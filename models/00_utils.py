@@ -502,3 +502,20 @@ def shn_rheader_tabs(jr, tabs=[]):
         rheader_tabs = ""
 
     return rheader_tabs
+
+def shn_action_buttons(jr):
+    """ Provide the usual Action Buttons for Column views. Designed to be called from a postp """
+
+    if not jr.component:
+        if auth.is_logged_in():
+            # Provide the ability to delete records in bulk
+            response.s3.actions = [
+                dict(label=str(T("Update")), _class="action-btn", url=str(URL(r=request, args=["[id]"]))),
+                dict(label=str(T("Delete")), _class="action-btn", url=str(URL(r=request, args=["[id]", "delete"]))),
+            ]
+        else:
+            response.s3.actions = [
+                dict(label=str(T("Details")), _class="action-btn", url=str(URL(r=request, args=["[id]"])))
+            ]
+
+    return

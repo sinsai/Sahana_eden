@@ -21,13 +21,6 @@ response.menu_options = [
     [T("Bulk Uploader"), False, URL(r=request, c="media", f="bulk_upload")],
 ]
 
-# Joined Resource
-#s3xrc.model.add_component("media", "metadata",
-#    multiple=True,
-#    joinby=dict(gis_location="location_id"),
-#    deletable=True,
-#    editable=True)
-
 # Web2Py Tools functions
 def download():
     "Download a file."
@@ -36,9 +29,7 @@ def download():
 # S3 framework functions
 def index():
     "Module's Home Page"
-
     module_name = s3.modules[module]["name_nice"]
-
     return dict(module_name=module_name)
 
 def test():
@@ -103,7 +94,23 @@ def apikey():
         msg_record_deleted = T("Key deleted"),
         msg_list_empty = T("No Keys currently defined"))
 
-    return shn_rest_controller(module, resource, deletable=False, listadd=False)
+    # Post-processor
+    def user_postp(jr, output):
+        if not jr.component:
+            if auth.is_logged_in():
+                # Provide the ability to delete records in bulk
+                response.s3.actions = [
+                    dict(label=str(T("Update")), _class="action-btn", url=str(URL(r=request, args=["[id]"])))
+                ]
+            else:
+                response.s3.actions = [
+                    dict(label=str(T("Details")), _class="action-btn", url=str(URL(r=request, args=["[id]"])))
+                ]
+            return output
+    response.s3.postp = user_postp
+
+    output = shn_rest_controller(module, resource, deletable=False, listadd=False)
+    return output
 
 def config():
     "RESTlike CRUD controller"
@@ -182,7 +189,14 @@ def feature_class():
         msg_record_deleted = T("Feature Class deleted"),
         msg_list_empty = T("No Feature Classes currently defined"))
 
-    return shn_rest_controller(module, resource)
+    # Post-processor
+    def user_postp(jr, output):
+        shn_action_buttons(jr)
+        return output
+    response.s3.postp = user_postp
+
+    output = shn_rest_controller(module, resource)
+    return output
 
 def feature_group():
     "RESTlike CRUD controller"
@@ -215,7 +229,14 @@ def feature_group():
         msg_record_deleted = T("Feature Group deleted"),
         msg_list_empty = T("No Feature Groups currently defined"))
 
-    return shn_rest_controller(module, resource)
+    # Post-processor
+    def user_postp(jr, output):
+        shn_action_buttons(jr)
+        return output
+    response.s3.postp = user_postp
+
+    output = shn_rest_controller(module, resource)
+    return output
 
 
 def location_to_feature_group():
@@ -238,7 +259,14 @@ def feature_class_to_feature_group():
 
     # CRUD Strings
 
-    return shn_rest_controller(module, resource)
+    # Post-processor
+    def user_postp(jr, output):
+        shn_action_buttons(jr)
+        return output
+    response.s3.postp = user_postp
+
+    output = shn_rest_controller(module, resource)
+    return output
 
 def location():
     "RESTlike CRUD controller"
@@ -318,6 +346,12 @@ def location():
 
     response.s3.pagination = True
 
+    # Post-processor
+    def user_postp(jr, output):
+        shn_action_buttons(jr)
+        return output
+    response.s3.postp = user_postp
+
     output = shn_rest_controller(module, resource)
     
     if isinstance(output, dict):
@@ -354,7 +388,14 @@ def marker():
         msg_record_deleted = T("Marker deleted"),
         msg_list_empty = T("No Markers currently available"))
 
-    return shn_rest_controller(module, resource)
+    # Post-processor
+    def user_postp(jr, output):
+        shn_action_buttons(jr)
+        return output
+    response.s3.postp = user_postp
+
+    output = shn_rest_controller(module, resource)
+    return output
 
 def projection():
     "RESTlike CRUD controller"
@@ -392,7 +433,14 @@ def projection():
         msg_record_deleted = T("Projection deleted"),
         msg_list_empty = T("No Projections currently defined"))
 
-    return shn_rest_controller(module, resource, deletable=False)
+    # Post-processor
+    def user_postp(jr, output):
+        shn_action_buttons(jr)
+        return output
+    response.s3.postp = user_postp
+
+    output = shn_rest_controller(module, resource, deletable=False)
+    return output
 
 def track():
     "RESTlike CRUD controller"
@@ -405,7 +453,14 @@ def track():
     # CRUD Strings
     # used in multiple controllers, so defined in model
 
-    return shn_rest_controller(module, resource)
+    # Post-processor
+    def user_postp(jr, output):
+        shn_action_buttons(jr)
+        return output
+    response.s3.postp = user_postp
+
+    output = shn_rest_controller(module, resource, deletable=False)
+    return output
 
 # Common CRUD strings for all layers
 ADD_LAYER = T("Add Layer")
@@ -452,7 +507,23 @@ def layer_openstreetmap():
         msg_record_deleted=LAYER_DELETED,
         msg_list_empty=NO_OSM_LAYERS)
 
-    return shn_rest_controller(module, resource, deletable=False, listadd=False)
+    # Post-processor
+    def user_postp(jr, output):
+        if not jr.component:
+            if auth.is_logged_in():
+                # Provide the ability to delete records in bulk
+                response.s3.actions = [
+                    dict(label=str(T("Update")), _class="action-btn", url=str(URL(r=request, args=["[id]"])))
+                ]
+            else:
+                response.s3.actions = [
+                    dict(label=str(T("Details")), _class="action-btn", url=str(URL(r=request, args=["[id]"])))
+                ]
+            return output
+    response.s3.postp = user_postp
+
+    output = shn_rest_controller(module, resource, deletable=False, listadd=False)
+    return output
 
 def layer_google():
     "RESTlike CRUD controller"
@@ -481,7 +552,23 @@ def layer_google():
         msg_record_deleted=LAYER_DELETED,
         msg_list_empty=NO_GOOGLE_LAYERS)
 
-    return shn_rest_controller(module, resource, deletable=False, listadd=False)
+    # Post-processor
+    def user_postp(jr, output):
+        if not jr.component:
+            if auth.is_logged_in():
+                # Provide the ability to delete records in bulk
+                response.s3.actions = [
+                    dict(label=str(T("Update")), _class="action-btn", url=str(URL(r=request, args=["[id]"])))
+                ]
+            else:
+                response.s3.actions = [
+                    dict(label=str(T("Details")), _class="action-btn", url=str(URL(r=request, args=["[id]"])))
+                ]
+            return output
+    response.s3.postp = user_postp
+
+    output = shn_rest_controller(module, resource, deletable=False, listadd=False)
+    return output
 
 def layer_yahoo():
     "RESTlike CRUD controller"
@@ -510,7 +597,23 @@ def layer_yahoo():
         msg_record_deleted=LAYER_DELETED,
         msg_list_empty=NO_YAHOO_LAYERS)
 
-    return shn_rest_controller(module, resource, deletable=False, listadd=False)
+    # Post-processor
+    def user_postp(jr, output):
+        if not jr.component:
+            if auth.is_logged_in():
+                # Provide the ability to delete records in bulk
+                response.s3.actions = [
+                    dict(label=str(T("Update")), _class="action-btn", url=str(URL(r=request, args=["[id]"])))
+                ]
+            else:
+                response.s3.actions = [
+                    dict(label=str(T("Details")), _class="action-btn", url=str(URL(r=request, args=["[id]"])))
+                ]
+            return output
+    response.s3.postp = user_postp
+
+    output = shn_rest_controller(module, resource, deletable=False, listadd=False)
+    return output
 
 def layer_mgrs():
     "RESTlike CRUD controller"
@@ -539,7 +642,23 @@ def layer_mgrs():
         msg_record_deleted=LAYER_DELETED,
         msg_list_empty=NO_MGRS_LAYERS)
 
-    return shn_rest_controller(module, resource, deletable=False, listadd=False)
+    # Post-processor
+    def user_postp(jr, output):
+        if not jr.component:
+            if auth.is_logged_in():
+                # Provide the ability to delete records in bulk
+                response.s3.actions = [
+                    dict(label=str(T("Update")), _class="action-btn", url=str(URL(r=request, args=["[id]"])))
+                ]
+            else:
+                response.s3.actions = [
+                    dict(label=str(T("Details")), _class="action-btn", url=str(URL(r=request, args=["[id]"])))
+                ]
+            return output
+    response.s3.postp = user_postp
+
+    output = shn_rest_controller(module, resource, deletable=False, listadd=False)
+    return output
 
 def layer_bing():
     "RESTlike CRUD controller"
@@ -568,7 +687,23 @@ def layer_bing():
         msg_record_deleted=LAYER_DELETED,
         msg_list_empty=NO_BING_LAYERS)
 
-    return shn_rest_controller(module, resource, deletable=False, listadd=False)
+    # Post-processor
+    def user_postp(jr, output):
+        if not jr.component:
+            if auth.is_logged_in():
+                # Provide the ability to delete records in bulk
+                response.s3.actions = [
+                    dict(label=str(T("Update")), _class="action-btn", url=str(URL(r=request, args=["[id]"])))
+                ]
+            else:
+                response.s3.actions = [
+                    dict(label=str(T("Details")), _class="action-btn", url=str(URL(r=request, args=["[id]"])))
+                ]
+            return output
+    response.s3.postp = user_postp
+
+    output = shn_rest_controller(module, resource, deletable=False, listadd=False)
+    return output
 
 def layer_georss():
     "RESTlike CRUD controller"
@@ -601,7 +736,14 @@ def layer_georss():
         msg_record_deleted=LAYER_DELETED,
         msg_list_empty=NO_GEORSS_LAYERS)
 
-    return shn_rest_controller(module, resource)
+    # Post-processor
+    def user_postp(jr, output):
+        shn_action_buttons(jr)
+        return output
+    response.s3.postp = user_postp
+
+    output = shn_rest_controller(module, resource, deletable=False)
+    return output
 
 def layer_gpx():
     "RESTlike CRUD controller"
@@ -633,7 +775,14 @@ def layer_gpx():
         msg_record_deleted=LAYER_DELETED,
         msg_list_empty=NO_GPX_LAYERS)
 
-    return shn_rest_controller(module, resource)
+    # Post-processor
+    def user_postp(jr, output):
+        shn_action_buttons(jr)
+        return output
+    response.s3.postp = user_postp
+
+    output = shn_rest_controller(module, resource, deletable=False)
+    return output
 
 def layer_kml():
     "RESTlike CRUD controller"
@@ -666,7 +815,14 @@ def layer_kml():
         msg_record_deleted=LAYER_DELETED,
         msg_list_empty=NO_KML_LAYERS)
 
-    return shn_rest_controller(module, resource)
+    # Post-processor
+    def user_postp(jr, output):
+        shn_action_buttons(jr)
+        return output
+    response.s3.postp = user_postp
+
+    output = shn_rest_controller(module, resource, deletable=False)
+    return output
 
 def layer_tms():
     "RESTlike CRUD controller"
@@ -700,7 +856,14 @@ def layer_tms():
         msg_record_deleted=LAYER_DELETED,
         msg_list_empty=NO_TMS_LAYERS)
 
-    return shn_rest_controller(module, resource)
+    # Post-processor
+    def user_postp(jr, output):
+        shn_action_buttons(jr)
+        return output
+    response.s3.postp = user_postp
+
+    output = shn_rest_controller(module, resource, deletable=False)
+    return output
 
 def layer_wms():
     "RESTlike CRUD controller"
@@ -735,7 +898,14 @@ def layer_wms():
         msg_record_deleted=LAYER_DELETED,
         msg_list_empty=NO_WMS_LAYERS)
 
-    return shn_rest_controller(module, resource)
+    # Post-processor
+    def user_postp(jr, output):
+        shn_action_buttons(jr)
+        return output
+    response.s3.postp = user_postp
+
+    output = shn_rest_controller(module, resource, deletable=False)
+    return output
 
 #@auth.requires_membership("AdvancedJS")
 def layer_js():
@@ -767,7 +937,14 @@ def layer_js():
         msg_record_deleted=LAYER_DELETED,
         msg_list_empty=NO_JS_LAYERS)
 
-    return shn_rest_controller(module, resource)
+    # Post-processor
+    def user_postp(jr, output):
+        shn_action_buttons(jr)
+        return output
+    response.s3.postp = user_postp
+
+    output = shn_rest_controller(module, resource, deletable=False)
+    return output
 
 def layer_xyz():
     "RESTlike CRUD controller"
@@ -800,7 +977,14 @@ def layer_xyz():
         msg_record_deleted=LAYER_DELETED,
         msg_list_empty=NO_XYZ_LAYERS)
 
-    return shn_rest_controller(module, resource)
+    # Post-processor
+    def user_postp(jr, output):
+        shn_action_buttons(jr)
+        return output
+    response.s3.postp = user_postp
+
+    output = shn_rest_controller(module, resource, deletable=False)
+    return output
 
 # Module-specific functions
 def convert_gps():

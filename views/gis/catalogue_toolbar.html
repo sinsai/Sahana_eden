@@ -1,44 +1,63 @@
 <h2>{{=T("Map Service Catalogue")}}</h2>
-<div class='toolbar-container'>
-<table>
-<tr><td class='btn-panel'>
-{{if auth.has_membership(1):}}
- <a id="configs-btn" class="toolbar-link" href="{{=URL(r=request, c='gis', f='config', args=['1', 'update'])}}">
+<div id="rheader_tabs">
+{{if request.function == "config":}}
+    <span class="rheader_tab_here">
 {{else:}}
- <a id="configs-btn" class="toolbar-link" href="{{=URL(r=request, c='gis', f='config', args=['1', 'display'])}}">
+    <span class="rheader_tab_other">
+{{pass}}
+{{if auth.has_membership(1):}}
+    <a href="{{=URL(r=request, c="gis", f="config", args=[1, "update"])}}">
+{{else:}}
+    <a href="{{=URL(r=request, c="gis", f="config", args=[1])}}">
 {{pass}}
 {{=T("Defaults")}}
-</a></td>
-<td class='btn-panel'>
-<a id="layers-btn" class="toolbar-link" href="{{=URL(r=request, c='gis', f='map_service_catalogue')}}">
+</a></span>
+{{if request.function == "map_service_catalogue":}}
+    <span class="rheader_tab_here">
+{{else:}}
+    <span class="rheader_tab_other">
+{{pass}}
+<a href="{{=URL(r=request, c="gis", f="map_service_catalogue")}}">
 {{=T("Layers")}}
-</a></td>
-<!--
-<td class='btn-panel'>
-<a id="features-btn" class="toolbar-link" href="{{=URL(r=request, c='gis', f='location')}}">
-{{=T("Locations")}}
-</a></td>
--->
-<td class='btn-panel'>
-<a id="feature_classes-btn" class="toolbar-link" href="{{=URL(r=request, c='gis', f='feature_class')}}">
+</a></span>
+{{if request.function == "feature_class":}}
+    <span class="rheader_tab_here">
+{{else:}}
+    <span class="rheader_tab_other">
+{{pass}}
+<a href="{{=URL(r=request, c="gis", f="feature_class")}}">
 {{=T("Feature Classes")}}
-</a></td>
-<td class='btn-panel'>
-<a id="feature_groups-btn" class="toolbar-link" href="{{=URL(r=request, c='gis', f='feature_group')}}">
+</a></span>
+{{if request.function == "feature_group":}}
+    <span class="rheader_tab_here">
+{{else:}}
+    <span class="rheader_tab_other">
+{{pass}}
+<a href="{{=URL(r=request, c="gis", f="feature_group")}}">
 {{=T("Feature Groups")}}
-</a></td>
-<td class='btn-panel'>
-<a id="markers-btn" class="toolbar-link" href="{{=URL(r=request, c='gis', f='marker')}}">
+</a></span>
+{{if request.function == "marker":}}
+    <span class="rheader_tab_here">
+{{else:}}
+    <span class="rheader_tab_other">
+{{pass}}
+<a href="{{=URL(r=request, c="gis", f="marker")}}">
 {{=T("Markers")}}
-</a></td>
-<td class='btn-panel'>
-<a id="keys-btn" class="toolbar-link" href="{{=URL(r=request, c='gis', f='apikey')}}">
+</a></span>
+{{if request.function == "apikey":}}
+    <span class="rheader_tab_here">
+{{else:}}
+    <span class="rheader_tab_other">
+{{pass}}
+<a href="{{=URL(r=request, c="gis", f="apikey")}}">
 {{=T("Keys")}}
-</a></td>
-<td class='btn-panel'>
-<a id="projections-btn" class="toolbar-link" href="{{=URL(r=request, c='gis', f='projection')}}">
+</a></span>
+{{if request.function == "projection":}}
+    <span class="rheader_tab_here">
+{{else:}}
+    <span class="rheader_tab_other">
+{{pass}}
+<a href="{{=URL(r=request, c="gis", f="projection")}}">
 {{=T("Projections")}}
-</a></td>
-</tr>
-</table>
+</a></span>
 </div>

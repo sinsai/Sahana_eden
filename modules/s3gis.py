@@ -2193,7 +2193,7 @@ OpenLayers.Util.extend( selectPdfControl, {
                     layerTreeBase,
                     //layerTreeFeaturesExternal,
                     layerTreeFeaturesInternal
-                ],
+                ]
             }),
             rootVisible: false,
             split: true,

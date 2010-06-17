@@ -2193,7 +2193,7 @@ OpenLayers.Util.extend( selectPdfControl, {
                     layerTreeBase,
                     //layerTreeFeaturesExternal,
                     layerTreeFeaturesInternal
-                ],
+                ]
             }),
             rootVisible: false,
             split: true,
@@ -2207,6 +2207,7 @@ OpenLayers.Util.extend( selectPdfControl, {
         """ + print_tool1 + """
 
         """ + layout + """
+            autoScroll: true,
             maximizable: true,
             titleCollapse: true,
             height: """ + str(height) + """,

@@ -80,6 +80,7 @@ def apikey():
 
     # Model options
     table.name.label = T("Service")
+    table.name.writable = False
     table.apikey.label = T("Key")
     table.apikey.comment = SPAN("*", _class="req")
 
@@ -89,11 +90,11 @@ def apikey():
     s3.crud_strings[tablename] = Storage(
         title_create = ADD_KEY,
         title_display = T("Key Details"),
-        title_list = LIST_KEYS,
+        title_list = T("Keys"),
         title_update = T("Edit Key"),
         title_search = T("Search Keys"),
         subtitle_create = T("Add New Key"),
-        subtitle_list = T("Keys"),
+        subtitle_list = LIST_KEYS,
         label_list_button = LIST_KEYS,
         label_create_button = ADD_KEY,
         label_delete_button = T("Delete Key"),
@@ -130,20 +131,21 @@ def config():
     ADD_CONFIG = T("Add Config")
     LIST_CONFIGS = T("List Configs")
     s3.crud_strings[tablename] = Storage(
-        title_create = ADD_CONFIG,
-        title_display = T("Config Details"),
-        title_list = LIST_CONFIGS,
-        title_update = T("Edit Config"),
-        title_search = T("Search Configs"),
-        subtitle_create = T("Add New Config"),
-        subtitle_list = T("Configs"),
-        label_list_button = LIST_CONFIGS,
-        label_create_button = ADD_CONFIG,
-        label_delete_button = T("Delete Config"),
-        msg_record_created = T("Config added"),
-        msg_record_modified = T("Config updated"),
-        msg_record_deleted = T("Config deleted"),
-        msg_list_empty = T("No Configs currently defined"))
+        #title_create = ADD_CONFIG,
+        title_display = T("Defaults"),
+        #title_list = T("Configs"),
+        title_update = T("Edit Defaults"),
+        #title_search = T("Search Configs"),
+        #subtitle_create = T("Add New Config"),
+        #subtitle_list = LIST_CONFIGS,
+        #label_list_button = LIST_CONFIGS,
+        #label_create_button = ADD_CONFIG,
+        #label_delete_button = T("Delete Config"),
+        #msg_record_created = T("Config added"),
+        msg_record_modified = T("Defaults updated"),
+        #msg_record_deleted = T("Config deleted"),
+        #msg_list_empty = T("No Configs currently defined")
+    )
 
     return shn_rest_controller(module, resource, deletable=False, listadd=False)
 
@@ -167,11 +169,11 @@ def feature_class():
     s3.crud_strings[tablename] = Storage(
         title_create = ADD_FEATURE_CLASS,
         title_display = T("Feature Class Details"),
-        title_list = LIST_FEATURE_CLASS,
+        title_list = T("Feature Classes"),
         title_update = T("Edit Feature Class"),
         title_search = T("Search Feature Class"),
         subtitle_create = T("Add New Feature Class"),
-        subtitle_list = T("Feature Classes"),
+        subtitle_list = LIST_FEATURE_CLASS,
         label_list_button = LIST_FEATURE_CLASS,
         label_create_button = ADD_FEATURE_CLASS,
         label_delete_button = T("Delete Feature Class"),
@@ -200,11 +202,11 @@ def feature_group():
     s3.crud_strings[tablename] = Storage(
         title_create = ADD_FEATURE_GROUP,
         title_display = T("Feature Group Details"),
-        title_list = LIST_FEATURE_GROUPS,
+        title_list = T("Feature Groups"),
         title_update = T("Edit Feature Group"),
         title_search = T("Search Feature Groups"),
         subtitle_create = T("Add New Feature Group"),
-        subtitle_list = T("Feature Groups"),
+        subtitle_list = LIST_FEATURE_GROUPS,
         label_list_button = LIST_FEATURE_GROUPS,
         label_create_button = ADD_FEATURE_GROUP,
         label_delete_button = T("Delete Feature Group"),
@@ -270,11 +272,11 @@ def location():
     s3.crud_strings[tablename] = Storage(
         title_create = ADD_LOCATION,
         title_display = T("Location Details"),
-        title_list = LIST_LOCATIONS,
+        title_list = T("Locations"),
         title_update = T("Edit Location"),
         title_search = T("Search Locations"),
         subtitle_create = T("Add New Location"),
-        subtitle_list = T("Locations"),
+        subtitle_list = LIST_LOCATIONS,
         label_list_button = LIST_LOCATIONS,
         label_create_button = ADD_LOCATION,
         label_delete_button = T("Delete Location"),
@@ -339,11 +341,11 @@ def marker():
     s3.crud_strings[tablename] = Storage(
         title_create = ADD_MARKER,
         title_display = T("Marker Details"),
-        title_list = LIST_MARKERS,
+        title_list = T("Markers"),
         title_update = T("Edit Marker"),
         title_search = T("Search Markers"),
         subtitle_create = T("Add New Marker"),
-        subtitle_list = T("Markers"),
+        subtitle_list = LIST_MARKERS,
         label_list_button = LIST_MARKERS,
         label_create_button = ADD_MARKER,
         label_delete_button = T("Delete Marker"),
@@ -377,11 +379,11 @@ def projection():
     s3.crud_strings[tablename] = Storage(
         title_create = ADD_PROJECTION,
         title_display = T("Projection Details"),
-        title_list = LIST_PROJECTIONS,
+        title_list = T("Projections"),
         title_update = T("Edit Projection"),
         title_search = T("Search Projections"),
         subtitle_create = T("Add New Projection"),
-        subtitle_list = T("Projections"),
+        subtitle_list = LIST_PROJECTIONS,
         label_list_button = LIST_PROJECTIONS,
         label_create_button = ADD_PROJECTION,
         label_delete_button = T("Delete Projection"),
@@ -1088,10 +1090,9 @@ def map_service_catalogue():
     """Map Service Catalogue.
     Allows selection of which Layers are active."""
 
-    title = T("Map Service Catalogue")
     subtitle = T("List Layers")
     # Start building the Return with the common items
-    output = dict(title=title, subtitle=subtitle)
+    output = dict(subtitle=subtitle)
 
     # Hack: We control all perms from this 1 table
     table = db.gis_layer_openstreetmap

@@ -1,3 +1,4 @@
+<h2>{{=T("Map Service Catalogue")}}</h2>
 <div class='toolbar-container'>
 <table>
 <tr><td class='btn-panel'>
@@ -7,6 +8,10 @@
  <a id="configs-btn" class="toolbar-link" href="{{=URL(r=request, c='gis', f='config', args=['1', 'display'])}}">
 {{pass}}
 {{=T("Defaults")}}
+</a></td>
+<td class='btn-panel'>
+<a id="layers-btn" class="toolbar-link" href="{{=URL(r=request, c='gis', f='map_service_catalogue')}}">
+{{=T("Layers")}}
 </a></td>
 <!--
 <td class='btn-panel'>
@@ -23,16 +28,12 @@
 {{=T("Feature Groups")}}
 </a></td>
 <td class='btn-panel'>
-<a id="keys-btn" class="toolbar-link" href="{{=URL(r=request, c='gis', f='apikey')}}">
-{{=T("Keys")}}
-</a></td>
-<td class='btn-panel'>
-<a id="layers-btn" class="toolbar-link" href="{{=URL(r=request, c='gis', f='map_service_catalogue')}}">
-{{=T("Layers")}}
-</a></td>
-<td class='btn-panel'>
 <a id="markers-btn" class="toolbar-link" href="{{=URL(r=request, c='gis', f='marker')}}">
 {{=T("Markers")}}
+</a></td>
+<td class='btn-panel'>
+<a id="keys-btn" class="toolbar-link" href="{{=URL(r=request, c='gis', f='apikey')}}">
+{{=T("Keys")}}
 </a></td>
 <td class='btn-panel'>
 <a id="projections-btn" class="toolbar-link" href="{{=URL(r=request, c='gis', f='projection')}}">

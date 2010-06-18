@@ -1087,8 +1087,11 @@ def feature_create_map():
     "Show a map to draw the feature"
     title = T("Add GIS Feature")
     form = crud.create("gis_location", onvalidation=lambda form: gis.wkt_centroid(form))
-    _projection = db(db.gis_config.id == 1).select(limitby=(0, 1)).first().projection_id
-    projection = db(db.gis_projection.id == _projection).select(limitby=(0, 1)).first().epsg
+
+    _config = db.gis_config
+    _projection = db.gis_projection
+    query = (_config.id == 1) & (_projection.id == _config.projection_id)
+    projection = db(query).select(_projection.epsg, limitby=(0, 1)).first().epsg
 
     # Layers
     baselayers = layers()
@@ -1407,10 +1410,10 @@ def layers():
         track = db(db.gis_track.id == layer.track_id).select(limitby=(0, 1)).first()
         layers.gpx[name].url = track.track
         if layer.marker_id:
-            layers.gpx[name].marker = db(db.gis_marker.id == layer.marker_id).select(limitby=(0, 1)).first().image
+            layers.gpx[name].marker = db(db.gis_marker.id == layer.marker_id).select(db.gis_marker.image, limitby=(0, 1)).first().image
         else:
-            marker_id = db(db.gis_config.id == 1).select(limitby=(0, 1)).first().marker_id
-            layers.gpx[name].marker = db(db.gis_marker.id == marker_id).select(limitby=(0, 1)).first().image
+            marker_id = db(db.gis_config.id == 1).select(db.gis_config.marker_id, limitby=(0, 1)).first().marker_id
+            layers.gpx[name].marker = db(db.gis_marker.id == marker_id).select(db.gis_marker.image, limitby=(0, 1)).first().image
 
     cachepath = os.path.join(request.folder, "uploads", "gis_cache")
     if os.access(cachepath, os.W_OK):
@@ -1445,7 +1448,7 @@ def layers():
                 # URL inaccessible
                 if os.access(filepath, os.R_OK):
                     # Use cached version
-                    date = db(db.gis_cache.name == name).select(limitby=(0, 1)).first().modified_on
+                    date = db(db.gis_cache.name == name).select(db.gis_cache.modified_on, limitby=(0, 1)).first().modified_on
                     response.warning += url + " " + str(T("not accessible - using cached version from")) + " " + str(date) + "\n"
                     url = URL(r=request, c="default", f="download", args=[filename])
                 else:
@@ -1460,12 +1463,12 @@ def layers():
         # Add to return
         layers.georss[name] = Storage()
         layers.georss[name].url = url
-        layers.georss[name].projection = db(db.gis_projection.id == layer.projection_id).select(limitby=(0, 1)).first().epsg
+        layers.georss[name].projection = db(db.gis_projection.id == layer.projection_id).select(db.gis_projection.epsg, limitby=(0, 1)).first().epsg
         if layer.marker_id:
-            layers.georss[name].marker = db(db.gis_marker.id == layer.marker_id).select(limitby=(0, 1)).first().image
+            layers.georss[name].marker = db(db.gis_marker.id == layer.marker_id).select(db.gis_marker.image, limitby=(0, 1)).first().image
         else:
-            marker_id = db(db.gis_config.id == 1).select(limitby=(0, 1)).first().marker_id
-            layers.georss[name].marker = db(db.gis_marker.id == marker_id).select(limitby=(0, 1)).first().image
+            marker_id = db(db.gis_config.id == 1).select(db.gis_config.marker_id, limitby=(0, 1)).first().marker_id
+            layers.georss[name].marker = db(db.gis_marker.id == marker_id).select(db.gis_marker.image, limitby=(0, 1)).first().image
 
     # KML
     layers.kml = Storage()
@@ -1492,7 +1495,7 @@ def layers():
                 # URL inaccessible
                 if os.access(filepath, os.R_OK):
                     # Use cached version
-                    date = db(db.gis_cache.name == name).select(limitby=(0, 1)).first().modified_on
+                    date = db(db.gis_cache.name == name).select(db.gis_cache.modified_on, limitby=(0, 1)).first().modified_on
                     response.warning += url + " " + str(T("not accessible - using cached version from")) + " " + str(date) + "\n"
                     url = URL(r=request, c="default", f="download", args=[filename])
                 else:
@@ -1536,7 +1539,7 @@ def layers():
         if layer.map:
             layers.wms[name].map = layer.map
         layers.wms[name].layers = layer.layers
-        layers.wms[name].projection = db(db.gis_projection.id == layer.projection_id).select(limitby=(0, 1)).first().epsg
+        layers.wms[name].projection = db(db.gis_projection.id == layer.projection_id).select(db.gis_projection.epsg, limitby=(0, 1)).first().epsg
         layers.wms[name].transparent = layer.transparent
         if layer.format:
             layers.wms[name].format = layer.format
@@ -1600,7 +1603,7 @@ def layers_enable():
                 query_inner = (table.id == row.id)
                 var = "%s_%i" % (type, row.id)
                 # Read current state
-                if db(query_inner).select(limitby=(0, 1)).first().enabled:
+                if db(query_inner).select(table.enabled, limitby=(0, 1)).first().enabled:
                     # Old state: Enabled
                     if var in request.vars:
                         # Do nothing
@@ -1640,12 +1643,11 @@ def map_viewing_client():
 
     # Config
     # ToDo return all of these to the view via a single 'config' var
-    config = gis.config_read()
+    config = gis.get_config()
     width = config.map_width
     height = config.map_height
     numZoomLevels = config.zoom_levels
-    _projection = config.projection_id
-    projection = db(db.gis_projection.id == _projection).select(limitby=(0, 1)).first().epsg
+    projection = config.epsg
     # Support bookmarks (such as from the control)
     if "lat" in request.vars:
         lat = request.vars.lat
@@ -1659,10 +1661,9 @@ def map_viewing_client():
         zoom = request.vars.zoom
     else:
         zoom = config.zoom
-    epsg = db(db.gis_projection.epsg == projection).select(limitby=(0, 1)).first()
-    units = epsg.units
-    maxResolution = epsg.maxResolution
-    maxExtent = epsg.maxExtent
+    units = config.units
+    maxResolution = config.maxResolution
+    maxExtent = config.maxExtent
     marker_default = config.marker_id
     cluster_distance = config.cluster_distance
     cluster_threshold = config.cluster_threshold
@@ -1707,7 +1708,8 @@ def map_viewing_client():
                 feature.resource = feature.gis_feature_class.resource
                 if feature.module and feature.resource:
                     try:
-                        feature.resource_id = db(db["%s_%s" % (feature.module, feature.resource)].location_id == feature.gis_location.id).select(limitby=(0, 1)).first().id
+                        _resource = db["%s_%s" % (feature.module, feature.resource)]
+                        feature.resource_id = db(_resource.location_id == feature.gis_location.id).select(_resource.id, limitby=(0, 1)).first().id
                     except:
                         feature.resource_id = None
                 else:
@@ -1735,7 +1737,7 @@ def map_viewing_client():
                     # Images are M->1 to Features
                     # We use the most recently uploaded one
                     query = (db.media_image.location_id == feature.gis_location.id) & (db.media_image.deleted == False)
-                    image = db(query).select(orderby=~db.media_image.created_on).first().image
+                    image = db(query).select(db.media_image.image, orderby=~db.media_image.created_on).first().image
                 except:
                     image = None
                 feature.image = image
@@ -1764,12 +1766,11 @@ def display_feature():
         raise HTTP(401, body=s3xrc.xml.json_message(False, 401, session.error))
 
     # Config
-    config = gis.config_read()
+    config = gis.get_config()
     width = config.map_width
     height = config.map_height
     numZoomLevels = config.zoom_levels
-    _projection = config.projection_id
-    projection = db(db.gis_projection.id == _projection).select(limitby=(0, 1)).first().epsg
+    projection = config.epsg
     # Support bookmarks (such as from the control)
     if "lat" in request.vars:
         lat = request.vars.lat
@@ -1783,10 +1784,9 @@ def display_feature():
         zoom = request.vars.zoom
     else:
         zoom = config.zoom
-    epsg = db(db.gis_projection.epsg == projection).select(limitby=(0, 1)).first()
-    units = epsg.units
-    maxResolution = epsg.maxResolution
-    maxExtent = epsg.maxExtent
+    units = config.units
+    maxResolution = config.maxResolution
+    maxExtent = config.maxExtent
     marker_default = config.marker_id
     cluster_distance = config.cluster_distance
     cluster_threshold = config.cluster_threshold
@@ -1805,7 +1805,8 @@ def display_feature():
         feature.module = None
         feature.resource = None
     if feature.module and feature.resource:
-        feature.resource_id = db(db["%s_%s" % (feature.module, feature.resource)].location_id == feature.id).select(limitby=(0, 1)).first().id
+        _resource = db["%s_%s" % (feature.module, feature.resource)]
+        feature.resource_id = db(_resource.location_id == feature.id).select(_resource.id, limitby=(0, 1)).first().id
     else:
         feature.resource_id = None
     # provide an extra access so no need to duplicate popups code
@@ -1835,7 +1836,7 @@ def display_feature():
         # Images are M->1 to Features
         # We use the most recently uploaded one
         query = (db.media_image.location_id == feature.id) & (db.media_image.deleted == False)
-        image = db(query).select(orderby=~db.media_image.created_on).first().image
+        image = db(query).select(db.media_image.image, orderby=~db.media_image.created_on).first().image
     except:
         image = None
     feature.image = image
@@ -1912,12 +1913,11 @@ def display_features():
     output = dict(lon_max=lon_max, lon_min=lon_min, lat_max=lat_max, lat_min=lat_min)
 
     # Config
-    config = gis.config_read()
+    config = gis.get_config()
     width = config.map_width
     height = config.map_height
     numZoomLevels = config.zoom_levels
-    _projection = config.projection_id
-    projection = db(db.gis_projection.id == _projection).select(limitby=(0, 1)).first().epsg
+    projection = config.epsg
     # Support bookmarks (such as from the control)
     if "lat" in request.vars:
         lat = request.vars.lat
@@ -1931,10 +1931,9 @@ def display_features():
         zoom = request.vars.zoom
     else:
         zoom = None
-    epsg = db(db.gis_projection.epsg == projection).select(limitby=(0, 1)).first()
-    units = epsg.units
-    maxResolution = epsg.maxResolution
-    maxExtent = epsg.maxExtent
+    units = config.units
+    maxResolution = config.maxResolution
+    maxExtent = config.maxExtent
     marker_default = config.marker_id
     cluster_distance = config.cluster_distance
     cluster_threshold = config.cluster_threshold
@@ -1953,7 +1952,8 @@ def display_features():
         feature.resource = feature_class.resource
         if feature.module and feature.resource:
             try:
-                feature.resource_id = db(db["%s_%s" % (feature.module, feature.resource)].location_id == feature.id).select(limitby=(0, 1)).first().id
+                _resource = db["%s_%s" % (feature.module, feature.resource)]
+                feature.resource_id = db(_resource.location_id == feature.id).select(_resource.id, limitby=(0, 1)).first().id
             except:
                 feature.resource_id = None
         else:

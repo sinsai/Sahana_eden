@@ -114,16 +114,6 @@ class GIS(object):
         else:
             return wkt
 
-    def config_read(self):
-        """
-            Reads the current GIS Config from the DB
-        """
-
-        db = self.db
-
-        config = db(db.gis_config.id == 1).select(cache=self.cache).first()
-        return config
-
     def download_kml(self, url, public_url):
         """
         Download a KML file:
@@ -204,7 +194,7 @@ class GIS(object):
         " Acquire API key from the database "
 
         query = self.db.gis_apikey.name == layer
-        return self.db(query).select(limitby=(0, 1)).first().apikey
+        return self.db(query).select(db.gis_apikey.name, limitby=(0, 1)).first().apikey
 
     def get_bearing(lat_start, lon_start, lat_end, lon_end):
         """
@@ -242,7 +232,7 @@ class GIS(object):
                 if feature.lat < min_lat:
                     min_lat = feature.lat
             # Check that we're still within overall bounds
-            config = self.config_read()
+            config = self.get_config()
             if min_lon < config.min_lon:
                 min_lon = config.min_lon
             if min_lat < config.min_lat:
@@ -254,7 +244,7 @@ class GIS(object):
 
         else:
             # Read from config
-            config = self.config_read()
+            config = self.get_config()
             min_lon = config.min_lon
             min_lat = config.min_lat
             max_lon = config.max_lon
@@ -274,6 +264,26 @@ class GIS(object):
             children = children & self.get_children(child.id)
 
         return children
+
+    def get_config(self):
+        " Reads the current GIS Config from the DB "
+
+        db = self.db
+        _config = db.gis_config
+        _projection = db.gis_projection
+        
+        query = (_config.id == 1) & (_projection.id == _config.projection_id)
+        config = db(query).select(limitby=(0, 1)).first()
+        
+        output = Storage()
+        for item in config["gis_config"]:
+            output[item] = config["gis_config"][item]
+        
+        for item in config["gis_projection"]:
+            if item in ["epsg", "units", "maxResolution", "maxExtent"]:
+                output[item] = config["gis_projection"][item]
+        
+        return output
 
     def get_feature_class_id_from_name(self, name):
         """
@@ -341,7 +351,7 @@ class GIS(object):
         table_fclass = db.gis_feature_class
         table_symbology = db.gis_symbology_to_feature_class
 
-        config = self.config_read()
+        config = self.get_config()
         symbology = config.symbology_id
 
         query = None
@@ -355,8 +365,9 @@ class GIS(object):
                                    table_feature.feature_class_id,
                                    limitby=(0, 1))
         if feature:
-            feature_class = feature.first().feature_class_id
-            marker_id = feature.first().marker_id
+            _feature = feature.first()
+            feature_class =  _feature.feature_class_id
+            marker_id =  _feature.first().marker_id
 
             # 1st choice for a Marker is the Feature's
             if marker_id:
@@ -391,7 +402,6 @@ class GIS(object):
             return marker.first().image
         else:
             return ""
-
 
     def latlon_to_wkt(self, lat, lon):
         """
@@ -491,7 +501,7 @@ class GIS(object):
         auth = self.auth
 
         # Read configuration
-        config = self.config_read()
+        config = self.get_config()
         if not height:
             height = config.map_height
         if not width:
@@ -511,12 +521,10 @@ class GIS(object):
         elif not zoom:
             zoom = config.zoom
         if not projection:
-            _projection = config.projection_id
-            projection = db(db.gis_projection.id == _projection).select(limitby=(0, 1)).first().epsg
-        epsg = db(db.gis_projection.epsg == projection).select(limitby=(0, 1)).first()
-        units = epsg.units
-        maxResolution = epsg.maxResolution
-        maxExtent = epsg.maxExtent
+            projection = config.epsg
+        units = config.units
+        maxResolution = config.maxResolution
+        maxExtent = config.maxExtent
         numZoomLevels = config.zoom_levels
         marker_default = config.marker_id
         cluster_distance = config.cluster_distance
@@ -1636,17 +1644,17 @@ OpenLayers.Util.extend( selectPdfControl, {
                     name = layer["name"]
                     url = layer["url"]
                     visible = layer["visible"]
-                    georss_projection = db(db.gis_projection.id == layer["projection_id"]).select(limitby=(0, 1)).first().epsg
+                    georss_projection = db(db.gis_projection.id == layer["projection_id"]).select(db.gis_projection.epsg, limitby=(0, 1)).first().epsg
                     if georss_projection == 4326:
                         projection_str = "projection: proj4326,"
                     else:
                         projection_str = "projection: new OpenLayers.Projection('EPSG:" + georss_projection + "'),"
                     marker_id = layer["marker_id"]
                     if marker_id:
-                        marker = db(db.gis_marker.id == marker_id).select(limitby=(0, 1)).first().image
+                        marker = db(db.gis_marker.id == marker_id).select(db.gis_marker.image, limitby=(0, 1)).first().image
                     else:
-                        marker = db(db.gis_marker.id == marker_default).select(limitby=(0, 1)).first().image
-                    marker_url = URL(r=request, c='default', f='download', args=marker)
+                        marker = db(db.gis_marker.id == marker_default).select(db.gis_marker.image, limitby=(0, 1)).first().image
+                    marker_url = URL(r=request, c="default", f="download", args=marker)
 
                     if cache:
                         # Download file
@@ -1665,7 +1673,7 @@ OpenLayers.Util.extend( selectPdfControl, {
                             # URL inaccessible
                             if os.access(filepath, os.R_OK):
                                 # Use cached version
-                                date = db(db.gis_cache.name == name).select(limitby=(0, 1)).first().modified_on
+                                date = db(db.gis_cache.name == name).select(db.gis_cache.modified_on, limitby=(0, 1)).first().modified_on
                                 response.warning += url + " " + str(T("not accessible - using cached version from")) + " " + str(date) + "\n"
                                 url = URL(r=request, c="default", f="download", args=[filename])
                             else:
@@ -1756,10 +1764,10 @@ OpenLayers.Util.extend( selectPdfControl, {
                     visible = layer["visible"]
                     marker_id = layer["marker_id"]
                     if marker_id:
-                        marker = db(db.gis_marker.id == marker_id).select(limitby=(0, 1)).first().image
+                        marker = db(db.gis_marker.id == marker_id).select(db.gis_marker.image, limitby=(0, 1)).first().image
                     else:
-                        marker = db(db.gis_marker.id == marker_default).select(limitby=(0, 1)).first().image
-                    marker_url = URL(r=request, c='default', f='download', args=marker)
+                        marker = db(db.gis_marker.id == marker_default).select(db.gis_marker.image, limitby=(0, 1)).first().image
+                    marker_url = URL(r=request, c="default", f="download", args=marker)
 
                     # Generate HTML snippet
                     name_safe = re.sub("\W", "_", name)
@@ -1875,7 +1883,7 @@ OpenLayers.Util.extend( selectPdfControl, {
                                 statinfo = os.stat(filepath)
                                 if statinfo.st_size:
                                     # Use cached version
-                                    date = db(db.gis_cache.name == name).select(limitby=(0, 1)).first().modified_on
+                                    date = db(db.gis_cache.name == name).select(db.gis_cache.modified_on, limitby=(0, 1)).first().modified_on
                                     response.warning += url + " " + str(T("not accessible - using cached version from")) + " " + str(date) + "\n"
                                     url = URL(r=request, c="default", f="download", args=[filename])
                                 else:
@@ -1961,7 +1969,7 @@ OpenLayers.Util.extend( selectPdfControl, {
         #############
 
         html.append(SCRIPT("""
-    var map, mapPanel, toolbar;
+    var map, mapPanel, legendPanel, toolbar;
     var currentFeature, popupControl, highlightControl;
     var wmsBrowser;
     var printProvider, printForm;
@@ -2204,6 +2212,20 @@ OpenLayers.Util.extend( selectPdfControl, {
             enableDD: true
         });
 
+        legendPanel = new GeoExt.LegendPanel({
+            id: 'legendpanel',
+            title: '""" + str(T("Legend")) + """',
+            defaults: {
+                labelCls: 'mylabel',
+                style: 'padding:5px'
+            },
+            bodyStyle: 'padding:5px',
+            autoScroll: true,
+            collapsible: true,
+            collapseMode: 'mini',
+            lines: false
+        });
+        
         """ + print_tool1 + """
 
         """ + layout + """
@@ -2222,7 +2244,7 @@ OpenLayers.Util.extend( selectPdfControl, {
                         collapsible: true,
                         split: true,
                         items: [
-                            layerTree""" + layers_wms_browser2 + search2 + print_tool2 + """
+                            layerTree""" + layers_wms_browser2 + search2 + print_tool2 + """, legendPanel
                             ]
                     },
                     mapPanel
@@ -2392,7 +2414,7 @@ class GoogleGeocoder(Geocoder):
     def get_api_key(self):
         " Acquire API key from the database "
         query = self.db.gis_apikey.name == "google"
-        return self.db(query).select(limitby=(0, 1)).first().apikey
+        return self.db(query).select(db.gis_apikey.apikey, limitby=(0, 1)).first().apikey
 
     def construct_url(self):
         " Construct the URL based on the arguments passed "
@@ -2415,7 +2437,7 @@ class YahooGeocoder(Geocoder):
     def get_api_key(self):
         " Acquire API key from the database "
         query = self.db.gis_apikey.name == "yahoo"
-        return self.db(query).select(limitby=(0, 1)).first().apikey
+        return self.db(query).select(db.gis_apikey.apikey, limitby=(0, 1)).first().apikey
 
     def construct_url(self):
         " Construct the URL based on the arguments passed "

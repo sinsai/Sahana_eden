@@ -55,10 +55,10 @@ def sector_represent(sector_ids):
     if not sector_ids:
         return "None"
     elif "|" in str(sector_ids):
-        sectors = [db(db.or_sector.id==id).select()[0].name for id in sector_ids.split("|") if id]
+        sectors = [db(db.or_sector.id == id).select(db.or_sector.name, limitby=(0, 1)).first().name for id in sector_ids.split("|") if id]
         return ", ".join(sectors)
     else:
-        return db(db.or_sector.id==sector_ids).select()[0].name
+        return db(db.or_sector.id == sector_ids).select(db.or_sector.name, limitby=(0, 1)).first().name
 
 # Reusable field
 sector_id = SQLTable(None, "sector_id",
@@ -155,7 +155,7 @@ organisation_popup_url = URL(r=request, c="or", f="organisation", args="create",
 organisation_id = SQLTable(None, "organisation_id",
                            FieldS3("organisation_id", db.or_organisation, sortby="name",
                            requires = IS_NULL_OR(IS_ONE_OF(db, "or_organisation.id", "%(name)s")),
-                           represent = lambda id: (id and [db(db.or_organisation.id == id).select(limitby=(0, 1)).first().name] or ["None"])[0],
+                           represent = lambda id: (id and [db(db.or_organisation.id == id).select(db.or_organisation.name, limitby=(0, 1)).first().name] or ["None"])[0],
                            label = T("Organization"),
                            comment = DIV(A(ADD_ORGANISATION, _class="colorbox", _href=organisation_popup_url, _target="top", _title=ADD_ORGANISATION), DIV(DIV(_class="tooltip", _title=T("Add Organization|The Organization this record is associated with.")))),
                            ondelete = "RESTRICT"
@@ -231,7 +231,7 @@ table.name.comment = SPAN("*", _class="req")
 
 table.parent.label = T("Parent")
 table.parent.requires = IS_NULL_OR(IS_ONE_OF(db, "or_office.id", "%(name)s"))
-table.parent.represent = lambda id: (id and [db(db.or_office.id == id).select(limitby=(0, 1)).first().name] or ["None"])[0]
+table.parent.represent = lambda id: (id and [db(db.or_office.id == id).select(db.or_office.name, limitby=(0, 1)).first().name] or ["None"])[0]
 
 table.type.requires = IS_NULL_OR(IS_IN_SET(or_office_type_opts))
 table.type.represent = lambda opt: or_office_type_opts.get(opt, UNKNOWN_OPT)
@@ -278,7 +278,7 @@ s3.crud_strings[tablename] = Storage(
 office_id = SQLTable(None, "office_id",
             FieldS3("office_id", db.or_office, sortby="name",
                 requires = IS_NULL_OR(IS_ONE_OF(db, "or_office.id", "%(name)s")),
-                represent = lambda id: (id and [db(db.or_office.id == id).select(limitby=(0, 1)).first().name] or ["None"])[0],
+                represent = lambda id: (id and [db(db.or_office.id == id).select(db.or_office.name, limitby=(0, 1)).first().name] or ["None"])[0],
                 label = T("Office"),
                 comment = DIV(A(ADD_OFFICE, _class="colorbox", _href=URL(r=request, c="or", f="office", args="create", vars=dict(format="popup")), _target="top", _title=ADD_OFFICE), A(SPAN("[Help]"), _class="tooltip", _title=T("Add Office|The Office this record is associated with."))),
                 ondelete = "RESTRICT"
@@ -334,8 +334,8 @@ def represent_focal_point(is_focal_point):
         return "-"
 
 def shn_or_contact_represent(contact_id):
-    person = db((db.or_contact.id==contact_id) &
-                (db.pr_person.id==db.or_contact.person_id)).select(db.pr_person.ALL)
+    person = db((db.or_contact.id == contact_id) &
+                (db.pr_person.id == db.or_contact.person_id)).select(db.pr_person.ALL)
     if person:
         return vita.fullname(person[0])
     else:
@@ -348,8 +348,8 @@ def shn_orgs_to_person(person_id):
 
     orgs = []
     if person_id:
-        contacts = db((db.or_contact.person_id==person_id)&
-                      (db.or_contact.deleted==False)).select(db.or_contact.organisation_id)
+        contacts = db((db.or_contact.person_id == person_id) &
+                      (db.or_contact.deleted == False)).select(db.or_contact.organisation_id)
         if contacts:
             for c in contacts:
                 orgs.append(c.organisation_id)

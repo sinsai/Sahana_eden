@@ -1,247 +1,247 @@
 uuid,name,level,code,feature_class_id,lon,lat
-"www.sahanafoundation.org/COUNTRY-AF",Afghanistan,0,AF,2,65.216,33.677
-"www.sahanafoundation.org/COUNTRY-AX",�land Islands,0,AX,2,19.952,60.198
-"www.sahanafoundation.org/COUNTRY-AL",Albania,0,AL,2,20.068,41.143
-"www.sahanafoundation.org/COUNTRY-DZ",Algeria,0,DZ,2,2.632,28.163
-"www.sahanafoundation.org/COUNTRY-AS",American Samoa,0,AS,2,-170.73,-14.318
-"www.sahanafoundation.org/COUNTRY-AD",Andorra,0,AD,2,1.576,42.549
-"www.sahanafoundation.org/COUNTRY-AO",Angola,0,AO,2,17.544,-12.296
-"www.sahanafoundation.org/COUNTRY-AI",Anguilla,0,AI,2,-63.032,18.237
-"www.sahanafoundation.org/COUNTRY-AQ",Antarctica,0,AQ,2,21.304,-80.446
-"www.sahanafoundation.org/COUNTRY-AG",Antigua and Barbuda,0,AG,2,-61.783,17.078
-"www.sahanafoundation.org/COUNTRY-AR",Argentina,0,AR,2,-65.167,-35.377
-"www.sahanafoundation.org/COUNTRY-AM",Armenia,0,AM,2,44.563,40.534
-"www.sahanafoundation.org/COUNTRY-AW",Aruba,0,AW,2,-69.977,12.517
-"www.sahanafoundation.org/COUNTRY-AU",Australia,0,AU,2,136.189,-24.973
-"www.sahanafoundation.org/COUNTRY-AT",Austria,0,AT,2,14.912,47.683
-"www.sahanafoundation.org/COUNTRY-AZ",Azerbaijan,0,AZ,2,47.395,40.43
-"www.sahanafoundation.org/COUNTRY-BS",Bahamas,0,BS,2,-78.014,24.628
-"www.sahanafoundation.org/COUNTRY-BH",Bahrain,0,BH,2,50.562,26.019
-"www.sahanafoundation.org/COUNTRY-BD",Bangladesh,0,BD,2,89.941,24.218
-"www.sahanafoundation.org/COUNTRY-BB",Barbados,0,BB,2,-59.559,13.153
-"www.sahanafoundation.org/COUNTRY-BY",Belarus,0,BY,2,28.047,53.54
-"www.sahanafoundation.org/COUNTRY-BE",Belgium,0,BE,2,4.664,50.643
-"www.sahanafoundation.org/COUNTRY-BZ",Belize,0,BZ,2,-88.602,17.219
-"www.sahanafoundation.org/COUNTRY-BJ",Benin,0,BJ,2,2.469,10.541
-"www.sahanafoundation.org/COUNTRY-BM",Bermuda,0,BM,2,-64.709,32.336
-"www.sahanafoundation.org/COUNTRY-BT",Bhutan,0,BT,2,90.429,27.415
-"www.sahanafoundation.org/COUNTRY-BO",Bolivia,0,BO,2,-64.671,-16.715
-"www.sahanafoundation.org/COUNTRY-BA",Bosnia and Herzegovina,0,BA,2,17.786,44.169
-"www.sahanafoundation.org/COUNTRY-BW",Botswana,0,BW,2,23.815,-22.182
-"www.sahanafoundation.org/COUNTRY-BV",Bouvet Island,0,BV,2,3.412,-54.422
-"www.sahanafoundation.org/COUNTRY-BR",Brazil,0,BR,2,-53.089,-10.772
-"www.sahanafoundation.org/COUNTRY-IO",British Indian Ocean Territory,0,IO,2,72.416,-7.335
-"www.sahanafoundation.org/COUNTRY-VG",British Virgin Islands,0,VG,2,-64.39,18.483
-"www.sahanafoundation.org/COUNTRY-BN",Brunei Darussalam,0,BN,2,114.591,4.468
-"www.sahanafoundation.org/COUNTRY-BG",Bulgaria,0,BG,2,25.231,42.761
-"www.sahanafoundation.org/COUNTRY-BF",Burkina Faso,0,BF,2,-1.74,12.278
-"www.sahanafoundation.org/COUNTRY-MM",Burma,0,MM,2,96.041,21.718
-"www.sahanafoundation.org/COUNTRY-BI",Burundi,0,BI,2,29.887,-3.356
-"www.sahanafoundation.org/COUNTRY-KH",Cambodia,0,KH,2,104.564,12.714
-"www.sahanafoundation.org/COUNTRY-CM",Cameroon,0,CM,2,12.277,5.133
-"www.sahanafoundation.org/COUNTRY-CA",Canada,0,CA,2,-109.433,59.081
-"www.sahanafoundation.org/COUNTRY-CV",Cape Verde,0,CV,2,-23.634,15.071
-"www.sahanafoundation.org/COUNTRY-KY",Cayman Islands,0,KY,2,-81.198,19.314
-"www.sahanafoundation.org/COUNTRY-CF",Central African Republic,0,CF,2,20.483,6.571
-"www.sahanafoundation.org/COUNTRY-TD",Chad,0,TD,2,18.665,15.361
-"www.sahanafoundation.org/COUNTRY-CL",Chile,0,CL,2,-69.433,-23.389
-"www.sahanafoundation.org/COUNTRY-CN",China,0,CN,2,106.514,33.42
-"www.sahanafoundation.org/COUNTRY-CX",Christmas Island,0,CX,2,105.704,-10.444
-"www.sahanafoundation.org/COUNTRY-CC",Cocos (Keeling) Islands,0,CC,2,96.839,-12.173
-"www.sahanafoundation.org/COUNTRY-CO",Colombia,0,CO,2,-73.076,3.9
-"www.sahanafoundation.org/COUNTRY-KM",Comoros,0,KM,2,43.337,-11.758
-"www.sahanafoundation.org/COUNTRY-CG",Congo,0,CG,2,15.986,-0.055
-"www.sahanafoundation.org/COUNTRY-CK",Cook Islands,0,CK,2,-159.782,-21.219
-"www.sahanafoundation.org/COUNTRY-CR",Costa Rica,0,CR,2,-83.946,9.971
-"www.sahanafoundation.org/COUNTRY-CI",Cote d'Ivoire,0,CI,2,-5.556,7.632
-"www.sahanafoundation.org/COUNTRY-HR",Croatia,0,HR,2,16.693,45.723
-"www.sahanafoundation.org/COUNTRY-CU",Cuba,0,CU,2,-77.781,21.297
-"www.sahanafoundation.org/COUNTRY-CY",Cyprus,0,CY,2,33.219,35.043
-"www.sahanafoundation.org/COUNTRY-CZ",Czech Republic,0,CZ,2,15.338,49.743
-"www.sahanafoundation.org/COUNTRY-CD",Democratic Republic of the Congo,0,CD,2,23.654,-2.876
-"www.sahanafoundation.org/COUNTRY-DK",Denmark,0,DK,2,9.264,56.058
-"www.sahanafoundation.org/COUNTRY-DJ",Djibouti,0,DJ,2,42.516,11.9
-"www.sahanafoundation.org/COUNTRY-DM",Dominica,0,DM,2,-61.356,15.475
-"www.sahanafoundation.org/COUNTRY-DO",Dominican Republic,0,DO,2,-70.729,19.015
-"www.sahanafoundation.org/COUNTRY-EC",Ecuador,0,EC,2,-78.497,-1.385
-"www.sahanafoundation.org/COUNTRY-EG",Egypt,0,EG,2,29.872,26.494
-"www.sahanafoundation.org/COUNTRY-SV",El Salvador,0,SV,2,-88.866,13.736
-"www.sahanafoundation.org/COUNTRY-GQ",Equatorial Guinea,0,GQ,2,10.488,1.607
-"www.sahanafoundation.org/COUNTRY-ER",Eritrea,0,ER,2,38.219,16.045
-"www.sahanafoundation.org/COUNTRY-EE",Estonia,0,EE,2,25.793,58.674
-"www.sahanafoundation.org/COUNTRY-ET",Ethiopia,0,ET,2,39.616,8.626
-"www.sahanafoundation.org/COUNTRY-FK",Falkland Islands (Malvinas),0,FK,2,-58.694,-51.665
-"www.sahanafoundation.org/COUNTRY-FO",Faroe Islands,0,FO,2,-6.864,62.05
-"www.sahanafoundation.org/COUNTRY-FJ",Fiji,0,FJ,2,177.974,-17.819
-"www.sahanafoundation.org/COUNTRY-FI",Finland,0,FI,2,26.272,64.504
-"www.sahanafoundation.org/COUNTRY-FR",France,0,FR,2,2.55,46.565
-"www.sahanafoundation.org/COUNTRY-GF",French Guiana,0,GF,2,-53.241,3.924
-"www.sahanafoundation.org/COUNTRY-PF",French Polynesia,0,PF,2,-149.462,-17.626
-"www.sahanafoundation.org/COUNTRY-TF",French Southern and Antarctic Lands,0,TF,2,69.117,-49.302
-"www.sahanafoundation.org/COUNTRY-GA",Gabon,0,GA,2,11.797,-0.591
-"www.sahanafoundation.org/COUNTRY-GM",Gambia,0,GM,2,-15.386,13.453
-"www.sahanafoundation.org/COUNTRY-GE",Georgia,0,GE,2,43.518,42.176
-"www.sahanafoundation.org/COUNTRY-DE",Germany,0,DE,2,9.851,51.11
-"www.sahanafoundation.org/COUNTRY-GH",Ghana,0,GH,2,-1.207,7.96
-"www.sahanafoundation.org/COUNTRY-GI",Gibraltar,0,GI,2,-5.345,36.138
-"www.sahanafoundation.org/COUNTRY-GR",Greece,0,GR,2,21.766,39.666
-"www.sahanafoundation.org/COUNTRY-GL",Greenland,0,GL,2,-41.391,74.719
-"www.sahanafoundation.org/COUNTRY-GD",Grenada,0,GD,2,-61.678,12.118
-"www.sahanafoundation.org/COUNTRY-GP",Guadeloupe,0,GP,2,-61.441,16.286
-"www.sahanafoundation.org/COUNTRY-GU",Guam,0,GU,2,144.707,13.385
-"www.sahanafoundation.org/COUNTRY-GT",Guatemala,0,GT,2,-90.398,15.256
-"www.sahanafoundation.org/COUNTRY-GG",Guernsey,0,GG,2,-2.576,49.459
-"www.sahanafoundation.org/COUNTRY-GN",Guinea,0,GN,2,-10.942,10.439
-"www.sahanafoundation.org/COUNTRY-GW",Guinea-Bissau,0,GW,2,-14.651,12.125
-"www.sahanafoundation.org/COUNTRY-GY",Guyana,0,GY,2,-58.974,4.792
-"www.sahanafoundation.org/COUNTRY-HT",Haiti,0,HT,2,-72.278,19.142
-"www.sahanafoundation.org/COUNTRY-HM",Heard Island and McDonald Islands,0,HM,2,73.507,-53.111
-"www.sahanafoundation.org/COUNTRY-VA",Holy See (Vatican City),0,VA,2,12.451,41.904
-"www.sahanafoundation.org/COUNTRY-HN",Honduras,0,HN,2,-86.863,14.819
-"www.sahanafoundation.org/COUNTRY-HK",Hong Kong,0,HK,2,114.129,22.423
-"www.sahanafoundation.org/COUNTRY-HU",Hungary,0,HU,2,19.134,47.07
-"www.sahanafoundation.org/COUNTRY-IS",Iceland,0,IS,2,-18.48,64.764
-"www.sahanafoundation.org/COUNTRY-IN",India,0,IN,2,78.5,21
-"www.sahanafoundation.org/COUNTRY-ID",Indonesia,0,ID,2,114.252,-0.976
-"www.sahanafoundation.org/COUNTRY-IR",Iran (Islamic Republic of),0,IR,2,54.301,32.565
-"www.sahanafoundation.org/COUNTRY-IQ",Iraq,0,IQ,2,43.772,33.048
-"www.sahanafoundation.org/COUNTRY-IE",Ireland,0,IE,2,-8.152,53.177
-"www.sahanafoundation.org/COUNTRY-IM",Isle of Man,0,IM,2,-4.527,54.229
-"www.sahanafoundation.org/COUNTRY-IL",Israel,0,IL,2,34.851,31.026
-"www.sahanafoundation.org/COUNTRY-IT",Italy,0,IT,2,12.8,42.7
-"www.sahanafoundation.org/COUNTRY-JM",Jamaica,0,JM,2,-77.32,18.151
-"www.sahanafoundation.org/COUNTRY-JP",Japan,0,JP,2,139.068,36.491
-"www.sahanafoundation.org/COUNTRY-JE",Jersey,0,JE,2,-2.129,49.219
-"www.sahanafoundation.org/COUNTRY-JO",Jordan,0,JO,2,36.319,30.703
-"www.sahanafoundation.org/COUNTRY-KZ",Kazakhstan,0,KZ,2,67.301,48.16
-"www.sahanafoundation.org/COUNTRY-KE",Kenya,0,KE,2,37.858,0.53
-"www.sahanafoundation.org/COUNTRY-KI",Kiribati,0,KI,2,175.036,-1.508
-"www.sahanafoundation.org/COUNTRY-KP","Korea, Democratic People's Republic of",0,KP,2,126.451,39.778
-"www.sahanafoundation.org/COUNTRY-KR","Korea, Republic of",0,KR,2,128.103,36.504
-"www.sahanafoundation.org/COUNTRY-KW",Kuwait,0,KW,2,47.376,29.476
-"www.sahanafoundation.org/COUNTRY-KG",Kyrgyzstan,0,KG,2,74.555,41.465
-"www.sahanafoundation.org/COUNTRY-LA",Lao People's Democratic Republic,0,LA,2,102.471,19.905
-"www.sahanafoundation.org/COUNTRY-LV",Latvia,0,LV,2,25.641,56.858
-"www.sahanafoundation.org/COUNTRY-LB",Lebanon,0,LB,2,35.888,33.92
-"www.sahanafoundation.org/COUNTRY-LS",Lesotho,0,LS,2,28.243,-29.581
-"www.sahanafoundation.org/COUNTRY-LR",Liberia,0,LR,2,-9.657,6.682
-"www.sahanafoundation.org/COUNTRY-LY",Libyan Arab Jamahiriya,0,LY,2,18.023,27.044
-"www.sahanafoundation.org/COUNTRY-LI",Liechtenstein,0,LI,2,9.555,47.153
-"www.sahanafoundation.org/COUNTRY-LT",Lithuania,0,LT,2,23.897,55.336
-"www.sahanafoundation.org/COUNTRY-LU",Luxembourg,0,LU,2,6.088,49.771
-"www.sahanafoundation.org/COUNTRY-MO",Macau,0,MO,2,113.545,22.2
-"www.sahanafoundation.org/COUNTRY-MG",Madagascar,0,MG,2,46.706,-19.374
-"www.sahanafoundation.org/COUNTRY-MW",Malawi,0,MW,2,33.808,-13.4
-"www.sahanafoundation.org/COUNTRY-MY",Malaysia,0,MY,2,102.195,4.201
-"www.sahanafoundation.org/COUNTRY-MV",Maldives,0,MV,2,72.92,3.548
-"www.sahanafoundation.org/COUNTRY-ML",Mali,0,ML,2,-3.524,17.35
-"www.sahanafoundation.org/COUNTRY-MT",Malta,0,MT,2,14.442,35.89
-"www.sahanafoundation.org/COUNTRY-MH",Marshall Islands,0,MH,2,168.963,7.595
-"www.sahanafoundation.org/COUNTRY-MQ",Martinique,0,MQ,2,-61.021,14.653
-"www.sahanafoundation.org/COUNTRY-MR",Mauritania,0,MR,2,-10.332,20.26
-"www.sahanafoundation.org/COUNTRY-MU",Mauritius,0,MU,2,57.583,-20.255
-"www.sahanafoundation.org/COUNTRY-YT",Mayotte,0,YT,2,45.155,-12.777
-"www.sahanafoundation.org/COUNTRY-MX",Mexico,0,MX,2,-102.535,23.951
-"www.sahanafoundation.org/COUNTRY-FM","Micronesia, Federated States of",0,FM,2,158.235,6.883
-"www.sahanafoundation.org/COUNTRY-MC",Monaco,0,MC,2,7.412,43.75
-"www.sahanafoundation.org/COUNTRY-MN",Mongolia,0,MN,2,102.876,46.056
-"www.sahanafoundation.org/COUNTRY-ME",Montenegro,0,ME,2,19.254,42.792
-"www.sahanafoundation.org/COUNTRY-MS",Montserrat,0,MS,2,-62.187,16.736
-"www.sahanafoundation.org/COUNTRY-MA",Morocco,0,MA,2,-5.758,32.706
-"www.sahanafoundation.org/COUNTRY-MZ",Mozambique,0,MZ,2,37.923,-14.422
-"www.sahanafoundation.org/COUNTRY-NA",Namibia,0,NA,2,17.218,-22.133
-"www.sahanafoundation.org/COUNTRY-NR",Nauru,0,NR,2,166.93,-0.522
-"www.sahanafoundation.org/COUNTRY-NP",Nepal,0,NP,2,83.939,28.253
-"www.sahanafoundation.org/COUNTRY-NL",Netherlands,0,NL,2,5.389,52.077
-"www.sahanafoundation.org/COUNTRY-AN",Netherlands Antilles,0,AN,2,-68.87,12.123
-"www.sahanafoundation.org/COUNTRY-NC",New Caledonia,0,NC,2,165.447,-21.359
-"www.sahanafoundation.org/COUNTRY-NZ",New Zealand,0,NZ,2,172.235,-42.634
-"www.sahanafoundation.org/COUNTRY-NI",Nicaragua,0,NI,2,-85.034,12.84
-"www.sahanafoundation.org/COUNTRY-NE",Niger,0,NE,2,9.398,17.426
-"www.sahanafoundation.org/COUNTRY-NG",Nigeria,0,NG,2,8.105,9.594
-"www.sahanafoundation.org/COUNTRY-NU",Niue,0,NU,2,-169.869,-19.052
-"www.sahanafoundation.org/COUNTRY-NF",Norfolk Island,0,NF,2,167.953,-29.037
-"www.sahanafoundation.org/COUNTRY-MP",Northern Mariana Islands,0,MP,2,145.623,15.005
-"www.sahanafoundation.org/COUNTRY-NO",Norway,0,NO,2,8.74,61.152
-"www.sahanafoundation.org/COUNTRY-OM",Oman,0,OM,2,57.407,21.656
-"www.sahanafoundation.org/COUNTRY-PK",Pakistan,0,PK,2,69.386,29.967
-"www.sahanafoundation.org/COUNTRY-PW",Palau,0,PW,2,134.57,7.501
-"www.sahanafoundation.org/COUNTRY-PS",Palestine,0,PS,2,35.278,32.037
-"www.sahanafoundation.org/COUNTRY-PA",Panama,0,PA,2,-80.92,8.384
-"www.sahanafoundation.org/COUNTRY-PG",Papua New Guinea,0,PG,2,143.459,-5.949
-"www.sahanafoundation.org/COUNTRY-PY",Paraguay,0,PY,2,-58.391,-23.236
-"www.sahanafoundation.org/COUNTRY-PE",Peru,0,PE,2,-75.552,-9.326
-"www.sahanafoundation.org/COUNTRY-PH",Philippines,0,PH,2,122.466,11.118
-"www.sahanafoundation.org/COUNTRY-PN",Pitcairn Islands,0,PN,2,-128.316,-24.366
-"www.sahanafoundation.org/COUNTRY-PL",Poland,0,PL,2,19.401,52.125
-"www.sahanafoundation.org/COUNTRY-PT",Portugal,0,PT,2,-8.058,40.309
-"www.sahanafoundation.org/COUNTRY-PR",Puerto Rico,0,PR,2,-66.466,18.221
-"www.sahanafoundation.org/COUNTRY-QA",Qatar,0,QA,2,51.191,25.316
-"www.sahanafoundation.org/COUNTRY-MD",Republic of Moldova,0,MD,2,28.599,47.193
-"www.sahanafoundation.org/COUNTRY-RE",Reunion,0,RE,2,55.538,-21.122
-"www.sahanafoundation.org/COUNTRY-RO",Romania,0,RO,2,24.969,45.844
-"www.sahanafoundation.org/COUNTRY-RU",Russia,0,RU,2,96.689,61.988
-"www.sahanafoundation.org/COUNTRY-RW",Rwanda,0,RW,2,29.917,-1.998
-"www.sahanafoundation.org/COUNTRY-BL",Saint Barthelemy,0,BL,2,-63.043,18.04
-"www.sahanafoundation.org/COUNTRY-SH",Saint Helena,0,SH,2,-5.71,-15.953
-"www.sahanafoundation.org/COUNTRY-KN",Saint Kitts and Nevis,0,KN,2,-62.769,17.34
-"www.sahanafoundation.org/COUNTRY-LC",Saint Lucia,0,LC,2,-60.969,13.898
-"www.sahanafoundation.org/COUNTRY-MF",Saint Martin,0,MF,2,-63.041,18.094
-"www.sahanafoundation.org/COUNTRY-PM",Saint Pierre and Miquelon,0,PM,2,-56.325,47.042
-"www.sahanafoundation.org/COUNTRY-VC",Saint Vincent and the Grenadines,0,VC,2,-61.194,13.248
-"www.sahanafoundation.org/COUNTRY-WS",Samoa,0,WS,2,-172.414,-13.652
-"www.sahanafoundation.org/COUNTRY-SM",San Marino,0,SM,2,12.46,43.942
-"www.sahanafoundation.org/COUNTRY-ST",Sao Tome and Principe,0,ST,2,6.629,0.201
-"www.sahanafoundation.org/COUNTRY-SA",Saudi Arabia,0,SA,2,44.585,24.023
-"www.sahanafoundation.org/COUNTRY-SN",Senegal,0,SN,2,-14.881,15.013
-"www.sahanafoundation.org/COUNTRY-RS",Serbia,0,RS,2,20.806,44.032
-"www.sahanafoundation.org/COUNTRY-SC",Seychelles,0,SC,2,55.474,-4.647
-"www.sahanafoundation.org/COUNTRY-SL",Sierra Leone,0,SL,2,-11.792,8.56
-"www.sahanafoundation.org/COUNTRY-SG",Singapore,0,SG,2,103.808,1.351
-"www.sahanafoundation.org/COUNTRY-SK",Slovakia,0,SK,2,19.491,48.707
-"www.sahanafoundation.org/COUNTRY-SI",Slovenia,0,SI,2,14.827,46.124
-"www.sahanafoundation.org/COUNTRY-SB",Solomon Islands,0,SB,2,160.109,-9.611
-"www.sahanafoundation.org/COUNTRY-SO",Somalia,0,SO,2,48.316,9.774
-"www.sahanafoundation.org/COUNTRY-ZA",South Africa,0,ZA,2,23.121,-30.558
-"www.sahanafoundation.org/COUNTRY-GS",South Georgia South Sandwich Islands,0,GS,2,-36.891,-54.209
-"www.sahanafoundation.org/COUNTRY-ES",Spain,0,ES,2,-3.649,40.227
-"www.sahanafoundation.org/COUNTRY-LK",Sri Lanka,0,LK,2,80.704,7.612
-"www.sahanafoundation.org/COUNTRY-SD",Sudan,0,SD,2,30.05,13.832
-"www.sahanafoundation.org/COUNTRY-SR",Suriname,0,SR,2,-55.912,4.127
-"www.sahanafoundation.org/COUNTRY-SJ",Svalbard,0,SJ,2,18.374,78.83
-"www.sahanafoundation.org/COUNTRY-SZ",Swaziland,0,SZ,2,31.497,-26.562
-"www.sahanafoundation.org/COUNTRY-SE",Sweden,0,SE,2,15.27,62.011
-"www.sahanafoundation.org/COUNTRY-CH",Switzerland,0,CH,2,7.908,46.861
-"www.sahanafoundation.org/COUNTRY-SY",Syrian Arab Republic,0,SY,2,38.506,35.013
-"www.sahanafoundation.org/COUNTRY-TW",Taiwan,0,TW,2,120.946,23.754
-"www.sahanafoundation.org/COUNTRY-TJ",Tajikistan,0,TJ,2,69.42,38.665
-"www.sahanafoundation.org/COUNTRY-TH",Thailand,0,TH,2,100.844,15.7
-"www.sahanafoundation.org/COUNTRY-MK",The former Yugoslav Republic of Macedonia,0,MK,2,21.698,41.6
-"www.sahanafoundation.org/COUNTRY-TL",Timor-Leste,0,TL,2,125.878,-8.822
-"www.sahanafoundation.org/COUNTRY-TG",Togo,0,TG,2,1.081,8.799
-"www.sahanafoundation.org/COUNTRY-TK",Tokelau,0,TK,2,-171.853,-9.193
-"www.sahanafoundation.org/COUNTRY-TO",Tonga,0,TO,2,-175.185,-21.202
-"www.sahanafoundation.org/COUNTRY-TT",Trinidad and Tobago,0,TT,2,-61.253,10.468
-"www.sahanafoundation.org/COUNTRY-TN",Tunisia,0,TN,2,9.596,35.383
-"www.sahanafoundation.org/COUNTRY-TR",Turkey,0,TR,2,35.179,39.061
-"www.sahanafoundation.org/COUNTRY-TM",Turkmenistan,0,TM,2,59.384,39.122
-"www.sahanafoundation.org/COUNTRY-TC",Turks and Caicos Islands,0,TC,2,-71.95,21.902
-"www.sahanafoundation.org/COUNTRY-TV",Tuvalu,0,TV,2,179.219,-8.514
-"www.sahanafoundation.org/COUNTRY-UG",Uganda,0,UG,2,32.386,1.28
-"www.sahanafoundation.org/COUNTRY-UA",Ukraine,0,UA,2,31.388,49.016
-"www.sahanafoundation.org/COUNTRY-AE",United Arab Emirates,0,AE,2,54.163,23.549
-"www.sahanafoundation.org/COUNTRY-GB",United Kingdom,0,GB,2,-1.6,53
-"www.sahanafoundation.org/COUNTRY-TZ",United Republic of Tanzania,0,TZ,2,34.823,-6.27
-"www.sahanafoundation.org/COUNTRY-US",United States,0,US,2,-98.606,39.622
-"www.sahanafoundation.org/COUNTRY-UM",United States Minor Outlying Islands,0,UM,2,-160.027,-0.385
-"www.sahanafoundation.org/COUNTRY-VI",United States Virgin Islands,0,VI,2,-64.785,17.741
-"www.sahanafoundation.org/COUNTRY-UY",Uruguay,0,UY,2,-56.012,-32.8
-"www.sahanafoundation.org/COUNTRY-UZ",Uzbekistan,0,UZ,2,63.17,41.75
-"www.sahanafoundation.org/COUNTRY-VU",Vanuatu,0,VU,2,166.899,-15.376
-"www.sahanafoundation.org/COUNTRY-VE",Venezuela,0,VE,2,-66.166,7.125
-"www.sahanafoundation.org/COUNTRY-VN",Viet Nam,0,VN,2,105.314,21.491
-"www.sahanafoundation.org/COUNTRY-WF",Wallis and Futuna Islands,0,WF,2,-178.131,-14.289
-"www.sahanafoundation.org/COUNTRY-EH",Western Sahara,0,EH,2,-13.706,24.554
-"www.sahanafoundation.org/COUNTRY-YE",Yemen,0,YE,2,48.355,15.807
-"www.sahanafoundation.org/COUNTRY-ZM",Zambia,0,ZM,2,26.32,-14.614
-"www.sahanafoundation.org/COUNTRY-ZW",Zimbabwe,0,ZW,2,29.872,-19
+"www.sahanafoundation.org/COUNTRY-AF",Afghanistan,L0,AF,2,65.216,33.677
+"www.sahanafoundation.org/COUNTRY-AX",Åland Islands,L0,AX,2,19.952,60.198
+"www.sahanafoundation.org/COUNTRY-AL",Albania,L0,AL,2,20.068,41.143
+"www.sahanafoundation.org/COUNTRY-DZ",Algeria,L0,DZ,2,2.632,28.163
+"www.sahanafoundation.org/COUNTRY-AS",American Samoa,L0,AS,2,-170.73,-14.318
+"www.sahanafoundation.org/COUNTRY-AD",Andorra,L0,AD,2,1.576,42.549
+"www.sahanafoundation.org/COUNTRY-AO",Angola,L0,AO,2,17.544,-12.296
+"www.sahanafoundation.org/COUNTRY-AI",Anguilla,L0,AI,2,-63.032,18.237
+"www.sahanafoundation.org/COUNTRY-AQ",Antarctica,L0,AQ,2,21.304,-80.446
+"www.sahanafoundation.org/COUNTRY-AG",Antigua and Barbuda,L0,AG,2,-61.783,17.078
+"www.sahanafoundation.org/COUNTRY-AR",Argentina,L0,AR,2,-65.167,-35.377
+"www.sahanafoundation.org/COUNTRY-AM",Armenia,L0,AM,2,44.563,40.534
+"www.sahanafoundation.org/COUNTRY-AW",Aruba,L0,AW,2,-69.977,12.517
+"www.sahanafoundation.org/COUNTRY-AU",Australia,L0,AU,2,136.189,-24.973
+"www.sahanafoundation.org/COUNTRY-AT",Austria,L0,AT,2,14.912,47.683
+"www.sahanafoundation.org/COUNTRY-AZ",Azerbaijan,L0,AZ,2,47.395,40.43
+"www.sahanafoundation.org/COUNTRY-BS",Bahamas,L0,BS,2,-78.014,24.628
+"www.sahanafoundation.org/COUNTRY-BH",Bahrain,L0,BH,2,50.562,26.019
+"www.sahanafoundation.org/COUNTRY-BD",Bangladesh,L0,BD,2,89.941,24.218
+"www.sahanafoundation.org/COUNTRY-BB",Barbados,L0,BB,2,-59.559,13.153
+"www.sahanafoundation.org/COUNTRY-BY",Belarus,L0,BY,2,28.047,53.54
+"www.sahanafoundation.org/COUNTRY-BE",Belgium,L0,BE,2,4.664,50.643
+"www.sahanafoundation.org/COUNTRY-BZ",Belize,L0,BZ,2,-88.602,17.219
+"www.sahanafoundation.org/COUNTRY-BJ",Benin,L0,BJ,2,2.469,10.541
+"www.sahanafoundation.org/COUNTRY-BM",Bermuda,L0,BM,2,-64.709,32.336
+"www.sahanafoundation.org/COUNTRY-BT",Bhutan,L0,BT,2,90.429,27.415
+"www.sahanafoundation.org/COUNTRY-BO",Bolivia,L0,BO,2,-64.671,-16.715
+"www.sahanafoundation.org/COUNTRY-BA",Bosnia and Herzegovina,L0,BA,2,17.786,44.169
+"www.sahanafoundation.org/COUNTRY-BW",Botswana,L0,BW,2,23.815,-22.182
+"www.sahanafoundation.org/COUNTRY-BV",Bouvet Island,L0,BV,2,3.412,-54.422
+"www.sahanafoundation.org/COUNTRY-BR",Brazil,L0,BR,2,-53.089,-10.772
+"www.sahanafoundation.org/COUNTRY-IO",British Indian Ocean Territory,L0,IO,2,72.416,-7.335
+"www.sahanafoundation.org/COUNTRY-VG",British Virgin Islands,L0,VG,2,-64.39,18.483
+"www.sahanafoundation.org/COUNTRY-BN",Brunei Darussalam,L0,BN,2,114.591,4.468
+"www.sahanafoundation.org/COUNTRY-BG",Bulgaria,L0,BG,2,25.231,42.761
+"www.sahanafoundation.org/COUNTRY-BF",Burkina Faso,L0,BF,2,-1.74,12.278
+"www.sahanafoundation.org/COUNTRY-MM",Burma,L0,MM,2,96.041,21.718
+"www.sahanafoundation.org/COUNTRY-BI",Burundi,L0,BI,2,29.887,-3.356
+"www.sahanafoundation.org/COUNTRY-KH",Cambodia,L0,KH,2,104.564,12.714
+"www.sahanafoundation.org/COUNTRY-CM",Cameroon,L0,CM,2,12.277,5.133
+"www.sahanafoundation.org/COUNTRY-CA",Canada,L0,CA,2,-109.433,59.081
+"www.sahanafoundation.org/COUNTRY-CV",Cape Verde,L0,CV,2,-23.634,15.071
+"www.sahanafoundation.org/COUNTRY-KY",Cayman Islands,L0,KY,2,-81.198,19.314
+"www.sahanafoundation.org/COUNTRY-CF",Central African Republic,L0,CF,2,20.483,6.571
+"www.sahanafoundation.org/COUNTRY-TD",Chad,L0,TD,2,18.665,15.361
+"www.sahanafoundation.org/COUNTRY-CL",Chile,L0,CL,2,-69.433,-23.389
+"www.sahanafoundation.org/COUNTRY-CN",China,L0,CN,2,106.514,33.42
+"www.sahanafoundation.org/COUNTRY-CX",Christmas Island,L0,CX,2,105.704,-10.444
+"www.sahanafoundation.org/COUNTRY-CC",Cocos (Keeling) Islands,L0,CC,2,96.839,-12.173
+"www.sahanafoundation.org/COUNTRY-CO",Colombia,L0,CO,2,-73.076,3.9
+"www.sahanafoundation.org/COUNTRY-KM",Comoros,L0,KM,2,43.337,-11.758
+"www.sahanafoundation.org/COUNTRY-CG",Congo,L0,CG,2,15.986,-0.055
+"www.sahanafoundation.org/COUNTRY-CK",Cook Islands,L0,CK,2,-159.782,-21.219
+"www.sahanafoundation.org/COUNTRY-CR",Costa Rica,L0,CR,2,-83.946,9.971
+"www.sahanafoundation.org/COUNTRY-CI",Cote d'Ivoire,L0,CI,2,-5.556,7.632
+"www.sahanafoundation.org/COUNTRY-HR",Croatia,L0,HR,2,16.693,45.723
+"www.sahanafoundation.org/COUNTRY-CU",Cuba,L0,CU,2,-77.781,21.297
+"www.sahanafoundation.org/COUNTRY-CY",Cyprus,L0,CY,2,33.219,35.043
+"www.sahanafoundation.org/COUNTRY-CZ",Czech Republic,L0,CZ,2,15.338,49.743
+"www.sahanafoundation.org/COUNTRY-CD",Democratic Republic of the Congo,L0,CD,2,23.654,-2.876
+"www.sahanafoundation.org/COUNTRY-DK",Denmark,L0,DK,2,9.264,56.058
+"www.sahanafoundation.org/COUNTRY-DJ",Djibouti,L0,DJ,2,42.516,11.9
+"www.sahanafoundation.org/COUNTRY-DM",Dominica,L0,DM,2,-61.356,15.475
+"www.sahanafoundation.org/COUNTRY-DO",Dominican Republic,L0,DO,2,-70.729,19.015
+"www.sahanafoundation.org/COUNTRY-EC",Ecuador,L0,EC,2,-78.497,-1.385
+"www.sahanafoundation.org/COUNTRY-EG",Egypt,L0,EG,2,29.872,26.494
+"www.sahanafoundation.org/COUNTRY-SV",El Salvador,L0,SV,2,-88.866,13.736
+"www.sahanafoundation.org/COUNTRY-GQ",Equatorial Guinea,L0,GQ,2,10.488,1.607
+"www.sahanafoundation.org/COUNTRY-ER",Eritrea,L0,ER,2,38.219,16.045
+"www.sahanafoundation.org/COUNTRY-EE",Estonia,L0,EE,2,25.793,58.674
+"www.sahanafoundation.org/COUNTRY-ET",Ethiopia,L0,ET,2,39.616,8.626
+"www.sahanafoundation.org/COUNTRY-FK",Falkland Islands (Malvinas),L0,FK,2,-58.694,-51.665
+"www.sahanafoundation.org/COUNTRY-FO",Faroe Islands,L0,FO,2,-6.864,62.05
+"www.sahanafoundation.org/COUNTRY-FJ",Fiji,L0,FJ,2,177.974,-17.819
+"www.sahanafoundation.org/COUNTRY-FI",Finland,L0,FI,2,26.272,64.504
+"www.sahanafoundation.org/COUNTRY-FR",France,L0,FR,2,2.55,46.565
+"www.sahanafoundation.org/COUNTRY-GF",French Guiana,L0,GF,2,-53.241,3.924
+"www.sahanafoundation.org/COUNTRY-PF",French Polynesia,L0,PF,2,-149.462,-17.626
+"www.sahanafoundation.org/COUNTRY-TF",French Southern and Antarctic Lands,L0,TF,2,69.117,-49.302
+"www.sahanafoundation.org/COUNTRY-GA",Gabon,L0,GA,2,11.797,-0.591
+"www.sahanafoundation.org/COUNTRY-GM",Gambia,L0,GM,2,-15.386,13.453
+"www.sahanafoundation.org/COUNTRY-GE",Georgia,L0,GE,2,43.518,42.176
+"www.sahanafoundation.org/COUNTRY-DE",Germany,L0,DE,2,9.851,51.11
+"www.sahanafoundation.org/COUNTRY-GH",Ghana,L0,GH,2,-1.207,7.96
+"www.sahanafoundation.org/COUNTRY-GI",Gibraltar,L0,GI,2,-5.345,36.138
+"www.sahanafoundation.org/COUNTRY-GR",Greece,L0,GR,2,21.766,39.666
+"www.sahanafoundation.org/COUNTRY-GL",Greenland,L0,GL,2,-41.391,74.719
+"www.sahanafoundation.org/COUNTRY-GD",Grenada,L0,GD,2,-61.678,12.118
+"www.sahanafoundation.org/COUNTRY-GP",Guadeloupe,L0,GP,2,-61.441,16.286
+"www.sahanafoundation.org/COUNTRY-GU",Guam,L0,GU,2,144.707,13.385
+"www.sahanafoundation.org/COUNTRY-GT",Guatemala,L0,GT,2,-90.398,15.256
+"www.sahanafoundation.org/COUNTRY-GG",Guernsey,L0,GG,2,-2.576,49.459
+"www.sahanafoundation.org/COUNTRY-GN",Guinea,L0,GN,2,-10.942,10.439
+"www.sahanafoundation.org/COUNTRY-GW",Guinea-Bissau,L0,GW,2,-14.651,12.125
+"www.sahanafoundation.org/COUNTRY-GY",Guyana,L0,GY,2,-58.974,4.792
+"www.sahanafoundation.org/COUNTRY-HT",Haiti,L0,HT,2,-72.278,19.142
+"www.sahanafoundation.org/COUNTRY-HM",Heard Island and McDonald Islands,L0,HM,2,73.507,-53.111
+"www.sahanafoundation.org/COUNTRY-VA",Holy See (Vatican City),L0,VA,2,12.451,41.904
+"www.sahanafoundation.org/COUNTRY-HN",Honduras,L0,HN,2,-86.863,14.819
+"www.sahanafoundation.org/COUNTRY-HK",Hong Kong,L0,HK,2,114.129,22.423
+"www.sahanafoundation.org/COUNTRY-HU",Hungary,L0,HU,2,19.134,47.07
+"www.sahanafoundation.org/COUNTRY-IS",Iceland,L0,IS,2,-18.48,64.764
+"www.sahanafoundation.org/COUNTRY-IN",India,L0,IN,2,78.5,21
+"www.sahanafoundation.org/COUNTRY-ID",Indonesia,L0,ID,2,114.252,-0.976
+"www.sahanafoundation.org/COUNTRY-IR",Iran (Islamic Republic of),L0,IR,2,54.301,32.565
+"www.sahanafoundation.org/COUNTRY-IQ",Iraq,L0,IQ,2,43.772,33.048
+"www.sahanafoundation.org/COUNTRY-IE",Ireland,L0,IE,2,-8.152,53.177
+"www.sahanafoundation.org/COUNTRY-IM",Isle of Man,L0,IM,2,-4.527,54.229
+"www.sahanafoundation.org/COUNTRY-IL",Israel,L0,IL,2,34.851,31.026
+"www.sahanafoundation.org/COUNTRY-IT",Italy,L0,IT,2,12.8,42.7
+"www.sahanafoundation.org/COUNTRY-JM",Jamaica,L0,JM,2,-77.32,18.151
+"www.sahanafoundation.org/COUNTRY-JP",Japan,L0,JP,2,139.068,36.491
+"www.sahanafoundation.org/COUNTRY-JE",Jersey,L0,JE,2,-2.129,49.219
+"www.sahanafoundation.org/COUNTRY-JO",Jordan,L0,JO,2,36.319,30.703
+"www.sahanafoundation.org/COUNTRY-KZ",Kazakhstan,L0,KZ,2,67.301,48.16
+"www.sahanafoundation.org/COUNTRY-KE",Kenya,L0,KE,2,37.858,0.53
+"www.sahanafoundation.org/COUNTRY-KI",Kiribati,L0,KI,2,175.036,-1.508
+"www.sahanafoundation.org/COUNTRY-KP","Korea, Democratic People's Republic of",L0,KP,2,126.451,39.778
+"www.sahanafoundation.org/COUNTRY-KR","Korea, Republic of",L0,KR,2,128.103,36.504
+"www.sahanafoundation.org/COUNTRY-KW",Kuwait,L0,KW,2,47.376,29.476
+"www.sahanafoundation.org/COUNTRY-KG",Kyrgyzstan,L0,KG,2,74.555,41.465
+"www.sahanafoundation.org/COUNTRY-LA",Lao People's Democratic Republic,L0,LA,2,102.471,19.905
+"www.sahanafoundation.org/COUNTRY-LV",Latvia,L0,LV,2,25.641,56.858
+"www.sahanafoundation.org/COUNTRY-LB",Lebanon,L0,LB,2,35.888,33.92
+"www.sahanafoundation.org/COUNTRY-LS",Lesotho,L0,LS,2,28.243,-29.581
+"www.sahanafoundation.org/COUNTRY-LR",Liberia,L0,LR,2,-9.657,6.682
+"www.sahanafoundation.org/COUNTRY-LY",Libyan Arab Jamahiriya,L0,LY,2,18.023,27.044
+"www.sahanafoundation.org/COUNTRY-LI",Liechtenstein,L0,LI,2,9.555,47.153
+"www.sahanafoundation.org/COUNTRY-LT",Lithuania,L0,LT,2,23.897,55.336
+"www.sahanafoundation.org/COUNTRY-LU",Luxembourg,L0,LU,2,6.088,49.771
+"www.sahanafoundation.org/COUNTRY-MO",Macau,L0,MO,2,113.545,22.2
+"www.sahanafoundation.org/COUNTRY-MG",Madagascar,L0,MG,2,46.706,-19.374
+"www.sahanafoundation.org/COUNTRY-MW",Malawi,L0,MW,2,33.808,-13.4
+"www.sahanafoundation.org/COUNTRY-MY",Malaysia,L0,MY,2,102.195,4.201
+"www.sahanafoundation.org/COUNTRY-MV",Maldives,L0,MV,2,72.92,3.548
+"www.sahanafoundation.org/COUNTRY-ML",Mali,L0,ML,2,-3.524,17.35
+"www.sahanafoundation.org/COUNTRY-MT",Malta,L0,MT,2,14.442,35.89
+"www.sahanafoundation.org/COUNTRY-MH",Marshall Islands,L0,MH,2,168.963,7.595
+"www.sahanafoundation.org/COUNTRY-MQ",Martinique,L0,MQ,2,-61.021,14.653
+"www.sahanafoundation.org/COUNTRY-MR",Mauritania,L0,MR,2,-10.332,20.26
+"www.sahanafoundation.org/COUNTRY-MU",Mauritius,L0,MU,2,57.583,-20.255
+"www.sahanafoundation.org/COUNTRY-YT",Mayotte,L0,YT,2,45.155,-12.777
+"www.sahanafoundation.org/COUNTRY-MX",Mexico,L0,MX,2,-102.535,23.951
+"www.sahanafoundation.org/COUNTRY-FM","Micronesia, Federated States of",L0,FM,2,158.235,6.883
+"www.sahanafoundation.org/COUNTRY-MC",Monaco,L0,MC,2,7.412,43.75
+"www.sahanafoundation.org/COUNTRY-MN",Mongolia,L0,MN,2,102.876,46.056
+"www.sahanafoundation.org/COUNTRY-ME",Montenegro,L0,ME,2,19.254,42.792
+"www.sahanafoundation.org/COUNTRY-MS",Montserrat,L0,MS,2,-62.187,16.736
+"www.sahanafoundation.org/COUNTRY-MA",Morocco,L0,MA,2,-5.758,32.706
+"www.sahanafoundation.org/COUNTRY-MZ",Mozambique,L0,MZ,2,37.923,-14.422
+"www.sahanafoundation.org/COUNTRY-NA",Namibia,L0,NA,2,17.218,-22.133
+"www.sahanafoundation.org/COUNTRY-NR",Nauru,L0,NR,2,166.93,-0.522
+"www.sahanafoundation.org/COUNTRY-NP",Nepal,L0,NP,2,83.939,28.253
+"www.sahanafoundation.org/COUNTRY-NL",Netherlands,L0,NL,2,5.389,52.077
+"www.sahanafoundation.org/COUNTRY-AN",Netherlands Antilles,L0,AN,2,-68.87,12.123
+"www.sahanafoundation.org/COUNTRY-NC",New Caledonia,L0,NC,2,165.447,-21.359
+"www.sahanafoundation.org/COUNTRY-NZ",New Zealand,L0,NZ,2,172.235,-42.634
+"www.sahanafoundation.org/COUNTRY-NI",Nicaragua,L0,NI,2,-85.034,12.84
+"www.sahanafoundation.org/COUNTRY-NE",Niger,L0,NE,2,9.398,17.426
+"www.sahanafoundation.org/COUNTRY-NG",Nigeria,L0,NG,2,8.105,9.594
+"www.sahanafoundation.org/COUNTRY-NU",Niue,L0,NU,2,-169.869,-19.052
+"www.sahanafoundation.org/COUNTRY-NF",Norfolk Island,L0,NF,2,167.953,-29.037
+"www.sahanafoundation.org/COUNTRY-MP",Northern Mariana Islands,L0,MP,2,145.623,15.005
+"www.sahanafoundation.org/COUNTRY-NO",Norway,L0,NO,2,8.74,61.152
+"www.sahanafoundation.org/COUNTRY-OM",Oman,L0,OM,2,57.407,21.656
+"www.sahanafoundation.org/COUNTRY-PK",Pakistan,L0,PK,2,69.386,29.967
+"www.sahanafoundation.org/COUNTRY-PW",Palau,L0,PW,2,134.57,7.501
+"www.sahanafoundation.org/COUNTRY-PS",Palestine,L0,PS,2,35.278,32.037
+"www.sahanafoundation.org/COUNTRY-PA",Panama,L0,PA,2,-80.92,8.384
+"www.sahanafoundation.org/COUNTRY-PG",Papua New Guinea,L0,PG,2,143.459,-5.949
+"www.sahanafoundation.org/COUNTRY-PY",Paraguay,L0,PY,2,-58.391,-23.236
+"www.sahanafoundation.org/COUNTRY-PE",Peru,L0,PE,2,-75.552,-9.326
+"www.sahanafoundation.org/COUNTRY-PH",Philippines,L0,PH,2,122.466,11.118
+"www.sahanafoundation.org/COUNTRY-PN",Pitcairn Islands,L0,PN,2,-128.316,-24.366
+"www.sahanafoundation.org/COUNTRY-PL",Poland,L0,PL,2,19.401,52.125
+"www.sahanafoundation.org/COUNTRY-PT",Portugal,L0,PT,2,-8.058,40.309
+"www.sahanafoundation.org/COUNTRY-PR",Puerto Rico,L0,PR,2,-66.466,18.221
+"www.sahanafoundation.org/COUNTRY-QA",Qatar,L0,QA,2,51.191,25.316
+"www.sahanafoundation.org/COUNTRY-MD",Republic of Moldova,L0,MD,2,28.599,47.193
+"www.sahanafoundation.org/COUNTRY-RE",Reunion,L0,RE,2,55.538,-21.122
+"www.sahanafoundation.org/COUNTRY-RO",Romania,L0,RO,2,24.969,45.844
+"www.sahanafoundation.org/COUNTRY-RU",Russia,L0,RU,2,96.689,61.988
+"www.sahanafoundation.org/COUNTRY-RW",Rwanda,L0,RW,2,29.917,-1.998
+"www.sahanafoundation.org/COUNTRY-BL",Saint Barthelemy,L0,BL,2,-63.043,18.04
+"www.sahanafoundation.org/COUNTRY-SH",Saint Helena,L0,SH,2,-5.71,-15.953
+"www.sahanafoundation.org/COUNTRY-KN",Saint Kitts and Nevis,L0,KN,2,-62.769,17.34
+"www.sahanafoundation.org/COUNTRY-LC",Saint Lucia,L0,LC,2,-60.969,13.898
+"www.sahanafoundation.org/COUNTRY-MF",Saint Martin,L0,MF,2,-63.041,18.094
+"www.sahanafoundation.org/COUNTRY-PM",Saint Pierre and Miquelon,L0,PM,2,-56.325,47.042
+"www.sahanafoundation.org/COUNTRY-VC",Saint Vincent and the Grenadines,L0,VC,2,-61.194,13.248
+"www.sahanafoundation.org/COUNTRY-WS",Samoa,L0,WS,2,-172.414,-13.652
+"www.sahanafoundation.org/COUNTRY-SM",San Marino,L0,SM,2,12.46,43.942
+"www.sahanafoundation.org/COUNTRY-ST",Sao Tome and Principe,L0,ST,2,6.629,0.201
+"www.sahanafoundation.org/COUNTRY-SA",Saudi Arabia,L0,SA,2,44.585,24.023
+"www.sahanafoundation.org/COUNTRY-SN",Senegal,L0,SN,2,-14.881,15.013
+"www.sahanafoundation.org/COUNTRY-RS",Serbia,L0,RS,2,20.806,44.032
+"www.sahanafoundation.org/COUNTRY-SC",Seychelles,L0,SC,2,55.474,-4.647
+"www.sahanafoundation.org/COUNTRY-SL",Sierra Leone,L0,SL,2,-11.792,8.56
+"www.sahanafoundation.org/COUNTRY-SG",Singapore,L0,SG,2,103.808,1.351
+"www.sahanafoundation.org/COUNTRY-SK",Slovakia,L0,SK,2,19.491,48.707
+"www.sahanafoundation.org/COUNTRY-SI",Slovenia,L0,SI,2,14.827,46.124
+"www.sahanafoundation.org/COUNTRY-SB",Solomon Islands,L0,SB,2,160.109,-9.611
+"www.sahanafoundation.org/COUNTRY-SO",Somalia,L0,SO,2,48.316,9.774
+"www.sahanafoundation.org/COUNTRY-ZA",South Africa,L0,ZA,2,23.121,-30.558
+"www.sahanafoundation.org/COUNTRY-GS",South Georgia South Sandwich Islands,L0,GS,2,-36.891,-54.209
+"www.sahanafoundation.org/COUNTRY-ES",Spain,L0,ES,2,-3.649,40.227
+"www.sahanafoundation.org/COUNTRY-LK",Sri Lanka,L0,LK,2,80.704,7.612
+"www.sahanafoundation.org/COUNTRY-SD",Sudan,L0,SD,2,30.05,13.832
+"www.sahanafoundation.org/COUNTRY-SR",Suriname,L0,SR,2,-55.912,4.127
+"www.sahanafoundation.org/COUNTRY-SJ",Svalbard,L0,SJ,2,18.374,78.83
+"www.sahanafoundation.org/COUNTRY-SZ",Swaziland,L0,SZ,2,31.497,-26.562
+"www.sahanafoundation.org/COUNTRY-SE",Sweden,L0,SE,2,15.27,62.011
+"www.sahanafoundation.org/COUNTRY-CH",Switzerland,L0,CH,2,7.908,46.861
+"www.sahanafoundation.org/COUNTRY-SY",Syrian Arab Republic,L0,SY,2,38.506,35.013
+"www.sahanafoundation.org/COUNTRY-TW",Taiwan,L0,TW,2,120.946,23.754
+"www.sahanafoundation.org/COUNTRY-TJ",Tajikistan,L0,TJ,2,69.42,38.665
+"www.sahanafoundation.org/COUNTRY-TH",Thailand,L0,TH,2,100.844,15.7
+"www.sahanafoundation.org/COUNTRY-MK",The former Yugoslav Republic of Macedonia,L0,MK,2,21.698,41.6
+"www.sahanafoundation.org/COUNTRY-TL",Timor-Leste,L0,TL,2,125.878,-8.822
+"www.sahanafoundation.org/COUNTRY-TG",Togo,L0,TG,2,1.081,8.799
+"www.sahanafoundation.org/COUNTRY-TK",Tokelau,L0,TK,2,-171.853,-9.193
+"www.sahanafoundation.org/COUNTRY-TO",Tonga,L0,TO,2,-175.185,-21.202
+"www.sahanafoundation.org/COUNTRY-TT",Trinidad and Tobago,L0,TT,2,-61.253,10.468
+"www.sahanafoundation.org/COUNTRY-TN",Tunisia,L0,TN,2,9.596,35.383
+"www.sahanafoundation.org/COUNTRY-TR",Turkey,L0,TR,2,35.179,39.061
+"www.sahanafoundation.org/COUNTRY-TM",Turkmenistan,L0,TM,2,59.384,39.122
+"www.sahanafoundation.org/COUNTRY-TC",Turks and Caicos Islands,L0,TC,2,-71.95,21.902
+"www.sahanafoundation.org/COUNTRY-TV",Tuvalu,L0,TV,2,179.219,-8.514
+"www.sahanafoundation.org/COUNTRY-UG",Uganda,L0,UG,2,32.386,1.28
+"www.sahanafoundation.org/COUNTRY-UA",Ukraine,L0,UA,2,31.388,49.016
+"www.sahanafoundation.org/COUNTRY-AE",United Arab Emirates,L0,AE,2,54.163,23.549
+"www.sahanafoundation.org/COUNTRY-GB",United Kingdom,L0,GB,2,-1.6,53
+"www.sahanafoundation.org/COUNTRY-TZ",United Republic of Tanzania,L0,TZ,2,34.823,-6.27
+"www.sahanafoundation.org/COUNTRY-US",United States,L0,US,2,-98.606,39.622
+"www.sahanafoundation.org/COUNTRY-UM",United States Minor Outlying Islands,L0,UM,2,-160.027,-0.385
+"www.sahanafoundation.org/COUNTRY-VI",United States Virgin Islands,L0,VI,2,-64.785,17.741
+"www.sahanafoundation.org/COUNTRY-UY",Uruguay,L0,UY,2,-56.012,-32.8
+"www.sahanafoundation.org/COUNTRY-UZ",Uzbekistan,L0,UZ,2,63.17,41.75
+"www.sahanafoundation.org/COUNTRY-VU",Vanuatu,L0,VU,2,166.899,-15.376
+"www.sahanafoundation.org/COUNTRY-VE",Venezuela,L0,VE,2,-66.166,7.125
+"www.sahanafoundation.org/COUNTRY-VN",Viet Nam,L0,VN,2,105.314,21.491
+"www.sahanafoundation.org/COUNTRY-WF",Wallis and Futuna Islands,L0,WF,2,-178.131,-14.289
+"www.sahanafoundation.org/COUNTRY-EH",Western Sahara,L0,EH,2,-13.706,24.554
+"www.sahanafoundation.org/COUNTRY-YE",Yemen,L0,YE,2,48.355,15.807
+"www.sahanafoundation.org/COUNTRY-ZM",Zambia,L0,ZM,2,26.32,-14.614
+"www.sahanafoundation.org/COUNTRY-ZW",Zimbabwe,L0,ZW,2,29.872,-19

@@ -471,16 +471,6 @@ div.confirmation { color:#070;
            cursor: pointer; }
 .warning p em { color:#c00;  }
 
-/* GIS module */
-div.toolbar-container { width: 100%;
-                        overflow: auto; }
-.btn-panel { padding: 2px; }
-.toolbar-link { padding: 2px 2px 2px 2px;
-                font-size:106%;
-                background-color: #e6ddd5;
-                text-decoration: none;
-                color: #000000 }
-
 /* Resource header */
 div#rheader { margin-bottom: 16px; }
 div#rheader table { width: 100%; }

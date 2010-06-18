@@ -9,65 +9,110 @@
     //]]></script>
 {{else:}}
 {{pass}}
-<script type="text/javascript">//<![CDATA[
-$(function() {
+{{if "pr_presence" in request.vars.caller:}}
+    {{fc = db(db.gis_feature_class.name == "Person").select(limitby=(0, 1)).first().id}}
+    <script type="text/javascript">//<![CDATA[
     // If coming from the OR then populate defaults for the fields & Hide unnecessary rows
-    if (self.parent.$("input[name='_formname']").val().match("or_office")) {
-        var location_name = self.parent.$('#or_office_name').val();
-        $("#gis_location_name").val(location_name);
-        $("#gis_location_name__row").hide();
+    $(function() {
+        //if (self.parent.$("input[name='_formname']").val().match("pr_presence")) {
+        var location_name = self.parent.$('#pr_presence_pr_pe_id__row > td.w2p_fw').html();
+        if (location_name) {
+            $("#gis_location_name").val(location_name);
+            $("#gis_location_name__row").hide();
+        }
         $("#gis_location_description__row").hide();
         $("#gis_location_level__row").hide();
         $("#gis_location_code__row").hide();
         //$("#gis_location_parent__row").hide();
-        $("#gis_location_feature_class_id").val(8);
-        // Don't hide in case magic number changes! :/
-        //$("#gis_location_feature_class_id__row").hide();
+        $("#gis_location_feature_class_id").val({{=fc}});
+        $("#gis_location_feature_class_id__row").hide();
         // Use default Marker for Class
-        //$("#gis_location_marker_id").val(6);
         $("#gis_location_marker_id__row").hide();
         $("#gis_location_gis_feature_type__row").hide();
         $("#gis_location_wkt__row").hide();
         $("#gis_location_osm_id__row").hide();
-    }
-});
-//]]></script>
-<script type="text/javascript">//<![CDATA[
-$(function() {
-    // If coming from the HMS then populate defaults for the fields & Hide unnecessary rows
-    if (self.parent.$("input[name='_formname']").val().match("hms_hospital")) {
-        var location_name = self.parent.$('#hms_hospital_name').val();
-        $("#gis_location_name").val(location_name);
-        $("#gis_location_name__row").hide();
-        $("#gis_location_description__row").hide();
-        $("#gis_location_level__row").hide();
-        $("#gis_location_code__row").hide();
-        //$("#gis_location_parent__row").hide();
-        $("#gis_location_feature_class_id").val(13);
-        // Don't hide in case magic number changes! :/
-        //$("#gis_location_feature_class_id__row").hide();
-        // Use default Marker for Class
-        //$("#gis_location_marker_id").val(7);
-        $("#gis_location_marker_id__row").hide();
-        $("#gis_location_gis_feature_type__row").hide();
-        $("#gis_location_wkt__row").hide();
-        $("#gis_location_osm_id__row").hide();
-    }
-});
-//]]></script>
-<script type="text/javascript">//<![CDATA[
-$(function() {
-    // If coming from the Food Requests
-    if (self.parent.$("input[name='_formname']").val().match("food_req")) {
-        // Hide Fields
-        $("#gis_location_marker_id__row").hide();
-        $("#gis_location_gis_feature_type__row").hide();
-        $("#gis_location_wkt__row").hide();
-                
+        $("#gis_location_source__row").hide();
+        
+        if (navigator.geolocation) {
+            // HTML5 geolocation is available :)
+            navigator.geolocation.getCurrentPosition(getCurrentPosition);
+        } else {
+            // geolocation is not available...IE sucks! ;)
+        }
+        
         // Provide tiered Location AutoCompletes
-        {{include 'gis/location_autocomplete.js'}}
+        //{include 'gis/location_autocomplete.js'}
+        //}
+    });
+    function getCurrentPosition(position){
+        // http://dev.w3.org/geo/api/spec-source.html
+        var lat = position.coords.latitude;
+        var lon = position.coords.longitude;
+        //var elevation = position.coords.altitude;
+        //var ce = position.coords.accuracy;
+        //var le = position.coords.altitudeAccuracy;
+        //position.coords.heading;
+        //position.coords.speed;
+        $("#gis_location_lat").val(lat);
+        $("#gis_location_lon").val(lon);
     }
-});
-//]]></script>
+    //]]></script>
+{{elif "or_office" in request.vars.caller:}}
+    {{fc = db(db.gis_feature_class.name == "Office").select(limitby=(0, 1)).first().id}}
+    <script type="text/javascript">//<![CDATA[
+    // If coming from the OR then populate defaults for the fields & Hide unnecessary rows
+    $(function() {
+        //if (self.parent.$("input[name='_formname']").val().match("or_office")) {
+        var location_name = self.parent.$('#or_office_name').val();
+        if (location_name) {
+            $("#gis_location_name").val(location_name);
+            $("#gis_location_name__row").hide();
+        }
+        $("#gis_location_description__row").hide();
+        $("#gis_location_level__row").hide();
+        $("#gis_location_code__row").hide();
+        //$("#gis_location_parent__row").hide();
+        $("#gis_location_feature_class_id").val({{=fc}});
+        $("#gis_location_feature_class_id__row").hide();
+        // Use default Marker for Class
+        $("#gis_location_marker_id__row").hide();
+        $("#gis_location_gis_feature_type__row").hide();
+        $("#gis_location_wkt__row").hide();
+        $("#gis_location_osm_id__row").hide();
+        $("#gis_location_source__row").hide();
+        
+        // Provide tiered Location AutoCompletes
+        //{include 'gis/location_autocomplete.js'}
+        //}
+    });
+    //]]></script>
+{{elif "hms_hospital" in request.vars.caller:}}
+    {{fc = db(db.gis_feature_class.name == "Hospital").select(limitby=(0, 1)).first().id}}
+    <script type="text/javascript">//<![CDATA[
+    // If coming from the HMS then populate defaults for the fields & Hide unnecessary rows
+    $(function() {
+        //if (self.parent.$("input[name='_formname']").val().match("hms_hospital")) {
+        var location_name = self.parent.$('#hms_hospital_name').val();
+        if (location_name) {
+            $("#gis_location_name").val(location_name);
+            $("#gis_location_name__row").hide();
+        }
+        $("#gis_location_description__row").hide();
+        $("#gis_location_level__row").hide();
+        $("#gis_location_code__row").hide();
+        //$("#gis_location_parent__row").hide();
+        $("#gis_location_feature_class_id").val({{=fc}});
+        $("#gis_location_feature_class_id__row").hide();
+        // Use default Marker for Class
+        $("#gis_location_marker_id__row").hide();
+        $("#gis_location_gis_feature_type__row").hide();
+        $("#gis_location_wkt__row").hide();
+        $("#gis_location_osm_id__row").hide();
+        $("#gis_location_source__row").hide();
+        //}
+    });
+    //]]></script>
+{{else:}}
+{{pass}}
 {{include 'gis/feature_crud.js'}}
 {{include 'gis/convert_gps.html'}}

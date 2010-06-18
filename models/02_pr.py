@@ -166,7 +166,7 @@ def shn_pentity_ondelete(record):
         crud.settings.delete_onvalidation = None
         crud.settings.delete_onaccept = None
 
-        if db(db.s3_setting.id == 1).select().first().archive_not_delete:
+        if db(db.s3_setting.id == 1).select(limitby=(0, 1)).first().archive_not_delete:
             db(db.pr_pentity.id == pr_pe_id).update(deleted = True)
         else:
             crud.delete(db.pr_pentity, pr_pe_id)

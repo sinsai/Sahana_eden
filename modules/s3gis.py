@@ -551,19 +551,19 @@ class GIS(object):
         # Catalogue Toolbar
         if catalogue_toolbar:
             if auth.has_membership(1):
-                config_button = TD( A(T("Defaults"), _id="configs-btn", _class="toolbar-link", _href=URL(r=request, c="gis", f="config", args=["1", "update"])), _class="btn-panel" )
+                config_button = SPAN( A(T("Defaults"), _href=URL(r=request, c="gis", f="config", args=["1", "update"])), _class="rheader_tab_other" )
             else:
-                config_button = TD( A(T("Defaults"), _id="configs-btn", _class="toolbar-link", _href=URL(r=request, c="gis", f="config", args=["1", "display"])), _class="btn-panel" )
-            catalogue_toolbar = TABLE(TR(
+                config_button = SPAN( A(T("Defaults"), _href=URL(r=request, c="gis", f="config", args=["1", "display"])), _class="rheader_tab_other" )
+            catalogue_toolbar = DIV(
                 config_button,
-                TD( A(T("Locations"), _id="features-btn", _class="toolbar-link", _href=URL(r=request, c="gis", f="location")), _class="btn-panel" ),
-                TD( A(T("Feature Classes"), _id="feature_classes-btn", _class="toolbar-link", _href=URL(r=request, c="gis", f="feature_class")), _class="btn-panel" ),
-                TD( A(T("Feature Groups"), _id="feature_groups-btn", _class="toolbar-link", _href=URL(r=request, c="gis", f="feature_group")), _class="btn-panel" ),
-                TD( A(T("Keys"), _id="keys-btn", _class="toolbar-link", _href=URL(r=request, c="gis", f="apikey")), _class="btn-panel" ),
-                TD( A(T("Layers"), _id="layers-btn", _class="toolbar-link", _href=URL(r=request, c="gis", f="map_service_catalogue")), _class="btn-panel" ),
-                TD( A(T("Markers"), _id="markers-btn", _class="toolbar-link", _href=URL(r=request, c="gis", f="marker")), _class="btn-panel" ),
-                TD( A(T("Projections"), _id="projections-btn", _class="toolbar-link", _href=URL(r=request, c="gis", f="projection")), _class="btn-panel" ),
-            ))
+                SPAN( A(T("Locations"), _href=URL(r=request, c="gis", f="location")), _class="rheader_tab_other" ),
+                SPAN( A(T("Feature Classes"), _href=URL(r=request, c="gis", f="feature_class")), _class="rheader_tab_other" ),
+                SPAN( A(T("Feature Groups"), _href=URL(r=request, c="gis", f="feature_group")), _class="rheader_tab_other" ),
+                SPAN( A(T("Keys"), _href=URL(r=request, c="gis", f="apikey")), _class="rheader_tab_other" ),
+                SPAN( A(T("Layers"), _href=URL(r=request, c="gis", f="map_service_catalogue")), _class="rheader_tab_other" ),
+                SPAN( A(T("Markers"), _href=URL(r=request, c="gis", f="marker")), _class="rheader_tab_other" ),
+                SPAN( A(T("Projections"), _href=URL(r=request, c="gis", f="projection")), _class="rheader_tab_other" ),
+                _id="rheader_tabs")
             html.append(catalogue_toolbar)
 
         # Map (Embedded not Window)

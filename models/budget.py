@@ -211,9 +211,9 @@ if deployment_settings.has_module(module):
             quantity = row.quantity
             row2 = db(db.budget_kit.id == kit.kit_id).select(db.budget_kit.total_unit_cost, db.budget_kit.total_monthly_cost, db.budget_kit.total_minute_cost, db.budget_kit.total_megabyte_cost, limitby=(0, 1)).first()
             total_unit_cost += row2.total_unit_cost * quantity
-            total_monthly_cost += row2.total_monthly_cost) * quantity
-            total_monthly_cost += row2.total_minute_cost) * quantity * row.minutes
-            total_monthly_cost += row2.total_megabyte_cost) * quantity * row.megabytes
+            total_monthly_cost += row2.total_monthly_cost * quantity
+            total_monthly_cost += row2.total_minute_cost * quantity * row.minutes
+            total_monthly_cost += row2.total_megabyte_cost * quantity * row.megabytes
 
         table = db.budget_bundle_item
         query = (table.bundle_id == bundle)

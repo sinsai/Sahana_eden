@@ -439,6 +439,7 @@ class GIS(object):
                   wms_browser = {},
                   catalogue_overlays = False,
                   catalogue_toolbar = False,
+                  legend = False,
                   toolbar = False,
                   search = False,
                   print_tool = {},
@@ -471,6 +472,7 @@ class GIS(object):
                 }
             @param catalogue_overlays: Show the Overlays from the GIS Catalogue (@ToDo: make this a dict of which external overlays to allow)
             @param catalogue_toolbar: Show the Catalogue Toolbar
+            @param legend: Show the Legend panel
             @param toolbar: Show the Icon Toolbar of Controls
             @param search: Show the Geonames search box
             @param print_tool: Show a print utility (NB This requires server-side support: http://eden.sahanafoundation.org/wiki/BluePrintGISPrinting)
@@ -687,6 +689,28 @@ OpenLayers.Util.extend( selectPdfControl, {
             mgrs_html = ""
             mgrs2 = ""
             mgrs3 = ""
+
+        # Legend panel
+        if legend:
+            legend1= """
+        legendPanel = new GeoExt.LegendPanel({
+            id: 'legendpanel',
+            title: '""" + str(T("Legend")) + """',
+            defaults: {
+                labelCls: 'mylabel',
+                style: 'padding:5px'
+            },
+            bodyStyle: 'padding:5px',
+            autoScroll: true,
+            collapsible: true,
+            collapseMode: 'mini',
+            lines: false
+        });
+        """
+            legend2 = ", legendPanel"
+        else:
+            legend1= ""
+            legend2 = ""
 
         # Toolbar
         if toolbar:
@@ -1289,10 +1313,10 @@ OpenLayers.Util.extend( selectPdfControl, {
                 wms_map = ""
             wms_layers = layer.layers
             try:
-                format = "type: '" + layer.format + "'"
+                format = "type: '" + layer.format + "',"
             except:
                 format = ""
-            wms_projection = db(db.gis_projection.id == layer.projection_id).select(limitby=(0, 1)).first().epsg
+            wms_projection = db(db.gis_projection.id == layer.projection_id).select(db.gis_projection.epsg, limitby=(0, 1)).first().epsg
             if wms_projection == 4326:
                 wms_projection = "projection: proj4326"
             else:
@@ -2211,19 +2235,7 @@ OpenLayers.Util.extend( selectPdfControl, {
             enableDD: true
         });
 
-        legendPanel = new GeoExt.LegendPanel({
-            id: 'legendpanel',
-            title: '""" + str(T("Legend")) + """',
-            defaults: {
-                labelCls: 'mylabel',
-                style: 'padding:5px'
-            },
-            bodyStyle: 'padding:5px',
-            autoScroll: true,
-            collapsible: true,
-            collapseMode: 'mini',
-            lines: false
-        });
+        """ + legend1 + """
         
         """ + print_tool1 + """
 
@@ -2243,7 +2255,7 @@ OpenLayers.Util.extend( selectPdfControl, {
                         collapsible: true,
                         split: true,
                         items: [
-                            layerTree""" + layers_wms_browser2 + search2 + print_tool2 + """, legendPanel
+                            layerTree""" + layers_wms_browser2 + search2 + print_tool2 + legend2 + """
                             ]
                     },
                     mapPanel

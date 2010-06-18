@@ -50,6 +50,7 @@ def test():
                 #wms_browser = {"name" : "Risk Maps", "url" : "http://www.pdc.org/wms/wmservlet/PDC_Active_Hazards?request=getcapabilities&service=WMS&version=1.1.1"},
                 catalogue_overlays = True,
                 catalogue_toolbar = True,
+                legend = True,
                 toolbar = True,
                 search = True,
                 #print_tool = {"url" : "http://localhost:8080/geoserver/pdf/"},

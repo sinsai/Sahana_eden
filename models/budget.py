@@ -28,6 +28,11 @@ if deployment_settings.has_module(module):
                     Field("indirect", "double", default=7.00, notnull=True),
                     migrate=migrate)
 
+    table.shipping.requires = IS_FLOAT_IN_RANGE(0, 100)
+    table.logistics.requires = IS_FLOAT_IN_RANGE(0, 100)
+    table.admin.requires = IS_FLOAT_IN_RANGE(0, 100)
+    table.indirect.requires = IS_FLOAT_IN_RANGE(0, 100)
+
     # Items
     budget_cost_type_opts = {
         1:T("One-time"),
@@ -100,7 +105,7 @@ if deployment_settings.has_module(module):
                 kit_totals(kit)
                 # Update Bundles containing this Kit
                 table = db.budget_bundle_kit
-                query = table.kit_id==kit
+                query = (table.kit_id == kit)
                 rows = db(query).select()
                 for row in rows:
                     bundle = row.bundle_id
@@ -108,7 +113,7 @@ if deployment_settings.has_module(module):
                     # Update Budgets containing this Bundle (tbc)
             # Update Bundles containing this Item
             table = db.budget_bundle_item
-            query = table.item_id==item
+            query = (table.item_id == item)
             rows = db(query).select()
             for row in rows:
                 bundle = row.bundle_id
@@ -136,7 +141,7 @@ if deployment_settings.has_module(module):
     def kit_totals(kit):
         "Calculate Totals for a Kit"
         table = db.budget_kit_item
-        query = table.kit_id==kit
+        query = table.kit_id == kit
         items = db(query).select()
         total_unit_cost = 0
         total_monthly_cost = 0
@@ -144,11 +149,13 @@ if deployment_settings.has_module(module):
         total_megabyte_cost = 0
         for item in items:
             query = (table.kit_id == kit) & (table.item_id == item.item_id)
-            total_unit_cost += (db(db.budget_item.id == item.item_id).select(limitby=(0, 1)).first().unit_cost) * (db(query).select(limitby=(0, 1)).first().quantity)
-            total_monthly_cost += (db(db.budget_item.id == item.item_id).select(limitby=(0, 1)).first().monthly_cost) * (db(query).select(limitby=(0, 1)).first().quantity)
-            total_minute_cost += (db(db.budget_item.id == item.item_id).select(limitby=(0, 1)).first().minute_cost) * (db(query).select(limitby=(0, 1)).first().quantity)
-            total_megabyte_cost += (db(db.budget_item.id == item.item_id).select(limitby=(0, 1)).first().megabyte_cost) * (db(query).select(limitby=(0, 1)).first().quantity)
-        db(db.budget_kit.id==kit).update(total_unit_cost=total_unit_cost, total_monthly_cost=total_monthly_cost, total_minute_cost=total_minute_cost, total_megabyte_cost=total_megabyte_cost)
+            quantity = db(query).select(table.quantity, limitby=(0, 1)).first().quantity
+            row = db(db.budget_item.id == item.item_id).select(db.budget_item.unit_cost, db.budget_item.monthly_cost, db.budget_item.minute_cost, db.budget_item.megabyte_cost, limitby=(0, 1)).first()
+            total_unit_cost += row.unit_cost * quantity
+            total_monthly_cost += row.monthly_cost * quantity
+            total_minute_cost += row.minute_cost * quantity
+            total_megabyte_cost += row.megabyte_cost * quantity
+        db(db.budget_kit.id == kit).update(total_unit_cost=total_unit_cost, total_monthly_cost=total_monthly_cost, total_minute_cost=total_minute_cost, total_megabyte_cost=total_megabyte_cost)
 
         
     def kit_total(form):
@@ -196,26 +203,32 @@ if deployment_settings.has_module(module):
         total_monthly_cost = 0
 
         table = db.budget_bundle_kit
-        query = table.bundle_id==bundle
+        query = (table.bundle_id == bundle)
         kits = db(query).select()
         for kit in kits:
             query = (table.bundle_id == bundle) & (table.kit_id == kit.kit_id)
-            total_unit_cost += (db(db.budget_kit.id == kit.kit_id).select(limitby=(0, 1)).first().total_unit_cost) * (db(query).select(limitby=(0, 1)).first().quantity)
-            total_monthly_cost += (db(db.budget_kit.id == kit.kit_id).select(limitby=(0, 1)).first().total_monthly_cost) * (db(query).select(limitby=(0, 1)).first().quantity)
-            total_monthly_cost += (db(db.budget_kit.id == kit.kit_id).select(limitby=(0, 1)).first().total_minute_cost) * (db(query).select(limitby=(0, 1)).first().quantity) * (db(query).select(limitby=(0, 1)).first().minutes)
-            total_monthly_cost += (db(db.budget_kit.id == kit.kit_id).select(limitby=(0, 1)).first().total_megabyte_cost) * (db(query).select(limitby=(0, 1)).first().quantity) * (db(query).select(limitby=(0, 1)).first().megabytes)
+            row = db(query).select(table.quantity, table.minutes, table.megabytes, limitby=(0, 1)).first()
+            quantity = row.quantity
+            row2 = db(db.budget_kit.id == kit.kit_id).select(db.budget_kit.total_unit_cost, db.budget_kit.total_monthly_cost, db.budget_kit.total_minute_cost, db.budget_kit.total_megabyte_cost, limitby=(0, 1)).first()
+            total_unit_cost += row2.total_unit_cost * quantity
+            total_monthly_cost += row2.total_monthly_cost) * quantity
+            total_monthly_cost += row2.total_minute_cost) * quantity * row.minutes
+            total_monthly_cost += row2.total_megabyte_cost) * quantity * row.megabytes
 
         table = db.budget_bundle_item
-        query = table.bundle_id==bundle
+        query = (table.bundle_id == bundle)
         items = db(query).select()
         for item in items:
             query = (table.bundle_id == bundle) & (table.item_id == item.item_id)
-            total_unit_cost += (db(db.budget_item.id == item.item_id).select(limitby=(0, 1)).first().unit_cost) * (db(query).select(limitby=(0, 1)).first().quantity)
-            total_monthly_cost += (db(db.budget_item.id == item.item_id).select(limitby=(0, 1)).first().monthly_cost) * (db(query).select(limitby=(0, 1)).first().quantity)
-            total_monthly_cost += (db(db.budget_item.id == item.item_id).select(limitby=(0, 1)).first().minute_cost) * (db(query).select(limitby=(0, 1)).first().quantity) * (db(query).select(limitby=(0, 1)).first().minutes)
-            total_monthly_cost += (db(db.budget_item.id == item.item_id).select(limitby=(0, 1)).first().megabyte_cost) * (db(query).select(limitby=(0, 1)).first().quantity) * (db(query).select(limitby=(0, 1)).first().megabytes)
+            row = db(query).select(table.quantity, table.minutes, table.megabytes, limitby=(0, 1)).first()
+            quantity = row.quantity
+            row2 = db(db.budget_item.id == item.item_id).select(db.budget_item.unit_cost, db.budget_item.monthly_cost, db.budget_item.minute_cost, db.budget_item.megabyte_cost, limitby=(0, 1)).first()
+            total_unit_cost += row2.unit_cost * quantity
+            total_monthly_cost += row2.monthly_cost * quantity
+            total_monthly_cost += row2.minute_cost * quantity * row.minutes
+            total_monthly_cost += row2.megabyte_cost * quantity * row.megabytes
 
-        db(db.budget_bundle.id==bundle).update(total_unit_cost=total_unit_cost, total_monthly_cost=total_monthly_cost)
+        db(db.budget_bundle.id == bundle).update(total_unit_cost=total_unit_cost, total_monthly_cost=total_monthly_cost)
 
     def bundle_total(form):
         "Calculate Totals for the Bundle specified by Form"

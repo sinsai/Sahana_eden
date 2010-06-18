@@ -172,13 +172,9 @@ def parameter():
     table = db[tablename]
 
     # Model Options
-    table.shipping.requires = IS_FLOAT_IN_RANGE(0, 100)
     table.shipping.label = "Shipping cost"
-    table.logistics.requires = IS_FLOAT_IN_RANGE(0, 100)
     table.logistics.label = "Procurement & Logistics cost"
-    table.admin.requires = IS_FLOAT_IN_RANGE(0, 100)
     table.admin.label = "Administrative support cost"
-    table.indirect.requires = IS_FLOAT_IN_RANGE(0, 100)
     table.indirect.label = "Indirect support cost HQ"
 
     # CRUD Strings
@@ -386,11 +382,12 @@ def kit_item():
     table = db.budget_kit_item
     authorised = shn_has_permission("update", table)
 
-    title = db.budget_kit[kit].code
-    kit_description = db.budget_kit[kit].description
-    kit_total_cost = db.budget_kit[kit].total_unit_cost
-    kit_monthly_cost = db.budget_kit[kit].total_monthly_cost
-    query = table.kit_id==kit
+    _kit = db.budget_kit[kit]
+    title = _kit.code
+    kit_description = _kit.description
+    kit_total_cost = _kit.total_unit_cost
+    kit_monthly_cost = _kit.total_monthly_cost
+    query = (table.kit_id == kit)
     # Start building the Return with the common items
     output = dict(title=title, description=kit_description, total_cost=kit_total_cost, monthly_cost=kit_monthly_cost)
     # Audit
@@ -410,13 +407,14 @@ def kit_item():
                 theclass = "odd"
                 even = True
             id = row.item_id
-            description = db.budget_item[id].description
+            _item = db.budget_item[id]
+            description = _item.description
             id_link = A(id, _href=URL(r=request, f="item", args=[id, "read"]))
             quantity_box = INPUT(_value=row.quantity, _size=4, _name="qty" + str(id))
-            unit_cost = db.budget_item[id].unit_cost
-            monthly_cost = db.budget_item[id].monthly_cost
-            minute_cost = db.budget_item[id].minute_cost
-            megabyte_cost = db.budget_item[id].megabyte_cost
+            unit_cost = _item.unit_cost
+            monthly_cost = _item.monthly_cost
+            minute_cost = _item.minute_cost
+            megabyte_cost = _item.megabyte_cost
             total_units = unit_cost * row.quantity
             total_monthly = monthly_cost * row.quantity
             checkbox = INPUT(_type="checkbox", _value="on", _name=id, _class="remove_item")
@@ -427,7 +425,7 @@ def kit_item():
         items = DIV(FORM(TABLE(table_header, TBODY(item_list), table_footer, _id="table-container"), _name="custom", _method="post", _enctype="multipart/form-data", _action=URL(r=request, f="kit_update_items", args=[kit])))
         subtitle = T("Contents")
 
-        crud.messages.submit_button=T("Add")
+        crud.messages.submit_button = T("Add")
         # Check for duplicates before Item is added to DB
         crud.settings.create_onvalidation = lambda form: kit_dupes(form)
         # Calculate Totals for the Kit after Item is added to DB
@@ -447,13 +445,14 @@ def kit_item():
                 theclass = "odd"
                 even = True
             id = row.item_id
-            description = db.budget_item[id].description
+            _item = db.budget_item[id]
+            description = _item.description
             id_link = A(id, _href=URL(r=request, f="item", args=[id, "read"]))
             quantity_box = row.quantity
-            unit_cost = db.budget_item[id].unit_cost
-            monthly_cost = db.budget_item[id].monthly_cost
-            minute_cost = db.budget_item[id].minute_cost
-            megabyte_cost = db.budget_item[id].megabyte_cost
+            unit_cost = _item.unit_cost
+            monthly_cost = _item.monthly_cost
+            minute_cost = _item.minute_cost
+            megabyte_cost = _item.megabyte_cost
             total_units = unit_cost * row.quantity
             total_monthly = monthly_cost * row.quantity
             item_list.append(TR(TD(id_link), TD(description, _align="left"), TD(quantity_box), TD(unit_cost), TD(monthly_cost), TD(minute_cost), TD(megabyte_cost), TD(total_units), TD(total_monthly), _class=theclass, _align="right"))
@@ -471,7 +470,7 @@ def kit_dupes(form):
     kit = form.vars.kit_id
     item = form.vars.item_id
     table = db.budget_kit_item
-    query = (table.kit_id==kit) & (table.item_id==item)
+    query = (table.kit_id == kit) & (table.item_id == item)
     items = db(query).select()
     if items:
         session.error = T("Item already in Kit!")
@@ -495,12 +494,12 @@ def kit_update_items():
             if "qty" in var:
                 item = var[3:]
                 quantity = request.vars[var]
-                query = (table.kit_id==kit) & (table.item_id==item)
+                query = (table.kit_id == kit) & (table.item_id == item)
                 db(query).update(quantity=quantity)
             else:
                 # Delete
                 item = var
-                query = (table.kit_id==kit) & (table.item_id==item)
+                query = (table.kit_id == kit) & (table.item_id == item)
                 db(query).delete()
         # Update the Total values
         kit_totals(kit)
@@ -793,10 +792,11 @@ def bundle_kit_item():
     tables = [db.budget_bundle_kit, db.budget_bundle_item]
     authorised = shn_has_permission("update", tables[0]) and shn_has_permission("update", tables[1])
 
-    title = db.budget_bundle[bundle].name
-    bundle_description = db.budget_bundle[bundle].description
-    bundle_total_cost = db.budget_bundle[bundle].total_unit_cost
-    bundle_monthly_cost = db.budget_bundle[bundle].total_monthly_cost
+    _bundle = db.budget_bundle[bundle]
+    title = _bundle.name
+    bundle_description = _bundle.description
+    bundle_total_cost = _bundle.total_unit_cost
+    bundle_monthly_cost = _bundle.total_monthly_cost
     # Start building the Return with the common items
     output = dict(title=title, description=bundle_description, total_cost=bundle_total_cost, monthly_cost=bundle_monthly_cost)
     # Audit
@@ -809,7 +809,7 @@ def bundle_kit_item():
         # Display a List_Create page with editable Quantities, Minutes & Megabytes
 
         # Kits
-        query = tables[0].bundle_id==bundle
+        query = (tables[0].bundle_id == bundle)
         sqlrows = db(query).select()
         for row in sqlrows:
             if even:
@@ -819,23 +819,24 @@ def bundle_kit_item():
                 theclass = "odd"
                 even = True
             id = row.kit_id
-            description = db.budget_kit[id].description
+            _kit = db.budget_kit[id]
+            description = _kit.description
             id_link = A(id, _href=URL(r=request, f="kit", args=[id, "read"]))
             quantity_box = INPUT(_value=row.quantity, _size=4, _name="kit_qty_" + str(id))
-            minute_cost = db.budget_kit[id].total_minute_cost
+            minute_cost = _kit.total_minute_cost
             if minute_cost:
                 minutes_box = INPUT(_value=row.minutes, _size=4, _name="kit_mins_" + str(id))
             else:
                 minutes_box = INPUT(_value=0, _size=4, _name="kit_mins_" + str(id), _disabled="disabled")
-            megabyte_cost = db.budget_kit[id].total_megabyte_cost
+            megabyte_cost = _kit.total_megabyte_cost
             if megabyte_cost:
                 megabytes_box = INPUT(_value=row.megabytes, _size=4, _name="kit_mbytes_" + str(id))
             else:
                 megabytes_box = INPUT(_value=0, _size=4, _name="kit_mbytes_" + str(id), _disabled="disabled")
-            unit_cost = db.budget_kit[id].total_unit_cost
-            monthly_cost = db.budget_kit[id].total_monthly_cost
-            minute_cost = db.budget_kit[id].total_minute_cost
-            megabyte_cost = db.budget_kit[id].total_megabyte_cost
+            unit_cost = _kit.total_unit_cost
+            monthly_cost = _kit.total_monthly_cost
+            minute_cost = _kit.total_minute_cost
+            megabyte_cost = _kit.total_megabyte_cost
             total_units = unit_cost * row.quantity
             total_monthly = monthly_cost * row.quantity
             checkbox = INPUT(_type="checkbox", _value="on", _name="kit_" + str(id), _class="remove_item")
@@ -852,23 +853,24 @@ def bundle_kit_item():
                 theclass = "odd"
                 even = True
             id = row.item_id
-            description = db.budget_item[id].description
+            _item = db.budget_item[id]
+            description = _item.description
             id_link = A(id, _href=URL(r=request, f="item", args=[id, "read"]))
             quantity_box = INPUT(_value=row.quantity, _size=4, _name="item_qty_" + str(id))
-            minute_cost = db.budget_item[id].minute_cost
+            minute_cost = _item.minute_cost
             if minute_cost:
                 minutes_box = INPUT(_value=row.minutes, _size=4, _name="item_mins_" + str(id))
             else:
                 minutes_box = INPUT(_value=0, _size=4, _name="item_mins_" + str(id), _disabled="disabled")
-            megabyte_cost = db.budget_item[id].megabyte_cost
+            megabyte_cost = _item.megabyte_cost
             if megabyte_cost:
                 megabytes_box = INPUT(_value=row.megabytes, _size=4, _name="item_mbytes_" + str(id))
             else:
                 megabytes_box = INPUT(_value=0, _size=4, _name="item_mbytes_" + str(id), _disabled="disabled")
-            unit_cost = db.budget_item[id].unit_cost
-            monthly_cost = db.budget_item[id].monthly_cost
-            minute_cost = db.budget_item[id].minute_cost
-            megabyte_cost = db.budget_item[id].megabyte_cost
+            unit_cost = _item.unit_cost
+            monthly_cost = _item.monthly_cost
+            minute_cost = _item.minute_cost
+            megabyte_cost = _item.megabyte_cost
             total_units = unit_cost * row.quantity
             total_monthly = monthly_cost * row.quantity
             checkbox = INPUT(_type="checkbox", _value="on", _name="item_" + str(id), _class="remove_item")
@@ -905,23 +907,24 @@ def bundle_kit_item():
                 theclass = "odd"
                 even = True
             id = row.kit_id
-            description = db.budget_kit[id].description
+            _kit = db.budget_kit[id]
+            description = _kit.description
             id_link = A(id, _href=URL(r=request, f="kit", args=[id, "read"]))
             quantity_box = INPUT(_value=row.quantity, _size=4, _name="kit_qty_" + str(id))
-            minute_cost = db.budget_kit[id].total_minute_cost
+            minute_cost = _kit.total_minute_cost
             if minute_cost:
                 minutes_box = INPUT(_value=row.minutes, _size=4, _name="kit_mins_" + str(id))
             else:
                 minutes_box = INPUT(_value=0, _size=4, _name="kit_mins_" + str(id), _disabled="disabled")
-            megabyte_cost = db.budget_kit[id].total_megabyte_cost
+            megabyte_cost = _kit.total_megabyte_cost
             if megabyte_cost:
                 megabytes_box = INPUT(_value=row.megabytes, _size=4, _name="kit_mbytes_" + str(id))
             else:
                 megabytes_box = INPUT(_value=0, _size=4, _name="kit_mbytes_" + str(id), _disabled="disabled")
-            unit_cost = db.budget_kit[id].total_unit_cost
-            monthly_cost = db.budget_kit[id].total_monthly_cost
-            minute_cost = db.budget_kit[id].total_minute_cost
-            megabyte_cost = db.budget_kit[id].total_megabyte_cost
+            unit_cost = _kit.total_unit_cost
+            monthly_cost = _kit.total_monthly_cost
+            minute_cost = _kit.total_minute_cost
+            megabyte_cost = _kit.total_megabyte_cost
             total_units = unit_cost * row.quantity
             total_monthly = monthly_cost * row.quantity
             checkbox = INPUT(_type="checkbox", _value="on", _name="kit_" + str(id), _class="remove_item")
@@ -938,17 +941,18 @@ def bundle_kit_item():
                 theclass = "odd"
                 even = True
             id = row.item_id
-            description = db.budget_item[id].description
+            _item = db.budget_item[id]
+            description = _item.description
             id_link = A(id, _href=URL(r=request, f="item", args=[id, "read"]))
             quantity_box = row.quantity
-            minute_cost = db.budget_item[id].minute_cost
+            minute_cost = _item.minute_cost
             minutes_box = row.minutes
-            megabyte_cost = db.budget_item[id].megabyte_cost
+            megabyte_cost = _item.megabyte_cost
             megabytes_box = row.megabytes
-            unit_cost = db.budget_item[id].unit_cost
-            monthly_cost = db.budget_item[id].monthly_cost
-            minute_cost = db.budget_item[id].minute_cost
-            megabyte_cost = db.budget_item[id].megabyte_cost
+            unit_cost = _item.unit_cost
+            monthly_cost = _item.monthly_cost
+            minute_cost = _item.minute_cost
+            megabyte_cost = _item.megabyte_cost
             total_units = unit_cost * row.quantity
             total_monthly = monthly_cost * row.quantity
             item_list.append(TR(TD(id_link), TD(description, _align="left"), TD(quantity_box), TD(unit_cost), TD(monthly_cost), TD(minutes_box), TD(minute_cost), TD(megabytes_box), TD(megabyte_cost), TD(total_units), TD(total_monthly), _class=theclass, _align="right"))
@@ -1000,43 +1004,43 @@ def bundle_update_items():
                 if "qty" in var:
                     kit = var[8:]
                     quantity = request.vars[var]
-                    query = (tables[0].bundle_id==bundle) & (tables[0].kit_id==kit)
+                    query = (tables[0].bundle_id == bundle) & (tables[0].kit_id == kit)
                     db(query).update(quantity=quantity)
                 elif "mins" in var:
                     kit = var[9:]
                     minutes = request.vars[var]
-                    query = (tables[0].bundle_id==bundle) & (tables[0].kit_id==kit)
+                    query = (tables[0].bundle_id == bundle) & (tables[0].kit_id == kit)
                     db(query).update(minutes=minutes)
                 elif "mbytes" in var:
                     kit = var[11:]
                     megabytes = request.vars[var]
-                    query = (tables[0].bundle_id==bundle) & (tables[0].kit_id==kit)
+                    query = (tables[0].bundle_id == bundle) & (tables[0].kit_id == kit)
                     db(query).update(megabytes=megabytes)
                 else:
                     # Delete
                     kit = var[4:]
-                    query = (tables[0].bundle_id==bundle) & (tables[0].kit_id==kit)
+                    query = (tables[0].bundle_id == bundle) & (tables[0].kit_id == kit)
                     db(query).delete()
             if "item" in var:
                 if "qty" in var:
                     item = var[9:]
                     quantity = request.vars[var]
-                    query = (tables[1].bundle_id==bundle) & (tables[1].item_id==item)
+                    query = (tables[1].bundle_id == bundle) & (tables[1].item_id == item)
                     db(query).update(quantity=quantity)
                 elif "mins" in var:
                     item = var[10:]
                     minutes = request.vars[var]
-                    query = (tables[1].bundle_id==bundle) & (tables[1].item_id==item)
+                    query = (tables[1].bundle_id == bundle) & (tables[1].item_id == item)
                     db(query).update(minutes=minutes)
                 elif "mbytes" in var:
                     item = var[12:]
                     megabytes = request.vars[var]
-                    query = (tables[1].bundle_id==bundle) & (tables[1].item_id==item)
+                    query = (tables[1].bundle_id == bundle) & (tables[1].item_id == item)
                     db(query).update(megabytes=megabytes)
                 else:
                     # Delete
                     item = var[5:]
-                    query = (tables[1].bundle_id==bundle) & (tables[1].item_id==item)
+                    query = (tables[1].bundle_id == bundle) & (tables[1].item_id == item)
                     db(query).delete()
         # Update the Total values
         bundle_totals(bundle)
@@ -1171,10 +1175,11 @@ def budget_staff_bundle():
     tables = [db.budget_budget_staff, db.budget_budget_bundle]
     authorised = shn_has_permission("update", tables[0]) and shn_has_permission("update", tables[1])
 
-    title = db.budget_budget[budget].name
-    budget_description = db.budget_budget[budget].description
-    budget_onetime_cost = db.budget_budget[budget].total_onetime_costs
-    budget_recurring_cost = db.budget_budget[budget].total_recurring_costs
+    _budget = db.budget_budget[budget]
+    title = _budget.name
+    budget_description = _budget.description
+    budget_onetime_cost = _budget.total_onetime_costs
+    budget_recurring_cost = _budget.total_recurring_costs
     # Start building the Return with the common items
     output = dict(title=title, description=budget_description, onetime_cost=budget_onetime_cost, recurring_cost=budget_recurring_cost)
     # Audit
@@ -1197,17 +1202,18 @@ def budget_staff_bundle():
                 theclass = "odd"
                 even = True
             id = row.staff_id
-            name = db.budget_staff[id].name
+            _staff = db.budget_staff[id]
+            name = _staff.name
             id_link = A(name, _href=URL(r=request, f="staff", args=[id, "read"]))
             location = db.budget_location[row.location_id].code
             location_link = A(location, _href=URL(r=request, f="location", args=[row.location_id, "read"]))
             project = db.budget_project[row.project_id].code
             project_link = A(project, _href=URL(r=request, f="project", args=[row.project_id, "read"]))
-            description = db.budget_staff[id].comments
+            description = _staff.comments
             quantity_box = INPUT(_value=row.quantity, _size=4, _name="staff_qty_" + str(id))
             months_box = INPUT(_value=row.months, _size=4, _name="staff_months_" + str(id))
-            salary = db.budget_staff[id].salary
-            travel = db.budget_staff[id].travel
+            salary = _staff.salary
+            travel = _staff.travel
             onetime = travel * row.quantity
             recurring = salary * row.quantity
             checkbox = INPUT(_type="checkbox", _value="on", _name="staff_" + str(id), _class="remove_item")
@@ -1224,17 +1230,18 @@ def budget_staff_bundle():
                 theclass = "odd"
                 even = True
             id = row.bundle_id
-            name = db.budget_bundle[id].name
+            _bundle = db.budget_bundle[id]
+            name = _bundle.name
             id_link = A(name, _href=URL(r=request, f="bundle", args=[id, "read"]))
             location = db.budget_location[row.location_id].code
             location_link = A(location, _href=URL(r=request, f="location", args=[row.location_id, "read"]))
             project = db.budget_project[row.project_id].code
             project_link = A(project, _href=URL(r=request, f="project", args=[row.project_id, "read"]))
-            description = db.budget_bundle[id].description
+            description = _bundle.description
             quantity_box = INPUT(_value=row.quantity, _size=4, _name="bundle_qty_" + str(id))
             months_box = INPUT(_value=row.months, _size=4, _name="bundle_months_" + str(id))
-            unit_cost = db.budget_bundle[id].total_unit_cost
-            monthly_cost = db.budget_bundle[id].total_monthly_cost
+            unit_cost = _bundle.total_unit_cost
+            monthly_cost = _bundle.total_monthly_cost
             onetime = unit_cost * row.quantity
             recurring = monthly_cost * row.months
             checkbox = INPUT(_type="checkbox", _value="on", _name="bundle_" + str(id), _class="remove_item")
@@ -1271,17 +1278,18 @@ def budget_staff_bundle():
                 theclass = "odd"
                 even = True
             id = row.staff_id
-            name = db.budget_staff[id].name
+            _staff = db.budget_staff[id]
+            name = _staff.name
             id_link = A(name, _href=URL(r=request, f="staff", args=[id, "read"]))
             location = db.budget_location[row.location_id].code
             location_link = A(location, _href=URL(r=request, f="location", args=[row.location_id, "read"]))
             project = db.budget_project[row.project_id].code
             project_link = A(project, _href=URL(r=request, f="project", args=[row.project_id, "read"]))
-            description = db.budget_staff[id].comments
+            description = _staff.comments
             quantity_box = INPUT(_value=row.quantity, _size=4, _name="staff_qty_" + str(id))
             months_box = INPUT(_value=row.months, _size=4, _name="staff_mins_" + str(id))
-            salary = db.budget_staff[id].salary
-            travel = db.budget_staff[id].travel
+            salary = _staff.salary
+            travel = _staff.travel
             onetime = travel * row.quantity
             recurring = salary * row.quantity
             checkbox = INPUT(_type="checkbox", _value="on", _name="staff_" + str(id), _class="remove_item")
@@ -1298,17 +1306,18 @@ def budget_staff_bundle():
                 theclass = "odd"
                 even = True
             id = row.bundle_id
-            name = db.budget_bundle[id].name
+            _bundle = db.budget_bundle[id]
+            name = _bundle.name
             id_link = A(name, _href=URL(r=request, f="bundle", args=[id, "read"]))
             location = db.budget_location[row.location_id].code
             location_link = A(location, _href=URL(r=request, f="location", args=[row.location_id, "read"]))
             project = db.budget_project[row.project_id].code
             project_link = A(project, _href=URL(r=request, f="project", args=[row.project_id, "read"]))
-            description = db.budget_bundle[id].description
+            description = _bundle.description
             quantity_box = row.quantity
             months_box = row.months
-            unit_cost = db.budget_bundle[id].total_unit_cost
-            monthly_cost = db.budget_bundle[id].total_monthly_cost
+            unit_cost = _bundle.total_unit_cost
+            monthly_cost = _bundle.total_monthly_cost
             onetime = unit_cost * row.quantity
             recurring = monthly_cost * row.months
             item_list.append(TR(TD(location_link), TD(project_link), TD(id_link), TD(description, _align="left"), TD(quantity_box), TD(unit_cost), TD(monthly_cost), TD(months_box), TD(onetime), TD(recurring), _class=theclass, _align="right"))
@@ -1339,11 +1348,11 @@ def budget_dupes(form):
     if "staff_id" in form.vars:
         staff = form.vars.staff_id
         table = db.budget_budget_staff
-        query = (table.budget_id == budget) & (table.staff_id==staff)
+        query = (table.budget_id == budget) & (table.staff_id == staff)
     elif "bundle_id" in form.vars:
         bundle = form.vars.bundle_id
         table = db.budget_budget_bundle
-        query = (table.budget_id == budget) & (table.bundle_id==bundle)
+        query = (table.budget_id == budget) & (table.bundle_id == bundle)
     else:
         # Something went wrong!
         return
@@ -1370,24 +1379,33 @@ def budget_totals(budget):
     total_recurring_cost = 0
 
     table = db.budget_budget_staff
-    query = table.budget_id==budget
+    query = (table.budget_id == budget)
     staffs = db(query).select()
     for staff in staffs:
-        query = (table.budget_id==budget) & (table.staff_id==staff.staff_id)
-        total_onetime_cost += (db(db.budget_staff.id==staff.staff_id).select().first().travel) * (db(query).select().first().quantity)
-        total_recurring_cost += (db(db.budget_staff.id==staff.staff_id).select().first().salary) * (db(query).select().first().quantity) * (db(query).select().first().months)
-        total_recurring_cost += (db(db.budget_location.id==staff.location_id).select().first().subsistence) * (db(query).select().first().quantity) * (db(query).select().first().months)
-        total_recurring_cost += (db(db.budget_location.id==staff.location_id).select().first().hazard_pay) * (db(query).select().first().quantity) * (db(query).select().first().months)
+        query = (table.budget_id == budget) & (table.staff_id == staff.staff_id)
+        row = db(query).select(table.quantity, table.months, limitby=(0, 1)).first()
+        quantity = row.quantity
+        months = row.months
+        row2 = db(db.budget_staff.id == staff.staff_id).select(db.budget_staff.travel, db.budget_staff.salary, limitby=(0, 1)).first()
+        row3 = db(db.budget_location.id == staff.location_id).select(db.budget_location.subsistence, db.budget_location.hazard_pay, limitby=(0, 1)).first()
+        total_onetime_cost += row2.travel * quantity
+        total_recurring_cost += row2.salary * quantity * months
+        total_recurring_cost += row3.subsistence * quantity * months
+        total_recurring_cost += row3.hazard_pay * quantity * months
 
     table = db.budget_budget_bundle
-    query = table.budget_id==budget
+    query = (table.budget_id == budget)
     bundles = db(query).select()
     for bundle in bundles:
-        query = (table.budget_id==budget) & (table.bundle_id==bundle.bundle_id)
-        total_onetime_cost += (db(db.budget_bundle.id==bundle.bundle_id).select().first().total_unit_cost) * (db(query).select().first().quantity)
-        total_recurring_cost += (db(db.budget_bundle.id==bundle.bundle_id).select().first().total_monthly_cost) * (db(query).select().first().quantity) * (db(query).select().first().months)
+        query = (table.budget_id == budget) & (table.bundle_id == bundle.bundle_id)
+        row = db(query).select(table.quantity, table.months, limitby=(0, 1)).first()
+        quantity = row.quantity
+        months = row.months
+        row2 = db(db.budget_bundle.id == bundle.bundle_id).select(db.budget_bundle.total_unit_cost, db.budget_bundle.total_monthly_cost, limitby=(0, 1)).first()
+        total_onetime_cost += row2.total_unit_cost * quantity
+        total_recurring_cost += row2.total_monthly_cost * quantity * months
 
-    db(db.budget_budget.id==budget).update(total_onetime_costs=total_onetime_cost, total_recurring_costs=total_recurring_cost)
+    db(db.budget_budget.id == budget).update(total_onetime_costs=total_onetime_cost, total_recurring_costs=total_recurring_cost)
 
 def budget_update_items():
     "Update a Budget's items (Quantity, Months & Delete)"
@@ -1406,33 +1424,33 @@ def budget_update_items():
                 if "qty" in var:
                     staff = var[10:]
                     quantity = request.vars[var]
-                    query = (tables[0].budget_id==budget) & (tables[0].staff_id==staff)
+                    query = (tables[0].budget_id == budget) & (tables[0].staff_id == staff)
                     db(query).update(quantity=quantity)
                 elif "months" in var:
                     staff = var[13:]
                     months = request.vars[var]
-                    query = (tables[0].budget_id==budget) & (tables[0].staff_id==staff)
+                    query = (tables[0].budget_id == budget) & (tables[0].staff_id == staff)
                     db(query).update(months=months)
                 else:
                     # Delete
                     staff = var[6:]
-                    query = (tables[0].budget_id==budget) & (tables[0].staff_id==staff)
+                    query = (tables[0].budget_id == budget) & (tables[0].staff_id == staff)
                     db(query).delete()
             if "bundle" in var:
                 if "qty" in var:
                     bundle = var[11:]
                     quantity = request.vars[var]
-                    query = (tables[1].budget_id==budget) & (tables[1].bundle_id==bundle)
+                    query = (tables[1].budget_id == budget) & (tables[1].bundle_id == bundle)
                     db(query).update(quantity=quantity)
                 elif "months" in var:
                     bundle = var[14:]
                     months = request.vars[var]
-                    query = (tables[1].budget_id==budget) & (tables[1].bundle_id==bundle)
+                    query = (tables[1].budget_id == budget) & (tables[1].bundle_id == bundle)
                     db(query).update(months=months)
                 else:
                     # Delete
                     bundle = var[7:]
-                    query = (tables[1].budget_id==budget) & (tables[1].bundle_id==bundle)
+                    query = (tables[1].budget_id == budget) & (tables[1].bundle_id == bundle)
                     db(query).delete()
         # Update the Total values
         budget_totals(budget)

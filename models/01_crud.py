@@ -2010,7 +2010,7 @@ def shn_delete(jr, **attr):
             try:
                 shn_audit_delete(module, resource, row.id, jr.representation)
                 if "deleted" in db[table] and \
-                   db(db.s3_setting.id == 1).select(limitby=(0, 1)).first().archive_not_delete:
+                   db(db.s3_setting.id == 1).select(db.s3_setting.archive_not_delete, limitby=(0, 1)).first().archive_not_delete:
                     if crud.settings.delete_onvalidation:
                         crud.settings.delete_onvalidation(row)
                     # Avoid collisions of values in unique fields between deleted records and

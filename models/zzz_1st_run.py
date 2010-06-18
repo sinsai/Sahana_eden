@@ -801,12 +801,11 @@ if empty:
     # Authorization
     # User Roles (uses native Web2Py Auth Groups)
     table = auth.settings.table_group_name
-    if not db(db[table].id>0).count():
+    if not db(db[table].id > 0).count():
         auth.add_group("Administrator", description = "System Administrator - can access & make changes to any data")
-        auth.add_group("Anonymous", description = "Anonymous - dummy group to grant permissions")
         auth.add_group("Authenticated", description = "Authenticated - all logged-in users")
-        auth.add_group("Editor", description = "Editor - can access & make changes to any unprotected data")
-        auth.add_group("Restricted", description = "Restricted - is given a simplified full-screen view so as to minimise the possibility of errors")
+        #auth.add_group("Editor", description = "Editor - can access & make changes to any unprotected data")
+        #auth.add_group("Restricted", description = "Restricted - is given a simplified full-screen view so as to minimise the possibility of errors")
         # DVI
         auth.add_group("DVI", description = "DVI - allowed access to the DVI module")
         # GIS

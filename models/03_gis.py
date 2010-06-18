@@ -33,7 +33,7 @@ ADD_MARKER = T("Add Marker")
 marker_id = SQLTable(None, "marker_id",
             FieldS3("marker_id", db.gis_marker, sortby="name",
                 requires = IS_NULL_OR(IS_ONE_OF(db, "gis_marker.id", "%(name)s")),
-                represent = lambda id: (id and [DIV(IMG(_src=URL(r=request, c="default", f="download", args=db(db.gis_marker.id==id).select(limitby=(0, 1)).first().image), _height=40))] or [""])[0],
+                represent = lambda id: (id and [DIV(IMG(_src=URL(r=request, c="default", f="download", args=db(db.gis_marker.id==id).select(db.gis_marker.image, limitby=(0, 1)).first().image), _height=40))] or [""])[0],
                 label = T("Marker"),
                 comment = DIV(A(ADD_MARKER, _class="colorbox", _href=URL(r=request, c="gis", f="marker", args="create", vars=dict(format="popup")), _target="top", _title=ADD_MARKER), DIV( _class="tooltip", _title=T("Marker|Defines the icon used for display of features on interactive map & KML exports."))),
                 ondelete = "RESTRICT"
@@ -59,7 +59,7 @@ table.units.requires = IS_IN_SET(["m", "degrees"], zero=None)
 projection_id = SQLTable(None, "projection_id",
             FieldS3("projection_id", db.gis_projection, sortby="name",
                 requires = IS_NULL_OR(IS_ONE_OF(db, "gis_projection.id", "%(name)s")),
-                represent = lambda id: db(db.gis_projection.id == id).select(limitby=(0, 1)).first().name,
+                represent = lambda id: db(db.gis_projection.id == id).select(db.gis_projection.name, limitby=(0, 1)).first().name,
                 label = T("Projection"),
                 comment = "",
                 ondelete = "RESTRICT"
@@ -75,7 +75,7 @@ table = db.define_table(tablename, timestamp, uuidstamp,
 symbology_id = SQLTable(None, "symbology_id",
             FieldS3("symbology_id", db.gis_symbology, sortby="name",
                 requires = IS_NULL_OR(IS_ONE_OF(db, "gis_symbology.id", "%(name)s")),
-                represent = lambda id: (id and [db(db.gis_symbology.id == id).select(limitby=(0, 1)).first().name] or ["None"])[0],
+                represent = lambda id: (id and [db(db.gis_symbology.id == id).select(db.gis_symbology.name, limitby=(0, 1)).first().name] or ["None"])[0],
                 label = T("Symbology"),
                 comment = "",
                 ondelete = "RESTRICT"
@@ -279,7 +279,7 @@ ADD_FEATURE_CLASS = T("Add Feature Class")
 feature_class_id = SQLTable(None, "feature_class_id",
             FieldS3("feature_class_id", db.gis_feature_class, sortby="name",
                 requires = IS_NULL_OR(IS_ONE_OF(db, "gis_feature_class.id", "%(name)s")),
-                represent = lambda id: (id and [db(db.gis_feature_class.id == id).select(limitby=(0, 1)).first().name] or ["None"])[0],
+                represent = lambda id: (id and [db(db.gis_feature_class.id == id).select(db.gis_feature_class.name, limitby=(0, 1)).first().name] or ["None"])[0],
                 label = T("Feature Class"),
                 comment = DIV(A(ADD_FEATURE_CLASS, _class="colorbox", _href=URL(r=request, c="gis", f="feature_class", args="create", vars=dict(format="popup")), _target="top", _title=ADD_FEATURE_CLASS), A(SPAN("[Help]"), _class="tooltip", _title=T("Feature Class|Defines the marker used for display & the attributes visible in the popup."))),
                 ondelete = "RESTRICT"
@@ -348,7 +348,7 @@ table.uuid.requires = IS_NOT_IN_DB(db, "%s.uuid" % table)
 table.name.requires = IS_NOT_EMPTY()    # Placenames don't have to be unique
 table.level.requires = IS_NULL_OR(IS_IN_SET(gis_location_hierarchy))
 table.parent.requires = IS_NULL_OR(IS_ONE_OF(db, "gis_location.id", "%(name)s"))
-table.parent.represent = lambda id: (id and [db(db.gis_location.id == id).select(limitby=(0, 1)).first().name] or ["None"])[0]
+table.parent.represent = lambda id: (id and [db(db.gis_location.id == id).select(db.gis_location.name, limitby=(0, 1)).first().name] or ["None"])[0]
 table.gis_feature_type.requires = IS_IN_SET(gis_feature_type_opts, zero=None)
 table.gis_feature_type.represent = lambda opt: gis_feature_type_opts.get(opt, UNKNOWN_OPT)
 # WKT validation is done in the onvalidation callback
@@ -385,7 +385,7 @@ s3xrc.model.configure(db.gis_location,
 def shn_gis_location_represent(id):
     # TODO: optimize! (very slow)
     try:
-        location = db(db.gis_location.id==id).select(limitby=(0, 1)).first()
+        location = db(db.gis_location.id == id).select(limitby=(0, 1)).first()
         # Simple
         #represent = location.name
         # Fancy Map
@@ -435,7 +435,7 @@ ADD_FEATURE_GROUP = T("Add Feature Group")
 feature_group_id = SQLTable(None, "feature_group_id",
             FieldS3("feature_group_id", db.gis_feature_group, sortby="name",
                 requires = IS_NULL_OR(IS_ONE_OF(db, "gis_feature_group.id", "%(name)s")),
-                represent = lambda id: (id and [db(db.gis_feature_group.id == id).select(limitby=(0, 1)).first().name] or ["None"])[0],
+                represent = lambda id: (id and [db(db.gis_feature_group.id == id).select(db.gis_feature_group.name, limitby=(0, 1)).first().name] or ["None"])[0],
                 label = T("Feature Group"),
                 comment = DIV(A(ADD_FEATURE_GROUP, _class="colorbox", _href=URL(r=request, c="gis", f="feature_group", args="create", vars=dict(format="popup")), _target="top", _title=ADD_FEATURE_GROUP), DIV( _class="tooltip", _title=T("Feature Group|A collection of Feature Classes which can be displayed together on a map or exported together."))),
                 ondelete = "RESTRICT"
@@ -509,7 +509,7 @@ s3.crud_strings[tablename] = Storage(
 track_id = SQLTable(None, "track_id",
             FieldS3("track_id", db.gis_track, sortby="name",
                 requires = IS_NULL_OR(IS_ONE_OF(db, "gis_track.id", "%(name)s")),
-                represent = lambda id: (id and [db(db.gis_track.id == id).select(limitby=(0, 1)).first().name] or ["None"])[0],
+                represent = lambda id: (id and [db(db.gis_track.id == id).select(db.gis_track.name, limitby=(0, 1)).first().name] or ["None"])[0],
                 label = T("Track"),
                 comment = DIV(A(ADD_TRACK, _class="colorbox", _href=URL(r=request, c="gis", f="track", args="create", vars=dict(format="popup")), _target="top", _title=ADD_TRACK), DIV( _class="tooltip", _title=T("GPX Track|A file downloaded from a GPS containing a series of geographic points in XML format."))),
                 ondelete = "RESTRICT"

@@ -21,13 +21,6 @@ response.menu_options = [
     [T("Bulk Uploader"), False, URL(r=request, c="media", f="bulk_upload")],
 ]
 
-# Joined Resource
-#s3xrc.model.add_component("media", "metadata",
-#    multiple=True,
-#    joinby=dict(gis_location="location_id"),
-#    deletable=True,
-#    editable=True)
-
 # Web2Py Tools functions
 def download():
     "Download a file."
@@ -36,9 +29,7 @@ def download():
 # S3 framework functions
 def index():
     "Module's Home Page"
-
     module_name = s3.modules[module]["name_nice"]
-
     return dict(module_name=module_name)
 
 def test():
@@ -54,6 +45,7 @@ def test():
 
     html = gis.show_map(
                 feature_overlays = [offices, hospitals],
+                #wms_browser = {"name" : "OpenGeo Demo WMS", "url" : "http://demo.opengeo.org/geoserver/ows?service=WMS&request=GetCapabilities"},
                 wms_browser = {"name" : "Risk Maps", "url" : "http://preview.grid.unep.ch:8080/geoserver/ows?service=WMS&request=GetCapabilities"},
                 #wms_browser = {"name" : "Risk Maps", "url" : "http://www.pdc.org/wms/wmservlet/PDC_Active_Hazards?request=getcapabilities&service=WMS&version=1.1.1"},
                 catalogue_overlays = True,
@@ -79,6 +71,7 @@ def apikey():
 
     # Model options
     table.name.label = T("Service")
+    table.name.writable = False
     table.apikey.label = T("Key")
     table.apikey.comment = SPAN("*", _class="req")
 
@@ -88,11 +81,11 @@ def apikey():
     s3.crud_strings[tablename] = Storage(
         title_create = ADD_KEY,
         title_display = T("Key Details"),
-        title_list = LIST_KEYS,
+        title_list = T("Keys"),
         title_update = T("Edit Key"),
         title_search = T("Search Keys"),
         subtitle_create = T("Add New Key"),
-        subtitle_list = T("Keys"),
+        subtitle_list = LIST_KEYS,
         label_list_button = LIST_KEYS,
         label_create_button = ADD_KEY,
         label_delete_button = T("Delete Key"),
@@ -101,7 +94,23 @@ def apikey():
         msg_record_deleted = T("Key deleted"),
         msg_list_empty = T("No Keys currently defined"))
 
-    return shn_rest_controller(module, resource, deletable=False, listadd=False)
+    # Post-processor
+    def user_postp(jr, output):
+        if not jr.component:
+            if auth.is_logged_in():
+                # Provide the ability to delete records in bulk
+                response.s3.actions = [
+                    dict(label=str(T("Update")), _class="action-btn", url=str(URL(r=request, args=["[id]"])))
+                ]
+            else:
+                response.s3.actions = [
+                    dict(label=str(T("Details")), _class="action-btn", url=str(URL(r=request, args=["[id]"])))
+                ]
+            return output
+    response.s3.postp = user_postp
+
+    output = shn_rest_controller(module, resource, deletable=False, listadd=False)
+    return output
 
 def config():
     "RESTlike CRUD controller"
@@ -129,20 +138,21 @@ def config():
     ADD_CONFIG = T("Add Config")
     LIST_CONFIGS = T("List Configs")
     s3.crud_strings[tablename] = Storage(
-        title_create = ADD_CONFIG,
-        title_display = T("Config Details"),
-        title_list = LIST_CONFIGS,
-        title_update = T("Edit Config"),
-        title_search = T("Search Configs"),
-        subtitle_create = T("Add New Config"),
-        subtitle_list = T("Configs"),
-        label_list_button = LIST_CONFIGS,
-        label_create_button = ADD_CONFIG,
-        label_delete_button = T("Delete Config"),
-        msg_record_created = T("Config added"),
-        msg_record_modified = T("Config updated"),
-        msg_record_deleted = T("Config deleted"),
-        msg_list_empty = T("No Configs currently defined"))
+        #title_create = ADD_CONFIG,
+        title_display = T("Defaults"),
+        #title_list = T("Configs"),
+        title_update = T("Edit Defaults"),
+        #title_search = T("Search Configs"),
+        #subtitle_create = T("Add New Config"),
+        #subtitle_list = LIST_CONFIGS,
+        #label_list_button = LIST_CONFIGS,
+        #label_create_button = ADD_CONFIG,
+        #label_delete_button = T("Delete Config"),
+        #msg_record_created = T("Config added"),
+        msg_record_modified = T("Defaults updated"),
+        #msg_record_deleted = T("Config deleted"),
+        #msg_list_empty = T("No Configs currently defined")
+    )
 
     return shn_rest_controller(module, resource, deletable=False, listadd=False)
 
@@ -166,11 +176,11 @@ def feature_class():
     s3.crud_strings[tablename] = Storage(
         title_create = ADD_FEATURE_CLASS,
         title_display = T("Feature Class Details"),
-        title_list = LIST_FEATURE_CLASS,
+        title_list = T("Feature Classes"),
         title_update = T("Edit Feature Class"),
         title_search = T("Search Feature Class"),
         subtitle_create = T("Add New Feature Class"),
-        subtitle_list = T("Feature Classes"),
+        subtitle_list = LIST_FEATURE_CLASS,
         label_list_button = LIST_FEATURE_CLASS,
         label_create_button = ADD_FEATURE_CLASS,
         label_delete_button = T("Delete Feature Class"),
@@ -179,7 +189,14 @@ def feature_class():
         msg_record_deleted = T("Feature Class deleted"),
         msg_list_empty = T("No Feature Classes currently defined"))
 
-    return shn_rest_controller(module, resource)
+    # Post-processor
+    def user_postp(jr, output):
+        shn_action_buttons(jr)
+        return output
+    response.s3.postp = user_postp
+
+    output = shn_rest_controller(module, resource)
+    return output
 
 def feature_group():
     "RESTlike CRUD controller"
@@ -199,11 +216,11 @@ def feature_group():
     s3.crud_strings[tablename] = Storage(
         title_create = ADD_FEATURE_GROUP,
         title_display = T("Feature Group Details"),
-        title_list = LIST_FEATURE_GROUPS,
+        title_list = T("Feature Groups"),
         title_update = T("Edit Feature Group"),
         title_search = T("Search Feature Groups"),
         subtitle_create = T("Add New Feature Group"),
-        subtitle_list = T("Feature Groups"),
+        subtitle_list = LIST_FEATURE_GROUPS,
         label_list_button = LIST_FEATURE_GROUPS,
         label_create_button = ADD_FEATURE_GROUP,
         label_delete_button = T("Delete Feature Group"),
@@ -212,7 +229,14 @@ def feature_group():
         msg_record_deleted = T("Feature Group deleted"),
         msg_list_empty = T("No Feature Groups currently defined"))
 
-    return shn_rest_controller(module, resource)
+    # Post-processor
+    def user_postp(jr, output):
+        shn_action_buttons(jr)
+        return output
+    response.s3.postp = user_postp
+
+    output = shn_rest_controller(module, resource)
+    return output
 
 
 def location_to_feature_group():
@@ -235,7 +259,14 @@ def feature_class_to_feature_group():
 
     # CRUD Strings
 
-    return shn_rest_controller(module, resource)
+    # Post-processor
+    def user_postp(jr, output):
+        shn_action_buttons(jr)
+        return output
+    response.s3.postp = user_postp
+
+    output = shn_rest_controller(module, resource)
+    return output
 
 def location():
     "RESTlike CRUD controller"
@@ -269,11 +300,11 @@ def location():
     s3.crud_strings[tablename] = Storage(
         title_create = ADD_LOCATION,
         title_display = T("Location Details"),
-        title_list = LIST_LOCATIONS,
+        title_list = T("Locations"),
         title_update = T("Edit Location"),
         title_search = T("Search Locations"),
         subtitle_create = T("Add New Location"),
-        subtitle_list = T("Locations"),
+        subtitle_list = LIST_LOCATIONS,
         label_list_button = LIST_LOCATIONS,
         label_create_button = ADD_LOCATION,
         label_delete_button = T("Delete Location"),
@@ -315,6 +346,12 @@ def location():
 
     response.s3.pagination = True
 
+    # Post-processor
+    def user_postp(jr, output):
+        shn_action_buttons(jr)
+        return output
+    response.s3.postp = user_postp
+
     output = shn_rest_controller(module, resource)
     
     if isinstance(output, dict):
@@ -338,11 +375,11 @@ def marker():
     s3.crud_strings[tablename] = Storage(
         title_create = ADD_MARKER,
         title_display = T("Marker Details"),
-        title_list = LIST_MARKERS,
+        title_list = T("Markers"),
         title_update = T("Edit Marker"),
         title_search = T("Search Markers"),
         subtitle_create = T("Add New Marker"),
-        subtitle_list = T("Markers"),
+        subtitle_list = LIST_MARKERS,
         label_list_button = LIST_MARKERS,
         label_create_button = ADD_MARKER,
         label_delete_button = T("Delete Marker"),
@@ -351,7 +388,14 @@ def marker():
         msg_record_deleted = T("Marker deleted"),
         msg_list_empty = T("No Markers currently available"))
 
-    return shn_rest_controller(module, resource)
+    # Post-processor
+    def user_postp(jr, output):
+        shn_action_buttons(jr)
+        return output
+    response.s3.postp = user_postp
+
+    output = shn_rest_controller(module, resource)
+    return output
 
 def projection():
     "RESTlike CRUD controller"
@@ -376,11 +420,11 @@ def projection():
     s3.crud_strings[tablename] = Storage(
         title_create = ADD_PROJECTION,
         title_display = T("Projection Details"),
-        title_list = LIST_PROJECTIONS,
+        title_list = T("Projections"),
         title_update = T("Edit Projection"),
         title_search = T("Search Projections"),
         subtitle_create = T("Add New Projection"),
-        subtitle_list = T("Projections"),
+        subtitle_list = LIST_PROJECTIONS,
         label_list_button = LIST_PROJECTIONS,
         label_create_button = ADD_PROJECTION,
         label_delete_button = T("Delete Projection"),
@@ -389,7 +433,14 @@ def projection():
         msg_record_deleted = T("Projection deleted"),
         msg_list_empty = T("No Projections currently defined"))
 
-    return shn_rest_controller(module, resource, deletable=False)
+    # Post-processor
+    def user_postp(jr, output):
+        shn_action_buttons(jr)
+        return output
+    response.s3.postp = user_postp
+
+    output = shn_rest_controller(module, resource, deletable=False)
+    return output
 
 def track():
     "RESTlike CRUD controller"
@@ -402,7 +453,14 @@ def track():
     # CRUD Strings
     # used in multiple controllers, so defined in model
 
-    return shn_rest_controller(module, resource)
+    # Post-processor
+    def user_postp(jr, output):
+        shn_action_buttons(jr)
+        return output
+    response.s3.postp = user_postp
+
+    output = shn_rest_controller(module, resource, deletable=False)
+    return output
 
 # Common CRUD strings for all layers
 ADD_LAYER = T("Add Layer")
@@ -449,7 +507,23 @@ def layer_openstreetmap():
         msg_record_deleted=LAYER_DELETED,
         msg_list_empty=NO_OSM_LAYERS)
 
-    return shn_rest_controller(module, resource, deletable=False, listadd=False)
+    # Post-processor
+    def user_postp(jr, output):
+        if not jr.component:
+            if auth.is_logged_in():
+                # Provide the ability to delete records in bulk
+                response.s3.actions = [
+                    dict(label=str(T("Update")), _class="action-btn", url=str(URL(r=request, args=["[id]"])))
+                ]
+            else:
+                response.s3.actions = [
+                    dict(label=str(T("Details")), _class="action-btn", url=str(URL(r=request, args=["[id]"])))
+                ]
+            return output
+    response.s3.postp = user_postp
+
+    output = shn_rest_controller(module, resource, deletable=False, listadd=False)
+    return output
 
 def layer_google():
     "RESTlike CRUD controller"
@@ -478,7 +552,23 @@ def layer_google():
         msg_record_deleted=LAYER_DELETED,
         msg_list_empty=NO_GOOGLE_LAYERS)
 
-    return shn_rest_controller(module, resource, deletable=False, listadd=False)
+    # Post-processor
+    def user_postp(jr, output):
+        if not jr.component:
+            if auth.is_logged_in():
+                # Provide the ability to delete records in bulk
+                response.s3.actions = [
+                    dict(label=str(T("Update")), _class="action-btn", url=str(URL(r=request, args=["[id]"])))
+                ]
+            else:
+                response.s3.actions = [
+                    dict(label=str(T("Details")), _class="action-btn", url=str(URL(r=request, args=["[id]"])))
+                ]
+            return output
+    response.s3.postp = user_postp
+
+    output = shn_rest_controller(module, resource, deletable=False, listadd=False)
+    return output
 
 def layer_yahoo():
     "RESTlike CRUD controller"
@@ -507,7 +597,23 @@ def layer_yahoo():
         msg_record_deleted=LAYER_DELETED,
         msg_list_empty=NO_YAHOO_LAYERS)
 
-    return shn_rest_controller(module, resource, deletable=False, listadd=False)
+    # Post-processor
+    def user_postp(jr, output):
+        if not jr.component:
+            if auth.is_logged_in():
+                # Provide the ability to delete records in bulk
+                response.s3.actions = [
+                    dict(label=str(T("Update")), _class="action-btn", url=str(URL(r=request, args=["[id]"])))
+                ]
+            else:
+                response.s3.actions = [
+                    dict(label=str(T("Details")), _class="action-btn", url=str(URL(r=request, args=["[id]"])))
+                ]
+            return output
+    response.s3.postp = user_postp
+
+    output = shn_rest_controller(module, resource, deletable=False, listadd=False)
+    return output
 
 def layer_mgrs():
     "RESTlike CRUD controller"
@@ -536,7 +642,23 @@ def layer_mgrs():
         msg_record_deleted=LAYER_DELETED,
         msg_list_empty=NO_MGRS_LAYERS)
 
-    return shn_rest_controller(module, resource, deletable=False, listadd=False)
+    # Post-processor
+    def user_postp(jr, output):
+        if not jr.component:
+            if auth.is_logged_in():
+                # Provide the ability to delete records in bulk
+                response.s3.actions = [
+                    dict(label=str(T("Update")), _class="action-btn", url=str(URL(r=request, args=["[id]"])))
+                ]
+            else:
+                response.s3.actions = [
+                    dict(label=str(T("Details")), _class="action-btn", url=str(URL(r=request, args=["[id]"])))
+                ]
+            return output
+    response.s3.postp = user_postp
+
+    output = shn_rest_controller(module, resource, deletable=False, listadd=False)
+    return output
 
 def layer_bing():
     "RESTlike CRUD controller"
@@ -565,7 +687,23 @@ def layer_bing():
         msg_record_deleted=LAYER_DELETED,
         msg_list_empty=NO_BING_LAYERS)
 
-    return shn_rest_controller(module, resource, deletable=False, listadd=False)
+    # Post-processor
+    def user_postp(jr, output):
+        if not jr.component:
+            if auth.is_logged_in():
+                # Provide the ability to delete records in bulk
+                response.s3.actions = [
+                    dict(label=str(T("Update")), _class="action-btn", url=str(URL(r=request, args=["[id]"])))
+                ]
+            else:
+                response.s3.actions = [
+                    dict(label=str(T("Details")), _class="action-btn", url=str(URL(r=request, args=["[id]"])))
+                ]
+            return output
+    response.s3.postp = user_postp
+
+    output = shn_rest_controller(module, resource, deletable=False, listadd=False)
+    return output
 
 def layer_georss():
     "RESTlike CRUD controller"
@@ -598,7 +736,14 @@ def layer_georss():
         msg_record_deleted=LAYER_DELETED,
         msg_list_empty=NO_GEORSS_LAYERS)
 
-    return shn_rest_controller(module, resource)
+    # Post-processor
+    def user_postp(jr, output):
+        shn_action_buttons(jr)
+        return output
+    response.s3.postp = user_postp
+
+    output = shn_rest_controller(module, resource, deletable=False)
+    return output
 
 def layer_gpx():
     "RESTlike CRUD controller"
@@ -630,7 +775,14 @@ def layer_gpx():
         msg_record_deleted=LAYER_DELETED,
         msg_list_empty=NO_GPX_LAYERS)
 
-    return shn_rest_controller(module, resource)
+    # Post-processor
+    def user_postp(jr, output):
+        shn_action_buttons(jr)
+        return output
+    response.s3.postp = user_postp
+
+    output = shn_rest_controller(module, resource, deletable=False)
+    return output
 
 def layer_kml():
     "RESTlike CRUD controller"
@@ -663,7 +815,14 @@ def layer_kml():
         msg_record_deleted=LAYER_DELETED,
         msg_list_empty=NO_KML_LAYERS)
 
-    return shn_rest_controller(module, resource)
+    # Post-processor
+    def user_postp(jr, output):
+        shn_action_buttons(jr)
+        return output
+    response.s3.postp = user_postp
+
+    output = shn_rest_controller(module, resource, deletable=False)
+    return output
 
 def layer_tms():
     "RESTlike CRUD controller"
@@ -697,7 +856,14 @@ def layer_tms():
         msg_record_deleted=LAYER_DELETED,
         msg_list_empty=NO_TMS_LAYERS)
 
-    return shn_rest_controller(module, resource)
+    # Post-processor
+    def user_postp(jr, output):
+        shn_action_buttons(jr)
+        return output
+    response.s3.postp = user_postp
+
+    output = shn_rest_controller(module, resource, deletable=False)
+    return output
 
 def layer_wms():
     "RESTlike CRUD controller"
@@ -732,7 +898,14 @@ def layer_wms():
         msg_record_deleted=LAYER_DELETED,
         msg_list_empty=NO_WMS_LAYERS)
 
-    return shn_rest_controller(module, resource)
+    # Post-processor
+    def user_postp(jr, output):
+        shn_action_buttons(jr)
+        return output
+    response.s3.postp = user_postp
+
+    output = shn_rest_controller(module, resource, deletable=False)
+    return output
 
 #@auth.requires_membership("AdvancedJS")
 def layer_js():
@@ -764,7 +937,14 @@ def layer_js():
         msg_record_deleted=LAYER_DELETED,
         msg_list_empty=NO_JS_LAYERS)
 
-    return shn_rest_controller(module, resource)
+    # Post-processor
+    def user_postp(jr, output):
+        shn_action_buttons(jr)
+        return output
+    response.s3.postp = user_postp
+
+    output = shn_rest_controller(module, resource, deletable=False)
+    return output
 
 def layer_xyz():
     "RESTlike CRUD controller"
@@ -797,7 +977,14 @@ def layer_xyz():
         msg_record_deleted=LAYER_DELETED,
         msg_list_empty=NO_XYZ_LAYERS)
 
-    return shn_rest_controller(module, resource)
+    # Post-processor
+    def user_postp(jr, output):
+        shn_action_buttons(jr)
+        return output
+    response.s3.postp = user_postp
+
+    output = shn_rest_controller(module, resource, deletable=False)
+    return output
 
 # Module-specific functions
 def convert_gps():
@@ -1087,10 +1274,9 @@ def map_service_catalogue():
     """Map Service Catalogue.
     Allows selection of which Layers are active."""
 
-    title = T("Map Service Catalogue")
     subtitle = T("List Layers")
     # Start building the Return with the common items
-    output = dict(title=title, subtitle=subtitle)
+    output = dict(subtitle=subtitle)
 
     # Hack: We control all perms from this 1 table
     table = db.gis_layer_openstreetmap

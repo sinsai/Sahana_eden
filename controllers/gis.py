@@ -938,7 +938,6 @@ def layer_wms():
     table = db[tablename]
 
     # Model options
-    #table.url.requires = [IS_URL, IS_NOT_EMPTY()]
     table.url.comment = SPAN("*", _class="req")
     table.layers.comment = SPAN("*", _class="req")
 

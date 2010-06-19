@@ -26,10 +26,6 @@ Load JavaScript to:
 * Hide browser buttons, menu & URL bar
 -->
 {{else:}}
-<!--
-<div id="header">
-</div>
--->
 
 <div id="menu_modules">
     {{=MENU2(response.menu, _id='modulenav')}}
@@ -58,7 +54,7 @@ Load JavaScript to:
 {{if session.s3.restricted:}}
 {{else:}}
 <div id="footer">
-    {{include session.s3.theme.footer}}
+    {{include "footer.html"}}
 </div>
 {{pass}}
 

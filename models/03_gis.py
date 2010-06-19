@@ -28,7 +28,7 @@ table.name.requires = [IS_NOT_EMPTY(), IS_NOT_IN_DB(db, "%s.name" % tablename)]
 # upload folder needs to be visible to the download() function as well as the upload
 table.image.uploadfolder = os.path.join(request.folder, "static/img/markers")
 table.image.represent = lambda filename: (filename and [DIV(IMG(_src=URL(r=request, c="default", f="download", args=filename), _height=40))] or [""])[0]
-# Reusable field for other tables to reference
+# Reusable field to include in other table definitions
 ADD_MARKER = T("Add Marker")
 marker_id = SQLTable(None, "marker_id",
             FieldS3("marker_id", db.gis_marker, sortby="name",
@@ -55,7 +55,7 @@ table.epsg.requires = IS_NOT_EMPTY()
 table.maxExtent.requires = IS_NOT_EMPTY()
 table.maxResolution.requires = IS_NOT_EMPTY()
 table.units.requires = IS_IN_SET(["m", "degrees"], zero=None)
-# Reusable field for other tables to reference
+# Reusable field to include in other table definitions
 projection_id = SQLTable(None, "projection_id",
             FieldS3("projection_id", db.gis_projection, sortby="name",
                 requires = IS_NULL_OR(IS_ONE_OF(db, "gis_projection.id", "%(name)s")),
@@ -71,7 +71,7 @@ tablename = "%s_%s" % (module, resource)
 table = db.define_table(tablename, timestamp, uuidstamp,
                 Field("name", length=128, notnull=True, unique=True),
                 migrate=migrate)
-# Reusable field for other tables to reference
+# Reusable field to include in other table definitions
 symbology_id = SQLTable(None, "symbology_id",
             FieldS3("symbology_id", db.gis_symbology, sortby="name",
                 requires = IS_NULL_OR(IS_ONE_OF(db, "gis_symbology.id", "%(name)s")),
@@ -274,7 +274,7 @@ table.gps_marker.requires = IS_IN_SET([
     ])
 #table.module.requires = IS_NULL_OR(IS_ONE_OF(db((db.s3_module.enabled=="True") & (~db.s3_module.name.like("default"))), "s3_module.name", "%(name_nice)s"))
 #table.resource.requires = IS_NULL_OR(IS_IN_SET(gis_resource_opts))
-# Reusable field for other tables to reference
+# Reusable field to include in other table definitions
 ADD_FEATURE_CLASS = T("Add Feature Class")
 feature_class_id = SQLTable(None, "feature_class_id",
             FieldS3("feature_class_id", db.gis_feature_class, sortby="name",
@@ -358,7 +358,7 @@ table.lat.requires = IS_NULL_OR(IS_LAT())
 table.lon.requires = IS_NULL_OR(IS_LON())
 table.source.requires = IS_NULL_OR(IS_IN_SET(gis_source_opts))
 
-# Reusable field for other tables to reference
+# Reusable field to include in other table definitions
 ADD_LOCATION = T("Add Location")
 repr_select = lambda l: len(l.name) > 48 and "%s..." % l.name[:44] or l.name
 location_id = SQLTable(None, "location_id",
@@ -385,30 +385,34 @@ s3xrc.model.configure(db.gis_location,
 def shn_gis_location_represent(id):
     # TODO: optimize! (very slow)
     try:
-        location = db(db.gis_location.id == id).select(limitby=(0, 1)).first()
-        # Simple
-        #represent = location.name
-        # Fancy Map
-        #represent = A(location.name, _href="#", _onclick="viewMap(" + str(id) +");return false")
-        # Lat/Lon
-        lat = location.lat
-        lon = location.lon
-        if lat and lon:
-            if lat > 0:
-                lat_prefix = "N"
-            else:
-                lat_prefix = "S"
-            if lon > 0:
-                lon_prefix = "E"
-            else:
-                lon_prefix = "W"
-            text = "%s %s %s %s" % (lat_prefix, lat, lon_prefix, lon)
+        location = db(db.gis_location.id == id).select(db.gis_location.name, db.gis_location.level, db.gis_location.lat, db.gis_location.lon, db.gis_location.id, limitby=(0, 1)).first()
+        if location.level in ["L0", "L1", "L2"]:
+            # Countries, Regions shouldn't be represented as Lat/Lon
+            represent = location.name
         else:
-            text = location.name
-        represent = text
-        # Hyperlink
-        represent = A(text, _href = deployment_settings.get_base_public_url() + URL(r=request, c="gis", f="location", args=[location.id]))
-        # ToDo: Convert to popup? (HTML again!)
+            # Simple
+            #represent = location.name
+            # Fancy Map
+            #represent = A(location.name, _href="#", _onclick="viewMap(" + str(id) +");return false")
+            # Lat/Lon
+            lat = location.lat
+            lon = location.lon
+            if lat and lon:
+                if lat > 0:
+                    lat_prefix = "N"
+                else:
+                    lat_prefix = "S"
+                if lon > 0:
+                    lon_prefix = "E"
+                else:
+                    lon_prefix = "W"
+                text = "%s %s %s %s" % (lat_prefix, lat, lon_prefix, lon)
+            else:
+                text = location.name
+            represent = text
+            # Hyperlink
+            represent = A(text, _href = deployment_settings.get_base_public_url() + URL(r=request, c="gis", f="location", args=[location.id]))
+            # ToDo: Convert to popup? (HTML again!)
     except:
         try:
             # "Invalid" => data consistency wrong
@@ -430,7 +434,7 @@ table = db.define_table(tablename, timestamp, uuidstamp, authorstamp, deletion_s
 table.uuid.requires = IS_NOT_IN_DB(db, "%s.uuid" % tablename)
 #table.author.requires = IS_ONE_OF(db, "auth_user.id","%(id)s: %(first_name)s %(last_name)s")
 table.name.requires = [IS_NOT_EMPTY(), IS_NOT_IN_DB(db, "%s.name" % tablename)]
-# Reusable field for other tables to reference
+# Reusable field to include in other table definitions
 ADD_FEATURE_GROUP = T("Add Feature Group")
 feature_group_id = SQLTable(None, "feature_group_id",
             FieldS3("feature_group_id", db.gis_feature_group, sortby="name",
@@ -505,7 +509,7 @@ s3.crud_strings[tablename] = Storage(
     msg_record_modified = T("Track updated"),
     msg_record_deleted = T("Track deleted"),
     msg_list_empty = T("No Tracks currently available"))
-# Reusable field for other tables to reference
+# Reusable field to include in other table definitions
 track_id = SQLTable(None, "track_id",
             FieldS3("track_id", db.gis_track, sortby="name",
                 requires = IS_NULL_OR(IS_ONE_OF(db, "gis_track.id", "%(name)s")),
@@ -596,6 +600,8 @@ for layertype in gis_layer_types:
             Field("transparent", "boolean", default=False, label=T("Transparent?")),
             projection_id)
         table = db.define_table(tablename, t, migrate=migrate)
+        #table.url.requires = [IS_URL, IS_NOT_EMPTY()]
+        # Default IS_NULL_OR() not appropriate here
         table.projection_id.requires = IS_ONE_OF(db, "gis_projection.id", "%(name)s")
         table.projection_id.default = 2
     elif layertype == "xyz":

@@ -1425,9 +1425,9 @@ OpenLayers.Util.extend( selectPdfControl, {
         # Needed for unzipping & filtering as well
         cachepath = os.path.join(request.folder, "uploads", "gis_cache")
         if os.access(cachepath, os.W_OK):
-            cache = True
+            cacheable = True
         else:
-            cache = False
+            cacheable = False
 
         #
         # Features
@@ -1679,7 +1679,7 @@ OpenLayers.Util.extend( selectPdfControl, {
                         marker = db(db.gis_marker.id == marker_default).select(db.gis_marker.image, limitby=(0, 1)).first().image
                     marker_url = URL(r=request, c="default", f="download", args=marker)
 
-                    if cache:
+                    if cacheable:
                         # Download file
                         try:
                             file = fetch(url)
@@ -1893,7 +1893,7 @@ OpenLayers.Util.extend( selectPdfControl, {
                     url = layer["url"]
                     visible = layer["visible"]
                     projection_str = "projection: proj4326,"
-                    if cache:
+                    if cacheable:
                         # Download file
                         file, warning = self.download_kml(url, public_url)
                         filename = "gis_cache.file." + name.replace(" ", "_") + ".kml"

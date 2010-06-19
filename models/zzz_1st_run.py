@@ -23,7 +23,7 @@ if empty:
             name = T("Sahana Blue"),
             logo = "img/sahanapy_logo.png",
             #header_background = "img/header_bg.png",
-            footer = "footer.html",
+            #footer = "footer.html",
             text_direction = "ltr",
             col_background = "336699",
             col_menu = "0066cc",
@@ -41,7 +41,7 @@ if empty:
             name = T("Sahana Green"),
             logo = "img/sahanapy_logo_green.png",
             #header_background = "img/header_bg.png",
-            footer = "footer.html",
+            #footer = "footer.html",
             text_direction = "ltr",
             col_background = "337733",
             col_menu = "cc7722",
@@ -62,7 +62,7 @@ if empty:
             name = T("Sahana Steel"),
             logo = "img/sahanapy_logo_ideamonk.png",
             #header_background = "img/header_bg.png",
-            footer = "footer.html",
+            #footer = "footer.html",
             text_direction = "ltr",
             col_background = "dbdbdb",
             col_menu = "0066cc",
@@ -432,7 +432,7 @@ if empty:
        # We want to start at ID 1
        table.truncate()
        table.insert(
-            uuid = uuid.uuid4(),
+            uuid = "www.sahanafoundation.org/GIS-PROJECTION-900913",
             name = "Spherical Mercator",
             epsg = 900913,
             maxExtent = "-20037508, -20037508, 20037508, 20037508.34",
@@ -440,7 +440,7 @@ if empty:
             units = "m"
         )
        table.insert(
-            uuid = uuid.uuid4(),
+            uuid = "www.sahanafoundation.org/GIS-PROJECTION-4326",
             name = "WGS84",
             epsg = 4326,
             maxExtent = "-180,-90,180,90",
@@ -802,9 +802,14 @@ if empty:
     # User Roles (uses native Web2Py Auth Groups)
     table = auth.settings.table_group_name
     if not db(db[table].id > 0).count():
+        # This must stay as id=1
         auth.add_group("Administrator", description = "System Administrator - can access & make changes to any data")
+        # This must stay as id=2
         auth.add_group("Authenticated", description = "Authenticated - all logged-in users")
-        #auth.add_group("Editor", description = "Editor - can access & make changes to any unprotected data")
+        # This must stay as id=3
+        auth.add_group("Creator", description = "Creator - dummy role which isn't meant to have users added to it. Used to restrict records to just those created by the user")
+        if session.s3.security_policy != 1:
+            auth.add_group("Editor", description = "Editor - can access & make changes to any unprotected data")
         #auth.add_group("Restricted", description = "Restricted - is given a simplified full-screen view so as to minimise the possibility of errors")
         # DVI
         auth.add_group("DVI", description = "DVI - allowed access to the DVI module")
@@ -818,35 +823,36 @@ if empty:
         auth.add_group("HMSViewer", description = "HMSViewer - permission to access HMS")
         # Ticketing
         auth.add_group("TicketAdmin", description = "TicketAdmin - full access to Ticketing")
-    # Security Defaults for all tables
-    # For performance we only populate this once (at system startup)
-    # => need to populate manually when adding new tables to the database! (less RAD)
-    table = auth.settings.table_permission_name
-    if not db(db[table].id>0).count():
-        authenticated = auth.id_group("Authenticated")
-        editors = auth.id_group("Editor")
-        for tablename in db.tables:
-            table = db[tablename]
-            # allow all registered users the ability to Read all records
-            auth.add_permission(authenticated, "read", table)
-            # allow anonymous users the ability to Read all records
-            #auth.add_permission(anonymous, "read", table)
-            # Editors can make changes
-            auth.add_permission(editors, "create", table)
-            auth.add_permission(editors, "update", table)
-            auth.add_permission(editors, "delete", table)
+    # Security Defaults for all tables (if using 'full' security policy)
+    if session.s3.security_policy != 1:
+        table = auth.settings.table_permission_name
+        if not db(db[table].id>0).count():
+            # For performance we only populate this once (at system startup)
+            # => need to populate manually when adding new tables to the database! (less RAD)
+            authenticated = auth.id_group("Authenticated")
+            #editors = auth.id_group("Editor")
+            for tablename in db.tables:
+                table = db[tablename]
+                # allow all registered users the ability to Read all records
+                auth.add_permission(authenticated, "read", table)
+                # allow anonymous users the ability to Read all records
+                #auth.add_permission(anonymous, "read", table)
+                # Editors can make changes
+                auth.add_permission(editors, "create", table)
+                auth.add_permission(editors, "update", table)
+                auth.add_permission(editors, "delete", table)
 
-        # Module-specific defaults can be set here
-        #table = pr_person
-        # Clear out defaults
-        #auth.del_permission(authenticated, "read", table)
-        #auth.del_permission(editors, "create", table)
-        #auth.del_permission(editors, "update", table)
-        #auth.del_permission(editors, "delete", table)
-        # Add specific Role(s)
-        #id = auth.id_group("myrole")
-        #auth.add_permission(id, "read", table)
-        #auth.add_permission(id, "create", table)
-        #auth.add_permission(id, "update", table)
-        #auth.add_permission(id, "delete", table)
+            # Module-specific defaults can be set here
+            #table = pr_person
+            # Clear out defaults
+            #auth.del_permission(authenticated, "read", table)
+            #auth.del_permission(editors, "create", table)
+            #auth.del_permission(editors, "update", table)
+            #auth.del_permission(editors, "delete", table)
+            # Add specific Role(s)
+            #id = auth.id_group("myrole")
+            #auth.add_permission(id, "read", table)
+            #auth.add_permission(id, "create", table)
+            #auth.add_permission(id, "update", table)
+            #auth.add_permission(id, "delete", table)
 

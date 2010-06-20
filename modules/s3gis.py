@@ -1099,6 +1099,7 @@ OpenLayers.Util.extend( selectPdfControl, {
             // A layer to display the print page extent
             var pageLayer = new OpenLayers.Layer.Vector('""" + str(T("Print Extent")) + """');
             pageLayer.addFeatures(printPage.feature);
+            pageLayer.setVisibility(false);
             map.addLayer(pageLayer);
             map.setOptions(options, {
                 eventListeners: {
@@ -1113,6 +1114,7 @@ OpenLayers.Util.extend( selectPdfControl, {
                 split: true,
                 autoScroll: true,
                 collapsible: true,
+                collapsed: true,
                 collapseMode: 'mini',
                 lines: false,
                 bodyStyle: 'padding:5px',

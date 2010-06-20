@@ -28,6 +28,12 @@ if deployment_settings.has_module(module):
     # -----------------
     # Tickets table (All sources get entered here : either manually or via S3XRC or Messaging)
 
+    ticket_priority_opts = {
+        3:T('High'),
+        2:T('Medium'),
+        1:T('Low')
+    }
+
     resource = 'log'
     tablename = "%s_%s" % (module, resource)
     table = db.define_table(tablename, timestamp, uuidstamp, deletion_status,
@@ -46,6 +52,11 @@ if deployment_settings.has_module(module):
         Field("actioned", "boolean"),
         Field("actioned_details", "text"),
         migrate=migrate)
+
+    table.uuid.requires = IS_NOT_IN_DB(db, "%s.uuid" % tablename)
+    table.message.requires = IS_NOT_EMPTY()
+    table.priority.requires = IS_NULL_OR(IS_IN_SET(ticket_priority_opts))
+    table.categories.requires = IS_NULL_OR(IS_IN_DB(db, db.ticket_category.id, '%(name)s', multiple=True))
 
     s3xrc.model.configure(table,
                           list_fields=['id',

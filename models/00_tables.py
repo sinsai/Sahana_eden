@@ -4,7 +4,7 @@
     Global tables and re-usable fields
 """
 
-# Reusable timestamp fields
+# Reusable timestamp fields to include in other table definitions
 timestamp = db.Table(None, "timestamp",
             Field("created_on", "datetime",
                           readable=False,
@@ -17,7 +17,8 @@ timestamp = db.Table(None, "timestamp",
                           update=request.utcnow)
             )
 
-# Reusable author fields, TODO: make a better represent!
+# Reusable Author fields to include in other table definitions
+# TODO: make a better represent!
 def shn_user_represent(id):
 
     def user_represent(id):
@@ -54,7 +55,7 @@ authorstamp = db.Table(None, "authorstamp",
 
 shn_comments_field = db.Table(None, "comments", Field("comments", "text", comment = A(SPAN("[Help]"), _class="tooltip", _title=T("Comments|Please use this field to show a history of the record."))))
 
-# Reusable UUID field (needed as part of database synchronization)
+# Reusable UUID field to include in other table definitions
 import uuid
 from gluon.sql import SQLCustomType
 s3uuid = SQLCustomType(
@@ -74,15 +75,14 @@ uuidstamp = db.Table(None, "uuidstamp",
                           writable=False,
                           default=""))
 
-# Reusable Deletion status field (needed as part of database synchronization)
-# Q: Will this be moved to a separate table? (Simpler for module writers but a performance penalty)
+# Reusable Deletion_Status field to include in other table definitions
 deletion_status = db.Table(None, "deletion_status",
             Field("deleted", "boolean",
                           readable=False,
                           writable=False,
                           default=False))
 
-# Reusable Admin field
+# Reusable Admin field to include in other table definitions
 admin_id = db.Table(None, "admin_id",
             FieldS3("admin", db.auth_group, sortby="role",
                 requires = IS_NULL_OR(IS_ONE_OF(db, "auth_group.id", "%(role)s")),
@@ -91,7 +91,7 @@ admin_id = db.Table(None, "admin_id",
                 ondelete="RESTRICT"
                 ))
 
-# Reusable Document field
+# Reusable Document field to include in other table definitions
 document = db.Table(None, "document",
             Field("document", "upload", autodelete = True,
                 label=T("Scanned File"),
@@ -125,7 +125,7 @@ table = db.define_table(tablename,
                 Field("name"),
                 Field("logo"),
                 Field("header_background"),
-                Field("footer"),
+                #Field("footer"),
                 Field("text_direction"),
                 Field("col_background"),
                 Field("col_txt"),
@@ -139,6 +139,20 @@ table = db.define_table(tablename,
                 Field("col_border_btn_in"),
                 Field("col_btn_hover"),
                 migrate=migrate)
+
+table.name.requires = [IS_NOT_EMPTY(), IS_NOT_IN_DB(db, "%s.name" % tablename)]
+table.text_direction.requires = IS_IN_SET({"ltr":T("Left-to-Right"), "rtl":T("Right-to-Left")}, zero=None)
+table.col_background.requires = IS_HTML_COLOUR()
+table.col_txt.requires = IS_HTML_COLOUR()
+table.col_txt_background.requires = IS_HTML_COLOUR()
+table.col_txt_border.requires = IS_HTML_COLOUR()
+table.col_txt_underline.requires = IS_HTML_COLOUR()
+table.col_menu.requires = IS_HTML_COLOUR()
+table.col_highlight.requires = IS_HTML_COLOUR()
+table.col_input.requires = IS_HTML_COLOUR()
+table.col_border_btn_out.requires = IS_HTML_COLOUR()
+table.col_border_btn_in.requires = IS_HTML_COLOUR()
+table.col_btn_hover.requires = IS_HTML_COLOUR()
 
 module = "s3"
 # Auditing
@@ -228,7 +242,7 @@ s3.crud_strings[tablename] = Storage(
     msg_record_modified = T("Source updated"),
     msg_record_deleted = T("Source deleted"),
     msg_list_empty = T("No Sources currently registered"))
-# Reusable field for other tables to reference
+# Reusable field to include in other table definitions
 source_id = SQLTable(None, "source_id",
             FieldS3("source_id", db.s3_source, sortby="name",
                 requires = IS_NULL_OR(IS_ONE_OF(db, "s3_source.id", "%(name)s")),

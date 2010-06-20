@@ -35,26 +35,16 @@ def log():
     """ RESTlike CRUD controller """
     resource = 'log'
     tablename = "%s_%s" % (module, resource)
+    table = db[tablename]
 
     # Model options
-    ticket_priority_opts = {
-        3:T('High'),
-        2:T('Medium'),
-        1:T('Low')
-    }
-
-    table = db[tablename]
-    table.uuid.requires = IS_NOT_IN_DB(db, "%s.uuid" % tablename)
-    table.message.requires = IS_NOT_EMPTY()
     table.message.comment = SPAN("*", _class="req")
-    table.priority.requires = IS_NULL_OR(IS_IN_SET(ticket_priority_opts))
     table.priority.represent = lambda id: (
         [id and
             DIV(IMG(_src='/%s/static/img/priority/priority_%d.gif' % (request.application,id,), _height=12)) or
             DIV(IMG(_src='/%s/static/img/priority/priority_4.gif' % request.application), _height=12)
         ][0].xml())
     table.priority.label = T('Priority')
-    table.categories.requires = IS_NULL_OR(IS_IN_DB(db, db.ticket_category.id, '%(name)s', multiple=True))
     #FixMe: represent for multiple=True
     #table.categories.represent = lambda id: (id and [db(db.ticket_category.id==id).select()[0].name] or ["None"])[0]
     table.source.label = T('Source')

@@ -73,19 +73,21 @@ def organisation():
 def office():
     "RESTlike CRUD controller"
     resource = "office"
-    table = "%s_%s" % (module, resource)
+    tablename = "%s_%s" % (module, resource)
+    table = db[tablename]
+    
     if isinstance(request.vars.organisation_id, list):
         request.vars.organisation_id = request.vars.organisation_id[0]
     if session.s3.security_policy == 1:
         # Hide the Admin row for simple security_policy
-        db[table].admin.readable = db[table].admin.writable = False
+        table.admin.readable = table.admin.writable = False
     # ServerSidePagination
     response.s3.pagination = True
 
     # the update forms are not ready. when they will - uncomment this and comment the next one
     #if request.args(0) in ("create", "update"):
     if request.args(0) == "create":
-        db[table].organisation_id.requires = IS_NULL_OR(IS_ONE_OF_EMPTY(db, "or_organisation.id"))
+        table.organisation_id.requires = IS_NULL_OR(IS_ONE_OF_EMPTY(db, "or_organisation.id"))
         if request.vars.organisation_id:
             session.s3.organisation_id = request.vars.organisation_id
             # Organisation name should be displayed on the form if organisation_id is pre-selected
@@ -98,8 +100,9 @@ def office():
 def contact():
     "RESTlike CRUD controller"
     resource = "contact"
-    table = "%s_%s" % (module, resource)
-
+    tablename = "%s_%s" % (module, resource)
+    table = db[tablename]
+    
     # ServerSidePagination
     response.s3.pagination = True
 
@@ -109,9 +112,9 @@ def contact():
     #if request.args(0) in ("create", "update"):
     if request.args(0) == "create":
         # person_id mandatory for a contact!
-        db[table].person_id.requires = IS_ONE_OF_EMPTY(db, "pr_person.id")
-        db[table].organisation_id.requires = IS_NULL_OR(IS_ONE_OF_EMPTY(db, "or_organisation.id"))
-        db[table].office_id.requires = IS_NULL_OR(IS_ONE_OF_EMPTY(db, "or_office.id"))
+        table.person_id.requires = IS_ONE_OF_EMPTY(db, "pr_person.id")
+        table.organisation_id.requires = IS_NULL_OR(IS_ONE_OF_EMPTY(db, "or_organisation.id"))
+        table.office_id.requires = IS_NULL_OR(IS_ONE_OF_EMPTY(db, "or_office.id"))
 
     return shn_rest_controller(module, resource, listadd=False)
 
@@ -144,40 +147,41 @@ def project_table_linkto_update(field):
     return URL(r=request, f = "project", args=[field, "update"],
                 vars={"_next":URL(r=request, args=request.args, vars=request.vars)})
 
-def org_sub_list( table , org_id):
+def org_sub_list(tablename, org_id):
     fields = []
     headers = {}
-
-    for field in db[table]:
+    table = db[tablename]
+    
+    for field in table:
         if field.readable and field.name <> "organisation_id" and field.name <> "admin":
             headers[str(field)] = str(field.label)
             fields.append(field)
 
     table_linkto_update = dict( \
-    or_office = office_table_linkto_update,
-    or_contact =  contact_table_linkto_update,
-    or_project = project_table_linkto_update,
+        or_office = office_table_linkto_update,
+        or_contact =  contact_table_linkto_update,
+        or_project = project_table_linkto_update,
     )
 
     table_linkto = dict( \
-    or_office = office_table_linkto,
-    or_contact = contact_table_linkto,
-    or_project = project_table_linkto,
+        or_office = office_table_linkto,
+        or_contact = contact_table_linkto,
+        or_project = project_table_linkto,
     )
 
-    authorised = shn_has_permission("update", table)
+    authorised = shn_has_permission("update", tablename)
     if authorised:
-        linkto = table_linkto_update[table]
+        linkto = table_linkto_update[tablename]
     else:
-        linkto = table_linkto[table]
+        linkto = table_linkto[tablenname]
 
-    query = (db[table].organisation_id == org_id)
+    query = (table.organisation_id == org_id)
 
-    list =  crud.select(table, query = db[table].organisation_id == org_id, fields = fields, headers = headers, linkto = linkto, truncate=48, _id = table + "_list", _class="display")
+    list =  crud.select(table, query = table.organisation_id == org_id, fields = fields, headers = headers, linkto = linkto, truncate=48, _id = tablename + "_list", _class="display")
 
-    #Required so that there is a table with an ID for the refresh after add
+    # Required so that there is a table with an ID for the refresh after add
     if list == None:
-        list = TABLE("None", _id = table + "_list")
+        list = TABLE("None", _id = tablename + "_list")
 
     return list
 

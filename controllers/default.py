@@ -52,7 +52,6 @@ def user():
     _table_user.language.label = T("Language")
     _table_user.language.default = "en"
     _table_user.language.comment = DIV(_class="tooltip", _title=T("Language|The language to use for notifications."))
-    _table_user.language.requires = IS_IN_SET(shn_languages, zero=None)
     _table_user.language.represent = lambda opt: shn_languages.get(opt, UNKNOWN_OPT)
 
     form = auth()

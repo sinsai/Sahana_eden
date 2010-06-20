@@ -50,6 +50,7 @@ def test():
                 #wms_browser = {"name" : "Risk Maps", "url" : "http://www.pdc.org/wms/wmservlet/PDC_Active_Hazards?request=getcapabilities&service=WMS&version=1.1.1"},
                 catalogue_overlays = True,
                 catalogue_toolbar = True,
+                legend = True,
                 toolbar = True,
                 search = True,
                 #print_tool = {"url" : "http://localhost:8080/geoserver/pdf/"},
@@ -110,6 +111,10 @@ def apikey():
     response.s3.postp = user_postp
 
     output = shn_rest_controller(module, resource, deletable=False, listadd=False)
+    
+    if not "gis" in response.view:
+        response.view = "gis/" + response.view
+    
     return output
 
 def config():
@@ -154,7 +159,14 @@ def config():
         #msg_list_empty = T("No Configs currently defined")
     )
 
-    return shn_rest_controller(module, resource, deletable=False, listadd=False)
+    output = shn_rest_controller(module, resource, deletable=False, listadd=False)
+    
+    if not "gis" in response.view:
+        response.view = "gis/" + response.view
+    
+    output["list_btn"] = ""
+    
+    return output
 
 def feature_class():
     "RESTlike CRUD controller"
@@ -196,6 +208,10 @@ def feature_class():
     response.s3.postp = user_postp
 
     output = shn_rest_controller(module, resource)
+    
+    if not "gis" in response.view:
+        response.view = "gis/" + response.view
+    
     return output
 
 def feature_group():
@@ -236,19 +252,11 @@ def feature_group():
     response.s3.postp = user_postp
 
     output = shn_rest_controller(module, resource)
+    
+    if not "gis" in response.view:
+        response.view = "gis/" + response.view
+    
     return output
-
-
-def location_to_feature_group():
-    "RESTlike CRUD controller"
-    resource = "location_to_feature_group"
-    table = module + "_" + resource
-
-    # Model options
-
-    # CRUD Strings
-
-    return shn_rest_controller(module, resource)
 
 def feature_class_to_feature_group():
     "RESTlike CRUD controller"
@@ -266,6 +274,10 @@ def feature_class_to_feature_group():
     response.s3.postp = user_postp
 
     output = shn_rest_controller(module, resource)
+    
+    if not "gis" in response.view:
+        response.view = "gis/" + response.view
+    
     return output
 
 def location():
@@ -395,6 +407,10 @@ def marker():
     response.s3.postp = user_postp
 
     output = shn_rest_controller(module, resource)
+    
+    if not "gis" in response.view:
+        response.view = "gis/" + response.view
+    
     return output
 
 def projection():
@@ -440,6 +456,10 @@ def projection():
     response.s3.postp = user_postp
 
     output = shn_rest_controller(module, resource, deletable=False)
+    
+    if not "gis" in response.view:
+        response.view = "gis/" + response.view
+    
     return output
 
 def track():
@@ -477,6 +497,7 @@ LAYER_DELETED = T("Layer deleted")
 # These may be differentiated per type of layer.
 TYPE_LAYERS_FMT = "%s Layers"
 ADD_NEW_TYPE_LAYER_FMT = "Add New %s Layer"
+EDIT_TYPE_LAYER_FMT = "Edit %s Layer"
 LIST_TYPE_LAYERS_FMT = "List %s Layers"
 NO_TYPE_LAYERS_FMT = "No %s Layers currently defined"
 
@@ -489,8 +510,9 @@ def layer_openstreetmap():
 
     # CRUD Strings
     type = "OpenStreetMap"
-    LIST_OSM_LAYERS = T(LIST_TYPE_LAYERS_FMT % type)
-    NO_OSM_LAYERS = T(NO_TYPE_LAYERS_FMT % type)
+    LIST_LAYERS = T(LIST_TYPE_LAYERS_FMT % type)
+    EDIT_LAYER = T(EDIT_TYPE_LAYER_FMT % type)
+    NO_LAYERS = T(NO_TYPE_LAYERS_FMT % type)
     s3.crud_strings[table] = Storage(
         title_create=ADD_LAYER,
         title_display=LAYER_DETAILS,
@@ -499,13 +521,13 @@ def layer_openstreetmap():
         title_search=SEARCH_LAYERS,
         subtitle_create=ADD_NEW_LAYER,
         subtitle_list=LIST_LAYERS,
-        label_list_button=LIST_OSM_LAYERS,
+        label_list_button=LIST_LAYERS,
         label_create_button=ADD_LAYER,
         label_delete_button = DELETE_LAYER,
         msg_record_created=LAYER_ADDED,
         msg_record_modified=LAYER_UPDATED,
         msg_record_deleted=LAYER_DELETED,
-        msg_list_empty=NO_OSM_LAYERS)
+        msg_list_empty=NO_LAYERS)
 
     # Post-processor
     def user_postp(jr, output):
@@ -523,6 +545,10 @@ def layer_openstreetmap():
     response.s3.postp = user_postp
 
     output = shn_rest_controller(module, resource, deletable=False, listadd=False)
+    
+    if not "gis" in response.view:
+        response.view = "gis/" + response.view
+    
     return output
 
 def layer_google():
@@ -534,8 +560,9 @@ def layer_google():
 
     # CRUD Strings
     type = "Google"
-    LIST_GOOGLE_LAYERS = T(LIST_TYPE_LAYERS_FMT % type)
-    NO_GOOGLE_LAYERS = T(NO_TYPE_LAYERS_FMT % type)
+    LIST_LAYERS = T(LIST_TYPE_LAYERS_FMT % type)
+    EDIT_LAYER = T(EDIT_TYPE_LAYER_FMT % type)
+    NO_LAYERS = T(NO_TYPE_LAYERS_FMT % type)
     s3.crud_strings[table] = Storage(
         title_create=ADD_LAYER,
         title_display=LAYER_DETAILS,
@@ -544,13 +571,13 @@ def layer_google():
         title_search=SEARCH_LAYERS,
         subtitle_create=ADD_NEW_LAYER,
         subtitle_list=LIST_LAYERS,
-        label_list_button=LIST_GOOGLE_LAYERS,
+        label_list_button=LIST_LAYERS,
         label_create_button=ADD_LAYER,
         label_delete_button = DELETE_LAYER,
         msg_record_created=LAYER_ADDED,
         msg_record_modified=LAYER_UPDATED,
         msg_record_deleted=LAYER_DELETED,
-        msg_list_empty=NO_GOOGLE_LAYERS)
+        msg_list_empty=NO_LAYERS)
 
     # Post-processor
     def user_postp(jr, output):
@@ -568,6 +595,10 @@ def layer_google():
     response.s3.postp = user_postp
 
     output = shn_rest_controller(module, resource, deletable=False, listadd=False)
+    
+    if not "gis" in response.view:
+        response.view = "gis/" + response.view
+    
     return output
 
 def layer_yahoo():
@@ -579,8 +610,9 @@ def layer_yahoo():
 
     # CRUD Strings
     type = "Yahoo"
-    LIST_YAHOO_LAYERS = T(LIST_TYPE_LAYERS_FMT % type)
-    NO_YAHOO_LAYERS = T(NO_TYPE_LAYERS_FMT % type)
+    LIST_LAYERS = T(LIST_TYPE_LAYERS_FMT % type)
+    EDIT_LAYER = T(EDIT_TYPE_LAYER_FMT % type)
+    NO_LAYERS = T(NO_TYPE_LAYERS_FMT % type)
     s3.crud_strings[table] = Storage(
         title_create=ADD_LAYER,
         title_display=LAYER_DETAILS,
@@ -589,13 +621,13 @@ def layer_yahoo():
         title_search=SEARCH_LAYERS,
         subtitle_create=ADD_NEW_LAYER,
         subtitle_list=LIST_LAYERS,
-        label_list_button=LIST_YAHOO_LAYERS,
+        label_list_button=LIST_LAYERS,
         label_create_button=ADD_LAYER,
         label_delete_button = DELETE_LAYER,
         msg_record_created=LAYER_ADDED,
         msg_record_modified=LAYER_UPDATED,
         msg_record_deleted=LAYER_DELETED,
-        msg_list_empty=NO_YAHOO_LAYERS)
+        msg_list_empty=NO_LAYERS)
 
     # Post-processor
     def user_postp(jr, output):
@@ -613,6 +645,10 @@ def layer_yahoo():
     response.s3.postp = user_postp
 
     output = shn_rest_controller(module, resource, deletable=False, listadd=False)
+    
+    if not "gis" in response.view:
+        response.view = "gis/" + response.view
+    
     return output
 
 def layer_mgrs():
@@ -624,8 +660,9 @@ def layer_mgrs():
 
     # CRUD Strings
     type = "MGRS"
-    LIST_MGRS_LAYERS = T(LIST_TYPE_LAYERS_FMT % type)
-    NO_MGRS_LAYERS = T(NO_TYPE_LAYERS_FMT % type)
+    LIST_LAYERS = T(LIST_TYPE_LAYERS_FMT % type)
+    EDIT_LAYER = T(EDIT_TYPE_LAYER_FMT % type)
+    NO_LAYERS = T(NO_TYPE_LAYERS_FMT % type)
     s3.crud_strings[table] = Storage(
         title_create=ADD_LAYER,
         title_display=LAYER_DETAILS,
@@ -634,13 +671,13 @@ def layer_mgrs():
         title_search=SEARCH_LAYERS,
         subtitle_create=ADD_NEW_LAYER,
         subtitle_list=LIST_LAYERS,
-        label_list_button=LIST_MGRS_LAYERS,
+        label_list_button=LIST_LAYERS,
         label_create_button=ADD_LAYER,
         label_delete_button = DELETE_LAYER,
         msg_record_created=LAYER_ADDED,
         msg_record_modified=LAYER_UPDATED,
         msg_record_deleted=LAYER_DELETED,
-        msg_list_empty=NO_MGRS_LAYERS)
+        msg_list_empty=NO_LAYERS)
 
     # Post-processor
     def user_postp(jr, output):
@@ -658,6 +695,10 @@ def layer_mgrs():
     response.s3.postp = user_postp
 
     output = shn_rest_controller(module, resource, deletable=False, listadd=False)
+    
+    if not "gis" in response.view:
+        response.view = "gis/" + response.view
+    
     return output
 
 def layer_bing():
@@ -669,8 +710,9 @@ def layer_bing():
 
     # CRUD Strings
     type = "Bing"
-    LIST_BING_LAYERS = T(LIST_TYPE_LAYERS_FMT % type)
-    NO_BING_LAYERS = T(NO_TYPE_LAYERS_FMT % type)
+    LIST_LAYERS = T(LIST_TYPE_LAYERS_FMT % type)
+    EDIT_LAYER = T(EDIT_TYPE_LAYER_FMT % type)
+    NO_LAYERS = T(NO_TYPE_LAYERS_FMT % type)
     s3.crud_strings[table] = Storage(
         title_create=ADD_LAYER,
         title_display=LAYER_DETAILS,
@@ -679,13 +721,13 @@ def layer_bing():
         title_search=SEARCH_LAYERS,
         subtitle_create=ADD_NEW_LAYER,
         subtitle_list=LIST_LAYERS,
-        label_list_button=LIST_BING_LAYERS,
+        label_list_button=LIST_LAYERS,
         label_create_button=ADD_LAYER,
         label_delete_button = DELETE_LAYER,
         msg_record_created=LAYER_ADDED,
         msg_record_modified=LAYER_UPDATED,
         msg_record_deleted=LAYER_DELETED,
-        msg_list_empty=NO_BING_LAYERS)
+        msg_list_empty=NO_LAYERS)
 
     # Post-processor
     def user_postp(jr, output):
@@ -703,6 +745,10 @@ def layer_bing():
     response.s3.postp = user_postp
 
     output = shn_rest_controller(module, resource, deletable=False, listadd=False)
+    
+    if not "gis" in response.view:
+        response.view = "gis/" + response.view
+    
     return output
 
 def layer_georss():
@@ -716,25 +762,26 @@ def layer_georss():
 
     # CRUD Strings
     type = "GeoRSS"
-    GEORSS_LAYERS = T(TYPE_LAYERS_FMT % type)
-    ADD_NEW_GEORSS_LAYER = T(ADD_NEW_TYPE_LAYER_FMT % type)
-    LIST_GEORSS_LAYERS = T(LIST_TYPE_LAYERS_FMT % type)
-    NO_GEORSS_LAYERS = T(NO_TYPE_LAYERS_FMT % type)
+    LAYERS = T(TYPE_LAYERS_FMT % type)
+    ADD_NEW_LAYER = T(ADD_NEW_TYPE_LAYER_FMT % type)
+    EDIT_LAYER = T(EDIT_TYPE_LAYER_FMT % type)
+    LIST_LAYERS = T(LIST_TYPE_LAYERS_FMT % type)
+    NO_LAYERS = T(NO_TYPE_LAYERS_FMT % type)
     s3.crud_strings[tablename] = Storage(
         title_create=ADD_LAYER,
         title_display=LAYER_DETAILS,
-        title_list=GEORSS_LAYERS,
+        title_list=LAYERS,
         title_update=EDIT_LAYER,
         title_search=SEARCH_LAYERS,
-        subtitle_create=ADD_NEW_GEORSS_LAYER,
-        subtitle_list=LIST_GEORSS_LAYERS,
-        label_list_button=LIST_GEORSS_LAYERS,
+        subtitle_create=ADD_NEW_LAYER,
+        subtitle_list=LIST_LAYERS,
+        label_list_button=LIST_LAYERS,
         label_create_button=ADD_LAYER,
         label_delete_button = DELETE_LAYER,
         msg_record_created=LAYER_ADDED,
         msg_record_modified=LAYER_UPDATED,
         msg_record_deleted=LAYER_DELETED,
-        msg_list_empty=NO_GEORSS_LAYERS)
+        msg_list_empty=NO_LAYERS)
 
     # Post-processor
     def user_postp(jr, output):
@@ -742,7 +789,11 @@ def layer_georss():
         return output
     response.s3.postp = user_postp
 
-    output = shn_rest_controller(module, resource, deletable=False)
+    output = shn_rest_controller(module, resource)
+    
+    if not "gis" in response.view:
+        response.view = "gis/" + response.view
+    
     return output
 
 def layer_gpx():
@@ -755,25 +806,26 @@ def layer_gpx():
 
     # CRUD Strings
     type = "GPX"
-    GPX_LAYERS = T(TYPE_LAYERS_FMT % type)
-    ADD_NEW_GPX_LAYER = T(ADD_NEW_TYPE_LAYER_FMT % type)
-    LIST_GPX_LAYERS = T(LIST_TYPE_LAYERS_FMT % type)
-    NO_GPX_LAYERS = T(NO_TYPE_LAYERS_FMT % type)
+    LAYERS = T(TYPE_LAYERS_FMT % type)
+    ADD_NEW_LAYER = T(ADD_NEW_TYPE_LAYER_FMT % type)
+    EDIT_LAYER = T(EDIT_TYPE_LAYER_FMT % type)
+    LIST_LAYERS = T(LIST_TYPE_LAYERS_FMT % type)
+    NO_LAYERS = T(NO_TYPE_LAYERS_FMT % type)
     s3.crud_strings[table] = Storage(
         title_create=ADD_LAYER,
         title_display=LAYER_DETAILS,
-        title_list=GPX_LAYERS,
+        title_list=LAYERS,
         title_update=EDIT_LAYER,
         title_search=SEARCH_LAYERS,
-        subtitle_create=ADD_NEW_GPX_LAYER,
-        subtitle_list=LIST_GPX_LAYERS,
-        label_list_button=LIST_GPX_LAYERS,
+        subtitle_create=ADD_NEW_LAYER,
+        subtitle_list=LIST_LAYERS,
+        label_list_button=LIST_LAYERS,
         label_create_button=ADD_LAYER,
         label_delete_button = DELETE_LAYER,
         msg_record_created=LAYER_ADDED,
         msg_record_modified=LAYER_UPDATED,
         msg_record_deleted=LAYER_DELETED,
-        msg_list_empty=NO_GPX_LAYERS)
+        msg_list_empty=NO_LAYERS)
 
     # Post-processor
     def user_postp(jr, output):
@@ -781,7 +833,11 @@ def layer_gpx():
         return output
     response.s3.postp = user_postp
 
-    output = shn_rest_controller(module, resource, deletable=False)
+    output = shn_rest_controller(module, resource)
+    
+    if not "gis" in response.view:
+        response.view = "gis/" + response.view
+    
     return output
 
 def layer_kml():
@@ -795,25 +851,26 @@ def layer_kml():
 
     # CRUD Strings
     type = "KML"
-    KML_LAYERS = T(TYPE_LAYERS_FMT % type)
-    ADD_NEW_KML_LAYER = T(ADD_NEW_TYPE_LAYER_FMT % type)
-    LIST_KML_LAYERS = T(LIST_TYPE_LAYERS_FMT % type)
-    NO_KML_LAYERS = T(NO_TYPE_LAYERS_FMT % type)
+    LAYERS = T(TYPE_LAYERS_FMT % type)
+    ADD_NEW_LAYER = T(ADD_NEW_TYPE_LAYER_FMT % type)
+    EDIT_LAYER = T(EDIT_TYPE_LAYER_FMT % type)
+    LIST_LAYERS = T(LIST_TYPE_LAYERS_FMT % type)
+    NO_LAYERS = T(NO_TYPE_LAYERS_FMT % type)
     s3.crud_strings[tablename] = Storage(
         title_create=ADD_LAYER,
         title_display=LAYER_DETAILS,
-        title_list=KML_LAYERS,
+        title_list=LAYERS,
         title_update=EDIT_LAYER,
         title_search=SEARCH_LAYERS,
-        subtitle_create=ADD_NEW_KML_LAYER,
-        subtitle_list=LIST_KML_LAYERS,
-        label_list_button=LIST_KML_LAYERS,
+        subtitle_create=ADD_NEW_LAYER,
+        subtitle_list=LIST_LAYERS,
+        label_list_button=LIST_LAYERS,
         label_create_button=ADD_LAYER,
         label_delete_button = DELETE_LAYER,
         msg_record_created=LAYER_ADDED,
         msg_record_modified=LAYER_UPDATED,
         msg_record_deleted=LAYER_DELETED,
-        msg_list_empty=NO_KML_LAYERS)
+        msg_list_empty=NO_LAYERS)
 
     # Post-processor
     def user_postp(jr, output):
@@ -821,7 +878,11 @@ def layer_kml():
         return output
     response.s3.postp = user_postp
 
-    output = shn_rest_controller(module, resource, deletable=False)
+    output = shn_rest_controller(module, resource)
+    
+    if not "gis" in response.view:
+        response.view = "gis/" + response.view
+    
     return output
 
 def layer_tms():
@@ -836,25 +897,26 @@ def layer_tms():
 
     # CRUD Strings
     type = "TMS"
-    TMS_LAYERS = T(TYPE_LAYERS_FMT % type)
-    ADD_NEW_TMS_LAYER = T(ADD_NEW_TYPE_LAYER_FMT % type)
-    LIST_TMS_LAYERS = T(LIST_TYPE_LAYERS_FMT % type)
-    NO_TMS_LAYERS = T(NO_TYPE_LAYERS_FMT % type)
+    LAYERS = T(TYPE_LAYERS_FMT % type)
+    ADD_NEW_LAYER = T(ADD_NEW_TYPE_LAYER_FMT % type)
+    EDIT_LAYER = T(EDIT_TYPE_LAYER_FMT % type)
+    LIST_LAYERS = T(LIST_TYPE_LAYERS_FMT % type)
+    NO_LAYERS = T(NO_TYPE_LAYERS_FMT % type)
     s3.crud_strings[tablename] = Storage(
         title_create=ADD_LAYER,
         title_display=LAYER_DETAILS,
-        title_list=TMS_LAYERS,
+        title_list=LAYERS,
         title_update=EDIT_LAYER,
         title_search=SEARCH_LAYERS,
-        subtitle_create=ADD_NEW_TMS_LAYER,
-        subtitle_list=LIST_TMS_LAYERS,
-        label_list_button=LIST_TMS_LAYERS,
+        subtitle_create=ADD_NEW_LAYER,
+        subtitle_list=LIST_LAYERS,
+        label_list_button=LIST_LAYERS,
         label_create_button=ADD_LAYER,
         label_delete_button = DELETE_LAYER,
         msg_record_created=LAYER_ADDED,
         msg_record_modified=LAYER_UPDATED,
         msg_record_deleted=LAYER_DELETED,
-        msg_list_empty=NO_TMS_LAYERS)
+        msg_list_empty=NO_LAYERS)
 
     # Post-processor
     def user_postp(jr, output):
@@ -862,7 +924,11 @@ def layer_tms():
         return output
     response.s3.postp = user_postp
 
-    output = shn_rest_controller(module, resource, deletable=False)
+    output = shn_rest_controller(module, resource)
+    
+    if not "gis" in response.view:
+        response.view = "gis/" + response.view
+    
     return output
 
 def layer_wms():
@@ -872,31 +938,31 @@ def layer_wms():
     table = db[tablename]
 
     # Model options
-    #table.url.requires = [IS_URL, IS_NOT_EMPTY()]
     table.url.comment = SPAN("*", _class="req")
     table.layers.comment = SPAN("*", _class="req")
 
     # CRUD Strings
     type = "WMS"
-    WMS_LAYERS = T(TYPE_LAYERS_FMT % type)
-    ADD_NEW_WMS_LAYER = T(ADD_NEW_TYPE_LAYER_FMT % type)
-    LIST_WMS_LAYERS = T(LIST_TYPE_LAYERS_FMT % type)
-    NO_WMS_LAYERS = T(NO_TYPE_LAYERS_FMT % type)
+    LAYERS = T(TYPE_LAYERS_FMT % type)
+    ADD_NEW_LAYER = T(ADD_NEW_TYPE_LAYER_FMT % type)
+    EDIT_LAYER = T(EDIT_TYPE_LAYER_FMT % type)
+    LIST_LAYERS = T(LIST_TYPE_LAYERS_FMT % type)
+    NO_LAYERS = T(NO_TYPE_LAYERS_FMT % type)
     s3.crud_strings[tablename] = Storage(
         title_create=ADD_LAYER,
         title_display=LAYER_DETAILS,
-        title_list=WMS_LAYERS,
+        title_list=LAYERS,
         title_update=EDIT_LAYER,
         title_search=SEARCH_LAYERS,
-        subtitle_create=ADD_NEW_WMS_LAYER,
-        subtitle_list=LIST_WMS_LAYERS,
-        label_list_button=LIST_WMS_LAYERS,
+        subtitle_create=ADD_NEW_LAYER,
+        subtitle_list=LIST_LAYERS,
+        label_list_button=LIST_LAYERS,
         label_create_button=ADD_LAYER,
         label_delete_button = DELETE_LAYER,
         msg_record_created=LAYER_ADDED,
         msg_record_modified=LAYER_UPDATED,
         msg_record_deleted=LAYER_DELETED,
-        msg_list_empty=NO_WMS_LAYERS)
+        msg_list_empty=NO_LAYERS)
 
     # Post-processor
     def user_postp(jr, output):
@@ -904,7 +970,11 @@ def layer_wms():
         return output
     response.s3.postp = user_postp
 
-    output = shn_rest_controller(module, resource, deletable=False)
+    output = shn_rest_controller(module, resource)
+    
+    if not "gis" in response.view:
+        response.view = "gis/" + response.view
+    
     return output
 
 #@auth.requires_membership("AdvancedJS")
@@ -917,25 +987,26 @@ def layer_js():
 
     # CRUD Strings
     type = "JS"
-    JS_LAYERS = T(TYPE_LAYERS_FMT % type)
-    ADD_NEW_JS_LAYER = T(ADD_NEW_TYPE_LAYER_FMT % type)
-    LIST_JS_LAYERS = T(LIST_TYPE_LAYERS_FMT % type)
-    NO_JS_LAYERS = T(NO_TYPE_LAYERS_FMT % type)
+    LAYERS = T(TYPE_LAYERS_FMT % type)
+    ADD_NEW_LAYER = T(ADD_NEW_TYPE_LAYER_FMT % type)
+    EDIT_LAYER = T(EDIT_TYPE_LAYER_FMT % type)
+    LIST_LAYERS = T(LIST_TYPE_LAYERS_FMT % type)
+    NO_LAYERS = T(NO_TYPE_LAYERS_FMT % type)
     s3.crud_strings[table] = Storage(
         title_create=ADD_LAYER,
         title_display=LAYER_DETAILS,
-        title_list=JS_LAYERS,
+        title_list=LAYERS,
         title_update=EDIT_LAYER,
         title_search=SEARCH_LAYERS,
-        subtitle_create=ADD_NEW_JS_LAYER,
-        subtitle_list=LIST_JS_LAYERS,
-        label_list_button=LIST_JS_LAYERS,
+        subtitle_create=ADD_NEW_LAYER,
+        subtitle_list=LIST_LAYERS,
+        label_list_button=LIST_LAYERS,
         label_create_button=ADD_LAYER,
         label_delete_button = DELETE_LAYER,
         msg_record_created=LAYER_ADDED,
         msg_record_modified=LAYER_UPDATED,
         msg_record_deleted=LAYER_DELETED,
-        msg_list_empty=NO_JS_LAYERS)
+        msg_list_empty=NO_LAYERS)
 
     # Post-processor
     def user_postp(jr, output):
@@ -943,7 +1014,11 @@ def layer_js():
         return output
     response.s3.postp = user_postp
 
-    output = shn_rest_controller(module, resource, deletable=False)
+    output = shn_rest_controller(module, resource)
+    
+    if not "gis" in response.view:
+        response.view = "gis/" + response.view
+    
     return output
 
 def layer_xyz():
@@ -957,25 +1032,26 @@ def layer_xyz():
 
     # CRUD Strings
     type = "XYZ"
-    XYZ_LAYERS = T(TYPE_LAYERS_FMT % type)
-    ADD_NEW_XYZ_LAYER = T(ADD_NEW_TYPE_LAYER_FMT % type)
-    LIST_XYZ_LAYERS = T(LIST_TYPE_LAYERS_FMT % type)
-    NO_XYZ_LAYERS = T(NO_TYPE_LAYERS_FMT % type)
+    LAYERS = T(TYPE_LAYERS_FMT % type)
+    ADD_NEW_LAYER = T(ADD_NEW_TYPE_LAYER_FMT % type)
+    EDIT_LAYER = T(EDIT_LAYER_FMT % type)
+    LIST_LAYERS = T(LIST_TYPE_LAYERS_FMT % type)
+    NO_LAYERS = T(NO_TYPE_LAYERS_FMT % type)
     s3.crud_strings[tablename] = Storage(
         title_create=ADD_LAYER,
         title_display=LAYER_DETAILS,
-        title_list=XYZ_LAYERS,
+        title_list=LAYERS,
         title_update=EDIT_LAYER,
         title_search=SEARCH_LAYERS,
-        subtitle_create=ADD_NEW_XYZ_LAYER,
-        subtitle_list=LIST_XYZ_LAYERS,
-        label_list_button=LIST_XYZ_LAYERS,
+        subtitle_create=ADD_NEW_LAYER,
+        subtitle_list=LIST_LAYERS,
+        label_list_button=LIST_LAYERS,
         label_create_button=ADD_LAYER,
         label_delete_button = DELETE_LAYER,
         msg_record_created=LAYER_ADDED,
         msg_record_modified=LAYER_UPDATED,
         msg_record_deleted=LAYER_DELETED,
-        msg_list_empty=NO_XYZ_LAYERS)
+        msg_list_empty=NO_LAYERS)
 
     # Post-processor
     def user_postp(jr, output):
@@ -983,7 +1059,11 @@ def layer_xyz():
         return output
     response.s3.postp = user_postp
 
-    output = shn_rest_controller(module, resource, deletable=False)
+    output = shn_rest_controller(module, resource)
+    
+    if not "gis" in response.view:
+        response.view = "gis/" + response.view
+    
     return output
 
 # Module-specific functions

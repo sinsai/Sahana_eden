@@ -18,17 +18,12 @@
 </head>
 <body>
 
-{{if session.s3.restricted:}}
 <!--
+If restricted in session.s3.roles:
 Load JavaScript to:
 * Go full-screen
 * Require Confirmation when leaving a page
 * Hide browser buttons, menu & URL bar
--->
-{{else:}}
-<!--
-<div id="header">
-</div>
 -->
 
 <div id="menu_modules">
@@ -55,12 +50,9 @@ Load JavaScript to:
 	</div>
 </div>
 
-{{if session.s3.restricted:}}
-{{else:}}
 <div id="footer">
-    {{include session.s3.theme.footer}}
+    {{include "footer.html"}}
 </div>
-{{pass}}
 
 </body>
 </html>

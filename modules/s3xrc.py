@@ -288,7 +288,7 @@ class S3RESTController(object):
             # Joined Table Operation
             if jr.component:
                 # HTTP Multi-Record Operation
-                if jr.method==None and jr.multiple and not jr.component_id:
+                if jr.method == None and jr.multiple and not jr.component_id:
                     # HTTP List/List-add
                     if jr.http == "GET":
                         authorised = self.__has_permission(session, "read",
@@ -333,7 +333,7 @@ class S3RESTController(object):
                         else:
                             self.__unauthorised(jr, session)
                     # HTTP Update
-                    elif jr.http=="PUT" or jr.http == "POST":
+                    elif jr.http == "PUT" or jr.http == "POST":
                         if jr.representation in self.json_import_formats:
                             method = "import_json"
                         elif jr.representation in self.xml_import_formats:

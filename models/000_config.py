@@ -61,6 +61,7 @@ deployment_settings.L10n.utc_offset = "UTC +0000"
 # Module settings
 # Comment/uncomment modules here to disable/enable them
 deployment_settings.modules = [
+    "admin",        # Admin
     "gis",          # GIS
     "media",        # Media Manager
     "pr",           # Person Registry

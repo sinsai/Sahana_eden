@@ -21,13 +21,6 @@ response.menu_options = [
     [T("Bulk Uploader"), False, URL(r=request, c="media", f="bulk_upload")],
 ]
 
-# Joined Resource
-#s3xrc.model.add_component("media", "metadata",
-#    multiple=True,
-#    joinby=dict(gis_location="location_id"),
-#    deletable=True,
-#    editable=True)
-
 # Web2Py Tools functions
 def download():
     "Download a file."
@@ -36,9 +29,7 @@ def download():
 # S3 framework functions
 def index():
     "Module's Home Page"
-
     module_name = s3.modules[module]["name_nice"]
-
     return dict(module_name=module_name)
 
 def test():
@@ -59,9 +50,10 @@ def test():
                 #wms_browser = {"name" : "Risk Maps", "url" : "http://www.pdc.org/wms/wmservlet/PDC_Active_Hazards?request=getcapabilities&service=WMS&version=1.1.1"},
                 catalogue_overlays = True,
                 catalogue_toolbar = True,
+                legend = True,
                 toolbar = True,
                 search = True,
-                #print_tool = {"url" : "http://localhost:8080/geoserver/pdf/"},
+                print_tool = {"url" : "http://localhost:8080/geoserver/pdf/"},
                 #mgrs = {"name" : "MGRS Atlas PDFs", "url" : "http://www.sharedgeo.org/datasets/shared/maps/usng/pdf.map?VERSION=1.0.0&SERVICE=WFS&request=GetFeature&typename=wfs_all_maps"},
                 window = True,
                 )
@@ -103,7 +95,27 @@ def apikey():
         msg_record_deleted = T("Key deleted"),
         msg_list_empty = T("No Keys currently defined"))
 
-    return shn_rest_controller(module, resource, deletable=False, listadd=False)
+    # Post-processor
+    def user_postp(jr, output):
+        if not jr.component:
+            if auth.is_logged_in():
+                # Provide the ability to delete records in bulk
+                response.s3.actions = [
+                    dict(label=str(T("Update")), _class="action-btn", url=str(URL(r=request, args=["[id]"])))
+                ]
+            else:
+                response.s3.actions = [
+                    dict(label=str(T("Details")), _class="action-btn", url=str(URL(r=request, args=["[id]"])))
+                ]
+            return output
+    response.s3.postp = user_postp
+
+    output = shn_rest_controller(module, resource, deletable=False, listadd=False)
+    
+    if not "gis" in response.view:
+        response.view = "gis/" + response.view
+    
+    return output
 
 def config():
     "RESTlike CRUD controller"
@@ -147,7 +159,14 @@ def config():
         #msg_list_empty = T("No Configs currently defined")
     )
 
-    return shn_rest_controller(module, resource, deletable=False, listadd=False)
+    output = shn_rest_controller(module, resource, deletable=False, listadd=False)
+    
+    if not "gis" in response.view:
+        response.view = "gis/" + response.view
+    
+    output["list_btn"] = ""
+    
+    return output
 
 def feature_class():
     "RESTlike CRUD controller"
@@ -182,7 +201,18 @@ def feature_class():
         msg_record_deleted = T("Feature Class deleted"),
         msg_list_empty = T("No Feature Classes currently defined"))
 
-    return shn_rest_controller(module, resource)
+    # Post-processor
+    def user_postp(jr, output):
+        shn_action_buttons(jr)
+        return output
+    response.s3.postp = user_postp
+
+    output = shn_rest_controller(module, resource)
+    
+    if not "gis" in response.view:
+        response.view = "gis/" + response.view
+    
+    return output
 
 def feature_group():
     "RESTlike CRUD controller"
@@ -215,19 +245,18 @@ def feature_group():
         msg_record_deleted = T("Feature Group deleted"),
         msg_list_empty = T("No Feature Groups currently defined"))
 
-    return shn_rest_controller(module, resource)
+    # Post-processor
+    def user_postp(jr, output):
+        shn_action_buttons(jr)
+        return output
+    response.s3.postp = user_postp
 
-
-def location_to_feature_group():
-    "RESTlike CRUD controller"
-    resource = "location_to_feature_group"
-    table = module + "_" + resource
-
-    # Model options
-
-    # CRUD Strings
-
-    return shn_rest_controller(module, resource)
+    output = shn_rest_controller(module, resource)
+    
+    if not "gis" in response.view:
+        response.view = "gis/" + response.view
+    
+    return output
 
 def feature_class_to_feature_group():
     "RESTlike CRUD controller"
@@ -238,7 +267,18 @@ def feature_class_to_feature_group():
 
     # CRUD Strings
 
-    return shn_rest_controller(module, resource)
+    # Post-processor
+    def user_postp(jr, output):
+        shn_action_buttons(jr)
+        return output
+    response.s3.postp = user_postp
+
+    output = shn_rest_controller(module, resource)
+    
+    if not "gis" in response.view:
+        response.view = "gis/" + response.view
+    
+    return output
 
 def location():
     "RESTlike CRUD controller"
@@ -318,6 +358,12 @@ def location():
 
     response.s3.pagination = True
 
+    # Post-processor
+    def user_postp(jr, output):
+        shn_action_buttons(jr)
+        return output
+    response.s3.postp = user_postp
+
     output = shn_rest_controller(module, resource)
     
     if isinstance(output, dict):
@@ -354,7 +400,18 @@ def marker():
         msg_record_deleted = T("Marker deleted"),
         msg_list_empty = T("No Markers currently available"))
 
-    return shn_rest_controller(module, resource)
+    # Post-processor
+    def user_postp(jr, output):
+        shn_action_buttons(jr)
+        return output
+    response.s3.postp = user_postp
+
+    output = shn_rest_controller(module, resource)
+    
+    if not "gis" in response.view:
+        response.view = "gis/" + response.view
+    
+    return output
 
 def projection():
     "RESTlike CRUD controller"
@@ -392,7 +449,18 @@ def projection():
         msg_record_deleted = T("Projection deleted"),
         msg_list_empty = T("No Projections currently defined"))
 
-    return shn_rest_controller(module, resource, deletable=False)
+    # Post-processor
+    def user_postp(jr, output):
+        shn_action_buttons(jr)
+        return output
+    response.s3.postp = user_postp
+
+    output = shn_rest_controller(module, resource, deletable=False)
+    
+    if not "gis" in response.view:
+        response.view = "gis/" + response.view
+    
+    return output
 
 def track():
     "RESTlike CRUD controller"
@@ -405,7 +473,14 @@ def track():
     # CRUD Strings
     # used in multiple controllers, so defined in model
 
-    return shn_rest_controller(module, resource)
+    # Post-processor
+    def user_postp(jr, output):
+        shn_action_buttons(jr)
+        return output
+    response.s3.postp = user_postp
+
+    output = shn_rest_controller(module, resource, deletable=False)
+    return output
 
 # Common CRUD strings for all layers
 ADD_LAYER = T("Add Layer")
@@ -422,6 +497,7 @@ LAYER_DELETED = T("Layer deleted")
 # These may be differentiated per type of layer.
 TYPE_LAYERS_FMT = "%s Layers"
 ADD_NEW_TYPE_LAYER_FMT = "Add New %s Layer"
+EDIT_TYPE_LAYER_FMT = "Edit %s Layer"
 LIST_TYPE_LAYERS_FMT = "List %s Layers"
 NO_TYPE_LAYERS_FMT = "No %s Layers currently defined"
 
@@ -434,8 +510,9 @@ def layer_openstreetmap():
 
     # CRUD Strings
     type = "OpenStreetMap"
-    LIST_OSM_LAYERS = T(LIST_TYPE_LAYERS_FMT % type)
-    NO_OSM_LAYERS = T(NO_TYPE_LAYERS_FMT % type)
+    LIST_LAYERS = T(LIST_TYPE_LAYERS_FMT % type)
+    EDIT_LAYER = T(EDIT_TYPE_LAYER_FMT % type)
+    NO_LAYERS = T(NO_TYPE_LAYERS_FMT % type)
     s3.crud_strings[table] = Storage(
         title_create=ADD_LAYER,
         title_display=LAYER_DETAILS,
@@ -444,15 +521,35 @@ def layer_openstreetmap():
         title_search=SEARCH_LAYERS,
         subtitle_create=ADD_NEW_LAYER,
         subtitle_list=LIST_LAYERS,
-        label_list_button=LIST_OSM_LAYERS,
+        label_list_button=LIST_LAYERS,
         label_create_button=ADD_LAYER,
         label_delete_button = DELETE_LAYER,
         msg_record_created=LAYER_ADDED,
         msg_record_modified=LAYER_UPDATED,
         msg_record_deleted=LAYER_DELETED,
-        msg_list_empty=NO_OSM_LAYERS)
+        msg_list_empty=NO_LAYERS)
 
-    return shn_rest_controller(module, resource, deletable=False, listadd=False)
+    # Post-processor
+    def user_postp(jr, output):
+        if not jr.component:
+            if auth.is_logged_in():
+                # Provide the ability to delete records in bulk
+                response.s3.actions = [
+                    dict(label=str(T("Update")), _class="action-btn", url=str(URL(r=request, args=["[id]"])))
+                ]
+            else:
+                response.s3.actions = [
+                    dict(label=str(T("Details")), _class="action-btn", url=str(URL(r=request, args=["[id]"])))
+                ]
+            return output
+    response.s3.postp = user_postp
+
+    output = shn_rest_controller(module, resource, deletable=False, listadd=False)
+    
+    if not "gis" in response.view:
+        response.view = "gis/" + response.view
+    
+    return output
 
 def layer_google():
     "RESTlike CRUD controller"
@@ -463,8 +560,9 @@ def layer_google():
 
     # CRUD Strings
     type = "Google"
-    LIST_GOOGLE_LAYERS = T(LIST_TYPE_LAYERS_FMT % type)
-    NO_GOOGLE_LAYERS = T(NO_TYPE_LAYERS_FMT % type)
+    LIST_LAYERS = T(LIST_TYPE_LAYERS_FMT % type)
+    EDIT_LAYER = T(EDIT_TYPE_LAYER_FMT % type)
+    NO_LAYERS = T(NO_TYPE_LAYERS_FMT % type)
     s3.crud_strings[table] = Storage(
         title_create=ADD_LAYER,
         title_display=LAYER_DETAILS,
@@ -473,15 +571,35 @@ def layer_google():
         title_search=SEARCH_LAYERS,
         subtitle_create=ADD_NEW_LAYER,
         subtitle_list=LIST_LAYERS,
-        label_list_button=LIST_GOOGLE_LAYERS,
+        label_list_button=LIST_LAYERS,
         label_create_button=ADD_LAYER,
         label_delete_button = DELETE_LAYER,
         msg_record_created=LAYER_ADDED,
         msg_record_modified=LAYER_UPDATED,
         msg_record_deleted=LAYER_DELETED,
-        msg_list_empty=NO_GOOGLE_LAYERS)
+        msg_list_empty=NO_LAYERS)
 
-    return shn_rest_controller(module, resource, deletable=False, listadd=False)
+    # Post-processor
+    def user_postp(jr, output):
+        if not jr.component:
+            if auth.is_logged_in():
+                # Provide the ability to delete records in bulk
+                response.s3.actions = [
+                    dict(label=str(T("Update")), _class="action-btn", url=str(URL(r=request, args=["[id]"])))
+                ]
+            else:
+                response.s3.actions = [
+                    dict(label=str(T("Details")), _class="action-btn", url=str(URL(r=request, args=["[id]"])))
+                ]
+            return output
+    response.s3.postp = user_postp
+
+    output = shn_rest_controller(module, resource, deletable=False, listadd=False)
+    
+    if not "gis" in response.view:
+        response.view = "gis/" + response.view
+    
+    return output
 
 def layer_yahoo():
     "RESTlike CRUD controller"
@@ -492,8 +610,9 @@ def layer_yahoo():
 
     # CRUD Strings
     type = "Yahoo"
-    LIST_YAHOO_LAYERS = T(LIST_TYPE_LAYERS_FMT % type)
-    NO_YAHOO_LAYERS = T(NO_TYPE_LAYERS_FMT % type)
+    LIST_LAYERS = T(LIST_TYPE_LAYERS_FMT % type)
+    EDIT_LAYER = T(EDIT_TYPE_LAYER_FMT % type)
+    NO_LAYERS = T(NO_TYPE_LAYERS_FMT % type)
     s3.crud_strings[table] = Storage(
         title_create=ADD_LAYER,
         title_display=LAYER_DETAILS,
@@ -502,15 +621,35 @@ def layer_yahoo():
         title_search=SEARCH_LAYERS,
         subtitle_create=ADD_NEW_LAYER,
         subtitle_list=LIST_LAYERS,
-        label_list_button=LIST_YAHOO_LAYERS,
+        label_list_button=LIST_LAYERS,
         label_create_button=ADD_LAYER,
         label_delete_button = DELETE_LAYER,
         msg_record_created=LAYER_ADDED,
         msg_record_modified=LAYER_UPDATED,
         msg_record_deleted=LAYER_DELETED,
-        msg_list_empty=NO_YAHOO_LAYERS)
+        msg_list_empty=NO_LAYERS)
 
-    return shn_rest_controller(module, resource, deletable=False, listadd=False)
+    # Post-processor
+    def user_postp(jr, output):
+        if not jr.component:
+            if auth.is_logged_in():
+                # Provide the ability to delete records in bulk
+                response.s3.actions = [
+                    dict(label=str(T("Update")), _class="action-btn", url=str(URL(r=request, args=["[id]"])))
+                ]
+            else:
+                response.s3.actions = [
+                    dict(label=str(T("Details")), _class="action-btn", url=str(URL(r=request, args=["[id]"])))
+                ]
+            return output
+    response.s3.postp = user_postp
+
+    output = shn_rest_controller(module, resource, deletable=False, listadd=False)
+    
+    if not "gis" in response.view:
+        response.view = "gis/" + response.view
+    
+    return output
 
 def layer_mgrs():
     "RESTlike CRUD controller"
@@ -521,8 +660,9 @@ def layer_mgrs():
 
     # CRUD Strings
     type = "MGRS"
-    LIST_MGRS_LAYERS = T(LIST_TYPE_LAYERS_FMT % type)
-    NO_MGRS_LAYERS = T(NO_TYPE_LAYERS_FMT % type)
+    LIST_LAYERS = T(LIST_TYPE_LAYERS_FMT % type)
+    EDIT_LAYER = T(EDIT_TYPE_LAYER_FMT % type)
+    NO_LAYERS = T(NO_TYPE_LAYERS_FMT % type)
     s3.crud_strings[table] = Storage(
         title_create=ADD_LAYER,
         title_display=LAYER_DETAILS,
@@ -531,15 +671,35 @@ def layer_mgrs():
         title_search=SEARCH_LAYERS,
         subtitle_create=ADD_NEW_LAYER,
         subtitle_list=LIST_LAYERS,
-        label_list_button=LIST_MGRS_LAYERS,
+        label_list_button=LIST_LAYERS,
         label_create_button=ADD_LAYER,
         label_delete_button = DELETE_LAYER,
         msg_record_created=LAYER_ADDED,
         msg_record_modified=LAYER_UPDATED,
         msg_record_deleted=LAYER_DELETED,
-        msg_list_empty=NO_MGRS_LAYERS)
+        msg_list_empty=NO_LAYERS)
 
-    return shn_rest_controller(module, resource, deletable=False, listadd=False)
+    # Post-processor
+    def user_postp(jr, output):
+        if not jr.component:
+            if auth.is_logged_in():
+                # Provide the ability to delete records in bulk
+                response.s3.actions = [
+                    dict(label=str(T("Update")), _class="action-btn", url=str(URL(r=request, args=["[id]"])))
+                ]
+            else:
+                response.s3.actions = [
+                    dict(label=str(T("Details")), _class="action-btn", url=str(URL(r=request, args=["[id]"])))
+                ]
+            return output
+    response.s3.postp = user_postp
+
+    output = shn_rest_controller(module, resource, deletable=False, listadd=False)
+    
+    if not "gis" in response.view:
+        response.view = "gis/" + response.view
+    
+    return output
 
 def layer_bing():
     "RESTlike CRUD controller"
@@ -550,8 +710,9 @@ def layer_bing():
 
     # CRUD Strings
     type = "Bing"
-    LIST_BING_LAYERS = T(LIST_TYPE_LAYERS_FMT % type)
-    NO_BING_LAYERS = T(NO_TYPE_LAYERS_FMT % type)
+    LIST_LAYERS = T(LIST_TYPE_LAYERS_FMT % type)
+    EDIT_LAYER = T(EDIT_TYPE_LAYER_FMT % type)
+    NO_LAYERS = T(NO_TYPE_LAYERS_FMT % type)
     s3.crud_strings[table] = Storage(
         title_create=ADD_LAYER,
         title_display=LAYER_DETAILS,
@@ -560,15 +721,35 @@ def layer_bing():
         title_search=SEARCH_LAYERS,
         subtitle_create=ADD_NEW_LAYER,
         subtitle_list=LIST_LAYERS,
-        label_list_button=LIST_BING_LAYERS,
+        label_list_button=LIST_LAYERS,
         label_create_button=ADD_LAYER,
         label_delete_button = DELETE_LAYER,
         msg_record_created=LAYER_ADDED,
         msg_record_modified=LAYER_UPDATED,
         msg_record_deleted=LAYER_DELETED,
-        msg_list_empty=NO_BING_LAYERS)
+        msg_list_empty=NO_LAYERS)
 
-    return shn_rest_controller(module, resource, deletable=False, listadd=False)
+    # Post-processor
+    def user_postp(jr, output):
+        if not jr.component:
+            if auth.is_logged_in():
+                # Provide the ability to delete records in bulk
+                response.s3.actions = [
+                    dict(label=str(T("Update")), _class="action-btn", url=str(URL(r=request, args=["[id]"])))
+                ]
+            else:
+                response.s3.actions = [
+                    dict(label=str(T("Details")), _class="action-btn", url=str(URL(r=request, args=["[id]"])))
+                ]
+            return output
+    response.s3.postp = user_postp
+
+    output = shn_rest_controller(module, resource, deletable=False, listadd=False)
+    
+    if not "gis" in response.view:
+        response.view = "gis/" + response.view
+    
+    return output
 
 def layer_georss():
     "RESTlike CRUD controller"
@@ -581,27 +762,39 @@ def layer_georss():
 
     # CRUD Strings
     type = "GeoRSS"
-    GEORSS_LAYERS = T(TYPE_LAYERS_FMT % type)
-    ADD_NEW_GEORSS_LAYER = T(ADD_NEW_TYPE_LAYER_FMT % type)
-    LIST_GEORSS_LAYERS = T(LIST_TYPE_LAYERS_FMT % type)
-    NO_GEORSS_LAYERS = T(NO_TYPE_LAYERS_FMT % type)
+    LAYERS = T(TYPE_LAYERS_FMT % type)
+    ADD_NEW_LAYER = T(ADD_NEW_TYPE_LAYER_FMT % type)
+    EDIT_LAYER = T(EDIT_TYPE_LAYER_FMT % type)
+    LIST_LAYERS = T(LIST_TYPE_LAYERS_FMT % type)
+    NO_LAYERS = T(NO_TYPE_LAYERS_FMT % type)
     s3.crud_strings[tablename] = Storage(
         title_create=ADD_LAYER,
         title_display=LAYER_DETAILS,
-        title_list=GEORSS_LAYERS,
+        title_list=LAYERS,
         title_update=EDIT_LAYER,
         title_search=SEARCH_LAYERS,
-        subtitle_create=ADD_NEW_GEORSS_LAYER,
-        subtitle_list=LIST_GEORSS_LAYERS,
-        label_list_button=LIST_GEORSS_LAYERS,
+        subtitle_create=ADD_NEW_LAYER,
+        subtitle_list=LIST_LAYERS,
+        label_list_button=LIST_LAYERS,
         label_create_button=ADD_LAYER,
         label_delete_button = DELETE_LAYER,
         msg_record_created=LAYER_ADDED,
         msg_record_modified=LAYER_UPDATED,
         msg_record_deleted=LAYER_DELETED,
-        msg_list_empty=NO_GEORSS_LAYERS)
+        msg_list_empty=NO_LAYERS)
 
-    return shn_rest_controller(module, resource)
+    # Post-processor
+    def user_postp(jr, output):
+        shn_action_buttons(jr)
+        return output
+    response.s3.postp = user_postp
+
+    output = shn_rest_controller(module, resource)
+    
+    if not "gis" in response.view:
+        response.view = "gis/" + response.view
+    
+    return output
 
 def layer_gpx():
     "RESTlike CRUD controller"
@@ -613,27 +806,39 @@ def layer_gpx():
 
     # CRUD Strings
     type = "GPX"
-    GPX_LAYERS = T(TYPE_LAYERS_FMT % type)
-    ADD_NEW_GPX_LAYER = T(ADD_NEW_TYPE_LAYER_FMT % type)
-    LIST_GPX_LAYERS = T(LIST_TYPE_LAYERS_FMT % type)
-    NO_GPX_LAYERS = T(NO_TYPE_LAYERS_FMT % type)
+    LAYERS = T(TYPE_LAYERS_FMT % type)
+    ADD_NEW_LAYER = T(ADD_NEW_TYPE_LAYER_FMT % type)
+    EDIT_LAYER = T(EDIT_TYPE_LAYER_FMT % type)
+    LIST_LAYERS = T(LIST_TYPE_LAYERS_FMT % type)
+    NO_LAYERS = T(NO_TYPE_LAYERS_FMT % type)
     s3.crud_strings[table] = Storage(
         title_create=ADD_LAYER,
         title_display=LAYER_DETAILS,
-        title_list=GPX_LAYERS,
+        title_list=LAYERS,
         title_update=EDIT_LAYER,
         title_search=SEARCH_LAYERS,
-        subtitle_create=ADD_NEW_GPX_LAYER,
-        subtitle_list=LIST_GPX_LAYERS,
-        label_list_button=LIST_GPX_LAYERS,
+        subtitle_create=ADD_NEW_LAYER,
+        subtitle_list=LIST_LAYERS,
+        label_list_button=LIST_LAYERS,
         label_create_button=ADD_LAYER,
         label_delete_button = DELETE_LAYER,
         msg_record_created=LAYER_ADDED,
         msg_record_modified=LAYER_UPDATED,
         msg_record_deleted=LAYER_DELETED,
-        msg_list_empty=NO_GPX_LAYERS)
+        msg_list_empty=NO_LAYERS)
 
-    return shn_rest_controller(module, resource)
+    # Post-processor
+    def user_postp(jr, output):
+        shn_action_buttons(jr)
+        return output
+    response.s3.postp = user_postp
+
+    output = shn_rest_controller(module, resource)
+    
+    if not "gis" in response.view:
+        response.view = "gis/" + response.view
+    
+    return output
 
 def layer_kml():
     "RESTlike CRUD controller"
@@ -646,27 +851,39 @@ def layer_kml():
 
     # CRUD Strings
     type = "KML"
-    KML_LAYERS = T(TYPE_LAYERS_FMT % type)
-    ADD_NEW_KML_LAYER = T(ADD_NEW_TYPE_LAYER_FMT % type)
-    LIST_KML_LAYERS = T(LIST_TYPE_LAYERS_FMT % type)
-    NO_KML_LAYERS = T(NO_TYPE_LAYERS_FMT % type)
+    LAYERS = T(TYPE_LAYERS_FMT % type)
+    ADD_NEW_LAYER = T(ADD_NEW_TYPE_LAYER_FMT % type)
+    EDIT_LAYER = T(EDIT_TYPE_LAYER_FMT % type)
+    LIST_LAYERS = T(LIST_TYPE_LAYERS_FMT % type)
+    NO_LAYERS = T(NO_TYPE_LAYERS_FMT % type)
     s3.crud_strings[tablename] = Storage(
         title_create=ADD_LAYER,
         title_display=LAYER_DETAILS,
-        title_list=KML_LAYERS,
+        title_list=LAYERS,
         title_update=EDIT_LAYER,
         title_search=SEARCH_LAYERS,
-        subtitle_create=ADD_NEW_KML_LAYER,
-        subtitle_list=LIST_KML_LAYERS,
-        label_list_button=LIST_KML_LAYERS,
+        subtitle_create=ADD_NEW_LAYER,
+        subtitle_list=LIST_LAYERS,
+        label_list_button=LIST_LAYERS,
         label_create_button=ADD_LAYER,
         label_delete_button = DELETE_LAYER,
         msg_record_created=LAYER_ADDED,
         msg_record_modified=LAYER_UPDATED,
         msg_record_deleted=LAYER_DELETED,
-        msg_list_empty=NO_KML_LAYERS)
+        msg_list_empty=NO_LAYERS)
 
-    return shn_rest_controller(module, resource)
+    # Post-processor
+    def user_postp(jr, output):
+        shn_action_buttons(jr)
+        return output
+    response.s3.postp = user_postp
+
+    output = shn_rest_controller(module, resource)
+    
+    if not "gis" in response.view:
+        response.view = "gis/" + response.view
+    
+    return output
 
 def layer_tms():
     "RESTlike CRUD controller"
@@ -680,27 +897,39 @@ def layer_tms():
 
     # CRUD Strings
     type = "TMS"
-    TMS_LAYERS = T(TYPE_LAYERS_FMT % type)
-    ADD_NEW_TMS_LAYER = T(ADD_NEW_TYPE_LAYER_FMT % type)
-    LIST_TMS_LAYERS = T(LIST_TYPE_LAYERS_FMT % type)
-    NO_TMS_LAYERS = T(NO_TYPE_LAYERS_FMT % type)
+    LAYERS = T(TYPE_LAYERS_FMT % type)
+    ADD_NEW_LAYER = T(ADD_NEW_TYPE_LAYER_FMT % type)
+    EDIT_LAYER = T(EDIT_TYPE_LAYER_FMT % type)
+    LIST_LAYERS = T(LIST_TYPE_LAYERS_FMT % type)
+    NO_LAYERS = T(NO_TYPE_LAYERS_FMT % type)
     s3.crud_strings[tablename] = Storage(
         title_create=ADD_LAYER,
         title_display=LAYER_DETAILS,
-        title_list=TMS_LAYERS,
+        title_list=LAYERS,
         title_update=EDIT_LAYER,
         title_search=SEARCH_LAYERS,
-        subtitle_create=ADD_NEW_TMS_LAYER,
-        subtitle_list=LIST_TMS_LAYERS,
-        label_list_button=LIST_TMS_LAYERS,
+        subtitle_create=ADD_NEW_LAYER,
+        subtitle_list=LIST_LAYERS,
+        label_list_button=LIST_LAYERS,
         label_create_button=ADD_LAYER,
         label_delete_button = DELETE_LAYER,
         msg_record_created=LAYER_ADDED,
         msg_record_modified=LAYER_UPDATED,
         msg_record_deleted=LAYER_DELETED,
-        msg_list_empty=NO_TMS_LAYERS)
+        msg_list_empty=NO_LAYERS)
 
-    return shn_rest_controller(module, resource)
+    # Post-processor
+    def user_postp(jr, output):
+        shn_action_buttons(jr)
+        return output
+    response.s3.postp = user_postp
+
+    output = shn_rest_controller(module, resource)
+    
+    if not "gis" in response.view:
+        response.view = "gis/" + response.view
+    
+    return output
 
 def layer_wms():
     "RESTlike CRUD controller"
@@ -709,33 +938,44 @@ def layer_wms():
     table = db[tablename]
 
     # Model options
-    #table.url.requires = [IS_URL, IS_NOT_EMPTY()]
     table.url.comment = SPAN("*", _class="req")
     table.layers.comment = SPAN("*", _class="req")
 
     # CRUD Strings
     type = "WMS"
-    WMS_LAYERS = T(TYPE_LAYERS_FMT % type)
-    ADD_NEW_WMS_LAYER = T(ADD_NEW_TYPE_LAYER_FMT % type)
-    LIST_WMS_LAYERS = T(LIST_TYPE_LAYERS_FMT % type)
-    NO_WMS_LAYERS = T(NO_TYPE_LAYERS_FMT % type)
+    LAYERS = T(TYPE_LAYERS_FMT % type)
+    ADD_NEW_LAYER = T(ADD_NEW_TYPE_LAYER_FMT % type)
+    EDIT_LAYER = T(EDIT_TYPE_LAYER_FMT % type)
+    LIST_LAYERS = T(LIST_TYPE_LAYERS_FMT % type)
+    NO_LAYERS = T(NO_TYPE_LAYERS_FMT % type)
     s3.crud_strings[tablename] = Storage(
         title_create=ADD_LAYER,
         title_display=LAYER_DETAILS,
-        title_list=WMS_LAYERS,
+        title_list=LAYERS,
         title_update=EDIT_LAYER,
         title_search=SEARCH_LAYERS,
-        subtitle_create=ADD_NEW_WMS_LAYER,
-        subtitle_list=LIST_WMS_LAYERS,
-        label_list_button=LIST_WMS_LAYERS,
+        subtitle_create=ADD_NEW_LAYER,
+        subtitle_list=LIST_LAYERS,
+        label_list_button=LIST_LAYERS,
         label_create_button=ADD_LAYER,
         label_delete_button = DELETE_LAYER,
         msg_record_created=LAYER_ADDED,
         msg_record_modified=LAYER_UPDATED,
         msg_record_deleted=LAYER_DELETED,
-        msg_list_empty=NO_WMS_LAYERS)
+        msg_list_empty=NO_LAYERS)
 
-    return shn_rest_controller(module, resource)
+    # Post-processor
+    def user_postp(jr, output):
+        shn_action_buttons(jr)
+        return output
+    response.s3.postp = user_postp
+
+    output = shn_rest_controller(module, resource)
+    
+    if not "gis" in response.view:
+        response.view = "gis/" + response.view
+    
+    return output
 
 #@auth.requires_membership("AdvancedJS")
 def layer_js():
@@ -747,27 +987,39 @@ def layer_js():
 
     # CRUD Strings
     type = "JS"
-    JS_LAYERS = T(TYPE_LAYERS_FMT % type)
-    ADD_NEW_JS_LAYER = T(ADD_NEW_TYPE_LAYER_FMT % type)
-    LIST_JS_LAYERS = T(LIST_TYPE_LAYERS_FMT % type)
-    NO_JS_LAYERS = T(NO_TYPE_LAYERS_FMT % type)
+    LAYERS = T(TYPE_LAYERS_FMT % type)
+    ADD_NEW_LAYER = T(ADD_NEW_TYPE_LAYER_FMT % type)
+    EDIT_LAYER = T(EDIT_TYPE_LAYER_FMT % type)
+    LIST_LAYERS = T(LIST_TYPE_LAYERS_FMT % type)
+    NO_LAYERS = T(NO_TYPE_LAYERS_FMT % type)
     s3.crud_strings[table] = Storage(
         title_create=ADD_LAYER,
         title_display=LAYER_DETAILS,
-        title_list=JS_LAYERS,
+        title_list=LAYERS,
         title_update=EDIT_LAYER,
         title_search=SEARCH_LAYERS,
-        subtitle_create=ADD_NEW_JS_LAYER,
-        subtitle_list=LIST_JS_LAYERS,
-        label_list_button=LIST_JS_LAYERS,
+        subtitle_create=ADD_NEW_LAYER,
+        subtitle_list=LIST_LAYERS,
+        label_list_button=LIST_LAYERS,
         label_create_button=ADD_LAYER,
         label_delete_button = DELETE_LAYER,
         msg_record_created=LAYER_ADDED,
         msg_record_modified=LAYER_UPDATED,
         msg_record_deleted=LAYER_DELETED,
-        msg_list_empty=NO_JS_LAYERS)
+        msg_list_empty=NO_LAYERS)
 
-    return shn_rest_controller(module, resource)
+    # Post-processor
+    def user_postp(jr, output):
+        shn_action_buttons(jr)
+        return output
+    response.s3.postp = user_postp
+
+    output = shn_rest_controller(module, resource)
+    
+    if not "gis" in response.view:
+        response.view = "gis/" + response.view
+    
+    return output
 
 def layer_xyz():
     "RESTlike CRUD controller"
@@ -780,27 +1032,39 @@ def layer_xyz():
 
     # CRUD Strings
     type = "XYZ"
-    XYZ_LAYERS = T(TYPE_LAYERS_FMT % type)
-    ADD_NEW_XYZ_LAYER = T(ADD_NEW_TYPE_LAYER_FMT % type)
-    LIST_XYZ_LAYERS = T(LIST_TYPE_LAYERS_FMT % type)
-    NO_XYZ_LAYERS = T(NO_TYPE_LAYERS_FMT % type)
+    LAYERS = T(TYPE_LAYERS_FMT % type)
+    ADD_NEW_LAYER = T(ADD_NEW_TYPE_LAYER_FMT % type)
+    EDIT_LAYER = T(EDIT_LAYER_FMT % type)
+    LIST_LAYERS = T(LIST_TYPE_LAYERS_FMT % type)
+    NO_LAYERS = T(NO_TYPE_LAYERS_FMT % type)
     s3.crud_strings[tablename] = Storage(
         title_create=ADD_LAYER,
         title_display=LAYER_DETAILS,
-        title_list=XYZ_LAYERS,
+        title_list=LAYERS,
         title_update=EDIT_LAYER,
         title_search=SEARCH_LAYERS,
-        subtitle_create=ADD_NEW_XYZ_LAYER,
-        subtitle_list=LIST_XYZ_LAYERS,
-        label_list_button=LIST_XYZ_LAYERS,
+        subtitle_create=ADD_NEW_LAYER,
+        subtitle_list=LIST_LAYERS,
+        label_list_button=LIST_LAYERS,
         label_create_button=ADD_LAYER,
         label_delete_button = DELETE_LAYER,
         msg_record_created=LAYER_ADDED,
         msg_record_modified=LAYER_UPDATED,
         msg_record_deleted=LAYER_DELETED,
-        msg_list_empty=NO_XYZ_LAYERS)
+        msg_list_empty=NO_LAYERS)
 
-    return shn_rest_controller(module, resource)
+    # Post-processor
+    def user_postp(jr, output):
+        shn_action_buttons(jr)
+        return output
+    response.s3.postp = user_postp
+
+    output = shn_rest_controller(module, resource)
+    
+    if not "gis" in response.view:
+        response.view = "gis/" + response.view
+    
+    return output
 
 # Module-specific functions
 def convert_gps():
@@ -903,8 +1167,11 @@ def feature_create_map():
     "Show a map to draw the feature"
     title = T("Add GIS Feature")
     form = crud.create("gis_location", onvalidation=lambda form: gis.wkt_centroid(form))
-    _projection = db(db.gis_config.id == 1).select(limitby=(0, 1)).first().projection_id
-    projection = db(db.gis_projection.id == _projection).select(limitby=(0, 1)).first().epsg
+
+    _config = db.gis_config
+    _projection = db.gis_projection
+    query = (_config.id == 1) & (_projection.id == _config.projection_id)
+    projection = db(query).select(_projection.epsg, limitby=(0, 1)).first().epsg
 
     # Layers
     baselayers = layers()
@@ -1223,10 +1490,10 @@ def layers():
         track = db(db.gis_track.id == layer.track_id).select(limitby=(0, 1)).first()
         layers.gpx[name].url = track.track
         if layer.marker_id:
-            layers.gpx[name].marker = db(db.gis_marker.id == layer.marker_id).select(limitby=(0, 1)).first().image
+            layers.gpx[name].marker = db(db.gis_marker.id == layer.marker_id).select(db.gis_marker.image, limitby=(0, 1)).first().image
         else:
-            marker_id = db(db.gis_config.id == 1).select(limitby=(0, 1)).first().marker_id
-            layers.gpx[name].marker = db(db.gis_marker.id == marker_id).select(limitby=(0, 1)).first().image
+            marker_id = db(db.gis_config.id == 1).select(db.gis_config.marker_id, limitby=(0, 1)).first().marker_id
+            layers.gpx[name].marker = db(db.gis_marker.id == marker_id).select(db.gis_marker.image, limitby=(0, 1)).first().image
 
     cachepath = os.path.join(request.folder, "uploads", "gis_cache")
     if os.access(cachepath, os.W_OK):
@@ -1261,7 +1528,7 @@ def layers():
                 # URL inaccessible
                 if os.access(filepath, os.R_OK):
                     # Use cached version
-                    date = db(db.gis_cache.name == name).select(limitby=(0, 1)).first().modified_on
+                    date = db(db.gis_cache.name == name).select(db.gis_cache.modified_on, limitby=(0, 1)).first().modified_on
                     response.warning += url + " " + str(T("not accessible - using cached version from")) + " " + str(date) + "\n"
                     url = URL(r=request, c="default", f="download", args=[filename])
                 else:
@@ -1276,12 +1543,12 @@ def layers():
         # Add to return
         layers.georss[name] = Storage()
         layers.georss[name].url = url
-        layers.georss[name].projection = db(db.gis_projection.id == layer.projection_id).select(limitby=(0, 1)).first().epsg
+        layers.georss[name].projection = db(db.gis_projection.id == layer.projection_id).select(db.gis_projection.epsg, limitby=(0, 1)).first().epsg
         if layer.marker_id:
-            layers.georss[name].marker = db(db.gis_marker.id == layer.marker_id).select(limitby=(0, 1)).first().image
+            layers.georss[name].marker = db(db.gis_marker.id == layer.marker_id).select(db.gis_marker.image, limitby=(0, 1)).first().image
         else:
-            marker_id = db(db.gis_config.id == 1).select(limitby=(0, 1)).first().marker_id
-            layers.georss[name].marker = db(db.gis_marker.id == marker_id).select(limitby=(0, 1)).first().image
+            marker_id = db(db.gis_config.id == 1).select(db.gis_config.marker_id, limitby=(0, 1)).first().marker_id
+            layers.georss[name].marker = db(db.gis_marker.id == marker_id).select(db.gis_marker.image, limitby=(0, 1)).first().image
 
     # KML
     layers.kml = Storage()
@@ -1308,7 +1575,7 @@ def layers():
                 # URL inaccessible
                 if os.access(filepath, os.R_OK):
                     # Use cached version
-                    date = db(db.gis_cache.name == name).select(limitby=(0, 1)).first().modified_on
+                    date = db(db.gis_cache.name == name).select(db.gis_cache.modified_on, limitby=(0, 1)).first().modified_on
                     response.warning += url + " " + str(T("not accessible - using cached version from")) + " " + str(date) + "\n"
                     url = URL(r=request, c="default", f="download", args=[filename])
                 else:
@@ -1352,7 +1619,7 @@ def layers():
         if layer.map:
             layers.wms[name].map = layer.map
         layers.wms[name].layers = layer.layers
-        layers.wms[name].projection = db(db.gis_projection.id == layer.projection_id).select(limitby=(0, 1)).first().epsg
+        layers.wms[name].projection = db(db.gis_projection.id == layer.projection_id).select(db.gis_projection.epsg, limitby=(0, 1)).first().epsg
         layers.wms[name].transparent = layer.transparent
         if layer.format:
             layers.wms[name].format = layer.format
@@ -1416,7 +1683,7 @@ def layers_enable():
                 query_inner = (table.id == row.id)
                 var = "%s_%i" % (type, row.id)
                 # Read current state
-                if db(query_inner).select(limitby=(0, 1)).first().enabled:
+                if db(query_inner).select(table.enabled, limitby=(0, 1)).first().enabled:
                     # Old state: Enabled
                     if var in request.vars:
                         # Do nothing
@@ -1456,12 +1723,11 @@ def map_viewing_client():
 
     # Config
     # ToDo return all of these to the view via a single 'config' var
-    config = gis.config_read()
+    config = gis.get_config()
     width = config.map_width
     height = config.map_height
     numZoomLevels = config.zoom_levels
-    _projection = config.projection_id
-    projection = db(db.gis_projection.id == _projection).select(limitby=(0, 1)).first().epsg
+    projection = config.epsg
     # Support bookmarks (such as from the control)
     if "lat" in request.vars:
         lat = request.vars.lat
@@ -1475,10 +1741,9 @@ def map_viewing_client():
         zoom = request.vars.zoom
     else:
         zoom = config.zoom
-    epsg = db(db.gis_projection.epsg == projection).select(limitby=(0, 1)).first()
-    units = epsg.units
-    maxResolution = epsg.maxResolution
-    maxExtent = epsg.maxExtent
+    units = config.units
+    maxResolution = config.maxResolution
+    maxExtent = config.maxExtent
     marker_default = config.marker_id
     cluster_distance = config.cluster_distance
     cluster_threshold = config.cluster_threshold
@@ -1523,7 +1788,8 @@ def map_viewing_client():
                 feature.resource = feature.gis_feature_class.resource
                 if feature.module and feature.resource:
                     try:
-                        feature.resource_id = db(db["%s_%s" % (feature.module, feature.resource)].location_id == feature.gis_location.id).select(limitby=(0, 1)).first().id
+                        _resource = db["%s_%s" % (feature.module, feature.resource)]
+                        feature.resource_id = db(_resource.location_id == feature.gis_location.id).select(_resource.id, limitby=(0, 1)).first().id
                     except:
                         feature.resource_id = None
                 else:
@@ -1551,7 +1817,7 @@ def map_viewing_client():
                     # Images are M->1 to Features
                     # We use the most recently uploaded one
                     query = (db.media_image.location_id == feature.gis_location.id) & (db.media_image.deleted == False)
-                    image = db(query).select(orderby=~db.media_image.created_on).first().image
+                    image = db(query).select(db.media_image.image, orderby=~db.media_image.created_on).first().image
                 except:
                     image = None
                 feature.image = image
@@ -1580,12 +1846,11 @@ def display_feature():
         raise HTTP(401, body=s3xrc.xml.json_message(False, 401, session.error))
 
     # Config
-    config = gis.config_read()
+    config = gis.get_config()
     width = config.map_width
     height = config.map_height
     numZoomLevels = config.zoom_levels
-    _projection = config.projection_id
-    projection = db(db.gis_projection.id == _projection).select(limitby=(0, 1)).first().epsg
+    projection = config.epsg
     # Support bookmarks (such as from the control)
     if "lat" in request.vars:
         lat = request.vars.lat
@@ -1599,10 +1864,9 @@ def display_feature():
         zoom = request.vars.zoom
     else:
         zoom = config.zoom
-    epsg = db(db.gis_projection.epsg == projection).select(limitby=(0, 1)).first()
-    units = epsg.units
-    maxResolution = epsg.maxResolution
-    maxExtent = epsg.maxExtent
+    units = config.units
+    maxResolution = config.maxResolution
+    maxExtent = config.maxExtent
     marker_default = config.marker_id
     cluster_distance = config.cluster_distance
     cluster_threshold = config.cluster_threshold
@@ -1621,7 +1885,8 @@ def display_feature():
         feature.module = None
         feature.resource = None
     if feature.module and feature.resource:
-        feature.resource_id = db(db["%s_%s" % (feature.module, feature.resource)].location_id == feature.id).select(limitby=(0, 1)).first().id
+        _resource = db["%s_%s" % (feature.module, feature.resource)]
+        feature.resource_id = db(_resource.location_id == feature.id).select(_resource.id, limitby=(0, 1)).first().id
     else:
         feature.resource_id = None
     # provide an extra access so no need to duplicate popups code
@@ -1651,7 +1916,7 @@ def display_feature():
         # Images are M->1 to Features
         # We use the most recently uploaded one
         query = (db.media_image.location_id == feature.id) & (db.media_image.deleted == False)
-        image = db(query).select(orderby=~db.media_image.created_on).first().image
+        image = db(query).select(db.media_image.image, orderby=~db.media_image.created_on).first().image
     except:
         image = None
     feature.image = image
@@ -1728,12 +1993,11 @@ def display_features():
     output = dict(lon_max=lon_max, lon_min=lon_min, lat_max=lat_max, lat_min=lat_min)
 
     # Config
-    config = gis.config_read()
+    config = gis.get_config()
     width = config.map_width
     height = config.map_height
     numZoomLevels = config.zoom_levels
-    _projection = config.projection_id
-    projection = db(db.gis_projection.id == _projection).select(limitby=(0, 1)).first().epsg
+    projection = config.epsg
     # Support bookmarks (such as from the control)
     if "lat" in request.vars:
         lat = request.vars.lat
@@ -1747,10 +2011,9 @@ def display_features():
         zoom = request.vars.zoom
     else:
         zoom = None
-    epsg = db(db.gis_projection.epsg == projection).select(limitby=(0, 1)).first()
-    units = epsg.units
-    maxResolution = epsg.maxResolution
-    maxExtent = epsg.maxExtent
+    units = config.units
+    maxResolution = config.maxResolution
+    maxExtent = config.maxExtent
     marker_default = config.marker_id
     cluster_distance = config.cluster_distance
     cluster_threshold = config.cluster_threshold
@@ -1769,7 +2032,8 @@ def display_features():
         feature.resource = feature_class.resource
         if feature.module and feature.resource:
             try:
-                feature.resource_id = db(db["%s_%s" % (feature.module, feature.resource)].location_id == feature.id).select(limitby=(0, 1)).first().id
+                _resource = db["%s_%s" % (feature.module, feature.resource)]
+                feature.resource_id = db(_resource.location_id == feature.id).select(_resource.id, limitby=(0, 1)).first().id
             except:
                 feature.resource_id = None
         else:

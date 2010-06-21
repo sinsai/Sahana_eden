@@ -152,7 +152,7 @@ for module in modules:
             authorised = False
             groups = re.split("\|", _module["access"])[1:-1]
             for group in groups:
-                if auth.has_membership(group):
+                if int(group) in session.s3.roles:
                     authorised = True
             if authorised == True:
                 s3.menu_modules.append([_module["name_nice"], False, URL(r=request, c=module, f="index")])
@@ -168,7 +168,7 @@ for module in modules:
                 authorised = False
                 groups = re.split("\|", _module["access"])[1:-1]
                 for group in groups:
-                    if auth.has_membership(group):
+                    if int(group) in session.s3.roles:
                         authorised = True
                 if authorised == True:
                     s3.menu_modules.append([_module["name_nice"], False, URL(r=request, c=module, f="index")])
@@ -187,7 +187,7 @@ for module in modules:
                 authorised = False
                 groups = re.split("\|", _module["access"])[1:-1]
                 for group in groups:
-                    if auth.has_membership(group):
+                    if int(group) in session.s3.roles:
                         authorised = True
                 if authorised == True:
                     modules_submenu.append([_module["name_nice"], False, URL(r=request, c=module, f="index")])
@@ -208,7 +208,7 @@ for module in modules:
                 authorised = False
                 groups = re.split("\|", _module["access"])[1:-1]
                 for group in groups:
-                    if auth.has_membership(group):
+                    if int(group) in session.s3.roles:
                         authorised = True
                 if authorised == True:
                     modules_submenu.append([_module["name_nice"], False, URL(r=request, c=module, f="index")])
@@ -226,7 +226,7 @@ for module in modules:
                 authorised = False
                 groups = re.split("\|", _module["access"])[1:-1]
                 for group in groups:
-                    if auth.has_membership(group):
+                    if int(group) in session.s3.roles:
                         authorised = True
                 if authorised == True:
                     s3.menu_modules.append([_module["name_nice"], False, URL(r=request, c=module, f="index")])

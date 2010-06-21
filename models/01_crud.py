@@ -1131,6 +1131,8 @@ def shn_read(jr, **attr):
         href_delete = URL(r=jr.request, f=jr.name, args=[record_id, "delete"])
         href_edit = URL(r=jr.request, f=jr.name, args=[record_id, "update"])
 
+    # ToDo: Comment this out
+    # Just because we have rights to edit a record, doens't mean that we always want to actually do so
     authorised = shn_has_permission("update", table, record_id)
     if authorised and jr.representation == "html" and editable:
         return shn_update(jr, **attr)
@@ -1798,7 +1800,7 @@ def shn_update(jr, **attr):
             query = ((table.deleted == False) | (table.deleted == None)) & query
 
         try:
-            record_id = db(query).select(table.id).first().id
+            record_id = db(query).select(table.id, limitby=(0, 1)).first().id
         except:
             record_id = None
             href_delete = None
@@ -2010,7 +2012,7 @@ def shn_delete(jr, **attr):
             try:
                 shn_audit_delete(module, resource, row.id, jr.representation)
                 if "deleted" in db[table] and \
-                   db(db.s3_setting.id == 1).select(limitby=(0, 1)).first().archive_not_delete:
+                   db(db.s3_setting.id == 1).select(db.s3_setting.archive_not_delete, limitby=(0, 1)).first().archive_not_delete:
                     if crud.settings.delete_onvalidation:
                         crud.settings.delete_onvalidation(row)
                     # Avoid collisions of values in unique fields between deleted records and

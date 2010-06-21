@@ -28,21 +28,28 @@ def shn_sessions():
     # Use response for one-off variables which are visible in views without explicit passing
     response.s3 = Storage()
     response.s3.formats = Storage()
-    settings = db(db.s3_setting.id > 0).select(limitby=(0, 1)).first()
+    
+    roles = []
+    try:
+        user_id = auth.user.id
+        _memberships = db.auth_membership
+        memberships = db(_memberships.user_id == user_id).select(_memberships.group_id) # Cache this & invalidate when memberships are changed?
+        for membership in memberships:
+            roles.append(membership.group_id)
+    except:
+        # User not authenticated therefore has no roles other than '0'
+        pass
+    session.s3.roles = roles
+
     controller_settings_table = "%s_setting" % request.controller
     controller_settings = controller_settings_table in db.tables and \
        db(db[controller_settings_table].id > 0).select(limitby=(0, 1)).first()
+    
+    settings = db(db.s3_setting.id > 0).select(db.s3_setting.debug, db.s3_setting.security_policy, db.s3_setting.self_registration, db.s3_setting.audit_read, db.s3_setting.audit_write, limitby=(0, 1)).first()
     # Are we running in debug mode?
     session.s3.debug = "debug" in request.vars or settings and settings.debug
     session.s3.security_policy = (settings and settings.security_policy) or 1
 
-    # Are we running in restricted mode?
-    #session.s3.restricted = auth.has_membership(auth.id_group("Restricted"))
-    # Select the theme
-    if not session.s3.theme:
-        session.s3.theme = Storage()
-    admin_theme = db().select(db.admin_theme.footer).first()
-    session.s3.theme.footer = admin_theme and admin_theme.footer or "footer.html"
     # We Audit if either the Global or Module asks us to
     # (ignore gracefully if module author hasn't implemented this)
     session.s3.audit_read = (settings and settings.audit_read) \
@@ -60,6 +67,7 @@ shn_languages = {
     "en": T("English"),
     "fr": T("French")
 }
+auth.settings.table_user.language.requires = IS_IN_SET(shn_languages, zero=None)
 
 #
 # List of Nations - added by nursix

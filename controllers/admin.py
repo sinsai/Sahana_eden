@@ -68,40 +68,27 @@ def theme():
 
     # Model options
     table.name.label = T("Name")
-    table.name.requires = [IS_NOT_EMPTY(), IS_NOT_IN_DB(db, "%s.name" % tablename)]
     table.name.comment = SPAN("*", _class="req")
     table.logo.label = T("Logo")
     table.logo.comment = A(SPAN("[Help]"), _class="tooltip", _title=T("Logo|Name of the file (& optional sub-path) located in static which should be used for the top-left image."))
     #table.header_background.label = T("Header Background")
     #table.header_background.comment = A(SPAN("[Help]"), _class="tooltip", _title=T("Header Background|Name of the file (& optional sub-path) located in static which should be used for the background of the header."))
-    table.footer.label = T("Footer")
-    table.footer.comment = A(SPAN("[Help]"), _class="tooltip", _title=T("Footer|Name of the file (& optional sub-path) located in views which should be used for footer."))
+    #table.footer.label = T("Footer")
+    #table.footer.comment = A(SPAN("[Help]"), _class="tooltip", _title=T("Footer|Name of the file (& optional sub-path) located in views which should be used for footer."))
     table.text_direction.label = T("Text Direction")
-    table.text_direction.requires = IS_IN_SET({"ltr":T("Left-to-Right"), "rtl":T("Right-to-Left")}, zero=None)
     table.text_direction.comment = A(SPAN("[Help]"), _class="tooltip", _title=T("Text Direction|Whilst most languages are read from Left-to-Right, Arabic, Hebrew & Farsi go from Right-to-Left."))
     table.col_background.label = T("Background Colour")
-    table.col_background.requires = IS_HTML_COLOUR()
     table.col_txt.label = T("Text Colour for Text blocks")
-    table.col_txt.requires = IS_HTML_COLOUR()
     table.col_txt_background.label = T("Background Colour for Text blocks")
-    table.col_txt_background.requires = IS_HTML_COLOUR()
     table.col_txt_border.label = T("Border Colour for Text blocks")
-    table.col_txt_border.requires = IS_HTML_COLOUR()
     table.col_txt_underline.label = T("Colour for Underline of Subheadings")
-    table.col_txt_underline.requires = IS_HTML_COLOUR()
     table.col_menu.label = T("Colour of dropdown menus")
-    table.col_menu.requires = IS_HTML_COLOUR()
     table.col_highlight.label = T("Colour of selected menu items")
-    table.col_highlight.requires = IS_HTML_COLOUR()
     table.col_input.label = T("Colour of selected Input fields")
-    table.col_input.requires = IS_HTML_COLOUR()
     table.col_border_btn_out.label = T("Colour of bottom of Buttons when not pressed")
-    table.col_border_btn_out.requires = IS_HTML_COLOUR()
     table.col_border_btn_in.label = T("Colour of bottom of Buttons when pressed")
-    table.col_border_btn_in.requires = IS_HTML_COLOUR()
     table.col_btn_hover.label = T("Colour of Buttons when hovering")
-    table.col_btn_hover.requires = IS_HTML_COLOUR()
-
+    
     # CRUD Strings
     ADD_THEME = T("Add Theme")
     LIST_THEMES = T("List Themes")
@@ -122,7 +109,9 @@ def theme():
 
     s3xrc.model.configure(table,
                           onvalidation=theme_check,
-                          list_fields=["id", "name", "logo", "footer", "col_background"])
+                          #list_fields=["id", "name", "logo", "footer", "col_background"],
+                          list_fields=["id", "name", "logo", "col_background"],
+                          )
 
     return shn_rest_controller(module, resource)
     s3xrc.model.clear_config(table, "onvalidation")
@@ -154,8 +143,8 @@ def theme_apply(form):
         lines = inpfile.readlines()
         inpfile.close()
         # Read settings from Database
-        theme = db(db.admin_theme.id == form.vars.theme).select().first()
-        default_theme = db(db.admin_theme.id == 1).select().first()
+        theme = db(db.admin_theme.id == form.vars.theme).select(limitby=(0, 1)).first()
+        default_theme = db(db.admin_theme.id == 1).select(limitby=(0, 1)).first()
         if theme.logo:
             logo = theme.logo
         else:
@@ -189,8 +178,7 @@ def theme_apply(form):
         currentdir = os.getcwd()
         os.chdir(os.path.join(currentdir, request.folder, "static", "scripts", "tools"))
         import sys
-        # If started as a services os.sys.executable is no longer python on
-        # windows.
+        # If started as a Windows service, os.sys.executable is no longer python
         if ("win" in sys.platform):
             pythonpath = os.path.join(sys.prefix, "python.exe")
         else:
@@ -213,30 +201,32 @@ def theme_check(form):
     # Check which form we're called by
     if form.vars.theme:
         # Called from Settings
-        theme = db(db.admin_theme.id == form.vars.theme).select().first()
+        theme = db(db.admin_theme.id == form.vars.theme).select(db.admin_theme.logo, limitby=(0, 1)).first()
         logo = theme.logo
         #header_background = theme.header_background
-        footer = theme.footer
-    elif form.vars.logo and form.vars.footer:
+        #footer = theme.footer
+    #elif form.vars.logo and form.vars.footer:
+    elif form.vars.logo:
         # Called from Theme
         logo = form.vars.logo
         #header_background = form.vars.header_background
-        footer = form.vars.footer
+        #footer = form.vars.footer
     else:
         session.error = INVALIDREQUEST
         redirect(URL(r=request))
+
     _logo = os.path.join(request.folder, "static", logo)
     #_header_background = os.path.join(request.folder, "static", header_background)
-    _footer = os.path.join(request.folder, "views", footer)
+    #_footer = os.path.join(request.folder, "views", footer)
     if not os.access(_logo, os.R_OK):
         form.errors["logo"] = T("Logo file %s missing!" % logo)
         return
     #if not os.access(_header_background, os.R_OK):
     #    form.errors["header_background"] = T("Header background file %s missing!" % logo)
     #    return
-    if not os.access(_footer, os.R_OK):
-        form.errors["footer"] = T("Footer file %s missing!" % footer)
-        return
+    #if not os.access(_footer, os.R_OK):
+    #    form.errors["footer"] = T("Footer file %s missing!" % footer)
+    #    return
     # Validation passed
     return
 
@@ -275,6 +265,7 @@ def user():
     db.auth_user.registration_key.writable = True
     db.auth_user.registration_key.readable = True
     db.auth_user.registration_key.label = T("Disabled?")
+    # In Controller to allow registration to work with UUIDs - only manual edits need this setting
     db.auth_user.registration_key.requires = IS_NULL_OR(IS_IN_SET(["disabled", "pending"]))
 
     # Pre-processor
@@ -311,7 +302,7 @@ def user_approve(form):
         return
     else:
         # Now blank - lookup old value
-        status = db(db.auth_user.id == request.vars.id).select().first().registration_key
+        status = db(db.auth_user.id == request.vars.id).select(db.auth_user.registration_key, limitby=(0, 1)).first().registration_key
         if status == "pending":
             # Send email to user confirming that they are now able to login
             if not auth.settings.mailer or \
@@ -493,9 +484,10 @@ def users():
             theclass = "odd"
             even = True
         id = row.user_id
-        item_first = db.auth_user[id].first_name
-        item_second = db.auth_user[id].last_name
-        item_description = db.auth_user[id][username]
+        _user = db.auth_user[id]
+        item_first = _user.first_name
+        item_second = _user.last_name
+        item_description = _user[username]
         id_link = A(id, _href=URL(r=request, f="user", args=[id, "read"]))
         checkbox = INPUT(_type="checkbox", _value="on", _name=id, _class="remove_item")
         item_list.append(TR(TD(id_link), TD(item_first), TD(item_second), TD(item_description), TD(checkbox), _class=theclass))
@@ -526,7 +518,7 @@ def group_remove_users():
     table = db.auth_membership
     for var in request.vars:
         user = var
-        query = (table.group_id==group) & (table.user_id==user)
+        query = (table.group_id == group) & (table.user_id == user)
         db(query).delete()
     # Audit
     #crud.settings.update_onaccept = lambda form: shn_audit_update(form, "membership", "html")
@@ -564,8 +556,9 @@ def groups():
             theclass = "odd"
             even = True
         id = row.group_id
-        item_first = db.auth_group[id].role
-        item_description = db.auth_group[id].description
+        _group = db.auth_group[id]
+        item_first = _group.role
+        item_description = _group.description
         id_link = A(id, _href=URL(r=request, f="group", args=[id, "read"]))
         checkbox = INPUT(_type="checkbox", _value="on", _name=id, _class="remove_item")
         item_list.append(TR(TD(id_link), TD(item_first), TD(item_description), TD(checkbox), _class=theclass))
@@ -592,7 +585,7 @@ def user_remove_groups():
     table = db.auth_membership
     for var in request.vars:
         group = var
-        query = (table.group_id==group) & (table.user_id==user)
+        query = (table.group_id == group) & (table.user_id == user)
         db(query).delete()
     # Audit
     #crud.settings.update_onaccept = lambda form: shn_audit_update(form, "membership", "html")
@@ -602,7 +595,7 @@ def user_remove_groups():
 # Import Data
 @auth.requires_membership("Administrator")
 def import_data():
-    "Import data via POST upload to CRUD controller."
+    "Import data via POST upload to CRUD controller. Old - being replaced by Sync/Importer."
     title = T("Import Data")
     crud.messages.submit_button = "Upload"
     import_job_form = crud.create(db.admin_import_job)
@@ -629,13 +622,13 @@ def import_csv():
 # Export Data
 @auth.requires_login()
 def export_data():
-    "Export data via CRUD controller."
+    "Export data via CRUD controller. Old - being replaced by Sync."
     title = T("Export Data")
     return dict(title=title)
 
-@auth.requires_login()
+@auth.requires_membership("Administrator")
 def export_csv():
-    "Export entire database as CSV"
+    "Export entire database as CSV. Old - being replaced by Sync."
     import StringIO
     output = StringIO.StringIO()
 
@@ -916,7 +909,7 @@ def handleResults():
     title = T("Test Results")
     return dict(title=title, item=message)
 
-#Ticket Viewer functions Borrowed from admin application of web2py
+# Ticket Viewer functions Borrowed from admin application of web2py
 @auth.requires_membership("Administrator")
 def errors():
     """ Error handler """
@@ -994,7 +987,7 @@ class TRACEBACK(object):
         return self.s
 
 
-##ticket viewing
+# Ticket viewing
 @auth.requires_membership("Administrator")
 def ticket():
     """ Ticket handler """

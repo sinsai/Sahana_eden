@@ -8,6 +8,10 @@
 
 BREADCRUMB = ">> "
 UNKNOWN_OPT = T("Unknown")
+READ = T("Details")
+UPDATE = T("Edit")
+#UPDATE = T("Update")
+DELETE = T("Delete")
 
 # Default strings are in English
 T.current_languages = ["en", "en-us"]

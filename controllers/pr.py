@@ -87,9 +87,9 @@ def person():
     def person_postp(jr, output):
         if jr.representation in ("html", "popup"):
             if not jr.component:
-                label = T("Details")
+                label = READ
             else:
-                label = T("Update")
+                label = UPDATE
             linkto = shn_linkto(jr, sticky=True)("[id]")
             response.s3.actions = [
                 dict(label=str(label), _class="action-btn", url=linkto)
@@ -134,9 +134,9 @@ def group():
     def group_postp(jr, output):
         if jr.representation in ("html", "popup"):
             if not jr.component:
-                label = T("Details")
+                label = READ
             else:
-                label = T("Update")
+                label = UPDATE
             linkto = shn_linkto(jr, sticky=True)("[id]")
             response.s3.actions = [
                 dict(label=str(label), _class="action-btn", url=linkto)

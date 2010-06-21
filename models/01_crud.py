@@ -2123,7 +2123,7 @@ def shn_search(jr, **attr):
 
         _vars = request.vars
         _table = jr.table
-        
+
         # JQuery Autocomplete uses "q" instead of "value"
         value = _vars.value or _vars.q or None
 

@@ -157,7 +157,7 @@ def sync():
         return T("Not supported")
 
     sync_peer = None
-    if request.vars["sync_partner_uuid"]:
+    if "sync_partner_uuid" in request.vars:
         sync_peer = db(db.sync_partner.uuid == request.vars["sync_partner_uuid"]).select()[0]
 
     if _function == "list" or _function == "create":

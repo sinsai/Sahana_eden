@@ -280,13 +280,8 @@ def user():
 
     # Post-processor
     def user_postp(jr, output):
-        if not jr.component:
-            # Provide the ability to delete records in bulk
-            response.s3.actions = [
-                dict(label=str(T("Update")), _class="action-btn", url=str(URL(r=request, args=["[id]"]))),
-                dict(label=str(T("Delete")), _class="action-btn", url=str(URL(r=request, args=["[id]", "delete"]))),
-            ]
-            return output
+        shn_action_buttons(jr)
+        return output
     response.s3.postp = user_postp
 
     output = shn_rest_controller(module, resource, main="first_name")

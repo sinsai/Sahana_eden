@@ -676,6 +676,16 @@ class S3RESTRequest(object):
             print >> sys.stderr, "S3RESTRequest: %s" % msg
 
 
+    def __repr__(self):
+
+        return self.here()
+
+
+    def __str__(self):
+
+        return str(self.here())
+
+
     # Request parser ==========================================================
 
     def __parse(self):
@@ -684,7 +694,8 @@ class S3RESTRequest(object):
 
         self.args = []
 
-        components = self.rc.model.components
+        components = [c[0].name for c in
+                      self.rc.model.get_components(self.prefix, self.name)]
 
         if len(self.request.args) > 0:
             for i in xrange(0, len(self.request.args)):
@@ -3146,14 +3157,14 @@ class S3XML(object):
                                   self.xml_encode(marker_url))
                     # Lookup GPS Marker
                     symbol = None
-                    fctbl = db.gis_feature_class
-                    query = (fctbl.id == str(LatLon[self.FeatureClass]))
-                    try:
-                        symbol = db(query).select(fctbl.gps_marker,
-                                                  limitby=(0, 1)).first().gps_marker
-                    except:
-                        # No Feature Class
-                        pass
+                    if LatLon[self.FeatureClass]:
+                        fctbl = db.gis_feature_class
+                        query = (fctbl.id == str(LatLon[self.FeatureClass]))
+                        try:
+                            symbol = db(query).select(fctbl.gps_marker,
+                                        limitby=(0, 1)).first().gps_marker
+                        except:
+                            pass
                     if not symbol:
                         symbol = "White Dot"
                     r.element.set(self.ATTRIBUTE.sym,

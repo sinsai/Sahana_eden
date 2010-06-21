@@ -61,9 +61,9 @@ def hospital():
     def hospital_postp(jr, output):
         if jr.representation in ("html", "popup"):
             if jr.component and jr.component.name == "bed_capacity":
-                label = T("Update")
+                label = UPDATE
             else:
-                label = T("Details")
+                label = READ
             linkto = shn_linkto(jr, sticky=True)("[id]")
             response.s3.actions = [
                 dict(label=str(label), _class="action-btn", url=linkto)

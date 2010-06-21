@@ -67,13 +67,17 @@ s3uuid = SQLCustomType(
 
 uuidstamp = db.Table(None, "uuidstamp",
                      Field("uuid",
-                          type=s3uuid,
-                          length=128,
-                          notnull=True,
-                          unique=True,
-                          readable=False,
-                          writable=False,
-                          default=""))
+                           type=s3uuid,
+                           length=128,
+                           notnull=True,
+                           unique=True,
+                           readable=False,
+                           writable=False,
+                           default=""),
+                     Field("mci", "integer", # Master-Copy-Index
+                           default=0,
+                           readable=False,
+                           writable=False))
 
 # Reusable Deletion_Status field to include in other table definitions
 deletion_status = db.Table(None, "deletion_status",

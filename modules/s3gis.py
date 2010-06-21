@@ -271,18 +271,18 @@ class GIS(object):
         db = self.db
         _config = db.gis_config
         _projection = db.gis_projection
-        
+
         query = (_config.id == 1) & (_projection.id == _config.projection_id)
         config = db(query).select(limitby=(0, 1)).first()
-        
+
         output = Storage()
         for item in config["gis_config"]:
             output[item] = config["gis_config"][item]
-        
+
         for item in config["gis_projection"]:
             if item in ["epsg", "units", "maxResolution", "maxExtent"]:
                 output[item] = config["gis_projection"][item]
-        
+
         return output
 
     def get_feature_class_id_from_name(self, name):
@@ -363,11 +363,10 @@ class GIS(object):
 
         feature = db(query).select(table_feature.marker_id,
                                    table_feature.feature_class_id,
-                                   limitby=(0, 1))
+                                   limitby=(0, 1)).first()
         if feature:
-            _feature = feature.first()
-            feature_class =  _feature.feature_class_id
-            marker_id =  _feature.first().marker_id
+            feature_class = feature.feature_class_id
+            marker_id = feature.marker_id
 
             # 1st choice for a Marker is the Feature's
             if marker_id:
@@ -716,9 +715,9 @@ OpenLayers.Util.extend( selectPdfControl, {
         if toolbar:
             toolbar = """
         toolbar = mapPanel.getTopToolbar();
-        
+
         // OpenLayers controls
-        
+
         // Measure Controls
         var measureSymbolizers = {
             'Point': {
@@ -749,7 +748,7 @@ OpenLayers.Util.extend( selectPdfControl, {
             new OpenLayers.Rule({symbolizer: measureSymbolizers})
         ]);
         var styleMapMeasure = new OpenLayers.StyleMap({'default': styleMeasure});
-        
+
         var length = new OpenLayers.Control.Measure(
                 OpenLayers.Handler.Path, {
                     geodesic: true,
@@ -778,7 +777,7 @@ OpenLayers.Util.extend( selectPdfControl, {
                     alert('""" + str(T("The area is ")) + """' + evt.measure.toFixed(2) + ' ' + evt.units + '2');
                 }
             });
-            
+
 
         // Controls for Draft Features
         // - interferes with Feature Layers!
@@ -1687,7 +1686,7 @@ OpenLayers.Util.extend( selectPdfControl, {
                         wkt = self.latlon_to_wkt(feature.gis_location.lat, feature.gis_location.lon)
                     # Deal with apostrophes in Feature Names
                     fname = re.sub("'", "\\'", feature.gis_location.name)
-                    
+
                     layers_features += """
         geom = parser.read('""" + wkt + """').geometry;
         iconURL = '""" + marker_url + """';
@@ -2313,7 +2312,7 @@ OpenLayers.Util.extend( selectPdfControl, {
         });
 
         """ + legend1 + """
-        
+
         """ + print_tool1 + """
 
         """ + layout + """

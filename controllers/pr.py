@@ -110,9 +110,7 @@ def person():
                             (T("Presence Log"), "presence"),
                             (T("Subscriptions"), "pe_subscription")
                             ]),
-                sticky=True,
-                rss=dict(title=shn_pr_person_represent,
-                        description="ID Label: %(pr_pe_label)s\n%(comment)s"))
+                sticky=True)
 
     shn_menu()
     return output

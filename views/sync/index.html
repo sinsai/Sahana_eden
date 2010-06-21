@@ -18,7 +18,7 @@
         <td align="left">
             {{=T("To begin the sync process, click the button on the right => ")}}
         </td>
-        <td align="right" nowrap><form method="post" action="sync/now"><input id="btnSubmit" type="submit" value="{{=T("Sync Now")}}" /></form></td>
+        <td align="right" nowrap><form method="post" action="{{=URL(r=request, c="sync", f="now")}}"><input id="btnSubmit" type="submit" value="{{=T("Sync Now")}}" /></form></td>
     </tr>
 </table>
 <br />
@@ -34,7 +34,7 @@ You can also see other settings on that page.")}}<br /><br />
         <td align="left">
             {{=T("Instead of automatically syncing from other peers over the network, you can also sync from files, which is necessary where there's no network. You can use this page to import sync data from files and also export data to sync files. Click the link on the right to go to this page.")}}
         </td>
-        <td align="right" nowrap>&nbsp;&nbsp;<a href="sync/offline"><b>{{=T("Offline Sync >>")}}</b></a></td>
+        <td align="right" nowrap>&nbsp;&nbsp;<a href="{{=URL(r=request, c="sync", f="offline")}}"><b>{{=T("Offline Sync >>")}}</b></a></td>
     </tr>
 </table>
 <br />
@@ -44,7 +44,7 @@ You can also see other settings on that page.")}}<br /><br />
         <td align="left">
             {{=T("You can change the configuration of synchronization module in the Settings section. This configuration includes your UUID (unique identification number), sync schedules, beacon service and so on. Click the following link to go to the Sync Settings page.")}}
         </td>
-        <td align="right" nowrap>&nbsp;&nbsp;<a href="sync/settings"><b>{{=T("Sync Settings >>")}}</b></a></td>
+        <td align="right" nowrap>&nbsp;&nbsp;<a href="{{=URL(r=request, c="sync", f="setting", args=[1, "update"])}}"><b>{{=T("Sync Settings >>")}}</b></a></td>
     </tr>
 </table>
 <br />
@@ -54,7 +54,7 @@ You can also see other settings on that page.")}}<br /><br />
         <td align="left">
             {{=T("Sync Partners are instances or peers (SahanaEden, SahanaAgasti, Ushahidi, etc.) that you want to sync information with. Click on the link on the right to go the page where you can add sync partners, search for sync partners and modify them.")}}
         </td>
-        <td align="right" nowrap>&nbsp;&nbsp;<a href="sync/partners"><b>{{=T("Sync Partners >>")}}</b></a></td>
+        <td align="right" nowrap>&nbsp;&nbsp;<a href="{{=URL(r=request, c="sync", f="partner")}}"><b>{{=T("Sync Partners >>")}}</b></a></td>
     </tr>
 </table>
 <br />
@@ -64,7 +64,7 @@ You can also see other settings on that page.")}}<br /><br />
         <td align="left">
             {{=T("Sync Pools are groups of peers (SahanaEden & SahanaAgasti instances) willing to sync with each other. You can subscribe to different groups, define new groups and dicsover the existing ones. Click the link on the right to go to Sync Pools page.")}}
         </td>
-        <td align="right" nowrap>&nbsp;&nbsp;<a href="sync/pools"><b>{{=T("Sync Pools >>")}}</b></a></td>
+        <td align="right" nowrap>&nbsp;&nbsp;<a href="{{=URL(r=request, c="sync", f="pool")}}"><b>{{=T("Sync Pools >>")}}</b></a></td>
     </tr>
 </table>
 <br />
@@ -74,7 +74,7 @@ You can also see other settings on that page.")}}<br /><br />
         <td align="left">
             {{=T("When syncing data with others, conflicts happen in cases when two (or more) parties want to sync information which both of them have modified, i.e. conflicting information. Sync module tries to resolve such conflicts automatically but in some cases it can't. In those cases, it is up to you to resolve those conflicts manually, click on the link on the right to go to this page.")}}
         </td>
-        <td align="right" nowrap>&nbsp;&nbsp;<a href="sync/conflicts"><b>{{=T("Sync Conflicts >>")}}</b></a></td>
+        <td align="right" nowrap>&nbsp;&nbsp;<a href="{{=URL(r=request, c="sync", f="conflict")}}"><b>{{=T("Sync Conflicts >>")}}</b></a></td>
     </tr>
 </table>
 <br />
@@ -84,7 +84,7 @@ You can also see other settings on that page.")}}<br /><br />
         <td align="left">
             {{=T("For each sync partner, there is a default sync job that runs after a specified interval of time. You can also set up more sync jobs which could be customized on your needs. Click the link on the right to get started.")}}
         </td>
-        <td align="right" nowrap>&nbsp;&nbsp;<a href="sync/schedule"><b>{{=T("Sync Schedule >>")}}</b></a></td>
+        <td align="right" nowrap>&nbsp;&nbsp;<a href="{{=URL(r=request, c="sync", f="schedule")}}"><b>{{=T("Sync Schedule >>")}}</b></a></td>
     </tr>
 </table>
 <br />
@@ -94,7 +94,7 @@ You can also see other settings on that page.")}}<br /><br />
         <td align="left">
             {{=T("This page shows you logs of past syncs. Click on the link below to go to this page.")}}
         </td>
-        <td align="right" nowrap>&nbsp;&nbsp;<a href="sync/history"><b>{{=T("Sync History >>")}}</b></a></td>
+        <td align="right" nowrap>&nbsp;&nbsp;<a href="{{=URL(r=request, c="sync", f="history")}}"><b>{{=T("Sync History >>")}}</b></a></td>
     </tr>
 </table>
 <br /><br />

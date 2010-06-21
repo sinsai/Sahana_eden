@@ -1,29 +1,28 @@
-{{extend 'layout.html'}}
-{{=H3(T("Complete Database Synchronized"))}}
-<div id='table-container'>
-<table><thead><tr><th>Id</th><th>Time Stamp</th><th>UUID of machine</th><th>Operation</th></tr></thead>
-{{for i in synced:}}
- <tr>
- <td>&nbsp;{{=A(T(str(i.id)),_href=URL(r=request, c='appadmin', f='update/db/admin_synclog', args = i.id))}}&nbsp;</td>
- <td>&nbsp;{{=i.timestamp}}&nbsp;</td>
- <td>&nbsp;{{=i.uuid}}&nbsp;</td>
- <td>&nbsp;{{=i.function}}&nbsp;</td>
+{{extend "layout.html"}}
+{{=H3(T("Syncronisation History"))}}
+<div id="table-container">
+<table class="display" width="100%" cellpadding="2" cellspacing="0"><thead><tr><th width="5%">Id</th><th width="20%">UUID of Remote Instance</th><th width="15%">Time Stamp</th><th width="20%">Tables Synced</th><th width="20%">Tables Not Synced</th><th width="10%">Sync Mode</th><th width="10%">Complete Sync?</th></tr></thead>
+ <tbody>
+{{
+tr_class = "even"
+for log in logs:
+	if tr_class == "even":
+		tr_class = "odd"
+	else:
+		tr_class = "even"
+	pass
+}}
+ <tr class="{{=tr_class}}">
+ <td valign="top">{{=A(T(str(log.id)),_href=URL(r=request, c="appadmin", f="update/db/sync_log", args = log.id))}}</td>
+ <td valign="top">{{=log.uuid}}</td>
+ <td valign="top">{{=log.timestamp}}</td>
+ <td valign="top">{{=log.sync_tables_success}}</td>
+ <td valign="top">{{=log.sync_tables_error}}</td>
+ <td valign="top">{{=log.sync_mode}}</td>
+ <td valign="top">{{=log.complete_sync}}</td>
  </tr>
 {{pass}}
-</table>
-<p>&nbsp;</p>
-{{=H3(T("Partial Database Synchronization"))}}
-<div id='table-container'>
-<table><thead><tr><th>Id</th><th>Time Stamp</th><th>UUID of machine</th><th>Operation</th></tr></thead>
-{{for i in history:}}
- {{if i.id not in syncedids:}}
- <tr>
- <td>&nbsp;{{=A(T(str(i.id)),_href=URL(r=request, c='appadmin', f='update/db/admin_synclog', args = i.id))}}&nbsp;</td>
- <td>&nbsp;{{=i.timestamp}}&nbsp;</td>
- <td>&nbsp;{{=i.uuid}}&nbsp;</td>
- <td>&nbsp;{{=i.function}}&nbsp;</td>
- </tr>
- {{pass}}
-{{pass}}
+ </tbody>
 </table>
 </div>
+<p>&nbsp;</p>

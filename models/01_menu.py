@@ -72,8 +72,8 @@ admin_menu_options = [
             [T("Offline Sync"), False, URL(r=request, c="sync", f="offline")],
             [T("Sync Settings"), False, URL(r=request, c="sync", f="setting", args=[1, "update"])],
             [T("Sync Partners"), False, URL(r=request, c="sync", f="partner")],
-            [T("Sync Pools"), False, URL(r=request, c="sync", f="pools")],
-            [T("Sync Conflicts"), False, URL(r=request, c="sync", f="conflicts")],
+            [T("Sync Pools"), False, URL(r=request, c="sync", f="pool")],
+            [T("Sync Conflicts"), False, URL(r=request, c="sync", f="conflict")],
             [T("Sync History"), False, URL(r=request, c="sync", f="history")]
     ]],
     [T("Messaging"), False, "#",[

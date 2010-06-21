@@ -166,7 +166,7 @@ class S3RESTController(object):
             # Full policy
             if self.auth.is_logged_in() or self.auth.basic():
                 # Administrators are always authorised
-                if self.auth.has_membership(1):
+                if 1 in session.s3.roles:
                     authorised = True
                 else:
                     # Require records in auth_permission to specify access

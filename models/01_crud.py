@@ -611,7 +611,7 @@ def shn_has_permission(name, table_name, record_id = 0):
         # Full policy
         if auth.is_logged_in() or auth.basic():
             # Administrators are always authorised
-            if auth.has_membership(1):
+            if 1 in session.s3.roles:
                 authorised = True
             else:
                 # Require records in auth_permission to specify access
@@ -637,7 +637,7 @@ def shn_accessible_query(name, table):
         # simple
         return table.id > 0
     # Administrators can see all data
-    if auth.has_membership(1):
+    if 1 in session.s3.roles:
         return table.id > 0
     # If there is access to the entire table then show all records
     try:

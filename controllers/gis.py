@@ -97,17 +97,8 @@ def apikey():
 
     # Post-processor
     def user_postp(jr, output):
-        if not jr.component:
-            if auth.is_logged_in():
-                # Provide the ability to delete records in bulk
-                response.s3.actions = [
-                    dict(label=str(T("Update")), _class="action-btn", url=str(URL(r=request, args=["[id]"])))
-                ]
-            else:
-                response.s3.actions = [
-                    dict(label=str(T("Details")), _class="action-btn", url=str(URL(r=request, args=["[id]"])))
-                ]
-            return output
+        shn_action_buttons(jr, deletable=False)
+        return output
     response.s3.postp = user_postp
 
     output = shn_rest_controller(module, resource, deletable=False, listadd=False)
@@ -531,17 +522,8 @@ def layer_openstreetmap():
 
     # Post-processor
     def user_postp(jr, output):
-        if not jr.component:
-            if auth.is_logged_in():
-                # Provide the ability to delete records in bulk
-                response.s3.actions = [
-                    dict(label=str(T("Update")), _class="action-btn", url=str(URL(r=request, args=["[id]"])))
-                ]
-            else:
-                response.s3.actions = [
-                    dict(label=str(T("Details")), _class="action-btn", url=str(URL(r=request, args=["[id]"])))
-                ]
-            return output
+        shn_action_buttons(jr, deletable=False)
+        return output
     response.s3.postp = user_postp
 
     output = shn_rest_controller(module, resource, deletable=False, listadd=False)
@@ -581,17 +563,8 @@ def layer_google():
 
     # Post-processor
     def user_postp(jr, output):
-        if not jr.component:
-            if auth.is_logged_in():
-                # Provide the ability to delete records in bulk
-                response.s3.actions = [
-                    dict(label=str(T("Update")), _class="action-btn", url=str(URL(r=request, args=["[id]"])))
-                ]
-            else:
-                response.s3.actions = [
-                    dict(label=str(T("Details")), _class="action-btn", url=str(URL(r=request, args=["[id]"])))
-                ]
-            return output
+        shn_action_buttons(jr, deletable=False)
+        return output
     response.s3.postp = user_postp
 
     output = shn_rest_controller(module, resource, deletable=False, listadd=False)
@@ -631,17 +604,8 @@ def layer_yahoo():
 
     # Post-processor
     def user_postp(jr, output):
-        if not jr.component:
-            if auth.is_logged_in():
-                # Provide the ability to delete records in bulk
-                response.s3.actions = [
-                    dict(label=str(T("Update")), _class="action-btn", url=str(URL(r=request, args=["[id]"])))
-                ]
-            else:
-                response.s3.actions = [
-                    dict(label=str(T("Details")), _class="action-btn", url=str(URL(r=request, args=["[id]"])))
-                ]
-            return output
+        shn_action_buttons(jr, deletable=False)
+        return output
     response.s3.postp = user_postp
 
     output = shn_rest_controller(module, resource, deletable=False, listadd=False)
@@ -681,17 +645,8 @@ def layer_mgrs():
 
     # Post-processor
     def user_postp(jr, output):
-        if not jr.component:
-            if auth.is_logged_in():
-                # Provide the ability to delete records in bulk
-                response.s3.actions = [
-                    dict(label=str(T("Update")), _class="action-btn", url=str(URL(r=request, args=["[id]"])))
-                ]
-            else:
-                response.s3.actions = [
-                    dict(label=str(T("Details")), _class="action-btn", url=str(URL(r=request, args=["[id]"])))
-                ]
-            return output
+        shn_action_buttons(jr, deletable=False)
+        return output
     response.s3.postp = user_postp
 
     output = shn_rest_controller(module, resource, deletable=False, listadd=False)
@@ -731,17 +686,8 @@ def layer_bing():
 
     # Post-processor
     def user_postp(jr, output):
-        if not jr.component:
-            if auth.is_logged_in():
-                # Provide the ability to delete records in bulk
-                response.s3.actions = [
-                    dict(label=str(T("Update")), _class="action-btn", url=str(URL(r=request, args=["[id]"])))
-                ]
-            else:
-                response.s3.actions = [
-                    dict(label=str(T("Details")), _class="action-btn", url=str(URL(r=request, args=["[id]"])))
-                ]
-            return output
+        shn_action_buttons(jr, deletable=False)
+        return output
     response.s3.postp = user_postp
 
     output = shn_rest_controller(module, resource, deletable=False, listadd=False)

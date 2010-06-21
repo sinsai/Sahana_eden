@@ -34,14 +34,14 @@ global_env['datetime'] = datetime
 # S3 Auth
 #
 try:
-    if auth.has_membership(1):
+    if 1 in session.s3.roles:
         pass
     else:
-        session.error = T('Not Authorised!')
-        redirect(URL(r=request, c='default', f='user', args='login'))
+        session.error = T("Not Authorised!")
+        redirect(URL(r=request, c="default", f="user", args="login"))
 except:
-    session.error = T('Not Authorised!')
-    redirect(URL(r=request, c='default', f='user', args='login'))
+    session.error = T("Not Authorised!")
+    redirect(URL(r=request, c="default", f="user", args="login"))
 
 module = "admin"
 
@@ -49,11 +49,11 @@ module = "admin"
 response.menu_options = admin_menu_options
 
 ignore_rw = True
-response.view = 'admin/appadmin.html'
-#response.menu = [[T('design'), False, URL('admin', 'default', 'design',
-#                 args=[request.application])], [T('db'), False,
-#                 URL(r=request, f='index')], [T('state'), False,
-#                 URL(r=request, f='state')]]
+response.view = "admin/appadmin.html"
+#response.menu = [[T("design"), False, URL("admin", "default", "design",
+#                 args=[request.application])], [T("db"), False,
+#                 URL(r=request, f="index")], [T("state"), False,
+#                 URL(r=request, f="state")]]
 
 
 # ##########################################################

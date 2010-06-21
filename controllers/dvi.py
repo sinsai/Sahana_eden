@@ -12,8 +12,8 @@ if module not in deployment_settings.modules:
 
 # Only people with the DVI role should be able to access this module
 #try:
-#    dvi_group = db(db[auth.settings.table_group_name].role == "DVI").select().first().id
-#    if auth.has_membership(dvi_group):
+#    dvi_group = db(db[auth.settings.table_group_name].role == "DVI").select(db[auth.settings.table_group_name].id, limitby=(0, 1)).first().id
+#    if dvi_group in session.s3.roles:
 #        pass
 #    else:
 #        session.error = T("Not Authorised!")
@@ -70,7 +70,7 @@ def recreq():
 
     def recreq_postp(jr, output):
         if jr.representation in ("html", "popup"):
-            label = T("Update")
+            label = UPDATE
             linkto = shn_linkto(jr, sticky=True)("[id]")
             response.s3.actions = [
                 dict(label=str(label), _class="action-btn", url=linkto)
@@ -92,9 +92,9 @@ def body():
     def body_postp(jr, output):
         if jr.representation in ("html", "popup"):
             if not jr.component:
-                label = T("Details")
+                label = READ
             else:
-                label = T("Update")
+                label = UPDATE
             linkto = shn_linkto(jr, sticky=True)("[id]")
             response.s3.actions = [
                 dict(label=str(label), _class="action-btn", url=linkto)

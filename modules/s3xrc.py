@@ -288,7 +288,7 @@ class S3RESTController(object):
             # Joined Table Operation
             if jr.component:
                 # HTTP Multi-Record Operation
-                if jr.method==None and jr.multiple and not jr.component_id:
+                if jr.method == None and jr.multiple and not jr.component_id:
                     # HTTP List/List-add
                     if jr.http == "GET":
                         authorised = self.__has_permission(session, "read",
@@ -333,7 +333,7 @@ class S3RESTController(object):
                         else:
                             self.__unauthorised(jr, session)
                     # HTTP Update
-                    elif jr.http=="PUT" or jr.http == "POST":
+                    elif jr.http == "PUT" or jr.http == "POST":
                         if jr.representation in self.json_import_formats:
                             method = "import_json"
                         elif jr.representation in self.xml_import_formats:
@@ -676,6 +676,16 @@ class S3RESTRequest(object):
             print >> sys.stderr, "S3RESTRequest: %s" % msg
 
 
+    def __repr__(self):
+
+        return self.here()
+
+
+    def __str__(self):
+
+        return str(self.here())
+
+
     # Request parser ==========================================================
 
     def __parse(self):
@@ -684,7 +694,8 @@ class S3RESTRequest(object):
 
         self.args = []
 
-        components = self.rc.model.components
+        components = [c[0].name for c in
+                      self.rc.model.get_components(self.prefix, self.name)]
 
         if len(self.request.args) > 0:
             for i in xrange(0, len(self.request.args)):
@@ -3146,14 +3157,14 @@ class S3XML(object):
                                   self.xml_encode(marker_url))
                     # Lookup GPS Marker
                     symbol = None
-                    fctbl = db.gis_feature_class
-                    query = (fctbl.id == str(LatLon[self.FeatureClass]))
-                    try:
-                        symbol = db(query).select(fctbl.gps_marker,
-                                                  limitby=(0, 1)).first().gps_marker
-                    except:
-                        # No Feature Class
-                        pass
+                    if LatLon[self.FeatureClass]:
+                        fctbl = db.gis_feature_class
+                        query = (fctbl.id == str(LatLon[self.FeatureClass]))
+                        try:
+                            symbol = db(query).select(fctbl.gps_marker,
+                                        limitby=(0, 1)).first().gps_marker
+                        except:
+                            pass
                     if not symbol:
                         symbol = "White Dot"
                     r.element.set(self.ATTRIBUTE.sym,

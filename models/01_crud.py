@@ -1131,6 +1131,10 @@ def shn_read(jr, **attr):
         href_delete = URL(r=jr.request, f=jr.name, args=[record_id, "delete"])
         href_edit = URL(r=jr.request, f=jr.name, args=[record_id, "update"])
 
+    # ToDo: Comment this out
+    # Just because we have rights to edit a record, doens't mean that we always want to actually do so
+    # => was intentional, because somebody said:
+    #    If we have the right to edit, why should we need to first click "Update" to do so?
     authorised = shn_has_permission("update", table, record_id)
     if authorised and jr.representation == "html" and editable:
         return shn_update(jr, **attr)
@@ -1798,7 +1802,7 @@ def shn_update(jr, **attr):
             query = ((table.deleted == False) | (table.deleted == None)) & query
 
         try:
-            record_id = db(query).select(table.id).first().id
+            record_id = db(query).select(table.id, limitby=(0, 1)).first().id
         except:
             record_id = None
             href_delete = None
@@ -2123,7 +2127,7 @@ def shn_search(jr, **attr):
 
         _vars = request.vars
         _table = jr.table
-        
+
         # JQuery Autocomplete uses "q" instead of "value"
         value = _vars.value or _vars.q or None
 

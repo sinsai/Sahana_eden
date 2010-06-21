@@ -716,24 +716,69 @@ OpenLayers.Util.extend( selectPdfControl, {
         if toolbar:
             toolbar = """
         toolbar = mapPanel.getTopToolbar();
-        var toggleGroup = "controls";
-
+        
         // OpenLayers controls
-        var length = new OpenLayers.Control.Measure(OpenLayers.Handler.Path, {
-            eventListeners: {
-                measure: function(evt) {
-                    alert('""" + str(T("The length was ")) + """' + evt.measure + evt.units);
-                }
+        
+        // Measure Controls
+        var measureSymbolizers = {
+            'Point': {
+                pointRadius: 5,
+                graphicName: 'circle',
+                fillColor: 'white',
+                fillOpacity: 1,
+                strokeWidth: 1,
+                strokeOpacity: 1,
+                strokeColor: '#f5902e'
+            },
+            'Line': {
+                strokeWidth: 3,
+                strokeOpacity: 1,
+                strokeColor: '#f5902e',
+                strokeDashstyle: 'dash'
+            },
+            'Polygon': {
+                strokeWidth: 2,
+                strokeOpacity: 1,
+                strokeColor: '#f5902e',
+                fillColor: 'white',
+                fillOpacity: 0.5
             }
-        });
-
-        var area = new OpenLayers.Control.Measure(OpenLayers.Handler.Polygon, {
-            eventListeners: {
-                measure: function(evt) {
-                    alert('""" + str(T("The area was ")) + """' + evt.measure + evt.units);
+        };
+        var styleMeasure = new OpenLayers.Style();
+        styleMeasure.addRules([
+            new OpenLayers.Rule({symbolizer: measureSymbolizers})
+        ]);
+        var styleMapMeasure = new OpenLayers.StyleMap({'default': styleMeasure});
+        
+        var length = new OpenLayers.Control.Measure(
+                OpenLayers.Handler.Path, {
+                    geodesic: true,
+                    persist: true,
+                    handlerOptions: {
+                        layerOptions: {styleMap: styleMapMeasure}
+                    }
                 }
-            }
-        });
+            );
+        length.events.on({
+                'measure': function(evt) {
+                    alert('""" + str(T("The length is ")) + """' + evt.measure.toFixed(2) + ' ' + evt.units);
+                }
+            });
+        var area = new OpenLayers.Control.Measure(
+                OpenLayers.Handler.Polygon, {
+                    geodesic: true,
+                    persist: true,
+                    handlerOptions: {
+                        layerOptions: {styleMap: styleMapMeasure}
+                    }
+                }
+            );
+        area.events.on({
+                'measure': function(evt) {
+                    alert('""" + str(T("The area is ")) + """' + evt.measure.toFixed(2) + ' ' + evt.units + '2');
+                }
+            });
+            
 
         // Controls for Draft Features
         // - interferes with Feature Layers!
@@ -756,6 +801,7 @@ OpenLayers.Util.extend( selectPdfControl, {
             control: new OpenLayers.Control.ZoomToMaxExtent(),
             map: map,
             iconCls: 'zoomfull',
+            // button options
             tooltip: '""" + str(T("Zoom to maximum map extent")) + """'
         });
 
@@ -763,42 +809,52 @@ OpenLayers.Util.extend( selectPdfControl, {
             control: new OpenLayers.Control.ZoomBox({ out: true }),
             map: map,
             iconCls: 'zoomout',
+            // button options
             tooltip: '""" + str(T("Zoom Out: click in the map or use the left mouse button and drag to create a rectangle")) + """',
-            toggleGroup: toggleGroup
+            toggleGroup: 'controls'
         });
 
         var zoomin = new GeoExt.Action({
             control: new OpenLayers.Control.ZoomBox(),
             map: map,
             iconCls: 'zoomin',
+            // button options
             tooltip: '""" + str(T("Zoom In: click in the map or use the left mouse button and drag to create a rectangle")) + """',
-            toggleGroup: toggleGroup
+            toggleGroup: 'controls'
         });
 
         var pan = new GeoExt.Action({
             control: new OpenLayers.Control.Navigation(),
             map: map,
             iconCls: 'pan-off',
+            // button options
             tooltip: '""" + str(T("Pan Map: keep the left mouse button pressed and drag the map")) + """',
-            toggleGroup: toggleGroup,
-            //allowDepress: false,
+            toggleGroup: 'controls',
+            allowDepress: false,
             pressed: true
         });
 
+        // 1st of these 2 to get activated cannot be deselected!
         var lengthButton = new GeoExt.Action({
             control: length,
             map: map,
             iconCls: 'measure-off',
+            // button options
             tooltip: '""" + str(T("Measure Length: Click the points along the path & end with a double-click")) + """',
-            toggleGroup: toggleGroup
+            toggleGroup: 'controls',
+            allowDepress: true,
+            enableToggle: true
         });
 
         var areaButton = new GeoExt.Action({
             control: area,
             map: map,
             iconCls: 'measure-area',
+            // button options
             tooltip: '""" + str(T("Measure Area: Click the points around the polygon & end with a double-click")) + """',
-            toggleGroup: toggleGroup
+            toggleGroup: 'controls',
+            allowDepress: true,
+            enableToggle: true
         });
 
         """ + mgrs2 + """
@@ -807,8 +863,10 @@ OpenLayers.Util.extend( selectPdfControl, {
             //control: selectControl,
             map: map,
             iconCls: 'searchclick',
+            // button options
             tooltip: '""" + str(T("Query Feature")) + """',
-            toggleGroup: toggleGroup
+            toggleGroup: 'controls',
+            enableToggle: true
         });
 
         //var pointButton = new GeoExt.Action({
@@ -816,7 +874,7 @@ OpenLayers.Util.extend( selectPdfControl, {
         //    map: map,
         //    iconCls: 'drawpoint-off',
         //    tooltip: '""" + str(T("Add Point")) + """',
-        //    toggleGroup: toggleGroup
+        //    toggleGroup: 'controls'
         //});
 
         //var lineButton = new GeoExt.Action({
@@ -824,7 +882,7 @@ OpenLayers.Util.extend( selectPdfControl, {
         //    map: map,
         //    iconCls: 'drawline-off',
         //    tooltip: '""" + str(T("Add Line")) + """',
-        //    toggleGroup: toggleGroup
+        //    toggleGroup: 'controls'
         //});
 
         //var polygonButton = new GeoExt.Action({
@@ -832,7 +890,7 @@ OpenLayers.Util.extend( selectPdfControl, {
         //    map: map,
         //    iconCls: 'drawpolygon-off',
         //    tooltip: '""" + str(T("Add Polygon")) + """',
-        //    toggleGroup: toggleGroup
+        //    toggleGroup: 'controls'
         //});
 
         //var dragButton = new GeoExt.Action({
@@ -840,7 +898,7 @@ OpenLayers.Util.extend( selectPdfControl, {
         //    map: map,
         //    iconCls: 'movefeature',
         //    tooltip: '""" + str(T("Move Feature: Drag feature to desired location")) + """',
-        //    toggleGroup: toggleGroup
+        //    toggleGroup: 'controls'
         //});
 
         //var resizeButton = new GeoExt.Action({
@@ -848,7 +906,7 @@ OpenLayers.Util.extend( selectPdfControl, {
         //    map: map,
         //    iconCls: 'resizefeature',
         //    tooltip: '""" + str(T("Resize Feature: Select the feature you wish to resize & then Drag the associated dot to your desired size")) + """',
-        //    toggleGroup: toggleGroup
+        //    toggleGroup: 'controls'
         //});
 
         //var rotateButton = new GeoExt.Action({
@@ -856,7 +914,7 @@ OpenLayers.Util.extend( selectPdfControl, {
         //    map: map,
         //    iconCls: 'rotatefeature',
         //    tooltip: '""" + str(T("Rotate Feature: Select the feature you wish to rotate & then Drag the associated dot to rotate to your desired location")) + """',
-        //    toggleGroup: toggleGroup
+        //    toggleGroup: 'controls'
         //});
 
         //var modifyButton = new GeoExt.Action({
@@ -864,7 +922,7 @@ OpenLayers.Util.extend( selectPdfControl, {
         //    map: map,
         //    iconCls: 'modifyfeature',
         //    tooltip: '""" + str(T("Modify Feature: Select the feature you wish to deform & then Drag one of the dots to deform the feature in your chosen manner")) + """',
-        //    toggleGroup: toggleGroup
+        //    toggleGroup: 'controls'
         //});
 
         //var removeButton = new GeoExt.Action({
@@ -872,7 +930,7 @@ OpenLayers.Util.extend( selectPdfControl, {
         //    map: map,
         //    iconCls: 'removefeature',
         //    tooltip: '""" + str(T("Remove Feature: Select the feature you wish to remove & press the delete key")) + """',
-        //    toggleGroup: toggleGroup
+        //    toggleGroup: 'controls'
         //});
 
         var navPreviousButton = new Ext.Toolbar.Button({
@@ -1023,104 +1081,123 @@ OpenLayers.Util.extend( selectPdfControl, {
         if print_tool:
             url = print_tool["url"]
             print_tool1 = """
-        printProvider = new GeoExt.data.PrintProvider({
-            //method: 'POST',
-            //url: '""" + url + """'
-            method: 'GET', // 'POST' recommended for production use
-            capabilities: printCapabilities // from the info.json script in the html
-        });
-        // Our print page. Stores scale, center and rotation and gives us a page
-        // extent feature that we can add to a layer.
-        printPage = new GeoExt.data.PrintPage({
-            printProvider: printProvider,
-            customParams: {
-                mapTitle: 'Printing Demo'
-            }
-        });
-        // A layer to display the print page extent
-        var pageLayer = new OpenLayers.Layer.Vector();
-        pageLayer.addFeatures(printPage.feature);
-        map.addLayer(pageLayer);
-        map.setOptions(options, {
-            eventListeners: {
-                // recenter/resize page extent after pan/zoom
-                'moveend': function(){ printPage.fit(this); }
-            }
-        });
-        // The form with fields controlling the print output
-        var formPanel = new Ext.form.FormPanel({
-            title: 'Print Map',
-            rootVisible: false,
-            split: true,
-            autoScroll: true,
-            collapsible: true,
-            collapseMode: 'mini',
-            lines: false,
-            bodyStyle: 'padding:5px',
-            labelAlign: 'top',
-            defaults: {anchor: '100%'},
-            items: [{
-                xtype: 'textarea',
-                name: 'comment',
-                value: '',
-                fieldLabel: 'Comment',
-                plugins: new GeoExt.plugins.PrintPageField({
-                    printPage: printPage
-                })
-            }, {
-                xtype: 'combo',
-                store: printProvider.layouts,
-                displayField: 'name',
-                fieldLabel: 'Layout',
-                typeAhead: true,
-                mode: 'local',
-                triggerAction: 'all',
-                plugins: new GeoExt.plugins.PrintProviderField({
-                    printProvider: printProvider
-                })
-            }, {
-                xtype: 'combo',
-                store: printProvider.dpis,
-                displayField: 'name',
-                fieldLabel: 'Resolution',
-                tpl: '<tpl for="."><div class="x-combo-list-item">{name} dpi</div></tpl>',
-                typeAhead: true,
-                mode: 'local',
-                triggerAction: 'all',
-                plugins: new GeoExt.plugins.PrintProviderField({
-                    printProvider: printProvider
-                }),
-                // the plugin will work even if we modify a combo value
-                setValue: function(v) {
-                    v = parseInt(v) + ' dpi';
-                    Ext.form.ComboBox.prototype.setValue.apply(this, arguments);
+        if (typeof(printCapabilities) != 'undefined') {
+            printProvider = new GeoExt.data.PrintProvider({
+                //method: 'POST',
+                //url: '""" + url + """'
+                method: 'GET', // 'POST' recommended for production use
+                capabilities: printCapabilities // from the info.json script in the html
+            });
+            // Our print page. Stores scale, center and rotation and gives us a page
+            // extent feature that we can add to a layer.
+            printPage = new GeoExt.data.PrintPage({
+                printProvider: printProvider,
+                customParams: {
+                    mapTitle: 'Printing Demo'
                 }
-            }, {
-                xtype: 'combo',
-                store: printProvider.scales,
-                displayField: 'name',
-                fieldLabel: 'Scale',
-                typeAhead: true,
-                mode: 'local',
-                triggerAction: 'all',
-                plugins: new GeoExt.plugins.PrintPageField({
-                    printPage: printPage
-                })
-            }, {
-                xtype: 'textfield',
-                name: 'rotation',
-                fieldLabel: 'Rotation',
-                plugins: new GeoExt.plugins.PrintPageField({
-                    printPage: printPage
-                })
-            }],
-            buttons: [{
-                text: 'Create PDF',
-                handler: function() {
-                    printProvider.print(mapPanel, printPage);
+            });
+            // A layer to display the print page extent
+            var pageLayer = new OpenLayers.Layer.Vector('""" + str(T("Print Extent")) + """');
+            pageLayer.addFeatures(printPage.feature);
+            pageLayer.setVisibility(false);
+            map.addLayer(pageLayer);
+            map.setOptions(options, {
+                eventListeners: {
+                    // recenter/resize page extent after pan/zoom
+                    'moveend': function(){ printPage.fit(this); }
                 }
-            }]
-        });
+            });
+            // The form with fields controlling the print output
+            var formPanel = new Ext.form.FormPanel({
+                title: '""" + str(T("Print Map")) + """',
+                rootVisible: false,
+                split: true,
+                autoScroll: true,
+                collapsible: true,
+                collapsed: true,
+                collapseMode: 'mini',
+                lines: false,
+                bodyStyle: 'padding:5px',
+                labelAlign: 'top',
+                defaults: {anchor: '100%'},
+                items: [{
+                    xtype: 'textarea',
+                    name: 'comment',
+                    value: '',
+                    fieldLabel: '""" + str(T("Comment")) + """',
+                    plugins: new GeoExt.plugins.PrintPageField({
+                        printPage: printPage
+                    })
+                }, {
+                    xtype: 'combo',
+                    store: printProvider.layouts,
+                    displayField: 'name',
+                    fieldLabel: '""" + str(T("Layout")) + """',
+                    typeAhead: true,
+                    mode: 'local',
+                    triggerAction: 'all',
+                    plugins: new GeoExt.plugins.PrintProviderField({
+                        printProvider: printProvider
+                    })
+                }, {
+                    xtype: 'combo',
+                    store: printProvider.dpis,
+                    displayField: 'name',
+                    fieldLabel: '""" + str(T("Resolution")) + """',
+                    tpl: '<tpl for="."><div class="x-combo-list-item">{name} dpi</div></tpl>',
+                    typeAhead: true,
+                    mode: 'local',
+                    triggerAction: 'all',
+                    plugins: new GeoExt.plugins.PrintProviderField({
+                        printProvider: printProvider
+                    }),
+                    // the plugin will work even if we modify a combo value
+                    setValue: function(v) {
+                        v = parseInt(v) + ' dpi';
+                        Ext.form.ComboBox.prototype.setValue.apply(this, arguments);
+                    }
+                }, {
+                    xtype: 'combo',
+                    store: printProvider.scales,
+                    displayField: 'name',
+                    fieldLabel: '""" + str(T("Scale")) + """',
+                    typeAhead: true,
+                    mode: 'local',
+                    triggerAction: 'all',
+                    plugins: new GeoExt.plugins.PrintPageField({
+                        printPage: printPage
+                    })
+                }, {
+                    xtype: 'textfield',
+                    name: 'rotation',
+                    fieldLabel: '""" + str(T("Rotation")) + """',
+                    plugins: new GeoExt.plugins.PrintPageField({
+                        printPage: printPage
+                    })
+                }],
+                buttons: [{
+                    text: '""" + str(T("Create PDF")) + """',
+                    handler: function() {
+                        printProvider.print(mapPanel, printPage);
+                    }
+                }]
+            });
+         } else {
+            // Display error diagnostic
+            var formPanel = new Ext.Panel ({
+                title: '""" + str(T("Print Map")) + """',
+                rootVisible: false,
+                split: true,
+                autoScroll: true,
+                collapsible: true,
+                collapseMode: 'mini',
+                lines: false,
+                bodyStyle: 'padding:5px',
+                labelAlign: 'top',
+                defaults: {anchor: '100%'},
+                html: '""" + str(T("Printing disabled since server not accessible: ")) + "<BR />" + url + """'
+            });
+         }
         """
             print_tool2 = """,
                     formPanel"""

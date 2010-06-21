@@ -12,10 +12,10 @@ if module not in deployment_settings.modules:
 
 # Options Menu (available in all Functions' Views)
 response.menu_options = [
-    [T('Home'), False, URL(r=request, f='index')],
-    [T('Request Aid'), False, URL(r=request, f='req', args='create')],
-    [T('View Requests & Pledge Aid'), False, URL(r=request, f='req')],
-    [T('View & Edit Pledges'),False, URL(r=request, f='pledge')]
+    [T("Home"), False, URL(r=request, f="index")],
+    [T("Request Aid"), False, URL(r=request, f="req", args="create")],
+    [T("View Requests & Pledge Aid"), False, URL(r=request, f="req")],
+    [T("View & Edit Pledges"),False, URL(r=request, f="pledge")]
 ]
 
 # S3 framework functions
@@ -30,12 +30,12 @@ def index():
 def req(): #aid requests
     "RESTlike CRUD controller"
 
-    resource = 'req' # pulls from table of combined aid request feeds (sms, tweets, manual)
+    resource = "req" # pulls from table of combined aid request feeds (sms, tweets, manual)
 
     # Filter out non-actionable SMS requests:
 #    response.s3.filter = (db.rms_req.actionable == True) | (db.rms_req.source_type != 2) # disabled b/c Ushahidi no longer updating actionaable fielde
 
-    if request.args(0) and request.args(0) == 'search_simple':
+    if request.args(0) and request.args(0) == "search_simple":
         pass
     else:
         # Uncomment to enable Server-side pagination:
@@ -45,11 +45,11 @@ def req(): #aid requests
         if jr.representation in ("html", "popup"):
             if not jr.component:
                 response.s3.actions = [
-                    dict(label=str(T("Pledge")), _class="action-btn", url=str(URL(r=request, args=['[id]', 'pledge'])))
+                    dict(label=str(T("Pledge")), _class="action-btn", url=str(URL(r=request, args=["[id]", "pledge"])))
                 ]
             elif jr.component_name == "pledge":
                 response.s3.actions = [
-                    dict(label=str(T("Details")), _class="action-btn", url=str(URL(r=request, args=['pledge', '[id]'])))
+                    dict(label=str(T("Details")), _class="action-btn", url=str(URL(r=request, args=["pledge", "[id]"])))
                 ]
         return output
     response.s3.postp = req_postp
@@ -66,7 +66,7 @@ def req(): #aid requests
 def pledge(): #pledges from agencies
     "RESTlike CRUD controller"
 
-    resource = 'pledge'
+    resource = "pledge"
 
     # Uncomment to enable Server-side pagination:
     #response.s3.pagination = True  #commented due to display problems
@@ -82,7 +82,7 @@ def pledge(): #pledges from agencies
         if jr.representation in ("html", "popup"):
             if not jr.component:
                 response.s3.actions = [
-                    dict(label=str(T("Details")), _class="action-btn", url=str(URL(r=request, args=['[id]'])))
+                    dict(label=str(READ), _class="action-btn", url=str(URL(r=request, args=["[id]", "read"])))
                 ]
         return output
     response.s3.postp = pledge_postp
@@ -102,24 +102,24 @@ def shn_rms_rheader(jr):
             aid_request = jr.record
             if aid_request:
                 try:
-                    location = db(db.gis_location.id == aid_request.location_id).select().first()
+                    location = db(db.gis_location.id == aid_request.location_id).select(limitby=(0, 1)).first()
                     location_represent = shn_gis_location_represent(location.id)
                 except:
                     location_represent = None
 
-                rheader = TABLE(TR(TH(T('Message: ')),
+                rheader = TABLE(TR(TH(T("Message: ")),
                                 TD(aid_request.message, _colspan=3)),
-                                TR(TH(T('Priority: ')),
+                                TR(TH(T("Priority: ")),
                                 aid_request.priority,
-                                TH(T('Source Type: ')),
+                                TH(T("Source Type: ")),
                                 rms_req_source_type.get(aid_request.source_type, T("unknown"))),
-                                TR(TH(T('Time of Request: ')),
+                                TR(TH(T("Time of Request: ")),
                                 aid_request.timestamp,
-                                TH(T('Verified: ')),
+                                TH(T("Verified: ")),
                                 aid_request.verified),
-                                TR(TH(T('Location: ')),
+                                TR(TH(T("Location: ")),
                                 location_represent,
-                                TH(T('Actionable: ')),
+                                TH(T("Actionable: ")),
                                 aid_request.actionable))
 
                 return rheader
@@ -137,12 +137,12 @@ def sms_complete(): #contributes to RSS feed for closing the loop with Ushahidi
         smsrec = db(db.rms_sms_request.id == record.id).select("smsrec")[0]["smsrec"]
 
         return \
-            "Ushahidi Link: " + A(ush_id, _href=ush_id).xml() + '<br>' + \
+            "Ushahidi Link: " + A(ush_id, _href=ush_id).xml() + "<br>" + \
             "SMS Record: " + str(smsrec)
 
     rss = { "title" : t , "description" : d }
     response.s3.filter = (db.rms_req.completion_status == True) & (db.rms_req.source_type == 2)
-    return shn_rest_controller(module, 'req', editable=False, listadd=False, rss=rss)
+    return shn_rest_controller(module, "req", editable=False, listadd=False, rss=rss)
 
 
 def tweet_complete(): #contributes to RSS feed for closing the loop with TtT
@@ -156,4 +156,4 @@ def tweet_complete(): #contributes to RSS feed for closing the loop with TtT
 
     rss = { "title" : t , "description" : d }
     response.s3.filter = (db.rms_req.completion_status == True) & (db.rms_req.source_type == 3)
-    return shn_rest_controller(module, 'req', editable=False, listadd=False, rss = rss)
+    return shn_rest_controller(module, "req", editable=False, listadd=False, rss = rss)

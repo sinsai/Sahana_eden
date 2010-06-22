@@ -71,8 +71,11 @@ uuidstamp = db.Table(None, "uuidstamp",
                   unique=True,
                   readable=False,
                   writable=False,
-                  default=""))
-
+                  default=""),
+            Field("mci", "integer", # Master-Copy-Index
+                  default=0,
+                  readable=False,
+                  writable=False))
 # Reusable Deletion_Status field to include in other table definitions
 deletion_status = db.Table(None, "deletion_status",
                     Field("deleted", "boolean",

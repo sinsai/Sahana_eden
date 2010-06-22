@@ -293,9 +293,9 @@ class GIS(object):
 
         db = self.db
 
-        feature = db(db.gis_feature_class.name == name).select()
+        feature = db(db.gis_feature_class.name == name).select(db.gis_feature_class.id, limitby=(0, 1)).first()
         if feature:
-            return feature[0].id
+            return feature.id
         else:
             return None
 
@@ -364,11 +364,10 @@ class GIS(object):
 
         feature = db(query).select(table_feature.marker_id,
                                    table_feature.feature_class_id,
-                                   limitby=(0, 1))
+                                   limitby=(0, 1)).first()
         if feature:
-            _feature = feature.first()
-            feature_class =  _feature.feature_class_id
-            marker_id =  _feature.first().marker_id
+            feature_class =  feature.feature_class_id
+            marker_id =  feature.marker_id
 
             # 1st choice for a Marker is the Feature's
             if marker_id:

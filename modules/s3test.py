@@ -3,7 +3,8 @@
 import wsgi_intercept.webtest_intercept
 
 class WSGI_Test(wsgi_intercept.webtest_intercept.WebCase):
-    """Class to use for Testing Sahana
+    """
+    Class to use for Testing Sahana
     - DocTests can call this direct
     - UnitTests can extend this
     """

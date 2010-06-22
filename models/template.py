@@ -55,7 +55,7 @@ if deployment_settings.has_module(module):
                                         )
 
     # Reusable field
-    hazard_ids = SQLTable(None, 'hazard_ids',
+    hazard_ids = db.Table(None, 'hazard_ids',
                          Field('hazard_ids',
                                requires = field_settings.requires,
                                widget = field_settings.widget,

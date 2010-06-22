@@ -193,8 +193,9 @@ class GIS(object):
     def get_api_key(self, layer="google"):
         " Acquire API key from the database "
 
-        query = self.db.gis_apikey.name == layer
-        return self.db(query).select(db.gis_apikey.name, limitby=(0, 1)).first().apikey
+        db = self.db
+        query = db.gis_apikey.name == layer
+        return db(query).select(db.gis_apikey.apikey, limitby=(0, 1)).first().apikey
 
     def get_bearing(lat_start, lon_start, lat_end, lon_end):
         """
@@ -477,7 +478,8 @@ class GIS(object):
             @param search: Show the Geonames search box
             @param print_tool: Show a print utility (NB This requires server-side support: http://eden.sahanafoundation.org/wiki/BluePrintGISPrinting)
                 {
-                url: string             # URL of print service (e.g. http://localhost:8080/geoserver/pdf/)
+                url: string,            # URL of print service (e.g. http://localhost:8080/geoserver/pdf/)
+                title: string           # Title for the Printed Map (optional)
                 }
             @param mgrs: Use the MGRS Control to select PDFs
                 {
@@ -539,8 +541,8 @@ class GIS(object):
         #####
         if session.s3.debug:
             html.append(LINK( _rel="stylesheet", _type="text/css", _href=URL(r=request, c="static", f="scripts/ext/resources/css/ext-all.css"), _media="screen", _charset="utf-8") )
-            html.append(LINK( _rel="stylesheet", _type="text/css", _href=URL(r=request, c="static", f="scripts/gis/ie6-style.css"), _media="screen", _charset="utf-8") )
-            html.append(LINK( _rel="stylesheet", _type="text/css", _href=URL(r=request, c="static", f="scripts/gis/google.css"), _media="screen", _charset="utf-8") )
+            html.append(LINK( _rel="stylesheet", _type="text/css", _href=URL(r=request, c="static", f="styles/gis/ie6-style.css"), _media="screen", _charset="utf-8") )
+            html.append(LINK( _rel="stylesheet", _type="text/css", _href=URL(r=request, c="static", f="styles/gis/google.css"), _media="screen", _charset="utf-8") )
             html.append(LINK( _rel="stylesheet", _type="text/css", _href=URL(r=request, c="static", f="styles/gis/geoext-all-debug.css"), _media="screen", _charset="utf-8") )
             html.append(LINK( _rel="stylesheet", _type="text/css", _href=URL(r=request, c="static", f="styles/gis/gis.css"), _media="screen", _charset="utf-8") )
         else:
@@ -751,33 +753,33 @@ OpenLayers.Util.extend( selectPdfControl, {
         var styleMapMeasure = new OpenLayers.StyleMap({'default': styleMeasure});
         
         var length = new OpenLayers.Control.Measure(
-                OpenLayers.Handler.Path, {
-                    geodesic: true,
-                    persist: true,
-                    handlerOptions: {
-                        layerOptions: {styleMap: styleMapMeasure}
-                    }
+            OpenLayers.Handler.Path, {
+                geodesic: true,
+                persist: true,
+                handlerOptions: {
+                    layerOptions: {styleMap: styleMapMeasure}
                 }
-            );
+            }
+        );
         length.events.on({
-                'measure': function(evt) {
-                    alert('""" + str(T("The length is ")) + """' + evt.measure.toFixed(2) + ' ' + evt.units);
-                }
-            });
+            'measure': function(evt) {
+                alert('""" + str(T("The length is ")) + """' + evt.measure.toFixed(2) + ' ' + evt.units);
+            }
+        });
         var area = new OpenLayers.Control.Measure(
-                OpenLayers.Handler.Polygon, {
-                    geodesic: true,
-                    persist: true,
-                    handlerOptions: {
-                        layerOptions: {styleMap: styleMapMeasure}
-                    }
+            OpenLayers.Handler.Polygon, {
+                geodesic: true,
+                persist: true,
+                handlerOptions: {
+                    layerOptions: {styleMap: styleMapMeasure}
                 }
-            );
+            }
+        );
         area.events.on({
-                'measure': function(evt) {
-                    alert('""" + str(T("The area is ")) + """' + evt.measure.toFixed(2) + ' ' + evt.units + '2');
-                }
-            });
+            'measure': function(evt) {
+                alert('""" + str(T("The area is ")) + """' + evt.measure.toFixed(2) + ' ' + evt.units + '2');
+            }
+        });
             
 
         // Controls for Draft Features
@@ -1080,33 +1082,51 @@ OpenLayers.Util.extend( selectPdfControl, {
         # Print
         if print_tool:
             url = print_tool["url"]
+            if "title" in print_tool:
+                mapTitle = str(print_tool["title"])
+            else:
+                mapTitle = str(T("Map from Sahana Eden"))
+            if session.auth:
+                creator = session.auth.user.email
+            else:
+                creator = None
             print_tool1 = """
         if (typeof(printCapabilities) != 'undefined') {
             printProvider = new GeoExt.data.PrintProvider({
                 //method: 'POST',
-                //url: '""" + url + """'
+                //url: '""" + url + """',
                 method: 'GET', // 'POST' recommended for production use
-                capabilities: printCapabilities // from the info.json script in the html
+                capabilities: printCapabilities, // from the info.json returned from the script headers
+                customParams: {
+                    mapTitle: '""" + mapTitle + """',
+                    subTitle: 'Sub Title',
+                    creator: '""" + creator + """'
+                }
             });
             // Our print page. Stores scale, center and rotation and gives us a page
             // extent feature that we can add to a layer.
             printPage = new GeoExt.data.PrintPage({
-                printProvider: printProvider,
-                customParams: {
-                    mapTitle: 'Printing Demo'
-                }
+                printProvider: printProvider
             });
+            
+            //var printExtent = new GeoExt.plugins.PrintExtent({
+            //    printProvider: printProvider
+            //});
             // A layer to display the print page extent
-            var pageLayer = new OpenLayers.Layer.Vector('""" + str(T("Print Extent")) + """');
-            pageLayer.addFeatures(printPage.feature);
-            pageLayer.setVisibility(false);
-            map.addLayer(pageLayer);
-            map.setOptions(options, {
-                eventListeners: {
+            //var pageLayer = new OpenLayers.Layer.Vector('""" + str(T("Print Extent")) + """');
+            //pageLayer.addFeatures(printPage.feature);
+            //pageLayer.setVisibility(false);
+            //map.addLayer(pageLayer);
+            //var pageControl = new OpenLayers.Control.TransformFeature();
+            //map.addControl(pageControl);                                
+            //map.setOptions({
+            //    eventListeners: {
                     // recenter/resize page extent after pan/zoom
-                    'moveend': function(){ printPage.fit(this); }
-                }
-            });
+            //        'moveend': function() {
+            //            printPage.fit(mapPanel, true);
+            //        }
+            //    }
+            //});
             // The form with fields controlling the print output
             var formPanel = new Ext.form.FormPanel({
                 title: '""" + str(T("Print Map")) + """',
@@ -1120,6 +1140,32 @@ OpenLayers.Util.extend( selectPdfControl, {
                 bodyStyle: 'padding:5px',
                 labelAlign: 'top',
                 defaults: {anchor: '100%'},
+                listeners: {
+                    'expand': function() {
+                        //if (null == mapPanel.map.getLayersByName('""" + str(T("Print Extent")) + """')[0]) {
+                        //    mapPanel.map.addLayer(pageLayer);
+                        //}
+                        if (null == mapPanel.plugins[0]) {
+                            //map.addLayer(pageLayer);
+                            //pageControl.activate();
+                            //mapPanel.plugins = [ new GeoExt.plugins.PrintExtent({
+                            //    printProvider: printProvider,
+                            //    map: map,
+                            //    layer: pageLayer,
+                            //    control: pageControl
+                            //}) ];
+                            //mapPanel.plugins[0].addPage();
+                        }
+                    },
+                    'collapse':  function() {
+                        //mapPanel.map.removeLayer(pageLayer);
+                        //if (null != mapPanel.plugins[0]) {
+                        //    map.removeLayer(pageLayer);
+                        //    mapPanel.plugins[0].removePage(mapPanel.plugins[0].pages[0]);
+                        //    mapPanel.plugins = [];
+                        //}
+                    }
+                },
                 items: [{
                     xtype: 'textarea',
                     name: 'comment',
@@ -1156,29 +1202,38 @@ OpenLayers.Util.extend( selectPdfControl, {
                         v = parseInt(v) + ' dpi';
                         Ext.form.ComboBox.prototype.setValue.apply(this, arguments);
                     }
-                }, {
-                    xtype: 'combo',
-                    store: printProvider.scales,
-                    displayField: 'name',
-                    fieldLabel: '""" + str(T("Scale")) + """',
-                    typeAhead: true,
-                    mode: 'local',
-                    triggerAction: 'all',
-                    plugins: new GeoExt.plugins.PrintPageField({
-                        printPage: printPage
-                    })
-                }, {
-                    xtype: 'textfield',
-                    name: 'rotation',
-                    fieldLabel: '""" + str(T("Rotation")) + """',
-                    plugins: new GeoExt.plugins.PrintPageField({
-                        printPage: printPage
-                    })
+                //}, {
+                //    xtype: 'combo',
+                //    store: printProvider.scales,
+                //    displayField: 'name',
+                //    fieldLabel: '""" + str(T("Scale")) + """',
+                //    typeAhead: true,
+                //    mode: 'local',
+                //    triggerAction: 'all',
+                //    plugins: new GeoExt.plugins.PrintPageField({
+                //        printPage: printPage
+                //    })
+                //}, {
+                //    xtype: 'textfield',
+                //    name: 'rotation',
+                //    fieldLabel: '""" + str(T("Rotation")) + """',
+                //    plugins: new GeoExt.plugins.PrintPageField({
+                //        printPage: printPage
+                //    })
                 }],
                 buttons: [{
                     text: '""" + str(T("Create PDF")) + """',
                     handler: function() {
-                        printProvider.print(mapPanel, printPage);
+                        // the PrintExtent plugin is the mapPanel's 1st plugin
+                        //mapPanel.plugins[0].print();
+                        // convenient way to fit the print page to the visible map area
+                        printPage.fit(mapPanel, true);
+                        // print the page, including the legend, where available
+                        if (null == legendPanel) {
+                            printProvider.print(mapPanel, printPage);
+                        } else {
+                            printProvider.print(mapPanel, printPage, {legend: legendPanel});
+                        }
                     }
                 }]
             });
@@ -1190,6 +1245,7 @@ OpenLayers.Util.extend( selectPdfControl, {
                 split: true,
                 autoScroll: true,
                 collapsible: true,
+                collapsed: true,
                 collapseMode: 'mini',
                 lines: false,
                 bodyStyle: 'padding:5px',
@@ -1204,7 +1260,7 @@ OpenLayers.Util.extend( selectPdfControl, {
         else:
             print_tool1 = ""
             print_tool2 = ""
-
+            
         # Strategy
         # Need to be uniquely instantiated
         strategy_fixed = """new OpenLayers.Strategy.Fixed()"""
@@ -2072,7 +2128,7 @@ OpenLayers.Util.extend( selectPdfControl, {
     var map, mapPanel, legendPanel, toolbar;
     var currentFeature, popupControl, highlightControl;
     var wmsBrowser;
-    var printProvider, printForm;
+    var printProvider;
     var allLayers = new Array();
     OpenLayers.ImgPath = '/""" + request.application + """/static/img/gis/openlayers/';
     // avoid pink tiles
@@ -2261,8 +2317,11 @@ OpenLayers.Util.extend( selectPdfControl, {
             map: map,
             center: center,
             zoom: """ + str(zoom) + """,
+            plugins: [],
             tbar: new Ext.Toolbar()
         });
+
+        """ + print_tool1 + """
 
         """ + toolbar + """
 
@@ -2314,8 +2373,6 @@ OpenLayers.Util.extend( selectPdfControl, {
 
         """ + legend1 + """
         
-        """ + print_tool1 + """
-
         """ + layout + """
             autoScroll: true,
             maximizable: true,
@@ -2534,3 +2591,5 @@ class YahooGeocoder(Geocoder):
     def get_xml(self):
         " Return the output in XML format "
         return self.page.read()
+
+        

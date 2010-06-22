@@ -22,7 +22,7 @@ table = db.define_table(tablename,
 # *****************************************************************************
 # PersonEntity (pentity)
 #
-opt_pr_entity_type = SQLTable(None, "opt_pr_entity_type",
+opt_pr_entity_type = db.Table(None, "opt_pr_entity_type",
                               Field("opt_pr_entity_type", "integer",
                                     requires = IS_IN_SET(vita.trackable_types, zero=None),
                                     default = vita.DEFAULT_TRACKABLE,
@@ -114,7 +114,7 @@ table.uuid.requires = IS_NOT_IN_DB(db, "%s.uuid" % tablename)
 #
 # Reusable field for other tables to reference --------------------------------
 #
-pr_pe_id = SQLTable(None, "pr_pe_id",
+pr_pe_id = db.Table(None, "pr_pe_id",
                 Field("pr_pe_id", db.pr_pentity,
                     requires =  IS_NULL_OR(IS_ONE_OF(db, "pr_pentity.id", shn_pentity_represent)),
                     represent = lambda id: (id and [shn_pentity_represent(id)] or ["None"])[0],
@@ -125,7 +125,7 @@ pr_pe_id = SQLTable(None, "pr_pe_id",
 #
 # Person Entity Field Set -----------------------------------------------------
 #
-pr_pe_fieldset = SQLTable(None, "pr_pe_fieldset",
+pr_pe_fieldset = db.Table(None, "pr_pe_fieldset",
                     Field("pr_pe_id", db.pr_pentity,
                         requires = IS_NULL_OR(IS_ONE_OF(db, "pr_pentity.id", shn_pentity_represent)),
                         represent = lambda id: (id and [shn_pentity_represent(id)] or ["None"])[0],
@@ -216,7 +216,7 @@ pr_person_gender_opts = {
     3:T("male")
     }
 
-opt_pr_gender = SQLTable(None, "opt_pr_gender",
+opt_pr_gender = db.Table(None, "opt_pr_gender",
                     Field("opt_pr_gender", "integer",
                         requires = IS_IN_SET(pr_person_gender_opts, zero=None),
                         default = 1,
@@ -235,7 +235,7 @@ pr_person_age_group_opts = {
     6:T("Senior (50+)")
     }
 
-opt_pr_age_group = SQLTable(None, "opt_pr_age_group",
+opt_pr_age_group = db.Table(None, "opt_pr_age_group",
                     Field("opt_pr_age_group", "integer",
                         requires = IS_IN_SET(pr_person_age_group_opts, zero=None),
                         default = 1,
@@ -256,7 +256,7 @@ pr_marital_status_opts = {
     99:T("other")
 }
 
-opt_pr_marital_status = SQLTable(None, "opt_pr_marital_status",
+opt_pr_marital_status = db.Table(None, "opt_pr_marital_status",
                         Field("opt_pr_marital_status", "integer",
                             requires = IS_NULL_OR(IS_IN_SET(pr_marital_status_opts)),
                             default = 1,
@@ -277,7 +277,7 @@ pr_religion_opts = {
     99:T("other")
     }
 
-opt_pr_religion = SQLTable(None, "opt_pr_religion",
+opt_pr_religion = db.Table(None, "opt_pr_religion",
                     Field("opt_pr_religion", "integer",
                         requires = IS_NULL_OR(IS_IN_SET(pr_religion_opts)),
                         # default = 1,
@@ -289,14 +289,14 @@ opt_pr_religion = SQLTable(None, "opt_pr_religion",
 #
 pr_nationality_opts = shn_list_of_nations
 
-opt_pr_nationality = SQLTable(None, "opt_pr_nationality",
+opt_pr_nationality = db.Table(None, "opt_pr_nationality",
                         Field("opt_pr_nationality", "integer",
                             requires = IS_NULL_OR(IS_IN_SET(pr_nationality_opts)),
                             # default = 999, # unknown
                             label = T("Nationality"),
                             represent = lambda opt: pr_nationality_opts.get(opt, UNKNOWN_OPT)))
 
-opt_pr_country = SQLTable(None, "opt_pr_country",
+opt_pr_country = db.Table(None, "opt_pr_country",
                         Field("opt_pr_country", "integer",
                             requires = IS_NULL_OR(IS_IN_SET(pr_nationality_opts)),
                             # default = 999, # unknown
@@ -404,7 +404,7 @@ shn_person_comment = DIV(A(s3.crud_strings.pr_person.label_create_button,
                          DIV(DIV(_class="tooltip",
                                  _title=T("Create Person Entry|Create a person entry in the registry."))))
 
-person_id = SQLTable(None, "person_id",
+person_id = db.Table(None, "person_id",
                 FieldS3("person_id", db.pr_person, sortby=["first_name", "middle_name", "last_name"],
                     requires = IS_NULL_OR(IS_ONE_OF(db, "pr_person.id", shn_pr_person_represent)),
                     represent = lambda id: (id and [shn_pr_person_represent(id)] or ["None"])[0],
@@ -439,7 +439,7 @@ pr_group_type_opts = {
     4:T("other")
     }
 
-opt_pr_group_type = SQLTable(None, "opt_pr_group_type",
+opt_pr_group_type = db.Table(None, "opt_pr_group_type",
                              Field("opt_pr_group_type", "integer",
                                    requires = IS_IN_SET(pr_group_type_opts, zero=None),
                                    default = 4,
@@ -505,7 +505,7 @@ s3.crud_strings[tablename] = Storage(
 #
 # group_id: reusable field for other tables to reference ----------------------
 #
-group_id = SQLTable(None, "group_id",
+group_id = db.Table(None, "group_id",
                 FieldS3("group_id", db.pr_group, sortby="group_name",
                     requires = IS_NULL_OR(IS_ONE_OF(db, "pr_group.id", "%(id)s: %(group_name)s", filterby="system", filter_opts=(False,))),
                     represent = lambda id: (id and [db(db.pr_group.id==id).select()[0].group_name] or ["None"])[0],

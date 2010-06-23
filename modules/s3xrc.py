@@ -166,7 +166,7 @@ class S3RESTController(object):
             # Full policy
             if self.auth.is_logged_in() or self.auth.basic():
                 # Administrators are always authorised
-                if self.auth.has_membership(1):
+                if 1 in session.s3.roles:
                     authorised = True
                 else:
                     # Require records in auth_permission to specify access
@@ -1742,14 +1742,13 @@ class S3ResourceController(object):
         for i in l:
             if k in i and v in i:
                 c = e.get(i[k], None)
-                if c and i[k] in c:
+                if c and i[v] in c:
                     continue
                 if i[k] in d:
                     if not i[v] in d[i[k]]:
                         d[i[k]].append(i[v])
                 else:
                     d[i[k]] = [i[v]]
-
         return d
 
 
@@ -2407,13 +2406,15 @@ class S3Vector(object):
     )
 
     RESOLUTION = Storage(
-        THIS="THIS",        # keep local instance
-        OTHER="OTHER",      # import other instance
-        NEWER="NEWER",      # import other only if newer
-        #vote="VOTE"        # not yet implemented
+        THIS="THIS",                # keep local instance
+        OTHER="OTHER",              # import other instance
+        NEWER="NEWER",              # import other if newer
+        MASTER="MASTER",            # import other if master
+        MASTERCOPY="MASTERCOPY"     # import other if lower master-copy-index
     )
 
     UID = "uuid"
+    MCI = "mci"
     MTIME = "modified_on"
 
 
@@ -2487,12 +2488,14 @@ class S3Vector(object):
         self.permitted=True
         self.committed=False
 
-        uid = self.record.get(self.UID, None)
+        self.uid = self.record.get(self.UID, None)
+        self.mci = self.record.get(self.MCI, 2)
+
         if not self.id:
             self.id = 0
             self.method = permission = self.METHOD.CREATE
-            if uid and self.UID in self.table:
-                query = (self.table[self.UID] == uid)
+            if self.uid and self.UID in self.table:
+                query = (self.table[self.UID] == self.uid)
                 orig = self.db(query).select(self.table.id, limitby=(0, 1))
                 if orig:
                     self.id = orig.first().id
@@ -2502,10 +2505,6 @@ class S3Vector(object):
             if not self.db(self.table.id == id).count():
                 self.id = 0
                 self.method = permission = self.METHOD.CREATE
-            # Unclear what this has once been good for, uncomment if necessary:
-            #else:
-                #if self.UID in self.record:
-                    #del self.record[self.UID]
 
         # Do allow import to tables with these prefixes:
         if self.prefix in ("auth", "admin", "s3"):
@@ -2517,10 +2516,9 @@ class S3Vector(object):
             self.permitted=False
 
         # Once the vector has been created, update the entry in the directory
-        uid = self.record.get(self.UID, None)
-        if uid and \
+        if self.uid and \
            directory is not None and self.tablename in directory:
-            entry = directory[self.tablename].get(uid, None)
+            entry = directory[self.tablename].get(self.uid, None)
             if entry:
                 entry.update(vector=self)
 
@@ -2602,6 +2600,10 @@ class S3Vector(object):
                             this_mtime = this[self.MTIME]
                         else:
                             this_mtime = None
+                        if self.MCI in self.table.fields:
+                            this_mci = this[self.MCI]
+                        else:
+                            this_mci = 0
                         for f in self.record.keys():
                             r = self.get_resolution(f)
                             if r == self.RESOLUTION.THIS:
@@ -2610,10 +2612,22 @@ class S3Vector(object):
                                 if this_mtime and \
                                    this_mtime > self.mtime:
                                     del self.record[f]
+                            elif r == self.RESOLUTION.MASTER:
+                                if this_mci == 0 or self.mci != 1:
+                                    del self.record[f]
+                            elif r == self.RESOLUTION.MASTERCOPY:
+                                if this_mci == 0 or \
+                                   self.mci == 0 or \
+                                   this_mci < self.mci:
+                                    del self.record[f]
+                                elif this_mci == self.mci and \
+                                     this_mtime and this_mtime > self.mtime:
+                                        del self.record[f]
 
                     if len(self.record):
+                        self.record.update({self.MCI:self.mci})
+                        self.record.update(deleted=False) # Undelete re-imported records!
                         try:
-                            self.record.update(deleted=False) # Undelete re-imported records!
                             success = self.db(self.table.id == self.id).update(**dict(self.record))
                         except: # TODO: propagate error to XML importer
                             return False
@@ -2625,13 +2639,29 @@ class S3Vector(object):
                 elif self.method == self.METHOD.CREATE:
                     # Create new record ---------------------------------------
 
-                    try:
-                        success = self.table.insert(**dict(self.record))
-                    except: # TODO: propagate error to XML importer
-                        return False
-                    if success:
-                        self.id = success
-                        self.committed = True
+                    if self.UID in self.record.keys():
+                        del self.record[self.UID]
+                    if self.MCI in self.record.keys():
+                        del self.record[self.MCI]
+                    for f in self.record.keys():
+                        r = self.get_resolution(f)
+                        if r == self.RESOLUTION.MASTER and self.mci != 1:
+                            del self.record[f]
+
+                    if not len(self.record):
+                        skip_components = True
+                    else:
+                        if self.uid and self.UID in self.table.fields:
+                            self.record.update({self.UID:self.uid})
+                        if self.MCI in self.table.fields:
+                            self.record.update({self.MCI:self.mci})
+                        try:
+                            success = self.table.insert(**dict(self.record))
+                        except: # TODO: propagate error to XML importer
+                            return False
+                        if success:
+                            self.id = success
+                            self.committed = True
 
                 # audit + onaccept on successful commits
                 if self.committed:
@@ -2716,6 +2746,7 @@ class S3XML(object):
     CACHE_TTL = 5 # time-to-live of RAM cache for field representations
 
     UID = "uuid"
+    MCI = "mci"
     MTIME = "modified_on"
 
     # GIS field names
@@ -2732,9 +2763,10 @@ class S3XML(object):
             "created_by",
             "modified_by",
             "uuid",
+            "mci",
             "admin"]
 
-    ATTRIBUTES_TO_FIELDS = ["admin"]
+    ATTRIBUTES_TO_FIELDS = ["admin", "mci"]
 
     TAG = Storage(
         root="s3xrc",
@@ -3221,6 +3253,8 @@ class S3XML(object):
         for i in xrange(0, len(fields)):
             f = fields[i]
             v = record.get(f, None)
+            if f == self.MCI and v is None:
+                v = 0
             if f not in table.fields or v is None:
                 continue
 
@@ -3233,7 +3267,10 @@ class S3XML(object):
             fieldtype = str(table[f].type)
 
             if f in self.FIELDS_TO_ATTRIBUTES:
-                resource.set(f, text)
+                if f == self.MCI:
+                    resource.set(self.MCI, str(int(v) + 1))
+                else:
+                    resource.set(f, text)
 
             elif fieldtype == "upload":
                 data = etree.SubElement(resource, self.TAG.data)

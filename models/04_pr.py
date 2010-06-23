@@ -259,7 +259,7 @@ pr_presence_condition_opts = vita.presence_conditions
 #
 # presence table --------------------------------------------------------------
 #
-orig_id = SQLTable(None, "orig_id",
+orig_id = db.Table(None, "orig_id",
                    Field("orig_id", db.gis_location,
                          requires = IS_NULL_OR(IS_ONE_OF(db, "gis_location.id", "%(name)s")),
                          represent = lambda id: (id and [A(db(db.gis_location.id==id).select()[0].name, _href="#", _onclick="viewMap(" + str(id) +");return false")] or [""])[0],
@@ -275,7 +275,7 @@ orig_id = SQLTable(None, "orig_id",
                         )
                   )
 
-dest_id = SQLTable(None, "dest_id",
+dest_id = db.Table(None, "dest_id",
                    Field("dest_id", db.gis_location,
                          requires = IS_NULL_OR(IS_ONE_OF(db, "gis_location.id", "%(name)s")),
                          represent = lambda id: (id and [A(db(db.gis_location.id==id).select()[0].name, _href="#", _onclick="viewMap(" + str(id) +");return false")] or [""])[0],
@@ -540,7 +540,7 @@ if deployment_settings.has_module("dvi") or \
     #   TODO: elaborate on field types and field options!
     #
 
-    pr_pe_id2 = SQLTable(None, "pr_pe_id",
+    pr_pe_id2 = db.Table(None, "pr_pe_id",
                         Field("pr_pe_id", db.pr_pentity,
                         requires = IS_NULL_OR(IS_ONE_OF(db, "pr_pentity.id", shn_pentity_represent, filterby="opt_pr_entity_type", filter_opts=[1, 3])),
                         represent = lambda id: (id and [shn_pentity_represent(id)] or ["None"])[0],

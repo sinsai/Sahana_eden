@@ -8,7 +8,7 @@
 """
 
 from gluon.sqlhtml import *
-from shn_utils import *
+from s3utils import *
 
 # Custom widgets
 # shnCheckboxesWidget --------------------------------------------------------    

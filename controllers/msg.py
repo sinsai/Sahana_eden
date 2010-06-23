@@ -376,4 +376,45 @@ def setting():
     response.menu_options = admin_menu_options
     return shn_rest_controller(module, resource, deletable=False,
     listadd=False)
-    
+
+def log():
+    """ RESTlike CRUD controller """
+    resource = 'log'
+    tablename = "%s_%s" % (module, resource)
+    table = db[tablename]
+
+    # Model options
+    table.message.comment = SPAN("*", _class="req")
+    table.priority.represent = lambda id: (
+        [id and
+            DIV(IMG(_src='/%s/static/img/priority/priority_%d.gif' % (request.application,id,), _height=12)) or
+            DIV(IMG(_src='/%s/static/img/priority/priority_4.gif' % request.application), _height=12)
+        ][0].xml())
+    table.priority.label = T('Priority')
+    table.person_id.label = T('Sender')
+    # Add Auth Restrictions
+
+    # CRUD Strings
+    ADD_MESSAGE = T('Add Message')
+    LIST_MESSAGES = T('List Messages')
+    s3.crud_strings[tablename] = Storage(
+        title_create = ADD_MESSAGE,
+        title_display = T('Message Ddetails'),
+        title_list = LIST_MESSAGES,
+        title_update = T('Edit message'),
+        title_search = T('Search messages'),
+        subtitle_create = T('Send new message'),
+        subtitle_list = T('Messages'),
+        label_list_button = LIST_MESSAGES,
+        label_create_button = ADD_MESSAGE,
+        msg_record_created = T('Message added'),
+        msg_record_modified = T('Message updated'),
+        msg_record_deleted = T('Message deleted'),
+        msg_list_empty = T('No messages in the system '))
+
+    # Server-side Pagination
+    response.s3.pagination = True
+
+    return shn_rest_controller(module, resource,
+        listadd=False,
+)

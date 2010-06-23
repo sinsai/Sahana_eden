@@ -69,6 +69,7 @@ class S3Config(Storage):
     def has_module(self, module_name):
         if not self.modules:
             _modules = [
+                "admin",        # Admin
                 "gis",          # GIS
                 "media",        # Media Manager
                 "pr",           # Person Registry

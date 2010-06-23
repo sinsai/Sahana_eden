@@ -11,15 +11,10 @@ if module not in deployment_settings.modules:
     redirect(URL(r=request, c="default", f="index"))
 
 # Only people with the DVI role should be able to access this module
-#try:
-#    dvi_group = db(db[auth.settings.table_group_name].role == "DVI").select(db[auth.settings.table_group_name].id, limitby=(0, 1)).first().id
-#    if dvi_group in session.s3.roles:
-#        pass
-#    else:
-#        session.error = T("Not Authorised!")
-#        redirect(URL(r=request, c="default", f="user", args="login"))
-#except:
-#    session.error=T("Not Authorised!")
+#if shn_has_role("DVI"):
+#    pass
+#else:
+#    session.error = T("Not Authorised!")
 #    redirect(URL(r=request, c="default", f="user", args="login"))
 
 # Options Menu (available in all Functions" Views)

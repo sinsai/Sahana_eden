@@ -51,8 +51,6 @@ authorstamp = db.Table(None, "authorstamp",
 shn_comments_field = db.Table(None, "comments", Field("comments", "text", comment = A(SPAN("[Help]"), _class="tooltip", _title=T("Comments|Please use this field to show a history of the record."))))
 
 # Reusable UUID field to include in other table definitions
-import uuid
-from gluon.sql import SQLCustomType
 s3uuid = SQLCustomType(
                 type = "string",
                 native = "VARCHAR(128)",
@@ -61,22 +59,21 @@ s3uuid = SQLCustomType(
             )
 
 uuidstamp = db.Table(None, "uuidstamp",
-                     Field("uuid",
-                           type=s3uuid,
-                           length=128,
-                           notnull=True,
-                           unique=True,
-                           readable=False,
-                           writable=False,
-                           default=""),
-                     Field("mci", "integer", # Master-Copy-Index
-                           default=0,
-                           readable=False,
-                           writable=False))
-
+            Field("uuid",
+                  type=s3uuid,
+                  length=128,
+                  notnull=True,
+                  unique=True,
+                  readable=False,
+                  writable=False,
+                  default=""),
+            Field("mci", "integer", # Master-Copy-Index
+                  default=0,
+                  readable=False,
+                  writable=False))
 # Reusable Deletion_Status field to include in other table definitions
 deletion_status = db.Table(None, "deletion_status",
-            Field("deleted", "boolean",
+                    Field("deleted", "boolean",
                           readable=False,
                           writable=False,
                           default=False))
@@ -115,7 +112,7 @@ s3.crud_strings = Storage(
     msg_record_deleted = T("Record deleted"),
     msg_list_empty = T("No Records currently available"))
 
-s3.display = Storage()
+#s3.display = Storage()
 
 module = "admin"
 resource = "theme"
@@ -242,7 +239,7 @@ s3.crud_strings[tablename] = Storage(
     msg_record_deleted = T("Source deleted"),
     msg_list_empty = T("No Sources currently registered"))
 # Reusable field to include in other table definitions
-source_id = SQLTable(None, "source_id",
+source_id = db.Table(None, "source_id",
             FieldS3("source_id", db.s3_source, sortby="name",
                 requires = IS_NULL_OR(IS_ONE_OF(db, "s3_source.id", "%(name)s")),
                 represent = lambda id: (id and [db(db.s3_source.id==id).select()[0].name] or ["None"])[0],

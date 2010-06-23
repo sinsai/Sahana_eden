@@ -30,7 +30,7 @@ if deployment_settings.has_module(module):
             5:T('Real World Arbitrary Units')
         }
 
-    opt_lms_unit_type = SQLTable(None, 'opt_lms_unit_type',
+    opt_lms_unit_type = db.Table(None, 'opt_lms_unit_type',
                         db.Field('opt_lms_unit_type', 'integer',
                         requires = IS_IN_SET(lms_unit_type_opts, zero=None),
                         # default = 1,
@@ -107,7 +107,7 @@ if deployment_settings.has_module(module):
             5:T('Vendor'),
             6:T('Warehouse')
         }
-    opt_site_category = SQLTable(None, 'site_category_type',
+    opt_site_category = db.Table(None, 'site_category_type',
                             Field('category', 'integer', notnull=True,
                                 requires = IS_IN_SET(site_category_opts, zero=None),
                                 # default = 1,

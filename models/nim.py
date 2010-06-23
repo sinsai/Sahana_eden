@@ -34,7 +34,7 @@ if deployment_settings.has_module(module):
 
         return None
 
-    user_id = SQLTable(None, 'user_id',
+    user_id = db.Table(None, 'user_id',
                     Field('user_id', auth.settings.table_user,
                             requires = IS_NULL_OR(IS_ONE_OF(db, auth.settings.table_user.id, shn_nim_represent_user)),
                             represent = lambda id: (id and [shn_nim_represent_user(id)] or ["None"])[0],

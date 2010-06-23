@@ -123,7 +123,7 @@ if deployment_settings.has_module(module):
                                     msg_list_empty      = "No aid requests currently available")
 
     #Reusable field for other tables
-    request_id = SQLTable(None, "req_id",
+    request_id = db.Table(None, "req_id",
                 FieldS3("req_id", db.rms_req, sortby="message",
                     requires = IS_NULL_OR(IS_ONE_OF(db, "rms_req.id", "%(message)s")),
                     represent = lambda id: (id and [db(db.rms_req.id == id).select(limitby=(0, 1)).first().updated] or ["None"])[0],
@@ -392,7 +392,7 @@ if deployment_settings.has_module(module):
 
 
     #Reusable field for other tables
-    req_detail_id = SQLTable(None, "req_detail_id",
+    req_detail_id = db.Table(None, "req_detail_id",
                 FieldS3("req_detail_id", db.rms_req_detail, sortby="request_key",
                     requires = IS_NULL_OR(IS_ONE_OF(db, "rms_req_detail.id", "%( request_key)s")),
                     represent = lambda id: (id and [db(db.rms_req_detail.id == id).select(limitby=(0, 1)).first().updated] or ["None"])[0],

@@ -61,7 +61,7 @@ def sector_represent(sector_ids):
         return db(db.or_sector.id == sector_ids).select(db.or_sector.name, limitby=(0, 1)).first().name
 
 # Reusable field
-sector_id = SQLTable(None, "sector_id",
+sector_id = db.Table(None, "sector_id",
                      FieldS3("sector_id", sortby="name",
                            requires = IS_NULL_OR(IS_ONE_OF(db, "or_sector.id", "%(name)s", multiple=True)),
                            represent = sector_represent,
@@ -152,7 +152,7 @@ s3.crud_strings[tablename] = Storage(
 
 # Reusable field
 organisation_popup_url = URL(r=request, c="or", f="organisation", args="create", vars=dict(format="popup"))
-organisation_id = SQLTable(None, "organisation_id",
+organisation_id = db.Table(None, "organisation_id",
                            FieldS3("organisation_id", db.or_organisation, sortby="name",
                            requires = IS_NULL_OR(IS_ONE_OF(db, "or_organisation.id", "%(name)s")),
                            represent = lambda id: (id and [db(db.or_organisation.id == id).select(db.or_organisation.name, limitby=(0, 1)).first().name] or ["None"])[0],
@@ -275,7 +275,7 @@ s3.crud_strings[tablename] = Storage(
     msg_list_empty = T("No Offices currently registered"))
 
 # Reusable field for other tables to reference
-office_id = SQLTable(None, "office_id",
+office_id = db.Table(None, "office_id",
             FieldS3("office_id", db.or_office, sortby="name",
                 requires = IS_NULL_OR(IS_ONE_OF(db, "or_office.id", "%(name)s")),
                 represent = lambda id: (id and [db(db.or_office.id == id).select(db.or_office.name, limitby=(0, 1)).first().name] or ["None"])[0],

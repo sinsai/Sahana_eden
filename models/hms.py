@@ -259,7 +259,7 @@ if deployment_settings.has_module(module):
         msg_list_empty = T("No Hospitals currently registered"))
 
     # Reusable field for other tables to reference
-    hospital_id = SQLTable(None, "hospital_id",
+    hospital_id = db.Table(None, "hospital_id",
                         FieldS3("hospital_id", db.hms_hospital, sortby="name",
                                 requires = IS_NULL_OR(IS_ONE_OF(db, "hms_hospital.id", "%(name)s")),
                                 represent = lambda id: (id and
@@ -1007,7 +1007,7 @@ if deployment_settings.has_module(module):
         msg_list_empty      = "No aid requests currently available")
 
     # Reusable field for other tables to reference
-    hms_hrequest_id = SQLTable(None, "hms_hrequest_id",
+    hms_hrequest_id = db.Table(None, "hms_hrequest_id",
                         Field("hms_hrequest_id", db.hms_hrequest,
                                 requires = IS_NULL_OR(IS_ONE_OF(db, "hms_hrequest.id", "%(id)s")),
                                 represent = lambda id: (id and [db(db.hms_hrequest.id==id).select()[0].id] or ["None"])[0],

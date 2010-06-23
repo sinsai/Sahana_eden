@@ -120,7 +120,7 @@ def hrequest():
     resource = "hrequest"
 
     if auth.user is not None:
-        person = db(db.pr_person.uuid==auth.user.person_uuid).select(db.pr_person.id)
+        person = db(db.pr_person.uuid == auth.user.person_uuid).select(db.pr_person.id)
         if person:
             db.hms_hpledge.person_id.default = person[0].id
 
@@ -152,9 +152,6 @@ def hpledge():
 
     resource = "hpledge"
 
-    # Uncomment to enable Server-side pagination:
-    #response.s3.pagination = True
-
     pledges = db(db.hms_hpledge.status == 3).select()
     for pledge in pledges:
         db(db.hms_hrequest.id == pledge.hrequest_id).update(status = 6)
@@ -162,7 +159,7 @@ def hpledge():
     db.commit()
 
     if auth.user is not None:
-        person = db(db.pr_person.uuid==auth.user.person_uuid).select(db.pr_person.id)
+        person = db(db.pr_person.uuid == auth.user.person_uuid).select(db.pr_person.id)
         if person:
             db.hms_hpledge.person_id.default = person[0].id
 

@@ -62,7 +62,7 @@ if deployment_settings.has_module(module):
         msg_record_deleted = T('Shelter deleted'),
         msg_list_empty = T('No Shelters currently registered'))
 
-    shelter_id = SQLTable(None, 'shelter_id',
+    shelter_id = db.Table(None, 'shelter_id',
                         Field('shelter_id', db.pr_pentity,
                                 requires = IS_NULL_OR(IS_ONE_OF(db, 'cr_shelter.id', "%(name)s")),
                                 represent = lambda id: (id and [db.cr_shelter[id].name] or ["None"])[0],

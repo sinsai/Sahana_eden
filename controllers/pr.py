@@ -50,7 +50,7 @@ def index():
     """ Module"s Home Page """
 
     try:
-        module_name = s3.modules[module]["name_nice"]
+        module_name = deployment_settings.modules[module].name_nice
     except:
         module_name = T("Person Registry")
 

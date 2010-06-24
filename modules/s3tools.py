@@ -39,16 +39,17 @@ __all__ = ["AuthS3", "CrudS3", "FieldS3"]
 
 import datetime
 import re
+import urllib
 import uuid
 
 from gluon.html import *
 from gluon.http import HTTP, redirect
 from gluon.storage import Storage, Messages
 from gluon.validators import *
-try:
-    from gluon.contrib.gql import Field, Row, Query
-except ImportError:
-    from gluon.sql import Field, Row, Query
+#try:
+#    from gluon.contrib.gql import Field, Row, Query
+#except ImportError:
+from gluon.sql import Field, Row, Query
 from gluon.sqlhtml import SQLFORM
 from gluon.tools import Auth
 from gluon.tools import Crud
@@ -579,8 +580,8 @@ class AuthS3(Auth):
             def f(*a, **b):
                 if not self.basic() and not self.is_logged_in():
                     request = self.environment.request
-                    next = URL(r=request,args=request.args,vars=request.get_vars)
-                    redirect(self.settings.login_url + "?_next="+urllib.quote(next))
+                    next = URL(r=request,args=request.args, vars=request.get_vars)
+                    redirect(self.settings.login_url + "?_next=" + urllib.quote(next))
                 if not self.has_membership(group_id):
                     self.environment.session.flash = \
                         self.messages.access_denied
@@ -599,11 +600,15 @@ class AuthS3(Auth):
         @param role can be integer or a name
         """
 
-        deployment_settings = self.deployment_settings
+        #deployment_settings = self.deployment_settings
+        db = self.db
         session = self.session
         
-        if type(role) != int:
-            role = deployment_settings.auth.roles[role]
+        try:
+            role = int(role)
+        except:
+            #role = deployment_settings.auth.roles[role]
+            role = db(db.auth_group.role == role).select(db.auth_group.id, limitby=(0, 1)).first().id
 
         if role in session.s3.roles:
             return True

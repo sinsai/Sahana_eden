@@ -904,10 +904,14 @@ def import_json(jr, **attr):
 
     #return json_message(False, 501, "Not implemented!")
 
+    if jr.http == "GET":
+        item = s3xrc.xml.json_message(False, 400, "%s requests not supported." % jr.http)
+        raise HTTP(400, body=item)
+
     _vars = jr.request.vars
-    if "filename" in _vars:
+    if "filename" in _vars and jr.http == "PUT":
         source = open(_vars["filename"])
-    elif "fetchurl" in _vars:
+    elif "fetchurl" in _vars and jr.http == "PUT":
         import urllib
         source = urllib.urlopen(_vars["fetchurl"])
     else:
@@ -961,9 +965,13 @@ def import_xml(jr, **attr):
 
     """ Import XML data """
 
-    if "filename" in jr.request.vars:
+    if jr.http == "GET":
+        item = s3xrc.xml.json_message(False, 400, "%s requests not supported." % jr.http)
+        raise HTTP(400, body=item)
+
+    if "filename" in jr.request.vars and jr.http == "PUT":
         source = jr.request.vars["filename"]
-    elif "fetchurl" in jr.request.vars:
+    elif "fetchurl" in jr.request.vars and jr.http == "PUT":
         source = jr.request.vars["fetchurl"]
     else:
         source = jr.request.body

@@ -84,7 +84,7 @@ if deployment_settings.has_module(module):
         #2: T("Advisory"),
         3: T("Closed"),
         4: T("Not Applicable")
-    } #: OR Status Options
+    } #: Operating Room Status Options
 
     resource = "hospital"
     tablename = "%s_%s" % (module, resource)
@@ -163,7 +163,7 @@ if deployment_settings.has_module(module):
     table.uuid.requires = IS_NOT_IN_DB(db, "%s.uuid" % tablename)
 
     table.organisation_id.represent = lambda id: \
-        (id and [db(db.or_organisation.id==id).select()[0].acronym] or ["None"])[0]
+        (id and [db(db.org_organisation.id==id).select()[0].acronym] or ["None"])[0]
 
     table.gov_uuid.requires = IS_NULL_OR(IS_NOT_IN_DB(db, "%s.gov_uuid" % tablename))
     table.gov_uuid.label = T("Government UID")

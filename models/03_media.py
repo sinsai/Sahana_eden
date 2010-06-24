@@ -20,7 +20,7 @@ table = db.define_table(tablename, timestamp, uuidstamp, authorstamp, deletion_s
                 location_id,
                 Field("description"),
                 person_id,
-                #Field("organisation.id", "reference or_organisation"),
+                #Field("organisation.id", "reference org_organisation"),
                 Field("source"),
                 Field("sensitivity"),    # Should be turned into a drop-down by referring to AAA's sensitivity table
                 Field("event_time", "datetime"),

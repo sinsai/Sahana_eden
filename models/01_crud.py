@@ -1253,7 +1253,7 @@ def shn_list(jr, **attr):
         else:
             query = (table[jr.fkey] == jr.table[jr.pkey]) & query
         if jr.component_id:
-            query = (table.id==jr.component_id) & query
+            query = (table.id == jr.component_id) & query
         href_add = URL(r=jr.request, f=jr.name, args=[jr.id, resource, "create"])
     else:
         href_add = URL(r=jr.request, f=jr.name, args=["create"])

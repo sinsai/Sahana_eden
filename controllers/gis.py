@@ -29,7 +29,7 @@ def download():
 # S3 framework functions
 def index():
     "Module's Home Page"
-    module_name = s3.modules[module]["name_nice"]
+    module_name = deployment_settings.modules[module].name_nice
     return dict(module_name=module_name)
 
 def test():

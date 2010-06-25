@@ -252,7 +252,7 @@ def process_email_via_api():
 
 #-------------------------------------------------------------------------------
 
-@auth.requires_membership("Administrator")
+@auth.shn_requires_membership(1)
 def modem_settings():
     "Modem settings"
     try:
@@ -299,7 +299,7 @@ def modem_settings():
     return shn_rest_controller(module, resource, deletable=False,
     listadd=False)
 
-@auth.requires_membership("Administrator")
+@auth.shn_requires_membership(1)
 def gateway_settings():
     """ Gateway settings """
     resource = "gateway_settings"
@@ -345,7 +345,7 @@ def gateway_settings():
     return shn_rest_controller(module, resource, deletable=False,
     listadd=False)
 
-@auth.requires_membership("Administrator")
+@auth.shn_requires_membership(1)
 def setting():
     """Overall settings for the messaging framework"""
     resource = "setting"

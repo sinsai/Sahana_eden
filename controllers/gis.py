@@ -927,7 +927,7 @@ def layer_wms():
     
     return output
 
-#@auth.requires_membership("AdvancedJS")
+#@auth.shn_requires_membership("AdvancedJS")
 def layer_js():
     "RESTlike CRUD controller"
     resource = "layer_js"

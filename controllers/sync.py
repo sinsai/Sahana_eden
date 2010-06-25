@@ -27,7 +27,7 @@ def index():
 
 logtable = "sync_log"
 
-@auth.requires_membership('Administrator')
+@auth.shn_requires_membership(1)
 def partner():
     "RESTlike CRUD controller"
     db.sync_partner.uuid.label = 'UUID'
@@ -49,7 +49,7 @@ def partner():
     s3.crud_strings.sync_partner = Storage(title_create=title_create,title_display=title_display,title_list=title_list,title_update=title_update,title_search=title_search,subtitle_create=subtitle_create,subtitle_list=subtitle_list,label_list_button=label_list_button,label_create_button=label_create_button,msg_record_created=msg_record_created,msg_record_modified=msg_record_modified,msg_record_deleted=msg_record_deleted,msg_list_empty=msg_list_empty)
     return shn_rest_controller('sync', 'partner')
 
-@auth.requires_membership('Administrator')
+@auth.shn_requires_membership(1)
 def setting():
     "RESTlike CRUD controller"
     db.sync_setting.uuid.writable = False

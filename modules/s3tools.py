@@ -446,8 +446,9 @@ class AuthS3(Auth):
 
         # S3: Don't allow registration if disabled
         db = self.db
-        self_registration = db().select(db.s3_setting.self_registration)[0].self_registration
-        utc_offset = db().select(db.s3_setting.utc_offset)[0].utc_offset
+        settings = db().select(db.s3_setting.self_registration, db.s3_setting.utc_offset, limitby=(0, 1)).first()
+        self_registration = settings.self_registration
+        utc_offset = settings.utc_offset
         if not self_registration:
             session.error = self.messages.registration_disabled
             redirect(URL(r=request, args=["login"]))
@@ -524,8 +525,7 @@ class AuthS3(Auth):
                     username = "username"
                 else:
                     username = "email"
-                users = self.db(table_user[username] == form.vars[username]).select()
-                user = users[0]
+                user = self.db(table_user[username] == form.vars[username]).select(limitby=(0, 1)).first()
                 user = Storage(table_user._filter_fields(user, id=True))
 
                 # Add the first user to admin group
@@ -566,7 +566,7 @@ class AuthS3(Auth):
 
     def requires_membership(self, role):
         """
-        decorator that prevents access to action if not logged in or
+        Decorator that prevents access to action if not logged in or
         if user logged in is not a member of group_id.
         If role is provided instead of group_id then the group_id is calculated.
 
@@ -580,7 +580,7 @@ class AuthS3(Auth):
             def f(*a, **b):
                 if not self.basic() and not self.is_logged_in():
                     request = self.environment.request
-                    next = URL(r=request,args=request.args, vars=request.get_vars)
+                    next = URL(r=request, args=request.args, vars=request.get_vars)
                     redirect(self.settings.login_url + "?_next=" + urllib.quote(next))
                 if not self.has_membership(group_id):
                     self.environment.session.flash = \
@@ -702,6 +702,36 @@ class AuthS3(Auth):
         self.shn_link_to_person(user=form.vars)
 
 
+    def shn_requires_membership(self, role):
+        """
+        Decorator that prevents access to action if not logged in or
+        if user logged in is not a member of group_id.
+        If role is provided instead of group_id then the group_id is calculated.
+
+        Extends Web2Py's requires_membership() to add new functionality:
+            * Custom Flash style
+            * Uses shn_has_role()
+        """
+
+        def decorator(action):
+            
+            def f(*a, **b):
+                if not self.basic() and not self.is_logged_in():
+                    request = self.environment.request
+                    next = URL(r=request, args=request.args, vars=request.get_vars)
+                    redirect(self.settings.login_url + "?_next=" + urllib.quote(next))
+                if not self.shn_has_role(role):
+                    self.environment.session.flash = \
+                        self.messages.access_denied
+                    next = self.settings.on_failed_authorization
+                    redirect(next)
+                return action(*a, **b)
+            f.__doc__ = action.__doc__
+            return f
+
+        return decorator
+
+
     def shn_link_to_person(self, user=None):
 
         """
@@ -730,7 +760,7 @@ class AuthS3(Auth):
         etable = db.pr_pentity
 
         if user is None:
-            users = db(utable.person_uuid==None).select(utable.ALL)
+            users = db(utable.person_uuid == None).select(utable.ALL)
         else:
             users = [user]
 
@@ -749,10 +779,10 @@ class AuthS3(Auth):
                 person = db(query).select(ptable.uuid)
                 if person and len(person) == 1:
                     person = person.first()
-                    if not db(utable.person_uuid==person.uuid).count():
-                        db(utable.id==user.id).update(person_uuid=person.uuid)
-                        if self.user and self.user.id==user.id:
-                            self.user.person_uuid=person.uuid
+                    if not db(utable.person_uuid == person.uuid).count():
+                        db(utable.id == user.id).update(person_uuid=person.uuid)
+                        if self.user and self.user.id == user.id:
+                            self.user.person_uuid = person.uuid
                         continue
                     #else:
                         #email = None
@@ -765,7 +795,7 @@ class AuthS3(Auth):
                         last_name = user.last_name)
                     if new_id:
                         person_uuid = ptable[new_id].uuid
-                        db(utable.id==user.id).update(person_uuid=person_uuid)
+                        db(utable.id == user.id).update(person_uuid=person_uuid)
                         # The following adds the email to pr_pe_contact
                         ctable.insert(
                                 pr_pe_id = pr_pe_id,
@@ -773,8 +803,8 @@ class AuthS3(Auth):
                                 priority = 1,
                                 value = email)
 
-                if self.user and self.user.id==user.id:
-                    self.user.person_uuid=person_uuid
+                if self.user and self.user.id == user.id:
+                    self.user.person_uuid = person_uuid
 
 
 
@@ -853,7 +883,7 @@ class SQLTABLE2(TABLE):
 
     More advanced linkto example::
 
-        def mylink(field, type, ref):
+        def mylink(field):
             return URL(r=request, args=[field])
 
         rows = db.select(db.sometable.ALL)
@@ -945,7 +975,8 @@ class SQLTABLE2(TABLE):
                 elif linkto and field.type[:9] == "reference":
                     ref = field.type[10:]
                     try:
-                        href = linkto(r, "reference", ref)
+                        #href = linkto(r, "reference", ref)
+                        href = linkto(r)
                     except TypeError:
                         href = "%s/%s/%s" % (linkto, ref, r)
                         if ref.find(".") >= 0:

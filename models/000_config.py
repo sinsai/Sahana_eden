@@ -170,4 +170,8 @@ deployment_settings.modules = Storage(
             description = "Sends & Receives Alerts via Email & SMS",
             module_type = 5
         ),
+    importer = Storage(
+    	     name_nice = "Spreadsheet importer",
+    	     description = "Used to extract data from spreadsheets and input it to the Eden database",
+    	     module_type = 5)
 )

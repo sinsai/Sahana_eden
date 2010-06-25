@@ -112,4 +112,3 @@ if deployment_settings.has_module(module):
                 Field("enabled", "boolean", default = False),
 #                Field("preference", "integer", default = 5), To be used later
                 migrate=migrate)
-    

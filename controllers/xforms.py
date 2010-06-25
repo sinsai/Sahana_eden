@@ -124,7 +124,7 @@ def importxml(db,xmlinput):
     except:
         return 0
 
-@auth.requires_membership('Administrator')
+@auth.shn_requires_membership(1)
 def post():
     data = importxml(db, request.body.read())
     return data

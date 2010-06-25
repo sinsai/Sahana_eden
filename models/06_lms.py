@@ -121,7 +121,7 @@ if deployment_settings.has_module(module):
                                     opt_site_category,
                     admin_id,
                     person_id,
-                                    organisation_id, #db.Field('organisation', db.or_organisation),
+                                    organisation_id, #db.Field('organisation', db.org_organisation),
                     db.Field('address', 'text'),
                                     db.Field('site_phone'),
                                     db.Field('site_fax'),

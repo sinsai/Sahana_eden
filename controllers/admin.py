@@ -19,7 +19,7 @@ response.menu_options = admin_menu_options
 def index():
     "Module's Home Page"
 
-    module_name = s3.modules[module]["name_nice"]
+    module_name = deployment_settings.modules[module].name_nice
 
     return dict(module_name=module_name)
 
@@ -679,7 +679,7 @@ def _import_job_create(jr):
     def process_new_file_and_redirect(form):
         filename = form.vars.source_file_newfilename
         filepath = os.path.join(request.folder, "uploads", filename)
-        query = jr.table.id==form.vars.id
+        query = (jr.table.id == form.vars.id)
         column_map = []
         model_fields = dict(map(
                 lambda x:(x.lower(), x),
@@ -715,7 +715,7 @@ def _import_job_update(jr):
     if len(request.args) < 2:
         redirect(jr.there())
     id = request.args[1]
-    query = jr.table.id==id
+    query = (jr.table.id == id)
     job = db(query).select()
     if not job:
         raise HTTP(404, body=s3xrc.xml.json_message(False, 404, session.error))
@@ -735,7 +735,7 @@ def _import_job_update(jr):
 
 def _import_job_update_GET(jr, job):
     table = db.admin_import_line
-    query = table.import_job==job.id
+    query = (table.import_job == job.id)
 
     if job.status == "new":
         try:

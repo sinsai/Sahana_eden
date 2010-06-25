@@ -70,19 +70,11 @@ def user():
 def index():
     "Module's Home Page"
 
-    module_name = s3.modules[module]["name_nice"]
+    modules = deployment_settings.modules
 
-    modules = Storage()
-    for _module in deployment_settings.modules:
-        _module = str(_module)
-        _s3 = s3.modules[_module]
-        modules[_module] = Storage()
-        _module = modules[_module]
-        _module.name_nice = _s3["name_nice"]
-        _module.access = _s3["access"]
-        _module.description = _s3["description"]
+    module_name = modules[module].name_nice
 
-    settings = db(db.s3_setting.id == 1).select().first()
+    settings = db(db.s3_setting.id == 1).select(limitby=(0, 1)).first()
     admin_name = settings.admin_name
     admin_email = settings.admin_email
     admin_tel = settings.admin_tel

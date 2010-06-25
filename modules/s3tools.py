@@ -972,19 +972,22 @@ class SQLTABLE2(TABLE):
                         #href = "%s/%s/%s" % (linkto, tablename, r)
                         href = "%s/%s" % (linkto, r)
                     row.append(TD(A(r, _href=href), _class="column_%s" % fieldname))
-                elif linkto and field.type[:9] == "reference":
-                    ref = field.type[10:]
-                    try:
-                        #href = linkto(r, "reference", ref)
-                        href = linkto(r)
-                    except TypeError:
-                        href = "%s/%s/%s" % (linkto, ref, r)
-                        if ref.find(".") >= 0:
-                            tref,fref = ref.split(".")
-                            if hasattr(sqlrows.db[tref], "_primarykey"):
-                                href = "%s/%s?%s" % (linkto, tref, urllib.urlencode({fref:ur}))
-
-                    row.append(TD(A(r, _href=href, _class="column_%s" % fieldname)))
+                # Reference record without a .represent defined
+                # We can't assume  controller exists for linked resources
+                # so better to use response.s3.actions for this
+                #elif linkto and field.type[:9] == "reference":
+                #    ref = field.type[10:]
+                #    try:
+                #        #href = linkto(r, "reference", ref)
+                #        href = linkto(r)
+                #    except TypeError:
+                #        href = "%s/%s/%s" % (linkto, ref, r)
+                #        if ref.find(".") >= 0:
+                #            tref,fref = ref.split(".")
+                #            if hasattr(sqlrows.db[tref], "_primarykey"):
+                #                href = "%s/%s?%s" % (linkto, tref, urllib.urlencode({fref:ur}))
+                #
+                #    row.append(TD(A(r, _href=href, _class="column_%s" % fieldname)))
                 elif linkto and hasattr(field._table, "_primarykey") and fieldname in field._table._primarykey:
                     # have to test this with multi-key tables
                     key = urllib.urlencode(dict( [ \

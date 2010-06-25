@@ -1,0 +1,22 @@
+{{extend 'layout.html'}}
+{{include 'ext.html'}}
+<link rel ="stylesheet" type="text/css" href="/{{=request.application}}/static/scripts/ext-community-extensions/Ext.ux.MultiSelect.css"/>
+
+<script type="text/javascript" src="/{{=request.application}}/static/scripts/ext-community-extensions/CheckColumn.js"></script>
+<script type="text/javascript" src="/{{=request.application}}/static/scripts/ext-community-extensions/Ext.ux.MultiSelect.js"></script>
+<script type="text/javascript">{{include 'importer/view4.js'}}</script>
+<script type="text/javascript">{{include 'importer/view3.js'}}</script>
+<script type="text/javascript">{{include 'importer/view2.js'}}</script>
+<script type="text/javascript">{{include 'importer/view1.js'}}</script>
+
+
+
+<h1>Your file has been uploaded</h1>
+<div id="spreadsheet" align="center"></div>
+
+<!--
+<i>Your file is at {{=result}}</i> <b>and this is path from where the xlrd accesses the spreadsheet</b>
+<br>
+{{=BEAUTIFY(response._vars)}}
+{{=folder}}
+-->

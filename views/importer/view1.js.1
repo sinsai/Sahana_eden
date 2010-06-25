@@ -1,0 +1,172 @@
+function doJSON(stringData) {
+        try {
+            var jsonData = Ext.util.JSON.decode(stringData);
+            //var jsonData= eval("("+stringData+")");
+            return jsonData;
+            
+        }
+        catch (err) {
+            Ext.MessageBox.alert('ERROR', 'Could not decode ' + stringData);
+        }
+        var jsonData= eval("("+stringData+")");
+            return jsonData;
+            
+    }
+var json={};
+var columnlist=[];
+
+Ext.onReady(function(){
+Ext.Msg.alert("Welcome","Welcome to the spreadsheet importer");
+
+Ext.Ajax.request({
+        url : '../static/test1.json' , 
+        
+        method: 'GET',
+            success: function ( result, request ) { 
+               
+                json=doJSON(result.responseText);   
+                maker(json);
+                
+     
+        },
+            failure: function ( result, request) { 
+                Ext.MessageBox.alert('Failed', result.responseText); 
+            } 
+        });
+});
+
+function maker(json){
+        
+    columnlist=new Array(json.columns);
+    for(var i=0;i< json.columns ; i++)
+    { 
+          
+            columnlist[i]="column"+i;
+            
+          
+    }
+    var store=new Ext.data.Store({
+        url : "../static/test1.json",
+        reader : new Ext.data.JsonReader({root: "data",id:"id"},
+         columnlist)
+        });
+        
+        store.load();
+   
+   var column_model=new Array(json.columns);
+   var edit=new Array(json.columns);
+   //editor functions for each column that can be edited
+   for(i=0;i< json.columns ; i++)
+   {
+       edit[i]=new Ext.form.TextField();
+   }
+   //makes column model objects
+   for( i=0 ; i< json.columns ; i++)
+   {
+       obj="{header:\"Column ";
+       obj+=(i+1);
+       obj+="\",";
+       obj+="sortable : true,";
+       obj+="dataIndex :";
+       obj+=("\""+columnlist[i]+"\", ");
+       /*obj+="editor: ";
+       obj+=edit[i];*/       
+       obj+=" }";
+       
+       try{
+       
+       col=Ext.util.JSON.decode(obj);
+       col.editor=edit[i];
+       column_model[i]=col;
+       //document.write('<br/>'+obj.editor);
+       
+       }
+       catch(err){
+           Ext.Msg.alert("Error","Input string cannot be parsed");
+           }
+    }
+    var new_row_string="{";
+    for(i=0; i<json.columns; i++)
+    {
+        new_row_string+="column"+i+" : \"Edit this\"";
+        if(i!=json.columns-1)
+            new_row_string+=",";
+    }
+    new_row_string+="}";
+    try
+    {
+        var new_row_object=eval("("+new_row_string+")");
+    }
+    catch(err)
+    {
+    }
+    var row_model=Ext.data.Record.create(columnlist);
+   var grid=new Ext.grid.EditorGridPanel({
+       title: 'Spreadsheet',
+       renderTo: 'spreadsheet',
+       height: 300,
+       width: 'auto',
+       
+       store: store,
+       //selModel: Ext.grid.RowSelectionModel,
+       columns: column_model,
+       listeners: {
+               afteredit: function(e){
+                  try{
+                  var conn = new Ext.data.Connection();
+                  
+                  conn.request({
+                  url: '../static/test1.json',
+                     params: {
+                     action: 'update',
+                     id: e.id,
+                     field: e.field,
+                     value: e.value
+                      },
+                      success: function(resp,opt) {
+                         e.commit();
+                      },
+                     failure: function(resp,opt) {
+                         e.reject();
+                      }
+                     });
+                     }
+                     catch(err){Ext.Msg.alert("Error","Could not write to db");}
+              }
+           
+        },
+        clicksToEdit: 2,
+        stripeRows: true,
+        tbar: [
+            {
+                 text: 'Add row',
+                 handler: function()
+                 {
+                 grid.getStore().insert(0,new row_model);
+                 grid.startEditing(0,0);}
+            },
+            {
+                text: 'Remove row',
+                
+                handler: function() {
+                                  var sm = grid.getSelectionModel();
+                                  var sel = sm.getSelected();
+                                  if (sm.hasSelection()){
+                                         Ext.Msg.show({
+                                                   title: 'Remove Movie',
+                                                   buttons: Ext.MessageBox.YESNOCANCEL,
+                                                   msg: 'Remove '+sel.data.column0+'?',
+                                                   fn: function(btn){
+                                                           if (btn == 'yes'){
+                                                               grid.getStore().remove(sel);
+                                                             }
+                                                       }
+                                             });
+                                  }
+                                    }
+            }
+              
+        ]
+        });
+        
+       }

@@ -480,7 +480,8 @@ class GIS(object):
             @param print_tool: Show a print utility (NB This requires server-side support: http://eden.sahanafoundation.org/wiki/BluePrintGISPrinting)
                 {
                 url: string,            # URL of print service (e.g. http://localhost:8080/geoserver/pdf/)
-                title: string           # Title for the Printed Map (optional)
+                mapTitle: string        # Title for the Printed Map (optional)
+                subTitle: string        # subTitle for the Printed Map (optional)
                 }
             @param mgrs: Use the MGRS Control to select PDFs
                 {
@@ -1084,15 +1085,20 @@ OpenLayers.Util.extend( selectPdfControl, {
         if print_tool:
             url = print_tool["url"]
             if "title" in print_tool:
-                mapTitle = str(print_tool["title"])
+                mapTitle = str(print_tool["mapTitle"])
             else:
                 mapTitle = str(T("Map from Sahana Eden"))
+            if "subtitle" in print_tool:
+                subTitle = str(print_tool["subTitle"])
+            else:
+                subTitle = str(T("Printed from Sahana Eden"))
             if session.auth:
                 creator = session.auth.user.email
             else:
-                creator = None
+                creator = ""
             print_tool1 = """
         if (typeof(printCapabilities) != 'undefined') {
+            // info.json from script headers OK
             printProvider = new GeoExt.data.PrintProvider({
                 //method: 'POST',
                 //url: '""" + url + """',
@@ -1100,7 +1106,7 @@ OpenLayers.Util.extend( selectPdfControl, {
                 capabilities: printCapabilities, // from the info.json returned from the script headers
                 customParams: {
                     mapTitle: '""" + mapTitle + """',
-                    subTitle: 'Sub Title',
+                    subTitle: '""" + subTitle + """',
                     creator: '""" + creator + """'
                 }
             });
@@ -1254,7 +1260,7 @@ OpenLayers.Util.extend( selectPdfControl, {
                 defaults: {anchor: '100%'},
                 html: '""" + str(T("Printing disabled since server not accessible: ")) + "<BR />" + url + """'
             });
-         }
+        }
         """
             print_tool2 = """,
                     formPanel"""
@@ -1325,12 +1331,12 @@ OpenLayers.Util.extend( selectPdfControl, {
         """
                 if openstreetmap.Mapnik:
                     layers_openstreetmap += """
-        var mapnik = new OpenLayers.Layer.TMS( '""" + openstreetmap.Mapnik + """', 'http://tile.openstreetmap.org/', {type: 'png', getURL: osm_getTileURL, displayOutsideMaxExtent: true, attribution: '<a href="http://www.openstreetmap.org/">OpenStreetMap</a>' } );
+        var mapnik = new OpenLayers.Layer.OSM('""" + openstreetmap.Mapnik + """');
         map.addLayer(mapnik);
                     """
                 if openstreetmap.Osmarender:
                     layers_openstreetmap += """
-        var osmarender = new OpenLayers.Layer.TMS( '""" + openstreetmap.Osmarender + """', 'http://tah.openstreetmap.org/Tiles/tile/', {type: 'png', getURL: osm_getTileURL, displayOutsideMaxExtent: true, attribution: '<a href="http://www.openstreetmap.org/">OpenStreetMap</a>' } );
+        var osmarender = new OpenLayers.Layer.OSM('""" + openstreetmap.Osmarender + """', 'http://tah.openstreetmap.org/Tiles/tile/${z}/${x}/${y}.png');
         map.addLayer(osmarender);
                     """
                 if openstreetmap.Aerial:
@@ -2560,8 +2566,8 @@ class GoogleGeocoder(Geocoder):
     def get_api_key(self):
         " Acquire API key from the database "
         db = self.db
-        query = self.db.gis_apikey.name == "google"
-        return self.db(query).select(db.gis_apikey.apikey, limitby=(0, 1)).first().apikey
+        query = db.gis_apikey.name == "google"
+        return db(query).select(db.gis_apikey.apikey, limitby=(0, 1)).first().apikey
 
     def construct_url(self, params):
         " Construct the URL based on the arguments passed "
@@ -2584,8 +2590,8 @@ class YahooGeocoder(Geocoder):
     def get_api_key(self):
         " Acquire API key from the database "
         db = self.db
-        query = self.db.gis_apikey.name == "yahoo"
-        return self.db(query).select(db.gis_apikey.apikey, limitby=(0, 1)).first().apikey
+        query = db.gis_apikey.name == "yahoo"
+        return db(query).select(db.gis_apikey.apikey, limitby=(0, 1)).first().apikey
 
     def construct_url(self, params):
         " Construct the URL based on the arguments passed "

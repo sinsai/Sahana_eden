@@ -22,11 +22,11 @@ for field in remote_record:
 pass
 }}
         for (var idx = 0; idx < fields.length; idx++) {
-            if (cForm["final_" + fields[idx]].type == "checkbox") {
-                if (cForm["final_" + fields[idx]].checked == true) {
-                    cForm["final_" + fields[idx]].value = "True";
+            if (frm["final_" + fields[idx]].type == "checkbox") {
+                if (frm["final_" + fields[idx]].checked == true) {
+                    frm["final_" + fields[idx]].value = "True";
                 } else {
-                    cForm["final_" + fields[idx]].value = "False";
+                    frm["final_" + fields[idx]].value = "False";
                 }
             }
         }

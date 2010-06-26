@@ -40,7 +40,7 @@ def now():
     
     # for eden instances
     final_status = ""
-    modules = s3.modules
+    modules = deployment_settings.modules
     _db_tables = db.tables
     db_tables = []
     for __table in _db_tables:
@@ -85,12 +85,13 @@ def now():
                 resource_url += "sync/sync.xml/" + _module + "/" + _resource + last_sync_on_str
                 final_status += "......processing " + resource_url + "<br />\n"
                 # sync this resource (Pull => fetch and sync)
-                resource_sync_url = _base_url + "sync/sync.xml/create/" + _module + "/" + _resource + "?sync_partner_uuid=" + str(peer.uuid) + "&fetchurl=" + resource_url
-                import urllib2
+                resource_sync_url = _base_url + "sync/sync.xml/create/" + _module + "/" + _resource
+                import urllib, urllib2
                 auth_cookie_name = "session_id_" + request.application
                 _request_headers = dict(Cookie = request.cookies[auth_cookie_name].key + "=" + request.cookies[auth_cookie_name].value)
+                _request_params = urllib.urlencode({"sync_partner_uuid": str(peer.uuid), "fetchurl": resource_url})
                 try:
-                    _request = urllib2.Request(resource_sync_url, None, _request_headers)
+                    _request = urllib2.Request(resource_sync_url, _request_params, _request_headers)
                     _response = urllib2.urlopen(_request).read()
                 except IOError, e:
                     if tables_error:

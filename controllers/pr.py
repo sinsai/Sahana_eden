@@ -5,7 +5,8 @@
 
     @author: nursix
 """
-
+from xml.etree.ElementTree import *
+exec("import applications.%s.modules.s3xrc " %(request.application))
 module = "pr"
 
 # -----------------------------------------------------------------------------
@@ -67,8 +68,22 @@ def index():
         age.append([str(pr_person_age_group_opts[a_opt]), int(count)])
 
     total = int(db(db.pr_person.deleted == False).count())
-
-    return dict(module_name=module_name, gender=gender, age=age, total=total)
+    f=file("/home/shikhar/Desktop/newimport1.xml","rb")
+    xmlstr=f.read()
+    k=fromstring(xmlstr)
+    try:
+	    s3xrc.import_xml(xmlstr,None,None,3)
+    	    stat='success'
+    except:
+	    stat='failure'
+    '''l=list()
+    for s in k:
+	    l.append(s)
+    
+    #k=l
+    k=XRequest()
+    import_xml(k)'''
+    return dict(k=k,stat=stat,xmlstr=xmlstr,module_name=module_name, gender=gender, age=age, total=total)
 
 
 # -----------------------------------------------------------------------------

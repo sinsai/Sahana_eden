@@ -126,7 +126,7 @@ if empty:
         )
 
     # Organisation Registry
-    tablename = "or_setting"
+    tablename = "org_setting"
     table = db[tablename]
     if not db(table.id > 0).count():
         table.insert(
@@ -135,7 +135,7 @@ if empty:
             audit_write = False
         )
 
-    tablename = "or_sector"
+    tablename = "org_sector"
     table = db[tablename]
     if not db(table.id > 0).count():
         table.insert( name = "Agriculture" )

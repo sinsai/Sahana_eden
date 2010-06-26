@@ -53,9 +53,11 @@ resource = "conflict"
 tablename = "%s_%s" % (module, resource)
 table = db.define_table(tablename,
                 Field("uuid", length=36),                   # uuid of the conflicting resource
-                Field("remote_record"),                     # String dump of the remote record
+                Field("resource_table"),                    # the table name of the conflicting resource
+                Field("remote_record", "text"),             # String dump of the remote record
                 Field("remote_modified_by"),                # the user who modified the remote resource, empty if it is None
                 Field("remote_modified_on", "datetime"),    # the date and time when the remote record was modified
+                Field("logged_on", "datetime"),             # the date and time when this conflict was logged
                 Field("resolved", "boolean"),               # whether this conflict has been resolved or not
                 migrate=migrate)
 

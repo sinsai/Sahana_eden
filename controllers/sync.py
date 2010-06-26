@@ -130,6 +130,7 @@ def sync_auth():
         def f(*a, **b):
             if auth.environment.request.raw_args and "create/" in auth.environment.request.raw_args:
                 if not auth.basic() and not auth.is_logged_in():
+                    import urllib
                     request = auth.environment.request
                     next = URL(r=request,args=request.args,
                                vars=request.get_vars)
@@ -189,9 +190,11 @@ def sync_res(vector):
             #print "Conflict: local record is kept and is older"
             db[conflict_table].insert(
                 uuid = vector.record.uuid,
+                resource_table = vector.tablename,
                 remote_record = record_dump,
                 remote_modified_by = vector.element.get("modified_by"),
                 remote_modified_on = vector.mtime,
+                logged_on = datetime.datetime.utcnow(),
                 resolved = False
             )
     elif sync_peer.policy == 2:  # Replace with Remote
@@ -201,9 +204,11 @@ def sync_res(vector):
             #print "Conflict: remote record is imported and is older"
             db[conflict_table].insert(
                 uuid = vector.record.uuid,
+                resource_table = vector.tablename,
                 remote_record = record_dump,
                 remote_modified_by = vector.element.get("modified_by"),
                 remote_modified_on = vector.mtime,
+                logged_on = datetime.datetime.utcnow(),
                 resolved = False
             )
         elif db_record_mtime and sync_peer.last_sync_on and db_record_mtime > sync_peer.last_sync_on:
@@ -211,9 +216,11 @@ def sync_res(vector):
             #print "Conflict: local record was modified since last sync but overwritten by remote record"
             db[conflict_table].insert(
                 uuid = vector.record.uuid,
+                resource_table = vector.tablename,
                 remote_record = record_dump,
                 remote_modified_by = vector.element.get("modified_by"),
                 remote_modified_on = vector.mtime,
+                logged_on = datetime.datetime.utcnow(),
                 resolved = False
             )
     elif sync_peer.policy == 3:  # Keep with Newer Timestamp
@@ -223,9 +230,11 @@ def sync_res(vector):
             #print "Conflict: remote record is imported and is older"
             db[conflict_table].insert(
                 uuid = vector.record.uuid,
+                resource_table = vector.tablename,
                 remote_record = record_dump,
                 remote_modified_by = vector.element.get("modified_by"),
                 remote_modified_on = vector.mtime,
+                logged_on = datetime.datetime.utcnow(),
                 resolved = False
             )
     elif sync_peer.policy == 4:  # Role-based
@@ -235,9 +244,18 @@ def sync_res(vector):
         if db_record_mtime and vector.mtime != db_record_mtime:
             # just log and skip
             vector.strategy = []
+            db[conflict_table].insert(
+                uuid = vector.record.uuid,
+                resource_table = vector.tablename,
+                remote_record = record_dump,
+                remote_modified_by = vector.element.get("modified_by"),
+                remote_modified_on = vector.mtime,
+                logged_on = datetime.datetime.utcnow(),
+                resolved = False
+            )
     return
 
-@auth.requires_membership("Administrator")
+@auth.shn_requires_membership(1)
 def partner():
     "Synchronisation Partners"
     db.sync_partner.uuid.label = "UUID"
@@ -259,7 +277,7 @@ def partner():
     s3.crud_strings.sync_partner = Storage(title_create=title_create,title_display=title_display,title_list=title_list,title_update=title_update,title_search=title_search,subtitle_create=subtitle_create,subtitle_list=subtitle_list,label_list_button=label_list_button,label_create_button=label_create_button,msg_record_created=msg_record_created,msg_record_modified=msg_record_modified,msg_record_deleted=msg_record_deleted,msg_list_empty=msg_list_empty)
     return shn_rest_controller("sync", "partner")
 
-@auth.requires_membership("Administrator")
+@auth.shn_requires_membership(1)
 def setting():
     "Synchronisation Settings"
     db.sync_setting.uuid.writable = False
@@ -279,8 +297,116 @@ def history():
     logs = db().select(db[log_table].ALL, orderby=db[log_table].timestamp)
     return dict(title=title, logs=logs)
 
-@auth.requires_membership("Administrator")
+@auth.shn_requires_membership(1)
 def conflict():
     "Conflict Resolution UI"
-    # going to be a simple CRUD right now, will be changed later
-    return shn_rest_controller("sync", "conflict", listadd=False)
+    import cPickle
+    title = T("Conflict Resolution")
+
+    def get_modified_by(user_email):
+        modified_by = user_email
+        user = db(db.auth_user.email == user_email).select().first()
+        if user:
+            modified_by  = user.first_name
+            if user.last_name:
+                modified_by += " " + user.last_name
+        return modified_by
+
+    skip_fields = ["uuid", "id"]
+    field_errors = dict()
+
+    conflicts = db(db[conflict_table].resolved==False).select(db[conflict_table].ALL, orderby=db[conflict_table].logged_on)
+    for idx in xrange(0, len(conflicts)):
+        if not conflicts[idx].resource_table in db.tables:
+            del conflicts[idx]
+    record_nbr = 1
+    if "record_nbr" in request.vars:
+        record_nbr = int(request.vars["record_nbr"])
+    total_conflicts = len(conflicts)
+    if record_nbr < 1 or record_nbr > total_conflicts:
+        record_nbr = 1
+    if total_conflicts == 0:
+        conflict = None
+    else:
+        conflict = conflicts[record_nbr - 1]
+    remote_record = None
+    local_record = None
+    local_modified_by = None
+    remote_modified_by = None
+    if conflict:
+        remote_record = cPickle.loads(conflict.remote_record)
+        local_record = db(db[conflict.resource_table].uuid==conflict.uuid).select().first()
+        if conflict.remote_modified_by:
+            remote_modified_by = get_modified_by(conflict.remote_modified_by)
+        if "modified_by" in local_record:
+            local_modified_by = get_modified_by(local_record.modified_by.email)
+
+    if "form_action" in request.vars:
+        if request.vars["form_action"] == "resolve" and conflict:
+            if local_record:
+                # update local record
+                for field in remote_record:
+                    if (not field in skip_fields) and (field in db[conflict.resource_table].fields):
+                        if "final_"+str(field) in request.vars:
+                            vals = {field: request.vars["final_" + str(field)]}
+                        else:
+                            if db[conflict.resource_table][field].type == "boolean":
+                                vals = {field: "False"}
+                            else:
+                                vals = {field: ""}
+
+                        field_error = db[conflict.resource_table][field].validate(vals[field])[1]
+                        if field_error:
+                            field_errors[field] = field_error
+                        # update only if no errors
+                        if len(field_errors) == 0:
+                            db(db[conflict.resource_table].uuid==conflict.uuid).update(**vals)
+                            # undelete record
+                            if "deleted" in db[conflict.resource_table].fields:
+                                vals = {"deleted": False}
+                                db(db[conflict.resource_table].uuid==conflict.uuid).update(**vals)
+            else:
+                # insert record
+                new_rec = dict()
+                for field in remote_record:
+                    if field in db[conflict_table].fields:
+                        if "final_"+field in request.vars:
+                            new_rec[field] = request.vars["final_"+field]
+                        else:
+                            new_rec[field] = remote_record[field]
+                        field_error = db[conflict.resource_table][field].validate(vals[field])[1]
+                        if field_error:
+                            field_errors[field] = field_error
+                # insert only if no errors
+                if len(field_errors) == 0:
+                    db[conflict.resource_table].insert(**new_rec)
+
+            # set status to resolved if no errors
+            if len(field_errors) == 0:
+                conflict.update_record(resolved = True)
+            # next conflict
+            conflicts = db(db[conflict_table].resolved==False).select(db[conflict_table].ALL, orderby=db[conflict_table].logged_on)
+            for idx in xrange(0, len(conflicts)):
+                if not conflicts[idx].resource_table in db.tables:
+                    del conflicts[idx]
+            total_conflicts = len(conflicts)
+            if record_nbr < 1 or record_nbr > total_conflicts:
+                record_nbr = 1
+            if total_conflicts == 0:
+                conflict = None
+            else:
+                conflict = conflicts[record_nbr - 1]
+            remote_record = None
+            local_record = None
+            if conflict:
+                remote_record = cPickle.loads(conflict.remote_record)
+                local_record = db(db[conflict.resource_table].uuid==conflict.uuid).select().first()
+                if conflict.remote_modified_by:
+                    remote_modified_by = get_modified_by(conflict.remote_modified_by)
+                if "modified_by" in local_record:
+                    local_modified_by = get_modified_by(local_record.modified_by.email)
+
+    form = None
+    if conflict:
+        form = SQLFORM.factory(db[conflict.resource_table])
+    return dict(title=title, skip_fields=skip_fields, total_conflicts=total_conflicts, conflict=conflict, record_nbr=record_nbr, local_record=local_record, remote_record=remote_record, local_modified_by=local_modified_by, remote_modified_by=remote_modified_by, form=form, field_errors=field_errors)

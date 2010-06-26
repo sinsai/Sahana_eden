@@ -194,7 +194,7 @@ def __get_commons(solution=None):
 def index():
     "Module Home Page"
 
-    module_name = s3.modules[module]["name_nice"]
+    module_name = deployment_settings.modules[module].name_nice
 
     groups = db(db.delphi_group.active == True).select()
     result = []

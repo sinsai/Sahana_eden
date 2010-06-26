@@ -7,18 +7,19 @@
 <ul>
 {{for module in modules:}}
     {{_module = modules[module]}}
-    {{if not _module["access"] and not module == "default":}}
-        <li><strong>{{=A(T(_module["name_nice"]), _href=URL(r=request, c=module, f="index"))}}</strong> - {{=_module["description"]}}.</li>
+    {{if module == "default":}}
+    {{elif not _module.access:}}
+        <li><strong>{{=A(T(_module.name_nice), _href=URL(r=request, c=module, f="index"))}}</strong> - {{=_module.description}}.</li>
     {{else:}}
         {{authorised = False}}
-        {{groups = re.split('\|', _module["access"])[1:-1]}}
+        {{groups = re.split('\|', _module.access)[1:-1]}}
         {{for group in groups:}}
             {{if int(group) in session.s3.roles:}}
                 {{authorised = True}}
             {{pass}}
         {{pass}}
         {{if authorised == True:}}
-            <li><strong>{{=A(T(_module["name_nice"]), _href=URL(r=request, c=module, f="index"))}}</strong> - {{=_module["description"]}}.</li>
+            <li><strong>{{=A(T(_module.name_nice), _href=URL(r=request, c=module, f="index"))}}</strong> - {{=_module.description}}.</li>
         {{pass}}
     {{pass}}
 {{pass}}

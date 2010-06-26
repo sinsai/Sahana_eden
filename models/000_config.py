@@ -10,7 +10,7 @@ s3cfg = local_import("s3cfg")
 deployment_settings = s3cfg.S3Config()
 
 # Database settings
-deployment_settings.database.db_type = sqlite"
+deployment_settings.database.db_type = "sqlite"
 deployment_settings.database.host = "localhost"
 deployment_settings.database.port = "" # use default
 deployment_settings.database.database = "sahana"
@@ -25,7 +25,6 @@ deployment_settings.auth.hmac_key = "akeytochange"
 # registered in order to secure the deployment
 deployment_settings.auth.registration_requires_verification = False
 deployment_settings.auth.registration_requires_approval = False
-
 
 # Base settings
 # Set this to the Public URL of the instance
@@ -59,25 +58,116 @@ deployment_settings.mail.approver = "useradmin@your.org"
 deployment_settings.L10n.utc_offset = "UTC +0000"
 
 # Module settings
+s3_module_type_opts = {
+    1:T("Home"),
+    2:T("Situation Awareness"),
+    3:T("Person Management"),
+    4:T("Aid Management"),
+    5:T("Communications")
+    }
 # Comment/uncomment modules here to disable/enable them
-deployment_settings.modules = [
-    "admin",        # Admin
-    "gis",          # GIS
-    "media",        # Media Manager
-    "pr",           # Person Registry
-    "or",           # Organisation Registry
-    "budget",       # Budgetting
-    "cr",           # Camp Registry
-    "delphi",       # Delphi Decision Maker
-    "dvi",          # Disaster Victim Identification
-    #"dvr",         # Disaster Victim Registry
-    "hms",          # Hospital Management
-    #"hrm",         # Human Resources Management
-    #"lms",         # Logistics
-    "mpr",          # Missing Person Registry
-    "msg",          # Messaging
-    #"nim",         # Nursing Information Manager
-    "rms",          # Request Management
-    "ticket",       # Ticketing
-    "vol"           # Volunteer Management
-]
+# Modules menu is defined in 01_menu.py
+from gluon.storage import Storage
+deployment_settings.modules = Storage(
+    default = Storage(
+            name_nice = "Sahana Home",
+            access = None,      # All Users (inc Anonymous) can see this module in the default menu & access the controller
+            module_type = 1     # Used to locate the module in the default menu
+        ),
+    admin = Storage(
+            name_nice = "Administration",
+            description = "Site Administration",
+            access = "|1|",     # Only Administrators can see this module in the default menu & access the controller
+            module_type = 1
+        ),
+    gis = Storage(
+            name_nice = "Mapping",
+            description = "Situation Awareness & Geospatial Analysis",
+            module_type = 2
+        ),
+    pr = Storage(
+            name_nice = "Person Registry",
+            description = "Central point to record details on People",
+            module_type = 3
+        ),
+    mpr = Storage(
+            name_nice = "Missing Persons Registry",
+            description = "Helps to report and search for Missing Persons",
+            module_type = 3
+        ),
+    dvi = Storage(
+            name_nice = "Disaster Victim Identification",
+            description = "Disaster Victim Identification",
+            module_type = 3,
+        ),
+    #dvr = Storage(
+    #        name_nice = "Disaster Victim Registry",
+    #        description = "Traces internally displaced people (IDPs) and their needs",
+    #        module_type = 3
+    #    ),
+    #nim = Storage(
+    #        name_nice = "Nursing Information Manager",
+    #        description = "Module to assist disaster nurses.",
+    #        module_type = 3
+    #    ),
+    budget = Storage(
+            name_nice = "Budgeting Module",
+            description = "Allows a Budget to be drawn up",
+            module_type = 4
+        ),
+    cr = Storage(
+            name_nice = "Shelter Registry",
+            description = "Tracks the location, distibution, capacity and breakdown of victims in Shelters",
+            module_type = 4,
+        ),
+    delphi = Storage(
+            name_nice = "Delphi Decision Maker",
+            description = "Supports the decision making of large groups of Crisis Management Experts by helping the groups create ranked list.",
+            module_type = 4
+        ),
+    hms = Storage(
+            name_nice = "Hospital Management",
+            description = "Helps to monitor status of hospitals",
+            module_type = 4
+        ),
+    media = Storage(
+            name_nice = "Media Manager",
+            description = "A library of digital resources, such as Photos.",
+            module_type = 4
+        ),
+    org = Storage(
+            name_nice = "Organization Registry",
+            description = 'Lists "who is doing what & where". Allows relief agencies to coordinate their activities',
+            module_type = 4
+        ),
+    rms = Storage(
+            name_nice = "Request Management",
+            description = "Tracks requests for aid and matches them against donors who have pledged aid",
+            module_type = 4
+        ),
+    ticket = Storage(
+            name_nice = "Ticketing Module",
+            description = "Master Message Log to process incoming reports & requests",
+            module_type = 4
+        ),
+    vol = Storage(
+            name_nice = "Volunteer Registry",
+            description = "Manage volunteers by capturing their skills, availability and allocation",
+            module_type = 4
+        ),
+    #hrm = Storage(
+    #        name_nice = "Human Resources",
+    #        description = "Helps to manage human resources",
+    #        module_type = 4
+    #    ),
+    #lms = Storage(
+    #        name_nice = "Logistics Management System",
+    #        description = "An intake system, a warehouse management system, commodity tracking, supply chain management, procurement and other asset and resource management capabilities.",
+    #        module_type = 4
+    #    ),
+    msg = Storage(
+            name_nice = "Messaging Module",
+            description = "Sends & Receives Alerts via Email & SMS",
+            module_type = 5
+        ),
+)

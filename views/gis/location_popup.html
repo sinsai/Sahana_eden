@@ -57,13 +57,13 @@
         $("#gis_location_lon").val(lon);
     }
     //]]></script>
-{{elif "or_office" in request.vars.caller:}}
+{{elif "org_office" in request.vars.caller:}}
     {{fc = db(db.gis_feature_class.name == "Office").select(limitby=(0, 1)).first().id}}
     <script type="text/javascript">//<![CDATA[
-    // If coming from the OR then populate defaults for the fields & Hide unnecessary rows
+    // If coming from the Organisation Registry then populate defaults for the fields & Hide unnecessary rows
     $(function() {
-        //if (self.parent.$("input[name='_formname']").val().match("or_office")) {
-        var location_name = self.parent.$('#or_office_name').val();
+        //if (self.parent.$("input[name='_formname']").val().match("org_office")) {
+        var location_name = self.parent.$('#org_office_name').val();
         if (location_name) {
             $("#gis_location_name").val(location_name);
             $("#gis_location_name__row").hide();

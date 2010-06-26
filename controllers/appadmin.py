@@ -33,9 +33,7 @@ global_env['datetime'] = datetime
 #
 # S3 Auth
 #
-if shn_has_role(1):
-    pass
-else:
+if not shn_has_role(1):
     session.error = T("Not Authorised!")
     redirect(URL(r=request, c="default", f="user", args="login"))
 

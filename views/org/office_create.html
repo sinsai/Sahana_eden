@@ -2,13 +2,7 @@
 {{include '_create.html'}}
 <script type="text/javascript">//<![CDATA[
 $(function() {
-    // Person AutoComplete
-    {{entity_id = "hms_pledge_person_id"}}
-    {{is_person = True}}
-    {{include 'auto_input.js'}}
-
-    // Organisation AutoComplete
-    {{entity_id = "hms_pledge_organisation_id"}}
+    {{entity_id = "org_office_organisation_id"}}
     {{urlpath_c = "org"}}
     {{urlpath_f = "organisation"}}
     {{urlvar_field = "name"}}

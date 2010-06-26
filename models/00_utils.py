@@ -278,7 +278,6 @@ shn_list_of_nations = {
     }
 
 # User Time Zone Operations:
-# TODO: don't know if that fits here, should perhaps be moved into sahana.py
 
 from datetime import timedelta
 import time
@@ -289,10 +288,10 @@ def shn_user_utc_offset():
     """
 
     if auth.is_logged_in():
-        return db(db.auth_user.id==session.auth.user.id).select()[0].utc_offset
+        return db(db.auth_user.id == session.auth.user.id).select(db.auth_user.utc_offset, limitby=(0, 1)).first().utc_offset
     else:
         try:
-            offset = db().select(db.s3_setting.utc_offset)[0].utc_offset
+            offset = db().select(db.s3_setting.utc_offset, limitby=(0, 1)).first().utc_offset
         except:
             offset = None
         return offset
@@ -354,7 +353,7 @@ def shn_last_update(table, record_id):
     return None
 
 def shn_compose_message(data, template):
-
+    " Compose an SMS Message from an XSLT "
     from lxml import etree
     if data:
         root = etree.Element("message")
@@ -394,7 +393,7 @@ def shn_crud_strings(table_name,
     @example
         s3.crud_strings[<table_name>] = shn_crud_strings(<table_name>, <table_name_plural>)
     """
-    #This may need to be reviewed for Internationalization
+    
     if not table_name_plural:
         table_name_plural = table_name + "s"
 

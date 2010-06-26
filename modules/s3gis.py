@@ -197,7 +197,7 @@ class GIS(object):
         query = db.gis_apikey.name == layer
         return db(query).select(db.gis_apikey.apikey, limitby=(0, 1)).first().apikey
 
-    def get_bearing(lat_start, lon_start, lat_end, lon_end):
+    def get_bearing(self, lat_start, lon_start, lat_end, lon_end):
         """
             Given a Start & End set of Coordinates, return a Bearing
             Formula from: http://www.movable-type.co.uk/scripts/latlong.html
@@ -299,7 +299,7 @@ class GIS(object):
         else:
             return None
 
-    def get_features_in_radius(lat, lon, radius):
+    def get_features_in_radius(self, lat, lon, radius):
         """
             Returns Features within a Radius (in km) of a LatLon Location
             Calling function has the job of filtering features by the type they are interested in
@@ -310,6 +310,8 @@ class GIS(object):
         """
 
         import math
+        
+        db = self.db
 
         # km
         radius_earth = 6378.137
@@ -1236,7 +1238,7 @@ OpenLayers.Util.extend( selectPdfControl, {
                     }
                 }]
             });
-         } else {
+        } else {
             // Display error diagnostic
             var formPanel = new Ext.Panel ({
                 title: '""" + str(T("Print Map")) + """',
@@ -1460,10 +1462,10 @@ OpenLayers.Util.extend( selectPdfControl, {
             options = "wrapDateLine: 'true'"
             if not layer.base:
                 options += """,
-                   isBaseLayer: false"""
+                    isBaseLayer: false"""
                 if not layer.visible:
-                   options += """,
-                   visibility: false"""
+                    options += """,
+                    visibility: false"""
 
             layers_wms  += """
         var wmsLayer""" + name_safe + """ = new OpenLayers.Layer.WMS(
@@ -1721,11 +1723,10 @@ OpenLayers.Util.extend( selectPdfControl, {
             }
         }
         """
+                query = (db.gis_location.deleted == False) & (db.gis_feature_group.name == name) & (db.gis_feature_class_to_feature_group.feature_group_id == db.gis_feature_group.id) & (db.gis_location.feature_class_id == db.gis_feature_class_to_feature_group.feature_class_id)
                 if "parent" in feature_overlays:
-                    parent_id = db(db.gis_location.name == parent).select(limitby=(0, 1)).first().id
-                    query = (db.gis_location.deleted == False) & (db.gis_feature_group.name == name) & (db.gis_feature_class_to_feature_group.feature_group_id == db.gis_feature_group.id) & (db.gis_location.feature_class_id == db.gis_feature_class_to_feature_group.feature_class_id) & (db.gis_location.parent == parent_id)
-                else:
-                    query = (db.gis_location.deleted == False) & (db.gis_feature_group.name == name) & (db.gis_feature_class_to_feature_group.feature_group_id == db.gis_feature_group.id) & (db.gis_location.feature_class_id == db.gis_feature_class_to_feature_group.feature_class_id)
+                    parent_id = db(db.gis_location.name == feature_overlays["parent"]).select(limitby=(0, 1)).first().id
+                    query = query & (db.gis_location.parent == parent_id)
                 features = db(query).select()
                 for feature in features:
                     marker = self.get_marker(feature.gis_location.id)
@@ -2503,11 +2504,11 @@ OpenLayers.Util.extend( selectPdfControl, {
         return
 
     def bbox_intersects(self, lon_min, lat_min, lon_max, lat_max):
+
         db = self.db
-        return db((db.gis_location.lat_min <= lat_max) &
-            (db.gis_location.lat_max >= lat_min) &
-            (db.gis_location.lon_min <= lon_max) &
-            (db.gis_location.lon_max >= lon_min))
+        _location = db.gis_location
+        query = (_location.lat_min <= lat_max) & (_location.lat_max >= lat_min) & (_location.lon_min <= lon_max) & (_location.lon_max >= lon_min)
+        return query
 
     def _intersects(self, shape):
         """
@@ -2515,7 +2516,8 @@ OpenLayers.Util.extend( selectPdfControl, {
         """
 
         db = self.db
-        for loc in self.bbox_intersects(*shape.bounds).select():
+        query = self.bbox_intersects(*shape.bounds)
+        for loc in db(query).select():
             location_shape = wkt_loads(loc.wkt)
             if location_shape.intersects(shape):
                 yield loc
@@ -2557,10 +2559,11 @@ class GoogleGeocoder(Geocoder):
 
     def get_api_key(self):
         " Acquire API key from the database "
+        db = self.db
         query = self.db.gis_apikey.name == "google"
         return self.db(query).select(db.gis_apikey.apikey, limitby=(0, 1)).first().apikey
 
-    def construct_url(self):
+    def construct_url(self, params):
         " Construct the URL based on the arguments passed "
         self.url = self.url % urllib.urlencode(params)
 
@@ -2580,10 +2583,11 @@ class YahooGeocoder(Geocoder):
 
     def get_api_key(self):
         " Acquire API key from the database "
+        db = self.db
         query = self.db.gis_apikey.name == "yahoo"
         return self.db(query).select(db.gis_apikey.apikey, limitby=(0, 1)).first().apikey
 
-    def construct_url(self):
+    def construct_url(self, params):
         " Construct the URL based on the arguments passed "
         self.url = self.url % urllib.urlencode(params)
 

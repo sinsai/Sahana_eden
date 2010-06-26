@@ -54,7 +54,7 @@ def test():
                 toolbar = True,
                 search = True,
                 print_tool = {
-                        "url" : "http://localhost:8080/print-servlet-1.2-SNAPSHOT/pdf/",
+                        "url" : "http://print.drrprojects.net:8180/print-servlet-1.2-SNAPSHOT/pdf/",
                         "mapTitle" : "My Map"
                     },
                 #print_tool = {"url" : "http://localhost:8080/geoserver/pdf/"},

@@ -5,8 +5,8 @@
 
     @author: nursix
 """
-from xml.etree.ElementTree import *
-exec("import applications.%s.modules.s3xrc " %(request.application))
+from lxml import *
+#exec("import applications.%s.modules.s3xrc " %(request.application))
 module = "pr"
 
 # -----------------------------------------------------------------------------
@@ -68,12 +68,12 @@ def index():
         age.append([str(pr_person_age_group_opts[a_opt]), int(count)])
 
     total = int(db(db.pr_person.deleted == False).count())
-    f=file("/home/shikhar/Desktop/newimport1.xml","rb")
+    f=file("/home/shikhar/Desktop/newimport.xml","rb")
     xmlstr=f.read()
-    k=fromstring(xmlstr)
+    k=etree.fromstring(xmlstr)
     try:
-	    s3xrc.import_xml(xmlstr,None,None,3)
-    	    stat='success'
+    	    s3xrc.import_xml('pr','person',2,k)
+	    stat='success'
     except:
 	    stat='failure'
     '''l=list()

@@ -48,8 +48,7 @@ def shn_menu():
                 ]]
             ]
             menu.extend(menu_person)
-    
-              
+
     if auth.user is not None:
         menu_user = [
             [T('My Tasks'), False, URL(r=request, f='task', args='')],
@@ -60,12 +59,12 @@ def shn_menu():
 
 shn_menu()
 
+
 def index():
 
     """ Module's Home Page """
 
     module_name = s3.modules[module]["name_nice"]
-
     return dict(module_name=module_name)
 
 
@@ -95,6 +94,8 @@ def person():
     db.pr_person.missing.default = False
 
     response.s3.pagination = True
+    response.files.append(URL(r=request,c='static/multiselect',f='jquery.multiSelect.js'))
+    response.files.append(URL(r=request,c='static/multiselect',f='jquery.multiSelect.css'))
 
     output = shn_rest_controller('pr', 'person', main='first_name', extra='last_name',
         rheader=shn_pr_rheader,
@@ -134,6 +135,7 @@ def task():
     response.s3.pagination = True
 
     return shn_rest_controller(module, 'task', listadd=False)
+
  
 def skill_types():
     return shn_rest_controller(module, 'skill_types')

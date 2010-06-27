@@ -155,8 +155,8 @@ def export_pdf(table, query):
         session.error = T("Geraldo module not available within the running Python - this needs installing for PDF output!")
         redirect(URL(r=request))
 
-    objects_list = db(query).select(table.ALL)
-    if not objects_list:
+    records = db(query).select(table.ALL)
+    if not records:
         session.warning = T("No data in this table - cannot create PDF!")
         redirect(URL(r=request))
 
@@ -178,18 +178,31 @@ def export_pdf(table, query):
     detailElements = []
     COLWIDTH = 2.5
     LEFTMARGIN = 0.2
+
+    def _represent(field, data):
+        if data == None:
+            return ""
+        represent = table[field].represent
+        if not represent:
+            represent = lambda v: str(v)
+        return represent(data)
+    
     for field in fields:
         _elements.append(Label(text=str(field.label)[:16], top=0.8*cm, left=LEFTMARGIN*cm))
         tab, col = str(field).split(".")
-        #db[table][col].represent = "foo"
         detailElements.append(ObjectValue(
             attribute_name=col,
-            left=LEFTMARGIN*cm, width=COLWIDTH*cm,
-            get_value=lambda instance: str(instance).decode("utf-8")))
+            left=LEFTMARGIN * cm,
+            width=COLWIDTH * cm,
+            # Ensure that col is substituted when lambda defined not evaluated by using the default value
+            get_value=lambda instance, column=col: _represent(column, instance[column])))
         LEFTMARGIN += COLWIDTH
 
     mod, res = str(table).split("_", 1)
-    mod_nice = s3.modules[mod]["name_nice"]
+    try:
+        mod_nice = deployment_settings.modules[mod]["name_nice"]
+    except:
+        mod_nice = mod
     _title = mod_nice + ": " + res.capitalize()
 
     class MyReport(Report):
@@ -212,7 +225,7 @@ def export_pdf(table, query):
             height = 0.5*cm
             auto_expand_height = True
             elements = tuple(detailElements)
-    report = MyReport(queryset=objects_list)
+    report = MyReport(queryset=records)
     report.generate_by(PDFGenerator, filename=output)
 
     output.seek(0)

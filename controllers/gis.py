@@ -45,19 +45,21 @@ def test():
 
     html = gis.show_map(
                 feature_overlays = [offices, hospitals],
-                #wms_browser = {"name" : "OpenGeo Demo WMS", "url" : "http://demo.opengeo.org/geoserver/ows?service=WMS&request=GetCapabilities"},
-                wms_browser = {"name" : "Risk Maps", "url" : "http://preview.grid.unep.ch:8080/geoserver/ows?service=WMS&request=GetCapabilities"},
+                wms_browser = {"name" : "OpenGeo Demo WMS", "url" : "http://demo.opengeo.org/geoserver/ows?service=WMS&request=GetCapabilities"},
+                #wms_browser = {"name" : "Risk Maps", "url" : "http://preview.grid.unep.ch:8080/geoserver/ows?service=WMS&request=GetCapabilities"},
                 #wms_browser = {"name" : "Risk Maps", "url" : "http://www.pdc.org/wms/wmservlet/PDC_Active_Hazards?request=getcapabilities&service=WMS&version=1.1.1"},
                 catalogue_overlays = True,
                 catalogue_toolbar = True,
-                legend = True,
+                #legend = True, # Stops Feature Layers from Printing
                 toolbar = True,
                 search = True,
                 print_tool = {
-                        "url" : "http://localhost:8080/print-servlet-1.2-SNAPSHOT/pdf/",
-                        "mapTitle" : "My Map"
+                        #"url" : "http://localhost:8080/geoserver/pdf/",                    # Local GeoServer
+                        "url" : "http://localhost:8080/print-servlet-1.2-SNAPSHOT/pdf/",    # Local Windows Tomcat
+                        #"url" : "http://host.domain:8180/print-servlet-1.2-SNAPSHOT/pdf/", # Linux Tomcat
+                        "mapTitle" : "Title",
+                        "subTitle" : "SubTitle"
                     },
-                #print_tool = {"url" : "http://localhost:8080/geoserver/pdf/"},
                 #mgrs = {"name" : "MGRS Atlas PDFs", "url" : "http://www.sharedgeo.org/datasets/shared/maps/usng/pdf.map?VERSION=1.0.0&SERVICE=WFS&request=GetFeature&typename=wfs_all_maps"},
                 window = True,
                 )

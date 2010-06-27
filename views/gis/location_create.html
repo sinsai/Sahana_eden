@@ -1,6 +1,6 @@
-{{extend 'layout.html'}}
-{{include '_create.html'}}
-{{if session.s3.security_policy==1:}}
+{{extend "layout.html"}}
+{{include "_create.html"}}
+{{if session.s3.security_policy == 1:}}
     <script type="text/javascript">//<![CDATA[
     $(function() {
             // Hide the Admin row for simple security_policy
@@ -9,5 +9,5 @@
     //]]></script>
 {{else:}}
 {{pass}}
-{{include 'gis/feature_crud.js'}}
-{{include 'gis/convert_gps.html'}}
+{{include "gis/feature_crud.js"}}
+{{include "gis/convert_gps.html"}}

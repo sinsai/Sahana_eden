@@ -316,7 +316,7 @@ def shn_pr_person_represent(id):
                     table.last_name,
                     limitby=(0, 1))
         if person:
-            return vita.fullname(person[0])
+            return vita.fullname(person.first())
         else:
             return None
 

@@ -107,17 +107,6 @@ organisation_id = db.Table(None, "organisation_id",
                            ondelete = "RESTRICT"
                           ))
 
-def organisation_onaccept(form):
-    # Do not redirect from onaccept directly, because that
-    # would break XML imports! Instead, set a redirect URL
-    # in response, and redirect from the controller
-    if request.vars.format == "popup":
-        response.s3.org_redirect = organisation_popup_url + \
-                                  "&caller=" + request.vars.caller
-    else:
-        f="dashboard"
-        response.s3.org_redirect = URL(r=request, f=f, args=form.vars.id)
-
 # Orgs as component of Clusters
 s3xrc.model.add_component(module, resource,
                           multiple=True,
@@ -126,7 +115,6 @@ s3xrc.model.add_component(module, resource,
                           editable=True)
 
 s3xrc.model.configure(table,
-                      onaccept=lambda form: organisation_onaccept(form),
                       list_fields = ["id",
                                      "name",
                                      "acronym",

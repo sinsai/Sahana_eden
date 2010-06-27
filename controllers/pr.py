@@ -6,7 +6,7 @@
     @author: nursix
 """
 
-module = "pr"
+module = request.controller
 
 # -----------------------------------------------------------------------------
 # Options Menu (available in all Functions" Views)
@@ -76,6 +76,8 @@ def person():
 
     """ RESTful CRUD controller """
 
+    resource = request.function
+    
     response.s3.pagination = True
 
     s3xrc.model.configure(db.pr_group_membership,
@@ -97,7 +99,7 @@ def person():
         return output
     response.s3.postp = person_postp
 
-    output = shn_rest_controller(module, "person",
+    output = shn_rest_controller(module, resource,
                 main="first_name",
                 extra="last_name",
                 rheader=lambda jr: shn_pr_rheader(jr,
@@ -120,6 +122,8 @@ def group():
 
     """ RESTful CRUD controller """
 
+    resource = request.function
+    
     response.s3.filter = (db.pr_group.system == False) # do not show system groups
     response.s3.pagination = True
 
@@ -142,7 +146,7 @@ def group():
         return output
     response.s3.postp = group_postp
 
-    output = shn_rest_controller(module, "group",
+    output = shn_rest_controller(module, resource,
                 main="group_name",
                 extra="group_description",
                 rheader=lambda jr: shn_pr_rheader(jr,
@@ -159,37 +163,44 @@ def group():
 # -----------------------------------------------------------------------------
 def image():
     "RESTlike CRUD controller"
-    return shn_rest_controller(module, "image")
+    resource = request.function
+    return shn_rest_controller(module, resource)
 
 # -----------------------------------------------------------------------------
 def pe_contact():
     "RESTlike CRUD controller"
-    return shn_rest_controller(module, "pe_contact")
+    resource = request.function
+    return shn_rest_controller(module, resource)
 
 # -----------------------------------------------------------------------------
 def address():
     "RESTlike CRUD controller"
-    return shn_rest_controller(module, "address")
+    resource = request.function
+    return shn_rest_controller(module, resource)
 
 # -----------------------------------------------------------------------------
 def presence():
     "RESTlike CRUD controller"
-    return shn_rest_controller(module, "presence")
+    resource = request.function
+    return shn_rest_controller(module, resource)
 
 # -----------------------------------------------------------------------------
 def identity():
     "RESTlike CRUD controller"
-    return shn_rest_controller(module, "identity")
+    resource = request.function
+    return shn_rest_controller(module, resource)
 
 # -----------------------------------------------------------------------------
 def group_membership():
     "RESTlike CRUD controller"
-    return shn_rest_controller(module, "group_membership")
+    resource = request.function
+    return shn_rest_controller(module, resource)
 
 # -----------------------------------------------------------------------------
 def pentity():
     "RESTlike CRUD controller"
-    return shn_rest_controller(module, "pentity")
+    resource = request.function
+    return shn_rest_controller(module, resource)
 
 # -----------------------------------------------------------------------------
 def download():

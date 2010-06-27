@@ -6,7 +6,7 @@
     @author: ajuonline
 """
 
-module = "lms"
+module = request.controller
 
 if module not in deployment_settings.modules:
     session.error = T("Module disabled!")

@@ -46,9 +46,6 @@ def index():
 
     return dict(module_name=module_name)
 
-@service.jsonrpc
-@service.xmlrpc
-@service.amfrpc
 def sector():
     "RESTlike CRUD controller"
     resource = request.function
@@ -77,11 +74,9 @@ def sector():
     
     return shn_rest_controller(module, resource, listadd=False)
 
-@service.jsonrpc
-@service.xmlrpc
-@service.amfrpc
 def organisation():
     "RESTlike CRUD controller"
+
     resource = request.function
     tablename = "%s_%s" % (module, resource)
     table = db[tablename]
@@ -115,18 +110,26 @@ def organisation():
         msg_record_deleted = T("Organization deleted"),
         msg_list_empty = T("No Organizations currently registered"))
 
+    def org_prep(jr):
+        if jr.representation == "html":
+            # Redirect to Dashboard after adding/editing an Organisation to add Offices/Contacts/Projects
+            crud.settings.create_next = URL(r=request, f="dashboard")
+            crud.settings.update_next = URL(r=request, f="dashboard")
+        return True
+    response.s3.prep = org_prep
+
+    def org_postp(jr, output):
+        shn_action_buttons(jr)
+        return output
+    response.s3.postp = org_postp
+    
     # ServerSidePagination
     response.s3.pagination = True
+    
     output = shn_rest_controller(module, resource, listadd=False)
-    if response.s3.org_redirect:
-        session.flash = T("Submission Succesful")
-        redirect(response.s3.org_redirect)
-    else:
-        return output
+    
+    return output
 
-@service.jsonrpc
-@service.xmlrpc
-@service.amfrpc
 def office():
     "RESTlike CRUD controller"
     resource = request.function
@@ -172,6 +175,12 @@ def office():
     if session.s3.security_policy == 1:
         # Hide the Admin row for simple security_policy
         table.admin.readable = table.admin.writable = False
+    
+    def org_postp(jr, output):
+        shn_action_buttons(jr)
+        return output
+    response.s3.postp = org_postp
+    
     # ServerSidePagination
     response.s3.pagination = True
 
@@ -179,15 +188,15 @@ def office():
     #if request.args(0) in ("create", "update"):
     if request.args(0) == "create":
         table.organisation_id.requires = IS_NULL_OR(IS_ONE_OF_EMPTY(db, "org_organisation.id"))
-        if request.vars.organisation_id:
+        if request.vars.organisation_id and request.vars.organisation_id != "None":
             session.s3.organisation_id = request.vars.organisation_id
             # Organisation name should be displayed on the form if organisation_id is pre-selected
             session.s3.organisation_name = db(db.org_organisation.id == int(session.s3.organisation_id)).select(db.org_organisation.name).first().name
-    return shn_rest_controller(module, resource, listadd=False, rheader=shn_office_rheader)
+    
+    output = shn_rest_controller(module, resource, listadd=False, rheader=shn_office_rheader)
+    
+    return output
 
-@service.jsonrpc
-@service.xmlrpc
-@service.amfrpc
 def contact():
     "RESTlike CRUD controller"
     resource = request.function
@@ -219,6 +228,11 @@ def contact():
         msg_record_deleted = T("Contact deleted"),
         msg_list_empty = T("No Contacts currently registered"))
 
+    def org_postp(jr, output):
+        shn_action_buttons(jr)
+        return output
+    response.s3.postp = org_postp
+    
     # ServerSidePagination
     response.s3.pagination = True
 
@@ -232,12 +246,10 @@ def contact():
         table.organisation_id.requires = IS_NULL_OR(IS_ONE_OF_EMPTY(db, "org_organisation.id"))
         table.office_id.requires = IS_NULL_OR(IS_ONE_OF_EMPTY(db, "org_office.id"))
 
-    return shn_rest_controller(module, resource, listadd=False)
+    output = shn_rest_controller(module, resource, listadd=False)
+    
+    return output
 
-
-@service.jsonrpc
-@service.xmlrpc
-@service.amfrpc
 def project():
     "RESTlike CRUD controller"
     resource = request.function
@@ -262,7 +274,17 @@ def project():
         msg_record_deleted = T("Project deleted"),
         msg_list_empty = T("No Projects currently registered"))
     
-    return shn_rest_controller(module, resource, listadd=False)
+    def org_postp(jr, output):
+        shn_action_buttons(jr)
+        return output
+    response.s3.postp = org_postp
+    
+    # ServerSidePagination
+    response.s3.pagination = True
+
+    output = shn_rest_controller(module, resource, listadd=False)
+    
+    return output
 
 def office_table_linkto(field):
     return URL(r=request, f = "office",  args=[field, "read"],
@@ -325,7 +347,7 @@ def org_sub_list(tablename, org_id):
 
 def dashboard():
 
-    # Get Organization to display from Var or Arg or Default
+    # Get Organization to display from Arg, Var, Session or Default
     if len(request.args) > 0:
         org_id = int(request.args[0])
         try:
@@ -342,10 +364,14 @@ def dashboard():
             redirect(URL(r=request, c="org", f="index"))
     else:
         table = db.org_organisation
-        query  = (table.id > 0) & ((table.deleted == False) | (table.deleted == None))
+        deleted  = ((table.deleted == False) | (table.deleted == None))
+        org_id = s3xrc.get_session(session, "org", "organisation") or 0
+        if org_id:
+            query = (table.id == org_id) & deleted
+        else:
+            query = (table.id > 0) & deleted
         try:
-            org_name = db(query).select(limitby=(0, 1)).first().name
-            org_id = 0
+            org_name = db(query).select(table.name, limitby=(0, 1)).first().name
         except:
             session.warning = T("No Organisations registered!")
             redirect(URL(r=request, c="org", f="index"))

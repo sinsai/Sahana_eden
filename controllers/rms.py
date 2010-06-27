@@ -4,7 +4,7 @@
     Request Management System - Controllers
 """
 
-module = "rms"
+module = request.controller
 
 if module not in deployment_settings.modules:
     session.error = T("Module disabled!")
@@ -30,7 +30,7 @@ def index():
 def req(): #aid requests
     "RESTlike CRUD controller"
 
-    resource = "req" # pulls from table of combined aid request feeds (sms, tweets, manual)
+    resource = request.function # pulls from table of combined aid request feeds (sms, tweets, manual)
 
     # Filter out non-actionable SMS requests:
 #    response.s3.filter = (db.rms_req.actionable == True) | (db.rms_req.source_type != 2) # disabled b/c Ushahidi no longer updating actionaable fielde
@@ -66,7 +66,7 @@ def req(): #aid requests
 def pledge(): #pledges from agencies
     "RESTlike CRUD controller"
 
-    resource = "pledge"
+    resource = request.function
 
     # Uncomment to enable Server-side pagination:
     #response.s3.pagination = True  #commented due to display problems

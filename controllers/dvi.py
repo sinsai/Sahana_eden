@@ -4,7 +4,7 @@
     DVI Module - Controllers
 """
 
-module = "dvi"
+module = request.controller
 
 if module not in deployment_settings.modules:
     session.error = T("Module disabled!")
@@ -61,6 +61,8 @@ def recreq():
 
     """ RESTful CRUD controller """
 
+    resource = request.function
+    
     response.s3.pagination = True
 
     def recreq_postp(jr, output):
@@ -73,7 +75,7 @@ def recreq():
         return output
     response.s3.postp = recreq_postp
 
-    output = shn_rest_controller(module, "recreq", listadd=False)
+    output = shn_rest_controller(module, resource, listadd=False)
 
     shn_menu()
     return output
@@ -82,6 +84,8 @@ def body():
 
     """ RESTful CRUD controller """
 
+    resource = request.function
+    
     response.s3.pagination = True
 
     def body_postp(jr, output):
@@ -97,7 +101,7 @@ def body():
         return output
     response.s3.postp = body_postp
 
-    output = shn_rest_controller(module, "body",
+    output = shn_rest_controller(module, resource,
                                  main="pr_pe_label",
                                  extra="opt_pr_gender",
                                  rheader=lambda jr: \

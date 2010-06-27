@@ -8,7 +8,7 @@
 
 from operator import __and__
 
-module = "gis"
+module = request.controller
 
 # Options Menu (available in all Functions' Views)
 response.menu_options = [
@@ -72,7 +72,7 @@ def test2():
 
 def apikey():
     "RESTlike CRUD controller"
-    resource = "apikey"
+    resource = request.function
     tablename = module + "_" + resource
     table = db[tablename]
 
@@ -116,7 +116,7 @@ def apikey():
 
 def config():
     "RESTlike CRUD controller"
-    resource = "config"
+    resource = request.function
     tablename = module + "_" + resource
     table = db[tablename]
 
@@ -167,7 +167,7 @@ def config():
 
 def feature_class():
     "RESTlike CRUD controller"
-    resource = "feature_class"
+    resource = request.function
     tablename = module + "_" + resource
     table = db[tablename]
 
@@ -213,7 +213,7 @@ def feature_class():
 
 def feature_group():
     "RESTlike CRUD controller"
-    resource = "feature_group"
+    resource = request.function
     tablename = module + "_" + resource
     table = db[tablename]
 
@@ -257,7 +257,7 @@ def feature_group():
 
 def feature_class_to_feature_group():
     "RESTlike CRUD controller"
-    resource = "feature_class_to_feature_group"
+    resource = request.function
     table = module + "_" + resource
 
     # Model options
@@ -279,7 +279,7 @@ def feature_class_to_feature_group():
 
 def location():
     "RESTlike CRUD controller"
-    resource = "location"
+    resource = request.function
     tablename = module + "_" + resource
     table = db[tablename]
     
@@ -370,7 +370,7 @@ def location():
 
 def marker():
     "RESTlike CRUD controller"
-    resource = "marker"
+    resource = request.function
     tablename = module + "_" + resource
     table = db[tablename]
 
@@ -412,7 +412,7 @@ def marker():
 
 def projection():
     "RESTlike CRUD controller"
-    resource = "projection"
+    resource = request.function
     tablename = module + "_" + resource
     table = db[tablename]
 
@@ -461,7 +461,7 @@ def projection():
 
 def track():
     "RESTlike CRUD controller"
-    resource = "track"
+    resource = request.function
     table = module + "_" + resource
 
     # Model options
@@ -500,7 +500,7 @@ NO_TYPE_LAYERS_FMT = "No %s Layers currently defined"
 
 def layer_openstreetmap():
     "RESTlike CRUD controller"
-    resource = "layer_openstreetmap"
+    resource = request.function
     table = module + "_" + resource
 
     # Model options
@@ -541,7 +541,7 @@ def layer_openstreetmap():
 
 def layer_google():
     "RESTlike CRUD controller"
-    resource = "layer_google"
+    resource = request.function
     table = module + "_" + resource
 
     # Model options
@@ -582,7 +582,7 @@ def layer_google():
 
 def layer_yahoo():
     "RESTlike CRUD controller"
-    resource = "layer_yahoo"
+    resource = request.function
     table = module + "_" + resource
 
     # Model options
@@ -623,7 +623,7 @@ def layer_yahoo():
 
 def layer_mgrs():
     "RESTlike CRUD controller"
-    resource = "layer_mgrs"
+    resource = request.function
     table = module + "_" + resource
 
     # Model options
@@ -664,7 +664,7 @@ def layer_mgrs():
 
 def layer_bing():
     "RESTlike CRUD controller"
-    resource = "layer_bing"
+    resource = request.function
     table = module + "_" + resource
 
     # Model options
@@ -705,7 +705,7 @@ def layer_bing():
 
 def layer_georss():
     "RESTlike CRUD controller"
-    resource = "layer_georss"
+    resource = request.function
     tablename = module + "_" + resource
     table = db[tablename]
 
@@ -750,7 +750,7 @@ def layer_georss():
 
 def layer_gpx():
     "RESTlike CRUD controller"
-    resource = "layer_gpx"
+    resource = request.function
     table = module + "_" + resource
 
     # Model options
@@ -794,7 +794,7 @@ def layer_gpx():
 
 def layer_kml():
     "RESTlike CRUD controller"
-    resource = "layer_kml"
+    resource = request.function
     tablename = module + "_" + resource
     table = db[tablename]
 
@@ -839,7 +839,7 @@ def layer_kml():
 
 def layer_tms():
     "RESTlike CRUD controller"
-    resource = "layer_tms"
+    resource = request.function
     tablename = module + "_" + resource
     table = db[tablename]
 
@@ -885,7 +885,7 @@ def layer_tms():
 
 def layer_wms():
     "RESTlike CRUD controller"
-    resource = "layer_wms"
+    resource = request.function
     tablename = module + "_" + resource
     table = db[tablename]
 
@@ -932,7 +932,7 @@ def layer_wms():
 #@auth.shn_requires_membership("AdvancedJS")
 def layer_js():
     "RESTlike CRUD controller"
-    resource = "layer_js"
+    resource = request.function
     table = module + "_" + resource
 
     # Model options
@@ -975,7 +975,7 @@ def layer_js():
 
 def layer_xyz():
     "RESTlike CRUD controller"
-    resource = "layer_xyz"
+    resource = request.function
     tablename = module + "_" + resource
     table = db[tablename]
 

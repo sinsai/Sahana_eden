@@ -44,7 +44,9 @@ def shn_menu():
                     [T('Address'), False, URL(r=request, f='person', args='address')],
                     [T('Contact'), False, URL(r=request, f='person', args='pe_contact')],
                     [T('Identity'), False, URL(r=request, f='person', args='identity')],
-                    [T('Skill'), False, URL(r=request, f='person', args='skill')],                    
+                    [T('Skill'), False, URL(r=request, f='person', args='skill')],
+                    [T('Presence'), False, URL(r=request, f='person', args='presence')],   
+                    [T('View Map'), False, URL(r=request, f='view_map')],                 
                 ]]
             ]
             menu.extend(menu_person)
@@ -139,3 +141,19 @@ def task():
  
 def skill_types():
     return shn_rest_controller(module, 'skill_types')
+
+def view_map():
+    "Map Location of Volunteer"
+
+    volunteer = {"feature_group" : "People"}
+    html = gis.show_map(
+                feature_overlays = [volunteer],
+                wms_browser = {"name" : "Risk Maps", "url" : "http://preview.grid.unep.ch:8080/geoserver/ows?service=WMS&request=GetCapabilities"},
+                catalogue_overlays = True,
+                catalogue_toolbar = True,
+                toolbar = True,
+                search = True,
+                window = True,
+                )
+
+    return dict(map=html)

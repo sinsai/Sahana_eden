@@ -424,6 +424,10 @@ if empty:
             name = "water",
             image = "gis_marker.image.Water_Supply_Infrastructure_Theme_S1.png"
         )
+        table.insert(
+            name = "volunteer",
+            image = "gis_marker.image.Volunteer.png"
+        )
     tablename = 'gis_projection'
     table = db[tablename]
     if not db(table.id > 0).count():
@@ -584,6 +588,12 @@ if empty:
             marker_id = db(db.gis_marker.name == 'vehicle').select().first().id,
             gps_marker = "Car",
         )
+        table.insert(
+            uuid = 'www.sahanafoundation.org/GIS-FEATURE-CLASS-VOLUNTEER',
+            name = 'Volunteer',
+            marker_id = db(db.gis_marker.name == 'volunteer').select().first().id,
+            gps_marker = "volunteer",
+        )
     tablename = 'gis_feature_group'
     table = db[tablename]
     if not db(table.id > 0).count():
@@ -677,6 +687,10 @@ if empty:
         table.insert(
             feature_group_id = db(db.gis_feature_group.name == 'Vehicles').select().first().id,
             feature_class_id = db(db.gis_feature_class.name == 'Vehicle').select().first().id,
+        )
+        table.insert(
+            feature_group_id = db(db.gis_feature_group.name == 'People').select().first().id,
+            feature_class_id = db(db.gis_feature_class.name == 'Volunteer').select().first().id,
         )
 
     tablename = 'gis_apikey'

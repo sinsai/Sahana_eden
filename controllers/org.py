@@ -60,12 +60,13 @@ def organisation():
     "RESTlike CRUD controller"
     # ServerSidePagination
     response.s3.pagination = True
+    def organisation_prep(jr):
+        if jr.representation == "html":
+            crud.settings.create_next = URL(r=request, f="dashboard")
+        return True
+    response.s3.prep = organisation_prep
     output = shn_rest_controller(module, "organisation", listadd=False)
-    if response.s3.org_redirect:
-        session.flash = T("Submission Succesful")
-        redirect(response.s3.org_redirect)
-    else:
-        return output
+    return output
 
 @service.jsonrpc
 @service.xmlrpc
@@ -75,7 +76,7 @@ def office():
     resource = "office"
     tablename = "%s_%s" % (module, resource)
     table = db[tablename]
-    
+
     if isinstance(request.vars.organisation_id, list):
         request.vars.organisation_id = request.vars.organisation_id[0]
     if session.s3.security_policy == 1:
@@ -102,7 +103,7 @@ def contact():
     resource = "contact"
     tablename = "%s_%s" % (module, resource)
     table = db[tablename]
-    
+
     # ServerSidePagination
     response.s3.pagination = True
 
@@ -151,7 +152,7 @@ def org_sub_list(tablename, org_id):
     fields = []
     headers = {}
     table = db[tablename]
-    
+
     for field in table:
         if field.readable and field.name <> "organisation_id" and field.name <> "admin":
             headers[str(field)] = str(field.label)
@@ -205,9 +206,11 @@ def dashboard():
     else:
         table = db.org_organisation
         query  = (table.id > 0) & ((table.deleted == False) | (table.deleted == None))
+        org_id = s3xrc.get_session(session, "org", "organisation") or 0
+        if org_id:
+            query = (table.id == org_id) & query
         try:
             org_name = db(query).select(limitby=(0, 1)).first().name
-            org_id = 0
         except:
             session.warning = T("No Organisations registered!")
             redirect(URL(r=request, c="org", f="index"))

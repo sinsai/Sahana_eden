@@ -60,6 +60,91 @@ S3XRC_NOT_IMPLEMENTED = "Not Implemented"
 
 
 # *****************************************************************************
+class S3Resource(object):
+
+    """ Class representing resources """
+
+    def __init__(self, rc, prefix, name, id=None, **attr):
+
+        """ Constructor
+
+            @param rc: the resource controller
+            @param prefix: the prefix of the resource name (=module prefix)
+            @param name: the name of the resource without prefix
+            @param attr: attributes
+
+        """
+
+        self.__rc = rc
+        self.__db = None
+
+        self.prefix = prefix
+        self.name = name
+        self.tablename = "%s_%s" % (prefix, name)
+
+        self.tree = None
+        self.__storage = attr.get("storage", None)
+        self.__bind(self.__storage)
+
+        self.components = self.__rc.model.get_components(self.prefix, self.name)
+        self.m2m = self.__rc.model.get_many2many(self.prefix, self.name)
+
+    def __bind(self, storage):
+
+        """ Bind this resource to a data store
+
+            @param storage: the data store, None for DAL
+
+        """
+
+        # Bind to model
+        self.__db = self.__rc.db
+        self.table = self.__db.get(self.tablename, None)
+        if not self.table:
+            raise KeyError("Table '%s' does not exist" % self.tablename)
+
+        if storage is None:
+            return
+
+        elif isinstance(storage, basestring):
+            # Bind to a file or URL
+            raise NotImplementedError
+
+        elif isinstance(storage, etree._ElementTree):
+            # Bind to an ElementTree
+            raise NotImplementedError
+
+        elif isinstance(storage, etree._Element):
+            # Bind to an Element
+            raise NotImplementedError
+
+        else:
+            # Invalid type
+            raise TypeError("Invalid storage type: %s" % type(storage))
+
+
+    def execute_request(self, request):
+
+        """ Executes a S3RESTRequest on this resource """
+
+        raise NotImplementedError
+
+
+    def fetchxml(self):
+
+        """ Imports data from an XML source into this resource """
+
+        raise NotImplementedError
+
+
+    def pushxml(self):
+
+        """ Exports data of this resource as XML to a URL """
+
+        raise NotImplementedError
+
+
+# *****************************************************************************
 class S3RESTController(object):
 
     """ RESTful interface for S3 resources """
@@ -1513,6 +1598,47 @@ class S3ResourceModel(object):
         return component_list
 
 
+    def get_many2many(self, prefix, name):
+
+        """ Finds all many-to-many links of a resource (introspective)
+
+            This requires that the link references the respective
+            tables <prefix>_<name> by fields '<name>_id', e.g.
+            'pr_group' by field 'group_id', 'gis_location' by
+            'location_id' etc.
+
+        """
+
+        m2m = dict()
+
+        tablename = "%s_%s" % (prefix, name)
+        if tablename not in self.db:
+            return m2m
+        else:
+            table = self.db[tablename]
+
+        this_id = "%s_id" % name
+        for (ln, lf) in table._referenced_by:
+
+            if lf == this_id:
+                if ln not in self.db:
+                    continue
+                lt = self.db[ln]
+
+                fields = filter(lambda f: f != lf and f[-3:] == "_id", lt.fields)
+                for f in fields:
+                    ftype = str(lt[f].type)
+                    if ftype.startswith("reference"):
+                        tn = ftype[10:]
+                        tprefix, tname = tn.split("_", 1)
+                        if f[:-3] == tname:
+                            lprefix, lname = ln.split("_",1)
+                            m2m[tname] = m2m.get(tname, dict())
+                            m2m[tname][lname] = dict(linkto=tn, linkby=ln)
+
+        return m2m
+
+
     def set_method(self, prefix, name,
                    component_name=None,
                    method=None,
@@ -1660,6 +1786,25 @@ class S3ResourceController(object):
         self.sync_resolve = None
         self.sync_log = None
         self.messages = None
+
+
+    # Resource ================================================================
+
+    def resource(self, prefix, name, id=[], **attr):
+
+        """ Wrapper function for the S3Resource class """
+
+        return S3Resource(self, prefix, name, id=id, **attr)
+
+
+    def parse_request(self, prefix, name, request, response, session):
+
+        """ The new request parser (tbd) """
+
+        res = None
+        req = None
+
+        return (res, req)
 
 
     # Session helpers =========================================================

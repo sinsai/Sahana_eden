@@ -4,7 +4,7 @@
     Volunteer Management Module
 """
 
-module = "vol"
+module = request.controller
 
 if module not in deployment_settings.modules:
     session.error = T("Module disabled!")
@@ -13,42 +13,42 @@ if module not in deployment_settings.modules:
 # Options Menu (available in all Functions)
 def shn_menu():
     menu = [
-        [T('Projects'), False, URL(r=request, f='project'),[
-            [T('Search'), False, URL(r=request, f='project', args='search_location')],
-            [T('Add Project'), False, URL(r=request, f='project', args='create')],
+        [T("Projects"), False, URL(r=request, f="project"),[
+            [T("Search"), False, URL(r=request, f="project", args="search_location")],
+            [T("Add Project"), False, URL(r=request, f="project", args="create")],
         ]],
     ]
-    if session.rcvars and 'vol_project' in session.rcvars:
-        selection = db.vol_project[session.rcvars['vol_project']]
+    if session.rcvars and "vol_project" in session.rcvars:
+        selection = db.vol_project[session.rcvars["vol_project"]]
         if selection:
             menu_project = [
-                    ["%s %s" % (T('Project:'), selection.name), False, URL(r=request, f='project', args=['read', selection.id]),[
-                        [T('Tasks'), False, URL(r=request, f='project', args=[str(selection.id), 'task'])],
-                        [T('Positions'), False, URL(r=request, f='project', args=[str(selection.id), 'position'])],
+                    ["%s %s" % (T("Project:"), selection.name), False, URL(r=request, f="project", args=[selection.id]),[
+                        [T("Tasks"), False, URL(r=request, f="project", args=[str(selection.id), "task"])],
+                        [T("Positions"), False, URL(r=request, f="project", args=[str(selection.id), "position"])],
                     ]]
             ]
             menu.extend(menu_project)
     menu_persons = [
-        [T('Persons'), False, URL(r=request, f='person', args=['search_simple'], vars={"_next":URL(r=request, f='person', args=['[id]','volunteer'])})]
+        [T("Persons"), False, URL(r=request, f="person", args=["search_simple"], vars={"_next":URL(r=request, f="person", args=["[id]", "volunteer"])})]
     ]
     menu.extend(menu_persons)
-    if session.rcvars and 'pr_person' in session.rcvars:
-        selection = db.pr_person[session.rcvars['pr_person']]
+    if session.rcvars and "pr_person" in session.rcvars:
+        selection = db.pr_person[session.rcvars["pr_person"]]
         if selection:
             selection = shn_pr_person_represent(selection.id)
             menu_person = [
-                ["%s %s" % (T('Person:'), selection), False, URL(r=request, f='person', args='read'),[
-                    [T('Volunteer Status'), False, URL(r=request, f='person', args='volunteer')],
-                    [T('Resources'), False, URL(r=request, f='person', args='resource')],
-                    [T('Address'), False, URL(r=request, f='person', args='address')],
-                    [T('Contact'), False, URL(r=request, f='person', args='pe_contact')],
-                    [T('Identity'), False, URL(r=request, f='person', args='identity')],
+                ["%s %s" % (T("Person:"), selection), False, URL(r=request, f="person"),[
+                    [T("Volunteer Status"), False, URL(r=request, f="person", args="volunteer")],
+                    [T("Resources"), False, URL(r=request, f="person", args="resource")],
+                    [T("Address"), False, URL(r=request, f="person", args="address")],
+                    [T("Contact"), False, URL(r=request, f="person", args="pe_contact")],
+                    [T("Identity"), False, URL(r=request, f="person", args="identity")],
                 ]]
             ]
             menu.extend(menu_person)
     if auth.user is not None:
         menu_user = [
-            [T('My Tasks'), False, URL(r=request, f='task', args='')]
+            [T("My Tasks"), False, URL(r=request, f="task", args="")]
         ]
         menu.extend(menu_user)
     response.menu_options = menu
@@ -69,8 +69,8 @@ def project():
 
     """ Project Controller """
 
-    resource = 'project'
-    tablename = module + '_' + resource
+    resource = request.function
+    tablename = module + "_" + resource
     table = db[tablename]
     table.name.comment = SPAN("*", _class="req")
     table.description.comment = SPAN("*", _class="req")
@@ -88,11 +88,13 @@ def person():
 
     """ Person Controller """
 
+    resource = request.function
+    
     db.pr_person.missing.default = False
 
     response.s3.pagination = True
 
-    output = shn_rest_controller('pr', 'person', main='first_name', extra='last_name',
+    output = shn_rest_controller("pr", resource, main="first_name", extra="last_name",
         rheader=shn_pr_rheader,
         sticky=True,
         rss=dict(
@@ -108,6 +110,8 @@ def task():
 
     """ Manage current user's tasks """
 
+    resource = request.function
+
     my_person_id = None
 
     if auth.user is not None and auth.user.person_uuid:
@@ -116,17 +120,17 @@ def task():
             my_person_id = my_person_id[0]
 
     if not my_person_id:
-        session.error = T('No person record found for current user.')
-        redirect(URL(r=request, f='index'))
+        session.error = T("No person record found for current user.")
+        redirect(URL(r=request, f="index"))
 
     db.vol_task.person_id.default = my_person_id
     #db.vol_task.person_id.writable = False
 
     response.s3.filter = (db.vol_task.person_id==my_person_id)
 
-    s3.crud_strings['vol_task'].title_list = T('My Tasks')
-    s3.crud_strings['vol_task'].subtitle_list = T('Task List')
+    s3.crud_strings["vol_task"].title_list = T("My Tasks")
+    s3.crud_strings["vol_task"].subtitle_list = T("Task List")
 
     response.s3.pagination = True
 
-    return shn_rest_controller(module, 'task', listadd=False)
+    return shn_rest_controller(module, resource, listadd=False)

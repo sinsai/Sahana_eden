@@ -8,7 +8,7 @@
 
 from operator import __and__
 
-module = "gis"
+module = request.controller
 
 # Options Menu (available in all Functions' Views)
 response.menu_options = [
@@ -45,19 +45,21 @@ def test():
 
     html = gis.show_map(
                 feature_overlays = [offices, hospitals],
-                #wms_browser = {"name" : "OpenGeo Demo WMS", "url" : "http://demo.opengeo.org/geoserver/ows?service=WMS&request=GetCapabilities"},
-                wms_browser = {"name" : "Risk Maps", "url" : "http://preview.grid.unep.ch:8080/geoserver/ows?service=WMS&request=GetCapabilities"},
+                wms_browser = {"name" : "OpenGeo Demo WMS", "url" : "http://demo.opengeo.org/geoserver/ows?service=WMS&request=GetCapabilities"},
+                #wms_browser = {"name" : "Risk Maps", "url" : "http://preview.grid.unep.ch:8080/geoserver/ows?service=WMS&request=GetCapabilities"},
                 #wms_browser = {"name" : "Risk Maps", "url" : "http://www.pdc.org/wms/wmservlet/PDC_Active_Hazards?request=getcapabilities&service=WMS&version=1.1.1"},
                 catalogue_overlays = True,
                 catalogue_toolbar = True,
-                legend = True,
+                #legend = True, # Stops Feature Layers from Printing
                 toolbar = True,
                 search = True,
                 print_tool = {
-                        "url" : "http://print.drrprojects.net:8180/print-servlet-1.2-SNAPSHOT/pdf/",
-                        "mapTitle" : "My Map"
+                        #"url" : "http://localhost:8080/geoserver/pdf/",                    # Local GeoServer
+                        "url" : "http://localhost:8080/print-servlet-1.2-SNAPSHOT/pdf/",    # Local Windows Tomcat
+                        #"url" : "http://host.domain:8180/print-servlet-1.2-SNAPSHOT/pdf/", # Linux Tomcat
+                        "mapTitle" : "Title",
+                        "subTitle" : "SubTitle"
                     },
-                #print_tool = {"url" : "http://localhost:8080/geoserver/pdf/"},
                 #mgrs = {"name" : "MGRS Atlas PDFs", "url" : "http://www.sharedgeo.org/datasets/shared/maps/usng/pdf.map?VERSION=1.0.0&SERVICE=WFS&request=GetFeature&typename=wfs_all_maps"},
                 window = True,
                 )
@@ -70,7 +72,7 @@ def test2():
 
 def apikey():
     "RESTlike CRUD controller"
-    resource = "apikey"
+    resource = request.function
     tablename = module + "_" + resource
     table = db[tablename]
 
@@ -114,7 +116,7 @@ def apikey():
 
 def config():
     "RESTlike CRUD controller"
-    resource = "config"
+    resource = request.function
     tablename = module + "_" + resource
     table = db[tablename]
 
@@ -165,7 +167,7 @@ def config():
 
 def feature_class():
     "RESTlike CRUD controller"
-    resource = "feature_class"
+    resource = request.function
     tablename = module + "_" + resource
     table = db[tablename]
 
@@ -211,7 +213,7 @@ def feature_class():
 
 def feature_group():
     "RESTlike CRUD controller"
-    resource = "feature_group"
+    resource = request.function
     tablename = module + "_" + resource
     table = db[tablename]
 
@@ -255,7 +257,7 @@ def feature_group():
 
 def feature_class_to_feature_group():
     "RESTlike CRUD controller"
-    resource = "feature_class_to_feature_group"
+    resource = request.function
     table = module + "_" + resource
 
     # Model options
@@ -277,7 +279,7 @@ def feature_class_to_feature_group():
 
 def location():
     "RESTlike CRUD controller"
-    resource = "location"
+    resource = request.function
     tablename = module + "_" + resource
     table = db[tablename]
     
@@ -368,7 +370,7 @@ def location():
 
 def marker():
     "RESTlike CRUD controller"
-    resource = "marker"
+    resource = request.function
     tablename = module + "_" + resource
     table = db[tablename]
 
@@ -410,7 +412,7 @@ def marker():
 
 def projection():
     "RESTlike CRUD controller"
-    resource = "projection"
+    resource = request.function
     tablename = module + "_" + resource
     table = db[tablename]
 
@@ -459,7 +461,7 @@ def projection():
 
 def track():
     "RESTlike CRUD controller"
-    resource = "track"
+    resource = request.function
     table = module + "_" + resource
 
     # Model options
@@ -498,7 +500,7 @@ NO_TYPE_LAYERS_FMT = "No %s Layers currently defined"
 
 def layer_openstreetmap():
     "RESTlike CRUD controller"
-    resource = "layer_openstreetmap"
+    resource = request.function
     table = module + "_" + resource
 
     # Model options
@@ -539,7 +541,7 @@ def layer_openstreetmap():
 
 def layer_google():
     "RESTlike CRUD controller"
-    resource = "layer_google"
+    resource = request.function
     table = module + "_" + resource
 
     # Model options
@@ -580,7 +582,7 @@ def layer_google():
 
 def layer_yahoo():
     "RESTlike CRUD controller"
-    resource = "layer_yahoo"
+    resource = request.function
     table = module + "_" + resource
 
     # Model options
@@ -621,7 +623,7 @@ def layer_yahoo():
 
 def layer_mgrs():
     "RESTlike CRUD controller"
-    resource = "layer_mgrs"
+    resource = request.function
     table = module + "_" + resource
 
     # Model options
@@ -662,7 +664,7 @@ def layer_mgrs():
 
 def layer_bing():
     "RESTlike CRUD controller"
-    resource = "layer_bing"
+    resource = request.function
     table = module + "_" + resource
 
     # Model options
@@ -703,7 +705,7 @@ def layer_bing():
 
 def layer_georss():
     "RESTlike CRUD controller"
-    resource = "layer_georss"
+    resource = request.function
     tablename = module + "_" + resource
     table = db[tablename]
 
@@ -748,7 +750,7 @@ def layer_georss():
 
 def layer_gpx():
     "RESTlike CRUD controller"
-    resource = "layer_gpx"
+    resource = request.function
     table = module + "_" + resource
 
     # Model options
@@ -792,7 +794,7 @@ def layer_gpx():
 
 def layer_kml():
     "RESTlike CRUD controller"
-    resource = "layer_kml"
+    resource = request.function
     tablename = module + "_" + resource
     table = db[tablename]
 
@@ -837,7 +839,7 @@ def layer_kml():
 
 def layer_tms():
     "RESTlike CRUD controller"
-    resource = "layer_tms"
+    resource = request.function
     tablename = module + "_" + resource
     table = db[tablename]
 
@@ -883,7 +885,7 @@ def layer_tms():
 
 def layer_wms():
     "RESTlike CRUD controller"
-    resource = "layer_wms"
+    resource = request.function
     tablename = module + "_" + resource
     table = db[tablename]
 
@@ -930,7 +932,7 @@ def layer_wms():
 #@auth.shn_requires_membership("AdvancedJS")
 def layer_js():
     "RESTlike CRUD controller"
-    resource = "layer_js"
+    resource = request.function
     table = module + "_" + resource
 
     # Model options
@@ -973,7 +975,7 @@ def layer_js():
 
 def layer_xyz():
     "RESTlike CRUD controller"
-    resource = "layer_xyz"
+    resource = request.function
     tablename = module + "_" + resource
     table = db[tablename]
 

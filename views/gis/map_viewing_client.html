@@ -103,6 +103,7 @@ Ext.onReady(function() {
     {{if layout == 1:}}
       var win = new Ext.Window({
         collapsible: true,
+        constrain: true,
     {{elif layout == 2:}}
       var panel = new Ext.Panel({
         renderTo: "map_panel",

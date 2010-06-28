@@ -6,7 +6,7 @@
     @author: nursix
 """
 
-module = "hms"
+module = request.controller
 
 if module not in deployment_settings.modules:
     session.error = T("Module disabled!")
@@ -54,6 +54,87 @@ def hospital():
 
     """ Main controller for hospital data entry """
 
+    resource = request.function
+    tablename = "%s_%s" % (module, resource)
+    table = db[tablename]
+    
+    table.gov_uuid.label = T("Government UID")
+    table.name.label = T("Name")
+    table.name.comment = SPAN("*", _class="req")
+    table.aka1.label = T("Other Name")
+    table.aka2.label = T("Other Name")
+    table.address.label = T("Address")
+    table.postcode.label = T("Postcode")
+    table.phone_exchange.label = T("Phone/Exchange")
+    table.phone_business.label = T("Phone/Business")
+    table.phone_emergency.label = T("Phone/Emergency")
+    table.email.label = T("Email")
+    table.fax.label = T("FAX")
+
+    table.total_beds.label = T("Total Beds")
+    table.total_beds.comment = DIV(DIV(_class="tooltip",
+        _title=T("Total Beds|Total number of beds in this hospital. Automatically updated from daily reports.")))
+
+    table.available_beds.label = T("Available Beds")
+    table.available_beds.comment = DIV(DIV(_class="tooltip",
+        _title=T("Available Beds|Number of vacant/available beds in this hospital. Automatically updated from daily reports.")))
+
+    table.ems_status.comment = DIV(DIV(_class="tooltip",
+        _title=T("EMS Status|Status of operations of the emergency department of this hospital.")))
+    table.ems_reason.comment = DIV(DIV(_class="tooltip",
+        _title=T("EMS Reason|Report the contributing factors for the current EMS status.")))
+
+    table.or_status.comment = DIV(DIV(_class="tooltip",
+        _title=T("OR Status|Status of the operating rooms of this hospital.")))
+    table.or_reason.comment = DIV(DIV(_class="tooltip",
+        _title=T("OR Reason|Report the contributing factors for the current OR status.")))
+
+    table.facility_status.comment = DIV(DIV(_class="tooltip",
+        _title=T("Facility Status|Status of general operation of the facility.")))
+
+    table.clinical_status.comment = DIV(DIV(_class="tooltip",
+        _title=T("Clinical Status|Status of clinical operation of the facility.")))
+
+    table.morgue_status.comment = DIV(DIV(_class="tooltip",
+        _title=T("Morgue Status|Status of morgue capacity.")))
+
+    table.security_status.comment = DIV(DIV(_class="tooltip",
+        _title=T("Security Status|Status of security procedures/access restrictions in the hospital.")))
+
+    table.morgue_units.label = T("Morgue Units Available")
+    table.morgue_units.comment =  DIV(DIV(_class="tooltip",
+        _title=T("Morgue Units Available|Number of vacant/available units to which victims can be transported immediately.")))
+
+    table.doctors.label = T("Number of doctors")
+    table.nurses.label = T("Number of nurses")
+    table.non_medical_staff.label = T("Number of non-medical staff")
+
+    table.access_status.label = T("Road Conditions")
+    table.access_status.comment =  DIV(DIV(_class="tooltip",
+        _title=T("Road Conditions|Describe the condition of the roads to your hospital.")))
+
+    table.info_source.label = "Source of Information"
+    table.info_source.comment =  DIV(DIV(_class="tooltip",
+        _title=T("Source of Information|Specify the source of the information in this report.")))
+
+    # CRUD Strings
+    LIST_HOSPITALS = T("List Hospitals")
+    s3.crud_strings[tablename] = Storage(
+        title_create = ADD_HOSPITAL,
+        title_display = T("Hospital Details"),
+        title_list = LIST_HOSPITALS,
+        title_update = T("Edit Hospital"),
+        title_search = T("Search Hospitals"),
+        subtitle_create = T("Add New Hospital"),
+        subtitle_list = T("Hospitals"),
+        label_list_button = LIST_HOSPITALS,
+        label_create_button = ADD_HOSPITAL,
+        label_delete_button = T("Delete Hospital"),
+        msg_record_created = T("Hospital information added"),
+        msg_record_modified = T("Hospital information updated"),
+        msg_record_deleted = T("Hospital information deleted"),
+        msg_list_empty = T("No Hospitals currently registered"))  
+    
     response.s3.pagination = True
 
     #s3xrc.sync_resolve = shn_hospital_resolver
@@ -71,7 +152,7 @@ def hospital():
         return output
     response.s3.postp = hospital_postp
 
-    output = shn_rest_controller(module , "hospital",
+    output = shn_rest_controller(module , resource,
         rheader = lambda jr: shn_hms_hospital_rheader(jr,
                   tabs=[
                         (T("Status Report"), ""),
@@ -117,8 +198,8 @@ def hrequest():
 
     """ Hospital Requests Controller """
 
-    resource = "hrequest"
-
+    resource = request.function
+    
     if auth.user is not None:
         person = db(db.pr_person.uuid == auth.user.person_uuid).select(db.pr_person.id)
         if person:
@@ -150,8 +231,8 @@ def hpledge():
 
     """ Pledges Controller """
 
-    resource = "hpledge"
-
+    resource = request.function
+    
     pledges = db(db.hms_hpledge.status == 3).select()
     for pledge in pledges:
         db(db.hms_hrequest.id == pledge.hrequest_id).update(status = 6)

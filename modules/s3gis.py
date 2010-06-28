@@ -197,7 +197,7 @@ class GIS(object):
         query = db.gis_apikey.name == layer
         return db(query).select(db.gis_apikey.apikey, limitby=(0, 1)).first().apikey
 
-    def get_bearing(lat_start, lon_start, lat_end, lon_end):
+    def get_bearing(self, lat_start, lon_start, lat_end, lon_end):
         """
             Given a Start & End set of Coordinates, return a Bearing
             Formula from: http://www.movable-type.co.uk/scripts/latlong.html
@@ -299,7 +299,7 @@ class GIS(object):
         else:
             return None
 
-    def get_features_in_radius(lat, lon, radius):
+    def get_features_in_radius(self, lat, lon, radius):
         """
             Returns Features within a Radius (in km) of a LatLon Location
             Calling function has the job of filtering features by the type they are interested in
@@ -310,6 +310,8 @@ class GIS(object):
         """
 
         import math
+        
+        db = self.db
 
         # km
         radius_earth = 6378.137
@@ -478,7 +480,8 @@ class GIS(object):
             @param print_tool: Show a print utility (NB This requires server-side support: http://eden.sahanafoundation.org/wiki/BluePrintGISPrinting)
                 {
                 url: string,            # URL of print service (e.g. http://localhost:8080/geoserver/pdf/)
-                title: string           # Title for the Printed Map (optional)
+                mapTitle: string        # Title for the Printed Map (optional)
+                subTitle: string        # subTitle for the Printed Map (optional)
                 }
             @param mgrs: Use the MGRS Control to select PDFs
                 {
@@ -1082,15 +1085,20 @@ OpenLayers.Util.extend( selectPdfControl, {
         if print_tool:
             url = print_tool["url"]
             if "title" in print_tool:
-                mapTitle = str(print_tool["title"])
+                mapTitle = str(print_tool["mapTitle"])
             else:
                 mapTitle = str(T("Map from Sahana Eden"))
+            if "subtitle" in print_tool:
+                subTitle = str(print_tool["subTitle"])
+            else:
+                subTitle = str(T("Printed from Sahana Eden"))
             if session.auth:
                 creator = session.auth.user.email
             else:
-                creator = None
+                creator = ""
             print_tool1 = """
         if (typeof(printCapabilities) != 'undefined') {
+            // info.json from script headers OK
             printProvider = new GeoExt.data.PrintProvider({
                 //method: 'POST',
                 //url: '""" + url + """',
@@ -1098,7 +1106,7 @@ OpenLayers.Util.extend( selectPdfControl, {
                 capabilities: printCapabilities, // from the info.json returned from the script headers
                 customParams: {
                     mapTitle: '""" + mapTitle + """',
-                    subTitle: 'Sub Title',
+                    subTitle: '""" + subTitle + """',
                     creator: '""" + creator + """'
                 }
             });
@@ -1236,7 +1244,7 @@ OpenLayers.Util.extend( selectPdfControl, {
                     }
                 }]
             });
-         } else {
+        } else {
             // Display error diagnostic
             var formPanel = new Ext.Panel ({
                 title: '""" + str(T("Print Map")) + """',
@@ -1252,7 +1260,7 @@ OpenLayers.Util.extend( selectPdfControl, {
                 defaults: {anchor: '100%'},
                 html: '""" + str(T("Printing disabled since server not accessible: ")) + "<BR />" + url + """'
             });
-         }
+        }
         """
             print_tool2 = """,
                     formPanel"""
@@ -1323,12 +1331,12 @@ OpenLayers.Util.extend( selectPdfControl, {
         """
                 if openstreetmap.Mapnik:
                     layers_openstreetmap += """
-        var mapnik = new OpenLayers.Layer.TMS( '""" + openstreetmap.Mapnik + """', 'http://tile.openstreetmap.org/', {type: 'png', getURL: osm_getTileURL, displayOutsideMaxExtent: true, attribution: '<a href="http://www.openstreetmap.org/">OpenStreetMap</a>' } );
+        var mapnik = new OpenLayers.Layer.OSM('""" + openstreetmap.Mapnik + """');
         map.addLayer(mapnik);
                     """
                 if openstreetmap.Osmarender:
                     layers_openstreetmap += """
-        var osmarender = new OpenLayers.Layer.TMS( '""" + openstreetmap.Osmarender + """', 'http://tah.openstreetmap.org/Tiles/tile/', {type: 'png', getURL: osm_getTileURL, displayOutsideMaxExtent: true, attribution: '<a href="http://www.openstreetmap.org/">OpenStreetMap</a>' } );
+        var osmarender = new OpenLayers.Layer.OSM('""" + openstreetmap.Osmarender + """', 'http://tah.openstreetmap.org/Tiles/tile/${z}/${x}/${y}.png');
         map.addLayer(osmarender);
                     """
                 if openstreetmap.Aerial:
@@ -1460,10 +1468,10 @@ OpenLayers.Util.extend( selectPdfControl, {
             options = "wrapDateLine: 'true'"
             if not layer.base:
                 options += """,
-                   isBaseLayer: false"""
+                    isBaseLayer: false"""
                 if not layer.visible:
-                   options += """,
-                   visibility: false"""
+                    options += """,
+                    visibility: false"""
 
             layers_wms  += """
         var wmsLayer""" + name_safe + """ = new OpenLayers.Layer.WMS(
@@ -1721,11 +1729,10 @@ OpenLayers.Util.extend( selectPdfControl, {
             }
         }
         """
+                query = (db.gis_location.deleted == False) & (db.gis_feature_group.name == name) & (db.gis_feature_class_to_feature_group.feature_group_id == db.gis_feature_group.id) & (db.gis_location.feature_class_id == db.gis_feature_class_to_feature_group.feature_class_id)
                 if "parent" in feature_overlays:
-                    parent_id = db(db.gis_location.name == parent).select(limitby=(0, 1)).first().id
-                    query = (db.gis_location.deleted == False) & (db.gis_feature_group.name == name) & (db.gis_feature_class_to_feature_group.feature_group_id == db.gis_feature_group.id) & (db.gis_location.feature_class_id == db.gis_feature_class_to_feature_group.feature_class_id) & (db.gis_location.parent == parent_id)
-                else:
-                    query = (db.gis_location.deleted == False) & (db.gis_feature_group.name == name) & (db.gis_feature_class_to_feature_group.feature_group_id == db.gis_feature_group.id) & (db.gis_location.feature_class_id == db.gis_feature_class_to_feature_group.feature_class_id)
+                    parent_id = db(db.gis_location.name == feature_overlays["parent"]).select(limitby=(0, 1)).first().id
+                    query = query & (db.gis_location.parent == parent_id)
                 features = db(query).select()
                 for feature in features:
                     marker = self.get_marker(feature.gis_location.id)
@@ -2503,11 +2510,11 @@ OpenLayers.Util.extend( selectPdfControl, {
         return
 
     def bbox_intersects(self, lon_min, lat_min, lon_max, lat_max):
+
         db = self.db
-        return db((db.gis_location.lat_min <= lat_max) &
-            (db.gis_location.lat_max >= lat_min) &
-            (db.gis_location.lon_min <= lon_max) &
-            (db.gis_location.lon_max >= lon_min))
+        _location = db.gis_location
+        query = (_location.lat_min <= lat_max) & (_location.lat_max >= lat_min) & (_location.lon_min <= lon_max) & (_location.lon_max >= lon_min)
+        return query
 
     def _intersects(self, shape):
         """
@@ -2515,7 +2522,8 @@ OpenLayers.Util.extend( selectPdfControl, {
         """
 
         db = self.db
-        for loc in self.bbox_intersects(*shape.bounds).select():
+        query = self.bbox_intersects(*shape.bounds)
+        for loc in db(query).select():
             location_shape = wkt_loads(loc.wkt)
             if location_shape.intersects(shape):
                 yield loc
@@ -2557,10 +2565,11 @@ class GoogleGeocoder(Geocoder):
 
     def get_api_key(self):
         " Acquire API key from the database "
-        query = self.db.gis_apikey.name == "google"
-        return self.db(query).select(db.gis_apikey.apikey, limitby=(0, 1)).first().apikey
+        db = self.db
+        query = db.gis_apikey.name == "google"
+        return db(query).select(db.gis_apikey.apikey, limitby=(0, 1)).first().apikey
 
-    def construct_url(self):
+    def construct_url(self, params):
         " Construct the URL based on the arguments passed "
         self.url = self.url % urllib.urlencode(params)
 
@@ -2580,10 +2589,11 @@ class YahooGeocoder(Geocoder):
 
     def get_api_key(self):
         " Acquire API key from the database "
-        query = self.db.gis_apikey.name == "yahoo"
-        return self.db(query).select(db.gis_apikey.apikey, limitby=(0, 1)).first().apikey
+        db = self.db
+        query = db.gis_apikey.name == "yahoo"
+        return db(query).select(db.gis_apikey.apikey, limitby=(0, 1)).first().apikey
 
-    def construct_url(self):
+    def construct_url(self, params):
         " Construct the URL based on the arguments passed "
         self.url = self.url % urllib.urlencode(params)
 

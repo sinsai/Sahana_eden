@@ -37,7 +37,7 @@ __name__ = "S3TOOLS"
 
 __all__ = ["AuthS3", "CrudS3", "FieldS3"]
 
-import datetime
+#import datetime
 import re
 import urllib
 import uuid
@@ -118,6 +118,7 @@ class AuthS3(Auth):
         """
 
         db = self.db
+        request = self.environment.request
         if not self.settings.table_user:
             passfield = self.settings.password_field
             if self.settings.username_field:
@@ -194,7 +195,9 @@ class AuthS3(Auth):
             table.utc_offset.label = "UTC Offset"
             table.utc_offset.comment = A(SPAN("[Help]"), _class="tooltip", _title="UTC Offset|The time difference between UTC and your timezone, specify as +HHMM for eastern or -HHMM for western timezones.")
             try:
-                from applications.sahana.modules.validators import IS_UTC_OFFSET
+                #from applications.eden.modules.validators import IS_UTC_OFFSET
+                #validators = local_import("validators")
+                exec("from applications.%s.modules.validators import IS_UTC_OFFSET" % request.application)
                 table.utc_offset.requires = IS_UTC_OFFSET()
             except:
                 pass
@@ -660,6 +663,7 @@ class AuthS3(Auth):
 
         db = self.db
         session = self.session
+        T = self.environment.T
 
         # If using the "simple" security policy then show all records
         if session.s3.security_policy == 1:
@@ -972,19 +976,22 @@ class SQLTABLE2(TABLE):
                         #href = "%s/%s/%s" % (linkto, tablename, r)
                         href = "%s/%s" % (linkto, r)
                     row.append(TD(A(r, _href=href), _class="column_%s" % fieldname))
-                elif linkto and field.type[:9] == "reference":
-                    ref = field.type[10:]
-                    try:
-                        #href = linkto(r, "reference", ref)
-                        href = linkto(r)
-                    except TypeError:
-                        href = "%s/%s/%s" % (linkto, ref, r)
-                        if ref.find(".") >= 0:
-                            tref,fref = ref.split(".")
-                            if hasattr(sqlrows.db[tref], "_primarykey"):
-                                href = "%s/%s?%s" % (linkto, tref, urllib.urlencode({fref:ur}))
-
-                    row.append(TD(A(r, _href=href, _class="column_%s" % fieldname)))
+                # Reference record without a .represent defined
+                # We can't assume  controller exists for linked resources
+                # so better to use response.s3.actions for this
+                #elif linkto and field.type[:9] == "reference":
+                #    ref = field.type[10:]
+                #    try:
+                #        #href = linkto(r, "reference", ref)
+                #        href = linkto(r)
+                #    except TypeError:
+                #        href = "%s/%s/%s" % (linkto, ref, r)
+                #        if ref.find(".") >= 0:
+                #            tref,fref = ref.split(".")
+                #            if hasattr(sqlrows.db[tref], "_primarykey"):
+                #                href = "%s/%s?%s" % (linkto, tref, urllib.urlencode({fref:ur}))
+                #
+                #    row.append(TD(A(r, _href=href, _class="column_%s" % fieldname)))
                 elif linkto and hasattr(field._table, "_primarykey") and fieldname in field._table._primarykey:
                     # have to test this with multi-key tables
                     key = urllib.urlencode(dict( [ \

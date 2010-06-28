@@ -6,7 +6,7 @@
     @author: Fran Boon
 """
 
-module = "media"
+module = request.controller
 
 if module not in deployment_settings.modules:
     session.error = T("Module disabled!")
@@ -34,7 +34,7 @@ def index():
 
 def metadata():
     "RESTlike CRUD controller"
-    resource = "metadata"
+    resource = request.function
     tablename = module + "_" + resource
     table = db[tablename]
     
@@ -69,7 +69,7 @@ def metadata():
 
 def image():
     "RESTlike CRUD controller"
-    resource = "image"
+    resource = request.function
     table = module + "_" + resource
 
     # Model options

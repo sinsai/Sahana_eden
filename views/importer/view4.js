@@ -165,7 +165,7 @@ function view4(header,table,numcol,grid_data)
 	var importsheet={}
 	importsheet.rows=row;
 	importsheet.columns=numcol;
-	importsheet.data=new Array(row);
+	importsheet.data=new Array();
 	grid_data.each(function()
 			{
 			
@@ -178,7 +178,7 @@ function view4(header,table,numcol,grid_data)
 				}
 				importsheet.data.push(temp);
 			});
-	Ext.Ajax.request({
+/*	Ext.Ajax.request({
 			url :'recvdata',
 			method: 'POST',
 			success: function()
@@ -189,8 +189,22 @@ function view4(header,table,numcol,grid_data)
 			scope: this,
 			params : {
 					spreadsheet : importsheet.data,
-					col : numcol
+					col : numcol,
+					row : row
 					}
 	});
-
+*/
+	var i=0;
+	var headrow=new Array();
+	while(i<numcol)
+	{
+		headrow.push(header.get('column'+i));
+		i++;
+	}
+	document.write(headrow);
+	while(i<row){
+ 		if(importsheet.data[i]==header)
+		      Ext.Msg.alert("",importsheet.data[i]);
+		i++;
+	}
 }

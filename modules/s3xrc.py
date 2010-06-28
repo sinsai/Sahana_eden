@@ -2143,7 +2143,7 @@ class S3ResourceController(object):
             @param prefix: the prefix of the resource name (=module name)
             @param name: the resource name (=without prefix)
             @param id: the target record ID
-            @param tree: the element tree
+            @param tree: the element tree, use s3xrc.xml.parse() on the source path to generate tree
             @param joins: list of component joins to include
             @param skip_resource: skip the main resource record (currently unused)
             @param permit: permit hook (function to check table permissions)
@@ -3692,14 +3692,17 @@ class S3XML(object):
 
         """ Converts JSON into an element tree
 
-            @param source: the JSON source
+            @param source: the JSON source, like a file object that supports read() 
             @param format: name of the XML root element
 
         """
-
+    	str=repr(type(source))
+	f=file("/home/shikhar/Desktop/test.txt","wb")
+	f.write(str)
+	f.close()
         try:
             root_dict = json.load(source)
-        except (ValueError,):
+	except (ValueError,):
             e = sys.exc_info()[1]
             raise HTTP(400, body=self.json_message(False, 400, e))
 

@@ -35,6 +35,7 @@ Ext.Ajax.request({
 
 function maker(json){
         
+    
     columnlist=new Array(json.columns);
     for(var i=0;i< json.columns ; i++)
     { 
@@ -173,5 +174,6 @@ function maker(json){
               
         ]
         });
+        
         
        }

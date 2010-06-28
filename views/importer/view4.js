@@ -1,3 +1,19 @@
+function cmparr(arr1,arr2)
+{
+	if(arr1.length!=arr2.length)
+	{
+		return false;
+	}
+	var check=0;
+	for(i=0;i<arr1.length;i++)
+		if(arr1[i]===arr2[i])
+			check++;
+	if(check==arr1.length)
+		return true;
+	else
+		return false;
+}
+
 function view4(header,table,numcol,grid_data)
 {
     var loc="recvdata";
@@ -106,7 +122,7 @@ function view4(header,table,numcol,grid_data)
     if(table=='budget_item')
 	    store=budget_item;
     if(table=='budget_kit_item')
-	    store='budget_kit_item';
+	    store=budget_kit_item;
     Ext.QuickTips.init();
     var i=0;
     var colnames=new Array(numcol);
@@ -119,7 +135,7 @@ function view4(header,table,numcol,grid_data)
     var colobjs=new Array(numcol);
     while(i<numcol)
     {
-	    colobjs[i]="{xtype: \'combo\',\n fieldLabel : \'"+colnames[i]+"\'}";
+	    colobjs[i]="{fieldLabel : \'"+colnames[i]+"\'}";
 	    try{
 		    colobjs[i]=Ext.util.JSON.decode(colobjs[i]);
 	    }
@@ -131,7 +147,8 @@ function view4(header,table,numcol,grid_data)
 	    colobjs[i].allowBlank=false;
 	    colobjs[i].blankText='You must select a column';
 	    colobjs[i].emptyText='Select a column';
-	    colobjs[i].editable=false;
+	    colobjs[i].editable=true;
+	    colobjs[i]=new Ext.form.ComboBox(colobjs[i]);
 	    i++;
     }
     var columnmap=new Ext.form.FormPanel({
@@ -146,6 +163,51 @@ function view4(header,table,numcol,grid_data)
 	buttons:[
 		{	text: 'Next',
 			handler: function(){
+					//build the sheet to be imported as 2d array
+       				 /*	var row=0;
+					grid_data.each(function(){
+						row++;
+					});*/
+					var importsheet={}
+				//	importsheet.rows=grid_data.getCount();
+					importsheet.columns=numcol;
+					importsheet.data=new Array();
+					grid_data.each(function()
+					{
+				
+						var i=0;
+						var temp=new Array();
+						while(i<numcol)
+						{
+							temp.push(this.get(('column'+i)));
+							i++;
+						}
+						importsheet.data.push(temp);
+					});
+ 					//extract column headers from the header row object
+					var i=0;map_from_ss_to_field=[];
+					while(i<numcol)
+					{
+						map_from_ss_to_field.push([i,colobjs[i].getName(),colobjs[i].getValue()]);
+						i++;
+					}
+					var headrow=new Array();
+					while(i<numcol)
+					{
+						headrow.push(header.get('column'+i));
+						i++;
+					}
+					i=0;
+					var header_row=0;
+					//find location of header row
+				//	while(i<importsheet.rows){
+ 						if(cmparr(importsheet.data[i],headrow))
+						{
+							header_row=i;
+							break;
+						}		
+				//	}
+				//	document.write(importsheet.rows);
 				    columnmap.getForm().submit({
 				    success: function(form,action){
 				       Ext.Msg.alert('Success', 'It worked');
@@ -158,7 +220,9 @@ function view4(header,table,numcol,grid_data)
     		}],
        buttonAlign: 'center'
 	});
-    	var row=0;
+    /*
+    	//build the sheet to be imported as 2d array
+        var row=0;
 	grid_data.each(function(){
 			row++;
 		});
@@ -170,7 +234,7 @@ function view4(header,table,numcol,grid_data)
 			{
 			
 				var i=0;
-				var temp=new Array(numcol);
+				var temp=new Array();
 				while(i<numcol)
 				{
 					temp.push(this.get(('column'+i)));
@@ -178,7 +242,7 @@ function view4(header,table,numcol,grid_data)
 				}
 				importsheet.data.push(temp);
 			});
-/*	Ext.Ajax.request({
+	Ext.Ajax.request({
 			url :'recvdata',
 			method: 'POST',
 			success: function()
@@ -193,7 +257,8 @@ function view4(header,table,numcol,grid_data)
 					row : row
 					}
 	});
-*/
+
+	//extract column headers from the header row object
 	var i=0;
 	var headrow=new Array();
 	while(i<numcol)
@@ -201,10 +266,14 @@ function view4(header,table,numcol,grid_data)
 		headrow.push(header.get('column'+i));
 		i++;
 	}
-	document.write(headrow);
+	i=0;
+	var header_row=0;
+	//find location of header row
 	while(i<row){
- 		if(importsheet.data[i]==header)
-		      Ext.Msg.alert("",importsheet.data[i]);
-		i++;
-	}
+ 		if(cmparr(importsheet.data[i],headrow))
+		{
+			header_row=i;
+			break;
+		}
+	}*/
 }

@@ -37,7 +37,8 @@ function view3(header,numcol,prevgrid)
         {
                 text: 'Back',
                 handler: function(){
-                        msForm.hide();prevgrid.show();
+                        msForm.hide();
+			prevgrid.show();
                         
                         }
                },

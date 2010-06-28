@@ -43,7 +43,7 @@ def slist():
 def recvdata():
     formdata=request.body.read()
     loc=request.folder
-    loc+="/static/finaldata.txt"
+    loc+="/static/finaldata.json"
     f=open(loc,"wb")
     f.write(formdata)
     return dict(formdata=formdata)

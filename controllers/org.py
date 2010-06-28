@@ -136,40 +136,6 @@ def office():
     tablename = "%s_%s" % (module, resource)
     table = db[tablename]
     
-    table.name.label = T("Name")
-    table.name.comment = SPAN("*", _class="req")
-    table.parent.label = T("Parent")
-    table.type.label = T("Type")
-    table.address.label = T("Address")
-    table.postcode.label = T("Postcode")
-    table.phone1.label = T("Phone 1")
-    table.phone2.label = T("Phone 2")
-    table.email.label = T("Email")
-    table.fax.label = T("FAX")
-    table.national_staff.label = T("National Staff")
-    table.international_staff.label = T("International Staff")
-    table.number_of_vehicles.label = T("Number of Vehicles")
-    table.vehicle_types.label = T("Vehicle Types")
-    table.equipment.label = T("Equipment")
-
-    # CRUD strings
-    LIST_OFFICES = T("List Offices")
-    s3.crud_strings[tablename] = Storage(
-        title_create = ADD_OFFICE,
-        title_display = T("Office Details"),
-        title_list = LIST_OFFICES,
-        title_update = T("Edit Office"),
-        title_search = T("Search Offices"),
-        subtitle_create = T("Add New Office"),
-        subtitle_list = T("Offices"),
-        label_list_button = LIST_OFFICES,
-        label_create_button = ADD_OFFICE,
-        label_delete_button = T("Delete Office"),
-        msg_record_created = T("Office added"),
-        msg_record_modified = T("Office updated"),
-        msg_record_deleted = T("Office deleted"),
-        msg_list_empty = T("No Offices currently registered"))
-
     if isinstance(request.vars.organisation_id, list):
         request.vars.organisation_id = request.vars.organisation_id[0]
     if session.s3.security_policy == 1:
@@ -197,37 +163,49 @@ def office():
     
     return output
 
+# Component Resources need these settings to be visible where they are linked from
+# - so we put them outside their controller function
+table = db.org_office
+table.name.label = T("Name")
+table.name.comment = SPAN("*", _class="req")
+table.parent.label = T("Parent")
+table.type.label = T("Type")
+table.address.label = T("Address")
+table.postcode.label = T("Postcode")
+table.phone1.label = T("Phone 1")
+table.phone2.label = T("Phone 2")
+table.email.label = T("Email")
+table.fax.label = T("FAX")
+table.national_staff.label = T("National Staff")
+table.international_staff.label = T("International Staff")
+table.number_of_vehicles.label = T("Number of Vehicles")
+table.vehicle_types.label = T("Vehicle Types")
+table.equipment.label = T("Equipment")
+
+# CRUD strings
+LIST_OFFICES = T("List Offices")
+s3.crud_strings[tablename] = Storage(
+    title_create = ADD_OFFICE,
+    title_display = T("Office Details"),
+    title_list = LIST_OFFICES,
+    title_update = T("Edit Office"),
+    title_search = T("Search Offices"),
+    subtitle_create = T("Add New Office"),
+    subtitle_list = T("Offices"),
+    label_list_button = LIST_OFFICES,
+    label_create_button = ADD_OFFICE,
+    label_delete_button = T("Delete Office"),
+    msg_record_created = T("Office added"),
+    msg_record_modified = T("Office updated"),
+    msg_record_deleted = T("Office deleted"),
+    msg_list_empty = T("No Offices currently registered"))
+ 
 def contact():
     "RESTlike CRUD controller"
     resource = request.function
     tablename = "%s_%s" % (module, resource)
     table = db[tablename]
     
-    table.person_id.label = T("Contact")
-    table.title.label = T("Job Title")
-    table.title.comment = A(SPAN("[Help]"), _class="tooltip", _title=T("Title|The Role this person plays within this Office."))
-    table.manager_id.label = T("Manager")
-    table.manager_id.comment = A(SPAN("[Help]"), _class="tooltip", _title=T("Manager|The person's manager within this Office."))
-    table.focal_point.comment = A(SPAN("[Help]"), _class="tooltip", _title=T("Focal Point|The contact person for this organization."))
-
-    # CRUD strings
-    ADD_CONTACT = T("Add Contact")
-    LIST_CONTACTS = T("List Contacts")
-    s3.crud_strings[tablename] = Storage(
-        title_create = ADD_CONTACT,
-        title_display = T("Contact Details"),
-        title_list = LIST_CONTACTS,
-        title_update = T("Edit Contact"),
-        title_search = T("Search Contacts"),
-        subtitle_create = T("Add New Contact"),
-        subtitle_list = T("Contacts"),
-        label_list_button = LIST_CONTACTS,
-        label_create_button = ADD_CONTACT,
-        msg_record_created = T("Contact added"),
-        msg_record_modified = T("Contact updated"),
-        msg_record_deleted = T("Contact deleted"),
-        msg_list_empty = T("No Contacts currently registered"))
-
     def org_postp(jr, output):
         shn_action_buttons(jr)
         return output
@@ -250,29 +228,39 @@ def contact():
     
     return output
 
+# Component Resources need these settings to be visible where they are linked from
+# - so we put them outside their controller function
+table = db.org_contact
+table.person_id.label = T("Contact")
+table.title.label = T("Job Title")
+table.title.comment = A(SPAN("[Help]"), _class="tooltip", _title=T("Title|The Role this person plays within this Office."))
+table.manager_id.label = T("Manager")
+table.manager_id.comment = A(SPAN("[Help]"), _class="tooltip", _title=T("Manager|The person's manager within this Office."))
+table.focal_point.comment = A(SPAN("[Help]"), _class="tooltip", _title=T("Focal Point|The contact person for this organization."))
+
+# CRUD strings
+ADD_CONTACT = T("Add Contact")
+LIST_CONTACTS = T("List Contacts")
+s3.crud_strings[tablename] = Storage(
+    title_create = ADD_CONTACT,
+    title_display = T("Contact Details"),
+    title_list = LIST_CONTACTS,
+    title_update = T("Edit Contact"),
+    title_search = T("Search Contacts"),
+    subtitle_create = T("Add New Contact"),
+    subtitle_list = T("Contacts"),
+    label_list_button = LIST_CONTACTS,
+    label_create_button = ADD_CONTACT,
+    msg_record_created = T("Contact added"),
+    msg_record_modified = T("Contact updated"),
+    msg_record_deleted = T("Contact deleted"),
+    msg_list_empty = T("No Contacts currently registered"))
+
 def project():
     "RESTlike CRUD controller"
     resource = request.function
     tablename = "%s_%s" % (module, resource)
     table = db[tablename]
-    
-    # CRUD strings
-    ADD_PROJECT = T("Add Project")
-    s3.crud_strings[tablename] = Storage(
-        title_create = ADD_PROJECT,
-        title_display = T("Project Details"),
-        title_list = T("Projects Report"),
-        title_update = T("Edit Project"),
-        title_search = T("Search Projects"),
-        subtitle_create = T("Add New Project"),
-        subtitle_list = T("Projects"),
-        label_list_button = T("List Projects"),
-        label_create_button = ADD_PROJECT,
-        label_delete_button = T("Delete Project"),
-        msg_record_created = T("Project added"),
-        msg_record_modified = T("Project updated"),
-        msg_record_deleted = T("Project deleted"),
-        msg_list_empty = T("No Projects currently registered"))
     
     def org_postp(jr, output):
         shn_action_buttons(jr)
@@ -285,6 +273,26 @@ def project():
     output = shn_rest_controller(module, resource, listadd=False)
     
     return output
+
+# Component Resources need these settings to be visible where they are linked from
+# - so we put them outside their controller function
+table = db.org_project
+ADD_PROJECT = T("Add Project")
+s3.crud_strings[tablename] = Storage(
+    title_create = ADD_PROJECT,
+    title_display = T("Project Details"),
+    title_list = T("Projects Report"),
+    title_update = T("Edit Project"),
+    title_search = T("Search Projects"),
+    subtitle_create = T("Add New Project"),
+    subtitle_list = T("Projects"),
+    label_list_button = T("List Projects"),
+    label_create_button = ADD_PROJECT,
+    label_delete_button = T("Delete Project"),
+    msg_record_created = T("Project added"),
+    msg_record_modified = T("Project updated"),
+    msg_record_deleted = T("Project deleted"),
+    msg_list_empty = T("No Projects currently registered"))
 
 def office_table_linkto(field):
     return URL(r=request, f = "office",  args=[field, "read"],

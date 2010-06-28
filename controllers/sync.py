@@ -291,6 +291,18 @@ def setting():
     crud.settings.update_next = URL(r=request, args=["update", 1])
     return shn_rest_controller("sync", "setting", deletable=False, listadd=False)
 
+@auth.shn_requires_membership(1)
+def schedule():
+    "Synchronisation Schedules"
+    title = T("Syncronisation Schedules")
+
+    if "create" in request.args:
+        return shn_rest_controller("sync", "schedule")
+
+    jobs = db().select(db.sync_schedule.ALL)
+
+    return dict(title=title, jobs=jobs)
+
 @auth.requires_login()
 def history():
     "Shows history of database synchronisations"

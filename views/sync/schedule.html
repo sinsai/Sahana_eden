@@ -1,0 +1,45 @@
+{{extend "layout.html"}}
+{{=H3(title)}}
+{{if len(jobs) == 0:}}
+<div align="center">There are no scheduled jobs. <a href="{{=URL(r=request, f="schedule/create")}}">Click here</a> to schedule a sync job.</div>
+{{else:}}
+<div id="table-container">
+<table class="display" width="100%" cellpadding="2" cellspacing="0"><thead><tr><th></th><th>Sync Partner UUID</th><th>Data Source</th><th>Schedule</th><th>Description</th><th>Last Run</th><th>Enabled?</th><th></th></tr></thead>
+ <tbody>
+{{
+tr_class = "even"
+for job in jobs:
+	if tr_class == "even":
+		tr_class = "odd"
+	else:
+		tr_class = "even"
+	pass
+}}
+ <tr class="{{=tr_class}}">
+ <td valign="top"></td>
+ <td valign="top">{{=T("0")}}</td>
+ <td valign="top">{{=conflict.job_command}}</td>
+ <td valign="top">{{=job.period}}</td>
+ <td valign="top">{{=job.description}}</td>
+ <td valign="top">{{=job.last_run}}</td>
+ <td valign="top">
+{{
+if job.enabled:
+    response.write(T("Enabled"))
+else:
+    response.write(T("Disabled"))
+pass
+}}
+ </td>
+ <td valign="top"><input type="button" onclick="window.location.href='#'" value="Modify" /></td>
+ </tr>
+ <tr class="{{=tr_class}}">
+ <td valign="top" colspan="3"><a href="{{=URL(r=request, f="schedule/create")}}">Create New Job</a></td>
+ <td valign="top" align="right" colspan="5">With selected: <input type="button" onclick="enableSelected()" value="Enable" />&nbsp; <input type="button" onclick="disableSelected()" value="Disable" />&nbsp; <input type="button" onclick="deleteSelected()" value="Delete" /></td>
+ </tr>
+{{pass}}
+ </tbody>
+</table>
+</div>
+{{pass}}
+<p>&nbsp;</p>

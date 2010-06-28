@@ -112,4 +112,39 @@ if deployment_settings.has_module(module):
                 Field("enabled", "boolean", default = False),
 #                Field("preference", "integer", default = 5), To be used later
                 migrate=migrate)
-    
+    # Message priority
+    msg_priority_opts = {
+        3:T('High'),
+        2:T('Medium'),
+        1:T('Low')
+    }
+
+    # Message Log
+    resource = 'log'
+    tablename = "%s_%s" % (module, resource)
+    table = db.define_table(tablename, timestamp, uuidstamp, deletion_status,
+        person_id,#Sender
+        Field("subject"),
+        Field("message", "text"),
+        Field("attachment", 'upload', autodelete = True),
+        Field("verified", "boolean", default = False),
+        Field("verified_comments", "text"),
+        Field("actionable", "boolean", default = True),
+        Field("actioned", "boolean", default = False),
+        Field("actioned_comments", "text"),
+        Field("priority", "integer"),
+        migrate=migrate)
+
+    table.uuid.requires = IS_NOT_IN_DB(db, "%s.uuid" % tablename)
+    table.message.requires = IS_NOT_EMPTY()
+    table.priority.requires = IS_NULL_OR(IS_IN_SET(msg_priority_opts))
+    s3xrc.model.configure(table,
+                          list_fields=['id',
+                                       'person_id',
+                                       'subject',
+                                       'verified',
+                                       'verified_comments',
+                                       'actionable',
+                                       'actioned',
+                                       'actioned_comments',
+                                       'priority'])

@@ -1,14 +1,14 @@
-{{extend 'layout.html'}}
-{{include '_create.html'}}
+{{extend "layout.html"}}
+{{include "_create.html"}}
 <script type="text/javascript">//<![CDATA[
 
-{{include 'org/offices_by_org.js'}}
+{{include "org/offices_by_org.js"}}
 
 $(function() {
     // Person AutoComplete
     {{entity_id = "org_contact_person_id"}}
     {{is_person = True}}
-    {{include 'auto_input.js'}}
+    {{include "auto_input.js"}}
     
     // Organisation AutoComplete
     {{entity_id = "org_contact_organisation_id"}}
@@ -16,17 +16,16 @@ $(function() {
     {{urlpath_f = "organisation"}}
     {{urlvar_field = "name"}}
     {{post_process = "load_offices(false);"}}
-    {{include 'auto_input.js'}}
+    {{include "auto_input.js"}}
 
     // Office AutoComplete
-    
     {{entity_id = "org_contact_office_id"}}
     {{dummy_select = True}}
-    {{default_value = T('Select an Organisation to see a list of offices')}}
+    {{default_value = T("Select an Organisation to see a list of offices")}}
     {{urlpath_c = "org"}}
     {{urlpath_f = "office"}}
     {{urlvar_field = "name"}}
-    {{include 'auto_input.js'}}
+    {{include "auto_input.js"}}
     
     cleanup = function(id){
         if(id == "org_contact_office_id" || id == "org_contact_organisation_id" ){

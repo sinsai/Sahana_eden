@@ -37,7 +37,7 @@ __name__ = "S3TOOLS"
 
 __all__ = ["AuthS3", "CrudS3", "FieldS3"]
 
-import datetime
+#import datetime
 import re
 import urllib
 import uuid
@@ -118,6 +118,7 @@ class AuthS3(Auth):
         """
 
         db = self.db
+        request = self.environment.request
         if not self.settings.table_user:
             passfield = self.settings.password_field
             if self.settings.username_field:
@@ -194,7 +195,9 @@ class AuthS3(Auth):
             table.utc_offset.label = "UTC Offset"
             table.utc_offset.comment = A(SPAN("[Help]"), _class="tooltip", _title="UTC Offset|The time difference between UTC and your timezone, specify as +HHMM for eastern or -HHMM for western timezones.")
             try:
-                from applications.sahana.modules.validators import IS_UTC_OFFSET
+                #from applications.eden.modules.validators import IS_UTC_OFFSET
+                #validators = local_import("validators")
+                exec("from applications.%s.modules.validators import IS_UTC_OFFSET" % request.application)
                 table.utc_offset.requires = IS_UTC_OFFSET()
             except:
                 pass
@@ -446,8 +449,9 @@ class AuthS3(Auth):
 
         # S3: Don't allow registration if disabled
         db = self.db
-        self_registration = db().select(db.s3_setting.self_registration)[0].self_registration
-        utc_offset = db().select(db.s3_setting.utc_offset)[0].utc_offset
+        settings = db().select(db.s3_setting.self_registration, db.s3_setting.utc_offset, limitby=(0, 1)).first()
+        self_registration = settings.self_registration
+        utc_offset = settings.utc_offset
         if not self_registration:
             session.error = self.messages.registration_disabled
             redirect(URL(r=request, args=["login"]))
@@ -524,8 +528,7 @@ class AuthS3(Auth):
                     username = "username"
                 else:
                     username = "email"
-                users = self.db(table_user[username] == form.vars[username]).select()
-                user = users[0]
+                user = self.db(table_user[username] == form.vars[username]).select(limitby=(0, 1)).first()
                 user = Storage(table_user._filter_fields(user, id=True))
 
                 # Add the first user to admin group
@@ -566,7 +569,7 @@ class AuthS3(Auth):
 
     def requires_membership(self, role):
         """
-        decorator that prevents access to action if not logged in or
+        Decorator that prevents access to action if not logged in or
         if user logged in is not a member of group_id.
         If role is provided instead of group_id then the group_id is calculated.
 
@@ -580,7 +583,7 @@ class AuthS3(Auth):
             def f(*a, **b):
                 if not self.basic() and not self.is_logged_in():
                     request = self.environment.request
-                    next = URL(r=request,args=request.args, vars=request.get_vars)
+                    next = URL(r=request, args=request.args, vars=request.get_vars)
                     redirect(self.settings.login_url + "?_next=" + urllib.quote(next))
                 if not self.has_membership(group_id):
                     self.environment.session.flash = \
@@ -660,6 +663,7 @@ class AuthS3(Auth):
 
         db = self.db
         session = self.session
+        T = self.environment.T
 
         # If using the "simple" security policy then show all records
         if session.s3.security_policy == 1:
@@ -702,6 +706,36 @@ class AuthS3(Auth):
         self.shn_link_to_person(user=form.vars)
 
 
+    def shn_requires_membership(self, role):
+        """
+        Decorator that prevents access to action if not logged in or
+        if user logged in is not a member of group_id.
+        If role is provided instead of group_id then the group_id is calculated.
+
+        Extends Web2Py's requires_membership() to add new functionality:
+            * Custom Flash style
+            * Uses shn_has_role()
+        """
+
+        def decorator(action):
+            
+            def f(*a, **b):
+                if not self.basic() and not self.is_logged_in():
+                    request = self.environment.request
+                    next = URL(r=request, args=request.args, vars=request.get_vars)
+                    redirect(self.settings.login_url + "?_next=" + urllib.quote(next))
+                if not self.shn_has_role(role):
+                    self.environment.session.flash = \
+                        self.messages.access_denied
+                    next = self.settings.on_failed_authorization
+                    redirect(next)
+                return action(*a, **b)
+            f.__doc__ = action.__doc__
+            return f
+
+        return decorator
+
+
     def shn_link_to_person(self, user=None):
 
         """
@@ -730,7 +764,7 @@ class AuthS3(Auth):
         etable = db.pr_pentity
 
         if user is None:
-            users = db(utable.person_uuid==None).select(utable.ALL)
+            users = db(utable.person_uuid == None).select(utable.ALL)
         else:
             users = [user]
 
@@ -749,10 +783,10 @@ class AuthS3(Auth):
                 person = db(query).select(ptable.uuid)
                 if person and len(person) == 1:
                     person = person.first()
-                    if not db(utable.person_uuid==person.uuid).count():
-                        db(utable.id==user.id).update(person_uuid=person.uuid)
-                        if self.user and self.user.id==user.id:
-                            self.user.person_uuid=person.uuid
+                    if not db(utable.person_uuid == person.uuid).count():
+                        db(utable.id == user.id).update(person_uuid=person.uuid)
+                        if self.user and self.user.id == user.id:
+                            self.user.person_uuid = person.uuid
                         continue
                     #else:
                         #email = None
@@ -765,7 +799,7 @@ class AuthS3(Auth):
                         last_name = user.last_name)
                     if new_id:
                         person_uuid = ptable[new_id].uuid
-                        db(utable.id==user.id).update(person_uuid=person_uuid)
+                        db(utable.id == user.id).update(person_uuid=person_uuid)
                         # The following adds the email to pr_pe_contact
                         ctable.insert(
                                 pr_pe_id = pr_pe_id,
@@ -773,8 +807,8 @@ class AuthS3(Auth):
                                 priority = 1,
                                 value = email)
 
-                if self.user and self.user.id==user.id:
-                    self.user.person_uuid=person_uuid
+                if self.user and self.user.id == user.id:
+                    self.user.person_uuid = person_uuid
 
 
 
@@ -853,7 +887,7 @@ class SQLTABLE2(TABLE):
 
     More advanced linkto example::
 
-        def mylink(field, type, ref):
+        def mylink(field):
             return URL(r=request, args=[field])
 
         rows = db.select(db.sometable.ALL)
@@ -942,18 +976,22 @@ class SQLTABLE2(TABLE):
                         #href = "%s/%s/%s" % (linkto, tablename, r)
                         href = "%s/%s" % (linkto, r)
                     row.append(TD(A(r, _href=href), _class="column_%s" % fieldname))
-                elif linkto and field.type[:9] == "reference":
-                    ref = field.type[10:]
-                    try:
-                        href = linkto(r, "reference", ref)
-                    except TypeError:
-                        href = "%s/%s/%s" % (linkto, ref, r)
-                        if ref.find(".") >= 0:
-                            tref,fref = ref.split(".")
-                            if hasattr(sqlrows.db[tref], "_primarykey"):
-                                href = "%s/%s?%s" % (linkto, tref, urllib.urlencode({fref:ur}))
-
-                    row.append(TD(A(r, _href=href, _class="column_%s" % fieldname)))
+                # Reference record without a .represent defined
+                # We can't assume  controller exists for linked resources
+                # so better to use response.s3.actions for this
+                #elif linkto and field.type[:9] == "reference":
+                #    ref = field.type[10:]
+                #    try:
+                #        #href = linkto(r, "reference", ref)
+                #        href = linkto(r)
+                #    except TypeError:
+                #        href = "%s/%s/%s" % (linkto, ref, r)
+                #        if ref.find(".") >= 0:
+                #            tref,fref = ref.split(".")
+                #            if hasattr(sqlrows.db[tref], "_primarykey"):
+                #                href = "%s/%s?%s" % (linkto, tref, urllib.urlencode({fref:ur}))
+                #
+                #    row.append(TD(A(r, _href=href, _class="column_%s" % fieldname)))
                 elif linkto and hasattr(field._table, "_primarykey") and fieldname in field._table._primarykey:
                     # have to test this with multi-key tables
                     key = urllib.urlencode(dict( [ \

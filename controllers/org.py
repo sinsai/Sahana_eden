@@ -7,7 +7,7 @@
     @author: Michael Howden
 """
 
-module = "org"
+module = request.controller
 
 if module not in deployment_settings.modules:
     session.error = T("Module disabled!")
@@ -46,42 +46,141 @@ def index():
 
     return dict(module_name=module_name)
 
-@service.jsonrpc
-@service.xmlrpc
-@service.amfrpc
 def sector():
     "RESTlike CRUD controller"
-    return shn_rest_controller(module, "sector", listadd=False)
-
-@service.jsonrpc
-@service.xmlrpc
-@service.amfrpc
-def organisation():
-    "RESTlike CRUD controller"
-    # ServerSidePagination
-    response.s3.pagination = True
-    def organisation_prep(jr):
-        if jr.representation == "html":
-            crud.settings.create_next = URL(r=request, f="dashboard")
-        return True
-    response.s3.prep = organisation_prep
-    output = shn_rest_controller(module, "organisation", listadd=False)
-    return output
-
-@service.jsonrpc
-@service.xmlrpc
-@service.amfrpc
-def office():
-    "RESTlike CRUD controller"
-    resource = "office"
+    resource = request.function
     tablename = "%s_%s" % (module, resource)
     table = db[tablename]
+
+    table.name.label = T("Name")
+    table.name.comment = SPAN("*", _class="req")
+
+    # CRUD strings
+    LIST_SECTORS = T("List Sectors")
+    s3.crud_strings[tablename] = Storage(
+        title_create = ADD_SECTOR,
+        title_display = T("Sector Details"),
+        title_list = LIST_SECTORS,
+        title_update = T("Edit Sector"),
+        title_search = T("Search Sectors"),
+        subtitle_create = T("Add New Sector"),
+        subtitle_list = T("Sectors"),
+        label_list_button = LIST_SECTORS,
+        label_create_button = ADD_SECTOR,
+        msg_record_created = T("Sector added"),
+        msg_record_modified = T("Sector updated"),
+        msg_record_deleted = T("Sector deleted"),
+        msg_list_empty = T("No Sectors currently registered"))
+    
+    return shn_rest_controller(module, resource, listadd=False)
+
+def organisation():
+    "RESTlike CRUD controller"
+
+    resource = request.function
+    tablename = "%s_%s" % (module, resource)
+    table = db[tablename]
+   
+    table.name.label = T("Name")
+    table.name.comment = SPAN("*", _class="req")
+    table.acronym.label = T("Acronym")
+    table.type.label = T("Type")
+    table.donation_phone.label = T("Donation Phone #")
+    table.donation_phone.comment = A(SPAN("[Help]"), _class="tooltip", _title=T("Donation Phone #|Phone number to donate to this organization's relief efforts."))
+    table.country.label = T("Home Country")
+    table.website.label = T("Website")
+    table.twitter.label = T("Twitter")
+    table.twitter.comment = A(SPAN("[Help]"), _class="tooltip", _title=T("Twitter|Twitter ID or #hashtag"))
+
+    # CRUD strings
+    LIST_ORGANIZATIONS = T("List Organizations")
+    s3.crud_strings[tablename] = Storage(
+        title_create = ADD_ORGANIZATION,
+        title_display = T("Organization Details"),
+        title_list = LIST_ORGANIZATIONS,
+        title_update = T("Edit Organization"),
+        title_search = T("Search Organizations"),
+        subtitle_create = T("Add New Organization"),
+        subtitle_list = T("Organizations"),
+        label_list_button = LIST_ORGANIZATIONS,
+        label_create_button = ADD_ORGANIZATION,
+        label_delete_button = T("Delete Organization"),
+        msg_record_created = T("Organization added"),
+        msg_record_modified = T("Organization updated"),
+        msg_record_deleted = T("Organization deleted"),
+        msg_list_empty = T("No Organizations currently registered"))
+
+    def org_prep(jr):
+        if jr.representation == "html":
+            # Redirect to Dashboard after adding/editing an Organisation to add Offices/Contacts/Projects
+            crud.settings.create_next = URL(r=request, f="dashboard")
+            crud.settings.update_next = URL(r=request, f="dashboard")
+        return True
+    response.s3.prep = org_prep
+
+    def org_postp(jr, output):
+        shn_action_buttons(jr)
+        return output
+    response.s3.postp = org_postp
+    
+    # ServerSidePagination
+    response.s3.pagination = True
+    
+    output = shn_rest_controller(module, resource, listadd=False)
+    
+    return output
+
+def office():
+    "RESTlike CRUD controller"
+    resource = request.function
+    tablename = "%s_%s" % (module, resource)
+    table = db[tablename]
+    
+    table.name.label = T("Name")
+    table.name.comment = SPAN("*", _class="req")
+    table.parent.label = T("Parent")
+    table.type.label = T("Type")
+    table.address.label = T("Address")
+    table.postcode.label = T("Postcode")
+    table.phone1.label = T("Phone 1")
+    table.phone2.label = T("Phone 2")
+    table.email.label = T("Email")
+    table.fax.label = T("FAX")
+    table.national_staff.label = T("National Staff")
+    table.international_staff.label = T("International Staff")
+    table.number_of_vehicles.label = T("Number of Vehicles")
+    table.vehicle_types.label = T("Vehicle Types")
+    table.equipment.label = T("Equipment")
+
+    # CRUD strings
+    LIST_OFFICES = T("List Offices")
+    s3.crud_strings[tablename] = Storage(
+        title_create = ADD_OFFICE,
+        title_display = T("Office Details"),
+        title_list = LIST_OFFICES,
+        title_update = T("Edit Office"),
+        title_search = T("Search Offices"),
+        subtitle_create = T("Add New Office"),
+        subtitle_list = T("Offices"),
+        label_list_button = LIST_OFFICES,
+        label_create_button = ADD_OFFICE,
+        label_delete_button = T("Delete Office"),
+        msg_record_created = T("Office added"),
+        msg_record_modified = T("Office updated"),
+        msg_record_deleted = T("Office deleted"),
+        msg_list_empty = T("No Offices currently registered"))
 
     if isinstance(request.vars.organisation_id, list):
         request.vars.organisation_id = request.vars.organisation_id[0]
     if session.s3.security_policy == 1:
         # Hide the Admin row for simple security_policy
         table.admin.readable = table.admin.writable = False
+    
+    def org_postp(jr, output):
+        shn_action_buttons(jr)
+        return output
+    response.s3.postp = org_postp
+    
     # ServerSidePagination
     response.s3.pagination = True
 
@@ -89,21 +188,51 @@ def office():
     #if request.args(0) in ("create", "update"):
     if request.args(0) == "create":
         table.organisation_id.requires = IS_NULL_OR(IS_ONE_OF_EMPTY(db, "org_organisation.id"))
-        if request.vars.organisation_id:
+        if request.vars.organisation_id and request.vars.organisation_id != "None":
             session.s3.organisation_id = request.vars.organisation_id
             # Organisation name should be displayed on the form if organisation_id is pre-selected
             session.s3.organisation_name = db(db.org_organisation.id == int(session.s3.organisation_id)).select(db.org_organisation.name).first().name
-    return shn_rest_controller(module, resource, listadd=False, rheader=shn_office_rheader)
+    
+    output = shn_rest_controller(module, resource, listadd=False, rheader=shn_office_rheader)
+    
+    return output
 
-@service.jsonrpc
-@service.xmlrpc
-@service.amfrpc
 def contact():
     "RESTlike CRUD controller"
-    resource = "contact"
+    resource = request.function
     tablename = "%s_%s" % (module, resource)
     table = db[tablename]
+    
+    table.person_id.label = T("Contact")
+    table.title.label = T("Job Title")
+    table.title.comment = A(SPAN("[Help]"), _class="tooltip", _title=T("Title|The Role this person plays within this Office."))
+    table.manager_id.label = T("Manager")
+    table.manager_id.comment = A(SPAN("[Help]"), _class="tooltip", _title=T("Manager|The person's manager within this Office."))
+    table.focal_point.comment = A(SPAN("[Help]"), _class="tooltip", _title=T("Focal Point|The contact person for this organization."))
 
+    # CRUD strings
+    ADD_CONTACT = T("Add Contact")
+    LIST_CONTACTS = T("List Contacts")
+    s3.crud_strings[tablename] = Storage(
+        title_create = ADD_CONTACT,
+        title_display = T("Contact Details"),
+        title_list = LIST_CONTACTS,
+        title_update = T("Edit Contact"),
+        title_search = T("Search Contacts"),
+        subtitle_create = T("Add New Contact"),
+        subtitle_list = T("Contacts"),
+        label_list_button = LIST_CONTACTS,
+        label_create_button = ADD_CONTACT,
+        msg_record_created = T("Contact added"),
+        msg_record_modified = T("Contact updated"),
+        msg_record_deleted = T("Contact deleted"),
+        msg_list_empty = T("No Contacts currently registered"))
+
+    def org_postp(jr, output):
+        shn_action_buttons(jr)
+        return output
+    response.s3.postp = org_postp
+    
     # ServerSidePagination
     response.s3.pagination = True
 
@@ -117,15 +246,45 @@ def contact():
         table.organisation_id.requires = IS_NULL_OR(IS_ONE_OF_EMPTY(db, "org_organisation.id"))
         table.office_id.requires = IS_NULL_OR(IS_ONE_OF_EMPTY(db, "org_office.id"))
 
-    return shn_rest_controller(module, resource, listadd=False)
+    output = shn_rest_controller(module, resource, listadd=False)
+    
+    return output
 
-
-@service.jsonrpc
-@service.xmlrpc
-@service.amfrpc
 def project():
     "RESTlike CRUD controller"
-    return shn_rest_controller(module, "project", listadd=False)
+    resource = request.function
+    tablename = "%s_%s" % (module, resource)
+    table = db[tablename]
+    
+    # CRUD strings
+    ADD_PROJECT = T("Add Project")
+    s3.crud_strings[tablename] = Storage(
+        title_create = ADD_PROJECT,
+        title_display = T("Project Details"),
+        title_list = T("Projects Report"),
+        title_update = T("Edit Project"),
+        title_search = T("Search Projects"),
+        subtitle_create = T("Add New Project"),
+        subtitle_list = T("Projects"),
+        label_list_button = T("List Projects"),
+        label_create_button = ADD_PROJECT,
+        label_delete_button = T("Delete Project"),
+        msg_record_created = T("Project added"),
+        msg_record_modified = T("Project updated"),
+        msg_record_deleted = T("Project deleted"),
+        msg_list_empty = T("No Projects currently registered"))
+    
+    def org_postp(jr, output):
+        shn_action_buttons(jr)
+        return output
+    response.s3.postp = org_postp
+    
+    # ServerSidePagination
+    response.s3.pagination = True
+
+    output = shn_rest_controller(module, resource, listadd=False)
+    
+    return output
 
 def office_table_linkto(field):
     return URL(r=request, f = "office",  args=[field, "read"],
@@ -152,7 +311,7 @@ def org_sub_list(tablename, org_id):
     fields = []
     headers = {}
     table = db[tablename]
-
+    
     for field in table:
         if field.readable and field.name <> "organisation_id" and field.name <> "admin":
             headers[str(field)] = str(field.label)
@@ -188,7 +347,7 @@ def org_sub_list(tablename, org_id):
 
 def dashboard():
 
-    # Get Organization to display from Var or Arg or Default
+    # Get Organization to display from Arg, Var, Session or Default
     if len(request.args) > 0:
         org_id = int(request.args[0])
         try:
@@ -205,12 +364,14 @@ def dashboard():
             redirect(URL(r=request, c="org", f="index"))
     else:
         table = db.org_organisation
-        query  = (table.id > 0) & ((table.deleted == False) | (table.deleted == None))
+        deleted  = ((table.deleted == False) | (table.deleted == None))
         org_id = s3xrc.get_session(session, "org", "organisation") or 0
         if org_id:
-            query = (table.id == org_id) & query
+            query = (table.id == org_id) & deleted
+        else:
+            query = (table.id > 0) & deleted
         try:
-            org_name = db(query).select(limitby=(0, 1)).first().name
+            org_name = db(query).select(table.name, limitby=(0, 1)).first().name
         except:
             session.warning = T("No Organisations registered!")
             redirect(URL(r=request, c="org", f="index"))

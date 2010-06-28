@@ -23,7 +23,7 @@ def index():
 
     return dict(module_name=module_name)
 
-@auth.requires_membership("Administrator")
+@auth.shn_requires_membership(1)
 def setting():
     "RESTlike CRUD controller"
 
@@ -59,7 +59,7 @@ def setting():
     return shn_rest_controller("s3", "setting", deletable=False, listadd=False)
     s3xrc.model.clear_config(table, "onvalidation", "onaccept")
 
-@auth.requires_membership("Administrator")
+@auth.shn_requires_membership(1)
 def theme():
     "RESTlike CRUD controller"
     resource = "theme"
@@ -230,7 +230,7 @@ def theme_check(form):
     # Validation passed
     return
 
-@auth.requires_membership("Administrator")
+@auth.shn_requires_membership(1)
 def user():
     "RESTlike CRUD controller"
     module = "auth"
@@ -309,7 +309,7 @@ def user_approve(form):
         else:
             return
 
-@auth.requires_membership("Administrator")
+@auth.shn_requires_membership(1)
 def usergroup():
     """
     User update form with groups
@@ -383,7 +383,7 @@ def usergroup():
 
     return dict(data=data, records=records, form=form)
 
-@auth.requires_membership("Administrator")
+@auth.shn_requires_membership(1)
 def group():
     "RESTlike CRUD controller"
     module = "auth"
@@ -413,7 +413,7 @@ def group():
     return shn_rest_controller(module, resource, main="role")
 
 # Unused as poor UI
-@auth.requires_membership("Administrator")
+@auth.shn_requires_membership(1)
 def membership():
     "RESTlike CRUD controller"
     module = "auth"
@@ -443,7 +443,7 @@ def membership():
 
     return shn_rest_controller(module, resource, main="user_id")
 
-@auth.requires_membership("Administrator")
+@auth.shn_requires_membership(1)
 def users():
     "List/amend which users are in a Group"
 
@@ -503,7 +503,7 @@ def users():
     output.update(dict(subtitle=subtitle, items=items, addtitle=addtitle, form=form))
     return output
 
-@auth.requires_membership("Administrator")
+@auth.shn_requires_membership(1)
 def group_remove_users():
     "Remove users from a group"
     if len(request.args) == 0:
@@ -520,7 +520,7 @@ def group_remove_users():
     session.flash = T("Users removed")
     redirect(URL(r=request, f="users", args=[group]))
 
-@auth.requires_membership("Administrator")
+@auth.shn_requires_membership(1)
 def groups():
     "List/amend which groups a User is in"
 
@@ -570,7 +570,7 @@ def groups():
     output.update(dict(subtitle=subtitle, items=items, addtitle=addtitle, form=form))
     return output
 
-@auth.requires_membership("Administrator")
+@auth.shn_requires_membership(1)
 def user_remove_groups():
     "Remove groups from a user"
     if len(request.args) == 0:
@@ -588,7 +588,7 @@ def user_remove_groups():
     redirect(URL(r=request, f="groups", args=[user]))
 
 # Import Data
-@auth.requires_membership("Administrator")
+@auth.shn_requires_membership(1)
 def import_data():
     "Import data via POST upload to CRUD controller. Old - being replaced by Sync/Importer."
     title = T("Import Data")
@@ -602,7 +602,7 @@ def import_data():
     return dict(title=title,
                 import_job_form=import_job_form)
 
-@auth.requires_membership("Administrator")
+@auth.shn_requires_membership(1)
 def import_csv():
     "Import CSV data via POST upload to Database."
     file = request.vars.multifile.file
@@ -621,7 +621,7 @@ def export_data():
     title = T("Export Data")
     return dict(title=title)
 
-@auth.requires_membership("Administrator")
+@auth.shn_requires_membership(1)
 def export_csv():
     "Export entire database as CSV. Old - being replaced by Sync."
     import StringIO
@@ -638,7 +638,7 @@ def export_csv():
 
 
 # Unstructured Data Import
-@auth.requires_membership("Administrator")
+@auth.shn_requires_membership(1)
 def import_job():
     "RESTlike CRUD controller to handle 'jobs' for importing unstructured data."
     # CRUD Strings
@@ -905,7 +905,7 @@ def handleResults():
     return dict(title=title, item=message)
 
 # Ticket Viewer functions Borrowed from admin application of web2py
-@auth.requires_membership("Administrator")
+@auth.shn_requires_membership(1)
 def errors():
     """ Error handler """
 
@@ -983,7 +983,7 @@ class TRACEBACK(object):
 
 
 # Ticket viewing
-@auth.requires_membership("Administrator")
+@auth.shn_requires_membership(1)
 def ticket():
     """ Ticket handler """
 

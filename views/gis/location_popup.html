@@ -1,6 +1,6 @@
-{{extend 'layout_popup.html'}}
-{{include '_popup.html'}}
-{{if session.s3.security_policy==1:}}
+{{extend "layout_popup.html"}}
+{{include "_popup.html"}}
+{{if session.s3.security_policy == 1:}}
     <script type="text/javascript">//<![CDATA[
     $(function() {
             // Hide the Admin row for simple security_policy
@@ -10,7 +10,7 @@
 {{else:}}
 {{pass}}
 {{if "pr_presence" in request.vars.caller:}}
-    {{fc = db(db.gis_feature_class.name == "Person").select(limitby=(0, 1)).first().id}}
+    {{fc = db(db.gis_feature_class.name == "Person").select(db.gis_feature_class.id, limitby=(0, 1)).first().id}}
     <script type="text/javascript">//<![CDATA[
     // If coming from the OR then populate defaults for the fields & Hide unnecessary rows
     $(function() {
@@ -58,7 +58,7 @@
     }
     //]]></script>
 {{elif "org_office" in request.vars.caller:}}
-    {{fc = db(db.gis_feature_class.name == "Office").select(limitby=(0, 1)).first().id}}
+    {{fc = db(db.gis_feature_class.name == "Office").select(db.gis_feature_class.id, limitby=(0, 1)).first().id}}
     <script type="text/javascript">//<![CDATA[
     // If coming from the Organisation Registry then populate defaults for the fields & Hide unnecessary rows
     $(function() {
@@ -87,7 +87,7 @@
     });
     //]]></script>
 {{elif "hms_hospital" in request.vars.caller:}}
-    {{fc = db(db.gis_feature_class.name == "Hospital").select(limitby=(0, 1)).first().id}}
+    {{fc = db(db.gis_feature_class.name == "Hospital").select(db.gis_feature_class.id, limitby=(0, 1)).first().id}}
     <script type="text/javascript">//<![CDATA[
     // If coming from the HMS then populate defaults for the fields & Hide unnecessary rows
     $(function() {
@@ -114,5 +114,5 @@
     //]]></script>
 {{else:}}
 {{pass}}
-{{include 'gis/feature_crud.js'}}
-{{include 'gis/convert_gps.html'}}
+{{include "gis/feature_crud.js"}}
+{{include "gis/convert_gps.html"}}

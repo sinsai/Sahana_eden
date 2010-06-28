@@ -4,7 +4,7 @@
     Budgetting Module - Controllers
 """
 
-module = "budget"
+module = request.controller
 
 if module not in deployment_settings.modules:
     session.error = T("Module disabled!")
@@ -167,7 +167,7 @@ def parameters():
 
 def parameter():
     "RESTlike CRUD controller"
-    resource = "parameter"
+    resource = request.function
     tablename = module + "_" + resource
     table = db[tablename]
 
@@ -186,7 +186,7 @@ def parameter():
 
 def item():
     "RESTlike CRUD controller"
-    resource = "item"
+    resource = request.function
     table = module + "_" + resource
 
     # Model options used in multiple controllers so defined at the top of the file
@@ -321,7 +321,7 @@ def item_export_pdf():
 
 def kit():
     "RESTlike CRUD controller"
-    resource = "kit"
+    resource = request.function
     table = module + "_" + resource
 
     # Model options used in multiple controllers so defined at the top of the file
@@ -751,7 +751,7 @@ def kit_import_csv():
 
 def bundle():
     "RESTlike CRUD controller"
-    resource = "bundle"
+    resource = request.function
     table = module + "_" + resource
 
     # Model options used in multiple controllers so defined at the top of the file
@@ -1053,7 +1053,7 @@ def bundle_update_items():
 
 def staff():
     "RESTlike CRUD controller"
-    resource = "staff"
+    resource = request.function
     table = module + "_" + resource
 
     # Model options used in multiple controllers so defined at the top of the file
@@ -1081,7 +1081,7 @@ def staff():
 
 def location():
     "RESTlike CRUD controller"
-    resource = "location"
+    resource = request.function
     table = module + "_" + resource
 
     # Model options used in multiple controllers so defined at the top of the file
@@ -1109,7 +1109,7 @@ def location():
 
 def project():
     "RESTlike CRUD controller"
-    resource = "project"
+    resource = request.function
     table = module + "_" + resource
 
     # Model options used in multiple controllers so defined at the top of the file
@@ -1137,7 +1137,7 @@ def project():
 
 def budget():
     "RESTlike CRUD controller"
-    resource = "budget"
+    resource = request.function
     table = module + "_" + resource
 
     # Model options used in multiple controllers so defined at the top of the file

@@ -4,7 +4,7 @@
     Messaging Module - Controllers
 """
 
-module = "msg"
+module = request.controller
 
 if module not in deployment_settings.modules:
     session.error = T("Module disabled!")
@@ -35,7 +35,7 @@ def tbc():
 
 def email_settings():
     """ RESTlike CRUD controller for email settings - appears in the administration menu """
-    resource = "email_settings"
+    resource = request.function
     tablename = module + "_" + resource
     table = db[tablename]
     
@@ -82,10 +82,11 @@ def email_settings():
 # The following 2 functions hook into the pr functions
 # -----------------------------------------------------------------------------
 def group():
+    resource = request.function
     response.s3.filter = (db.pr_group.system == False) # do not show system groups
     response.s3.pagination = True
     "RESTlike CRUD controller"
-    return shn_rest_controller("pr", "group",
+    return shn_rest_controller("pr", resource,
                                main="group_name",
                                extra="group_description",
                                rheader=shn_pr_rheader,
@@ -93,7 +94,8 @@ def group():
 # -----------------------------------------------------------------------------
 def group_membership():
     "RESTlike CRUD controller"
-    return shn_rest_controller("pr", "group_membership")
+    resource = request.function
+    return shn_rest_controller("pr", resource)
 
 #-------------------------------------------------------------------------------
 
@@ -101,7 +103,7 @@ def pe_contact():
     """ Allows the user to add,update and delete his contacts"""
     
     if auth.is_logged_in() or auth.basic():
-        person = (db(db.pr_person.uuid == auth.user.person_uuid).select(db.pr_person.pr_pe_id)).first().pr_pe_id
+        person = db(db.pr_person.uuid == auth.user.person_uuid).select(db.pr_person.pr_pe_id, limitby=(0, 1)).first().pr_pe_id
         response.s3.filter = (db.pr_pe_contact.pr_pe_id == person)
     else:
         redirect(URL(r=request, c="default", f="user", args="login",
@@ -117,14 +119,14 @@ def pe_contact():
     db.pr_pe_contact.person_name.readable = False
     def msg_pe_contact_onvalidation(form):
         """This onvalidation method adds the person id to the record"""
-        person = (db(db.pr_person.uuid == auth.user.person_uuid).select(db.pr_person.pr_pe_id)).first().pr_pe_id
+        person = db(db.pr_person.uuid == auth.user.person_uuid).select(db.pr_person.pr_pe_id, limitby=(0, 1)).first().pr_pe_id
         form.vars.pr_pe_id = person
     def msg_pe_contact_restrict_access(jr):
         """The following restricts update and delete access to contacts not
         owned by the user"""
         if jr.id :
-            person = (db(db.pr_person.uuid == auth.user.person_uuid).select(db.pr_person.pr_pe_id)).first().pr_pe_id
-            if person == (db(db.pr_pe_contact.id == jr.id).select(db.pr_pe_contact.pr_pe_id)).first().pr_pe_id :
+            person = db(db.pr_person.uuid == auth.user.person_uuid).select(db.pr_person.pr_pe_id, limitby=(0, 1)).first().pr_pe_id
+            if person == db(db.pr_pe_contact.id == jr.id).select(db.pr_pe_contact.pr_pe_id, limitby=(0, 1)).first().pr_pe_id :
                 return True
             else:
                 session.error = T("Access denied")
@@ -170,17 +172,18 @@ def search():
 		response.view = "plain.html"
 		return dict(item=item)
     return
+
 #-------------------------------------------------------------------------------
 def outbox():
     "RESTlike CRUD controller"
-    resource = "outbox"
+    resource = request.function
     tablename = module + "_" + resource
     table = db[tablename]
     if auth.is_logged_in() or auth.basic():
         if auth.has_membership(1):
             pass
         else:
-            person = (db(db.pr_person.uuid == auth.user.person_uuid).select(db.pr_person.id)).first().id
+            person = db(db.pr_person.uuid == auth.user.person_uuid).select(db.pr_person.id, limitby=(0, 1)).first().id
             db.msg_outbox.id.readable = False
             response.s3.filter = (db.msg_outbox.person_id == person)
     else:
@@ -192,21 +195,21 @@ def outbox():
     table.subject.label = T("Subject")
     table.body.label = T("Body")
     SEND_MESSAGE = T("Send Message")
-    VIEW_MESSAGE_OUTBOX = T("View OutBox")
+    VIEW_MESSAGE_OUTBOX = T("View Outbox")
     s3.crud_strings[tablename] = Storage(
             title_create = SEND_MESSAGE,
             title_display = T("Message Details"),
             title_list = VIEW_MESSAGE_OUTBOX,
             title_update = T("Edit Message"),
-            title_search = T("Search OutBox"),
+            title_search = T("Search Outbox"),
             subtitle_create = SEND_MESSAGE,
-            subtitle_list = T("OutBox"),
+            subtitle_list = T("Outbox"),
             label_list_button = VIEW_MESSAGE_OUTBOX,
             label_create_button = SEND_MESSAGE,
             msg_record_created = T("Message created"),
             msg_record_modified = T("Message updated"),
             msg_record_deleted = T("Message deleted"),
-            msg_list_empty = T("No Message currently in your OutBox"))
+            msg_list_empty = T("No Message currently in your Outbox"))
     
     def restrict_methods(jr):
 		if jr.method == "create":
@@ -222,7 +225,7 @@ def outbox():
 			return True
     def msg_outbox_onvalidation(form):
         """This onvalidation method adds the person id to the record"""
-        person = (db(db.pr_person.uuid == auth.user.person_uuid).select(db.pr_person.id)).first().id
+        person = db(db.pr_person.uuid == auth.user.person_uuid).select(db.pr_person.id, limitby=(0, 1)).first().id
         form.vars.person_id = person
         if not form.vars.pr_pe_id:
 			session.error = T("Empty Recipients")
@@ -252,7 +255,7 @@ def process_email_via_api():
 
 #-------------------------------------------------------------------------------
 
-@auth.requires_membership("Administrator")
+@auth.shn_requires_membership(1)
 def modem_settings():
     "Modem settings"
     try:
@@ -261,7 +264,7 @@ def modem_settings():
         session.error = T("Python Serial module not available within the\
         Python - this needs installing to activate the Modem")
         redirect(URL(r=request, c="admin", f="index"))
-    resource = "modem_settings"
+    resource = request.function
     tablename = module + "_" + resource
     table = db[tablename]
     
@@ -299,10 +302,10 @@ def modem_settings():
     return shn_rest_controller(module, resource, deletable=False,
     listadd=False)
 
-@auth.requires_membership("Administrator")
+@auth.shn_requires_membership(1)
 def gateway_settings():
     """ Gateway settings """
-    resource = "gateway_settings"
+    resource = request.function
     tablename = module + "_" + resource
     table = db[tablename]
     
@@ -345,13 +348,13 @@ def gateway_settings():
     return shn_rest_controller(module, resource, deletable=False,
     listadd=False)
 
-@auth.requires_membership("Administrator")
+@auth.shn_requires_membership(1)
 def setting():
     """Overall settings for the messaging framework"""
-    resource = "setting"
+    resource = request.function
     tablename = module + "_" + resource
     table = db[tablename]
-    table.outgoing_sms_handler.label = T('Outgoing SMS handler')
+    table.outgoing_sms_handler.label = T("Outgoing SMS handler")
     table.outgoing_sms_handler.comment = DIV(DIV(_class="tooltip",
     _title=T("Outgoing SMS handler|Selects whether to use the gateway or the Modem for sending out SMS")))
     # CRUD Strings
@@ -376,4 +379,45 @@ def setting():
     response.menu_options = admin_menu_options
     return shn_rest_controller(module, resource, deletable=False,
     listadd=False)
-    
+
+def log():
+    """ RESTlike CRUD controller """
+    resource = 'log'
+    tablename = "%s_%s" % (module, resource)
+    table = db[tablename]
+
+    # Model options
+    table.message.comment = SPAN("*", _class="req")
+    table.priority.represent = lambda id: (
+        [id and
+            DIV(IMG(_src='/%s/static/img/priority/priority_%d.gif' % (request.application,id,), _height=12)) or
+            DIV(IMG(_src='/%s/static/img/priority/priority_4.gif' % request.application), _height=12)
+        ][0].xml())
+    table.priority.label = T('Priority')
+    table.person_id.label = T('Sender')
+    # Add Auth Restrictions
+
+    # CRUD Strings
+    ADD_MESSAGE = T('Add Message')
+    LIST_MESSAGES = T('List Messages')
+    s3.crud_strings[tablename] = Storage(
+        title_create = ADD_MESSAGE,
+        title_display = T('Message Ddetails'),
+        title_list = LIST_MESSAGES,
+        title_update = T('Edit message'),
+        title_search = T('Search messages'),
+        subtitle_create = T('Send new message'),
+        subtitle_list = T('Messages'),
+        label_list_button = LIST_MESSAGES,
+        label_create_button = ADD_MESSAGE,
+        msg_record_created = T('Message added'),
+        msg_record_modified = T('Message updated'),
+        msg_record_deleted = T('Message deleted'),
+        msg_list_empty = T('No messages in the system '))
+
+    # Server-side Pagination
+    response.s3.pagination = True
+
+    return shn_rest_controller(module, resource,
+        listadd=False,
+)

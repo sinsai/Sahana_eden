@@ -77,8 +77,8 @@ def now():
             else:
                 last_sync_on_str = ""
             for _module, _resource in tables:
-#                if not (_module == "pr" and _resource == "person"):
-#                    continue
+                if not (_module == "pr" and _resource == "person"):
+                    continue
                 resource_url = peer.instance_url
                 if resource_url.endswith("/")==False:
                     resource_url += "/"
@@ -97,7 +97,9 @@ def now():
                     if tables_error:
                         tables_error += ", "
                     tables_error += _module + "_" + _resource
-                    final_status += "\n<br />ERROR while processing: " + resource_sync_url + "<br />\n"
+                    final_status += "ERROR while processing: " + resource_sync_url + "<br />\n"
+                    error_str = str(e).replace("<", "&lt;").replace(">", "&gt;")
+                    final_status += "ERROR: " + error_str + "<br /><br />\n"
                 else:
                     if tables_success:
                         tables_success += ", "
@@ -105,6 +107,9 @@ def now():
                     final_status += ".........processed " + resource_sync_url + "<br />\n"
             final_status += "......completed<br /><br />\n"
         else:
+            peer_sync_success = False
+
+        if tables_success == "":
             peer_sync_success = False
 
         # log sync job and update sync partner's last_sync_on

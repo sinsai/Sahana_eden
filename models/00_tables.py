@@ -95,6 +95,9 @@ document = db.Table(None, "document",
 # Make URLs clickable
 shn_url_represent = lambda url: (url and [A(url, _href=url, _target="blank")] or [""])[0]
 
+# Phone number requires
+shn_phone_requires = IS_NULL_OR(IS_MATCH('\+?\s*[\s\-\.\(\)\d]+(?:(?: x| ext)\s?\d{1,5})?$'))
+
 # Default CRUD strings
 ADD_RECORD = T("Add Record")
 LIST_RECORDS = T("List Records")

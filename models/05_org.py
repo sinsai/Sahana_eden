@@ -167,10 +167,13 @@ table = db.define_table(tablename, timestamp, uuidstamp, deletion_status,
 table.uuid.requires = IS_NOT_IN_DB(db, "%s.uuid" % tablename)
 #db[table].name.requires = IS_NOT_EMPTY()   # Office names don't have to be unique
 table.name.requires = [IS_NOT_EMPTY(), IS_NOT_IN_DB(db, "%s.name" % tablename)]
-table.parent.requires = IS_NULL_OR(IS_ONE_OF(db, "org_office.id", "%(name)s"))
-table.parent.represent = lambda id: (id and [db(db.org_office.id == id).select(db.org_office.name, limitby=(0, 1)).first().name] or ["None"])[0]
 table.type.requires = IS_NULL_OR(IS_IN_SET(org_office_type_opts))
 table.type.represent = lambda opt: org_office_type_opts.get(opt, UNKNOWN_OPT)
+table.parent.requires = IS_NULL_OR(IS_ONE_OF(db, "org_office.id", "%(name)s"))
+table.parent.represent = lambda id: (id and [db(db.org_office.id == id).select(db.org_office.name, limitby=(0, 1)).first().name] or ["None"])[0]
+table.phone1.requires = shn_phone_requires
+table.phone2.requires = shn_phone_requires
+table.fax.requires = shn_phone_requires
 table.email.requires = IS_NULL_OR(IS_EMAIL())
 table.national_staff.requires = IS_NULL_OR(IS_INT_IN_RANGE(0, 99999))
 table.international_staff.requires = IS_NULL_OR(IS_INT_IN_RANGE(0, 9999))

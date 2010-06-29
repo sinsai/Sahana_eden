@@ -108,16 +108,16 @@ function view4(header,table,numcol,grid_data)
 	['persons_per_dwelling','Persons per dwelling'],
 	['area','Area']
 	];
-    var store;
+    var store='';
     if(table=='or_organization')
 	    store=or_organization;
     if(table=='or_office')
-	    store=or_office;
+	    	store=or_office;
     if(table=='pr_person')
 	    store=pr_person;
     if(table=='cr_shelter')
 	    store=cr_shelter;
-    if(table='budget_kits')
+    if(table=='budget_kits')
 	    store=budget_kits;
     if(table=='budget_item')
 	    store=budget_item;
@@ -145,9 +145,11 @@ function view4(header,table,numcol,grid_data)
 	    colobjs[i].name=colnames[i];
 	    colobjs[i].store=store;
 	    colobjs[i].allowBlank=false;
-	    colobjs[i].blankText='You must select a column';
-	    colobjs[i].emptyText='Select a column';
-	    colobjs[i].editable=true;
+	    colobjs[i].blankText='You must select a field';
+	    colobjs[i].emptyText='Select a field';
+	    colobjs[i].editable=false;
+	    colobjs[i].triggerAction='all';
+	    colobjs[i].typeAhead=true;
 	    colobjs[i]=new Ext.form.ComboBox(colobjs[i]);
 	    i++;
     }
@@ -158,7 +160,7 @@ function view4(header,table,numcol,grid_data)
         renderTo: 'spreadsheet',
         frame: true,
 	labelAlign: 'right',
-        height : 300,
+        height : 'auto',
         items: colobjs,
 	buttons:[
 		{	text: 'Next',
@@ -169,7 +171,7 @@ function view4(header,table,numcol,grid_data)
 						row++;
 					});*/
 					var importsheet={}
-				//	importsheet.rows=grid_data.getCount();
+					importsheet.rows=grid_data.getCount();
 					importsheet.columns=numcol;
 					importsheet.data=new Array();
 					grid_data.each(function()
@@ -200,22 +202,22 @@ function view4(header,table,numcol,grid_data)
 					i=0;
 					var header_row=0;
 					//find location of header row
-				//	while(i<importsheet.rows){
+					while(i<importsheet.rows){
  						if(cmparr(importsheet.data[i],headrow))
 						{
 							header_row=i;
 							break;
-						}		
-				//	}
-				//	document.write(importsheet.rows);
-				    columnmap.getForm().submit({
-				    success: function(form,action){
-				       Ext.Msg.alert('Success', 'It worked');
-					    },
-				    failure: function(form,action){
-				       Ext.Msg.alert('Warning', action.result.msg);
-    					}
-    				});
+						}	
+						i++;	
+					}
+				    	columnmap.getForm().submit({
+				    		success: function(form,action){
+				       			Ext.Msg.alert('Success', 'It worked');
+					    	},
+				    		failure: function(form,action){
+				       			Ext.Msg.alert('Warning', action.result.msg);
+    						}
+    					});
     			}
     		}],
        buttonAlign: 'center'

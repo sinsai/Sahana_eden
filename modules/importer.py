@@ -61,9 +61,11 @@ def json(path_to_file,appname):
         for y in range(0,ncol):
             temp="\n\t\"column%i\":" % y
             try:
-                temp+="\""+str(spreadsheet[x][y])+"\""
+		cell=str(spreadsheet[x][y])    
+            	cell=cell.replace("\n","")
+		temp+="\""+cell+"\""
             except:
-                pass
+            	temp+="\"\""
             if(y is not ncol-1): 
                 temp+=","
             json+=temp

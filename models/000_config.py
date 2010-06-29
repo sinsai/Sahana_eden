@@ -59,5 +59,6 @@ deployment_settings.modules = [
     #"nim",         # Nursing Information Manager
     "rms",          # Request Management
     "ticket",       # Ticketing
-    "vol"           # Volunteer Management
+    "vol",           # Volunteer Management
+    "template"
 ]

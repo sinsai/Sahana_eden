@@ -139,6 +139,13 @@ modules.ticket = {
             "description":"Master Message Log to process incoming reports & requests",
         }
 
+modules.template = {
+            "name_nice":"Template Module",
+            "module_type":4,
+            "access":"",
+            "description":"TEST ONLY",
+        }
+
 # Modules Menu (available in all Controllers)
 s3.menu_modules = []
 module_type = 1

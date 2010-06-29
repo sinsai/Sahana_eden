@@ -77,8 +77,8 @@ def now():
             else:
                 last_sync_on_str = ""
             for _module, _resource in tables:
-                if not (_module == "pr" and _resource == "person"):
-                    continue
+#                if not (_module == "pr" and _resource == "person"):
+#                    continue
                 resource_url = peer.instance_url
                 if resource_url.endswith("/")==False:
                     resource_url += "/"

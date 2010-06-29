@@ -130,6 +130,11 @@ def organisation():
     
     return output
 
+# Should be visible to the Dashboard
+# - so we put them outside their controller function
+table = db.org_organisation
+table.website.represent = shn_url_represent
+
 def office():
     "RESTlike CRUD controller"
     resource = request.function
@@ -232,6 +237,8 @@ def contact():
 # - so we put them outside their controller function
 table = db.org_contact
 table.person_id.label = T("Contact")
+table.person_id.comment = DIV(SPAN("*", _class="req"), shn_person_comment)
+table.organisation_id.comment = DIV(SPAN("*", _class="req"), shn_organisation_comment)
 table.title.label = T("Job Title")
 table.title.comment = A(SPAN("[Help]"), _class="tooltip", _title=T("Title|The Role this person plays within this Office."))
 table.manager_id.label = T("Manager")
@@ -386,7 +393,7 @@ def dashboard():
 
     o_opts = []
     first_option = True;
-    # if we keep the dropdown - it will better be in alphabetic order
+    # if we keep the dropdown - it should be in alphabetic order
     # that way the user will find things easier
     for organisation in db(db.org_organisation.deleted == False).select(db.org_organisation.ALL, orderby = db.org_organisation.name):
         if (org_id == 0 and first_option) or organisation.id == org_id:

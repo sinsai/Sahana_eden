@@ -137,7 +137,7 @@ def export_csv(resource, query, record=None):
 #
 # export_pdf ------------------------------------------------------------------
 #
-def export_pdf(table, query):
+def export_pdf(table, query, list_fields=None):
 
     """ Export record(s) as Adobe PDF """
 
@@ -163,7 +163,13 @@ def export_pdf(table, query):
     import StringIO
     output = StringIO.StringIO()
 
-    fields = [table[f] for f in table.fields if table[f].readable]
+    fields = None
+    if list_fields:
+        fields = [table[f] for f in list_fields if table[f].readable]
+    if fields and len(fields) == 0:
+        fields.append(table.id)
+    if not fields:
+        fields = [table[f] for f in table.fields if table[f].readable]
     _elements = [ SystemField(
                         expression="%(report_title)s",
                         top=0.1*cm,
@@ -185,7 +191,17 @@ def export_pdf(table, query):
         represent = table[field].represent
         if not represent:
             represent = lambda v: str(v)
-        return represent(data)
+        text = str(represent(data)).decode("utf-8")
+        # Filter out markup from text
+        if "<" in text:
+            try:
+                markup = etree.XML(text)
+                text = markup.xpath(".//text()")
+                if text:
+                    text = " ".join(text)
+            except etree.XMLSyntaxError:
+                pass
+        return text
     
     for field in fields:
         _elements.append(Label(text=str(field.label)[:16], top=0.8*cm, left=LEFTMARGIN*cm))
@@ -363,6 +379,15 @@ def export_xls(table, query, list_fields=None):
 
             # Check for a custom.represent (e.g. for ref fields)
             represent = shn_field_represent(field, item, col)
+            # Filter out markup from text
+            if isinstance(represent, basestring) and "<" in represent:
+                try:
+                    markup = etree.XML(represent)
+                    represent = markup.xpath(".//text()")
+                    if represent:
+                        represent = " ".join(represent)
+                except etree.XMLSyntaxError:
+                    pass
 
             rowx.write(cell1, str(represent), style)
             cell1 += 1
@@ -1155,7 +1180,7 @@ def shn_read(jr, **attr):
 
         elif jr.representation == "pdf": # TODO: encoding problems, doesn't quite work
             query = db[table].id == record_id
-            return export_pdf(table, query)
+            return export_pdf(table, query, list_fields)
 
         elif jr.representation == "xls":
             query = db[table].id == record_id
@@ -1311,7 +1336,8 @@ def shn_list(jr, **attr):
         fields = None
 
         if list_fields:
-            fields = [f for f in list_fields if table[f].readable]
+            fkey = jr.fkey or None
+            fields = [f for f in list_fields if table[f].readable and f != fkey]
 
         if fields and len(fields) == 0:
             fields.append("id")
@@ -1369,9 +1395,10 @@ def shn_list(jr, **attr):
         fields = None
 
         if list_fields:
-            fields = [table[f] for f in list_fields if table[f].readable]
+            fkey = jr.fkey or None
+            fields = [table[f] for f in list_fields if table[f].readable and f != fkey]
 
-        if fields and len(fields)==0:
+        if fields and len(fields) == 0:
             fields.append(table.id)
 
         if not fields:
@@ -1537,7 +1564,7 @@ def shn_list(jr, **attr):
         return export_csv(resource, query)
 
     elif jr.representation == "pdf":
-        return export_pdf(table, query)
+        return export_pdf(table, query, list_fields)
 
     elif jr.representation == "xls":
         return export_xls(table, query, list_fields)

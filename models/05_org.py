@@ -98,12 +98,19 @@ table.website.requires = IS_NULL_OR(IS_URL())
 # Reusable field
 ADD_ORGANIZATION = T("Add Organization")
 organisation_popup_url = URL(r=request, c="org", f="organisation", args="create", vars=dict(format="popup"))
+shn_organisation_comment = DIV(A(ADD_ORGANIZATION,
+                           _class="colorbox",
+                           _href=organisation_popup_url,
+                           _target="top",
+                           _title=ADD_ORGANIZATION),
+                         DIV(DIV(_class="tooltip",
+                                 _title=T("Add Organization|The Organization this record is associated with."))))
 organisation_id = db.Table(None, "organisation_id",
                            FieldS3("organisation_id", db.org_organisation, sortby="name",
                            requires = IS_NULL_OR(IS_ONE_OF(db, "org_organisation.id", "%(name)s")),
                            represent = lambda id: (id and [db(db.org_organisation.id == id).select(db.org_organisation.name, limitby=(0, 1)).first().name] or ["None"])[0],
                            label = T("Organization"),
-                           comment = DIV(A(ADD_ORGANIZATION, _class="colorbox", _href=organisation_popup_url, _target="top", _title=ADD_ORGANIZATION), DIV(DIV(_class="tooltip", _title=T("Add Organization|The Organization this record is associated with.")))),
+                           comment = shn_organisation_comment,
                            ondelete = "RESTRICT"
                           ))
 
@@ -119,7 +126,8 @@ s3xrc.model.configure(table,
                                      "name",
                                      "acronym",
                                      "type",
-                                     "country"])
+                                     "country",
+                                     "website"])
 
 # -----------------------------------------------------------------------------
 # Offices
@@ -189,6 +197,8 @@ s3xrc.model.add_component(module, resource,
 s3xrc.model.configure(table,
                       list_fields=["id",
                                    "name",
+                                   "organisation_id",   # Filtered in Component views
+                                   "location_id",
                                    "phone1",
                                    "email"])
 
@@ -211,6 +221,8 @@ table = db.define_table(tablename, timestamp, deletion_status,
                 migrate=migrate)
 
 # Field settings
+# Over-ride the default IS_NULL_OR as Contact doesn't make sense without an associated Organisation
+table.organisation_id.requires = IS_ONE_OF(db, "org_organisation.id", "%(name)s")
 table.manager_id.requires = IS_NULL_OR(IS_ONE_OF(db, "pr_person.id", shn_pr_person_represent))
 table.manager_id.represent = lambda id: (id and [shn_pr_person_represent(id)] or ["None"])[0]
 

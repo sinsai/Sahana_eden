@@ -33,13 +33,22 @@ table = db.define_table(tablename,
                 Field("sync_pools"),                        # Comma-separated list of sync pools we've subscribed to
                 migrate=migrate)
 
+sync_partner_instance_type_opts = {
+    "SahanaEden":T("SahanaEden"),
+    "SahanaAgasti":T("SahanaAgasti"),
+    "Ushahidi":T("Ushahidi"),
+    "Other":T("Other")
+}
+
 # Custom settings for sync partners
 resource = "partner"
 tablename = "%s_%s" % (module, resource)
 table = db.define_table(tablename,
                 Field("uuid", length=36),                   # uuid of this partner
                 Field("instance_url", default = "http://eden.sahanafoundation.org/"), # URL of their instance
-                Field("instance_type"),                     # the type of instance => "SahanaEden", "SahanaAgasti", "Ushahidi", etc.
+                Field("instance_type",                      # the type of instance => "SahanaEden", "SahanaAgasti", "Ushahidi", etc.
+                    default="SahanaEden",
+                    requires = IS_IN_SET(sync_partner_instance_type_opts) ),
                 Field("username"),                          # login username for this partner
                 Field("password"),                          # login password for this partner
                 Field("peer_description", length=64),

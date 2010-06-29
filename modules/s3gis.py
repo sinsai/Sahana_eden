@@ -1278,8 +1278,12 @@ OpenLayers.Util.extend( selectPdfControl, {
             layout = """
         var win = new Ext.Window({
             collapsible: true,
+            constrain: true,
             """
-            layout2 = "win.show();"
+            layout2 = """
+        win.show();
+        win.maximize();
+        """
         else:
             # Embedded
             layout = """

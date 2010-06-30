@@ -28,7 +28,7 @@ def index():
 
 
 def req(): #aid requests
-    "RESTlike CRUD controller"
+    "RESTful CRUD controller"
 
     resource = request.function # pulls from table of combined aid request feeds (sms, tweets, manual)
 
@@ -64,7 +64,7 @@ def req(): #aid requests
 
 
 def pledge(): #pledges from agencies
-    "RESTlike CRUD controller"
+    "RESTful CRUD controller"
 
     resource = request.function
 

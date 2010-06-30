@@ -34,7 +34,7 @@ def tbc():
     return dict()
 
 def email_settings():
-    """ RESTlike CRUD controller for email settings - appears in the administration menu """
+    """ RESTful CRUD controller for email settings - appears in the administration menu """
     resource = request.function
     tablename = module + "_" + resource
     table = db[tablename]
@@ -85,7 +85,7 @@ def group():
     resource = request.function
     response.s3.filter = (db.pr_group.system == False) # do not show system groups
     response.s3.pagination = True
-    "RESTlike CRUD controller"
+    "RESTful CRUD controller"
     return shn_rest_controller("pr", resource,
                                main="group_name",
                                extra="group_description",
@@ -93,7 +93,7 @@ def group():
                                deletable=False)
 # -----------------------------------------------------------------------------
 def group_membership():
-    "RESTlike CRUD controller"
+    "RESTful CRUD controller"
     resource = request.function
     return shn_rest_controller("pr", resource)
 
@@ -175,7 +175,7 @@ def search():
 
 #-------------------------------------------------------------------------------
 def outbox():
-    "RESTlike CRUD controller"
+    "RESTful CRUD controller"
     resource = request.function
     tablename = module + "_" + resource
     table = db[tablename]
@@ -381,7 +381,7 @@ def setting():
     listadd=False)
 
 def log():
-    """ RESTlike CRUD controller """
+    """ RESTful CRUD controller """
     resource = 'log'
     tablename = "%s_%s" % (module, resource)
     table = db[tablename]

@@ -27,12 +27,12 @@ def index():
     return dict(module_name=module_name, a=1)
 
 def category():
-    """ RESTlike CRUD controller """
+    """ RESTful CRUD controller """
     resource = request.function
     return shn_rest_controller(module, resource, listadd=False)
 
 def log():
-    """ RESTlike CRUD controller """
+    """ RESTful CRUD controller """
     resource = request.function
     tablename = "%s_%s" % (module, resource)
     table = db[tablename]

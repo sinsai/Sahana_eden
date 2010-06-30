@@ -71,7 +71,7 @@ def test2():
     return dict()
 
 def apikey():
-    "RESTlike CRUD controller"
+    "RESTful CRUD controller"
     resource = request.function
     tablename = module + "_" + resource
     table = db[tablename]
@@ -115,7 +115,7 @@ def apikey():
     return output
 
 def config():
-    "RESTlike CRUD controller"
+    "RESTful CRUD controller"
     resource = request.function
     tablename = module + "_" + resource
     table = db[tablename]
@@ -166,7 +166,7 @@ def config():
     return output
 
 def feature_class():
-    "RESTlike CRUD controller"
+    "RESTful CRUD controller"
     resource = request.function
     tablename = module + "_" + resource
     table = db[tablename]
@@ -212,7 +212,7 @@ def feature_class():
     return output
 
 def feature_group():
-    "RESTlike CRUD controller"
+    "RESTful CRUD controller"
     resource = request.function
     tablename = module + "_" + resource
     table = db[tablename]
@@ -256,7 +256,7 @@ def feature_group():
     return output
 
 def feature_class_to_feature_group():
-    "RESTlike CRUD controller"
+    "RESTful CRUD controller"
     resource = request.function
     table = module + "_" + resource
 
@@ -278,7 +278,7 @@ def feature_class_to_feature_group():
     return output
 
 def location():
-    "RESTlike CRUD controller"
+    "RESTful CRUD controller"
     resource = request.function
     tablename = module + "_" + resource
     table = db[tablename]
@@ -369,7 +369,7 @@ def location():
     return output
 
 def marker():
-    "RESTlike CRUD controller"
+    "RESTful CRUD controller"
     resource = request.function
     tablename = module + "_" + resource
     table = db[tablename]
@@ -411,7 +411,7 @@ def marker():
     return output
 
 def projection():
-    "RESTlike CRUD controller"
+    "RESTful CRUD controller"
     resource = request.function
     tablename = module + "_" + resource
     table = db[tablename]
@@ -460,7 +460,7 @@ def projection():
     return output
 
 def track():
-    "RESTlike CRUD controller"
+    "RESTful CRUD controller"
     resource = request.function
     table = module + "_" + resource
 
@@ -499,7 +499,7 @@ LIST_TYPE_LAYERS_FMT = "List %s Layers"
 NO_TYPE_LAYERS_FMT = "No %s Layers currently defined"
 
 def layer_openstreetmap():
-    "RESTlike CRUD controller"
+    "RESTful CRUD controller"
     resource = request.function
     table = module + "_" + resource
 
@@ -540,7 +540,7 @@ def layer_openstreetmap():
     return output
 
 def layer_google():
-    "RESTlike CRUD controller"
+    "RESTful CRUD controller"
     resource = request.function
     table = module + "_" + resource
 
@@ -581,7 +581,7 @@ def layer_google():
     return output
 
 def layer_yahoo():
-    "RESTlike CRUD controller"
+    "RESTful CRUD controller"
     resource = request.function
     table = module + "_" + resource
 
@@ -622,7 +622,7 @@ def layer_yahoo():
     return output
 
 def layer_mgrs():
-    "RESTlike CRUD controller"
+    "RESTful CRUD controller"
     resource = request.function
     table = module + "_" + resource
 
@@ -663,7 +663,7 @@ def layer_mgrs():
     return output
 
 def layer_bing():
-    "RESTlike CRUD controller"
+    "RESTful CRUD controller"
     resource = request.function
     table = module + "_" + resource
 
@@ -704,7 +704,7 @@ def layer_bing():
     return output
 
 def layer_georss():
-    "RESTlike CRUD controller"
+    "RESTful CRUD controller"
     resource = request.function
     tablename = module + "_" + resource
     table = db[tablename]
@@ -749,7 +749,7 @@ def layer_georss():
     return output
 
 def layer_gpx():
-    "RESTlike CRUD controller"
+    "RESTful CRUD controller"
     resource = request.function
     table = module + "_" + resource
 
@@ -793,7 +793,7 @@ def layer_gpx():
     return output
 
 def layer_kml():
-    "RESTlike CRUD controller"
+    "RESTful CRUD controller"
     resource = request.function
     tablename = module + "_" + resource
     table = db[tablename]
@@ -838,7 +838,7 @@ def layer_kml():
     return output
 
 def layer_tms():
-    "RESTlike CRUD controller"
+    "RESTful CRUD controller"
     resource = request.function
     tablename = module + "_" + resource
     table = db[tablename]
@@ -884,7 +884,7 @@ def layer_tms():
     return output
 
 def layer_wms():
-    "RESTlike CRUD controller"
+    "RESTful CRUD controller"
     resource = request.function
     tablename = module + "_" + resource
     table = db[tablename]
@@ -931,7 +931,7 @@ def layer_wms():
 
 #@auth.shn_requires_membership("AdvancedJS")
 def layer_js():
-    "RESTlike CRUD controller"
+    "RESTful CRUD controller"
     resource = request.function
     table = module + "_" + resource
 
@@ -974,7 +974,7 @@ def layer_js():
     return output
 
 def layer_xyz():
-    "RESTlike CRUD controller"
+    "RESTful CRUD controller"
     resource = request.function
     tablename = module + "_" + resource
     table = db[tablename]

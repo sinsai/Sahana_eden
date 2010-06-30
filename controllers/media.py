@@ -33,7 +33,7 @@ def index():
     return dict(module_name=module_name)
 
 def metadata():
-    "RESTlike CRUD controller"
+    "RESTful CRUD controller"
     resource = request.function
     tablename = module + "_" + resource
     table = db[tablename]
@@ -68,7 +68,7 @@ def metadata():
     return shn_rest_controller(module, resource)
 
 def image():
-    "RESTlike CRUD controller"
+    "RESTful CRUD controller"
     resource = request.function
     table = module + "_" + resource
 

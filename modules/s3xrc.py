@@ -34,7 +34,7 @@
 """
 
 __name__ = "S3XRC"
-__all__ = ["S3RESTController", "S3ResourceController"]
+__all__ = ["S3Resource", "S3RESTController", "S3ResourceController"]
 
 import sys, uuid, datetime, time, urllib
 import gluon.contrib.simplejson as json
@@ -62,87 +62,75 @@ S3XRC_NOT_IMPLEMENTED = "Not Implemented"
 # *****************************************************************************
 class S3Resource(object):
 
-    """ Class representing resources """
+    UID = "uuid"
+    DELETED = "deleted"
 
-    def __init__(self, rc, prefix, name, id=None, **attr):
+    def __init__(self, manager, prefix, name, id=None, uid=None, query=None, **attr):
 
-        """ Constructor
-
-            @param rc: the resource controller
-            @param prefix: the prefix of the resource name (=module prefix)
-            @param name: the name of the resource without prefix
-            @param attr: attributes
-
-        """
-
-        self.__rc = rc
-        self.__db = None
+        assert manager is not None, "Undefined Resource Manager"
+        self.manager = manager
 
         self.prefix = prefix
         self.name = name
-        self.tablename = "%s_%s" % (prefix, name)
 
-        self.tree = None
-        self.__storage = attr.get("storage", None)
-        self.__bind(self.__storage)
+        self.attr = Storage(attr)
 
-        self.components = self.__rc.model.get_components(self.prefix, self.name)
-        self.m2m = self.__rc.model.get_many2many(self.prefix, self.name)
+        self.storage = self.attr.storage
+        self.__bind()
 
-    def __bind(self, storage):
+        self.__ids = []
+        self.__uids = []
+        self.__records = None
 
-        """ Bind this resource to a data store
-
-            @param storage: the data store, None for DAL
-
-        """
-
-        # Bind to model
-        self.__db = self.__rc.db
-        self.table = self.__db.get(self.tablename, None)
-        if not self.table:
-            raise KeyError("Table '%s' does not exist" % self.tablename)
-
-        if storage is None:
-            return
-
-        elif isinstance(storage, basestring):
-            # Bind to a file or URL
-            raise NotImplementedError
-
-        elif isinstance(storage, etree._ElementTree):
-            # Bind to an ElementTree
-            raise NotImplementedError
-
-        elif isinstance(storage, etree._Element):
-            # Bind to an Element
-            raise NotImplementedError
-
+        # Master query
+        if id:
+            if not isinstance(id, (list, tuple)):
+                id = [id]
+            self.__ids = list(id)
+            if len(self.__ids) == 1:
+                self.__query = (self.table.id == self.__ids[0])
+            else:
+                self.__query = (self.table.id.belongs(self.__ids))
         else:
-            # Invalid type
-            raise TypeError("Invalid storage type: %s" % type(storage))
+            self.__query = (self.table.id>0)
+
+        # UID filter
+        if uid and self.UID in self.table.fields:
+            if not isinstance(uid, (list, tuple)):
+                uid = [uid]
+            self.__uids = list(uid)
+            if self.__uids:
+                if len(self.__uids) == 1:
+                    q = (self.table[self.UID] == self.__uids[0])
+                else:
+                    q = (self.table[self.UID].belongs(self.__uids))
+                self.__query = self.__query & q
+
+        # Custom query filter
+        if query:
+            self.__query = self.__query & query
+
+        # Deletion status filter
+        if self.DELETED in self.table.fields:
+            self.__query = (self.table[self.DELETED] == False) & self.__query
 
 
-    def execute_request(self, request):
+    def __bind(self):
 
-        """ Executes a S3RESTRequest on this resource """
+        self.db = self.manager.db
+        self.tablename = "%s_%s" % (self.prefix, self.name)
 
-        raise NotImplementedError
+        self.table = self.db.get(self.tablename, None)
+        if not self.table:
+            raise KeyError("Undefined table: %s" % self.tablename)
+
+        if self.storage is not None:
+            raise NotImplementedError
 
 
-    def fetchxml(self):
+    def execute_request(self):
 
-        """ Imports data from an XML source into this resource """
-
-        raise NotImplementedError
-
-
-    def pushxml(self):
-
-        """ Exports data of this resource as XML to a URL """
-
-        raise NotImplementedError
-
+        return dict(resource=self)
 
 # *****************************************************************************
 class S3RESTController(object):
@@ -169,6 +157,7 @@ class S3RESTController(object):
 
         assert rc is not None, "Undefined resource controller"
         self.rc = rc
+        self.db = self.rc.db
 
         assert auth is not None, "Undefined authentication controller"
         self.auth = auth
@@ -1790,21 +1779,11 @@ class S3ResourceController(object):
 
     # Resource ================================================================
 
-    def resource(self, prefix, name, id=[], **attr):
+    def resource(self, prefix, name, id=None, uid=None, query=None, **attr):
 
         """ Wrapper function for the S3Resource class """
 
-        return S3Resource(self, prefix, name, id=id, **attr)
-
-
-    def parse_request(self, prefix, name, request, response, session):
-
-        """ The new request parser (tbd) """
-
-        res = None
-        req = None
-
-        return (res, req)
+        return S3Resource(self, prefix, name, id=id, uid=uid, query=query, **attr)
 
 
     # Session helpers =========================================================

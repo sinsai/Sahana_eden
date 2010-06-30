@@ -202,7 +202,7 @@ def export_pdf(table, query, list_fields=None):
             except etree.XMLSyntaxError:
                 pass
         return text
-    
+
     for field in fields:
         _elements.append(Label(text=str(field.label)[:16], top=0.8*cm, left=LEFTMARGIN*cm))
         tab, col = str(field).split(".")

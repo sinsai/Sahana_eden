@@ -78,37 +78,6 @@ def organisation():
     "RESTlike CRUD controller"
 
     resource = request.function
-    tablename = "%s_%s" % (module, resource)
-    table = db[tablename]
-   
-    table.name.label = T("Name")
-    table.name.comment = SPAN("*", _class="req")
-    table.acronym.label = T("Acronym")
-    table.type.label = T("Type")
-    table.donation_phone.label = T("Donation Phone #")
-    table.donation_phone.comment = A(SPAN("[Help]"), _class="tooltip", _title=T("Donation Phone #|Phone number to donate to this organization's relief efforts."))
-    table.country.label = T("Home Country")
-    table.website.label = T("Website")
-    table.twitter.label = T("Twitter")
-    table.twitter.comment = A(SPAN("[Help]"), _class="tooltip", _title=T("Twitter|Twitter ID or #hashtag"))
-
-    # CRUD strings
-    LIST_ORGANIZATIONS = T("List Organizations")
-    s3.crud_strings[tablename] = Storage(
-        title_create = ADD_ORGANIZATION,
-        title_display = T("Organization Details"),
-        title_list = LIST_ORGANIZATIONS,
-        title_update = T("Edit Organization"),
-        title_search = T("Search Organizations"),
-        subtitle_create = T("Add New Organization"),
-        subtitle_list = T("Organizations"),
-        label_list_button = LIST_ORGANIZATIONS,
-        label_create_button = ADD_ORGANIZATION,
-        label_delete_button = T("Delete Organization"),
-        msg_record_created = T("Organization added"),
-        msg_record_modified = T("Organization updated"),
-        msg_record_deleted = T("Organization deleted"),
-        msg_list_empty = T("No Organizations currently registered"))
 
     def org_prep(jr):
         if jr.representation == "html":
@@ -126,14 +95,50 @@ def organisation():
     # ServerSidePagination
     response.s3.pagination = True
     
-    output = shn_rest_controller(module, resource, listadd=False)
-    
+    output = shn_rest_controller(module, resource, listadd=False,
+                                 rheader=lambda jr: shn_org_rheader(jr,
+                                                                    tabs = [(T("Basic Details"), None),
+                                                                            (T("Contact Data"), "pe_contact"),
+                                                                           ]
+                                                                   ),
+                                 sticky=True
+                                )
+
     return output
 
-# Should be visible to the Dashboard
+# Component Resources need these settings to be visible where they are linked from
 # - so we put them outside their controller function
-table = db.org_organisation
+tablename = "%s_%s" % (module, "organisation")
+table = db[tablename]
+table.name.label = T("Name")
+table.name.comment = SPAN("*", _class="req")
+table.acronym.label = T("Acronym")
+table.type.label = T("Type")
+table.donation_phone.label = T("Donation Phone #")
+table.donation_phone.comment = A(SPAN("[Help]"), _class="tooltip", _title=T("Donation Phone #|Phone number to donate to this organization's relief efforts."))
+table.country.label = T("Home Country")
+table.website.label = T("Website")
+# Should be visible to the Dashboard
 table.website.represent = shn_url_represent
+table.twitter.label = T("Twitter")
+table.twitter.comment = A(SPAN("[Help]"), _class="tooltip", _title=T("Twitter|Twitter ID or #hashtag"))
+# CRUD strings
+LIST_ORGANIZATIONS = T("List Organizations")
+s3.crud_strings[tablename] = Storage(
+    title_create = ADD_ORGANIZATION,
+    title_display = T("Organization Details"),
+    title_list = LIST_ORGANIZATIONS,
+    title_update = T("Edit Organization"),
+    title_search = T("Search Organizations"),
+    subtitle_create = T("Add New Organization"),
+    subtitle_list = T("Organizations"),
+    label_list_button = LIST_ORGANIZATIONS,
+    label_create_button = ADD_ORGANIZATION,
+    label_delete_button = T("Delete Organization"),
+    msg_record_created = T("Organization added"),
+    msg_record_modified = T("Organization updated"),
+    msg_record_deleted = T("Organization deleted"),
+    msg_list_empty = T("No Organizations currently registered"))
 
 def office():
     "RESTlike CRUD controller"
@@ -164,13 +169,21 @@ def office():
             # Organisation name should be displayed on the form if organisation_id is pre-selected
             session.s3.organisation_name = db(db.org_organisation.id == int(session.s3.organisation_id)).select(db.org_organisation.name).first().name
     
-    output = shn_rest_controller(module, resource, listadd=False, rheader=shn_office_rheader)
-    
+    output = shn_rest_controller(module, resource, listadd=False,
+                                 rheader=lambda jr: shn_org_rheader(jr,
+                                                                    tabs = [(T("Basic Details"), None),
+                                                                            (T("Contact Data"), "pe_contact"),
+                                                                           ]
+                                                                   ),
+                                 sticky=True
+                                )
+
     return output
 
 # Component Resources need these settings to be visible where they are linked from
 # - so we put them outside their controller function
-table = db.org_office
+tablename = "%s_%s" % (module, "office")
+table = db[tablename]
 table.name.label = T("Name")
 table.name.comment = SPAN("*", _class="req")
 table.parent.label = T("Parent")
@@ -186,7 +199,6 @@ table.international_staff.label = T("International Staff")
 table.number_of_vehicles.label = T("Number of Vehicles")
 table.vehicle_types.label = T("Vehicle Types")
 table.equipment.label = T("Equipment")
-
 # CRUD strings
 LIST_OFFICES = T("List Offices")
 s3.crud_strings[tablename] = Storage(
@@ -235,7 +247,8 @@ def contact():
 
 # Component Resources need these settings to be visible where they are linked from
 # - so we put them outside their controller function
-table = db.org_contact
+tablename = "%s_%s" % (module, "contact")
+table = db[tablename]
 table.person_id.label = T("Contact")
 table.person_id.comment = DIV(SPAN("*", _class="req"), shn_person_comment)
 table.organisation_id.comment = DIV(SPAN("*", _class="req"), shn_organisation_comment)
@@ -244,7 +257,6 @@ table.title.comment = A(SPAN("[Help]"), _class="tooltip", _title=T("Title|The Ro
 table.manager_id.label = T("Manager")
 table.manager_id.comment = A(SPAN("[Help]"), _class="tooltip", _title=T("Manager|The person's manager within this Office."))
 table.focal_point.comment = A(SPAN("[Help]"), _class="tooltip", _title=T("Focal Point|The contact person for this organization."))
-
 # CRUD strings
 ADD_CONTACT = T("Add Contact")
 LIST_CONTACTS = T("List Contacts")
@@ -283,7 +295,8 @@ def project():
 
 # Component Resources need these settings to be visible where they are linked from
 # - so we put them outside their controller function
-table = db.org_project
+tablename = "%s_%s" % (module, "project")
+table = db[tablename]
 ADD_PROJECT = T("Add Project")
 s3.crud_strings[tablename] = Storage(
     title_create = ADD_PROJECT,
@@ -453,36 +466,67 @@ def who_what_where_when():
     #print project_list
     return dict(project_list = project_list)
 
-def shn_office_rheader(jr):
+def shn_org_rheader(jr, tabs=[]):
+    " Organisation Registry page headers "
 
-    if jr.name == "office":
-        if jr.representation == "html":
+    if jr.representation == "html":
+        
+        rheader_tabs = shn_rheader_tabs(jr, tabs)
+        
+        if jr.name == "organisation":
+        
+            _next = jr.here()
+            _same = jr.same()
 
+            organisation = jr.record
+
+            sectors = re.split("\|", organisation.sector_id)[1:-1]
+            _sectors = TABLE()
+            for sector in sectors:
+                _sectors.append(TR(db(db.org_sector.id == sector).select(db.org_sector.name, limitby=(0, 1)).first().name))
+            
+            rheader = DIV(TABLE(
+                TR(
+                    TH(T("Organisation: ")),
+                    organisation.name,
+                    TH(T("Sector(s): ")),
+                    _sectors
+                    ),
+                TR(
+                    #TH(A(T("Edit Organization"),
+                    #    _href=URL(r=request, c="org", f="organisation", args=[jr.id, "update"], vars={"_next": _next})))
+                    TH(T("Type: ")),
+                    org_organisation_type_opts[organisation.type],
+                    )
+            ), rheader_tabs)
+
+            return rheader
+
+        elif jr.name == "office":
+        
             _next = jr.here()
             _same = jr.same()
 
             office = jr.record
             organisation = db(db.org_organisation.id == office.organisation_id).select(db.org_organisation.name, limitby=(0, 1)).first()
 
-            rheader = TABLE(
-                TR(
-                    TH(T("Name: ")),
-                    office.name,
-                    TH(T("Type: ")),
-                    office.type,
-                TR(
-                    TH(T("Organisation: ")),
-                    organisation.name
-                    ),
-                    TH(T("Sector: ")),
-                    db(db.org_sector.id == organisation.sector_id).select(db.org_sector.name, limitby=(0, 1)).first().name
-                    ),
-                TR(
-                    TH(A(T("Edit Office"),
-                        _href=URL(r=request, c="org", f="office", args=[jr.id, "update"], vars={"_next": _next})))
-                    )
-            )
+            rheader = DIV(TABLE(
+                    TR(
+                        TH(T("Name: ")),
+                        office.name,
+                        TH(T("Type: ")),
+                        org_office_type_opts[office.type],
+                        ),
+                    TR(
+                        TH(T("Organisation: ")),
+                        organisation.name
+                        ),
+                    TR(
+                        TH(A(T("Edit Office"),
+                            _href=URL(r=request, c="org", f="office", args=[jr.id, "update"], vars={"_next": _next})))
+                        )
+                ), rheader_tabs)
+
             return rheader
 
     return None
-

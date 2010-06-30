@@ -70,6 +70,7 @@ org_organisation_type_opts = {
 resource = "organisation"
 tablename = module + "_" + resource
 table = db.define_table(tablename, timestamp, uuidstamp, deletion_status,
+                pr_pe_fieldset,                         # Person Entity Field Set
                 #Field("privacy", "integer", default=0),
                 #Field("archived", "boolean", default=False),
                 Field("name", length=128, notnull=True, unique=True),
@@ -80,7 +81,7 @@ table = db.define_table(tablename, timestamp, uuidstamp, deletion_status,
                 #Field("registration", label=T("Registration")),    # Registration Number
                 Field("country", "integer"),
                 Field("website"),
-                Field("twitter"),
+                Field("twitter"),   # deprecated by pe_contact component
                 Field("donation_phone"),
                 shn_comments_field,
                 source_id,
@@ -88,12 +89,15 @@ table = db.define_table(tablename, timestamp, uuidstamp, deletion_status,
 
 # Field settings
 table.uuid.requires = IS_NOT_IN_DB(db, "%s.uuid" % tablename)
+table.pr_pe_label.readable = False
+table.pr_pe_label.writable = False
 table.name.requires = [IS_NOT_EMPTY(), IS_NOT_IN_DB(db, "%s.name" % tablename)]
 table.type.requires = IS_NULL_OR(IS_IN_SET(org_organisation_type_opts))
 table.type.represent = lambda opt: org_organisation_type_opts.get(opt, UNKNOWN_OPT)
 table.country.requires = IS_NULL_OR(IS_IN_SET(shn_list_of_nations))
 table.country.represent = lambda opt: shn_list_of_nations.get(opt, UNKNOWN_OPT)
 table.website.requires = IS_NULL_OR(IS_URL())
+table.donation_phone.requires = shn_phone_requires
 
 # Reusable field
 ADD_ORGANIZATION = T("Add Organization")
@@ -122,6 +126,9 @@ s3xrc.model.add_component(module, resource,
                           editable=True)
 
 s3xrc.model.configure(table,
+                      # Ensure that table is substituted when lambda defined not evaluated by using the default value
+                      onaccept=lambda form, tab=table: shn_pentity_onaccept(form, table=tab, entity_type=5),
+                      delete_onaccept=lambda form: shn_pentity_ondelete(form),
                       list_fields = ["id",
                                      "name",
                                      "acronym",
@@ -142,6 +149,7 @@ org_office_type_opts = {
 resource = "office"
 tablename = module + "_" + resource
 table = db.define_table(tablename, timestamp, uuidstamp, deletion_status,
+                pr_pe_fieldset,                         # Person Entity Field Set
                 Field("name", notnull=True),
                 organisation_id,
                 Field("type", "integer"),
@@ -165,6 +173,8 @@ table = db.define_table(tablename, timestamp, uuidstamp, deletion_status,
 
 # Field settings
 table.uuid.requires = IS_NOT_IN_DB(db, "%s.uuid" % tablename)
+table.pr_pe_label.readable = False
+table.pr_pe_label.writable = False
 #db[table].name.requires = IS_NOT_EMPTY()   # Office names don't have to be unique
 table.name.requires = [IS_NOT_EMPTY(), IS_NOT_IN_DB(db, "%s.name" % tablename)]
 table.type.requires = IS_NULL_OR(IS_IN_SET(org_office_type_opts))
@@ -198,6 +208,9 @@ s3xrc.model.add_component(module, resource,
                           editable=True)
 
 s3xrc.model.configure(table,
+                      # Ensure that table is substituted when lambda defined not evaluated by using the default value
+                      onaccept=lambda form, tab=table: shn_pentity_onaccept(form, table=tab, entity_type=6),
+                      delete_onaccept=lambda form: shn_pentity_ondelete(form),
                       list_fields=["id",
                                    "name",
                                    "organisation_id",   # Filtered in Component views

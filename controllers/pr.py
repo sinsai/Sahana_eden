@@ -162,43 +162,43 @@ def group():
 
 # -----------------------------------------------------------------------------
 def image():
-    "RESTlike CRUD controller"
+    "RESTful CRUD controller"
     resource = request.function
     return shn_rest_controller(module, resource)
 
 # -----------------------------------------------------------------------------
 def pe_contact():
-    "RESTlike CRUD controller"
+    "RESTful CRUD controller"
     resource = request.function
     return shn_rest_controller(module, resource)
 
 # -----------------------------------------------------------------------------
 def address():
-    "RESTlike CRUD controller"
+    "RESTful CRUD controller"
     resource = request.function
     return shn_rest_controller(module, resource)
 
 # -----------------------------------------------------------------------------
 def presence():
-    "RESTlike CRUD controller"
+    "RESTful CRUD controller"
     resource = request.function
     return shn_rest_controller(module, resource)
 
 # -----------------------------------------------------------------------------
 def identity():
-    "RESTlike CRUD controller"
+    "RESTful CRUD controller"
     resource = request.function
     return shn_rest_controller(module, resource)
 
 # -----------------------------------------------------------------------------
 def group_membership():
-    "RESTlike CRUD controller"
+    "RESTful CRUD controller"
     resource = request.function
     return shn_rest_controller(module, resource)
 
 # -----------------------------------------------------------------------------
 def pentity():
-    "RESTlike CRUD controller"
+    "RESTful CRUD controller"
     resource = request.function
     return shn_rest_controller(module, resource)
 

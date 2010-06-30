@@ -83,7 +83,7 @@ def index():
     return dict(module_name=module_name, modules=modules, admin_name=admin_name, admin_email=admin_email, admin_tel=admin_tel)
 
 def source():
-    "RESTlike CRUD controller"
+    "RESTful CRUD controller"
     return shn_rest_controller('s3', 'source')
 
 # NB These 4 functions are unlikely to get used in production

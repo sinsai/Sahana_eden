@@ -102,6 +102,7 @@ pr_contact_method_opts = {
     4:T("Twitter"),
     5:T("Telephone"),
     6:T("Fax"),
+    7:T("Facebook"),
     99:T("other")
     }
 

@@ -91,8 +91,8 @@ class Vita(object):
             2:self.T("Group"),           # a group
             3:self.T("Body"),            # a dead body or body part
             4:self.T("Object"),          # other objects belonging to persons
-            5:self.T("Organisation"),
-            6:self.T("Office")
+            5:self.T("Organisation"),    # an organisation
+            6:self.T("Office"),          # an office
         }
         self.DEFAULT_TRACKABLE = 1
 

@@ -10,6 +10,8 @@ import os, traceback, datetime
 import re
 import uuid
 
+from lxml import etree
+
 from gluon.sql import SQLCustomType
 
 # All dates should be stored in UTC for Sync to work reliably

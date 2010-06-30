@@ -26,7 +26,7 @@ def index():
     return dict(module_name=module_name)
 
 def shelter():
-    """ RESTlike CRUD controller
+    """ RESTful CRUD controller
     >>> resource='shelter'
     >>> from applications.sahana.modules.s3_test import WSGI_Test
     >>> test=WSGI_Test(db)

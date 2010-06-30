@@ -70,6 +70,7 @@ def hospital():
     table.phone_emergency.label = T("Phone/Emergency")
     table.email.label = T("Email")
     table.fax.label = T("FAX")
+    table.website.represent = shn_url_represent
 
     table.total_beds.label = T("Total Beds")
     table.total_beds.comment = DIV(DIV(_class="tooltip",

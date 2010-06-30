@@ -20,7 +20,6 @@ timestamp = db.Table(None, "timestamp",
 # Reusable Author fields to include in other table definitions
 # TODO: make a better represent!
 def shn_user_represent(id):
-
     def user_represent(id):
         table = db.auth_user
         user = db(table.id == id).select(table.email, limitby=(0, 1))
@@ -28,7 +27,6 @@ def shn_user_represent(id):
             user = user.first()
             return user.email
         return None
-
     return cache.ram("repr_user_%s" % id,
                      lambda: user_represent(id), time_expire=10)
 
@@ -54,7 +52,7 @@ shn_comments_field = db.Table(None, "comments", Field("comments", "text", commen
 s3uuid = SQLCustomType(
                 type = "string",
                 native = "VARCHAR(128)",
-                encoder = (lambda x: "'%s'" % (uuid.uuid4() if x=="" else str(x).replace("'", "''"))),
+                encoder = (lambda x: "'%s'" % (uuid.uuid4() if x == "" else str(x).replace("'", "''"))),
                 decoder = (lambda x: x)
             )
 
@@ -82,7 +80,7 @@ deletion_status = db.Table(None, "deletion_status",
 admin_id = db.Table(None, "admin_id",
             FieldS3("admin", db.auth_group, sortby="role",
                 requires = IS_NULL_OR(IS_ONE_OF(db, "auth_group.id", "%(role)s")),
-                represent = lambda id: (id and [db(db.auth_group.id==id).select()[0].role] or ["None"])[0],
+                represent = lambda id: (id and [db(db.auth_group.id == id).select(db.auth_group.role, limitby=(0, 1)).first().role] or ["None"])[0],
                 comment = DIV(A(T("Add Role"), _class="colorbox", _href=URL(r=request, c="admin", f="group", args="create", vars=dict(format="popup")), _target="top", _title=T("Add Role")), A(SPAN("[Help]"), _class="tooltip", _title=T("Admin|The Group whose members can edit data in this record."))),
                 ondelete="RESTRICT"
                 ))
@@ -94,6 +92,13 @@ document = db.Table(None, "document",
                 #comment = A(SPAN("[Help]"), _class="tooltip", _title=T("Scanned File|The scanned copy of this document.")),
                 ))
 
+# Make URLs clickable
+shn_url_represent = lambda url: (url and [A(url, _href=url, _target="blank")] or [""])[0]
+
+# Phone number requires
+shn_phone_requires = IS_NULL_OR(IS_MATCH('\+?\s*[\s\-\.\(\)\d]+(?:(?: x| ext)\s?\d{1,5})?$'))
+
+# Default CRUD strings
 ADD_RECORD = T("Add Record")
 LIST_RECORDS = T("List Records")
 s3.crud_strings = Storage(
@@ -112,8 +117,6 @@ s3.crud_strings = Storage(
     msg_record_deleted = T("Record deleted"),
     msg_list_empty = T("No Records currently available"))
 
-#s3.display = Storage()
-
 module = "admin"
 resource = "theme"
 tablename = "%s_%s" % (module, resource)
@@ -121,7 +124,6 @@ table = db.define_table(tablename,
                 Field("name"),
                 Field("logo"),
                 Field("header_background"),
-                #Field("footer"),
                 Field("text_direction"),
                 Field("col_background"),
                 Field("col_txt"),
@@ -190,7 +192,7 @@ table = db.define_table(tablename, timestamp, uuidstamp,
 table.security_policy.requires = IS_IN_SET(s3_setting_security_policy_opts, zero=None)
 table.security_policy.represent = lambda opt: s3_setting_security_policy_opts.get(opt, UNKNOWN_OPT)
 table.theme.requires = IS_IN_DB(db, "admin_theme.id", "admin_theme.name", zero=None)
-table.theme.represent = lambda name: db(db.admin_theme.id == name).select().first().name
+table.theme.represent = lambda name: db(db.admin_theme.id == name).select(db.admin_theme.name, limitby=(0, 1)).first().name
 # Define CRUD strings (NB These apply to all Modules' "settings" too)
 ADD_SETTING = T("Add Setting")
 LIST_SETTINGS = T("List Settings")
@@ -242,7 +244,7 @@ s3.crud_strings[tablename] = Storage(
 source_id = db.Table(None, "source_id",
             FieldS3("source_id", db.s3_source, sortby="name",
                 requires = IS_NULL_OR(IS_ONE_OF(db, "s3_source.id", "%(name)s")),
-                represent = lambda id: (id and [db(db.s3_source.id==id).select()[0].name] or ["None"])[0],
+                represent = lambda id: (id and [db(db.s3_source.id == id).select(db.s3_source.name, limitby=(0, 1)).first().name] or ["None"])[0],
                 label = T("Source of Information"),
                 comment = DIV(A(ADD_SOURCE, _class="colorbox", _href=URL(r=request, c="default", f="source", args="create", vars=dict(format="popup")), _target="top", _title=ADD_SOURCE), A(SPAN("[Help]"), _class="tooltip", _title=T("Add Source|The Source this information came from."))),
                 ondelete = "RESTRICT"

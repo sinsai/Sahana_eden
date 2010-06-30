@@ -70,6 +70,7 @@ org_organisation_type_opts = {
 resource = "organisation"
 tablename = module + "_" + resource
 table = db.define_table(tablename, timestamp, uuidstamp, deletion_status,
+                pr_pe_fieldset,                         # Person Entity Field Set
                 #Field("privacy", "integer", default=0),
                 #Field("archived", "boolean", default=False),
                 Field("name", length=128, notnull=True, unique=True),
@@ -80,7 +81,7 @@ table = db.define_table(tablename, timestamp, uuidstamp, deletion_status,
                 #Field("registration", label=T("Registration")),    # Registration Number
                 Field("country", "integer"),
                 Field("website"),
-                Field("twitter"),
+                Field("twitter"),   # deprecated by pe_contact component
                 Field("donation_phone"),
                 shn_comments_field,
                 source_id,
@@ -88,22 +89,32 @@ table = db.define_table(tablename, timestamp, uuidstamp, deletion_status,
 
 # Field settings
 table.uuid.requires = IS_NOT_IN_DB(db, "%s.uuid" % tablename)
+table.pr_pe_label.readable = False
+table.pr_pe_label.writable = False
 table.name.requires = [IS_NOT_EMPTY(), IS_NOT_IN_DB(db, "%s.name" % tablename)]
 table.type.requires = IS_NULL_OR(IS_IN_SET(org_organisation_type_opts))
 table.type.represent = lambda opt: org_organisation_type_opts.get(opt, UNKNOWN_OPT)
 table.country.requires = IS_NULL_OR(IS_IN_SET(shn_list_of_nations))
 table.country.represent = lambda opt: shn_list_of_nations.get(opt, UNKNOWN_OPT)
 table.website.requires = IS_NULL_OR(IS_URL())
+table.donation_phone.requires = shn_phone_requires
 
 # Reusable field
 ADD_ORGANIZATION = T("Add Organization")
 organisation_popup_url = URL(r=request, c="org", f="organisation", args="create", vars=dict(format="popup"))
+shn_organisation_comment = DIV(A(ADD_ORGANIZATION,
+                           _class="colorbox",
+                           _href=organisation_popup_url,
+                           _target="top",
+                           _title=ADD_ORGANIZATION),
+                         DIV(DIV(_class="tooltip",
+                                 _title=T("Add Organization|The Organization this record is associated with."))))
 organisation_id = db.Table(None, "organisation_id",
                            FieldS3("organisation_id", db.org_organisation, sortby="name",
                            requires = IS_NULL_OR(IS_ONE_OF(db, "org_organisation.id", "%(name)s")),
                            represent = lambda id: (id and [db(db.org_organisation.id == id).select(db.org_organisation.name, limitby=(0, 1)).first().name] or ["None"])[0],
                            label = T("Organization"),
-                           comment = DIV(A(ADD_ORGANIZATION, _class="colorbox", _href=organisation_popup_url, _target="top", _title=ADD_ORGANIZATION), DIV(DIV(_class="tooltip", _title=T("Add Organization|The Organization this record is associated with.")))),
+                           comment = shn_organisation_comment,
                            ondelete = "RESTRICT"
                           ))
 
@@ -115,11 +126,15 @@ s3xrc.model.add_component(module, resource,
                           editable=True)
 
 s3xrc.model.configure(table,
+                      # Ensure that table is substituted when lambda defined not evaluated by using the default value
+                      onaccept=lambda form, tab=table: shn_pentity_onaccept(form, table=tab, entity_type=5),
+                      delete_onaccept=lambda form: shn_pentity_ondelete(form),
                       list_fields = ["id",
                                      "name",
                                      "acronym",
                                      "type",
-                                     "country"])
+                                     "country",
+                                     "website"])
 
 # -----------------------------------------------------------------------------
 # Offices
@@ -134,6 +149,7 @@ org_office_type_opts = {
 resource = "office"
 tablename = module + "_" + resource
 table = db.define_table(tablename, timestamp, uuidstamp, deletion_status,
+                pr_pe_fieldset,                         # Person Entity Field Set
                 Field("name", notnull=True),
                 organisation_id,
                 Field("type", "integer"),
@@ -157,12 +173,17 @@ table = db.define_table(tablename, timestamp, uuidstamp, deletion_status,
 
 # Field settings
 table.uuid.requires = IS_NOT_IN_DB(db, "%s.uuid" % tablename)
+table.pr_pe_label.readable = False
+table.pr_pe_label.writable = False
 #db[table].name.requires = IS_NOT_EMPTY()   # Office names don't have to be unique
 table.name.requires = [IS_NOT_EMPTY(), IS_NOT_IN_DB(db, "%s.name" % tablename)]
-table.parent.requires = IS_NULL_OR(IS_ONE_OF(db, "org_office.id", "%(name)s"))
-table.parent.represent = lambda id: (id and [db(db.org_office.id == id).select(db.org_office.name, limitby=(0, 1)).first().name] or ["None"])[0]
 table.type.requires = IS_NULL_OR(IS_IN_SET(org_office_type_opts))
 table.type.represent = lambda opt: org_office_type_opts.get(opt, UNKNOWN_OPT)
+table.parent.requires = IS_NULL_OR(IS_ONE_OF(db, "org_office.id", "%(name)s"))
+table.parent.represent = lambda id: (id and [db(db.org_office.id == id).select(db.org_office.name, limitby=(0, 1)).first().name] or ["None"])[0]
+table.phone1.requires = shn_phone_requires
+table.phone2.requires = shn_phone_requires
+table.fax.requires = shn_phone_requires
 table.email.requires = IS_NULL_OR(IS_EMAIL())
 table.national_staff.requires = IS_NULL_OR(IS_INT_IN_RANGE(0, 99999))
 table.international_staff.requires = IS_NULL_OR(IS_INT_IN_RANGE(0, 9999))
@@ -187,8 +208,13 @@ s3xrc.model.add_component(module, resource,
                           editable=True)
 
 s3xrc.model.configure(table,
+                      # Ensure that table is substituted when lambda defined not evaluated by using the default value
+                      onaccept=lambda form, tab=table: shn_pentity_onaccept(form, table=tab, entity_type=6),
+                      delete_onaccept=lambda form: shn_pentity_ondelete(form),
                       list_fields=["id",
                                    "name",
+                                   "organisation_id",   # Filtered in Component views
+                                   "location_id",
                                    "phone1",
                                    "email"])
 
@@ -211,6 +237,8 @@ table = db.define_table(tablename, timestamp, deletion_status,
                 migrate=migrate)
 
 # Field settings
+# Over-ride the default IS_NULL_OR as Contact doesn't make sense without an associated Organisation
+table.organisation_id.requires = IS_ONE_OF(db, "org_organisation.id", "%(name)s")
 table.manager_id.requires = IS_NULL_OR(IS_ONE_OF(db, "pr_person.id", shn_pr_person_represent))
 table.manager_id.represent = lambda id: (id and [shn_pr_person_represent(id)] or ["None"])[0]
 

@@ -102,12 +102,12 @@ if deployment_settings.has_module(module):
                     Field("address"),
                     Field("postcode"),
                     Field("city"),
-                    Field("phone_exchange"),
-                    Field("phone_business"),
-                    Field("phone_emergency"),
-                    Field("website"),
+                    Field("phone_exchange", requires = shn_phone_requires), # Switchboard
+                    Field("phone_business", requires = shn_phone_requires),
+                    Field("phone_emergency", requires = shn_phone_requires),
+                    Field("website", requires = IS_NULL_OR(IS_URL())),
                     Field("email"),
-                    Field("fax"),
+                    Field("fax", requires = shn_phone_requires),
                     Field("total_beds", "integer"),             # Total Beds
                     Field("available_beds", "integer"),         # Available Beds
                     Field("ems_status", "integer",              # Emergency Room Status
@@ -289,10 +289,13 @@ if deployment_settings.has_module(module):
         _title=T("Title|The Role this person plays within this hospital.")))
 
     table.phone.label = T("Phone")
+    table.phone.requires = shn_phone_requires
     table.mobile.label = T("Mobile")
+    table.mobile.requires = shn_phone_requires
     table.email.requires = IS_NULL_OR(IS_EMAIL())
     table.email.label = T("Email")
     table.fax.label = T("FAX")
+    table.fax.requires = shn_phone_requires
     table.skype.label = T("Skype ID")
 
     s3xrc.model.add_component(module, resource,

@@ -144,7 +144,7 @@ function view4(header,table,numcol,grid_data)
 	    }
 	    colobjs[i].name=colnames[i];
 	    colobjs[i].store=store;
-	    colobjs[i].allowBlank=false;
+//	    colobjs[i].allowBlank=false;
 	    colobjs[i].blankText='You must select a field';
 	    colobjs[i].emptyText='Select a field';
 	    colobjs[i].editable=false;
@@ -210,13 +210,14 @@ function view4(header,table,numcol,grid_data)
 						}	
 						i++;	
 					}
+					import_spreadsheet(table,header_row,importsheet,map_from_ss_to_field);
 				    	columnmap.getForm().submit({
 				    		success: function(form,action){
 				       			Ext.Msg.alert('Success', 'It worked');
-					    	},
+							},
 				    		failure: function(form,action){
 				       			Ext.Msg.alert('Warning', action.result.msg);
-    						}
+							}
     					});
     			}
     		}],

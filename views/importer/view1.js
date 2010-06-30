@@ -77,8 +77,6 @@ function maker(json){
        col=Ext.util.JSON.decode(obj);
        col.editor=edit[i];
        column_model[i]=col;
-       //document.write('<br/>'+obj.editor);
-       
        }
        catch(err){
            Ext.Msg.alert("Error","Input string cannot be parsed");
@@ -131,7 +129,6 @@ function maker(json){
                  e.record.commit();
                  var temp=e.column;
                  json.data[e.row].temp=e.value;
-                 //Ext.Msg.alert("",json.data[e.row].temp);
               }
            
         },

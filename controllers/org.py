@@ -47,7 +47,7 @@ def index():
     return dict(module_name=module_name)
 
 def sector():
-    "RESTlike CRUD controller"
+    "RESTful CRUD controller"
     resource = request.function
     tablename = "%s_%s" % (module, resource)
     table = db[tablename]
@@ -75,7 +75,7 @@ def sector():
     return shn_rest_controller(module, resource, listadd=False)
 
 def organisation():
-    "RESTlike CRUD controller"
+    "RESTful CRUD controller"
 
     resource = request.function
 
@@ -95,10 +95,13 @@ def organisation():
     # ServerSidePagination
     response.s3.pagination = True
     
-    output = shn_rest_controller(module, resource, listadd=False,
-                                 rheader=lambda jr: shn_org_rheader(jr,
+    output = shn_rest_controller(module, resource,
+                                 listadd=False,
+                                 rheader=lambda jr: shn_project_rheader(jr,
                                                                     tabs = [(T("Basic Details"), None),
-                                                                            (T("Contact Data"), "pe_contact"),
+                                                                            (T("Positions"), "position"),
+                                                                            #(T("Donors"), "organisation"),
+                                                                            #(T("Sites"), "site"),          # Ticket 195
                                                                            ]
                                                                    ),
                                  sticky=True
@@ -141,7 +144,7 @@ s3.crud_strings[tablename] = Storage(
     msg_list_empty = T("No Organizations currently registered"))
 
 def office():
-    "RESTlike CRUD controller"
+    "RESTful CRUD controller"
     resource = request.function
     tablename = "%s_%s" % (module, resource)
     table = db[tablename]
@@ -218,7 +221,7 @@ s3.crud_strings[tablename] = Storage(
     msg_list_empty = T("No Offices currently registered"))
  
 def contact():
-    "RESTlike CRUD controller"
+    "RESTful CRUD controller"
     resource = request.function
     tablename = "%s_%s" % (module, resource)
     table = db[tablename]
@@ -275,8 +278,8 @@ s3.crud_strings[tablename] = Storage(
     msg_record_deleted = T("Contact deleted"),
     msg_list_empty = T("No Contacts currently registered"))
 
-def project():
-    "RESTlike CRUD controller"
+def donor():
+    "RESTful CRUD controller"
     resource = request.function
     tablename = "%s_%s" % (module, resource)
     table = db[tablename]
@@ -295,24 +298,51 @@ def project():
 
 # Component Resources need these settings to be visible where they are linked from
 # - so we put them outside their controller function
-tablename = "%s_%s" % (module, "project")
-table = db[tablename]
-ADD_PROJECT = T("Add Project")
+tablename = "%s_%s" % (module, "donor")
 s3.crud_strings[tablename] = Storage(
-    title_create = ADD_PROJECT,
-    title_display = T("Project Details"),
-    title_list = T("Projects Report"),
-    title_update = T("Edit Project"),
-    title_search = T("Search Projects"),
-    subtitle_create = T("Add New Project"),
-    subtitle_list = T("Projects"),
-    label_list_button = T("List Projects"),
-    label_create_button = ADD_PROJECT,
-    label_delete_button = T("Delete Project"),
-    msg_record_created = T("Project added"),
-    msg_record_modified = T("Project updated"),
-    msg_record_deleted = T("Project deleted"),
-    msg_list_empty = T("No Projects currently registered"))
+    title_create = ADD_DONOR,
+    title_display = T("Donor Details"),
+    title_list = T("Donors Report"),
+    title_update = T("Edit Donor"),
+    title_search = T("Search Donors"),
+    subtitle_create = T("Add New Donor"),
+    subtitle_list = T("Donors"),
+    label_list_button = T("List Donors"),
+    label_create_button = ADD_DONOR,
+    label_delete_button = T("Delete Donor"),
+    msg_record_created = T("Donor added"),
+    msg_record_modified = T("Donor updated"),
+    msg_record_deleted = T("Donor deleted"),
+    msg_list_empty = T("No Donors currently registered"))
+
+def project():
+    "RESTful CRUD controller"
+    resource = request.function
+    tablename = "%s_%s" % (module, resource)
+    table = db[tablename]
+    
+    def org_postp(jr, output):
+        shn_action_buttons(jr)
+        return output
+    response.s3.postp = org_postp
+    
+    # ServerSidePagination
+    response.s3.pagination = True
+
+    output = shn_rest_controller(module, resource,
+                                 listadd=False,
+                                 main="code",
+                                 rheader=lambda jr: shn_project_rheader(jr,
+                                                                    tabs = [(T("Basic Details"), None),
+                                                                            (T("Positions"), "position"),
+                                                                            #(T("Donors"), "organisation"),
+                                                                            #(T("Sites"), "site"),          # Ticket 195
+                                                                           ]
+                                                                   ),
+                                 sticky=True
+                                )
+    
+    return output
 
 def office_table_linkto(field):
     return URL(r=request, f = "office",  args=[field, "read"],
@@ -519,11 +549,13 @@ def shn_org_rheader(jr, tabs=[]):
                         ),
                     TR(
                         TH(T("Organisation: ")),
-                        organisation.name
+                        organisation.name,
+                        TH(T("Location: ")),
+                        shn_gis_location_represent(office.location_id),
                         ),
                     TR(
-                        TH(A(T("Edit Office"),
-                            _href=URL(r=request, c="org", f="office", args=[jr.id, "update"], vars={"_next": _next})))
+                        #TH(A(T("Edit Office"),
+                        #    _href=URL(r=request, c="org", f="office", args=[jr.id, "update"], vars={"_next": _next})))
                         )
                 ), rheader_tabs)
 

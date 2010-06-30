@@ -530,11 +530,15 @@ def shn_project_search_location(xrequest, **attr):
                         result.status and org_project_status_opts[result.status] or "unknown",
                         ))
                 items=DIV(TABLE(THEAD(TR(
+                    TH("ID"),
+                    TH("Organisation"),
+                    TH("Location"),
+                    TH("Sector(s)"),
                     TH("Name"),
+                    TH("Status"),
                     TH("Start date"),
                     TH("End date"),
-                    TH("Description"),
-                    TH("Status"))),
+                    TH("Budgeted Cost"))),
                     TBODY(records), _id="list", _class="display"))
             else:
                     items = T("None")

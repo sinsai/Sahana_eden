@@ -151,7 +151,7 @@ deployment_settings.modules = Storage(
             module_type = 4
         ),
     vol = Storage(
-            name_nice = "Volunteer Registry",
+            name_nice = "Volunteer Management",
             description = "Manage volunteers by capturing their skills, availability and allocation",
             module_type = 4
         ),

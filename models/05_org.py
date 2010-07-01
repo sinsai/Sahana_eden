@@ -218,72 +218,6 @@ s3xrc.model.configure(table,
                                    "phone1",
                                    "email"])
 
-# -----------------------------------------------------------------------------
-# Contacts
-# Many-to-Many Persons to Offices with also the Title & Manager that the person has in this context
-# ToDo: Build an Organigram out of this data?
-#
-resource = "contact"
-tablename = module + "_" + resource
-table = db.define_table(tablename, timestamp, deletion_status,
-                person_id,
-                organisation_id,
-                office_id,
-                Field("title"),
-                Field("manager_id", db.pr_person),
-                Field("focal_point", "boolean"),
-                source_id,
-                shn_comments_field,
-                migrate=migrate)
-
-# Field settings
-# Over-ride the default IS_NULL_OR as Contact doesn't make sense without an associated Organisation
-table.organisation_id.requires = IS_ONE_OF(db, "org_organisation.id", "%(name)s")
-table.manager_id.requires = IS_NULL_OR(IS_ONE_OF(db, "pr_person.id", shn_pr_person_represent))
-table.manager_id.represent = lambda id: (id and [shn_pr_person_represent(id)] or ["None"])[0]
-
-# Functions
-def represent_focal_point(is_focal_point):
-    if is_focal_point:
-        return "Focal Point"
-    else:
-        return "-"
-
-def shn_org_contact_represent(contact_id):
-    person = db((db.org_contact.id == contact_id) &
-                (db.pr_person.id == db.org_contact.person_id)).select(db.pr_person.ALL)
-    if person:
-        return vita.fullname(person[0])
-    else:
-        return None
-
-table.focal_point.represent = lambda focal_point: represent_focal_point(focal_point)
-
-def shn_orgs_to_person(person_id):
-    orgs = []
-    if person_id:
-        contacts = db((db.org_contact.person_id == person_id) &
-                      (db.org_contact.deleted == False)).select(db.org_contact.organisation_id)
-        if contacts:
-            for c in contacts:
-                orgs.append(c.organisation_id)
-    return orgs
-
-# Contacts as component of Orgs
-s3xrc.model.add_component(module, resource,
-                          multiple=True,
-                          joinby=dict(org_organisation="organisation_id"),
-                          deletable=True,
-                          editable=True)
-
-s3xrc.model.configure(table,
-                      list_fields=["id",
-                                   "person_id",
-                                   "office_id",
-                                   "title",
-                                   "manager_id",
-                                   "focal_point"])
-
 # Donors are a type of Organisation
 def shn_donor_represent(donor_ids):
     if not donor_ids:
@@ -399,59 +333,157 @@ s3xrc.model.configure(table,
                                    "end_date",
                                    "budgeted_cost"])
 
+# -----------------------------------------------------------------------------
+# Staff
+# Many-to-Many Persons to Offices & Projects with also the Title & Manager that the person has in this context
+# ToDo: Build an Organigram out of this data?
+#
+resource = "staff"
+tablename = module + "_" + resource
+table = db.define_table(tablename, timestamp, deletion_status,
+                person_id,
+                organisation_id,
+                office_id,
+                project_id,
+                Field("title"),
+                Field("manager_id", db.pr_person),
+                Field("focal_point", "boolean"),
+                #Field("slots", "integer", default=1),
+                #Field("payrate", "double", default=0.0), # Wait for Bugeting integration
+                shn_comments_field,
+                migrate=migrate)
+
+# Field settings
+# Over-ride the default IS_NULL_OR as Staff doesn't make sense without an associated Organisation
+table.organisation_id.requires = IS_ONE_OF(db, "org_organisation.id", "%(name)s")
+table.manager_id.requires = IS_NULL_OR(IS_ONE_OF(db, "pr_person.id", shn_pr_person_represent))
+table.manager_id.represent = lambda id: (id and [shn_pr_person_represent(id)] or ["None"])[0]
+
+# Staff Resource called from multiple controllers
+# - so we define strings in the model
+table.person_id.label = T("Person")
+table.person_id.comment = DIV(SPAN("*", _class="req"), shn_person_comment)
+table.organisation_id.comment = DIV(SPAN("*", _class="req"), shn_organisation_comment)
+table.title.label = T("Job Title")
+table.title.comment = A(SPAN("[Help]"), _class="tooltip", _title=T("Title|The Role this person plays within this Office/Project."))
+table.manager_id.label = T("Manager")
+table.manager_id.comment = A(SPAN("[Help]"), _class="tooltip", _title=T("Manager|The person's manager within this Office/Project."))
+table.focal_point.comment = A(SPAN("[Help]"), _class="tooltip", _title=T("Focal Point|The contact person for this organization."))
+# CRUD strings
+ADD_STAFF = T("Add Staff")
+LIST_STAFF = T("List Staff")
+s3.crud_strings[tablename] = Storage(
+    title_create = ADD_STAFF,
+    title_display = T("Staff Details"),
+    title_list = LIST_STAFF,
+    title_update = T("Edit Staff"),
+    title_search = T("Search Staff"),
+    subtitle_create = T("Add New Staff"),
+    subtitle_list = T("Staff"),
+    label_list_button = LIST_STAFF,
+    label_create_button = ADD_STAFF,
+    msg_record_created = T("Staff added"),
+    msg_record_modified = T("Staff updated"),
+    msg_record_deleted = T("Staff deleted"),
+    msg_list_empty = T("No Staff currently registered"))
+
+# Functions
+def represent_focal_point(is_focal_point):
+    if is_focal_point:
+        return "Focal Point"
+    else:
+        return "-"
+
+def shn_org_staff_represent(staff_id):
+    person = db((db.org_staff.id == staff_id) &
+                (db.pr_person.id == db.org_staff.person_id)).select(db.pr_person.ALL)
+    if person:
+        return vita.fullname(person[0])
+    else:
+        return None
+
+table.focal_point.represent = lambda focal_point: represent_focal_point(focal_point)
+
+def shn_orgs_to_person(person_id):
+    orgs = []
+    if person_id:
+        staff = db((db.org_staff.person_id == person_id) &
+                      (db.org_staff.deleted == False)).select(db.org_staff.organisation_id)
+        if staff:
+            for s in staff:
+                orgs.append(s.organisation_id)
+    return orgs
+
+# Staff as component of Orgs
+s3xrc.model.add_component(module, resource,
+                          multiple=True,
+                          joinby=dict(org_organisation="organisation_id"),
+                          deletable=True,
+                          editable=True)
+
+s3xrc.model.configure(table,
+                      list_fields=["id",
+                                   "person_id",
+                                   "office_id",
+                                   "title",
+                                   "manager_id",
+                                   "focal_point"])
+
 # org_position (component of org_project)
 #   describes a position in a project
 #
-org_position_type_opts = {
-    1: T("Site Manager"),
-    2: T("Team Leader"),
-    3: T("Assistant"),
-    99: T("Other")
-}
-
-resource = "position"
-tablename = module + "_" + resource
-table = db.define_table(tablename, timestamp, uuidstamp, deletion_status,
-                project_id,
-                Field("type", "integer",
-                    requires = IS_IN_SET(org_position_type_opts, zero=None),
-                    # default = 99,
-                    label = T("Position type"),
-                    represent = lambda opt: org_position_type_opts.get(opt, UNKNOWN_OPT)),
-                Field("title", length=30),
-                Field("description", "text"),
-                Field("slots", "integer", default=1),
-                Field("payrate", "double", default=0.0),
-                #Field("status")?
-                migrate=migrate)
+# Deprecated - replaced by staff
+#
+#org_position_type_opts = {
+#    1: T("Site Manager"),
+#    2: T("Team Leader"),
+#    3: T("Assistant"),
+#    99: T("Other")
+#}
+#resource = "position"
+#tablename = module + "_" + resource
+#table = db.define_table(tablename, timestamp, uuidstamp, deletion_status,
+#                project_id,
+#                Field("type", "integer",
+#                    requires = IS_IN_SET(org_position_type_opts, zero=None),
+#                    # default = 99,
+#                    label = T("Position type"),
+#                    represent = lambda opt: org_position_type_opts.get(opt, UNKNOWN_OPT)),
+#                Field("title", length=30),
+#                Field("description", "text"),
+#                Field("slots", "integer", default=1),
+#                Field("payrate", "double", default=0.0),
+#                #Field("status")?
+#                migrate=migrate)
 
 # CRUD Strings
-ADD_POSITION = T("Add Position")
-POSITIONS = T("Positions")
-s3.crud_strings[tablename] = Storage(
-    title_create = ADD_POSITION,
-    title_display = T("Position Details"),
-    title_list = POSITIONS,
-    title_update = T("Edit Position"),
-    title_search = T("Search Positions"),
-    subtitle_create = T("Add New Position"),
-    subtitle_list = POSITIONS,
-    label_list_button = T("List Positions"),
-    label_create_button = ADD_POSITION,
-    msg_record_created = T("Position added"),
-    msg_record_modified = T("Position updated"),
-    msg_record_deleted = T("Position deleted"),
-    msg_list_empty = T("No positions currently registered"))
+#ADD_POSITION = T("Add Position")
+#POSITIONS = T("Positions")
+#s3.crud_strings[tablename] = Storage(
+#    title_create = ADD_POSITION,
+#    title_display = T("Position Details"),
+#    title_list = POSITIONS,
+#    title_update = T("Edit Position"),
+#    title_search = T("Search Positions"),
+#    subtitle_create = T("Add New Position"),
+#    subtitle_list = POSITIONS,
+#    label_list_button = T("List Positions"),
+#    label_create_button = ADD_POSITION,
+#    msg_record_created = T("Position added"),
+#    msg_record_modified = T("Position updated"),
+#    msg_record_deleted = T("Position deleted"),
+#    msg_list_empty = T("No positions currently registered"))
 
 # Reusable field
-org_position_id = db.Table(None, "org_position_id",
-                        FieldS3("org_position_id", db.org_position, sortby="title",
-                        requires = IS_NULL_OR(IS_ONE_OF(db, "org_position.id", "%(title)s")),
-                        represent = lambda id: lambda id: (id and [db.org_position[id].title] or ["None"])[0],
-                        comment = DIV(A(ADD_POSITION, _class="colorbox", _href=URL(r=request, c="org", f="project", args="create", vars=dict(format="popup")), _target="top", _title=ADD_POSITION), A(SPAN("[Help]"), _class="tooltip", _title=T("Position|Add new position)."))),
-                        ondelete = "RESTRICT"
-                        ))
+#org_position_id = db.Table(None, "org_position_id",
+#                        FieldS3("org_position_id", db.org_position, sortby="title",
+#                        requires = IS_NULL_OR(IS_ONE_OF(db, "org_position.id", "%(title)s")),
+#                        represent = lambda id: lambda id: (id and [db.org_position[id].title] or ["None"])[0],
+#                        comment = DIV(A(ADD_POSITION, _class="colorbox", _href=URL(r=request, c="org", f="project", args="create", vars=dict(format="popup")), _target="top", _title=ADD_POSITION), A(SPAN("[Help]"), _class="tooltip", _title=T("Position|Add new position)."))),
+#                        ondelete = "RESTRICT"
+#                        ))
 
+# Staff as Component of Projects
 s3xrc.model.add_component(module, resource,
                           multiple=True,
                           joinby=dict(org_project="project_id"),
@@ -460,12 +492,92 @@ s3xrc.model.add_component(module, resource,
                           main="title", extra="description")
 
 s3xrc.model.configure(table,
-                      list_fields=["type",
+                      list_fields=["organisation_id",
+                                   "project_id",
                                    "title",
-                                   "description",
-                                   "slots",
-                                   "payrate"])
+                                   "person_id",
+                                   #"description",
+                                   #"slots",
+                                   #"payrate"
+                                   ])
 
+# -----------------------------------------------------------------------------
+# org_task:
+#   a task within a project
+#
+org_task_status_opts = {
+    1: T("new"),
+    2: T("assigned"),
+    3: T("completed"),
+    4: T("postponed"),
+    5: T("feedback"),
+    6: T("cancelled"),
+    99: T("unspecified")
+}
+
+org_task_priority_opts = {
+    4: T("normal"),
+    1: T("immediately"),
+    2: T("urgent"),
+    3: T("high"),
+    5: T("low")
+}
+
+resource = "task"
+tablename = module + "_" + resource
+table = db.define_table(tablename, timestamp, uuidstamp, deletion_status,
+                project_id,
+                Field("priority", "integer",
+                    requires = IS_IN_SET(org_task_priority_opts, zero=None),
+                    # default = 4,
+                    label = T("Priority"),
+                    represent = lambda opt: org_task_priority_opts.get(opt, UNKNOWN_OPT)),
+                Field("subject", length=80),
+                Field("description", "text"),
+                person_id,
+                Field("status", "integer",
+                    requires = IS_IN_SET(org_task_status_opts, zero=None),
+                    # default = 1,
+                    label = T("Status"),
+                    represent = lambda opt: org_task_status_opts.get(opt, UNKNOWN_OPT)),
+                migrate=migrate)
+
+# Task Resource called from multiple controllers
+# - so we define strings in the model
+table.person_id.label = T("Assigned to")
+# CRUD Strings
+ADD_TASK = T("Add Task")
+LIST_TASKS = T("List Tasks")
+s3.crud_strings[tablename] = Storage(
+    title_create = ADD_TASK,
+    title_display = T("Task Details"),
+    title_list = LIST_TASKS,
+    title_update = T("Edit Task"),
+    title_search = T("Search Tasks"),
+    subtitle_create = T("Add New Task"),
+    subtitle_list = T("Tasks"),
+    label_list_button = LIST_TASKS,
+    label_create_button = ADD_TASK,
+    msg_record_created = T("Task added"),
+    msg_record_modified = T("Task updated"),
+    msg_record_deleted = T("Task deleted"),
+    msg_list_empty = T("No tasks currently registered"))
+
+# Component
+s3xrc.model.add_component(module, resource,
+    multiple=True,
+    joinby=dict(org_project="project_id"),
+    deletable=True,
+    editable=True,
+    main="subject", extra="description")
+
+s3xrc.model.configure(table,
+                      list_fields=["id",
+                                   "priority",
+                                   "subject",
+                                   "person_id",
+                                   "status"])
+                                   
 # -----------------------------------------------------------------------------
 # shn_project_search_location:
 #   form function to search projects by location

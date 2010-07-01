@@ -4,7 +4,7 @@
 {{if request.args[0] == "login":}}
  {{=T("Login")}}
 {{elif request.args[0] == "register":}}
- {{form[0].insert(-3, TR(TD(LABEL(T("Mobile Phone:"))), INPUT(_name="mobile", _id="mobile"), TD(DIV(_class="tooltip", _title=T("Mobile Phone|Entering a phone number is optional, but doing so allows you to subscribe to receive SMS messages.")))))}}
+ {{form[0].insert(-4, TR(TD(LABEL(T("Mobile Phone:"))), INPUT(_name="mobile", _id="mobile"), TD(DIV(_class="tooltip", _title=T("Mobile Phone|Entering a phone number is optional, but doing so allows you to subscribe to receive SMS messages.")))))}}
  {{=T("Register")}}
 {{elif request.args[0] == "profile":}}
  {{=T("Profile")}}

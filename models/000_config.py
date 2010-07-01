@@ -151,15 +151,10 @@ deployment_settings.modules = Storage(
             module_type = 4
         ),
     vol = Storage(
-            name_nice = "Volunteer Registry",
+            name_nice = "Volunteer Management",
             description = "Manage volunteers by capturing their skills, availability and allocation",
             module_type = 4
         ),
-    #hrm = Storage(
-    #        name_nice = "Human Resources",
-    #        description = "Helps to manage human resources",
-    #        module_type = 4
-    #    ),
     #lms = Storage(
     #        name_nice = "Logistics Management System",
     #        description = "An intake system, a warehouse management system, commodity tracking, supply chain management, procurement and other asset and resource management capabilities.",

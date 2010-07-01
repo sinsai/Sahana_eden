@@ -102,6 +102,7 @@ pr_contact_method_opts = {
     4:T("Twitter"),
     5:T("Telephone"),
     6:T("Fax"),
+    7:T("Facebook"),
     99:T("other")
     }
 
@@ -134,6 +135,7 @@ s3xrc.model.add_component(module, resource,
 
 s3xrc.model.configure(table,
                       list_fields=["id",
+                                   pr_pe_id,
                                    "name",
                                    "person_name",
                                    "opt_pr_contact_method",

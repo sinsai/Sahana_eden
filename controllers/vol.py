@@ -18,8 +18,8 @@ def shn_menu():
             [T("Add Project"), False, URL(r=request, f="project", args="create")],
         ]],
     ]
-    if session.rcvars and "vol_project" in session.rcvars:
-        selection = db.vol_project[session.rcvars["vol_project"]]
+    if session.rcvars and "org_project" in session.rcvars:
+        selection = db.org_project[session.rcvars["org_project"]]
         if selection:
             menu_project = [
                     ["%s %s" % (T("Project:"), selection.name), False, URL(r=request, f="project", args=[selection.id]),[
@@ -65,25 +65,6 @@ def index():
     return dict(module_name=module_name)
 
 
-def project():
-
-    """ Project Controller """
-
-    resource = request.function
-    tablename = module + "_" + resource
-    table = db[tablename]
-    table.name.comment = SPAN("*", _class="req")
-    table.description.comment = SPAN("*", _class="req")
-    table.status.comment = SPAN("*", _class="req")
-
-    response.s3.pagination = True
-
-    output = shn_rest_controller(module , resource,
-                                 rheader=shn_vol_project_rheader)
-    shn_menu()
-    return output
-
-
 def person():
 
     """ Person Controller """
@@ -106,8 +87,37 @@ def person():
     return output
 
 
-def task():
+def project():
+    "RESTful CRUD controller"
+    resource = request.function
+    tablename = "org_%s" % (resource)
+    table = db[tablename]
+    
+    def org_postp(jr, output):
+        shn_action_buttons(jr)
+        return output
+    response.s3.postp = org_postp
+    
+    # ServerSidePagination
+    response.s3.pagination = True
 
+    output = shn_rest_controller("org", resource,
+                                 listadd=False,
+                                 main="code",
+                                 rheader=lambda jr: shn_project_rheader(jr,
+                                                                    tabs = [(T("Basic Details"), None),
+                                                                            (T("Staff"), "staff"),
+                                                                            (T("Tasks"), "task"),
+                                                                            #(T("Donors"), "organisation"),
+                                                                            #(T("Sites"), "site"),          # Ticket 195
+                                                                           ]
+                                                                   ),
+                                 sticky=True
+                                )
+    
+    return output
+
+def task():
     """ Manage current user's tasks """
 
     resource = request.function
@@ -115,22 +125,23 @@ def task():
     my_person_id = None
 
     if auth.user is not None and auth.user.person_uuid:
-        my_person_id = db(db.pr_person.uuid==auth.user.person_uuid).select(db.pr_person.id, limitby=(0,1))
+        my_person_id = db(db.pr_person.uuid == auth.user.person_uuid).select(db.pr_person.id, limitby=(0,1))
         if my_person_id:
-            my_person_id = my_person_id[0]
+            my_person_id = my_person_id.first()
 
     if not my_person_id:
         session.error = T("No person record found for current user.")
         redirect(URL(r=request, f="index"))
 
-    db.vol_task.person_id.default = my_person_id
-    #db.vol_task.person_id.writable = False
+    db.org_task.person_id.default = my_person_id
+    #db.org_task.person_id.writable = False
 
-    response.s3.filter = (db.vol_task.person_id==my_person_id)
+    response.s3.filter = (db.org_task.person_id == my_person_id)
 
-    s3.crud_strings["vol_task"].title_list = T("My Tasks")
-    s3.crud_strings["vol_task"].subtitle_list = T("Task List")
+    s3.crud_strings["org_task"].title_list = T("My Tasks")
+    s3.crud_strings["org_task"].subtitle_list = T("Task List")
 
     response.s3.pagination = True
 
-    return shn_rest_controller(module, resource, listadd=False)
+    return shn_rest_controller("org", resource, listadd=False)
+

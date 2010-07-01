@@ -25,7 +25,7 @@ def index():
 
 @auth.shn_requires_membership(1)
 def setting():
-    "RESTlike CRUD controller"
+    "RESTful CRUD controller"
 
     table = db.s3_setting
 
@@ -61,7 +61,7 @@ def setting():
 
 @auth.shn_requires_membership(1)
 def theme():
-    "RESTlike CRUD controller"
+    "RESTful CRUD controller"
     resource = "theme"
     tablename = module + "_" + resource
     table = db[tablename]
@@ -232,7 +232,7 @@ def theme_check(form):
 
 @auth.shn_requires_membership(1)
 def user():
-    "RESTlike CRUD controller"
+    "RESTful CRUD controller"
     module = "auth"
     resource = "user"
     tablename = module + "_" + resource
@@ -385,7 +385,7 @@ def usergroup():
 
 @auth.shn_requires_membership(1)
 def group():
-    "RESTlike CRUD controller"
+    "RESTful CRUD controller"
     module = "auth"
     resource = "group"
     table = module + "_" + resource
@@ -415,7 +415,7 @@ def group():
 # Unused as poor UI
 @auth.shn_requires_membership(1)
 def membership():
-    "RESTlike CRUD controller"
+    "RESTful CRUD controller"
     module = "auth"
     resource = "membership"
     table = module + "_" + resource
@@ -640,7 +640,7 @@ def export_csv():
 # Unstructured Data Import
 @auth.shn_requires_membership(1)
 def import_job():
-    "RESTlike CRUD controller to handle 'jobs' for importing unstructured data."
+    "RESTful CRUD controller to handle 'jobs' for importing unstructured data."
     # CRUD Strings
     module = "admin"
     resource = "import_job"

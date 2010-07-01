@@ -25,10 +25,10 @@ function TB_cleanup(caller) {
 
 function TB_refresh() {
     // The Get parameters
-    // ToDo: Make this less fragile by passing these fields as separate vars?
     var $_GET = getQueryParams(document.location.search);
     var caller = $_GET["caller"];
     if (caller.match(/but_add_/)){
+        // OR Dashboard
         TB_cleanup(caller);
         return;
     }
@@ -40,6 +40,7 @@ function TB_refresh() {
             // Use manual override
             var child_resource = child;
         }
+    // ToDo: Make this less fragile by passing these fields as separate vars?
     var parent_field = caller.replace('_' + child_resource, '');
     var parent_module = parent_field.replace(/_.*/, '');
     var parent_resource = parent_field.replace(parent_module + '_', '');

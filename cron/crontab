@@ -4,8 +4,9 @@
 # AutoSync daemon running ZeroConf should be launched at startup
 #@reboot root **applications/eden/cron/sync_daemon.py
 # Send outgoing emails every 5 minutes
-*/5   *       *       *       *       root *msg/process_email_via_api
-*/5   *       *       *       *       root *msg/process_sms_via_api
+#*/5   *       *       *       *       root *msg/process_email_via_api
+# Send outgoing SMS every 5 minutes
+#*/5   *       *       *       *       root *msg/process_sms_via_api
 # Collect incoming emails every 15 minutes
 #*/15  *       *       *       *       root *applications/eden/cron/email_receive.py
 # Process Import Jobs

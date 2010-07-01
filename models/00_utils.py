@@ -316,7 +316,12 @@ def shn_as_local_time(value):
         dt = value
         return dt.strftime(str(format))+" +0000"
 
+# Make URLs clickable
+shn_url_represent = lambda url: (url and [A(url, _href=url, _target="blank")] or [""])[0]
 
+# Phone number requires
+shn_phone_requires = IS_NULL_OR(IS_MATCH('\+?\s*[\s\-\.\(\)\d]+(?:(?: x| ext)\s?\d{1,5})?$'))
+        
 def Tstr(text):
     """Convenience function for non web2py modules"""
     return str(T(text))

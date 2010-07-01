@@ -92,11 +92,11 @@ auth.settings.logout_onlogout = shn_auth_on_logout
 auth.settings.login_onaccept = shn_auth_on_login
 # Uncomment to have complex redirects post login
 #if not request.vars._next:
-#	auth.settings.login_next = URL(r=request, c='default', f='user',
-#		args='login_next')
+#	auth.settings.login_next = URL(r=request, c="default", f="user",
+#		args="login_next")
 #if not deployment_settings.auth.registration_requires_verification:
-#    auth.settings.register_next = URL(r=request, c='default', f='user',
-#            args='login_next')
+#    auth.settings.register_next = URL(r=request, c="default", f="user",
+#            args="login_next")
 
 # Extra startup roles for Admin:
 auth.settings.admin_startup_roles = [

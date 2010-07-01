@@ -45,14 +45,17 @@ def user():
         _table_user.utc_offset.readable = True
         _table_user.utc_offset.writable = True
 
+    _table_user.first_name.comment = SPAN("*", _class="req")
+    _table_user.email.comment = SPAN("*", _class="req")
+    _table_user.password.comment = SPAN("*", _class="req")
     _table_user.language.label = T("Language")
     _table_user.language.default = "en"
     _table_user.language.comment = DIV(_class="tooltip", _title=T("Language|The language to use for notifications."))
     _table_user.language.represent = lambda opt: shn_languages.get(opt, UNKNOWN_OPT)
-
+    
     form = auth()
 
-    self_registration = db().select(db.s3_setting.self_registration).first().self_registration
+    self_registration = db().select(db.s3_setting.self_registration, limitby=(0, 1)).first().self_registration
 
     # Use Custom Ext views
     # Best to not use an Ext form for login: can't save username/password in browser & can't hit 'Enter' to submit!

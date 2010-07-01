@@ -74,9 +74,9 @@ $(document).ready(function() {
          errorPlacement: function(error, element) {
               error.appendTo( element.parent().next() );
          },
-        submitHandler: function() {
-            $("#regform").submit();
-        }
+         submitHandler: function(form) {
+                form.submit();
+         }
     });
 });
 

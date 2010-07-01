@@ -4,6 +4,7 @@
 {{if request.args[0] == "login":}}
  {{=T("Login")}}
 {{elif request.args[0] == "register":}}
+ {{form[0].insert(-1,TR(TD(LABEL(T('Mobile Phone:'))),INPUT(_name="mobile",_id="mobile")))}}
  {{=T("Register")}}
 {{elif request.args[0] == "profile":}}
  {{=T("Profile")}}

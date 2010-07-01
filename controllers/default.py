@@ -37,11 +37,7 @@ def user():
         # be updated for a workflow on login. This also notes the timestamp
         # of last login through the browser
         if auth.is_logged_in():
-            if not auth.user.timestamp:
-                db(db.auth_user.id == auth.user.id).update(timestamp = request.utcnow)
-                redirect(URL(r=request, c="msg", f="pe_contact"))
             db(db.auth_user.id == auth.user.id).update(timestamp = request.utcnow)
-            redirect(URL(r=request, f="index"))
 
     _table_user = auth.settings.table_user
     if request.args and request.args(0) == "profile":

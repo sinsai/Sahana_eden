@@ -806,6 +806,12 @@ class AuthS3(Auth):
                                 opt_pr_contact_method = 1,
                                 priority = 1,
                                 value = email)
+                        # The following adds the mobile to pr_pe_contact
+                        ctable.insert(
+                                pr_pe_id = pr_pe_id,
+                                opt_pr_contact_method = 2,
+                                priority = 2,
+                                value = self.environment.request.vars["mobile"])
 
                 if self.user and self.user.id == user.id:
                     self.user.person_uuid = person_uuid

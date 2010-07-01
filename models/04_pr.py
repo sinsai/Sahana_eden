@@ -135,6 +135,7 @@ s3xrc.model.add_component(module, resource,
 
 s3xrc.model.configure(table,
                       list_fields=["id",
+                                   pr_pe_id,
                                    "name",
                                    "person_name",
                                    "opt_pr_contact_method",

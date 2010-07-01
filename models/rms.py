@@ -28,6 +28,7 @@ if deployment_settings.has_module(module):
         1:T("Pledged"),
         2:T("In Transit"),
         3:T("Delivered"),
+        4:T("Cancelled")
         }
 
     rms_type_opts = {
@@ -46,10 +47,10 @@ if deployment_settings.has_module(module):
     # -----------------
     # Requests table (Combined SMS, Tweets & Manual entry)
 
-    def shn_req_aid_represent(id):
-        return  A(T('Make Pledge'), _href=URL(r=request, f='req', args=[id, 'pledge']))
+    #def shn_req_aid_represent(id):
+        #return  A(T("Make Pledge"), _href=URL(r=request, f="req", args=[id, "pledge"]))
 
-    resource = 'req'
+    resource = "req"
     tablename = "%s_%s" % (module, resource)
     table = db.define_table(tablename, timestamp, uuidstamp, deletion_status,
         Field("message", "text"),
@@ -64,12 +65,15 @@ if deployment_settings.has_module(module):
         Field("actionable", "boolean"),
         Field("actioned", "boolean"),
         Field("actioned_details"),
+        Field("pledge_status", "string"),
         migrate=migrate)
 
-    table.id.represent = lambda id: shn_req_aid_represent(id)
+    #table.id.represent = lambda id: shn_req_aid_represent(id) 
+    
+    db.rms_req.pledge_status.writable = False
 
     # Label the fields for the view
-    table.timestamp.label = T('Date & Time')
+    table.timestamp.label = T("Date & Time")
 
     # Hide fields from user:
     table.source_type.readable = table.source_type.writable = False
@@ -91,18 +95,22 @@ if deployment_settings.has_module(module):
     table.timestamp.comment = SPAN("*", _class="req")
 
     table.priority.requires = IS_NULL_OR(IS_IN_SET(rms_priority_opts))
-    table.priority.represent = lambda id: (id and [DIV(IMG(_src='/%s/static/img/priority/priority_%d.gif' % (request.application,id,), _height=12))] or [DIV(IMG(_src='/%s/static/img/priority/priority_4.gif' % request.application), _height=12)])
-    table.priority.label = T('Priority Level')
+    table.priority.represent = lambda id: (
+        [id and
+            DIV(IMG(_src="/%s/static/img/priority/priority_%d.gif" % (request.application,id,), _height=12)) or
+            DIV(IMG(_src="/%s/static/img/priority/priority_4.gif" % request.application), _height=12)
+        ][0].xml())
+    table.priority.label = T("Priority Level")
 
     table.type.requires = IS_NULL_OR(IS_IN_SET(rms_type_opts))
     table.type.represent = lambda type: type and rms_type_opts[type]
-    table.type.label = T('Request Type')
+    table.type.label = T("Request Type")
 
     table.source_type.requires = IS_NULL_OR(IS_IN_SET(rms_req_source_type))
     table.source_type.represent = lambda stype: stype and rms_req_source_type[stype]
-    table.source_type.label = T('Source Type')
+    table.source_type.label = T("Source Type")
 
-    ADD_AID_REQUEST = T('Add Aid Request')
+    ADD_AID_REQUEST = T("Add Aid Request")
 
     s3.crud_strings[tablename] = Storage(title_create        = ADD_AID_REQUEST,
                                     title_display       = "Aid Request Details",
@@ -119,13 +127,13 @@ if deployment_settings.has_module(module):
                                     msg_list_empty      = "No aid requests currently available")
 
     #Reusable field for other tables
-    request_id = SQLTable(None, 'req_id',
-                FieldS3('req_id', db.rms_req, sortby='message',
-                    requires = IS_NULL_OR(IS_ONE_OF(db, 'rms_req.id', '%(message)s')),
-                    represent = lambda id: (id and [db(db.rms_req.id==id).select().first().updated] or ["None"])[0],
-                    label = T('Aid Request'),
-                    comment = DIV(A(ADD_AID_REQUEST, _class='colorbox', _href=URL(r=request, c='rms', f='req', args='create', vars=dict(format='popup')), _target='top', _title=ADD_AID_REQUEST), A(SPAN("[Help]"), _class="tooltip", _title=T("Add Request|The Request this record is associated with."))),
-                    ondelete = 'RESTRICT'
+    request_id = db.Table(None, "req_id",
+                FieldS3("req_id", db.rms_req, sortby="message",
+                    requires = IS_NULL_OR(IS_ONE_OF(db, "rms_req.id", "%(message)s")),
+                    represent = lambda id: (id and [db(db.rms_req.id == id).select(limitby=(0, 1)).first().updated] or ["None"])[0],
+                    label = T("Aid Request"),
+                    comment = DIV(A(ADD_AID_REQUEST, _class="colorbox", _href=URL(r=request, c="rms", f="req", args="create", vars=dict(format="popup")), _target="top", _title=ADD_AID_REQUEST), A(SPAN("[Help]"), _class="tooltip", _title=T("Add Request|The Request this record is associated with."))),
+                    ondelete = "RESTRICT"
                     ))
 
 
@@ -146,7 +154,7 @@ if deployment_settings.has_module(module):
                 return None
         else:
             # No search fields specified at all => fallback
-            search_fields = ['message']
+            search_fields = ["message"]
 
         if label and isinstance(label, str):
             labels = label.split()
@@ -195,27 +203,27 @@ if deployment_settings.has_module(module):
         if attr is None:
             attr = {}
 
-        if not shn_has_permission('read', db.rms_req):
+        if not shn_has_permission("read", db.rms_req):
             session.error = UNAUTHORISED
-            redirect(URL(r=request, c='default', f='user', args='login', vars={'_next':URL(r=request, args='search_simple', vars=request.vars)}))
+            redirect(URL(r=request, c="default", f="user", args="login", vars={"_next":URL(r=request, args="search_simple", vars=request.vars)}))
 
         if xrequest.representation=="html":
             # Check for redirection
             if request.vars._next:
                 next = str.lower(request.vars._next)
             else:
-                next = str.lower(URL(r=request, f='req', args='[id]'))
+                next = str.lower(URL(r=request, f="req", args="[id]"))
 
             # Custom view
-            response.view = '%s/req_search.html' % xrequest.prefix
+            response.view = "%s/req_search.html" % xrequest.prefix
 
             # Title and subtitle
-            title = T('Search for a Request')
-            subtitle = T('Matching Records')
+            title = T("Search for a Request")
+            subtitle = T("Matching Records")
 
             # Select form
             form = FORM(TABLE(
-                    TR(T('Text in Message: '),
+                    TR(T("Text in Message: "),
                     INPUT(_type="text", _name="label", _size="40"),
                     A(SPAN("[Help]"), _class="tooltip", _title=T("Text in Message|To search for a request, enter some of the text that you are looking for. You may use % as wildcard. Press 'Search' without input to list all requests."))),
                     TR("", INPUT(_type="submit", _value="Search"))
@@ -278,8 +286,8 @@ if deployment_settings.has_module(module):
     # ------------------
     # Create pledge table
 
-    def shn_req_pledge_represent(id):
-        return  A(T("Edit Pledge"), _href=URL(r=request, f="pledge", args=[id]))
+    #def shn_req_pledge_represent(id):
+        #return  A(T("Edit Pledge"), _href=URL(r=request, f="pledge", args=[id]))
 
 
     resource = "pledge"
@@ -290,10 +298,10 @@ if deployment_settings.has_module(module):
         Field("status", "integer"),
         organisation_id,
         person_id,
-        #   Field('comment_id', db.comment),
+        #   Field("comment_id", db.comment),
         migrate=migrate)
 
-    table.id.represent = lambda id: shn_req_pledge_represent(id)
+    #table.id.represent = lambda id: shn_req_pledge_represent(id)
 
     # hide unnecessary fields
     table.req_id.readable = table.req_id.writable = False
@@ -305,17 +313,26 @@ if deployment_settings.has_module(module):
     table.submitted_on.default = request.now
     table.submitted_on.writable = False
 
-    table.status.requires = IS_IN_SET(rms_status_opts)
+    table.status.requires = IS_IN_SET(rms_status_opts, zero=None)
     table.status.represent = lambda status: status and rms_status_opts[status]
-    table.status.label = T('Pledge Status')
+    table.status.label = T("Pledge Status")
+
+    table.organisation_id.label = T("Organization")
+    table.person_id.label = T("Person")
 
     # Pledges as a component of requests
     s3xrc.model.add_component(module, resource,
-        multiple=True,
-        joinby=dict(rms_req = 'req_id'),
-        deletable=True,
-        editable=True,
-        list_fields = ['id', 'organisation_id', 'person_id', 'submitted_on', 'status'])
+                              multiple=True,
+                              joinby=dict(rms_req = "req_id"),
+                              deletable=True,
+                              editable=True)
+
+    s3xrc.model.configure(table,
+                          list_fields=["id",
+                                       "organisation_id",
+                                       "person_id",
+                                       "submitted_on",
+                                       "status"])
 
     s3.crud_strings[tablename] = Storage(title_create        = "Add Pledge",
                                     title_display       = "Pledge Details",
@@ -330,12 +347,36 @@ if deployment_settings.has_module(module):
                                     msg_record_modified = "Pledge updated",
                                     msg_record_deleted  = "Pledge deleted",
                                     msg_list_empty      = "No Pledges currently available")
-
-
+    
+    def rms_pledge_onaccept(form):
+        #pledge_id = session.rcvars.rms_pledge
+        
+        req_id = session.rcvars.rms_req #db(db.rms_pledge.id == pledge_id).select(db.rms_pledge.req_id).first().req_id
+        
+        if req_id:
+            #This could be done as a join
+            pledges = db(db.rms_pledge.req_id == req_id).select(db.rms_pledge.status)
+            num_status = {}
+            for pledge in pledges:
+                status = pledge.status
+                if status:
+                    if status not in num_status:
+                        num_status[status] = 1
+                    else:
+                        num_status[status] = num_status[status] + 1
+            
+            pledge_status = ""
+            for i in (3,2,1):
+                if i in num_status:
+                    pledge_status = pledge_status + str(rms_status_opts[i]) + ": " + str(num_status[i]) + ", "
+            pledge_status = pledge_status[:-2]
+            db(db.rms_req.id == req_id).update(pledge_status = pledge_status)     
+        
+    s3xrc.model.configure(db.rms_pledge, onaccept=rms_pledge_onaccept)  
 
     # ------------------
     # Create the table for request_detail for requests with arbitrary keys
-    resource = 'req_detail'
+    resource = "req_detail"
     tablename = "%s_%s" % (module, resource)
     table = db.define_table(tablename, timestamp, uuidstamp, deletion_status,
         request_id,
@@ -344,12 +385,17 @@ if deployment_settings.has_module(module):
         migrate=migrate)
 
     s3xrc.model.add_component(module, resource,
-        multiple=True,
-        joinby=dict(rms_req='req_id'),
-        deletable=True,
-        editable=True,
-        main='request_key', extra='value',
-        list_fields = ['id', 'req_id', 'request_key', 'value'])
+                              multiple=True,
+                              joinby=dict(rms_req="req_id"),
+                              deletable=True,
+                              editable=True,
+                              main="request_key", extra="value")
+
+    s3xrc.model.configure(table,
+                          list_fields=["id",
+                                       "req_id",
+                                       "request_key",
+                                       "value"])
 
     # Make some fields invisible:
     table.req_id.readable = table.req_id.writable = False
@@ -359,7 +405,7 @@ if deployment_settings.has_module(module):
     #table.request_key.writable = False
     #table.value.writable = False
 
-    ADD_REQUEST_DETAIL = T('Add Request Detail')
+    ADD_REQUEST_DETAIL = T("Add Request Detail")
     s3.crud_strings[tablename] = Storage( title_create        = ADD_REQUEST_DETAIL,
                                     title_display       = "Request Detail",
                                     title_list          = "List Request Details",
@@ -376,11 +422,11 @@ if deployment_settings.has_module(module):
 
 
     #Reusable field for other tables
-    req_detail_id = SQLTable(None, 'req_detail_id',
-                FieldS3('req_detail_id', db.rms_req_detail, sortby='request_key',
-                    requires = IS_NULL_OR(IS_ONE_OF(db, 'rms_req_detail.id', '%( request_key)s')),
-                    represent = lambda id: (id and [db(db.rms_req_detail.id==id).select().first().updated] or ["None"])[0],
-                    label = T('Request Detail'),
-                    comment = DIV(A(ADD_REQUEST_DETAIL, _class='colorbox', _href=URL(r=request, c='rms', f='req_detail', args='create', vars=dict(format='popup')), _target='top', _title=ADD_REQUEST_DETAIL), A(SPAN("[Help]"), _class="tooltip", _title=T("Add Request|The Request this record is associated with."))),
-                    ondelete = 'RESTRICT'
+    req_detail_id = db.Table(None, "req_detail_id",
+                FieldS3("req_detail_id", db.rms_req_detail, sortby="request_key",
+                    requires = IS_NULL_OR(IS_ONE_OF(db, "rms_req_detail.id", "%( request_key)s")),
+                    represent = lambda id: (id and [db(db.rms_req_detail.id == id).select(limitby=(0, 1)).first().updated] or ["None"])[0],
+                    label = T("Request Detail"),
+                    comment = DIV(A(ADD_REQUEST_DETAIL, _class="colorbox", _href=URL(r=request, c="rms", f="req_detail", args="create", vars=dict(format="popup")), _target="top", _title=ADD_REQUEST_DETAIL), A(SPAN("[Help]"), _class="tooltip", _title=T("Add Request|The Request this record is associated with."))),
+                    ondelete = "RESTRICT"
                     ))

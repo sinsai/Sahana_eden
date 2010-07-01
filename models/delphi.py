@@ -39,6 +39,8 @@ if deployment_settings.has_module(module):
         msg_record_deleted = T('Group deleted'),
         msg_list_empty = T('No Groups currently defined'))
 
+    s3xrc.model.configure(table, list_fields=['id', 'name', 'description'])
+
     ##################
     # Group Membership
     ##################
@@ -60,12 +62,12 @@ if deployment_settings.has_module(module):
 
     table.group_id.label = T('Problem Group')
     table.group_id.requires = IS_IN_DB(db, 'delphi_group.id', '%(name)s')
-    table.group_id.represent = lambda id: (id and [db(db.delphi_group.id==id).select().first().name] or ["None"])[0]
+    table.group_id.represent = lambda id: (id and [db(db.delphi_group.id == id).select(limitby=(0, 1)).first().name] or ["None"])[0]
     table.user_id.label = T('User')
     table.user_id.represent = lambda user_id: (user_id == 0) and '-' or '%(first_name)s %(last_name)s [%(id)d]' % db(db.auth_user.id==user_id).select()[0]
     #table.user_id.requires = IS_IN_DB(db, 'auth_user.id', '%(first_name)s %(last_name)s [%(id)d]')
     table.user_id.requires = IS_IN_DB(db, 'auth_user.id', shn_user_represent)
-    table.status.requires = IS_IN_SET(delphi_role_opts)
+    table.status.requires = IS_IN_SET(delphi_role_opts, zero=None)
     table.status.represent = lambda opt: delphi_role_opts.get(opt, UNKNOWN_OPT)
 
     # CRUD Strings
@@ -85,6 +87,8 @@ if deployment_settings.has_module(module):
         msg_record_modified = T('Membership updated'),
         msg_record_deleted = T('Membership deleted'),
         msg_list_empty = T('No Memberships currently defined'))
+
+    s3xrc.model.configure(table, list_fields=['id', 'group_id', 'user_id', 'status', 'req'])
 
     ##########
     # Problems
@@ -106,7 +110,7 @@ if deployment_settings.has_module(module):
     table.created_by.default = auth.user.id if auth.user else 0
     table.group_id.label = T('Problem Group')
     table.group_id.requires = IS_IN_DB(db, 'delphi_group.id', '%(name)s')
-    table.group_id.represent = lambda id: (id and [db(db.delphi_group.id==id).select().first().name] or ["None"])[0]
+    table.group_id.represent = lambda id: (id and [db(db.delphi_group.id == id).select(limitby=(0, 1)).first().name] or ["None"])[0]
 
     # CRUD Strings
     ADD_PROBLEM = T('Add Problem')
@@ -125,6 +129,8 @@ if deployment_settings.has_module(module):
         msg_record_modified = T('Problem updated'),
         msg_record_deleted = T('Problem deleted'),
         msg_list_empty = T('No Problems currently defined'))
+
+    s3xrc.model.configure(table, list_fields=['id', 'group_id', 'name', 'created_by', 'last_modification'])
 
     def get_last_problem_id():
         last_problems = db(db.delphi_problem.id > 0).select(db.delphi_problem.id, orderby =~ db.delphi_problem.id, limitby = (0, 1))
@@ -150,7 +156,7 @@ if deployment_settings.has_module(module):
     table.problem_id.label = T('Problem')
     table.problem_id.default = get_last_problem_id()
     table.problem_id.requires = IS_IN_DB(db, 'delphi_problem.id', '%(id)s: %(name)s')
-    table.problem_id.represent = lambda id: (id and [db(db.delphi_problem.id==id).select().first().name] or ["None"])[0]
+    table.problem_id.represent = lambda id: (id and [db(db.delphi_problem.id == id).select(limitby=(0, 1)).first().name] or ["None"])[0]
 
     # CRUD Strings
     ADD_SOLUTION = T('Add Solution')
@@ -169,6 +175,8 @@ if deployment_settings.has_module(module):
         msg_record_modified = T('Solution updated'),
         msg_record_deleted = T('Solution deleted'),
         msg_list_empty = T('No Solutions currently defined'))
+
+    s3xrc.model.configure(table, list_fields=['id', 'problem_id', 'name', 'suggested_by', 'last_modification'])
 
     #######
     # Votes

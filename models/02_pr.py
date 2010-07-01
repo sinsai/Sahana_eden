@@ -22,9 +22,9 @@ table = db.define_table(tablename,
 # *****************************************************************************
 # PersonEntity (pentity)
 #
-opt_pr_entity_type = SQLTable(None, "opt_pr_entity_type",
+opt_pr_entity_type = db.Table(None, "opt_pr_entity_type",
                               Field("opt_pr_entity_type", "integer",
-                                    requires = IS_IN_SET(vita.trackable_types),
+                                    requires = IS_IN_SET(vita.trackable_types, zero=None),
                                     default = vita.DEFAULT_TRACKABLE,
                                     label = T("Entity Type"),
                                     represent = lambda opt:
@@ -114,7 +114,7 @@ table.uuid.requires = IS_NOT_IN_DB(db, "%s.uuid" % tablename)
 #
 # Reusable field for other tables to reference --------------------------------
 #
-pr_pe_id = SQLTable(None, "pr_pe_id",
+pr_pe_id = db.Table(None, "pr_pe_id",
                 Field("pr_pe_id", db.pr_pentity,
                     requires =  IS_NULL_OR(IS_ONE_OF(db, "pr_pentity.id", shn_pentity_represent)),
                     represent = lambda id: (id and [shn_pentity_represent(id)] or ["None"])[0],
@@ -125,7 +125,7 @@ pr_pe_id = SQLTable(None, "pr_pe_id",
 #
 # Person Entity Field Set -----------------------------------------------------
 #
-pr_pe_fieldset = SQLTable(None, "pr_pe_fieldset",
+pr_pe_fieldset = db.Table(None, "pr_pe_fieldset",
                     Field("pr_pe_id", db.pr_pentity,
                         requires = IS_NULL_OR(IS_ONE_OF(db, "pr_pentity.id", shn_pentity_represent)),
                         represent = lambda id: (id and [shn_pentity_represent(id)] or ["None"])[0],
@@ -166,7 +166,7 @@ def shn_pentity_ondelete(record):
         crud.settings.delete_onvalidation = None
         crud.settings.delete_onaccept = None
 
-        if db(db.s3_setting.id == 1).select().first().archive_not_delete:
+        if db(db.s3_setting.id == 1).select(limitby=(0, 1)).first().archive_not_delete:
             db(db.pr_pentity.id == pr_pe_id).update(deleted = True)
         else:
             crud.delete(db.pr_pentity, pr_pe_id)
@@ -216,9 +216,9 @@ pr_person_gender_opts = {
     3:T("male")
     }
 
-opt_pr_gender = SQLTable(None, "opt_pr_gender",
+opt_pr_gender = db.Table(None, "opt_pr_gender",
                     Field("opt_pr_gender", "integer",
-                        requires = IS_IN_SET(pr_person_gender_opts),
+                        requires = IS_IN_SET(pr_person_gender_opts, zero=None),
                         default = 1,
                         label = T("Gender"),
                         represent = lambda opt: pr_person_gender_opts.get(opt, UNKNOWN_OPT)))
@@ -235,9 +235,9 @@ pr_person_age_group_opts = {
     6:T("Senior (50+)")
     }
 
-opt_pr_age_group = SQLTable(None, "opt_pr_age_group",
+opt_pr_age_group = db.Table(None, "opt_pr_age_group",
                     Field("opt_pr_age_group", "integer",
-                        requires = IS_IN_SET(pr_person_age_group_opts),
+                        requires = IS_IN_SET(pr_person_age_group_opts, zero=None),
                         default = 1,
                         label = T("Age Group"),
                         represent = lambda opt:
@@ -256,7 +256,7 @@ pr_marital_status_opts = {
     99:T("other")
 }
 
-opt_pr_marital_status = SQLTable(None, "opt_pr_marital_status",
+opt_pr_marital_status = db.Table(None, "opt_pr_marital_status",
                         Field("opt_pr_marital_status", "integer",
                             requires = IS_NULL_OR(IS_IN_SET(pr_marital_status_opts)),
                             default = 1,
@@ -277,7 +277,7 @@ pr_religion_opts = {
     99:T("other")
     }
 
-opt_pr_religion = SQLTable(None, "opt_pr_religion",
+opt_pr_religion = db.Table(None, "opt_pr_religion",
                     Field("opt_pr_religion", "integer",
                         requires = IS_NULL_OR(IS_IN_SET(pr_religion_opts)),
                         # default = 1,
@@ -289,14 +289,14 @@ opt_pr_religion = SQLTable(None, "opt_pr_religion",
 #
 pr_nationality_opts = shn_list_of_nations
 
-opt_pr_nationality = SQLTable(None, "opt_pr_nationality",
+opt_pr_nationality = db.Table(None, "opt_pr_nationality",
                         Field("opt_pr_nationality", "integer",
                             requires = IS_NULL_OR(IS_IN_SET(pr_nationality_opts)),
                             # default = 999, # unknown
                             label = T("Nationality"),
                             represent = lambda opt: pr_nationality_opts.get(opt, UNKNOWN_OPT)))
 
-opt_pr_country = SQLTable(None, "opt_pr_country",
+opt_pr_country = db.Table(None, "opt_pr_country",
                         Field("opt_pr_country", "integer",
                             requires = IS_NULL_OR(IS_IN_SET(pr_nationality_opts)),
                             # default = 999, # unknown
@@ -307,16 +307,21 @@ opt_pr_country = SQLTable(None, "opt_pr_country",
 # shn_pr_person_represent -----------------------------------------------------
 #
 def shn_pr_person_represent(id):
-    table = db.pr_person
-    person = db(table.id == id).select(
-                table.first_name,
-                table.middle_name,
-                table.last_name,
-                limitby=(0, 1))
-    if person:
-        return vita.fullname(person[0])
-    else:
-        return None
+
+    def _represent(id):
+        table = db.pr_person
+        person = db(table.id == id).select(
+                    table.first_name,
+                    table.middle_name,
+                    table.last_name,
+                    limitby=(0, 1))
+        if person:
+            return vita.fullname(person.first())
+        else:
+            return None
+
+    name = cache.ram("pr_person_%s" % id, lambda: _represent(id), time_expire=10)
+    return name
 
 #
 # person table ----------------------------------------------------------------
@@ -333,8 +338,6 @@ table = db.define_table(tablename, timestamp, uuidstamp, authorstamp, deletion_s
                 Field("local_name"),                    # name in local language and script, Sahana legacy
                 opt_pr_gender,
                 opt_pr_age_group,
-                Field("email", length=128),             # Deprecated - see pe_contact
-                Field("mobile_phone"),                  # Deprecated - see pe_contact
                 # Person Details
                 Field("date_of_birth", "date"),         # Sahana legacy
                 opt_pr_nationality,                     # Nationality
@@ -349,9 +352,6 @@ table = db.define_table(tablename, timestamp, uuidstamp, authorstamp, deletion_s
 table.date_of_birth.requires = IS_NULL_OR(IS_DATE_IN_RANGE(maximum=request.utcnow.date(),
                                         error_message="%s " % T("Enter a date before") + "%(max)s!"))
 table.first_name.requires = IS_NOT_EMPTY()   # People don"t have to have unique names, some just have a single name
-table.email.requires = IS_NOT_IN_DB(db, "%s.email" % tablename)     # Needs to be unique as used for AAA
-table.email.requires = IS_NULL_OR(IS_EMAIL())
-table.mobile_phone.requires = IS_NULL_OR(IS_NOT_IN_DB(db, "%s.mobile_phone" % tablename))   # Needs to be unique as used for AAA
 table.pr_pe_label.requires = IS_NULL_OR(IS_NOT_IN_DB(db, "pr_person.pr_pe_label"))
 
 # Field representation
@@ -363,10 +363,6 @@ table.preferred_name.comment = DIV(DIV(_class="tooltip",
     _title=T("Preferred Name|The name to be used when calling for or directly addressing the person (optional).")))
 table.local_name.comment = DIV(DIV(_class="tooltip",
     _title=T("Local Name|Name of the person in local language and script (optional).")))
-table.email.comment = DIV(DIV(_class="tooltip",
-    _title=T("Email|This gets used both for signing-in to the system & for receiving alerts/updates.")))
-table.mobile_phone.comment = DIV(DIV(_class="tooltip",
-    _title=T("Mobile Phone No|This gets used both for signing-in to the system & for receiving alerts/updates.")))
 table.opt_pr_nationality.comment = DIV(DIV(_class="tooltip",
     _title=T("Nationality|Nationality of the person.")))
 table.opt_pr_country.comment = DIV(DIV(_class="tooltip",
@@ -377,7 +373,6 @@ table.missing.represent = lambda missing: (missing and ["missing"] or [""])[0]
 # Field labels
 table.opt_pr_gender.label = T("Gender")
 table.opt_pr_age_group.label = T("Age group")
-table.mobile_phone.label = T("Mobile Phone #")
 
 # CRUD Strings
 ADD_PERSON = T("Add Person")
@@ -409,7 +404,7 @@ shn_person_comment = DIV(A(s3.crud_strings.pr_person.label_create_button,
                          DIV(DIV(_class="tooltip",
                                  _title=T("Create Person Entry|Create a person entry in the registry."))))
 
-person_id = SQLTable(None, "person_id",
+person_id = db.Table(None, "person_id",
                 FieldS3("person_id", db.pr_person, sortby=["first_name", "middle_name", "last_name"],
                     requires = IS_NULL_OR(IS_ONE_OF(db, "pr_person.id", shn_pr_person_represent)),
                     represent = lambda id: (id and [shn_pr_person_represent(id)] or ["None"])[0],
@@ -418,9 +413,17 @@ person_id = SQLTable(None, "person_id",
                 ))
 
 s3xrc.model.configure(table,
-    onaccept=lambda form: shn_pentity_onaccept(form, table=db.pr_person, entity_type=1),
-    delete_onaccept=lambda form: shn_pentity_ondelete(form))
-
+                      onaccept=lambda form: \
+                      shn_pentity_onaccept(form, table=db.pr_person, entity_type=1),
+                      delete_onaccept=lambda form: \
+                      shn_pentity_ondelete(form),
+                      list_fields = ["id",
+                                     "first_name",
+                                     "middle_name",
+                                     "last_name",
+                                     "date_of_birth",
+                                     "opt_pr_nationality",
+                                     "missing"])
 
 # *****************************************************************************
 # Group (group)
@@ -436,12 +439,12 @@ pr_group_type_opts = {
     4:T("other")
     }
 
-opt_pr_group_type = SQLTable(None, "opt_pr_group_type",
-                    Field("opt_pr_group_type", "integer",
-                        requires = IS_IN_SET(pr_group_type_opts),
-                        default = 4,
-                        label = T("Group Type"),
-                        represent = lambda opt: pr_group_type_opts.get(opt, UNKNOWN_OPT)))
+opt_pr_group_type = db.Table(None, "opt_pr_group_type",
+                             Field("opt_pr_group_type", "integer",
+                                   requires = IS_IN_SET(pr_group_type_opts, zero=None),
+                                   default = 4,
+                                   label = T("Group Type"),
+                                   represent = lambda opt: pr_group_type_opts.get(opt, UNKNOWN_OPT)))
 
 #
 # group table -----------------------------------------------------------------
@@ -502,7 +505,7 @@ s3.crud_strings[tablename] = Storage(
 #
 # group_id: reusable field for other tables to reference ----------------------
 #
-group_id = SQLTable(None, "group_id",
+group_id = db.Table(None, "group_id",
                 FieldS3("group_id", db.pr_group, sortby="group_name",
                     requires = IS_NULL_OR(IS_ONE_OF(db, "pr_group.id", "%(id)s: %(group_name)s", filterby="system", filter_opts=(False,))),
                     represent = lambda id: (id and [db(db.pr_group.id==id).select()[0].group_name] or ["None"])[0],
@@ -520,21 +523,76 @@ s3xrc.model.configure(table,
     delete_onaccept=lambda form: shn_pentity_ondelete(form))
 
 # *****************************************************************************
-# Functions:
+# Group membership (group_membership)
 #
-def shn_pr_person_list_fields():
+resource = "group_membership"
+tablename = "%s_%s" % (module, resource)
+table = db.define_table(tablename, timestamp, deletion_status,
+                group_id,
+                person_id,
+                Field("group_head", "boolean", default=False),
+                Field("description"),
+                Field("comment"),
+                migrate=migrate)
 
-    list_fields = ["id",
-            "first_name",
-            "middle_name",
-            "last_name",
-            "date_of_birth",
-            "opt_pr_nationality",
-            "missing"]
+# Joined Resource
+s3xrc.model.add_component(module, resource,
+                          multiple=True,
+                          joinby=dict(pr_group="group_id",
+                                      pr_person="person_id"),
+                          deletable=True,
+                          editable=True)
 
-    return list_fields
+s3xrc.model.configure(table,
+                      list_fields=["id",
+                                   "group_id",
+                                   "person_id",
+                                   "group_head",
+                                   "description"])
 
-# -----------------------------------------------------------------------------
+# Field validation
+
+# Field representation
+table.group_head.represent = lambda group_head: (group_head and [T("yes")] or [""])[0]
+
+# Field labels
+
+# CRUD Strings
+if request.function in ("person", "group_membership"):
+    s3.crud_strings[tablename] = Storage(
+        title_create = T("Add Membership"),
+        title_display = T("Membership Details"),
+        title_list = T("Memberships"),
+        title_update = T("Edit Membership"),
+        title_search = T("Search Membership"),
+        subtitle_create = T("Add New Membership"),
+        subtitle_list = T("Current Memberships"),
+        label_list_button = T("List All Memberships"),
+        label_create_button = T("Add Membership"),
+        label_delete_button = T("Delete Membership"),
+        msg_record_created = T("Membership added"),
+        msg_record_modified = T("Membership updated"),
+        msg_record_deleted = T("Membership deleted"),
+        msg_list_empty = T("No Memberships currently registered"))
+elif request.function == "group":
+    s3.crud_strings[tablename] = Storage(
+        title_create = T("Add Member"),
+        title_display = T("Membership Details"),
+        title_list = T("Group Members"),
+        title_update = T("Edit Membership"),
+        title_search = T("Search Member"),
+        subtitle_create = T("Add New Member"),
+        subtitle_list = T("Current Group Members"),
+        label_list_button = T("List Members"),
+        label_create_button = T("Add Group Member"),
+        label_delete_button = T("Delete Membership"),
+        msg_record_created = T("Group Member added"),
+        msg_record_modified = T("Membership updated"),
+        msg_record_deleted = T("Membership deleted"),
+        msg_list_empty = T("No Members currently registered"))
+
+# *****************************************************************************
+# Functions:
 #
 def shn_pr_person_search_simple(xrequest, **attr):
 
@@ -602,9 +660,7 @@ def shn_pr_person_search_simple(xrequest, **attr):
             xrequest.id = None
 
             # Get report from HTML exporter
-            report = shn_list(xrequest,
-                              listadd=False,
-                              list_fields=shn_pr_person_list_fields())
+            report = shn_list(xrequest, listadd=False)
 
             output.update(dict(report))
 
@@ -635,67 +691,74 @@ s3xrc.model.set_method(module, "person", method="search_simple", action=shn_pr_p
 
 # -----------------------------------------------------------------------------
 #
-def shn_pr_pheader(resource, record_id, representation, next=None, same=None):
+def shn_pr_rheader(jr, tabs=[]):
 
-    """
-        Person Registry page headers
-    """
+    """ Person Registry page headers """
 
-    if resource == "person":
-        if representation == "html":
+    if jr.name == "person":
+        if jr.representation == "html":
 
-            if next:
-                _next = next
-            else:
-                _next = URL(r=request, f=resource, args=["read"])
+            _next = jr.here()
+            _same = jr.same()
 
-            if same:
-                _same = same
-            else:
-                _same = URL(r=request, f=resource, args=["read", "[id]"])
+            person = jr.record
 
-            person = vita.person(record_id)
+            rheader_tabs = shn_rheader_tabs(jr, tabs)
 
             if person:
-                pheader = DIV(TABLE(
-                    TR(
-                        TH(T("Name: ")),
-                        vita.fullname(person),
-                        TH(T("ID Label: ")),
-                        "%(pr_pe_label)s" % person,
-                        TH(A(T("Clear Selection"),
-                            _href=URL(r=request, f="person", args="clear", vars={"_next": _same})))
-                        ),
-                    TR(
-                        TH(T("Date of Birth: ")),
-                        "%s" % (person.date_of_birth or T("unknown")),
-                        TH(T("Gender: ")),
-                        "%s" % pr_person_gender_opts.get(person.opt_pr_gender, T("unknown")),
-                        TH(""),
-                        ),
-                    TR(
-                        TH(T("Nationality: ")),
-                        "%s" % pr_nationality_opts.get(person.opt_pr_nationality, T("unknown")),
-                        TH(T("Age Group: ")),
-                        "%s" % pr_person_age_group_opts.get(person.opt_pr_age_group, T("unknown")),
-                        TH(A(T("Edit Person"),
-                            _href=URL(r=request, f="person", args=["update", record_id], vars={"_next": _next})))
-                        )
-                #), DIV(
-                        #A(T("Images"), _href=URL(r=request, f="person", args=[record_id, "image"], vars={"_next": _next})),
-                        #A(T("Identity"), _href=URL(r=request, f="person", args=[record_id, "identity"], vars={"_next": _next})),
-                        #A(T("Addresses"), _href=URL(r=request, f="person", args=[record_id, "address"], vars={"_next": _next})),
-                        #A(T("Contact Information"), _href=URL(r=request, f="person", args=[record_id, "pe_contact"], vars={"_next": _next})),
-                        #A(T("Presence Log"), _href=URL(r=request, f="person", args=[record_id, "presence"], vars={"_next": _next})),
-                        #_class="pheader_tabs"
-                ))
-                return pheader
+                rheader = DIV(TABLE(
+
+                    TR(TH(T("Name: ")),
+                       vita.fullname(person),
+                       TH(T("ID Label: ")),
+                       "%(pr_pe_label)s" % person),
+
+                    TR(TH(T("Date of Birth: ")),
+                       "%s" % (person.date_of_birth or T("unknown")),
+                       TH(T("Gender: ")),
+                       "%s" % pr_person_gender_opts.get(person.opt_pr_gender, T("unknown"))),
+
+                    TR(TH(T("Nationality: ")),
+                       "%s" % pr_nationality_opts.get(person.opt_pr_nationality, T("unknown")),
+                       TH(T("Age Group: ")),
+                       "%s" % pr_person_age_group_opts.get(person.opt_pr_age_group, T("unknown"))),
+
+                    #))
+                    ), rheader_tabs)
+
+                return rheader
 
         else:
             pass
 
-    elif resource == "group":
-        pass
+    elif jr.name == "group":
+        if jr.representation == "html":
+
+            _next = jr.here()
+            _same = jr.same()
+
+            group = jr.record
+
+            rheader_tabs = shn_rheader_tabs(jr, tabs)
+
+            if group:
+                rheader = DIV(TABLE(
+
+                    TR(TH(T("Name: ")),
+                       group.group_name,
+                       TH(""),
+                       ""),
+                    TR(TH(T("Description: ")),
+                       group.group_description,
+                       TH(""),
+                       "")
+
+                    ), rheader_tabs)
+
+                return rheader
+
+        else:
+            pass
     else:
         pass
 

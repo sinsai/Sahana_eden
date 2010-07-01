@@ -9,9 +9,9 @@
 
     <!-- **********************************************************************
 
-         S3XRC to EDXL-HAVE Transformation Template
+         EDXL-HAVE Export Templates for S3XRC
 
-         Version 0.3 / 2010-01-31 / by nursix
+         Version 0.4 / 2010-06-10 / by nursix
 
          Copyright (c) 2010 Sahana Software Foundation
 
@@ -37,7 +37,6 @@
          OTHER DEALINGS IN THE SOFTWARE.
 
     *********************************************************************** -->
-
     <xsl:output method="xml"/>
 
     <!-- ****************************************************************** -->
@@ -109,11 +108,8 @@
                         <xsl:when test="normalize-space(./data[@field='gov_uuid']/text())">
                             <xsl:value-of select="normalize-space(./data[@field='gov_uuid']/text())"/>
                         </xsl:when>
-                        <xsl:when test="contains(./@uuid, '/')">
-                            <xsl:value-of select="./@uuid" />
-                        </xsl:when>
                         <xsl:otherwise>
-                            <xsl:value-of select="concat(/s3xrc/@domain, '/', ./@uuid)" />
+                            <xsl:value-of select="./@uuid" />
                         </xsl:otherwise>
                     </xsl:choose>
                 </xsl:attribute>

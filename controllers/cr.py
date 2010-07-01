@@ -4,7 +4,7 @@
     Shelter Registry - Controllers
 """
 
-module = "cr"
+module = request.controller
 
 if module not in deployment_settings.modules:
     session.error = T("Module disabled!")
@@ -21,7 +21,7 @@ response.menu_options = [
 def index():
     "Module's Home Page"
     
-    module_name = s3.modules[module]["name_nice"]
+    module_name = deployment_settings.modules[module].name_nice
     
     return dict(module_name=module_name)
 
@@ -46,7 +46,8 @@ def shelter():
     True
     >>> test.assertHeader("Content-Type", "text/csv")
     """
-    return shn_rest_controller(module, 'shelter')
+    resource = request.function
+    return shn_rest_controller(module, resource)
 
 # http://groups.google.com/group/web2py/browse_thread/thread/53086d5f89ac3ae2
 def call():
@@ -79,7 +80,7 @@ def create(name):
 @service.xmlrpc
 def update(id, name):
     # Need to do validation manually!
-    status = db(db.cr_shelter.id==id).update(name=name)
+    status = db(db.cr_shelter.id == id).update(name=name)
     if status:
         return 'Success - record %d updated!' % id
     else:

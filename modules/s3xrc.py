@@ -3,7 +3,7 @@
 """
     S3XRC Resource Framework
 
-    @version: 1.7
+    @version: 1.9
     @requires: U{B{I{lxml}} <http://codespeak.net/lxml>}
 
     @author: nursix
@@ -34,15 +34,15 @@
 """
 
 __name__ = "S3XRC"
-__all__ = ["S3RESTController", "S3RESTRequest", "S3ResourceController"]
+__all__ = ["S3RESTController", "S3ResourceController"]
 
-import sys, uuid
+import sys, uuid, datetime, time, urllib
 import gluon.contrib.simplejson as json
 
 from gluon.storage import Storage
 from gluon.html import URL
 from gluon.http import HTTP, redirect
-from gluon.validators import IS_NULL_OR
+from gluon.validators import IS_NULL_OR, IS_EMPTY_OR
 from xml.etree.cElementTree import ElementTree
 from lxml import etree
 
@@ -166,7 +166,7 @@ class S3RESTController(object):
             # Full policy
             if self.auth.is_logged_in() or self.auth.basic():
                 # Administrators are always authorised
-                if self.auth.has_membership(1):
+                if 1 in session.s3.roles:
                     authorised = True
                 else:
                     # Require records in auth_permission to specify access
@@ -288,7 +288,7 @@ class S3RESTController(object):
             # Joined Table Operation
             if jr.component:
                 # HTTP Multi-Record Operation
-                if jr.method==None and jr.multiple and not jr.component_id:
+                if jr.method == None and jr.multiple and not jr.component_id:
                     # HTTP List/List-add
                     if jr.http == "GET":
                         authorised = self.__has_permission(session, "read",
@@ -333,7 +333,7 @@ class S3RESTController(object):
                         else:
                             self.__unauthorised(jr, session)
                     # HTTP Update
-                    elif jr.http=="PUT" or jr.http == "POST":
+                    elif jr.http == "PUT" or jr.http == "POST":
                         if jr.representation in self.json_import_formats:
                             method = "import_json"
                         elif jr.representation in self.xml_import_formats:
@@ -638,7 +638,7 @@ class S3RESTRequest(object):
                ("select" in self.request.vars):
                 if self.component and not self.args[0].isdigit():
                     self.args.insert(0, str(self.id))
-                    if self.representation==self.DEFAULT_REPRESENTATION or \
+                    if self.representation == self.DEFAULT_REPRESENTATION or \
                        self.extension:
                         self.request.args.insert(0, str(self.id))
                     else:
@@ -676,6 +676,16 @@ class S3RESTRequest(object):
             print >> sys.stderr, "S3RESTRequest: %s" % msg
 
 
+    def __repr__(self):
+
+        return self.here()
+
+
+    def __str__(self):
+
+        return str(self.here())
+
+
     # Request parser ==========================================================
 
     def __parse(self):
@@ -684,7 +694,8 @@ class S3RESTRequest(object):
 
         self.args = []
 
-        components = self.rc.model.components
+        components = [c[0].name for c in
+                      self.rc.model.get_components(self.prefix, self.name)]
 
         if len(self.request.args) > 0:
             for i in xrange(0, len(self.request.args)):
@@ -761,11 +772,11 @@ class S3RESTRequest(object):
 
         if self.id:
             # Primary record ID is specified
-            query = (self.table.id==self.id)
+            query = (self.table.id == self.id)
             if "deleted" in self.table:
-                query = ((self.table.deleted==False) |
-                         (self.table.deleted==None)) & query
-            records = self.rc.db(query).select(self.table.ALL, limitby=(0,1))
+                query = ((self.table.deleted == False) |
+                         (self.table.deleted == None)) & query
+            records = self.rc.db(query).select(self.table.ALL, limitby=(0, 1))
             if not records:
                 self.__dbg("Invalid resource record ID")
                 self.id = None
@@ -776,11 +787,11 @@ class S3RESTRequest(object):
 
         elif uids and uids[0] is not None and "uuid" in self.table:
             # Primary record UUID is specified
-            query = (self.table.uuid==uids[0])
+            query = (self.table.uuid == uids[0])
             if "deleted" in self.table:
-                query = ((self.table.deleted==False) |
-                         (self.table.deleted==None)) & query
-            records = self.rc.db(query).select(self.table.ALL, limitby=(0,1))
+                query = ((self.table.deleted == False) |
+                         (self.table.deleted == None)) & query
+            records = self.rc.db(query).select(self.table.ALL, limitby=(0, 1))
             if not records:
                 self.__dbg("Invalid resource record UUID")
                 self.id = None
@@ -792,18 +803,18 @@ class S3RESTRequest(object):
 
         if self.component and self.component_id:
             # Component record ID is specified
-            query = ((self.component.table.id==self.component_id) &
-                     (self.table[self.pkey]==self.component.table[self.fkey]))
+            query = ((self.component.table.id == self.component_id) &
+                     (self.table[self.pkey] == self.component.table[self.fkey]))
             if self.id:
                 # Must match if a primary record has been found
-                query = (self.table.id==self.id) & query
+                query = (self.table.id == self.id) & query
             if "deleted" in self.table:
-                query = ((self.table.deleted==False) |
-                         (self.table.deleted==None)) & query
+                query = ((self.table.deleted == False) |
+                         (self.table.deleted == None)) & query
             if "deleted" in self.component.table:
-                query = ((self.component.table.deleted==False) |
-                         (self.component.table.deleted==None)) & query
-            records = self.rc.db(query).select(self.table.ALL, limitby=(0,1))
+                query = ((self.component.table.deleted == False) |
+                         (self.component.table.deleted == None)) & query
+            records = self.rc.db(query).select(self.table.ALL, limitby=(0, 1))
             if not records:
                 self.__dbg("Invalid component record ID or component not matching primary record.")
                 self.id = None
@@ -816,19 +827,19 @@ class S3RESTRequest(object):
         elif self.component and \
              uids and uids[1] is not None and "uuid" in self.component.table:
             # Component record ID is specified
-            query = ((self.component.table.uuid==uids[1]) &
-                     (self.table[self.pkey]==self.component.table[self.fkey]))
+            query = ((self.component.table.uuid == uids[1]) &
+                     (self.table[self.pkey] == self.component.table[self.fkey]))
             if self.id:
                 # Must match if a primary record has been found
-                query = (self.table.id==self.id) & query
+                query = (self.table.id == self.id) & query
             if "deleted" in self.table:
-                query = ((self.table.deleted==False) |
-                         (self.table.deleted==None)) & query
+                query = ((self.table.deleted == False) |
+                         (self.table.deleted == None)) & query
             if "deleted" in self.component.table:
-                query = ((self.component.table.deleted==False) |
-                         (self.component.table.deleted==None)) & query
+                query = ((self.component.table.deleted == False) |
+                         (self.component.table.deleted == None)) & query
             records = self.rc.db(query).select(
-                        self.table.ALL, self.component.table.id, limitby=(0,1))
+                        self.table.ALL, self.component.table.id, limitby=(0, 1))
             if not records:
                 self.__dbg("Invalid component record UUID or component not matching primary record.")
                 self.id = None
@@ -845,10 +856,10 @@ class S3RESTRequest(object):
                 return True
             id_label = str.strip(self.request.vars.id_label)
             if "pr_pe_label" in self.table:
-                query = (self.table.pr_pe_label==id_label)
+                query = (self.table.pr_pe_label == id_label)
                 if "deleted" in self.table:
-                    query = ((self.table.deleted==False) |
-                             (self.table.deleted==None)) & query
+                    query = ((self.table.deleted == False) |
+                             (self.table.deleted == None)) & query
                 records = self.rc.db(query).select(self.table.ALL,
                                                    limitby=(0, 1))
                 if records:
@@ -866,8 +877,8 @@ class S3RESTRequest(object):
             if self.id:
                 query = (self.table.id == self.id)
                 if "deleted" in self.table:
-                    query = ((self.table.deleted==False) |
-                             (self.table.deleted==None)) & query
+                    query = ((self.table.deleted == False) |
+                             (self.table.deleted == None)) & query
                 records = self.rc.db(query).select(self.table.ALL,
                                                    limitby=(0, 1))
                 if not records:
@@ -1017,6 +1028,7 @@ class S3RESTRequest(object):
     def export_xml(self,
                    permit=None,
                    audit=None,
+                   title=None,
                    template=None,
                    filterby=None,
                    pretty_print=False):
@@ -1047,33 +1059,52 @@ class S3RESTRequest(object):
             else:
                 joins = self.rc.model.get_components(self.prefix, self.name)
 
-        if "start" in self.request.vars:
-            start = int(self.request.vars["start"])
-        else:
-            start = None
+        start = self.request.vars.get("start", None)
+        if start is not None:
+            try:
+                start = int(self.request.vars["start"])
+            except ValueError:
+                start = None
 
-        if "limit" in self.request.vars:
-            limit = int(self.request.vars["limit"])
-        else:
-            limit = None
+        limit = self.request.vars.get("limit", None)
+        if limit is not None:
+            try:
+                limit = int(self.request.vars["limit"])
+            except ValueError:
+                limit = None
 
-        if "marker" in self.request.vars:
-            # Override marker for displaying KML feeds
-            marker = self.request.vars["marker"]
-        else:
-            marker = None
+        marker = self.request.vars.get("marker", None)
+
+        msince = self.request.vars.get("msince", None)
+        if msince is not None:
+            tfmt = "%Y-%m-%dT%H:%M:%SZ"
+            try:
+                (y,m,d,hh,mm,ss,t0,t1,t2) = time.strptime(msince, tfmt)
+                msince = datetime.datetime(y,m,d,hh,mm,ss)
+            except ValueError:
+                msince = None
 
         tree = self.rc.export_xml(self.prefix, self.name, self.id,
                                   joins=joins,
                                   filterby=filterby,
                                   permit=permit,
                                   audit=audit,
+                                  msince=msince,
                                   start=start,
                                   limit=limit,
                                   marker=marker)
 
         if template is not None:
-            args = dict(domain=self.rc.domain, base_url=self.rc.base_url)
+            tfmt = "%Y-%m-%d %H:%M:%S"
+            args = dict(domain=self.rc.domain,
+                        base_url=self.rc.base_url,
+                        prefix=self.prefix,
+                        name=self.name,
+                        utcnow=datetime.datetime.utcnow().strftime(tfmt))
+            if title:
+                args.update(title=title)
+            if self.component:
+                args.update(id=self.id, component=self.component.tablename)
             mode = self.request.vars.get("mode", None)
             if mode is not None:
                 args.update(mode=mode)
@@ -1088,6 +1119,7 @@ class S3RESTRequest(object):
     def export_json(self,
                     permit=None,
                     audit=None,
+                    title=None,
                     template=None,
                     filterby=None,
                     pretty_print=False):
@@ -1127,6 +1159,8 @@ class S3RESTRequest(object):
         else:
             limit = None
 
+        # marker and msince not supported in JSON
+
         tree = self.rc.export_xml(self.prefix, self.name, self.id,
                                joins=joins,
                                filterby=filterby,
@@ -1137,7 +1171,16 @@ class S3RESTRequest(object):
                                show_urls=False)
 
         if template is not None:
-            args = dict(domain=self.rc.domain, base_url=self.rc.base_url)
+            tfmt = "%Y-%m-%d %H:%M:%S"
+            args = dict(domain=self.rc.domain,
+                        base_url=self.rc.base_url,
+                        prefix=self.prefix,
+                        name=self.name,
+                        utcnow=datetime.datetime.utcnow().strftime(tfmt))
+            if title:
+                args.update(title=title)
+            if self.component:
+                args.update(id=self.id, component=self.component.tablename)
             mode = self.request.vars.get("mode", None)
             if mode is not None:
                 args.update(mode=mode)
@@ -1149,15 +1192,19 @@ class S3RESTRequest(object):
         return self.rc.xml.tree2json(tree, pretty_print=pretty_print)
 
 
-    def import_xml(self, tree, permit=None, audit=None):
+    def import_xml(self, tree, permit=None, audit=None, push_limit=1):
 
         """ import the requested resources from an element tree
 
             @param tree: the element tree
             @param permit: permit hook (function to check table permissions)
             @param audit: audit hook (function to audit table access)
+            @param push_limit: number of resources allowed in pushes
 
         """
+
+        if self.http not in ("PUT", "POST"):
+            push_limit = None
 
         if self.component:
             skip_resource = True
@@ -1188,6 +1235,7 @@ class S3RESTRequest(object):
                                   skip_resource=skip_resource,
                                   permit=permit,
                                   audit=audit,
+                                  push_limit=push_limit,
                                   ignore_errors=ignore_errors)
 
 
@@ -1195,9 +1243,14 @@ class S3RESTRequest(object):
 
         """ Export field options in the current resource as element tree """
 
-        field = self.request.vars.get("field", None)
+        fields = self.request.vars.get("field", None)
+        if fields and not isinstance(fields, list):
+            if "," in fields:
+                fields = fields.split(",")
+            else:
+                fields = [fields]
 
-        if not field:
+        if not fields:
             if self.component:
                 tree = self.rc.options_xml(self.component.prefix,
                                            self.component.name)
@@ -1206,12 +1259,19 @@ class S3RESTRequest(object):
                 tree = self.rc.options_xml(self.prefix, self.name, joins=joins)
         else:
             if self.component:
-                tree = self.rc.xml.get_field_options(self.component.table,
-                                                     field)
+                table = self.component.table
             else:
-                tree = self.rc.xml.get_field_options(self.table, field)
-            tree.set("id", "%s_%s_%s" % (self.prefix, self.name, field))
-            tree.set("name", "%s" % field)
+                table = self.table
+            tree = etree.Element(self.rc.xml.TAG.options)
+            for field in fields:
+                opt_list = self.rc.xml.get_field_options(table, field)
+                opt_list.set("id", "%s_%s" % (table._tablename, field))
+                opt_list.set("name", "%s" % field)
+                tree.append(opt_list)
+            if len(tree) == 1:
+                tree = tree.findall("select")[0]
+            else:
+                tree.set(self.rc.xml.TAG.resource, table._tablename)
             tree = etree.ElementTree(tree)
 
         return tree
@@ -1561,7 +1621,13 @@ class S3ResourceController(object):
     MAX_DEPTH = 10
 
 
-    def __init__(self, db, domain=None, base_url=None, rpp=None, gis=None):
+    def __init__(self, db,
+                 domain=None,
+                 base_url=None,
+                 rpp=None,
+                 gis=None,
+                 messages=None,
+                 cache=None):
 
         """ Constructor
 
@@ -1570,11 +1636,14 @@ class S3ResourceController(object):
             @param base_url: base URL of this instance
             @param rpp: rows-per-page for server-side pagination
             @param gis: the GIS toolkit to use
+            @param messages: a function to retrieve message URLs tagged for a resource
+            @param cache: the cache object
 
         """
 
         assert db is not None, "Database must not be None."
         self.db = db
+        self.cache = cache
 
         self.error = None
 
@@ -1586,10 +1655,11 @@ class S3ResourceController(object):
             self.ROWSPERPAGE = rpp
 
         self.model = S3ResourceModel(self.db)
-        self.xml = S3XML(self.db, domain=domain, base_url=base_url, gis=gis)
+        self.xml = S3XML(self.db, domain=domain, base_url=base_url, gis=gis, cache=cache)
 
         self.sync_resolve = None
         self.sync_log = None
+        self.messages = None
 
 
     # Session helpers =========================================================
@@ -1607,6 +1677,8 @@ class S3ResourceController(object):
         tablename = "%s_%s" % (prefix, name)
         if self.RCVARS in session and tablename in session[self.RCVARS]:
             return session[self.RCVARS][tablename]
+        else:
+            return None
 
 
     def store_session(self, session, prefix, name, id):
@@ -1670,14 +1742,13 @@ class S3ResourceController(object):
         for i in l:
             if k in i and v in i:
                 c = e.get(i[k], None)
-                if c and i[k] in c:
+                if c and i[v] in c:
                     continue
                 if i[k] in d:
                     if not i[v] in d[i[k]]:
                         d[i[k]].append(i[v])
                 else:
                     d[i[k]] = [i[v]]
-
         return d
 
 
@@ -1709,7 +1780,6 @@ class S3ResourceController(object):
 
         return (rfields, dfields)
 
-
     # XML Export ==============================================================
 
     def export_xml(self, prefix, name, id,
@@ -1721,6 +1791,7 @@ class S3ResourceController(object):
                    start=None,
                    limit=None,
                    marker=None,
+                   msince=None,
                    show_urls=True,
                    dereference=True):
 
@@ -1737,6 +1808,7 @@ class S3ResourceController(object):
             @param start: starting record (for server-side pagination)
             @param limit: page size (for server-side pagination)
             @marker: URL to override map marker URL in location references
+            @msince: report only resources which have been modified since that datetime
             @show_urls: show resource URLs in <resource> elements
             @dereference: include referenced resources into the export
 
@@ -1768,7 +1840,7 @@ class S3ResourceController(object):
         if filterby:
             query = (filterby) & query
 
-        results = self.db(query).count()
+        #results = self.db(query).count()
 
         # Server-side pagination
         if start is not None: # can't be 'if start': 0 is a valid value
@@ -1783,6 +1855,7 @@ class S3ResourceController(object):
             limitby = None
 
         # Load primary records
+        results = self.db(query).count()
         records = self.db(query).select(table.ALL, limitby=limitby) or []
 
         # Filter by permission
@@ -1802,8 +1875,10 @@ class S3ResourceController(object):
                 (c, pkey, fkey) = joins[i]
                 pkeys = map(lambda r: r[pkey], records)
                 cquery = (c.table[fkey].belongs(pkeys))
-                if "deleted" in c.table:
+                if "deleted" in c.table.fields:
                     cquery = (c.table.deleted == False) & cquery
+                if msince and "modified_on" in c.table.fields:
+                    cquery = (c.table.modified_on >= msince) & cquery
                 cdata[c.tablename] = self.db(cquery).select(c.table.ALL) or []
                 _skip = [fkey,]
                 if skip:
@@ -1839,12 +1914,6 @@ class S3ResourceController(object):
             self.xml.gis_encode(rmap,
                                 download_url=self.download_url,
                                 marker=marker)
-            ref_map.extend(rmap)
-            resources.append(resource)
-            if exp_map.get(table._tablename, None):
-                exp_map[table._tablename].append(record.id)
-            else:
-                exp_map[table._tablename] = [record.id]
 
             # Export components of this record
             r_url = "%s/%s" % (url, record.id)
@@ -1884,6 +1953,21 @@ class S3ResourceController(object):
                         exp_map[c.tablename].append(crecord.id)
                     else:
                         exp_map[c.tablename] = [crecord.id]
+
+            if msince and "modified_on" in table.fields:
+                mtime = record.get("modified_on", None)
+                if mtime and mtime < msince and \
+                   not len(resource.findall("resource")):
+                    continue
+
+            ref_map.extend(rmap)
+            resources.append(resource)
+            if exp_map.get(table._tablename, None):
+                exp_map[table._tablename].append(record.id)
+            else:
+                exp_map[table._tablename] = [record.id]
+
+        #results = len(resources)
 
         # Add referenced resources to the tree
         depth = dereference and self.MAX_DEPTH or 0
@@ -1985,6 +2069,13 @@ class S3ResourceController(object):
 
         table = self.db[resource]
         record = self.xml.record(table, element, validate=validate)
+
+        mtime = element.get(self.xml.MTIME, None)
+        if mtime:
+            mtime, error = self.validate(table, None, self.xml.MTIME, mtime)
+            if error:
+                mtime = None
+
         if not record:
             self.error = S3XRC_VALIDATION_ERROR
             return None
@@ -2002,6 +2093,7 @@ class S3ResourceController(object):
         vector = S3Vector(self.db, prefix, name, id,
                           record=record,
                           element=element,
+                          mtime=mtime,
                           rmap=rmap,
                           directory=directory,
                           permit=permit,
@@ -2029,7 +2121,9 @@ class S3ResourceController(object):
                                      tree=tree,
                                      directory=directory,
                                      vmap=vmap)
-            if vectors is not None:
+            if vectors:
+                if entry["vector"] is None:
+                    entry["vector"] = vectors[-1]
                 imports.extend(vectors)
 
         imports.append(vector)
@@ -2041,6 +2135,7 @@ class S3ResourceController(object):
                    skip_resource=False,
                    permit=None,
                    audit=None,
+                   push_limit=None,
                    ignore_errors=False):
 
         """ Imports data from an element tree
@@ -2058,7 +2153,6 @@ class S3ResourceController(object):
         """
 
         self.error = None
-        self.xml.steps = 0
 
         tablename = "%s_%s" % (prefix, name)
         if tablename in self.db:
@@ -2096,6 +2190,11 @@ class S3ResourceController(object):
 
         if joins is None:
             joins = []
+
+        if push_limit is not None and \
+           len(elements) > push_limit:
+            self.error = S3XRC_NOT_PERMITTED
+            return False
 
         # Import all matching elements
         imports = []
@@ -2301,13 +2400,28 @@ class S3Vector(object):
 
     """ Helper class for data imports """
 
-    ACTION = dict(create="create", update="update")
+    METHOD = Storage(
+        CREATE="create",
+        UPDATE="update"
+    )
+
+    RESOLUTION = Storage(
+        THIS="THIS",                # keep local instance
+        OTHER="OTHER",              # import other instance
+        NEWER="NEWER",              # import other if newer
+        MASTER="MASTER",            # import other if master
+        MASTERCOPY="MASTERCOPY"     # import other if lower master-copy-index
+    )
+
     UID = "uuid"
+    MCI = "mci"
+    MTIME = "modified_on"
 
 
     def __init__(self, db, prefix, name, id,
                  record=None,
                  element=None,
+                 mtime=None,
                  rmap=None,
                  directory=None,
                  permit=None,
@@ -2347,15 +2461,22 @@ class S3Vector(object):
         self.record=record
         self.id=id
 
+        if mtime:
+            self.mtime = mtime
+        else:
+            self.mtime = datetime.datetime.utcnow()
+
         self.rmap=rmap
 
         self.components = []
         self.references = []
         self.update = []
 
-        self.method=None
-        self.strategy=None
-        self.resolution=None
+        self.method = None
+        self.strategy = [self.METHOD.CREATE, self.METHOD.UPDATE]
+
+        self.resolution = self.RESOLUTION.OTHER
+        self.default_resolution = self.RESOLUTION.THIS
 
         self.onvalidation=onvalidation
         self.onaccept=onaccept
@@ -2367,55 +2488,75 @@ class S3Vector(object):
         self.permitted=True
         self.committed=False
 
-        uid = self.record.get(self.UID, None)
+        self.uid = self.record.get(self.UID, None)
+        self.mci = self.record.get(self.MCI, 2)
+
         if not self.id:
             self.id = 0
-            self.method = permission = self.ACTION["create"]
-            if uid and self.UID in self.table:
-                orig = self.db(self.table[self.UID] == uid).select(
-                       self.table.id, limitby=(0,1))
+            self.method = permission = self.METHOD.CREATE
+            if self.uid and self.UID in self.table:
+                query = (self.table[self.UID] == self.uid)
+                orig = self.db(query).select(self.table.id, limitby=(0, 1))
                 if orig:
-                    self.id = orig[0].id
-                    self.method = permission = self.ACTION["update"]
+                    self.id = orig.first().id
+                    self.method = permission = self.METHOD.UPDATE
         else:
-            self.method = permission = self.ACTION["update"]
+            self.method = permission = self.METHOD.UPDATE
             if not self.db(self.table.id == id).count():
                 self.id = 0
-                self.method = permission = self.ACTION["create"]
-            else:
-                if self.UID in self.record:
-                    del self.record[self.UID]
+                self.method = permission = self.METHOD.CREATE
 
-        if permit and not \
+        # Do allow import to tables with these prefixes:
+        if self.prefix in ("auth", "admin", "s3"):
+            self.permitted=False
+
+        # ...or check permission explicitly:
+        elif permit and not \
            permit(permission, self.tablename, record_id=self.id):
             self.permitted=False
 
-        if self.prefix == "auth" or \
-           self.prefix == "admin" or \
-           self.prefix == "s3":
-            self.permitted=False
-
-        # Once the vector has been created, update the entry in the demand map
-        uid = self.record.get(self.UID, None)
-        if uid and \
+        # Once the vector has been created, update the entry in the directory
+        if self.uid and \
            directory is not None and self.tablename in directory:
-            entry = directory[self.tablename].get(uid, None)
+            entry = directory[self.tablename].get(self.uid, None)
             if entry:
                 entry.update(vector=self)
 
+
     # Data import =============================================================
+
+    def get_resolution(self, field):
+
+        """ Find Sync resolution for a particular field in this record
+
+            @param field: the field name
+
+        """
+
+        if isinstance(self.resolution, dict):
+            r = self.resolution.get(field, self.default_resolution)
+        else:
+            r = self.resolution
+        if not r in self.RESOLUTION.values():
+            r = self.default_resolution
+        return r
+
 
     def commit(self):
 
         """ Commits the vector to the database """
 
-        self.resolve()
+        self.resolve() # Resolve references
+
+        skip_components = False
 
         if not self.committed:
             if self.accepted and self.permitted:
 
-                # Create pseudoform
-                form = Storage() # PseudoForm for callbacks
+                #print >> sys.stderr, "Committing %s id=%s mtime=%s" % (self.tablename, self.id, self.mtime)
+
+                # Create pseudoform for callbacks
+                form = Storage()
                 form.method = self.method
                 form.vars = self.record
                 form.vars.id = self.id
@@ -2425,39 +2566,104 @@ class S3Vector(object):
                 if self.onvalidation:
                     self.onvalidation(form)
                 if form.errors:
-                    #print form.errors
+                    #print >> sys.stderr, form.errors
                     if self.element:
                         #TODO: propagate errors to element
                         pass
                     return False
 
+                # Call Sync resolver+logger
                 if self.sync:
                     self.sync(self)
                 if self.log:
                     self.log(self)
-                if self.method == self.ACTION["update"]:
-                    try:
+
+                # Check for strategy
+                if not isinstance(self.strategy, (list, tuple)):
+                    self.strategy = [self.strategy]
+
+                if self.method not in self.strategy:
+                    # Skip this record ----------------------------------------
+
+                    # Do not create/update components when skipping primary
+                    skip_components = True
+
+                elif self.method == self.METHOD.UPDATE:
+                    # Update existing record ----------------------------------
+
+                    # Merge as per Sync resolution:
+                    query = (self.table.id == self.id)
+                    this = self.db(query).select(self.table.ALL, limitby=(0,1))
+                    if this:
+                        this = this.first()
+                        if self.MTIME in self.table.fields:
+                            this_mtime = this[self.MTIME]
+                        else:
+                            this_mtime = None
+                        if self.MCI in self.table.fields:
+                            this_mci = this[self.MCI]
+                        else:
+                            this_mci = 0
+                        for f in self.record.keys():
+                            r = self.get_resolution(f)
+                            if r == self.RESOLUTION.THIS:
+                                del self.record[f]
+                            elif r == self.RESOLUTION.NEWER:
+                                if this_mtime and \
+                                   this_mtime > self.mtime:
+                                    del self.record[f]
+                            elif r == self.RESOLUTION.MASTER:
+                                if this_mci == 0 or self.mci != 1:
+                                    del self.record[f]
+                            elif r == self.RESOLUTION.MASTERCOPY:
+                                if this_mci == 0 or \
+                                   self.mci == 0 or \
+                                   this_mci < self.mci:
+                                    del self.record[f]
+                                elif this_mci == self.mci and \
+                                     this_mtime and this_mtime > self.mtime:
+                                        del self.record[f]
+
+                    if len(self.record):
+                        self.record.update({self.MCI:self.mci})
                         self.record.update(deleted=False) # Undelete re-imported records!
-                        success = self.db(self.table.id == self.id).update(
-                                    **dict(self.record))
-                        if self.components:
-                            db_record = self.db(self.table.id == self.id).select(
-                                            self.table.ALL)[0]
-                    except:
-                        return False
-                    if success:
+                        try:
+                            success = self.db(self.table.id == self.id).update(**dict(self.record))
+                        except: # TODO: propagate error to XML importer
+                            return False
+                        if success:
+                            self.committed = True
+                    else:
                         self.committed = True
-                elif self.method == self.ACTION["create"]:
-                    try:
-                        success = self.table.insert(**dict(self.record))
-                        if self.components:
-                            db_record = self.db(self.table.id == success).select(
-                                            self.table.ALL)[0]
-                    except:
-                        return False
-                    if success:
-                        self.id = success
-                        self.committed = True
+
+                elif self.method == self.METHOD.CREATE:
+                    # Create new record ---------------------------------------
+
+                    if self.UID in self.record.keys():
+                        del self.record[self.UID]
+                    if self.MCI in self.record.keys():
+                        del self.record[self.MCI]
+                    for f in self.record.keys():
+                        r = self.get_resolution(f)
+                        if r == self.RESOLUTION.MASTER and self.mci != 1:
+                            del self.record[f]
+
+                    if not len(self.record):
+                        skip_components = True
+                    else:
+                        if self.uid and self.UID in self.table.fields:
+                            self.record.update({self.UID:self.uid})
+                        if self.MCI in self.table.fields:
+                            self.record.update({self.MCI:self.mci})
+                        try:
+                            success = self.table.insert(**dict(self.record))
+                        except: # TODO: propagate error to XML importer
+                            return False
+                        if success:
+                            self.id = success
+                            self.committed = True
+
+                # audit + onaccept on successful commits
                 if self.committed:
                     form.vars.id = self.id
                     if self.audit:
@@ -2465,24 +2671,32 @@ class S3Vector(object):
                                    form=form, record=self.id, representation="xml")
                     if self.onaccept:
                         self.onaccept(form)
-                else:
-                    return False
 
-        for i in xrange(0, len(self.components)):
-            component = self.components[i]
-            pkey = component.pkey
-            fkey = component.fkey
-            component.record[fkey] = db_record[pkey]
-            component.commit()
+        # Load record if components pending
+        if self.id and self.components and not skip_components:
+            db_record = self.db(self.table.id == self.id).select(self.table.ALL)
+            if db_record:
+                db_record = db_record.first()
 
-        if self.update:
+            # Commit components
+            for i in xrange(0, len(self.components)):
+                component = self.components[i]
+                pkey = component.pkey
+                fkey = component.fkey
+                component.record[fkey] = db_record[pkey]
+                component.commit()
+
+        # Update referencing vectors
+        if self.update and self.id:
             for u in self.update:
                 vector = u.get("vector", None)
                 if vector:
                     field = u.get("field", None)
                     vector.writeback(field, self.id)
 
+        # Phew...done!
         return True
+
 
     def resolve(self):
 
@@ -2506,6 +2720,7 @@ class S3Vector(object):
                             del self.record[r.field]
                         vector.update.append(dict(vector=self, field=r.field))
 
+
     def writeback(self, field, value):
 
         """ Update a field in the record
@@ -2518,6 +2733,7 @@ class S3Vector(object):
         if self.id and self.permitted:
             self.db(self.table.id == self.id).update(**{field:value})
 
+
 # *****************************************************************************
 class S3XML(object):
 
@@ -2527,11 +2743,17 @@ class S3XML(object):
     S3XRC = "{%s}" % S3XRC_NAMESPACE #: LXML namespace prefix
     NSMAP = {None: S3XRC_NAMESPACE} #: LXML default namespace
 
+    CACHE_TTL = 5 # time-to-live of RAM cache for field representations
+
     UID = "uuid"
+    MCI = "mci"
+    MTIME = "modified_on"
+
+    # GIS field names
     Lat = "lat"
     Lon = "lon"
-    Marker = "marker_id"
     FeatureClass = "feature_class_id"
+    #Marker = "marker_id"
 
     IGNORE_FIELDS = ["deleted", "id"]
 
@@ -2541,11 +2763,12 @@ class S3XML(object):
             "created_by",
             "modified_by",
             "uuid",
+            "mci",
             "admin"]
 
-    ATTRIBUTES_TO_FIELDS = ["admin"]
+    ATTRIBUTES_TO_FIELDS = ["admin", "mci"]
 
-    TAG = dict(
+    TAG = Storage(
         root="s3xrc",
         resource="resource",
         reference="reference",
@@ -2559,7 +2782,7 @@ class S3XML(object):
         options="options"
     )
 
-    ATTRIBUTE = dict(
+    ATTRIBUTE = Storage(
         name="name",
         table="table",
         field="field",
@@ -2578,17 +2801,18 @@ class S3XML(object):
         lon="lon",
         lonmin="lonmin",
         lonmax="lonmax",
-        marker="marker"
+        marker="marker",
+        sym="sym"
     )
 
-    ACTION = dict(
+    ACTION = Storage(
         create="create",
         read="read",
         update="update",
         delete="delete"
     )
 
-    PREFIX = dict(
+    PREFIX = Storage(
         resource="$",
         options="$o",
         reference="$k",
@@ -2603,7 +2827,7 @@ class S3XML(object):
               ("'", "&apos;"), ("&", "&amp;")]
 
 
-    def __init__(self, db, domain=None, base_url=None, gis=None):
+    def __init__(self, db, domain=None, base_url=None, gis=None, cache=None):
 
         """ Constructor
 
@@ -2620,6 +2844,7 @@ class S3XML(object):
         self.base_url = base_url
         self.domain_mapping = True
         self.gis = gis
+        self.cache = cache
 
     # XML+XSLT tools ==========================================================
 
@@ -2638,7 +2863,8 @@ class S3XML(object):
             result = etree.parse(source, parser)
             return result
         except:
-            self.error = S3XRC_PARSE_ERROR
+            e = sys.exc_info()[1]
+            self.error = e
             return None
 
 
@@ -2671,7 +2897,8 @@ class S3XML(object):
                     result = transformer(tree)
                 return result
             except:
-                self.error = S3XRC_TRANSFORMATION_ERROR
+                e = sys.exc_info()[1]
+                self.error = e
                 return None
         else:
             # Error parsing the XSL template
@@ -2688,9 +2915,9 @@ class S3XML(object):
         """
 
         return etree.tostring(tree,
-                                xml_declaration=True,
-                                encoding="utf-8",
-                                pretty_print=pretty_print)
+                              xml_declaration=True,
+                              encoding="utf-8",
+                              pretty_print=pretty_print)
 
 
     def tree(self, resources, domain=None, url=None,
@@ -2711,34 +2938,34 @@ class S3XML(object):
         # matched in XSLT templates (need explicit prefix) and thus this
         # would require a rework of all existing templates (which is
         # however useful)
-        root = etree.Element(self.TAG["root"]) #, nsmap=self.NSMAP)
+        root = etree.Element(self.TAG.root) #, nsmap=self.NSMAP)
 
-        root.set(self.ATTRIBUTE["success"], str(False))
+        root.set(self.ATTRIBUTE.success, str(False))
 
         if resources is not None:
             if resources:
-                root.set(self.ATTRIBUTE["success"], str(True))
+                root.set(self.ATTRIBUTE.success, str(True))
             if start is not None:
-                root.set(self.ATTRIBUTE["start"], str(start))
+                root.set(self.ATTRIBUTE.start, str(start))
             if limit is not None:
-                root.set(self.ATTRIBUTE["limit"], str(limit))
+                root.set(self.ATTRIBUTE.limit, str(limit))
             if results is not None:
-                root.set(self.ATTRIBUTE["results"], str(results))
+                root.set(self.ATTRIBUTE.results, str(results))
             root.extend(resources)
 
         if domain:
-            root.set(self.ATTRIBUTE["domain"], self.domain)
+            root.set(self.ATTRIBUTE.domain, self.domain)
 
         if url:
-            root.set(self.ATTRIBUTE["url"], self.base_url)
+            root.set(self.ATTRIBUTE.url, self.base_url)
 
-        root.set(self.ATTRIBUTE["latmin"],
+        root.set(self.ATTRIBUTE.latmin,
                  str(self.gis.get_bounds()["min_lat"]))
-        root.set(self.ATTRIBUTE["latmax"],
+        root.set(self.ATTRIBUTE.latmax,
                  str(self.gis.get_bounds()["max_lat"]))
-        root.set(self.ATTRIBUTE["lonmin"],
+        root.set(self.ATTRIBUTE.lonmin,
                  str(self.gis.get_bounds()["min_lon"]))
-        root.set(self.ATTRIBUTE["lonmax"],
+        root.set(self.ATTRIBUTE.lonmax,
                  str(self.gis.get_bounds()["max_lon"]))
 
         return etree.ElementTree(root)
@@ -2812,6 +3039,30 @@ class S3XML(object):
 
     # Data export =============================================================
 
+    def represent(self, table, f, v):
+
+        """ Get the representation of a field value
+
+            @param table: the database table
+            @param f: the field name
+            @param v: the value
+
+        """
+
+        text = str(table[f].represent(v)).decode("utf-8")
+        # Filter out markup from text
+        if "<" in text:
+            try:
+                markup = etree.XML(text)
+                text = markup.xpath(".//text()")
+                if text:
+                    text = " ".join(text)
+            except etree.XMLSyntaxError:
+                pass
+        text = self.xml_encode(text)
+        return text
+
+
     def rmap(self, table, record, fields):
 
         """ Generates a reference map for a record
@@ -2856,16 +3107,7 @@ class S3XML(object):
             value = text = self.xml_encode(str(
                            table[f].formatter(value)).decode("utf-8"))
             if table[f].represent:
-                text = str(table[f].represent(value)).decode("utf-8")
-                # Filter out markup from text
-                try:
-                    markup = etree.XML(text)
-                    text = markup.xpath(".//text()")
-                    if text:
-                        text = " ".join(text)
-                except etree.XMLSyntaxError:
-                    pass
-                text = self.xml_encode(text)
+                text = self.represent(table, f, value)
 
             reference_map.append(Storage(field=f,
                                          table=ktablename,
@@ -2888,14 +3130,14 @@ class S3XML(object):
 
         for i in xrange(0, len(rmap)):
             r = rmap[i]
-            reference = etree.SubElement(element, self.TAG["reference"])
-            reference.set(self.ATTRIBUTE["field"], r.field)
-            reference.set(self.ATTRIBUTE["resource"], r.table)
+            reference = etree.SubElement(element, self.TAG.reference)
+            reference.set(self.ATTRIBUTE.field, r.field)
+            reference.set(self.ATTRIBUTE.resource, r.table)
             if r.uid:
                 reference.set(self.UID, r.uid )
                 reference.text = r.text
             else:
-                reference.set(self.ATTRIBUTE["value"], r.value)
+                reference.set(self.ATTRIBUTE.value, r.value)
                 # TODO: add in-line resource
             r.element = reference
 
@@ -2913,6 +3155,8 @@ class S3XML(object):
         if not self.gis:
             return
 
+        db = self.db
+
         references = filter(lambda r:
                             r.element is not None and \
                             self.Lat in self.db[r.table].fields and \
@@ -2921,27 +3165,42 @@ class S3XML(object):
 
         for i in xrange(0, len(references)):
             r = references[i]
-            ktable = self.db[r.table]
-            LatLon = self.db(ktable.id == r.id).select(ktable[self.Lat],
-                                                       ktable[self.Lon],
-                                                       limitby=(0, 1))
+            ktable = db[r.table]
+            LatLon = db(ktable.id == r.id).select(ktable[self.Lat],
+                                                  ktable[self.Lon],
+                                                  ktable[self.FeatureClass],
+                                                  limitby=(0, 1))
             if LatLon:
-                LatLon = LatLon[0]
+                LatLon = LatLon.first()
                 if LatLon[self.Lat] is not None and \
                    LatLon[self.Lon] is not None:
-                    r.element.set(self.ATTRIBUTE["lat"],
+                    r.element.set(self.ATTRIBUTE.lat,
                                   self.xml_encode("%.6f" % LatLon[self.Lat]))
-                    r.element.set(self.ATTRIBUTE["lon"],
+                    r.element.set(self.ATTRIBUTE.lon,
                                   self.xml_encode("%.6f" % LatLon[self.Lon]))
+                    # Lookup Marker (Icon)
                     if marker:
                         marker_url = "%s/gis_marker.image.%s.png" % \
                                      (download_url, marker)
                     else:
                         marker = self.gis.get_marker(r.value)
                         marker_url = "%s/%s" % (download_url, marker)
-                    r.element.set(self.ATTRIBUTE["marker"],
+                    r.element.set(self.ATTRIBUTE.marker,
                                   self.xml_encode(marker_url))
-
+                    # Lookup GPS Marker
+                    symbol = None
+                    if LatLon[self.FeatureClass]:
+                        fctbl = db.gis_feature_class
+                        query = (fctbl.id == str(LatLon[self.FeatureClass]))
+                        try:
+                            symbol = db(query).select(fctbl.gps_marker,
+                                        limitby=(0, 1)).first().gps_marker
+                        except:
+                            pass
+                    if not symbol:
+                        symbol = "White Dot"
+                    r.element.set(self.ATTRIBUTE.sym,
+                                  self.xml_encode(symbol))
 
     def element(self, table, record,
                 fields=[],
@@ -2964,25 +3223,38 @@ class S3XML(object):
         if not download_url:
             download_url = ""
 
-        resource = etree.Element(self.TAG["resource"])
-        resource.set(self.ATTRIBUTE["name"], table._tablename)
+        resource = etree.Element(self.TAG.resource)
+        resource.set(self.ATTRIBUTE.name, table._tablename)
 
         if self.UID in table.fields and self.UID in record:
             _value = str(table[self.UID].formatter(record[self.UID]))
             if self.domain_mapping:
                 value = self.export_uid(_value)
             resource.set(self.UID, self.xml_encode(value))
-            if table._tablename == "gis_location":
+            if table._tablename == "gis_location" and self.gis:
                 # Look up the marker to display
-                if self.gis:
-                    marker = self.gis.get_marker(_value)
-                    marker_url = "%s/%s" % (download_url, marker)
-                    resource.set(self.ATTRIBUTE["marker"],
-                                 self.xml_encode(marker_url))
+                marker = self.gis.get_marker(_value)
+                marker_url = "%s/%s" % (download_url, marker)
+                resource.set(self.ATTRIBUTE.marker,
+                                self.xml_encode(marker_url))
+                # Look up the GPS Marker
+                symbol = None
+                try:
+                    db = self.db
+                    query = (db.gis_feature_class.id == record.feature_class_id)
+                    symbol = db(query).select(limitby=(0, 1)).first().gps_marker
+                except:
+                    # No Feature Class
+                    pass
+                if not symbol:
+                    symbol = "White Dot"
+                resource.set(self.ATTRIBUTE.sym, self.xml_encode(symbol))
 
         for i in xrange(0, len(fields)):
             f = fields[i]
             v = record.get(f, None)
+            if f == self.MCI and v is None:
+                v = 0
             if f not in table.fields or v is None:
                 continue
 
@@ -2990,25 +3262,19 @@ class S3XML(object):
                            str(table[f].formatter(v)).decode("utf-8"))
 
             if table[f].represent:
-                text = str(table[f].represent(v)).decode("utf-8")
-                # Filter out markup from text
-                try:
-                    markup = etree.XML(text)
-                    text = markup.xpath(".//text()")
-                    if text:
-                        text = " ".join(text)
-                except etree.XMLSyntaxError:
-                    pass
-                text = self.xml_encode(text)
+                text = self.represent(table, f, v)
 
             fieldtype = str(table[f].type)
 
             if f in self.FIELDS_TO_ATTRIBUTES:
-                resource.set(f, text)
+                if f == self.MCI:
+                    resource.set(self.MCI, str(int(v) + 1))
+                else:
+                    resource.set(f, text)
 
             elif fieldtype == "upload":
-                data = etree.SubElement(resource, self.TAG["data"])
-                data.set(self.ATTRIBUTE["field"], f)
+                data = etree.SubElement(resource, self.TAG.data)
+                data.set(self.ATTRIBUTE.field, f)
                 data.text = "%s/%s" % (download_url, value)
 
             elif fieldtype == "password":
@@ -3020,14 +3286,14 @@ class S3XML(object):
                 continue
 
             else:
-                data = etree.SubElement(resource, self.TAG["data"])
-                data.set(self.ATTRIBUTE["field"], f)
+                data = etree.SubElement(resource, self.TAG.data)
+                data.set(self.ATTRIBUTE.field, f)
                 if table[f].represent:
-                    data.set(self.ATTRIBUTE["value"], value )
+                    data.set(self.ATTRIBUTE.value, value )
                 data.text = text
 
         if url:
-            resource.set(self.ATTRIBUTE["url"], url)
+            resource.set(self.ATTRIBUTE.url, url)
 
         return resource
 
@@ -3045,16 +3311,19 @@ class S3XML(object):
 
         resources = []
 
-        if isinstance(tree, ElementTree):
+        if isinstance(tree, etree._ElementTree):
             root = tree.getroot()
-            if not root.tag == self.TAG["root"]:
+            if not root.tag == self.TAG.root:
                 return resources
         else:
             root = tree
 
+        if root is None or not len(root):
+            return resources
+
         expr = './%s[@%s="%s"]' % (
-               self.TAG["resource"],
-               self.ATTRIBUTE["name"],
+               self.TAG.resource,
+               self.ATTRIBUTE.name,
                tablename)
 
         resources = root.xpath(expr)
@@ -3074,56 +3343,76 @@ class S3XML(object):
         """
 
         reference_list = []
-        references = element.xpath("./reference")
+        references = element.findall("reference")
 
         for r in references:
-            field = r.get(self.ATTRIBUTE["field"], None)
+            field = r.get(self.ATTRIBUTE.field, None)
             if field and field in fields:
-                resource = r.get(self.ATTRIBUTE["resource"], None)
+                resource = r.get(self.ATTRIBUTE.resource, None)
+                if not resource:
+                    continue
+                table = self.db.get(resource, None)
+                if not table:
+                    continue
+
+                id = None
                 _uid = uid = r.get(self.UID, None)
-                if self.domain_mapping:
-                    uid = self.import_uid(uid)
-                if resource and uid:
-                    table = self.db[resource]
-                    if not self.UID in table.fields:
-                        continue
+                entry = None
 
+                # If no UUID, try to find the reference in-line
+                relement = None
+                if not uid:
+                    expr = './/%s[@%s="%s"]' % (
+                        self.TAG.resource,
+                        self.ATTRIBUTE.name, resource)
+                    relements = r.xpath(expr)
+                    if relements:
+                        relement = relements[0]
+                        _uid = uid = r.get(self.UID, None)
+
+                if uid:
+                    if self.domain_mapping:
+                        uid = self.import_uid(uid)
+
+                    # Check if this resource is already in the directory:
                     entry = None
-
                     if directory is not None and resource in directory:
                         entry = directory[resource].get(uid, None)
 
+                    # Otherwise:
                     if not entry:
-                        relement = None
-                        if tree:
+                        # Find the corresponding element in the tree
+                        if tree and not relement:
                             expr = './/%s[@%s="%s" and @%s="%s"]' % (
-                                self.TAG["resource"],
-                                self.ATTRIBUTE["name"], resource,
-                                self.UID, _uid)
+                                   self.TAG.resource,
+                                   self.ATTRIBUTE.name, resource,
+                                   self.UID, _uid)
                             relements = tree.getroot().xpath(expr)
-
-                            if relements is not None and len(relements):
+                            if relements:
                                 relement = relements[0]
 
-                        id = None
-                        record = self.db(table[self.UID] == uid).select(
-                                 table.id, limitby=(0, 1))
-                        if record:
-                            id = record[0].id
+                        # Find the corresponding table record
+                        if self.UID in table:
+                            set = self.db(table[self.UID] == uid)
+                            record = set.select(table.id, limitby=(0, 1)).first()
+                            if record:
+                                id = record.id
 
-                        entry = dict(resource=resource,
-                                     element=relement,
-                                     uid=uid,
-                                     id=id,
-                                     vector=None)
+                # Update the entry
+                if not entry:
+                    entry = dict(vector=None)
+                entry.update(resource=resource, element=relement, uid=uid, id=id)
 
-                        if directory is not None:
-                            if resource not in directory:
-                                directory[resource] = {}
-                            if _uid not in directory[resource]:
-                                directory[resource][uid] = entry
+                if uid:
+                    # Add this entry to the directory
+                    if directory is not None:
+                        if resource not in directory:
+                            directory[resource] = {}
+                        if _uid not in directory[resource]:
+                            directory[resource][uid] = entry
 
-                    reference_list.append(Storage(field=field, entry=entry))
+                # Add this entry to the reference list
+                reference_list.append(Storage(field=field, entry=entry))
 
         return reference_list
 
@@ -3147,9 +3436,8 @@ class S3XML(object):
             uid = element.get(self.UID, None)
             if uid:
                 if self.domain_mapping:
-                    record[self.UID] = self.import_uid(uid)
-                else:
-                    record[self.UID] = uid
+                    uid = self.import_uid(uid)
+                record[self.UID] = uid
                 original = self.db(table[self.UID] == uid).select(table.ALL,
                                                               limitby=(0,1))
                 if original:
@@ -3168,15 +3456,15 @@ class S3XML(object):
                             v = str(value)
                         (value, error) = validate(table, original, f, v)
                         if error:
-                            element.set(self.ATTRIBUTE["error"],
+                            element.set(self.ATTRIBUTE.error,
                                         "%s: %s" % (f, error))
                             valid = False
                             continue
                     record[f]=value
 
         for child in element:
-            if child.tag == self.TAG["data"]:
-                f = child.get(self.ATTRIBUTE["field"], None)
+            if child.tag == self.TAG.data:
+                f = child.get(self.ATTRIBUTE.field, None)
                 if not f or f not in table.fields:
                     continue
                 if f in self.IGNORE_FIELDS or f in skip:
@@ -3187,7 +3475,7 @@ class S3XML(object):
                    field_type.startswith("reference"):
                     continue
 
-                value = child.get(self.ATTRIBUTE["value"], None)
+                value = child.get(self.ATTRIBUTE.value, None)
                 value = self.xml_decode(value)
 
                 if field_type == 'boolean':
@@ -3211,9 +3499,9 @@ class S3XML(object):
                         else:
                             v = value
                         (value, error) = validate(table, original, f, v)
-                        child.set(self.ATTRIBUTE["value"], v)
+                        child.set(self.ATTRIBUTE.value, v)
                         if error:
-                            child.set(self.ATTRIBUTE["error"], "%s: %s" % (f, error))
+                            child.set(self.ATTRIBUTE.error, "%s: %s" % (f, error))
                             valid = False
                             continue
                     record[f] = value
@@ -3235,7 +3523,7 @@ class S3XML(object):
 
         """
 
-        select = etree.Element(self.TAG["select"])
+        select = etree.Element(self.TAG.select)
 
         if fieldname in table.fields:
             field = table[fieldname]
@@ -3243,24 +3531,24 @@ class S3XML(object):
             return select
 
         requires = field.requires
-        select.set(self.TAG["field"], fieldname)
+        select.set(self.TAG.field, fieldname)
         if not isinstance(requires, (list, tuple)):
             requires = [requires]
         if requires:
             r = requires[0]
             options = []
-            if isinstance(r, IS_NULL_OR) and hasattr(r.other, "options"):
-                null = etree.SubElement(select, self.TAG["option"])
-                null.set(self.ATTRIBUTE["value"], "")
-                null.text = ""
+            if isinstance(r, (IS_NULL_OR, IS_EMPTY_OR)) and hasattr(r.other, "options"):
+                #null = etree.SubElement(select, self.TAG.option)
+                #null.set(self.ATTRIBUTE.value, "")
+                #null.text = ""
                 options = r.other.options()
             elif hasattr(r, "options"):
                 options = r.options()
             for (value, text) in options:
                 value = self.xml_encode(str(value).decode("utf-8"))
                 text = self.xml_encode(str(text).decode("utf-8"))
-                option = etree.SubElement(select, self.TAG["option"])
-                option.set(self.ATTRIBUTE["value"], value)
+                option = etree.SubElement(select, self.TAG.option)
+                option.set(self.ATTRIBUTE.value, value)
                 option.text = text
 
         return select
@@ -3278,22 +3566,22 @@ class S3XML(object):
 
         resource = "%s_%s" % (prefix, name)
 
-        options = etree.Element(self.TAG["options"])
-        options.set(self.ATTRIBUTE["resource"], resource)
+        options = etree.Element(self.TAG.options)
+        options.set(self.ATTRIBUTE.resource, resource)
 
         if resource in self.db:
             table = self.db[resource]
             for f in table.fields:
                 select = self.get_field_options(table, f)
-                if select is not None:
+                if select is not None and len(select):
                     options.append(select)
             for j in joins:
                 component = j[0]
-                coptions = etree.Element(self.TAG["options"])
-                coptions.set(self.ATTRIBUTE["resource"], component.tablename)
+                coptions = etree.Element(self.TAG.options)
+                coptions.set(self.ATTRIBUTE.resource, component.tablename)
                 for f in component.table.fields:
                     select = self.get_field_options(component.table, f)
-                    if select is not None:
+                    if select is not None and len(select):
                         coptions.append(select)
                 options.append(coptions)
 
@@ -3315,20 +3603,20 @@ class S3XML(object):
             return self.__obj2element(key, value, native=native)
 
         elif isinstance(value, (list, tuple)):
-            if not key == self.TAG["item"]:
+            if not key == self.TAG.item:
                 _list = etree.Element(key)
             else:
-                _list = etree.Element(self.TAG["list"])
+                _list = etree.Element(self.TAG.list)
             for obj in value:
-                item = self.__json2element(self.TAG["item"], obj,
+                item = self.__json2element(self.TAG.item, obj,
                                            native=native)
                 _list.append(item)
             return _list
 
         else:
             if native:
-                element = etree.Element(self.TAG["data"])
-                element.set(self.ATTRIBUTE["field"], key)
+                element = etree.Element(self.TAG.data)
+                element.set(self.ATTRIBUTE.field, key)
             else:
                 element = etree.Element(key)
             if not isinstance(value, (str, unicode)):
@@ -3350,32 +3638,32 @@ class S3XML(object):
         prefix = name = resource = field = None
 
         if not tag:
-            tag = self.TAG["object"]
+            tag = self.TAG.object
 
         elif native:
-            if tag.startswith(self.PREFIX["reference"]):
-                field = tag[len(self.PREFIX["reference"])+1:]
-                tag = self.TAG["reference"]
-            elif tag.startswith(self.PREFIX["options"]):
-                resource = tag[len(self.PREFIX["options"])+1:]
-                tag = self.TAG["options"]
-            elif tag.startswith(self.PREFIX["resource"]):
-                resource = tag[len(self.PREFIX["resource"])+1:]
-                tag = self.TAG["resource"]
-            elif not tag == self.TAG["root"]:
+            if tag.startswith(self.PREFIX.reference):
+                field = tag[len(self.PREFIX.reference) + 1:]
+                tag = self.TAG.reference
+            elif tag.startswith(self.PREFIX.options):
+                resource = tag[len(self.PREFIX.options) + 1:]
+                tag = self.TAG.options
+            elif tag.startswith(self.PREFIX.resource):
+                resource = tag[len(self.PREFIX.resource) + 1:]
+                tag = self.TAG.resource
+            elif not tag == self.TAG.root:
                 field = tag
-                tag = self.TAG["data"]
+                tag = self.TAG.data
 
         element = etree.Element(tag)
 
         if native:
             if resource:
-                if tag == self.TAG["resource"]:
-                    element.set(self.ATTRIBUTE["name"], resource)
+                if tag == self.TAG.resource:
+                    element.set(self.ATTRIBUTE.name, resource)
                 else:
-                    element.set(self.ATTRIBUTE["resource"], resource)
+                    element.set(self.ATTRIBUTE.resource, resource)
             if field:
-                element.set(self.ATTRIBUTE["field"], field)
+                element.set(self.ATTRIBUTE.field, field)
 
         for k in obj.keys():
             m = obj[k]
@@ -3388,10 +3676,10 @@ class S3XML(object):
                     child = self.__json2element(k, _obj, native=native)
                     element.append(child)
             else:
-                if k == self.PREFIX["text"]:
+                if k == self.PREFIX.text:
                     element.text = self.xml_encode(m)
-                elif k.startswith(self.PREFIX["attribute"]):
-                    a = k[len(self.PREFIX["attribute"]):]
+                elif k.startswith(self.PREFIX.attribute):
+                    a = k[len(self.PREFIX.attribute):]
                     element.set(a, self.xml_encode(m))
                 else:
                     child = self.__json2element(k, m, native=native)
@@ -3413,12 +3701,12 @@ class S3XML(object):
             root_dict = json.load(source)
         except (ValueError,):
             e = sys.exc_info()[1]
-            raise HTTP(400, body=self.json_message(False, 400, "%s %s" % (e.lineno, e.msg)))
+            raise HTTP(400, body=self.json_message(False, 400, e))
 
         native=False
 
         if not format:
-            format=self.TAG["root"]
+            format=self.TAG.root
             native=True
 
         if root_dict and isinstance(root_dict, dict):
@@ -3438,7 +3726,7 @@ class S3XML(object):
 
         """
 
-        if element.tag == self.TAG["list"]:
+        if element.tag == self.TAG.list:
             obj = []
             for child in element:
                 tag = child.tag
@@ -3456,18 +3744,18 @@ class S3XML(object):
                     tag = tag.rsplit("}",1)[1]
                 collapse = True
                 if native:
-                    if tag == self.TAG["resource"]:
-                        resource = child.get(self.ATTRIBUTE["name"])
-                        tag = "%s_%s" % (self.PREFIX["resource"], resource)
+                    if tag == self.TAG.resource:
+                        resource = child.get(self.ATTRIBUTE.name)
+                        tag = "%s_%s" % (self.PREFIX.resource, resource)
                         collapse = False
-                    elif tag == self.TAG["options"]:
-                        resource = child.get(self.ATTRIBUTE["resource"])
-                        tag = "%s_%s" % (self.PREFIX["options"], resource)
-                    elif tag == self.TAG["reference"]:
-                        tag = "%s_%s" % (self.PREFIX["reference"],
-                                         child.get(self.ATTRIBUTE["field"]))
-                    elif tag == self.TAG["data"]:
-                        tag = child.get(self.ATTRIBUTE["field"])
+                    elif tag == self.TAG.options:
+                        resource = child.get(self.ATTRIBUTE.resource)
+                        tag = "%s_%s" % (self.PREFIX.options, resource)
+                    elif tag == self.TAG.reference:
+                        tag = "%s_%s" % (self.PREFIX.reference,
+                                         child.get(self.ATTRIBUTE.field))
+                    elif tag == self.TAG.data:
+                        tag = child.get(self.ATTRIBUTE.field)
                 child_obj = self.__element2json(child, native=native)
                 if child_obj:
                     if not tag in obj:
@@ -3483,23 +3771,23 @@ class S3XML(object):
             attributes = element.attrib
             for a in attributes:
                 if native:
-                    if a == self.ATTRIBUTE["name"] and \
-                       element.tag == self.TAG["resource"]:
+                    if a == self.ATTRIBUTE.name and \
+                       element.tag == self.TAG.resource:
                         continue
-                    if a == self.ATTRIBUTE["resource"] and \
-                       element.tag == self.TAG["options"]:
+                    if a == self.ATTRIBUTE.resource and \
+                       element.tag == self.TAG.options:
                         continue
-                    if a == self.ATTRIBUTE["field"] and \
-                    element.tag in (self.TAG["data"], self.TAG["reference"]):
+                    if a == self.ATTRIBUTE.field and \
+                    element.tag in (self.TAG.data, self.TAG.reference):
                         continue
-                obj[self.PREFIX["attribute"] + a] = \
+                obj[self.PREFIX.attribute + a] = \
                     self.xml_decode(attributes[a])
 
             if element.text:
-                obj[self.PREFIX["text"]] = self.xml_decode(element.text)
+                obj[self.PREFIX.text] = self.xml_decode(element.text)
 
             if len(obj) == 1 and obj.keys()[0] in \
-               (self.PREFIX["text"], self.TAG["item"], self.TAG["list"]):
+               (self.PREFIX.text, self.TAG.item, self.TAG.list):
                 obj = obj[obj.keys()[0]]
 
             return obj
@@ -3516,7 +3804,7 @@ class S3XML(object):
 
         root = tree.getroot()
 
-        if root.tag == self.TAG["root"]:
+        if root.tag == self.TAG.root:
             native = True
         else:
             native = False

@@ -9,9 +9,9 @@
 
     <!-- **********************************************************************
 
-         EDXL-HAVE to S3XRC Transformation Template
+         EDXL-HAVE Import Templates
 
-         Version 0.1 / 2010-02-01 / by nursix
+         Version 0.2 / 2010-06-10 / by nursix
 
          Copyright (c) 2010 Sahana Software Foundation
 
@@ -37,13 +37,13 @@
          OTHER DEALINGS IN THE SOFTWARE.
 
     *********************************************************************** -->
-
     <xsl:output method="xml"/>
 
+    <!-- ****************************************************************** -->
     <xsl:param name="domain"/>
+    <xsl:param name="base_url"/>
 
     <!-- ****************************************************************** -->
-
     <xsl:template match="/">
         <xsl:apply-templates select="./have:HospitalStatus"/>
     </xsl:template>
@@ -54,10 +54,11 @@
         </s3xrc>
     </xsl:template>
 
+
+    <!-- ****************************************************************** -->
     <xsl:template match="have:Hospital">
         <xsl:if test="./have:Organization/have:OrganizationInformation/xnl:OrganisationName/@xnl:ID">
             <resource name="hms_hospital">
-
                 <xsl:call-template name="HospitalUUID"/>
             </resource>
         </xsl:if>
@@ -65,21 +66,15 @@
 
 
     <!-- ****************************************************************** -->
-
     <xsl:template name="HospitalUUID">
         <xsl:variable name="uuid_provided">
             <xsl:value-of select="./have:Organization/have:OrganizationInformation/xnl:OrganisationName/@xnl:ID"/>
         </xsl:variable>
-        <xsl:attribute name="uuid">
-            <xsl:choose>
-                <xsl:when test="starts-with($uuid_provided, concat($domain, '/'))">
-                    <xsl:value-of select="substring-after($uuid_provided, '/')"/>
-                </xsl:when>
-                <xsl:otherwise>
-                    <xsl:value-of select="$uuid_provided"/>
-                </xsl:otherwise>
-            </xsl:choose>
-        </xsl:attribute>
+        <xsl:if test="$uuid_provided">
+            <xsl:attribute name="uuid">
+                <xsl:value-of select="$uuid_provided"/>
+            </xsl:attribute>
+        </xsl:if>
     </xsl:template>
 
 

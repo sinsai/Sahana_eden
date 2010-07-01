@@ -471,23 +471,32 @@ div.confirmation { color:#070;
            cursor: pointer; }
 .warning p em { color:#c00;  }
 
-/* GIS module */
-div.toolbar-container { width: 100%;
-                        overflow: auto; }
-.btn-panel { padding: 2px; }
-.toolbar-link { padding: 2px 2px 2px 2px;
-                font-size:106%;
-                background-color: #e6ddd5;
-                text-decoration: none;
-                color: #000000 }
-
-/* Joined Resources */
-div#pheader table { width: 100%; }
-div#pheader th { text-align: left;
+/* Resource header */
+div#rheader { margin-bottom: 16px; }
+div#rheader table { width: 100%; }
+div#rheader th { text-align: left;
                  width: 10%; }
-div#pheader td { text-align: left;
+div#rheader td { text-align: left;
                  padding: 1px 6px 1px 1px;
                  width: 20%; }
+div#rheader_tabs { width: 100%;
+                   padding: 10px 0px 2px 0px;
+                   margin-bottom: 5px;
+                   border-bottom: 1px solid #bbb;
+                   text-align: left; }
+
+div#rheader_tabs span { padding: 1px 3px 3px 3px;
+                        -moz-border-radius: 3px 3px 0px 0px;
+                        -webkit-border-radius: 3px 3px 0px 0px; }
+
+div#rheader_tabs span.rheader_tab_other { border: 1px solid #bbb; border-bottom: 0; }
+div#rheader_tabs span.rheader_tab_here { border: 2px solid #6699cc; border-bottom: 0; }
+
+div#rheader_tabs span.rheader_tab_other a { color: #bbb;
+                                            text-decoration: None; }
+
+div#rheader_tabs span.rheader_tab_here a { color: #006699;
+                                            text-decoration: None; }
 
 /* Ext button (e.g. on Bulk Upload form */
 #show-dialog-btn { border:1px solid #efefef;

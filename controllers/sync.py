@@ -28,16 +28,25 @@ def index():
     
     return dict(module_name=module_name)
 
+import urllib2
+
+class RequestWithMethod(urllib2.Request):
+    def __init__(self, method, *args, **kwargs):
+        self._method = method
+        urllib2.Request.__init__(self, *args, **kwargs)
+    def get_method(self):
+        return self._method
+
 @auth.requires_login()
 def now():
     "Manual syncing"
-    
+
     module_name = "Synchronisation"
     final_status = ""
-    
+
     # retrieve sync partners from DB
     peers = db().select(db.sync_partner.ALL)
-    
+
     # for eden instances
     final_status = ""
     modules = deployment_settings.modules
@@ -91,7 +100,7 @@ def now():
                 _request_headers = dict(Cookie = request.cookies[auth_cookie_name].key + "=" + request.cookies[auth_cookie_name].value)
                 _request_params = urllib.urlencode({"sync_partner_uuid": str(peer.uuid), "fetchurl": resource_url})
                 try:
-                    _request = urllib2.Request(resource_sync_url, _request_params, _request_headers)
+                    _request = RequestWithMethod("PUT", resource_sync_url, _request_params, _request_headers)
                     _response = urllib2.urlopen(_request).read()
                 except IOError, e:
                     if tables_error:

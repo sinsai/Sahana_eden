@@ -8,7 +8,7 @@ $(function() {
         if (module == "cr") {
             var options_resource = ["shelter"];
         } else if (module == "org") {
-            var options_resource = ["organisation","office","contact"];
+            var options_resource = ["organisation", "office", "staff"];
         } else if (module == "pr") {
             var options_resource = ["person"];
         } else if (module == "gis") {

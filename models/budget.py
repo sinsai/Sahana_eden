@@ -278,25 +278,13 @@ if deployment_settings.has_module(module):
     table.megabytes.requires = IS_NOT_EMPTY()
 
     # Staff Types
-    budget_currency_type_opts = {
-        1:T("Dollars"),
-        2:T("Euros"),
-        3:T("Pounds")
-        }
-    opt_budget_currency_type = db.Table(None, "budget_currency_type",
-                        Field("currency_type", "integer", notnull=True,
-                        requires = IS_IN_SET(budget_currency_type_opts, zero=None),
-                        # default = 1,
-                        label = T("Currency"),
-                        represent = lambda opt: budget_currency_type_opts.get(opt, UNKNOWN_OPT)))
-
     resource = "staff"
     tablename = "%s_%s" % (module, resource)
     table = db.define_table(tablename, timestamp, uuidstamp, deletion_status,
                     Field("name", length=128, notnull=True, unique=True),
                     Field("grade", notnull=True),
                     Field("salary", "integer", notnull=True),
-                    opt_budget_currency_type,
+                    opt_currency_type,
                     Field("travel", "integer", default=0),
                     # Shouldn't be grade-dependent, but purely location-dependent
                     #Field("subsistence", "double", default=0.00),

@@ -92,11 +92,18 @@ document = db.Table(None, "document",
                 #comment = A(SPAN("[Help]"), _class="tooltip", _title=T("Scanned File|The scanned copy of this document.")),
                 ))
 
-# Make URLs clickable
-shn_url_represent = lambda url: (url and [A(url, _href=url, _target="blank")] or [""])[0]
-
-# Phone number requires
-shn_phone_requires = IS_NULL_OR(IS_MATCH('\+?\s*[\s\-\.\(\)\d]+(?:(?: x| ext)\s?\d{1,5})?$'))
+# Reusable Currency field to include in other table definitions
+currency_type_opts = {
+    1:T("Dollars"),
+    2:T("Euros"),
+    3:T("Pounds")
+}
+opt_currency_type = db.Table(None, "currency_type",
+                    Field("currency_type", "integer", notnull=True,
+                    requires = IS_IN_SET(currency_type_opts, zero=None),
+                    # default = 1,
+                    label = T("Currency"),
+                    represent = lambda opt: currency_type_opts.get(opt, UNKNOWN_OPT)))
 
 # Default CRUD strings
 ADD_RECORD = T("Add Record")

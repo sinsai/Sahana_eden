@@ -87,35 +87,6 @@ def person():
     return output
 
 
-def task():
-
-    """ Manage current user's tasks """
-
-    resource = request.function
-
-    my_person_id = None
-
-    if auth.user is not None and auth.user.person_uuid:
-        my_person_id = db(db.pr_person.uuid == auth.user.person_uuid).select(db.pr_person.id, limitby=(0,1))
-        if my_person_id:
-            my_person_id = my_person_id.first()
-
-    if not my_person_id:
-        session.error = T("No person record found for current user.")
-        redirect(URL(r=request, f="index"))
-
-    db.vol_task.person_id.default = my_person_id
-    #db.vol_task.person_id.writable = False
-
-    response.s3.filter = (db.vol_task.person_id == my_person_id)
-
-    s3.crud_strings["vol_task"].title_list = T("My Tasks")
-    s3.crud_strings["vol_task"].subtitle_list = T("Task List")
-
-    response.s3.pagination = True
-
-    return shn_rest_controller(module, resource, listadd=False)
-
 def project():
     "RESTful CRUD controller"
     resource = request.function
@@ -135,7 +106,8 @@ def project():
                                  main="code",
                                  rheader=lambda jr: shn_project_rheader(jr,
                                                                     tabs = [(T("Basic Details"), None),
-                                                                            (T("Positions"), "position"),
+                                                                            (T("Staff"), "staff"),
+                                                                            (T("Tasks"), "task"),
                                                                             #(T("Donors"), "organisation"),
                                                                             #(T("Sites"), "site"),          # Ticket 195
                                                                            ]
@@ -144,3 +116,32 @@ def project():
                                 )
     
     return output
+
+def task():
+    """ Manage current user's tasks """
+
+    resource = request.function
+
+    my_person_id = None
+
+    if auth.user is not None and auth.user.person_uuid:
+        my_person_id = db(db.pr_person.uuid == auth.user.person_uuid).select(db.pr_person.id, limitby=(0,1))
+        if my_person_id:
+            my_person_id = my_person_id.first()
+
+    if not my_person_id:
+        session.error = T("No person record found for current user.")
+        redirect(URL(r=request, f="index"))
+
+    db.org_task.person_id.default = my_person_id
+    #db.org_task.person_id.writable = False
+
+    response.s3.filter = (db.org_task.person_id == my_person_id)
+
+    s3.crud_strings["org_task"].title_list = T("My Tasks")
+    s3.crud_strings["org_task"].subtitle_list = T("Task List")
+
+    response.s3.pagination = True
+
+    return shn_rest_controller("org", resource, listadd=False)
+

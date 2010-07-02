@@ -135,6 +135,7 @@ s3xrc.model.add_component(module, resource,
 
 s3xrc.model.configure(table,
                       list_fields=["id",
+                                   "pr_pe_id",
                                    "name",
                                    "person_name",
                                    "opt_pr_contact_method",
@@ -371,6 +372,7 @@ table.time.represent = lambda value: shn_as_local_time(value)
 
 # Field labels
 table.time.label = T("Date/Time")
+table.time.comment = SPAN("*", _class="req")
 
 # CRUD Strings
 ADD_LOG_ENTRY = T("Add Log Entry")
@@ -400,7 +402,7 @@ resource = "pe_subscription"
 tablename = "%s_%s" % (module, resource)
 table = db.define_table(tablename, timestamp, uuidstamp, deletion_status,
                 pr_pe_id,               # Person Entity ID
-                Field("resource"),      
+                Field("resource"),
                 Field("record"),        # type="s3uuid"
                 Field("comment"),       # Comment
                 migrate=migrate)

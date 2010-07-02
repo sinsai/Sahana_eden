@@ -26,10 +26,10 @@ response.menu_options = [
         [T("Add"), False, URL(r=request, f="office", args="create")],
         #[T("Search"), False, URL(r=request, f="office", args="search")]
     ]],
-    [T("Contacts"), False, URL(r=request, f="contact"),[
-        [T("List"), False, URL(r=request, f="contact")],
-        [T("Add"), False, URL(r=request, f="contact", args="create")],
-        #[T("Search"), False, URL(r=request, f="contact", args="search")]
+    [T("Staff"), False, URL(r=request, f="staff"),[
+        [T("List"), False, URL(r=request, f="staff")],
+        [T("Add"), False, URL(r=request, f="staff", args="create")],
+        #[T("Search"), False, URL(r=request, f="staff", args="search")]
     ]],
     [T("Projects"), False, URL(r=request, f="project"),[
         [T("List"), False, URL(r=request, f="project")],
@@ -81,7 +81,7 @@ def organisation():
 
     def org_prep(jr):
         if jr.representation == "html":
-            # Redirect to Dashboard after adding/editing an Organisation to add Offices/Contacts/Projects
+            # Redirect to Dashboard after adding/editing an Organisation to add Offices/Staff/Projects
             crud.settings.create_next = URL(r=request, f="dashboard")
             crud.settings.update_next = URL(r=request, f="dashboard")
         return True
@@ -220,7 +220,7 @@ s3.crud_strings[tablename] = Storage(
     msg_record_deleted = T("Office deleted"),
     msg_list_empty = T("No Offices currently registered"))
  
-def contact():
+def staff():
     "RESTful CRUD controller"
     resource = request.function
     tablename = "%s_%s" % (module, resource)
@@ -239,7 +239,7 @@ def contact():
     # the update forms are not ready. when they will - uncomment this and comment the next one
     #if request.args(0) in ("create", "update"):
     if request.args(0) == "create":
-        # person_id mandatory for a contact!
+        # person_id mandatory for a staff!
         table.person_id.requires = IS_ONE_OF_EMPTY(db, "pr_person.id")
         table.organisation_id.requires = IS_NULL_OR(IS_ONE_OF_EMPTY(db, "org_organisation.id"))
         table.office_id.requires = IS_NULL_OR(IS_ONE_OF_EMPTY(db, "org_office.id"))
@@ -247,36 +247,6 @@ def contact():
     output = shn_rest_controller(module, resource, listadd=False)
     
     return output
-
-# Component Resources need these settings to be visible where they are linked from
-# - so we put them outside their controller function
-tablename = "%s_%s" % (module, "contact")
-table = db[tablename]
-table.person_id.label = T("Contact")
-table.person_id.comment = DIV(SPAN("*", _class="req"), shn_person_comment)
-table.organisation_id.comment = DIV(SPAN("*", _class="req"), shn_organisation_comment)
-table.title.label = T("Job Title")
-table.title.comment = A(SPAN("[Help]"), _class="tooltip", _title=T("Title|The Role this person plays within this Office."))
-table.manager_id.label = T("Manager")
-table.manager_id.comment = A(SPAN("[Help]"), _class="tooltip", _title=T("Manager|The person's manager within this Office."))
-table.focal_point.comment = A(SPAN("[Help]"), _class="tooltip", _title=T("Focal Point|The contact person for this organization."))
-# CRUD strings
-ADD_CONTACT = T("Add Contact")
-LIST_CONTACTS = T("List Contacts")
-s3.crud_strings[tablename] = Storage(
-    title_create = ADD_CONTACT,
-    title_display = T("Contact Details"),
-    title_list = LIST_CONTACTS,
-    title_update = T("Edit Contact"),
-    title_search = T("Search Contacts"),
-    subtitle_create = T("Add New Contact"),
-    subtitle_list = T("Contacts"),
-    label_list_button = LIST_CONTACTS,
-    label_create_button = ADD_CONTACT,
-    msg_record_created = T("Contact added"),
-    msg_record_modified = T("Contact updated"),
-    msg_record_deleted = T("Contact deleted"),
-    msg_list_empty = T("No Contacts currently registered"))
 
 def donor():
     "RESTful CRUD controller"
@@ -334,7 +304,8 @@ def project():
                                  main="code",
                                  rheader=lambda jr: shn_project_rheader(jr,
                                                                     tabs = [(T("Basic Details"), None),
-                                                                            (T("Positions"), "position"),
+                                                                            (T("Staff"), "staff"),
+                                                                            (T("Tasks"), "task"),
                                                                             #(T("Donors"), "organisation"),
                                                                             #(T("Sites"), "site"),          # Ticket 195
                                                                            ]
@@ -351,11 +322,11 @@ def office_table_linkto_update(field):
     return URL(r=request, f = "office", args=[field, "update"],
                 vars={"_next":URL(r=request, args=request.args, vars=request.vars)})
 
-def contact_table_linkto(field):
-    return URL(r=request, f = "contact",  args=[field, "read"],
+def staff_table_linkto(field):
+    return URL(r=request, f = "staff",  args=[field, "read"],
                 vars={"_next":URL(r=request, args=request.args, vars=request.vars)})
-def contact_table_linkto_update(field):
-    return URL(r=request, f = "contact", args=[field, "update"],
+def staff_table_linkto_update(field):
+    return URL(r=request, f = "staff", args=[field, "update"],
                 vars={"_next":URL(r=request, args=request.args, vars=request.vars)})
 
 def project_table_linkto(field):
@@ -377,13 +348,13 @@ def org_sub_list(tablename, org_id):
 
     table_linkto_update = dict( \
         org_office = office_table_linkto_update,
-        org_contact =  contact_table_linkto_update,
+        org_staff =  staff_table_linkto_update,
         org_project = project_table_linkto_update,
     )
 
     table_linkto = dict( \
         org_office = office_table_linkto,
-        org_contact = contact_table_linkto,
+        org_staff = staff_table_linkto,
         org_project = project_table_linkto,
     )
 
@@ -452,44 +423,44 @@ def dashboard():
     org_details = crud.read("org_organisation", org_id)
 
     office_list = org_sub_list("org_office", org_id)
-    contact_list = org_sub_list("org_contact", org_id)
+    staff_list = org_sub_list("org_staff", org_id)
     project_list = org_sub_list("org_project", org_id)
 
-    but_add_org = A(T("Add Organization"),
+    but_add_org = A(ADD_ORGANIZATION,
                         _class="colorbox",
                         _href=URL(r=request,
                             c="org", f="organisation", args="create",
                             vars=dict(format="popup", KeepThis="true")) + "&TB_iframe=true&mode=new",
-                            _target="top", _title=T("Add Organization"))
+                            _target="top", _title=ADD_ORGANIZATION)
 
     but_edit_org = A(T("Edit Organization"),
                         _href=URL(r=request,
                             c="org", f="organisation", args=[org_id, "update"]))
 
-    but_add_office = A(T("Add Office"),
+    but_add_office = A(ADD_OFFICE,
                         _class="colorbox",
                         _href=URL(r=request,
                             c="org", f="office", args="create",
                             vars=dict(format="popup", KeepThis="true")) + "&TB_iframe=true&mode=new",
-                            _target="top", _title=T("Add Office"))
+                            _target="top", _title=ADD_OFFICE)
 
-    but_add_contact = A(T("Add Contact"),
+    but_add_staff = A(ADD_STAFF,
                         _class="colorbox",
                         _href=URL(r=request,
-                            c="org", f="contact", args="create",
+                            c="org", f="staff", args="create",
                             vars=dict(format="popup", KeepThis="true")) + "&TB_iframe=true&mode=new",
-                            _target="top", _title=T("Add Contact"))
+                            _target="top", _title=ADD_STAFF)
 
-    but_add_project = A(T("Add Project"),
+    but_add_project = A(ADD_PROJECT,
                         _class="colorbox",
                         _href=URL(r=request,
                             c="org", f="project", args="create",
                             vars=dict(format="popup", KeepThis="true")) + "&TB_iframe=true&mode=new",
-                            _target="top", _title=T("Add Project"))
+                            _target="top", _title=ADD_PROJECT)
 
     session.s3.organisation_id = org_id
 
-    return dict(organisation_id = org_id, organisation_select = organisation_select, org_details = org_details, office_list = office_list, contact_list = contact_list, project_list = project_list, but_add_org =but_add_org, but_edit_org =but_edit_org, but_add_office = but_add_office, but_add_contact = but_add_contact, but_add_project = but_add_project)
+    return dict(organisation_id = org_id, organisation_select = organisation_select, org_details = org_details, office_list = office_list, staff_list = staff_list, project_list = project_list, but_add_org =but_add_org, but_edit_org =but_edit_org, but_add_office = but_add_office, but_add_staff = but_add_staff, but_add_project = but_add_project)
 
 def who_what_where_when():
     project_list = crud.select("org_project", query = db.org_project.id > 0)

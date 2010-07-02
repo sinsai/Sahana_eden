@@ -9,7 +9,30 @@
     //]]></script>
 {{else:}}
 {{pass}}
-{{if "pr_presence" in request.vars.caller:}}
+{{if "gis_location_parent" in request.vars.caller:}}
+    <script type="text/javascript">//<![CDATA[
+    // If a Parent location then populate defaults for the fields & Hide unnecessary rows
+    $(function() {
+        $("#gis_location_description__row").hide();
+        //$("#gis_location_level__row").hide();
+        $("#gis_location_code__row").hide();
+        //$("#gis_location_parent__row").hide();
+        $("#gis_location_feature_class_id__row").hide();
+        // Use default Marker for Class
+        $("#gis_location_marker_id__row").hide();
+        //$("#gis_location_gis_feature_type__row").hide();
+        //$("#gis_location_gis_feature_type").val();
+        $("#gis_location_wkt__row").hide();
+        $("#gis_location_addr_street__row").hide();
+        $("#gis_location_osm_id__row").hide();
+        $("#gis_location_source__row").hide();
+        
+        // Provide tiered Location AutoCompletes
+        //{include 'gis/location_autocomplete.js'}
+        //}
+    });
+    //]]></script>
+{{elif "pr_presence" in request.vars.caller:}}
     {{fc = db(db.gis_feature_class.name == "Person").select(db.gis_feature_class.id, limitby=(0, 1)).first().id}}
     <script type="text/javascript">//<![CDATA[
     // If coming from the PR then populate defaults for the fields & Hide unnecessary rows
@@ -24,8 +47,10 @@
         $("#gis_location_level__row").hide();
         $("#gis_location_code__row").hide();
         //$("#gis_location_parent__row").hide();
+        {{if fc:}}
         $("#gis_location_feature_class_id").val({{=fc}});
         $("#gis_location_feature_class_id__row").hide();
+        {{pass}}
         // Use default Marker for Class
         $("#gis_location_marker_id__row").hide();
         $("#gis_location_gis_feature_type__row").hide();
@@ -72,8 +97,41 @@
         $("#gis_location_level__row").hide();
         $("#gis_location_code__row").hide();
         //$("#gis_location_parent__row").hide();
+        {{if fc:}}
         $("#gis_location_feature_class_id").val({{=fc}});
         $("#gis_location_feature_class_id__row").hide();
+        {{pass}}
+        // Use default Marker for Class
+        $("#gis_location_marker_id__row").hide();
+        $("#gis_location_gis_feature_type__row").hide();
+        $("#gis_location_wkt__row").hide();
+        $("#gis_location_osm_id__row").hide();
+        $("#gis_location_source__row").hide();
+        
+        // Provide tiered Location AutoCompletes
+        //{include 'gis/location_autocomplete.js'}
+        //}
+    });
+    //]]></script>
+{{elif "org_project" in request.vars.caller:}}
+    {{fc = db(db.gis_feature_class.name == "Project").select(db.gis_feature_class.id, limitby=(0, 1)).first().id}}
+    <script type="text/javascript">//<![CDATA[
+    // If coming from the Organisation Registry then populate defaults for the fields & Hide unnecessary rows
+    $(function() {
+        //if (self.parent.$("input[name='_formname']").val().match("org_project")) {
+        var location_name = self.parent.$('#org_project_name').val();
+        if (location_name) {
+            $("#gis_location_name").val(location_name);
+            $("#gis_location_name__row").hide();
+        }
+        $("#gis_location_description__row").hide();
+        $("#gis_location_level__row").hide();
+        $("#gis_location_code__row").hide();
+        //$("#gis_location_parent__row").hide();
+        {{if fc:}}
+        $("#gis_location_feature_class_id").val({{=fc}});
+        $("#gis_location_feature_class_id__row").hide();
+        {{pass}}
         // Use default Marker for Class
         $("#gis_location_marker_id__row").hide();
         $("#gis_location_gis_feature_type__row").hide();
@@ -101,8 +159,10 @@
         $("#gis_location_level__row").hide();
         $("#gis_location_code__row").hide();
         //$("#gis_location_parent__row").hide();
+        {{if fc:}}
         $("#gis_location_feature_class_id").val({{=fc}});
         $("#gis_location_feature_class_id__row").hide();
+        {{pass}}
         // Use default Marker for Class
         $("#gis_location_marker_id__row").hide();
         $("#gis_location_gis_feature_type__row").hide();

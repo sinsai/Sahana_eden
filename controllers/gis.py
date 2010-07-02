@@ -292,13 +292,22 @@ def location():
     table.code.comment = DIV( _class="tooltip", _title=T("Code|For a country this would be the ISO2 code, for a Town, it would be the Airport Locode."))
     table.description.label = T("Description")
     table.parent.label = T("Parent")
+    table.parent.comment = DIV(A(ADD_LOCATION,
+                                       _class="colorbox",
+                                       _href=URL(r=request, c="gis", f="location", args="create", vars=dict(format="popup", child="parent")),
+                                       _target="top",
+                                       _title=ADD_LOCATION),
+                                     A(SPAN("[Help]"),
+                                       _class="tooltip",
+                                       _title=T("Parent|The Area which this Site is located within."))),
+                       
     table.addr_street.label = T("Street Address")
     table.gis_feature_type.label = T("Feature Type")
     table.lat.label = T("Latitude")
     CONVERSION_TOOL = T("Conversion Tool")
-    table.lat.comment = DIV(SPAN("*", _class="req"), A(CONVERSION_TOOL, _style="cursor:pointer;", _title=CONVERSION_TOOL, _id="btnConvert"), DIV( _class="tooltip", _title=T("Latitude|Latitude is North-South (Up-Down). Latitude is zero on the equator and positive in the northern hemisphere and negative in the southern hemisphere. This needs to be added in Decimal Degrees. Use the popup to convert from either GPS coordinates or Degrees/Minutes/Seconds.")))
+    table.lat.comment = DIV(A(CONVERSION_TOOL, _style="cursor:pointer;", _title=CONVERSION_TOOL, _id="btnConvert"), DIV( _class="tooltip", _title=T("Latitude|Latitude is North-South (Up-Down). Latitude is zero on the equator and positive in the northern hemisphere and negative in the southern hemisphere. This needs to be added in Decimal Degrees. Use the popup to convert from either GPS coordinates or Degrees/Minutes/Seconds.")))
     table.lon.label = T("Longitude")
-    table.lon.comment = DIV(SPAN("*", _class="req"), DIV( _class="tooltip", _title=T("Longitude|Longitude is West - East (sideways). Longitude is zero on the prime meridian (Greenwich Mean Time) and is positive to the east, across Europe and Asia.  Longitude is negative to the west, across the Atlantic and the Americas.  This needs to be added in Decimal Degrees. Use the popup to convert from either GPS coordinates or Degrees/Minutes/Seconds.")))
+    table.lon.comment = DIV( _class="tooltip", _title=T("Longitude|Longitude is West - East (sideways). Longitude is zero on the prime meridian (Greenwich Mean Time) and is positive to the east, across Europe and Asia.  Longitude is negative to the west, across the Atlantic and the Americas.  This needs to be added in Decimal Degrees. Use the popup to convert from either GPS coordinates or Degrees/Minutes/Seconds."))
     table.wkt.label = T("Well-Known Text")
     table.wkt.comment = DIV(SPAN("*", _class="req"), DIV( _class="tooltip", _title=T("WKT|The <a href='http://en.wikipedia.org/wiki/Well-known_text' target=_blank>Well-Known Text</a> representation of the Polygon/Line.")))
     table.osm_id.label = "OpenStreetMap"
@@ -2037,7 +2046,7 @@ def display_features():
 def geolocate():
     " Call a Geocoder service "
     if "location" in request.vars:
-        location = request.vars.service
+        location = request.vars.location
     else:
         session.error = T("Need to specify a location to search for.")
         redirect(URL(r=request, f="index"))

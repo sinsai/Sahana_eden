@@ -362,7 +362,7 @@ table.manager_id.represent = lambda id: (id and [shn_pr_person_represent(id)] or
 # Staff Resource called from multiple controllers
 # - so we define strings in the model
 table.person_id.label = T("Person")
-table.person_id.comment = DIV(SPAN("*", _class="req"), shn_person_comment)
+#table.person_id.comment = DIV(SPAN("*", _class="req"), shn_person_comment)
 table.organisation_id.comment = DIV(SPAN("*", _class="req"), shn_organisation_comment)
 table.title.label = T("Job Title")
 table.title.comment = A(SPAN("[Help]"), _class="tooltip", _title=T("Title|The Role this person plays within this Office/Project."))
@@ -687,11 +687,12 @@ def shn_project_rheader(jr, tabs=[]):
 
             project = jr.record
             
-            sectors = re.split("\|", project.sector_id)[1:-1]
-            _sectors = TABLE()
-            for sector in sectors:
-                _sectors.append(TR(db(db.org_sector.id == sector).select(db.org_sector.name, limitby=(0, 1)).first().name))
-                        
+            sectors = TABLE()
+            if project.sector_id:
+                _sectors = re.split("\|", project.sector_id)[1:-1]
+                for sector in _sectors:
+                    sectors.append(TR(db(db.org_sector.id == sector).select(db.org_sector.name, limitby=(0, 1)).first().name))
+
             if project:
                 rheader = DIV(TABLE(
                     TR(
@@ -710,7 +711,7 @@ def shn_project_rheader(jr, tabs=[]):
                         TH(T("Status: ")),
                         "%s" % org_project_status_opts[project.status],
                         TH(T("Sector(s): ")),
-                        _sectors
+                        sectors
                         #TH(A(T("Edit Project"),
                         #    _href=URL(r=request, f="project", args=[jr.id, "update"], vars={"_next": _next})))
                         )

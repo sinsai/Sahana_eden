@@ -4,7 +4,7 @@
     Budgetting Module - Controllers
 """
 
-module = "budget"
+module = request.controller
 
 if module not in deployment_settings.modules:
     session.error = T("Module disabled!")
@@ -106,11 +106,11 @@ table.subsistence.label = T("Subsistence Cost")
 table.hazard_pay.label = T("Hazard Pay")
 table.comments.label = T("Comments")
 
-table = db.budget_project
-table.code.label = T("Code")
-table.code.comment = SPAN("*", _class="req")
-table.title.label = T("Title")
-table.comments.label = T("Comments")
+#table = db.budget_project
+#table.code.label = T("Code")
+#table.code.comment = SPAN("*", _class="req")
+#table.title.label = T("Title")
+#table.comments.label = T("Comments")
 
 table = db.budget_budget
 table.name.label = T("Name")
@@ -123,8 +123,8 @@ table.comments.label = T("Comments")
 table = db.budget_budget_bundle
 table.budget_id.label = T("Budget")
 table.budget_id.represent = lambda budget_id: db(db.budget_budget.id == budget_id).select(db.budget_budget.name, limitby=(0, 1)).first().name
-table.project_id.label = T("Project")
-table.project_id.represent = lambda project_id: db(db.budget_project.id == project_id).select(db.budget_project.code, limitby=(0, 1)).first().code
+#table.project_id.label = T("Project")
+#table.project_id.represent = lambda project_id: db(db.budget_project.id == project_id).select(db.budget_project.code, limitby=(0, 1)).first().code
 table.location_id.label = T("Location")
 table.location_id.represent = lambda location_id: db(db.budget_location.id == location_id).select(db.budget_location.code, limitby=(0, 1)).first().code
 table.bundle_id.label = T("Bundle")
@@ -137,8 +137,8 @@ table.months.comment = SPAN("*", _class="req")
 table = db.budget_budget_staff
 table.budget_id.label = T("Budget")
 table.budget_id.represent = lambda budget_id: db(db.budget_budget.id == budget_id).select(db.budget_budget.name, limitby=(0, 1)).first().name
-table.project_id.label = T("Project")
-table.project_id.represent = lambda project_id: db(db.budget_project.id == project_id).select(db.budget_project.code, limitby=(0, 1)).first().code
+#table.project_id.label = T("Project")
+#table.project_id.represent = lambda project_id: db(db.budget_project.id == project_id).select(db.budget_project.code, limitby=(0, 1)).first().code
 table.location_id.label = T("Location")
 table.location_id.represent = lambda location_id: db(db.budget_location.id == location_id).select(db.budget_location.code, limitby=(0, 1)).first().code
 table.staff_id.label = T("Staff")
@@ -166,8 +166,8 @@ def parameters():
         redirect (URL(r=request, f="parameter", args=[1, "read"]))
 
 def parameter():
-    "RESTlike CRUD controller"
-    resource = "parameter"
+    "RESTful CRUD controller"
+    resource = request.function
     tablename = module + "_" + resource
     table = db[tablename]
 
@@ -185,8 +185,8 @@ def parameter():
     return shn_rest_controller(module, resource, deletable=False)
 
 def item():
-    "RESTlike CRUD controller"
-    resource = "item"
+    "RESTful CRUD controller"
+    resource = request.function
     table = module + "_" + resource
 
     # Model options used in multiple controllers so defined at the top of the file
@@ -320,8 +320,8 @@ def item_export_pdf():
     return output.read()
 
 def kit():
-    "RESTlike CRUD controller"
-    resource = "kit"
+    "RESTful CRUD controller"
+    resource = request.function
     table = module + "_" + resource
 
     # Model options used in multiple controllers so defined at the top of the file
@@ -750,8 +750,8 @@ def kit_import_csv():
     redirect(URL(r=request, f="kit"))
 
 def bundle():
-    "RESTlike CRUD controller"
-    resource = "bundle"
+    "RESTful CRUD controller"
+    resource = request.function
     table = module + "_" + resource
 
     # Model options used in multiple controllers so defined at the top of the file
@@ -1052,8 +1052,8 @@ def bundle_update_items():
     redirect(URL(r=request, f="bundle_kit_item", args=[bundle]))
 
 def staff():
-    "RESTlike CRUD controller"
-    resource = "staff"
+    "RESTful CRUD controller"
+    resource = request.function
     table = module + "_" + resource
 
     # Model options used in multiple controllers so defined at the top of the file
@@ -1079,9 +1079,10 @@ def staff():
 
     return shn_rest_controller(module, resource)
 
+# This should be deprecated & replaced with a link to gis_location
 def location():
-    "RESTlike CRUD controller"
-    resource = "location"
+    "RESTful CRUD controller"
+    resource = request.function
     table = module + "_" + resource
 
     # Model options used in multiple controllers so defined at the top of the file
@@ -1108,36 +1109,39 @@ def location():
     return shn_rest_controller(module, resource, main="code")
 
 def project():
-    "RESTlike CRUD controller"
-    resource = "project"
-    table = module + "_" + resource
+    "RESTful CRUD controller"
+    resource = request.function
+    tablename = "org_%s" % (resource)
+    table = db[tablename]
+    
+    def org_postp(jr, output):
+        shn_action_buttons(jr)
+        return output
+    response.s3.postp = org_postp
+    
+    # ServerSidePagination
+    response.s3.pagination = True
 
-    # Model options used in multiple controllers so defined at the top of the file
+    output = shn_rest_controller("org", resource,
+                                 listadd=False,
+                                 main="code",
+                                 rheader=lambda jr: shn_project_rheader(jr,
+                                                                    tabs = [(T("Basic Details"), None),
+                                                                            (T("Staff"), "staff"),
+                                                                            (T("Tasks"), "task"),
+                                                                            #(T("Donors"), "organisation"),
+                                                                            #(T("Sites"), "site"),          # Ticket 195
+                                                                           ]
+                                                                   ),
+                                 sticky=True
+                                )
+    
+    return output
 
-    # CRUD Strings
-    ADD_PROJECT = T("Add Project")
-    LIST_PROJECTS = T("List Projects")
-    s3.crud_strings[table] = Storage(
-        title_create = ADD_PROJECT,
-        title_display = T("Project Details"),
-        title_list = LIST_PROJECTS,
-        title_update = T("Edit Project"),
-        title_search = T("Search Projects"),
-        subtitle_create = T("Add New Project"),
-        subtitle_list = T("Projects"),
-        label_list_button = LIST_PROJECTS,
-        label_create_button = ADD_PROJECT,
-        label_delete_button = T("Delete Project"),
-        msg_record_created = T("Project added"),
-        msg_record_modified = T("Project updated"),
-        msg_record_deleted = T("Project deleted"),
-        msg_list_empty = T("No Projects currently registered"))
-
-    return shn_rest_controller(module, resource, main="code")
 
 def budget():
-    "RESTlike CRUD controller"
-    resource = "budget"
+    "RESTful CRUD controller"
+    resource = request.function
     table = module + "_" + resource
 
     # Model options used in multiple controllers so defined at the top of the file
@@ -1192,7 +1196,7 @@ def budget_staff_bundle():
         # Display a List_Create page with editable Quantities & Months
 
         # Staff
-        query = tables[0].budget_id==budget
+        query = tables[0].budget_id == budget
         sqlrows = db(query).select()
         for row in sqlrows:
             if even:
@@ -1207,8 +1211,8 @@ def budget_staff_bundle():
             id_link = A(name, _href=URL(r=request, f="staff", args=[id, "read"]))
             location = db.budget_location[row.location_id].code
             location_link = A(location, _href=URL(r=request, f="location", args=[row.location_id, "read"]))
-            project = db.budget_project[row.project_id].code
-            project_link = A(project, _href=URL(r=request, f="project", args=[row.project_id, "read"]))
+            project = db.org_project[row.project_id].code
+            project_link = A(project, _href=URL(r=request, c="org", f="project", args=[row.project_id, "read"]))
             description = _staff.comments
             quantity_box = INPUT(_value=row.quantity, _size=4, _name="staff_qty_" + str(id))
             months_box = INPUT(_value=row.months, _size=4, _name="staff_months_" + str(id))
@@ -1235,8 +1239,8 @@ def budget_staff_bundle():
             id_link = A(name, _href=URL(r=request, f="bundle", args=[id, "read"]))
             location = db.budget_location[row.location_id].code
             location_link = A(location, _href=URL(r=request, f="location", args=[row.location_id, "read"]))
-            project = db.budget_project[row.project_id].code
-            project_link = A(project, _href=URL(r=request, f="project", args=[row.project_id, "read"]))
+            project = db.org_project[row.project_id].code
+            project_link = A(project, _href=URL(r=request, c="org", f="project", args=[row.project_id, "read"]))
             description = _bundle.description
             quantity_box = INPUT(_value=row.quantity, _size=4, _name="bundle_qty_" + str(id))
             months_box = INPUT(_value=row.months, _size=4, _name="bundle_months_" + str(id))
@@ -1283,8 +1287,8 @@ def budget_staff_bundle():
             id_link = A(name, _href=URL(r=request, f="staff", args=[id, "read"]))
             location = db.budget_location[row.location_id].code
             location_link = A(location, _href=URL(r=request, f="location", args=[row.location_id, "read"]))
-            project = db.budget_project[row.project_id].code
-            project_link = A(project, _href=URL(r=request, f="project", args=[row.project_id, "read"]))
+            project = db.org_project[row.project_id].code
+            project_link = A(project, _href=URL(r=request, c="org", f="project", args=[row.project_id, "read"]))
             description = _staff.comments
             quantity_box = INPUT(_value=row.quantity, _size=4, _name="staff_qty_" + str(id))
             months_box = INPUT(_value=row.months, _size=4, _name="staff_mins_" + str(id))
@@ -1311,8 +1315,8 @@ def budget_staff_bundle():
             id_link = A(name, _href=URL(r=request, f="bundle", args=[id, "read"]))
             location = db.budget_location[row.location_id].code
             location_link = A(location, _href=URL(r=request, f="location", args=[row.location_id, "read"]))
-            project = db.budget_project[row.project_id].code
-            project_link = A(project, _href=URL(r=request, f="project", args=[row.project_id, "read"]))
+            project = db.org_project[row.project_id].code
+            project_link = A(project, _href=URL(r=request, c="org", f="project", args=[row.project_id, "read"]))
             description = _bundle.description
             quantity_box = row.quantity
             months_box = row.months

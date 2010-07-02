@@ -4,7 +4,7 @@
     Request Management System - Controllers
 """
 
-module = "rms"
+module = request.controller
 
 if module not in deployment_settings.modules:
     session.error = T("Module disabled!")
@@ -28,9 +28,9 @@ def index():
 
 
 def req(): #aid requests
-    "RESTlike CRUD controller"
+    "RESTful CRUD controller"
 
-    resource = "req" # pulls from table of combined aid request feeds (sms, tweets, manual)
+    resource = request.function # pulls from table of combined aid request feeds (sms, tweets, manual)
 
     # Filter out non-actionable SMS requests:
 #    response.s3.filter = (db.rms_req.actionable == True) | (db.rms_req.source_type != 2) # disabled b/c Ushahidi no longer updating actionaable fielde
@@ -40,11 +40,17 @@ def req(): #aid requests
     else:
         # Uncomment to enable Server-side pagination:
         response.s3.pagination = True
+        
+    if request.args(0) == "create" or request.args(0) == "update": 
+        db.rms_req.pledge_status.readable = False
+    
+    
 
     def req_postp(jr, output):
         if jr.representation in ("html", "popup"):
             if not jr.component:
                 response.s3.actions = [
+                    dict(label=str(T("Edit")), _class="action-btn", url=str(URL(r=request, args=["update", "[id]"]))),
                     dict(label=str(T("Pledge")), _class="action-btn", url=str(URL(r=request, args=["[id]", "pledge"])))
                 ]
             elif jr.component_name == "pledge":
@@ -55,7 +61,7 @@ def req(): #aid requests
     response.s3.postp = req_postp
 
     output = shn_rest_controller(module, resource,
-                                 editable=False,
+                                 editable=True,
                                  listadd=False,
                                  rheader=shn_rms_rheader)
                                  # call rheader to act as parent header for parent/child forms (layout defined below)
@@ -64,19 +70,22 @@ def req(): #aid requests
 
 
 def pledge(): #pledges from agencies
-    "RESTlike CRUD controller"
+    "RESTful CRUD controller"
 
-    resource = "pledge"
+    resource = request.function
 
     # Uncomment to enable Server-side pagination:
     #response.s3.pagination = True  #commented due to display problems
+    
+    
+ 
 
-    pledges = db(db.rms_pledge.status == 3).select() # changes the request status to completed when pledge delivered
+    #pledges = db(db.rms_pledge.status == 3).select() # changes the request status to completed when pledge delivered
                                                      # this is necessary to close the loop
-    for pledge in pledges:
-        req = db(db.rms_req.id == pledge.req_id).update(completion_status = True)
+    #for pledge in pledges:
+    #    req = db(db.rms_req.id == pledge.req_id).update(completion_status = True)
 
-    db.commit()
+    #db.commit()
 
     def pledge_postp(jr, output):
         if jr.representation in ("html", "popup"):

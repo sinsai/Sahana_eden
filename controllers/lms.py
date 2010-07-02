@@ -6,7 +6,7 @@
     @author: ajuonline
 """
 
-module = "lms"
+module = request.controller
 
 if module not in deployment_settings.modules:
     session.error = T("Module disabled!")
@@ -110,52 +110,52 @@ def admin():
     return dict(module_name=module_name, title=title)
 
 def unit():
-    "RESTlike CRUD controller"
+    "RESTful CRUD controller"
     return shn_rest_controller(module, 'unit')
 def site():
-    "RESTlike CRUD controller"
+    "RESTful CRUD controller"
     return shn_rest_controller(module, 'site')
 
 '''def site_category():
-    "RESTlike CRUD controller"
+    "RESTful CRUD controller"
     return shn_rest_controller(module, 'site_category')
 '''
 def storage_loc():
-    "RESTlike CRUD controller"
+    "RESTful CRUD controller"
     return shn_rest_controller(module, 'storage_loc')
 
 def storage_bin_type():
-    "RESTlike CRUD controller"
+    "RESTful CRUD controller"
     return shn_rest_controller(module, 'storage_bin_type')
 
 def storage_bin():
-    "RESTlike CRUD controller"
+    "RESTful CRUD controller"
     return shn_rest_controller(module, 'storage_bin')
 
 def catalog():
-    "RESTlike CRUD controller"
+    "RESTful CRUD controller"
     return shn_rest_controller(module, 'catalog')
 
 def catalog_cat():
-    "RESTlike CRUD controller"
+    "RESTful CRUD controller"
     return shn_rest_controller(module, 'catalog_cat')
 
 def catalog_subcat():
-    "RESTlike CRUD controller"
+    "RESTful CRUD controller"
     return shn_rest_controller(module, 'catalog_subcat')
 
 def category_master():
-    "RESTlike CRUD controller"
+    "RESTful CRUD controller"
     return shn_rest_controller(module, 'category_master')
 
 def item():
-    "RESTlike CRUD controller"
+    "RESTful CRUD controller"
     return shn_rest_controller(module, 'item')
 
 '''def item_cascade(form):
     """
     When an Item is updated, then also need to update all Kits, Bundles & Budgets which contain this item
-    Called as an onaccept from the RESTlike controller
+    Called as an onaccept from the RESTful controller
     """
     # Check if we're an update form
     if form.vars.id:

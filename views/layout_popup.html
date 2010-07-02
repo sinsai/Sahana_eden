@@ -2,15 +2,20 @@
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
 {{if session.s3.debug:}}
-  {{include 'sahana_styles_debug.html'}}
-  {{include 'sahana_scripts_debug.html'}}
+  {{include "sahana_styles_debug.html"}}
+  {{include "sahana_scripts_debug.html"}}
 {{else:}}
   <link href="/{{=request.application}}/static/styles/S3/sahana.min.css" rel="stylesheet" type="text/css" media="screen" charset="utf-8" />
-  {{include 'sahana_scripts_min.html'}}
+  {{include "sahana_scripts_min.html"}}
 {{pass}}
-{{include 'colorbox.html'}}
+{{include "colorbox.html"}}
 
 <script type="text/javascript">//<![CDATA[
+
+$(document).ready( function() {
+    // Reset the parent's toggle
+    self.parent.window.togglecallerappend = "True";
+});
 
 function TB_cleanup(caller) {
     if(self.parent.cleanup)
@@ -20,10 +25,10 @@ function TB_cleanup(caller) {
 
 function TB_refresh() {
     // The Get parameters
-    // ToDo: Make this less fragile by passing these fields as separate vars?
     var $_GET = getQueryParams(document.location.search);
     var caller = $_GET["caller"];
     if (caller.match(/but_add_/)){
+        // OR Dashboard
         TB_cleanup(caller);
         return;
     }
@@ -35,11 +40,12 @@ function TB_refresh() {
             // Use manual override
             var child_resource = child;
         }
+    // ToDo: Make this less fragile by passing these fields as separate vars?
     var parent_field = caller.replace('_' + child_resource, '');
     var parent_module = parent_field.replace(/_.*/, '');
     var parent_resource = parent_field.replace(parent_module + '_', '');
     // URL to retrieve the Options list for the field of the master resource
-    var url = '{{=URL(r=request, c='aaa', f='bbb')}}'.replace('aaa/bbb', parent_module + '/' + parent_resource);
+    var url = '{{=URL(r=request, c="aaa", f="bbb")}}'.replace('aaa/bbb', parent_module + '/' + parent_resource);
     url += "/options.json?field=" + child_resource;
     var selector = self.parent.$('#' + caller);
     var dummy = self.parent.$('#dummy_' + caller);
@@ -105,7 +111,9 @@ function getQueryParams(qs) {
 // If submission succesful
 {{if response.flash or response.confirmation:}}
 // Refresh the DIV and close the pop up
-$(document).ready( function() {self.parent.$(".TB_closeAjaxWindow").html('');});
+$(document).ready( function() {
+        self.parent.$(".TB_closeAjaxWindow").html('');
+    });
 TB_refresh();
 {{pass}}
 

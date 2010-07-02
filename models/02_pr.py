@@ -54,6 +54,7 @@ def shn_pentity_represent(id, default_label="[no label]"):
     etype = lambda entity_type: vita.trackable_types[entity_type]
 
     if entity_type == 1:
+        # Person
         table = db.pr_person
         person = db(table.pr_pe_id == id).select(
                     table.first_name,
@@ -61,7 +62,7 @@ def shn_pentity_represent(id, default_label="[no label]"):
                     table.last_name,
                     limitby=(0, 1))
         if person:
-            person = person[0]
+            person = person.first()
             pentity_str = "%s %s (%s)" % (
                 vita.fullname(person),
                 label,
@@ -69,14 +70,41 @@ def shn_pentity_represent(id, default_label="[no label]"):
             )
 
     elif entity_type == 2:
+        # Group
         table = db.pr_group
         group = db(table.pr_pe_id == id).select(
                     table.group_name,
                     limitby=(0, 1))
         if group:
-            group = group[0]
+            group = group.first()
             pentity_str = "%s (%s)" % (
                 group.group_name,
+                vita.trackable_types[entity_type]
+            )
+
+    elif entity_type == 5:
+        # Organisation
+        table = db.org_organisation
+        organisation = db(table.pr_pe_id == id).select(
+                    table.name,
+                    limitby=(0, 1))
+        if organisation:
+            organisation = organisation.first()
+            pentity_str = "%s (%s)" % (
+                organisation.name,
+                vita.trackable_types[entity_type]
+            )
+
+    elif entity_type == 6:
+        # Office
+        table = db.org_office
+        office = db(table.pr_pe_id == id).select(
+                    table.name,
+                    limitby=(0, 1))
+        if office:
+            office = office.first()
+            pentity_str = "%s (%s)" % (
+                office.name,
                 vita.trackable_types[entity_type]
             )
 
@@ -166,7 +194,7 @@ def shn_pentity_ondelete(record):
         crud.settings.delete_onvalidation = None
         crud.settings.delete_onaccept = None
 
-        if db(db.s3_setting.id == 1).select(limitby=(0, 1)).first().archive_not_delete:
+        if db(db.s3_setting.id == 1).select(db.s3_setting.archive_not_delete, limitby=(0, 1)).first().archive_not_delete:
             db(db.pr_pentity.id == pr_pe_id).update(deleted = True)
         else:
             crud.delete(db.pr_pentity, pr_pe_id)
@@ -187,7 +215,7 @@ def shn_pentity_onaccept(form, table=None, entity_type=1):
     """
 
     if "pr_pe_id" in table.fields:
-        record = db(table.id == form.vars.id).select(table.pr_pe_id, table.pr_pe_label).first()
+        record = db(table.id == form.vars.id).select(table.pr_pe_id, table.pr_pe_label, limitby=(0, 1)).first()
         if record:
             pr_pe_id = record.pr_pe_id
             label = record.pr_pe_label
@@ -695,15 +723,16 @@ def shn_pr_rheader(jr, tabs=[]):
 
     """ Person Registry page headers """
 
-    if jr.name == "person":
-        if jr.representation == "html":
+    if jr.representation == "html":
+        
+        rheader_tabs = shn_rheader_tabs(jr, tabs)
+
+        if jr.name == "person":
 
             _next = jr.here()
             _same = jr.same()
 
             person = jr.record
-
-            rheader_tabs = shn_rheader_tabs(jr, tabs)
 
             if person:
                 rheader = DIV(TABLE(
@@ -728,18 +757,12 @@ def shn_pr_rheader(jr, tabs=[]):
 
                 return rheader
 
-        else:
-            pass
-
-    elif jr.name == "group":
-        if jr.representation == "html":
+        elif jr.name == "group":
 
             _next = jr.here()
             _same = jr.same()
 
             group = jr.record
-
-            rheader_tabs = shn_rheader_tabs(jr, tabs)
 
             if group:
                 rheader = DIV(TABLE(
@@ -756,11 +779,6 @@ def shn_pr_rheader(jr, tabs=[]):
                     ), rheader_tabs)
 
                 return rheader
-
-        else:
-            pass
-    else:
-        pass
 
     return None
 

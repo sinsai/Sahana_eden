@@ -10,6 +10,8 @@ import os, traceback, datetime
 import re
 import uuid
 
+from lxml import etree
+
 from gluon.sql import SQLCustomType
 
 # All dates should be stored in UTC for Sync to work reliably
@@ -22,8 +24,8 @@ request.utcnow = datetime.datetime.utcnow()
 migrate = deployment_settings.get_base_migrate()
 
 db_string = deployment_settings.get_database_string()
-if isinstance(db_string, str):
-    db = DAL(db_string)
+if db_string[0].find("sqlite") != -1:
+    db = DAL(db_string[0])
 else:
     # Tuple (inc pool_size)
     db = DAL(db_string[0], pool_size=db_string[1])

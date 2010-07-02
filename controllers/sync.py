@@ -29,7 +29,7 @@ logtable = "sync_log"
 
 @auth.shn_requires_membership(1)
 def partner():
-    "RESTlike CRUD controller"
+    "RESTful CRUD controller"
     db.sync_partner.uuid.label = 'UUID'
     #db.sync_partner.password.readable = False
     title_create = T('Add Partner')
@@ -51,7 +51,7 @@ def partner():
 
 @auth.shn_requires_membership(1)
 def setting():
-    "RESTlike CRUD controller"
+    "RESTful CRUD controller"
     db.sync_setting.uuid.writable = False
     db.sync_setting.uuid.label = 'UUID'
     db.sync_setting.uuid.comment = A(SPAN("[Help]"), _class="tooltip", _title=T("UUID|The unique identifier which identifies this server to other instances."))

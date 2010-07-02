@@ -4,7 +4,7 @@
     Ticketing Module - Controllers
 """
 
-module = "ticket"
+module = request.controller
 
 if module not in deployment_settings.modules:
     session.error = T("Module disabled!")
@@ -27,13 +27,13 @@ def index():
     return dict(module_name=module_name, a=1)
 
 def category():
-    """ RESTlike CRUD controller """
-    resource = 'category'
+    """ RESTful CRUD controller """
+    resource = request.function
     return shn_rest_controller(module, resource, listadd=False)
 
 def log():
-    """ RESTlike CRUD controller """
-    resource = 'log'
+    """ RESTful CRUD controller """
+    resource = request.function
     tablename = "%s_%s" % (module, resource)
     table = db[tablename]
 

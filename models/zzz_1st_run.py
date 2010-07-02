@@ -460,8 +460,8 @@ if empty:
             # Doesn't work on Postgres!
             projection_id = 1,
             marker_id = 1,
-            map_height = 600,
-            map_width = 800
+            map_height = 400,
+            map_width = 640
         )
 
     tablename = "gis_feature_class"

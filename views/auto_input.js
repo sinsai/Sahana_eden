@@ -2,18 +2,18 @@
 // author:  sunneach
 // created: Feb 27 2010
 // Auto_input {{=entity_id}}
-// Hide the real Input Field
 {{if entity_id:}}
+    // Hide the real Input Field
     $("#{{=entity_id}}").hide();
     {{dummy_input = "dummy_" + entity_id}}
     {{try:}}      
         {{default_value}}
     {{except:}}   
-        {{default_value=None}}
+        {{default_value = None}}
     {{pass}}
     
     {{if default_value is None:}}
-        {{default_value = ''}}
+        {{default_value = ""}}
     {{pass}}
 
     {{try:}} 
@@ -29,8 +29,6 @@
         {{dummy_select = None}}
     {{pass}}
     
-    
-    
     {{if dummy_select:}}
         $("#{{=entity_id}}").after("<select id='{{=dummy_input}}' class='reference'><option value=''>{{=default_value}}</option></select>");
         // Populate the id when the Dummy selection is changed
@@ -40,11 +38,11 @@
          };
         $("#{{=dummy_input}}").change(copy_dummy); 
     {{else:}}
-        $("#{{=entity_id}}").after("<input id='{{=dummy_input}}' class='ac_input' value='{{=default_value}}'size=50 />");
+        $("#{{=entity_id}}").after("<input id='{{=dummy_input}}' class='ac_input' value='{{=default_value}}' size=50 />");
         {{if is_person:}}
-            {{include 'pr/person_autocomplete.js'}}
+            {{include "pr/person_autocomplete.js"}}
         {{else:}}
-            {{include 'autocomplete.js'}}
+            {{include "autocomplete.js"}}
         {{pass}}
     {{pass}}
     

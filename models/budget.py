@@ -278,25 +278,13 @@ if deployment_settings.has_module(module):
     table.megabytes.requires = IS_NOT_EMPTY()
 
     # Staff Types
-    budget_currency_type_opts = {
-        1:T("Dollars"),
-        2:T("Euros"),
-        3:T("Pounds")
-        }
-    opt_budget_currency_type = db.Table(None, "budget_currency_type",
-                        Field("currency_type", "integer", notnull=True,
-                        requires = IS_IN_SET(budget_currency_type_opts, zero=None),
-                        # default = 1,
-                        label = T("Currency"),
-                        represent = lambda opt: budget_currency_type_opts.get(opt, UNKNOWN_OPT)))
-
     resource = "staff"
     tablename = "%s_%s" % (module, resource)
     table = db.define_table(tablename, timestamp, uuidstamp, deletion_status,
                     Field("name", length=128, notnull=True, unique=True),
                     Field("grade", notnull=True),
                     Field("salary", "integer", notnull=True),
-                    opt_budget_currency_type,
+                    opt_currency_type,
                     Field("travel", "integer", default=0),
                     # Shouldn't be grade-dependent, but purely location-dependent
                     #Field("subsistence", "double", default=0.00),
@@ -323,15 +311,16 @@ if deployment_settings.has_module(module):
     table.code.requires = [IS_NOT_EMPTY(), IS_NOT_IN_DB(db, "%s.code" % table)]
 
     # Projects
-    resource = "project"
-    tablename = "%s_%s" % (module, resource)
-    table = db.define_table(tablename, timestamp, uuidstamp, deletion_status,
-                    Field("code", length=128, notnull=True, unique=True),
-                    Field("title"),
-                    Field("comments"),
-                    migrate=migrate)
+    # Deprecated: we use org_project
+    #resource = "project"
+    #tablename = "%s_%s" % (module, resource)
+    #table = db.define_table(tablename, timestamp, uuidstamp, deletion_status,
+    #                Field("code", length=128, notnull=True, unique=True),
+    #                Field("title"),
+    #                Field("comments"),
+    #                migrate=migrate)
 
-    table.code.requires = [IS_NOT_EMPTY(), IS_NOT_IN_DB(db, "%s.code" % table)]
+    #table.code.requires = [IS_NOT_EMPTY(), IS_NOT_IN_DB(db, "%s.code" % table)]
 
     # Budgets
     resource = "budget"
@@ -351,7 +340,7 @@ if deployment_settings.has_module(module):
     tablename = "%s_%s" % (module, resource)
     table = db.define_table(tablename, timestamp, deletion_status,
                     Field("budget_id", db.budget_budget),
-                    Field("project_id", db.budget_project),
+                    project_id,
                     Field("location_id", db.budget_location),
                     Field("bundle_id", db.budget_bundle, ondelete="RESTRICT"),
                     Field("quantity", "integer", default=1, notnull=True),
@@ -359,7 +348,6 @@ if deployment_settings.has_module(module):
                     migrate=migrate)
 
     table.budget_id.requires = IS_ONE_OF(db, "budget_budget.id", "%(name)s")
-    table.project_id.requires = IS_ONE_OF(db,"budget_project.id", "%(code)s")
     table.location_id.requires = IS_ONE_OF(db, "budget_location.id", "%(code)s")
     table.bundle_id.requires = IS_ONE_OF(db, "budget_bundle.id", "%(name)s")
     table.quantity.requires = IS_NOT_EMPTY()
@@ -370,7 +358,7 @@ if deployment_settings.has_module(module):
     tablename = "%s_%s" % (module, resource)
     table = db.define_table(tablename, timestamp, deletion_status,
                     Field("budget_id", db.budget_budget),
-                    Field("project_id", db.budget_project),
+                    project_id,
                     Field("location_id", db.budget_location),
                     Field("staff_id", db.budget_staff, ondelete="RESTRICT"),
                     Field("quantity", "integer", default=1, notnull=True),
@@ -378,7 +366,6 @@ if deployment_settings.has_module(module):
                     migrate=migrate)
 
     table.budget_id.requires = IS_ONE_OF(db, "budget_budget.id", "%(name)s")
-    table.project_id.requires = IS_ONE_OF(db,"budget_project.id", "%(code)s")
     table.location_id.requires = IS_ONE_OF(db, "budget_location.id", "%(code)s")
     table.staff_id.requires = IS_ONE_OF(db, "budget_staff.id", "%(name)s")
     table.quantity.requires = IS_NOT_EMPTY()

@@ -10,9 +10,9 @@
 {{else:}}
 {{pass}}
 {{if "pr_presence" in request.vars.caller:}}
-    {{fc = db(db.gis_feature_class.name == "Person").select(limitby=(0, 1)).first().id}}
+    {{fc = db(db.gis_feature_class.name == "Person").select(db.gis_feature_class.id, limitby=(0, 1)).first().id}}
     <script type="text/javascript">//<![CDATA[
-    // If coming from the OR then populate defaults for the fields & Hide unnecessary rows
+    // If coming from the PR then populate defaults for the fields & Hide unnecessary rows
     $(function() {
         //if (self.parent.$("input[name='_formname']").val().match("pr_presence")) {
         var location_name = self.parent.$('#pr_presence_pr_pe_id__row > td.w2p_fw').html();
@@ -58,7 +58,7 @@
     }
     //]]></script>
 {{elif "org_office" in request.vars.caller:}}
-    {{fc = db(db.gis_feature_class.name == "Office").select(limitby=(0, 1)).first().id}}
+    {{fc = db(db.gis_feature_class.name == "Office").select(db.gis_feature_class.id, limitby=(0, 1)).first().id}}
     <script type="text/javascript">//<![CDATA[
     // If coming from the Organisation Registry then populate defaults for the fields & Hide unnecessary rows
     $(function() {
@@ -87,7 +87,7 @@
     });
     //]]></script>
 {{elif "hms_hospital" in request.vars.caller:}}
-    {{fc = db(db.gis_feature_class.name == "Hospital").select(limitby=(0, 1)).first().id}}
+    {{fc = db(db.gis_feature_class.name == "Hospital").select(db.gis_feature_class.id, limitby=(0, 1)).first().id}}
     <script type="text/javascript">//<![CDATA[
     // If coming from the HMS then populate defaults for the fields & Hide unnecessary rows
     $(function() {

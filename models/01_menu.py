@@ -161,7 +161,16 @@ for module in deployment_settings.modules:
                 s3.menu_modules.append([_module.name_nice, False, URL(r=request, c=module, f="index")])
 # Admin always last
 _module = deployment_settings.modules["admin"]
-s3.menu_modules.append([_module.name_nice, False, URL(r=request, c="admin", f="index")])
+if not _module.access:
+    s3.menu_modules.append([_module.name_nice, False, URL(r=request, c="admin", f="index")])
+else:
+    authorised = False
+    groups = re.split("\|", _module.access)[1:-1]
+    for group in groups:
+        if int(group) in session.s3.roles:
+            authorised = True
+    if authorised == True:
+        s3.menu_modules.append([_module.name_nice, False, URL(r=request, c="admin", f="index")])
 
 response.menu = s3.menu_modules
 response.menu.append(s3.menu_auth)

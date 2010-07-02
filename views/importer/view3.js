@@ -1,6 +1,16 @@
+function alertmessage3()
+{
+	$(document).ready(function()
+	{
+		$("#message2").hide();
+		$("#message3").addClass("confirmation");
+		$("#message3").show('slow');
+	});
+}
+
 function view3(header,numcol,prevgrid)
 {
-    Ext.Msg.alert("Step 3","Please select a single table to which the spreadsheet has to be imported ");
+    alertmessage3();
     var msForm = new Ext.form.FormPanel({
         title: 'Select table',
         width: 'auto',

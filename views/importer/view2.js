@@ -1,6 +1,17 @@
+function alertmessage2()
+{
+	$(document).ready(function()
+		{
+			 $("#message1").hide();
+			 $("#message2").addClass("confirmation");
+		 	 $("#message2"). show("slow");
+		});
+}
+
+
 function view2(grid_data,column_model,rows,columns)
 {
-    Ext.Msg.alert("Step 2","Select the row which has column headers<br/>To edit the original spreadsheet again, press <b>back</b>");
+ 	alertmessage2();   
     var selmod=new Ext.grid.CheckboxSelectionModel({singleSelect:true,header: 'Select header row'});
     var grid2=new Ext.grid.GridPanel({
             title: 'Select header row',

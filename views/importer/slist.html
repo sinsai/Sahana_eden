@@ -1,7 +1,7 @@
 {{extend 'layout.html'}}
 {{include 'ext.html'}}
-<link rel ="stylesheet" type="text/css" href="/{{=request.application}}/static/scripts/ext-community-extensions/Ext.ux.MultiSelect.css"/>
 
+<link rel ="stylesheet" type="text/css" href="/{{=request.application}}/static/scripts/ext-community-extensions/Ext.ux.MultiSelect.css"/>
 <script type="text/javascript" src="/{{=request.application}}/static/scripts/ext-community-extensions/CheckColumn.js"></script>
 <script type="text/javascript" src="/{{=request.application}}/static/scripts/ext-community-extensions/Ext.ux.MultiSelect.js"></script>
 <script type="text/javascript">{{include 'importer/import.js'}}</script>
@@ -11,9 +11,12 @@
 <script type="text/javascript">{{include 'importer/view1.js'}}</script>
 
 
-
-<h1>Your file has been uploaded</h1>
-<div id="spreadsheet" align="center"></div>
+</script>
+<div class="confirmation" id="message1">Welcome to the spreadsheet importer. You can edit cells, and and remove rows in this view. Make sure you have a row with column headers </div>
+<div id="message2" class="hide" >Select header row</div>
+<div id="message3" class="hide">Select a single table to import the spreadsheet to</div>
+<div id="message4" class="hide"> Map columns in the spreadsheet to fields in teh table</div>
+<div  id="spreadsheet" align="center"></div>
 
 <!--
 <i>Your file is at {{=result}}</i> <b>and this is path from where the xlrd accesses the spreadsheet</b>

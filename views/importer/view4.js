@@ -14,6 +14,16 @@ function cmparr(arr1,arr2)
 		return false;
 }
 
+function alertmessage4()
+{
+	$(document).ready(function()
+	{
+		$("#message3").hide();
+		$("#message4").addClass('confirmation');
+		$("#message4").show('slow');
+	});
+}
+
 function view4(header,table,numcol,grid_data)
 {
     var loc="recvdata";
@@ -156,7 +166,7 @@ function view4(header,table,numcol,grid_data)
     var columnmap=new Ext.form.FormPanel({
 	url: loc,
 	method: 'POST',
-        title: 'Map spreadsheet columns to database fields',
+        title: 'Edit spreadsheet --> Select header row --> Select table --> <u>Map spreadsheet columns to database fields</u>',
         renderTo: 'spreadsheet',
         frame: true,
 	labelAlign: 'right',
@@ -210,7 +220,7 @@ function view4(header,table,numcol,grid_data)
 						}	
 						i++;	
 					}
-					import_spreadsheet(table,header_row,importsheet,map_from_ss_to_field);
+					//import_spreadsheet(table,header_row,importsheet,map_from_ss_to_field);
 				    	columnmap.getForm().submit({
 				    		success: function(form,action){
 				       			Ext.Msg.alert('Success', 'It worked');

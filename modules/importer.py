@@ -62,7 +62,7 @@ def json(path_to_file,appname):
             temp="\n\t\"column%i\":" % y
             try:
 		cell=str(spreadsheet[x][y])    
-            	cell=cell.replace("\n","")
+            	cell=cell.replace("\n","\\n")
 		temp+="\""+cell+"\""
             except:
             	temp+="\"\""

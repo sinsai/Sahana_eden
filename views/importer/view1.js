@@ -14,7 +14,6 @@ var json={};
 var columnlist=[];
 
 Ext.onReady(function(){
-Ext.Msg.alert("Welcome","Welcome to the spreadsheet importer<br/>At this step, you can modify the values extracted from your spreadsheet<br/><b>Be sure to add a row that has column headers if its not there already</b>");
 
 Ext.Ajax.request({
         url : '../static/test1.json' , 
@@ -33,9 +32,9 @@ Ext.Ajax.request({
         });
 });
 
+
 function maker(json){
         
-    
     columnlist=new Array(json.columns);
     for(var i=0;i< json.columns ; i++)
     { 
@@ -79,7 +78,6 @@ function maker(json){
        column_model[i]=col;
        }
        catch(err){
-           Ext.Msg.alert("Error","Input string cannot be parsed");
            }
     }
     var new_row_string="{";
@@ -101,7 +99,7 @@ function maker(json){
     column_model[json.columns]=sm2;
     var row_model=Ext.data.Record.create(columnlist);
     var grid=new Ext.grid.EditorGridPanel({
-       title: 'Spreadsheet',
+       title: '<u>Edit</u> --> Select header row --> Select table --> Map columns to fields',
        renderTo: 'spreadsheet',
        height: 300,
        width: 'auto',

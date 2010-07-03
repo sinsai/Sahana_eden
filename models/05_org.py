@@ -414,20 +414,27 @@ def shn_orgs_to_person(person_id):
                 orgs.append(s.organisation_id)
     return orgs
 
-# Staff as component of Orgs
+# Staff as component of Orgs, Offices & Projects
 s3xrc.model.add_component(module, resource,
                           multiple=True,
-                          joinby=dict(org_organisation="organisation_id"),
+                          joinby=dict(org_organisation="organisation_id", org_office="office_id", org_project="project_id"),
                           deletable=True,
                           editable=True)
 
+# May wish to over-ride this in controllers
 s3xrc.model.configure(table,
                       list_fields=["id",
                                    "person_id",
+                                   "organisation_id",
                                    "office_id",
+                                   "project_id",
                                    "title",
                                    "manager_id",
-                                   "focal_point"])
+                                   "focal_point"
+                                   #"description",
+                                   #"slots",
+                                   #"payrate"
+                                   ])
 
 # org_position (component of org_project)
 #   describes a position in a project
@@ -483,24 +490,6 @@ s3xrc.model.configure(table,
 #                        ondelete = "RESTRICT"
 #                        ))
 
-# Staff as Component of Projects
-s3xrc.model.add_component(module, resource,
-                          multiple=True,
-                          joinby=dict(org_project="project_id"),
-                          deletable=True,
-                          editable=True,
-                          main="title", extra="description")
-
-s3xrc.model.configure(table,
-                      list_fields=["organisation_id",
-                                   "project_id",
-                                   "title",
-                                   "person_id",
-                                   #"description",
-                                   #"slots",
-                                   #"payrate"
-                                   ])
-
 # -----------------------------------------------------------------------------
 # org_task:
 #   a task within a project
@@ -527,6 +516,7 @@ resource = "task"
 tablename = module + "_" + resource
 table = db.define_table(tablename, timestamp, uuidstamp, deletion_status,
                 project_id,
+                office_id,
                 Field("priority", "integer",
                     requires = IS_IN_SET(org_task_priority_opts, zero=None),
                     # default = 4,
@@ -563,16 +553,18 @@ s3.crud_strings[tablename] = Storage(
     msg_record_deleted = T("Task deleted"),
     msg_list_empty = T("No tasks currently registered"))
 
-# Component
+# Task as Component of Project, Office, (Organisation to come? via Project? Can't rely on that as multi-Org projects)
 s3xrc.model.add_component(module, resource,
     multiple=True,
-    joinby=dict(org_project="project_id"),
+    joinby=dict(org_project="project_id", org_office="office_id"),
     deletable=True,
     editable=True,
     main="subject", extra="description")
 
 s3xrc.model.configure(table,
                       list_fields=["id",
+                                   "project_id",
+                                   "office_id",
                                    "priority",
                                    "subject",
                                    "person_id",

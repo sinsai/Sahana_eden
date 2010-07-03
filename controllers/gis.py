@@ -332,6 +332,10 @@ def location():
         msg_list_empty = T("No Locations currently available"))
 
     # Options
+    if session.s3.security_policy == 1:
+        # Hide the Admin row for simple security_policy
+        table.admin.readable = table.admin.writable = False
+
     _vars = request.vars
     filters = []
     if "feature_class" in _vars:
@@ -355,6 +359,94 @@ def location():
         # .belongs() not GAE-compatible!
         filters.append((db.gis_location.parent.belongs(db(db.gis_location.name.like(parent)).select(db.gis_location.id))))
         # ToDo: Make this recursive - want ancestor not just direct parent!
+
+    if "caller" in _vars:
+        caller = _vars["caller"]
+        if "gis_location_parent" in caller:
+            # If a Parent location then populate defaults for the fields & Hide unnecessary rows
+            table.description.readable = table.description.writable = False
+            #table.level.readable = table.level.writable = False
+            table.code.readable = table.code.writable = False
+            table.feature_class_id.readable = table.feature_class_id.writable = False
+            # Use default Marker for Class
+            table.marker_id.readable = table.marker_id.writable = False
+            #table.gis_feature_type.readable = table.gis_feature_type.writable = False
+            #table.gis_feature_type.default = 
+            table.wkt.readable = table.wkt.writable = False
+            table.addr_street.readable = table.addr_street.writable = False
+            table.osm_id.readable = table.osm_id.writable = False
+            table.source.readable = table.source.writable = False
+
+        elif "pr_presence" in caller:
+            # If a Person location then populate defaults for the fields & Hide unnecessary rows
+            fc = db(db.gis_feature_class.name == "Person").select(db.gis_feature_class.id, limitby=(0, 1)).first()
+            try:
+                table.feature_class_id.default = fc.id
+                table.feature_class_id.readable = table.feature_class_id.writable = False
+                # Use default Marker for Class
+                table.marker_id.readable = table.marker_id.writable = False
+            except:
+                pass
+            table.description.readable = table.description.writable = False
+            table.level.readable = table.level.writable = False
+            table.code.readable = table.code.writable = False
+            table.gis_feature_type.readable = table.gis_feature_type.writable = False
+            table.wkt.readable = table.wkt.writable = False
+            table.osm_id.readable = table.osm_id.writable = False
+            table.source.readable = table.source.writable = False
+            
+        elif "org_project" in caller:
+            fc = db(db.gis_feature_class.name == "Project").select(db.gis_feature_class.id, limitby=(0, 1)).first()
+            try:
+                table.feature_class_id.default = fc.id
+                table.feature_class_id.readable = table.feature_class_id.writable = False
+                # Use default Marker for Class
+                table.marker_id.readable = table.marker_id.writable = False
+            except:
+                pass
+            table.description.readable = table.description.writable = False
+            table.level.readable = table.level.writable = False
+            table.code.readable = table.code.writable = False
+            table.gis_feature_type.readable = table.gis_feature_type.writable = False
+            table.wkt.readable = table.wkt.writable = False
+            table.osm_id.readable = table.osm_id.writable = False
+            table.source.readable = table.source.writable = False
+
+        elif "org_office" in caller:
+            fc = db(db.gis_feature_class.name == "Office").select(db.gis_feature_class.id, limitby=(0, 1)).first()
+            try:
+                table.feature_class_id.default = fc.id
+                table.feature_class_id.readable = table.feature_class_id.writable = False
+                # Use default Marker for Class
+                table.marker_id.readable = table.marker_id.writable = False
+            except:
+                pass
+            table.description.readable = table.description.writable = False
+            table.level.readable = table.level.writable = False
+            table.code.readable = table.code.writable = False
+            table.gis_feature_type.readable = table.gis_feature_type.writable = False
+            table.wkt.readable = table.wkt.writable = False
+            table.osm_id.readable = table.osm_id.writable = False
+            table.source.readable = table.source.writable = False
+
+        elif "hms_hospital" in caller:
+            fc = db(db.gis_feature_class.name == "Hospital").select(db.gis_feature_class.id, limitby=(0, 1)).first()
+            try:
+                table.feature_class_id.default = fc.id
+                table.feature_class_id.readable = table.feature_class_id.writable = False
+                # Use default Marker for Class
+                table.marker_id.readable = table.marker_id.writable = False
+            except:
+                pass
+            table.description.readable = table.description.writable = False
+            table.level.readable = table.level.writable = False
+            table.code.readable = table.code.writable = False
+            table.gis_feature_type.readable = table.gis_feature_type.writable = False
+            table.wkt.readable = table.wkt.writable = False
+            table.osm_id.readable = table.osm_id.writable = False
+            table.source.readable = table.source.writable = False
+        
+    
 
     # ToDo
     # if "bbox" in request.vars:

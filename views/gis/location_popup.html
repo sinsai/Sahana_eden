@@ -1,62 +1,14 @@
 {{extend "layout_popup.html"}}
 {{include "_popup.html"}}
-{{if session.s3.security_policy == 1:}}
+{{if "pr_presence" in request.vars.caller:}}
     <script type="text/javascript">//<![CDATA[
+    // If a Person location then set defaults from main form & offer HTML5 GeoLocation
     $(function() {
-            // Hide the Admin row for simple security_policy
-            $("#gis_location_admin__row").hide();
-    });
-    //]]></script>
-{{else:}}
-{{pass}}
-{{if "gis_location_parent" in request.vars.caller:}}
-    <script type="text/javascript">//<![CDATA[
-    // If a Parent location then populate defaults for the fields & Hide unnecessary rows
-    $(function() {
-        $("#gis_location_description__row").hide();
-        //$("#gis_location_level__row").hide();
-        $("#gis_location_code__row").hide();
-        //$("#gis_location_parent__row").hide();
-        $("#gis_location_feature_class_id__row").hide();
-        // Use default Marker for Class
-        $("#gis_location_marker_id__row").hide();
-        //$("#gis_location_gis_feature_type__row").hide();
-        //$("#gis_location_gis_feature_type").val();
-        $("#gis_location_wkt__row").hide();
-        $("#gis_location_addr_street__row").hide();
-        $("#gis_location_osm_id__row").hide();
-        $("#gis_location_source__row").hide();
-        
-        // Provide tiered Location AutoCompletes
-        //{include 'gis/location_autocomplete.js'}
-        //}
-    });
-    //]]></script>
-{{elif "pr_presence" in request.vars.caller:}}
-    {{fc = db(db.gis_feature_class.name == "Person").select(db.gis_feature_class.id, limitby=(0, 1)).first().id}}
-    <script type="text/javascript">//<![CDATA[
-    // If coming from the PR then populate defaults for the fields & Hide unnecessary rows
-    $(function() {
-        //if (self.parent.$("input[name='_formname']").val().match("pr_presence")) {
         var location_name = self.parent.$('#pr_presence_pr_pe_id__row > td.w2p_fw').html();
         if (location_name) {
             $("#gis_location_name").val(location_name);
             $("#gis_location_name__row").hide();
         }
-        $("#gis_location_description__row").hide();
-        $("#gis_location_level__row").hide();
-        $("#gis_location_code__row").hide();
-        //$("#gis_location_parent__row").hide();
-        {{if fc:}}
-        $("#gis_location_feature_class_id").val({{=fc}});
-        $("#gis_location_feature_class_id__row").hide();
-        {{pass}}
-        // Use default Marker for Class
-        $("#gis_location_marker_id__row").hide();
-        $("#gis_location_gis_feature_type__row").hide();
-        $("#gis_location_wkt__row").hide();
-        $("#gis_location_osm_id__row").hide();
-        $("#gis_location_source__row").hide();
         
         if (navigator.geolocation) {
             // HTML5 geolocation is available :)
@@ -64,7 +16,7 @@
         } else {
             // geolocation is not available...IE sucks! ;)
         }
-        
+
         // Provide tiered Location AutoCompletes
         //{include 'gis/location_autocomplete.js'}
         //}
@@ -83,40 +35,23 @@
     }
     //]]></script>
 {{elif "org_office" in request.vars.caller:}}
-    {{fc = db(db.gis_feature_class.name == "Office").select(db.gis_feature_class.id, limitby=(0, 1)).first().id}}
     <script type="text/javascript">//<![CDATA[
-    // If coming from the Organisation Registry then populate defaults for the fields & Hide unnecessary rows
+    // If an Office location then populate defaults for the fields & Hide unnecessary rows
     $(function() {
-        //if (self.parent.$("input[name='_formname']").val().match("org_office")) {
         var location_name = self.parent.$('#org_office_name').val();
         if (location_name) {
             $("#gis_location_name").val(location_name);
             $("#gis_location_name__row").hide();
         }
-        $("#gis_location_description__row").hide();
-        $("#gis_location_level__row").hide();
-        $("#gis_location_code__row").hide();
-        //$("#gis_location_parent__row").hide();
-        {{if fc:}}
-        $("#gis_location_feature_class_id").val({{=fc}});
-        $("#gis_location_feature_class_id__row").hide();
-        {{pass}}
-        // Use default Marker for Class
-        $("#gis_location_marker_id__row").hide();
-        $("#gis_location_gis_feature_type__row").hide();
-        $("#gis_location_wkt__row").hide();
-        $("#gis_location_osm_id__row").hide();
-        $("#gis_location_source__row").hide();
-        
+
         // Provide tiered Location AutoCompletes
         //{include 'gis/location_autocomplete.js'}
         //}
     });
     //]]></script>
 {{elif "org_project" in request.vars.caller:}}
-    {{fc = db(db.gis_feature_class.name == "Project").select(db.gis_feature_class.id, limitby=(0, 1)).first().id}}
     <script type="text/javascript">//<![CDATA[
-    // If coming from the Organisation Registry then populate defaults for the fields & Hide unnecessary rows
+    // If a Project location then populate defaults for the fields & Hide unnecessary rows
     $(function() {
         //if (self.parent.$("input[name='_formname']").val().match("org_project")) {
         var location_name = self.parent.$('#org_project_name').val();
@@ -124,28 +59,13 @@
             $("#gis_location_name").val(location_name);
             $("#gis_location_name__row").hide();
         }
-        $("#gis_location_description__row").hide();
-        $("#gis_location_level__row").hide();
-        $("#gis_location_code__row").hide();
-        //$("#gis_location_parent__row").hide();
-        {{if fc:}}
-        $("#gis_location_feature_class_id").val({{=fc}});
-        $("#gis_location_feature_class_id__row").hide();
-        {{pass}}
-        // Use default Marker for Class
-        $("#gis_location_marker_id__row").hide();
-        $("#gis_location_gis_feature_type__row").hide();
-        $("#gis_location_wkt__row").hide();
-        $("#gis_location_osm_id__row").hide();
-        $("#gis_location_source__row").hide();
-        
+
         // Provide tiered Location AutoCompletes
         //{include 'gis/location_autocomplete.js'}
         //}
     });
     //]]></script>
 {{elif "hms_hospital" in request.vars.caller:}}
-    {{fc = db(db.gis_feature_class.name == "Hospital").select(db.gis_feature_class.id, limitby=(0, 1)).first().id}}
     <script type="text/javascript">//<![CDATA[
     // If coming from the HMS then populate defaults for the fields & Hide unnecessary rows
     $(function() {
@@ -155,20 +75,9 @@
             $("#gis_location_name").val(location_name);
             $("#gis_location_name__row").hide();
         }
-        $("#gis_location_description__row").hide();
-        $("#gis_location_level__row").hide();
-        $("#gis_location_code__row").hide();
-        //$("#gis_location_parent__row").hide();
-        {{if fc:}}
-        $("#gis_location_feature_class_id").val({{=fc}});
-        $("#gis_location_feature_class_id__row").hide();
-        {{pass}}
-        // Use default Marker for Class
-        $("#gis_location_marker_id__row").hide();
-        $("#gis_location_gis_feature_type__row").hide();
-        $("#gis_location_wkt__row").hide();
-        $("#gis_location_osm_id__row").hide();
-        $("#gis_location_source__row").hide();
+
+        // Provide tiered Location AutoCompletes
+        //{include 'gis/location_autocomplete.js'}
         //}
     });
     //]]></script>

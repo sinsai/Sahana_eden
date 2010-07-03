@@ -377,43 +377,18 @@ def location():
             table.osm_id.readable = table.osm_id.writable = False
             table.source.readable = table.source.writable = False
 
-        elif "pr_presence" in caller:
-            # If a Person location then populate defaults for the fields & Hide unnecessary rows
-            fc = db(db.gis_feature_class.name == "Person").select(db.gis_feature_class.id, limitby=(0, 1)).first()
-            try:
-                table.feature_class_id.default = fc.id
-                table.feature_class_id.readable = table.feature_class_id.writable = False
-                # Use default Marker for Class
-                table.marker_id.readable = table.marker_id.writable = False
-            except:
-                pass
-            table.description.readable = table.description.writable = False
-            table.level.readable = table.level.writable = False
-            table.code.readable = table.code.writable = False
-            table.gis_feature_type.readable = table.gis_feature_type.writable = False
-            table.wkt.readable = table.wkt.writable = False
-            table.osm_id.readable = table.osm_id.writable = False
-            table.source.readable = table.source.writable = False
-            
-        elif "org_project" in caller:
-            fc = db(db.gis_feature_class.name == "Project").select(db.gis_feature_class.id, limitby=(0, 1)).first()
-            try:
-                table.feature_class_id.default = fc.id
-                table.feature_class_id.readable = table.feature_class_id.writable = False
-                # Use default Marker for Class
-                table.marker_id.readable = table.marker_id.writable = False
-            except:
-                pass
-            table.description.readable = table.description.writable = False
-            table.level.readable = table.level.writable = False
-            table.code.readable = table.code.writable = False
-            table.gis_feature_type.readable = table.gis_feature_type.writable = False
-            table.wkt.readable = table.wkt.writable = False
-            table.osm_id.readable = table.osm_id.writable = False
-            table.source.readable = table.source.writable = False
+        else:
+            fc = None
+            # When called from a Popup, populate defaults & hide unnecessary rows
+            if "pr_presence" in caller:
+                fc = db(db.gis_feature_class.name == "Person").select(db.gis_feature_class.id, limitby=(0, 1)).first()
+            elif "org_project" in caller:
+                fc = db(db.gis_feature_class.name == "Project").select(db.gis_feature_class.id, limitby=(0, 1)).first()
+            elif "org_office" in caller:
+                fc = db(db.gis_feature_class.name == "Office").select(db.gis_feature_class.id, limitby=(0, 1)).first()
+            elif "hms_hospital" in caller:
+                fc = db(db.gis_feature_class.name == "Hospital").select(db.gis_feature_class.id, limitby=(0, 1)).first()
 
-        elif "org_office" in caller:
-            fc = db(db.gis_feature_class.name == "Office").select(db.gis_feature_class.id, limitby=(0, 1)).first()
             try:
                 table.feature_class_id.default = fc.id
                 table.feature_class_id.readable = table.feature_class_id.writable = False
@@ -421,23 +396,7 @@ def location():
                 table.marker_id.readable = table.marker_id.writable = False
             except:
                 pass
-            table.description.readable = table.description.writable = False
-            table.level.readable = table.level.writable = False
-            table.code.readable = table.code.writable = False
-            table.gis_feature_type.readable = table.gis_feature_type.writable = False
-            table.wkt.readable = table.wkt.writable = False
-            table.osm_id.readable = table.osm_id.writable = False
-            table.source.readable = table.source.writable = False
 
-        elif "hms_hospital" in caller:
-            fc = db(db.gis_feature_class.name == "Hospital").select(db.gis_feature_class.id, limitby=(0, 1)).first()
-            try:
-                table.feature_class_id.default = fc.id
-                table.feature_class_id.readable = table.feature_class_id.writable = False
-                # Use default Marker for Class
-                table.marker_id.readable = table.marker_id.writable = False
-            except:
-                pass
             table.description.readable = table.description.writable = False
             table.level.readable = table.level.writable = False
             table.code.readable = table.code.writable = False
@@ -445,8 +404,6 @@ def location():
             table.wkt.readable = table.wkt.writable = False
             table.osm_id.readable = table.osm_id.writable = False
             table.source.readable = table.source.writable = False
-        
-    
 
     # ToDo
     # if "bbox" in request.vars:

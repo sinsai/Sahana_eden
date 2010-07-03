@@ -32,7 +32,7 @@ table.image.represent = lambda filename: (filename and [DIV(IMG(_src=URL(r=reque
 ADD_MARKER = T("Add Marker")
 marker_id = db.Table(None, "marker_id",
             FieldS3("marker_id", db.gis_marker, sortby="name",
-                requires = IS_NULL_OR(IS_ONE_OF(db, "gis_marker.id", "%(name)s")),
+                requires = IS_NULL_OR(IS_ONE_OF(db, "gis_marker.id", "%(name)s", zero=T("Use default from feature class"))),
                 represent = lambda id: (id and [DIV(IMG(_src=URL(r=request, c="default", f="download", args=db(db.gis_marker.id == id).select(db.gis_marker.image, limitby=(0, 1)).first().image), _height=40))] or [""])[0],
                 label = T("Marker"),
                 comment = DIV(A(ADD_MARKER, _class="colorbox", _href=URL(r=request, c="gis", f="marker", args="create", vars=dict(format="popup")), _target="top", _title=ADD_MARKER), DIV( _class="tooltip", _title=T("Marker|Defines the icon used for display of features on interactive map & KML exports. A Marker assigned to an individual Location is set if there is a need to override the Marker assigned to the Feature Class. If neither are defined, then the Default Marker is used."))),

@@ -47,6 +47,13 @@ def now():
     # retrieve sync partners from DB
     peers = db().select(db.sync_partner.ALL)
 
+    # retrieve settings (to get username and password for login)
+    settings = db().select(db.sync_setting.ALL)[0]
+
+    if not (settings.username or settings.password):
+        final_status = "Please specify Username and Password in Sync Settings before proceeding with Sync, this Username and Password must belong to a user account that is capable of modifying records (in database), usually an Administrator.<br /><br /><a href=\"" + URL(r=request, c="sync", f="setting/1/update") + "\">Click here</a> to go to Sync Settings.<br /><br />\n"
+        return dict(module_name=module_name, sync_status=final_status)
+
     # for eden instances
     final_status = ""
     modules = deployment_settings.modules
@@ -96,11 +103,9 @@ def now():
                 # sync this resource (Pull => fetch and sync)
                 resource_sync_url = _base_url + "sync/sync.xml/create/" + _module + "/" + _resource
                 import urllib, urllib2
-                auth_cookie_name = "session_id_" + request.application
-                _request_headers = dict(Cookie = request.cookies[auth_cookie_name].key + "=" + request.cookies[auth_cookie_name].value)
-                _request_params = urllib.urlencode({"sync_partner_uuid": str(peer.uuid), "fetchurl": resource_url})
+                _request_params = urllib.urlencode({"sync_partner_uuid": str(peer.uuid), "fetchurl": resource_url, "sync_username": settings.username, "sync_password": settings.password})
                 try:
-                    _request = RequestWithMethod("PUT", resource_sync_url, _request_params, _request_headers)
+                    _request = RequestWithMethod("PUT", resource_sync_url, _request_params)
                     _response = urllib2.urlopen(_request).read()
                 except IOError, e:
                     if tables_error:
@@ -140,22 +145,6 @@ def now():
     
     return dict(module_name=module_name, sync_status=final_status)
 
-def sync_auth():
-    def decorator(action):
-        def f(*a, **b):
-            if auth.environment.request.raw_args and "create/" in auth.environment.request.raw_args:
-                if not auth.basic() and not auth.is_logged_in():
-                    import urllib
-                    request = auth.environment.request
-                    next = URL(r=request,args=request.args,
-                               vars=request.get_vars)
-                    redirect(auth.settings.login_url + "?_next="+urllib.quote(next))
-            return action(*a, **b)
-        f.__doc__ = action.__doc__
-        return f
-    return decorator
-
-@sync_auth()
 def sync():
     global sync_peer
 
@@ -172,9 +161,16 @@ def sync():
     else:
         return T("Not supported")
 
+    user = None
+    if "sync_username" in request.vars and "sync_password" in request.vars:
+        user = auth.login_bare(request.vars["sync_username"], request.vars["sync_password"])
+
     sync_peer = None
     if "sync_partner_uuid" in request.vars:
         sync_peer = db(db.sync_partner.uuid == request.vars["sync_partner_uuid"]).select()[0]
+
+    if _function == "create" and not user:
+        return T("Access Denied")
 
     if _function == "list" or _function == "create":
         s3xrc.sync_resolve = sync_res

@@ -5,15 +5,6 @@
     <a href="{{=URL(r=request, args=jr.id)}}.osm" title="{{=T("Export in OSM format")}}"><img src="/{{=request.application}}/static/img/osm_icon.png"/></a>
 </div>
 {{include "_update.html"}}
-{{if session.s3.security_policy == 1:}}
-    <script type="text/javascript">//<![CDATA[
-    $(function() {
-            // Hide the Admin row for simple security_policy
-            $("#gis_location_admin__row").hide();
-    });
-    //]]></script>
-{{else:}}
-{{pass}}
 <script type="text/javascript">//<![CDATA[
 $(function() {
 {{include "gis/feature_crud.js"}}

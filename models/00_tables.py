@@ -77,13 +77,14 @@ deletion_status = db.Table(None, "deletion_status",
                           default=False))
 
 # Reusable Admin field to include in other table definitions
-admin_id = db.Table(None, "admin_id",
-            FieldS3("admin", db.auth_group, sortby="role",
-                requires = IS_NULL_OR(IS_ONE_OF(db, "auth_group.id", "%(role)s")),
-                represent = lambda id: (id and [db(db.auth_group.id == id).select(db.auth_group.role, limitby=(0, 1)).first().role] or ["None"])[0],
-                comment = DIV(A(T("Add Role"), _class="colorbox", _href=URL(r=request, c="admin", f="group", args="create", vars=dict(format="popup")), _target="top", _title=T("Add Role")), A(SPAN("[Help]"), _class="tooltip", _title=T("Admin|The Group whose members can edit data in this record."))),
-                ondelete="RESTRICT"
-                ))
+# Deprecated: http://eden.sahanafoundation.org/wiki/BluePrintAuthorization#Recordrestriction
+#admin_id = db.Table(None, "admin_id",
+#            FieldS3("admin", db.auth_group, sortby="role",
+#                requires = IS_NULL_OR(IS_ONE_OF(db, "auth_group.id", "%(role)s")),
+#                represent = lambda id: (id and [db(db.auth_group.id == id).select(db.auth_group.role, limitby=(0, 1)).first().role] or ["None"])[0],
+#                comment = DIV(A(T("Add Role"), _class="colorbox", _href=URL(r=request, c="admin", f="group", args="create", vars=dict(format="popup")), _target="top", _title=T("Add Role")), A(SPAN("[Help]"), _class="tooltip", _title=T("Admin|The Group whose members can edit data in this record."))),
+#                ondelete="RESTRICT"
+#                ))
 
 # Reusable Document field to include in other table definitions
 document = db.Table(None, "document",

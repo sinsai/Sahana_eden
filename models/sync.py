@@ -28,6 +28,8 @@ tablename = "%s_%s" % (module, resource)
 table = db.define_table(tablename,
                 Field("uuid", length=36),                   # Our UUID for sync purposes
                 Field("instance_url"),                      # URL our sahana instance is accessible on
+                Field("username"),                          # login username for sync account
+                Field("password"),                          # login password for sync account
                 Field("peer_description", length=128, default = "This is a SahanaEden instance, see http://eden.sahanafoundation.org" ),
                 Field("beacon_service_url", default = "http://sync.eden.sahanafoundation.org/sync/beacon"), # URL of beacon service that our sahana instance is configured to work with
                 Field("sync_pools"),                        # Comma-separated list of sync pools we've subscribed to
@@ -45,7 +47,7 @@ resource = "partner"
 tablename = "%s_%s" % (module, resource)
 table = db.define_table(tablename,
                 Field("uuid", length=36),                   # uuid of this partner
-                Field("instance_url", default = "http://eden.sahanafoundation.org/"), # URL of their instance
+                Field("instance_url", default = "http://sync.eden.sahanafoundation.org/eden"), # URL of their instance
                 Field("instance_type",                      # the type of instance => "SahanaEden", "SahanaAgasti", "Ushahidi", etc.
                     default="SahanaEden",
                     requires = IS_IN_SET(sync_partner_instance_type_opts) ),

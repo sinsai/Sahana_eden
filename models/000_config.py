@@ -161,7 +161,7 @@ deployment_settings.modules = Storage(
     #        module_type = 4
     #    ),
     msg = Storage(
-            name_nice = "Messaging Module",
+            name_nice = "Messaging",
             description = "Sends & Receives Alerts via Email & SMS",
             module_type = 5
         ),

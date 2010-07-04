@@ -77,7 +77,6 @@ table = db.define_table(tablename, timestamp, uuidstamp, deletion_status,
                 Field("acronym", length=8),
                 Field("type", "integer"),
                 sector_id,
-                admin_id,
                 #Field("registration", label=T("Registration")),    # Registration Number
                 Field("country", "integer"),
                 Field("website"),
@@ -153,7 +152,6 @@ table = db.define_table(tablename, timestamp, uuidstamp, deletion_status,
                 Field("name", notnull=True),
                 organisation_id,
                 Field("type", "integer"),
-                admin_id,
                 location_id,
                 Field("parent", "reference org_office"),   # This form of hierarchy may not work on all Databases
                 Field("address", "text"),
@@ -327,6 +325,7 @@ s3xrc.model.configure(table,
                                    "organisation_id",
                                    "location_id",
                                    "sector_id",
+                                   "code",
                                    "name",
                                    "status",
                                    "start_date",
@@ -362,7 +361,7 @@ table.manager_id.represent = lambda id: (id and [shn_pr_person_represent(id)] or
 # Staff Resource called from multiple controllers
 # - so we define strings in the model
 table.person_id.label = T("Person")
-table.person_id.comment = DIV(SPAN("*", _class="req"), shn_person_comment)
+#table.person_id.comment = DIV(SPAN("*", _class="req"), shn_person_comment)
 table.organisation_id.comment = DIV(SPAN("*", _class="req"), shn_organisation_comment)
 table.title.label = T("Job Title")
 table.title.comment = A(SPAN("[Help]"), _class="tooltip", _title=T("Title|The Role this person plays within this Office/Project."))
@@ -414,20 +413,27 @@ def shn_orgs_to_person(person_id):
                 orgs.append(s.organisation_id)
     return orgs
 
-# Staff as component of Orgs
+# Staff as component of Orgs, Offices & Projects
 s3xrc.model.add_component(module, resource,
                           multiple=True,
-                          joinby=dict(org_organisation="organisation_id"),
+                          joinby=dict(org_organisation="organisation_id", org_office="office_id", org_project="project_id"),
                           deletable=True,
                           editable=True)
 
+# May wish to over-ride this in controllers
 s3xrc.model.configure(table,
                       list_fields=["id",
                                    "person_id",
+                                   "organisation_id",
                                    "office_id",
+                                   "project_id",
                                    "title",
                                    "manager_id",
-                                   "focal_point"])
+                                   "focal_point"
+                                   #"description",
+                                   #"slots",
+                                   #"payrate"
+                                   ])
 
 # org_position (component of org_project)
 #   describes a position in a project
@@ -483,24 +489,6 @@ s3xrc.model.configure(table,
 #                        ondelete = "RESTRICT"
 #                        ))
 
-# Staff as Component of Projects
-s3xrc.model.add_component(module, resource,
-                          multiple=True,
-                          joinby=dict(org_project="project_id"),
-                          deletable=True,
-                          editable=True,
-                          main="title", extra="description")
-
-s3xrc.model.configure(table,
-                      list_fields=["organisation_id",
-                                   "project_id",
-                                   "title",
-                                   "person_id",
-                                   #"description",
-                                   #"slots",
-                                   #"payrate"
-                                   ])
-
 # -----------------------------------------------------------------------------
 # org_task:
 #   a task within a project
@@ -527,6 +515,7 @@ resource = "task"
 tablename = module + "_" + resource
 table = db.define_table(tablename, timestamp, uuidstamp, deletion_status,
                 project_id,
+                office_id,
                 Field("priority", "integer",
                     requires = IS_IN_SET(org_task_priority_opts, zero=None),
                     # default = 4,
@@ -563,16 +552,18 @@ s3.crud_strings[tablename] = Storage(
     msg_record_deleted = T("Task deleted"),
     msg_list_empty = T("No tasks currently registered"))
 
-# Component
+# Task as Component of Project, Office, (Organisation to come? via Project? Can't rely on that as multi-Org projects)
 s3xrc.model.add_component(module, resource,
     multiple=True,
-    joinby=dict(org_project="project_id"),
+    joinby=dict(org_project="project_id", org_office="office_id"),
     deletable=True,
     editable=True,
     main="subject", extra="description")
 
 s3xrc.model.configure(table,
                       list_fields=["id",
+                                   "project_id",
+                                   "office_id",
                                    "priority",
                                    "subject",
                                    "person_id",
@@ -687,11 +678,12 @@ def shn_project_rheader(jr, tabs=[]):
 
             project = jr.record
             
-            sectors = re.split("\|", project.sector_id)[1:-1]
-            _sectors = TABLE()
-            for sector in sectors:
-                _sectors.append(TR(db(db.org_sector.id == sector).select(db.org_sector.name, limitby=(0, 1)).first().name))
-                        
+            sectors = TABLE()
+            if project.sector_id:
+                _sectors = re.split("\|", project.sector_id)[1:-1]
+                for sector in _sectors:
+                    sectors.append(TR(db(db.org_sector.id == sector).select(db.org_sector.name, limitby=(0, 1)).first().name))
+
             if project:
                 rheader = DIV(TABLE(
                     TR(
@@ -710,7 +702,7 @@ def shn_project_rheader(jr, tabs=[]):
                         TH(T("Status: ")),
                         "%s" % org_project_status_opts[project.status],
                         TH(T("Sector(s): ")),
-                        _sectors
+                        sectors
                         #TH(A(T("Edit Project"),
                         #    _href=URL(r=request, f="project", args=[jr.id, "update"], vars={"_next": _next})))
                         )

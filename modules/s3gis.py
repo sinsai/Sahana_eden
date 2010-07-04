@@ -2548,24 +2548,19 @@ OpenLayers.Util.extend( selectPdfControl, {
 class Geocoder(object):
     " Base class for all geocoders "
 
-    def __init__(self):
+    def __init__(self, db):
         " Initializes the page content object "
-        self.page = ""
-
-    def read_details(self, url):
-        self.page = fetch(url)
+        self.db = db
+        self.api_key = self.get_api_key()
 
 class GoogleGeocoder(Geocoder):
     " Google Geocoder module "
 
-    def __init__(self, location, db, domain="maps.google.com", resource="maps/geo", output_format="kml"):
-        " Initialize the values based on arguments or default settings "
-        self.api_key = self.get_api_key()
-        self.domain = domain
-        self.resource = resource
-        self.params = {"q": location, "key": self.api_key}
-        self.url = "http://%(domain)s/%(resource)?%%s" % locals()
-        self.db = db
+    def __init__(self, location, db):
+        " Initialise parent class & make any necessary modifications "
+        Geocoder.__init__(self, db)
+        params = {"q": location, "key": self.api_key}
+        self.url = "http://maps.google.com/maps/geo?%s" % urllib.urlencode(params)
 
     def get_api_key(self):
         " Acquire API key from the database "
@@ -2573,36 +2568,29 @@ class GoogleGeocoder(Geocoder):
         query = db.gis_apikey.name == "google"
         return db(query).select(db.gis_apikey.apikey, limitby=(0, 1)).first().apikey
 
-    def construct_url(self, params):
-        " Construct the URL based on the arguments passed "
-        self.url = self.url % urllib.urlencode(params)
-
     def get_kml(self):
         " Returns the output in KML format "
-        return self.page.read()
+        url = self.url
+        page = fetch(url)
+        return page
 
 class YahooGeocoder(Geocoder):
     " Yahoo Geocoder module "
 
     def __init__(self, location, db):
-        " Initialize the values based on arguments or default settings "
-        self.api_key = self.get_api_key()
-        self.location = location
-        self.params = {"location": self.location, "appid": self.app_key}
-        self.db = db
-
+        " Initialise parent class & make any necessary modifications "
+        Geocoder.__init__(self, db)
+        params = {"location": location, "appid": self.api_key}
+        self.url = "http://local.yahooapis.com/MapsService/V1/geocode?%s" % urllib.urlencode(params)
+        
     def get_api_key(self):
         " Acquire API key from the database "
         db = self.db
         query = db.gis_apikey.name == "yahoo"
         return db(query).select(db.gis_apikey.apikey, limitby=(0, 1)).first().apikey
 
-    def construct_url(self, params):
-        " Construct the URL based on the arguments passed "
-        self.url = self.url % urllib.urlencode(params)
-
     def get_xml(self):
         " Return the output in XML format "
-        return self.page.read()
-
-        
+        url = self.url
+        page = fetch(url)
+        return page

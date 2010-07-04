@@ -26,16 +26,21 @@ response.menu_options = [
         [T("Add"), False, URL(r=request, f="office", args="create")],
         #[T("Search"), False, URL(r=request, f="office", args="search")]
     ]],
+    [T("Projects"), False, URL(r=request, f="project"),[
+        [T("List"), False, URL(r=request, f="project")],
+        [T("Add"), False, URL(r=request, f="project", args="create")],
+        #[T("Search"), False, URL(r=request, f="project", args="search")]
+    ]],
     [T("Staff"), False, URL(r=request, f="staff"),[
         [T("List"), False, URL(r=request, f="staff")],
         [T("Add"), False, URL(r=request, f="staff", args="create")],
         #[T("Search"), False, URL(r=request, f="staff", args="search")]
     ]],
-    [T("Projects"), False, URL(r=request, f="project"),[
-        [T("List"), False, URL(r=request, f="project")],
-        [T("Add"), False, URL(r=request, f="project", args="create")],
-        #[T("Search"), False, URL(r=request, f="project", args="search")]
-    ]]
+    [T("Tasks"), False, URL(r=request, f="task"),[
+        [T("List"), False, URL(r=request, f="task")],
+        [T("Add"), False, URL(r=request, f="task", args="create")],
+        #[T("Search"), False, URL(r=request, f="task", args="search")]
+    ]],
 ]
 
 # S3 framework functions
@@ -97,9 +102,12 @@ def organisation():
     
     output = shn_rest_controller(module, resource,
                                  listadd=False,
-                                 rheader=lambda jr: shn_project_rheader(jr,
+                                 rheader=lambda jr: shn_org_rheader(jr,
                                                                     tabs = [(T("Basic Details"), None),
-                                                                            (T("Positions"), "position"),
+                                                                            (T("Offices"), "office"),
+                                                                            (T("Staff"), "staff"),
+                                                                            (T("Projects"), "project"),
+                                                                            (T("Tasks"), "task"),
                                                                             #(T("Donors"), "organisation"),
                                                                             #(T("Sites"), "site"),          # Ticket 195
                                                                            ]
@@ -174,10 +182,11 @@ def office():
     
     output = shn_rest_controller(module, resource, listadd=False,
                                  rheader=lambda jr: shn_org_rheader(jr,
-                                                                    tabs = [(T("Basic Details"), None),
-                                                                            (T("Contact Data"), "pe_contact"),
-                                                                           ]
-                                                                   ),
+                                                                       tabs = [(T("Basic Details"), None),
+                                                                               (T("Contact Data"), "pe_contact"),
+                                                                               (T("Staff"), "staff"),
+                                                                              ]
+                                                                      ),
                                  sticky=True
                                 )
 
@@ -299,6 +308,9 @@ def project():
     # ServerSidePagination
     response.s3.pagination = True
 
+    db.org_staff.person_id.comment[1] = DIV(DIV(_class="tooltip",
+                              _title=Tstr("Person") + "|" + Tstr("Select the person assigned to this role for this project.")))
+    
     output = shn_rest_controller(module, resource,
                                  listadd=False,
                                  main="code",
@@ -311,6 +323,26 @@ def project():
                                                                            ]
                                                                    ),
                                  sticky=True
+                                )
+    
+    return output
+
+def task():
+    "RESTful CRUD controller"
+    resource = request.function
+    tablename = "%s_%s" % (module, resource)
+    table = db[tablename]
+    
+    def org_postp(jr, output):
+        shn_action_buttons(jr)
+        return output
+    response.s3.postp = org_postp
+    
+    # ServerSidePagination
+    response.s3.pagination = True
+
+    output = shn_rest_controller(module, resource,
+                                 listadd=False
                                 )
     
     return output
@@ -462,11 +494,6 @@ def dashboard():
 
     return dict(organisation_id = org_id, organisation_select = organisation_select, org_details = org_details, office_list = office_list, staff_list = staff_list, project_list = project_list, but_add_org =but_add_org, but_edit_org =but_edit_org, but_add_office = but_add_office, but_add_staff = but_add_staff, but_add_project = but_add_project)
 
-def who_what_where_when():
-    project_list = crud.select("org_project", query = db.org_project.id > 0)
-    #print project_list
-    return dict(project_list = project_list)
-
 def shn_org_rheader(jr, tabs=[]):
     " Organisation Registry page headers "
 
@@ -516,7 +543,7 @@ def shn_org_rheader(jr, tabs=[]):
                         TH(T("Name: ")),
                         office.name,
                         TH(T("Type: ")),
-                        org_office_type_opts[office.type],
+                        org_office_type_opts.get(office.type, UNKNOWN_OPT),
                         ),
                     TR(
                         TH(T("Organisation: ")),

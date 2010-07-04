@@ -20,6 +20,8 @@ def call():
 
 def test():
     #items =
+    db.atable.afield.readable = db.atable.afield.writable = False
+    db.atable.afield.default = "default!"
     form = crud.create(db.atable)
     return dict(form=form)
 

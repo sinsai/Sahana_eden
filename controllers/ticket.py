@@ -4,7 +4,7 @@
     Ticketing Module - Controllers
 """
 
-module = "ticket"
+module = request.controller
 
 if module not in deployment_settings.modules:
     session.error = T("Module disabled!")
@@ -22,39 +22,29 @@ response.menu_options = [
 def index():
     "Module's Home Page"
 
-    module_name = s3.modules[module]["name_nice"]
+    module_name = deployment_settings.modules[module].name_nice
 
     return dict(module_name=module_name, a=1)
 
 def category():
-    """ RESTlike CRUD controller """
-    resource = 'category'
+    """ RESTful CRUD controller """
+    resource = request.function
     return shn_rest_controller(module, resource, listadd=False)
 
 def log():
-    """ RESTlike CRUD controller """
-    resource = 'log'
+    """ RESTful CRUD controller """
+    resource = request.function
     tablename = "%s_%s" % (module, resource)
+    table = db[tablename]
 
     # Model options
-    ticket_priority_opts = {
-        3:T('High'),
-        2:T('Medium'),
-        1:T('Low')
-    }
-
-    table = db[tablename]
-    table.uuid.requires = IS_NOT_IN_DB(db, "%s.uuid" % tablename)
-    table.message.requires = IS_NOT_EMPTY()
     table.message.comment = SPAN("*", _class="req")
-    table.priority.requires = IS_NULL_OR(IS_IN_SET(ticket_priority_opts))
     table.priority.represent = lambda id: (
         [id and
             DIV(IMG(_src='/%s/static/img/priority/priority_%d.gif' % (request.application,id,), _height=12)) or
             DIV(IMG(_src='/%s/static/img/priority/priority_4.gif' % request.application), _height=12)
         ][0].xml())
     table.priority.label = T('Priority')
-    table.categories.requires = IS_NULL_OR(IS_IN_DB(db, db.ticket_category.id, '%(name)s', multiple=True))
     #FixMe: represent for multiple=True
     #table.categories.represent = lambda id: (id and [db(db.ticket_category.id==id).select()[0].name] or ["None"])[0]
     table.source.label = T('Source')

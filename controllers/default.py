@@ -37,11 +37,7 @@ def user():
         # be updated for a workflow on login. This also notes the timestamp
         # of last login through the browser
         if auth.is_logged_in():
-            if not auth.user.timestamp:
-                db(db.auth_user.id == auth.user.id).update(timestamp = request.utcnow)
-                redirect(URL(r=request, c="msg", f="pe_contact"))
             db(db.auth_user.id == auth.user.id).update(timestamp = request.utcnow)
-            redirect(URL(r=request, f="index"))
 
     _table_user = auth.settings.table_user
     if request.args and request.args(0) == "profile":
@@ -49,15 +45,17 @@ def user():
         _table_user.utc_offset.readable = True
         _table_user.utc_offset.writable = True
 
+    _table_user.first_name.comment = SPAN("*", _class="req")
+    _table_user.email.comment = SPAN("*", _class="req")
+    _table_user.password.comment = SPAN("*", _class="req")
     _table_user.language.label = T("Language")
     _table_user.language.default = "en"
     _table_user.language.comment = DIV(_class="tooltip", _title=T("Language|The language to use for notifications."))
-    _table_user.language.requires = IS_IN_SET(shn_languages, zero=None)
     _table_user.language.represent = lambda opt: shn_languages.get(opt, UNKNOWN_OPT)
-
+    
     form = auth()
 
-    self_registration = db().select(db.s3_setting.self_registration).first().self_registration
+    self_registration = db().select(db.s3_setting.self_registration, limitby=(0, 1)).first().self_registration
 
     # Use Custom Ext views
     # Best to not use an Ext form for login: can't save username/password in browser & can't hit 'Enter' to submit!
@@ -71,19 +69,11 @@ def user():
 def index():
     "Module's Home Page"
 
-    module_name = s3.modules[module]["name_nice"]
+    modules = deployment_settings.modules
 
-    modules = Storage()
-    for _module in deployment_settings.modules:
-        _module = str(_module)
-        _s3 = s3.modules[_module]
-        modules[_module] = Storage()
-        _module = modules[_module]
-        _module.name_nice = _s3["name_nice"]
-        _module.access = _s3["access"]
-        _module.description = _s3["description"]
+    module_name = modules[module].name_nice
 
-    settings = db(db.s3_setting.id == 1).select().first()
+    settings = db(db.s3_setting.id == 1).select(limitby=(0, 1)).first()
     admin_name = settings.admin_name
     admin_email = settings.admin_email
     admin_tel = settings.admin_tel
@@ -92,7 +82,7 @@ def index():
     return dict(module_name=module_name, modules=modules, admin_name=admin_name, admin_email=admin_email, admin_tel=admin_tel)
 
 def source():
-    "RESTlike CRUD controller"
+    "RESTful CRUD controller"
     return shn_rest_controller('s3', 'source')
 
 # NB These 4 functions are unlikely to get used in production

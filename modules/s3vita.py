@@ -49,18 +49,18 @@ import traceback
 # Copied from Selenium Plone Tool
 def getBrowserName(userAgent):
     "Determine which browser is being used."
-    if userAgent.find('MSIE') > -1:
-        return 'IE'
-    elif userAgent.find('Firefox') > -1:
-        return 'Firefox'
-    elif userAgent.find('Gecko') > -1:
-        return 'Mozilla'
+    if userAgent.find("MSIE") > -1:
+        return "IE"
+    elif userAgent.find("Firefox") > -1:
+        return "Firefox"
+    elif userAgent.find("Gecko") > -1:
+        return "Mozilla"
     else:
-        return 'Unknown'
+        return "Unknown"
 
 from gluon.html import *
 
-__all__ = ['Vita']
+__all__ = ["Vita"]
 
 # *****************************************************************************
 class Vita(object):
@@ -81,31 +81,33 @@ class Vita(object):
 
         if T:
             self.T = T
-        elif 'T' in self.environment:
-            self.T = self.environment['T']
+        elif "T" in self.environment:
+            self.T = self.environment["T"]
 
         # -------------------------------------------------------------------------
         # Trackable entity types
         self.trackable_types = {
-            1:self.T('Person'),          # an individual
-            2:self.T('Group'),           # a group
-            3:self.T('Body'),            # a dead body or body part
-            4:self.T('Object')           # other objects belonging to persons
+            1:self.T("Person"),          # an individual
+            2:self.T("Group"),           # a group
+            3:self.T("Body"),            # a dead body or body part
+            4:self.T("Object"),          # other objects belonging to persons
+            5:self.T("Organisation"),    # an organisation
+            6:self.T("Office"),          # an office
         }
         self.DEFAULT_TRACKABLE = 1
 
         # -------------------------------------------------------------------------
         # Presence Conditions
         self.presence_conditions = {
-            1:self.T('Check-In'),        # Arriving at a location for accommodation/storage
-            2:self.T('Reconfirmation'),  # Reconfirmation of accomodation/storage at a location
-            3:self.T('Check-Out'),       # Leaving from a location after accommodation/storage
-            4:self.T('Found'),           # Temporarily at a location
-            5:self.T('Procedure'),       # Temporarily at a location for a procedure (checkpoint)
-            6:self.T('Transit'),         # Temporarily at a location between two transfers
-            7:self.T('Transfer'),        # On the way from one location to another
-            8:self.T('Missing'),         # Been at a location, and missing from there
-            9:self.T('Lost')             # Been at a location, and destroyed/disposed/deceased there
+            1:self.T("Check-In"),        # Arriving at a location for accommodation/storage
+            2:self.T("Reconfirmation"),  # Reconfirmation of accomodation/storage at a location
+            3:self.T("Check-Out"),       # Leaving from a location after accommodation/storage
+            4:self.T("Found"),           # Temporarily at a location
+            5:self.T("Procedure"),       # Temporarily at a location for a procedure (checkpoint)
+            6:self.T("Transit"),         # Temporarily at a location between two transfers
+            7:self.T("Transfer"),        # On the way from one location to another
+            8:self.T("Missing"),         # Been at a location, and missing from there
+            9:self.T("Lost")             # Been at a location, and destroyed/disposed/deceased there
         }
         self.DEFAULT_PRESENCE = 4
 
@@ -123,14 +125,14 @@ class Vita(object):
 
             if isinstance(entity, (int, long)) or \
                (isinstance(entity, str) and entity.strip().isdigit()):
-                query = (table.id==entity) & query
+                query = (table.id == entity) & query
 
             elif isinstance(entity, str):
-                query = (table.label.strip().lower()==entity.strip().lower()) & query
+                query = (table.label.strip().lower() == entity.strip().lower()) & query
 
             elif isinstance(entity, dict):
-                if 'pr_pe_id' in entity:
-                    query = (table.id==entity.pr_pe_id) & query
+                if "pr_pe_id" in entity:
+                    query = (table.id == entity.pr_pe_id) & query
                 else:
                     return entity # entity already given?
 
@@ -138,7 +140,7 @@ class Vita(object):
                 return None
 
             try:
-                record = self.db(query).select(table.ALL, limitby=(0,1))[0]
+                record = self.db(query).select(table.ALL, limitby=(0, 1)).first()
                 return record
             except:
                 return None
@@ -160,15 +162,15 @@ class Vita(object):
 
             if isinstance(entity, (int, long)) or \
                (isinstance(entity, str) and entity.strip().isdigit()):
-                query = (table.id==entity) & query
+                query = (table.id == entity) & query
 
             elif isinstance(entity, dict):
-                if 'pr_pe_id' in entity:
-                    query = (table.pr_pe_id==entity.pr_pe_id) & query
-                elif 'person_id' in entity:
-                    query = (table.id==entity.person_id) & query
-                elif 'id' in entity:
-                    query = (table.pr_pe_id==entity.id) & query
+                if "pr_pe_id" in entity:
+                    query = (table.pr_pe_id == entity.pr_pe_id) & query
+                elif "person_id" in entity:
+                    query = (table.id == entity.person_id) & query
+                elif "id" in entity:
+                    query = (table.pr_pe_id == entity.id) & query
                 else:
                     return None
 
@@ -176,7 +178,7 @@ class Vita(object):
                 return None
 
             try:
-                record = self.db(query).select(table.ALL, limitby=(0,1))[0]
+                record = self.db(query).select(table.ALL, limitby=(0, 1)).first()
                 return record
             except:
                 return None
@@ -194,19 +196,19 @@ class Vita(object):
 
         if entity:
 
-            query = (table.deleted==False)
+            query = (table.deleted == False)
 
-            if isinstance(entity, (int,long)) or \
+            if isinstance(entity, (int, long)) or \
                (isinstance(entity, str) and entity.strip().isdigit()):
-                query = (table.id==entity) & query
+                query = (table.id == entity) & query
 
             elif isinstance(entity, dict):
-                if 'pr_pe_id' in entity:
-                    query = (table.pr_pe_id==entity.pr_pe_id) & query
-                elif 'group_id' in entity:
-                    query = (table.id==entity.group_id) & query
-                elif 'id' in entity:
-                    query = (table.pr_pe_id==entity.id) & query
+                if "pr_pe_id" in entity:
+                    query = (table.pr_pe_id == entity.pr_pe_id) & query
+                elif "group_id" in entity:
+                    query = (table.id == entity.group_id) & query
+                elif "id" in entity:
+                    query = (table.pr_pe_id == entity.id) & query
                 else:
                     return None
 
@@ -214,7 +216,7 @@ class Vita(object):
                 return None
 
             try:
-                record = self.db(query).select(table.ALL, limitby=(0,1))[0]
+                record = self.db(query).select(table.ALL, limitby=(0, 1)).first()
                 return record
             except:
                 return None
@@ -230,7 +232,7 @@ class Vita(object):
         """
 
         if record:
-            fname, mname, lname = '','',''
+            fname, mname, lname = "", "", ""
             if record.first_name:
                 fname = "%s " % record.first_name.strip()
             if record.middle_name:
@@ -243,7 +245,7 @@ class Vita(object):
             else:
                 return "%s%s%s" % (fname, mname, lname)
         else:
-            return ''
+            return ""
 
     # -------------------------------------------------------------------------
     def rlevenshtein(self, str1, str2):
@@ -278,7 +280,7 @@ class Vita(object):
 
                 matrix[i, j] = min(x, y, z)
 
-        return float(matrix[l1, l2])/float(max(l1, l2))
+        return float(matrix[l1, l2]) / float(max(l1, l2))
 
 #
 # *****************************************************************************

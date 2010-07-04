@@ -4,17 +4,17 @@ $(function() {
     // When the Module changes:
 	$("select[name='module']").change(function() {
 		// What is the new module?
-        module=$(this).val();
-        if (module=="cr") {
-            var options_resource=["shelter"];
-        } else if (module=="or") {
-            var options_resource=["organisation","office","contact"];
-        } else if (module=="pr") {
-            var options_resource=["person"];
-        } else if (module=="gis") {
-            var options_resource=["location"];
-        } else if (module=="budget") {
-            var options_resource=["item","kit_item"];
+        module = $(this).val();
+        if (module == "cr") {
+            var options_resource = ["shelter"];
+        } else if (module == "org") {
+            var options_resource = ["organisation", "office", "staff"];
+        } else if (module == "pr") {
+            var options_resource = ["person"];
+        } else if (module == "gis") {
+            var options_resource = ["location"];
+        } else if (module == "budget") {
+            var options_resource = ["item", "kit_item"];
         }
         // Refresh the resource lookuplist
         // ToDo: Pull from Database using AJAX/JSON:

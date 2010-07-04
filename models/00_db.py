@@ -1,11 +1,19 @@
 # -*- coding: utf-8 -*-
 
 """
-    DB configuration
+    Import Modules
+    Configure the Database
+    Instantiate Classes
 """
 
 import os, traceback, datetime
 import re
+import uuid
+
+from lxml import etree
+
+from gluon.sql import SQLCustomType
+
 # All dates should be stored in UTC for Sync to work reliably
 request.utcnow = datetime.datetime.utcnow()
 
@@ -16,8 +24,8 @@ request.utcnow = datetime.datetime.utcnow()
 migrate = deployment_settings.get_base_migrate()
 
 db_string = deployment_settings.get_database_string()
-if isinstance(db_string, str):
-    db = DAL(db_string)
+if db_string[0].find("sqlite") != -1:
+    db = DAL(db_string[0])
 else:
     # Tuple (inc pool_size)
     db = DAL(db_string[0], pool_size=db_string[1])
@@ -33,16 +41,32 @@ else:
 # Instantiate Classes from Modules
 ##################################
 
-# Custom classes which extend default Gluon & T2
-exec("from applications.%s.modules.sahana import *" % request.application)
+from gluon.tools import Mail
+mail = Mail()
 
+# Custom classes which extend default Gluon
+s3tools = local_import("s3tools")
+auth = s3tools.AuthS3(globals(), deployment_settings, db)
+crud = s3tools.CrudS3(globals(), db)
+
+# Shortcuts
+shn_has_role = auth.shn_has_role
+shn_has_permission = auth.shn_has_permission
+shn_accessible_query = auth.shn_accessible_query
+FieldS3 = s3tools.FieldS3
+MENU2 = s3tools.MENU2
+
+from gluon.tools import Service
+service = Service(globals())
+
+# Custom classes which extend default T2
+# (to deprecate)
+exec("from applications.%s.modules.sahana import *" % request.application)
 # Faster for Production (where app-name won't change):
 #from applications.eden.modules.sahana import *
 # We should change this to use:
 # sahana = local_import("sahana")
-
 # t2 = sahana.S3(request, response, session, cache, T, db)
-# auth = sahana.AuthS3(globals(), db)
 # etc
 t2 = S3(request, response, session, cache, T, db)
 
@@ -52,17 +76,11 @@ exec("from applications.%s.modules.validators import *" % request.application)
 #from applications.eden.modules.validators import *
 
 # Custom Utilities and Widgets
-exec("from applications.%s.modules.shn_utils import *" % request.application)
+exec("from applications.%s.modules.s3utils import *" % request.application)
 exec("from applications.%s.modules.widgets import *" % request.application)
 # Faster for Production (where app-name won't change):
-#from applications.eden.modules.shn_utils import *
+#from applications.eden.modules.s3utils import *
 #from applications.eden.modules.widgets import *
-
-mail = Mail()
-auth = AuthS3(globals(), db)
-crud = CrudS3(globals(), db)
-from gluon.tools import Service
-service = Service(globals())
 
 # GIS Module
 s3gis = local_import("s3gis")

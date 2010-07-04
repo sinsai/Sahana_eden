@@ -22,7 +22,7 @@ table = db.define_table(tablename,
 # *****************************************************************************
 # PersonEntity (pentity)
 #
-opt_pr_entity_type = SQLTable(None, "opt_pr_entity_type",
+opt_pr_entity_type = db.Table(None, "opt_pr_entity_type",
                               Field("opt_pr_entity_type", "integer",
                                     requires = IS_IN_SET(vita.trackable_types, zero=None),
                                     default = vita.DEFAULT_TRACKABLE,
@@ -54,6 +54,7 @@ def shn_pentity_represent(id, default_label="[no label]"):
     etype = lambda entity_type: vita.trackable_types[entity_type]
 
     if entity_type == 1:
+        # Person
         table = db.pr_person
         person = db(table.pr_pe_id == id).select(
                     table.first_name,
@@ -61,7 +62,7 @@ def shn_pentity_represent(id, default_label="[no label]"):
                     table.last_name,
                     limitby=(0, 1))
         if person:
-            person = person[0]
+            person = person.first()
             pentity_str = "%s %s (%s)" % (
                 vita.fullname(person),
                 label,
@@ -69,14 +70,41 @@ def shn_pentity_represent(id, default_label="[no label]"):
             )
 
     elif entity_type == 2:
+        # Group
         table = db.pr_group
         group = db(table.pr_pe_id == id).select(
                     table.group_name,
                     limitby=(0, 1))
         if group:
-            group = group[0]
+            group = group.first()
             pentity_str = "%s (%s)" % (
                 group.group_name,
+                vita.trackable_types[entity_type]
+            )
+
+    elif entity_type == 5:
+        # Organisation
+        table = db.org_organisation
+        organisation = db(table.pr_pe_id == id).select(
+                    table.name,
+                    limitby=(0, 1))
+        if organisation:
+            organisation = organisation.first()
+            pentity_str = "%s (%s)" % (
+                organisation.name,
+                vita.trackable_types[entity_type]
+            )
+
+    elif entity_type == 6:
+        # Office
+        table = db.org_office
+        office = db(table.pr_pe_id == id).select(
+                    table.name,
+                    limitby=(0, 1))
+        if office:
+            office = office.first()
+            pentity_str = "%s (%s)" % (
+                office.name,
                 vita.trackable_types[entity_type]
             )
 
@@ -114,7 +142,7 @@ table.uuid.requires = IS_NOT_IN_DB(db, "%s.uuid" % tablename)
 #
 # Reusable field for other tables to reference --------------------------------
 #
-pr_pe_id = SQLTable(None, "pr_pe_id",
+pr_pe_id = db.Table(None, "pr_pe_id",
                 Field("pr_pe_id", db.pr_pentity,
                     requires =  IS_NULL_OR(IS_ONE_OF(db, "pr_pentity.id", shn_pentity_represent)),
                     represent = lambda id: (id and [shn_pentity_represent(id)] or ["None"])[0],
@@ -125,7 +153,7 @@ pr_pe_id = SQLTable(None, "pr_pe_id",
 #
 # Person Entity Field Set -----------------------------------------------------
 #
-pr_pe_fieldset = SQLTable(None, "pr_pe_fieldset",
+pr_pe_fieldset = db.Table(None, "pr_pe_fieldset",
                     Field("pr_pe_id", db.pr_pentity,
                         requires = IS_NULL_OR(IS_ONE_OF(db, "pr_pentity.id", shn_pentity_represent)),
                         represent = lambda id: (id and [shn_pentity_represent(id)] or ["None"])[0],
@@ -166,7 +194,7 @@ def shn_pentity_ondelete(record):
         crud.settings.delete_onvalidation = None
         crud.settings.delete_onaccept = None
 
-        if db(db.s3_setting.id == 1).select().first().archive_not_delete:
+        if db(db.s3_setting.id == 1).select(db.s3_setting.archive_not_delete, limitby=(0, 1)).first().archive_not_delete:
             db(db.pr_pentity.id == pr_pe_id).update(deleted = True)
         else:
             crud.delete(db.pr_pentity, pr_pe_id)
@@ -187,7 +215,7 @@ def shn_pentity_onaccept(form, table=None, entity_type=1):
     """
 
     if "pr_pe_id" in table.fields:
-        record = db(table.id == form.vars.id).select(table.pr_pe_id, table.pr_pe_label).first()
+        record = db(table.id == form.vars.id).select(table.pr_pe_id, table.pr_pe_label, limitby=(0, 1)).first()
         if record:
             pr_pe_id = record.pr_pe_id
             label = record.pr_pe_label
@@ -216,7 +244,7 @@ pr_person_gender_opts = {
     3:T("male")
     }
 
-opt_pr_gender = SQLTable(None, "opt_pr_gender",
+opt_pr_gender = db.Table(None, "opt_pr_gender",
                     Field("opt_pr_gender", "integer",
                         requires = IS_IN_SET(pr_person_gender_opts, zero=None),
                         default = 1,
@@ -235,7 +263,7 @@ pr_person_age_group_opts = {
     6:T("Senior (50+)")
     }
 
-opt_pr_age_group = SQLTable(None, "opt_pr_age_group",
+opt_pr_age_group = db.Table(None, "opt_pr_age_group",
                     Field("opt_pr_age_group", "integer",
                         requires = IS_IN_SET(pr_person_age_group_opts, zero=None),
                         default = 1,
@@ -256,7 +284,7 @@ pr_marital_status_opts = {
     99:T("other")
 }
 
-opt_pr_marital_status = SQLTable(None, "opt_pr_marital_status",
+opt_pr_marital_status = db.Table(None, "opt_pr_marital_status",
                         Field("opt_pr_marital_status", "integer",
                             requires = IS_NULL_OR(IS_IN_SET(pr_marital_status_opts)),
                             default = 1,
@@ -277,7 +305,7 @@ pr_religion_opts = {
     99:T("other")
     }
 
-opt_pr_religion = SQLTable(None, "opt_pr_religion",
+opt_pr_religion = db.Table(None, "opt_pr_religion",
                     Field("opt_pr_religion", "integer",
                         requires = IS_NULL_OR(IS_IN_SET(pr_religion_opts)),
                         # default = 1,
@@ -289,14 +317,14 @@ opt_pr_religion = SQLTable(None, "opt_pr_religion",
 #
 pr_nationality_opts = shn_list_of_nations
 
-opt_pr_nationality = SQLTable(None, "opt_pr_nationality",
+opt_pr_nationality = db.Table(None, "opt_pr_nationality",
                         Field("opt_pr_nationality", "integer",
                             requires = IS_NULL_OR(IS_IN_SET(pr_nationality_opts)),
                             # default = 999, # unknown
                             label = T("Nationality"),
                             represent = lambda opt: pr_nationality_opts.get(opt, UNKNOWN_OPT)))
 
-opt_pr_country = SQLTable(None, "opt_pr_country",
+opt_pr_country = db.Table(None, "opt_pr_country",
                         Field("opt_pr_country", "integer",
                             requires = IS_NULL_OR(IS_IN_SET(pr_nationality_opts)),
                             # default = 999, # unknown
@@ -316,7 +344,7 @@ def shn_pr_person_represent(id):
                     table.last_name,
                     limitby=(0, 1))
         if person:
-            return vita.fullname(person[0])
+            return vita.fullname(person.first())
         else:
             return None
 
@@ -396,15 +424,16 @@ s3.crud_strings[tablename] = Storage(
 #
 # person_id: reusable field for other tables to reference ---------------------
 #
-shn_person_comment = DIV(A(s3.crud_strings.pr_person.label_create_button,
+shn_person_comment = DIV(A(ADD_PERSON,
                            _class="colorbox",
                            _href=URL(r=request, c="pr", f="person", args="create", vars=dict(format="popup")),
                            _target="top",
-                           _title=s3.crud_strings.pr_person.label_create_button),
+                           _title=ADD_PERSON),
                          DIV(DIV(_class="tooltip",
-                                 _title=T("Create Person Entry|Create a person entry in the registry."))))
+                              _title=Tstr("Person") + "|" + Tstr("Select the person associated with this scenario.")))
+                                 )
 
-person_id = SQLTable(None, "person_id",
+person_id = db.Table(None, "person_id",
                 FieldS3("person_id", db.pr_person, sortby=["first_name", "middle_name", "last_name"],
                     requires = IS_NULL_OR(IS_ONE_OF(db, "pr_person.id", shn_pr_person_represent)),
                     represent = lambda id: (id and [shn_pr_person_represent(id)] or ["None"])[0],
@@ -439,7 +468,7 @@ pr_group_type_opts = {
     4:T("other")
     }
 
-opt_pr_group_type = SQLTable(None, "opt_pr_group_type",
+opt_pr_group_type = db.Table(None, "opt_pr_group_type",
                              Field("opt_pr_group_type", "integer",
                                    requires = IS_IN_SET(pr_group_type_opts, zero=None),
                                    default = 4,
@@ -505,7 +534,7 @@ s3.crud_strings[tablename] = Storage(
 #
 # group_id: reusable field for other tables to reference ----------------------
 #
-group_id = SQLTable(None, "group_id",
+group_id = db.Table(None, "group_id",
                 FieldS3("group_id", db.pr_group, sortby="group_name",
                     requires = IS_NULL_OR(IS_ONE_OF(db, "pr_group.id", "%(id)s: %(group_name)s", filterby="system", filter_opts=(False,))),
                     represent = lambda id: (id and [db(db.pr_group.id==id).select()[0].group_name] or ["None"])[0],
@@ -695,15 +724,16 @@ def shn_pr_rheader(jr, tabs=[]):
 
     """ Person Registry page headers """
 
-    if jr.name == "person":
-        if jr.representation == "html":
+    if jr.representation == "html":
+        
+        rheader_tabs = shn_rheader_tabs(jr, tabs)
+
+        if jr.name == "person":
 
             _next = jr.here()
             _same = jr.same()
 
             person = jr.record
-
-            rheader_tabs = shn_rheader_tabs(jr, tabs)
 
             if person:
                 rheader = DIV(TABLE(
@@ -728,18 +758,12 @@ def shn_pr_rheader(jr, tabs=[]):
 
                 return rheader
 
-        else:
-            pass
-
-    elif jr.name == "group":
-        if jr.representation == "html":
+        elif jr.name == "group":
 
             _next = jr.here()
             _same = jr.same()
 
             group = jr.record
-
-            rheader_tabs = shn_rheader_tabs(jr, tabs)
 
             if group:
                 rheader = DIV(TABLE(
@@ -756,11 +780,6 @@ def shn_pr_rheader(jr, tabs=[]):
                     ), rheader_tabs)
 
                 return rheader
-
-        else:
-            pass
-    else:
-        pass
 
     return None
 

@@ -114,16 +114,6 @@ class GIS(object):
         else:
             return wkt
 
-    def config_read(self):
-        """
-            Reads the current GIS Config from the DB
-        """
-
-        db = self.db
-
-        config = db(db.gis_config.id == 1).select(cache=self.cache).first()
-        return config
-
     def download_kml(self, url, public_url):
         """
         Download a KML file:
@@ -203,10 +193,11 @@ class GIS(object):
     def get_api_key(self, layer="google"):
         " Acquire API key from the database "
 
-        query = self.db.gis_apikey.name == layer
-        return self.db(query).select().first().apikey
+        db = self.db
+        query = db.gis_apikey.name == layer
+        return db(query).select(db.gis_apikey.apikey, limitby=(0, 1)).first().apikey
 
-    def get_bearing(lat_start, lon_start, lat_end, lon_end):
+    def get_bearing(self, lat_start, lon_start, lat_end, lon_end):
         """
             Given a Start & End set of Coordinates, return a Bearing
             Formula from: http://www.movable-type.co.uk/scripts/latlong.html
@@ -242,7 +233,7 @@ class GIS(object):
                 if feature.lat < min_lat:
                     min_lat = feature.lat
             # Check that we're still within overall bounds
-            config = self.config_read()
+            config = self.get_config()
             if min_lon < config.min_lon:
                 min_lon = config.min_lon
             if min_lat < config.min_lat:
@@ -254,7 +245,7 @@ class GIS(object):
 
         else:
             # Read from config
-            config = self.config_read()
+            config = self.get_config()
             min_lon = config.min_lon
             min_lat = config.min_lat
             max_lon = config.max_lon
@@ -275,6 +266,26 @@ class GIS(object):
 
         return children
 
+    def get_config(self):
+        " Reads the current GIS Config from the DB "
+
+        db = self.db
+        _config = db.gis_config
+        _projection = db.gis_projection
+        
+        query = (_config.id == 1) & (_projection.id == _config.projection_id)
+        config = db(query).select(limitby=(0, 1)).first()
+        
+        output = Storage()
+        for item in config["gis_config"]:
+            output[item] = config["gis_config"][item]
+        
+        for item in config["gis_projection"]:
+            if item in ["epsg", "units", "maxResolution", "maxExtent"]:
+                output[item] = config["gis_projection"][item]
+        
+        return output
+
     def get_feature_class_id_from_name(self, name):
         """
             Returns the Feature Class ID from it's name
@@ -282,13 +293,13 @@ class GIS(object):
 
         db = self.db
 
-        feature = db(db.gis_feature_class.name == name).select()
+        feature = db(db.gis_feature_class.name == name).select(db.gis_feature_class.id, limitby=(0, 1)).first()
         if feature:
-            return feature[0].id
+            return feature.id
         else:
             return None
 
-    def get_features_in_radius(lat, lon, radius):
+    def get_features_in_radius(self, lat, lon, radius):
         """
             Returns Features within a Radius (in km) of a LatLon Location
             Calling function has the job of filtering features by the type they are interested in
@@ -299,6 +310,8 @@ class GIS(object):
         """
 
         import math
+        
+        db = self.db
 
         # km
         radius_earth = 6378.137
@@ -341,7 +354,7 @@ class GIS(object):
         table_fclass = db.gis_feature_class
         table_symbology = db.gis_symbology_to_feature_class
 
-        config = self.config_read()
+        config = self.get_config()
         symbology = config.symbology_id
 
         query = None
@@ -353,10 +366,10 @@ class GIS(object):
 
         feature = db(query).select(table_feature.marker_id,
                                    table_feature.feature_class_id,
-                                   limitby=(0, 1))
+                                   limitby=(0, 1)).first()
         if feature:
-            feature_class = feature.first().feature_class_id
-            marker_id = feature.first().marker_id
+            feature_class =  feature.feature_class_id
+            marker_id =  feature.marker_id
 
             # 1st choice for a Marker is the Feature's
             if marker_id:
@@ -391,7 +404,6 @@ class GIS(object):
             return marker.first().image
         else:
             return ""
-
 
     def latlon_to_wkt(self, lat, lon):
         """
@@ -429,6 +441,7 @@ class GIS(object):
                   wms_browser = {},
                   catalogue_overlays = False,
                   catalogue_toolbar = False,
+                  legend = False,
                   toolbar = False,
                   search = False,
                   print_tool = {},
@@ -461,11 +474,14 @@ class GIS(object):
                 }
             @param catalogue_overlays: Show the Overlays from the GIS Catalogue (@ToDo: make this a dict of which external overlays to allow)
             @param catalogue_toolbar: Show the Catalogue Toolbar
+            @param legend: Show the Legend panel
             @param toolbar: Show the Icon Toolbar of Controls
             @param search: Show the Geonames search box
             @param print_tool: Show a print utility (NB This requires server-side support: http://eden.sahanafoundation.org/wiki/BluePrintGISPrinting)
                 {
-                url: string             # URL of print service (e.g. http://localhost:8080/geoserver/pdf/)
+                url: string,            # URL of print service (e.g. http://localhost:8080/geoserver/pdf/)
+                mapTitle: string        # Title for the Printed Map (optional)
+                subTitle: string        # subTitle for the Printed Map (optional)
                 }
             @param mgrs: Use the MGRS Control to select PDFs
                 {
@@ -491,7 +507,7 @@ class GIS(object):
         auth = self.auth
 
         # Read configuration
-        config = self.config_read()
+        config = self.get_config()
         if not height:
             height = config.map_height
         if not width:
@@ -511,12 +527,10 @@ class GIS(object):
         elif not zoom:
             zoom = config.zoom
         if not projection:
-            _projection = config.projection_id
-            projection = db(db.gis_projection.id == _projection).select().first().epsg
-        epsg = db(db.gis_projection.epsg == projection).select().first()
-        units = epsg.units
-        maxResolution = epsg.maxResolution
-        maxExtent = epsg.maxExtent
+            projection = config.epsg
+        units = config.units
+        maxResolution = config.maxResolution
+        maxExtent = config.maxExtent
         numZoomLevels = config.zoom_levels
         marker_default = config.marker_id
         cluster_distance = config.cluster_distance
@@ -529,8 +543,8 @@ class GIS(object):
         #####
         if session.s3.debug:
             html.append(LINK( _rel="stylesheet", _type="text/css", _href=URL(r=request, c="static", f="scripts/ext/resources/css/ext-all.css"), _media="screen", _charset="utf-8") )
-            html.append(LINK( _rel="stylesheet", _type="text/css", _href=URL(r=request, c="static", f="scripts/gis/ie6-style.css"), _media="screen", _charset="utf-8") )
-            html.append(LINK( _rel="stylesheet", _type="text/css", _href=URL(r=request, c="static", f="scripts/gis/google.css"), _media="screen", _charset="utf-8") )
+            html.append(LINK( _rel="stylesheet", _type="text/css", _href=URL(r=request, c="static", f="styles/gis/ie6-style.css"), _media="screen", _charset="utf-8") )
+            html.append(LINK( _rel="stylesheet", _type="text/css", _href=URL(r=request, c="static", f="styles/gis/google.css"), _media="screen", _charset="utf-8") )
             html.append(LINK( _rel="stylesheet", _type="text/css", _href=URL(r=request, c="static", f="styles/gis/geoext-all-debug.css"), _media="screen", _charset="utf-8") )
             html.append(LINK( _rel="stylesheet", _type="text/css", _href=URL(r=request, c="static", f="styles/gis/gis.css"), _media="screen", _charset="utf-8") )
         else:
@@ -543,19 +557,18 @@ class GIS(object):
         # Catalogue Toolbar
         if catalogue_toolbar:
             if auth.has_membership(1):
-                config_button = TD( A(T("Defaults"), _id="configs-btn", _class="toolbar-link", _href=URL(r=request, c="gis", f="config", args=["1", "update"])), _class="btn-panel" )
+                config_button = SPAN( A(T("Defaults"), _href=URL(r=request, c="gis", f="config", args=["1", "update"])), _class="rheader_tab_other" )
             else:
-                config_button = TD( A(T("Defaults"), _id="configs-btn", _class="toolbar-link", _href=URL(r=request, c="gis", f="config", args=["1", "display"])), _class="btn-panel" )
-            catalogue_toolbar = TABLE(TR(
+                config_button = SPAN( A(T("Defaults"), _href=URL(r=request, c="gis", f="config", args=["1", "display"])), _class="rheader_tab_other" )
+            catalogue_toolbar = DIV(
                 config_button,
-                TD( A(T("Locations"), _id="features-btn", _class="toolbar-link", _href=URL(r=request, c="gis", f="location")), _class="btn-panel" ),
-                TD( A(T("Feature Classes"), _id="feature_classes-btn", _class="toolbar-link", _href=URL(r=request, c="gis", f="feature_class")), _class="btn-panel" ),
-                TD( A(T("Feature Groups"), _id="feature_groups-btn", _class="toolbar-link", _href=URL(r=request, c="gis", f="feature_group")), _class="btn-panel" ),
-                TD( A(T("Keys"), _id="keys-btn", _class="toolbar-link", _href=URL(r=request, c="gis", f="apikey")), _class="btn-panel" ),
-                TD( A(T("Layers"), _id="layers-btn", _class="toolbar-link", _href=URL(r=request, c="gis", f="map_service_catalogue")), _class="btn-panel" ),
-                TD( A(T("Markers"), _id="markers-btn", _class="toolbar-link", _href=URL(r=request, c="gis", f="marker")), _class="btn-panel" ),
-                TD( A(T("Projections"), _id="projections-btn", _class="toolbar-link", _href=URL(r=request, c="gis", f="projection")), _class="btn-panel" ),
-            ))
+                SPAN( A(T("Layers"), _href=URL(r=request, c="gis", f="map_service_catalogue")), _class="rheader_tab_other" ),
+                SPAN( A(T("Feature Classes"), _href=URL(r=request, c="gis", f="feature_class")), _class="rheader_tab_other" ),
+                SPAN( A(T("Feature Groups"), _href=URL(r=request, c="gis", f="feature_group")), _class="rheader_tab_other" ),
+                SPAN( A(T("Markers"), _href=URL(r=request, c="gis", f="marker")), _class="rheader_tab_other" ),
+                SPAN( A(T("Keys"), _href=URL(r=request, c="gis", f="apikey")), _class="rheader_tab_other" ),
+                SPAN( A(T("Projections"), _href=URL(r=request, c="gis", f="projection")), _class="rheader_tab_other" ),
+                _id="rheader_tabs")
             html.append(catalogue_toolbar)
 
         # Map (Embedded not Window)
@@ -681,28 +694,95 @@ OpenLayers.Util.extend( selectPdfControl, {
             mgrs2 = ""
             mgrs3 = ""
 
+        # Legend panel
+        if legend:
+            legend1= """
+        legendPanel = new GeoExt.LegendPanel({
+            id: 'legendpanel',
+            title: '""" + str(T("Legend")) + """',
+            defaults: {
+                labelCls: 'mylabel',
+                style: 'padding:5px'
+            },
+            bodyStyle: 'padding:5px',
+            autoScroll: true,
+            collapsible: true,
+            collapseMode: 'mini',
+            lines: false
+        });
+        """
+            legend2 = ", legendPanel"
+        else:
+            legend1= ""
+            legend2 = ""
+
         # Toolbar
         if toolbar:
             toolbar = """
         toolbar = mapPanel.getTopToolbar();
-        var toggleGroup = "controls";
-
+        
         // OpenLayers controls
-        var length = new OpenLayers.Control.Measure(OpenLayers.Handler.Path, {
-            eventListeners: {
-                measure: function(evt) {
-                    alert('""" + str(T("The length was ")) + """' + evt.measure + evt.units);
+        
+        // Measure Controls
+        var measureSymbolizers = {
+            'Point': {
+                pointRadius: 5,
+                graphicName: 'circle',
+                fillColor: 'white',
+                fillOpacity: 1,
+                strokeWidth: 1,
+                strokeOpacity: 1,
+                strokeColor: '#f5902e'
+            },
+            'Line': {
+                strokeWidth: 3,
+                strokeOpacity: 1,
+                strokeColor: '#f5902e',
+                strokeDashstyle: 'dash'
+            },
+            'Polygon': {
+                strokeWidth: 2,
+                strokeOpacity: 1,
+                strokeColor: '#f5902e',
+                fillColor: 'white',
+                fillOpacity: 0.5
+            }
+        };
+        var styleMeasure = new OpenLayers.Style();
+        styleMeasure.addRules([
+            new OpenLayers.Rule({symbolizer: measureSymbolizers})
+        ]);
+        var styleMapMeasure = new OpenLayers.StyleMap({'default': styleMeasure});
+        
+        var length = new OpenLayers.Control.Measure(
+            OpenLayers.Handler.Path, {
+                geodesic: true,
+                persist: true,
+                handlerOptions: {
+                    layerOptions: {styleMap: styleMapMeasure}
                 }
             }
-        });
-
-        var area = new OpenLayers.Control.Measure(OpenLayers.Handler.Polygon, {
-            eventListeners: {
-                measure: function(evt) {
-                    alert('""" + str(T("The area was ")) + """' + evt.measure + evt.units);
-                }
+        );
+        length.events.on({
+            'measure': function(evt) {
+                alert('""" + str(T("The length is ")) + """' + evt.measure.toFixed(2) + ' ' + evt.units);
             }
         });
+        var area = new OpenLayers.Control.Measure(
+            OpenLayers.Handler.Polygon, {
+                geodesic: true,
+                persist: true,
+                handlerOptions: {
+                    layerOptions: {styleMap: styleMapMeasure}
+                }
+            }
+        );
+        area.events.on({
+            'measure': function(evt) {
+                alert('""" + str(T("The area is ")) + """' + evt.measure.toFixed(2) + ' ' + evt.units + '2');
+            }
+        });
+            
 
         // Controls for Draft Features
         // - interferes with Feature Layers!
@@ -725,6 +805,7 @@ OpenLayers.Util.extend( selectPdfControl, {
             control: new OpenLayers.Control.ZoomToMaxExtent(),
             map: map,
             iconCls: 'zoomfull',
+            // button options
             tooltip: '""" + str(T("Zoom to maximum map extent")) + """'
         });
 
@@ -732,42 +813,52 @@ OpenLayers.Util.extend( selectPdfControl, {
             control: new OpenLayers.Control.ZoomBox({ out: true }),
             map: map,
             iconCls: 'zoomout',
+            // button options
             tooltip: '""" + str(T("Zoom Out: click in the map or use the left mouse button and drag to create a rectangle")) + """',
-            toggleGroup: toggleGroup
+            toggleGroup: 'controls'
         });
 
         var zoomin = new GeoExt.Action({
             control: new OpenLayers.Control.ZoomBox(),
             map: map,
             iconCls: 'zoomin',
+            // button options
             tooltip: '""" + str(T("Zoom In: click in the map or use the left mouse button and drag to create a rectangle")) + """',
-            toggleGroup: toggleGroup
+            toggleGroup: 'controls'
         });
 
         var pan = new GeoExt.Action({
             control: new OpenLayers.Control.Navigation(),
             map: map,
             iconCls: 'pan-off',
+            // button options
             tooltip: '""" + str(T("Pan Map: keep the left mouse button pressed and drag the map")) + """',
-            toggleGroup: toggleGroup,
-            //allowDepress: false,
+            toggleGroup: 'controls',
+            allowDepress: false,
             pressed: true
         });
 
+        // 1st of these 2 to get activated cannot be deselected!
         var lengthButton = new GeoExt.Action({
             control: length,
             map: map,
             iconCls: 'measure-off',
+            // button options
             tooltip: '""" + str(T("Measure Length: Click the points along the path & end with a double-click")) + """',
-            toggleGroup: toggleGroup
+            toggleGroup: 'controls',
+            allowDepress: true,
+            enableToggle: true
         });
 
         var areaButton = new GeoExt.Action({
             control: area,
             map: map,
             iconCls: 'measure-area',
+            // button options
             tooltip: '""" + str(T("Measure Area: Click the points around the polygon & end with a double-click")) + """',
-            toggleGroup: toggleGroup
+            toggleGroup: 'controls',
+            allowDepress: true,
+            enableToggle: true
         });
 
         """ + mgrs2 + """
@@ -776,8 +867,10 @@ OpenLayers.Util.extend( selectPdfControl, {
             //control: selectControl,
             map: map,
             iconCls: 'searchclick',
+            // button options
             tooltip: '""" + str(T("Query Feature")) + """',
-            toggleGroup: toggleGroup
+            toggleGroup: 'controls',
+            enableToggle: true
         });
 
         //var pointButton = new GeoExt.Action({
@@ -785,7 +878,7 @@ OpenLayers.Util.extend( selectPdfControl, {
         //    map: map,
         //    iconCls: 'drawpoint-off',
         //    tooltip: '""" + str(T("Add Point")) + """',
-        //    toggleGroup: toggleGroup
+        //    toggleGroup: 'controls'
         //});
 
         //var lineButton = new GeoExt.Action({
@@ -793,7 +886,7 @@ OpenLayers.Util.extend( selectPdfControl, {
         //    map: map,
         //    iconCls: 'drawline-off',
         //    tooltip: '""" + str(T("Add Line")) + """',
-        //    toggleGroup: toggleGroup
+        //    toggleGroup: 'controls'
         //});
 
         //var polygonButton = new GeoExt.Action({
@@ -801,7 +894,7 @@ OpenLayers.Util.extend( selectPdfControl, {
         //    map: map,
         //    iconCls: 'drawpolygon-off',
         //    tooltip: '""" + str(T("Add Polygon")) + """',
-        //    toggleGroup: toggleGroup
+        //    toggleGroup: 'controls'
         //});
 
         //var dragButton = new GeoExt.Action({
@@ -809,7 +902,7 @@ OpenLayers.Util.extend( selectPdfControl, {
         //    map: map,
         //    iconCls: 'movefeature',
         //    tooltip: '""" + str(T("Move Feature: Drag feature to desired location")) + """',
-        //    toggleGroup: toggleGroup
+        //    toggleGroup: 'controls'
         //});
 
         //var resizeButton = new GeoExt.Action({
@@ -817,7 +910,7 @@ OpenLayers.Util.extend( selectPdfControl, {
         //    map: map,
         //    iconCls: 'resizefeature',
         //    tooltip: '""" + str(T("Resize Feature: Select the feature you wish to resize & then Drag the associated dot to your desired size")) + """',
-        //    toggleGroup: toggleGroup
+        //    toggleGroup: 'controls'
         //});
 
         //var rotateButton = new GeoExt.Action({
@@ -825,7 +918,7 @@ OpenLayers.Util.extend( selectPdfControl, {
         //    map: map,
         //    iconCls: 'rotatefeature',
         //    tooltip: '""" + str(T("Rotate Feature: Select the feature you wish to rotate & then Drag the associated dot to rotate to your desired location")) + """',
-        //    toggleGroup: toggleGroup
+        //    toggleGroup: 'controls'
         //});
 
         //var modifyButton = new GeoExt.Action({
@@ -833,7 +926,7 @@ OpenLayers.Util.extend( selectPdfControl, {
         //    map: map,
         //    iconCls: 'modifyfeature',
         //    tooltip: '""" + str(T("Modify Feature: Select the feature you wish to deform & then Drag one of the dots to deform the feature in your chosen manner")) + """',
-        //    toggleGroup: toggleGroup
+        //    toggleGroup: 'controls'
         //});
 
         //var removeButton = new GeoExt.Action({
@@ -841,7 +934,7 @@ OpenLayers.Util.extend( selectPdfControl, {
         //    map: map,
         //    iconCls: 'removefeature',
         //    tooltip: '""" + str(T("Remove Feature: Select the feature you wish to remove & press the delete key")) + """',
-        //    toggleGroup: toggleGroup
+        //    toggleGroup: 'controls'
         //});
 
         var navPreviousButton = new Ext.Toolbar.Button({
@@ -991,112 +1084,190 @@ OpenLayers.Util.extend( selectPdfControl, {
         # Print
         if print_tool:
             url = print_tool["url"]
+            if "title" in print_tool:
+                mapTitle = str(print_tool["mapTitle"])
+            else:
+                mapTitle = str(T("Map from Sahana Eden"))
+            if "subtitle" in print_tool:
+                subTitle = str(print_tool["subTitle"])
+            else:
+                subTitle = str(T("Printed from Sahana Eden"))
+            if session.auth:
+                creator = session.auth.user.email
+            else:
+                creator = ""
             print_tool1 = """
-        printProvider = new GeoExt.data.PrintProvider({
-            //method: 'POST',
-            //url: '""" + url + """'
-            method: 'GET', // 'POST' recommended for production use
-            capabilities: printCapabilities // from the info.json script in the html
-        });
-        // Our print page. Stores scale, center and rotation and gives us a page
-        // extent feature that we can add to a layer.
-        printPage = new GeoExt.data.PrintPage({
-            printProvider: printProvider,
-            customParams: {
-                mapTitle: 'Printing Demo'
-            }
-        });
-        // A layer to display the print page extent
-        var pageLayer = new OpenLayers.Layer.Vector();
-        pageLayer.addFeatures(printPage.feature);
-        map.addLayer(pageLayer);
-        map.setOptions(options, {
-            eventListeners: {
-                // recenter/resize page extent after pan/zoom
-                'moveend': function(){ printPage.fit(this); }
-            }
-        });
-        // The form with fields controlling the print output
-        var formPanel = new Ext.form.FormPanel({
-            title: 'Print Map',
-            rootVisible: false,
-            split: true,
-            autoScroll: true,
-            collapsible: true,
-            collapseMode: 'mini',
-            lines: false,
-            bodyStyle: 'padding:5px',
-            labelAlign: 'top',
-            defaults: {anchor: '100%'},
-            items: [{
-                xtype: 'textarea',
-                name: 'comment',
-                value: '',
-                fieldLabel: 'Comment',
-                plugins: new GeoExt.plugins.PrintPageField({
-                    printPage: printPage
-                })
-            }, {
-                xtype: 'combo',
-                store: printProvider.layouts,
-                displayField: 'name',
-                fieldLabel: 'Layout',
-                typeAhead: true,
-                mode: 'local',
-                triggerAction: 'all',
-                plugins: new GeoExt.plugins.PrintProviderField({
-                    printProvider: printProvider
-                })
-            }, {
-                xtype: 'combo',
-                store: printProvider.dpis,
-                displayField: 'name',
-                fieldLabel: 'Resolution',
-                tpl: '<tpl for="."><div class="x-combo-list-item">{name} dpi</div></tpl>',
-                typeAhead: true,
-                mode: 'local',
-                triggerAction: 'all',
-                plugins: new GeoExt.plugins.PrintProviderField({
-                    printProvider: printProvider
-                }),
-                // the plugin will work even if we modify a combo value
-                setValue: function(v) {
-                    v = parseInt(v) + ' dpi';
-                    Ext.form.ComboBox.prototype.setValue.apply(this, arguments);
+        if (typeof(printCapabilities) != 'undefined') {
+            // info.json from script headers OK
+            printProvider = new GeoExt.data.PrintProvider({
+                //method: 'POST',
+                //url: '""" + url + """',
+                method: 'GET', // 'POST' recommended for production use
+                capabilities: printCapabilities, // from the info.json returned from the script headers
+                customParams: {
+                    mapTitle: '""" + mapTitle + """',
+                    subTitle: '""" + subTitle + """',
+                    creator: '""" + creator + """'
                 }
-            }, {
-                xtype: 'combo',
-                store: printProvider.scales,
-                displayField: 'name',
-                fieldLabel: 'Scale',
-                typeAhead: true,
-                mode: 'local',
-                triggerAction: 'all',
-                plugins: new GeoExt.plugins.PrintPageField({
-                    printPage: printPage
-                })
-            }, {
-                xtype: 'textfield',
-                name: 'rotation',
-                fieldLabel: 'Rotation',
-                plugins: new GeoExt.plugins.PrintPageField({
-                    printPage: printPage
-                })
-            }],
-            buttons: [{
-                text: 'Create PDF',
-                handler: function() {
-                    printProvider.print(mapPanel, printPage);
-                }
-            }]
-        });
+            });
+            // Our print page. Stores scale, center and rotation and gives us a page
+            // extent feature that we can add to a layer.
+            printPage = new GeoExt.data.PrintPage({
+                printProvider: printProvider
+            });
+            
+            //var printExtent = new GeoExt.plugins.PrintExtent({
+            //    printProvider: printProvider
+            //});
+            // A layer to display the print page extent
+            //var pageLayer = new OpenLayers.Layer.Vector('""" + str(T("Print Extent")) + """');
+            //pageLayer.addFeatures(printPage.feature);
+            //pageLayer.setVisibility(false);
+            //map.addLayer(pageLayer);
+            //var pageControl = new OpenLayers.Control.TransformFeature();
+            //map.addControl(pageControl);                                
+            //map.setOptions({
+            //    eventListeners: {
+                    // recenter/resize page extent after pan/zoom
+            //        'moveend': function() {
+            //            printPage.fit(mapPanel, true);
+            //        }
+            //    }
+            //});
+            // The form with fields controlling the print output
+            var formPanel = new Ext.form.FormPanel({
+                title: '""" + str(T("Print Map")) + """',
+                rootVisible: false,
+                split: true,
+                autoScroll: true,
+                collapsible: true,
+                collapsed: true,
+                collapseMode: 'mini',
+                lines: false,
+                bodyStyle: 'padding:5px',
+                labelAlign: 'top',
+                defaults: {anchor: '100%'},
+                listeners: {
+                    'expand': function() {
+                        //if (null == mapPanel.map.getLayersByName('""" + str(T("Print Extent")) + """')[0]) {
+                        //    mapPanel.map.addLayer(pageLayer);
+                        //}
+                        if (null == mapPanel.plugins[0]) {
+                            //map.addLayer(pageLayer);
+                            //pageControl.activate();
+                            //mapPanel.plugins = [ new GeoExt.plugins.PrintExtent({
+                            //    printProvider: printProvider,
+                            //    map: map,
+                            //    layer: pageLayer,
+                            //    control: pageControl
+                            //}) ];
+                            //mapPanel.plugins[0].addPage();
+                        }
+                    },
+                    'collapse':  function() {
+                        //mapPanel.map.removeLayer(pageLayer);
+                        //if (null != mapPanel.plugins[0]) {
+                        //    map.removeLayer(pageLayer);
+                        //    mapPanel.plugins[0].removePage(mapPanel.plugins[0].pages[0]);
+                        //    mapPanel.plugins = [];
+                        //}
+                    }
+                },
+                items: [{
+                    xtype: 'textarea',
+                    name: 'comment',
+                    value: '',
+                    fieldLabel: '""" + str(T("Comment")) + """',
+                    plugins: new GeoExt.plugins.PrintPageField({
+                        printPage: printPage
+                    })
+                }, {
+                    xtype: 'combo',
+                    store: printProvider.layouts,
+                    displayField: 'name',
+                    fieldLabel: '""" + str(T("Layout")) + """',
+                    typeAhead: true,
+                    mode: 'local',
+                    triggerAction: 'all',
+                    plugins: new GeoExt.plugins.PrintProviderField({
+                        printProvider: printProvider
+                    })
+                }, {
+                    xtype: 'combo',
+                    store: printProvider.dpis,
+                    displayField: 'name',
+                    fieldLabel: '""" + str(T("Resolution")) + """',
+                    tpl: '<tpl for="."><div class="x-combo-list-item">{name} dpi</div></tpl>',
+                    typeAhead: true,
+                    mode: 'local',
+                    triggerAction: 'all',
+                    plugins: new GeoExt.plugins.PrintProviderField({
+                        printProvider: printProvider
+                    }),
+                    // the plugin will work even if we modify a combo value
+                    setValue: function(v) {
+                        v = parseInt(v) + ' dpi';
+                        Ext.form.ComboBox.prototype.setValue.apply(this, arguments);
+                    }
+                //}, {
+                //    xtype: 'combo',
+                //    store: printProvider.scales,
+                //    displayField: 'name',
+                //    fieldLabel: '""" + str(T("Scale")) + """',
+                //    typeAhead: true,
+                //    mode: 'local',
+                //    triggerAction: 'all',
+                //    plugins: new GeoExt.plugins.PrintPageField({
+                //        printPage: printPage
+                //    })
+                //}, {
+                //    xtype: 'textfield',
+                //    name: 'rotation',
+                //    fieldLabel: '""" + str(T("Rotation")) + """',
+                //    plugins: new GeoExt.plugins.PrintPageField({
+                //        printPage: printPage
+                //    })
+                }],
+                buttons: [{
+                    text: '""" + str(T("Create PDF")) + """',
+                    handler: function() {
+                        // the PrintExtent plugin is the mapPanel's 1st plugin
+                        //mapPanel.plugins[0].print();
+                        // convenient way to fit the print page to the visible map area
+                        printPage.fit(mapPanel, true);
+                        // print the page, including the legend, where available
+                        if (null == legendPanel) {
+                            printProvider.print(mapPanel, printPage);
+                        } else {
+                            printProvider.print(mapPanel, printPage, {legend: legendPanel});
+                        }
+                    }
+                }]
+            });
+        } else {
+            // Display error diagnostic
+            var formPanel = new Ext.Panel ({
+                title: '""" + str(T("Print Map")) + """',
+                rootVisible: false,
+                split: true,
+                autoScroll: true,
+                collapsible: true,
+                collapsed: true,
+                collapseMode: 'mini',
+                lines: false,
+                bodyStyle: 'padding:5px',
+                labelAlign: 'top',
+                defaults: {anchor: '100%'},
+                html: '""" + str(T("Printing disabled since server not accessible: ")) + "<BR />" + url + """'
+            });
+        }
         """
             print_tool2 = """,
                     formPanel"""
         else:
             print_tool1 = ""
             print_tool2 = ""
-
+            
         # Strategy
         # Need to be uniquely instantiated
         strategy_fixed = """new OpenLayers.Strategy.Fixed()"""
@@ -1107,8 +1278,12 @@ OpenLayers.Util.extend( selectPdfControl, {
             layout = """
         var win = new Ext.Window({
             collapsible: true,
+            constrain: true,
             """
-            layout2 = "win.show();"
+            layout2 = """
+        win.show();
+        win.maximize();
+        """
         else:
             # Embedded
             layout = """
@@ -1160,12 +1335,12 @@ OpenLayers.Util.extend( selectPdfControl, {
         """
                 if openstreetmap.Mapnik:
                     layers_openstreetmap += """
-        var mapnik = new OpenLayers.Layer.TMS( '""" + openstreetmap.Mapnik + """', 'http://tile.openstreetmap.org/', {type: 'png', getURL: osm_getTileURL, displayOutsideMaxExtent: true, attribution: '<a href="http://www.openstreetmap.org/">OpenStreetMap</a>' } );
+        var mapnik = new OpenLayers.Layer.OSM('""" + openstreetmap.Mapnik + """');
         map.addLayer(mapnik);
                     """
                 if openstreetmap.Osmarender:
                     layers_openstreetmap += """
-        var osmarender = new OpenLayers.Layer.TMS( '""" + openstreetmap.Osmarender + """', 'http://tah.openstreetmap.org/Tiles/tile/', {type: 'png', getURL: osm_getTileURL, displayOutsideMaxExtent: true, attribution: '<a href="http://www.openstreetmap.org/">OpenStreetMap</a>' } );
+        var osmarender = new OpenLayers.Layer.OSM('""" + openstreetmap.Osmarender + """', 'http://tah.openstreetmap.org/Tiles/tile/${z}/${x}/${y}.png');
         map.addLayer(osmarender);
                     """
                 if openstreetmap.Aerial:
@@ -1282,10 +1457,10 @@ OpenLayers.Util.extend( selectPdfControl, {
                 wms_map = ""
             wms_layers = layer.layers
             try:
-                format = "type: '" + layer.format + "'"
+                format = "type: '" + layer.format + "',"
             except:
                 format = ""
-            wms_projection = db(db.gis_projection.id == layer.projection_id).select().first().epsg
+            wms_projection = db(db.gis_projection.id == layer.projection_id).select(db.gis_projection.epsg, limitby=(0, 1)).first().epsg
             if wms_projection == 4326:
                 wms_projection = "projection: proj4326"
             else:
@@ -1297,10 +1472,10 @@ OpenLayers.Util.extend( selectPdfControl, {
             options = "wrapDateLine: 'true'"
             if not layer.base:
                 options += """,
-                   isBaseLayer: false"""
+                    isBaseLayer: false"""
                 if not layer.visible:
-                   options += """,
-                   visibility: false"""
+                    options += """,
+                    visibility: false"""
 
             layers_wms  += """
         var wmsLayer""" + name_safe + """ = new OpenLayers.Layer.WMS(
@@ -1394,9 +1569,9 @@ OpenLayers.Util.extend( selectPdfControl, {
         # Needed for unzipping & filtering as well
         cachepath = os.path.join(request.folder, "uploads", "gis_cache")
         if os.access(cachepath, os.W_OK):
-            cache = True
+            cacheable = True
         else:
-            cache = False
+            cacheable = False
 
         #
         # Features
@@ -1558,11 +1733,10 @@ OpenLayers.Util.extend( selectPdfControl, {
             }
         }
         """
+                query = (db.gis_location.deleted == False) & (db.gis_feature_group.name == name) & (db.gis_feature_class_to_feature_group.feature_group_id == db.gis_feature_group.id) & (db.gis_location.feature_class_id == db.gis_feature_class_to_feature_group.feature_class_id)
                 if "parent" in feature_overlays:
-                    parent_id = db(db.gis_location.name == parent).select().first().id
-                    query = (db.gis_location.deleted == False) & (db.gis_feature_group.name == name) & (db.gis_feature_class_to_feature_group.feature_group_id == db.gis_feature_group.id) & (db.gis_location.feature_class_id == db.gis_feature_class_to_feature_group.feature_class_id) & (db.gis_location.parent == parent_id)
-                else:
-                    query = (db.gis_location.deleted == False) & (db.gis_feature_group.name == name) & (db.gis_feature_class_to_feature_group.feature_group_id == db.gis_feature_group.id) & (db.gis_location.feature_class_id == db.gis_feature_class_to_feature_group.feature_class_id)
+                    parent_id = db(db.gis_location.name == feature_overlays["parent"]).select(limitby=(0, 1)).first().id
+                    query = query & (db.gis_location.parent == parent_id)
                 features = db(query).select()
                 for feature in features:
                     marker = self.get_marker(feature.gis_location.id)
@@ -1636,19 +1810,19 @@ OpenLayers.Util.extend( selectPdfControl, {
                     name = layer["name"]
                     url = layer["url"]
                     visible = layer["visible"]
-                    georss_projection = db(db.gis_projection.id == layer["projection_id"]).select().first().epsg
+                    georss_projection = db(db.gis_projection.id == layer["projection_id"]).select(db.gis_projection.epsg, limitby=(0, 1)).first().epsg
                     if georss_projection == 4326:
                         projection_str = "projection: proj4326,"
                     else:
                         projection_str = "projection: new OpenLayers.Projection('EPSG:" + georss_projection + "'),"
                     marker_id = layer["marker_id"]
                     if marker_id:
-                        marker = db(db.gis_marker.id == marker_id).select().first().image
+                        marker = db(db.gis_marker.id == marker_id).select(db.gis_marker.image, limitby=(0, 1)).first().image
                     else:
-                        marker = db(db.gis_marker.id == marker_default).select().first().image
-                    marker_url = URL(r=request, c='default', f='download', args=marker)
+                        marker = db(db.gis_marker.id == marker_default).select(db.gis_marker.image, limitby=(0, 1)).first().image
+                    marker_url = URL(r=request, c="default", f="download", args=marker)
 
-                    if cache:
+                    if cacheable:
                         # Download file
                         try:
                             file = fetch(url)
@@ -1665,7 +1839,7 @@ OpenLayers.Util.extend( selectPdfControl, {
                             # URL inaccessible
                             if os.access(filepath, os.R_OK):
                                 # Use cached version
-                                date = db(db.gis_cache.name == name).select().first().modified_on
+                                date = db(db.gis_cache.name == name).select(db.gis_cache.modified_on, limitby=(0, 1)).first().modified_on
                                 response.warning += url + " " + str(T("not accessible - using cached version from")) + " " + str(date) + "\n"
                                 url = URL(r=request, c="default", f="download", args=[filename])
                             else:
@@ -1751,15 +1925,15 @@ OpenLayers.Util.extend( selectPdfControl, {
         """
                 for layer in gpx_enabled:
                     name = layer["name"]
-                    track = db(db.gis_track.id == layer.track_id).select().first()
+                    track = db(db.gis_track.id == layer.track_id).select(limitby=(0, 1)).first()
                     url = track.track
                     visible = layer["visible"]
                     marker_id = layer["marker_id"]
                     if marker_id:
-                        marker = db(db.gis_marker.id == marker_id).select().first().image
+                        marker = db(db.gis_marker.id == marker_id).select(db.gis_marker.image, limitby=(0, 1)).first().image
                     else:
-                        marker = db(db.gis_marker.id == marker_default).select().first().image
-                    marker_url = URL(r=request, c='default', f='download', args=marker)
+                        marker = db(db.gis_marker.id == marker_default).select(db.gis_marker.image, limitby=(0, 1)).first().image
+                    marker_url = URL(r=request, c="default", f="download", args=marker)
 
                     # Generate HTML snippet
                     name_safe = re.sub("\W", "_", name)
@@ -1862,7 +2036,7 @@ OpenLayers.Util.extend( selectPdfControl, {
                     url = layer["url"]
                     visible = layer["visible"]
                     projection_str = "projection: proj4326,"
-                    if cache:
+                    if cacheable:
                         # Download file
                         file, warning = self.download_kml(url, public_url)
                         filename = "gis_cache.file." + name.replace(" ", "_") + ".kml"
@@ -1875,7 +2049,7 @@ OpenLayers.Util.extend( selectPdfControl, {
                                 statinfo = os.stat(filepath)
                                 if statinfo.st_size:
                                     # Use cached version
-                                    date = db(db.gis_cache.name == name).select().first().modified_on
+                                    date = db(db.gis_cache.name == name).select(db.gis_cache.modified_on, limitby=(0, 1)).first().modified_on
                                     response.warning += url + " " + str(T("not accessible - using cached version from")) + " " + str(date) + "\n"
                                     url = URL(r=request, c="default", f="download", args=[filename])
                                 else:
@@ -1961,10 +2135,10 @@ OpenLayers.Util.extend( selectPdfControl, {
         #############
 
         html.append(SCRIPT("""
-    var map, mapPanel, toolbar;
+    var map, mapPanel, legendPanel, toolbar;
     var currentFeature, popupControl, highlightControl;
     var wmsBrowser;
-    var printProvider, printForm;
+    var printProvider;
     var allLayers = new Array();
     OpenLayers.ImgPath = '/""" + request.application + """/static/img/gis/openlayers/';
     // avoid pink tiles
@@ -2153,8 +2327,11 @@ OpenLayers.Util.extend( selectPdfControl, {
             map: map,
             center: center,
             zoom: """ + str(zoom) + """,
+            plugins: [],
             tbar: new Ext.Toolbar()
         });
+
+        """ + print_tool1 + """
 
         """ + toolbar + """
 
@@ -2193,7 +2370,7 @@ OpenLayers.Util.extend( selectPdfControl, {
                     layerTreeBase,
                     //layerTreeFeaturesExternal,
                     layerTreeFeaturesInternal
-                ],
+                ]
             }),
             rootVisible: false,
             split: true,
@@ -2204,9 +2381,10 @@ OpenLayers.Util.extend( selectPdfControl, {
             enableDD: true
         });
 
-        """ + print_tool1 + """
-
+        """ + legend1 + """
+        
         """ + layout + """
+            autoScroll: true,
             maximizable: true,
             titleCollapse: true,
             height: """ + str(height) + """,
@@ -2221,7 +2399,7 @@ OpenLayers.Util.extend( selectPdfControl, {
                         collapsible: true,
                         split: true,
                         items: [
-                            layerTree""" + layers_wms_browser2 + search2 + print_tool2 + """
+                            layerTree""" + layers_wms_browser2 + search2 + print_tool2 + legend2 + """
                             ]
                     },
                     mapPanel
@@ -2336,11 +2514,11 @@ OpenLayers.Util.extend( selectPdfControl, {
         return
 
     def bbox_intersects(self, lon_min, lat_min, lon_max, lat_max):
+
         db = self.db
-        return db((db.gis_location.lat_min <= lat_max) &
-            (db.gis_location.lat_max >= lat_min) &
-            (db.gis_location.lon_min <= lon_max) &
-            (db.gis_location.lon_max >= lon_min))
+        _location = db.gis_location
+        query = (_location.lat_min <= lat_max) & (_location.lat_max >= lat_min) & (_location.lon_min <= lon_max) & (_location.lon_max >= lon_min)
+        return query
 
     def _intersects(self, shape):
         """
@@ -2348,7 +2526,8 @@ OpenLayers.Util.extend( selectPdfControl, {
         """
 
         db = self.db
-        for loc in self.bbox_intersects(*shape.bounds).select():
+        query = self.bbox_intersects(*shape.bounds)
+        for loc in db(query).select():
             location_shape = wkt_loads(loc.wkt)
             if location_shape.intersects(shape):
                 yield loc
@@ -2369,57 +2548,49 @@ OpenLayers.Util.extend( selectPdfControl, {
 class Geocoder(object):
     " Base class for all geocoders "
 
-    def __init__(self):
+    def __init__(self, db):
         " Initializes the page content object "
-        self.page = ""
-
-    def read_details(self, url):
-        self.page = fetch(url)
+        self.db = db
+        self.api_key = self.get_api_key()
 
 class GoogleGeocoder(Geocoder):
     " Google Geocoder module "
 
-    def __init__(self, location, db, domain="maps.google.com", resource="maps/geo", output_format="kml"):
-        " Initialize the values based on arguments or default settings "
-        self.api_key = self.get_api_key()
-        self.domain = domain
-        self.resource = resource
-        self.params = {"q": location, "key": self.api_key}
-        self.url = "http://%(domain)s/%(resource)?%%s" % locals()
-        self.db = db
+    def __init__(self, location, db):
+        " Initialise parent class & make any necessary modifications "
+        Geocoder.__init__(self, db)
+        params = {"q": location, "key": self.api_key}
+        self.url = "http://maps.google.com/maps/geo?%s" % urllib.urlencode(params)
 
     def get_api_key(self):
         " Acquire API key from the database "
-        query = self.db.gis_apikey.name == "google"
-        return self.db(query).select().first().apikey
-
-    def construct_url(self):
-        " Construct the URL based on the arguments passed "
-        self.url = self.url % urllib.urlencode(params)
+        db = self.db
+        query = db.gis_apikey.name == "google"
+        return db(query).select(db.gis_apikey.apikey, limitby=(0, 1)).first().apikey
 
     def get_kml(self):
         " Returns the output in KML format "
-        return self.page.read()
+        url = self.url
+        page = fetch(url)
+        return page
 
 class YahooGeocoder(Geocoder):
     " Yahoo Geocoder module "
 
     def __init__(self, location, db):
-        " Initialize the values based on arguments or default settings "
-        self.api_key = self.get_api_key()
-        self.location = location
-        self.params = {"location": self.location, "appid": self.app_key}
-        self.db = db
-
+        " Initialise parent class & make any necessary modifications "
+        Geocoder.__init__(self, db)
+        params = {"location": location, "appid": self.api_key}
+        self.url = "http://local.yahooapis.com/MapsService/V1/geocode?%s" % urllib.urlencode(params)
+        
     def get_api_key(self):
         " Acquire API key from the database "
-        query = self.db.gis_apikey.name == "yahoo"
-        return self.db(query).select().first().apikey
-
-    def construct_url(self):
-        " Construct the URL based on the arguments passed "
-        self.url = self.url % urllib.urlencode(params)
+        db = self.db
+        query = db.gis_apikey.name == "yahoo"
+        return db(query).select(db.gis_apikey.apikey, limitby=(0, 1)).first().apikey
 
     def get_xml(self):
         " Return the output in XML format "
-        return self.page.read()
+        url = self.url
+        page = fetch(url)
+        return page

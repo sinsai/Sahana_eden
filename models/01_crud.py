@@ -28,6 +28,7 @@ shn_xml_export_formats = dict(
     pfif = "application/xml",
     have = "application/xml",
     osm = "application/xml",
+    rss = "application/rss+xml",
     georss = "application/rss+xml",
     kml = "application/vnd.google-earth.kml+xml"
 ) #: Supported XML output formats and corresponding response headers
@@ -136,7 +137,7 @@ def export_csv(resource, query, record=None):
 #
 # export_pdf ------------------------------------------------------------------
 #
-def export_pdf(table, query):
+def export_pdf(table, query, list_fields=None):
 
     """ Export record(s) as Adobe PDF """
 
@@ -154,15 +155,21 @@ def export_pdf(table, query):
         session.error = T("Geraldo module not available within the running Python - this needs installing for PDF output!")
         redirect(URL(r=request))
 
-    objects_list = db(query).select(table.ALL)
-    if not objects_list:
+    records = db(query).select(table.ALL)
+    if not records:
         session.warning = T("No data in this table - cannot create PDF!")
         redirect(URL(r=request))
 
     import StringIO
     output = StringIO.StringIO()
 
-    fields = [table[f] for f in table.fields if table[f].readable]
+    fields = None
+    if list_fields:
+        fields = [table[f] for f in list_fields if table[f].readable]
+    if fields and len(fields) == 0:
+        fields.append(table.id)
+    if not fields:
+        fields = [table[f] for f in table.fields if table[f].readable]
     _elements = [ SystemField(
                         expression="%(report_title)s",
                         top=0.1*cm,
@@ -177,18 +184,41 @@ def export_pdf(table, query):
     detailElements = []
     COLWIDTH = 2.5
     LEFTMARGIN = 0.2
+
+    def _represent(field, data):
+        if data == None:
+            return ""
+        represent = table[field].represent
+        if not represent:
+            represent = lambda v: str(v)
+        text = str(represent(data)).decode("utf-8")
+        # Filter out markup from text
+        if "<" in text:
+            try:
+                markup = etree.XML(text)
+                text = markup.xpath(".//text()")
+                if text:
+                    text = " ".join(text)
+            except etree.XMLSyntaxError:
+                pass
+        return text
+    
     for field in fields:
         _elements.append(Label(text=str(field.label)[:16], top=0.8*cm, left=LEFTMARGIN*cm))
         tab, col = str(field).split(".")
-        #db[table][col].represent = "foo"
         detailElements.append(ObjectValue(
             attribute_name=col,
-            left=LEFTMARGIN*cm, width=COLWIDTH*cm,
-            get_value=lambda instance: str(instance).decode("utf-8")))
+            left=LEFTMARGIN * cm,
+            width=COLWIDTH * cm,
+            # Ensure that col is substituted when lambda defined not evaluated by using the default value
+            get_value=lambda instance, column=col: _represent(column, instance[column])))
         LEFTMARGIN += COLWIDTH
 
     mod, res = str(table).split("_", 1)
-    mod_nice = db(db.s3_module.name==mod).select().first().name_nice
+    try:
+        mod_nice = deployment_settings.modules[mod]["name_nice"]
+    except:
+        mod_nice = mod
     _title = mod_nice + ": " + res.capitalize()
 
     class MyReport(Report):
@@ -211,7 +241,7 @@ def export_pdf(table, query):
             height = 0.5*cm
             auto_expand_height = True
             elements = tuple(detailElements)
-    report = MyReport(queryset=objects_list)
+    report = MyReport(queryset=records)
     report.generate_by(PDFGenerator, filename=output)
 
     output.seek(0)
@@ -226,7 +256,10 @@ def export_pdf(table, query):
 #
 def export_rss(module, resource, query, rss=None, linkto=None):
 
-    """ Export record(s) as RSS feed """
+    """ Export record(s) as RSS feed
+
+        @deprecated
+    """
 
     # This can not work when proxied through Apache (since it's always a local request):
     #if request.env.remote_addr == '127.0.0.1':
@@ -346,6 +379,15 @@ def export_xls(table, query, list_fields=None):
 
             # Check for a custom.represent (e.g. for ref fields)
             represent = shn_field_represent(field, item, col)
+            # Filter out markup from text
+            if isinstance(represent, basestring) and "<" in represent:
+                try:
+                    markup = etree.XML(represent)
+                    represent = markup.xpath(".//text()")
+                    if represent:
+                        represent = " ".join(represent)
+                except etree.XMLSyntaxError:
+                    pass
 
             rowx.write(cell1, str(represent), style)
             cell1 += 1
@@ -380,8 +422,12 @@ def export_json(jr):
             raise HTTP(501, body=s3xrc.xml.json_message(False, 501, session.error))
             #redirect(URL(r=request, f="index"))
 
+    prefix, name, table, tablename = jr.target()
+    title = shn_get_crud_strings(tablename).subtitle_list
+
     output = jr.export_json(permit=shn_has_permission,
                             audit=shn_audit,
+                            title=title,
                             template=template,
                             pretty_print=PRETTY_PRINT,
                             filterby=response.s3.filter)
@@ -416,8 +462,12 @@ def export_xml(jr):
             raise HTTP(501, body=s3xrc.xml.json_message(False, 501, session.error))
             #redirect(URL(r=request, f="index"))
 
+    prefix, name, table, tablename = jr.target()
+    title = shn_get_crud_strings(tablename).subtitle_list
+
     output = jr.export_xml(permit=shn_has_permission,
                            audit=shn_audit,
+                           title=title,
                            template=template,
                            pretty_print=PRETTY_PRINT,
                            filterby=response.s3.filter)
@@ -573,78 +623,6 @@ def import_url(jr, table, method):
     raise HTTP(error, body=item)
 
 # *****************************************************************************
-# Authorisation
-
-#
-# shn_has_permission ----------------------------------------------------------
-#
-def shn_has_permission(name, table_name, record_id = 0):
-
-    """
-        S3 framework function to define whether a user can access a record in manner "name"
-
-        Designed to be called from the RESTlike controller
-
-    """
-
-    if session.s3.security_policy == 1:
-        # Simple policy
-        # Anonymous users can Read.
-        if name == "read":
-            authorised = True
-        else:
-            # Authentication required for Create/Update/Delete.
-            authorised = auth.is_logged_in() or auth.basic()
-    else:
-        # Full policy
-        if auth.is_logged_in() or auth.basic():
-            # Administrators are always authorised
-            if auth.has_membership(1):
-                authorised = True
-            else:
-                # Require records in auth_permission to specify access
-                authorised = auth.has_permission(name, table_name, record_id)
-        else:
-            # No access for anonymous
-            authorised = False
-    return authorised
-
-#
-# shn_accessible_query --------------------------------------------------------
-#
-def shn_accessible_query(name, table):
-
-    """
-        Returns a query with all accessible records for the current logged in user
-
-        @note: This method does not work on GAE because uses JOIN and IN
-
-    """
-    # If using the "simple" security policy then show all records
-    if session.s3.security_policy == 1:
-        # simple
-        return table.id > 0
-    # Administrators can see all data
-    if auth.has_membership(1):
-        return table.id > 0
-    # If there is access to the entire table then show all records
-    try:
-        user_id = auth.user.id
-    except:
-        user_id = 0
-    if auth.has_permission(name, table, 0, user_id):
-        return table.id > 0
-    # Filter Records to show only those to which the user has access
-    session.warning = T("Only showing accessible records!")
-    membership = auth.settings.table_membership
-    permission = auth.settings.table_permission
-    return table.id.belongs(db(membership.user_id == user_id)\
-                       (membership.group_id == permission.group_id)\
-                       (permission.name == name)\
-                       (permission.table_name == table)\
-                       ._select(permission.record_id))
-
-# *****************************************************************************
 # Audit
 #
 # These functions should always return True in order to be chainable
@@ -785,7 +763,7 @@ def shn_audit_delete(module, resource, record, representation=None):
         module = module
         table = "%s_%s" % (module, resource)
         old_value = []
-        _old_value = db(db[table].id == record).select().first()
+        _old_value = db(db[table].id == record).select(limitby=(0, 1)).first()
         for field in _old_value:
             old_value.append(field + ":" + str(_old_value[field]))
         db.s3_audit.insert(
@@ -964,10 +942,14 @@ def import_json(jr, **attr):
 
     #return json_message(False, 501, "Not implemented!")
 
+    if jr.http == "GET":
+        item = s3xrc.xml.json_message(False, 400, "%s requests not supported." % jr.http)
+        raise HTTP(400, body=item)
+
     _vars = jr.request.vars
-    if "filename" in _vars:
+    if "filename" in _vars and jr.http == "PUT":
         source = open(_vars["filename"])
-    elif "fetchurl" in _vars:
+    elif "fetchurl" in _vars and jr.http == "PUT":
         import urllib
         source = urllib.urlopen(_vars["fetchurl"])
     else:
@@ -985,7 +967,9 @@ def import_json(jr, **attr):
         template_name = "%s.%s" % (jr.representation, XSLT_FILE_EXTENSION)
         template_file = os.path.join(request.folder, XSLT_IMPORT_TEMPLATES, template_name)
         if os.path.exists(template_file):
-            tree = s3xrc.xml.transform(tree, template_file, domain=s3xrc.domain, base_url=s3xrc.base_url)
+            tree = s3xrc.xml.transform(tree, template_file,
+                                       domain=s3xrc.domain,
+                                       base_url=s3xrc.base_url)
             if not tree:
                 session.error = str(T("XSL Transformation Error: ")) + str(s3xrc.xml.error)
                 redirect(URL(r=request, f="index"))
@@ -1019,14 +1003,21 @@ def import_xml(jr, **attr):
 
     """ Import XML data """
 
-    if "filename" in jr.request.vars:
+    if jr.http == "GET":
+        item = s3xrc.xml.json_message(False, 400, "%s requests not supported." % jr.http)
+        raise HTTP(400, body=item)
+
+    if "filename" in jr.request.vars and jr.http == "PUT":
         source = jr.request.vars["filename"]
-    elif "fetchurl" in jr.request.vars:
+    elif "fetchurl" in jr.request.vars and jr.http == "PUT":
         source = jr.request.vars["fetchurl"]
     else:
         source = jr.request.body
 
     tree = s3xrc.xml.parse(source)
+    if not tree:
+        item = s3xrc.xml.json_message(False, 400, s3xrc.xml.error)
+        raise HTTP(400, body=item)
 
     # XSLT Transformation
     if not jr.representation == "xml":
@@ -1067,7 +1058,7 @@ def shn_read(jr, **attr):
     sticky = attr.get("sticky", False)
     editable = attr.get("editable", True)
     deletable = attr.get("deletable", True)
-    rss = attr.get("rss", None)
+    #rss = attr.get("rss", None)
 
     # TODO: this function not filter-aware!
 
@@ -1107,13 +1098,17 @@ def shn_read(jr, **attr):
         editable = s3xrc.model.get_attr(resource, "editable")
         deletable = s3xrc.model.get_attr(resource, "deletable")
 
-        rss = s3xrc.model.get_attr(resource, "rss")
+        #rss = s3xrc.model.get_attr(resource, "rss")
 
     else:
         record_id = jr.id
         href_delete = URL(r=jr.request, f=jr.name, args=[record_id, "delete"])
         href_edit = URL(r=jr.request, f=jr.name, args=[record_id, "update"])
 
+    # ToDo: Comment this out
+    # Just because we have rights to edit a record, doens't mean that we always want to actually do so
+    # => was intentional, because somebody said:
+    #    If we have the right to edit, why should we need to first click "Update" to do so?
     authorised = shn_has_permission("update", table, record_id)
     if authorised and jr.representation == "html" and editable:
         return shn_update(jr, **attr)
@@ -1185,7 +1180,7 @@ def shn_read(jr, **attr):
 
         elif jr.representation == "pdf": # TODO: encoding problems, doesn't quite work
             query = db[table].id == record_id
-            return export_pdf(table, query)
+            return export_pdf(table, query, list_fields)
 
         elif jr.representation == "xls":
             query = db[table].id == record_id
@@ -1197,9 +1192,9 @@ def shn_read(jr, **attr):
         elif jr.representation in shn_xml_export_formats:
             return export_xml(jr)
 
-        elif jr.representation == "rss": # TODO: replace by XML export
-            query = db[table].id == record_id
-            return export_rss(module, resource, query, rss=rss, linkto=jr.here("html"))
+        #elif jr.representation == "rss": # TODO: replace by XML export
+            #query = db[table].id == record_id
+            #return export_rss(module, resource, query, rss=rss, linkto=jr.here("html"))
 
         else:
             session.error = BADFORMAT
@@ -1266,7 +1261,7 @@ def shn_list(jr, **attr):
     editable = _attr.get("editable", True)
     deletable = _attr.get("deletable", True)
     sticky = _attr.get("sticky", False)
-    rss = _attr.get("rss", None)
+    #rss = _attr.get("rss", None)
     listadd = _attr.get("listadd", True)
     main = _attr.get("main", None)
     extra = _attr.get("extra", None)
@@ -1296,7 +1291,7 @@ def shn_list(jr, **attr):
         else:
             query = (table[jr.fkey] == jr.table[jr.pkey]) & query
         if jr.component_id:
-            query = (table.id==jr.component_id) & query
+            query = (table.id == jr.component_id) & query
         href_add = URL(r=jr.request, f=jr.name, args=[jr.id, resource, "create"])
     else:
         href_add = URL(r=jr.request, f=jr.name, args=["create"])
@@ -1341,7 +1336,8 @@ def shn_list(jr, **attr):
         fields = None
 
         if list_fields:
-            fields = [f for f in list_fields if table[f].readable]
+            fkey = jr.fkey or None
+            fields = [f for f in list_fields if table[f].readable and f != fkey]
 
         if fields and len(fields) == 0:
             fields.append("id")
@@ -1399,9 +1395,10 @@ def shn_list(jr, **attr):
         fields = None
 
         if list_fields:
-            fields = [table[f] for f in list_fields if table[f].readable]
+            fkey = jr.fkey or None
+            fields = [table[f] for f in list_fields if table[f].readable and f != fkey]
 
-        if fields and len(fields)==0:
+        if fields and len(fields) == 0:
             fields.append(table.id)
 
         if not fields:
@@ -1567,7 +1564,7 @@ def shn_list(jr, **attr):
         return export_csv(resource, query)
 
     elif jr.representation == "pdf":
-        return export_pdf(table, query)
+        return export_pdf(table, query, list_fields)
 
     elif jr.representation == "xls":
         return export_xls(table, query, list_fields)
@@ -1578,8 +1575,8 @@ def shn_list(jr, **attr):
     elif jr.representation in shn_xml_export_formats:
         return export_xml(jr)
 
-    elif jr.representation == "rss":
-        return export_rss(module, resource, query, rss=rss, linkto=jr.there("html"))
+    #elif jr.representation == "rss":
+        #return export_rss(module, resource, query, rss=rss, linkto=jr.there("html"))
 
     else:
         session.error = BADFORMAT
@@ -1781,7 +1778,7 @@ def shn_update(jr, **attr):
             query = ((table.deleted == False) | (table.deleted == None)) & query
 
         try:
-            record_id = db(query).select(table.id).first().id
+            record_id = db(query).select(table.id, limitby=(0, 1)).first().id
         except:
             record_id = None
             href_delete = None
@@ -1993,7 +1990,7 @@ def shn_delete(jr, **attr):
             try:
                 shn_audit_delete(module, resource, row.id, jr.representation)
                 if "deleted" in db[table] and \
-                   db(db.s3_setting.id == 1).select().first().archive_not_delete:
+                   db(db.s3_setting.id == 1).select(db.s3_setting.archive_not_delete, limitby=(0, 1)).first().archive_not_delete:
                     if crud.settings.delete_onvalidation:
                         crud.settings.delete_onvalidation(row)
                     # Avoid collisions of values in unique fields between deleted records and
@@ -2105,14 +2102,14 @@ def shn_search(jr, **attr):
     elif jr.representation == "json":
 
         _vars = request.vars
-        _table - jr.table
-        _field = _table[field]
+        _table = jr.table
 
         # JQuery Autocomplete uses "q" instead of "value"
         value = _vars.value or _vars.q or None
 
         if _vars.field and _vars.filter and value:
             field = str.lower(_vars.field)
+            _field = _table[field]
 
             # Optional fields
             if "field2" in _vars:
@@ -2123,11 +2120,11 @@ def shn_search(jr, **attr):
                 field3 = str.lower(_vars.field3)
             else:
                 field3 = None
-            if "extra_string" in _vars:
-                extra_string = str.lower(_vars.extra_string)
+            if "level" in _vars:
+                level = str.upper(_vars.level)
             else:
-                extra_string = None
-            if "parent" in _vars:
+                level = None
+            if "parent" in _vars and _vars.parent:
                 parent = int(_vars.parent)
             else:
                 parent = None
@@ -2152,20 +2149,22 @@ def shn_search(jr, **attr):
                                         (_table[field2].like("%" + value + "%")) | \
                                         (_table[field3].like("%" + value + "%")))
 
-                elif extra_string:
+                elif level:
 
                     # gis_location hierarchical search
                     if parent:
                         query = query & (_table.parent == parent) & \
-                                        (_field.like("%" + value + "%")) & \
-                                        (_field.like("%" + extra_string + "%"))
+                                        (_table.level == level) & \
+                                        (_field.like("%" + value + "%"))
+
                     else:
-                        query = query & (_field.like("%" + value + "%")) & \
-                                        (_field.like("%" + extra_string + "%"))
+                        query = query & (_table.level == level) & \
+                                        (_field.like("%" + value + "%"))
+                        return str(query)
 
                 elif exclude:
 
-                    # gis_location without Admin Areas
+                    # gis_location without Admin Areas (old: assumes 'Lx:' in name)
                     query = query & ~(_field.like(exclude)) & \
                                     (_field.like("%" + value + "%"))
 

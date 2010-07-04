@@ -10,18 +10,18 @@ import re
 from datetime import datetime, timedelta
 from gluon.validators import Validator, IS_MATCH, IS_NOT_IN_DB
 
-__all__ = ['IS_LAT', 'IS_LON', 'IS_HTML_COLOUR', 'THIS_NOT_IN_DB', 'IS_UTC_OFFSET', 'IS_UTC_DATETIME', 'IS_ONE_OF', 'IS_ONE_OF_EMPTY', 'IS_NOT_ONE_OF']
+__all__ = ["IS_LAT", "IS_LON", "IS_HTML_COLOUR", "THIS_NOT_IN_DB", "IS_UTC_OFFSET", "IS_UTC_DATETIME", "IS_ONE_OF", "IS_ONE_OF_EMPTY", "IS_NOT_ONE_OF"]
 
 class IS_LAT(object):
     """
     example:
 
-    INPUT(_type='text', _name='name', requires=IS_LAT())
+    INPUT(_type="text", _name="name", requires=IS_LAT())
 
     latitude has to be in degrees between -90 & 90
     """
     def __init__(self,
-            error_message = 'Latitude/Northing should be between -90 & 90!'):
+            error_message = "Latitude/Northing should be between -90 & 90!"):
         self.minimum = -90
         self.maximum = 90
         self.error_message = error_message
@@ -38,12 +38,12 @@ class IS_LON(object):
     """
     example:
 
-    INPUT(_type='text', _name='name' ,requires=IS_LON())
+    INPUT(_type="text", _name="name" ,requires=IS_LON())
 
     longitude has to be in degrees between -180 & 180
     """
     def __init__(self,
-            error_message = 'Longitude/Easting should be between -180 & 180!'):
+            error_message = "Longitude/Easting should be between -180 & 180!"):
         self.minimum = -180
         self.maximum = 180
         self.error_message = error_message
@@ -60,12 +60,12 @@ class IS_HTML_COLOUR(IS_MATCH):
     """
     example::
 
-        INPUT(_type='text', _name='name', requires=IS_HTML_COLOUR())
+        INPUT(_type="text", _name="name", requires=IS_HTML_COLOUR())
 
     """
 
-    def __init__(self, error_message='must be a 6 digit hex code!'):
-        IS_MATCH.__init__(self, '^[0-9a-fA-F]{6}$', error_message)
+    def __init__(self, error_message="must be a 6 digit hex code!"):
+        IS_MATCH.__init__(self, "^[0-9a-fA-F]{6}$", error_message)
 
 class THIS_NOT_IN_DB(object):
     """
@@ -73,8 +73,8 @@ class THIS_NOT_IN_DB(object):
     See: http://groups.google.com/group/web2py/browse_thread/thread/27b14433976c0540
     """
     def __init__(self, dbset, field, this,
-            error_message = 'value already in database!'):
-        if hasattr(dbset, 'define_table'):
+            error_message = "value already in database!"):
+        if hasattr(dbset, "define_table"):
             self.dbset = dbset()
         else:
             self.dbset = dbset
@@ -85,9 +85,9 @@ class THIS_NOT_IN_DB(object):
     def set_self_id(self, id):
         self.record_id = id
     def __call__(self, value):
-        tablename, fieldname = str(self.field).split('.')
+        tablename, fieldname = str(self.field).split(".")
         field = self.dbset._db[tablename][fieldname]
-        rows = self.dbset(field==self.value).select(limitby=(0, 1))
+        rows = self.dbset(field == self.value).select(limitby=(0, 1))
         if len(rows)>0 and str(rows[0].id) != str(self.record_id):
             return (self.value, self.error_message)
         return (value, None)
@@ -117,24 +117,25 @@ class IS_ONE_OF_EMPTY(Validator):
         represent=None,
         filterby=None,
         filter_opts=None,
-        error_message='invalid value!',
+        error_message="invalid value!",
         multiple=False,
-        alphasort=True
+        alphasort=True,
+        zero=""
         ):
 
         self.error_message = error_message
 
         self.field = field
-        (ktable, kfield) = str(self.field).split('.')
+        (ktable, kfield) = str(self.field).split(".")
 
         self.ktable = ktable
 
         if not kfield or not len(kfield):
-            self.kfield = 'id'
+            self.kfield = "id"
         else:
             self.kfield = kfield
 
-        self.represent = represent or ('%%(%s)s' % self.kfield)
+        self.represent = represent or ("%%(%s)s" % self.kfield)
 
         self.filterby = filterby
         self.filter_opts = filter_opts
@@ -143,8 +144,9 @@ class IS_ONE_OF_EMPTY(Validator):
 
         self.multiple = multiple
         self.alphasort = alphasort
+        self.zero = zero
 
-        if hasattr(dbset, 'define_table'):
+        if hasattr(dbset, "define_table"):
             self.dbset = dbset()
         else:
             self.dbset = dbset
@@ -159,7 +161,7 @@ class IS_ONE_OF_EMPTY(Validator):
             else:
                 values = [value]
 
-            deleted_q = ('deleted' in _table) and (_table['deleted']==False) or False
+            deleted_q = ("deleted" in _table) and (_table["deleted"]==False) or False
 
             filter_opts_q = False
 
@@ -179,7 +181,7 @@ class IS_ONE_OF_EMPTY(Validator):
                     return (value, self.error_message)
 
             if self.multiple:
-                return ('|%s|' % '|'.join(values), None)
+                return ("|%s|" % "|".join(values), None)
             else:
                 return (value, None)
 
@@ -212,10 +214,10 @@ class IS_ONE_OF(IS_ONE_OF_EMPTY):
 
             _table = self.dbset._db[self.ktable]
 
-            if 'deleted' in _table:
-                query = ((_table['deleted']==False) | (_table['deleted']==None))
+            if "deleted" in _table:
+                query = ((_table["deleted"] == False) | (_table["deleted"] == None))
             else:
-                query = (_table['id'])
+                query = (_table["id"])
 
             if self.filterby and self.filterby in _table:
                 if self.filter_opts:
@@ -231,13 +233,13 @@ class IS_ONE_OF(IS_ONE_OF_EMPTY):
                 except TypeError:
                     if isinstance(self.represent, str):
                         set.append((r[self.kfield], self.represent %dict(r)))
-                    elif isinstance(self.represent, (list,tuple)):
+                    elif isinstance(self.represent, (list, tuple)):
                         _label = ""
                         for l in self.represent:
                             if l in r:
-                                _label = '%s %s' % ( _label, r[l] )
+                                _label = "%s %s" % ( _label, r[l] )
                         set.append((r[self.kfield],  _label))
-                    elif 'name' in _table:
+                    elif "name" in _table:
                         set.append((r[self.kfield], r.name))
                     else:
                         set.append(( r[self.kfield], r[self.kfield] ))
@@ -245,6 +247,9 @@ class IS_ONE_OF(IS_ONE_OF_EMPTY):
             # AlphaSort:
             if self.alphasort:
                 set.sort(key=lambda opt: opt[1])
+            # Zero
+            if self.zero != None and not self.multiple:
+                set.insert(0, ("", self.zero))
 
             return( set )
 
@@ -258,7 +263,7 @@ class IS_NOT_ONE_OF(IS_NOT_IN_DB):
 
     example::
 
-        INPUT(_type='text', _name='name', requires=IS_NOT_ONE_OF(db, db.table))
+        INPUT(_type="text", _name="name", requires=IS_NOT_ONE_OF(db, db.table))
 
     makes the field unique (amongst non-deleted field)
     """
@@ -266,12 +271,12 @@ class IS_NOT_ONE_OF(IS_NOT_IN_DB):
     def __call__(self, value):
         if value in self.allowed_override:
             return (value, None)
-        (tablename, fieldname) = str(self.field).split('.')
+        (tablename, fieldname) = str(self.field).split(".")
         _table = self.dbset._db[tablename]
         field = _table[fieldname]
         query = (field == value)
-        if 'deleted' in _table:
-            query = (_table['deleted']==False) & query
+        if "deleted" in _table:
+            query = (_table["deleted"]==False) & query
         rows = self.dbset(query).select(limitby=(0, 1))
         if len(rows) > 0 and str(rows[0].id) != str(self.record_id):
             return (value, self.error_message)
@@ -291,17 +296,17 @@ class IS_UTC_OFFSET(Validator):
     """
 
     def __init__(self,
-        error_message='invalid UTC offset!'
+        error_message="invalid UTC offset!"
         ):
         self.error_message = error_message
 
     @staticmethod
     def get_offset_value(offset_str):
-        if offset_str and len(offset_str)>=5 and \
-            (offset_str[-5]=='+' or offset_str[-5]=='-') and \
+        if offset_str and len(offset_str) >= 5 and \
+            (offset_str[-5] == "+" or offset_str[-5] == "-") and \
             offset_str[-4:].isdigit():
-            offset_hrs = int(offset_str[-5]+offset_str[-4:-2])
-            offset_min = int(offset_str[-5]+offset_str[-2:])
+            offset_hrs = int(offset_str[-5] + offset_str[-4:-2])
+            offset_min = int(offset_str[-5] + offset_str[-2:])
             offset = 3600*offset_hrs + 60*offset_min
             return offset
         else:
@@ -317,7 +322,7 @@ class IS_UTC_OFFSET(Validator):
             if offset is not None and offset>-86340 and offset <86340:
                 # Add a leading 'UTC ',
                 # otherwise leading '+' and '0' will be stripped away by web2py
-                return ('UTC '+_offset_str[-5:], None)
+                return ("UTC " + _offset_str[-5:], None)
 
         return (value, self.error_message)
 
@@ -330,7 +335,7 @@ class IS_UTC_DATETIME(Validator):
 
     example:
 
-        INPUT(_type='text', _name='name', requires=IS_UTC_DATETIME())
+        INPUT(_type="text", _name="name", requires=IS_UTC_DATETIME())
 
     datetime has to be in the ISO8960 format YYYY-MM-DD hh:mm:ss, with an optional
     trailing UTC offset specified as +/-HHMM (+ for eastern, - for western timezones)
@@ -352,11 +357,11 @@ class IS_UTC_DATETIME(Validator):
                                         from now for unsynchronized local clocks
     """
 
-    isodatetime = '%Y-%m-%d %H:%M:%S'
+    isodatetime = "%Y-%m-%d %H:%M:%S"
 
     def __init__(self,
-        format='%Y-%m-%d %H:%M:%S',
-        error_message='must be YYYY-MM-DD HH:MM:SS (+/-HHMM)!',
+        format="%Y-%m-%d %H:%M:%S",
+        error_message="must be YYYY-MM-DD HH:MM:SS (+/-HHMM)!",
         utc_offset=None,
         allow_future=True,
         max_future=900
@@ -369,19 +374,19 @@ class IS_UTC_DATETIME(Validator):
         offset, error = validate(utc_offset)
 
         if error:
-            self.utc_offset = 'UTC +0000' # fallback to UTC
+            self.utc_offset = "UTC +0000" # fallback to UTC
         else:
             self.utc_offset = offset
 
         self.allow_future = allow_future
         self.max_future = max_future
 
-    def __call__(self,value):
+    def __call__(self, value):
 
         _dtstr = value.strip()
 
-        if len(_dtstr)>6 and \
-            (_dtstr[-6:-4]==' +' or _dtstr[-6:-4]==' -') and \
+        if len(_dtstr) > 6 and \
+            (_dtstr[-6:-4] == " +" or _dtstr[-6:-4] == " -") and \
             _dtstr[-4:].isdigit():
             # UTC offset specified in dtstr
             dtstr = _dtstr[0:-6]
@@ -391,13 +396,13 @@ class IS_UTC_DATETIME(Validator):
             dtstr = _dtstr
             _offset_str = self.utc_offset
 
-        offset_hrs = int(_offset_str[-5]+_offset_str[-4:-2])
-        offset_min = int(_offset_str[-5]+_offset_str[-2:])
+        offset_hrs = int(_offset_str[-5] + _offset_str[-4:-2])
+        offset_min = int(_offset_str[-5] + _offset_str[-2:])
         offset = 3600*offset_hrs + 60*offset_min
 
         # Offset must be in range -1439 to +1439 minutes
-        if offset<-86340 or offset >86340:
-            self.error_message='invalid UTC offset!'
+        if offset < -86340 or offset > 86340:
+            self.error_message = "invalid UTC offset!"
             return (dt, self.error_message)
 
         try:
@@ -408,7 +413,7 @@ class IS_UTC_DATETIME(Validator):
                 (y,m,d,hh,mm,ss,t0,t1,t2) = time.strptime(dtstr+":00", str(self.format))
                 dt = datetime(y,m,d,hh,mm,ss)
             except:
-                self.error_message='must be YYYY-MM-DD HH:MM:SS (+/-HHMM)!'
+                self.error_message="must be YYYY-MM-DD HH:MM:SS (+/-HHMM)!"
                 return(value, self.error_message)
 
         if self.allow_future:
@@ -417,11 +422,11 @@ class IS_UTC_DATETIME(Validator):
             latest = datetime.utcnow() + timedelta(seconds=self.max_future)
             dt_utc = dt - timedelta(seconds=offset)
             if dt_utc > latest:
-                self.error_message='future times not allowed!'
+                self.error_message = "future times not allowed!"
                 return (dt_utc, self.error_message)
             else:
                 return (dt_utc, None)
 
     def formatter(self, value):
         # Always format with trailing UTC offset
-        return value.strftime(str(self.format))+' +0000'
+        return value.strftime(str(self.format)) + " +0000"

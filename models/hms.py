@@ -84,7 +84,7 @@ if deployment_settings.has_module(module):
         #2: T("Advisory"),
         3: T("Closed"),
         4: T("Not Applicable")
-    } #: OR Status Options
+    } #: Operating Room Status Options
 
     resource = "hospital"
     tablename = "%s_%s" % (module, resource)
@@ -102,12 +102,12 @@ if deployment_settings.has_module(module):
                     Field("address"),
                     Field("postcode"),
                     Field("city"),
-                    Field("phone_exchange"),
-                    Field("phone_business"),
-                    Field("phone_emergency"),
-                    Field("website"),
+                    Field("phone_exchange", requires = shn_phone_requires), # Switchboard
+                    Field("phone_business", requires = shn_phone_requires),
+                    Field("phone_emergency", requires = shn_phone_requires),
+                    Field("website", requires = IS_NULL_OR(IS_URL())),
                     Field("email"),
-                    Field("fax"),
+                    Field("fax", requires = shn_phone_requires),
                     Field("total_beds", "integer"),             # Total Beds
                     Field("available_beds", "integer"),         # Available Beds
                     Field("ems_status", "integer",              # Emergency Room Status
@@ -163,117 +163,42 @@ if deployment_settings.has_module(module):
     table.uuid.requires = IS_NOT_IN_DB(db, "%s.uuid" % tablename)
 
     table.organisation_id.represent = lambda id: \
-        (id and [db(db.or_organisation.id==id).select()[0].acronym] or ["None"])[0]
+        (id and [db(db.org_organisation.id==id).select()[0].acronym] or ["None"])[0]
 
     table.gov_uuid.requires = IS_NULL_OR(IS_NOT_IN_DB(db, "%s.gov_uuid" % tablename))
-    table.gov_uuid.label = T("Government UID")
     table.gov_uuid.comment = DIV(DIV(_class="tooltip",
         _title=T("Government UID|The Unique Identifier (UUID) as assigned to this facility by the government.")))
 
     table.name.requires = [IS_NOT_EMPTY(), IS_NOT_IN_DB(db, "%s.name" % tablename)]
-    table.name.label = T("Name")
-    table.name.comment = SPAN("*", _class="req")
-
-    table.aka1.label = T("Other Name")
-    table.aka2.label = T("Other Name")
-
-    table.address.label = T("Address")
-    table.postcode.label = T("Postcode")
-
-    table.phone_exchange.label = T("Phone/Exchange")
-    table.phone_business.label = T("Phone/Business")
-    table.phone_emergency.label = T("Phone/Emergency")
     table.email.requires = IS_NULL_OR(IS_EMAIL())
-    table.email.label = T("Email")
-    table.fax.label = T("FAX")
-
     table.total_beds.requires = IS_NULL_OR(IS_INT_IN_RANGE(0, 9999))
-    table.total_beds.label = T("Total Beds")
     table.total_beds.readable = False
     table.total_beds.writable = False
-    table.total_beds.comment = DIV(DIV(_class="tooltip",
-        _title=T("Total Beds|Total number of beds in this hospital. Automatically updated from daily reports.")))
-
     table.available_beds.requires = IS_NULL_OR(IS_INT_IN_RANGE(0, 9999))
-    table.available_beds.label = T("Available Beds")
     table.available_beds.readable = False
     table.available_beds.writable = False
-    table.available_beds.comment = DIV(DIV(_class="tooltip",
-        _title=T("Available Beds|Number of vacant/available beds in this hospital. Automatically updated from daily reports.")))
-
-    table.ems_status.comment = DIV(DIV(_class="tooltip",
-        _title=T("EMS Status|Status of operations of the emergency department of this hospital.")))
-    table.ems_reason.comment = DIV(DIV(_class="tooltip",
-        _title=T("EMS Reason|Report the contributing factors for the current EMS status.")))
-
-    table.or_status.comment = DIV(DIV(_class="tooltip",
-        _title=T("OR Status|Status of the operating rooms of this hospital.")))
-    table.or_reason.comment = DIV(DIV(_class="tooltip",
-        _title=T("OR Reason|Report the contributing factors for the current OR status.")))
-
-    table.facility_status.comment = DIV(DIV(_class="tooltip",
-        _title=T("Facility Status|Status of general operation of the facility.")))
-    table.clinical_status.comment = DIV(DIV(_class="tooltip",
-        _title=T("Clinical Status|Status of clinical operation of the facility.")))
-    table.morgue_status.comment = DIV(DIV(_class="tooltip",
-        _title=T("Morgue Status|Status of morgue capacity.")))
-    table.security_status.comment = DIV(DIV(_class="tooltip",
-        _title=T("Security Status|Status of security procedures/access restrictions in the hospital.")))
-
-    table.morgue_units.label = T("Morgue Units Available")
-    table.morgue_units.comment =  DIV(DIV(_class="tooltip",
-        _title=T("Morgue Units Available|Number of vacant/available units to which victims can be transported immediately.")))
     table.morgue_units.requires = IS_NULL_OR(IS_INT_IN_RANGE(0, 99999))
-
     table.doctors.requires = IS_NULL_OR(IS_INT_IN_RANGE(0, 99999))
-    table.doctors.label = T("Number of doctors")
     table.nurses.requires = IS_NULL_OR(IS_INT_IN_RANGE(0, 99999))
-    table.nurses.label = T("Number of nurses")
     table.non_medical_staff.requires = IS_NULL_OR(IS_INT_IN_RANGE(0, 99999))
-    table.non_medical_staff.label = T("Number of non-medical staff")
-
-    table.access_status.label = T("Road Conditions")
-    table.access_status.comment =  DIV(DIV(_class="tooltip",
-        _title=T("Road Conditions|Describe the condition of the roads to your hospital.")))
-
-    table.info_source.label = "Source of Information"
-    table.info_source.comment =  DIV(DIV(_class="tooltip",
-        _title=T("Source of Information|Specify the source of the information in this report.")))
-
-    ADD_HOSPITAL = T("Add Hospital")
-    LIST_HOSPITALS = T("List Hospitals")
-    s3.crud_strings[tablename] = Storage(
-        title_create = ADD_HOSPITAL,
-        title_display = T("Hospital Details"),
-        title_list = LIST_HOSPITALS,
-        title_update = T("Edit Hospital"),
-        title_search = T("Search Hospitals"),
-        subtitle_create = T("Add New Hospital"),
-        subtitle_list = T("Hospitals"),
-        label_list_button = LIST_HOSPITALS,
-        label_create_button = ADD_HOSPITAL,
-        label_delete_button = T("Delete Hospital"),
-        msg_record_created = T("Hospital information added"),
-        msg_record_modified = T("Hospital information updated"),
-        msg_record_deleted = T("Hospital information deleted"),
-        msg_list_empty = T("No Hospitals currently registered"))
-
+    
     # Reusable field for other tables to reference
-    hospital_id = SQLTable(None, "hospital_id",
+    ADD_HOSPITAL = T("Add Hospital")
+    hospital_id = db.Table(None, "hospital_id",
                         FieldS3("hospital_id", db.hms_hospital, sortby="name",
                                 requires = IS_NULL_OR(IS_ONE_OF(db, "hms_hospital.id", "%(name)s")),
                                 represent = lambda id: (id and
-                                            [db(db.hms_hospital.id==id).select()[0].name] or
+                                            [db(db.hms_hospital.id == id).select(db.hms_hospital.name, limitby=(0, 1)).first().name] or
                                             ["None"])[0],
                                 label = T("Hospital"),
-                                comment = DIV(A(s3.crud_strings[tablename].title_create,
+                                comment = DIV(A(ADD_HOSPITAL,
                                                _class="colorbox",
                                                _href=URL(r=request,
                                                          c="hms",
                                                          f="hospital",
                                                          args="create",
                                                          vars=dict(format="popup")),
-                                               _target="top", _title=s3.crud_strings[tablename].title_create),
+                                               _target="top", _title=ADD_HOSPITAL),
                                               DIV(DIV(_class="tooltip",
                                                       _title=T("Hospital|The hospital this record is associated with.")))),
                                 ondelete = "RESTRICT"))
@@ -364,10 +289,13 @@ if deployment_settings.has_module(module):
         _title=T("Title|The Role this person plays within this hospital.")))
 
     table.phone.label = T("Phone")
+    table.phone.requires = shn_phone_requires
     table.mobile.label = T("Mobile")
+    table.mobile.requires = shn_phone_requires
     table.email.requires = IS_NULL_OR(IS_EMAIL())
     table.email.label = T("Email")
     table.fax.label = T("FAX")
+    table.fax.requires = shn_phone_requires
     table.skype.label = T("Skype ID")
 
     s3xrc.model.add_component(module, resource,
@@ -1007,7 +935,7 @@ if deployment_settings.has_module(module):
         msg_list_empty      = "No aid requests currently available")
 
     # Reusable field for other tables to reference
-    hms_hrequest_id = SQLTable(None, "hms_hrequest_id",
+    hms_hrequest_id = db.Table(None, "hms_hrequest_id",
                         Field("hms_hrequest_id", db.hms_hrequest,
                                 requires = IS_NULL_OR(IS_ONE_OF(db, "hms_hrequest.id", "%(id)s")),
                                 represent = lambda id: (id and [db(db.hms_hrequest.id==id).select()[0].id] or ["None"])[0],

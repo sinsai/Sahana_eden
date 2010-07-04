@@ -28,21 +28,28 @@ def shn_sessions():
     # Use response for one-off variables which are visible in views without explicit passing
     response.s3 = Storage()
     response.s3.formats = Storage()
-    settings = db(db.s3_setting.id > 0).select().first()
+    
+    roles = []
+    try:
+        user_id = auth.user.id
+        _memberships = db.auth_membership
+        memberships = db(_memberships.user_id == user_id).select(_memberships.group_id) # Cache this & invalidate when memberships are changed?
+        for membership in memberships:
+            roles.append(membership.group_id)
+    except:
+        # User not authenticated therefore has no roles other than '0'
+        pass
+    session.s3.roles = roles
+
     controller_settings_table = "%s_setting" % request.controller
     controller_settings = controller_settings_table in db.tables and \
-       db(db[controller_settings_table].id > 0).select().first()
+       db(db[controller_settings_table].id > 0).select(limitby=(0, 1)).first()
+    
+    settings = db(db.s3_setting.id > 0).select(db.s3_setting.debug, db.s3_setting.security_policy, db.s3_setting.self_registration, db.s3_setting.audit_read, db.s3_setting.audit_write, limitby=(0, 1)).first()
     # Are we running in debug mode?
     session.s3.debug = "debug" in request.vars or settings and settings.debug
     session.s3.security_policy = (settings and settings.security_policy) or 1
 
-    # Are we running in restricted mode?
-    #session.s3.restricted = auth.has_membership(auth.id_group("Restricted"))
-    # Select the theme
-    if not session.s3.theme:
-        session.s3.theme = Storage()
-    admin_theme = db().select(db.admin_theme.footer).first()
-    session.s3.theme.footer = admin_theme and admin_theme.footer or "footer.html"
     # We Audit if either the Global or Module asks us to
     # (ignore gracefully if module author hasn't implemented this)
     session.s3.audit_read = (settings and settings.audit_read) \
@@ -60,6 +67,7 @@ shn_languages = {
     "en": T("English"),
     "fr": T("French")
 }
+auth.settings.table_user.language.requires = IS_IN_SET(shn_languages, zero=None)
 
 #
 # List of Nations - added by nursix
@@ -270,7 +278,6 @@ shn_list_of_nations = {
     }
 
 # User Time Zone Operations:
-# TODO: don't know if that fits here, should perhaps be moved into sahana.py
 
 from datetime import timedelta
 import time
@@ -281,10 +288,10 @@ def shn_user_utc_offset():
     """
 
     if auth.is_logged_in():
-        return db(db.auth_user.id==session.auth.user.id).select()[0].utc_offset
+        return db(db.auth_user.id == session.auth.user.id).select(db.auth_user.utc_offset, limitby=(0, 1)).first().utc_offset
     else:
         try:
-            offset = db().select(db.s3_setting.utc_offset)[0].utc_offset
+            offset = db().select(db.s3_setting.utc_offset, limitby=(0, 1)).first().utc_offset
         except:
             offset = None
         return offset
@@ -309,7 +316,12 @@ def shn_as_local_time(value):
         dt = value
         return dt.strftime(str(format))+" +0000"
 
+# Make URLs clickable
+shn_url_represent = lambda url: (url and [A(url, _href=url, _target="blank")] or [""])[0]
 
+# Phone number requires
+shn_phone_requires = IS_NULL_OR(IS_MATCH('\+?\s*[\s\-\.\(\)\d]+(?:(?: x| ext)\s?\d{1,5})?$'))
+        
 def Tstr(text):
     """Convenience function for non web2py modules"""
     return str(T(text))
@@ -336,7 +348,7 @@ def shn_last_update(table, record_id):
             if "modified_by" in table.fields:
                 user = auth.settings.table_user[record.modified_by]
                 if user:
-                    person = db(db.pr_person.uuid==user.person_uuid).select().first()
+                    person = db(db.pr_person.uuid == user.person_uuid).select(limitby=(0, 1)).first()
                     if person:
                         modified_by = "%s%s" % (mod_by_str, vita.fullname(person))
 
@@ -346,7 +358,7 @@ def shn_last_update(table, record_id):
     return None
 
 def shn_compose_message(data, template):
-
+    " Compose an SMS Message from an XSLT "
     from lxml import etree
     if data:
         root = etree.Element("message")
@@ -386,7 +398,7 @@ def shn_crud_strings(table_name,
     @example
         s3.crud_strings[<table_name>] = shn_crud_strings(<table_name>, <table_name_plural>)
     """
-    #This may need to be reviewed for Internationalization
+    
     if not table_name_plural:
         table_name_plural = table_name + "s"
 
@@ -502,3 +514,25 @@ def shn_rheader_tabs(jr, tabs=[]):
         rheader_tabs = ""
 
     return rheader_tabs
+
+def shn_action_buttons(jr, deletable=True):
+    """ Provide the usual Action Buttons for Column views. Designed to be called from a postp """
+
+    if not jr.component:
+        if auth.is_logged_in():
+            # Provide the ability to delete records in bulk
+            if deletable:
+                response.s3.actions = [
+                    dict(label=str(UPDATE), _class="action-btn", url=str(URL(r=request, args=["[id]", "update"]))),
+                    dict(label=str(DELETE), _class="action-btn", url=str(URL(r=request, args=["[id]", "delete"])))
+                ]
+            else:
+                response.s3.actions = [
+                    dict(label=str(UPDATE), _class="action-btn", url=str(URL(r=request, args=["[id]", "update"])))
+                ]
+        else:
+            response.s3.actions = [
+                dict(label=str(READ), _class="action-btn", url=str(URL(r=request, args=["[id]"])))
+            ]
+
+    return

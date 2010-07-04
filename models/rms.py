@@ -28,6 +28,8 @@ if deployment_settings.has_module(module):
         1:T("Pledged"),
         2:T("In Transit"),
         3:T("Delivered"),
+        4:T("Received"),
+        5:T("Cancelled")
         }
 
     rms_type_opts = {
@@ -64,9 +66,12 @@ if deployment_settings.has_module(module):
         Field("actionable", "boolean"),
         Field("actioned", "boolean"),
         Field("actioned_details"),
+        Field("pledge_status", "string"),
         migrate=migrate)
 
-    #table.id.represent = lambda id: shn_req_aid_represent(id)
+    #table.id.represent = lambda id: shn_req_aid_represent(id) 
+    
+    db.rms_req.pledge_status.writable = False
 
     # Label the fields for the view
     table.timestamp.label = T("Date & Time")
@@ -123,10 +128,10 @@ if deployment_settings.has_module(module):
                                     msg_list_empty      = "No aid requests currently available")
 
     #Reusable field for other tables
-    request_id = SQLTable(None, "req_id",
+    request_id = db.Table(None, "req_id",
                 FieldS3("req_id", db.rms_req, sortby="message",
                     requires = IS_NULL_OR(IS_ONE_OF(db, "rms_req.id", "%(message)s")),
-                    represent = lambda id: (id and [db(db.rms_req.id==id).select().first().updated] or ["None"])[0],
+                    represent = lambda id: (id and [db(db.rms_req.id == id).select(limitby=(0, 1)).first().updated] or ["None"])[0],
                     label = T("Aid Request"),
                     comment = DIV(A(ADD_AID_REQUEST, _class="colorbox", _href=URL(r=request, c="rms", f="req", args="create", vars=dict(format="popup")), _target="top", _title=ADD_AID_REQUEST), A(SPAN("[Help]"), _class="tooltip", _title=T("Add Request|The Request this record is associated with."))),
                     ondelete = "RESTRICT"
@@ -294,7 +299,7 @@ if deployment_settings.has_module(module):
         Field("status", "integer"),
         organisation_id,
         person_id,
-        #   Field("comment_id", db.comment),
+        shn_comments_field,
         migrate=migrate)
 
     #table.id.represent = lambda id: shn_req_pledge_represent(id)
@@ -343,6 +348,32 @@ if deployment_settings.has_module(module):
                                     msg_record_modified = "Pledge updated",
                                     msg_record_deleted  = "Pledge deleted",
                                     msg_list_empty      = "No Pledges currently available")
+    
+    def rms_pledge_onaccept(form):
+        #pledge_id = session.rcvars.rms_pledge
+        
+        req_id = session.rcvars.rms_req #db(db.rms_pledge.id == pledge_id).select(db.rms_pledge.req_id).first().req_id
+        
+        if req_id:
+            #This could be done as a join
+            pledges = db(db.rms_pledge.req_id == req_id).select(db.rms_pledge.status)
+            num_status = {}
+            for pledge in pledges:
+                status = pledge.status
+                if status:
+                    if status not in num_status:
+                        num_status[status] = 1
+                    else:
+                        num_status[status] = num_status[status] + 1
+            
+            pledge_status = ""
+            for i in (3,2,1):
+                if i in num_status:
+                    pledge_status = pledge_status + str(rms_status_opts[i]) + ": " + str(num_status[i]) + ", "
+            pledge_status = pledge_status[:-2]
+            db(db.rms_req.id == req_id).update(pledge_status = pledge_status)     
+        
+    s3xrc.model.configure(db.rms_pledge, onaccept=rms_pledge_onaccept)  
 
     # ------------------
     # Create the table for request_detail for requests with arbitrary keys
@@ -392,10 +423,10 @@ if deployment_settings.has_module(module):
 
 
     #Reusable field for other tables
-    req_detail_id = SQLTable(None, "req_detail_id",
+    req_detail_id = db.Table(None, "req_detail_id",
                 FieldS3("req_detail_id", db.rms_req_detail, sortby="request_key",
                     requires = IS_NULL_OR(IS_ONE_OF(db, "rms_req_detail.id", "%( request_key)s")),
-                    represent = lambda id: (id and [db(db.rms_req_detail.id==id).select().first().updated] or ["None"])[0],
+                    represent = lambda id: (id and [db(db.rms_req_detail.id == id).select(limitby=(0, 1)).first().updated] or ["None"])[0],
                     label = T("Request Detail"),
                     comment = DIV(A(ADD_REQUEST_DETAIL, _class="colorbox", _href=URL(r=request, c="rms", f="req_detail", args="create", vars=dict(format="popup")), _target="top", _title=ADD_REQUEST_DETAIL), A(SPAN("[Help]"), _class="tooltip", _title=T("Add Request|The Request this record is associated with."))),
                     ondelete = "RESTRICT"

@@ -6,7 +6,7 @@
     @author: nursix
 """
 
-module = "pr"
+module = request.controller
 
 # -----------------------------------------------------------------------------
 # Options Menu (available in all Functions" Views)
@@ -50,7 +50,7 @@ def index():
     """ Module"s Home Page """
 
     try:
-        module_name = s3.modules[module]["name_nice"]
+        module_name = deployment_settings.modules[module].name_nice
     except:
         module_name = T("Person Registry")
 
@@ -76,6 +76,8 @@ def person():
 
     """ RESTful CRUD controller """
 
+    resource = request.function
+    
     response.s3.pagination = True
 
     s3xrc.model.configure(db.pr_group_membership,
@@ -87,9 +89,9 @@ def person():
     def person_postp(jr, output):
         if jr.representation in ("html", "popup"):
             if not jr.component:
-                label = T("Details")
+                label = READ
             else:
-                label = T("Update")
+                label = UPDATE
             linkto = shn_linkto(jr, sticky=True)("[id]")
             response.s3.actions = [
                 dict(label=str(label), _class="action-btn", url=linkto)
@@ -97,7 +99,7 @@ def person():
         return output
     response.s3.postp = person_postp
 
-    output = shn_rest_controller(module, "person",
+    output = shn_rest_controller(module, resource,
                 main="first_name",
                 extra="last_name",
                 rheader=lambda jr: shn_pr_rheader(jr,
@@ -107,10 +109,10 @@ def person():
                             (T("Address"), "address"),
                             (T("Contact Data"), "pe_contact"),
                             (T("Memberships"), "group_membership"),
-                            (T("Presence Log"), "presence")]),
-                sticky=True,
-                rss=dict(title=shn_pr_person_represent,
-                        description="ID Label: %(pr_pe_label)s\n%(comment)s"))
+                            (T("Presence Log"), "presence"),
+                            (T("Subscriptions"), "pe_subscription")
+                            ]),
+                sticky=True)
 
     shn_menu()
     return output
@@ -120,6 +122,8 @@ def group():
 
     """ RESTful CRUD controller """
 
+    resource = request.function
+    
     response.s3.filter = (db.pr_group.system == False) # do not show system groups
     response.s3.pagination = True
 
@@ -132,9 +136,9 @@ def group():
     def group_postp(jr, output):
         if jr.representation in ("html", "popup"):
             if not jr.component:
-                label = T("Details")
+                label = READ
             else:
-                label = T("Update")
+                label = UPDATE
             linkto = shn_linkto(jr, sticky=True)("[id]")
             response.s3.actions = [
                 dict(label=str(label), _class="action-btn", url=linkto)
@@ -142,7 +146,7 @@ def group():
         return output
     response.s3.postp = group_postp
 
-    output = shn_rest_controller(module, "group",
+    output = shn_rest_controller(module, resource,
                 main="group_name",
                 extra="group_description",
                 rheader=lambda jr: shn_pr_rheader(jr,
@@ -158,45 +162,58 @@ def group():
 
 # -----------------------------------------------------------------------------
 def image():
-    "RESTlike CRUD controller"
-    return shn_rest_controller(module, "image")
+    "RESTful CRUD controller"
+    resource = request.function
+    return shn_rest_controller(module, resource)
 
 # -----------------------------------------------------------------------------
 def pe_contact():
-    "RESTlike CRUD controller"
-    return shn_rest_controller(module, "pe_contact")
+    "RESTful CRUD controller"
+    resource = request.function
+    return shn_rest_controller(module, resource)
 
 # -----------------------------------------------------------------------------
 def address():
-    "RESTlike CRUD controller"
-    return shn_rest_controller(module, "address")
+    "RESTful CRUD controller"
+    resource = request.function
+    return shn_rest_controller(module, resource)
 
 # -----------------------------------------------------------------------------
 def presence():
-    "RESTlike CRUD controller"
-    return shn_rest_controller(module, "presence")
+    "RESTful CRUD controller"
+    resource = request.function
+    return shn_rest_controller(module, resource)
 
 # -----------------------------------------------------------------------------
 def identity():
-    "RESTlike CRUD controller"
-    return shn_rest_controller(module, "identity")
+    "RESTful CRUD controller"
+    resource = request.function
+    return shn_rest_controller(module, resource)
 
 # -----------------------------------------------------------------------------
 def group_membership():
-    "RESTlike CRUD controller"
-    return shn_rest_controller(module, "group_membership")
+    "RESTful CRUD controller"
+    resource = request.function
+    return shn_rest_controller(module, resource)
 
 # -----------------------------------------------------------------------------
 def pentity():
-    "RESTlike CRUD controller"
-    return shn_rest_controller(module, "pentity")
+    "RESTful CRUD controller"
+    resource = request.function
+    return shn_rest_controller(module, resource)
+
 # -----------------------------------------------------------------------------
 def download():
-    "Download a file."
+
+    """ Download a file. """
+
     return response.download(request, db)
 
 # -----------------------------------------------------------------------------
 def tooltip():
+
+    """ Ajax tooltips """
+
     if "formfield" in request.vars:
         response.view = "pr/ajaxtips/%s.html" % request.vars.formfield
     return dict()

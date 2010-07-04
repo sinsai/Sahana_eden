@@ -6,7 +6,7 @@
     @author: Fran Boon
 """
 
-module = "media"
+module = request.controller
 
 if module not in deployment_settings.modules:
     session.error = T("Module disabled!")
@@ -28,13 +28,13 @@ def download():
 def index():
     "Module's Home Page"
     
-    module_name = s3.modules[module]["name_nice"]
+    module_name = deployment_settings.modules[module].name_nice
     
     return dict(module_name=module_name)
 
 def metadata():
-    "RESTlike CRUD controller"
-    resource = "metadata"
+    "RESTful CRUD controller"
+    resource = request.function
     tablename = module + "_" + resource
     table = db[tablename]
     
@@ -68,8 +68,8 @@ def metadata():
     return shn_rest_controller(module, resource)
 
 def image():
-    "RESTlike CRUD controller"
-    resource = "image"
+    "RESTful CRUD controller"
+    resource = request.function
     table = module + "_" + resource
 
     # Model options

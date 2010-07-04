@@ -69,21 +69,21 @@ class S3Config(Storage):
     def has_module(self, module_name):
         if not self.modules:
             _modules = [
+                "admin",        # Admin
                 "gis",          # GIS
                 "media",        # Media Manager
                 "pr",           # Person Registry
-                "or",           # Organisation Registry
+                "org",          # Organisation Registry
                 "budget",       # Budgetting
                 "cr",           # Camp Registry
                 "delphi",       # Delphi Decision Maker
                 "dvi",          # Disaster Victim Identification
                 "dvr",          # Disaster Victim Registry
                 "hms",          # Hospital Management
-                "hrm",          # Human Resources Management
-                "lms",          # Logistics
+                #"lms",          # Logistics
                 "mpr",          # Missing Person Registry
                 "msg",          # Messaging
-                "nim",          # Nursing Information Manager
+                #"nim",          # Nursing Information Manager
                 "rms",          # Request Management
                 "ticket",       # Ticketing
                 "vol"           # Volunteer Management

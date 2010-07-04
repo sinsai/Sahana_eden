@@ -6,7 +6,7 @@
     @author: nursix
 """
 
-module = "mpr"
+module = request.controller
 
 if module not in deployment_settings.modules:
     session.error = T("Module disabled!")
@@ -42,15 +42,16 @@ response.menu_options = [
 def index():
     "Module's Home Page"
 
-    module_name = s3.modules[module]["name_nice"]
+    module_name = deployment_settings.modules[module].name_nice
 
     return dict(module_name=module_name)
 
 # Main controller functions
 def person():
+    resource = request.function
     db.pr_pd_general.est_age.readable=False
     db.pr_person.missing.default = True
-    return shn_rest_controller('pr', 'person', main='first_name', extra='last_name',
+    return shn_rest_controller('pr', resource, main='first_name', extra='last_name',
         rheader=shn_pr_rheader,
         rss=dict(
             title=shn_pr_person_represent,

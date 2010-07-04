@@ -4,7 +4,7 @@
     Global tables and re-usable fields
 """
 
-# Reusable timestamp fields
+# Reusable timestamp fields to include in other table definitions
 timestamp = db.Table(None, "timestamp",
             Field("created_on", "datetime",
                           readable=False,
@@ -17,22 +17,16 @@ timestamp = db.Table(None, "timestamp",
                           update=request.utcnow)
             )
 
-# Reusable author fields, TODO: make a better represent!
+# Reusable Author fields to include in other table definitions
+# TODO: make a better represent!
 def shn_user_represent(id):
-
     def user_represent(id):
         table = db.auth_user
-        user = db(table.id == id).select(table.first_name,
-                                       table.last_name,
-                                       limitby=(0, 1))
+        user = db(table.id == id).select(table.email, limitby=(0, 1))
         if user:
-            user = user[0]
-            name = user.first_name
-            if user.last_name:
-                name = "%s %s" % (name, user.last_name)
-            return name
+            user = user.first()
+            return user.email
         return None
-
     return cache.ram("repr_user_%s" % id,
                      lambda: user_represent(id), time_expire=10)
 
@@ -54,50 +48,64 @@ authorstamp = db.Table(None, "authorstamp",
 
 shn_comments_field = db.Table(None, "comments", Field("comments", "text", comment = A(SPAN("[Help]"), _class="tooltip", _title=T("Comments|Please use this field to show a history of the record."))))
 
-# Reusable UUID field (needed as part of database synchronization)
-import uuid
-from gluon.sql import SQLCustomType
+# Reusable UUID field to include in other table definitions
 s3uuid = SQLCustomType(
                 type = "string",
                 native = "VARCHAR(128)",
-                encoder = (lambda x: "'%s'" % (uuid.uuid4() if x=="" else str(x).replace("'", "''"))),
+                encoder = (lambda x: "'%s'" % (uuid.uuid4() if x == "" else str(x).replace("'", "''"))),
                 decoder = (lambda x: x)
             )
 
 uuidstamp = db.Table(None, "uuidstamp",
-                     Field("uuid",
-                          type=s3uuid,
-                          length=128,
-                          notnull=True,
-                          unique=True,
-                          readable=False,
-                          writable=False,
-                          default=""))
-
-# Reusable Deletion status field (needed as part of database synchronization)
-# Q: Will this be moved to a separate table? (Simpler for module writers but a performance penalty)
+            Field("uuid",
+                  type=s3uuid,
+                  length=128,
+                  notnull=True,
+                  unique=True,
+                  readable=False,
+                  writable=False,
+                  default=""),
+            Field("mci", "integer", # Master-Copy-Index
+                  default=0,
+                  readable=False,
+                  writable=False))
+# Reusable Deletion_Status field to include in other table definitions
 deletion_status = db.Table(None, "deletion_status",
-            Field("deleted", "boolean",
+                    Field("deleted", "boolean",
                           readable=False,
                           writable=False,
                           default=False))
 
-# Reusable Admin field
+# Reusable Admin field to include in other table definitions
 admin_id = db.Table(None, "admin_id",
             FieldS3("admin", db.auth_group, sortby="role",
                 requires = IS_NULL_OR(IS_ONE_OF(db, "auth_group.id", "%(role)s")),
-                represent = lambda id: (id and [db(db.auth_group.id==id).select()[0].role] or ["None"])[0],
+                represent = lambda id: (id and [db(db.auth_group.id == id).select(db.auth_group.role, limitby=(0, 1)).first().role] or ["None"])[0],
                 comment = DIV(A(T("Add Role"), _class="colorbox", _href=URL(r=request, c="admin", f="group", args="create", vars=dict(format="popup")), _target="top", _title=T("Add Role")), A(SPAN("[Help]"), _class="tooltip", _title=T("Admin|The Group whose members can edit data in this record."))),
                 ondelete="RESTRICT"
                 ))
 
-# Reusable Document field
+# Reusable Document field to include in other table definitions
 document = db.Table(None, "document",
             Field("document", "upload", autodelete = True,
                 label=T("Scanned File"),
                 #comment = A(SPAN("[Help]"), _class="tooltip", _title=T("Scanned File|The scanned copy of this document.")),
                 ))
 
+# Reusable Currency field to include in other table definitions
+currency_type_opts = {
+    1:T("Dollars"),
+    2:T("Euros"),
+    3:T("Pounds")
+}
+opt_currency_type = db.Table(None, "currency_type",
+                    Field("currency_type", "integer", notnull=True,
+                    requires = IS_IN_SET(currency_type_opts, zero=None),
+                    # default = 1,
+                    label = T("Currency"),
+                    represent = lambda opt: currency_type_opts.get(opt, UNKNOWN_OPT)))
+
+# Default CRUD strings
 ADD_RECORD = T("Add Record")
 LIST_RECORDS = T("List Records")
 s3.crud_strings = Storage(
@@ -116,8 +124,6 @@ s3.crud_strings = Storage(
     msg_record_deleted = T("Record deleted"),
     msg_list_empty = T("No Records currently available"))
 
-s3.display = Storage()
-
 module = "admin"
 resource = "theme"
 tablename = "%s_%s" % (module, resource)
@@ -125,7 +131,6 @@ table = db.define_table(tablename,
                 Field("name"),
                 Field("logo"),
                 Field("header_background"),
-                Field("footer"),
                 Field("text_direction"),
                 Field("col_background"),
                 Field("col_txt"),
@@ -139,6 +144,20 @@ table = db.define_table(tablename,
                 Field("col_border_btn_in"),
                 Field("col_btn_hover"),
                 migrate=migrate)
+
+table.name.requires = [IS_NOT_EMPTY(), IS_NOT_IN_DB(db, "%s.name" % tablename)]
+table.text_direction.requires = IS_IN_SET({"ltr":T("Left-to-Right"), "rtl":T("Right-to-Left")}, zero=None)
+table.col_background.requires = IS_HTML_COLOUR()
+table.col_txt.requires = IS_HTML_COLOUR()
+table.col_txt_background.requires = IS_HTML_COLOUR()
+table.col_txt_border.requires = IS_HTML_COLOUR()
+table.col_txt_underline.requires = IS_HTML_COLOUR()
+table.col_menu.requires = IS_HTML_COLOUR()
+table.col_highlight.requires = IS_HTML_COLOUR()
+table.col_input.requires = IS_HTML_COLOUR()
+table.col_border_btn_out.requires = IS_HTML_COLOUR()
+table.col_border_btn_in.requires = IS_HTML_COLOUR()
+table.col_btn_hover.requires = IS_HTML_COLOUR()
 
 module = "s3"
 # Auditing
@@ -180,7 +199,7 @@ table = db.define_table(tablename, timestamp, uuidstamp,
 table.security_policy.requires = IS_IN_SET(s3_setting_security_policy_opts, zero=None)
 table.security_policy.represent = lambda opt: s3_setting_security_policy_opts.get(opt, UNKNOWN_OPT)
 table.theme.requires = IS_IN_DB(db, "admin_theme.id", "admin_theme.name", zero=None)
-table.theme.represent = lambda name: db(db.admin_theme.id == name).select().first().name
+table.theme.represent = lambda name: db(db.admin_theme.id == name).select(db.admin_theme.name, limitby=(0, 1)).first().name
 # Define CRUD strings (NB These apply to all Modules' "settings" too)
 ADD_SETTING = T("Add Setting")
 LIST_SETTINGS = T("List Settings")
@@ -228,11 +247,11 @@ s3.crud_strings[tablename] = Storage(
     msg_record_modified = T("Source updated"),
     msg_record_deleted = T("Source deleted"),
     msg_list_empty = T("No Sources currently registered"))
-# Reusable field for other tables to reference
-source_id = SQLTable(None, "source_id",
+# Reusable field to include in other table definitions
+source_id = db.Table(None, "source_id",
             FieldS3("source_id", db.s3_source, sortby="name",
                 requires = IS_NULL_OR(IS_ONE_OF(db, "s3_source.id", "%(name)s")),
-                represent = lambda id: (id and [db(db.s3_source.id==id).select()[0].name] or ["None"])[0],
+                represent = lambda id: (id and [db(db.s3_source.id == id).select(db.s3_source.name, limitby=(0, 1)).first().name] or ["None"])[0],
                 label = T("Source of Information"),
                 comment = DIV(A(ADD_SOURCE, _class="colorbox", _href=URL(r=request, c="default", f="source", args="create", vars=dict(format="popup")), _target="top", _title=ADD_SOURCE), A(SPAN("[Help]"), _class="tooltip", _title=T("Add Source|The Source this information came from."))),
                 ondelete = "RESTRICT"

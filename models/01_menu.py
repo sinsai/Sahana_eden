@@ -20,6 +20,8 @@ if not auth.is_logged_in():
     if self_registration:
         s3.menu_auth = [T("Login"), True, URL(request.application, "default", "user/login"),
              [
+                    [T("Login"), False,
+                     URL(request.application, "default", "user/login")],
                     [T("Register"), False,
                      URL(request.application, "default", "user/register")],
                     [T("Lost Password"), False,
@@ -32,7 +34,7 @@ if not auth.is_logged_in():
                      URL(request.application, "default", "user/retrieve_password")]]
              ],
 else:
-    s3.menu_auth = ["%s: %s %s" % (T("Logged-in as: "),
+    s3.menu_auth = ["%s: %s %s" % (T("Logged-in as"),
                                   auth.user.first_name,
                                   auth.user.last_name), True, None,
          [
@@ -44,6 +46,8 @@ else:
                  URL(request.application, c="pr", f="person", vars={"person.uid" : auth.user.person_uuid})],
                 [T("Contact details"), False,
                  URL(request.application, c="pr", f="person", args="pe_contact", vars={"person.uid" : auth.user.person_uuid})],
+                [T("Subscriptions"), False,
+                 URL(request.application, c="pr", f="person", args="pe_subscription", vars={"person.uid" : auth.user.person_uuid})],
                 [T("Change Password"), False,
                  URL(request.application, "default", "user/change_password")]]
          ]
@@ -71,6 +75,7 @@ admin_menu_options = [
             [T("Sync Settings"), False, URL(r=request, c="sync", f="setting", args=[1, "update"])]
     ]],
     [T("Messaging"), False, "#",[
+            [T("Global Messaging Settings"), False, URL(r=request, c="msg", f="setting", args=[1, "update"])],
             [T("Email Settings"), False, URL(r=request, c="msg", f="email_settings", args=[1, "update"])],
             [T("Modem Settings"), False, URL(r=request, c="msg", f="modem_settings", args=[1, "update"])],
             [T("Gateway Settings"), False, URL(r=request, c="msg", f="gateway_settings", args=[1, "update"])]
@@ -79,3 +84,96 @@ admin_menu_options = [
     [T("Tickets"), False, URL(r=request, c="admin", f="errors")],
     [T("Functional Tests"), False, URL(r=request, c="static", f="selenium", args=["core", "TestRunner.html"], vars=dict(test="../tests/TestSuite.html", auto="true", resultsUrl=URL(r=request, c="admin", f="handleResults")))]
 ]
+
+# Modules Menu (available in all Controllers)
+# NB This is just a default menu - most deployments will customise this
+s3.menu_modules = []
+# Home always 1st
+_module = deployment_settings.modules["default"]
+s3.menu_modules.append([_module.name_nice, False, URL(r=request, c="default", f="index")])
+# Aid Management sub-menu
+module_type = 4
+module_type_name = str(s3_module_type_opts[module_type])
+module_type_menu = ([module_type_name, False, "#"])
+modules_submenu = []
+for module in deployment_settings.modules:
+    _module = deployment_settings.modules[module]
+    if (_module.module_type == module_type):
+        if not _module.access:
+            modules_submenu.append([_module.name_nice, False, URL(r=request, c=module, f="index")])
+        else:
+            authorised = False
+            groups = re.split("\|", _module.access)[1:-1]
+            for group in groups:
+                if shn_has_role(group):
+                    authorised = True
+            if authorised == True:
+                modules_submenu.append([_module.name_nice, False, URL(r=request, c=module, f="index")])
+module_type_menu.append(modules_submenu)
+s3.menu_modules.append(module_type_menu)
+# Person Management sub-menu
+module_type = 3
+module_type_name = str(s3_module_type_opts[module_type])
+module_type_menu = ([module_type_name, False, URL(r=request, c="pr", f="index")])
+modules_submenu = []
+for module in deployment_settings.modules:
+    _module = deployment_settings.modules[module]
+    if (_module.module_type == module_type):
+        if not _module.access:
+            modules_submenu.append([_module.name_nice, False, URL(r=request, c=module, f="index")])
+        else:
+            authorised = False
+            groups = re.split("\|", _module.access)[1:-1]
+            for group in groups:
+                if shn_has_role(group):
+                    authorised = True
+            if authorised == True:
+                modules_submenu.append([_module.name_nice, False, URL(r=request, c=module, f="index")])
+module_type_menu.append(modules_submenu)
+s3.menu_modules.append(module_type_menu)
+# Mapping: no sub-menus
+module_type = 2
+for module in deployment_settings.modules:
+    _module = deployment_settings.modules[module]
+    if (_module.module_type == module_type):
+        if not _module.access:
+            s3.menu_modules.append([_module.name_nice, False, URL(r=request, c=module, f="index")])
+        else:
+            authorised = False
+            groups = re.split("\|", _module.access)[1:-1]
+            for group in groups:
+                if shn_has_role(group):
+                    authorised = True
+            if authorised == True:
+                s3.menu_modules.append([_module.name_nice, False, URL(r=request, c=module, f="index")])
+# Messaging: no sub-menus
+module_type = 5
+for module in deployment_settings.modules:
+    _module = deployment_settings.modules[module]
+    if (_module.module_type == module_type):
+        if not _module.access:
+            s3.menu_modules.append([_module.name_nice, False, URL(r=request, c=module, f="index")])
+        else:
+            authorised = False
+            groups = re.split("\|", _module.access)[1:-1]
+            for group in groups:
+                if int(group) in session.s3.roles:
+                    authorised = True
+            if authorised == True:
+                s3.menu_modules.append([_module.name_nice, False, URL(r=request, c=module, f="index")])
+# Admin always last
+_module = deployment_settings.modules["admin"]
+if not _module.access:
+    s3.menu_modules.append([_module.name_nice, False, URL(r=request, c="admin", f="index")])
+else:
+    authorised = False
+    groups = re.split("\|", _module.access)[1:-1]
+    for group in groups:
+        if int(group) in session.s3.roles:
+            authorised = True
+    if authorised == True:
+        s3.menu_modules.append([_module.name_nice, False, URL(r=request, c="admin", f="index")])
+
+response.menu = s3.menu_modules
+response.menu.append(s3.menu_auth)
+response.menu.append(s3.menu_help)

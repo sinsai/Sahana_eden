@@ -4,10 +4,18 @@
     Global menus
 """
 
+# Language Menu (available in all screens)
+s3.menu_lang = [ T("Language"), True, #,
+        [
+            [T("English"), False, URL(r=request, vars={"_language":"en"})],
+            [T("Chinese"), False, URL(r=request, vars={"_language":"zh-tw"})],
+        ]
+    ]
+
 # Help Menu (available in all screens)
-s3.menu_help = [
-        T("Contact us"), True, URL(request.application, "default", "contact")
-        , [
+s3.menu_help = [ T("Help"), True, "#",
+        [
+            [T("Contact us"), False, URL(request.application, "default", "contact")],
             [T("About"), False, URL(request.application, "default", "about")],
         ]
     ]
@@ -19,25 +27,25 @@ if not auth.is_logged_in():
 
     if self_registration:
         s3.menu_auth = [T("Login"), True, URL(request.application, "default", "user/login"),
-             [
+                [
                     [T("Login"), False,
                      URL(request.application, "default", "user/login")],
                     [T("Register"), False,
                      URL(request.application, "default", "user/register")],
                     [T("Lost Password"), False,
-                     URL(request.application, "default", "user/retrieve_password")]]
-             ]
+                     URL(request.application, "default", "user/retrieve_password")]
+                ]
+            ]
     else:
         s3.menu_auth = [T("Login"), True, URL(request.application, "default", "user/login"),
-             [
+                [
                     [T("Lost Password"), False,
-                     URL(request.application, "default", "user/retrieve_password")]]
-             ],
+                     URL(request.application, "default", "user/retrieve_password")]
+                ]
+            ]
 else:
-    s3.menu_auth = ["%s: %s %s" % (T("Logged-in as"),
-                                  auth.user.first_name,
-                                  auth.user.last_name), True, None,
-         [
+    s3.menu_auth = [auth.user.email, True, None,
+            [
                 [T("Logout"), False,
                  URL(request.application, "default", "user/logout")],
                 [T("User Profile"), False,
@@ -49,8 +57,9 @@ else:
                 [T("Subscriptions"), False,
                  URL(request.application, c="pr", f="person", args="pe_subscription", vars={"person.uid" : auth.user.person_uuid})],
                 [T("Change Password"), False,
-                 URL(request.application, "default", "user/change_password")]]
-         ]
+                 URL(request.application, "default", "user/change_password")]
+            ]
+        ]
 
 # Menu for Admin module
 # (defined here as used in several different Controller files)
@@ -91,51 +100,10 @@ s3.menu_modules = []
 # Home always 1st
 _module = deployment_settings.modules["default"]
 s3.menu_modules.append([_module.name_nice, False, URL(r=request, c="default", f="index")])
-# Aid Management sub-menu
-module_type = 4
-module_type_name = str(s3_module_type_opts[module_type])
-module_type_menu = ([module_type_name, False, "#"])
-modules_submenu = []
+# The Modules to display at the top level
 for module in deployment_settings.modules:
     _module = deployment_settings.modules[module]
-    if (_module.module_type == module_type):
-        if not _module.access:
-            modules_submenu.append([_module.name_nice, False, URL(r=request, c=module, f="index")])
-        else:
-            authorised = False
-            groups = re.split("\|", _module.access)[1:-1]
-            for group in groups:
-                if shn_has_role(group):
-                    authorised = True
-            if authorised == True:
-                modules_submenu.append([_module.name_nice, False, URL(r=request, c=module, f="index")])
-module_type_menu.append(modules_submenu)
-s3.menu_modules.append(module_type_menu)
-# Person Management sub-menu
-module_type = 3
-module_type_name = str(s3_module_type_opts[module_type])
-module_type_menu = ([module_type_name, False, URL(r=request, c="pr", f="index")])
-modules_submenu = []
-for module in deployment_settings.modules:
-    _module = deployment_settings.modules[module]
-    if (_module.module_type == module_type):
-        if not _module.access:
-            modules_submenu.append([_module.name_nice, False, URL(r=request, c=module, f="index")])
-        else:
-            authorised = False
-            groups = re.split("\|", _module.access)[1:-1]
-            for group in groups:
-                if shn_has_role(group):
-                    authorised = True
-            if authorised == True:
-                modules_submenu.append([_module.name_nice, False, URL(r=request, c=module, f="index")])
-module_type_menu.append(modules_submenu)
-s3.menu_modules.append(module_type_menu)
-# Mapping: no sub-menus
-module_type = 2
-for module in deployment_settings.modules:
-    _module = deployment_settings.modules[module]
-    if (_module.module_type == module_type):
+    if (_module.module_type == 1):
         if not _module.access:
             s3.menu_modules.append([_module.name_nice, False, URL(r=request, c=module, f="index")])
         else:
@@ -146,34 +114,95 @@ for module in deployment_settings.modules:
                     authorised = True
             if authorised == True:
                 s3.menu_modules.append([_module.name_nice, False, URL(r=request, c=module, f="index")])
-# Messaging: no sub-menus
-module_type = 5
 for module in deployment_settings.modules:
     _module = deployment_settings.modules[module]
-    if (_module.module_type == module_type):
+    if (_module.module_type == 2):
         if not _module.access:
             s3.menu_modules.append([_module.name_nice, False, URL(r=request, c=module, f="index")])
         else:
             authorised = False
             groups = re.split("\|", _module.access)[1:-1]
             for group in groups:
-                if int(group) in session.s3.roles:
+                if shn_has_role(group):
                     authorised = True
             if authorised == True:
                 s3.menu_modules.append([_module.name_nice, False, URL(r=request, c=module, f="index")])
+for module in deployment_settings.modules:
+    _module = deployment_settings.modules[module]
+    if (_module.module_type == 3):
+        if not _module.access:
+            s3.menu_modules.append([_module.name_nice, False, URL(r=request, c=module, f="index")])
+        else:
+            authorised = False
+            groups = re.split("\|", _module.access)[1:-1]
+            for group in groups:
+                if shn_has_role(group):
+                    authorised = True
+            if authorised == True:
+                s3.menu_modules.append([_module.name_nice, False, URL(r=request, c=module, f="index")])
+for module in deployment_settings.modules:
+    _module = deployment_settings.modules[module]
+    if (_module.module_type == 4):
+        if not _module.access:
+            s3.menu_modules.append([_module.name_nice, False, URL(r=request, c=module, f="index")])
+        else:
+            authorised = False
+            groups = re.split("\|", _module.access)[1:-1]
+            for group in groups:
+                if shn_has_role(group):
+                    authorised = True
+            if authorised == True:
+                s3.menu_modules.append([_module.name_nice, False, URL(r=request, c=module, f="index")])
+for module in deployment_settings.modules:
+    _module = deployment_settings.modules[module]
+    if (_module.module_type == 5):
+        if not _module.access:
+            s3.menu_modules.append([_module.name_nice, False, URL(r=request, c=module, f="index")])
+        else:
+            authorised = False
+            groups = re.split("\|", _module.access)[1:-1]
+            for group in groups:
+                if shn_has_role(group):
+                    authorised = True
+            if authorised == True:
+                s3.menu_modules.append([_module.name_nice, False, URL(r=request, c=module, f="index")])
+
+# Modules to display off the 'more' menu
+module_more_menu = ([T("more"), False, "#"])
+modules_submenu = []
+for module in deployment_settings.modules:
+    _module = deployment_settings.modules[module]
+    if (_module.module_type == 10):
+        if not _module.access:
+            modules_submenu.append([_module.name_nice, False, URL(r=request, c=module, f="index")])
+        else:
+            authorised = False
+            groups = re.split("\|", _module.access)[1:-1]
+            for group in groups:
+                if shn_has_role(group):
+                    authorised = True
+            if authorised == True:
+                modules_submenu.append([_module.name_nice, False, URL(r=request, c=module, f="index")])
+module_more_menu.append(modules_submenu)
+s3.menu_modules.append(module_more_menu)
+
 # Admin always last
 _module = deployment_settings.modules["admin"]
-if not _module.access:
-    s3.menu_modules.append([_module.name_nice, False, URL(r=request, c="admin", f="index")])
+authorised = False
+groups = re.split("\|", _module.access)[1:-1]
+for group in groups:
+    if int(group) in session.s3.roles:
+        authorised = True
+if authorised == True:
+    s3.menu_admin = [_module.name_nice, True, URL(r=request, c="admin", f="index")]
 else:
-    authorised = False
-    groups = re.split("\|", _module.access)[1:-1]
-    for group in groups:
-        if int(group) in session.s3.roles:
-            authorised = True
-    if authorised == True:
-        s3.menu_modules.append([_module.name_nice, False, URL(r=request, c="admin", f="index")])
+    s3.menu_admin = []
 
+# Build overall menu out of components
 response.menu = s3.menu_modules
-response.menu.append(s3.menu_auth)
 response.menu.append(s3.menu_help)
+response.menu.append(s3.menu_auth)
+# Uncomment to enable Language tool on menu
+#response.menu.append(s3.menu_lang)
+if s3.menu_admin:
+    response.menu.append(s3.menu_admin)

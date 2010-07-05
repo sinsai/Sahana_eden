@@ -153,7 +153,8 @@ table { border-collapse: collapse }
 #modulenav li li { display: block;
                    float: none;
                    border: 0; }
-#modulenav li:hover ul, li.over ul { display: block; }
+#modulenav li:hover ul { display: block; }
+#modulenav li.over ul { display: block; }
 
 .S3menulogo { background: url(../../img/S3menu_logo.png) left top no-repeat;
               text-shadow: none;

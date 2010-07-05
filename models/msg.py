@@ -136,7 +136,6 @@ if deployment_settings.has_module(module):
         migrate=migrate)
 
     table.uuid.requires = IS_NOT_IN_DB(db, "%s.uuid" % tablename)
-    table.message.requires = IS_NOT_EMPTY()
     table.priority.requires = IS_NULL_OR(IS_IN_SET(msg_priority_opts))
     s3xrc.model.configure(table,
                           list_fields=['id',
@@ -148,3 +147,29 @@ if deployment_settings.has_module(module):
                                        'actioned',
                                        'actioned_comments',
                                        'priority'])
+
+    # Reusable Message ID
+    message_id = db.Table(None, "message_id",
+                FieldS3("message_id", db.msg_log,
+                    requires = IS_NULL_OR(IS_ONE_OF(db, "msg_log.id")),
+                    ondelete = "RESTRICT"
+                ))
+
+    # Message Tag
+    resource = 'tag'
+    tablename = "%s_%s" % (module, resource)
+    table = db.define_table(tablename, timestamp, uuidstamp, deletion_status,
+        message_id,
+        Field('resource'),
+        Field("record_uuid", # null in this field implies subscription to the entire resource
+            type=s3uuid,
+            length=128),
+        migrate=migrate)
+
+    table.uuid.requires = IS_NOT_IN_DB(db, "%s.uuid" % tablename)
+    s3xrc.model.configure(table,
+                          list_fields=[ 'id',
+                                        'message_id',
+                                        'record_uuid',
+                                        'resource',
+                                       ])

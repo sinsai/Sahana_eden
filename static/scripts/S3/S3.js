@@ -39,8 +39,6 @@ $(document).ready(function() {
         function() {
                 var header_width = $(this).width();
                 var popup_width = $('ul', this).width();
-
-                //console.log("header is", header_width, "popup_width", popup_width);
                 if (popup_width != null){
                   if (popup_width < header_width){
                     $('ul', this).css({
@@ -48,11 +46,7 @@ $(document).ready(function() {
                     });
                   }
                 }
-                /*$('ul', this).css({
-                    'width': popup_width.toString() + 'px'
-                });*/
-
-                $('ul', this).css('display','block');
+                $('ul', this).css('display', 'block');
             },
         function() { $('ul', this).css('display', 'none');  }
     );

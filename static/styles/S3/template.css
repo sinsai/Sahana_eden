@@ -118,7 +118,7 @@ table { border-collapse: collapse }
                      background: none; }
 #modulenav li li a { display: block;
                      font-weight: normal;
-                     padding: 5px 0px 5px 5px; }
+                     padding: 5px 5px 5px 5px; }
 #modulenav li li a:hover { background: #d2eaff;
                            color: #000; }
 #modulenav li { float: left;

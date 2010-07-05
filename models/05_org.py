@@ -47,7 +47,7 @@ sector_id = db.Table(None, "sector_id",
                            requires = IS_NULL_OR(IS_ONE_OF(db, "org_sector.id", "%(name)s", multiple=True)),
                            represent = shn_sector_represent,
                            label = T("Sector"),
-                           comment = DIV(A(ADD_SECTOR, _class="colorbox", _href=URL(r=request, c="org", f="sector", args="create", vars=dict(format="popup")), _target="top", _title=ADD_SECTOR), A(SPAN("[Help]"), _class="tooltip", _title=T("Add Sector|The Sector(s) this organisation works in. Multiple values can be selected by holding down the 'Control' key."))),
+                           comment = DIV(A(ADD_SECTOR, _class="colorbox", _href=URL(r=request, c="org", f="sector", args="create", vars=dict(format="popup")), _target="top", _title=ADD_SECTOR), A(SPAN("[Help]"), _class="tooltip", _title=T("Add Sector|The Sector(s) this organization works in. Multiple values can be selected by holding down the 'Control' key."))),
                            ondelete = "RESTRICT"
                           ))
 
@@ -58,7 +58,7 @@ org_organisation_type_opts = {
     1:T("Government"),
     2:T("Embassy"),
     3:T("International NGO"),
-    4:T("Donor"),               # Don't change this number without chaging organisation_popup.html
+    4:T("Donor"),               # Don't change this number without changing organisation_popup.html
     6:T("National NGO"),
     7:T("UN"),
     8:T("International Organization"),
@@ -634,7 +634,7 @@ def shn_project_search_location(xrequest, **attr):
                         ))
                 items=DIV(TABLE(THEAD(TR(
                     TH("ID"),
-                    TH("Organisation"),
+                    TH("Organization"),
                     TH("Location"),
                     TH("Sector(s)"),
                     TH("Name"),

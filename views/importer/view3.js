@@ -12,7 +12,7 @@ function view3(header,numcol,prevgrid)
 {
     alertmessage3();
     var msForm = new Ext.form.FormPanel({
-        title: 'Select table',
+        title: 'Edit \u2794 Select header row \u2794 <u>Select table</u> \u2794 Map columns to fields',
         width: 'auto',
         height: 300,
         bodyStyle: 'padding:10px;',

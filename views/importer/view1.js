@@ -99,7 +99,7 @@ function maker(json){
     column_model[json.columns]=sm2;
     var row_model=Ext.data.Record.create(columnlist);
     var grid=new Ext.grid.EditorGridPanel({
-       title: '<u>Edit</u> --> Select header row --> Select table --> Map columns to fields',
+       title: '<u>Edit</u> \u2794 Select header row \u2794 Select table \u2794 Map columns to fields',
        renderTo: 'spreadsheet',
        height: 300,
        width: 'auto',

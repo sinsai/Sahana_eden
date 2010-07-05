@@ -14,7 +14,7 @@ function view2(grid_data,column_model,rows,columns)
  	alertmessage2();   
     var selmod=new Ext.grid.CheckboxSelectionModel({singleSelect:true,header: 'Select header row'});
     var grid2=new Ext.grid.GridPanel({
-            title: 'Select header row',
+            title: 'Edit \u2794 <u>Select header row</u> \u2794 Select table \u2794 Map columns to fields',
             renderTo: 'spreadsheet',
             height: 300,
             width: 'auto',

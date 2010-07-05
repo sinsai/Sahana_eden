@@ -3696,10 +3696,6 @@ class S3XML(object):
             @param format: name of the XML root element
 
         """
-    	str=repr(type(source))
-	f=file("/home/shikhar/Desktop/test.txt","wb")
-	f.write(str)
-	f.close()
         try:
             root_dict = json.load(source)
 	except (ValueError,):

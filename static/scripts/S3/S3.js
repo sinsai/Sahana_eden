@@ -39,20 +39,22 @@ $(document).ready(function() {
     // Menu popups (works in IE6)
     $('#modulenav li').hover(
         function() {
+                var header_width = $(this).width();
                 var popup_width = $('ul', this).width();
-                var this_width = $(this).width();
-                if (popup_width < this_width) {
+                if (popup_width != null){
+                  if (popup_width < header_width){
                     $('ul', this).css({
-                        'width': this_width.toString() + 'px'
+                        'width': header_width.toString() + 'px'
                     });
+                  }
                 }
-                $('ul', this).css('display', 'block');  
+                $('ul', this).css('display', 'block');
             },
         function() { $('ul', this).css('display', 'none');  }
     );
     $('#subnav li').hover(
         function() {
-                var popup_width = $(this).width() - 2;
+                var popup_width = $(this).width()-2;
                 $('ul', this).css({
                     'display': 'block',
                     'width': popup_width.toString() + 'px'

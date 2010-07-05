@@ -434,6 +434,7 @@ class AuthS3(Auth):
             * Checks whether registration is permitted
             * Custom Flash styles
             * utcnow
+            * Allow form to be embedded in other pages
 
         returns a registration form
 
@@ -449,15 +450,15 @@ class AuthS3(Auth):
 
         # S3: Don't allow registration if disabled
         db = self.db
-        settings = db().select(db.s3_setting.self_registration, db.s3_setting.utc_offset, limitby=(0, 1)).first()
-        self_registration = settings.self_registration
+        settings = db(db.s3_setting.id > 0).select(db.s3_setting.utc_offset, limitby=(0, 1)).first()
+        self_registration = (settings and session.s3.self_registration) or 1
         utc_offset = settings.utc_offset
         if not self_registration:
             session.error = self.messages.registration_disabled
             redirect(URL(r=request, args=["login"]))
 
 
-        if self.is_logged_in():
+        if self.is_logged_in() and request.function != "index":
             redirect(self.settings.logged_url)
 
 
@@ -482,12 +483,9 @@ class AuthS3(Auth):
         for i, row in enumerate(form[0].components):
             item = row[1][0]
             if isinstance(item, INPUT) and item["_name"] == passfield:
-                form[0].insert(i+1, TR(
+                form[0].insert(i + 1, TR(
                         LABEL(self.messages.verify_password + ":"),
                         INPUT(_name="password_two",
-
-
-
                               _type="password",
                               requires=IS_EXPR("value==%s" % \
                                repr(request.vars.get(passfield, None)),
@@ -1050,20 +1048,21 @@ class MENU2(DIV):
         if level == 0:
             # Top-level menu
             div = UL(**self.attributes)
-            for item in data:
-                (name, right, link) = item[:3]
+            for i in range(len(data)):
+                (name, right, link) = data[i][:3]
                 if not link:
                         link = "#null"
                 if right:
                     style = "float: right;"
                 else:
                     style = "float: left;"
-                if len(item) > 3 and item[3]:
+                if len(data[i]) > 3 and data[i][3]:
                     # Submenu
-                    ul_inner = self.serialize(item[3], level+1)
+                    ul_inner = self.serialize(data[i][3], level+1)
                     in_ul = LI(DIV(A(name, _href=link), _class="hoverable"), ul_inner, _style=style)
                 else:
-                    if name == "Sahana Home":
+                    if (i == 0) and (self.attributes["_id"] == "modulenav"):
+                        # 1st item, so display logo
                         in_ul = LI(DIV(A(SPAN(_class="S3menulogo"), _href=link),
                                     SPAN(A(name, _href=link, _class="S3menuHome")),_class="hoverable"), _style=style )
                     else:

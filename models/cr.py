@@ -21,7 +21,6 @@ if deployment_settings.has_module(module):
     table = db.define_table(tablename, timestamp, uuidstamp, deletion_status,
                     Field('name', notnull=True),
                     Field('description'),
-                    admin_id,
                     location_id,
                     person_id,
                     Field('address', 'text'),
@@ -35,7 +34,6 @@ if deployment_settings.has_module(module):
     table.name.label = T('Shelter Name')
     table.name.comment = SPAN("*", _class="req")
     table.description.label = T('Description')
-    table.admin.label = T('Shelter Manager')
     table.person_id.label = T('Contact Person')
     table.address.label = T('Address')
     table.capacity.requires = IS_NULL_OR(IS_INT_IN_RANGE(0, 999999))

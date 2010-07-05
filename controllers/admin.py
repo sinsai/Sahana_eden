@@ -645,6 +645,7 @@ def import_job():
     module = "admin"
     resource = "import_job"
     table = "%s_%s" % (module, resource)
+    # This breaks!
     jr = s3xrc.request(module, resource, request, session=session)
     CREATE_NEW_IMPORT_JOB = T("Create New Import Job")
     LIST_IMPORT_JOBS = ("List Import Jobs")
@@ -663,7 +664,7 @@ def import_job():
 
     if len(request.args) == 0:
         return _import_job_list(jr)
-    action = request.args[0]
+    action = request.args(0)
     if action == "create":
         return _import_job_create(jr)
     if action == "update":

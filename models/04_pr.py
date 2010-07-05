@@ -379,6 +379,7 @@ table.time.represent = lambda value: shn_as_local_time(value)
 
 # Field labels
 table.time.label = T("Date/Time")
+table.time.comment = SPAN("*", _class="req")
 
 # CRUD Strings
 ADD_LOG_ENTRY = T("Add Log Entry")

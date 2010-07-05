@@ -16,13 +16,13 @@ DELETE = T("Delete")
 # Default strings are in English
 T.current_languages = ["en", "en-us"]
 # Check if user has selected a specific language
-#if request.vars._language:
-#    session._language = request.vars._language
-#if session._language:
-#    T.force(session._language)
-#else:
+if request.vars._language:
+    session._language = request.vars._language
+if session._language:
+    T.force(session._language)
+else:
     # Use what browser requests
-#    T.force(T.http_accept_language)
+    T.force(T.http_accept_language)
 
 
 ######

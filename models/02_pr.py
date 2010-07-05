@@ -424,13 +424,14 @@ s3.crud_strings[tablename] = Storage(
 #
 # person_id: reusable field for other tables to reference ---------------------
 #
-shn_person_comment = DIV(A(s3.crud_strings.pr_person.label_create_button,
+shn_person_comment = DIV(A(ADD_PERSON,
                            _class="colorbox",
                            _href=URL(r=request, c="pr", f="person", args="create", vars=dict(format="popup")),
                            _target="top",
-                           _title=s3.crud_strings.pr_person.label_create_button),
+                           _title=ADD_PERSON),
                          DIV(DIV(_class="tooltip",
-                                 _title=T("Create Person Entry|Create a person entry in the registry."))))
+                              _title=Tstr("Person") + "|" + Tstr("Select the person associated with this scenario.")))
+                                 )
 
 person_id = db.Table(None, "person_id",
                 FieldS3("person_id", db.pr_person, sortby=["first_name", "middle_name", "last_name"],

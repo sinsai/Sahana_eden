@@ -12,13 +12,13 @@ module = request.controller
 
 # Options Menu (available in all Functions' Views)
 response.menu_options = [
-    [T("Locations"), False, URL(r=request, f="location"), [
-            [T("List"), False, URL(r=request, f="location")],
-            [T("Add"), False, URL(r=request, f="location", args="create")],
-        ]],
-    [T("Map Service Catalogue"), False, URL(r=request, f="map_service_catalogue")],
-    [T("Map Viewing Client"), False, URL(r=request, f="map_viewing_client")],
-    [T("Bulk Uploader"), False, URL(r=request, c="media", f="bulk_upload")],
+    [T("Map"), False, URL(r=request, f="map_viewing_client")],
+    [T("Locations"), False, URL(r=request, f="location")],
+    #, [ [T("List"), False, URL(r=request, f="location")],
+    #    [T("Add"), False, URL(r=request, f="location", args="create")] ]
+    [T("Service Catalogue"), False, URL(r=request, f="map_service_catalogue")],
+    # Currently broken
+    #[T("Bulk Uploader"), False, URL(r=request, c="media", f="bulk_upload")],
 ]
 
 # Web2Py Tools functions
@@ -206,7 +206,7 @@ def feature_class():
 
     output = shn_rest_controller(module, resource)
     
-    if not "gis" in response.view:
+    if not "gis" in response.view and response.view != "popup.html":
         response.view = "gis/" + response.view
     
     return output
@@ -462,7 +462,7 @@ def marker():
 
     output = shn_rest_controller(module, resource)
     
-    if not "gis" in response.view:
+    if not "gis" in response.view and response.view != "popup.html":
         response.view = "gis/" + response.view
     
     return output

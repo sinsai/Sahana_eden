@@ -20,6 +20,8 @@ if not auth.is_logged_in():
     if self_registration:
         s3.menu_auth = [T("Login"), True, URL(request.application, "default", "user/login"),
              [
+                    [T("Login"), False,
+                     URL(request.application, "default", "user/login")],
                     [T("Register"), False,
                      URL(request.application, "default", "user/register")],
                     [T("Lost Password"), False,
@@ -32,7 +34,7 @@ if not auth.is_logged_in():
                      URL(request.application, "default", "user/retrieve_password")]]
              ],
 else:
-    s3.menu_auth = ["%s: %s %s" % (T("Logged-in as: "),
+    s3.menu_auth = ["%s: %s %s" % (T("Logged-in as"),
                                   auth.user.first_name,
                                   auth.user.last_name), True, None,
          [

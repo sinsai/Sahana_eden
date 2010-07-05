@@ -341,7 +341,6 @@ table = db.define_table(tablename, timestamp, uuidstamp, deletion_status,
                 Field("ce", "integer", writable=False, readable=False), # Circular 'Error' around Lat/Lon (in m). Needed for CoT.
                 Field("le", "integer", writable=False, readable=False), # Linear 'Error' for the Elevation (in m). Needed for CoT.
                 Field("source", "integer"),
-                admin_id,
                 migrate=migrate)
 
 table.uuid.requires = IS_NOT_IN_DB(db, "%s.uuid" % table)

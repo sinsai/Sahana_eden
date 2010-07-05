@@ -332,10 +332,6 @@ def location():
         msg_list_empty = T("No Locations currently available"))
 
     # Options
-    if session.s3.security_policy == 1:
-        # Hide the Admin row for simple security_policy
-        table.admin.readable = table.admin.writable = False
-
     _vars = request.vars
     filters = []
     if "feature_class" in _vars:
@@ -388,6 +384,8 @@ def location():
                 fc = db(db.gis_feature_class.name == "Office").select(db.gis_feature_class.id, limitby=(0, 1)).first()
             elif "hms_hospital" in caller:
                 fc = db(db.gis_feature_class.name == "Hospital").select(db.gis_feature_class.id, limitby=(0, 1)).first()
+            elif "cr_shelter" in caller:
+                fc = db(db.gis_feature_class.name == "Shelter").select(db.gis_feature_class.id, limitby=(0, 1)).first()
 
             try:
                 table.feature_class_id.default = fc.id
@@ -400,7 +398,8 @@ def location():
             table.description.readable = table.description.writable = False
             table.level.readable = table.level.writable = False
             table.code.readable = table.code.writable = False
-            table.gis_feature_type.readable = table.gis_feature_type.writable = False
+            # Fails to submit if hidden server-side
+            #table.gis_feature_type.readable = table.gis_feature_type.writable = False
             table.wkt.readable = table.wkt.writable = False
             table.osm_id.readable = table.osm_id.writable = False
             table.source.readable = table.source.writable = False

@@ -308,6 +308,9 @@ def project():
     # ServerSidePagination
     response.s3.pagination = True
 
+    db.org_staff.person_id.comment[1] = DIV(DIV(_class="tooltip",
+                              _title=Tstr("Person") + "|" + Tstr("Select the person assigned to this role for this project.")))
+    
     output = shn_rest_controller(module, resource,
                                  listadd=False,
                                  main="code",

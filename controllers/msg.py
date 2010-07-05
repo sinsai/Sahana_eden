@@ -421,3 +421,16 @@ def log():
     return shn_rest_controller(module, resource,
         listadd=False,
 )
+
+def tag():
+    """ RESTful CRUD controller """
+    resource = 'tag'
+    tablename = "%s_%s" % (module, resource)
+    table = db[tablename]
+    # Server-side Pagination
+    response.s3.pagination = True
+    
+    return shn_rest_controller(module, resource,
+    listadd=False,
+    )
+    

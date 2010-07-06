@@ -13,13 +13,18 @@ module = "survey"
 # Will populate later on.
 response.menu_options = None
 
+def index():
+    "Module's Home Page"
+    module_name = deployment_settings.modules[module].name_nice
+
+    return dict(module_name=module_name)
+    
 def template():
     """ RESTlike CRUD controller """
     resource = "template"
     def _prep(jr):        
-        crud.settings.create_next = URL(r=request, f="series", args=["create"])
-        crud.settings.update_next = URL(r=request, f="series", args=["create"]) #TODO: NB this needs to be re-worked!
-        return True
+        pass
+    return True
     response.s3.prep = _prep
 
     tablename = "%s_%s" % (module, resource)
@@ -57,12 +62,6 @@ def template():
 def series():
     """ RESTlike CRUD controller """
     resource = "series"
-    def _prep(jr):        
-        if "prev" in request.post_vars:
-            if response.s3.template_id:
-                crud.settings.create_next = jr.other(method="template",record_id=response.s3.template_id,representation=html)           
-        return True
-    response.s3.prep = _prep
     tablename = "%s_%s" % (module, resource)
     table = db[tablename]    
     table.uuid.requires = IS_NOT_IN_DB(db,"%s.uuid" % tablename)
@@ -143,6 +142,11 @@ def section():
 def question():
     # Question data, e.g., name,description, etc.
     resource = "question"
+    def _prep(jr):
+        if "next" in request.post_vars:
+            pass #TODO:
+        return True
+    response.s3.prep = _prep
     tablename = "%s_%s" % (module, resource)
     table = db[tablename]
     table.uuid.requires = IS_NOT_IN_DB(db,"%s.uuid" % tablename)
@@ -196,10 +200,16 @@ def question():
             addButtons(form,next=True,prev=True)
     return output
 
-def question_options():        
-    if response.s3.question_id:
-        question = db(db.survey_question.id == response.s3.question_id)
+def question_options():
     resource = "question_options"
+    def _prep(jr):
+        # test to see which button was pressed.
+        if "prev" in request.post_vars:
+            pass
+        elif "next" in request.post_vars:
+            pass
+        return True
+    response.s3.prep = _prep
     tablename = "%s_%s" % (module, resource)
     table = db[tablename]
     table.uuid.requires = IS_NOT_IN_DB(db,"%s.uuid" % tablename)
@@ -218,6 +228,9 @@ def question_options():
         if form:
             addButtons(form,finish=True,prev=True)
     return output
+
+def layout():
+    return None
 
 # Utility methods -- TODO: move these to a module
 def addButtons(form, prev = None, next = None, finish = None,cancel=None):

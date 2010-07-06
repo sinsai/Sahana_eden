@@ -124,3 +124,10 @@ if deployment_settings.has_module(module):
                                         Field("validate","boolean"),  # whether or not to enable validation
                                         Field("validation_options","integer"), # pre-set validation regexps and such.
                                         Field("aggregation_type","string"))
+
+resource = "answer_options"
+tablename = module +"_" + resource
+answer_options = db.define_table(tablename,uuidstamp,deletion_status,authorstamp,
+                                 Field("question_id",db.survey_question,readable=False,writable=False),
+                                 Field("answer_row_value","text",readable=False,writable=False),
+                                 Field("answer_column_choice","text",readable=False,writable=False))            

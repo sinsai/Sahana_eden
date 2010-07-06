@@ -18,13 +18,12 @@ def index():
     module_name = deployment_settings.modules[module].name_nice
 
     return dict(module_name=module_name)
-    
 def template():
     """ RESTlike CRUD controller """
     resource = "template"
     def _prep(jr):        
         pass
-    return True
+        return True
     response.s3.prep = _prep
 
     tablename = "%s_%s" % (module, resource)
@@ -226,13 +225,12 @@ def question_options():
     if output:
         form = output.get("form", None)
         if form:
-            addButtons(form,finish=True,prev=True)
-    return output
+            addButtons(form,finish=True,prev=True)            
+    return output                                                                                                                                          
 
-def layout():
+def layout():    
     return None
 
-# Utility methods -- TODO: move these to a module
 def addButtons(form, prev = None, next = None, finish = None,cancel=None):
     """
         Utility Function to reduce code duplication as this deals with:
@@ -241,6 +239,9 @@ def addButtons(form, prev = None, next = None, finish = None,cancel=None):
         2) adding the following: Cancel, Next, Previous and Finish(shown on the last step *ONLY*)
     """
     form[0][-1][1][0] = "" # remove the original Save Button    
+    if cancel:
+        form[-1][-1][2].append(INPUT(_type="button",_name = "prev",_value=T("Cancel"), _id="cancel"))
+        form[-1][-1][2].append(" ")
     if prev:
         form[-1][-1][2].append(INPUT(_type="submit",_name = "prev",_value=T("Previous"), _id="prev"))
         form[-1][-1][2].append(" ")
@@ -250,4 +251,4 @@ def addButtons(form, prev = None, next = None, finish = None,cancel=None):
     if finish:
         form[-1][-1][2].append(INPUT(_type="submit", _value=T("Finish"),_name="finish",_id="finish"))
         form[-1][-1][2].append("  ")
-    return form     
+    return form

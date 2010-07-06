@@ -119,7 +119,7 @@ if deployment_settings.has_module(module):
         1:T('Low')
     }
 
-    # Message Log
+    # Message Log - This is where all the messges / logs go into
     resource = 'log'
     tablename = "%s_%s" % (module, resource)
     table = db.define_table(tablename, timestamp, uuidstamp, deletion_status,
@@ -155,7 +155,7 @@ if deployment_settings.has_module(module):
                     ondelete = "RESTRICT"
                 ))
 
-    # Message Tag
+    # Message Tag - Used to tag a message to a resource
     resource = 'tag'
     tablename = "%s_%s" % (module, resource)
     table = db.define_table(tablename, timestamp, uuidstamp, deletion_status,
@@ -172,4 +172,37 @@ if deployment_settings.has_module(module):
                                         'message_id',
                                         'record_uuid',
                                         'resource',
+                                       ])
+
+    # Message Outbox1 - To replace Message Outbox #TODO
+    resource = 'outbox1'
+    tablename = "%s_%s" % (module, resource)
+    table = db.define_table(tablename, timestamp, uuidstamp, deletion_status,
+        message_id,
+        pe_contact_id,
+        Field('status'),
+        Field('log'),
+        migrate=migrate)
+
+    table.uuid.requires = IS_NOT_IN_DB(db, "%s.uuid" % tablename)
+    s3xrc.model.configure(table,
+                          list_fields=[ 'id',
+                                        'message_id',
+                                        'pe_contact_id',
+                                        'status',
+                                        'log',
+                                       ])
+    # Message Read Status - To replace Message Outbox #TODO
+    resource = 'read_status'
+    tablename = "%s_%s" % (module, resource)
+    table = db.define_table(tablename, timestamp, uuidstamp, deletion_status,
+        message_id,
+        person_id,
+        migrate=migrate)
+
+    table.uuid.requires = IS_NOT_IN_DB(db, "%s.uuid" % tablename)
+    s3xrc.model.configure(table,
+                          list_fields=[ 'id',
+                                        'message_id',
+                                        'person_id',
                                        ])

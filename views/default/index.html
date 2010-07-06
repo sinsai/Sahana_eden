@@ -36,13 +36,18 @@
     </p>
 {{elif self_registration:}}
     <p>
-    {{=T("Sahana Eden is used to support disaster response. If you would like to help, then please sign-up now")}}:
+    {{=XML(Tstr("Sahana Eden is used to support disaster response. If you would like to help, then please") + " <b>" +Tstr("sign-up now") + "</b>")}}:
     </p>
     {{=H3(T("Register"))}}
-    {{include "auth/register.html"}}
+    {{include "auth/_register.html"}}
 {{else:}}
     <p>
-    {{=T("Sahana Eden is used to support disaster response. Please login to access the system")}}:
+    {{=T("Sahana Eden is used to support disaster response.")}}:
     </p>
+    <p>
+    {{=XML(Tstr("Registered users can") + " <b>" + Tstr("login") + "</b> " + Tstr("to access the system"))}}
+    </p>
+    {{=H3(T("Login"))}}
+    {{include "auth/_login.html"}}
 {{pass}}
 </div>

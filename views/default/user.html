@@ -2,10 +2,10 @@
 <div id="home">
 {{if request.args(0) == "login":}}
  {{=H2(T("Login"))}}
- {{=form}}
+ {{include "auth/_login.html"}}
 {{elif request.args(0) == "register":}}
  {{=H2(T("Register"))}}
- {{include "auth/register.html"}}
+ {{include "auth/_register.html"}}
 {{elif request.args(0) == "profile":}}
  {{=H2(T("Profile"))}}
  {{=form}}

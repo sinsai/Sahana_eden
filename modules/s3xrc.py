@@ -165,24 +165,26 @@ class S3Resource(object):
 
     def execute_request(self, r, **attr):
 
-        """ Execute an S3RESTRequest on this resource """
+        """ Execute a S3RESTRequest on this resource
 
-        self.__dbg("execute request")
+            @param r: the S3RESTRequest to execute
+            @param attr: attributes to pass to method handlers
 
-        r._bind(self)
+        """
+
+        self.__dbg("executing REST request")
+
+        r._bind(self) # Bind request to resource
         r.next = None
 
         bypass = False
         output = None
 
         hooks = r.response.get(self.HOOKS, None)
-        if hooks is not None:
-            preprocess = hooks.get("prep", None)
-            postprocess = hooks.get("postp", None)
-        else:
-            preprocess = None
-            postprocess = None
+        preprocess = None
+        postprocess = None
 
+        # Enforce primary record ID
         if not r.id and (r.component or r.method == "read") and \
            not r.method == "options" and not "select" in r.request.vars:
             if r.representation == "html":
@@ -190,6 +192,7 @@ class S3Resource(object):
                 search_simple = model.get_method(self.prefix, self.name,
                                                  method="search_simple")
                 if search_simple:
+                    self.__dbg("no record ID - redirecting to search_simple")
                     redirect(URL(r=r.request, f=self.name, args="search_simple",
                                  vars={"_next": r.same()}))
                 else:
@@ -198,6 +201,9 @@ class S3Resource(object):
             else:
                 raise HTTP(404, body=r.BADRECORD)
 
+        # Pre-process
+        if hooks is not None:
+            preprocess = hooks.get("prep", None)
         if preprocess:
             self.__dbg("pre-processing")
             pre = preprocess(r)
@@ -220,11 +226,17 @@ class S3Resource(object):
                 self.__dbg("pre-process returned an error - aborting")
                 raise HTTP(400, body=r.INVALIDREQUEST)
 
+        # Default view
+        if r.representation <> "html":
+            r.response.view = "plain.html"
+
+        # Method handling
         handler = None
         if bypass:
             self.__dbg("bypass directive - skipping method handler")
         else:
             if r.method and r.custom_action:
+                self.__dbg("custom method %s" % r.method)
                 handler = r.custom_action
             elif r.http == "GET":
                 handler = self.__get(r)
@@ -235,13 +247,16 @@ class S3Resource(object):
             elif r.http == "DELETE":
                 handler = self.__delete(r)
             else:
-                raise HTTP(501)
+                raise HTTP(501, body=r.BADMETHOD)
             if handler is not None:
                 self.__dbg("method handler found - executing request")
                 output = handler(r, **attr)
             else:
                 self.__dbg("no method handler - finalizing request")
 
+        # Post-process
+        if hooks is not None:
+            postprocess = hooks.get("postp", None)
         if postprocess:
             self.__dbg("post-processing")
             output = postprocess(r, output)
@@ -249,6 +264,7 @@ class S3Resource(object):
         if output is not None and isinstance(output, dict):
             output.update(jr=r)
 
+        # Redirection
         if r.next is not None:
             self.__dbg("redirecting to %s" % str(r.next))
             redirect(r.next)
@@ -258,7 +274,11 @@ class S3Resource(object):
 
     def __get(self, r):
 
-        """ Get GET method handler """
+        """ Get GET method handler
+
+            @param r: the S3RESTRequest
+
+        """
 
         self.__dbg("GET method")
 
@@ -297,7 +317,19 @@ class S3Resource(object):
             authorised = permit("read", tablename)
 
         elif method == "clear" and not r.component:
-            raise NotImplementedError
+            self.manager.clear_session(r.session, self.prefix, self.name)
+            if "_next" in r.request.vars:
+                request_vars = dict(_next=r.request.vars._next)
+            else:
+                request_vars = {}
+            if r.representation == "html" and search_simple:
+                r.next = URL(r=r.request,
+                             f=self.name,
+                             args="search_simple",
+                             vars=request_vars)
+            else:
+                r.next = URL(r=r.request, f=self.name)
+            return None
 
         else:
             raise HTTP(501, body=r.BADMETHOD)
@@ -310,7 +342,11 @@ class S3Resource(object):
 
     def __put(self, r):
 
-        """ Get PUT method handler """
+        """ Get PUT method handler
+
+            @param r: the S3RESTRequest
+
+        """
 
         self.__dbg("PUT method")
 
@@ -324,7 +360,11 @@ class S3Resource(object):
 
     def __post(self, r):
 
-        """ Get POST method handler """
+        """ Get POST method handler
+
+            @param r: the S3RESTRequest
+
+        """
 
         self.__dbg("POST method")
 
@@ -337,7 +377,11 @@ class S3Resource(object):
 
     def __delete(self, r):
 
-        """ Get DELETE method handler """
+        """ Get DELETE method handler
+
+            @param r: the S3RESTRequest
+
+        """
 
         self.__dbg("DELETE method")
 
@@ -366,494 +410,6 @@ class S3Resource(object):
         """ Get REST method handler for this resource """
 
         return self.__handler.get(method, None)
-
-
-# *****************************************************************************
-class S3RESTController(object):
-
-    """ RESTful interface for S3 resources """
-
-    # Error messages
-    INVALIDREQUEST = "Invalid request."
-    UNAUTHORISED = "Not authorised."
-    BADFORMAT = "Unsupported data format."
-    BADMETHOD = "Unsupported method."
-    BADRECORD = "Record not found."
-
-
-    def __init__(self, rc=None, auth=None, **attr):
-
-        """ Constructor
-
-            @param rc: the resource controller
-            @param auth: the auth controller
-            @param attr: dict of attributes
-
-        """
-
-        assert rc is not None, "Undefined resource controller"
-        self.rc = rc
-        self.db = self.rc.db
-
-        assert auth is not None, "Undefined authentication controller"
-        self.auth = auth
-
-        if attr is None:
-            attr = {}
-
-        self.xml_import_formats = attr.get("xml_import_formats", ["xml"])
-        self.xml_export_formats = attr.get("xml_export_formats",
-                                           dict(xml="application/xml"))
-
-        self.json_import_formats = attr.get("json_import_formats", ["json"])
-        self.json_export_formats = attr.get("json_export_formats",
-                                            dict(json="text/x-json"))
-
-        self.debug = attr.get("debug", False)
-
-        self.__handler = Storage()
-
-
-    def __dbg(self, msg):
-
-        """ Output debug messages
-
-            @param msg: the message
-
-        """
-
-        if self.debug:
-            print >> sys.stderr, "S3RESTController: %s" % msg
-
-
-    # Configuration ===========================================================
-
-    def set_handler(self, method, handler):
-
-        """ Set a method handler
-
-            @param method: the method
-            @param handler: the method handler
-
-        """
-
-        self.__handler[method] = handler
-
-
-    def get_handler(self, method):
-
-        """ Get a method handler
-
-            @param method: the method
-
-        """
-
-        return self.__handler.get(method, None)
-
-
-    # Helper functions ========================================================
-
-    def __has_permission(self, session, name, table_name, record_id = 0):
-
-        """ Check permissions of the current user for a table
-
-            @param session: the session
-            @param name: name of the permission to check
-            @param table_name: name of the table to check
-            @param record_id: ID of the record to check
-
-        """
-
-        if session.s3.security_policy == 1:
-            # Simple policy
-            # Anonymous users can Read.
-            if name == "read":
-                authorised = True
-            else:
-                # Authentication required for Create/Update/Delete.
-                authorised = self.auth.is_logged_in() or self.auth.basic()
-        else:
-            # Full policy
-            if self.auth.is_logged_in() or self.auth.basic():
-                # Administrators are always authorised
-                if 1 in session.s3.roles:
-                    authorised = True
-                else:
-                    # Require records in auth_permission to specify access
-                    authorised = self.auth.has_permission(name, table_name,
-                                                          record_id)
-            else:
-                # No access for anonymous
-                authorised = False
-
-        return authorised
-
-    def __unauthorised(self, jr, session):
-
-        """ Action upon unauthorized access
-
-            @param jr: the REST request
-            @param session: the session
-
-        """
-
-        if jr.representation == "html":
-            session.error = self.UNAUTHORISED
-            login = URL(r=jr.request, c="default", f="user", args="login",
-                        vars={"_next": jr.here()})
-            redirect(login)
-        else:
-            raise HTTP(401, body = self.UNAUTHORISED)
-
-
-    # Main controller function ================================================
-
-    def __call__(self, session, request, response, module, resource, **attr):
-
-        """ REST interface
-
-            @param session: the session
-            @param request: the web2py request object
-            @param response: the web2py response object
-            @param module: name of the module (=prefix of the resource name)
-            @param resource: name of the resource (=without prefix)
-
-        """
-
-        self.__dbg("\nS3RESTController: Call\n")
-
-        jr = S3RESTRequest(self.rc, module, resource, request,
-                           session=session, debug=self.debug)
-
-        if jr.invalid:
-            if jr.badmethod:
-                raise HTTP(501, body=self.BADMETHOD)
-            elif jr.badrecord:
-                raise HTTP(404, body=self.BADRECORD)
-            else:
-                raise HTTP(400, body=self.INVALIDREQUEST)
-
-        self.__dbg("S3RESTController: processing %s" % jr.here())
-
-        # Initialise
-        output = {}
-        method = handler = next = None
-
-        # Check read permission on primary table
-        if not self.__has_permission(session, "read", jr.table):
-            self.__unauthorised(jr, session)
-
-        # Record ID is required in joined-table operations and read action:
-        if not jr.id and (jr.component or jr.method == "read") and \
-           not jr.method == "options" and not "select" in jr.request.vars:
-            # Check for search_simple
-            if jr.representation == "html":
-                search_simple = self.rc.model.get_method(jr.prefix, jr.name,
-                                                        method="search_simple")
-                if search_simple:
-                    redirect(URL(r=request, f=jr.name, args="search_simple",
-                                 vars={"_next": jr.same()}))
-                else:
-                    session.error = self.BADRECORD
-                    redirect(URL(r=jr.request, c=jr.prefix, f=jr.name))
-            else:
-                raise HTTP(404, body=self.BADRECORD)
-
-        # Pre-process
-        if "s3" in response and response.s3.prep is not None:
-            prep = response.s3.prep(jr)
-            if prep and isinstance(prep, dict):
-                bypass = prep.get("bypass", False)
-                output = prep.get("output", None)
-                if bypass and output is not None:
-                    self.__dbg("S3RESTController: got bypass directive - aborting")
-                    if isinstance(output, dict):
-                        output.update(jr=jr)
-                    return output
-                success = prep.get("success", True)
-                if not success:
-                    if jr.representation == "html" and output:
-                        if isinstance(output, dict):
-                            output.update(jr=jr)
-                        self.__dbg("S3RESTController: preprocess failure - aborting")
-                        return output
-                    status = prep.get("status", 400)
-                    message = prep.get("message", self.INVALIDREQUEST)
-                    raise HTTP(status, message)
-                else:
-                    pass
-            elif not prep:
-                raise HTTP(400, body=self.INVALIDREQUEST)
-            else:
-                pass
-
-        # Set default view
-        if jr.representation <> "html":
-            response.view = "plain.html"
-
-        # Analyse request
-        if jr.method and jr.custom_action:
-            handler = jr.custom_action
-        else:
-            # Joined Table Operation
-            if jr.component:
-                # HTTP Multi-Record Operation
-                if jr.method == None and jr.multiple and not jr.component_id:
-                    # HTTP List/List-add
-                    if jr.http == "GET":
-                        authorised = self.__has_permission(session, "read",
-                                                           jr.component.table)
-                        if authorised:
-                            method = "list"
-                        else:
-                            self.__unauthorised(jr, session)
-                    # HTTP Create
-                    elif jr.http == "PUT" or jr.http == "POST":
-                        if jr.representation in self.json_import_formats:
-                            method = "import_json"
-                        elif jr.representation in self.xml_import_formats:
-                            method = "import_xml"
-                        elif jr.http == "POST":
-                            authorised = self.__has_permission(session, "read",
-                                                            jr.component.table)
-                            if authorised:
-                                method = "list"
-                            else:
-                                self.__unauthorised(jr, session)
-                        else:
-                            raise HTTP(501, body=self.BADFORMAT)
-                    # HTTP Delete
-                    elif jr.http == "DELETE":
-                        # Not implemented
-                        raise HTTP(501)
-                    # Unsupported HTTP method
-                    else:
-                        # Unsupported HTTP method for this context:
-                        # HEAD, OPTIONS, TRACE, CONNECT
-                        # Not implemented
-                        raise HTTP(501)
-                # HTTP Single-Record Operation
-                elif jr.method == None and (jr.component_id or not jr.multiple):
-                    # HTTP Read/Update
-                    if jr.http == "GET":
-                        authorised = self.__has_permission(session, "read",
-                                                           jr.component.table)
-                        if authorised:
-                            method = "read"
-                        else:
-                            self.__unauthorised(jr, session)
-                    # HTTP Update
-                    elif jr.http == "PUT" or jr.http == "POST":
-                        if jr.representation in self.json_import_formats:
-                            method = "import_json"
-                        elif jr.representation in self.xml_import_formats:
-                            method = "import_xml"
-                        elif jr.http == "POST":
-                            authorised = self.__has_permission(session, "read",
-                                                            jr.component.table)
-                            if authorised:
-                                method = "read"
-                            else:
-                                self.__unauthorised(jr, session)
-                        else:
-                            raise HTTP(501, body=self.BADFORMAT)
-                    # HTTP Delete
-                    elif jr.http == "DELETE":
-                        # Not implemented
-                        raise HTTP(501)
-                    # Unsupported HTTP method
-                    else:
-                        # Unsupported HTTP method for this context:
-                        # POST, HEAD, OPTIONS, TRACE, CONNECT
-                        # Not implemented
-                        raise HTTP(501)
-                # Read (joined table)
-                elif jr.method == "read" or jr.method == "display":
-                    authorised = self.__has_permission(session, "read",
-                                                       jr.component.table)
-                    if authorised:
-                        if jr.multiple and not jr.component_id:
-                            # This is a list action
-                            method = "list"
-                        else:
-                            # This is a read action
-                            method = "read"
-                    else:
-                        self.__unauthorised(jr, session)
-                # Create (joined table)
-                elif jr.method == "create":
-                    authorised = self.__has_permission(session, jr.method,
-                                                       jr.component.table)
-                    if authorised:
-                        method = "create"
-                    else:
-                        self.__unauthorised(jr, session)
-                # Update (joined table)
-                elif jr.method == "update":
-                    authorised = self.__has_permission(session, jr.method,
-                                                       jr.component.table)
-                    if authorised:
-                        method = "update"
-                    else:
-                        self.__unauthorised(jr, session)
-                # Delete (joined table)
-                elif jr.method == "delete":
-                    authorised = self.__has_permission(session, jr.method,
-                                                       jr.component.table)
-                    if authorised:
-                        method = "delete"
-                        next = jr.there()
-                    else:
-                        self.__unauthorised(jr, session)
-                # Options (joined table)
-                elif jr.method == "options":
-                    method = "options"
-                # Unsupported Method
-                else:
-                    raise HTTP(501, body=self.BADMETHOD)
-            # Single Table Operation
-            else:
-                # Clear Session
-                if jr.method == "clear":
-                    # Clear session
-                    self.rc.clear_session(session, jr.prefix, jr.name)
-                    if "_next" in request.vars:
-                        request_vars = dict(_next=request.vars._next)
-                    else:
-                        request_vars = {}
-                    # Check for search_simple
-                    if jr.representation == "html":
-                        search_simple = \
-                            self.rc.model.get_method(jr.prefix, jr.name,
-                                                     method="search_simple")
-                        if search_simple:
-                            next = URL(r=jr.request, f=jr.name,
-                                       args="search_simple", vars=request_vars)
-                        else:
-                            next = URL(r=jr.request, f=jr.name)
-                    else:
-                        next = URL(r=jr.request, f=jr.name)
-                # HTTP Multi-Record Operation
-                elif not jr.method and not jr.id:
-                    # HTTP List or List-Add
-                    if jr.http == "GET":
-                        method = "list"
-                    # HTTP Create
-                    elif jr.http == "PUT" or jr.http == "POST":
-                        # http://www.w3.org/Protocols/rfc2616/rfc2616-sec9.html#sec9.6
-                        if jr.representation in self.json_import_formats:
-                            method = "import_json"
-                        elif jr.representation in self.xml_import_formats:
-                            method = "import_xml"
-                        elif jr.http == "POST":
-                            method = "list"
-                        else:
-                            raise HTTP(501, body=self.BADFORMAT)
-                    # Unsupported HTTP method
-                    else:
-                        # Unsupported HTTP method for this context:
-                        # DELETE, HEAD, OPTIONS, TRACE, CONNECT
-                        # Not implemented
-                        raise HTTP(501)
-                # HTTP Single Record Operation
-                elif jr.id and not jr.method:
-                    # HTTP Read (single record)
-                    if jr.http == "GET":
-                        method = "read"
-                    # HTTP Create/Update (single record)
-                    elif jr.http == "PUT" or jr.http == "POST":
-                        # http://www.w3.org/Protocols/rfc2616/rfc2616-sec9.html#sec9.6
-                        if jr.representation in self.json_import_formats:
-                            method = "import_json"
-                        elif jr.representation in self.xml_import_formats:
-                            method = "import_xml"
-                        elif jr.http == "POST":
-                            method = "read"
-                        else:
-                            raise HTTP(501, body=self.BADFORMAT)
-                    # HTTP Delete (single record)
-                    elif jr.http == "DELETE":
-                        # http://www.w3.org/Protocols/rfc2616/rfc2616-sec9.html#sec9.7
-                        if db(db[jr.table].id == jr.id).select():
-                            authorised = self.__has_permission(session,
-                                                               "delete",
-                                                               jr.table,
-                                                               jr.id)
-                            if authorised:
-                                method = "delete"
-                            else:
-                                # Unauthorised
-                                raise HTTP(401)
-                        else:
-                            # Not found
-                            raise HTTP(404)
-                    # Unsupported HTTP method
-                    else:
-                        # Unsupported HTTP method for this context:
-                        # POST, HEAD, OPTIONS, TRACE, CONNECT
-                        # Not implemented
-                        raise HTTP(501)
-                # Read (single table)
-                elif jr.method == "read" or jr.method == "display":
-                    method = "read"
-                # Create (single table)
-                elif jr.method == "create":
-                    authorised = self.__has_permission(session, jr.method,
-                                                       jr.table)
-                    if authorised:
-                        method = "create"
-                    else:
-                        self.__unauthorised(jr, session)
-                # Update (single table)
-                elif jr.method == "update":
-                    authorised = self.__has_permission(session, jr.method,
-                                                       jr.table, jr.id)
-                    if authorised:
-                        method = "update"
-                    else:
-                        self.__unauthorised(jr, session)
-                # Delete (single table)
-                elif jr.method == "delete":
-                    authorised = self.__has_permission(session, jr.method,
-                                                       jr.table, jr.id)
-                    if authorised:
-                        method = "delete"
-                        next = jr.there()
-                    else:
-                        self.__unauthorised(jr, session)
-                # Search (single table)
-                elif jr.method == "search":
-                    method = "search"
-                # Options (single table)
-                elif jr.method == "options":
-                    method = "options"
-                # Unsupported Method
-                else:
-                    raise HTTP(501, body=self.BADMETHOD)
-            # Get handler
-            if method is not None:
-                self.__dbg("S3RESTController: method=%s" % method)
-                handler = self.get_handler(method)
-
-        if handler is not None:
-            self.__dbg("S3RESTController: method handler found - executing request")
-            output = handler(jr, **attr)
-        else:
-            self.__dbg("S3RESTController: no method handler - finalizing request")
-
-        # Post-process
-        if "s3" in response and response.s3.postp is not None:
-            output = response.s3.postp(jr, output)
-
-        # Add S3RESTRequest to output dict (if any)
-        if output is not None and isinstance(output, dict):
-            output.update(jr=jr)
-
-        # Redirect to next
-        if next is not None:
-            redirect(next)
-
-        return output
 
 
 # *****************************************************************************

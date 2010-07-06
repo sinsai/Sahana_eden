@@ -643,6 +643,8 @@ table = db.define_table(tablename, timestamp,
 # upload folder needs to be visible to the download() function as well as the upload
 table.file.uploadfolder = os.path.join(request.folder, "uploads/gis_cache")
 
+# Not yet implemented
+
 # GIS Styles: SLD
 #db.define_table("gis_style", timestamp,
 #                Field("name", notnull=True, unique=True))
@@ -654,4 +656,3 @@ table.file.uploadfolder = os.path.join(request.folder, "uploads/gis_cache")
 #db.define_table("gis_webmapcontext", timestamp,
 #                Field("user", db.auth_user))
 #db.gis_webmapcontext.user.requires = IS_ONE_OF(db, "auth_user.id", "%(email)s")
-

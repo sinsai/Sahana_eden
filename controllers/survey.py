@@ -9,17 +9,17 @@ from gluon.html import *
 
 module = "survey"
 
+
 # Will populate later on.
 response.menu_options = None
-
 
 def template():
     """ RESTlike CRUD controller """
     resource = "template"
     def _prep(jr):        
         crud.settings.create_next = URL(r=request, f="series", args=["create"])
-        crud.settings.update_next = URL(r=request, f="series", args=["create"]) #TODO: NB this needs to be re-worked! 
-        return True        
+        crud.settings.update_next = URL(r=request, f="series", args=["create"]) #TODO: NB this needs to be re-worked!
+        return True
     response.s3.prep = _prep
 
     tablename = "%s_%s" % (module, resource)
@@ -47,21 +47,18 @@ def template():
         msg_list_empty = T('No Survey Template currently registered'))
 
     output = shn_rest_controller(module,resource,listadd=False)
-    def _postp(jr):
-        reponse.s3.template_id = jr.id
-        return True
-    response.s3.postp = _postp        
 
     if output:
         form = output.get("form", None)
         if form:
             addButtons(form,next=True)
+    print session.s3.id
     return output
 
 def series():
     """ RESTlike CRUD controller """
     resource = "series"
-    def _prep(jr):
+    def _prep(jr):        
         if "prev" in request.post_vars:
             if response.s3.template_id:
                 crud.settings.create_next = jr.other(method="template",record_id=response.s3.template_id,representation=html)           
@@ -72,13 +69,20 @@ def series():
     table.uuid.requires = IS_NOT_IN_DB(db,"%s.uuid" % tablename)
     table.name.requires = IS_NOT_EMPTY()
     table.name.label = T("Survey Series Name")
+    table.name.comment = SPAN("*", _class="req")
     table.description.label = T("Description")
     table.survey_template_id.label = T("Survey Template")
-    table.survey_template_id.requires = IS_NULL_OR(IS_ONE_OF(db, "survey_template.id", "%(name)s"))
+    table.survey_template_id.requires = IS_ONE_OF(db, "survey_template.id", "%(name)s")
     table.survey_template_id.represent = lambda id: (id and [db(db.survey_template.id==id).select()[0].name] or [""])[0]
+    table.survey_template_id.comment = SPAN("*", _class="req")
     table.from_date.label = T("Start of Period")
+    table.from_date.requires = IS_NOT_EMPTY()
+    table.from_date.comment = SPAN("*", _class="req")    
     table.to_date.label = T("End of Period")    
-    table.to_date.label = T("End of Period")    
+    table.to_date.requires = IS_NOT_EMPTY()
+    table.to_date.comment = SPAN("*", _class="req")
+
+
 
     # CRUD Strings
     s3.crud_strings[tablename] = Storage(
@@ -216,6 +220,7 @@ def question_options():
             addButtons(form,finish=True,prev=True)
     return output
 
+# Utility methods -- TODO: move these to a module
 def addButtons(form, prev = None, next = None, finish = None,cancel=None):
     """
         Utility Function to reduce code duplication as this deals with:
@@ -231,3 +236,4 @@ def addButtons(form, prev = None, next = None, finish = None,cancel=None):
     if finish:
         form[0][-1][1].append(INPUT(_type="submit", _value=T("Finish"),_name="finish",_id="finish"))
     return form
+     

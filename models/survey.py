@@ -9,14 +9,32 @@
 module = "survey"
 
 from gluon.sqlhtml import *
+# Reusable field to include in other table definitions
+ADD_LOCATION = T("Add Location")
+repr_select = lambda l: len(l.name) > 48 and "%s..." % l.name[:44] or l.name
+location_id = db.Table(None, "location_id",
+                       FieldS3("location_id", db.gis_location, sortby="name",
+                       requires = IS_ONE_OF(db, "gis_location.id", repr_select, alphasort=True),
+                       represent = lambda id: shn_gis_location_represent(id),
+                       label = T("Location"),
+                       comment = DIV(SPAN("*", _class="req"),A(ADD_LOCATION,
+                                       _class="colorbox",
+                                       _href=URL(r=request, c="gis", f="location", args="create", vars=dict(format="popup")),
+                                       _target="top",
+                                       _title=ADD_LOCATION),
+                                     DIV( _class="tooltip",
+                                       _title=Tstr("Location") + "|" + Tstr("The Location of this Site, which can be general (for Reporting) or precise (for displaying on a Map)."))),
+                       ondelete = "RESTRICT"))
 
+s3xrc.model.configure(db.gis_location,
+                      onvalidation=lambda form: gis.wkt_centroid(form),
+                      onaccept=gis.update_location_tree())
 if deployment_settings.has_module(module):
 
     #Reusable table
     name_desc = db.Table(db,timestamp, uuidstamp, deletion_status, authorstamp,
                          Field("name", "string", default="", length=120),
                          Field("description", "text", default="",length=500))
-
 
     #Survey Template
     resource = "template"

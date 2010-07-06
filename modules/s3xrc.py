@@ -65,18 +65,28 @@ class S3Resource(object):
     UID = "uuid"
     DELETED = "deleted"
 
+    HOOKS = "s3"
+
     def __init__(self, manager, prefix, name, id=None, uid=None, query=None, **attr):
 
         assert manager is not None, "Undefined Resource Manager"
         self.manager = manager
 
-        self.prefix = prefix
-        self.name = name
+        self.permit = self.rc.auth.shn_has_permission
 
         self.attr = Storage(attr)
 
+        self.debug = self.attr.debug
+        if self.debug is None:
+            self.debug = self.manager.debug
+
+        self.prefix = prefix
+        self.name = name
+
         self.storage = self.attr.storage
         self.__bind()
+
+        self.parent = self.attr.parent
 
         self.__ids = []
         self.__uids = []
@@ -128,9 +138,185 @@ class S3Resource(object):
             raise NotImplementedError
 
 
-    def execute_request(self):
+    def _url(self):
 
-        return dict(resource=self)
+        raise NotImplementedError
+
+
+    def __repr__(self):
+
+        return "<S3Resource %s>" % self.tablename
+
+
+    def __len__(self):
+
+        raise NotImplementedError
+
+
+    def __dbg(self, msg):
+
+        if self.debug:
+            print >> sys.stderr, "S3Resource: %s" % msg
+
+
+    def execute_request(self, r, **attr):
+
+        r._bind(self)
+        r.next = None
+
+        bypass = False
+        output = None
+
+        hooks = r.response.get(self.HOOKS, None)
+        if hooks is not None:
+            preprocess = hooks.get("prep", None)
+            postprocess = hooks.get("postp", None)
+        else:
+            preprocess = None
+            postprocess = None
+
+        if preprocess:
+            self.__dbg("pre-processing")
+            pre = preprocess(r)
+            if pre and isinstance(pre, dict):
+                bypass = pre.get("bypass", False) is True
+                output = pre.get("output", None)
+                if not bypass:
+                    success = pre.get("success", True)
+                    if not success:
+                        self.__dbg("pre-process returned an error - aborting")
+                        if r.representation == "html" and output:
+                            if isinstance(output, dict):
+                                output.update(jr=r)
+                            return output
+                        else:
+                            status = pre.get("status", 400)
+                            message = pre.get("message", r.INVALIDREQUEST)
+                            raise HTTP(status, message)
+            elif not pre:
+                self.__dbg("pre-process returned an error - aborting")
+                raise HTTP(400, body=r.INVALIDREQUEST)
+
+        handler = None
+        if bypass:
+            self.__dbg("bypass directive - skipping method handler")
+        else:
+            if r.method and r.custom_action:
+                handler = r.custom_action
+            elif r.http == "GET":
+                handler = self.__get(r)
+            elif r.http == "PUT":
+                handler = self.__put(r)
+            elif r.http == "POST":
+                handler = self.__post(r)
+            elif r.http == "DELETE":
+                handler = self.__delete(r)
+            else:
+                raise HTTP(501)
+            if handler is not None:
+                self.__dbg("method handler found - executing request")
+                output = handler(r, **attr)
+            else:
+                self.__dbg("no method handler - finalizing request")
+
+        if postprocess:
+            self.__dbg("post-processing")
+            output = postprocess(r, output)
+
+        if output is not None and isinstance(output, dict):
+            output.update(jr=r)
+
+        if r.next is not None:
+            self.__dbg("redirecting to %s" % str(r.next))
+            redirect(r.next)
+
+        return output
+
+
+    def __get(self, r):
+
+        self.__dbg("GET method")
+
+        method = r.method
+        permit = self.permit
+
+        tablename = r.component and r.component.tablename or r.tablename
+
+        if method is None or method in ("read", "display"):
+            authorised = permit("read", tablename)
+            if r.component:
+                if r.multiple and not r.component_id:
+                    method = "list"
+                else:
+                    method = "read"
+            else:
+                if r.id:
+                    method = "read"
+                else:
+                    method = "list"
+
+        elif method in ("create", "update"):
+            authorised = permit(method, tablename)
+
+        elif method == "delete":
+            return self.__delete(r)
+
+        elif method == "options":
+            authorised = permit("read", tablename)
+
+        elif method == "search" and not r.component:
+            authorised = permit("read", tablename)
+
+        elif method == "clear" and not r.component:
+            raise NotImplementedError
+
+        else:
+            raise HTTP(501, body=r.BADMETHOD)
+
+        if not authorised:
+            r.unauthorised()
+        else:
+            return self.get_handler(method)
+
+
+    def __put(self, r):
+
+        self.__dbg("PUT method")
+        raise NotImplementedError
+
+
+    def __post(self, r):
+
+        self.__dbg("POST method")
+        raise NotImplementedError
+
+
+    def __delete(self, r):
+
+        self.__dbg("DELETE method")
+
+        method = r.method
+        permit = self.permit
+
+        tablename = r.component and r.component.tablename or r.tablename
+
+        authorised = permit("delete", tablename)
+        if not authorised:
+            r.unauthorised()
+
+        r.next = r.there()
+        return self.get_handler("delete")
+
+
+    def set_handler(self):
+
+        raise NotImplementedError
+
+
+    def get_handler(self):
+
+        raise NotImplementedError
+
 
 # *****************************************************************************
 class S3RESTController(object):
@@ -1742,7 +1928,8 @@ class S3ResourceController(object):
                  rpp=None,
                  gis=None,
                  messages=None,
-                 cache=None):
+                 cache=None,
+                 debug=False):
 
         """ Constructor
 
@@ -1758,7 +1945,9 @@ class S3ResourceController(object):
 
         assert db is not None, "Database must not be None."
         self.db = db
+
         self.cache = cache
+        self.debug = debug
 
         self.error = None
 

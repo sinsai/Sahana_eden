@@ -62,6 +62,8 @@ S3XRC_NOT_IMPLEMENTED = "Not Implemented"
 # *****************************************************************************
 class S3Resource(object):
 
+    """ RESTful API for S3Resources """
+
     UID = "uuid"
     DELETED = "deleted"
 
@@ -72,7 +74,7 @@ class S3Resource(object):
         assert manager is not None, "Undefined Resource Manager"
         self.manager = manager
 
-        self.permit = self.rc.auth.shn_has_permission
+        self.permit = self.manager.auth.shn_has_permission
 
         self.attr = Storage(attr)
 
@@ -91,6 +93,8 @@ class S3Resource(object):
         self.__ids = []
         self.__uids = []
         self.__records = None
+
+        self.__handler = Storage()
 
         # Master query
         if id:
@@ -161,6 +165,10 @@ class S3Resource(object):
 
     def execute_request(self, r, **attr):
 
+        """ Execute an S3RESTRequest on this resource """
+
+        self.__dbg("execute request")
+
         r._bind(self)
         r.next = None
 
@@ -174,6 +182,21 @@ class S3Resource(object):
         else:
             preprocess = None
             postprocess = None
+
+        if not r.id and (r.component or r.method == "read") and \
+           not r.method == "options" and not "select" in r.request.vars:
+            if r.representation == "html":
+                model = self.manager.model
+                search_simple = model.get_method(self.prefix, self.name,
+                                                 method="search_simple")
+                if search_simple:
+                    redirect(URL(r=r.request, f=self.name, args="search_simple",
+                                 vars={"_next": r.same()}))
+                else:
+                    r.session.error = r.BADRECORD
+                    redirect(URL(r=r.request, c=self.prefix, f=self.name))
+            else:
+                raise HTTP(404, body=r.BADRECORD)
 
         if preprocess:
             self.__dbg("pre-processing")
@@ -235,10 +258,16 @@ class S3Resource(object):
 
     def __get(self, r):
 
+        """ Get GET method handler """
+
         self.__dbg("GET method")
 
         method = r.method
         permit = self.permit
+
+        model = self.manager.model
+        search_simple = model.get_method(self.prefix, self.name,
+                                         method="search_simple")
 
         tablename = r.component and r.component.tablename or r.tablename
 
@@ -281,41 +310,62 @@ class S3Resource(object):
 
     def __put(self, r):
 
+        """ Get PUT method handler """
+
         self.__dbg("PUT method")
-        raise NotImplementedError
+
+        if r.representation in self.manager.xml_import_formats:
+            return self.get_handler("import_xml")
+        elif r.representation in self.manager.json_import_formats:
+            return self.get_handler("import_json")
+        else:
+            raise HTTP(501, body=r.BADFORMAT)
 
 
     def __post(self, r):
 
+        """ Get POST method handler """
+
         self.__dbg("POST method")
-        raise NotImplementedError
+
+        if r.representation in self.manager.xml_import_formats or \
+           r.representation in self.manager.json_import_formats:
+            return self.__put(r)
+        else:
+            return self.__get(r)
 
 
     def __delete(self, r):
 
+        """ Get DELETE method handler """
+
         self.__dbg("DELETE method")
 
-        method = r.method
         permit = self.permit
 
         tablename = r.component and r.component.tablename or r.tablename
 
-        authorised = permit("delete", tablename)
+        authorised = permit("delete", tablename, r.id)
         if not authorised:
             r.unauthorised()
 
-        r.next = r.there()
+        if r.next is None:
+            r.next = r.there()
         return self.get_handler("delete")
 
 
-    def set_handler(self):
+    def set_handler(self, method, handler):
 
-        raise NotImplementedError
+        """ Set REST method handler for this resource """
+
+        self.__handler[method] = handler
 
 
-    def get_handler(self):
+    def get_handler(self, method):
 
-        raise NotImplementedError
+        """ Get REST method handler for this resource """
+
+        return self.__handler.get(method, None)
 
 
 # *****************************************************************************
@@ -813,8 +863,18 @@ class S3RESTRequest(object):
 
     DEFAULT_REPRESENTATION = "html"
 
+    # Error messages
+    INVALIDREQUEST = "Invalid request."
+    UNAUTHORISED = "Not authorised."
+    BADFORMAT = "Unsupported data format."
+    BADMETHOD = "Unsupported method."
+    BADRECORD = "Record not found."
 
-    def __init__(self, rc, prefix, name, request, session=None, debug=False):
+    def __init__(self, rc, prefix, name,
+                 request=None,
+                 session=None,
+                 response=None,
+                 debug=False):
 
         """ Constructor
 
@@ -833,11 +893,15 @@ class S3RESTRequest(object):
         self.prefix = prefix or request.controller
         self.name = name or request.function
 
+        self.resource = None
+
         self.request = request
         if session is not None:
             self.session = session
         else:
             self.session = Storage()
+
+        self.response = response
 
         self.debug = debug
         self.error = None
@@ -945,6 +1009,26 @@ class S3RESTRequest(object):
 
         return str(self.here())
 
+
+    def unauthorised(self):
+
+        """ Action upon unauthorised request """
+
+        if self.representation == "html":
+            self.session.error = self.UNAUTHORISED
+            login = URL(r=self.request,
+                        c="default",
+                        f="user",
+                        args="login",
+                        vars={"_next": self.here()})
+            redirect(login)
+        else:
+            raise HTTP(401, body = self.UNAUTHORISED)
+
+
+    def _bind(self, resource):
+
+        self.resource = resource
 
     # Request parser ==========================================================
 
@@ -1925,11 +2009,13 @@ class S3ResourceController(object):
     def __init__(self, db,
                  domain=None,
                  base_url=None,
+                 cache=None,
+                 auth=None,
                  rpp=None,
                  gis=None,
                  messages=None,
-                 cache=None,
-                 debug=False):
+                 debug=False,
+                 **attr):
 
         """ Constructor
 
@@ -1947,6 +2033,7 @@ class S3ResourceController(object):
         self.db = db
 
         self.cache = cache
+        self.auth = auth
         self.debug = debug
 
         self.error = None
@@ -1965,14 +2052,63 @@ class S3ResourceController(object):
         self.sync_log = None
         self.messages = None
 
+        attr = Storage(attr)
 
-    # Resource ================================================================
+        self.xml_import_formats = attr.get("xml_import_formats", ["xml"])
+        self.xml_export_formats = attr.get("xml_export_formats",
+                                           dict(xml="application/xml"))
+
+        self.json_import_formats = attr.get("json_import_formats", ["json"])
+        self.json_export_formats = attr.get("json_export_formats",
+                                            dict(json="text/x-json"))
+
+        self.__handler = Storage()
+
+
+    def __dbg(self, msg):
+
+        print >> sys.stderr, "S3ResourceController: %s" % msg
+
+
+    def set_handler(self, method, handler):
+
+        self.__handler[method] = handler
+
+
+    def get_handler(self, method):
+
+        return self.__handler.get(method, None)
+
+
+    # Resource + Request ======================================================
 
     def resource(self, prefix, name, id=None, uid=None, query=None, **attr):
 
         """ Wrapper function for the S3Resource class """
 
-        return S3Resource(self, prefix, name, id=id, uid=uid, query=query, **attr)
+        resource = S3Resource(self, prefix, name, id=id, uid=uid, query=query, **attr)
+
+        for method in self.__handler.keys():
+            resource.set_handler(method, self.__handler[method])
+
+        return resource
+
+
+    def parse_request(self, prefix, name, session, request, response):
+
+        self.__dbg("parsing request")
+
+        req = S3RESTRequest(self, prefix, name,
+                            request=request,
+                            session=session,
+                            response=response,
+                            debug=self.debug)
+
+        res = self.resource(prefix, name,
+                            id=req.id,
+                            debug=self.debug)
+
+        return (res, req)
 
 
     # Session helpers =========================================================

@@ -51,22 +51,21 @@ ROWSPERPAGE = 20
 PRETTY_PRINT = True
 
 # *****************************************************************************
-# Load Controllers
+# Resource Controller
 _s3xrc = local_import("s3xrc")
 
 s3xrc = _s3xrc.S3ResourceController(db,
             domain=request.env.server_name,
             base_url="%s/%s" % (deployment_settings.get_base_public_url(), request.application),
-            rpp=ROWSPERPAGE,
+            cache=cache,
+            auth=auth,
             gis=gis,
-            cache=cache)
-
-s3rest = _s3xrc.S3RESTController(rc=s3xrc, auth=auth,
+            rpp=ROWSPERPAGE,
             xml_import_formats = shn_xml_import_formats,
             xml_export_formats = shn_xml_export_formats,
             json_import_formats = shn_json_import_formats,
             json_export_formats = shn_json_export_formats,
-            debug=False)
+            debug = True)
 
 # *****************************************************************************
 def shn_field_represent(field, row, col):
@@ -2289,17 +2288,19 @@ def shn_rest_controller(module, resource, **attr):
 
     """
 
-    s3rest.set_handler("import_xml", import_xml)
-    s3rest.set_handler("import_json", import_json)
-    s3rest.set_handler("list", shn_list)
-    s3rest.set_handler("read", shn_read)
-    s3rest.set_handler("create", shn_create)
-    s3rest.set_handler("update", shn_update)
-    s3rest.set_handler("delete", shn_delete)
-    s3rest.set_handler("search", shn_search)
-    s3rest.set_handler("options", shn_options)
+    s3xrc.set_handler("import_xml", import_xml)
+    s3xrc.set_handler("import_json", import_json)
+    s3xrc.set_handler("list", shn_list)
+    s3xrc.set_handler("read", shn_read)
+    s3xrc.set_handler("create", shn_create)
+    s3xrc.set_handler("update", shn_update)
+    s3xrc.set_handler("delete", shn_delete)
+    s3xrc.set_handler("search", shn_search)
+    s3xrc.set_handler("options", shn_options)
 
-    output = s3rest(session, request, response, module, resource, **attr)
+    res, req = s3xrc.parse_request(module, resource, session, request, response)
+    output = res.execute_request(req, **attr)
+
     return output
 
 # END

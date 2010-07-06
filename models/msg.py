@@ -247,6 +247,17 @@ if deployment_settings.has_module(module):
     
     # Reports
     # Verified reports ready to be sent out as alerts or displayed on a map 
+    msg_report_type_opts = {
+        "Shelter":T("Take shelter in place or per <instruction>"),
+        "Evacuate":T("Relocate as instructed in the <instruction>"),
+        "Prepare":T("Make preparations per the <instruction>"),
+        "Execute":T("Execute a pre-planned activity identified in <instruction>"),
+        "Avoid":T("Avoid the subject event as per the <instruction>"),
+        "Monitor":T("Attend to information sources as described in <instruction>"),
+        "Assess":T("Evaluate the information in this message.  (This value SHOULD NOT be used in public warning applications.)"),
+        "AllClear":T("The subject event no longer poses a threat or concern and any follow on action is described in <instruction>"),
+        "None":T("No action recommended"),
+    }
     resource = "report"
     tablename = "%s_%s" % (module, resource)
     table = db.define_table(tablename, timestamp, uuidstamp, deletion_status,

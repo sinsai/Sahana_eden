@@ -96,7 +96,7 @@ table { border-collapse: collapse }
           padding: 0 1em;
           height: 70px;
           position: relative;
-          background: url(../../img/sahanapy_logo.png) #336699 no-repeat left top; }
+          background: url(../../YOURLOGOHERE) #336699 no-repeat left top; }
 
 /* response.menu_modules */
 #menu_modules { position: relative;
@@ -560,7 +560,7 @@ div#rheader_tabs span.rheader_tab_here a { color: #006699;
 /* Home page specific */
 #logo {width: 350px;
        height: 70px;
-       background: url(../../img/sahanapy_logo.png) top right;
+       background: url(../../YOURLOGOHERE) top right;
        margin: 0 0 0 0px; }
 
 .modlist { list-style: none;

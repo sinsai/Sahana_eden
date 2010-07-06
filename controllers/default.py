@@ -51,14 +51,18 @@ def index():
 
     login_form = None
     register_form = None
-    
-    if self_registration:
-        request.args = ["register"]
-        register_form = auth()
-    else:
+
+    if not auth.is_logged_in():
+        # Provide a login box on front page
         request.args = ["login"]
         login_form = auth()
 
+        # Download the registration box on front page ready to unhide without a server-side call
+        if self_registration:
+            request.args = ["register"]
+            register_form = auth()
+    
+    
     return dict(module_name=module_name, modules=modules, admin_name=admin_name, admin_email=admin_email, admin_tel=admin_tel, self_registration=self_registration, login_form=login_form, register_form=register_form)
 
 def user():

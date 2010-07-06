@@ -12,7 +12,7 @@ function import_spreadsheet(table,header_row,importsheet,map_from_ss_to_field)
 	document.write('<br/>'+importsheet.columns+'<br/>');
 	var jsonss=new Array(); //the array which will have json objects of each row
 	time=new Date();
-	var modifydate=time.getUTCFullYear()+"-"+time.GetUTCMonth+"-"+time.getUTCDate+" "+time.getUTCHours()+":"+time.getUTCMinutes()+":"+time.getUTCSeconds();
+	var modifydate=''+(time.getUTCFullYear()+"-"+time.getUTCMonth()+"-"+time.getUTCDate()+" "+time.getUTCHours()+":"+time.getUTCMinutes()+":"+time.getUTCSeconds());
 	//making importable json object of the spreadsheet data
 	for(var i=0;i<importsheet.rows;i++)
 	{
@@ -34,17 +34,30 @@ function import_spreadsheet(table,header_row,importsheet,map_from_ss_to_field)
 			}
 			
 		}
-		rowobj+=" }";
-		document.write(rowobj);
-			try{
-				rowobj=eval('('+rowobj+')');
-			}
-			catch(err)
-			{
-				alert("Error");
-			}
-		//rowobj."modified-on"=modifydate;
+		rowobj+=",\"@modified_on\":\"";
+		rowobj+=modifydate;
+		rowobj+=" \"}";
+		try{
+			rowobj=eval('('+rowobj+')');
+		}
+		catch(err)
+		{
+			alert("Error");
+		}
 		jsonss.push(rowobj);
 	}
-
+	var posturl="http://localhost:8000/newins/"+prefix+"/"+name+"/create.json";
+	document.write(posturl);
+	var send="{\""+str+"\":\"\"}";
+ 	send=eval('('+send+')');
+	send.str=jsonss;	
+	jQuery.post({
+		type : 'POST',
+		url : posturl,
+		data : rowobj,
+		success: function(data,textStatus,XmlHttpRequest)
+			{
+				document.write('<b>'+data.status+'</b>');
+			}
+		});
 }

@@ -51,8 +51,7 @@ def template():
     if output:
         form = output.get("form", None)
         if form:
-            addButtons(form,next=True)
-    print session.s3.id
+            addButtons(form,next=True)   
     return output
 
 def series():

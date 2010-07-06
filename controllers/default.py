@@ -10,11 +10,9 @@ module = "default"
 
 # Options Menu (available in all Functions)
 response.menu_options = [
-    #[T('About Sahana'), False, URL(r=request, f='about')],
+    #[T("About Sahana"), False, URL(r=request, f="about")],
 ]
 
-# Web2Py Tools functions
-# (replaces T2)
 def call():
     "Call an XMLRPC, JSONRPC or RSS service"
     # If webservices don't use sessions, avoid cluttering up the storage
@@ -22,50 +20,21 @@ def call():
     return service()
 
 def download():
-    "Download a file."
+    "Download a file"
     return response.download(request, db)
 
-def user():
-    "Auth functions based on arg. See gluon/tools.py"
+# Add newly-registered users to Person Registry & 'Authenticated' role
+auth.settings.register_onaccept = lambda form: auth.shn_register(form)
 
-    auth.settings.on_failed_authorization = URL(r=request, f='error')
-    # Add newly-registered users to Person Registry & 'Authenticated' role
-    auth.settings.register_onaccept = lambda form: auth.shn_register(form)
+_table_user = auth.settings.table_user
+_table_user.first_name.comment = SPAN("*", _class="req")
+_table_user.email.comment = SPAN("*", _class="req")
+_table_user.password.comment = SPAN("*", _class="req")
+_table_user.language.label = T("Language")
+_table_user.language.default = "en"
+_table_user.language.comment = DIV(_class="tooltip", _title=Tstr("Language") + "|" + Tstr("The language to use for notifications."))
+_table_user.language.represent = lambda opt: shn_languages.get(opt, UNKNOWN_OPT)
 
-    if request.args and request.args(0) == "login_next":
-        # The following redirects the user to contacts page on first login - can
-        # be updated for a workflow on login. This also notes the timestamp
-        # of last login through the browser
-        if auth.is_logged_in():
-            db(db.auth_user.id == auth.user.id).update(timestamp = request.utcnow)
-
-    _table_user = auth.settings.table_user
-    if request.args and request.args(0) == "profile":
-        #_table_user.organisation.writable = False
-        _table_user.utc_offset.readable = True
-        _table_user.utc_offset.writable = True
-
-    _table_user.first_name.comment = SPAN("*", _class="req")
-    _table_user.email.comment = SPAN("*", _class="req")
-    _table_user.password.comment = SPAN("*", _class="req")
-    _table_user.language.label = T("Language")
-    _table_user.language.default = "en"
-    _table_user.language.comment = DIV(_class="tooltip", _title=T("Language|The language to use for notifications."))
-    _table_user.language.represent = lambda opt: shn_languages.get(opt, UNKNOWN_OPT)
-    
-    form = auth()
-
-    self_registration = db().select(db.s3_setting.self_registration, limitby=(0, 1)).first().self_registration
-
-    # Use Custom Ext views
-    # Best to not use an Ext form for login: can't save username/password in browser & can't hit 'Enter' to submit!
-    #if request.args(0) == "login":
-    #    response.title = T("Login")
-    #    response.view = "auth/login.html"
-
-    return dict(form=form, self_registration=self_registration)
-
-# S3 framework functions
 def index():
     "Module's Home Page"
 
@@ -77,13 +46,61 @@ def index():
     admin_name = settings.admin_name
     admin_email = settings.admin_email
     admin_tel = settings.admin_tel
-    response.title = T('Sahana FOSS Disaster Management System')
+    response.title = T("Sahana FOSS Disaster Management System")
+    self_registration = settings.self_registration
 
-    return dict(module_name=module_name, modules=modules, admin_name=admin_name, admin_email=admin_email, admin_tel=admin_tel)
+    login_form = None
+    register_form = None
+    
+    if self_registration:
+        request.args = ["register"]
+        register_form = auth()
+    else:
+        request.args = ["login"]
+        login_form = auth()
+
+    return dict(module_name=module_name, modules=modules, admin_name=admin_name, admin_email=admin_email, admin_tel=admin_tel, self_registration=self_registration, login_form=login_form, register_form=register_form)
+
+def user():
+    "Auth functions based on arg. See gluon/tools.py"
+
+    auth.settings.on_failed_authorization = URL(r=request, f="error")
+    
+    if request.args and request.args(0) == "login_next":
+        # Can redirect the user to another page on first login for workflow (set in 00_settings.py)
+        # Note the timestamp of last login through the browser
+        if auth.is_logged_in():
+            db(db.auth_user.id == auth.user.id).update(timestamp = request.utcnow)
+
+    _table_user = auth.settings.table_user
+    if request.args and request.args(0) == "profile":
+        #_table_user.organisation.writable = False
+        _table_user.utc_offset.readable = True
+        _table_user.utc_offset.writable = True
+
+    form = auth()
+    if request.args and request.args(0) == "login":
+        login_form = form
+    else:
+        login_form = None
+    if request.args and request.args(0) == "register":
+        register_form = form
+    else:
+        register_form = None
+
+    self_registration = session.s3.self_registration
+
+    # Use Custom Ext views
+    # Best to not use an Ext form for login: can't save username/password in browser & can't hit 'Enter' to submit!
+    #if request.args(0) == "login":
+    #    response.title = T("Login")
+    #    response.view = "auth/login.html"
+
+    return dict(form=form, login_form=login_form, register_form=register_form, self_registration=self_registration)
 
 def source():
     "RESTful CRUD controller"
-    return shn_rest_controller('s3', 'source')
+    return shn_rest_controller("s3", "source")
 
 # NB These 4 functions are unlikely to get used in production
 def header():
@@ -100,14 +117,14 @@ def list():
     return dict()
 
 # About Sahana
-def apath(path=''):
+def apath(path=""):
     "Application path"
     import os
     from gluon.fileutils import up
     opath = up(request.folder)
     #TODO: This path manipulation is very OS specific.
-    while path[:3] == '../': opath, path=up(opath), path[3:]
-    return os.path.join(opath,path).replace('\\','/')
+    while path[:3] == "../": opath, path=up(opath), path[3:]
+    return os.path.join(opath,path).replace("\\", "/")
 
 def about():
     """
@@ -119,8 +136,8 @@ def about():
     import subprocess
     import string
     python_version = sys.version
-    web2py_version = open(apath('../VERSION'), 'r').read()[8:]
-    sahana_version = open(os.path.join(request.folder, 'VERSION'), 'r').read()
+    web2py_version = open(apath("../VERSION"), "r").read()[8:]
+    sahana_version = open(os.path.join(request.folder, "VERSION"), "r").read()
     try:
         sqlite_version = (subprocess.Popen(["sqlite3", "-version"], stdout=subprocess.PIPE).communicate()[0]).rstrip()
     except:
@@ -163,10 +180,10 @@ def about():
 
 def help():
     "Custom View"
-    response.title = T('Help')
+    response.title = T("Help")
     return dict()
 
 def contact():
     "Custom View"
-    response.title = T('Contact us')
+    response.title = T("Contact us")
     return dict()

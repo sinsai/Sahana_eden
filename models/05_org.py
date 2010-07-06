@@ -47,7 +47,8 @@ sector_id = db.Table(None, "sector_id",
                            requires = IS_NULL_OR(IS_ONE_OF(db, "org_sector.id", "%(name)s", multiple=True)),
                            represent = shn_sector_represent,
                            label = T("Sector"),
-                           comment = DIV(A(ADD_SECTOR, _class="colorbox", _href=URL(r=request, c="org", f="sector", args="create", vars=dict(format="popup")), _target="top", _title=ADD_SECTOR), A(SPAN("[Help]"), _class="tooltip", _title=T("Add Sector|The Sector(s) this organisation works in. Multiple values can be selected by holding down the 'Control' key."))),
+                           comment = DIV(A(ADD_SECTOR, _class="colorbox", _href=URL(r=request, c="org", f="sector", args="create", vars=dict(format="popup")), _target="top", _title=ADD_SECTOR),
+                                     DIV( _class="tooltip", _title=Tstr("Add Sector") + "|" + Tstr("The Sector(s) this organization works in. Multiple values can be selected by holding down the 'Control' key."))),
                            ondelete = "RESTRICT"
                           ))
 
@@ -58,7 +59,7 @@ org_organisation_type_opts = {
     1:T("Government"),
     2:T("Embassy"),
     3:T("International NGO"),
-    4:T("Donor"),               # Don't change this number without chaging organisation_popup.html
+    4:T("Donor"),               # Don't change this number without changing organisation_popup.html
     6:T("National NGO"),
     7:T("UN"),
     8:T("International Organization"),
@@ -77,7 +78,6 @@ table = db.define_table(tablename, timestamp, uuidstamp, deletion_status,
                 Field("acronym", length=8),
                 Field("type", "integer"),
                 sector_id,
-                admin_id,
                 #Field("registration", label=T("Registration")),    # Registration Number
                 Field("country", "integer"),
                 Field("website"),
@@ -100,7 +100,7 @@ table.website.requires = IS_NULL_OR(IS_URL())
 table.donation_phone.requires = shn_phone_requires
 
 # Reusable field
-ADD_ORGANIZATION = T("Add Organization")
+ADD_ORGANIZATION = Tstr("Add Organization")
 organisation_popup_url = URL(r=request, c="org", f="organisation", args="create", vars=dict(format="popup"))
 shn_organisation_comment = DIV(A(ADD_ORGANIZATION,
                            _class="colorbox",
@@ -108,7 +108,7 @@ shn_organisation_comment = DIV(A(ADD_ORGANIZATION,
                            _target="top",
                            _title=ADD_ORGANIZATION),
                          DIV(DIV(_class="tooltip",
-                                 _title=T("Add Organization|The Organization this record is associated with."))))
+                                 _title=ADD_ORGANIZATION + "|" + Tstr("The Organization this record is associated with."))))
 organisation_id = db.Table(None, "organisation_id",
                            FieldS3("organisation_id", db.org_organisation, sortby="name",
                            requires = IS_NULL_OR(IS_ONE_OF(db, "org_organisation.id", "%(name)s")),
@@ -153,7 +153,6 @@ table = db.define_table(tablename, timestamp, uuidstamp, deletion_status,
                 Field("name", notnull=True),
                 organisation_id,
                 Field("type", "integer"),
-                admin_id,
                 location_id,
                 Field("parent", "reference org_office"),   # This form of hierarchy may not work on all Databases
                 Field("address", "text"),
@@ -190,13 +189,14 @@ table.international_staff.requires = IS_NULL_OR(IS_INT_IN_RANGE(0, 9999))
 table.number_of_vehicles.requires = IS_NULL_OR(IS_INT_IN_RANGE(0, 9999))
 
 # Reusable field for other tables to reference
-ADD_OFFICE = T("Add Office")
+ADD_OFFICE = Tstr("Add Office")
 office_id = db.Table(None, "office_id",
             FieldS3("office_id", db.org_office, sortby="name",
                 requires = IS_NULL_OR(IS_ONE_OF(db, "org_office.id", "%(name)s")),
                 represent = lambda id: (id and [db(db.org_office.id == id).select(db.org_office.name, limitby=(0, 1)).first().name] or ["None"])[0],
                 label = T("Office"),
-                comment = DIV(A(ADD_OFFICE, _class="colorbox", _href=URL(r=request, c="org", f="office", args="create", vars=dict(format="popup")), _target="top", _title=ADD_OFFICE), A(SPAN("[Help]"), _class="tooltip", _title=T("Add Office|The Office this record is associated with."))),
+                comment = DIV(A(ADD_OFFICE, _class="colorbox", _href=URL(r=request, c="org", f="office", args="create", vars=dict(format="popup")), _target="top", _title=ADD_OFFICE),
+                          DIV( _class="tooltip", _title=ADD_OFFICE + "|" + Tstr("The Office this record is associated with."))),
                 ondelete = "RESTRICT"
                 ))
 
@@ -228,13 +228,14 @@ def shn_donor_represent(donor_ids):
     else:
         return db(db.org_donor.id == donor_ids).select(db.org_donor.name, limitby=(0, 1)).first().name
 
-ADD_DONOR = T("Add Donor")
+ADD_DONOR = Tstr("Add Donor")
 donor_id = db.Table(None, "donor_id",
             FieldS3("donor_id", db.org_organisation, sortby="name",
                 requires = IS_NULL_OR(IS_ONE_OF(db, "org_organisation.id", "%(name)s", multiple=True, filterby="type", filter_opts=[4])),
                 represent = shn_donor_represent,
                 label = T("Donor"),
-                comment = DIV(A(ADD_DONOR, _class="colorbox", _href=URL(r=request, c="org", f="organisation", args="create", vars=dict(format="popup", child="donor_id")), _target="top", _title=ADD_DONOR), A(SPAN("[Help]"), _class="tooltip", _title=T("Add Donor|The Donor(s) for this project. Multiple values can be selected by holding down the 'Control' key."))),
+                comment = DIV(A(ADD_DONOR, _class="colorbox", _href=URL(r=request, c="org", f="organisation", args="create", vars=dict(format="popup", child="donor_id")), _target="top", _title=ADD_DONOR),
+                          DIV( _class="tooltip", _title=ADD_DONOR + "|" + Tstr("The Donor(s) for this project. Multiple values can be selected by holding down the 'Control' key."))),
                 ondelete = "RESTRICT"
                 ))
 
@@ -288,7 +289,7 @@ table.description.label = T("Description")
 table.status.label = T("Status")
 table.status.comment = SPAN("*", _class="req")
 
-ADD_PROJECT = T("Add Project")
+ADD_PROJECT = Tstr("Add Project")
 s3.crud_strings[tablename] = Storage(
     title_create = ADD_PROJECT,
     title_display = T("Project Details"),
@@ -310,7 +311,8 @@ project_id = db.Table(None, "project_id",
                         FieldS3("project_id", db.org_project, sortby="name",
                         requires = IS_NULL_OR(IS_ONE_OF(db, "org_project.id", "%(code)s")),
                         represent = lambda id: (id and [db.org_project[id].code] or ["None"])[0],
-                        comment = DIV(A(ADD_PROJECT, _class="colorbox", _href=URL(r=request, c="org", f="project", args="create", vars=dict(format="popup")), _target="top", _title=ADD_PROJECT), A(SPAN("[Help]"), _class="tooltip", _title=T("Project|Add new project)."))),
+                        comment = DIV(A(ADD_PROJECT, _class="colorbox", _href=URL(r=request, c="org", f="project", args="create", vars=dict(format="popup")), _target="top", _title=ADD_PROJECT),
+                                  DIV( _class="tooltip", _title=ADD_PROJECT + "|" + Tstr("Add new project."))),
                         label = "Project",
                         ondelete = "RESTRICT"
                         ))
@@ -327,6 +329,7 @@ s3xrc.model.configure(table,
                                    "organisation_id",
                                    "location_id",
                                    "sector_id",
+                                   "code",
                                    "name",
                                    "status",
                                    "start_date",
@@ -362,13 +365,13 @@ table.manager_id.represent = lambda id: (id and [shn_pr_person_represent(id)] or
 # Staff Resource called from multiple controllers
 # - so we define strings in the model
 table.person_id.label = T("Person")
-table.person_id.comment = DIV(SPAN("*", _class="req"), shn_person_comment)
+#table.person_id.comment = DIV(SPAN("*", _class="req"), shn_person_comment)
 table.organisation_id.comment = DIV(SPAN("*", _class="req"), shn_organisation_comment)
 table.title.label = T("Job Title")
-table.title.comment = A(SPAN("[Help]"), _class="tooltip", _title=T("Title|The Role this person plays within this Office/Project."))
+table.title.comment = DIV( _class="tooltip", _title=Tstr("Title") + "|" + Tstr("The Role this person plays within this Office/Project."))
 table.manager_id.label = T("Manager")
-table.manager_id.comment = A(SPAN("[Help]"), _class="tooltip", _title=T("Manager|The person's manager within this Office/Project."))
-table.focal_point.comment = A(SPAN("[Help]"), _class="tooltip", _title=T("Focal Point|The contact person for this organization."))
+table.manager_id.comment = DIV( _class="tooltip", _title=Tstr("Manager") + "|" + Tstr("The person's manager within this Office/Project."))
+table.focal_point.comment = DIV( _class="tooltip", _title=Tstr("Focal Point") + "|" + Tstr("The contact person for this organization."))
 # CRUD strings
 ADD_STAFF = T("Add Staff")
 LIST_STAFF = T("List Staff")
@@ -414,20 +417,27 @@ def shn_orgs_to_person(person_id):
                 orgs.append(s.organisation_id)
     return orgs
 
-# Staff as component of Orgs
+# Staff as component of Orgs, Offices & Projects
 s3xrc.model.add_component(module, resource,
                           multiple=True,
-                          joinby=dict(org_organisation="organisation_id"),
+                          joinby=dict(org_organisation="organisation_id", org_office="office_id", org_project="project_id"),
                           deletable=True,
                           editable=True)
 
+# May wish to over-ride this in controllers
 s3xrc.model.configure(table,
                       list_fields=["id",
                                    "person_id",
+                                   "organisation_id",
                                    "office_id",
+                                   "project_id",
                                    "title",
                                    "manager_id",
-                                   "focal_point"])
+                                   "focal_point"
+                                   #"description",
+                                   #"slots",
+                                   #"payrate"
+                                   ])
 
 # org_position (component of org_project)
 #   describes a position in a project
@@ -457,7 +467,7 @@ s3xrc.model.configure(table,
 #                migrate=migrate)
 
 # CRUD Strings
-#ADD_POSITION = T("Add Position")
+#ADD_POSITION = Tstr("Add Position")
 #POSITIONS = T("Positions")
 #s3.crud_strings[tablename] = Storage(
 #    title_create = ADD_POSITION,
@@ -479,27 +489,10 @@ s3xrc.model.configure(table,
 #                        FieldS3("org_position_id", db.org_position, sortby="title",
 #                        requires = IS_NULL_OR(IS_ONE_OF(db, "org_position.id", "%(title)s")),
 #                        represent = lambda id: lambda id: (id and [db.org_position[id].title] or ["None"])[0],
-#                        comment = DIV(A(ADD_POSITION, _class="colorbox", _href=URL(r=request, c="org", f="project", args="create", vars=dict(format="popup")), _target="top", _title=ADD_POSITION), A(SPAN("[Help]"), _class="tooltip", _title=T("Position|Add new position)."))),
+#                        comment = DIV(A(ADD_POSITION, _class="colorbox", _href=URL(r=request, c="org", f="project", args="create", vars=dict(format="popup")), _target="top", _title=ADD_POSITION),
+#                                  DIV( _class="tooltip", _title=ADD_POSITION + "|" + Tstr("Add new position."))),
 #                        ondelete = "RESTRICT"
 #                        ))
-
-# Staff as Component of Projects
-s3xrc.model.add_component(module, resource,
-                          multiple=True,
-                          joinby=dict(org_project="project_id"),
-                          deletable=True,
-                          editable=True,
-                          main="title", extra="description")
-
-s3xrc.model.configure(table,
-                      list_fields=["organisation_id",
-                                   "project_id",
-                                   "title",
-                                   "person_id",
-                                   #"description",
-                                   #"slots",
-                                   #"payrate"
-                                   ])
 
 # -----------------------------------------------------------------------------
 # org_task:
@@ -527,6 +520,7 @@ resource = "task"
 tablename = module + "_" + resource
 table = db.define_table(tablename, timestamp, uuidstamp, deletion_status,
                 project_id,
+                office_id,
                 Field("priority", "integer",
                     requires = IS_IN_SET(org_task_priority_opts, zero=None),
                     # default = 4,
@@ -563,16 +557,18 @@ s3.crud_strings[tablename] = Storage(
     msg_record_deleted = T("Task deleted"),
     msg_list_empty = T("No tasks currently registered"))
 
-# Component
+# Task as Component of Project, Office, (Organisation to come? via Project? Can't rely on that as multi-Org projects)
 s3xrc.model.add_component(module, resource,
     multiple=True,
-    joinby=dict(org_project="project_id"),
+    joinby=dict(org_project="project_id", org_office="office_id"),
     deletable=True,
     editable=True,
     main="subject", extra="description")
 
 s3xrc.model.configure(table,
                       list_fields=["id",
+                                   "project_id",
+                                   "office_id",
                                    "priority",
                                    "subject",
                                    "person_id",
@@ -643,7 +639,7 @@ def shn_project_search_location(xrequest, **attr):
                         ))
                 items=DIV(TABLE(THEAD(TR(
                     TH("ID"),
-                    TH("Organisation"),
+                    TH("Organization"),
                     TH("Location"),
                     TH("Sector(s)"),
                     TH("Name"),
@@ -687,11 +683,12 @@ def shn_project_rheader(jr, tabs=[]):
 
             project = jr.record
             
-            sectors = re.split("\|", project.sector_id)[1:-1]
-            _sectors = TABLE()
-            for sector in sectors:
-                _sectors.append(TR(db(db.org_sector.id == sector).select(db.org_sector.name, limitby=(0, 1)).first().name))
-                        
+            sectors = TABLE()
+            if project.sector_id:
+                _sectors = re.split("\|", project.sector_id)[1:-1]
+                for sector in _sectors:
+                    sectors.append(TR(db(db.org_sector.id == sector).select(db.org_sector.name, limitby=(0, 1)).first().name))
+
             if project:
                 rheader = DIV(TABLE(
                     TR(
@@ -710,7 +707,7 @@ def shn_project_rheader(jr, tabs=[]):
                         TH(T("Status: ")),
                         "%s" % org_project_status_opts[project.status],
                         TH(T("Sector(s): ")),
-                        _sectors
+                        sectors
                         #TH(A(T("Edit Project"),
                         #    _href=URL(r=request, f="project", args=[jr.id, "update"], vars={"_next": _next})))
                         )

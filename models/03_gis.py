@@ -6,6 +6,8 @@
 
 module = "gis"
 
+MARKER = Tstr("Marker")
+
 # Settings
 resource = "setting"
 tablename = "%s_%s" % (module, resource)
@@ -29,13 +31,15 @@ table.name.requires = [IS_NOT_EMPTY(), IS_NOT_IN_DB(db, "%s.name" % tablename)]
 table.image.uploadfolder = os.path.join(request.folder, "static/img/markers")
 table.image.represent = lambda filename: (filename and [DIV(IMG(_src=URL(r=request, c="default", f="download", args=filename), _height=40))] or [""])[0]
 # Reusable field to include in other table definitions
-ADD_MARKER = T("Add Marker")
+ADD_MARKER = Tstr("Add") + " " + MARKER
 marker_id = db.Table(None, "marker_id",
             FieldS3("marker_id", db.gis_marker, sortby="name",
-                requires = IS_NULL_OR(IS_ONE_OF(db, "gis_marker.id", "%(name)s")),
+                requires = IS_NULL_OR(IS_ONE_OF(db, "gis_marker.id", "%(name)s", #zero=T("Use default from feature class")
+			)),
                 represent = lambda id: (id and [DIV(IMG(_src=URL(r=request, c="default", f="download", args=db(db.gis_marker.id == id).select(db.gis_marker.image, limitby=(0, 1)).first().image), _height=40))] or [""])[0],
                 label = T("Marker"),
-                comment = DIV(A(ADD_MARKER, _class="colorbox", _href=URL(r=request, c="gis", f="marker", args="create", vars=dict(format="popup")), _target="top", _title=ADD_MARKER), DIV( _class="tooltip", _title=T("Marker|Defines the icon used for display of features on interactive map & KML exports. A Marker assigned to an individual Location is set if there is a need to override the Marker assigned to the Feature Class. If neither are defined, then the Default Marker is used."))),
+                comment = DIV(A(ADD_MARKER, _class="colorbox", _href=URL(r=request, c="gis", f="marker", args="create", vars=dict(format="popup")), _target="top", _title=ADD_MARKER), 
+                          DIV( _class="tooltip", _title=MARKER + "|" + Tstr("Defines the icon used for display of features on interactive map & KML exports. A Marker assigned to an individual Location is set if there is a need to override the Marker assigned to the Feature Class. If neither are defined, then the Default Marker is used."))),
                 ondelete = "RESTRICT"
                 ))
 
@@ -281,7 +285,8 @@ feature_class_id = db.Table(None, "feature_class_id",
                 requires = IS_NULL_OR(IS_ONE_OF(db, "gis_feature_class.id", "%(name)s")),
                 represent = lambda id: (id and [db(db.gis_feature_class.id == id).select(db.gis_feature_class.name, limitby=(0, 1)).first().name] or ["None"])[0],
                 label = T("Feature Class"),
-                comment = DIV(A(ADD_FEATURE_CLASS, _class="colorbox", _href=URL(r=request, c="gis", f="feature_class", args="create", vars=dict(format="popup")), _target="top", _title=ADD_FEATURE_CLASS), A(SPAN("[Help]"), _class="tooltip", _title=T("Feature Class|Defines the marker used for display & the attributes visible in the popup."))),
+                comment = DIV(A(ADD_FEATURE_CLASS, _class="colorbox", _href=URL(r=request, c="gis", f="feature_class", args="create", vars=dict(format="popup")), _target="top", _title=ADD_FEATURE_CLASS), 
+                          DIV( _class="tooltip", _title=Tstr("Feature Class") + "|" + Tstr("Defines the marker used for display & the attributes visible in the popup."))),
                 ondelete = "RESTRICT"
                 ))
 
@@ -341,7 +346,6 @@ table = db.define_table(tablename, timestamp, uuidstamp, deletion_status,
                 Field("ce", "integer", writable=False, readable=False), # Circular 'Error' around Lat/Lon (in m). Needed for CoT.
                 Field("le", "integer", writable=False, readable=False), # Linear 'Error' for the Elevation (in m). Needed for CoT.
                 Field("source", "integer"),
-                admin_id,
                 migrate=migrate)
 
 table.uuid.requires = IS_NOT_IN_DB(db, "%s.uuid" % table)
@@ -371,9 +375,8 @@ location_id = db.Table(None, "location_id",
                                        _href=URL(r=request, c="gis", f="location", args="create", vars=dict(format="popup")),
                                        _target="top",
                                        _title=ADD_LOCATION),
-                                     A(SPAN("[Help]"),
-                                       _class="tooltip",
-                                       _title=T("Location|The Location of this Site, which can be general (for Reporting) or precise (for displaying on a Map)."))),
+                                     DIV( _class="tooltip",
+                                       _title=Tstr("Location") + "|" + Tstr("The Location of this Site, which can be general (for Reporting) or precise (for displaying on a Map)."))),
                        ondelete = "RESTRICT"))
 
 s3xrc.model.configure(db.gis_location,
@@ -441,7 +444,8 @@ feature_group_id = db.Table(None, "feature_group_id",
                 requires = IS_NULL_OR(IS_ONE_OF(db, "gis_feature_group.id", "%(name)s")),
                 represent = lambda id: (id and [db(db.gis_feature_group.id == id).select(db.gis_feature_group.name, limitby=(0, 1)).first().name] or ["None"])[0],
                 label = T("Feature Group"),
-                comment = DIV(A(ADD_FEATURE_GROUP, _class="colorbox", _href=URL(r=request, c="gis", f="feature_group", args="create", vars=dict(format="popup")), _target="top", _title=ADD_FEATURE_GROUP), DIV( _class="tooltip", _title=T("Feature Group|A collection of Feature Classes which can be displayed together on a map or exported together."))),
+                comment = DIV(A(ADD_FEATURE_GROUP, _class="colorbox", _href=URL(r=request, c="gis", f="feature_group", args="create", vars=dict(format="popup")), _target="top", _title=ADD_FEATURE_GROUP),
+                          DIV( _class="tooltip", _title=Tstr("Feature Group") + "|" + Tstr("A collection of Feature Classes which can be displayed together on a map or exported together."))),
                 ondelete = "RESTRICT"
                 ))
 
@@ -492,7 +496,7 @@ table.name.comment = SPAN("*", _class="req")
 table.track.requires = IS_UPLOAD_FILENAME(extension="gpx")
 table.track.description = T("Description")
 table.track.label = T("GPS Track File")
-table.track.comment = DIV(SPAN("*", _class="req"), DIV( _class="tooltip", _title=T("GPS Track|A file in GPX format taken from a GPS whose timestamps can be correlated with the timestamps on the photos to locate them on the map.")))
+table.track.comment = DIV(SPAN("*", _class="req"), DIV( _class="tooltip", _title=Tstr("GPS Track") + "|" + Tstr("A file in GPX format taken from a GPS whose timestamps can be correlated with the timestamps on the photos to locate them on the map.")))
 ADD_TRACK = T("Upload Track")
 LIST_TRACKS = T("List Tracks")
 s3.crud_strings[tablename] = Storage(
@@ -515,7 +519,8 @@ track_id = db.Table(None, "track_id",
                 requires = IS_NULL_OR(IS_ONE_OF(db, "gis_track.id", "%(name)s")),
                 represent = lambda id: (id and [db(db.gis_track.id == id).select(db.gis_track.name, limitby=(0, 1)).first().name] or ["None"])[0],
                 label = T("Track"),
-                comment = DIV(A(ADD_TRACK, _class="colorbox", _href=URL(r=request, c="gis", f="track", args="create", vars=dict(format="popup")), _target="top", _title=ADD_TRACK), DIV( _class="tooltip", _title=T("GPX Track|A file downloaded from a GPS containing a series of geographic points in XML format."))),
+                comment = DIV(A(ADD_TRACK, _class="colorbox", _href=URL(r=request, c="gis", f="track", args="create", vars=dict(format="popup")), _target="top", _title=ADD_TRACK),
+                          DIV( _class="tooltip", _title=Tstr("GPX Track") + "|" + Tstr("A file downloaded from a GPS containing a series of geographic points in XML format."))),
                 ondelete = "RESTRICT"
                 ))
 
@@ -639,6 +644,8 @@ table = db.define_table(tablename, timestamp,
 # upload folder needs to be visible to the download() function as well as the upload
 table.file.uploadfolder = os.path.join(request.folder, "uploads/gis_cache")
 
+# Not yet implemented
+
 # GIS Styles: SLD
 #db.define_table("gis_style", timestamp,
 #                Field("name", notnull=True, unique=True))
@@ -650,4 +657,3 @@ table.file.uploadfolder = os.path.join(request.folder, "uploads/gis_cache")
 #db.define_table("gis_webmapcontext", timestamp,
 #                Field("user", db.auth_user))
 #db.gis_webmapcontext.user.requires = IS_ONE_OF(db, "auth_user.id", "%(email)s")
-

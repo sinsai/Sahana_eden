@@ -12,13 +12,13 @@ module = request.controller
 
 # Options Menu (available in all Functions' Views)
 response.menu_options = [
-    [T("Locations"), False, URL(r=request, f="location"), [
-            [T("List"), False, URL(r=request, f="location")],
-            [T("Add"), False, URL(r=request, f="location", args="create")],
-        ]],
-    [T("Map Service Catalogue"), False, URL(r=request, f="map_service_catalogue")],
-    [T("Map Viewing Client"), False, URL(r=request, f="map_viewing_client")],
-    [T("Bulk Uploader"), False, URL(r=request, c="media", f="bulk_upload")],
+    [T("Map"), False, URL(r=request, f="map_viewing_client")],
+    [T("Locations"), False, URL(r=request, f="location")],
+    #, [ [T("List"), False, URL(r=request, f="location")],
+    #    [T("Add"), False, URL(r=request, f="location", args="create")] ]
+    [T("Service Catalogue"), False, URL(r=request, f="map_service_catalogue")],
+    # Currently broken
+    #[T("Bulk Uploader"), False, URL(r=request, c="media", f="bulk_upload")],
 ]
 
 # Web2Py Tools functions
@@ -206,7 +206,7 @@ def feature_class():
 
     output = shn_rest_controller(module, resource)
     
-    if not "gis" in response.view:
+    if not "gis" in response.view and response.view != "popup.html":
         response.view = "gis/" + response.view
     
     return output
@@ -292,13 +292,22 @@ def location():
     table.code.comment = DIV( _class="tooltip", _title=T("Code|For a country this would be the ISO2 code, for a Town, it would be the Airport Locode."))
     table.description.label = T("Description")
     table.parent.label = T("Parent")
+    table.parent.comment = DIV(A(ADD_LOCATION,
+                                       _class="colorbox",
+                                       _href=URL(r=request, c="gis", f="location", args="create", vars=dict(format="popup", child="parent")),
+                                       _target="top",
+                                       _title=ADD_LOCATION),
+                                     A(SPAN("[Help]"),
+                                       _class="tooltip",
+                                       _title=T("Parent|The Area which this Site is located within."))),
+                       
     table.addr_street.label = T("Street Address")
     table.gis_feature_type.label = T("Feature Type")
     table.lat.label = T("Latitude")
     CONVERSION_TOOL = T("Conversion Tool")
-    table.lat.comment = DIV(SPAN("*", _class="req"), A(CONVERSION_TOOL, _style="cursor:pointer;", _title=CONVERSION_TOOL, _id="btnConvert"), DIV( _class="tooltip", _title=T("Latitude|Latitude is North-South (Up-Down). Latitude is zero on the equator and positive in the northern hemisphere and negative in the southern hemisphere. This needs to be added in Decimal Degrees. Use the popup to convert from either GPS coordinates or Degrees/Minutes/Seconds.")))
+    table.lat.comment = DIV(A(CONVERSION_TOOL, _style="cursor:pointer;", _title=CONVERSION_TOOL, _id="btnConvert"), DIV( _class="tooltip", _title=T("Latitude|Latitude is North-South (Up-Down). Latitude is zero on the equator and positive in the northern hemisphere and negative in the southern hemisphere. This needs to be added in Decimal Degrees. Use the popup to convert from either GPS coordinates or Degrees/Minutes/Seconds.")))
     table.lon.label = T("Longitude")
-    table.lon.comment = DIV(SPAN("*", _class="req"), DIV( _class="tooltip", _title=T("Longitude|Longitude is West - East (sideways). Longitude is zero on the prime meridian (Greenwich Mean Time) and is positive to the east, across Europe and Asia.  Longitude is negative to the west, across the Atlantic and the Americas.  This needs to be added in Decimal Degrees. Use the popup to convert from either GPS coordinates or Degrees/Minutes/Seconds.")))
+    table.lon.comment = DIV( _class="tooltip", _title=T("Longitude|Longitude is West - East (sideways). Longitude is zero on the prime meridian (Greenwich Mean Time) and is positive to the east, across Europe and Asia.  Longitude is negative to the west, across the Atlantic and the Americas.  This needs to be added in Decimal Degrees. Use the popup to convert from either GPS coordinates or Degrees/Minutes/Seconds."))
     table.wkt.label = T("Well-Known Text")
     table.wkt.comment = DIV(SPAN("*", _class="req"), DIV( _class="tooltip", _title=T("WKT|The <a href='http://en.wikipedia.org/wiki/Well-known_text' target=_blank>Well-Known Text</a> representation of the Polygon/Line.")))
     table.osm_id.label = "OpenStreetMap"
@@ -346,6 +355,54 @@ def location():
         # .belongs() not GAE-compatible!
         filters.append((db.gis_location.parent.belongs(db(db.gis_location.name.like(parent)).select(db.gis_location.id))))
         # ToDo: Make this recursive - want ancestor not just direct parent!
+
+    if "caller" in _vars:
+        caller = _vars["caller"]
+        if "gis_location_parent" in caller:
+            # If a Parent location then populate defaults for the fields & Hide unnecessary rows
+            table.description.readable = table.description.writable = False
+            #table.level.readable = table.level.writable = False
+            table.code.readable = table.code.writable = False
+            table.feature_class_id.readable = table.feature_class_id.writable = False
+            # Use default Marker for Class
+            table.marker_id.readable = table.marker_id.writable = False
+            #table.gis_feature_type.readable = table.gis_feature_type.writable = False
+            #table.gis_feature_type.default = 
+            table.wkt.readable = table.wkt.writable = False
+            table.addr_street.readable = table.addr_street.writable = False
+            table.osm_id.readable = table.osm_id.writable = False
+            table.source.readable = table.source.writable = False
+
+        else:
+            fc = None
+            # When called from a Popup, populate defaults & hide unnecessary rows
+            if "pr_presence" in caller:
+                fc = db(db.gis_feature_class.name == "Person").select(db.gis_feature_class.id, limitby=(0, 1)).first()
+            elif "org_project" in caller:
+                fc = db(db.gis_feature_class.name == "Project").select(db.gis_feature_class.id, limitby=(0, 1)).first()
+            elif "org_office" in caller:
+                fc = db(db.gis_feature_class.name == "Office").select(db.gis_feature_class.id, limitby=(0, 1)).first()
+            elif "hms_hospital" in caller:
+                fc = db(db.gis_feature_class.name == "Hospital").select(db.gis_feature_class.id, limitby=(0, 1)).first()
+            elif "cr_shelter" in caller:
+                fc = db(db.gis_feature_class.name == "Shelter").select(db.gis_feature_class.id, limitby=(0, 1)).first()
+
+            try:
+                table.feature_class_id.default = fc.id
+                table.feature_class_id.readable = table.feature_class_id.writable = False
+                # Use default Marker for Class
+                table.marker_id.readable = table.marker_id.writable = False
+            except:
+                pass
+
+            table.description.readable = table.description.writable = False
+            table.level.readable = table.level.writable = False
+            table.code.readable = table.code.writable = False
+            # Fails to submit if hidden server-side
+            #table.gis_feature_type.readable = table.gis_feature_type.writable = False
+            table.wkt.readable = table.wkt.writable = False
+            table.osm_id.readable = table.osm_id.writable = False
+            table.source.readable = table.source.writable = False
 
     # ToDo
     # if "bbox" in request.vars:
@@ -405,7 +462,7 @@ def marker():
 
     output = shn_rest_controller(module, resource)
     
-    if not "gis" in response.view:
+    if not "gis" in response.view and response.view != "popup.html":
         response.view = "gis/" + response.view
     
     return output
@@ -2037,7 +2094,7 @@ def display_features():
 def geolocate():
     " Call a Geocoder service "
     if "location" in request.vars:
-        location = request.vars.service
+        location = request.vars.location
     else:
         session.error = T("Need to specify a location to search for.")
         redirect(URL(r=request, f="index"))

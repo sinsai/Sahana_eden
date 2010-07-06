@@ -28,7 +28,8 @@ if deployment_settings.has_module(module):
         1:T("Pledged"),
         2:T("In Transit"),
         3:T("Delivered"),
-        4:T("Cancelled")
+        4:T("Received"),
+        5:T("Cancelled")
         }
 
     rms_type_opts = {
@@ -298,7 +299,7 @@ if deployment_settings.has_module(module):
         Field("status", "integer"),
         organisation_id,
         person_id,
-        #   Field("comment_id", db.comment),
+        shn_comments_field,
         migrate=migrate)
 
     #table.id.represent = lambda id: shn_req_pledge_represent(id)

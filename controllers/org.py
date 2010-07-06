@@ -26,16 +26,21 @@ response.menu_options = [
         [T("Add"), False, URL(r=request, f="office", args="create")],
         #[T("Search"), False, URL(r=request, f="office", args="search")]
     ]],
+    [T("Projects"), False, URL(r=request, f="project"),[
+        [T("List"), False, URL(r=request, f="project")],
+        [T("Add"), False, URL(r=request, f="project", args="create")],
+        #[T("Search"), False, URL(r=request, f="project", args="search")]
+    ]],
     [T("Staff"), False, URL(r=request, f="staff"),[
         [T("List"), False, URL(r=request, f="staff")],
         [T("Add"), False, URL(r=request, f="staff", args="create")],
         #[T("Search"), False, URL(r=request, f="staff", args="search")]
     ]],
-    [T("Projects"), False, URL(r=request, f="project"),[
-        [T("List"), False, URL(r=request, f="project")],
-        [T("Add"), False, URL(r=request, f="project", args="create")],
-        #[T("Search"), False, URL(r=request, f="project", args="search")]
-    ]]
+    [T("Tasks"), False, URL(r=request, f="task"),[
+        [T("List"), False, URL(r=request, f="task")],
+        [T("Add"), False, URL(r=request, f="task", args="create")],
+        #[T("Search"), False, URL(r=request, f="task", args="search")]
+    ]],
 ]
 
 # S3 framework functions
@@ -97,9 +102,12 @@ def organisation():
     
     output = shn_rest_controller(module, resource,
                                  listadd=False,
-                                 rheader=lambda jr: shn_project_rheader(jr,
+                                 rheader=lambda jr: shn_org_rheader(jr,
                                                                     tabs = [(T("Basic Details"), None),
-                                                                            (T("Positions"), "position"),
+                                                                            (T("Offices"), "office"),
+                                                                            (T("Staff"), "staff"),
+                                                                            (T("Projects"), "project"),
+                                                                            (T("Tasks"), "task"),
                                                                             #(T("Donors"), "organisation"),
                                                                             #(T("Sites"), "site"),          # Ticket 195
                                                                            ]
@@ -151,10 +159,7 @@ def office():
     
     if isinstance(request.vars.organisation_id, list):
         request.vars.organisation_id = request.vars.organisation_id[0]
-    if session.s3.security_policy == 1:
-        # Hide the Admin row for simple security_policy
-        table.admin.readable = table.admin.writable = False
-    
+
     def org_postp(jr, output):
         shn_action_buttons(jr)
         return output
@@ -174,10 +179,11 @@ def office():
     
     output = shn_rest_controller(module, resource, listadd=False,
                                  rheader=lambda jr: shn_org_rheader(jr,
-                                                                    tabs = [(T("Basic Details"), None),
-                                                                            (T("Contact Data"), "pe_contact"),
-                                                                           ]
-                                                                   ),
+                                                                       tabs = [(T("Basic Details"), None),
+                                                                               (T("Contact Data"), "pe_contact"),
+                                                                               (T("Staff"), "staff"),
+                                                                              ]
+                                                                      ),
                                  sticky=True
                                 )
 
@@ -299,6 +305,9 @@ def project():
     # ServerSidePagination
     response.s3.pagination = True
 
+    db.org_staff.person_id.comment[1] = DIV(DIV(_class="tooltip",
+                              _title=Tstr("Person") + "|" + Tstr("Select the person assigned to this role for this project.")))
+    
     output = shn_rest_controller(module, resource,
                                  listadd=False,
                                  main="code",
@@ -311,6 +320,26 @@ def project():
                                                                            ]
                                                                    ),
                                  sticky=True
+                                )
+    
+    return output
+
+def task():
+    "RESTful CRUD controller"
+    resource = request.function
+    tablename = "%s_%s" % (module, resource)
+    table = db[tablename]
+    
+    def org_postp(jr, output):
+        shn_action_buttons(jr)
+        return output
+    response.s3.postp = org_postp
+    
+    # ServerSidePagination
+    response.s3.pagination = True
+
+    output = shn_rest_controller(module, resource,
+                                 listadd=False
                                 )
     
     return output
@@ -376,20 +405,21 @@ def org_sub_list(tablename, org_id):
 
 def dashboard():
 
+    INVALID_ORGANIZATION = T("Invalid Organization ID!")
     # Get Organization to display from Arg, Var, Session or Default
     if len(request.args) > 0:
         org_id = int(request.args[0])
         try:
             org_name = db(db.org_organisation.id == org_id).select(db.org_organisation.name, limitby=(0, 1)).first().name
         except:
-            session.error = T("Invalid Organisation ID!")
+            session.error = INVALID_ORGANIZATION
             redirect(URL(r=request, c="org", f="index"))
     elif "name" in request.vars:
         org_name = request.vars["name"]
         try:
             org_id = db(db.org_organisation.name == org_name).select(db.org_organisation.id, limitby=(0, 1)).first().id
         except:
-            session.error = T("Invalid Organisation ID!")
+            session.error = INVALID_ORGANIZATION
             redirect(URL(r=request, c="org", f="index"))
     else:
         table = db.org_organisation
@@ -402,7 +432,7 @@ def dashboard():
         try:
             org_name = db(query).select(table.name, limitby=(0, 1)).first().name
         except:
-            session.warning = T("No Organisations registered!")
+            session.warning = T("No Organizations registered!")
             redirect(URL(r=request, c="org", f="index"))
 
     o_opts = []
@@ -460,12 +490,7 @@ def dashboard():
 
     session.s3.organisation_id = org_id
 
-    return dict(organisation_id = org_id, organisation_select = organisation_select, org_details = org_details, office_list = office_list, staff_list = staff_list, project_list = project_list, but_add_org =but_add_org, but_edit_org =but_edit_org, but_add_office = but_add_office, but_add_staff = but_add_staff, but_add_project = but_add_project)
-
-def who_what_where_when():
-    project_list = crud.select("org_project", query = db.org_project.id > 0)
-    #print project_list
-    return dict(project_list = project_list)
+    return dict(organisation_id=org_id, organisation_select=organisation_select, org_details=org_details, office_list=office_list, staff_list=staff_list, project_list=project_list, but_add_org=but_add_org, but_edit_org=but_edit_org, but_add_office=but_add_office, but_add_staff=but_add_staff, but_add_project=but_add_project)
 
 def shn_org_rheader(jr, tabs=[]):
     " Organisation Registry page headers "
@@ -488,7 +513,7 @@ def shn_org_rheader(jr, tabs=[]):
             
             rheader = DIV(TABLE(
                 TR(
-                    TH(T("Organisation: ")),
+                    TH(T("Organization: ")),
                     organisation.name,
                     TH(T("Sector(s): ")),
                     _sectors
@@ -516,10 +541,10 @@ def shn_org_rheader(jr, tabs=[]):
                         TH(T("Name: ")),
                         office.name,
                         TH(T("Type: ")),
-                        org_office_type_opts[office.type],
+                        org_office_type_opts.get(office.type, UNKNOWN_OPT),
                         ),
                     TR(
-                        TH(T("Organisation: ")),
+                        TH(T("Organization: ")),
                         organisation.name,
                         TH(T("Location: ")),
                         shn_gis_location_represent(office.location_id),

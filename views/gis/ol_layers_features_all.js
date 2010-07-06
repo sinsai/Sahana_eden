@@ -27,7 +27,7 @@ map.addLayer(featuresLayer{{=fgname}});
 featuresLayers.push(featuresLayer{{=fgname}});
 featuresLayer{{=fgname}}.events.on({ "featureselected": onFeatureSelect, "featureunselected": onFeatureUnselect });
 {{for feature in features[feature_group.id]:}}
-  {{if feature.gis_location.id:}}
+  {{if feature.gis_location.id and feature.gis_location.wkt:}}
     geom = parser.read('{{=feature.gis_location.wkt}}').geometry;
     geom = geom.transform(proj4326, projection_current);
     popupContentHTML = "{{include 'gis/ol_features_popup.html'}}";

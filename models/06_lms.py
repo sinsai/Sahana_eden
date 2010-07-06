@@ -47,7 +47,7 @@ if deployment_settings.has_module(module):
                     Field('multiplicator', 'double', default=1.0), #by default 1 thisi s what links
                     migrate=migrate)
 
-    if not db(table.id>0).count():
+    if not db(table.id > 0).count():
         table.insert(
             opt_lms_unit_type=1,
             label="m",
@@ -119,7 +119,6 @@ if deployment_settings.has_module(module):
                     db.Field('name', notnull=True),
                     db.Field('description'),
                                     opt_site_category,
-                    admin_id,
                     person_id,
                                     organisation_id, #db.Field('organisation', db.org_organisation),
                     db.Field('address', 'text'),
@@ -134,7 +133,6 @@ if deployment_settings.has_module(module):
     table.name.label = T("Site Name")
     table.name.comment = SPAN("*", _class="req"), A(SPAN("[Help]"), _class="tooltip", _title=T("Site Name|A Warehouse/Site is a physical location with an address and GIS data where Items are Stored. It can be a Building, a particular area in a city or anything similar."))
     table.description.comment = A(SPAN("[Help]"), _class="tooltip", _title=T("Site Description|Use this space to add a description about the warehouse/site."))
-    table.admin.label = T("Site Manager")
     table.person_id.label = T("Contact Person")
     table.address.comment = A(SPAN("[Help]"), _class="tooltip", _title=T("Site Address|Detailed address of the site for informational/logistics purpose. Please note that you can add GIS/Mapping data about this site in the 'Location' field mentioned below."))
     table.attachment.label = T("Image/Other Attachment")

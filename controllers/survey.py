@@ -230,10 +230,12 @@ def addButtons(form, prev = None, next = None, finish = None,cancel=None):
     """
     form[0][-1][1][0] = "" # remove the original Save Button
     if prev:
-        form[0][-1][1].append(INPUT(_type="submit",_name = "prev",_value=T("Previous"), _id="prev"))
+        form[-1][-1][2].append(INPUT(_type="submit",_name = "prev",_value=T("Previous"), _id="prev"))
+        form[-1][-1][2].append(" ")
     if next:
-        form[0][-1][1].append(INPUT(_type="submit", _value=T("Next"),_name="next",_id="next"))
+        form[-1][-1][2].append(INPUT(_type="submit", _value=T("Next"),_name="next",_id="next"))
+        form[-1][-1][2].append(" ")
     if finish:
-        form[0][-1][1].append(INPUT(_type="submit", _value=T("Finish"),_name="finish",_id="finish"))
-    return form
-     
+        form[-1][-1][2].append(INPUT(_type="submit", _value=T("Finish"),_name="finish",_id="finish"))
+        form[-1][-1][2].append("  ")
+    return form     

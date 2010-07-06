@@ -9,7 +9,8 @@
 module = "survey"
 
 from gluon.sqlhtml import *
-# Reusable field to include in other table definitions
+
+
 ADD_LOCATION = T("Add Location")
 repr_select = lambda l: len(l.name) > 48 and "%s..." % l.name[:44] or l.name
 location_id = db.Table(None, "location_id",
@@ -29,6 +30,7 @@ location_id = db.Table(None, "location_id",
 s3xrc.model.configure(db.gis_location,
                       onvalidation=lambda form: gis.wkt_centroid(form),
                       onaccept=gis.update_location_tree())
+
 if deployment_settings.has_module(module):
 
     #Reusable table

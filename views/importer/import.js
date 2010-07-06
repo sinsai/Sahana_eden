@@ -16,7 +16,7 @@ function import_spreadsheet(table,header_row,importsheet,map_from_ss_to_field)
 	//making importable json object of the spreadsheet data
 	for(var i=0;i<importsheet.rows;i++)
 	{
-		var rowobj="{ ";
+		var rowobj="{";
 		for(var j=0;j<importsheet.columns;j++)
 		{
 			var field="\""+map[j][2]+"\"";
@@ -28,7 +28,7 @@ function import_spreadsheet(table,header_row,importsheet,map_from_ss_to_field)
 					rowobj+=",\"$\":\""+importsheet.data[i][j]+"\"}";
 				}
 				else
-					rowobj+=field+" : \""+importsheet.data[i][j]+"\"";
+					rowobj+=field+":\""+importsheet.data[i][j]+"\"";
 				if(j!=importsheet.columns-1) 
 					rowobj+=",";
 			}
@@ -36,22 +36,44 @@ function import_spreadsheet(table,header_row,importsheet,map_from_ss_to_field)
 		}
 		rowobj+=",\"@modified_on\":\"";
 		rowobj+=modifydate;
-		rowobj+=" \"}";
-		try{
+		rowobj+="\"}";
+		//document.write("The row object is "+rowobj+"<br/>");
+		/*try{
 			rowobj=eval('('+rowobj+')');
 		}
 		catch(err)
 		{
 			alert("Error");
-		}
+		}*/
 		jsonss.push(rowobj);
 	}
 	var posturl="http://localhost:8000/newins/"+prefix+"/"+name+"/create.json";
-	document.write(posturl);
+	document.write(rowobj);
+	var sendobj="{\""+str+"\":"+rowobj+"}";
+	document.write("<br/>The URL for post request->"+posturl+" and the sending status is ->");
 	var send="{\""+str+"\":\"\"}";
  	send=eval('('+send+')');
 	send.str=jsonss;	
-	jQuery.post({
+	Ext.Ajax.request({
+		url : posturl,
+		params : {foo : sendobj},
+		method : 'POST',
+		success : function()
+			{
+				document.write("Successfully sent");
+			},
+		failure: function()
+			{
+				document.write("Sending failed");
+			},
+		listeners:{
+				requestexception: function(conn,response,options)
+				{
+					console.log(response);
+				}
+			}
+	});
+	/*jQuery.post({
 		type : 'POST',
 		url : posturl,
 		data : rowobj,
@@ -60,4 +82,5 @@ function import_spreadsheet(table,header_row,importsheet,map_from_ss_to_field)
 				document.write('<b>'+data.status+'</b>');
 			}
 		});
+	*/
 }

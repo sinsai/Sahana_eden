@@ -226,7 +226,8 @@ function view4(header,table,numcol,grid_data)
 					}
 					catch(err)
 					{
-						Ext.Msg.alert("","An error occured");}
+					//	Ext.Msg.alert("","An error occured->"+err);
+						}
 				    /*	columnmap.getForm().submit({
 				    		success: function(form,action){
 				       			Ext.Msg.alert('Success', 'It worked');

@@ -80,5 +80,5 @@ def json(path_to_file,appname):
     jsonfile.close()
 
 def pathfind(filename):
-    str = 'uploads/' + filename
+    str = "uploads/" + filename
     return str

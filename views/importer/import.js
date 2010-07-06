@@ -16,6 +16,8 @@ function import_spreadsheet(table,header_row,importsheet,map_from_ss_to_field)
 	//making importable json object of the spreadsheet data
 	for(var i=0;i<importsheet.rows;i++)
 	{
+		if(i==header_row)
+			continue;
 		var rowobj="{";
 		for(var j=0;j<importsheet.columns;j++)
 		{
@@ -38,25 +40,26 @@ function import_spreadsheet(table,header_row,importsheet,map_from_ss_to_field)
 		rowobj+=modifydate;
 		rowobj+="\"}";
 		//document.write("The row object is "+rowobj+"<br/>");
-		/*try{
+		try{
 			rowobj=eval('('+rowobj+')');
 		}
 		catch(err)
 		{
 			alert("Error");
-		}*/
+		}
 		jsonss.push(rowobj);
 	}
-	var posturl="http://localhost:8000/newins/"+prefix+"/"+name+"/create.json";
+	var posturl="http://localhost:8000/{{=request.application}}/"+prefix+"/"+name+"/create.json";
 	document.write(rowobj);
 	var sendobj="{\""+str+"\":"+rowobj+"}";
 	document.write("<br/>The URL for post request->"+posturl+" and the sending status is ->");
 	var send="{\""+str+"\":\"\"}";
  	send=eval('('+send+')');
-	send.str=jsonss;	
+	send[str]=rowobj;	
 	Ext.Ajax.request({
 		url : posturl,
-		params : {foo : sendobj},
+		//params : {body:send},
+		jsonData: send,//send as body,
 		method : 'POST',
 		success : function()
 			{
@@ -67,20 +70,10 @@ function import_spreadsheet(table,header_row,importsheet,map_from_ss_to_field)
 				document.write("Sending failed");
 			},
 		listeners:{
-				requestexception: function(conn,response,options)
+				requestexception: function(c,r,o)
 				{
-					console.log(response);
+					alert(r);
 				}
 			}
 	});
-	/*jQuery.post({
-		type : 'POST',
-		url : posturl,
-		data : rowobj,
-		success: function(data,textStatus,XmlHttpRequest)
-			{
-				document.write('<b>'+data.status+'</b>');
-			}
-		});
-	*/
 }

@@ -79,10 +79,6 @@ def json(path_to_file,appname):
     jsonfile.write(json)
     jsonfile.close()
 
-def pathfind(k):
-    str=k[0]
-    str=repr(str)
-    str=str[3:]
-    str=str[0:len(str)-3]
-    str='uploads/' + str
+def pathfind(filename):
+    str = 'uploads/' + filename
     return str

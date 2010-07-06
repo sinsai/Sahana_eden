@@ -10,9 +10,9 @@ response.menu_options = [
     [T('Google Documents'), False, URL(r=request, f='googledoc')]
 ]
 
-exec('import applications.%s.modules.importer as importer' % (request.application))
+#exec('import applications.%s.modules.importer as importer' % (request.application))
 #from applications.eden1.modules.importer import *
-
+importer=local_import("importer")
 def index(): 
     return dict(module_name=module_name)
 def googledoc():
@@ -24,15 +24,18 @@ def spreadsheet():
     
 def slist():
     
-    q=db.importer_slist.id>0
-    s=db(q)
-    initid=0
-    rows=s.select()
-    for row in rows:
-        if(row.id>initid):
-            initid=row.id
-    k=db.executesql("select Path from importer_slist where id==%s;"%(initid))
     
+   #q=db.importer_slist.id>0
+   # s=db(q)
+   # initid=0
+   # rows=s.select()
+   # for row in rows:
+   #     if(row.id>initid):
+   #         initid=row.id
+   # k=db.executesql("select Path from importer_slist where id==%s;"%(initid))
+    
+    k=db(db.importer_slist.id>0).select().last()
+    k=k.Path;
     str=importer.pathfind(k)
     str=request.folder+str
     temp=importer.removerowcol(str)

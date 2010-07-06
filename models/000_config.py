@@ -160,6 +160,11 @@ deployment_settings.modules = Storage(
             description = "Master Message Log to process incoming reports & requests",
             module_type = 10
         ),
+    survey = Storage(
+            name_nice = "Survey Module",
+            description = "A tool to create, manage, and complete surveys to assess damage following a natural disaster.",
+            module_type = 10
+        )
     #lms = Storage(
     #        name_nice = "Logistics Management System",
     #        description = "An intake system, a warehouse management system, commodity tracking, supply chain management, procurement and other asset and resource management capabilities.",

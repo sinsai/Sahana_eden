@@ -71,7 +71,7 @@ class S3Config(Storage):
             _modules = [
                 "admin",        # Admin
                 "gis",          # GIS
-                "media",        # Media Manager
+                "doc",          # Document Library
                 "pr",           # Person Registry
                 "org",          # Organisation Registry
                 "budget",       # Budgetting

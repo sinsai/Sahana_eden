@@ -37,6 +37,34 @@ class RequestWithMethod(urllib2.Request):
     def get_method(self):
         return self._method
 
+class Error:
+    # indicates an HTTP error
+    def __init__(self, url, errcode, errmsg, headers):
+        self.url = url
+        self.errcode = errcode
+        self.errmsg = errmsg
+        self.headers = headers
+    def __repr__(self):
+        return (
+            "<Error for %s: %s %s>" %
+            (self.url, self.errcode, self.errmsg)
+            )
+
+class FetchURL:
+    def fetch(self, request, host, path, data):
+        import httplib
+        http = httplib.HTTPConnection(host)
+        # write header
+        headers = {"Content-type": "application/x-www-form-urlencoded", "Accept": "text/plain"}
+        http.request(request, path, data, headers)
+        # get response
+        response = http.getresponse()
+        retcode = response.status
+        retmsg = response.reason
+        if retcode != 200:
+            raise Error(str(host) + str(path), retcode, retmsg, headers)
+        return response.read()
+
 @auth.requires_login()
 def now():
     "Manual syncing"
@@ -53,6 +81,9 @@ def now():
     if not (settings.username or settings.password):
         final_status = "Please specify Username and Password in Sync Settings before proceeding with Sync, this Username and Password must belong to a user account that is capable of modifying records (in database), usually an Administrator.<br /><br /><a href=\"" + URL(r=request, c="sync", f="setting/1/update") + "\">Click here</a> to go to Sync Settings.<br /><br />\n"
         return dict(module_name=module_name, sync_status=final_status)
+
+    # url fetcher
+    fetcher = FetchURL()
 
     # for eden instances
     final_status = ""
@@ -101,19 +132,20 @@ def now():
                 resource_url += "sync/sync.xml/" + _module + "/" + _resource + last_sync_on_str
                 final_status += "......processing " + resource_url + "<br />\n"
                 # sync this resource (Pull => fetch and sync)
-                resource_sync_url = _base_url + "sync/sync.xml/create/" + _module + "/" + _resource
+                resource_sync_url = "/sync/sync.xml/create/" + _module + "/" + _resource
                 import urllib, urllib2
                 _request_params = urllib.urlencode({"sync_partner_uuid": str(peer.uuid), "fetchurl": resource_url, "sync_username": settings.username, "sync_password": settings.password})
                 try:
-                    _request = RequestWithMethod("PUT", resource_sync_url, _request_params)
-                    _response = urllib2.urlopen(_request).read()
-                except IOError, e:
+                    #_request = RequestWithMethod("PUT", resource_sync_url, _request_params)
+                    #_response = urllib2.urlopen(_request).read()
+                    _response = fetcher.fetch("PUT", request.env.http_host, "/" + request.application + resource_sync_url, _request_params)
+                except Error, e:
                     if tables_error:
                         tables_error += ", "
                     tables_error += _module + "_" + _resource
-                    final_status += "ERROR while processing: " + resource_sync_url + "<br />\n"
+                    #final_status += "ERROR while processing: " + resource_sync_url + "<br />\n"
                     error_str = str(e).replace("<", "&lt;").replace(">", "&gt;")
-                    final_status += "ERROR: " + error_str + "<br /><br />\n"
+                    final_status += error_str + "<br /><br />\n"
                 else:
                     if tables_success:
                         tables_success += ", "
@@ -174,7 +206,7 @@ def sync():
 
     if _function == "list" or _function == "create":
         s3xrc.sync_resolve = sync_res
-        return shn_rest_controller(module=_module, resource=_resource)
+        return shn_rest_controller(module=_module, resource=_resource, push_limit=None)
     else:
         return T("Not supported")
     

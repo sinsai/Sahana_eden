@@ -54,7 +54,7 @@ def setting():
     #crud.settings.update_next = URL(r=request, args=[1, "update"])
 
     s3xrc.model.configure(table,
-                          onvalidation=theme_check,
+                          #onvalidation=theme_check,
                           onaccept=theme_apply)
     return shn_rest_controller("s3", "setting", deletable=False, listadd=False)
     s3xrc.model.clear_config(table, "onvalidation", "onaccept")
@@ -69,8 +69,8 @@ def theme():
     # Model options
     table.name.label = T("Name")
     table.name.comment = SPAN("*", _class="req")
-    table.logo.label = T("Logo")
-    table.logo.comment = A(SPAN("[Help]"), _class="tooltip", _title=T("Logo|Name of the file (& optional sub-path) located in static which should be used for the top-left image."))
+    #table.logo.label = T("Logo")
+    #table.logo.comment = A(SPAN("[Help]"), _class="tooltip", _title=T("Logo|Name of the file (& optional sub-path) located in static which should be used for the top-left image."))
     #table.header_background.label = T("Header Background")
     #table.header_background.comment = A(SPAN("[Help]"), _class="tooltip", _title=T("Header Background|Name of the file (& optional sub-path) located in static which should be used for the background of the header."))
     #table.footer.label = T("Footer")
@@ -108,9 +108,9 @@ def theme():
         msg_list_empty = T("No Themes currently defined"))
 
     s3xrc.model.configure(table,
-                          onvalidation=theme_check,
+                          #onvalidation=theme_check,
                           #list_fields=["id", "name", "logo", "footer", "col_background"],
-                          list_fields=["id", "name", "logo", "col_background"],
+                          list_fields=["id", "name", "col_background"],
                           )
 
     return shn_rest_controller(module, resource)
@@ -145,10 +145,10 @@ def theme_apply(form):
         # Read settings from Database
         theme = db(db.admin_theme.id == form.vars.theme).select(limitby=(0, 1)).first()
         default_theme = db(db.admin_theme.id == 1).select(limitby=(0, 1)).first()
-        if theme.logo:
-            logo = theme.logo
-        else:
-            logo = default_theme.logo
+        #if theme.logo:
+        #    logo = theme.logo
+        #else:
+        #    logo = default_theme.logo
         #if theme.header_background:
         #    header_background = theme.header_background
         #else:
@@ -160,7 +160,7 @@ def theme_apply(form):
         # Write out CSS
         ofile = open(out_file, "w")
         for line in lines:
-            line = line.replace("YOURLOGOHERE", logo)
+            #line = line.replace("YOURLOGOHERE", logo)
             #line = line.replace("HEADERBACKGROUND", header_background )
             line = line.replace("TEXT_DIRECTION", text_direction)
             # Iterate through Colours
@@ -197,7 +197,7 @@ def theme_apply(form):
         redirect(URL(r=request))
 
 def theme_check(form):
-    "Check the Theme has valid files available"
+    "Check the Theme has valid files available. Deprecated"
     # Check which form we're called by
     if form.vars.theme:
         # Called from Settings
@@ -645,6 +645,7 @@ def import_job():
     module = "admin"
     resource = "import_job"
     table = "%s_%s" % (module, resource)
+    # This breaks!
     jr = s3xrc.request(module, resource, request, session=session)
     CREATE_NEW_IMPORT_JOB = T("Create New Import Job")
     LIST_IMPORT_JOBS = ("List Import Jobs")
@@ -663,7 +664,7 @@ def import_job():
 
     if len(request.args) == 0:
         return _import_job_list(jr)
-    action = request.args[0]
+    action = request.args(0)
     if action == "create":
         return _import_job_create(jr)
     if action == "update":

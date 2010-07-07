@@ -121,25 +121,25 @@ def task():
     """ Manage current user's tasks """
 
     resource = request.function
+    tablename = "org_%s" % (resource)
+    table = db[tablename]
 
     my_person_id = None
 
     if auth.user is not None and auth.user.person_uuid:
-        my_person_id = db(db.pr_person.uuid == auth.user.person_uuid).select(db.pr_person.id, limitby=(0,1))
-        if my_person_id:
-            my_person_id = my_person_id.first()
+        my_person_id = db(db.pr_person.uuid == auth.user.person_uuid).select(db.pr_person.id, limitby=(0,1)).first()
 
     if not my_person_id:
         session.error = T("No person record found for current user.")
         redirect(URL(r=request, f="index"))
 
-    db.org_task.person_id.default = my_person_id
-    #db.org_task.person_id.writable = False
+    table.person_id.default = my_person_id
+    #table.person_id.writable = False
 
     response.s3.filter = (db.org_task.person_id == my_person_id)
 
-    s3.crud_strings["org_task"].title_list = T("My Tasks")
-    s3.crud_strings["org_task"].subtitle_list = T("Task List")
+    s3.crud_strings[tablename].title_list = T("My Tasks")
+    s3.crud_strings[tablename].subtitle_list = T("Task List")
 
     response.s3.pagination = True
 

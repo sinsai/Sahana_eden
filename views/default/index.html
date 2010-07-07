@@ -1,36 +1,71 @@
 {{extend "layout.html"}}
 <div id="home">
 <h2>{{=T("Welcome to the Sahana Eden Disaster Management System")}}</h2>
-<p>
-{{=T("Sahana Eden is a collection of web based disaster management applications that provides solutions to large-scale humanitarian coordination and collaboration in disaster situation and its aftermath. Sahana Eden consists of several modules for following functionalities")}}:
-</p>
-<ul>
-{{for module in modules:}}
-    {{_module = modules[module]}}
-    {{if module == "default":}}
-    {{elif not _module.access:}}
-        <li><strong>{{=A(T(_module.name_nice), _href=URL(r=request, c=module, f="index"))}}</strong> - {{=_module.description}}.</li>
-    {{else:}}
-        {{authorised = False}}
-        {{groups = re.split('\|', _module.access)[1:-1]}}
-        {{for group in groups:}}
-            {{if int(group) in session.s3.roles:}}
-                {{authorised = True}}
+{{if 2 in session.s3.roles:}}
+    <p>
+    {{=T("Sahana Eden is a suite of web-based applications that provide solutions to coordination and collaboration for organisations working in disaster management. The following modules are available")}}:
+    </p>
+    <ul>
+    {{for module in modules:}}
+        {{_module = modules[module]}}
+        {{if module == "default":}}
+        {{elif not _module.access:}}
+            <li><strong>{{=A(T(_module.name_nice), _href=URL(r=request, c=module, f="index"))}}</strong> - {{=_module.description}}.</li>
+        {{else:}}
+            {{authorised = False}}
+            {{groups = re.split('\|', _module.access)[1:-1]}}
+            {{for group in groups:}}
+                {{if int(group) in session.s3.roles:}}
+                    {{authorised = True}}
+                {{pass}}
+            {{pass}}
+            {{if authorised == True:}}
+                <li><strong>{{=A(T(_module.name_nice), _href=URL(r=request, c=module, f="index"))}}</strong> - {{=_module.description}}.</li>
             {{pass}}
         {{pass}}
-        {{if authorised == True:}}
-            <li><strong>{{=A(T(_module.name_nice), _href=URL(r=request, c=module, f="index"))}}</strong> - {{=_module.description}}.</li>
-        {{pass}}
     {{pass}}
+    </ul>
+    <p>
+    {{=T("For more details on the Sahana Eden system, see the")}} <a href="http://eden.sahanafoundation.org">{{=T("Sahana Eden Website")}}</a>
+    <br/>{{=T("For live help from the Sahana community on using this application, go to")}} <a href="http://sahanafoundation.org/chat">{{=T("Sahana Community Chat")}}</a>
+    </p>
+    <p>
+    {{=T("Administrator")}}: {{=admin_name}}
+    <br/>{{=T("Email")}}: {{=admin_email}}
+    <br/>{{=T("Telephone")}}: {{=admin_tel}}
+    </p>
+{{else:}}
+  <div id="login_form">
+    <p>
+    {{=T("Sahana Eden is a suite of web-based applications that provide solutions to coordination and collaboration for organisations working in disaster management.")}}
+    </p>
+    <p>
+    {{=XML(Tstr("Registered users can") + " <b>" + Tstr("login") + "</b> " + Tstr("to access the system"))}}:
+    </p>
+    {{=H3(T("Login"))}}
+    {{include "auth/_login.html"}}
+  </div>
+{{if self_registration:}}
+  <div id="register_form" class="hide">
+    <p>
+    {{=XML(Tstr("If you would like to help, then please") + " <b>" +Tstr("sign-up now") + "</b>")}}:
+    </p>
+    {{=H3(T("Register"))}}
+    {{include "auth/_register.html"}}
+  </div>
 {{pass}}
-</ul>
-<p>
-{{=T("For more details on the Sahana Eden system, see the")}} <a href="http://eden.sahanafoundation.org">{{=T("Sahana Eden Website")}}</a>
-<br/>{{=T("For live help from the Sahana community on using this application, go to")}} <a href="http://sahanafoundation.org/chat">{{=T("Sahana Community Chat")}}</a>
-</p>
-<p>
-{{=T("Administrator")}}: {{=admin_name}}
-<br/>{{=T("Email")}} : {{=admin_email}}
-<br/>{{=T("Telephone")}} : {{=admin_tel}}
-</p>
 </div>
+<script type="text/javascript">//<![CDATA[
+$(document).ready(function() {
+    // Redirect Register Button to unhide
+    $("#register-btn").click(function() {
+        // Unhide register form
+        $("#register_form").removeClass("hide");
+        // Hide login form
+        $("#login_form").addClass("hide");
+        // Don't go to default location
+        return false;
+    });
+});
+//]]></script>
+{{pass}}

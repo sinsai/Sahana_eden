@@ -5,7 +5,7 @@
 # Populate dropdown
 db.auth_permission.table_name.requires = IS_IN_SET(db.tables)
 db.pr_pe_subscription.resource.requires = IS_IN_SET(db.tables)
-#db.msg_tag.resource.requires = IS_IN_SET(db.tables)
+db.msg_tag.resource.requires = IS_IN_SET(db.tables)
 
 # MSG
 s3msg = local_import("s3msg")

@@ -159,10 +159,7 @@ def office():
     
     if isinstance(request.vars.organisation_id, list):
         request.vars.organisation_id = request.vars.organisation_id[0]
-    if session.s3.security_policy == 1:
-        # Hide the Admin row for simple security_policy
-        table.admin.readable = table.admin.writable = False
-    
+
     def org_postp(jr, output):
         shn_action_buttons(jr)
         return output
@@ -408,20 +405,21 @@ def org_sub_list(tablename, org_id):
 
 def dashboard():
 
+    INVALID_ORGANIZATION = T("Invalid Organization ID!")
     # Get Organization to display from Arg, Var, Session or Default
     if len(request.args) > 0:
         org_id = int(request.args[0])
         try:
             org_name = db(db.org_organisation.id == org_id).select(db.org_organisation.name, limitby=(0, 1)).first().name
         except:
-            session.error = T("Invalid Organisation ID!")
+            session.error = INVALID_ORGANIZATION
             redirect(URL(r=request, c="org", f="index"))
     elif "name" in request.vars:
         org_name = request.vars["name"]
         try:
             org_id = db(db.org_organisation.name == org_name).select(db.org_organisation.id, limitby=(0, 1)).first().id
         except:
-            session.error = T("Invalid Organisation ID!")
+            session.error = INVALID_ORGANIZATION
             redirect(URL(r=request, c="org", f="index"))
     else:
         table = db.org_organisation
@@ -434,7 +432,7 @@ def dashboard():
         try:
             org_name = db(query).select(table.name, limitby=(0, 1)).first().name
         except:
-            session.warning = T("No Organisations registered!")
+            session.warning = T("No Organizations registered!")
             redirect(URL(r=request, c="org", f="index"))
 
     o_opts = []
@@ -492,7 +490,7 @@ def dashboard():
 
     session.s3.organisation_id = org_id
 
-    return dict(organisation_id = org_id, organisation_select = organisation_select, org_details = org_details, office_list = office_list, staff_list = staff_list, project_list = project_list, but_add_org =but_add_org, but_edit_org =but_edit_org, but_add_office = but_add_office, but_add_staff = but_add_staff, but_add_project = but_add_project)
+    return dict(organisation_id=org_id, organisation_select=organisation_select, org_details=org_details, office_list=office_list, staff_list=staff_list, project_list=project_list, but_add_org=but_add_org, but_edit_org=but_edit_org, but_add_office=but_add_office, but_add_staff=but_add_staff, but_add_project=but_add_project)
 
 def shn_org_rheader(jr, tabs=[]):
     " Organisation Registry page headers "
@@ -515,7 +513,7 @@ def shn_org_rheader(jr, tabs=[]):
             
             rheader = DIV(TABLE(
                 TR(
-                    TH(T("Organisation: ")),
+                    TH(T("Organization: ")),
                     organisation.name,
                     TH(T("Sector(s): ")),
                     _sectors
@@ -546,7 +544,7 @@ def shn_org_rheader(jr, tabs=[]):
                         org_office_type_opts.get(office.type, UNKNOWN_OPT),
                         ),
                     TR(
-                        TH(T("Organisation: ")),
+                        TH(T("Organization: ")),
                         organisation.name,
                         TH(T("Location: ")),
                         shn_gis_location_represent(office.location_id),

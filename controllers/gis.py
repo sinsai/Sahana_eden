@@ -77,9 +77,7 @@ def apikey():
     table = db[tablename]
 
     # Model options
-    table.name.label = T("Service")
     table.name.writable = False
-    table.apikey.label = T("Key")
     table.apikey.comment = SPAN("*", _class="req")
 
     # CRUD Strings
@@ -121,20 +119,11 @@ def config():
     table = db[tablename]
 
     # Model options
-    table.lat.label = T("Latitude")
-    table.lat.comment = DIV(SPAN("*", _class="req"), DIV( _class="tooltip", _title=T("Latitude|Latitude is North-South (Up-Down). Latitude is zero on the equator and positive in the northern hemisphere and negative in the southern hemisphere.")))
-    table.lon.label = T("Longitude")
-    table.lon.comment = DIV(SPAN("*", _class="req"), DIV( _class="tooltip", _title=T("Longitude|Longitude is West - East (sideways). Longitude is zero on the prime meridian (Greenwich Mean Time) and is positive to the east, across Europe and Asia.  Longitude is negative to the west, across the Atlantic and the Americas.")))
-    table.zoom.label = T("Zoom")
-    table.zoom.comment = DIV(SPAN("*", _class="req"), DIV( _class="tooltip", _title=T("Zoom|How much detail is seen. A high Zoom level means lot of detail, but not a wide area. A low Zoom level means seeing a wide area, but not a high level of detail.")))
-    table.marker_id.label = T("Default Marker")
-    table.map_height.label = T("Map Height")
-    table.map_height.comment = DIV(SPAN("*", _class="req"), DIV( _class="tooltip", _title=T("Height|Default Height of the map window. In Window layout the map maximises to fill the window, so no need to set a large value here.")))
-    table.map_width.label = T("Map Width")
-    table.map_width.comment = DIV(SPAN("*", _class="req"), DIV( _class="tooltip", _title=T("Width|Default Width of the map window. In Window layout the map maximises to fill the window, so no need to set a large value here.")))
-    table.zoom_levels.label = T("Zoom Levels")
-    table.cluster_distance.label = T("Cluster Distance")
-    table.cluster_threshold.label = T("Cluster Threshold")
+    table.lat.comment = DIV(SPAN("*", _class="req"), DIV( _class="tooltip", _title=Tstr("Latitude") + "|" + Tstr("Latitude is North-South (Up-Down). Latitude is zero on the equator and positive in the northern hemisphere and negative in the southern hemisphere.")))
+    table.lon.comment = DIV(SPAN("*", _class="req"), DIV( _class="tooltip", _title=Tstr("Longitude") + "|" + Tstr("Longitude is West - East (sideways). Longitude is zero on the prime meridian (Greenwich Mean Time) and is positive to the east, across Europe and Asia.  Longitude is negative to the west, across the Atlantic and the Americas.")))
+    table.zoom.comment = DIV(SPAN("*", _class="req"), DIV( _class="tooltip", _title=Tstr("Zoom") + "|" + Tstr("How much detail is seen. A high Zoom level means lot of detail, but not a wide area. A low Zoom level means seeing a wide area, but not a high level of detail.")))
+    table.map_height.comment = DIV(SPAN("*", _class="req"), DIV( _class="tooltip", _title=Tstr("Height") + "|" + Tstr("Default Height of the map window. In Window layout the map maximises to fill the window, so no need to set a large value here.")))
+    table.map_width.comment = DIV(SPAN("*", _class="req"), DIV( _class="tooltip", _title=Tstr("Width") + "|" + Tstr("Default Width of the map window. In Window layout the map maximises to fill the window, so no need to set a large value here.")))
 
     # CRUD Strings
     ADD_CONFIG = T("Add Config")
@@ -172,13 +161,8 @@ def feature_class():
     table = db[tablename]
 
     # Model options
-    table.name.label = T("Name")
     table.name.comment = SPAN("*", _class="req")
-    table.gps_marker.label = T("GPS Marker")
-    table.gps_marker.comment = DIV( _class="tooltip", _title=T("GPS Marker|Defines the icon used for display of features on handheld GPS."))
-    table.description.label = T("Description")
-    table.module.label = T("Module")
-    table.resource.label = T("Resource")
+    table.gps_marker.comment = DIV( _class="tooltip", _title=Tstr("GPS Marker") + "|" + Tstr("Defines the icon used for display of features on handheld GPS."))
 
     # CRUD Strings
     LIST_FEATURE_CLASS = T("List Feature Classes")
@@ -218,11 +202,9 @@ def feature_group():
     table = db[tablename]
 
     # Model options
-    table.name.label = T("Name")
     table.name.comment = SPAN("*", _class="req")
-    table.description.label = T("Description")
-    #table.features.comment = DIV( _class="tooltip", _title=T("Multi-Select|Click Features to select, Click again to Remove. Dark Green is selected."))
-    #table.feature_classes.comment = DIV( _class="tooltip", _title=T("Multi-Select|Click Features to select, Click again to Remove. Dark Green is selected."))
+    #table.features.comment = DIV( _class="tooltip", _title=Tstr("Multi-Select") + "|" + Tstr("Click Features to select, Click again to Remove. Dark Green is selected."))
+    #table.feature_classes.comment = DIV( _class="tooltip", _title=Tstr("Multi-Select") + "|" + Tstr("Click Features to select, Click again to Remove. Dark Green is selected."))
 
     # CRUD Strings
     LIST_FEATURE_GROUPS = T("List Feature Groups")
@@ -284,34 +266,23 @@ def location():
     table = db[tablename]
     
     # Model options
-    table.name.label = T("Name")
     table.name.comment = SPAN("*", _class="req")
-    table.level.label = T("Level")
     table.level.comment = DIV( _class="tooltip", _title=T("Level|Is the location is a geographic area, then state at what level here."))
-    table.code.label = T("Code")
     table.code.comment = DIV( _class="tooltip", _title=T("Code|For a country this would be the ISO2 code, for a Town, it would be the Airport Locode."))
-    table.description.label = T("Description")
-    table.parent.label = T("Parent")
     table.parent.comment = DIV(A(ADD_LOCATION,
                                        _class="colorbox",
                                        _href=URL(r=request, c="gis", f="location", args="create", vars=dict(format="popup", child="parent")),
                                        _target="top",
                                        _title=ADD_LOCATION),
-                                     A(SPAN("[Help]"),
+                                     DIV(
                                        _class="tooltip",
-                                       _title=T("Parent|The Area which this Site is located within."))),
+                                       _title=Tstr("Parent") + "|" + Tstr("The Area which this Site is located within."))),
                        
-    table.addr_street.label = T("Street Address")
-    table.gis_feature_type.label = T("Feature Type")
-    table.lat.label = T("Latitude")
     CONVERSION_TOOL = T("Conversion Tool")
     table.lat.comment = DIV(A(CONVERSION_TOOL, _style="cursor:pointer;", _title=CONVERSION_TOOL, _id="btnConvert"), DIV( _class="tooltip", _title=T("Latitude|Latitude is North-South (Up-Down). Latitude is zero on the equator and positive in the northern hemisphere and negative in the southern hemisphere. This needs to be added in Decimal Degrees. Use the popup to convert from either GPS coordinates or Degrees/Minutes/Seconds.")))
-    table.lon.label = T("Longitude")
-    table.lon.comment = DIV( _class="tooltip", _title=T("Longitude|Longitude is West - East (sideways). Longitude is zero on the prime meridian (Greenwich Mean Time) and is positive to the east, across Europe and Asia.  Longitude is negative to the west, across the Atlantic and the Americas.  This needs to be added in Decimal Degrees. Use the popup to convert from either GPS coordinates or Degrees/Minutes/Seconds."))
-    table.wkt.label = T("Well-Known Text")
-    table.wkt.comment = DIV(SPAN("*", _class="req"), DIV( _class="tooltip", _title=T("WKT|The <a href='http://en.wikipedia.org/wiki/Well-known_text' target=_blank>Well-Known Text</a> representation of the Polygon/Line.")))
-    table.osm_id.label = "OpenStreetMap"
-    table.osm_id.comment = DIV( _class="tooltip", _title=T("OSM ID|The <a href='http://openstreetmap.org' target=_blank>OpenStreetMap</a> ID. If you don't know the ID, you can just say 'Yes' if it has been added to OSM."))
+    table.lon.comment = DIV( _class="tooltip", _title=Tstr("Longitude") + "|" + Tstr("Longitude is West - East (sideways). Longitude is zero on the prime meridian (Greenwich Mean Time) and is positive to the east, across Europe and Asia.  Longitude is negative to the west, across the Atlantic and the Americas.  This needs to be added in Decimal Degrees. Use the popup to convert from either GPS coordinates or Degrees/Minutes/Seconds."))
+    table.wkt.comment = DIV(SPAN("*", _class="req"), DIV( _class="tooltip", _title="WKT" + "|" + Tstr("The <a href='http://en.wikipedia.org/wiki/Well-known_text' target=_blank>Well-Known Text</a> representation of the Polygon/Line.")))
+    table.osm_id.comment = DIV( _class="tooltip", _title="OSM ID" + "|" + Tstr("The <a href='http://openstreetmap.org' target=_blank>OpenStreetMap</a> ID. If you don't know the ID, you can just say 'Yes' if it has been added to OSM."))
 
     # CRUD Strings
     LIST_LOCATIONS = T("List Locations")
@@ -432,9 +403,7 @@ def marker():
     table = db[tablename]
 
     # Model options
-    table.name.label = T("Name")
     table.name.comment = SPAN("*", _class="req")
-    table.image.label = T("Image")
 
     # CRUD Strings
     LIST_MARKERS = T("List Markers")
@@ -474,15 +443,10 @@ def projection():
     table = db[tablename]
 
     # Model options
-    table.name.label = T("Name")
     table.name.comment = SPAN("*", _class="req")
-    table.epsg.label = "EPSG"
     table.epsg.comment = SPAN("*", _class="req")
-    table.maxExtent.label = T("maxExtent")
     table.maxExtent.comment = SPAN("*", _class="req")
-    table.maxResolution.label = T("maxResolution")
     table.maxResolution.comment = SPAN("*", _class="req")
-    table.units.label = T("Units")
 
     # CRUD Strings
     ADD_PROJECTION = T("Add Projections")

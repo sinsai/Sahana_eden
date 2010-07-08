@@ -62,7 +62,7 @@ S3XRC_NOT_IMPLEMENTED = "Not Implemented"
 # *****************************************************************************
 class S3Resource(object):
 
-    """ RESTful API for S3Resources """
+    """ API for S3Resources """
 
     UID = "uuid"
     DELETED = "deleted"
@@ -70,6 +70,8 @@ class S3Resource(object):
     HOOKS = "s3"
 
     def __init__(self, manager, prefix, name, id=None, uid=None, query=None, **attr):
+
+        """ Constructor """
 
         assert manager is not None, "Undefined Resource Manager"
         self.manager = manager
@@ -92,44 +94,19 @@ class S3Resource(object):
 
         self.__ids = []
         self.__uids = []
-        self.__records = None
+        self.__set = None
 
         self.__handler = Storage()
 
-        # Master query
-        if id:
-            if not isinstance(id, (list, tuple)):
-                id = [id]
-            self.__ids = list(id)
-            if len(self.__ids) == 1:
-                self.__query = (self.table.id == self.__ids[0])
-            else:
-                self.__query = (self.table.id.belongs(self.__ids))
-        else:
-            self.__query = (self.table.id>0)
+        self.__query = Storage()
+        self._filter(id=id, uid=uid, query=query)
 
-        # UID filter
-        if uid and self.UID in self.table.fields:
-            if not isinstance(uid, (list, tuple)):
-                uid = [uid]
-            self.__uids = list(uid)
-            if self.__uids:
-                if len(self.__uids) == 1:
-                    q = (self.table[self.UID] == self.__uids[0])
-                else:
-                    q = (self.table[self.UID].belongs(self.__uids))
-                self.__query = self.__query & q
 
-        # Custom query filter
-        if query:
-            self.__query = self.__query & query
-
-        # Deletion status filter
-        if self.DELETED in self.table.fields:
-            self.__query = (self.table[self.DELETED] == False) & self.__query
-
+    # Data binding ------------------------------------------------------------
 
     def __bind(self):
+
+        """ Bind this resource to model and data store """
 
         self.db = self.manager.db
         self.tablename = "%s_%s" % (self.prefix, self.name)
@@ -142,19 +119,61 @@ class S3Resource(object):
             raise NotImplementedError
 
 
-    def _url(self):
+    def _filter(self, id=None, uid=None, query=None):
 
-        raise NotImplementedError
+        """ Generate filter query """
 
+        if "master" in self.__query:
+            del self.__query["master"]
+
+        # ID filter
+        if id:
+            if not isinstance(id, (list, tuple)):
+                id = [id]
+            self.__ids = list(id)
+            if len(self.__ids) == 1:
+                q = (self.table.id == self.__ids[0])
+            else:
+                q = (self.table.id.belongs(self.__ids))
+            self.__query.id = q
+
+        # UID filter
+        if uid and self.UID in self.table.fields:
+            if not isinstance(uid, (list, tuple)):
+                uid = [uid]
+            self.__uids = list(uid)
+            if len(self.__uids) == 1:
+                q = (self.table[self.UID] == self.__uids[0])
+            else:
+                q = (self.table[self.UID].belongs(self.__uids))
+            self.__query.uid = self.__query.uid & q
+
+        # Custom filter
+        if query:
+            self.__query.query = query
+
+        # Deletion status filter
+        if self.DELETED in self.table.fields:
+            self.__query.deleted = (self.table[self.DELETED] == False)
+
+        mq = None
+        for k in self.__query.keys():
+            q = self.__query[k]
+            if q and mq:
+                mq = mq & q
+            elif q:
+                mq = q
+
+        if not mq:
+            mq = (self.table.id > 0)
+        self.__query.master = mq
+
+
+    # Representation ----------------------------------------------------------
 
     def __repr__(self):
 
         return "<S3Resource %s>" % self.tablename
-
-
-    def __len__(self):
-
-        raise NotImplementedError
 
 
     def __dbg(self, msg):
@@ -162,6 +181,8 @@ class S3Resource(object):
         if self.debug:
             print >> sys.stderr, "S3Resource: %s" % msg
 
+
+    # REST Interface ----------------------------------------------------------
 
     def execute_request(self, r, **attr):
 
@@ -286,8 +307,6 @@ class S3Resource(object):
         permit = self.permit
 
         model = self.manager.model
-        search_simple = model.get_method(self.prefix, self.name,
-                                         method="search_simple")
 
         tablename = r.component and r.component.tablename or r.tablename
 
@@ -322,6 +341,8 @@ class S3Resource(object):
                 request_vars = dict(_next=r.request.vars._next)
             else:
                 request_vars = {}
+            search_simple = model.get_method(self.prefix, self.name,
+                                             method="search_simple")
             if r.representation == "html" and search_simple:
                 r.next = URL(r=r.request,
                              f=self.name,
@@ -389,13 +410,17 @@ class S3Resource(object):
 
         tablename = r.component and r.component.tablename or r.tablename
 
-        authorised = permit("delete", tablename, r.id)
-        if not authorised:
-            r.unauthorised()
+        if r.id or \
+           r.component and r.component_id:
+            authorised = permit("delete", tablename, r.id)
+            if not authorised:
+                r.unauthorised()
 
-        if r.next is None:
-            r.next = r.there()
-        return self.get_handler("delete")
+            if r.next is None:
+                r.next = r.there()
+            return self.get_handler("delete")
+        else:
+            raise HTTP(501, body=r.BADMETHOD)
 
 
     def set_handler(self, method, handler):
@@ -811,6 +836,7 @@ class S3RESTRequest(object):
         vars = {}
 
         component_id = self.component_id
+        id = self.id
 
         if not representation:
             representation = self.representation
@@ -1623,7 +1649,8 @@ class S3ResourceController(object):
 
     def __dbg(self, msg):
 
-        print >> sys.stderr, "S3ResourceController: %s" % msg
+        if self.debug:
+            print >> sys.stderr, "S3ResourceController: %s" % msg
 
 
     def set_handler(self, method, handler):

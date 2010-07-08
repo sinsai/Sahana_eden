@@ -65,7 +65,7 @@ s3xrc = _s3xrc.S3ResourceController(db,
             xml_export_formats = shn_xml_export_formats,
             json_import_formats = shn_json_import_formats,
             json_export_formats = shn_json_export_formats,
-            debug = True)
+            debug = False)
 
 # *****************************************************************************
 def shn_field_represent(field, row, col):
@@ -1407,7 +1407,8 @@ def shn_list(jr, **attr):
         headers = dict(map(lambda f: (str(f), f.label), fields))
 
         if response.s3.pagination and not limitby:
-            # Server-side pagination, so only download 1 record initially & let the view request what it wants via AJAX
+            # Server-side pagination, so only download 1 record
+            # initially & let the view request what it wants via AJAX
             limitby = (0, 1)
 
         linkto = shn_linkto(jr, sticky)
@@ -1434,7 +1435,12 @@ def shn_list(jr, **attr):
                 _comment = table[jr.fkey].comment
                 table[jr.fkey].comment = None
                 table[jr.fkey].default = jr.record[jr.pkey]
-                table[jr.fkey].writable = False
+                # Fix for #447:
+                if jr.http == "POST":
+                    table[jr.fkey].writable = True
+                    request.post_vars.update({jr.fkey: str(jr.record[jr.pkey])})
+                else:
+                    table[jr.fkey].writable = False
 
             if onaccept:
                 _onaccept = lambda form: \
@@ -1633,7 +1639,12 @@ def shn_create(jr, **attr):
             _comment = table[jr.fkey].comment
             table[jr.fkey].comment = None
             table[jr.fkey].default = jr.record[jr.pkey]
-            table[jr.fkey].writable = False
+            # Fix for #447:
+            if jr.http == "POST":
+                table[jr.fkey].writable = True
+                request.post_vars.update({jr.fkey: str(jr.record[jr.pkey])})
+            else:
+                table[jr.fkey].writable = False
             # Save callbacks
             create_onvalidation = crud.settings.create_onvalidation
             create_onaccept = crud.settings.create_onaccept
@@ -1841,7 +1852,12 @@ def shn_update(jr, **attr):
                 _comment = table[jr.fkey].comment
                 table[jr.fkey].comment = None
                 table[jr.fkey].default = jr.record[jr.pkey]
-                table[jr.fkey].writable = False
+                # Fix for #447:
+                if jr.http == "POST":
+                    table[jr.fkey].writable = True
+                    request.post_vars.update({jr.fkey: str(jr.record[jr.pkey])})
+                else:
+                    table[jr.fkey].writable = False
                 # Save callbacks
                 update_onvalidation = crud.settings.update_onvalidation
                 update_onaccept = crud.settings.update_onaccept

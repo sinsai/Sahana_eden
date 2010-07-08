@@ -62,7 +62,7 @@ def json(path_to_file,appname):
             temp="\n\t\"column%i\":" % y
             try:
 		cell=str(spreadsheet[x][y])    
-            	cell=cell.replace("\n","\\n")
+            	cell=cell.replace("\n","")
 		temp+="\""+cell+"\""
             except:
             	temp+="\"\""
@@ -75,9 +75,11 @@ def json(path_to_file,appname):
 
 
     json+="\n]}"
-    jsonfile=open("/%s/static/test1.json" % appname,"wb")
+    '''jsonfile=open("/%s/static/test1.json" % appname,"wb")
     jsonfile.write(json)
     jsonfile.close()
+    '''
+    return json
 
 def pathfind(filename):
     str = "uploads/" + filename

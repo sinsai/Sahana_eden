@@ -3311,7 +3311,7 @@ class S3XML(object):
 
         resources = []
 
-        if isinstance(tree, etree._ElementTree):
+        if isinstance(tree, lxml.etree._ElementTree):   #just added lxml.
             root = tree.getroot()
             if not root.tag == self.TAG.root:
                 return resources

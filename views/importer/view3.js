@@ -27,7 +27,7 @@ function view3(header,numcol,prevgrid)
             width: 500,
             height: 300,
             allowBlank:false,
-            store: [['or_organisation','Organization Registry'],
+            store: [['or_organisation','Organization Registry'],	//Server call to findn component tables here
                     ['or_office', 'Organization Registry-Office'], 
                     ['pr_person', 'Person Registry'], 
                     ['cr_shelter', 'Shelter Registry'],  

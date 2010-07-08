@@ -5,14 +5,16 @@ module = 'importer'
 module_name = 'Spreadsheet importer' 
 
 response.menu_options = [
-    [T('Spreadsheet'), False, URL(r=request, f='spreadsheet')
+    [
+	    T('Spreadsheet'), False, URL(r=request, f='spreadsheet/create')
     ],
-    [T('Google Documents'), False, URL(r=request, f='googledoc')]
+    [
+	    T('Google Documents'), False, URL(r=request, f='googledoc')
+    ]
 ]
 
-#exec('import applications.%s.modules.importer as importer' % (request.application))
-#from applications.eden1.modules.importer import *
 importer=local_import("importer")
+
 def index(): 
     return dict(module_name=module_name)
 def googledoc():
@@ -24,24 +26,14 @@ def spreadsheet():
     
 def slist():
     
-    
-   #q=db.importer_slist.id>0
-   # s=db(q)
-   # initid=0
-   # rows=s.select()
-   # for row in rows:
-   #     if(row.id>initid):
-   #         initid=row.id
-   # k=db.executesql("select Path from importer_slist where id==%s;"%(initid))
-    
     k=db(db.importer_slist.id>0).select().last()
     k=k.Path;
     str=importer.pathfind(k)
     str=request.folder+str
     temp=importer.removerowcol(str)
-    appname=request.application
-    k=importer.json(str,request.folder);
-    return dict(result=str,ss=temp,folder=request.folder)#,spreadsheet=spreadsheet)
+    #appname=request.application
+    v=importer.json(str,request.folder)
+    return dict(ss=v)
 
 def recvdata():
     formdata=request.body.read()

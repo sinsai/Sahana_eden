@@ -1204,7 +1204,7 @@ def feature_group_contents():
             id = row.location_id
             name = db.gis_location[id].name
             # Metadata is M->1 to Features
-            metadata = db(db.media_metadata.location_id == id & db.media_metadata.deleted == False).select()
+            metadata = db(db.doc_metadata.location_id == id & db.doc_metadata.deleted == False).select()
             if metadata:
                 # We just read the description of the 1st one
                 description = metadata[0].description
@@ -1261,7 +1261,7 @@ def feature_group_contents():
             id = row.location_id
             name = db.gis_location[id].name
             # Metadata is M->1 to Features
-            metadata = db(db.media_metadata.location_id == id & db.media_metadata.deleted == False).select()
+            metadata = db(db.doc_metadata.location_id == id & db.doc_metadata.deleted == False).select()
             if metadata:
                 # We just read the description of the 1st one
                 description = metadata[0].description
@@ -1741,7 +1741,7 @@ def map_viewing_client():
         groups = db.gis_feature_group
         locations = db.gis_location
         classes = db.gis_feature_class
-        metadata = db.media_metadata
+        metadata = db.doc_metadata
         # Which Features are added to the Group directly?
         # ^^ No longer supported, for simplicity
         #link = db.gis_location_to_feature_group
@@ -1774,8 +1774,8 @@ def map_viewing_client():
                 try:
                     # Metadata is M->1 to Features
                     # We use the most recent one
-                    query = (db.media_metadata.location_id == feature.gis_location.id) & (db.media_metadata.deleted == False)
-                    metadata = db(query).select(orderby=~db.media_metadata.event_time).first()
+                    query = (db.doc_metadata.location_id == feature.gis_location.id) & (db.doc_metadata.deleted == False)
+                    metadata = db(query).select(orderby=~db.doc_metadata.event_time).first()
 
                     # Person .represent is too complex to put into JOIN
                     contact = shn_pr_person_represent(metadata.person_id)
@@ -1789,8 +1789,8 @@ def map_viewing_client():
                 try:
                     # Images are M->1 to Features
                     # We use the most recently uploaded one
-                    query = (db.media_image.location_id == feature.gis_location.id) & (db.media_image.deleted == False)
-                    image = db(query).select(db.media_image.image, orderby=~db.media_image.created_on).first().image
+                    query = (db.doc_image.location_id == feature.gis_location.id) & (db.doc_image.deleted == False)
+                    image = db(query).select(db.doc_image.image, orderby=~db.doc_image.created_on).first().image
                 except:
                     image = None
                 feature.image = image
@@ -1873,8 +1873,8 @@ def display_feature():
     try:
         # Metadata is M->1 to Features
         # We use the most recent one
-        query = (db.media_metadata.location_id == feature.id) & (db.media_metadata.deleted == False)
-        metadata = db(query).select(orderby=~db.media_metadata.event_time).first()
+        query = (db.doc_metadata.location_id == feature.id) & (db.doc_metadata.deleted == False)
+        metadata = db(query).select(orderby=~db.doc_metadata.event_time).first()
 
         # Person .represent is too complex to put into JOIN
         contact = shn_pr_person_represent(metadata.person_id)
@@ -1888,8 +1888,8 @@ def display_feature():
     try:
         # Images are M->1 to Features
         # We use the most recently uploaded one
-        query = (db.media_image.location_id == feature.id) & (db.media_image.deleted == False)
-        image = db(query).select(db.media_image.image, orderby=~db.media_image.created_on).first().image
+        query = (db.doc_image.location_id == feature.id) & (db.doc_image.deleted == False)
+        image = db(query).select(db.doc_image.image, orderby=~db.doc_image.created_on).first().image
     except:
         image = None
     feature.image = image
@@ -2022,8 +2022,8 @@ def display_features():
         try:
             # Metadata is M->1 to Features
             # We use the most recent one
-            query = (db.media_metadata.location_id == feature.id) & (db.media_metadata.deleted == False)
-            metadata = db(query).select(orderby=~db.media_metadata.event_time)[0]
+            query = (db.doc_metadata.location_id == feature.id) & (db.doc_metadata.deleted == False)
+            metadata = db(query).select(orderby=~db.doc_metadata.event_time).first()
 
             # Person .represent is too complex to put into JOIN
             contact = shn_pr_person_represent(metadata.person_id)
@@ -2037,8 +2037,8 @@ def display_features():
         try:
             # Images are M->1 to Features
             # We use the most recently uploaded one
-            query = (db.media_image.location_id == feature.id) & (db.media_image.deleted == False)
-            image = db(query).select(orderby=~db.media_image.created_on)[0].image
+            query = (db.doc_image.location_id == feature.id) & (db.doc_image.deleted == False)
+            image = db(query).select(orderby=~db.doc_image.created_on, limitby=(0, 1)).first().image
         except:
             image = None
         feature.image = image

@@ -49,17 +49,21 @@ def index():
     response.title = T("Sahana FOSS Disaster Management System")
     self_registration = settings.self_registration
 
-    form=None
-    
-    if self_registration:
-        request.args = ["register"]
-        form = auth()
-    else:
-        request.args = ["login"]
-        auth.settings.login_next = None
-        form = auth()
+    login_form = None
+    register_form = None
 
-    return dict(module_name=module_name, modules=modules, admin_name=admin_name, admin_email=admin_email, admin_tel=admin_tel, self_registration=self_registration, form=form)
+    if not auth.is_logged_in():
+        # Provide a login box on front page
+        request.args = ["login"]
+        login_form = auth()
+
+        # Download the registration box on front page ready to unhide without a server-side call
+        if self_registration:
+            request.args = ["register"]
+            register_form = auth()
+    
+    
+    return dict(module_name=module_name, modules=modules, admin_name=admin_name, admin_email=admin_email, admin_tel=admin_tel, self_registration=self_registration, login_form=login_form, register_form=register_form)
 
 def user():
     "Auth functions based on arg. See gluon/tools.py"
@@ -79,8 +83,16 @@ def user():
         _table_user.utc_offset.writable = True
 
     form = auth()
+    if request.args and request.args(0) == "login":
+        login_form = form
+    else:
+        login_form = None
+    if request.args and request.args(0) == "register":
+        register_form = form
+    else:
+        register_form = None
 
-    self_registration = db().select(db.s3_setting.self_registration, limitby=(0, 1)).first().self_registration
+    self_registration = session.s3.self_registration
 
     # Use Custom Ext views
     # Best to not use an Ext form for login: can't save username/password in browser & can't hit 'Enter' to submit!
@@ -88,7 +100,7 @@ def user():
     #    response.title = T("Login")
     #    response.view = "auth/login.html"
 
-    return dict(form=form, self_registration=self_registration)
+    return dict(form=form, login_form=login_form, register_form=register_form, self_registration=self_registration)
 
 def source():
     "RESTful CRUD controller"

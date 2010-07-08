@@ -1035,7 +1035,9 @@ def import_xml(jr, **attr):
             item = s3xrc.xml.json_message(False, 501, session.error)
             raise HTTP(501)
 
-    success = jr.import_xml(tree, permit=shn_has_permission, audit=shn_audit)
+    # get push_limit from attr if present and pass along to jr.import_xml
+    push_limit = attr.get("push_limit", 1)
+    success = jr.import_xml(tree, permit=shn_has_permission, audit=shn_audit, push_limit=push_limit)
 
     if success:
         item = s3xrc.xml.json_message()
@@ -1743,7 +1745,7 @@ def shn_create(jr, **attr):
 
     elif jr.representation in shn_xml_import_formats:
         response.view = "plain.html"
-        return import_xml(jr)
+        return import_xml(jr, **attr)
 
     else:
         session.error = BADFORMAT

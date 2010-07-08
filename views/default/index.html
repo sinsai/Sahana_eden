@@ -31,23 +31,41 @@
     </p>
     <p>
     {{=T("Administrator")}}: {{=admin_name}}
-    <br/>{{=T("Email")}} : {{=admin_email}}
-    <br/>{{=T("Telephone")}} : {{=admin_tel}}
+    <br/>{{=T("Email")}}: {{=admin_email}}
+    <br/>{{=T("Telephone")}}: {{=admin_tel}}
     </p>
-{{elif self_registration:}}
-    <p>
-    {{=XML(Tstr("Sahana Eden is used to support disaster response. If you would like to help, then please") + " <b>" +Tstr("sign-up now") + "</b>")}}:
-    </p>
-    {{=H3(T("Register"))}}
-    {{include "auth/_register.html"}}
 {{else:}}
+  <div id="login_form">
     <p>
-    {{=T("Sahana Eden is used to support disaster response.")}}:
+    {{=T("Sahana Eden is a suite of web-based applications that provide solutions to coordination and collaboration for organisations working in disaster management.")}}
     </p>
     <p>
-    {{=XML(Tstr("Registered users can") + " <b>" + Tstr("login") + "</b> " + Tstr("to access the system"))}}
+    {{=XML(Tstr("Registered users can") + " <b>" + Tstr("login") + "</b> " + Tstr("to access the system"))}}:
     </p>
     {{=H3(T("Login"))}}
     {{include "auth/_login.html"}}
+  </div>
+{{if self_registration:}}
+  <div id="register_form" class="hide">
+    <p>
+    {{=XML(Tstr("If you would like to help, then please") + " <b>" +Tstr("sign-up now") + "</b>")}}:
+    </p>
+    {{=H3(T("Register"))}}
+    {{include "auth/_register.html"}}
+  </div>
 {{pass}}
 </div>
+<script type="text/javascript">//<![CDATA[
+$(document).ready(function() {
+    // Redirect Register Button to unhide
+    $("#register-btn").click(function() {
+        // Unhide register form
+        $("#register_form").removeClass("hide");
+        // Hide login form
+        $("#login_form").addClass("hide");
+        // Don't go to default location
+        return false;
+    });
+});
+//]]></script>
+{{pass}}

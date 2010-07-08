@@ -110,7 +110,7 @@ Ext.onReady(function() {
             if (!dialog) {
                 dialog = new Ext.ux.UploadDialog.Dialog({
                     // Affix your upload controller here
-                    url: '{{=URL(r=request, c='media', f='upload_bulk')}}',
+                    url: '{{=URL(r=request, c="doc", f="upload_bulk")}}',
                     reset_on_hide: false,
                     allow_close_on_upload: true,
                     upload_autostart: false, //true,

@@ -18,7 +18,7 @@ response.menu_options = [
     #    [T("Add"), False, URL(r=request, f="location", args="create")] ]
     [T("Service Catalogue"), False, URL(r=request, f="map_service_catalogue")],
     # Currently broken
-    #[T("Bulk Uploader"), False, URL(r=request, c="media", f="bulk_upload")],
+    #[T("Bulk Uploader"), False, URL(r=request, c="doc", f="bulk_upload")],
 ]
 
 # Web2Py Tools functions

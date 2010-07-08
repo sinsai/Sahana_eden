@@ -39,15 +39,16 @@ class RequestWithMethod(urllib2.Request):
 
 class Error:
     # indicates an HTTP error
-    def __init__(self, url, errcode, errmsg, headers):
+    def __init__(self, url, errcode, errmsg, headers, body=None):
         self.url = url
         self.errcode = errcode
         self.errmsg = errmsg
         self.headers = headers
+        self.body = body
     def __repr__(self):
         return (
-            "<Error for %s: %s %s>" %
-            (self.url, self.errcode, self.errmsg)
+            "Error for %s: %s %s\n Response body: %s" %
+            (self.url, self.errcode, self.errmsg, self.body)
             )
 
 class FetchURL:
@@ -61,8 +62,13 @@ class FetchURL:
         response = http.getresponse()
         retcode = response.status
         retmsg = response.reason
+        retbody = None
         if retcode != 200:
-            raise Error(str(host) + str(path), retcode, retmsg, headers)
+            try:
+                retbody = response.read()
+            except:
+                retbody = None
+            raise Error(str(host) + str(path), retcode, retmsg, headers, retbody)
         return response.read()
 
 @auth.requires_login()
@@ -144,7 +150,7 @@ def now():
                         tables_error += ", "
                     tables_error += _module + "_" + _resource
                     #final_status += "ERROR while processing: " + resource_sync_url + "<br />\n"
-                    error_str = str(e).replace("<", "&lt;").replace(">", "&gt;")
+                    error_str = str(e)
                     final_status += error_str + "<br /><br />\n"
                 else:
                     if tables_success:

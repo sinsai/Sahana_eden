@@ -22,9 +22,10 @@ def googledoc():
 
 
 def spreadsheet():
+    crud.settings.create_onaccept = lambda form : redirect(URL(r=request, c="importer", f="spreadsheetview")) 
     return shn_rest_controller(module,'slist')
-    
-def slist():
+
+def spreadsheetview():
     
     k=db(db.importer_slist.id>0).select().last()
     k=k.Path;
@@ -34,7 +35,8 @@ def slist():
     #appname=request.application
     v=importer.json(str,request.folder)
     return dict(ss=v)
-
+def slist():
+    return shn_rest_controller(module,'slist',listadd=False)
 def recvdata():
     formdata=request.body.read()
     loc=request.folder

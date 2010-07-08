@@ -3310,7 +3310,7 @@ class S3XML(object):
         """
 
         resources = []
-
+	import lxml	#my own debugging addition
         if isinstance(tree, lxml.etree._ElementTree):   #just added lxml.
             root = tree.getroot()
             if not root.tag == self.TAG.root:

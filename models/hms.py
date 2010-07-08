@@ -181,7 +181,7 @@ if deployment_settings.has_module(module):
     table.doctors.requires = IS_NULL_OR(IS_INT_IN_RANGE(0, 99999))
     table.nurses.requires = IS_NULL_OR(IS_INT_IN_RANGE(0, 99999))
     table.non_medical_staff.requires = IS_NULL_OR(IS_INT_IN_RANGE(0, 99999))
-    
+
     # Reusable field for other tables to reference
     ADD_HOSPITAL = T("Add Hospital")
     hospital_id = db.Table(None, "hospital_id",
@@ -349,6 +349,7 @@ if deployment_settings.has_module(module):
     table.date.label = T("Date & Time")
     table.date.requires = IS_UTC_DATETIME(utc_offset=shn_user_utc_offset(),
                                           allow_future=False)
+    table.date.represent = lambda value: shn_as_local_time(value)
     table.date.comment = DIV(DIV(_class="tooltip",
         _title=Tstr("Date & Time") + "|" + Tstr("Date and time this report relates to.")))
 
@@ -457,6 +458,7 @@ if deployment_settings.has_module(module):
     table.date.label = T("Date of Report")
     table.date.requires = IS_UTC_DATETIME(utc_offset=shn_user_utc_offset(),
                                           allow_future=False)
+    table.date.represent = lambda value: shn_as_local_time(value)
 
     table.beds_baseline.requires = IS_NULL_OR(IS_INT_IN_RANGE(0, 9999))
     table.beds_baseline.default = 0
@@ -1143,6 +1145,7 @@ if deployment_settings.has_module(module):
                     Field("status", "integer"),
                     organisation_id,
                     person_id,
+                    Field("description"),
                     migrate=migrate)
 
     # hide unnecessary fields
@@ -1152,7 +1155,10 @@ if deployment_settings.has_module(module):
     table.status.default = 1
 
     # auto fill posted_on field and make it readonly
-    table.submitted_on.default = request.now
+    table.submitted_on.requires = IS_UTC_DATETIME(utc_offset=shn_user_utc_offset(),
+                                                  allow_future=False)
+    table.submitted_on.represent = lambda value: shn_as_local_time(value)
+    table.submitted_on.default = request.utcnow
     table.submitted_on.writable = False
 
     table.status.requires = IS_IN_SET(hms_pledge_status_opts, zero=None)
@@ -1171,6 +1177,7 @@ if deployment_settings.has_module(module):
                                        #"organisation_id",
                                        #"person_id",
                                        "submitted_on",
+                                       "description",
                                        "status"])
 
     s3.crud_strings[tablename] = Storage(
@@ -1183,6 +1190,7 @@ if deployment_settings.has_module(module):
         subtitle_list = "Pledges",
         label_list_button = "List Pledges",
         label_create_button = "Add Pledge",
+        label_delete_button = "Delete Pledge",
         msg_record_created = "Pledge added",
         msg_record_modified = "Pledge updated",
         msg_record_deleted = "Pledge deleted",

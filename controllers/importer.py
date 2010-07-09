@@ -41,12 +41,6 @@ def slist():
 
 def recvdata():
     spreadsheet=request.body#.read()
-    '''loc=request.folder
-    loc+="/static/finaldata.json"
-    f=open(loc,"wb")
-    
-    f.write(spreadsheet)
-    f.close()'''
     tree=s3xrc.xml.json2tree(spreadsheet)
     s3xrc.import_xml(tree=tree,prefix='pr',name='person',id=None)
     return dict(spreadsheet=spreadsheet)

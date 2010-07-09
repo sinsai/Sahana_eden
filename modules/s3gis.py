@@ -2337,33 +2337,37 @@ OpenLayers.Util.extend( selectPdfControl, {
 
         """ + search + """
 
-        var layerTreeBase = new GeoExt.tree.BaseLayerContainer({
+        var layerTreeBase = {
             text: '""" + str(T("Base Layers")) + """',
+            nodeType: 'gx_baselayercontainer',
             layerStore: mapPanel.layers,
             leaf: false,
             expanded: true
-        });
+        };
 
-        var layerTreeFeaturesExternal = new GeoExt.tree.OverlayLayerContainer({
+        var layerTreeFeaturesExternal = {
             text: '""" + str(T("External Features")) + """',
+            nodeType: 'gx_overlaylayercontainer',
             layerStore: mapPanel.layers,
             leaf: false,
             expanded: true
-        });
+        };
 
-        var layerTreeFeaturesInternal = new GeoExt.tree.OverlayLayerContainer({
+        var layerTreeFeaturesInternal = {
             //text: '""" + str(T("Internal Features")) + """',
             text: '""" + str(T("Overlays")) + """',
+            nodeType: 'gx_overlaylayercontainer',
             layerStore: mapPanel.layers,
             leaf: false,
             expanded: true
-        });
+        };
 
         """ + layers_wms_browser + """
 
         var layerTree = new Ext.tree.TreePanel({
             id: 'treepanel',
             title: '""" + str(T("Layers")) + """',
+            loader: new Ext.tree.TreeLoader({applyLoader: false}),
             root: new Ext.tree.AsyncTreeNode({
                 expanded: true,
                 children: [

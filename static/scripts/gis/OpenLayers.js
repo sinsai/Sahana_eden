@@ -548,7 +548,8 @@ this.redraw();return this.div;},redraw:function(evt){var lonLat;if(evt==null){lo
 lonLat=this.map.getLonLatFromPixel(evt.xy);if(!lonLat){return;}
 if(this.displayProjection){lonLat.transform(this.map.getProjectionObject(),this.displayProjection);}
 this.lastXy=evt.xy;}
-var newHtml=this.formatOutput(lonLat);if(newHtml!=this.element.innerHTML){this.element.innerHTML=newHtml;}},formatOutput:function(lonLat){var inches=OpenLayers.INCHES_PER_UNIT;var metersPerPixel=this.map.getResolution()*(inches[this.map.getUnits()]*(1/inches['m']));var mgdigits=parseInt(6-Math.ceil(Math.log(metersPerPixel)/2.302585092994046));var digits=parseInt(this.numDigits);var mgrs=new USNG2();var mgrsStr=mgrs.fromLonLat(lonLat,mgdigits-1);var newHtml=this.prefix+
+var newHtml=this.formatOutput(lonLat);if(newHtml!=this.element.innerHTML){this.element.innerHTML=newHtml;}},formatOutput:function(lonLat){var inches=OpenLayers.INCHES_PER_UNIT;var metersPerPixel=this.map.getResolution()*(inches[this.map.getUnits()]*(1/inches['m']));var mgdigits=parseInt(6-Math.ceil(Math.log(metersPerPixel)/2.302585092994046));var digits=parseInt(this.numDigits);var mgrs=new USNG2();if((lonLat.lat>-80)&&(lonLat.lat<80)){var mgrsStr=mgrs.fromLonLat(lonLat,mgdigits-1);}else{var mgrsStr='undefined';}
+var newHtml=this.prefix+
 lonLat.lon.toFixed(digits)+
 this.separator+
 lonLat.lat.toFixed(digits)+" / MGRS: "+mgrsStr+

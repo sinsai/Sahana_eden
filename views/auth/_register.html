@@ -5,7 +5,7 @@
 <script src="/{{=request.application}}/static/scripts/S3/jquery.pstrength-min.1.2.js" type="text/javascript"></script>
 <script type="text/javascript">
 $(function() {
-    $('.password').pstrength();
+    $('.password:last').pstrength();
 });
 // Client-side validation (needed to check for passwords being same)
 $(document).ready(function() {
@@ -27,7 +27,7 @@ $(document).ready(function() {
             },
             password_two: {
                 required: true,
-                equalTo: "#auth_user_password"
+                equalTo: ".password:last"
             },
         },
         messages: {

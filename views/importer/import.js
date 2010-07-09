@@ -6,9 +6,7 @@ function import_spreadsheet(table,header_row,importsheet,map_from_ss_to_field)
 	var name=temp[1];
 	var str="$_";
 	str+=prefix+"_"+name;
-	for(k in importsheet)
-		document.write(k+'<br/>');
-	document.write('<br/>'+importsheet.columns+'<br/>');
+	document.write(str+"<br/>");
 	var jsonss=new Array(); //the array which will have json objects of each row
 	time=new Date();
 	var modifydate=''+(time.getUTCFullYear()+"-"+time.getUTCMonth()+"-"+time.getUTCDate()+" "+time.getUTCHours()+":"+time.getUTCMinutes()+":"+time.getUTCSeconds());
@@ -41,7 +39,6 @@ function import_spreadsheet(table,header_row,importsheet,map_from_ss_to_field)
 		//document.write("The row object is "+rowobj+"<br/>");
 		try{
 			rowobj=eval('('+rowobj+')');
-				document.write(rowobj+'<br/>');
 		}
 		catch(err)
 		{
@@ -49,16 +46,19 @@ function import_spreadsheet(table,header_row,importsheet,map_from_ss_to_field)
 		}
 		jsonss.push(rowobj);
 	}
-	var posturl="http://localhost:8000/{{=request.application}}/"+prefix+"/"+name+"/create.json";
+	var posturl="http://localhost:8000/{{=request.application}}/"+prefix+"/"+name+"/create.json?id=None";
 	document.write(rowobj);
 	var sendobj="{\""+str+"\":"+jsonss+"}";
 	document.write("<br/>The URL for post request->"+posturl+" and the sending status is ->");
 	var send="{\""+str+"\":\"\"}";
  	send=eval('('+send+')');
-	//send[str]=rowobj;	
+	send[str]=jsonss;
+	//send[str]=new Array();
+	//send[str].push(rowobj);
+	document.write(send[str]);	
 	Ext.Ajax.request({
 		url : posturl,
-		jsonData: rowobj,//send as body,
+		jsonData: send,//send as body,
 		method : 'POST',
 		success : function(r,o)
 			{

@@ -1192,7 +1192,7 @@ class S3RESTRequest(object):
         return self.rc.xml.tree2json(tree, pretty_print=pretty_print)
 
 
-    def import_xml(self, tree, permit=None, audit=None, push_limit=1):
+    def import_xml(self, tree, permit=None, audit=None, push_limit=100):
 
         """ import the requested resources from an element tree
 

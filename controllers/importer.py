@@ -35,12 +35,18 @@ def spreadsheetview():
     #appname=request.application
     v=importer.json(str,request.folder)
     return dict(ss=v)
+
 def slist():
     return shn_rest_controller(module,'slist',listadd=False)
+
 def recvdata():
-    formdata=request.body.read()
-    loc=request.folder
+    spreadsheet=request.body#.read()
+    '''loc=request.folder
     loc+="/static/finaldata.json"
     f=open(loc,"wb")
-    f.write(formdata)
-    return dict(formdata=formdata)
+    
+    f.write(spreadsheet)
+    f.close()'''
+    tree=s3xrc.xml.json2tree(spreadsheet)
+    s3xrc.import_xml(tree=tree,prefix='pr',name='person',id=None)
+    return dict(spreadsheet=spreadsheet)

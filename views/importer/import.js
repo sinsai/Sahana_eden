@@ -57,7 +57,7 @@ function import_spreadsheet(table,header_row,importsheet,map_from_ss_to_field)
 	//send[str].push(rowobj);
 	document.write(send[str]);	
 	Ext.Ajax.request({
-		url : posturl,
+		url : 'http://localhost:8000/newins/importer/recvdata',
 		jsonData: send,//send as body,
 		method : 'POST',
 		success : function(r,o)

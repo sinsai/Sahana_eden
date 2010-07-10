@@ -278,9 +278,11 @@ class GIS(object):
         # Default config is the 1st
         config = 1 
         if auth.is_logged_in():
-            # ToDo: Read personalised config, if available
-            pass
-        
+            # Read personalised config, if available
+            personalised = db((db.pr_person.uuid == auth.user.person_uuid) & (_config.pr_pe_id == db.pr_person.pr_pe_id)).select(_config.id, limitby=(0, 1)).first()
+            if personalised:
+                config = personalised.id
+            
         query = (_config.id == config)
         
         query = query & (_projection.id == _config.projection_id)

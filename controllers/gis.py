@@ -122,39 +122,27 @@ def config():
     table = db[tablename]
 
     # Model options
-    table.lat.comment = DIV(SPAN("*", _class="req"), DIV( _class="tooltip", _title=Tstr("Latitude") + "|" + Tstr("Latitude is North-South (Up-Down). Latitude is zero on the equator and positive in the northern hemisphere and negative in the southern hemisphere.")))
-    table.lon.comment = DIV(SPAN("*", _class="req"), DIV( _class="tooltip", _title=Tstr("Longitude") + "|" + Tstr("Longitude is West - East (sideways). Longitude is zero on the prime meridian (Greenwich Mean Time) and is positive to the east, across Europe and Asia.  Longitude is negative to the west, across the Atlantic and the Americas.")))
-    table.zoom.comment = DIV(SPAN("*", _class="req"), DIV( _class="tooltip", _title=Tstr("Zoom") + "|" + Tstr("How much detail is seen. A high Zoom level means lot of detail, but not a wide area. A low Zoom level means seeing a wide area, but not a high level of detail.")))
-    table.map_height.comment = DIV(SPAN("*", _class="req"), DIV( _class="tooltip", _title=Tstr("Height") + "|" + Tstr("Default Height of the map window. In Window layout the map maximises to fill the window, so no need to set a large value here.")))
-    table.map_width.comment = DIV(SPAN("*", _class="req"), DIV( _class="tooltip", _title=Tstr("Width") + "|" + Tstr("Default Width of the map window. In Window layout the map maximises to fill the window, so no need to set a large value here.")))
+    # In Model so that they're visible to person() as component
+    # CRUD Strings (over-ride)
+    s3.crud_strings[tablename].title_display = T("Defaults")
+    s3.crud_strings[tablename].title_update = T("Edit Defaults")
+    s3.crud_strings[tablename].msg_record_modified = T("Defaults updated")
 
-    # CRUD Strings
-    ADD_CONFIG = T("Add Config")
-    LIST_CONFIGS = T("List Configs")
-    s3.crud_strings[tablename] = Storage(
-        #title_create = ADD_CONFIG,
-        title_display = T("Defaults"),
-        #title_list = T("Configs"),
-        title_update = T("Edit Defaults"),
-        #title_search = T("Search Configs"),
-        #subtitle_create = T("Add New Config"),
-        #subtitle_list = LIST_CONFIGS,
-        #label_list_button = LIST_CONFIGS,
-        #label_create_button = ADD_CONFIG,
-        #label_delete_button = T("Delete Config"),
-        #msg_record_created = T("Config added"),
-        msg_record_modified = T("Defaults updated"),
-        #msg_record_deleted = T("Config deleted"),
-        #msg_list_empty = T("No Configs currently defined")
-    )
-
-    output = shn_rest_controller(module, resource, deletable=False, listadd=False)
     
+    output = shn_rest_controller(module, resource, deletable=False, listadd=False)
+
     if not "gis" in response.view:
         response.view = "gis/" + response.view
-    
+
     output["list_btn"] = ""
-    
+
+    if auth.is_logged_in():
+        personalised = db((db.pr_person.uuid == auth.user.person_uuid) & (table.pr_pe_id == db.pr_person.pr_pe_id)).select(table.id, limitby=(0, 1)).first()
+        if personalised:
+            output["rheader"] = P(T("You have personalised settings, so changes made here won't be visible to you. To change your personalised settings, click "), A(T("here"), _href=URL(r=request, c="pr", f="person", args=["config"], vars={"person.uid":auth.user.person_uuid})))
+        else:
+            output["rheader"] = P(T("These are the default settings for all users. To change settings just for you, click "), A(T("here"), _href=URL(r=request, c="pr", f="person", args=["config"], vars={"person.uid":auth.user.person_uuid})))
+
     return output
 
 def feature_class():

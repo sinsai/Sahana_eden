@@ -109,6 +109,7 @@ opt_gis_layout = db.Table(None, "opt_gis_layout",
 resource = "config"
 tablename = "%s_%s" % (module, resource)
 table = db.define_table(tablename, timestamp, uuidstamp,
+                pr_pe_id,                           # Personal Entity Reference
                 Field("lat", "double"),
                 Field("lon", "double"),
                 Field("zoom", "integer"),
@@ -128,6 +129,9 @@ table = db.define_table(tablename, timestamp, uuidstamp,
                 migrate=migrate)
 
 table.uuid.requires = IS_NOT_IN_DB(db, "gis_config.uuid")
+table.pr_pe_id.requires = IS_NULL_OR(IS_ONE_OF(db, "pr_pentity.id",
+                                    shn_pentity_represent))
+table.pr_pe_id.readable = table.pr_pe_id.writable = False
 table.lat.requires = IS_LAT()
 table.lon.requires = IS_LON()
 table.zoom.requires = IS_INT_IN_RANGE(0, 19)
@@ -149,7 +153,45 @@ table.map_width.label = T("Map Width")
 table.zoom_levels.label = T("Zoom Levels")
 table.cluster_distance.label = T("Cluster Distance")
 table.cluster_threshold.label = T("Cluster Threshold")
+# Defined here since Component
+table.lat.comment = DIV(SPAN("*", _class="req"), DIV( _class="tooltip", _title=Tstr("Latitude") + "|" + Tstr("Latitude is North-South (Up-Down). Latitude is zero on the equator and positive in the northern hemisphere and negative in the southern hemisphere.")))
+table.lon.comment = DIV(SPAN("*", _class="req"), DIV( _class="tooltip", _title=Tstr("Longitude") + "|" + Tstr("Longitude is West - East (sideways). Longitude is zero on the prime meridian (Greenwich Mean Time) and is positive to the east, across Europe and Asia.  Longitude is negative to the west, across the Atlantic and the Americas.")))
+table.zoom.comment = DIV(SPAN("*", _class="req"), DIV( _class="tooltip", _title=Tstr("Zoom") + "|" + Tstr("How much detail is seen. A high Zoom level means lot of detail, but not a wide area. A low Zoom level means seeing a wide area, but not a high level of detail.")))
+table.map_height.comment = DIV(SPAN("*", _class="req"), DIV( _class="tooltip", _title=Tstr("Height") + "|" + Tstr("Default Height of the map window. In Window layout the map maximises to fill the window, so no need to set a large value here.")))
+table.map_width.comment = DIV(SPAN("*", _class="req"), DIV( _class="tooltip", _title=Tstr("Width") + "|" + Tstr("Default Width of the map window. In Window layout the map maximises to fill the window, so no need to set a large value here.")))
+ADD_CONFIG = T("Add Config")
+LIST_CONFIGS = T("List Configs")
+s3.crud_strings[tablename] = Storage(
+    title_create = ADD_CONFIG,
+    title_display = T("Config"),
+    title_list = T("Configs"),
+    title_update = T("Edit Config"),
+    title_search = T("Search Configs"),
+    subtitle_create = T("Add New Config"),
+    subtitle_list = LIST_CONFIGS,
+    label_list_button = LIST_CONFIGS,
+    label_create_button = ADD_CONFIG,
+    label_delete_button = T("Delete Config"),
+    msg_record_created = T("Config added"),
+    msg_record_modified = T("Config updated"),
+    msg_record_deleted = T("Config deleted"),
+    msg_list_empty = T("No Configs currently defined")
+)
 
+# Configs as component of Persons
+s3xrc.model.add_component(module, resource,
+                          multiple=False,
+                          joinby="pr_pe_id",
+                          deletable=False,
+                          editable=True)
+
+s3xrc.model.configure(table,
+                      list_fields = ["lat",
+                                     "lon",
+                                     "zoom",
+                                     "projection_id",
+                                     "map_height",
+                                     "map_width"])
 # GIS Feature Classes
 # These are used in groups (for display/export), for icons & for URLs to edit data
 #gis_resource_opts = {

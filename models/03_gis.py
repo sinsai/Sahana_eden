@@ -424,12 +424,10 @@ def shn_gis_location_represent(id):
         location = db(db.gis_location.id == id).select(db.gis_location.name, db.gis_location.level, db.gis_location.lat, db.gis_location.lon, db.gis_location.id, limitby=(0, 1)).first()
         if location.level in ["L0", "L1", "L2"]:
             # Countries, Regions shouldn't be represented as Lat/Lon
-            represent = location.name
+            text = location.name
         else:
             # Simple
             #represent = location.name
-            # Fancy Map
-            #represent = A(location.name, _href="#", _onclick="viewMap(" + str(id) +");return false")
             # Lat/Lon
             lat = location.lat
             lon = location.lon
@@ -442,13 +440,16 @@ def shn_gis_location_represent(id):
                     lon_prefix = "E"
                 else:
                     lon_prefix = "W"
-                text = "%s %s %s %s" % (lat_prefix, lat, lon_prefix, lon)
+                text = location.name + " (%s %s %s %s)" % (lat_prefix, lat, lon_prefix, lon)
             else:
                 text = location.name
-            represent = text
-            # Hyperlink
-            represent = A(text, _href = deployment_settings.get_base_public_url() + URL(r=request, c="gis", f="location", args=[location.id]))
-            # ToDo: Convert to popup? (HTML again!)
+        # Simple
+        #represent = text
+        # Hyperlink
+        #represent = A(text, _href = deployment_settings.get_base_public_url() + URL(r=request, c="gis", f="location", args=[location.id]))
+        # Map
+        represent = A(text, _href="#", _onclick="viewMap(" + str(id) +");return false")
+        # ToDo: Convert to popup? (HTML again!)
     except:
         try:
             # "Invalid" => data consistency wrong
@@ -466,6 +467,7 @@ table = db.define_table(tablename, timestamp, uuidstamp, authorstamp, deletion_s
                 Field("name", length=128, notnull=True, unique=True),
                 Field("description"),
                 Field("enabled", "boolean", default=True, label=T("Enabled?")),
+                Field("visible", "boolean", default=False, label=T("On by default?")),
                 migrate=migrate)
 table.uuid.requires = IS_NOT_IN_DB(db, "%s.uuid" % tablename)
 #table.author.requires = IS_ONE_OF(db, "auth_user.id","%(id)s: %(first_name)s %(last_name)s")

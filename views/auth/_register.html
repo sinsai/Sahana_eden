@@ -5,7 +5,7 @@
 <script src="/{{=request.application}}/static/scripts/S3/jquery.pstrength-min.1.2.js" type="text/javascript"></script>
 <script type="text/javascript">
 $(function() {
-    $('.password').pstrength();
+    $('.password:last').pstrength();
 });
 // Client-side validation (needed to check for passwords being same)
 $(document).ready(function() {
@@ -15,25 +15,25 @@ $(document).ready(function() {
         errorClass: "req",
         rules: {
             first_name: {
-                required: true,
+                required: true
                 },
             email: {
                 required: true,
-                email: true,
+                email: true
                 //remote: "emailsurl"  // TODO
             },
             password: {
-                required: true,
+                required: true
             },
             password_two: {
                 required: true,
-                equalTo: "#auth_user_password"
-            },
+                equalTo: ".password:last"
+            }
         },
         messages: {
             firstname: "  {{=T("Enter your firstname")}}",
             password: {
-                required: "  {{=T("Provide a password")}}",
+                required: "  {{=T("Provide a password")}}"
             },
             password_two: {
                 required: "  {{=T("Repeat your password")}}",
@@ -41,8 +41,8 @@ $(document).ready(function() {
             },
             email: {
                 required: "  {{=T("Please enter a valid email address")}}",
-                minlength: "  {{=T("Please enter a valid email address")}}",
-            },
+                minlength: "  {{=T("Please enter a valid email address")}}"
+            }
         },
          errorPlacement: function(error, element) {
               error.appendTo( element.parent().next() );

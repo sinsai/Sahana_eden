@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 """
-    Media Manager - Controllers
+    Document Library - Controllers
 
     @author: Fran Boon
 """

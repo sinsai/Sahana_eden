@@ -725,7 +725,7 @@ def shn_pr_rheader(jr, tabs=[]):
     """ Person Registry page headers """
 
     if jr.representation == "html":
-        
+
         rheader_tabs = shn_rheader_tabs(jr, tabs)
 
         if jr.name == "person":

@@ -145,9 +145,9 @@ deployment_settings.modules = Storage(
             description = "Supports the decision making of large groups of Crisis Management Experts by helping the groups create ranked list.",
             module_type = 10
         ),
-    media = Storage(
-            name_nice = "Media Manager",
-            description = "A library of digital resources, such as Photos.",
+    doc = Storage(
+            name_nice = "Document Library",
+            description = "A library of digital resources, such as Photos, signed contracts and Office documents.",
             module_type = 10
         ),
     org = Storage(

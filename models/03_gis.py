@@ -30,6 +30,9 @@ table.name.requires = [IS_NOT_EMPTY(), IS_NOT_IN_DB(db, "%s.name" % tablename)]
 # upload folder needs to be visible to the download() function as well as the upload
 table.image.uploadfolder = os.path.join(request.folder, "static/img/markers")
 table.image.represent = lambda filename: (filename and [DIV(IMG(_src=URL(r=request, c="default", f="download", args=filename), _height=40))] or [""])[0]
+table.name.label = T("Name")
+table.image.label = T("Image")
+
 # Reusable field to include in other table definitions
 ADD_MARKER = Tstr("Add") + " " + MARKER
 marker_id = db.Table(None, "marker_id",
@@ -59,6 +62,11 @@ table.epsg.requires = IS_NOT_EMPTY()
 table.maxExtent.requires = IS_NOT_EMPTY()
 table.maxResolution.requires = IS_NOT_EMPTY()
 table.units.requires = IS_IN_SET(["m", "degrees"], zero=None)
+table.name.label = T("Name")
+table.epsg.label = "EPSG"
+table.maxExtent.label = T("maxExtent")
+table.maxResolution.label = T("maxResolution")
+table.units.label = T("Units")
 # Reusable field to include in other table definitions
 projection_id = db.Table(None, "projection_id",
             FieldS3("projection_id", db.gis_projection, sortby="name",
@@ -133,6 +141,15 @@ table.max_lon.requires = IS_LON()
 table.zoom_levels.requires = IS_INT_IN_RANGE(1, 30)
 table.cluster_distance.requires = IS_INT_IN_RANGE(1, 30)
 table.cluster_threshold.requires = IS_INT_IN_RANGE(1, 10)
+table.lat.label = T("Latitude")
+table.lon.label = T("Longitude")
+table.zoom.label = T("Zoom")
+table.marker_id.label = T("Default Marker")
+table.map_height.label = T("Map Height")
+table.map_width.label = T("Map Width")
+table.zoom_levels.label = T("Zoom Levels")
+table.cluster_distance.label = T("Cluster Distance")
+table.cluster_threshold.label = T("Cluster Threshold")
 
 # GIS Feature Classes
 # These are used in groups (for display/export), for icons & for URLs to edit data
@@ -278,6 +295,12 @@ table.gps_marker.requires = IS_IN_SET([
     ])
 #table.module.requires = IS_NULL_OR(IS_ONE_OF(db((db.s3_module.enabled=="True") & (~db.s3_module.name.like("default"))), "s3_module.name", "%(name_nice)s"))
 #table.resource.requires = IS_NULL_OR(IS_IN_SET(gis_resource_opts))
+table.name.label = T("Name")
+table.gps_marker.label = T("GPS Marker")
+table.description.label = T("Description")
+table.module.label = T("Module")
+table.resource.label = T("Resource")
+
 # Reusable field to include in other table definitions
 ADD_FEATURE_CLASS = T("Add Feature Class")
 feature_class_id = db.Table(None, "feature_class_id",
@@ -361,6 +384,17 @@ table.wkt.represent = lambda wkt: gis.abbreviate_wkt(wkt)
 table.lat.requires = IS_NULL_OR(IS_LAT())
 table.lon.requires = IS_NULL_OR(IS_LON())
 table.source.requires = IS_NULL_OR(IS_IN_SET(gis_source_opts))
+table.name.label = T("Name")
+table.level.label = T("Level")
+table.code.label = T("Code")
+table.description.label = T("Description")
+table.parent.label = T("Parent")
+table.addr_street.label = T("Street Address")
+table.gis_feature_type.label = T("Feature Type")
+table.lat.label = T("Latitude")
+table.lon.label = T("Longitude")
+table.wkt.label = T("Well-Known Text")
+table.osm_id.label = "OpenStreetMap"
 
 # Reusable field to include in other table definitions
 ADD_LOCATION = T("Add Location")
@@ -391,12 +425,10 @@ def shn_gis_location_represent(id):
         location = db(db.gis_location.id == id).select(db.gis_location.name, db.gis_location.level, db.gis_location.lat, db.gis_location.lon, db.gis_location.id, limitby=(0, 1)).first()
         if location.level in ["L0", "L1", "L2"]:
             # Countries, Regions shouldn't be represented as Lat/Lon
-            represent = location.name
+            text = location.name
         else:
             # Simple
             #represent = location.name
-            # Fancy Map
-            #represent = A(location.name, _href="#", _onclick="viewMap(" + str(id) +");return false")
             # Lat/Lon
             lat = location.lat
             lon = location.lon
@@ -409,13 +441,16 @@ def shn_gis_location_represent(id):
                     lon_prefix = "E"
                 else:
                     lon_prefix = "W"
-                text = "%s %s %s %s" % (lat_prefix, lat, lon_prefix, lon)
+                text = location.name + " (%s %s %s %s)" % (lat_prefix, lat, lon_prefix, lon)
             else:
                 text = location.name
-            represent = text
-            # Hyperlink
-            represent = A(text, _href = deployment_settings.get_base_public_url() + URL(r=request, c="gis", f="location", args=[location.id]))
-            # ToDo: Convert to popup? (HTML again!)
+        # Simple
+        #represent = text
+        # Hyperlink
+        #represent = A(text, _href = deployment_settings.get_base_public_url() + URL(r=request, c="gis", f="location", args=[location.id]))
+        # Map
+        represent = A(text, _href="#", _onclick="viewMap(" + str(id) +");return false")
+        # ToDo: Convert to popup? (HTML again!)
     except:
         try:
             # "Invalid" => data consistency wrong
@@ -433,10 +468,13 @@ table = db.define_table(tablename, timestamp, uuidstamp, authorstamp, deletion_s
                 Field("name", length=128, notnull=True, unique=True),
                 Field("description"),
                 Field("enabled", "boolean", default=True, label=T("Enabled?")),
+                Field("visible", "boolean", default=False, label=T("On by default?")),
                 migrate=migrate)
 table.uuid.requires = IS_NOT_IN_DB(db, "%s.uuid" % tablename)
 #table.author.requires = IS_ONE_OF(db, "auth_user.id","%(id)s: %(first_name)s %(last_name)s")
 table.name.requires = [IS_NOT_EMPTY(), IS_NOT_IN_DB(db, "%s.name" % tablename)]
+table.name.label = T("Name")
+table.description.label = T("Description")
 # Reusable field to include in other table definitions
 ADD_FEATURE_GROUP = T("Add Feature Group")
 feature_group_id = db.Table(None, "feature_group_id",
@@ -478,6 +516,8 @@ table = db.define_table(tablename, timestamp,
 table.name.requires = IS_IN_SET(["google", "multimap", "yahoo"], zero=None)
 #table.apikey.requires = THIS_NOT_IN_DB(db(table.name==request.vars.name), "gis_apikey.name", request.vars.name, "Service already in use")
 table.apikey.requires = IS_NOT_EMPTY()
+table.name.label = T("Service")
+table.apikey.label = T("Key")
 
 # GPS Tracks (files in GPX format)
 resource = "track"

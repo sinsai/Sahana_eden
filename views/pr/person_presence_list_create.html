@@ -1,4 +1,4 @@
-{{extend 'layout.html'}}
+{{extend "layout.html"}}
 {{try:}}
  {{=H2(title)}}
 {{except:}}
@@ -13,7 +13,7 @@
  {{=H3(subtitle)}}
 {{except:}}
 {{pass}}
-{{include 'formats.html'}}
+{{include "formats.html"}}
 <div id='table-container'>
 {{try:}}
  {{=items}}
@@ -24,6 +24,7 @@
 {{except:}}
 {{pass}}
 </div>
+<div id='map'></div>
 {{try:}}
  {{=H3(addtitle)}}
 {{except:}}
@@ -34,10 +35,9 @@
 {{except:}}
 {{pass}}
 </div>
-{{include 'key.html'}}
-{{include 'pagenav.html'}}
-{{include 'searchbox.html'}}
+{{include "key.html"}}
+{{include "pagenav.html"}}
+{{include "searchbox.html"}}
 <p>&nbsp;</p>
-<div id='map'></div>
-{{include 'colorbox.html'}}
-{{include 'dataTables.html'}}
+{{include "colorbox.html"}}
+{{include "dataTables.html"}}

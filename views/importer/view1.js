@@ -80,10 +80,9 @@ function maker(json){
        obj+="dataIndex :";
        obj+=("\""+columnlist[i-1]+"\"} ");
        try{
-       
-       col=Ext.util.JSON.decode(obj);
-       col.editor=edit[i];
-       column_model[i]=col;
+       	   col=Ext.util.JSON.decode(obj);
+           col.editor=edit[i];
+           column_model[i]=col;
        }
        catch(err){
 		Ext.Msg.alert("Error","Error decoding column model");   
@@ -106,23 +105,29 @@ function maker(json){
     {
     }
     var sm2 = new Ext.grid.CheckboxSelectionModel();
-    column_model[0]=sm2;//placing the checkboxes before the first column
+    column_model[0]=sm2;	//placing the checkboxes before the first column
+    var sm1 = new Ext.grid.CellSelectionModel();
+    //column_model.push(sm1);
     var row_model=Ext.data.Record.create(columnlist);
+    var ht=(json.rows)*20;
     //Configuring the grid
     var grid=new Ext.grid.EditorGridPanel({
-       title: '<u>Edit</u> \u2794 Select header row \u2794 Select table \u2794 Map columns to fields',
+       title: '<div align="center"><u>Edit</u> \u2794 Select header row \u2794 Select table \u2794 Map columns to fields</div>',
        renderTo: 'spreadsheet',
        loadMask: true,
-       height: 300,
-       width: 'auto',
+       //height: 'auto',
+       autoHeight: true,
+     //  width: 'auto',
        store: store,
        columnLines: true,
-       sm: sm2,   
+       sm: sm2,  
+       style : 'text-align:left;', 
        frame : true,
        columns: column_model,
        buttons: [{text : 'Next',handler:
                                        function()
-                                       {//This function stores the grid
+                                       {
+				       	   //This function stores the grid
                                            var gridsave=new Array(grid.getStore().getCount());
                                            var i=0;
                                            grid.getStore().each(function(record){gridsave[i++]=record.data});
@@ -147,7 +152,9 @@ function maker(json){
         tbar: [
             {
                  text: 'Add row',
-                 handler: function()
+                 icon : 'images/table_add.png',
+		 cls : 'x-btn-text-icon',
+		 handler: function()
                  {
                          grid.getStore().insert(0,new row_model);
                          grid.startEditing(0,0);

@@ -46,7 +46,7 @@ function import_spreadsheet(table,header_row,importsheet,map_from_ss_to_field)
 		}
 		jsonss.push(rowobj);
 	}
-	var posturl="http://localhost:8000/{{=request.application}}/"+prefix+"/"+name+"/create.json?id=None";
+	var posturl="http://{{=request.env.http_host}}/{{=request.application}}/"+prefix+"/"+name+"/create.json";
 	document.write(rowobj);
 	var sendobj="{\""+str+"\":"+jsonss+"}";
 	document.write("<br/>The URL for post request->"+posturl+" and the sending status is ->");
@@ -57,7 +57,7 @@ function import_spreadsheet(table,header_row,importsheet,map_from_ss_to_field)
 	//send[str].push(rowobj);
 	document.write(send[str]);	
 	Ext.Ajax.request({
-		url : 'http://localhost:8000/newins/importer/recvdata',
+		url : posturl,
 		jsonData: send,//send as body,
 		method : 'POST',
 		success : function(r,o)

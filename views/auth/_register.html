@@ -15,15 +15,15 @@ $(document).ready(function() {
         errorClass: "req",
         rules: {
             first_name: {
-                required: true,
+                required: true
                 },
             email: {
                 required: true,
-                email: true,
+                email: true
                 //remote: "emailsurl"  // TODO
             },
             password: {
-                required: true,
+                required: true
             },
             password_two: {
                 required: true,
@@ -33,7 +33,7 @@ $(document).ready(function() {
         messages: {
             firstname: "  {{=T("Enter your firstname")}}",
             password: {
-                required: "  {{=T("Provide a password")}}",
+                required: "  {{=T("Provide a password")}}"
             },
             password_two: {
                 required: "  {{=T("Repeat your password")}}",
@@ -41,7 +41,7 @@ $(document).ready(function() {
             },
             email: {
                 required: "  {{=T("Please enter a valid email address")}}",
-                minlength: "  {{=T("Please enter a valid email address")}}",
+                minlength: "  {{=T("Please enter a valid email address")}}"
             },
         },
          errorPlacement: function(error, element) {

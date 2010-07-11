@@ -558,3 +558,28 @@ if deployment_settings.has_module(module):
         msg_record_modified = T('Skill updated'),
         msg_record_deleted = T('Skill deleted'),
         msg_list_empty = T('No skills currently set'))
+
+# shn_pr_group_represent -----------------------------------------------------
+#
+def teamname(record):
+    """
+        Returns the Team Name
+    """
+
+    tname = ""
+    if record and record.group_name:
+        tname = "%s " % record.group_name.strip()
+    return tname
+
+def shn_pr_group_represent(id):
+
+    def _represent(id):
+        table = db.pr_group
+        group = db(table.id == id).select(table.group_name)
+        if group:
+            return teamname(group[0])
+        else:
+            return None
+
+    name = cache.ram("pr_group_%s" % id, lambda: _represent(id))
+    return name

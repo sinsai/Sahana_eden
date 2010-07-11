@@ -126,6 +126,13 @@ table = db.define_table(tablename, timestamp, uuidstamp, deletion_status,
                 Field("comment"),                       # Comment
                 migrate=migrate)
 
+# Reusable Contact ID
+pe_contact_id = db.Table(None, "pe_contact_id",
+                FieldS3("pe_contact_id", db.pr_pe_contact,
+                    requires = IS_NULL_OR(IS_ONE_OF(db, "pr_pe_contact.id")),
+                    ondelete = "RESTRICT"
+                ))
+
 # Joined Resource
 s3xrc.model.add_component(module, resource,
                           multiple=True,
@@ -135,7 +142,7 @@ s3xrc.model.add_component(module, resource,
 
 s3xrc.model.configure(table,
                       list_fields=["id",
-                                   pr_pe_id,
+                                   "pr_pe_id",
                                    "name",
                                    "person_name",
                                    "opt_pr_contact_method",
@@ -402,7 +409,7 @@ resource = "pe_subscription"
 tablename = "%s_%s" % (module, resource)
 table = db.define_table(tablename, timestamp, uuidstamp, deletion_status,
                 pr_pe_id,               # Person Entity ID
-                Field("resource"),      
+                Field("resource"),
                 Field("record"),        # type="s3uuid"
                 Field("comment"),       # Comment
                 migrate=migrate)

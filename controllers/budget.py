@@ -843,7 +843,7 @@ def bundle_kit_item():
             item_list.append(TR(TD(id_link), TD(description, _align="left"), TD(quantity_box), TD(unit_cost), TD(monthly_cost), TD(minutes_box), TD(minute_cost), TD(megabytes_box), TD(megabyte_cost), TD(total_units), TD(total_monthly), TD(checkbox, _align="center"), _class=theclass, _align="right"))
 
         # Items
-        query = tables[1].bundle_id==bundle
+        query = tables[1].bundle_id == bundle
         sqlrows = db(query).select()
         for row in sqlrows:
             if even:
@@ -897,7 +897,7 @@ def bundle_kit_item():
     else:
         # Display a simple List page
         # Kits
-        query = tables[0].bundle_id==bundle
+        query = tables[0].bundle_id == bundle
         sqlrows = db(query).select()
         for row in sqlrows:
             if even:
@@ -931,7 +931,7 @@ def bundle_kit_item():
             item_list.append(TR(TD(id_link), TD(description, _align="left"), TD(quantity_box), TD(unit_cost), TD(monthly_cost), TD(minutes_box), TD(minute_cost), TD(megabytes_box), TD(megabyte_cost), TD(total_units), TD(total_monthly), _class=theclass, _align="right"))
 
         # Items
-        query = tables[1].bundle_id==bundle
+        query = tables[1].bundle_id == bundle
         sqlrows = db(query).select()
         for row in sqlrows:
             if even:

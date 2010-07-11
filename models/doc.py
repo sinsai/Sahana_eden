@@ -1,10 +1,10 @@
 # -*- coding: utf-8 -*-
 
 """
-    Media Manager
+    Document Library
 """
 
-module = "media"
+module = "doc"
 
 # Settings
 resource = "setting"
@@ -31,13 +31,14 @@ table.uuid.requires = IS_NOT_IN_DB(db, "%s.uuid" % tablename)
 table.event_time.requires = IS_NULL_OR(IS_DATETIME())
 table.expiry_time.requires = IS_NULL_OR(IS_DATETIME())
 table.url.requires = IS_NULL_OR(IS_URL())
-ADD_METADATA = T("Add Metadata")
+ADD_METADATA = Tstr("Add Metadata")
 metadata_id = db.Table(None, "metadata_id",
-            Field("metadata_id", db.media_metadata,
-                requires = IS_NULL_OR(IS_ONE_OF(db, "media_metadata.id", "%(name)s")),
-                represent = lambda id: (id and [db(db.media_metadata.id==id).select()[0].name] or ["None"])[0],
+            Field("metadata_id", db.doc_metadata,
+                requires = IS_NULL_OR(IS_ONE_OF(db, "doc_metadata.id", "%(name)s")),
+                represent = lambda id: (id and [db(db.doc_metadata.id==id).select()[0].name] or ["None"])[0],
                 label = T("Metadata"),
-                comment = DIV(A(ADD_METADATA, _class="colorbox", _href=URL(r=request, c="media", f="metadata", args="create", vars=dict(format="popup")), _target="top", _title=ADD_METADATA), A(SPAN("[Help]"), _class="tooltip", _title=T("Metadata|FIXME: Add some useful text here."))),
+                comment = DIV(A(ADD_METADATA, _class="colorbox", _href=URL(r=request, c="doc", f="metadata", args="create", vars=dict(format="popup")), _target="top", _title=ADD_METADATA),
+                          DIV( _class="tooltip", _title=ADD_METADATA + "|" + "Add some metadata for the file, such as Soure, Sensitivity, Event Time.")),
                 ondelete = "RESTRICT"
                 ))
 
@@ -56,12 +57,13 @@ table.name.comment = SPAN("*", _class="req")
 table.image.uploadfolder = os.path.join(request.folder, "uploads/images")
 IMAGE_EXTENSIONS = ["png", "PNG", "jpg", "JPG", "jpeg", "JPEG", "gif", "GIF", "tif", "TIF", "tiff", "TIFF", "bmp", "BMP", "raw", "RAW"]
 table.image.requires = IS_IMAGE(extensions=(IMAGE_EXTENSIONS))
-ADD_IMAGE = T("Add Image")
+ADD_IMAGE = Tstr("Add Image")
 image_id = db.Table(None, "image_id",
-            Field("image_id", db.media_image,
-                requires = IS_NULL_OR(IS_ONE_OF(db, "media_image.id", "%(name)s")),
-                represent = lambda id: (id and [DIV(A(IMG(_src=URL(r=request, c="default", f="download", args=db(db.media_image.id == id).select(limitby=(0, 1)).first().image), _height=40), _class="zoom", _href="#zoom-media_image-%s" % id), DIV(IMG(_src=URL(r=request, c="default", f="download", args=db(db.media_image.id==id).select()[0].image),_width=600), _id="zoom-media_image-%s" % id, _class="hidden"))] or [""])[0],
+            Field("image_id", db.doc_image,
+                requires = IS_NULL_OR(IS_ONE_OF(db, "doc_image.id", "%(name)s")),
+                represent = lambda id: (id and [DIV(A(IMG(_src=URL(r=request, c="default", f="download", args=db(db.doc_image.id == id).select(db.doc_image.image, limitby=(0, 1)).first().image), _height=40), _class="zoom", _href="#zoom-media_image-%s" % id), DIV(IMG(_src=URL(r=request, c="default", f="download", args=db(db.doc_image.id == id).select(db.doc_image.image, limitby=(0, 1)).first().image),_width=600), _id="zoom-media_image-%s" % id, _class="hidden"))] or [""])[0],
                 label = T("Image"),
-                comment = DIV(A(ADD_IMAGE, _class="colorbox", _href=URL(r=request, c="media", f="image", args="create", vars=dict(format="popup")), _target="top", _title=ADD_IMAGE), A(SPAN("[Help]"), _class="tooltip", _title=T("Photo|Add a Photo to describe this."))),
+                comment = DIV(A(ADD_IMAGE, _class="colorbox", _href=URL(r=request, c="doc", f="image", args="create", vars=dict(format="popup")), _target="top", _title=ADD_IMAGE),
+                          DIV( _class="tooltip", _title=ADD_IMAGE + "|" + Tstr("Add an image, such as a Photo."))),
                 ondelete = "RESTRICT"
                 ))

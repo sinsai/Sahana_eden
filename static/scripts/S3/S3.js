@@ -1,4 +1,5 @@
 var popupWin = null;
+
 function openPopup(url) {
     if ( !popupWin || popupWin.closed ) {
         popupWin = window.open( url, "popupWin", "width=640,height=480" );
@@ -14,8 +15,6 @@ $(document).ready(function() {
     $('.confirmation').hide().slideDown('slow')
     $('.confirmation').click(function() { $(this).fadeOut('slow'); return false; });
     $("input.date").datepicker({ changeMonth: true, changeYear: true, dateFormat: 'yy-mm-dd', isRTL: false });
-    var togglecallerappend;
-    window.togglecallerappend = "True";
     $('a.colorbox').click(function(){
         // Function to Add a Resource from within a form
         $(this).attr('href', function() {
@@ -23,9 +22,8 @@ $(document).ready(function() {
             var url_in = $(this).attr('href');
             var caller = $(this).parents('tr').attr('id').replace(/__row/, '');
             var url_out = url_in;
-            if (window.togglecallerappend == "True"){
+            if (url_out.indexOf("&caller=") == -1){
                 url_out = url_out + '&caller=' + caller;
-                window.togglecallerappend = "False";
             }
             return url_out;
         });
@@ -39,11 +37,16 @@ $(document).ready(function() {
     // Menu popups (works in IE6)
     $('#modulenav li').hover(
         function() {
-                var popup_width = $(this).width()-2;
-                $('ul', this).css({
-                    'display': 'block',
-                    'width': popup_width.toString() + 'px'
-                });
+                var header_width = $(this).width();
+                var popup_width = $('ul', this).width();
+                if (popup_width != null){
+                  if (popup_width < header_width){
+                    $('ul', this).css({
+                        'width': header_width.toString() + 'px'
+                    });
+                  }
+                }
+                $('ul', this).css('display', 'block');
             },
         function() { $('ul', this).css('display', 'none');  }
     );

@@ -66,7 +66,7 @@ if deployment_settings.has_module(module):
             return None
 
     # CRUD Strings
-    ADD_VOLUNTEER = T("Add Volunteer Registration")
+    ADD_VOLUNTEER = Tstr("Add Volunteer Registration")
     VOLUNTEERS = T("Volunteer Registrations")
     s3.crud_strings[tablename] = Storage(
         title_create = ADD_VOLUNTEER,
@@ -88,7 +88,8 @@ if deployment_settings.has_module(module):
                                 FieldS3("vol_volunteer_id", db.vol_volunteer, sortby=["first_name", "middle_name", "last_name"],
                                 requires = IS_NULL_OR(IS_ONE_OF(db(db.vol_volunteer.status == 1), "vol_volunteer.id", shn_vol_volunteer_represent)),
                                 represent = lambda id: (id and [shn_vol_volunteer_represent(id)] or ["None"])[0],
-                                comment = DIV(A(s3.crud_strings.vol_volunteer.label_create_button, _class="colorbox", _href=URL(r=request, c="vol", f="volunteer", args="create", vars=dict(format="popup")), _target="top", _title=s3.crud_strings.vol_volunteer.label_create_button), A(SPAN("[Help]"), _class="tooltip", _title=T("Volunteer|Add new volunteer)."))),
+                                comment = DIV(A(ADD_VOLUNTEER, _class="colorbox", _href=URL(r=request, c="vol", f="volunteer", args="create", vars=dict(format="popup")), _target="top", _title=ADD_VOLUNTEER),
+                                          DIV( _class="tooltip", _title=ADD_VOLUNTEER + "|" + Tstr("Add new volunteer."))),
                                 ondelete = "RESTRICT"
                             ))
 

@@ -57,9 +57,12 @@
             // Provide tiered Location AutoCompletes
             //{include "gis/location_autocomplete.js"}
             //}
-{{else:}}
-{{include "gis/feature_crud.js"}}
-{{pass}}
-});
+    });
+    //]]></script>
+{{elif jr.method != "read":}}
+    <script type="text/javascript">//<![CDATA[
+        {{include "gis/feature_crud.js"}}
+    });
 //]]></script>
+{{pass}}
 {{include "gis/convert_gps.html"}}

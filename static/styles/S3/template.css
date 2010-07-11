@@ -118,7 +118,7 @@ table { border-collapse: collapse }
                      background: none; }
 #modulenav li li a { display: block;
                      font-weight: normal;
-                     padding: 5px 0px 5px 5px; }
+                     padding: 5px 5px 5px 5px; }
 #modulenav li li a:hover { background: #d2eaff;
                            color: #000; }
 #modulenav li { float: left;
@@ -153,7 +153,8 @@ table { border-collapse: collapse }
 #modulenav li li { display: block;
                    float: none;
                    border: 0; }
-#modulenav li:hover ul, li.over ul { display: block; }
+#modulenav li:hover ul { display: block; }
+#modulenav li.over ul { display: block; }
 
 .S3menulogo { background: url(../../img/S3menu_logo.png) left top no-repeat;
               text-shadow: none;
@@ -391,6 +392,10 @@ div#table-container tr.odd td { border: 1px solid #ccc;
 div.item-container { width: 100%;
                      overflow: auto; }
 div.item-container { margin: 5px 0 5px 0; }
+
+/* Map view */
+div#map { width: 100%;
+          overflow: auto; }
 
 /* Big Buttons (e.g. RMS) */
 div.question-container { text-align:center;

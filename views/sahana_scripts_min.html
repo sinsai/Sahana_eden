@@ -1,6 +1,7 @@
 <!--Running in Production mode, so we want fewer compressed scripts to download-->
 
 <script src="/{{=request.application}}/static/scripts/web2py/jquery-1.4.2.min.js" type="text/javascript"></script>
+<script src="/{{=request.application}}/static/scripts/S3/jquery.validate.pack.js" type="text/javascript"></script>
 <!-- For Sites Hosted on the Public Internet, using Google's version of jQuery will provide better performance
 <script src="http://ajax.googleapis.com/ajax/libs/jquery/1.4/jquery.min.js" type="text/javascript"></script>
 -->
@@ -34,39 +35,13 @@ jQuery(document).ready(function(){
 <script type="text/javascript">//<![CDATA[
 function viewMap(feature_id) {
     var url = '{{=URL(r=request, c='gis', f='display_feature')}}/' + feature_id;
-    var iframe = "<iframe width='810' height='610' src='" + url + "'></iframe>";
-    if (jQuery.support.scriptEval==true) {
-        // Firefox, Chrome
-        // ToDo: catch Chrome somehow as it prefers the IE method
-        $.get(url, function(data){
-            // Hack from http://stackoverflow.com/questions/1197575/can-scripts-be-inserted-with-innerhtml
-            var n = document.createElement("div");
-            n.innerHTML = data;
-            document.body.appendChild(n);
-        });
-    } else {
-        // IE
-        //$.getScript() will be too complex to engineer
-        $('#map').html(iframe);
-    }
+    var iframe = "<iframe width='640' height='480' src='" + url + "'></iframe>";
+    $('#map').html(iframe);
 }
 function viewMapMulti(module, resource, instance, jresource) {
     var url = '{{=URL(r=request, c='gis', f='display_features')}}/?module=' + module + '&resource=' + resource + '&instance=' + instance + '&jresource=' + jresource;
-    var iframe = "<iframe width='810' height='610' src='" + url + "'></iframe>";
-    if (jQuery.support.scriptEval==true) {
-        // Firefox, Chrome
-        // ToDo: catch Chrome somehow as it prefers the IE method
-        $.get(url, function(data){
-            // Hack from http://stackoverflow.com/questions/1197575/can-scripts-be-inserted-with-innerhtml
-            var n = document.createElement("div");
-            n.innerHTML = data;
-            document.body.appendChild(n);
-        });
-    } else {
-        // IE
-        //$.getScript() will be too complex to engineer
-        $('#map').html(iframe);
-    }
+    var iframe = "<iframe width='640' height='480' src='" + url + "'></iframe>";
+    $('#map').html(iframe);
 }
 jQuery(document).ready(function() {
     jQuery("input.date").datepicker({ changeMonth: true, changeYear: true, dateFormat: 'yy-mm-dd', isRTL: false });

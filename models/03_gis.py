@@ -6,6 +6,8 @@
 
 module = "gis"
 
+MARKER = Tstr("Marker")
+
 # Settings
 resource = "setting"
 tablename = "%s_%s" % (module, resource)
@@ -28,14 +30,18 @@ table.name.requires = [IS_NOT_EMPTY(), IS_NOT_IN_DB(db, "%s.name" % tablename)]
 # upload folder needs to be visible to the download() function as well as the upload
 table.image.uploadfolder = os.path.join(request.folder, "static/img/markers")
 table.image.represent = lambda filename: (filename and [DIV(IMG(_src=URL(r=request, c="default", f="download", args=filename), _height=40))] or [""])[0]
+table.name.label = T("Name")
+table.image.label = T("Image")
+
 # Reusable field to include in other table definitions
-ADD_MARKER = T("Add Marker")
+ADD_MARKER = Tstr("Add") + " " + MARKER
 marker_id = db.Table(None, "marker_id",
             FieldS3("marker_id", db.gis_marker, sortby="name",
                 requires = IS_NULL_OR(IS_ONE_OF(db, "gis_marker.id", "%(name)s", zero=T("Use default from feature class"))),
                 represent = lambda id: (id and [DIV(IMG(_src=URL(r=request, c="default", f="download", args=db(db.gis_marker.id == id).select(db.gis_marker.image, limitby=(0, 1)).first().image), _height=40))] or [""])[0],
                 label = T("Marker"),
-                comment = DIV(A(ADD_MARKER, _class="colorbox", _href=URL(r=request, c="gis", f="marker", args="create", vars=dict(format="popup")), _target="top", _title=ADD_MARKER), DIV( _class="tooltip", _title=T("Marker|Defines the icon used for display of features on interactive map & KML exports. A Marker assigned to an individual Location is set if there is a need to override the Marker assigned to the Feature Class. If neither are defined, then the Default Marker is used."))),
+                comment = DIV(A(ADD_MARKER, _class="colorbox", _href=URL(r=request, c="gis", f="marker", args="create", vars=dict(format="popup")), _target="top", _title=ADD_MARKER), 
+                          DIV( _class="tooltip", _title=MARKER + "|" + Tstr("Defines the icon used for display of features on interactive map & KML exports. A Marker assigned to an individual Location is set if there is a need to override the Marker assigned to the Feature Class. If neither are defined, then the Default Marker is used."))),
                 ondelete = "RESTRICT"
                 ))
 
@@ -55,6 +61,11 @@ table.epsg.requires = IS_NOT_EMPTY()
 table.maxExtent.requires = IS_NOT_EMPTY()
 table.maxResolution.requires = IS_NOT_EMPTY()
 table.units.requires = IS_IN_SET(["m", "degrees"], zero=None)
+table.name.label = T("Name")
+table.epsg.label = "EPSG"
+table.maxExtent.label = T("maxExtent")
+table.maxResolution.label = T("maxResolution")
+table.units.label = T("Units")
 # Reusable field to include in other table definitions
 projection_id = db.Table(None, "projection_id",
             FieldS3("projection_id", db.gis_projection, sortby="name",
@@ -98,6 +109,7 @@ opt_gis_layout = db.Table(None, "opt_gis_layout",
 resource = "config"
 tablename = "%s_%s" % (module, resource)
 table = db.define_table(tablename, timestamp, uuidstamp,
+                pr_pe_id,                           # Personal Entity Reference
                 Field("lat", "double"),
                 Field("lon", "double"),
                 Field("zoom", "integer"),
@@ -117,6 +129,9 @@ table = db.define_table(tablename, timestamp, uuidstamp,
                 migrate=migrate)
 
 table.uuid.requires = IS_NOT_IN_DB(db, "gis_config.uuid")
+table.pr_pe_id.requires = IS_NULL_OR(IS_ONE_OF(db, "pr_pentity.id",
+                                    shn_pentity_represent))
+table.pr_pe_id.readable = table.pr_pe_id.writable = False
 table.lat.requires = IS_LAT()
 table.lon.requires = IS_LON()
 table.zoom.requires = IS_INT_IN_RANGE(0, 19)
@@ -129,7 +144,54 @@ table.max_lon.requires = IS_LON()
 table.zoom_levels.requires = IS_INT_IN_RANGE(1, 30)
 table.cluster_distance.requires = IS_INT_IN_RANGE(1, 30)
 table.cluster_threshold.requires = IS_INT_IN_RANGE(1, 10)
+table.lat.label = T("Latitude")
+table.lon.label = T("Longitude")
+table.zoom.label = T("Zoom")
+table.marker_id.label = T("Default Marker")
+table.map_height.label = T("Map Height")
+table.map_width.label = T("Map Width")
+table.zoom_levels.label = T("Zoom Levels")
+table.cluster_distance.label = T("Cluster Distance")
+table.cluster_threshold.label = T("Cluster Threshold")
+# Defined here since Component
+table.lat.comment = DIV(SPAN("*", _class="req"), DIV( _class="tooltip", _title=Tstr("Latitude") + "|" + Tstr("Latitude is North-South (Up-Down). Latitude is zero on the equator and positive in the northern hemisphere and negative in the southern hemisphere.")))
+table.lon.comment = DIV(SPAN("*", _class="req"), DIV( _class="tooltip", _title=Tstr("Longitude") + "|" + Tstr("Longitude is West - East (sideways). Longitude is zero on the prime meridian (Greenwich Mean Time) and is positive to the east, across Europe and Asia.  Longitude is negative to the west, across the Atlantic and the Americas.")))
+table.zoom.comment = DIV(SPAN("*", _class="req"), DIV( _class="tooltip", _title=Tstr("Zoom") + "|" + Tstr("How much detail is seen. A high Zoom level means lot of detail, but not a wide area. A low Zoom level means seeing a wide area, but not a high level of detail.")))
+table.map_height.comment = DIV(SPAN("*", _class="req"), DIV( _class="tooltip", _title=Tstr("Height") + "|" + Tstr("Default Height of the map window. In Window layout the map maximises to fill the window, so no need to set a large value here.")))
+table.map_width.comment = DIV(SPAN("*", _class="req"), DIV( _class="tooltip", _title=Tstr("Width") + "|" + Tstr("Default Width of the map window. In Window layout the map maximises to fill the window, so no need to set a large value here.")))
+ADD_CONFIG = T("Add Config")
+LIST_CONFIGS = T("List Configs")
+s3.crud_strings[tablename] = Storage(
+    title_create = ADD_CONFIG,
+    title_display = T("Config"),
+    title_list = T("Configs"),
+    title_update = T("Edit Config"),
+    title_search = T("Search Configs"),
+    subtitle_create = T("Add New Config"),
+    subtitle_list = LIST_CONFIGS,
+    label_list_button = LIST_CONFIGS,
+    label_create_button = ADD_CONFIG,
+    label_delete_button = T("Delete Config"),
+    msg_record_created = T("Config added"),
+    msg_record_modified = T("Config updated"),
+    msg_record_deleted = T("Config deleted"),
+    msg_list_empty = T("No Configs currently defined")
+)
 
+# Configs as component of Persons
+s3xrc.model.add_component(module, resource,
+                          multiple=False,
+                          joinby="pr_pe_id",
+                          deletable=False,
+                          editable=True)
+
+s3xrc.model.configure(table,
+                      list_fields = ["lat",
+                                     "lon",
+                                     "zoom",
+                                     "projection_id",
+                                     "map_height",
+                                     "map_width"])
 # GIS Feature Classes
 # These are used in groups (for display/export), for icons & for URLs to edit data
 #gis_resource_opts = {
@@ -274,6 +336,12 @@ table.gps_marker.requires = IS_IN_SET([
     ])
 #table.module.requires = IS_NULL_OR(IS_ONE_OF(db((db.s3_module.enabled=="True") & (~db.s3_module.name.like("default"))), "s3_module.name", "%(name_nice)s"))
 #table.resource.requires = IS_NULL_OR(IS_IN_SET(gis_resource_opts))
+table.name.label = T("Name")
+table.gps_marker.label = T("GPS Marker")
+table.description.label = T("Description")
+table.module.label = T("Module")
+table.resource.label = T("Resource")
+
 # Reusable field to include in other table definitions
 ADD_FEATURE_CLASS = T("Add Feature Class")
 feature_class_id = db.Table(None, "feature_class_id",
@@ -281,7 +349,8 @@ feature_class_id = db.Table(None, "feature_class_id",
                 requires = IS_NULL_OR(IS_ONE_OF(db, "gis_feature_class.id", "%(name)s")),
                 represent = lambda id: (id and [db(db.gis_feature_class.id == id).select(db.gis_feature_class.name, limitby=(0, 1)).first().name] or ["None"])[0],
                 label = T("Feature Class"),
-                comment = DIV(A(ADD_FEATURE_CLASS, _class="colorbox", _href=URL(r=request, c="gis", f="feature_class", args="create", vars=dict(format="popup")), _target="top", _title=ADD_FEATURE_CLASS), A(SPAN("[Help]"), _class="tooltip", _title=T("Feature Class|Defines the marker used for display & the attributes visible in the popup."))),
+                comment = DIV(A(ADD_FEATURE_CLASS, _class="colorbox", _href=URL(r=request, c="gis", f="feature_class", args="create", vars=dict(format="popup")), _target="top", _title=ADD_FEATURE_CLASS), 
+                          DIV( _class="tooltip", _title=Tstr("Feature Class") + "|" + Tstr("Defines the marker used for display & the attributes visible in the popup."))),
                 ondelete = "RESTRICT"
                 ))
 
@@ -356,6 +425,17 @@ table.wkt.represent = lambda wkt: gis.abbreviate_wkt(wkt)
 table.lat.requires = IS_NULL_OR(IS_LAT())
 table.lon.requires = IS_NULL_OR(IS_LON())
 table.source.requires = IS_NULL_OR(IS_IN_SET(gis_source_opts))
+table.name.label = T("Name")
+table.level.label = T("Level")
+table.code.label = T("Code")
+table.description.label = T("Description")
+table.parent.label = T("Parent")
+table.addr_street.label = T("Street Address")
+table.gis_feature_type.label = T("Feature Type")
+table.lat.label = T("Latitude")
+table.lon.label = T("Longitude")
+table.wkt.label = T("Well-Known Text")
+table.osm_id.label = "OpenStreetMap"
 
 # Reusable field to include in other table definitions
 ADD_LOCATION = T("Add Location")
@@ -370,9 +450,8 @@ location_id = db.Table(None, "location_id",
                                        _href=URL(r=request, c="gis", f="location", args="create", vars=dict(format="popup")),
                                        _target="top",
                                        _title=ADD_LOCATION),
-                                     A(SPAN("[Help]"),
-                                       _class="tooltip",
-                                       _title=T("Location|The Location of this Site, which can be general (for Reporting) or precise (for displaying on a Map)."))),
+                                     DIV( _class="tooltip",
+                                       _title=Tstr("Location") + "|" + Tstr("The Location of this Site, which can be general (for Reporting) or precise (for displaying on a Map)."))),
                        ondelete = "RESTRICT"))
 
 s3xrc.model.configure(db.gis_location,
@@ -387,12 +466,10 @@ def shn_gis_location_represent(id):
         location = db(db.gis_location.id == id).select(db.gis_location.name, db.gis_location.level, db.gis_location.lat, db.gis_location.lon, db.gis_location.id, limitby=(0, 1)).first()
         if location.level in ["L0", "L1", "L2"]:
             # Countries, Regions shouldn't be represented as Lat/Lon
-            represent = location.name
+            text = location.name
         else:
             # Simple
             #represent = location.name
-            # Fancy Map
-            #represent = A(location.name, _href="#", _onclick="viewMap(" + str(id) +");return false")
             # Lat/Lon
             lat = location.lat
             lon = location.lon
@@ -405,13 +482,16 @@ def shn_gis_location_represent(id):
                     lon_prefix = "E"
                 else:
                     lon_prefix = "W"
-                text = "%s %s %s %s" % (lat_prefix, lat, lon_prefix, lon)
+                text = location.name + " (%s %s %s %s)" % (lat_prefix, lat, lon_prefix, lon)
             else:
                 text = location.name
-            represent = text
-            # Hyperlink
-            represent = A(text, _href = deployment_settings.get_base_public_url() + URL(r=request, c="gis", f="location", args=[location.id]))
-            # ToDo: Convert to popup? (HTML again!)
+        # Simple
+        #represent = text
+        # Hyperlink
+        #represent = A(text, _href = deployment_settings.get_base_public_url() + URL(r=request, c="gis", f="location", args=[location.id]))
+        # Map
+        represent = A(text, _href="#", _onclick="viewMap(" + str(id) +");return false")
+        # ToDo: Convert to popup? (HTML again!)
     except:
         try:
             # "Invalid" => data consistency wrong
@@ -429,10 +509,13 @@ table = db.define_table(tablename, timestamp, uuidstamp, authorstamp, deletion_s
                 Field("name", length=128, notnull=True, unique=True),
                 Field("description"),
                 Field("enabled", "boolean", default=True, label=T("Enabled?")),
+                Field("visible", "boolean", default=False, label=T("On by default?")),
                 migrate=migrate)
 table.uuid.requires = IS_NOT_IN_DB(db, "%s.uuid" % tablename)
 #table.author.requires = IS_ONE_OF(db, "auth_user.id","%(id)s: %(first_name)s %(last_name)s")
 table.name.requires = [IS_NOT_EMPTY(), IS_NOT_IN_DB(db, "%s.name" % tablename)]
+table.name.label = T("Name")
+table.description.label = T("Description")
 # Reusable field to include in other table definitions
 ADD_FEATURE_GROUP = T("Add Feature Group")
 feature_group_id = db.Table(None, "feature_group_id",
@@ -440,7 +523,8 @@ feature_group_id = db.Table(None, "feature_group_id",
                 requires = IS_NULL_OR(IS_ONE_OF(db, "gis_feature_group.id", "%(name)s")),
                 represent = lambda id: (id and [db(db.gis_feature_group.id == id).select(db.gis_feature_group.name, limitby=(0, 1)).first().name] or ["None"])[0],
                 label = T("Feature Group"),
-                comment = DIV(A(ADD_FEATURE_GROUP, _class="colorbox", _href=URL(r=request, c="gis", f="feature_group", args="create", vars=dict(format="popup")), _target="top", _title=ADD_FEATURE_GROUP), DIV( _class="tooltip", _title=T("Feature Group|A collection of Feature Classes which can be displayed together on a map or exported together."))),
+                comment = DIV(A(ADD_FEATURE_GROUP, _class="colorbox", _href=URL(r=request, c="gis", f="feature_group", args="create", vars=dict(format="popup")), _target="top", _title=ADD_FEATURE_GROUP),
+                          DIV( _class="tooltip", _title=Tstr("Feature Group") + "|" + Tstr("A collection of Feature Classes which can be displayed together on a map or exported together."))),
                 ondelete = "RESTRICT"
                 ))
 
@@ -473,6 +557,8 @@ table = db.define_table(tablename, timestamp,
 table.name.requires = IS_IN_SET(["google", "multimap", "yahoo"], zero=None)
 #table.apikey.requires = THIS_NOT_IN_DB(db(table.name==request.vars.name), "gis_apikey.name", request.vars.name, "Service already in use")
 table.apikey.requires = IS_NOT_EMPTY()
+table.name.label = T("Service")
+table.apikey.label = T("Key")
 
 # GPS Tracks (files in GPX format)
 resource = "track"
@@ -491,7 +577,7 @@ table.name.comment = SPAN("*", _class="req")
 table.track.requires = IS_UPLOAD_FILENAME(extension="gpx")
 table.track.description = T("Description")
 table.track.label = T("GPS Track File")
-table.track.comment = DIV(SPAN("*", _class="req"), DIV( _class="tooltip", _title=T("GPS Track|A file in GPX format taken from a GPS whose timestamps can be correlated with the timestamps on the photos to locate them on the map.")))
+table.track.comment = DIV(SPAN("*", _class="req"), DIV( _class="tooltip", _title=Tstr("GPS Track") + "|" + Tstr("A file in GPX format taken from a GPS whose timestamps can be correlated with the timestamps on the photos to locate them on the map.")))
 ADD_TRACK = T("Upload Track")
 LIST_TRACKS = T("List Tracks")
 s3.crud_strings[tablename] = Storage(
@@ -514,7 +600,8 @@ track_id = db.Table(None, "track_id",
                 requires = IS_NULL_OR(IS_ONE_OF(db, "gis_track.id", "%(name)s")),
                 represent = lambda id: (id and [db(db.gis_track.id == id).select(db.gis_track.name, limitby=(0, 1)).first().name] or ["None"])[0],
                 label = T("Track"),
-                comment = DIV(A(ADD_TRACK, _class="colorbox", _href=URL(r=request, c="gis", f="track", args="create", vars=dict(format="popup")), _target="top", _title=ADD_TRACK), DIV( _class="tooltip", _title=T("GPX Track|A file downloaded from a GPS containing a series of geographic points in XML format."))),
+                comment = DIV(A(ADD_TRACK, _class="colorbox", _href=URL(r=request, c="gis", f="track", args="create", vars=dict(format="popup")), _target="top", _title=ADD_TRACK),
+                          DIV( _class="tooltip", _title=Tstr("GPX Track") + "|" + Tstr("A file downloaded from a GPS containing a series of geographic points in XML format."))),
                 ondelete = "RESTRICT"
                 ))
 
@@ -638,6 +725,8 @@ table = db.define_table(tablename, timestamp,
 # upload folder needs to be visible to the download() function as well as the upload
 table.file.uploadfolder = os.path.join(request.folder, "uploads/gis_cache")
 
+# Not yet implemented
+
 # GIS Styles: SLD
 #db.define_table("gis_style", timestamp,
 #                Field("name", notnull=True, unique=True))
@@ -649,4 +738,3 @@ table.file.uploadfolder = os.path.join(request.folder, "uploads/gis_cache")
 #db.define_table("gis_webmapcontext", timestamp,
 #                Field("user", db.auth_user))
 #db.gis_webmapcontext.user.requires = IS_ONE_OF(db, "auth_user.id", "%(email)s")
-

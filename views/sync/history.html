@@ -15,7 +15,7 @@ for log in logs:
  <tr class="{{=tr_class}}">
  <td valign="top">{{=A(T(str(log.id)),_href=URL(r=request, c="appadmin", f="update/db/sync_log", args = log.id))}}</td>
  <td valign="top">{{=log.partner_name}}</td>
- <td valign="top">{{=log.timestamp}}</td>
+ <td valign="top">{{=log.timestamp.strftime("%x %H:%M")}}</td>
  <td valign="top">{{=log.sync_tables_success}}</td>
  <td valign="top">{{=log.sync_tables_error}}</td>
  <td valign="top">{{=log.sync_mode}}</td>

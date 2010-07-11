@@ -1,4 +1,4 @@
-{{extend 'layout.html'}}
+{{extend "layout.html"}}
 {{try:}}
  {{=H2(title)}}
 {{except:}}
@@ -13,7 +13,7 @@
  {{=H3(subtitle)}}
 {{except:}}
 {{pass}}
-{{include 'formats.html'}}
+{{include "formats.html"}}
 <div id='table-container'>
 {{try:}}
  {{=items}}
@@ -24,12 +24,12 @@
 {{except:}}
 {{pass}}
 </div>
+<div id='map'></div>
 <p>&nbsp;</p>
-{{include 'pagenav.html'}}
-{{include 'searchbox.html'}}
+{{include "pagenav.html"}}
+{{include "searchbox.html"}}
 {{try:}}
  {{=add_btn}}
 {{except:}}
 {{pass}}
-<div id='map'></div>
-{{include 'dataTables.html'}}
+{{include "dataTables.html"}}

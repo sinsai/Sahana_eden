@@ -393,6 +393,10 @@ div.item-container { width: 100%;
                      overflow: auto; }
 div.item-container { margin: 5px 0 5px 0; }
 
+/* Map view */
+div#map { width: 100%;
+          overflow: auto; }
+
 /* Big Buttons (e.g. RMS) */
 div.question-container { text-align:center;
                          width:8em;

@@ -51,22 +51,21 @@ ROWSPERPAGE = 20
 PRETTY_PRINT = True
 
 # *****************************************************************************
-# Load Controllers
+# Resource Controller
 _s3xrc = local_import("s3xrc")
 
 s3xrc = _s3xrc.S3ResourceController(db,
             domain=request.env.server_name,
             base_url="%s/%s" % (deployment_settings.get_base_public_url(), request.application),
-            rpp=ROWSPERPAGE,
+            cache=cache,
+            auth=auth,
             gis=gis,
-            cache=cache)
-
-s3rest = _s3xrc.S3RESTController(rc=s3xrc, auth=auth,
+            rpp=ROWSPERPAGE,
             xml_import_formats = shn_xml_import_formats,
             xml_export_formats = shn_xml_export_formats,
             json_import_formats = shn_json_import_formats,
             json_export_formats = shn_json_export_formats,
-            debug=False)
+            debug = False)
 
 # *****************************************************************************
 def shn_field_represent(field, row, col):
@@ -202,7 +201,7 @@ def export_pdf(table, query, list_fields=None):
             except etree.XMLSyntaxError:
                 pass
         return text
-    
+
     for field in fields:
         _elements.append(Label(text=str(field.label)[:16], top=0.8*cm, left=LEFTMARGIN*cm))
         tab, col = str(field).split(".")
@@ -1410,7 +1409,8 @@ def shn_list(jr, **attr):
         headers = dict(map(lambda f: (str(f), f.label), fields))
 
         if response.s3.pagination and not limitby:
-            # Server-side pagination, so only download 1 record initially & let the view request what it wants via AJAX
+            # Server-side pagination, so only download 1 record
+            # initially & let the view request what it wants via AJAX
             limitby = (0, 1)
 
         linkto = shn_linkto(jr, sticky)
@@ -1437,7 +1437,12 @@ def shn_list(jr, **attr):
                 _comment = table[jr.fkey].comment
                 table[jr.fkey].comment = None
                 table[jr.fkey].default = jr.record[jr.pkey]
-                table[jr.fkey].writable = False
+                # Fix for #447:
+                if jr.http == "POST":
+                    table[jr.fkey].writable = True
+                    request.post_vars.update({jr.fkey: str(jr.record[jr.pkey])})
+                else:
+                    table[jr.fkey].writable = False
 
             if onaccept:
                 _onaccept = lambda form: \
@@ -1636,7 +1641,12 @@ def shn_create(jr, **attr):
             _comment = table[jr.fkey].comment
             table[jr.fkey].comment = None
             table[jr.fkey].default = jr.record[jr.pkey]
-            table[jr.fkey].writable = False
+            # Fix for #447:
+            if jr.http == "POST":
+                table[jr.fkey].writable = True
+                request.post_vars.update({jr.fkey: str(jr.record[jr.pkey])})
+            else:
+                table[jr.fkey].writable = False
             # Save callbacks
             create_onvalidation = crud.settings.create_onvalidation
             create_onaccept = crud.settings.create_onaccept
@@ -1844,7 +1854,12 @@ def shn_update(jr, **attr):
                 _comment = table[jr.fkey].comment
                 table[jr.fkey].comment = None
                 table[jr.fkey].default = jr.record[jr.pkey]
-                table[jr.fkey].writable = False
+                # Fix for #447:
+                if jr.http == "POST":
+                    table[jr.fkey].writable = True
+                    request.post_vars.update({jr.fkey: str(jr.record[jr.pkey])})
+                else:
+                    table[jr.fkey].writable = False
                 # Save callbacks
                 update_onvalidation = crud.settings.update_onvalidation
                 update_onaccept = crud.settings.update_onaccept
@@ -2291,17 +2306,19 @@ def shn_rest_controller(module, resource, **attr):
 
     """
 
-    s3rest.set_handler("import_xml", import_xml)
-    s3rest.set_handler("import_json", import_json)
-    s3rest.set_handler("list", shn_list)
-    s3rest.set_handler("read", shn_read)
-    s3rest.set_handler("create", shn_create)
-    s3rest.set_handler("update", shn_update)
-    s3rest.set_handler("delete", shn_delete)
-    s3rest.set_handler("search", shn_search)
-    s3rest.set_handler("options", shn_options)
+    s3xrc.set_handler("import_xml", import_xml)
+    s3xrc.set_handler("import_json", import_json)
+    s3xrc.set_handler("list", shn_list)
+    s3xrc.set_handler("read", shn_read)
+    s3xrc.set_handler("create", shn_create)
+    s3xrc.set_handler("update", shn_update)
+    s3xrc.set_handler("delete", shn_delete)
+    s3xrc.set_handler("search", shn_search)
+    s3xrc.set_handler("options", shn_options)
 
-    output = s3rest(session, request, response, module, resource, **attr)
+    res, req = s3xrc.parse_request(module, resource, session, request, response)
+    output = res.execute_request(req, **attr)
+
     return output
 
 # END

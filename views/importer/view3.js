@@ -8,7 +8,7 @@ function alertmessage3()
 	});
 }
 
-function view3(header,numcol,prevgrid)
+function view3(importsheet)
 {
     alertmessage3();
     var msForm = new Ext.form.FormPanel({
@@ -27,7 +27,7 @@ function view3(header,numcol,prevgrid)
             width: 500,
             height: 300,
             allowBlank:false,
-            store: [['or_organisation','Organization Registry'],	//Server call to findn component tables here
+            store: [['or_organisation','Organization Registry'],	//Server call to find component tables here
                     ['or_office', 'Organization Registry-Office'], 
                     ['pr_person', 'Person Registry'], 
                     ['cr_shelter', 'Shelter Registry'],  
@@ -48,8 +48,7 @@ function view3(header,numcol,prevgrid)
                 text: 'Back',
                 handler: function(){
                         msForm.hide();
-			prevgrid.show();
-                        
+                        view2(importsheet); 
                         }
                },
                {
@@ -65,8 +64,9 @@ function view3(header,numcol,prevgrid)
                     else
                         {
                             table=table.substring(15);
-                            msForm.hide();
-                            view4(header,table,numcol,prevgrid);
+                            importsheet.table=table;
+			    msForm.hide();
+                            view4(importsheet);//header,table,numcol,prevgrid);
                         }
                      
                         }

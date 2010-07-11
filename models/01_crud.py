@@ -958,11 +958,8 @@ def import_json(jr, **attr):
 
     tree = s3xrc.xml.json2tree(source)
     #Own hack 
-    if "push_limit" in _vars and (jr.http == "PUT" or jr.http == "POST"):
-	    push_limit = _vars["push_limit"]
-	    f=file("/home/shikhar/Desktop/abc.txt","wb")
-	    f.write(repr(push_limit))
-	    f.close()
+    if "p_l" in _vars and (jr.http == "PUT" or jr.http == "POST"):
+	    p_l = _vars["p_l"]
     #Hack ends
     if hasattr(source, "close"):
         source.close()
@@ -989,7 +986,7 @@ def import_json(jr, **attr):
     #print s3xrc.xml.tostring(tree)
     #return s3xrc.xml.tree2json(tree)
 
-    success = jr.import_xml(tree, permit=shn_has_permission, audit=shn_audit, push_limit=push_limit)
+    success = jr.import_xml(tree, permit=shn_has_permission, audit=shn_audit, push_limit=p_l)
 
     if success:
         item = s3xrc.xml.json_message()

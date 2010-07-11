@@ -1,27 +1,29 @@
-function import_spreadsheet(table,header_row,importsheet,map_from_ss_to_field)
+function import_spreadsheet(importsheet)//table,header_row,importsheet,map_from_ss_to_field)
 {
 	var map=map_from_ss_to_field;
-	var temp=table.split("_");
+	var temp=importsheet.table.split("_");
 	var prefix=temp[0];
 	var name=temp[1];
 	var str="$_";
 	str+=prefix+"_"+name;
-	document.write(str+"<br/>");
+	//document.write(str+"<br/>");
 	var jsonss=new Array(); //the array which will have json objects of each row
 	time=new Date();
 	var modifydate=''+(time.getUTCFullYear()+"-"+time.getUTCMonth()+"-"+time.getUTCDate()+" "+time.getUTCHours()+":"+time.getUTCMinutes()+":"+time.getUTCSeconds());
 	//making importable json object of the spreadsheet data
 	for(var i=0;i<importsheet.rows;i++)
 	{
-		if(i==header_row)
+		if(i==importsheet.header_row_index)
 			continue;
 		var rowobj="{";
 		for(var j=0;j<importsheet.columns;j++)
 		{
-			var field="\""+map[j][2]+"\"";
+			var field="\""+importsheet.map[j][2]+"\"";
+			Ext.Msg.alert("",field);
 			if(field!=''){
-				if(map[j][2].substring(0,3)=="opt")
+				if(importsheet.map[j][2].substring(0,3)=="opt")
 				{
+					document.write(importsheet.map[j][2]+"<br/>");
 					rowobj+=field+":";
 					rowobj+="{\"@value\":\"1\"";
 					rowobj+=",\"$\":\""+importsheet.data[i][j]+"\"}";
@@ -46,7 +48,7 @@ function import_spreadsheet(table,header_row,importsheet,map_from_ss_to_field)
 		}
 		jsonss.push(rowobj);
 	}
-	var posturl="http://{{=request.env.http_host}}/{{=request.application}}/"+prefix+"/"+name+"/create.json";
+	var posturl="http://{{=request.env.http_host}}/{{=request.application}}/"+prefix+"/"+name+"/create.json?p_l="+jsonss.length;
 	document.write(rowobj);
 	var sendobj="{\""+str+"\":"+jsonss+"}";
 	document.write("<br/>The URL for post request->"+posturl+" and the sending status is ->");
@@ -66,7 +68,7 @@ function import_spreadsheet(table,header_row,importsheet,map_from_ss_to_field)
 			},
 		failure: function(r,o)
 			{
-				document.write("Sending failed<br/> "+r.status+'<br/>'+r.error);
+				document.write("Sending failed<br/> "+r.status+'<br/>'+r.tree);
 			}
 	});
 }

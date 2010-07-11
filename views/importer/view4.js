@@ -24,7 +24,7 @@ function alertmessage4()
 	});
 }
 
-function view4(header,table,numcol,grid_data)
+function view4(importsheet)//header,table,numcol,grid_data)
 {
     var loc="recvdata";
     var budget_kits=[
@@ -119,31 +119,32 @@ function view4(header,table,numcol,grid_data)
 	['area','Area']
 	];
     var store='';
-    if(table=='or_organization')
+    if(importsheet.table=='or_organization')
 	    store=or_organization;
-    if(table=='or_office')
+    if(importsheet.table=='or_office')
 	    	store=or_office;
-    if(table=='pr_person')
+    if(importsheet.table=='pr_person')
 	    store=pr_person;
-    if(table=='cr_shelter')
+    if(importsheet.table=='cr_shelter')
 	    store=cr_shelter;
-    if(table=='budget_kits')
+    if(importsheet.table=='budget_kits')
 	    store=budget_kits;
-    if(table=='budget_item')
+    if(importsheet.table=='budget_item')
 	    store=budget_item;
-    if(table=='budget_kit_item')
+    if(importsheet.table=='budget_kit_item')
 	    store=budget_kit_item;
     Ext.QuickTips.init();
     var i=0;
-    var colnames=new Array(numcol);
-    while(i<numcol)
+    var colnames=new Array(importsheet.columns);
+    while(i<importsheet.columns)
     {
-	    colnames[i]=header.get('column'+i);
+	    //colnames[i]=header.get('column'+i);
+	    colnames[i]=importsheet.headerobject.get('column'+i);
 	    i++;
     }
     i=0;
-    var colobjs=new Array(numcol);
-    while(i<numcol)
+    var colobjs=new Array(importsheet.columns);
+    while(i<importsheet.columns)
     {
 	    colobjs[i]="{fieldLabel : \'"+colnames[i]+"\'}";
 	    try{
@@ -180,16 +181,16 @@ function view4(header,table,numcol,grid_data)
 					grid_data.each(function(){
 						row++;
 					});*/
-					var importsheet={}
-					importsheet.rows=grid_data.getCount();
-					importsheet.columns=numcol;
+					//var importsheet={}
+					importsheet.rows=importsheet.datastore.getCount();
+					//importsheet.columns=numcol;
 					importsheet.data=new Array();
-					grid_data.each(function()
+					importsheet.datastore.each(function()
 					{
 				
 						var i=0;
 						var temp=new Array();
-						while(i<numcol)
+						while(i<importsheet.columns)
 						{
 							temp.push(this.get(('column'+i)));
 							i++;
@@ -197,32 +198,41 @@ function view4(header,table,numcol,grid_data)
 						importsheet.data.push(temp);
 					});
  					//extract column headers from the header row object
-					var i=0;map_from_ss_to_field=[];
-					while(i<numcol)
+					var i=0;
+					map_from_ss_to_field=[];
+					while(i<importsheet.columns)
 					{
+						if(colobjs[i].getValue()=='')
+						{
+							Ext.Msg.alert("Error","Map all columns");
+							break;
+						}
 						map_from_ss_to_field.push([i,colobjs[i].getName(),colobjs[i].getValue()]);
 						i++;
 					}
+					importsheet.map=map_from_ss_to_field;
 					var headrow=new Array();
-					while(i<numcol)
+					i=0;
+					while(i<importsheet.columns)
 					{
-						headrow.push(header.get('column'+i));
+						headrow.push(importsheet.headerobject.get('column'+i));
 						i++;
 					}
-
+					importsheet.header_row_labels=headrow;
 					i=0;
 					var header_row=0;
 					//find location of header row
 					while(i<importsheet.rows){
- 						if(cmparr(importsheet.data[i],headrow))
+ 						if(cmparr(importsheet.data[i],importsheet.header_row_labels))
 						{
 							header_row=i;
+							importsheet.header_row_index=i;
 							break;
 						}	
 						i++;	
 					}
 					try{
-						import_spreadsheet(table,header_row,importsheet,map_from_ss_to_field);
+						import_spreadsheet(importsheet);//table,header_row,importsheet,map_from_ss_to_field);
 					}
 					catch(err)
 					{

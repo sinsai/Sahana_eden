@@ -44,10 +44,10 @@ Ext.Ajax.request({
 });
 */
 
-function maker(json){
+function view1(importsheet){
     
-    var columnlist=new Array(json.columns);
-    for(var i=0;i< json.columns ; i++)
+    var columnlist=new Array(importsheet.columns);
+    for(var i=0;i< importsheet.columns ; i++)
     { 
             temp="column"+i;
 //	    temp=eval('('+temp+')');
@@ -55,23 +55,24 @@ function maker(json){
     }
     //columnlist[0]="id";
     //columnlist[0]=eval('('+columnlist[0]+')');
-    var store=new Ext.data.JsonStore({		//Don't get JSON twice
+    /*var store=new Ext.data.JsonStore({		
     	 root: 'data',
 	 idProperty:'id',
          fields : columnlist,
 	 totalProperty : json.rows
     });
-   store.loadData(json);
+   store.loadData(json);*/
    //column model for the grid     
-   var column_model=new Array(json.columns+1);
-   var edit=new Array(json.columns);
+   var columns=(importsheet.columns);
+   var column_model=new Array(columns);
+   var edit=new Array(importsheet.columns);
    //editor functions for each column 
-   for(i=1;i< json.columns+1 ; i++)
+   for(i=1;i< importsheet.columns+1 ; i++)
    {
        edit[i]=new Ext.form.TextField();
    }
    //makes column model objects
-   for( i=1 ; i< json.columns+1 ; i++)
+   for( i=1 ; i< importsheet.columns+1 ; i++)
    {
        obj="{header:\"Column ";
        obj+=(i);
@@ -90,10 +91,10 @@ function maker(json){
     
    }
     var new_row_string="{";
-    for(i=0; i<json.columns; i++)
+    for(i=0; i < importsheet.columns; i++)
     {
         new_row_string+="column"+i+" : \"Edit this\"";
-        if(i!=json.columns-1)
+        if(i!=importsheet.columns-1)
             new_row_string+=",";
     }
     new_row_string+="}";
@@ -106,10 +107,10 @@ function maker(json){
     }
     var sm2 = new Ext.grid.CheckboxSelectionModel();
     column_model[0]=sm2;	//placing the checkboxes before the first column
+    importsheet.column_model=column_model;
     var sm1 = new Ext.grid.CellSelectionModel();
     //column_model.push(sm1);
     var row_model=Ext.data.Record.create(columnlist);
-    var ht=(json.rows)*20;
     //Configuring the grid
     var grid=new Ext.grid.EditorGridPanel({
        title: '<div align="center"><u>Edit</u> \u2794 Select header row \u2794 Select table \u2794 Map columns to fields</div>',
@@ -118,25 +119,29 @@ function maker(json){
        //height: 'auto',
        autoHeight: true,
      //  width: 'auto',
-       store: store,
+       store: importsheet.datastore,
        columnLines: true,
        sm: sm2,  
        style : 'text-align:left;', 
        frame : true,
        columns: column_model,
-       buttons: [{text : 'Next',handler:
-                                       function()
-                                       {
-				       	   //This function stores the grid
-                                           var gridsave=new Array(grid.getStore().getCount());
-                                           var i=0;
-                                           grid.getStore().each(function(record){gridsave[i++]=record.data});
-                                           grid.hide();
-                                           view2(store,column_model,grid.getStore().getCount(),json.columns);
-                                           
-                                           
-                                           }}
-                                           ],
+       buttons: [{text : 'Next',
+       		  handler:
+                            function()
+                            {
+			       	   importsheet.rows=grid.getStore().getCount();
+			     	   //This function stores the grid
+                                   var gridsave=new Array(grid.getStore().getCount());
+                                   var i=0;
+				  //importsheet.columns=json.columns;
+                                    grid.getStore().each(function(record)						{
+						   	gridsave[i++]=record.data}
+							);
+                                    grid.hide();
+				   view2(importsheet);
+                            }
+                   }
+                 ],
        buttonAlign: 'center',
        listeners: {
                afteredit: function(e){
@@ -152,7 +157,7 @@ function maker(json){
         tbar: [
             {
                  text: 'Add row',
-                 icon : 'images/table_add.png',
+                 icon : '/images/table_add.png',
 		 cls : 'x-btn-text-icon',
 		 handler: function()
                  {
@@ -188,34 +193,30 @@ function maker(json){
               
         ]
         });
+    grid.show();
 }
 
+var importsheet={};
+importsheet.datastore={};
 Ext.onReady(function(){
-/*
-Ext.Ajax.request({
-        url : '../static/test1.json' , 
-        
-        method: 'GET',
-            success: function ( result, request ) { 
-               
-                json=doJSON(result.responseText);   
-                maker(json);
-                
-     
-        },
-            failure: function ( result, request) { 
-                Ext.MessageBox.alert('Failed', result.responseText); 
-            } 
-        });
-	document.write(string);
-	json=doJSON({{=ss}});
-	try{
-		var json=doJSON({{=ss}});
-	}
-	catch(err)
-	{
-		alert("Error");
-	}*/
-	var json={{=ss}};
-	maker(json);
+        var json={{=ss}};
+	var columnlist=new Array(json.columns);
+   	for(var i=0;i< json.columns ; i++)
+    	{ 
+       	    temp="column"+i;
+//	    temp=eval('('+temp+')');
+	    columnlist[i]=temp;
+ 	}
+    	//columnlist[0]="id";
+    	//columnlist[0]=eval('('+columnlist[0]+')');
+    	var store=new Ext.data.JsonStore({		
+    		 root: 'data',
+		 idProperty:'id',
+    		 fields : columnlist,
+		 totalProperty : json.rows
+	    });
+   	store.loadData(json);
+	importsheet.datastore=store;
+	importsheet.columns=json.columns;
+	view1(importsheet);//.datastore,importsheet.columns);
 });

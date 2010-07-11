@@ -9,17 +9,17 @@ function alertmessage2()
 }
 
 
-function view2(grid_data,column_model,rows,columns)
+function view2(importsheet)//grid_data,column_model,rows,columns)
 {
  	alertmessage2();   
-    var selmod=new Ext.grid.CheckboxSelectionModel({singleSelect:true,header: 'Select header row'});
+    var selmod=new Ext.grid.CheckboxSelectionModel({title:'Select header row',singleSelect:true,header: 'Select header row'});
     var grid2=new Ext.grid.GridPanel({
             title: 'Edit \u2794 <u>Select header row</u> \u2794 Select table \u2794 Map columns to fields',
             renderTo: 'spreadsheet',
             height: 300,
             width: 'auto',
-            store: grid_data,
-            columns: column_model,
+            store: importsheet.datastore,
+            columns: importsheet.column_model,
             frame: true,
             stripeRows: true,
             columnLines: true,
@@ -27,7 +27,10 @@ function view2(grid_data,column_model,rows,columns)
             buttons :[
                     {
                         text: 'Back',
-                        handler: function(){maker(json);grid2.hide();}
+                        handler: function(){
+						grid2.hide();
+						view1(importsheet);
+						}
                     },
                     {
                         text: 'Next',
@@ -39,24 +42,25 @@ function view2(grid_data,column_model,rows,columns)
                             */
 			    var columns=0;
                             //Can use this bit later to extract cells from grid
-                            grid_data.each(function(){
+                            /*importsheet.datastore.each(function(){
                                             str=this.fields.items;
-					    
                                             for(k in str)
-					    {	columns+=1;
+					    {	
+					    	columns+=1;
 					    }
 						return false;
-                            		
-			      		    });
+			      		    });*/
 			    if(!selmod.getSelected())
 				    Ext.Msg.alert("Error","Select column header row");
 			    else
-			    {grid2.hide();view3(selmod.getSelected(),columns-1,grid_data);}
+			    {	    grid2.hide();
+				    importsheet.headerobject=selmod.getSelected();
+				    view3(importsheet);
+			    }
+                            }
                         }
-                     }
+    		    
                     ],
             buttonAlign: 'center'});
             grid2.render();
-
-    
 }

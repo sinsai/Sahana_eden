@@ -28,11 +28,9 @@ tablename = "%s_%s" % (module, resource)
 table = db.define_table(tablename,
                 Field("uuid", length=36),                   # Our UUID for sync purposes
                 Field("instance_url"),                      # URL our sahana instance is accessible on
-                Field("username"),                          # login username for sync account
-                Field("password"),                          # login password for sync account
                 Field("peer_description", length=128, default = "This is a SahanaEden instance, see http://eden.sahanafoundation.org" ),
                 Field("beacon_service_url", default = "http://sync.eden.sahanafoundation.org/sync/beacon"), # URL of beacon service that our sahana instance is configured to work with
-                Field("sync_pools"),                        # Comma-separated list of sync pools we've subscribed to
+#                Field("sync_pools"),                        # Comma-separated list of sync pools we've subscribed to
                 migrate=migrate)
 
 sync_partner_instance_type_opts = {
@@ -47,14 +45,15 @@ resource = "partner"
 tablename = "%s_%s" % (module, resource)
 table = db.define_table(tablename,
                 Field("uuid", length=36),                   # uuid of this partner
+                Field("name", default="SahanaEden Instance"), # name of the partner (descriptive title)
                 Field("instance_url", default = "http://sync.eden.sahanafoundation.org/eden"), # URL of their instance
                 Field("instance_type",                      # the type of instance => "SahanaEden", "SahanaAgasti", "Ushahidi", etc.
                     default="SahanaEden",
                     requires = IS_IN_SET(sync_partner_instance_type_opts) ),
                 Field("username"),                          # login username for this partner
-                Field("password"),                          # login password for this partner
+                Field("password", "password"),              # login password for this partner
                 Field("peer_description", length=64),
-                Field("sync_pools"),                        # Comma-separated list of sync pools they're subscribed to
+#                Field("sync_pools"),                        # Comma-separated list of sync pools they're subscribed to
                 opt_sync_policy,                            # sync_policy for this partner
                 Field("last_sync_on", "datetime"),          # the last time we sync-ed with this partner
                 migrate=migrate)
@@ -76,12 +75,14 @@ table = db.define_table(tablename,
 resource = "log"
 tablename = "%s_%s" % (module, resource)
 table = db.define_table(tablename,
-                Field("uuid", length=36),                   # uuid of remote system we synced with
+                Field("partner_uuid", length=36),                   # uuid of remote system we synced with
+                Field("partner_name"),                      # descriptive name of remote system we synced with
                 Field("timestamp", "datetime"),             # the date and time when sync was performed
                 Field("sync_tables_success"),               # comma-separated list of tables successfully synced
                 Field("sync_tables_error"),                 # comma-separated list of tables that couldn't be synced
                 Field("sync_mode"),                         # whether this was an "online" sync (standard sync mode) or "offline" sync (USB/File based)
                 Field("complete_sync", "boolean"),          # whether all resources were synced (complete sync) or only those modified since the last sync (partial sync)
+                Field("sync_method"),                       # whether this was a Pull only, Push only or a Pull-Push sync operation
                 migrate=migrate)
 
 sync_schedule_period_opts = {

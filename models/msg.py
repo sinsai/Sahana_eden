@@ -128,7 +128,7 @@ if deployment_settings.has_module(module):
         Field("fromaddress"), #From address if set changes sender to this
         Field("subject"),
         Field("message", "text"),
-        Field("attachment", "upload", autodelete = True),
+   #     Field("attachment", "upload", autodelete = True), #TODO
         Field("verified", "boolean", default = False),
         Field("verified_comments", "text"),
         Field("actionable", "boolean", default = True),
@@ -181,8 +181,14 @@ if deployment_settings.has_module(module):
     tablename = "%s_%s" % (module, resource)
     table = db.define_table(tablename, timestamp, uuidstamp, deletion_status,
         message_id,
-        pe_contact_id, # Person/Group to send the message out to 
-        Field("address"), # If set used instead of pe_contact_id
+        pr_pe_id, # Person/Group to send the message out to 
+        Field("address"), # If set used instead of picking up from pr_pe_id
+        Field("pr_message_method",
+                "integer",
+                requires = IS_IN_SET(pr_contact_method_opts, zero=None),
+                default = 1,
+                label = T("Contact Method"),
+                represent = lambda opt: pr_contact_method_opts.get(opt, UNKNOWN_OPT)),
         opt_msg_status,
         Field("log"),
         migrate=migrate)
@@ -197,7 +203,7 @@ if deployment_settings.has_module(module):
     s3xrc.model.configure(table,
                           list_fields=[ "id",
                                         "message_id",
-                                        "pe_contact_id",
+                                        "pr_pe_id",
                                         "status",
                                         "log",
                                        ])

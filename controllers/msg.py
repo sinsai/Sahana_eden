@@ -420,7 +420,7 @@ def log():
 
     return shn_rest_controller(module, resource,
         listadd=False,
-)
+        )
 
 def tag():
     """ RESTful CRUD controller """

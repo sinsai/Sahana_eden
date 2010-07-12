@@ -137,3 +137,29 @@ class Msg(object):
                 # Explicitly commit DB operations when running from Cron
                 self.db.commit()
         return
+
+    def check_pr_pe_id_validity(self, pr_pe_id):
+        """To check if the pr_pe_id passed is valid or not"""
+        if pr_pe_id == self.db(self.db.pr_person.pr_pe_id == 1).select(self.db.pr_person.pr_pe_id,limitby=(0,1)).first()['pr_pe_id'] :
+            return True
+        else:
+            return False
+
+    def send_email_by_pr_pe_id(self, pr_pe_id, subject="", message="", sender_person_id = None, sender="", fromaddress=""):
+        """As the function name suggests - depends on pr_message_method """
+        try:
+            message_log_id = self.db.msg_log.insert(person_id = sender_person_id,
+                                             subject = subject,
+                                             message = message,
+                                             sender  = sender,
+                                             fromaddress = fromaddress)
+        except:
+            return False
+        try:
+            #TODO 1) outbox1 to outbox1 
+            #2) This is not transaction safe - power failure in the middle will cause no message in the outbox
+            self.db.msg_outbox1.insert(message_id = message_log_id, pr_pe_id = pr_pe_id, pr_message_method = 1)
+        except:
+            return False
+
+        return True

@@ -44,10 +44,10 @@ def test():
         offices = {"feature_group" : "Offices", "popup_url" : URL(r=request, c="gis", f="location", args="read.popup")}
 
     query = db((db.gis_feature_class.name == "Town") & (db.gis_location.feature_class_id == db.gis_feature_class.id)).select()
-
+    
     html = gis.show_map(
-                feature_overlays = [offices, hospitals],
-                #features = {"name" : "Towns", "query" : query, "active" : True},
+                feature_groups = [offices, hospitals],
+                feature_queries = [{"name" : "Towns", "query" : query, "active" : True}],
                 wms_browser = {"name" : "OpenGeo Demo WMS", "url" : "http://demo.opengeo.org/geoserver/ows?service=WMS&request=GetCapabilities"},
                 #wms_browser = {"name" : "Risk Maps", "url" : "http://preview.grid.unep.ch:8080/geoserver/ows?service=WMS&request=GetCapabilities"},
                 #wms_browser = {"name" : "Risk Maps", "url" : "http://www.pdc.org/wms/wmservlet/PDC_Active_Hazards?request=getcapabilities&service=WMS&version=1.1.1"},
@@ -1235,7 +1235,7 @@ def display_feature():
     bounds = gis.get_bounds(features=query)
 
     map = gis.show_map(
-        features = {"name" : "Feature", "query" : query, "active" : True},
+        feature_queries = [{"name" : "Feature", "query" : query, "active" : True}],
         lat = lat,
         lon = lon,
         bbox = bounds,
@@ -1291,7 +1291,7 @@ def display_features():
     bounds = gis.get_bounds(features=features)
 
     map = gis.show_map(
-        features = {"name" : "Features", "query" : features, "active" : True},
+        feature_queries = [{"name" : "Features", "query" : features, "active" : True}],
         bbox = bounds,
         window = True,
         collapsed = True
@@ -1471,17 +1471,17 @@ def map_viewing_client():
     catalogue_overlays = True
 
     # Read which overlays to enable
-    feature_overlays = []
-    feature_groups = db(db.gis_feature_group.enabled == True).select()
-    for feature_group in feature_groups:
-        feature_overlays.append(
+    feature_groups = []
+    _feature_groups = db(db.gis_feature_group.enabled == True).select()
+    for feature_group in _feature_groups:
+        feature_groups.append(
             {
                 "feature_group" : feature_group.name,
                 "active" : feature_group.visible
             }
         )
 
-    map = gis.show_map(window=window, catalogue_toolbar=catalogue_toolbar, toolbar=toolbar, search=search, catalogue_overlays=catalogue_overlays, feature_overlays=feature_overlays)
+    map = gis.show_map(window=window, catalogue_toolbar=catalogue_toolbar, toolbar=toolbar, search=search, catalogue_overlays=catalogue_overlays, feature_groups=feature_groups)
 
     return dict(map=map)
 

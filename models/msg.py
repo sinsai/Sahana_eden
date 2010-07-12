@@ -123,7 +123,7 @@ if deployment_settings.has_module(module):
     resource = "log"
     tablename = "%s_%s" % (module, resource)
     table = db.define_table(tablename, timestamp, uuidstamp, deletion_status,
-        person_id,#Sender
+        pr_pe_id,#Sender
         Field("sender"), #The name to go out incase of the email, if set used
         Field("fromaddress"), #From address if set changes sender to this
         Field("subject"),
@@ -141,7 +141,7 @@ if deployment_settings.has_module(module):
     table.priority.requires = IS_NULL_OR(IS_IN_SET(msg_priority_opts))
     s3xrc.model.configure(table,
                           list_fields=["id",
-                                       "person_id",
+                                       "pr_pe_id",
                                        "subject",
                                        "verified",
                                        "verified_comments",
@@ -190,6 +190,7 @@ if deployment_settings.has_module(module):
                 label = T("Contact Method"),
                 represent = lambda opt: pr_contact_method_opts.get(opt, UNKNOWN_OPT)),
         opt_msg_status,
+        Field("system_generated", "boolean", default = False),
         Field("log"),
         migrate=migrate)
 

@@ -46,8 +46,8 @@ def test():
     query = db((db.gis_feature_class.name == "Town") & (db.gis_location.feature_class_id == db.gis_feature_class.id)).select()
 
     html = gis.show_map(
-                #feature_overlays = [offices, hospitals],
-                features = {"name" : "Towns", "query" : query, "active" : True},
+                feature_overlays = [offices, hospitals],
+                #features = {"name" : "Towns", "query" : query, "active" : True},
                 wms_browser = {"name" : "OpenGeo Demo WMS", "url" : "http://demo.opengeo.org/geoserver/ows?service=WMS&request=GetCapabilities"},
                 #wms_browser = {"name" : "Risk Maps", "url" : "http://preview.grid.unep.ch:8080/geoserver/ows?service=WMS&request=GetCapabilities"},
                 #wms_browser = {"name" : "Risk Maps", "url" : "http://www.pdc.org/wms/wmservlet/PDC_Active_Hazards?request=getcapabilities&service=WMS&version=1.1.1"},

@@ -57,7 +57,7 @@ if deployment_settings.has_module(module):
                         label = T("Status"),
                         represent = lambda opt: msg_status_type_opts.get(opt, UNKNOWN_OPT)))
 
-	# Person entity outbox - Should be extended for non pr_pe_id type resources
+	# Person entity outbox - Should be extended for non pr_pe_id type resources #TODO 
     resource = "outbox"
     tablename = "%s_%s" % (module, resource)
     table = db.define_table(tablename, timestamp, authorstamp, uuidstamp, deletion_status,
@@ -124,6 +124,8 @@ if deployment_settings.has_module(module):
     tablename = "%s_%s" % (module, resource)
     table = db.define_table(tablename, timestamp, uuidstamp, deletion_status,
         person_id,#Sender
+        Field("sender"), #The name to go out incase of the email, if set used
+        Field("fromaddress"), #From address if set changes sender to this
         Field("subject"),
         Field("message", "text"),
         Field("attachment", "upload", autodelete = True),
@@ -179,10 +181,17 @@ if deployment_settings.has_module(module):
     tablename = "%s_%s" % (module, resource)
     table = db.define_table(tablename, timestamp, uuidstamp, deletion_status,
         message_id,
-        pe_contact_id,
-        Field("status"),
+        pe_contact_id, # Person/Group to send the message out to 
+        Field("address"), # If set used instead of pe_contact_id
+        opt_msg_status,
         Field("log"),
         migrate=migrate)
+
+    s3xrc.model.add_component(module, resource,
+                          multiple=True,
+                          joinby=dict(msg_log="message_id"),
+                          deletable=True,
+                          editable=True)
 
     table.uuid.requires = IS_NOT_IN_DB(db, "%s.uuid" % tablename)
     s3xrc.model.configure(table,

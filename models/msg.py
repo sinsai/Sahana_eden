@@ -57,25 +57,6 @@ if deployment_settings.has_module(module):
                         label = T("Status"),
                         represent = lambda opt: msg_status_type_opts.get(opt, UNKNOWN_OPT)))
 
-	# Person entity outbox - Should be extended for non pr_pe_id type resources #TODO 
-    resource = "outbox"
-    tablename = "%s_%s" % (module, resource)
-    table = db.define_table(tablename, timestamp, authorstamp, uuidstamp, deletion_status,
-                    pr_pe_id,
-                    person_id,
-                    Field("subject", length=78),    # RFC 2822
-                    Field("body", "text"),
-                    Field("pr_message_method",
-                      "integer",
-                      requires = IS_IN_SET(pr_contact_method_opts, zero=None),
-                      default = 1,
-                      label = T("Contact Method"),
-                      represent = lambda opt: pr_contact_method_opts.get(opt, UNKNOWN_OPT)),
-                    opt_msg_status,
-                    migrate=migrate)
-    table.uuid.requires = IS_NOT_IN_DB(db, "%s.uuid" % tablename)
-    
-
     # SMS store for persistence and scratch pad for combining incoming xform chunks
     resource = "xforms_store"
     tablename = "%s_%s" % (module, resource)
@@ -126,7 +107,7 @@ if deployment_settings.has_module(module):
         pr_pe_id,#Sender
         Field("sender"), #The name to go out incase of the email, if set used
         Field("fromaddress"), #From address if set changes sender to this
-        Field("subject"),
+        Field("subject", length=78),
         Field("message", "text"),
    #     Field("attachment", "upload", autodelete = True), #TODO
         Field("verified", "boolean", default = False),
@@ -176,8 +157,7 @@ if deployment_settings.has_module(module):
                                         "resource",
                                        ])
 
-    # Message Outbox1 - To replace Message Outbox #TODO
-    resource = "outbox1"
+    resource = "outbox"
     tablename = "%s_%s" % (module, resource)
     table = db.define_table(tablename, timestamp, uuidstamp, deletion_status,
         message_id,

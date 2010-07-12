@@ -81,63 +81,6 @@ class Msg(object):
         """
         return self.mail.send(to, subject, message)
 
-    def process_outbox(self, contact_method = 1, option = 1):
-        """ Send Pending Messages from OutBox.
-        If succesful then move from OutBox to Sent. A modified copy of send_email """
-        table = self.db.msg_outbox
-        query = ((table.status == 1) & (table.pr_message_method == contact_method))
-        rows = self.db(query).select()
-        for row in rows:
-            status = True
-            contents = row.body
-            subject = row.subject
-            # Determine list of users
-            entity = row.pr_pe_id
-            table2 = self.db.pr_pentity
-            query = table2.id == entity
-            entity_type = self.db(query).select(limitby=(0, 1)).first().opt_pr_entity_type
-            def send_pr_pe_id(pr_pe_id):
-                table3 = self.db.pr_pe_contact
-                query = (table3.pr_pe_id == pr_pe_id) & (table3.opt_pr_contact_method == contact_method)
-                recipient = self.db(query).select(table3.value, orderby = table3.priority).first()
-                if recipient:
-                    if (contact_method == 2 and option == 2):
-                        if self.outgoing_is_gateway:
-                            return False
-                        else:
-                            return self.send_sms_via_modem(recipient.value, contents)
-                    if (contact_method == 2 and option == 1):
-                        if self.outgoing_is_gateway:
-                            return self.send_sms_via_api(recipient.value, contents)
-                        else:
-                            return False
-                    if (contact_method == 1):
-                        return self.send_email_via_api(recipient.value, subject, contents)
-            if entity_type == 2:
-                # Group
-                table3 = self.db.pr_group
-                query = (table3.pr_pe_id == entity)
-                group_id = self.db(query).select(limitby=(0, 1)).first().id
-                table4 = self.db.pr_group_membership
-                query = (table4.group_id == group_id)
-                recipients = self.db(query).select()
-                for recipient in recipients:
-                    person_id = recipient.person_id
-                    table5 = self.db.pr_person
-                    query = (table5.id == person_id)
-                    pr_pe_id = self.db(query).select(limitby=(0, 1)).first().pr_pe_id
-                    status = send_pr_pe_id(pr_pe_id)
-            if entity_type == 1:
-                # Person
-                status = send_pr_pe_id(entity)
-                # We only check status of last recipient
-            if status:
-                # Update status to sent in OutBox
-                self.db(table.id == row.id).update(status=2)
-                # Explicitly commit DB operations when running from Cron
-                self.db.commit()
-        return
-
     def check_pr_pe_id_validity(self, pr_pe_id):
         """To check if the pr_pe_id passed is valid or not"""
         if pr_pe_id == self.db(self.db.pr_person.pr_pe_id == 1).select(self.db.pr_person.pr_pe_id,limitby=(0,1)).first()['pr_pe_id'] :
@@ -161,13 +104,12 @@ class Msg(object):
                                              fromaddress = fromaddress)
         except:
             return False
-            #TODO 1) outbox1 to outbox1 
             #2) This is not transaction safe - power failure in the middle will cause no message in the outbox
         if isinstance(pr_pe_id,list):
             listindex = 0
             for prpeid in pr_pe_id:
                 try:
-                    self.db.msg_outbox1.insert(message_id = message_log_id, 
+                    self.db.msg_outbox.insert(message_id = message_log_id, 
                                         pr_pe_id = prpeid, 
                                         pr_message_method = pr_message_method,
                                         system_generated = system_generated)
@@ -176,7 +118,7 @@ class Msg(object):
                     return listindex
         else:
             try:
-                self.db.msg_outbox1.insert(message_id = message_log_id, 
+                self.db.msg_outbox.insert(message_id = message_log_id, 
                                         pr_pe_id = pr_pe_id, 
                                         pr_message_method = pr_message_method,
                                         system_generated = system_generated)
@@ -201,11 +143,10 @@ class Msg(object):
                                         1, # To set as an email
                                         system_generated)
 
-    def process_outbox1(self, contact_method = 1, option = 1):
+    def process_outbox(self, contact_method = 1, option = 1):
         """ Send Pending Messages from OutBox.
         If succesful then move from OutBox to Sent. A modified copy of send_email """
-        #TODO change outbox1 to outbox
-        table = self.db.msg_outbox1
+        table = self.db.msg_outbox
         query = ((table.status == 1) & (table.pr_message_method == contact_method))
         rows = self.db(query).select()
         for row in rows:
@@ -254,7 +195,7 @@ class Msg(object):
                     table5 = self.db.pr_person
                     query = (table5.id == person_id)
                     pr_pe_id = self.db(query).select(limitby=(0, 1)).first().pr_pe_id
-                    self.db.msg_outbox1.insert( message_id = message_id, 
+                    self.db.msg_outbox.insert( message_id = message_id, 
                                                 pr_pe_id = pr_pe_id, 
                                                 pr_message_method = contact_method,
                                                 system_generated = True)

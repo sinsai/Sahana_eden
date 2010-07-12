@@ -77,7 +77,7 @@ def person():
     """ RESTful CRUD controller """
 
     resource = request.function
-    
+
     response.s3.pagination = True
 
     s3xrc.model.configure(db.pr_group_membership,
@@ -123,7 +123,7 @@ def group():
     """ RESTful CRUD controller """
 
     resource = request.function
-    
+
     response.s3.filter = (db.pr_group.system == False) # do not show system groups
     response.s3.pagination = True
 

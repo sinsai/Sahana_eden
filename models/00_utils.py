@@ -28,7 +28,7 @@ def shn_sessions():
     # Use response for one-off variables which are visible in views without explicit passing
     response.s3 = Storage()
     response.s3.formats = Storage()
-    
+
     roles = []
     try:
         user_id = auth.user.id
@@ -44,7 +44,7 @@ def shn_sessions():
     controller_settings_table = "%s_setting" % request.controller
     controller_settings = controller_settings_table in db.tables and \
        db(db[controller_settings_table].id > 0).select(limitby=(0, 1)).first()
-    
+
     settings = db(db.s3_setting.id > 0).select(db.s3_setting.debug, db.s3_setting.security_policy, db.s3_setting.self_registration, db.s3_setting.audit_read, db.s3_setting.audit_write, limitby=(0, 1)).first()
     # Are we running in debug mode?
     session.s3.debug = "debug" in request.vars or settings and settings.debug
@@ -322,7 +322,7 @@ shn_url_represent = lambda url: (url and [A(url, _href=url, _target="blank")] or
 
 # Phone number requires
 shn_phone_requires = IS_NULL_OR(IS_MATCH('\+?\s*[\s\-\.\(\)\d]+(?:(?: x| ext)\s?\d{1,5})?$'))
-        
+
 def Tstr(text):
     """Convenience function for non web2py modules"""
     return str(T(text))
@@ -399,7 +399,7 @@ def shn_crud_strings(table_name,
     @example
         s3.crud_strings[<table_name>] = shn_crud_strings(<table_name>, <table_name_plural>)
     """
-    
+
     if not table_name_plural:
         table_name_plural = table_name + "s"
 
@@ -496,7 +496,8 @@ def shn_rheader_tabs(jr, tabs=[]):
     for (title, component) in tabs:
         _class = "rheader_tab_other"
         if component:
-            if jr.component and jr.component.name == component:
+            if jr.component and jr.component.name == component or \
+               jr.custom_method and jr.method == component:
                 _class = "rheader_tab_here"
             args = [jr.id, component]
             _href = URL(r=request, f=jr.name, args=args)

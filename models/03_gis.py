@@ -454,6 +454,13 @@ location_id = db.Table(None, "location_id",
                                        _title=Tstr("Location") + "|" + Tstr("The Location of this Site, which can be general (for Reporting) or precise (for displaying on a Map)."))),
                        ondelete = "RESTRICT"))
 
+# Locations as component of Locations ('Parent')
+s3xrc.model.add_component(module, resource,
+                          multiple=False,
+                          joinby=dict(gis_location="location_id"),
+                          deletable=True,
+                          editable=True)
+
 s3xrc.model.configure(db.gis_location,
                       onvalidation=lambda form: gis.wkt_centroid(form),
                       onaccept=gis.update_location_tree())
@@ -555,7 +562,7 @@ table = db.define_table(tablename, timestamp,
 # FIXME
 # We want a THIS_NOT_IN_DB here: http://groups.google.com/group/web2py/browse_thread/thread/27b14433976c0540/fc129fd476558944?lnk=gst&q=THIS_NOT_IN_DB#fc129fd476558944
 table.name.requires = IS_IN_SET(["google", "multimap", "yahoo"], zero=None)
-#table.apikey.requires = THIS_NOT_IN_DB(db(table.name==request.vars.name), "gis_apikey.name", request.vars.name, "Service already in use")
+#table.apikey.requires = THIS_NOT_IN_DB(db(table.name == request.vars.name), "gis_apikey.name", request.vars.name, "Service already in use")
 table.apikey.requires = IS_NOT_EMPTY()
 table.name.label = T("Service")
 table.apikey.label = T("Key")

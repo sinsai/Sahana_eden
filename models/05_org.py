@@ -28,7 +28,8 @@ table = db.define_table(tablename, timestamp, uuidstamp, deletion_status,
 # Field settings
 table.uuid.requires = IS_NOT_IN_DB(db, "%s.uuid" % tablename)
 table.name.requires = [IS_NOT_EMPTY(), IS_NOT_IN_DB(db, "%s.name" % tablename)]
-
+table.name.label = T("Name")
+table.name.comment = SPAN("*", _class="req")
 
 # Functions
 def shn_sector_represent(sector_ids):
@@ -98,9 +99,38 @@ table.country.requires = IS_NULL_OR(IS_IN_SET(shn_list_of_nations))
 table.country.represent = lambda opt: shn_list_of_nations.get(opt, UNKNOWN_OPT)
 table.website.requires = IS_NULL_OR(IS_URL())
 table.donation_phone.requires = shn_phone_requires
+table.name.label = T("Name")
+table.name.comment = SPAN("*", _class="req")
+table.acronym.label = T("Acronym")
+table.type.label = T("Type")
+table.donation_phone.label = T("Donation Phone #")
+table.donation_phone.comment = A(SPAN("[Help]"), _class="tooltip", _title=T("Donation Phone #|Phone number to donate to this organization's relief efforts."))
+table.country.label = T("Home Country")
+table.website.label = T("Website")
+# Should be visible to the Dashboard
+table.website.represent = shn_url_represent
+table.twitter.label = T("Twitter")
+table.twitter.comment = A(SPAN("[Help]"), _class="tooltip", _title=T("Twitter|Twitter ID or #hashtag"))
+# CRUD strings
+ADD_ORGANIZATION = Tstr("Add Organization")
+LIST_ORGANIZATIONS = T("List Organizations")
+s3.crud_strings[tablename] = Storage(
+    title_create = ADD_ORGANIZATION,
+    title_display = T("Organization Details"),
+    title_list = LIST_ORGANIZATIONS,
+    title_update = T("Edit Organization"),
+    title_search = T("Search Organizations"),
+    subtitle_create = T("Add New Organization"),
+    subtitle_list = T("Organizations"),
+    label_list_button = LIST_ORGANIZATIONS,
+    label_create_button = ADD_ORGANIZATION,
+    label_delete_button = T("Delete Organization"),
+    msg_record_created = T("Organization added"),
+    msg_record_modified = T("Organization updated"),
+    msg_record_deleted = T("Organization deleted"),
+    msg_list_empty = T("No Organizations currently registered"))
 
 # Reusable field
-ADD_ORGANIZATION = Tstr("Add Organization")
 organisation_popup_url = URL(r=request, c="org", f="organisation", args="create", vars=dict(format="popup"))
 shn_organisation_comment = DIV(A(ADD_ORGANIZATION,
                            _class="colorbox",
@@ -187,9 +217,41 @@ table.email.requires = IS_NULL_OR(IS_EMAIL())
 table.national_staff.requires = IS_NULL_OR(IS_INT_IN_RANGE(0, 99999))
 table.international_staff.requires = IS_NULL_OR(IS_INT_IN_RANGE(0, 9999))
 table.number_of_vehicles.requires = IS_NULL_OR(IS_INT_IN_RANGE(0, 9999))
-
-# Reusable field for other tables to reference
+table.name.label = T("Name")
+table.name.comment = SPAN("*", _class="req")
+table.parent.label = T("Parent")
+table.type.label = T("Type")
+table.address.label = T("Address")
+table.postcode.label = T("Postcode")
+table.phone1.label = T("Phone 1")
+table.phone2.label = T("Phone 2")
+table.email.label = T("Email")
+table.fax.label = T("FAX")
+table.national_staff.label = T("National Staff")
+table.international_staff.label = T("International Staff")
+table.number_of_vehicles.label = T("Number of Vehicles")
+table.vehicle_types.label = T("Vehicle Types")
+table.equipment.label = T("Equipment")
+# CRUD strings
 ADD_OFFICE = Tstr("Add Office")
+LIST_OFFICES = T("List Offices")
+s3.crud_strings[tablename] = Storage(
+    title_create = ADD_OFFICE,
+    title_display = T("Office Details"),
+    title_list = LIST_OFFICES,
+    title_update = T("Edit Office"),
+    title_search = T("Search Offices"),
+    subtitle_create = T("Add New Office"),
+    subtitle_list = T("Offices"),
+    label_list_button = LIST_OFFICES,
+    label_create_button = ADD_OFFICE,
+    label_delete_button = T("Delete Office"),
+    msg_record_created = T("Office added"),
+    msg_record_modified = T("Office updated"),
+    msg_record_deleted = T("Office deleted"),
+    msg_list_empty = T("No Offices currently registered"))
+ 
+# Reusable field for other tables to reference
 office_id = db.Table(None, "office_id",
             FieldS3("office_id", db.org_office, sortby="name",
                 requires = IS_NULL_OR(IS_ONE_OF(db, "org_office.id", "%(name)s")),
@@ -200,10 +262,10 @@ office_id = db.Table(None, "office_id",
                 ondelete = "RESTRICT"
                 ))
 
-# Offices as component of Orgs
+# Offices as component of Orgs & Locations
 s3xrc.model.add_component(module, resource,
                           multiple=True,
-                          joinby=dict(org_organisation="organisation_id"),
+                          joinby=dict(org_organisation="organisation_id", gis_location="location_id"),
                           deletable=True,
                           editable=True)
 
@@ -317,10 +379,10 @@ project_id = db.Table(None, "project_id",
                         ondelete = "RESTRICT"
                         ))
 
-# Projects as component of Orgs
+# Projects as component of Orgs & Locations
 s3xrc.model.add_component(module, resource,
                           multiple=True,
-                          joinby=dict(org_organisation="organisation_id"),
+                          joinby=dict(org_organisation="organisation_id", gis_location="location_id"),
                           deletable=True,
                           editable=True)
 

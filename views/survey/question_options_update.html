@@ -23,27 +23,34 @@
     $(document).ready(function() {
 
         // hide all question options rows except those common among all types.
-        $("#survey_question_options_display_option__row").hide();
+//        $("#survey_question_options_display_option__row").hide();
         $("#survey_question_options_answer_choices__row").hide();
         $("#survey_question_options_row_choices__row").hide();
         $("#survey_question_options_column_choices__row").hide();
-        $("#survey_question_options_number_of_choices__row").hide();
+        $("#survey_question_options_number_of_options__row").hide();
         $("#survey_question_options_ta_rows__row").hide();
         $("#survey_question_options_tf_ta_columns__row").hide();
+        $("#survey_question_options_validation_options__row").hide();
+        $("#survey_question_options_number_of_text_fields__row").hide();
 
+        // only show the comment display label tf if it's enabled!
+        $("#survey_question_options_comment_display_label__row").hide();
+        $("#survey_question_options_allow_comments").click(function() {
+            $("#survey_question_options_comment_display_label__row").toggle();
+        });
 
-        {{if response.s3.question_type:}}
-        var question_type = {{=response.s3.question_type}}
-        switch(questionType) {
+        {{if question_type:}}
+        var question_type = {{=question_type}}
+        switch(question_type) {
             // MC -- One Answer
              case 1: {
-                $("#survey_question_options_display_option__row").show();
+//                $("#survey_question_options_display_option__row").show();
                 $("#survey_question_options_answer_choices__row").show();
                 break;
              }
             // MC -- More than one answer
             case 2: {
-                $("#survey_question_options_display_option__row").show();
+//                $("#survey_question_options_display_option__row").show();
                 $("#survey_question_options_answer_choices__row").show();
                 break;
             }
@@ -76,6 +83,9 @@
             // Multiple Text Fields
             case 7: {
                 $("#survey_question_options_tf_ta_columns__row").show();
+                $("#survey_question_options_row_choices__row").show();
+                $("#survey_question_options_column_choices__row").show();
+                $("#survey_question_options_number_of_text_fields__row").show();
                 break;
             }
             // Comment/Essay Box

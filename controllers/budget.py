@@ -153,7 +153,7 @@ def index():
     "Module's Home Page"
     
     module_name = deployment_settings.modules[module].name_nice
-    
+
     return dict(module_name=module_name)
 
 def parameters():
@@ -843,7 +843,7 @@ def bundle_kit_item():
             item_list.append(TR(TD(id_link), TD(description, _align="left"), TD(quantity_box), TD(unit_cost), TD(monthly_cost), TD(minutes_box), TD(minute_cost), TD(megabytes_box), TD(megabyte_cost), TD(total_units), TD(total_monthly), TD(checkbox, _align="center"), _class=theclass, _align="right"))
 
         # Items
-        query = tables[1].bundle_id==bundle
+        query = tables[1].bundle_id == bundle
         sqlrows = db(query).select()
         for row in sqlrows:
             if even:
@@ -897,7 +897,7 @@ def bundle_kit_item():
     else:
         # Display a simple List page
         # Kits
-        query = tables[0].bundle_id==bundle
+        query = tables[0].bundle_id == bundle
         sqlrows = db(query).select()
         for row in sqlrows:
             if even:
@@ -931,7 +931,7 @@ def bundle_kit_item():
             item_list.append(TR(TD(id_link), TD(description, _align="left"), TD(quantity_box), TD(unit_cost), TD(monthly_cost), TD(minutes_box), TD(minute_cost), TD(megabytes_box), TD(megabyte_cost), TD(total_units), TD(total_monthly), _class=theclass, _align="right"))
 
         # Items
-        query = tables[1].bundle_id==bundle
+        query = tables[1].bundle_id == bundle
         sqlrows = db(query).select()
         for row in sqlrows:
             if even:
@@ -1391,7 +1391,7 @@ def budget_totals(budget):
         quantity = row.quantity
         months = row.months
         row2 = db(db.budget_staff.id == staff.staff_id).select(db.budget_staff.travel, db.budget_staff.salary, limitby=(0, 1)).first()
-        row3 = db(db.budget_location.id == staff.location_id).select(db.budget_location.subsistence, db.budget_location.hazard_pay, limitby=(0, 1)).first()
+        row3 = db(db.budget_location.id == staff.location_id).selx`ect(db.budget_location.subsistence, db.budget_location.hazard_pay, limitby=(0, 1)).first()
         total_onetime_cost += row2.travel * quantity
         total_recurring_cost += row2.salary * quantity * months
         total_recurring_cost += row3.subsistence * quantity * months
@@ -1418,7 +1418,7 @@ def budget_update_items():
         budget = int(request.args(0))
     except TypeError, ValueError:
         session.error = T("Need to specify a Budget!")
-        redirect(URL(r=request, f="budget"))
+        redirect(URL(r=reqest, f="budget"))
     
     tables = [db.budget_budget_staff, db.budget_budget_bundle]
     authorised = shn_has_permission("update", tables[0]) and shn_has_permission("update", tables[1])

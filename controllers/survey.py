@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 """
-    Survey Module -- a tool to create survey.
+    Survey Module -- a tool to create surveys.
 
     @author: Robert O'Connor
 """
@@ -22,7 +22,8 @@ def template():
     """ RESTlike CRUD controller """
     resource = "template"
     def _prep(jr):        
-        pass
+        crud.settings.create_next = URL(r = request, c="survey", f="layout")
+        crud.settings.update_next = URL(r = request, c="survey", f="layout")
         return True
     response.s3.prep = _prep
 
@@ -55,7 +56,10 @@ def template():
     if output:
         form = output.get("form", None)
         if form:
-            addButtons(form,next=True)   
+            addButtons(form,next=True)
+    print crud.settings.create_next
+    print crud.settings.update_next
+
     return output
 
 def series():
@@ -129,12 +133,11 @@ def section():
         msg_record_created = T("Survey Section added"),
         msg_record_modified = T("Survey Section updated"),
         msg_record_deleted = T("Survey Section deleted"),
-        msg_list_empty = T("No Survey Sections currently registered"))
+        msg_list_empty = T("No Survey Sections currently registered"))     
     output = shn_rest_controller(module, resource,listadd=False)
-    if output:
-        form = output.get("form", None)
-        if form:
-            addButtons(form,next=True,prev=True)
+    form = output.get("form",None)
+    if form:
+        addButtons(form,cancel=True,save=True)
     return output
 
 
@@ -142,8 +145,8 @@ def question():
     # Question data, e.g., name,description, etc.
     resource = "question"
     def _prep(jr):
-        if "next" in request.post_vars:
-            pass #TODO:
+        crud.settings.create_next = URL(r = request, c="survey", f="question_options",args=["create"])
+        crud.settings.update_next = URL(r = request, c="survey", f="question_options", args=["update"])
         return True
     response.s3.prep = _prep
     tablename = "%s_%s" % (module, resource)
@@ -162,7 +165,7 @@ def question():
         4:T("Matrix of Choices (Multiple Answers)"),
         5:T("Rating Scale"),
         6:T("Single Text Field"),
-        7:T("Multiple Textboxes"),
+        7:T("Multiple Text Fields"),
         8:T("Comment/Essay Box"),
         9:T("Numerical Text Field"),
         10:T("Date and/or Time"),
@@ -171,12 +174,11 @@ def question():
         13:T("Location"),
         14:T("Organisation"),
         15:T("Person"),
-        16:T("Custom Database Resource (e.g., anything defined as a resource in Sahana)")
+#        16:T("Custom Database Resource (e.g., anything defined as a resource in Sahana)")
     }
 
     table.question_type.requires = IS_IN_SET(question_types)
     table.question_type.comment = SPAN("*", _class="req")
-
     # CRUD Strings
     s3.crud_strings[tablename] = Storage(
         title_create = T("Add Survey Question"),
@@ -197,18 +199,15 @@ def question():
         form = output.get("form", None)
         if form:
             addButtons(form,next=True,prev=True)
+        
     return output
 
 def question_options():
     resource = "question_options"
-    def _prep(jr):
-        # test to see which button was pressed.
-        if "prev" in request.post_vars:
-            pass
-        elif "next" in request.post_vars:
-            pass
-        return True
-    response.s3.prep = _prep
+    question_type = None
+    if session.rcvars and "survey_question" in session.rcvars:
+        question = db(db.survey_question.id == session.rcvars.survey_question).select().first()
+        question_type = question.question_type
     tablename = "%s_%s" % (module, resource)
     table = db[tablename]
     table.uuid.requires = IS_NOT_IN_DB(db,"%s.uuid" % tablename)
@@ -221,34 +220,71 @@ def question_options():
     table.aggregation_type.readable = False
     table.row_choices.label = T("Row Choices (One Per Line)")
     table.column_choices.label = T("Column Choices (One Per Line)")
+#    question_display_options = {
+#        "1":T("One Column"),
+#        "2":T("Two Columns"),
+#        "3":T("Three Columns")
+#    }
+#    table.display_option.requires = IS_NULL_OR(IS_IN_SET(question_display_options))
+
     output = shn_rest_controller(module, resource,listadd=False)
     if output:
         form = output.get("form", None)
         if form:
-            addButtons(form,finish=True,prev=True)            
-    return output                                                                                                                                          
+            addButtons(form,finish=True,prev=True)
+        output.update(question_type=question_type)
+    return output
 
-def layout():    
-    return None
+def layout():
 
-def addButtons(form, prev = None, next = None, finish = None,cancel=None):
+    """Deals with Rendering the survey editor"""    
+    template_id = None
+    if session.rcvars and "survey_template" in session.rcvars:
+        template_id = session.rcvars["survey_template"]
+    output = {}
+    if template_id:
+        output.update(template_id=template_id)
+    # Get sections for this template.
+    section_query = (db.survey_template_link_table.survey_template_id == template_id) & (db.survey_section.id == db.survey_template_link_table.survey_section_id)
+    sections = db(section_query).select(db.survey_section.ALL)    
+
+
+    # build the UI
+    ui = DIV(_class="sections")
+    for section in sections:
+        ui.append(DIV(section.name,_class="title"))
+        question_query = (db.survey_template_link_table.survey_section_id == section.id) & (db.survey_question.id == db.survey_template_link_table.survey_question_id)
+        questions = db(question_query).select(db.survey_question.ALL)
+        for question in questions:
+            # MC (Only One Answer allowed)
+#            options = db(db.survey_question_options.survey_question_id == quesion.id).select()
+            ui.append(DIV(question.name,_class="question"))
+            if question.question_type is 1:
+                pass
+        pass
+    output.update(ui=ui)
+    return output
+    
+def addButtons(form, save = None, prev = None, next = None, finish = None,cancel=None):
     """
         Utility Function to reduce code duplication as this deals with:
 
         1) removing the save button
         2) adding the following: Cancel, Next, Previous and Finish(shown on the last step *ONLY*)
     """
-    form[0][-1][1][0] = "" # remove the original Save Button    
+    form[0][-1][1][0] = "" # remove the original Save Button
+    if save:
+        form[-1][-1][1].append(INPUT(_type="submit",_name = "save",_value=T("Save"), _id="save"))
+
     if cancel:
-        form[-1][-1][2].append(INPUT(_type="button",_name = "prev",_value=T("Cancel"), _id="cancel"))
-        form[-1][-1][2].append(" ")
+        form[-1][-1][1].append(INPUT(_type="button",_name = "cancel",_value=T("Cancel"), _id="cancel"))
+
     if prev:
-        form[-1][-1][2].append(INPUT(_type="submit",_name = "prev",_value=T("Previous"), _id="prev"))
-        form[-1][-1][2].append(" ")
+        form[-1][-1][1].append(INPUT(_type="submit",_name = "prev",_value=T("Previous"), _id="prev"))
+
     if next:
-        form[-1][-1][2].append(INPUT(_type="submit", _value=T("Next"),_name="next",_id="next"))
-        form[-1][-1][2].append(" ")
+        form[-1][-1][1].append(INPUT(_type="submit", _value=T("Next"),_name="next",_id="next"))
+
     if finish:
-        form[-1][-1][2].append(INPUT(_type="submit", _value=T("Finish"),_name="finish",_id="finish"))
-        form[-1][-1][2].append("  ")
+        form[-1][-1][1].append(INPUT(_type="submit", _value=T("Finish"),_name="finish",_id="finish"))
     return form

@@ -111,11 +111,12 @@ if deployment_settings.has_module(module):
     tablename = module +"_" + resource
     question_options = db.define_table(tablename,uuidstamp,deletion_status,authorstamp,
                                         Field("question_id",db.survey_question), # the question
-                                        Field("display_option","integer"),
+#                                        Field("display_option","integer"),
                                         Field("answer_choices","text",length=700),
                                         Field("row_choices","text"), # row choices
                                         Field("column_choices","text"), # column choices
                                         Field("number_of_options","integer"),
+                                        Field("number_of_text_fields","integer",length=4),
                                         Field("ta_rows","integer"), # how many rows the Text Area has
                                         Field("tf_ta_columns","integer"), # number of columns for text-fields and columns alike                                        
                                         Field("allow_comments","boolean"), # whether or not to allow comments
@@ -130,4 +131,4 @@ tablename = module +"_" + resource
 answer_options = db.define_table(tablename,uuidstamp,deletion_status,authorstamp,
                                  Field("question_id",db.survey_question,readable=False,writable=False),
                                  Field("answer_row_value","text",readable=False,writable=False),
-                                 Field("answer_column_choice","text",readable=False,writable=False))            
+                                 Field("answer_column_choice","text",readable=False,writable=False))

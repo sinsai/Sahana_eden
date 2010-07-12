@@ -163,11 +163,11 @@ if deployment_settings.has_module(module):
     table.uuid.requires = IS_NOT_IN_DB(db, "%s.uuid" % tablename)
 
     table.organisation_id.represent = lambda id: \
-        (id and [db(db.org_organisation.id==id).select()[0].acronym] or ["None"])[0]
+        (id and [db(db.org_organisation.id == id).select(db.org_organisation.acronym, limitby=(0, 1)).first().acronym] or ["None"])[0]
 
     table.gov_uuid.requires = IS_NULL_OR(IS_NOT_IN_DB(db, "%s.gov_uuid" % tablename))
     table.gov_uuid.comment = DIV(DIV(_class="tooltip",
-        _title=T("Government UID|The Unique Identifier (UUID) as assigned to this facility by the government.")))
+        _title=Tstr("Government UID") + "|" + Tstr("The Unique Identifier (UUID) as assigned to this facility by the government.")))
 
     table.name.requires = [IS_NOT_EMPTY(), IS_NOT_IN_DB(db, "%s.name" % tablename)]
     table.email.requires = IS_NULL_OR(IS_EMAIL())
@@ -200,7 +200,7 @@ if deployment_settings.has_module(module):
                                                          vars=dict(format="popup")),
                                                _target="top", _title=ADD_HOSPITAL),
                                               DIV(DIV(_class="tooltip",
-                                                      _title=T("Hospital|The hospital this record is associated with.")))),
+                                                      _title=Tstr("Hospital") + "|" + Tstr("The hospital this record is associated with.")))),
                                 ondelete = "RESTRICT"))
 
     # -----------------------------------------------------------------------------
@@ -245,7 +245,7 @@ if deployment_settings.has_module(module):
         # Update requests
         hospital = db.hms_hospital[form.vars.id]
         if hospital:
-            db(db.hms_hrequest.hospital_id==hospital.id).update(city=hospital.city)
+            db(db.hms_hrequest.hospital_id == hospital.id).update(city=hospital.city)
 
 
     s3xrc.model.configure(table,
@@ -286,7 +286,7 @@ if deployment_settings.has_module(module):
     table.person_id.label = T("Contact")
     table.title.label = T("Job Title")
     table.title.comment = DIV(DIV(_class="tooltip",
-        _title=T("Title|The Role this person plays within this hospital.")))
+        _title=Tstr("Title") + "|" + Tstr("The Role this person plays within this hospital.")))
 
     table.phone.label = T("Phone")
     table.phone.requires = shn_phone_requires
@@ -351,31 +351,31 @@ if deployment_settings.has_module(module):
                                           allow_future=False)
     table.date.represent = lambda value: shn_as_local_time(value)
     table.date.comment = DIV(DIV(_class="tooltip",
-        _title=T("Date & Time|Date and time this report relates to.")))
+        _title=Tstr("Date & Time") + "|" + Tstr("Date and time this report relates to.")))
 
     table.patients.requires = IS_NULL_OR(IS_INT_IN_RANGE(0, 9999))
     table.patients.default = 0
     table.patients.label = T("Number of Patients")
     table.patients.comment = DIV(DIV(_class="tooltip",
-        _title=T("Patients|Number of in-patients at the time of reporting.")))
+        _title=Tstr("Patients") + "|" + Tstr("Number of in-patients at the time of reporting.")))
 
     table.admissions24.requires = IS_NULL_OR(IS_INT_IN_RANGE(0, 9999))
     table.admissions24.default = 0
     table.admissions24.label = T("Admissions/24hrs")
     table.admissions24.comment = DIV(DIV(_class="tooltip",
-        _title=T("Admissions/24hrs|Number of newly admitted patients during the past 24 hours.")))
+        _title=Tstr("Admissions/24hrs") + "|" + Tstr("Number of newly admitted patients during the past 24 hours.")))
 
     table.discharges24.requires = IS_NULL_OR(IS_INT_IN_RANGE(0, 9999))
     table.discharges24.default = 0
     table.discharges24.label = T("Discharges/24hrs")
     table.discharges24.comment = DIV(DIV(_class="tooltip",
-        _title=T("Discharges/24hrs|Number of discharged patients during the past 24 hours.")))
+        _title=Tstr("Discharges/24hrs") + "|" + Tstr("Number of discharged patients during the past 24 hours.")))
 
     table.deaths24.requires = IS_NULL_OR(IS_INT_IN_RANGE(0, 9999))
     table.deaths24.default = 0
     table.deaths24.label = T("Deaths/24hrs")
     table.deaths24.comment = DIV(DIV(_class="tooltip",
-        _title=T("Deaths/24hrs|Number of deaths during the past 24 hours.")))
+        _title=Tstr("Deaths/24hrs") + "|" + Tstr("Number of deaths during the past 24 hours.")))
 
     s3xrc.model.add_component(module, resource,
                               multiple=True,
@@ -450,10 +450,10 @@ if deployment_settings.has_module(module):
     table.unit_name.label = T("Department/Unit Name")
     table.unit_name.requires = IS_NULL_OR(IS_NOT_IN_DB(db(table.deleted==False), table.unit_name))
     table.unit_name.comment = DIV(DIV(_class="tooltip",
-        _title=T("Unit Name|Name of the unit or department this report refers to. Leave empty if your hospital has no subdivisions.")))
+        _title=Tstr("Unit Name") + "|" + Tstr("Name of the unit or department this report refers to. Leave empty if your hospital has no subdivisions.")))
 
     table.bed_type.comment =  DIV(DIV(_class="tooltip",
-        _title=T("Bed Type|Specify the bed type of this unit.")))
+        _title=Tstr("Bed Type") + "|" + Tstr("Specify the bed type of this unit.")))
 
     table.date.label = T("Date of Report")
     table.date.requires = IS_UTC_DATETIME(utc_offset=shn_user_utc_offset(),
@@ -471,11 +471,11 @@ if deployment_settings.has_module(module):
     table.beds_add24.label = T("Additional Beds / 24hrs")
 
     table.beds_baseline.comment = DIV(DIV(_class="tooltip",
-        _title=T("Baseline Number of Beds|Baseline number of beds of that type in this unit.")))
+        _title=Tstr("Baseline Number of Beds") + "|" + Tstr("Baseline number of beds of that type in this unit.")))
     table.beds_available.comment = DIV(DIV(_class="tooltip",
-        _title=T("Available Beds|Number of available/vacant beds of that type in this unit at the time of reporting.")))
+        _title=Tstr("Available Beds") + "|" + Tstr("Number of available/vacant beds of that type in this unit at the time of reporting.")))
     table.beds_add24.comment = DIV(DIV(_class="tooltip",
-        _title=T("Additional Beds / 24hrs|Number of additional beds of that type expected to become available in this unit within the next 24 hours.")))
+        _title=Tstr("Additional Beds / 24hrs") + "|" + Tstr("Number of additional beds of that type expected to become available in this unit within the next 24 hours.")))
 
     # -----------------------------------------------------------------------------
     #
@@ -489,8 +489,8 @@ if deployment_settings.has_module(module):
             formvars = form.vars
 
         table = db.hms_bed_capacity
-        query = ((table.id==formvars.id) &
-                 (db.hms_hospital.id==table.hospital_id))
+        query = ((table.id == formvars.id) &
+                 (db.hms_hospital.id == table.hospital_id))
         hospital = db(query).select(db.hms_hospital.id, limitby=(0, 1))
 
         if hospital:
@@ -498,13 +498,13 @@ if deployment_settings.has_module(module):
 
             a_beds = table.beds_available.sum()
             t_beds = table.beds_baseline.sum()
-            query = (table.hospital_id==hospital.id) & (table.deleted==False)
+            query = (table.hospital_id == hospital.id) & (table.deleted == False)
             count = db(query).select(a_beds, t_beds)
             if count:
                a_beds = count[0]._extra[a_beds]
                t_beds = count[0]._extra[t_beds]
 
-            db(db.hms_hospital.id==hospital.id).update(
+            db(db.hms_hospital.id == hospital.id).update(
                 total_beds=t_beds,
                 available_beds=a_beds)
 
@@ -652,7 +652,7 @@ if deployment_settings.has_module(module):
 
     table.tags.label = T("Tags")
     table.tags.comment = DIV(DIV(_class="tooltip",
-                            _title=T("Image Tags|Enter tags separated by commas.")))
+                            _title=Tstr("Image Tags") + "|" + Tstr("Enter tags separated by commas.")))
 
     # CRUD Strings
     s3.crud_strings[tablename] = Storage(
@@ -748,7 +748,7 @@ if deployment_settings.has_module(module):
                                            args="search_simple",
                                            vars=request.vars)}))
 
-        if xrequest.representation=="html":
+        if xrequest.representation == "html":
             # Check for redirection
             if request.vars._next:
                 next = str.lower(request.vars._next)
@@ -760,7 +760,7 @@ if deployment_settings.has_module(module):
                         TR(T("Name or ID: "),
                            INPUT(_type="text", _name="label", _size="40"),
                            DIV(DIV(_class="tooltip",
-                                   _title=T("Name|To search for a hospital, enter any part of the name or ID. You may use % as wildcard. Press 'Search' without input to list all hospitals.")))),
+                                   _title=Tstr("Name") + "|" + Tstr("To search for a hospital, enter any part of the name or ID. You may use % as wildcard. Press 'Search' without input to list all hospitals.")))),
                         TR("",
                            INPUT(_type="submit", _value="Search"))))
 
@@ -948,7 +948,7 @@ if deployment_settings.has_module(module):
                                                _target="top",
                                                _title=s3.crud_strings[tablename].title_create),
                                               DIV(DIV(_class="tooltip",
-                                                      _title=T("Request|The request this record is associated with.")))),
+                                                      _title=Tstr("Request") + "|" + Tstr("The request this record is associated with.")))),
                                 ondelete = "RESTRICT"))
 
     s3xrc.model.add_component(module, resource,
@@ -976,7 +976,7 @@ if deployment_settings.has_module(module):
         if hrequest:
             hospital = db.hms_hospital[hrequest.hospital_id]
             if hospital:
-                db(db.hms_hrequest.id==hrequest.id).update(city=hospital.city)
+                db(db.hms_hrequest.id == hrequest.id).update(city=hospital.city)
 
     s3xrc.model.configure(db.hms_hrequest,
                           onaccept=lambda form: shn_hms_hrequest_onaccept(form))
@@ -1069,7 +1069,7 @@ if deployment_settings.has_module(module):
                     TR(T("Text in Message: "),
                     INPUT(_type="text", _name="label", _size="40"),
                     DIV(DIV(_class="tooltip",
-                            _title=T("Text in Message|To search for a request, enter some of the text that you are looking for. You may use % as wildcard. Press 'Search' without input to list all requests.")))),
+                            _title=Tstr("Text in Message") + "|" + Tstr("To search for a request, enter some of the text that you are looking for. You may use % as wildcard. Press 'Search' without input to list all requests.")))),
                     TR("", INPUT(_type="submit", _value="Search"))))
 
             output = dict(title=title, subtitle=subtitle, form=form, vars=form.vars)

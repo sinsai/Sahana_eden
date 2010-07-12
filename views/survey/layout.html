@@ -1,0 +1,61 @@
+{{ extend "layout.html"}}
+
+<style type="text/css">
+    .box {
+        border: 14px none;
+        width: 101%;
+        padding: 2px;
+        text-align: left;
+        margin-left: auto;
+        margin-right: auto;
+        background-color: #ffffff;
+        display: block;
+        font-family:sans-serif,serif;
+    }
+
+    .section {
+        padding: inherit;
+        text-align: justify;
+        margin: 0 0 0 10px;
+        background-color: #ffffff;
+        display: block;
+        overflow: auto;
+        font-size:12px;
+    }
+
+    .question {        
+        padding-left:inherit;
+        padding-right: inherit;
+        padding-top: 10px;
+        padding-bottom:10px;
+        text-align: justify;
+        margin: 0 0 0 8px;
+        display: block;
+        font-size:14px;
+    }
+
+    /* the title box for sections; the "Add" box for sections and questions */
+    .title {
+        border: 1px solid #000000;
+        width: 30em;
+        text-align: justify;
+        display: block;
+        font-size:20px;
+        font-family:sans-serif,serif;        
+    }
+
+    .hidden {
+        display: none;
+    }
+</style>
+
+<h2 style="text-decoration:underline;text-align:center;">
+    {{=T("Add Questions")}}
+</h2>
+
+<div class="box">
+    {{try:}}
+        {{=ui}}
+    {{except:}}
+        {{pass}}
+</div>    

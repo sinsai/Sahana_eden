@@ -21,12 +21,11 @@ def index():
 def template():
     """ RESTlike CRUD controller """
     resource = "template"
-    def _prep(jr):        
+    def _prep(jr):
         crud.settings.create_next = URL(r = request, c="survey", f="layout")
         crud.settings.update_next = URL(r = request, c="survey", f="layout")
         return True
     response.s3.prep = _prep
-
     tablename = "%s_%s" % (module, resource)
     table = db[tablename]    
     table.uuid.requires = IS_NOT_IN_DB(db,"%s.uuid" % tablename)
@@ -252,7 +251,7 @@ def layout():
     # build the UI
     ui = DIV(_class="sections")
     for section in sections:
-        ui.append(DIV(section.name,_class="title"))
+        ui.append(DIV(A(section.name,_href=URL(r=request, c="survey", f="section",args=[section.id, "update"])),_class="title"))
         question_query = (db.survey_template_link_table.survey_section_id == section.id) & (db.survey_question.id == db.survey_template_link_table.survey_question_id)
         questions = db(question_query).select(db.survey_question.ALL)
         for question in questions:

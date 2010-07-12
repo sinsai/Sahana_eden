@@ -1855,7 +1855,11 @@ OpenLayers.Util.extend( selectPdfControl, {
                         # Query is a simple select
                         _feature = feature
                     if "marker" in features:
-                        marker = db(db.gis_marker.id == features["marker"]).select(db.gis_marker.image, limitby=(0, 1), cache=cache).first().image
+                        _marker = db(db.gis_marker.id == features["marker"]).select(db.gis_marker.image, limitby=(0, 1), cache=cache).first()
+                        if _marker:
+                            marker = _marker.image
+                        else:
+                            marker = self.get_marker(_feature.id)
                     else:
                         marker = self.get_marker(_feature.id)
                     marker_url = URL(r=request, c="default", f="download", args=[marker])
@@ -2001,7 +2005,11 @@ OpenLayers.Util.extend( selectPdfControl, {
                 features = db(query).select()
                 for feature in features:
                     if "marker" in layer:
-                        marker = db(db.gis_marker.id == layer["marker"]).select(db.gis_marker.image, limitby=(0, 1), cache=cache).first().image
+                        _marker = db(db.gis_marker.id == layer["marker"]).select(db.gis_marker.image, limitby=(0, 1), cache=cache).first()
+                        if _marker:
+                            marker = _marker.image
+                        else:
+                            marker = self.get_marker(feature.gis_location.id)
                     else:
                         marker = self.get_marker(feature.gis_location.id)
                     marker_url = URL(r=request, c="default", f="download", args=[marker])

@@ -216,6 +216,8 @@ class GIS(object):
         """
             Calculate the Bounds of a list of Features
             e.g. to use in GPX export for correct zooming
+            @ToDo: Support Polygons
+            @ToDo: Optimised Geospatial routines rather than this crude hack
         """
         # If we have a list of features, then use this to build the bounds
         if features:
@@ -360,9 +362,11 @@ class GIS(object):
 
         """
 
+        cache = self.cache
         db = self.db
         table_feature = db.gis_location
         table_marker = db.gis_marker
+        _image = table_marker.image
         table_fclass = db.gis_feature_class
         table_symbology = db.gis_symbology_to_feature_class
 
@@ -386,8 +390,8 @@ class GIS(object):
             # 1st choice for a Marker is the Feature's
             if marker_id:
                 query = (table_marker.id == marker_id)
-                marker = db(query).select(table_marker.image, limitby=(0, 1),
-                                          cache=self.cache)
+                marker = db(query).select(_image, limitby=(0, 1),
+                                          cache=cache)
                 if marker:
                     return marker.first().image
 
@@ -395,23 +399,23 @@ class GIS(object):
             query = (table_symbology.feature_class_id == feature_class) & \
                     (table_symbology.symbology_id == symbology) & \
                     (table_marker.id == table_symbology.marker_id)
-            marker = db(query).select(table_marker.image, limitby=(0, 1),
-                                      cache=self.cache)
+            marker = db(query).select(_image, limitby=(0, 1),
+                                      cache=cache)
             if marker:
                 return marker.first().image
 
             # 3rd choice for a Marker is the Feature Class's
             query = (table_fclass.id == feature_class) & \
                     (table_marker.id == table_fclass.marker_id)
-            marker = db(query).select(table_marker.image, limitby=(0, 1),
-                                      cache=self.cache)
+            marker = db(query).select(_image, limitby=(0, 1),
+                                      cache=cache)
             if marker:
                 return marker.first().image
 
         # 4th choice for a Marker is the default
         query = (table_marker.id == config.marker_id)
-        marker = db(query).select(table_marker.image, limitby=(0, 1),
-                                  cache=self.cache)
+        marker = db(query).select(_image, limitby=(0, 1),
+                                  cache=cache)
         if marker:
             return marker.first().image
         else:
@@ -523,7 +527,8 @@ class GIS(object):
                  query  : query,        # A gluon.sql.Rows of gis_locations
                  active : False,        # Is the feed displayed upon load or needs ticking to load afterwards?
                  popup_url : None,      # The URL which will be used to fill the pop-up. it will be appended by the Location ID.
-                 marker : None          # The icon used to display the feature (over-riding the normal process). Can be a lambda to vary icon (size/colour) based on attribute levels.
+                 marker : None          # The marker_id for the icon used to display the feature (over-riding the normal process).
+                                        # [Plan: Can be a lambda to vary icon (size/colour) based on attribute levels.]
                 }
             @param feature_overlays: Which Feature Groups to overlay onto the map & their options (List of Dicts):
                 [{
@@ -532,7 +537,8 @@ class GIS(object):
                  filter : None,         # A query to further limit which features from the feature group are loaded
                  active : False,        # Is the feed displayed upon load or needs ticking to load afterwards?
                  popup_url : None,      # The URL which will be used to fill the pop-up. it will be appended by the Location ID.
-                 marker : None          # The icon used to display the feature (over-riding the normal process). Can be a lambda to vary icon (size/colour) based on attribute levels.
+                 marker : None          # The marker_id for the icon used to display the feature (over-riding the normal process).
+                                        # [Plan: Can be a lambda to vary icon (size/colour) based on attribute levels.]
                 }]
             @param wms_browser: WMS Server's GetCapabilities & options (dict)
                 {
@@ -568,6 +574,7 @@ class GIS(object):
         T = self.T
         db = self.db
         auth = self.auth
+        cache = self.cache
 
         # Read configuration
         config = self.get_config()
@@ -1738,10 +1745,8 @@ OpenLayers.Util.extend( selectPdfControl, {
                 name = features["name"] or "Query"
                 if "popup_url" in features:
                     popup_url = features["popup_url"]
-                # We'd like to do something like this:
-                #elif feature_class is office:
-                #    popup_url = str(URL(r=request, c="or", f="office"))
                 else:
+                    #popup_url = str(URL(r=request, c=feature_class.module, f=feature_class.resource, args=["read.popup"]))
                     popup_url = str(URL(r=request, c="gis", f="location", args=["read.popup"]))
 
                 # Generate HTML snippet
@@ -1840,8 +1845,8 @@ OpenLayers.Util.extend( selectPdfControl, {
             }
         }
         """
-                features = features["query"]
-                for feature in features:
+                _features = features["query"]
+                for feature in _features:
                     try:
                         feature.gis_location.id
                         # Query was generated by a Join
@@ -1849,8 +1854,11 @@ OpenLayers.Util.extend( selectPdfControl, {
                     except AttributeError:
                         # Query is a simple select
                         _feature = feature
-                    marker = self.get_marker(_feature.id)
-                    marker_url = URL(r=request, c='default', f='download', args=[marker])
+                    if "marker" in features:
+                        marker = db(db.gis_marker.id == features["marker"]).select(db.gis_marker.image, limitby=(0, 1), cache=cache).first().image
+                    else:
+                        marker = self.get_marker(_feature.id)
+                    marker_url = URL(r=request, c="default", f="download", args=[marker])
                     # Deal with null Feature Classes
                     if _feature.feature_class_id:
                         fc = "'" + str(_feature.feature_class_id) + "'"
@@ -1988,12 +1996,15 @@ OpenLayers.Util.extend( selectPdfControl, {
         """
                 query = (db.gis_location.deleted == False) & (db.gis_feature_group.name == name) & (db.gis_feature_class_to_feature_group.feature_group_id == db.gis_feature_group.id) & (db.gis_location.feature_class_id == db.gis_feature_class_to_feature_group.feature_class_id)
                 if "parent" in feature_overlays:
-                    parent_id = db(db.gis_location.name == feature_overlays["parent"]).select(limitby=(0, 1)).first().id
+                    parent_id = db(db.gis_location.name == feature_overlays["parent"]).select(db.gis_location.id, limitby=(0, 1)).first().id
                     query = query & (db.gis_location.parent == parent_id)
                 features = db(query).select()
                 for feature in features:
-                    marker = self.get_marker(feature.gis_location.id)
-                    marker_url = URL(r=request, c='default', f='download', args=[marker])
+                    if "marker" in layer:
+                        marker = db(db.gis_marker.id == layer["marker"]).select(db.gis_marker.image, limitby=(0, 1), cache=cache).first().image
+                    else:
+                        marker = self.get_marker(feature.gis_location.id)
+                    marker_url = URL(r=request, c="default", f="download", args=[marker])
                     # Deal with null Feature Classes
                     if feature.gis_location.feature_class_id:
                         fc = "'" + str(feature.gis_location.feature_class_id) + "'"

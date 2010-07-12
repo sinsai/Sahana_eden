@@ -497,7 +497,7 @@ def shn_rheader_tabs(jr, tabs=[]):
         _class = "rheader_tab_other"
         if component:
             if jr.component and jr.component.name == component or \
-               jr.custom_method and jr.method == component:
+               jr.custom_action and jr.method == component:
                 _class = "rheader_tab_here"
             args = [jr.id, component]
             _href = URL(r=request, f=jr.name, args=args)

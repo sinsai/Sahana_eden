@@ -161,17 +161,45 @@ class Msg(object):
                                              fromaddress = fromaddress)
         except:
             return False
-        try:
             #TODO 1) outbox1 to outbox1 
             #2) This is not transaction safe - power failure in the middle will cause no message in the outbox
-            self.db.msg_outbox1.insert(message_id = message_log_id, 
+        if isinstance(pr_pe_id,list):
+            listindex = 0
+            for prpeid in pr_pe_id:
+                try:
+                    self.db.msg_outbox1.insert(message_id = message_log_id, 
+                                        pr_pe_id = prpeid, 
+                                        pr_message_method = pr_message_method,
+                                        system_generated = system_generated)
+                    listindex = listindex+1
+                except:
+                    return listindex
+        else:
+            try:
+                self.db.msg_outbox1.insert(message_id = message_log_id, 
                                         pr_pe_id = pr_pe_id, 
                                         pr_message_method = pr_message_method,
                                         system_generated = system_generated)
-        except:
-            return False
-
+            except:
+                return False
+        self.db.commit()
         return True
+
+    def send_email_by_pr_pe_id(self, pr_pe_id, subject="", 
+                                message="", 
+                                sender_pr_pe_id = None, 
+                                sender="", 
+                                fromaddress="",
+                                system_generated = False):
+        """Api over send_by_pr_pe_id - depends on pr_message_method """
+        return self.send_by_pr_pe_id(pr_pe_id, 
+                                        subject, 
+                                        message, 
+                                        sender_pr_pe_id, 
+                                        sender, 
+                                        fromaddress,
+                                        1, # To set as an email
+                                        system_generated)
 
     def process_outbox1(self, contact_method = 1, option = 1):
         """ Send Pending Messages from OutBox.

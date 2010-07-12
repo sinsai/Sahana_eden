@@ -12,11 +12,11 @@ module = request.controller
 
 # Options Menu (available in all Functions' Views)
 response.menu_options = [
-    [T("Map"), False, URL(r=request, f="map_viewing_client")],
-    [T("Locations"), False, URL(r=request, f="location")],
     #, [ [T("List"), False, URL(r=request, f="location")],
     #    [T("Add"), False, URL(r=request, f="location", args="create")] ]
     [T("Service Catalogue"), False, URL(r=request, f="map_service_catalogue")],
+    [T("Locations"), False, URL(r=request, f="location")],
+    [T("Map"), False, URL(r=request, f="map_viewing_client")],
     # Currently broken
     #[T("Bulk Uploader"), False, URL(r=request, c="doc", f="bulk_upload")],
 ]
@@ -43,8 +43,11 @@ def test():
     else:
         offices = {"feature_group" : "Offices", "popup_url" : URL(r=request, c="gis", f="location", args="read.popup")}
 
+    query = db((db.gis_feature_class.name == "Town") & (db.gis_location.feature_class_id == db.gis_feature_class.id)).select()
+    
     html = gis.show_map(
-                feature_overlays = [offices, hospitals],
+                feature_groups = [offices, hospitals],
+                feature_queries = [{"name" : "Towns", "query" : query, "active" : True}],
                 wms_browser = {"name" : "OpenGeo Demo WMS", "url" : "http://demo.opengeo.org/geoserver/ows?service=WMS&request=GetCapabilities"},
                 #wms_browser = {"name" : "Risk Maps", "url" : "http://preview.grid.unep.ch:8080/geoserver/ows?service=WMS&request=GetCapabilities"},
                 #wms_browser = {"name" : "Risk Maps", "url" : "http://www.pdc.org/wms/wmservlet/PDC_Active_Hazards?request=getcapabilities&service=WMS&version=1.1.1"},
@@ -119,39 +122,27 @@ def config():
     table = db[tablename]
 
     # Model options
-    table.lat.comment = DIV(SPAN("*", _class="req"), DIV( _class="tooltip", _title=Tstr("Latitude") + "|" + Tstr("Latitude is North-South (Up-Down). Latitude is zero on the equator and positive in the northern hemisphere and negative in the southern hemisphere.")))
-    table.lon.comment = DIV(SPAN("*", _class="req"), DIV( _class="tooltip", _title=Tstr("Longitude") + "|" + Tstr("Longitude is West - East (sideways). Longitude is zero on the prime meridian (Greenwich Mean Time) and is positive to the east, across Europe and Asia.  Longitude is negative to the west, across the Atlantic and the Americas.")))
-    table.zoom.comment = DIV(SPAN("*", _class="req"), DIV( _class="tooltip", _title=Tstr("Zoom") + "|" + Tstr("How much detail is seen. A high Zoom level means lot of detail, but not a wide area. A low Zoom level means seeing a wide area, but not a high level of detail.")))
-    table.map_height.comment = DIV(SPAN("*", _class="req"), DIV( _class="tooltip", _title=Tstr("Height") + "|" + Tstr("Default Height of the map window. In Window layout the map maximises to fill the window, so no need to set a large value here.")))
-    table.map_width.comment = DIV(SPAN("*", _class="req"), DIV( _class="tooltip", _title=Tstr("Width") + "|" + Tstr("Default Width of the map window. In Window layout the map maximises to fill the window, so no need to set a large value here.")))
+    # In Model so that they're visible to person() as component
+    # CRUD Strings (over-ride)
+    s3.crud_strings[tablename].title_display = T("Defaults")
+    s3.crud_strings[tablename].title_update = T("Edit Defaults")
+    s3.crud_strings[tablename].msg_record_modified = T("Defaults updated")
 
-    # CRUD Strings
-    ADD_CONFIG = T("Add Config")
-    LIST_CONFIGS = T("List Configs")
-    s3.crud_strings[tablename] = Storage(
-        #title_create = ADD_CONFIG,
-        title_display = T("Defaults"),
-        #title_list = T("Configs"),
-        title_update = T("Edit Defaults"),
-        #title_search = T("Search Configs"),
-        #subtitle_create = T("Add New Config"),
-        #subtitle_list = LIST_CONFIGS,
-        #label_list_button = LIST_CONFIGS,
-        #label_create_button = ADD_CONFIG,
-        #label_delete_button = T("Delete Config"),
-        #msg_record_created = T("Config added"),
-        msg_record_modified = T("Defaults updated"),
-        #msg_record_deleted = T("Config deleted"),
-        #msg_list_empty = T("No Configs currently defined")
-    )
-
-    output = shn_rest_controller(module, resource, deletable=False, listadd=False)
     
+    output = shn_rest_controller(module, resource, deletable=False, listadd=False)
+
     if not "gis" in response.view:
         response.view = "gis/" + response.view
-    
+
     output["list_btn"] = ""
-    
+
+    if auth.is_logged_in():
+        personalised = db((db.pr_person.uuid == auth.user.person_uuid) & (table.pr_pe_id == db.pr_person.pr_pe_id)).select(table.id, limitby=(0, 1)).first()
+        if personalised:
+            output["rheader"] = P(T("You have personalised settings, so changes made here won't be visible to you. To change your personalised settings, click "), A(T("here"), _href=URL(r=request, c="pr", f="person", args=["config"], vars={"person.uid":auth.user.person_uuid})))
+        else:
+            output["rheader"] = P(T("These are the default settings for all users. To change settings just for you, click "), A(T("here"), _href=URL(r=request, c="pr", f="person", args=["config"], vars={"person.uid":auth.user.person_uuid})))
+
     return output
 
 def feature_class():
@@ -1039,118 +1030,6 @@ def layer_xyz():
     
     return output
 
-# Module-specific functions
-def convert_gps():
-    " Provide a form which converts from GPS Coordinates to Decimal Coordinates "
-    return dict()
-
-def proxy():
-    """Based on http://trac.openlayers.org/browser/trunk/openlayers/examples/proxy.cgi
-This is a blind proxy that we use to get around browser
-restrictions that prevent the Javascript from loading pages not on the
-same server as the Javascript. This has several problems: it's less
-efficient, it might break some sites, and it's a security risk because
-people can use this proxy to browse the web and possibly do bad stuff
-with it. It only loads pages via http and https, but it can load any
-content type. It supports GET and POST requests."""
-
-    import urllib2
-    import cgi
-    import sys, os
-
-    # ToDo - need to link to map_service_catalogue
-    # prevent Open Proxy abuse
-    allowedHosts = []
-    #allowedHosts = ["www.openlayers.org", "openlayers.org",
-    #                "labs.metacarta.com", "world.freemap.in",
-    #                "prototype.openmnnd.org", "geo.openplans.org",
-    #                "sigma.openplans.org", "demo.opengeo.org",
-    #                "www.openstreetmap.org", "sample.avencia.com",
-    #                "v-swe.uni-muenster.de:8080"]
-
-    method = request["wsgi"].environ["REQUEST_METHOD"]
-
-    if method == "POST":
-        # This can probably use same call as GET in web2py
-        qs = request["wsgi"].environ["QUERY_STRING"]
-
-        d = cgi.parse_qs(qs)
-        if d.has_key("url"):
-            url = d["url"][0]
-        else:
-            url = "http://www.openlayers.org"
-    else:
-        # GET
-        #fs = cgi.FieldStorage()
-        #url = fs.getvalue("url", "http://www.openlayers.org")
-        if "url" in request.vars:
-            url = request.vars.url
-        else:
-            session.error = str(T("Need a 'url' argument!"))
-            raise HTTP(400, body=s3xrc.xml.json_message(False, 400, session.error))
-
-    try:
-        host = url.split("/")[2]
-        if allowedHosts and not host in allowedHosts:
-            msg = "Status: 502 Bad Gateway\n"
-            msg += "Content-Type: text/plain\n\n"
-            msg += "This proxy does not allow you to access that location (%s).\n\n" % (host,)
-
-            msg += os.environ
-            return msg
-
-        elif url.startswith("http://") or url.startswith("https://"):
-            if method == "POST":
-                length = int(request["wsgi"].environ["CONTENT_LENGTH"])
-                headers = {"Content-Type": request["wsgi"].environ["CONTENT_TYPE"]}
-                body = request.body.read(length)
-                r = urllib2.Request(url, body, headers)
-                y = urllib2.urlopen(r)
-            else:
-                y = urllib2.urlopen(url)
-
-            # print content type header
-            # TODO: this doesn't work in web2py, need to figure out how that happens?
-            #i = y.info()
-            #if i.has_key("Content-Type"):
-            # msg = "Content-Type: %s" % (i["Content-Type"])
-            #else:
-            # msg = "Content-Type: text/plain"
-
-            #msg += "\n" + y.read()
-
-            msg = y.read()
-            y.close()
-            return msg
-        else:
-            msg = "Content-Type: text/plain\n\n"
-
-            msg += "Illegal request."
-            return msg
-
-    except Exception, E:
-        msg = "Status: 500 Unexpected Error\n"
-        msg += "Content-Type: text/plain\n\n"
-        msg += "Some unexpected error occurred. Error text was: %s" % str(E)
-        return msg
-
-# Features
-# - experimental!
-def feature_create_map():
-    "Show a map to draw the feature"
-    title = T("Add GIS Feature")
-    form = crud.create("gis_location", onvalidation=lambda form: gis.wkt_centroid(form))
-
-    _config = db.gis_config
-    _projection = db.gis_projection
-    query = (_config.id == 1) & (_projection.id == _config.projection_id)
-    projection = db(query).select(_projection.epsg, limitby=(0, 1)).first().epsg
-
-    # Layers
-    baselayers = layers()
-
-    return dict(title=title, form=form, projection=projection, openstreetmap=baselayers.openstreetmap, google=baselayers.google, yahoo=baselayers.yahoo, bing=baselayers.bing)
-
 # Feature Groups
 def feature_group_contents():
     "Many to Many CRUD Controller"
@@ -1326,9 +1205,185 @@ def feature_group_update_items():
         session.error = T("Not authorised!")
     redirect(URL(r=request, f="feature_group_contents", args=[feature_group]))
 
+def convert_gps():
+    " Provide a form which converts from GPS Coordinates to Decimal Coordinates "
+    return dict()
+
+def display_feature():
+    """
+    Cut-down version of the Map Viewing Client.
+    Used by shn_gis_location_represent() to show just this feature on the map.
+    Called by the viewMap() JavaScript
+    """
+
+    # The Feature
+    feature_id = request.args(0)
+
+    # Check user is authorised to access record
+    if not shn_has_permission("read", db.gis_location, feature_id):
+        session.error = str(T("No access to this record!"))
+        raise HTTP(401, body=s3xrc.xml.json_message(False, 401, session.error))
+
+    query = db(db.gis_location.id == feature_id).select(limitby=(0, 1))
+    feature = query.first()
+
+    # Centre on Feature
+    lat = feature.lat
+    lon = feature.lon
+
+    # Calculate an appropriate BBox
+    bounds = gis.get_bounds(features=query)
+
+    map = gis.show_map(
+        feature_queries = [{"name" : "Feature", "query" : query, "active" : True}],
+        lat = lat,
+        lon = lon,
+        bbox = bounds,
+        window = True,
+        collapsed = True
+    )
+
+    return dict(map=map)
+    
+def display_features():
+    """
+    Cut-down version of the Map Viewing Client.
+    Used as a link from the RHeader.
+        URL generated server-side
+    Shows all locations matching a query.
+    ToDo: Most recent location is marked using a bigger Marker.
+    """
+
+    # Parse the URL, check for implicit resources, extract the primary record
+    # http://127.0.0.1:8000/eden/gis/display_features&module=pr&resource=person&instance=1&jresource=presence
+    ok = 0
+    if "module" in request.vars:
+        res_module = request.vars.module
+        ok +=1
+    if "resource" in request.vars:
+        resource = request.vars.resource
+        ok +=1
+    if "instance" in request.vars:
+        instance = int(request.vars.instance)
+        ok +=1
+    if "jresource" in request.vars:
+        jresource = request.vars.jresource
+        ok +=1
+    if ok != 4:
+        session.error = str(T("Insufficient vars: Need module, resource, jresource, instance"))
+        raise HTTP(400, body=s3xrc.xml.json_message(False, 400, session.error))
+
+    component, pkey, fkey = s3xrc.model.get_component(res_module, resource, jresource)
+    table = db["%s_%s" % (res_module, resource)]
+    jtable = db[str(component.table)]
+    query = (jtable[fkey] == table[pkey]) & (table.id == instance)
+    # Filter out deleted
+    deleted = (table.deleted == False)
+    query = query & deleted
+    # Filter out inaccessible
+    query2 = db.gis_location.id == jtable.location_id
+    accessible = shn_accessible_query("read", db.gis_location)
+    query2 = query2 & accessible
+
+    features = db(query).select(db.gis_location.ALL, left = [db.gis_location.on(query2)])
+
+    # Calculate an appropriate BBox
+    bounds = gis.get_bounds(features=features)
+
+    map = gis.show_map(
+        feature_queries = [{"name" : "Features", "query" : features, "active" : True}],
+        bbox = bounds,
+        window = True,
+        collapsed = True
+    )
+
+    return dict(map=map)
+
+# Experimental!
+def feature_create_map():
+    "Show a map to draw the feature"
+    title = T("Add GIS Feature")
+    form = crud.create("gis_location", onvalidation=lambda form: gis.wkt_centroid(form))
+
+    _config = db.gis_config
+    _projection = db.gis_projection
+    query = (_config.id == 1) & (_projection.id == _config.projection_id)
+    projection = db(query).select(_projection.epsg, limitby=(0, 1)).first().epsg
+
+    # Layers
+    baselayers = layers()
+
+    return dict(title=title, form=form, projection=projection, openstreetmap=baselayers.openstreetmap, google=baselayers.google, yahoo=baselayers.yahoo, bing=baselayers.bing)
+
+def geolocate():
+    " Call a Geocoder service "
+    if "location" in request.vars:
+        location = request.vars.location
+    else:
+        session.error = T("Need to specify a location to search for.")
+        redirect(URL(r=request, f="index"))
+
+    if "service" in request.vars:
+        service = request.vars.service
+    else:
+        # ToDo service=all should be default
+        service = "google"
+
+    if service == "google":
+        return s3gis.GoogleGeocoder(location, db).get_kml()
+
+    if service == "yahoo":
+        return s3gis.YahooGeocoder(location, db).get_xml()
+
+def layers_enable():
+    """
+    Enable/Disable Layers
+    """
+
+    # Hack: We control all perms from this 1 table
+    table = db.gis_layer_openstreetmap
+    authorised = shn_has_permission("update", table)
+    if authorised:
+        for type in gis_layer_types:
+            resource = "gis_layer_%s" % type
+            table = db[resource]
+            query = table.id > 0
+            sqlrows = db(query).select()
+            for row in sqlrows:
+                query_inner = (table.id == row.id)
+                var = "%s_%i" % (type, row.id)
+                # Read current state
+                if db(query_inner).select(table.enabled, limitby=(0, 1)).first().enabled:
+                    # Old state: Enabled
+                    if var in request.vars:
+                        # Do nothing
+                        pass
+                    else:
+                        # Disable
+                        db(query_inner).update(enabled=False)
+                        # Audit
+                        #shn_audit_update_m2m(resource=resource, record=row.id, representation="html")
+                        shn_audit_update_m2m(resource, row.id, "html")
+                else:
+                    # Old state: Disabled
+                    if var in request.vars:
+                        # Enable
+                        db(query_inner).update(enabled=True)
+                        # Audit
+                        shn_audit_update_m2m(resource, row.id, "html")
+                    else:
+                        # Do nothing
+                        pass
+        session.flash = T("Layers updated")
+    else:
+        session.error = T("Not authorised!")
+    redirect(URL(r=request, f="map_service_catalogue"))
+
 def map_service_catalogue():
-    """Map Service Catalogue.
-    Allows selection of which Layers are active."""
+    """
+    Map Service Catalogue.
+    Allows selection of which Layers are active.
+    """
 
     subtitle = T("List Layers")
     # Start building the Return with the common items
@@ -1396,8 +1451,141 @@ def map_service_catalogue():
     output.update(dict(items=items))
     return output
 
+def map_viewing_client():
+    """
+    Map Viewing Client.
+    UI for a user to view the overall Maps with associated Features
+    """
+
+    # Read configuration settings
+    config = gis.get_config()
+    if config.opt_gis_layout == 1:
+        window = True
+    else:
+        window = False
+
+    # ToDo: Make these configurable
+    catalogue_toolbar = True
+    toolbar = True
+    search = True
+    catalogue_overlays = True
+
+    # Read which overlays to enable
+    feature_groups = []
+    _feature_groups = db(db.gis_feature_group.enabled == True).select()
+    for feature_group in _feature_groups:
+        feature_groups.append(
+            {
+                "feature_group" : feature_group.name,
+                "active" : feature_group.visible
+            }
+        )
+
+    map = gis.show_map(window=window, catalogue_toolbar=catalogue_toolbar, toolbar=toolbar, search=search, catalogue_overlays=catalogue_overlays, feature_groups=feature_groups)
+
+    return dict(map=map)
+
+def proxy():
+    """Based on http://trac.openlayers.org/browser/trunk/openlayers/examples/proxy.cgi
+This is a blind proxy that we use to get around browser
+restrictions that prevent the Javascript from loading pages not on the
+same server as the Javascript. This has several problems: it's less
+efficient, it might break some sites, and it's a security risk because
+people can use this proxy to browse the web and possibly do bad stuff
+with it. It only loads pages via http and https, but it can load any
+content type. It supports GET and POST requests."""
+
+    import urllib2
+    import cgi
+    import sys, os
+
+    # ToDo - need to link to map_service_catalogue
+    # prevent Open Proxy abuse
+    allowedHosts = []
+    #allowedHosts = ["www.openlayers.org", "openlayers.org",
+    #                "labs.metacarta.com", "world.freemap.in",
+    #                "prototype.openmnnd.org", "geo.openplans.org",
+    #                "sigma.openplans.org", "demo.opengeo.org",
+    #                "www.openstreetmap.org", "sample.avencia.com",
+    #                "v-swe.uni-muenster.de:8080"]
+
+    method = request["wsgi"].environ["REQUEST_METHOD"]
+
+    if method == "POST":
+        # This can probably use same call as GET in web2py
+        qs = request["wsgi"].environ["QUERY_STRING"]
+
+        d = cgi.parse_qs(qs)
+        if d.has_key("url"):
+            url = d["url"][0]
+        else:
+            url = "http://www.openlayers.org"
+    else:
+        # GET
+        #fs = cgi.FieldStorage()
+        #url = fs.getvalue("url", "http://www.openlayers.org")
+        if "url" in request.vars:
+            url = request.vars.url
+        else:
+            session.error = str(T("Need a 'url' argument!"))
+            raise HTTP(400, body=s3xrc.xml.json_message(False, 400, session.error))
+
+    try:
+        host = url.split("/")[2]
+        if allowedHosts and not host in allowedHosts:
+            msg = "Status: 502 Bad Gateway\n"
+            msg += "Content-Type: text/plain\n\n"
+            msg += "This proxy does not allow you to access that location (%s).\n\n" % (host,)
+
+            msg += os.environ
+            return msg
+
+        elif url.startswith("http://") or url.startswith("https://"):
+            if method == "POST":
+                length = int(request["wsgi"].environ["CONTENT_LENGTH"])
+                headers = {"Content-Type": request["wsgi"].environ["CONTENT_TYPE"]}
+                body = request.body.read(length)
+                r = urllib2.Request(url, body, headers)
+                y = urllib2.urlopen(r)
+            else:
+                y = urllib2.urlopen(url)
+
+            # print content type header
+            # TODO: this doesn't work in web2py, need to figure out how that happens?
+            #i = y.info()
+            #if i.has_key("Content-Type"):
+            # msg = "Content-Type: %s" % (i["Content-Type"])
+            #else:
+            # msg = "Content-Type: text/plain"
+
+            #msg += "\n" + y.read()
+
+            msg = y.read()
+            y.close()
+            return msg
+        else:
+            msg = "Content-Type: text/plain\n\n"
+
+            msg += "Illegal request."
+            return msg
+
+    except Exception, E:
+        msg = "Status: 500 Unexpected Error\n"
+        msg += "Content-Type: text/plain\n\n"
+        msg += "Some unexpected error occurred. Error text was: %s" % str(E)
+        return msg
+
+
+
+######################
+# Deprecated Functions
+######################
+        
 def layers():
-    "Provide the Enabled Layers"
+    """
+    Deprecated!
+    Provide the Enabled Layers
+    """
 
     from gluon.tools import fetch
 
@@ -1640,171 +1828,9 @@ def layers():
 
     return layers
 
-def layers_enable():
-    "Enable/Disable Layers"
-
-    # Hack: We control all perms from this 1 table
-    table = db.gis_layer_openstreetmap
-    authorised = shn_has_permission("update", table)
-    if authorised:
-        for type in gis_layer_types:
-            resource = "gis_layer_%s" % type
-            table = db[resource]
-            query = table.id > 0
-            sqlrows = db(query).select()
-            for row in sqlrows:
-                query_inner = (table.id == row.id)
-                var = "%s_%i" % (type, row.id)
-                # Read current state
-                if db(query_inner).select(table.enabled, limitby=(0, 1)).first().enabled:
-                    # Old state: Enabled
-                    if var in request.vars:
-                        # Do nothing
-                        pass
-                    else:
-                        # Disable
-                        db(query_inner).update(enabled=False)
-                        # Audit
-                        #shn_audit_update_m2m(resource=resource, record=row.id, representation="html")
-                        shn_audit_update_m2m(resource, row.id, "html")
-                else:
-                    # Old state: Disabled
-                    if var in request.vars:
-                        # Enable
-                        db(query_inner).update(enabled=True)
-                        # Audit
-                        shn_audit_update_m2m(resource, row.id, "html")
-                    else:
-                        # Do nothing
-                        pass
-        session.flash = T("Layers updated")
-    else:
-        session.error = T("Not authorised!")
-    redirect(URL(r=request, f="map_service_catalogue"))
-
-def map_viewing_client():
+def display_feature_old():
     """
-    Map Viewing Client.
-    Main user UI for viewing the Maps with associated Features
-    """
-
-    title = T("Map Viewing Client")
-    response.title = title
-
-    # Start building the Return with the Framework
-    output = dict(title=title, )
-
-    # Config
-    # ToDo return all of these to the view via a single 'config' var
-    config = gis.get_config()
-    width = config.map_width
-    height = config.map_height
-    numZoomLevels = config.zoom_levels
-    projection = config.epsg
-    # Support bookmarks (such as from the control)
-    if "lat" in request.vars:
-        lat = request.vars.lat
-    else:
-        lat = config.lat
-    if "lon" in request.vars:
-        lon = request.vars.lon
-    else:
-        lon = config.lon
-    if "zoom" in request.vars:
-        zoom = request.vars.zoom
-    else:
-        zoom = config.zoom
-    units = config.units
-    maxResolution = config.maxResolution
-    maxExtent = config.maxExtent
-    marker_default = config.marker_id
-    cluster_distance = config.cluster_distance
-    cluster_threshold = config.cluster_threshold
-    layout = config.opt_gis_layout
-
-    # Add the Config to the Return
-    output.update(dict(width=width, height=height, numZoomLevels=numZoomLevels, projection=projection, lat=lat, lon=lon, zoom=zoom, units=units, maxResolution=maxResolution, maxExtent=maxExtent, cluster_distance=cluster_distance, cluster_threshold=cluster_threshold, layout=layout))
-
-    # Layers
-    baselayers = layers()
-    # Add the Layers to the Return
-    output.update(dict(openstreetmap=baselayers.openstreetmap, google=baselayers.google, yahoo=baselayers.yahoo, bing=baselayers.bing, tms_layers=baselayers.tms, wms_layers=baselayers.wms, xyz_layers=baselayers.xyz))
-    output.update(dict(georss_layers=baselayers.georss, gpx_layers=baselayers.gpx, js_layers=baselayers.js, kml_layers=baselayers.kml))
-    # MGRS isn't a Layer, it's a Control, but added here anyway
-    output.update(dict(mgrs=baselayers.mgrs))
-
-    # Internal Features
-    features = Storage()
-    # Features are displayed in a layer per FeatureGroup
-    feature_groups = db(db.gis_feature_group.enabled == True).select()
-    for feature_group in feature_groups:
-        groups = db.gis_feature_group
-        locations = db.gis_location
-        classes = db.gis_feature_class
-        metadata = db.doc_metadata
-        # Which Features are added to the Group directly?
-        # ^^ No longer supported, for simplicity
-        #link = db.gis_location_to_feature_group
-        # JOINs are efficient for RDBMS but not compatible with GAE
-        #features1 = db(link.feature_group_id == feature_group.id).select(groups.ALL, locations.ALL, classes.ALL, left=[groups.on(groups.id == link.feature_group_id), locations.on(locations.id == link.location_id), classes.on(classes.id == locations.feature_class_id)])
-        # FIXME?: Extend JOIN for Metadata (sortby, want 1 only), Markers (complex logic), Resource_id (need to find from the results of prev query)
-        # Which Features are added to the Group via their FeatureClass?
-        link = db.gis_feature_class_to_feature_group
-        features2 = db(link.feature_group_id == feature_group.id).select(groups.ALL, locations.ALL, classes.ALL, left=[groups.on(groups.id == link.feature_group_id), classes.on(classes.id == link.feature_class_id), locations.on(locations.feature_class_id == link.feature_class_id)])
-        # FIXME?: Extend JOIN for Metadata (sortby, want 1 only), Markers (complex logic), Resource_id (need to find from the results of prev query)
-        #features[feature_group.id] = features1 | features2
-        features[feature_group.id] = features2
-        for feature in features[feature_group.id]:
-            try:
-                # Deprecated since we'll be using KML to populate Popups with Edit URLs, etc
-                feature.module = feature.gis_feature_class.module
-                feature.resource = feature.gis_feature_class.resource
-                if feature.module and feature.resource:
-                    try:
-                        _resource = db["%s_%s" % (feature.module, feature.resource)]
-                        feature.resource_id = db(_resource.location_id == feature.gis_location.id).select(_resource.id, limitby=(0, 1)).first().id
-                    except:
-                        feature.resource_id = None
-                else:
-                    feature.resource_id = None
-
-                # Look up the marker to display
-                feature.marker = gis.get_marker(feature.gis_location.id)
-
-                try:
-                    # Metadata is M->1 to Features
-                    # We use the most recent one
-                    query = (db.doc_metadata.location_id == feature.gis_location.id) & (db.doc_metadata.deleted == False)
-                    metadata = db(query).select(orderby=~db.doc_metadata.event_time).first()
-
-                    # Person .represent is too complex to put into JOIN
-                    contact = shn_pr_person_represent(metadata.person_id)
-
-                except:
-                    metadata = None
-                    contact = None
-                feature.metadata = metadata
-                feature.contact = contact
-
-                try:
-                    # Images are M->1 to Features
-                    # We use the most recently uploaded one
-                    query = (db.doc_image.location_id == feature.gis_location.id) & (db.doc_image.deleted == False)
-                    image = db(query).select(db.doc_image.image, orderby=~db.doc_image.created_on).first().image
-                except:
-                    image = None
-                feature.image = image
-            except:
-                pass
-
-    # Add the Features to the Return
-    #output.update(dict(features=features, features_classes=feature_classes, features_markers=feature_markers, features_metadata=feature_metadata))
-    output.update(dict(feature_groups=feature_groups, features=features))
-
-    return output
-
-def display_feature():
-    """
+    Deprecated!
     Cut-down version of the Map Viewing Client.
     Used as a .represent for location_id to show just this feature on the map.
     """
@@ -1906,8 +1932,9 @@ def display_feature():
 
     return output
 
-def display_features():
+def display_features_old():
     """
+    Deprecated!
     Cut-down version of the Map Viewing Client.
     Used as a link from the RHeader.
         URL generated server-side
@@ -2055,22 +2082,124 @@ def display_features():
 
     return output
 
-def geolocate():
-    " Call a Geocoder service "
-    if "location" in request.vars:
-        location = request.vars.location
+def map_viewing_client_old():
+    """
+    Map Viewing Client.
+    Main user UI for viewing the Maps with associated Features
+    """
+
+    title = T("Map Viewing Client")
+    response.title = title
+
+    # Start building the Return with the Framework
+    output = dict(title=title, )
+
+    # Config
+    # ToDo return all of these to the view via a single 'config' var
+    config = gis.get_config()
+    width = config.map_width
+    height = config.map_height
+    numZoomLevels = config.zoom_levels
+    projection = config.epsg
+    # Support bookmarks (such as from the control)
+    if "lat" in request.vars:
+        lat = request.vars.lat
     else:
-        session.error = T("Need to specify a location to search for.")
-        redirect(URL(r=request, f="index"))
-
-    if "service" in request.vars:
-        service = request.vars.service
+        lat = config.lat
+    if "lon" in request.vars:
+        lon = request.vars.lon
     else:
-        # ToDo service=all should be default
-        service = "google"
+        lon = config.lon
+    if "zoom" in request.vars:
+        zoom = request.vars.zoom
+    else:
+        zoom = config.zoom
+    units = config.units
+    maxResolution = config.maxResolution
+    maxExtent = config.maxExtent
+    marker_default = config.marker_id
+    cluster_distance = config.cluster_distance
+    cluster_threshold = config.cluster_threshold
+    layout = config.opt_gis_layout
 
-    if service == "google":
-        return s3gis.GoogleGeocoder(location, db).get_kml()
+    # Add the Config to the Return
+    output.update(dict(width=width, height=height, numZoomLevels=numZoomLevels, projection=projection, lat=lat, lon=lon, zoom=zoom, units=units, maxResolution=maxResolution, maxExtent=maxExtent, cluster_distance=cluster_distance, cluster_threshold=cluster_threshold, layout=layout))
 
-    if service == "yahoo":
-        return s3gis.YahooGeocoder(location, db).get_xml()
+    # Layers
+    baselayers = layers()
+    # Add the Layers to the Return
+    output.update(dict(openstreetmap=baselayers.openstreetmap, google=baselayers.google, yahoo=baselayers.yahoo, bing=baselayers.bing, tms_layers=baselayers.tms, wms_layers=baselayers.wms, xyz_layers=baselayers.xyz))
+    output.update(dict(georss_layers=baselayers.georss, gpx_layers=baselayers.gpx, js_layers=baselayers.js, kml_layers=baselayers.kml))
+    # MGRS isn't a Layer, it's a Control, but added here anyway
+    output.update(dict(mgrs=baselayers.mgrs))
+
+    # Internal Features
+    features = Storage()
+    # Features are displayed in a layer per FeatureGroup
+    feature_groups = db(db.gis_feature_group.enabled == True).select()
+    for feature_group in feature_groups:
+        groups = db.gis_feature_group
+        locations = db.gis_location
+        classes = db.gis_feature_class
+        metadata = db.doc_metadata
+        # Which Features are added to the Group directly?
+        # ^^ No longer supported, for simplicity
+        #link = db.gis_location_to_feature_group
+        # JOINs are efficient for RDBMS but not compatible with GAE
+        #features1 = db(link.feature_group_id == feature_group.id).select(groups.ALL, locations.ALL, classes.ALL, left=[groups.on(groups.id == link.feature_group_id), locations.on(locations.id == link.location_id), classes.on(classes.id == locations.feature_class_id)])
+        # FIXME?: Extend JOIN for Metadata (sortby, want 1 only), Markers (complex logic), Resource_id (need to find from the results of prev query)
+        # Which Features are added to the Group via their FeatureClass?
+        link = db.gis_feature_class_to_feature_group
+        features2 = db(link.feature_group_id == feature_group.id).select(groups.ALL, locations.ALL, classes.ALL, left=[groups.on(groups.id == link.feature_group_id), classes.on(classes.id == link.feature_class_id), locations.on(locations.feature_class_id == link.feature_class_id)])
+        # FIXME?: Extend JOIN for Metadata (sortby, want 1 only), Markers (complex logic), Resource_id (need to find from the results of prev query)
+        #features[feature_group.id] = features1 | features2
+        features[feature_group.id] = features2
+        for feature in features[feature_group.id]:
+            try:
+                # Deprecated since we'll be using KML to populate Popups with Edit URLs, etc
+                feature.module = feature.gis_feature_class.module
+                feature.resource = feature.gis_feature_class.resource
+                if feature.module and feature.resource:
+                    try:
+                        _resource = db["%s_%s" % (feature.module, feature.resource)]
+                        feature.resource_id = db(_resource.location_id == feature.gis_location.id).select(_resource.id, limitby=(0, 1)).first().id
+                    except:
+                        feature.resource_id = None
+                else:
+                    feature.resource_id = None
+
+                # Look up the marker to display
+                feature.marker = gis.get_marker(feature.gis_location.id)
+
+                try:
+                    # Metadata is M->1 to Features
+                    # We use the most recent one
+                    query = (db.doc_metadata.location_id == feature.gis_location.id) & (db.doc_metadata.deleted == False)
+                    metadata = db(query).select(orderby=~db.doc_metadata.event_time).first()
+
+                    # Person .represent is too complex to put into JOIN
+                    contact = shn_pr_person_represent(metadata.person_id)
+
+                except:
+                    metadata = None
+                    contact = None
+                feature.metadata = metadata
+                feature.contact = contact
+
+                try:
+                    # Images are M->1 to Features
+                    # We use the most recently uploaded one
+                    query = (db.doc_image.location_id == feature.gis_location.id) & (db.doc_image.deleted == False)
+                    image = db(query).select(db.doc_image.image, orderby=~db.doc_image.created_on).first().image
+                except:
+                    image = None
+                feature.image = image
+            except:
+                pass
+
+    # Add the Features to the Return
+    #output.update(dict(features=features, features_classes=feature_classes, features_markers=feature_markers, features_metadata=feature_metadata))
+    output.update(dict(feature_groups=feature_groups, features=features))
+
+    return output
+

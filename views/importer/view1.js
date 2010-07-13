@@ -72,18 +72,20 @@ function view1(importsheet){
        edit[i]=new Ext.form.TextField();
    }
    //makes column model objects
-   for( i=1 ; i< importsheet.columns+1 ; i++)
+   for( i=1 ; i< importsheet.columns ; i++)
    {
        var obj={};
-       obj.header="Column "+i;
+       obj.header="Column "+(i-1);
        obj.sortable=true;
        obj.dataIndex=columnlist[i-1];
        obj.editor=edit[i];
        column_model[i]=obj;
    }
     var new_row_string="{";
+    //Add row numbers --> RowNumbers plugin in the beginning of col model
     var sm2 = new Ext.grid.CheckboxSelectionModel();
     column_model[0]=sm2;	//placing the checkboxes before the first column
+    //column_model[0]=new Ext.grid.RowNumberer();
     importsheet.column_model=column_model;
     var sm1 = new Ext.grid.CellSelectionModel();
     //column_model.push(sm1);
@@ -93,6 +95,10 @@ function view1(importsheet){
        title: '<div align="center"><u>Edit</u> \u2794 Select header row \u2794 Select table \u2794 Map columns to fields<p>Edit the spreadsheet, make sure a row with column titles exists</p></div>',
        renderTo: 'spreadsheet',
        loadMask: true,
+       viewConfig:
+       {	
+       		forceFit : true
+	},
        height: 300,
        store: importsheet.datastore,
        columnLines: true,
@@ -141,7 +147,7 @@ function view1(importsheet){
 							var k=-1;
 							for(var i=0;i<importsheet.columns;i++)
 							{
-								k=importsheet.datastore.find('column'+i,text);//,0,true,false);
+								k=importsheet.datastore.find('column'+i,text,0,true,false);
 								if(k!=-1)
 									break;
 							}
@@ -151,20 +157,18 @@ function view1(importsheet){
 							}
 							else
 							{
-								Ext.Msg.alert("Found","First matching record is at "+k);
+								Ext.Msg.alert("Found","First matching record is at "+(k+1));
 								sm2.selectRow(k);								
 							}
 						}
 					});
 				}
-			},
+			},'-',
 							
 			
             {
                  text: 'Add row',
-                 icon : '../../../img/silk/save.gif',
-		 cls : 'x-btn-text-icon',
-		 iconCls : 'extra-silk-add',
+		 iconCls : 'add',
 		 handler: function()
                  {
                          grid.getStore().insert(0,new row_model);
@@ -173,7 +177,7 @@ function view1(importsheet){
             },'-',
             {
                 text: 'Remove row',
-                
+                iconCls : 'remove', 
                 handler: function() {
                     try{
                                   var selmod = grid.getSelectionModel();

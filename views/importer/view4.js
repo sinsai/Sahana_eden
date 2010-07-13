@@ -26,7 +26,10 @@ function alertmessage4()
 
 function view4(importsheet)//header,table,numcol,grid_data)
 {
-    var loc="recvdata";
+    
+    //Use Ext.Ajax.request here to fetch data about tables and resources from the server here, use callback config to process it, must put a mask here
+    //This view must be refactored keeping in mind the import of multiple resources and multiple tables, it will have a multiselect of tables and a dropdown or resource
+    //Remove hardcoded table data
     var budget_kits=[
 	['code','Code'],
 	['description','Description'],
@@ -187,7 +190,7 @@ function view4(importsheet)//header,table,numcol,grid_data)
 			handler: function(){
 					importsheet.rows=importsheet.datastore.getCount();
 					importsheet.data=new Array();
-					//Function which converts the spreadsheet to a list of lists
+					//Function which converts the spreadsheet to a list of lists, make a separate function
 					importsheet.datastore.each(function()
 					{
 				
@@ -200,7 +203,6 @@ function view4(importsheet)//header,table,numcol,grid_data)
 						}
 						importsheet.data.push(temp);
 					});
-
  					//extract column headers from the header row object
 					var i=0;
 					map_from_ss_to_field=[];
@@ -281,6 +283,7 @@ function view4(importsheet)//header,table,numcol,grid_data)
 							rowobj+=",\"@modified_on\":\"";
 							rowobj+=modifydate;
 							rowobj+="\"}";
+							document.write(rowobj+'<br/>');
 							//rowobj=eval('('+rowobj+')');
 							rowobj=Ext.util.JSON.decode(rowobj);
 							jsonss.push(rowobj);

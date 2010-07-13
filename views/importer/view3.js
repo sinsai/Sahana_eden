@@ -11,6 +11,7 @@ function alertmessage3()
 function view3(importsheet)
 {
     alertmessage3();
+    //View must be replaced with single dropdown for resources and a multiselect for resource tables/components
     var msForm = new Ext.form.FormPanel({
         title: 'Edit \u2794 Select header row \u2794 <u>Select table</u> \u2794 Map columns to fields',
         width: 'auto',

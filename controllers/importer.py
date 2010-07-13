@@ -39,6 +39,15 @@ def spreadsheetview():
 
 def slist():
     return shn_rest_controller(module,'slist',listadd=False)
+'''
+def allfields(prefix,name):
+    table = prefix+'_'+name
+    fields = db.table.fields
+    #remove first seven field names
+    fields = fields[8:]
+'''
+
+    
 
 '''def recvdata():
     spreadsheet=request.body

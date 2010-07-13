@@ -75,7 +75,7 @@ function view1(importsheet){
    for( i=1 ; i< importsheet.columns ; i++)
    {
        var obj={};
-       obj.header="Column "+(i-1);
+       obj.header="Column "+(i);
        obj.sortable=true;
        obj.dataIndex=columnlist[i-1];
        obj.editor=edit[i];

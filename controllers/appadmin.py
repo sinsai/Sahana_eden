@@ -38,8 +38,7 @@ if not shn_has_role(1):
     redirect(URL(r=request, c="default", f="user", args="login"))
 
 module = "admin"
-# Current Module (for sidebar title)
-module_name = s3.modules[module]["name_nice"]
+
 # Options Menu (available in all Functions' Views)
 response.menu_options = admin_menu_options
 

@@ -250,6 +250,113 @@ def feature_class_to_feature_group():
     
     return output
 
+def feature_layer():
+    "RESTful CRUD controller"
+    resource = request.function
+    tablename = module + "_" + resource
+    table = db[tablename]
+
+    # Model options
+    table.name.comment = SPAN("*", _class="req")
+    table.query.comment = SPAN("*", _class="req")
+
+    # CRUD Strings
+    ADD_FEATURE_LAYER = T("Add Feature Layer")
+    LIST_FEATURE_LAYERS = T("List Feature Layers")
+    s3.crud_strings[tablename] = Storage(
+        title_create = ADD_FEATURE_LAYER,
+        title_display = T("Feature Layer Details"),
+        title_list = T("Feature Layers"),
+        title_update = T("Edit Feature Layer"),
+        title_search = T("Search Feature Layers"),
+        subtitle_create = T("Add New Feature Layer"),
+        subtitle_list = LIST_FEATURE_LAYERS,
+        label_list_button = LIST_FEATURE_LAYERS,
+        label_create_button = ADD_FEATURE_LAYER,
+        label_delete_button = T("Delete Feature Layer"),
+        msg_record_created = T("Feature Layer added"),
+        msg_record_modified = T("Feature Layer updated"),
+        msg_record_deleted = T("Feature Layer deleted"),
+        msg_list_empty = T("No Feature Layers currently defined"))
+
+    # Post-processor
+    def user_postp(jr, output):
+        shn_action_buttons(jr)
+        return output
+    response.s3.postp = user_postp
+
+    crud.settings.create_onvalidation = lambda form: feature_layer_query(form)
+    crud.settings.update_onvalidation = lambda form: feature_layer_query(form)
+    
+    output = shn_rest_controller(module, resource)
+    
+    return output
+
+def feature_layer_query(form):
+    "OnValidation callback to build the simple Query from helpers"
+    
+    if "advanced" in form.vars:
+        # We should use the query field as-is
+        pass
+    elif "resource" in form.vars:
+        # We build query from helpers
+        if "filter_field" in form.vars and "filter_value" in form.vars:
+            if "deleted" in db[resource]:
+                form.vars.query = "(db[%s].deleted == False) & (db[%s][%s] == '%s')" % (resource, resource, filter_field, filter_value)
+            else:
+                form.vars.query = "(db[%s][%s] == '%s')" % (resource, filter_field, filter_value)
+        else:
+            if "deleted" in db[resource]:
+                # All undeleted members of the resource
+                form.vars.query = "(db[%s].deleted == False)" % (resource)
+            else:
+                # All members of the resource
+                form.vars.query = "(db[%s].id > 0)" % (resource)
+    else:
+        # Resource is mandatory if not in advanced mode
+        session.error = T("Need to specify a Resource!")
+
+    return
+
+def landmark():
+    "RESTful CRUD controller"
+    resource = request.function
+    tablename = module + "_" + resource
+    table = db[tablename]
+
+    # Model options
+    table.name.comment = SPAN("*", _class="req")
+    table.category.comment = SPAN("*", _class="req")
+
+    # CRUD Strings
+    ADD_LANDMARK = T("Add Landmark")
+    LIST_LANDMARKS = T("List Landmarks")
+    s3.crud_strings[tablename] = Storage(
+        title_create = ADD_LANDMARK,
+        title_display = T("Landmark Details"),
+        title_list = T("Landmarks"),
+        title_update = T("Edit Landmark"),
+        title_search = T("Search Landmarks"),
+        subtitle_create = T("Add New Landmark"),
+        subtitle_list = LIST_LANDMARKS,
+        label_list_button = LIST_LANDMARKS,
+        label_create_button = ADD_LANDMARK,
+        label_delete_button = T("Delete Landmark"),
+        msg_record_created = T("Landmark added"),
+        msg_record_modified = T("Landmark updated"),
+        msg_record_deleted = T("Landmark deleted"),
+        msg_list_empty = T("No Landmarks currently defined"))
+
+    # Post-processor
+    def user_postp(jr, output):
+        shn_action_buttons(jr)
+        return output
+    response.s3.postp = user_postp
+
+    output = shn_rest_controller(module, resource)
+    
+    return output
+
 def location():
     "RESTful CRUD controller"
     resource = request.function

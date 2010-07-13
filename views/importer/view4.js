@@ -119,8 +119,8 @@ function view4(importsheet)//header,table,numcol,grid_data)
 	['area','Area']
 	];
     var store='';
-    if(importsheet.table=='or_organization')
-	    store=or_organization;
+    if(importsheet.table=='or_organisation')
+	    store=or_organisation;
     if(importsheet.table=='or_office')
 	    	store=or_office;
     if(importsheet.table=='pr_person')

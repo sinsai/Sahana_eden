@@ -34,6 +34,7 @@ def spreadsheetview():
     temp=importer.removerowcol(str)
     #appname=request.application
     v=importer.json(str,request.folder)
+    #fields=shn_get_writecolumns(
     return dict(ss=v)
 
 def slist():

@@ -74,37 +74,14 @@ function view1(importsheet){
    //makes column model objects
    for( i=1 ; i< importsheet.columns+1 ; i++)
    {
-       obj="{header:\"Column ";
-       obj+=(i);
-       obj+="\",";
-       obj+="sortable : true,";
-       obj+="dataIndex :";
-       obj+=("\""+columnlist[i-1]+"\"} ");
-       try{
-       	   col=Ext.util.JSON.decode(obj);
-           col.editor=edit[i];
-           column_model[i]=col;
-       }
-       catch(err){
-		Ext.Msg.alert("Error","Error decoding column model");   
-       }
-    
+       var obj={};
+       obj.header="Column "+i;
+       obj.sortable=true;
+       obj.dataIndex=columnlist[i-1];
+       obj.editor=edit[i];
+       column_model[i]=obj;
    }
     var new_row_string="{";
-    for(i=0; i < importsheet.columns; i++)
-    {
-        new_row_string+="column"+i+" : \"Edit this\"";
-        if(i!=importsheet.columns-1)
-            new_row_string+=",";
-    }
-    new_row_string+="}";
-    try
-    {
-        var new_row_object=eval("("+new_row_string+")");
-    }
-    catch(err)
-    {
-    }
     var sm2 = new Ext.grid.CheckboxSelectionModel();
     column_model[0]=sm2;	//placing the checkboxes before the first column
     importsheet.column_model=column_model;
@@ -113,7 +90,7 @@ function view1(importsheet){
     var row_model=Ext.data.Record.create(columnlist);
     //Configuring the grid
     var grid=new Ext.grid.EditorGridPanel({
-       title: '<div align="center"><u>Edit</u> \u2794 Select header row \u2794 Select table \u2794 Map columns to fields</div>',
+       title: '<div align="center"><u>Edit</u> \u2794 Select header row \u2794 Select table \u2794 Map columns to fields<p>Edit the spreadsheet, make sure a row with column titles exists</p></div>',
        renderTo: 'spreadsheet',
        loadMask: true,
        //height: 'auto',
@@ -125,7 +102,8 @@ function view1(importsheet){
        style : 'text-align:left;', 
        frame : true,
        columns: column_model,
-       buttons: [{text : 'Next',
+       buttons: [ 			
+       		  {text : 'Next',
        		  handler:
                             function()
                             {
@@ -155,10 +133,25 @@ function view1(importsheet){
         clicksToEdit: 2,
         stripeRows: true,
         tbar: [
+			{text: 'Search',
+       		   handler:
+		   	     function()
+				{
+					Ext.Msg.prompt("Search","Enter search text",function(btn,text){
+						if(btn=='ok')
+						{
+							Ext.Msg.alert("Search","Search term was "+text);
+						}
+					});
+				}
+			},
+							
+			
             {
                  text: 'Add row',
-                 icon : '/images/table_add.png',
+                 icon : '../../../img/silk/save.gif',
 		 cls : 'x-btn-text-icon',
+		 iconCls : 'extra-silk-add',
 		 handler: function()
                  {
                          grid.getStore().insert(0,new row_model);

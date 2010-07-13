@@ -66,7 +66,7 @@ function view3(importsheet)
                             table=table.substring(15);
                             importsheet.table=table;
 			    msForm.hide();
-                            view4(importsheet);//header,table,numcol,prevgrid);
+                            view4(importsheet);
                         }
                      
                         }

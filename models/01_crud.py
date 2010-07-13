@@ -870,7 +870,10 @@ def shn_custom_view(jr, default_name, format=None):
 # shn_convert_orderby ----------------------------------------------------------
 #
 def shn_get_columns(table):
-    return [f for f in table.fields if table[f].readable]
+     return [f for f in table.fields if table[f].readable]
+
+#def shn_get_writecolumns(table):
+#	return [f for f in table.fields if table[f].writeable]
 
 def shn_convert_orderby(table, request, fields=None):
     cols = fields or shn_get_columns(table)

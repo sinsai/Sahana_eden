@@ -1,12 +1,10 @@
-function import_spreadsheet(importsheet)//table,header_row,importsheet,map_from_ss_to_field)
+function import_spreadsheet(importsheet,lm)
 {
-	var map=map_from_ss_to_field;
 	var temp=importsheet.table.split("_");
 	var prefix=temp[0];
 	var name=temp[1];
 	var str="$_";
 	str+=prefix+"_"+name;
-	//document.write(str+"<br/>");
 	var jsonss=new Array(); //the array which will have json objects of each row
 	time=new Date();
 	var modifydate=''+(time.getUTCFullYear()+"-"+time.getUTCMonth()+"-"+time.getUTCDate()+" "+time.getUTCHours()+":"+time.getUTCMinutes()+":"+time.getUTCSeconds());
@@ -23,7 +21,6 @@ function import_spreadsheet(importsheet)//table,header_row,importsheet,map_from_
 			if(field!=''){
 				if(importsheet.map[j][2].substring(0,3)=="opt")
 				{
-					document.write(importsheet.map[j][2]+"<br/>");
 					rowobj+=field+":";
 					rowobj+="{\"@value\":\"1\"";
 					rowobj+=",\"$\":\""+importsheet.data[i][j]+"\"}";
@@ -38,37 +35,38 @@ function import_spreadsheet(importsheet)//table,header_row,importsheet,map_from_
 		rowobj+=",\"@modified_on\":\"";
 		rowobj+=modifydate;
 		rowobj+="\"}";
-		//document.write("The row object is "+rowobj+"<br/>");
 		try{
 			rowobj=eval('('+rowobj+')');
 		}
 		catch(err)
 		{
-			document.write(rowobj+"<br/>");
 		}
 		jsonss.push(rowobj);
 	}
 	var posturl="http://{{=request.env.http_host}}/{{=request.application}}/"+prefix+"/"+name+"/create.json?p_l="+jsonss.length;
-	document.write(rowobj);
 	var sendobj="{\""+str+"\":"+jsonss+"}";
-	document.write("<br/>The URL for post request->"+posturl+" and the sending status is ->");
 	var send="{\""+str+"\":\"\"}";
  	send=eval('('+send+')');
 	send[str]=jsonss;
 	//send[str]=new Array();
 	//send[str].push(rowobj);
-	document.write(send[str]);	
 	Ext.Ajax.request({
+		//scope: lm,
 		url : posturl,
 		jsonData: send,//send as body,
 		method : 'POST',
 		success : function(r,o)
 			{
-				document.write("Successfully sent "+r.status);
+				lm.hide();
+				Ext.Msg.alert("Success","Import successful!");
+				//document.write("Successfully sent "+r.status);
 			},
 		failure: function(r,o)
 			{
-				document.write("Sending failed<br/> "+r.status+'<br/>'+r.tree);
+				lm.hide();
+				Ext.Msg.alert("Failure","Import Failed");
+
+			//				document.write("Sending failed<br/> "+r.status+'<br/>'+r.tree);
 			}
 	});
 }

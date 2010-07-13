@@ -6,7 +6,10 @@ from gluon.validators import *
 from gluon.sqlhtml import *
 # request, response, session, cache, T, db(s) 
 # must be passed and cannot be imported!
-from xlrd import *
+try:
+	from xlrd import *
+except ImportError:
+	print >> sys.stderr, "WARNING: %s: XLRD not installed" % __name__
 
 def removerowcol(path_to_file):
     

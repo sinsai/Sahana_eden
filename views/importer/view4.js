@@ -164,6 +164,7 @@ function view4(importsheet)//header,table,numcol,grid_data)
 	    colobjs[i]=new Ext.form.ComboBox(colobjs[i]);
 	    i++;
     }
+    //document.write(importsheet.datastore.json);
     var columnmap=new Ext.form.FormPanel({
 	url: loc,
 	method: 'POST',
@@ -174,17 +175,19 @@ function view4(importsheet)//header,table,numcol,grid_data)
         height : 'auto',
         items: colobjs,
 	buttons:[
-		{	text: 'Next',
+		{
+			text: 'Back',
+			handler:
+				function(){
+						columnmap.hide();
+						view3(importsheet);
+					}
+		},
+		{	text: 'Import',
 			handler: function(){
-					//build the sheet to be imported as 2d array
-       				 /*	var row=0;
-					grid_data.each(function(){
-						row++;
-					});*/
-					//var importsheet={}
 					importsheet.rows=importsheet.datastore.getCount();
-					//importsheet.columns=numcol;
 					importsheet.data=new Array();
+					//Function which converts the spreadsheet to a list of lists
 					importsheet.datastore.each(function()
 					{
 				
@@ -197,6 +200,7 @@ function view4(importsheet)//header,table,numcol,grid_data)
 						}
 						importsheet.data.push(temp);
 					});
+
  					//extract column headers from the header row object
 					var i=0;
 					map_from_ss_to_field=[];
@@ -220,6 +224,10 @@ function view4(importsheet)//header,table,numcol,grid_data)
 					}
 					importsheet.header_row_labels=headrow;
 					i=0;
+					/*var jsonObj=[];
+					for (var i=0;i<store.getCount().i++) {
+						jsonObj.push(store.getAt(i).data);
+					}*/
 					var header_row=0;
 					//find location of header row
 					while(i<importsheet.rows){
@@ -231,21 +239,74 @@ function view4(importsheet)//header,table,numcol,grid_data)
 						}	
 						i++;	
 					}
-					try{
-						import_spreadsheet(importsheet);//table,header_row,importsheet,map_from_ss_to_field);
-					}
-					catch(err)
-					{
-					//	Ext.Msg.alert("","An error occured->"+err);
-						}
-				    /*	columnmap.getForm().submit({
-				    		success: function(form,action){
-				       			Ext.Msg.alert('Success', 'It worked');
-					 		 },
-				    		failure: function(form,action){
-				       			Ext.Msg.alert('Warning', action.result.msg);
+					     var lm = new Ext.LoadMask(Ext.getBody(),{msg : 'Importing...'});
+				     	 lm.enable();	     
+					 lm.show();
+					
+					//Import function
+					(function()
+					      {
+					      	var temp=importsheet.table.split("_");
+						var prefix=temp[0];
+						var name=temp[1];
+						var str="$_";
+						str+=prefix+"_"+name;
+						var jsonss=new Array(); //the array which will have json objects of each row
+						time=new Date();
+						var modifydate=''+(time.getUTCFullYear()+"-"+time.getUTCMonth()+"-"+time.getUTCDate()+" "+time.getUTCHours()+":"+time.getUTCMinutes()+":"+time.getUTCSeconds());
+	//making importable json object of the spreadsheet data
+						for(var i=0;i<importsheet.rows;i++)
+						{
+							if(i==importsheet.header_row_index)
+								continue;
+							var rowobj="{";
+							for(var j=0;j<importsheet.columns;j++)
+							{
+								var field="\""+importsheet.map[j][2]+"\"";
+								//Ext.Msg.alert("",field);
+								if(field!=''){
+								if(importsheet.map[j][2].substring(0,3)=="opt")
+								{
+									rowobj+=field+":";
+									rowobj+="{\"@value\":\"1\"";
+									rowobj+=",\"$\":\""+importsheet.data[i][j]+"\"}";
+								}
+								else
+									rowobj+=field+":\""+importsheet.data[i][j]+"\"";
+								if(j!=importsheet.columns-1) 
+									rowobj+=",";
+								}		
+			
 							}
-    					});*/
+							rowobj+=",\"@modified_on\":\"";
+							rowobj+=modifydate;
+							rowobj+="\"}";
+							//rowobj=eval('('+rowobj+')');
+							rowobj=Ext.util.JSON.decode(rowobj);
+							jsonss.push(rowobj);
+						}
+						var posturl="http://{{=request.env.http_host}}/{{=request.application}}/"+prefix+"/"+name+"/create.json?p_l="+jsonss.length;
+						var send="{\""+str+"\":\"\"}";
+					 	send=eval('('+send+')');
+						send[str]=jsonss;
+						Ext.Ajax.request({
+							scope: this,
+							url : posturl,
+							jsonData: send,//send as body,
+							method : 'POST',
+							success : function(r,o)
+							{
+								lm.hide();
+								Ext.Msg.alert("Success","Import successful!");
+							},
+							failure: function(r,o)
+							{
+								lm.hide();
+								Ext.Msg.alert("Failure","Import Failed");
+									document.write(r.responseText+"<br/>");
+							}
+							});}.defer(50,this));
+	
     			}
     		}],
        buttonAlign: 'center'

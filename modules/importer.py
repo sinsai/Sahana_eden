@@ -85,5 +85,5 @@ def json(path_to_file,appname):
     return json
 
 def pathfind(filename):
-    str = "uploads/" + filename
+    str = os.path.join("uploads",filename)
     return str

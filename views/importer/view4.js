@@ -51,7 +51,7 @@ function view4(importsheet)//header,table,numcol,grid_data)
     	['item_id','Item ID'],
     	['quantity','Quantity']
     	];
-    var or_office=[
+    var org_office=[
     	['name','Name'],
 	['organisation_id','ID'],
 	['type','Type'],
@@ -73,7 +73,7 @@ function view4(importsheet)//header,table,numcol,grid_data)
 	['comments','Comments']
 	];
 
-    var or_organisation=[
+    var org_organisation=[
     	['name','Name'],
 	['acronym','Acronym'],
 	['type','Type'],
@@ -119,10 +119,10 @@ function view4(importsheet)//header,table,numcol,grid_data)
 	['area','Area']
 	];
     var store='';
-    if(importsheet.table=='or_organisation')
-	    store=or_organisation;
-    if(importsheet.table=='or_office')
-	    	store=or_office;
+    if(importsheet.table=='org_organisation')
+	    store=org_organisation;
+    if(importsheet.table=='org_office')
+	    	store=org_office;
     if(importsheet.table=='pr_person')
 	    store=pr_person;
     if(importsheet.table=='cr_shelter')

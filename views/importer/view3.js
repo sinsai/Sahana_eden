@@ -27,8 +27,8 @@ function view3(importsheet)
             width: 500,
             height: 300,
             allowBlank:false,
-            store: [['or_organisation','Organization Registry'],	//Server call to find component tables here
-                    ['or_office', 'Organization Registry-Office'], 
+            store: [['org_organisation','Organization Registry'],	//Server call to find component tables here
+                    ['org_office', 'Organization Registry-Office'], 
                     ['pr_person', 'Person Registry'], 
                     ['cr_shelter', 'Shelter Registry'],  
                     ['budget_kits', 'Budgetting-Kits'],

@@ -93,9 +93,7 @@ function view1(importsheet){
        title: '<div align="center"><u>Edit</u> \u2794 Select header row \u2794 Select table \u2794 Map columns to fields<p>Edit the spreadsheet, make sure a row with column titles exists</p></div>',
        renderTo: 'spreadsheet',
        loadMask: true,
-       //height: 'auto',
-       autoHeight: true,
-     //  width: 'auto',
+       height: 300,
        store: importsheet.datastore,
        columnLines: true,
        sm: sm2,  
@@ -140,7 +138,22 @@ function view1(importsheet){
 					Ext.Msg.prompt("Search","Enter search text",function(btn,text){
 						if(btn=='ok')
 						{
-							Ext.Msg.alert("Search","Search term was "+text);
+							var k=-1;
+							for(var i=0;i<importsheet.columns;i++)
+							{
+								k=importsheet.datastore.find('column'+i,text);//,0,true,false);
+								if(k!=-1)
+									break;
+							}
+							if(k==(-1))
+							{
+								Ext.Msg.alert("Not found","Search string not in spreadsheet "+k);
+							}
+							else
+							{
+								Ext.Msg.alert("Found","First matching record is at "+k);
+								sm2.selectRow(k);								
+							}
 						}
 					});
 				}

@@ -136,7 +136,7 @@ def section():
     output = shn_rest_controller(module, resource,listadd=False)
     form = output.get("form",None)
     if form:
-        addButtons(form,cancel=True,save=True)
+        addButtons(form,cancel=True,save=True)            
     return output
 
 
@@ -234,8 +234,7 @@ def question_options():
         output.update(question_type=question_type)
     return output
 
-def layout():
-
+def layout():     
     """Deals with Rendering the survey editor"""    
     template_id = None
     if session.rcvars and "survey_template" in session.rcvars:
@@ -251,7 +250,12 @@ def layout():
     # build the UI
     ui = DIV(_class="sections")
     for section in sections:
-        ui.append(DIV(A(section.name,_href=URL(r=request, c="survey", f="section",args=[section.id, "update"])),_class="title"))
+        link = A(section.name,_class="colorbox",
+                                       _href=URL(r=request, c="survey", f="section", args=[section.id,"update"], vars=dict(format="popup")),
+                                       _target="top",
+                                       _title=T("Edit Section"))
+
+        ui.append(DIV(link,_class="title"))
         question_query = (db.survey_template_link_table.survey_section_id == section.id) & (db.survey_question.id == db.survey_template_link_table.survey_question_id)
         questions = db(question_query).select(db.survey_question.ALL)
         for question in questions:

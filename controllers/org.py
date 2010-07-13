@@ -57,9 +57,6 @@ def sector():
     tablename = "%s_%s" % (module, resource)
     table = db[tablename]
 
-    table.name.label = T("Name")
-    table.name.comment = SPAN("*", _class="req")
-
     # CRUD strings
     LIST_SECTORS = T("List Sectors")
     s3.crud_strings[tablename] = Storage(
@@ -117,40 +114,6 @@ def organisation():
 
     return output
 
-# Component Resources need these settings to be visible where they are linked from
-# - so we put them outside their controller function
-tablename = "%s_%s" % (module, "organisation")
-table = db[tablename]
-table.name.label = T("Name")
-table.name.comment = SPAN("*", _class="req")
-table.acronym.label = T("Acronym")
-table.type.label = T("Type")
-table.donation_phone.label = T("Donation Phone #")
-table.donation_phone.comment = A(SPAN("[Help]"), _class="tooltip", _title=T("Donation Phone #|Phone number to donate to this organization's relief efforts."))
-table.country.label = T("Home Country")
-table.website.label = T("Website")
-# Should be visible to the Dashboard
-table.website.represent = shn_url_represent
-table.twitter.label = T("Twitter")
-table.twitter.comment = A(SPAN("[Help]"), _class="tooltip", _title=T("Twitter|Twitter ID or #hashtag"))
-# CRUD strings
-LIST_ORGANIZATIONS = T("List Organizations")
-s3.crud_strings[tablename] = Storage(
-    title_create = ADD_ORGANIZATION,
-    title_display = T("Organization Details"),
-    title_list = LIST_ORGANIZATIONS,
-    title_update = T("Edit Organization"),
-    title_search = T("Search Organizations"),
-    subtitle_create = T("Add New Organization"),
-    subtitle_list = T("Organizations"),
-    label_list_button = LIST_ORGANIZATIONS,
-    label_create_button = ADD_ORGANIZATION,
-    label_delete_button = T("Delete Organization"),
-    msg_record_created = T("Organization added"),
-    msg_record_modified = T("Organization updated"),
-    msg_record_deleted = T("Organization deleted"),
-    msg_list_empty = T("No Organizations currently registered"))
-
 def office():
     "RESTful CRUD controller"
     resource = request.function
@@ -189,43 +152,7 @@ def office():
 
     return output
 
-# Component Resources need these settings to be visible where they are linked from
-# - so we put them outside their controller function
-tablename = "%s_%s" % (module, "office")
-table = db[tablename]
-table.name.label = T("Name")
-table.name.comment = SPAN("*", _class="req")
-table.parent.label = T("Parent")
-table.type.label = T("Type")
-table.address.label = T("Address")
-table.postcode.label = T("Postcode")
-table.phone1.label = T("Phone 1")
-table.phone2.label = T("Phone 2")
-table.email.label = T("Email")
-table.fax.label = T("FAX")
-table.national_staff.label = T("National Staff")
-table.international_staff.label = T("International Staff")
-table.number_of_vehicles.label = T("Number of Vehicles")
-table.vehicle_types.label = T("Vehicle Types")
-table.equipment.label = T("Equipment")
-# CRUD strings
-LIST_OFFICES = T("List Offices")
-s3.crud_strings[tablename] = Storage(
-    title_create = ADD_OFFICE,
-    title_display = T("Office Details"),
-    title_list = LIST_OFFICES,
-    title_update = T("Edit Office"),
-    title_search = T("Search Offices"),
-    subtitle_create = T("Add New Office"),
-    subtitle_list = T("Offices"),
-    label_list_button = LIST_OFFICES,
-    label_create_button = ADD_OFFICE,
-    label_delete_button = T("Delete Office"),
-    msg_record_created = T("Office added"),
-    msg_record_modified = T("Office updated"),
-    msg_record_deleted = T("Office deleted"),
-    msg_list_empty = T("No Offices currently registered"))
- 
+
 def staff():
     "RESTful CRUD controller"
     resource = request.function

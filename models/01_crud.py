@@ -992,7 +992,7 @@ def import_json(jr, **attr):
     else:
         # TODO: export the whole tree on error
         tree = s3xrc.xml.tree2json(tree)
-        item = s3xrc.xml.json_message(False, 400, s3xrc.xml.error, tree=tree)
+        item = s3xrc.xml.json_message(False, 400, s3xrc.error, tree=tree)
         raise HTTP(400, body=item)
 
     return dict(item=item)
@@ -1045,7 +1045,7 @@ def import_xml(jr, **attr):
     else:
         # TODO: export the whole tree on error
         tree = s3xrc.xml.tree2json(tree)
-        item = s3xrc.xml.json_message(False, 400, s3xrc.xml.error, tree=tree)
+        item = s3xrc.xml.json_message(False, 400, s3xrc.error, tree=tree)
         raise HTTP(400, body=item)
 
     return dict(item=item)

@@ -77,7 +77,7 @@ def person():
     """ RESTful CRUD controller """
 
     resource = request.function
-    
+
     def person_prep(jr):
         if jr.component_name == "config":
             _config = db.gis_config
@@ -135,7 +135,7 @@ def group():
     """ RESTful CRUD controller """
 
     resource = request.function
-    
+
     response.s3.filter = (db.pr_group.system == False) # do not show system groups
     response.s3.pagination = True
 

@@ -384,17 +384,17 @@ table.pr_pe_label.requires = IS_NULL_OR(IS_NOT_IN_DB(db, "pr_person.pr_pe_label"
 
 # Field representation
 table.pr_pe_label.comment = DIV(DIV(_class="tooltip",
-    _title=T("ID Label|Number or Label on the identification tag this person is wearing (if any).")))
+    _title=Tstr("ID Label") + "|" + Tstr("Number or Label on the identification tag this person is wearing (if any).")))
 table.first_name.comment =  DIV(SPAN("*", _class="req", _style="padding-right: 5px;"), DIV(_class="tooltip",
-    _title=T("First name|The first or only name of the person (mandatory).")))
+    _title=Tstr("First name") + "|" + Tstr("The first or only name of the person (mandatory).")))
 table.preferred_name.comment = DIV(DIV(_class="tooltip",
-    _title=T("Preferred Name|The name to be used when calling for or directly addressing the person (optional).")))
+    _title=Tstr("Preferred Name") + "|" + Tstr("The name to be used when calling for or directly addressing the person (optional).")))
 table.local_name.comment = DIV(DIV(_class="tooltip",
-    _title=T("Local Name|Name of the person in local language and script (optional).")))
+    _title=Tstr("Local Name") + "|" + Tstr("Name of the person in local language and script (optional).")))
 table.opt_pr_nationality.comment = DIV(DIV(_class="tooltip",
-    _title=T("Nationality|Nationality of the person.")))
+    _title=Tstr("Nationality") + "|" + Tstr("Nationality of the person.")))
 table.opt_pr_country.comment = DIV(DIV(_class="tooltip",
-    _title=T("Country of Residence|The country the person usually lives in.")))
+    _title=Tstr("Country of Residence") + "|" + Tstr("The country the person usually lives in.")))
 
 table.missing.represent = lambda missing: (missing and ["missing"] or [""])[0]
 
@@ -537,14 +537,14 @@ s3.crud_strings[tablename] = Storage(
 group_id = db.Table(None, "group_id",
                 FieldS3("group_id", db.pr_group, sortby="group_name",
                     requires = IS_NULL_OR(IS_ONE_OF(db, "pr_group.id", "%(id)s: %(group_name)s", filterby="system", filter_opts=(False,))),
-                    represent = lambda id: (id and [db(db.pr_group.id==id).select()[0].group_name] or ["None"])[0],
+                    represent = lambda id: (id and [db(db.pr_group.id == id).select(db.pr_group.group_name, limitby=(0, 1)).first().group_name] or ["None"])[0],
                     comment = DIV(A(s3.crud_strings.pr_group.label_create_button,
                                     _class="colorbox",
                                     _href=URL(r=request, c="pr", f="group", args="create", vars=dict(format="popup")),
                                     _target="top",
                                     _title=s3.crud_strings.pr_group.label_create_button),
                                   DIV(DIV(_class="tooltip",
-                                          _title=T("Create Group Entry|Create a group entry in the registry.")))),
+                                          _title=Tstr("Create Group Entry") + "|" + Tstr("Create a group entry in the registry.")))),
                     ondelete = "RESTRICT"))
 
 s3xrc.model.configure(table,

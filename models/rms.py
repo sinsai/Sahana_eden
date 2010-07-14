@@ -133,7 +133,7 @@ if deployment_settings.has_module(module):
                     requires = IS_NULL_OR(IS_ONE_OF(db, "rms_req.id", "%(message)s")),
                     represent = lambda id: (id and [db(db.rms_req.id == id).select(limitby=(0, 1)).first().updated] or ["None"])[0],
                     label = T("Aid Request"),
-                    comment = DIV(A(ADD_AID_REQUEST, _class="colorbox", _href=URL(r=request, c="rms", f="req", args="create", vars=dict(format="popup")), _target="top", _title=ADD_AID_REQUEST), A(SPAN("[Help]"), _class="tooltip", _title=T("Add Request|The Request this record is associated with."))),
+                    comment = DIV(A(ADD_AID_REQUEST, _class="colorbox", _href=URL(r=request, c="rms", f="req", args="create", vars=dict(format="popup")), _target="top", _title=ADD_AID_REQUEST), DIV( _class="tooltip", _title=Tstr("Add Request") + "|" + Tstr("The Request this record is associated with."))),
                     ondelete = "RESTRICT"
                     ))
 
@@ -226,7 +226,7 @@ if deployment_settings.has_module(module):
             form = FORM(TABLE(
                     TR(T("Text in Message: "),
                     INPUT(_type="text", _name="label", _size="40"),
-                    A(SPAN("[Help]"), _class="tooltip", _title=T("Text in Message|To search for a request, enter some of the text that you are looking for. You may use % as wildcard. Press 'Search' without input to list all requests."))),
+                    DIV( _class="tooltip", _title=Tstr("Text in Message") + "|" + Tstr("To search for a request, enter some of the text that you are looking for. You may use % as wildcard. Press 'Search' without input to list all requests."))),
                     TR("", INPUT(_type="submit", _value="Search"))
                     ))
 
@@ -428,6 +428,6 @@ if deployment_settings.has_module(module):
                     requires = IS_NULL_OR(IS_ONE_OF(db, "rms_req_detail.id", "%( request_key)s")),
                     represent = lambda id: (id and [db(db.rms_req_detail.id == id).select(limitby=(0, 1)).first().updated] or ["None"])[0],
                     label = T("Request Detail"),
-                    comment = DIV(A(ADD_REQUEST_DETAIL, _class="colorbox", _href=URL(r=request, c="rms", f="req_detail", args="create", vars=dict(format="popup")), _target="top", _title=ADD_REQUEST_DETAIL), A(SPAN("[Help]"), _class="tooltip", _title=T("Add Request|The Request this record is associated with."))),
+                    comment = DIV(A(ADD_REQUEST_DETAIL, _class="colorbox", _href=URL(r=request, c="rms", f="req_detail", args="create", vars=dict(format="popup")), _target="top", _title=ADD_REQUEST_DETAIL), DIV( _class="tooltip", _title=Tstr("Add Request") + "|" + Tstr("The Request this record is associated with."))),
                     ondelete = "RESTRICT"
                     ))

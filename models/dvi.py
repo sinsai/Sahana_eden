@@ -521,7 +521,7 @@ if deployment_settings.has_module(module):
             form = FORM(TABLE(
                     TR(T("ID Label: "),
                     INPUT(_type="text", _name="label", _size="40"),
-                    A(SPAN("[Help]"), _class="tooltip", _title=T("ID Label|To search for a body, enter the ID label of the body. You may use % as wildcard. Press 'Search' without input to list all bodies."))),
+                    DIV( _class="tooltip", _title=Tstr("ID Label") + "|" + Tstr("To search for a body, enter the ID label of the body. You may use % as wildcard. Press 'Search' without input to list all bodies."))),
                     TR("", INPUT(_type="submit", _value="Search"))
                     ))
 

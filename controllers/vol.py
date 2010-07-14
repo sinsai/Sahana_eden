@@ -216,7 +216,7 @@ def view_map():
 
     volunteer = {"feature_group" : "People"}
     html = gis.show_map(
-                feature_overlays = [volunteer],
+                feature_groups = [volunteer],
                 wms_browser = {"name" : "Risk Maps", "url" : "http://preview.grid.unep.ch:8080/geoserver/ows?service=WMS&request=GetCapabilities"},
                 catalogue_overlays = True,
                 catalogue_toolbar = True,

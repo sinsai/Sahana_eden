@@ -15,8 +15,7 @@ response.menu_options = None
 
 def index():
     "Module's Home Page"
-    module_name = deployment_settings.modules[module].name_nice
-
+    module_name = deployment_settings.modules[module].name_nice    
     return dict(module_name=module_name)
 def template():
     """ RESTlike CRUD controller """
@@ -52,14 +51,7 @@ def template():
 
     output = shn_rest_controller(module,resource,listadd=False)
 
-    if output:
-        form = output.get("form", None)
-        if form:
-            addButtons(form,next=True)
-    print crud.settings.create_next
-    print crud.settings.update_next
-
-    return output
+    return transform_buttons(output,next=True,cancel=True)
 
 def series():
     """ RESTlike CRUD controller """
@@ -98,15 +90,9 @@ def series():
         msg_record_modified = T("Survey Series updated"),
         msg_record_deleted = T("Survey Series deleted"),
         msg_list_empty = T("No Survey Series currently registered"))
+    output = shn_rest_controller(module, resource,listadd=False)
 
-
-    output = shn_rest_controller(module, resource,listadd=False)    
-    if output:
-        form = output.get("form", None)
-        if form:
-            addButtons(form,next=True,prev=True)
-    return output
-
+    return transform_buttons(output)
 def section():
     """ RESTlike CRUD controller """
     resource = "section"
@@ -134,18 +120,23 @@ def section():
         msg_record_deleted = T("Survey Section deleted"),
         msg_list_empty = T("No Survey Sections currently registered"))     
     output = shn_rest_controller(module, resource,listadd=False)
-    form = output.get("form",None)
-    if form:
-        addButtons(form,cancel=True,save=True)            
-    return output
+
+
+    output = shn_rest_controller(module, resource,listadd=False)
+
+    return transform_buttons(output,save=True,cancel=True)
 
 
 def question():
     # Question data, e.g., name,description, etc.
     resource = "question"
     def _prep(jr):
-        crud.settings.create_next = URL(r = request, c="survey", f="question_options",args=["create"])
-        crud.settings.update_next = URL(r = request, c="survey", f="question_options", args=["update"])
+        if jr.method == "create":
+            request.vars._next =  URL(r = request, f="question_options",args=["create"])
+        elif jr.method == "update":
+            request.vars._next =  URL(r = request, f="question_options",args=["update"])
+        crud.settings.create_next = URL(r = request, f="question_options",args=["create"])
+        crud.settings.update_next = URL(r = request, f="question_options", args=["update"])
         return True
     response.s3.prep = _prep
     tablename = "%s_%s" % (module, resource)
@@ -165,14 +156,15 @@ def question():
         5:T("Rating Scale"),
         6:T("Single Text Field"),
         7:T("Multiple Text Fields"),
-        8:T("Comment/Essay Box"),
-        9:T("Numerical Text Field"),
-        10:T("Date and/or Time"),
-        11:T("Image"),
-        12:T("Descriptive Text (e.g., Prose, etc)"),
-        13:T("Location"),
-        14:T("Organisation"),
-        15:T("Person"),
+        8:T("Matrix of Text Fields"),
+        9:T("Comment/Essay Box"),
+        10:T("Numerical Text Field"),
+        11:T("Date and/or Time"),
+        12:T("Image"),
+        13:T("Descriptive Text (e.g., Prose, etc)"),
+        14:T("Location"),
+        15:T("Organisation"),
+        16:T("Person"),
 #        16:T("Custom Database Resource (e.g., anything defined as a resource in Sahana)")
     }
 
@@ -194,16 +186,12 @@ def question():
         msg_list_empty = T("No Survey Questions currently registered"))
 
     output = shn_rest_controller(module, resource,listadd=False)
-    if output:
-        form = output.get("form", None)
-        if form:
-            addButtons(form,next=True,prev=True)
-        
-    return output
+    return transform_buttons(output,next=True,cancel=True)
 
 def question_options():
     resource = "question_options"
     question_type = None
+    question_id = session.rcvars.question_id
     if session.rcvars and "survey_question" in session.rcvars:
         question = db(db.survey_question.id == session.rcvars.survey_question).select().first()
         question_type = question.question_type
@@ -218,24 +206,18 @@ def question_options():
     table.aggregation_type.writable = False
     table.aggregation_type.readable = False
     table.row_choices.label = T("Row Choices (One Per Line)")
-    table.column_choices.label = T("Column Choices (One Per Line)")
-#    question_display_options = {
-#        "1":T("One Column"),
-#        "2":T("Two Columns"),
-#        "3":T("Three Columns")
-#    }
-#    table.display_option.requires = IS_NULL_OR(IS_IN_SET(question_display_options))
-
+    table.column_choices.label = T("Column Choices (One Per Line")
+    table.tf_choices.label = T("Text before each Text Field (One per line)")
+    id = db(table.id == question_id).select().first()
+    if id:
+        redirect(URL(r=request,f="question_options",args=[id,"update"]))
+        return
     output = shn_rest_controller(module, resource,listadd=False)
-    if output:
-        form = output.get("form", None)
-        if form:
-            addButtons(form,finish=True,prev=True)
-        output.update(question_type=question_type)
-    return output
+    output.update(question_type=question_type)
+    return transform_buttons(output,prev=True,finish=True,cancel=True)
 
-def layout():     
-    """Deals with Rendering the survey editor"""    
+def layout():
+    """Deals with Rendering the survey editor"""
     template_id = None
     if session.rcvars and "survey_template" in session.rcvars:
         template_id = session.rcvars["survey_template"]
@@ -245,7 +227,6 @@ def layout():
     # Get sections for this template.
     section_query = (db.survey_template_link_table.survey_template_id == template_id) & (db.survey_section.id == db.survey_template_link_table.survey_section_id)
     sections = db(section_query).select(db.survey_section.ALL)    
-
 
     # build the UI
     ui = DIV(_class="sections")
@@ -259,16 +240,64 @@ def layout():
         question_query = (db.survey_template_link_table.survey_section_id == section.id) & (db.survey_question.id == db.survey_template_link_table.survey_question_id)
         questions = db(question_query).select(db.survey_question.ALL)
         for question in questions:
+            question_type = session.rcvars.survey_question_type
+            #TODO: take order into account.
             # MC (Only One Answer allowed)
-#            options = db(db.survey_question_options.survey_question_id == quesion.id).select()
+            options = db(db.survey_question_options.question_id == question.id).select().first()
             ui.append(DIV(question.name,_class="question"))
             if question.question_type is 1:
+                choices = options.answer_choices.split("\r\n")
+                for choice in choices:
+#                    c = DIV(choice.name,INPUT(_type="radio")
+                    ui.append(c)
+                if options.allow_comments:
+                    comment = INPUT(_type="text")
+                    ui.append(comment)
+            elif question.question_type is 2:
+                choices = option.answer_choices.split("\r\n")
+                for choice in choices:
+                    c = INPUT(_type="checkbox")
+                    ui.append(c)
+
+                if options.allow_comments:
+                    comment = INPUT()
+                    ui.append(comment)
+            elif question_type is 3:
                 pass
-        pass
+
+            elif question.question_type == 4:
+                pass
+            elif question.question_type == 5:
+                pass
+            elif question.question_type == 6:
+                pass
+            elif question.question_type == 7:
+                pass
+            elif question.question_type == 8:
+                pass
+            elif question.question_type == 9:
+                pass
+            elif question.question_type == 10:
+                pass
+            elif question.question_type == 11:
+                pass
+            elif question.question_type == 12:
+                pass
+            elif question.question_type == 13:
+                pass
+            elif question.question_type == 14:
+                pass
+            elif question.question_type == 15:
+                pass
+            elif question.question_type == 16:
+                pass
+            else:
+                pass
     output.update(ui=ui)
+
     return output
     
-def addButtons(form, save = None, prev = None, next = None, finish = None,cancel=None):
+def add_buttons(form, save = None, prev = None, next = None, finish = None,cancel=None):
     """
         Utility Function to reduce code duplication as this deals with:
 
@@ -291,3 +320,11 @@ def addButtons(form, save = None, prev = None, next = None, finish = None,cancel
     if finish:
         form[-1][-1][1].append(INPUT(_type="submit", _value=T("Finish"),_name="finish",_id="finish"))
     return form
+
+def transform_buttons(output,save = None, prev = None, next = None, finish = None,cancel=None,extra=None):
+    # fails when output is not HTML (e.g., JSON)
+    if isinstance(output, dict):
+        form = output.get("form",None)
+        if form:
+            add_buttons(form,save,prev,next,finish,cancel)
+    return output

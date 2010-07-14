@@ -31,7 +31,7 @@
         $("#survey_question_options_ta_rows__row").hide();
         $("#survey_question_options_tf_ta_columns__row").hide();
         $("#survey_question_options_validation_options__row").hide();
-        $("#survey_question_options_number_of_text_fields__row").hide();
+       $("#survey_question_options_tf_choices__row").hide();
 
         // only show the comment display label tf if it's enabled!
         $("#survey_question_options_comment_display_label__row").hide();
@@ -82,10 +82,8 @@
 
             // Multiple Text Fields
             case 7: {
-                $("#survey_question_options_tf_ta_columns__row").show();
-                $("#survey_question_options_row_choices__row").show();
-                $("#survey_question_options_column_choices__row").show();
-                $("#survey_question_options_number_of_text_fields__row").show();
+                $("#survey_question_options_tf_ta_columns__row").show()
+                $("#survey_question_options_tf_choices__row").show();
                 break;
             }
             // Comment/Essay Box

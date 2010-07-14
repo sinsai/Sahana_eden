@@ -633,13 +633,13 @@ class S3RESTRequest(object):
                 self.args.append(str.lower(arg))
             if self.args[0].isdigit():
                 self.id = self.args[0]
-                if len(self.args) > 1:
+                if len(self.args) > 1 and self.args[1] != "":
                     if self.args[1] in components:
                         self.component_name = self.args[1]
-                        if len(self.args) > 2:
+                        if len(self.args) > 2 and self.args[2] != "":
                             if self.args[2].isdigit():
                                 self.component_id = self.args[2]
-                                if len(self.args) > 3:
+                                if len(self.args) > 3 and self.args[3] != "":
                                     self.method = self.args[3]
                             else:
                                 self.method = self.args[2]
@@ -651,10 +651,10 @@ class S3RESTRequest(object):
             else:
                 if self.args[0] in components:
                     self.component_name = self.args[0]
-                    if len(self.args) > 1:
+                    if len(self.args) > 1 and self.args[1] != "":
                         if self.args[1].isdigit():
                             self.component_id = self.args[1]
-                            if len(self.args) > 2:
+                            if len(self.args) > 2 and self.args[2] != "":
                                 self.method = self.args[2]
                         else:
                             self.method = self.args[1]

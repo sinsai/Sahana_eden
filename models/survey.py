@@ -31,6 +31,7 @@ s3xrc.model.configure(db.gis_location,
                       onvalidation=lambda form: gis.wkt_centroid(form),
                       onaccept=gis.update_location_tree())
 
+
 if deployment_settings.has_module(module):
 
     #Reusable table
@@ -115,8 +116,8 @@ if deployment_settings.has_module(module):
                                         Field("answer_choices","text",length=700),
                                         Field("row_choices","text"), # row choices
                                         Field("column_choices","text"), # column choices
+                                        Field("tf_choices","text"), # text before the text fields.
                                         Field("number_of_options","integer"),
-                                        Field("number_of_text_fields","integer",length=4),
                                         Field("ta_rows","integer"), # how many rows the Text Area has
                                         Field("tf_ta_columns","integer"), # number of columns for text-fields and columns alike                                        
                                         Field("allow_comments","boolean"), # whether or not to allow comments
@@ -126,9 +127,18 @@ if deployment_settings.has_module(module):
                                         Field("validation_options","integer"), # pre-set validation regexps and such.
                                         Field("aggregation_type","string"))
 
-resource = "answer_options"
-tablename = module +"_" + resource
-answer_options = db.define_table(tablename,uuidstamp,deletion_status,authorstamp,
+
+    resource = "answer_options"
+    tablename = module +"_" + resource
+    answer_options = db.define_table(tablename,uuidstamp,deletion_status,authorstamp,
                                  Field("question_id",db.survey_question,readable=False,writable=False),
                                  Field("answer_row_value","text",readable=False,writable=False),
                                  Field("answer_column_choice","text",readable=False,writable=False))
+
+    def question_options_onaccept(form):
+        if form.vars.id and session.rcvars.survey_question:
+            table = db.survey_question_options
+            db(table.id == form.vars.id).update(question_id=session.rcvars.survey_question)
+            db.commit()
+    s3xrc.model.configure(db.survey_question_options,
+                      onaccept=lambda form: question_options_onaccept(form))

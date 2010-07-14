@@ -271,7 +271,7 @@ pr_presence_condition_opts = vita.presence_conditions
 orig_id = db.Table(None, "orig_id",
                    Field("orig_id", db.gis_location,
                          requires = IS_NULL_OR(IS_ONE_OF(db, "gis_location.id", "%(name)s")),
-                         represent = lambda id: (id and [A(db(db.gis_location.id==id).select()[0].name, _href="#", _onclick="viewMap(" + str(id) +");return false")] or [""])[0],
+                         represent = lambda id: (id and [A(db(db.gis_location.id==id).select(db.gis_location.name, limitby=(0, 1)).first().name, _href="#", _onclick="viewMap(" + str(id) +");return false")] or [""])[0],
                          label = T("Origin"),
                          comment = DIV(A(ADD_LOCATION,
                                          _class="colorbox",
@@ -279,7 +279,7 @@ orig_id = db.Table(None, "orig_id",
                                          _target="top",
                                          _title=ADD_LOCATION),
                                        DIV(DIV(_class="tooltip",
-                                               _title=T("Location|The Location of this Site, which can be general (for Reporting) or precise (for displaying on a Map).")))),
+                                               _title=Tstr("Location") + "|" + Tstr("The Location of this Site, which can be general (for Reporting) or precise (for displaying on a Map).")))),
                          ondelete = "RESTRICT"
                         )
                   )
@@ -287,7 +287,7 @@ orig_id = db.Table(None, "orig_id",
 dest_id = db.Table(None, "dest_id",
                    Field("dest_id", db.gis_location,
                          requires = IS_NULL_OR(IS_ONE_OF(db, "gis_location.id", "%(name)s")),
-                         represent = lambda id: (id and [A(db(db.gis_location.id==id).select()[0].name, _href="#", _onclick="viewMap(" + str(id) +");return false")] or [""])[0],
+                         represent = lambda id: (id and [A(db(db.gis_location.id == id).select(db.gis_location.name, limitby=(0, 1)).first().name, _href="#", _onclick="viewMap(" + str(id) +");return false")] or [""])[0],
                          label = T("Destination"),
                          comment = DIV(A(ADD_LOCATION,
                                          _class="colorbox",
@@ -295,7 +295,7 @@ dest_id = db.Table(None, "dest_id",
                                          _target="top",
                                          _title=ADD_LOCATION),
                                        DIV(DIV(_class="tooltip",
-                                               _title=T("Location|The Location of this Site, which can be general (for Reporting) or precise (for displaying on a Map).")))),
+                                               _title=Tstr("Location") + "|" + Tstr("The Location of this Site, which can be general (for Reporting) or precise (for displaying on a Map).")))),
                          ondelete = "RESTRICT"
                         )
                   )

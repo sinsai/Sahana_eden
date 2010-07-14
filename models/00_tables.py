@@ -46,7 +46,7 @@ authorstamp = db.Table(None, "authorstamp",
                           ondelete="RESTRICT")
             )
 
-shn_comments_field = db.Table(None, "comments", Field("comments", "text", comment = A(SPAN("[Help]"), _class="tooltip", _title=T("Comments|Please use this field to show a history of the record."))))
+shn_comments_field = db.Table(None, "comments", Field("comments", "text", comment = DIV( _class="tooltip", _title=str(T("Comments")) + "|" + str(T("Please use this field to show a history of the record.")))))
 
 # Reusable UUID field to include in other table definitions
 s3uuid = SQLCustomType(
@@ -82,7 +82,7 @@ deletion_status = db.Table(None, "deletion_status",
 #            FieldS3("admin", db.auth_group, sortby="role",
 #                requires = IS_NULL_OR(IS_ONE_OF(db, "auth_group.id", "%(role)s")),
 #                represent = lambda id: (id and [db(db.auth_group.id == id).select(db.auth_group.role, limitby=(0, 1)).first().role] or ["None"])[0],
-#                comment = DIV(A(T("Add Role"), _class="colorbox", _href=URL(r=request, c="admin", f="group", args="create", vars=dict(format="popup")), _target="top", _title=T("Add Role")), A(SPAN("[Help]"), _class="tooltip", _title=T("Admin|The Group whose members can edit data in this record."))),
+#                comment = DIV(A(T("Add Role"), _class="colorbox", _href=URL(r=request, c="admin", f="group", args="create", vars=dict(format="popup")), _target="top", _title=T("Add Role")), DIV( _class="tooltip", _title=str(T("Admin")) + "|" + str(T("The Group whose members can edit data in this record.")))),
 #                ondelete="RESTRICT"
 #                ))
 
@@ -90,7 +90,7 @@ deletion_status = db.Table(None, "deletion_status",
 document = db.Table(None, "document",
             Field("document", "upload", autodelete = True,
                 label=T("Scanned File"),
-                #comment = A(SPAN("[Help]"), _class="tooltip", _title=T("Scanned File|The scanned copy of this document.")),
+                #comment = DIV( _class="tooltip", _title=str(T("Scanned File")) + "|" + str(T("The scanned copy of this document."))),
                 ))
 
 # Reusable Currency field to include in other table definitions
@@ -254,7 +254,7 @@ source_id = db.Table(None, "source_id",
                 requires = IS_NULL_OR(IS_ONE_OF(db, "s3_source.id", "%(name)s")),
                 represent = lambda id: (id and [db(db.s3_source.id == id).select(db.s3_source.name, limitby=(0, 1)).first().name] or ["None"])[0],
                 label = T("Source of Information"),
-                comment = DIV(A(ADD_SOURCE, _class="colorbox", _href=URL(r=request, c="default", f="source", args="create", vars=dict(format="popup")), _target="top", _title=ADD_SOURCE), A(SPAN("[Help]"), _class="tooltip", _title=T("Add Source|The Source this information came from."))),
+                comment = DIV(A(ADD_SOURCE, _class="colorbox", _href=URL(r=request, c="default", f="source", args="create", vars=dict(format="popup")), _target="top", _title=ADD_SOURCE), DIV( _class="tooltip", _title=str(T("Add Source")) + "|" + str(T("The Source this information came from.")))),
                 ondelete = "RESTRICT"
                 ))
 

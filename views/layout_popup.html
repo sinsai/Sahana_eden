@@ -9,6 +9,17 @@
   {{include "sahana_scripts_min.html"}}
 {{pass}}
 {{include "colorbox.html"}}
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+{{if session.s3.debug:}}
+  {{include "sahana_styles_debug.html"}}
+  {{include "sahana_scripts_debug.html"}}
+{{else:}}
+  <link href="/{{=request.application}}/static/styles/S3/sahana.min.css" rel="stylesheet" type="text/css" media="screen" charset="utf-8" />
+  {{include "sahana_scripts_min.html"}}
+{{pass}}
+{{include "colorbox.html"}}
 
 <script type="text/javascript">//<![CDATA[
 

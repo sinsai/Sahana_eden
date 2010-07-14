@@ -121,9 +121,6 @@ def section():
         msg_list_empty = T("No Survey Sections currently registered"))     
     output = shn_rest_controller(module, resource,listadd=False)
 
-
-    output = shn_rest_controller(module, resource,listadd=False)
-
     return transform_buttons(output,save=True,cancel=True)
 
 
@@ -216,8 +213,9 @@ def question_options():
     output.update(question_type=question_type)
     return transform_buttons(output,prev=True,finish=True,cancel=True)
 
-def layout():
-    """Deals with Rendering the survey editor"""
+def layout():     
+    """Deals with Rendering the survey editor"""    
+
     template_id = None
     if session.rcvars and "survey_template" in session.rcvars:
         template_id = session.rcvars["survey_template"]

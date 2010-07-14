@@ -704,6 +704,7 @@ def shn_project_search_location(xrequest, **attr):
                     TH("Organization"),
                     TH("Location"),
                     TH("Sector(s)"),
+                    TH("Code"),
                     TH("Name"),
                     TH("Status"),
                     TH("Start date"),

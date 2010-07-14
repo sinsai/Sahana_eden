@@ -3,7 +3,7 @@
 """
     S3XRC Resource Framework
 
-    @version: 1.9
+    @version: 2.0
     @requires: U{B{I{lxml}} <http://codespeak.net/lxml>}
 
     @author: nursix
@@ -34,7 +34,7 @@
 """
 
 __name__ = "S3XRC"
-__all__ = ["S3Resource", "S3RESTController", "S3ResourceController"]
+__all__ = ["S3Resource", "S3Request", "S3ResourceController"]
 
 import sys, uuid, datetime, time, urllib
 import gluon.contrib.simplejson as json
@@ -64,33 +64,33 @@ class S3Resource(object):
 
     """ API for S3Resources """
 
-    UID = "uuid"
-    DELETED = "deleted"
+    __UID = "uuid"
+    __DELETED = "deleted"
 
-    HOOKS = "s3"
+    __HOOKS = "s3"
 
     def __init__(self, manager, prefix, name, id=None, uid=None, query=None, **attr):
 
         """ Constructor """
 
         assert manager is not None, "Undefined Resource Manager"
-        self.manager = manager
+        self.__manager = manager
 
-        self.permit = self.manager.auth.shn_has_permission
+        self.__permit = self.__manager.auth.shn_has_permission
 
-        self.attr = Storage(attr)
+        self.__attr = Storage(attr)
 
-        self.debug = self.attr.debug
-        if self.debug is None:
-            self.debug = self.manager.debug
+        self.__debug = self.__attr.debug
+        if self.__debug is None:
+            self.__debug = self.__manager.debug
 
-        self.prefix = prefix
-        self.name = name
+        self._prefix = prefix
+        self._name = name
 
-        self.storage = self.attr.storage
+        self.__storage = self.__attr.storage
         self.__bind()
 
-        self.parent = self.attr.parent
+        self.__parent = self.__attr.parent
 
         self.__ids = []
         self.__uids = []
@@ -101,6 +101,16 @@ class S3Resource(object):
         self.__query = Storage()
         self._filter(id=id, uid=uid, query=query)
 
+        self.__components = None
+
+
+    # Helper functions --------------------------------------------------------
+
+    def __dbg(self, msg):
+
+        if self.__debug:
+            print >> sys.stderr, "S3Resource: %s" % msg
+
 
     # Data binding ------------------------------------------------------------
 
@@ -108,14 +118,14 @@ class S3Resource(object):
 
         """ Bind this resource to model and data store """
 
-        self.db = self.manager.db
-        self.tablename = "%s_%s" % (self.prefix, self.name)
+        self.__db = self.__manager.db
+        self._tablename = "%s_%s" % (self._prefix, self._name)
 
-        self.table = self.db.get(self.tablename, None)
-        if not self.table:
-            raise KeyError("Undefined table: %s" % self.tablename)
+        self._table = self.__db.get(self._tablename, None)
+        if not self._table:
+            raise KeyError("Undefined table: %s" % self._tablename)
 
-        if self.storage is not None:
+        if self.__storage is not None:
             raise NotImplementedError
 
 
@@ -132,20 +142,20 @@ class S3Resource(object):
                 id = [id]
             self.__ids = list(id)
             if len(self.__ids) == 1:
-                q = (self.table.id == self.__ids[0])
+                q = (self._table.id == self.__ids[0])
             else:
-                q = (self.table.id.belongs(self.__ids))
+                q = (self._table.id.belongs(self.__ids))
             self.__query.id = q
 
         # UID filter
-        if uid and self.UID in self.table.fields:
+        if uid and self.__UID in self._table.fields:
             if not isinstance(uid, (list, tuple)):
                 uid = [uid]
             self.__uids = list(uid)
             if len(self.__uids) == 1:
-                q = (self.table[self.UID] == self.__uids[0])
+                q = (self._table[self.__UID] == self.__uids[0])
             else:
-                q = (self.table[self.UID].belongs(self.__uids))
+                q = (self._table[self.__UID].belongs(self.__uids))
             self.__query.uid = self.__query.uid & q
 
         # Custom filter
@@ -153,8 +163,8 @@ class S3Resource(object):
             self.__query.query = query
 
         # Deletion status filter
-        if self.DELETED in self.table.fields:
-            self.__query.deleted = (self.table[self.DELETED] == False)
+        if self.__DELETED in self._table.fields:
+            self.__query.deleted = (self._table[self.__DELETED] == False)
 
         mq = None
         for k in self.__query.keys():
@@ -165,30 +175,108 @@ class S3Resource(object):
                 mq = q
 
         if not mq:
-            mq = (self.table.id > 0)
+            mq = (self._table.id > 0)
         self.__query.master = mq
+
+
+    def _count():
+        raise NotImplementedError
+
+
+    def _load():
+        raise NotImplementedError
+
+
+    def _save():
+        raise NotImplementedError
+
+
+    # Data access -------------------------------------------------------------
+
+    #def __getitem__(self, key):
+        #return self.get(key)
+
+
+    #def __setitem__(self, key, value):
+        #return self.set(key, value)
+
+
+    #def __len__(self):
+        #raise NotImplementedError
+
+
+    def _get(self, key, *default):
+
+        keys = key.split(".")
+        if len(keys) > 1:
+            c, f = keys[:2]
+            component = self._get_component(c)
+            if component:
+                return component.get(f, *default)
+            elif len(default):
+                return default[0]
+            else:
+                raise KeyError("%s" % c)
+        else:
+            f = components[0]
+            if f in self._table.fields:
+                records = self._records()
+                values = [r.get(f, None) for r in records]
+                return values
+            elif len(default):
+                return default[0]
+            else:
+                raise KeyError("%s" % f)
+
+
+    def _set(self, key, value):
+
+        raise NotImplementedError
+
+
+    def _get_component(self, name):
+
+        if self.__components:
+            component = self.__components.get(name, None)
+        else:
+            return None
+
+        if component and "resource" in component:
+            return component.resource
+        else:
+            return None
+
+
+    def _records(self):
+
+        # TODO: pagination (slicing)
+
+        if self.__set is None:
+            query = self.__query.master
+            self.__set = self.__db(query).select(self._table.ALL)
+
+        return self.__set
 
 
     # Representation ----------------------------------------------------------
 
     def __repr__(self):
 
-        return "<S3Resource %s>" % self.tablename
+        return "<S3Resource %s>" % self._tablename
 
 
-    def __dbg(self, msg):
+    def _url(self, request=None):
 
-        if self.debug:
-            print >> sys.stderr, "S3Resource: %s" % msg
+        raise NotImplementedError
 
 
     # REST Interface ----------------------------------------------------------
 
     def execute_request(self, r, **attr):
 
-        """ Execute a S3RESTRequest on this resource
+        """ Execute a S3Request on this resource
 
-            @param r: the S3RESTRequest to execute
+            @param r: the S3Request to execute
             @param attr: attributes to pass to method handlers
 
         """
@@ -201,7 +289,7 @@ class S3Resource(object):
         bypass = False
         output = None
 
-        hooks = r.response.get(self.HOOKS, None)
+        hooks = r.response.get(self.__HOOKS, None)
         preprocess = None
         postprocess = None
 
@@ -209,16 +297,16 @@ class S3Resource(object):
         if not r.id and (r.component or r.method == "read") and \
            not r.method == "options" and not "select" in r.request.vars:
             if r.representation == "html":
-                model = self.manager.model
-                search_simple = model.get_method(self.prefix, self.name,
+                model = self.__manager.model
+                search_simple = model.get_method(self._prefix, self._name,
                                                  method="search_simple")
                 if search_simple:
                     self.__dbg("no record ID - redirecting to search_simple")
-                    redirect(URL(r=r.request, f=self.name, args="search_simple",
+                    redirect(URL(r=r.request, f=self._name, args="search_simple",
                                  vars={"_next": r.same()}))
                 else:
                     r.session.error = r.BADRECORD
-                    redirect(URL(r=r.request, c=self.prefix, f=self.name))
+                    redirect(URL(r=r.request, c=self._prefix, f=self._name))
             else:
                 raise HTTP(404, body=r.BADRECORD)
 
@@ -297,16 +385,16 @@ class S3Resource(object):
 
         """ Get GET method handler
 
-            @param r: the S3RESTRequest
+            @param r: the S3Request
 
         """
 
         self.__dbg("GET method")
 
         method = r.method
-        permit = self.permit
+        permit = self.__permit
 
-        model = self.manager.model
+        model = self.__manager.model
 
         tablename = r.component and r.component.tablename or r.tablename
 
@@ -336,20 +424,20 @@ class S3Resource(object):
             authorised = permit("read", tablename)
 
         elif method == "clear" and not r.component:
-            self.manager.clear_session(r.session, self.prefix, self.name)
+            self.__manager.clear_session(r.session, self._prefix, self._name)
             if "_next" in r.request.vars:
                 request_vars = dict(_next=r.request.vars._next)
             else:
                 request_vars = {}
-            search_simple = model.get_method(self.prefix, self.name,
+            search_simple = model.get_method(self._prefix, self._name,
                                              method="search_simple")
             if r.representation == "html" and search_simple:
                 r.next = URL(r=r.request,
-                             f=self.name,
+                             f=self._name,
                              args="search_simple",
                              vars=request_vars)
             else:
-                r.next = URL(r=r.request, f=self.name)
+                r.next = URL(r=r.request, f=self._name)
             return None
 
         else:
@@ -365,15 +453,15 @@ class S3Resource(object):
 
         """ Get PUT method handler
 
-            @param r: the S3RESTRequest
+            @param r: the S3Request
 
         """
 
         self.__dbg("PUT method")
 
-        if r.representation in self.manager.xml_import_formats:
+        if r.representation in self.__manager.xml_import_formats:
             return self.get_handler("import_xml")
-        elif r.representation in self.manager.json_import_formats:
+        elif r.representation in self.__manager.json_import_formats:
             return self.get_handler("import_json")
         else:
             raise HTTP(501, body=r.BADFORMAT)
@@ -383,14 +471,14 @@ class S3Resource(object):
 
         """ Get POST method handler
 
-            @param r: the S3RESTRequest
+            @param r: the S3Request
 
         """
 
         self.__dbg("POST method")
 
-        if r.representation in self.manager.xml_import_formats or \
-           r.representation in self.manager.json_import_formats:
+        if r.representation in self.__manager.xml_import_formats or \
+           r.representation in self.__manager.json_import_formats:
             return self.__put(r)
         else:
             return self.__get(r)
@@ -400,13 +488,13 @@ class S3Resource(object):
 
         """ Get DELETE method handler
 
-            @param r: the S3RESTRequest
+            @param r: the S3Request
 
         """
 
         self.__dbg("DELETE method")
 
-        permit = self.permit
+        permit = self.__permit
 
         tablename = r.component and r.component.tablename or r.tablename
 
@@ -422,6 +510,61 @@ class S3Resource(object):
         else:
             raise HTTP(501, body=r.BADMETHOD)
 
+    # XML/JSON functions ------------------------------------------------------
+
+    def export_tree(self):
+        raise NotImplementedError
+
+    def export_xml(self):
+        raise NotImplementedError
+
+    def export_json(self):
+        raise NotImplementedError
+
+
+    def import_tree(self):
+        raise NotImplementedError
+
+    def import_xml(self):
+        raise NotImplementedError
+
+    def import_json(self):
+        raise NotImplementedError
+
+
+    def options_tree(field=None):
+        raise NotImplementedError
+
+    def options_xml(field=None):
+        raise NotImplementedError
+
+    def options_json(field=None):
+        raise NotImplementedError
+
+
+    def fields_tree(component=None):
+        raise NotImplementedError
+
+    def fields_xml(component=None):
+        raise NotImplementedError
+
+    def fields_json(component=None):
+        raise NotImplementedError
+
+
+    def push_xml(self):
+        raise NotImplementedError
+
+    def push_json(self):
+        raise NotImplementedError
+
+    def fetch_xml(self):
+        raise NotImplementedError
+
+    def fetch_json(self):
+        raise NotImplementedError
+
+    # Configuration -----------------------------------------------------------
 
     def set_handler(self, method, handler):
 
@@ -438,7 +581,7 @@ class S3Resource(object):
 
 
 # *****************************************************************************
-class S3RESTRequest(object):
+class S3Request(object):
 
     """ Class to represent RESTful requests """
 
@@ -509,7 +652,7 @@ class S3RESTRequest(object):
 
         # Parse request
         if not self.__parse():
-            self.__dbg("S3RESTRequest: Parsing of request failed.")
+            self.__dbg("S3Request: Parsing of request failed.")
             return None
 
         # Check for component
@@ -518,7 +661,7 @@ class S3RESTRequest(object):
                 self.rc.model.get_component(self.prefix, self.name,
                                             self.component_name)
             if not self.component:
-                self.__dbg("S3RESTRequest: %s not a component of %s" %
+                self.__dbg("S3Request: %s not a component of %s" %
                            (self.component_name, self.tablename))
                 self.invalid = self.badrequest = True
                 return None
@@ -527,7 +670,7 @@ class S3RESTRequest(object):
 
         # Find primary record
         if not self.__record():
-            self.__dbg("S3RESTRequest: Primary record identification failed.")
+            self.__dbg("S3Request: Primary record identification failed.")
             return None
 
         # Check for custom action
@@ -558,13 +701,13 @@ class S3RESTRequest(object):
                         self.request.args.append("%s.%s" %
                                                 (self.id, self.representation))
 
-        self.__dbg("S3RESTRequest: *** Init complete ***")
-        self.__dbg("S3RESTRequest: Resource=%s" % self.tablename)
-        self.__dbg("S3RESTRequest: ID=%s" % self.id)
-        self.__dbg("S3RESTRequest: Component=%s" % self.component_name)
-        self.__dbg("S3RESTRequest: ComponentID=%s" % self.component_id)
-        self.__dbg("S3RESTRequest: Method=%s" % self.method)
-        self.__dbg("S3RESTRequest: Representation=%s" % self.representation)
+        self.__dbg("S3Request: *** Init complete ***")
+        self.__dbg("S3Request: Resource=%s" % self.tablename)
+        self.__dbg("S3Request: ID=%s" % self.id)
+        self.__dbg("S3Request: Component=%s" % self.component_name)
+        self.__dbg("S3Request: ComponentID=%s" % self.component_id)
+        self.__dbg("S3Request: Method=%s" % self.method)
+        self.__dbg("S3Request: Representation=%s" % self.representation)
 
         return
 
@@ -578,7 +721,7 @@ class S3RESTRequest(object):
         """
 
         if self.debug:
-            print >> sys.stderr, "S3RESTRequest: %s" % msg
+            print >> sys.stderr, "S3Request: %s" % msg
 
 
     def __repr__(self):
@@ -630,16 +773,17 @@ class S3RESTRequest(object):
                     if ext and len(ext) > 0:
                         self.representation = str.lower(ext)
                         self.extension = True
-                self.args.append(str.lower(arg))
+                if arg:
+                    self.args.append(str.lower(arg))
             if self.args[0].isdigit():
                 self.id = self.args[0]
-                if len(self.args) > 1 and self.args[1] != "":
+                if len(self.args) > 1:
                     if self.args[1] in components:
                         self.component_name = self.args[1]
-                        if len(self.args) > 2 and self.args[2] != "":
+                        if len(self.args) > 2:
                             if self.args[2].isdigit():
                                 self.component_id = self.args[2]
-                                if len(self.args) > 3 and self.args[3] != "":
+                                if len(self.args) > 3:
                                     self.method = self.args[3]
                             else:
                                 self.method = self.args[2]
@@ -651,10 +795,10 @@ class S3RESTRequest(object):
             else:
                 if self.args[0] in components:
                     self.component_name = self.args[0]
-                    if len(self.args) > 1 and self.args[1] != "":
+                    if len(self.args) > 1:
                         if self.args[1].isdigit():
                             self.component_id = self.args[1]
-                            if len(self.args) > 2 and self.args[2] != "":
+                            if len(self.args) > 2:
                                 self.method = self.args[2]
                         else:
                             self.method = self.args[1]
@@ -1647,18 +1791,28 @@ class S3ResourceController(object):
         self.__handler = Storage()
 
 
+    # Helper functions --------------------------------------------------------
+
     def __dbg(self, msg):
+
+        """ Print out debug messages. """
 
         if self.debug:
             print >> sys.stderr, "S3ResourceController: %s" % msg
 
 
+    # Configuration -----------------------------------------------------------
+
     def set_handler(self, method, handler):
+
+        """ Set the default handler for a resource method """
 
         self.__handler[method] = handler
 
 
     def get_handler(self, method):
+
+        """ Get the default handler for a resource method """
 
         return self.__handler.get(method, None)
 
@@ -1679,9 +1833,14 @@ class S3ResourceController(object):
 
     def parse_request(self, prefix, name, session, request, response):
 
+        """ Parse an HTTP request and generate the corresponding
+            S3Request and S3Resource objects.
+
+        """
+
         self.__dbg("parsing request")
 
-        req = S3RESTRequest(self, prefix, name,
+        req = S3Request(self, prefix, name,
                             request=request,
                             session=session,
                             response=response,
@@ -1690,6 +1849,8 @@ class S3ResourceController(object):
         res = self.resource(prefix, name,
                             id=req.id,
                             debug=self.debug)
+
+        req.resource = res
 
         return (res, req)
 

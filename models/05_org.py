@@ -104,13 +104,13 @@ table.name.comment = SPAN("*", _class="req")
 table.acronym.label = T("Acronym")
 table.type.label = T("Type")
 table.donation_phone.label = T("Donation Phone #")
-table.donation_phone.comment = A(SPAN("[Help]"), _class="tooltip", _title=T("Donation Phone #|Phone number to donate to this organization's relief efforts."))
+table.donation_phone.comment = DIV( _class="tooltip", _title=Tstr("Donation Phone #") + "|" + Tstr("Phone number to donate to this organization's relief efforts."))
 table.country.label = T("Home Country")
 table.website.label = T("Website")
 # Should be visible to the Dashboard
 table.website.represent = shn_url_represent
 table.twitter.label = T("Twitter")
-table.twitter.comment = A(SPAN("[Help]"), _class="tooltip", _title=T("Twitter|Twitter ID or #hashtag"))
+table.twitter.comment = DIV( _class="tooltip", _title=Tstr("Twitter") + "|" + Tstr("Twitter ID or #hashtag"))
 # CRUD strings
 ADD_ORGANIZATION = Tstr("Add Organization")
 LIST_ORGANIZATIONS = T("List Organizations")
@@ -704,6 +704,7 @@ def shn_project_search_location(xrequest, **attr):
                     TH("Organization"),
                     TH("Location"),
                     TH("Sector(s)"),
+                    TH("Code"),
                     TH("Name"),
                     TH("Status"),
                     TH("Start date"),

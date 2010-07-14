@@ -387,9 +387,8 @@ table = db.define_table(tablename, timestamp, uuidstamp, deletion_status,
                 Field("name", notnull=True),
                 Field("code"),
                 Field("description"),
-                feature_class_id,
-                marker_id,
-                #Field("resource_id", "integer"), # ID in associated resource table. FIXME: Remove as link should be reversed?
+                feature_class_id,       # Will be removed
+                marker_id,              # Will be removed
                 Field("level", length=2),
                 Field("parent", "reference gis_location", ondelete = "RESTRICT"),   # This form of hierarchy may not work on all Databases
                 Field("lft", "integer", readable=False, writable=False), # Left will be for MPTT: http://eden.sahanafoundation.org/wiki/HaitiGISToDo#HierarchicalTrees
@@ -468,7 +467,6 @@ s3xrc.model.configure(db.gis_location,
 # -----------------------------------------------------------------------------
 #
 def shn_gis_location_represent(id):
-    # TODO: optimize! (very slow)
     try:
         location = db(db.gis_location.id == id).select(db.gis_location.name, db.gis_location.level, db.gis_location.lat, db.gis_location.lon, db.gis_location.id, limitby=(0, 1)).first()
         if location.level in ["L0", "L1", "L2"]:
@@ -507,9 +505,61 @@ def shn_gis_location_represent(id):
             represent = None
     return represent
 
+# Landmarks
+# Used to store items which should be placed on the map, but which we don't maintain other details on
+# i.e. not Hospitals, Offices, Warehouses
+gis_landmark_type_opts = {
+    1:T("Airport"),
+    2:T("Bridge"),
+    3:T("Church"),
+    4:T("Port"),
+    5:T("School"),
+    99:T("other"),
+    }
+resource = "landmark"
+tablename = "%s_%s" % (module, resource)
+table = db.define_table(tablename, timestamp, uuidstamp, authorstamp, deletion_status,
+                Field("name", length=128, notnull=True, unique=True),
+                Field("category"),
+                location_id,
+                shn_comments_field,
+                migrate=migrate)
+table.uuid.requires = IS_NOT_IN_DB(db, "%s.uuid" % tablename)
+table.name.requires = [IS_NOT_EMPTY(), IS_NOT_IN_DB(db, "%s.name" % tablename)]
+table.name.label = T("Name")
+table.category.requires = IS_IN_SET(gis_landmark_type_opts)
+table.category.represent = lambda opt: gis_landmark_type_opts.get(opt, UNKNOWN_OPT)
+table.category.label = T("Category")
+
+
+# Feature Layers
+# Used to select a set of Features for either Display or Export
+# (replaces feature_group)
+resource = "feature_layer"
+tablename = "%s_%s" % (module, resource)
+table = db.define_table(tablename, timestamp, uuidstamp, authorstamp, deletion_status,
+                Field("name", length=128, notnull=True, unique=True),
+                Field("resource"),              # Used to build a simple query
+                Field("filter_field"),          # Used to build a simple query
+                Field("filter_value"),          # Used to build a simple query
+                Field("query", notnull=True),   
+                marker_id,                      # Optional Marker to over-ride the values from the Feature Classes
+                shn_comments_field,
+                migrate=migrate)
+table.uuid.requires = IS_NOT_IN_DB(db, "%s.uuid" % tablename)
+#table.author.requires = IS_ONE_OF(db, "auth_user.id","%(id)s: %(first_name)s %(last_name)s")
+table.name.requires = [IS_NOT_EMPTY(), IS_NOT_IN_DB(db, "%s.name" % tablename)]
+table.name.label = T("Name")
+table.resource.label = T("Resource")
+# In zzz_last.py
+#table.resource.requires = IS_IN_SET(db.tables)
+table.filter_field.label = T("Filter Field")
+table.filter_value.label = T("Filter Value")
+table.query.label = T("Query")
 
 # Feature Groups
 # Used to select a set of Feature Classes for either Display or Export
+# This is being deprecated by feature_layer
 resource = "feature_group"
 tablename = "%s_%s" % (module, resource)
 table = db.define_table(tablename, timestamp, uuidstamp, authorstamp, deletion_status,
@@ -544,6 +594,7 @@ feature_group_id = db.Table(None, "feature_group_id",
 #                location_id,
 #                migrate=migrate)
 
+# This is being deprecated by feature_layer
 resource = "feature_class_to_feature_group"
 tablename = "%s_%s" % (module, resource)
 table = db.define_table(tablename, timestamp, deletion_status,

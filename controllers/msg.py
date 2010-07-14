@@ -12,8 +12,8 @@ if module not in deployment_settings.modules:
 
 # Options Menu (available in all Functions' Views)
 response.menu_options = [
-	[T("Compose"), False, URL(r=request, f="outbox", args="create")],
-	[T("Outbox"), False, URL(r=request, f="outbox")],
+	#[T("Compose"), False, URL(r=request, f="outbox", args="create")], #TODO
+	#[T("Outbox"), False, URL(r=request, f="outbox")],#TODO
 	[T("Distribution groups"), False, URL(r=request, f="group"), [
 		[T("List/Add"), False, URL(r=request, f="group")],
 		[T("Group Memberships"), False, URL(r=request, f="group_membership")],
@@ -174,73 +174,73 @@ def search():
     return
 
 #-------------------------------------------------------------------------------
-def outbox():
-    "RESTful CRUD controller"
-    resource = request.function
-    tablename = module + "_" + resource
-    table = db[tablename]
-    if auth.is_logged_in() or auth.basic():
-        if auth.has_membership(1):
-            pass
-        else:
-            person = db(db.pr_person.uuid == auth.user.person_uuid).select(db.pr_person.id, limitby=(0, 1)).first().id
-            db.msg_outbox.id.readable = False
-            response.s3.filter = (db.msg_outbox.person_id == person)
-    else:
-        redirect(URL(r=request, c="default", f="user", args="login",
-            vars={"_next":URL(r=request, c="msg", f="outbox")}))
+#def outbox():
+    #"RESTful CRUD controller"
+    #resource = request.function
+    #tablename = module + "_" + resource
+    #table = db[tablename]
+    #if auth.is_logged_in() or auth.basic():
+        #if auth.has_membership(1):
+            #pass
+        #else:
+            #person = db(db.pr_person.uuid == auth.user.person_uuid).select(db.pr_person.id, limitby=(0, 1)).first().id
+            #db.msg_outbox.id.readable = False
+            #response.s3.filter = (db.msg_outbox.person_id == person)
+    #else:
+        #redirect(URL(r=request, c="default", f="user", args="login",
+            #vars={"_next":URL(r=request, c="msg", f="outbox")}))
 
-    table.pr_pe_id.label = T("Recipients ")
-    table.person_id.label = T("Sender")
-    table.subject.label = T("Subject")
-    table.body.label = T("Body")
-    SEND_MESSAGE = T("Send Message")
-    VIEW_MESSAGE_OUTBOX = T("View Outbox")
-    s3.crud_strings[tablename] = Storage(
-            title_create = SEND_MESSAGE,
-            title_display = T("Message Details"),
-            title_list = VIEW_MESSAGE_OUTBOX,
-            title_update = T("Edit Message"),
-            title_search = T("Search Outbox"),
-            subtitle_create = SEND_MESSAGE,
-            subtitle_list = T("Outbox"),
-            label_list_button = VIEW_MESSAGE_OUTBOX,
-            label_create_button = SEND_MESSAGE,
-            msg_record_created = T("Message created"),
-            msg_record_modified = T("Message updated"),
-            msg_record_deleted = T("Message deleted"),
-            msg_list_empty = T("No Message currently in your Outbox"))
+    #table.pr_pe_id.label = T("Recipients ")
+    #table.person_id.label = T("Sender")
+    #table.subject.label = T("Subject")
+    #table.body.label = T("Body")
+    #SEND_MESSAGE = T("Send Message")
+    #VIEW_MESSAGE_OUTBOX = T("View Outbox")
+    #s3.crud_strings[tablename] = Storage(
+            #title_create = SEND_MESSAGE,
+            #title_display = T("Message Details"),
+            #title_list = VIEW_MESSAGE_OUTBOX,
+            #title_update = T("Edit Message"),
+            #title_search = T("Search Outbox"),
+            #subtitle_create = SEND_MESSAGE,
+            #subtitle_list = T("Outbox"),
+            #label_list_button = VIEW_MESSAGE_OUTBOX,
+            #label_create_button = SEND_MESSAGE,
+            #msg_record_created = T("Message created"),
+            #msg_record_modified = T("Message updated"),
+            #msg_record_deleted = T("Message deleted"),
+            #msg_list_empty = T("No Message currently in your Outbox"))
     
-    def restrict_methods(jr):
-		if jr.method == "create":
-			db.msg_outbox.pr_pe_id.widget = lambda f, v: StringWidget.widget(f, v)
-			return True
-		if jr.method == "delete" or jr.method == "update":
-			if auth.has_membership(1):
-				return True
-			else:
-				session.error = T("Restricted method")
-				return dict(bypass = True, output = redirect(URL(r=request)))
-		else:
-			return True
-    def msg_outbox_onvalidation(form):
-        """This onvalidation method adds the person id to the record"""
-        person = db(db.pr_person.uuid == auth.user.person_uuid).select(db.pr_person.id, limitby=(0, 1)).first().id
-        form.vars.person_id = person
-        if not form.vars.pr_pe_id:
-			session.error = T("Empty Recipients")
-			redirect(URL(r=request,c="msg", f="outbox", args="create"))
+    #def restrict_methods(jr):
+		#if jr.method == "create":
+			#db.msg_outbox.pr_pe_id.widget = lambda f, v: StringWidget.widget(f, v)
+			#return True
+		#if jr.method == "delete" or jr.method == "update":
+			#if auth.has_membership(1):
+				#return True
+			#else:
+				#session.error = T("Restricted method")
+				#return dict(bypass = True, output = redirect(URL(r=request)))
+		#else:
+			#return True
+    #def msg_outbox_onvalidation(form):
+        #"""This onvalidation method adds the person id to the record"""
+        #person = db(db.pr_person.uuid == auth.user.person_uuid).select(db.pr_person.id, limitby=(0, 1)).first().id
+        #form.vars.person_id = person
+        #if not form.vars.pr_pe_id:
+			#session.error = T("Empty Recipients")
+			#redirect(URL(r=request,c="msg", f="outbox", args="create"))
     
-    db.msg_outbox.status.writable = False
-    db.msg_outbox.status.readable = True
-    db.msg_outbox.person_id.readable = False
-    db.msg_outbox.person_id.writable = False
+    #db.msg_outbox.status.writable = False
+    #db.msg_outbox.status.readable = True
+    #db.msg_outbox.person_id.readable = False
+    #db.msg_outbox.person_id.writable = False
     
-    response.s3.prep = restrict_methods
-    s3xrc.model.configure(db.msg_outbox,
-            onvalidation=lambda form: msg_outbox_onvalidation(form))
+    #response.s3.prep = restrict_methods
+    #s3xrc.model.configure(db.msg_outbox,
+            #onvalidation=lambda form: msg_outbox_onvalidation(form))
     
-    return shn_rest_controller("msg", "outbox", listadd=False)
+    #return shn_rest_controller("msg", "outbox", listadd=False)
 
 #-------------------------------------------------------------------------------
 def process_sms_via_api():
@@ -420,7 +420,7 @@ def log():
 
     return shn_rest_controller(module, resource,
         listadd=False,
-)
+        )
 
 def tag():
     """ RESTful CRUD controller """

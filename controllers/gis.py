@@ -44,10 +44,10 @@ def test():
         offices = {"feature_group" : "Offices", "popup_url" : URL(r=request, c="gis", f="location", args="read.popup")}
 
     query = db((db.gis_feature_class.name == "Town") & (db.gis_location.feature_class_id == db.gis_feature_class.id)).select()
-
+    
     html = gis.show_map(
-                feature_overlays = [offices, hospitals],
-                #features = {"name" : "Towns", "query" : query, "active" : True},
+                feature_groups = [offices, hospitals],
+                feature_queries = [{"name" : "Towns", "query" : query, "active" : True}],
                 wms_browser = {"name" : "OpenGeo Demo WMS", "url" : "http://demo.opengeo.org/geoserver/ows?service=WMS&request=GetCapabilities"},
                 #wms_browser = {"name" : "Risk Maps", "url" : "http://preview.grid.unep.ch:8080/geoserver/ows?service=WMS&request=GetCapabilities"},
                 #wms_browser = {"name" : "Risk Maps", "url" : "http://www.pdc.org/wms/wmservlet/PDC_Active_Hazards?request=getcapabilities&service=WMS&version=1.1.1"},
@@ -247,6 +247,113 @@ def feature_class_to_feature_group():
     
     if not "gis" in response.view:
         response.view = "gis/" + response.view
+    
+    return output
+
+def feature_layer():
+    "RESTful CRUD controller"
+    resource = request.function
+    tablename = module + "_" + resource
+    table = db[tablename]
+
+    # Model options
+    table.name.comment = SPAN("*", _class="req")
+    table.query.comment = SPAN("*", _class="req")
+
+    # CRUD Strings
+    ADD_FEATURE_LAYER = T("Add Feature Layer")
+    LIST_FEATURE_LAYERS = T("List Feature Layers")
+    s3.crud_strings[tablename] = Storage(
+        title_create = ADD_FEATURE_LAYER,
+        title_display = T("Feature Layer Details"),
+        title_list = T("Feature Layers"),
+        title_update = T("Edit Feature Layer"),
+        title_search = T("Search Feature Layers"),
+        subtitle_create = T("Add New Feature Layer"),
+        subtitle_list = LIST_FEATURE_LAYERS,
+        label_list_button = LIST_FEATURE_LAYERS,
+        label_create_button = ADD_FEATURE_LAYER,
+        label_delete_button = T("Delete Feature Layer"),
+        msg_record_created = T("Feature Layer added"),
+        msg_record_modified = T("Feature Layer updated"),
+        msg_record_deleted = T("Feature Layer deleted"),
+        msg_list_empty = T("No Feature Layers currently defined"))
+
+    # Post-processor
+    def user_postp(jr, output):
+        shn_action_buttons(jr)
+        return output
+    response.s3.postp = user_postp
+
+    crud.settings.create_onvalidation = lambda form: feature_layer_query(form)
+    crud.settings.update_onvalidation = lambda form: feature_layer_query(form)
+    
+    output = shn_rest_controller(module, resource)
+    
+    return output
+
+def feature_layer_query(form):
+    "OnValidation callback to build the simple Query from helpers"
+    
+    if "advanced" in form.vars:
+        # We should use the query field as-is
+        pass
+    elif "resource" in form.vars:
+        # We build query from helpers
+        if "filter_field" in form.vars and "filter_value" in form.vars:
+            if "deleted" in db[resource]:
+                form.vars.query = "(db[%s].deleted == False) & (db[%s][%s] == '%s')" % (resource, resource, filter_field, filter_value)
+            else:
+                form.vars.query = "(db[%s][%s] == '%s')" % (resource, filter_field, filter_value)
+        else:
+            if "deleted" in db[resource]:
+                # All undeleted members of the resource
+                form.vars.query = "(db[%s].deleted == False)" % (resource)
+            else:
+                # All members of the resource
+                form.vars.query = "(db[%s].id > 0)" % (resource)
+    else:
+        # Resource is mandatory if not in advanced mode
+        session.error = T("Need to specify a Resource!")
+
+    return
+
+def landmark():
+    "RESTful CRUD controller"
+    resource = request.function
+    tablename = module + "_" + resource
+    table = db[tablename]
+
+    # Model options
+    table.name.comment = SPAN("*", _class="req")
+    table.category.comment = SPAN("*", _class="req")
+
+    # CRUD Strings
+    ADD_LANDMARK = T("Add Landmark")
+    LIST_LANDMARKS = T("List Landmarks")
+    s3.crud_strings[tablename] = Storage(
+        title_create = ADD_LANDMARK,
+        title_display = T("Landmark Details"),
+        title_list = T("Landmarks"),
+        title_update = T("Edit Landmark"),
+        title_search = T("Search Landmarks"),
+        subtitle_create = T("Add New Landmark"),
+        subtitle_list = LIST_LANDMARKS,
+        label_list_button = LIST_LANDMARKS,
+        label_create_button = ADD_LANDMARK,
+        label_delete_button = T("Delete Landmark"),
+        msg_record_created = T("Landmark added"),
+        msg_record_modified = T("Landmark updated"),
+        msg_record_deleted = T("Landmark deleted"),
+        msg_list_empty = T("No Landmarks currently defined"))
+
+    # Post-processor
+    def user_postp(jr, output):
+        shn_action_buttons(jr)
+        return output
+    response.s3.postp = user_postp
+
+    output = shn_rest_controller(module, resource)
     
     return output
 
@@ -1235,7 +1342,7 @@ def display_feature():
     bounds = gis.get_bounds(features=query)
 
     map = gis.show_map(
-        features = {"name" : "Feature", "query" : query, "active" : True},
+        feature_queries = [{"name" : "Feature", "query" : query, "active" : True}],
         lat = lat,
         lon = lon,
         bbox = bounds,
@@ -1291,7 +1398,7 @@ def display_features():
     bounds = gis.get_bounds(features=features)
 
     map = gis.show_map(
-        features = {"name" : "Features", "query" : features, "active" : True},
+        feature_queries = [{"name" : "Features", "query" : features, "active" : True}],
         bbox = bounds,
         window = True,
         collapsed = True
@@ -1471,17 +1578,17 @@ def map_viewing_client():
     catalogue_overlays = True
 
     # Read which overlays to enable
-    feature_overlays = []
-    feature_groups = db(db.gis_feature_group.enabled == True).select()
-    for feature_group in feature_groups:
-        feature_overlays.append(
+    feature_groups = []
+    _feature_groups = db(db.gis_feature_group.enabled == True).select()
+    for feature_group in _feature_groups:
+        feature_groups.append(
             {
                 "feature_group" : feature_group.name,
                 "active" : feature_group.visible
             }
         )
 
-    map = gis.show_map(window=window, catalogue_toolbar=catalogue_toolbar, toolbar=toolbar, search=search, catalogue_overlays=catalogue_overlays, feature_overlays=feature_overlays)
+    map = gis.show_map(window=window, catalogue_toolbar=catalogue_toolbar, toolbar=toolbar, search=search, catalogue_overlays=catalogue_overlays, feature_groups=feature_groups)
 
     return dict(map=map)
 

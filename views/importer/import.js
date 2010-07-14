@@ -51,7 +51,6 @@ function import_spreadsheet(importsheet,lm)
 	//send[str]=new Array();
 	//send[str].push(rowobj);
 	Ext.Ajax.request({
-		//scope: lm,
 		url : posturl,
 		jsonData: send,//send as body,
 		method : 'POST',

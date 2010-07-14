@@ -6,6 +6,19 @@ from gluon.validators import *
 from gluon.sqlhtml import *
 # request, response, session, cache, T, db(s) 
 # must be passed and cannot be imported!
+
+#For google spreadsheets
+try:
+	from xml.etree import ElementTree
+	import gdata.spreadsheet.service
+	import gdata.service
+	import atom.service
+	import gdata.spreadsheet
+	import atom
+
+except ImportError:
+	print >> sys.stderr, "WARNING: %s:GData Spreadsheets library is not installed" % __name__
+
 try:
 	from xlrd import *
 except ImportError:
@@ -87,3 +100,23 @@ def json(path_to_file,appname):
 def pathfind(filename):
     str = os.path.join("uploads",filename)
     return str
+
+def getspreadsheetlist(client):		
+	'''
+	Get list of spreadsheets from Google Docs
+	client is the gdata spreadsheets client
+	'''
+	l=[]
+	for i, entry in enumerate(feed.entry):
+		if isinstance(feed, gdata.spreadsheet.SpreadsheetsCellsFeed):
+			l.append('%s %s\n' % (entry.title.text, entry.content.text))
+		elif isintance(feed, gdata.spreadsheet.SpreadsheetsListFeed):
+	 		l.append('%s %s %s' %(i, entry.title.text. entry.content.text))
+	        	for key in entry.custom:
+	        		l.append(' %s: %s' % (key, entry.custom[key].text))
+	        else:
+			l.append('%s %s\n' % (i,entry.title.text))
+	f=file("/home/shikhar/Desktop/test.txt")
+	f.write(repr(l))
+	f.close()
+	return l

@@ -1,3 +1,6 @@
 {{extend 'layout.html'}}
-<h1>Coming soon!!</h1>
-{{=BEAUTIFY(response._vars)}}
+{{include 'ext.html'}}
+<h2> Click the authenticate button to access your Google Account</h2>
+<div id="login" align="center"><a href="{{=auth_url}}">Login to your Google Account</a></div>
+
+

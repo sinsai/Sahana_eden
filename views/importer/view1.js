@@ -12,39 +12,10 @@ function doJSON(stringData) {
 var json={};
 var columnlist=[];
 
-/*
-Ext.onReady(function(){
 
-Ext.Ajax.request({
-        url : '../static/test1.json' , 
-        
-        method: 'GET',
-            success: function ( result, request ) { 
-               
-                json=doJSON(result.responseText);   
-                maker(json);
-                
-     
-        },
-            failure: function ( result, request) { 
-                Ext.MessageBox.alert('Failed', result.responseText); 
-            } 
-        });
-	document.write(string);
-	json=doJSON({{=ss}});
-	try{
-		var json=doJSON({{=ss}});
-	}
-	catch(err)
-	{
-		alert("Error");
-	}
-	var word={{=ss}};
-	maker(json);
-});
-*/
 
 function view1(importsheet){
+	Ext.BLANK_IMAGE_URL = '../../static/scripts/ext/resources/images/default/s.gif';
     
     var columnlist=new Array(importsheet.columns);
     for(var i=0;i< importsheet.columns ; i++)
@@ -65,6 +36,23 @@ function view1(importsheet){
    //column model for the grid     
    var columns=(importsheet.columns);
    var column_model=new Array(columns);
+   var action = new Ext.ux.grid.RowActions({
+			 header:'Click to delete',
+			keepSelection:true,
+			actions:[{
+				 
+				 iconCls:'action-delete',
+				 tooltip : 'delete'
+			}]
+		});
+
+		// dummy action event handler - just outputs some arguments to console
+		action.on({
+			action:function(grid, record, action, row, col) {
+				Ext.Msg.alert("Event:action","You wanna delete");
+			}
+		});
+
    var edit=new Array(importsheet.columns);
    //editor functions for each column 
    for(i=1;i< importsheet.columns+1 ; i++)
@@ -72,7 +60,7 @@ function view1(importsheet){
        edit[i]=new Ext.form.TextField();
    }
    //makes column model objects
-   for( i=1 ; i< importsheet.columns ; i++)
+   for( i=1 ; i< importsheet.columns + 1; i++)
    {
        var obj={};
        obj.header="Column "+(i);
@@ -86,6 +74,7 @@ function view1(importsheet){
     var sm2 = new Ext.grid.CheckboxSelectionModel();
     column_model[0]=sm2;	//placing the checkboxes before the first column
     //column_model[0]=new Ext.grid.RowNumberer();
+    column_model.push(action);
     importsheet.column_model=column_model;
     var sm1 = new Ext.grid.CellSelectionModel();
     //column_model.push(sm1);
@@ -95,6 +84,7 @@ function view1(importsheet){
        title: '<div align="center"><u>Edit</u> \u2794 Select header row \u2794 Select table \u2794 Map columns to fields<p>Edit the spreadsheet, make sure a row with column titles exists</p></div>',
        renderTo: 'spreadsheet',
        loadMask: true,
+       //iconCls : 'icon-grid',
        viewConfig:
        {	
        		forceFit : true
@@ -138,7 +128,7 @@ function view1(importsheet){
         stripeRows: true,
         tbar: [
 			{text: 'Search',
-       		   handler:
+       	         	   handler:
 		   	     function()
 				{
 					Ext.Msg.prompt("Search","Enter search text",function(btn,text){
@@ -168,7 +158,7 @@ function view1(importsheet){
 			
             {
                  text: 'Add row',
-		 iconCls : 'add',
+		 iconCls : 'action-delete',
 		 handler: function()
                  {
                          grid.getStore().insert(0,new row_model);
@@ -208,8 +198,9 @@ function view1(importsheet){
 
 var importsheet={};
 importsheet.datastore={};
+var json={{=ss}};
 Ext.onReady(function(){
-        var json={{=ss}};
+        
 	var columnlist=new Array(json.columns);
    	for(var i=0;i< json.columns ; i++)
     	{ 

@@ -15,7 +15,7 @@ response.menu_options = [
 
 importer=local_import("importer")
 
-session.gd_client = importer.gdata.spreadsheet.service.SpreadsheetsService()
+gd_client = importer.gdata.spreadsheet.service.SpreadsheetsService()
 
 def index(): 
     return dict(module_name=module_name)
@@ -26,7 +26,7 @@ def googledoc():
     scope = 'https://spreadsheets.google.com/feeds/'
     secure = False
     sessionval = True
-    url2token = session.gd_client.GenerateAuthSubURL(next, scope, \
+    url2token = gd_client.GenerateAuthSubURL(next, scope, \
 		    secure, sessionval)
     return dict(module_name=module_name,auth_url=url2token)	
 
@@ -36,7 +36,7 @@ def gettoken():
     authsub_token = request.vars['token']
     authsub_token.replace('\r','')
     authsub_token.replace('\n','')
-    session.gd_client.SetAuthSubToken(authsub_token)
+    gd_client.SetAuthSubToken(authsub_token)
     '''Google documentation is outdated on this, gd_client.auth_token doesn't work'''
     
     user_spreadsheets = getspreadsheetlist()
@@ -67,7 +67,7 @@ def getspreadsheetlist():
 	client is the gdata spreadsheets client
 	'''
 	l=[]
-	feed=session.gd_client.GetSpreadsheetsFeed()
+	feed=gd_client.GetSpreadsheetsFeed()
 	for i, entry in enumerate(feed.entry):
 		if isinstance(feed, gdata.spreadsheet.SpreadsheetsCellsFeed):
 			l.append('%s %s\n' % (entry.title.text, entry.content.text))

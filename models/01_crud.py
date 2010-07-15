@@ -1295,10 +1295,15 @@ def shn_list(jr, **attr):
     else:
         href_add = URL(r=jr.request, f=jr.name, args=["create"])
 
+    rfilter = jr.resource.get_query()
+
     # SSPag filter handling
     if jr.representation == "html":
         # HTML call sets/clears the filter
-        session.s3.filter = response.s3.filter
+        if response.s3.filter:
+            session.s3.filter = response.s3.filter & rfilter
+        else:
+            session.s3.filter = rfilter
     elif jr.representation.lower() == "aadata":
         # aaData call uses the filter, if present
         if session.s3.filter is not None:
@@ -1311,6 +1316,8 @@ def shn_list(jr, **attr):
     # Filter deleted records
     if "deleted" in table:
         query = ((table.deleted == False) | (table.deleted == None)) & query
+
+    print query
 
     # Call audit
     shn_audit_read(operation="list",

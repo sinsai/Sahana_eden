@@ -65,7 +65,7 @@ s3xrc = _s3xrc.S3ResourceController(db,
             xml_export_formats = shn_xml_export_formats,
             json_import_formats = shn_json_import_formats,
             json_export_formats = shn_json_export_formats,
-            debug = False)
+            debug = True)
 
 # *****************************************************************************
 def shn_field_represent(field, row, col):
@@ -2315,8 +2315,8 @@ def shn_rest_controller(module, resource, **attr):
     s3xrc.set_handler("options", shn_options)
 
     res, req = s3xrc.parse_request(module, resource, session, request, response)
-    output = res.execute_request(req, **attr)
 
+    output = res.execute_request(req, **attr)
     return output
 
 # END

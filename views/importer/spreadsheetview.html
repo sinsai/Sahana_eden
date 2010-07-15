@@ -5,23 +5,31 @@
 <script type="text/javascript" src="/{{=request.application}}/static/scripts/ext-community-extensions/CheckColumn.js"></script>
 <script type="text/javascript" src="/{{=request.application}}/static/scripts/ext-community-extensions/Ext.ux.MultiSelect.js"></script>
 
-<style type="text/css">
-	.action-delete {background-image: url(images/delete.png) !important; background-repeat: no-repeat; }
-</style>
-<div class="action-delete">					dkjkjsdk</div>
 	
 <link rel ="stylesheet" type="text/css" href="/{{=request.application}}/static/scripts/ext-community-extensions/rowactions/css/Ext.ux.grid.RowActions.css"/>
 <script type="text/javascript" src="/{{=request.application}}/static/scripts/ext-community-extensions/CheckColumn.js"></script>
 <script type="text/javascript" src="/{{=request.application}}/static/scripts/ext-community-extensions/rowactions/Ext.ux.grid.RowActions.js"></script>
+<!--<style type="text/css">
+.action-delete { 
+	background-image: url(../static/scripts/S3importer/images/delete.png); 
+	background-repeat: no-repeat; }
+</style>-->
+<link rel="stylesheet" type="text/css" href="../static/scripts/S3importer/css/importer.css"></link>
 
-<script type="text/javascript">{{include 'importer/import.js'}}</script>
-<script type="text/javascript">{{include 'importer/view4.js'}}</script>
-<script type="text/javascript">{{include 'importer/view3.js'}}</script>
-<script type="text/javascript">{{include 'importer/view2.js'}}</script>
-<script type="text/javascript">{{include "importer/view1.js"}} </script>
 
 
+<script type="text/javascript">
+	var json={{=ss}};
+	var importsheet={};
+	importsheet.datastore={};
+	var url="{{=request.env.http_host}}";
+	var application="{{=request.application}}";
 </script>
+<script type="text/javascript" src='../static/scripts/S3importer/import.js'></script>
+<script type="text/javascript" src='../static/scripts/S3importer/view4.js'></script>
+<script type="text/javascript" src='../static/scripts/S3importer/view3.js'></script>
+<script type="text/javascript" src='../static/scripts/S3importer/view2.js'></script>
+<script type="text/javascript" src="../static/scripts/S3importer/view1.js"></script>
 <div class="confirmation" id="message1">Welcome to the spreadsheet importer. Make sure you have a row with column headers. You can edit cells, and and remove rows in this view.</div>
 <div id="message2" class="hide" >Select header row, the row which has titles of each column in the spreadsheet</div>
 <div id="message3" class="hide">Select a single table to import the spreadsheet to</div>

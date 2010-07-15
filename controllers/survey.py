@@ -222,47 +222,42 @@ def layout():
     output = {}
     if template_id:
         output.update(template_id=template_id)
+    question_list = {}
     # Get sections for this template.
     section_query = (db.survey_template_link_table.survey_template_id == template_id) & (db.survey_section.id == db.survey_template_link_table.survey_section_id)
-    sections = db(section_query).select(db.survey_section.ALL)    
+    sections = db(section_query).select(db.survey_section.ALL)
 
-    # build the UI
     ui = DIV(_class="sections")
+    if not sections:
+        ui.append(DIV(A(T("Add Section"),_class="colorbox",
+                                       _href=URL(r=request, f="section", args=["create"], vars=dict(format="popup")),
+                                       _target="top",
+                                       _title=T("Add Section")),_class="title"))
+    # build the UI
     for section in sections:
         link = A(section.name,_class="colorbox",
                                        _href=URL(r=request, c="survey", f="section", args=[section.id,"update"], vars=dict(format="popup")),
                                        _target="top",
                                        _title=T("Edit Section"))
 
+        ui.append(BR())
         ui.append(DIV(link,_class="title"))
         question_query = (db.survey_template_link_table.survey_section_id == section.id) & (db.survey_question.id == db.survey_template_link_table.survey_question_id)
         questions = db(question_query).select(db.survey_question.ALL)
+        if not questions:
+            ui.append(DIV(A (T("Add Question"),_href=URL(r=request,f="question"))))
         for question in questions:
             question_type = session.rcvars.survey_question_type
             #TODO: take order into account.
             # MC (Only One Answer allowed)
             options = db(db.survey_question_options.question_id == question.id).select().first()
-            ui.append(DIV(question.name,_class="question"))
+            ui.append(BR())
             if question.question_type is 1:
-                choices = options.answer_choices.split("\r\n")
-                for choice in choices:
-#                    c = DIV(choice.name,INPUT(_type="radio")
-                    ui.append(c)
-                if options.allow_comments:
-                    comment = INPUT(_type="text")
-                    ui.append(comment)
+               pass
             elif question.question_type is 2:
-                choices = option.answer_choices.split("\r\n")
-                for choice in choices:
-                    c = INPUT(_type="checkbox")
-                    ui.append(c)
-
-                if options.allow_comments:
-                    comment = INPUT()
-                    ui.append(comment)
+                pass
             elif question_type is 3:
                 pass
-
             elif question.question_type == 4:
                 pass
             elif question.question_type == 5:
@@ -278,7 +273,7 @@ def layout():
             elif question.question_type == 10:
                 pass
             elif question.question_type == 11:
-                pass
+                ui.append(DIV("%s " % (question.name),INPUT(_class="date")))
             elif question.question_type == 12:
                 pass
             elif question.question_type == 13:
@@ -290,9 +285,14 @@ def layout():
             elif question.question_type == 16:
                 pass
             else:
-                pass
-    output.update(ui=ui)
+                pass        
 
+    ui.append(BR())
+    ui.append(DIV(A(T("Add Section"),_class="colorbox",
+                                       _href=URL(r=request, f="section", args=["create"], vars=dict(format="popup")),
+                                       _target="top",
+                                       _title=T("Add Section")),_class="title"))
+    output.update(ui=ui)
     return output
     
 def add_buttons(form, save = None, prev = None, next = None, finish = None,cancel=None):
@@ -326,3 +326,8 @@ def transform_buttons(output,save = None, prev = None, next = None, finish = Non
         if form:
             add_buttons(form,save,prev,next,finish,cancel)
     return output
+def check_comments(allow_comments,text):
+    ret = None
+    if allow_comments:
+        ret = DIV(text,INPUT())
+    return ret

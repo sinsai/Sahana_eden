@@ -34,7 +34,10 @@ table = db.define_table(tablename,
                 authorstamp,
                 )
 table.status.requires = IS_IN_SET(["new", "failed", "processing", "completed"])
-table.module.requires = IS_IN_SET(deployment_settings.modules)
+modules_list = []
+for module in deployment_settings.modules:
+    modules_list.append(module)
+table.module.requires = IS_IN_SET(modules_list)
 # TODO(mattb): These need to be pulled dynamically!!
 table.resource.requires = IS_IN_SET(["organisation", "office", "staff"])
 

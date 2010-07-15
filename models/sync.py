@@ -28,14 +28,14 @@ tablename = "%s_%s" % (module, resource)
 table = db.define_table(tablename,
                 Field("uuid", length=36),                   # Our UUID for sync purposes
                 Field("instance_url"),                      # URL our sahana instance is accessible on
-                Field("peer_description", length=128, default = "This is a SahanaEden instance, see http://eden.sahanafoundation.org" ),
+                Field("Comments", length=128, default = "This is a SahanaEden instance, see http://eden.sahanafoundation.org" ),
                 Field("beacon_service_url", default = "http://sync.eden.sahanafoundation.org/sync/beacon"), # URL of beacon service that our sahana instance is configured to work with
 #                Field("sync_pools"),                        # Comma-separated list of sync pools we've subscribed to
                 migrate=migrate)
 
 sync_partner_instance_type_opts = {
-    "SahanaEden":T("SahanaEden"),
-    "SahanaAgasti":T("SahanaAgasti"),
+    "Sahana Eden":T("Sahana Eden"),
+    "Sahana Agasti":T("Sahana Agasti"),
     "Ushahidi":T("Ushahidi"),
     "Other":T("Other")
 }
@@ -45,14 +45,14 @@ resource = "partner"
 tablename = "%s_%s" % (module, resource)
 table = db.define_table(tablename,
                 Field("uuid", length=36),                   # uuid of this partner
-                Field("name", default="SahanaEden Instance"), # name of the partner (descriptive title)
+                Field("name", default="Sahana Eden Instance"), # name of the partner (descriptive title)
                 Field("instance_url", default = "http://sync.eden.sahanafoundation.org/eden"), # URL of their instance
                 Field("instance_type",                      # the type of instance => "SahanaEden", "SahanaAgasti", "Ushahidi", etc.
                     default="SahanaEden",
                     requires = IS_IN_SET(sync_partner_instance_type_opts) ),
-                Field("username"),                          # login username for this partner
-                Field("password", "password"),              # login password for this partner
-                Field("peer_description", length=64),
+                Field("username"),                          # username required to sync with this partner
+                Field("password", "password"),              # password required to sync with this partner
+                Field("comments", length=128),
 #                Field("sync_pools"),                        # Comma-separated list of sync pools they're subscribed to
                 opt_sync_policy,                            # sync_policy for this partner
                 Field("last_sync_on", "datetime"),          # the last time we sync-ed with this partner
@@ -75,14 +75,14 @@ table = db.define_table(tablename,
 resource = "log"
 tablename = "%s_%s" % (module, resource)
 table = db.define_table(tablename,
-                Field("partner_uuid", length=36),                   # uuid of remote system we synced with
+                Field("partner_uuid", length=36),           # uuid of remote system we synced with
                 Field("partner_name"),                      # descriptive name of remote system we synced with
                 Field("timestamp", "datetime"),             # the date and time when sync was performed
-                Field("sync_tables_success"),               # comma-separated list of tables successfully synced
-                Field("sync_tables_error"),                 # comma-separated list of tables that couldn't be synced
+                Field("sync_resources"),                    # comma-separated list of resources synced
+                Field("sync_errors"),                       # sync errors
                 Field("sync_mode"),                         # whether this was an "online" sync (standard sync mode) or "offline" sync (USB/File based)
                 Field("complete_sync", "boolean"),          # whether all resources were synced (complete sync) or only those modified since the last sync (partial sync)
-                Field("sync_method"),                       # whether this was a Pull only, Push only or a Pull-Push sync operation
+                Field("sync_method"),                       # whether this was a Pull only, Push only, Remote Push or a Pull-Push sync operation
                 migrate=migrate)
 
 sync_schedule_period_opts = {
@@ -93,8 +93,8 @@ sync_schedule_period_opts = {
 }
 
 sync_schedule_job_type_opts = {
-    1:T("SahanaEden <=> SahanaEden sync"),
-    2:T("SahanaEden <= Other sync (SahanaAgasti, Ushahidi, etc.)")
+    1:T("Sahana Eden <=> Sahana Eden sync"),
+    2:T("Sahana Eden <= Other sync (Sahana Agasti, Ushahidi, etc.)")
 }
 
 # Scheduled sync jobs

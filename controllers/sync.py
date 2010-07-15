@@ -52,13 +52,18 @@ class Error:
             )
 
 class FetchURL:
-    def fetch(self, request, host, path, data, cookie=None):
-        import httplib
+    def fetch(self, request, host, path, data, cookie=None, username=None, password=None):
+        import httplib, base64
         http = httplib.HTTPConnection(host)
         # write header
         headers = {"Content-type": "application/x-www-form-urlencoded", "Accept": "text/plain"}
         if cookie:
             headers["Cookie"] = cookie
+        # auth
+        if username:
+            base64string =  base64.encodestring("%s:%s" % (username, password))[:-1]
+            authheader =  "Basic %s" % base64string
+            headers["Authorization"] = authheader
         http.request(request, path, data, headers)
         # get response
         response = http.getresponse()
@@ -77,6 +82,8 @@ class FetchURL:
 def now():
     "Manual syncing"
 
+    import urllib, urlparse
+
     module_name = "Synchronisation"
     final_status = ""
     sync_start = False
@@ -88,12 +95,8 @@ def now():
         # retrieve sync partners from DB
         peers = db().select(db.sync_partner.ALL)
 
-    #    # retrieve settings (to get username and password for login)
-    #    settings = db().select(db.sync_setting.ALL)[0]
-
-    #    if not (settings.username or settings.password):
-    #        final_status = "Please specify Username and Password in Sync Settings before proceeding with Sync, this Username and Password must belong to a user account that is capable of modifying records (in database), usually an Administrator.<br /><br /><a href=\"" + URL(r=request, c="sync", f="setting/1/update") + "\">Click here</a> to go to Sync Settings.<br /><br />\n"
-    #        return dict(module_name=module_name, sync_status=final_status, sync_start=False)
+        # retrieve settings
+        settings = db().select(db.sync_setting.ALL)[0]
 
         # url fetcher
         fetcher = FetchURL()
@@ -114,12 +117,8 @@ def now():
 
     #    self_instance_url = db().select(db.sync_setting.instance_url)[0].instance_url
     #    if not self_instance_url:
-    #        final_status = "Please specify Instance URL in Sync Settings before proceeding with Sync, your instance URL is the root URL of SahanaEden application, similar to http://demo.eden.sahanafoundation.org/eden/.<br /><br /><a href=\"" + URL(r=request, c="sync", f="setting/1/update") + "\">Click here</a> to go to Sync Settings.<br /><br />\n"
+    #        final_status = "Please specify Instance URL in Sync Settings before proceeding with Sync, your instance URL is the root URL of Sahana Eden application, similar to http://demo.eden.sahanafoundation.org/eden/.<br /><br /><a href=\"" + URL(r=request, c="sync", f="setting/1/update") + "\">Click here</a> to go to Sync Settings.<br /><br />\n"
     #        return dict(module_name=module_name, sync_status=final_status, sync_start=False)
-        
-        _base_url = s3xrc.base_url
-        if _base_url.endswith("/")==False:
-            _base_url += "/"
 
         if len(peers) < 1:
             final_status = "There are no sync partners. Please add peers (Sync Partners) to sync with.<br /><br /><a href=\"" + URL(r=request, c="sync", f="partner") + "\">Click here</a> to go to Sync Partners page.<br /><br />\n"
@@ -129,53 +128,74 @@ def now():
         +133
         session._unlock(response)
 
+        # Whether a push was successful => means Push + Pull Sync was performed
+        push_success = False
         for peer in peers:
             final_status += "<br />Begin sync with: " + peer.name + ", " + peer.instance_url + " (" + peer.instance_type + "):<br />\n\n"
             peer_sync_success = True
             last_sync_on = peer.last_sync_on
-            tables_success = ""
-            tables_error = ""
-            if peer.instance_type == "SahanaEden":
+            sync_resources = []
+            sync_errors = ""
+            if peer.instance_type == "Sahana Eden":
                 if not last_sync_on is None:
                     last_sync_on_str = "?msince=" + last_sync_on.strftime("%Y-%m-%dT%H:%M:%SZ")
                 else:
                     last_sync_on_str = ""
                 for _module, _resource in tables:
-#                    if not (_module == "pr" and _resource == "person"):
+                    _resource_name = _module + "_" + _resource
+#                    if not (_module == "budget" and _resource == "item"):
 #                        continue
-                    resource_url = peer.instance_url
-                    if resource_url.endswith("/")==False:
-                        resource_url += "/"
-                    resource_url += "sync/sync.json/" + _module + "/" + _resource + last_sync_on_str
-                    final_status += "......processing " + resource_url + "<br />\n"
-                    # sync this resource (Pull => fetch and sync)
-                    resource_sync_url = "/sync/sync.json/create/" + _module + "/" + _resource
-                    import urllib, urllib2
-                    _request_params = urllib.urlencode({"sync_partner_uuid": str(peer.uuid), "fetchurl": resource_url})
+                    peer_instance_url = list(urlparse.urlparse(peer.instance_url))
+                    if peer_instance_url[2].endswith("/")==False:
+                        peer_instance_url[2] += "/"
+                    resource_remote_pull_url = peer.instance_url
+                    if resource_remote_pull_url.endswith("/")==False:
+                        resource_remote_pull_url += "/"
+                    resource_remote_pull_url += "sync/sync.json/" + _module + "/" + _resource + last_sync_on_str
+                    resource_remote_push_url = peer_instance_url[2] + "sync/sync.json/push/" + _module + "/" + _resource + "?sync_partner_uuid=" + str(settings.uuid)
+                    resource_local_pull_url = "/" + request.application + "/sync/sync.json/" + _module + "/" + _resource + last_sync_on_str
+                    resource_local_push_url = "/" + request.application + "/sync/sync.json/create/" + _module + "/" + _resource
+                    final_status += "......processing " + resource_remote_pull_url + "<br />\n"
+                    # Sync this resource, try Pull and Push
+                    _request_params = urllib.urlencode({"sync_partner_uuid": str(peer.uuid), "fetchurl": resource_remote_pull_url})
                     # Keep Session for local URLs
                     cookie = str(response.session_id_name) + "=" + str(response.session_id)
+                    # Sync -> Pull
                     try:
-                        #_request = RequestWithMethod("PUT", resource_sync_url, _request_params)
+                        #_request = RequestWithMethod("PUT", "http://" + str(request.env.http_host) + resource_local_push_url, _request_params)
                         #_response = urllib2.urlopen(_request).read()
-                        _response = fetcher.fetch("PUT", request.env.http_host, "/" + request.application + resource_sync_url, _request_params, cookie)
+                        _response = fetcher.fetch("PUT", request.env.http_host, resource_local_push_url, _request_params, cookie)
                     except Error, e:
-                        if tables_error:
-                            tables_error += ", "
-                        tables_error += _module + "_" + _resource
-                        #final_status += "ERROR while processing: " + resource_sync_url + "<br />\n"
+                        if not _resource_name + " (error)" in sync_resources and not _resource_name in sync_resources:
+                            sync_resources.append(_resource_name + " (error)")
+                        #final_status += "ERROR while processing: http://" +  + str(request.env.http_host) + resource_local_push_url + "<br />\n"
                         error_str = str(e)
+                        sync_errors +=  "Error while syncing => " + _resource_name + ": \n" + error_str + "\n\n"
                         final_status += error_str + "<br /><br />\n"
                     else:
-                        if tables_success:
-                            tables_success += ", "
-                        tables_success += _module + "_" + _resource
-                        final_status += ".........processed " + resource_sync_url + "<br />\n"
+                        if not _resource_name + " (error)" in sync_resources and not _resource_name in sync_resources:
+                            sync_resources.append(_resource_name)
+                        final_status += ".........processed http://" + str(request.env.http_host) + resource_local_push_url + " (Pull Sync)<br />\n"
+                    # Sync -> Push
+                    try:
+                        _local_data = fetcher.fetch("GET", request.env.http_host, resource_local_pull_url, None, cookie)
+                        _response = fetcher.fetch("PUT", peer_instance_url[1], resource_remote_push_url, _local_data, None, peer.username, peer.password)
+                    except Error, e:
+                        if not _resource_name + " (error)" in sync_resources and not _resource_name in sync_resources:
+                            sync_resources.append(_resource_name + " (error)")
+                        error_str = str(e)
+                        sync_errors +=  "Error while syncing => " + _resource_name + ": \n" + error_str + "\n\n"
+                        final_status += error_str + "<br /><br />\n"
+                    else:
+                        if not _resource_name + " (error)" in sync_resources and not _resource_name in sync_resources:
+                            sync_resources.append(_resource_name)
+                        final_status += ".........processed http://" + peer_instance_url[1] + resource_remote_push_url + " (Push Sync)<br />\n"
                 final_status += "......completed<br />\n"
             else:
                 peer_sync_success = False
 
-            if tables_success == "":
-                peer_sync_success = False
+#            if len(sync_resources) == 0:
+#                peer_sync_success = False
 
             # log sync job and update sync partner's last_sync_on
             if peer_sync_success:
@@ -184,15 +204,15 @@ def now():
                     partner_uuid = peer.uuid,
                     partner_name = peer.name,
                     timestamp = datetime.datetime.utcnow(),
-                    sync_tables_success = tables_success,
-                    sync_tables_error = tables_error,
+                    sync_resources = ",".join(map(str, sync_resources)),
+                    sync_errors = sync_errors,
                     sync_mode = "online",
-                    sync_method = "Pull",
+                    sync_method = "Pull-Push",
                     complete_sync = False
                 )
                 # sync log link
                 if log_table_id:
-                    final_status += "Log generated: " + str(A(T("Click here to open log for this sync operation"),_href=URL(r=request, c="sync", f="history", args = log_table_id),_target="_blank")) + "<br /><br />\n"
+                    final_status += "Log generated: " + str(A(T("Click here to open log for this sync operation"),_href=URL(r=request, c="sync", f="history", args = log_table_id))) + "<br /><br />\n"
                 # update last_sync_on
                 vals = {"last_sync_on": datetime.datetime.utcnow()}
                 db(db.sync_partner.id==peer.id).update(**vals)
@@ -203,6 +223,7 @@ def now():
 
 def sync():
     global sync_peer
+    import gluon.contrib.simplejson as json
 
     if len(request.args) == 3:
         _function, _module, _resource = tuple(request.args)
@@ -217,20 +238,42 @@ def sync():
     else:
         return T("Not supported")
 
-    #user = None
-    #if "sync_username" in request.vars and "sync_password" in request.vars:
-    #    user = auth.login_bare(request.vars["sync_username"], request.vars["sync_password"])
-
     sync_peer = None
     if "sync_partner_uuid" in request.vars:
         sync_peer = db(db.sync_partner.uuid == request.vars["sync_partner_uuid"]).select()[0]
 
-    #if _function == "create" and not user:
-    #    return T("Access Denied")
+    # remote push?
+    remote_push = False
+    if _function == "push":
+        remote_push = True
+        request.args = ["create"]
+        _function = "create"
 
-    if _function == "list" or _function == "create":
+    if _function == "create" and not sync_peer:
+        return T("Invalid Request")
+
+    if _function in ["list", "create"]:
         s3xrc.sync_resolve = sync_res
-        return shn_rest_controller(module=_module, resource=_resource, push_limit=None)
+        ret_data = shn_rest_controller(module=_module, resource=_resource, push_limit=None)
+        if remote_push:
+                sync_resources = _module + "_" + _resource
+                sync_errors = ""
+                ret_json = json.loads(ret_data["item"])
+                if str(ret_json["statuscode"]) != "200":
+                    sync_resources += " (error)"
+                    sync_errors = str(ret_data["item"])
+                # log sync remote push
+                log_table_id = db[log_table].insert(
+                    partner_uuid = sync_peer.uuid,
+                    partner_name = sync_peer.name,
+                    timestamp = datetime.datetime.utcnow(),
+                    sync_resources = sync_resources,
+                    sync_errors = sync_errors,
+                    sync_mode = "online",
+                    sync_method = "Remote Push",
+                    complete_sync = False
+                )
+        return ret_data
     else:
         return T("Not supported")
     

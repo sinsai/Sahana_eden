@@ -36,14 +36,14 @@ $(function() {
         cost_type=$("select[name='cost_type']").val();
         if (cost_type==2) {
             // Set the Category
-            $('select#budget_item_category_type').val("Running Cost")
+            $('#budget_item_category_type').val("Running Cost")
             // Set the Unit Cost input
-            $('input#budget_item_unit_cost').val('0.0')
+            $('#budget_item_unit_cost').val('0.0')
         } else if (cost_type==1) {
             // Set the Running Cost inputs
-            $('input#budget_item_monthly_cost').val('0.0')
-            $('input#budget_item_minute_cost').val('0.0')
-            $('input#budget_item_megabyte_cost').val('0.0')
+            $('#budget_item_monthly_cost').val('0.0')
+            $('#budget_item_minute_cost').val('0.0')
+            $('#budget_item_megabyte_cost').val('0.0')
         }
         // Pass to RESTlike CRUD controller
         event.default();

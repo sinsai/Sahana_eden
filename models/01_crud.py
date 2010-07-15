@@ -1743,12 +1743,13 @@ def shn_create(jr, **attr):
         # Read in POST
         import csv
         csv.field_size_limit(1000000000)
-        infile = open(request.vars.filename, "rb")
-        #try:
-        import_csv(infile, table)
-        session.flash = T("Data uploaded")
-        #except:
-            #session.error = T("Unable to parse CSV file!")
+        #infile = open(request.vars.filename, "rb")
+        infile = request.vars.filename.file
+        try:
+            import_csv(infile, table)
+            session.flash = T("Data uploaded")
+        except:
+            session.error = T("Unable to parse CSV file!")
         redirect(jr.there())
 
     elif jr.representation in shn_json_import_formats:

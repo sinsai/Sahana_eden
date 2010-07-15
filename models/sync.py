@@ -78,8 +78,8 @@ table = db.define_table(tablename,
                 Field("partner_uuid", length=36),           # uuid of remote system we synced with
                 Field("partner_name"),                      # descriptive name of remote system we synced with
                 Field("timestamp", "datetime"),             # the date and time when sync was performed
-                Field("sync_resources"),                    # comma-separated list of resources synced
-                Field("sync_errors"),                       # sync errors
+                Field("sync_resources", "text"),            # comma-separated list of resources synced
+                Field("sync_errors", "text"),               # sync errors encountered
                 Field("sync_mode"),                         # whether this was an "online" sync (standard sync mode) or "offline" sync (USB/File based)
                 Field("complete_sync", "boolean"),          # whether all resources were synced (complete sync) or only those modified since the last sync (partial sync)
                 Field("sync_method"),                       # whether this was a Pull only, Push only, Remote Push or a Pull-Push sync operation

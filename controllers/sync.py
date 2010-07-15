@@ -204,7 +204,7 @@ def now():
                     partner_uuid = peer.uuid,
                     partner_name = peer.name,
                     timestamp = datetime.datetime.utcnow(),
-                    sync_resources = ",".join(map(str, sync_resources)),
+                    sync_resources = ", ".join(map(str, sync_resources)),
                     sync_errors = sync_errors,
                     sync_mode = "online",
                     sync_method = "Pull-Push",

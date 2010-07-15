@@ -369,7 +369,33 @@ def sync_res(vector):
 def partner():
     "Synchronisation Partners"
     db.sync_partner.uuid.label = "UUID"
+    db.sync_partner.uuid.comment = DIV(SPAN("*", _class="req"), DIV(_class="tooltip",
+        _title=T("UUID|The unique identifier of the sync partner. Enter 0 for non-Eden instances.")))
+    db.sync_partner.name.label = T("Name")
+    db.sync_partner.name.comment = DIV(_class="tooltip",
+        _title=T("Name|The descriptive name of the sync partner."))
+    db.sync_partner.instance_url.label = T("Instance URL")
+    db.sync_partner.instance_url.comment = DIV(SPAN("*", _class="req"), DIV(_class="tooltip",
+        _title=T("Instance URL|For Eden instances - this is the application URL, e.g. http://sync.sahanfoundation.org/eden. For non-Eden instances, this is the Full ")))
+    db.sync_partner.instance_type.label = T("Instance Type")
+    db.sync_partner.instance_type.comment = DIV(SPAN("*", _class="req"), DIV(_class="tooltip",
+        _title=T("Instance Type|Whether this is a Sahana Eden, Sahana Agasti, Ushahidi or Other instance.")))
+    db.sync_partner.username.label = T("Sync Username")
+    db.sync_partner.username.comment = DIV(_class="tooltip",
+        _title=T("Sync Username|Username used to login when synchronising with this partner. Note that only HTTP Basic authentication is supported."))
+    db.sync_partner.password.label = T("Sync Password")
+    db.sync_partner.password.comment = DIV(_class="tooltip",
+        _title=T("Sync Password|Password used to login when synchronising with this partner. Note that only HTTP Basic authentication is supported."))
+    db.sync_partner.comments.label = T("Comments")
+    db.sync_partner.comments.comment = DIV(_class="tooltip",
+        _title=T("Comments|Any comments about this sync partner."))
+    db.sync_partner.policy.label = T("Sync Policy")
+    db.sync_partner.policy.comment = DIV(SPAN("*", _class="req"), DIV(_class="tooltip",
+        _title=T("Sync Policy|The policy to use while synchronising with this partner. All policies other than 'No Sync' come into effect when conflicts arise.")))
+    db.sync_partner.sync_pools.readable = False
+    db.sync_partner.sync_pools.writable = False
     db.sync_partner.password.readable = False
+    db.sync_partner.last_sync_on.writable = False
     title_create = T("Add Partner")
     title_display = T("Partner Details")
     title_list = T("List Partners")
@@ -390,11 +416,24 @@ def partner():
 @auth.shn_requires_membership(1)
 def setting():
     "Synchronisation Settings"
+    if not "update" in request.args:
+        redirect(URL(r=request, args=["update", 1]))
     db.sync_setting.uuid.writable = False
     db.sync_setting.uuid.label = "UUID"
-    db.sync_setting.uuid.comment = A(SPAN("[Help]"), _class="tooltip", _title=T("UUID|The unique identifier which identifies this server to other instances."))
+    db.sync_setting.uuid.comment = DIV(_class="tooltip",
+        _title=T("UUID|The unique identifier which identifies this instance to other instances."))
+    db.sync_setting.comments.label = T("Comments")
+    db.sync_setting.comments.comment = DIV(_class="tooltip",
+        _title=T("Comments|Any comments for this instance."))
+#    db.sync_setting.beacon_service_url.label = T("Beacon Service URL")
+#    db.sync_setting.beacon_service_url.comment = DIV(_class="tooltip",
+#        _title=T("Beacon Service URL|Beacon service allows searching for other instances that wish to synchronise. This is the URL of the beacon service this instance will use."))
+    db.sync_setting.sync_pools.readable = False
+    db.sync_setting.sync_pools.writable = False
+    db.sync_setting.beacon_service_url.readable = False
+    db.sync_setting.beacon_service_url.writable = False
     title_update = T("Edit Sync Settings")
-    label_list_button = None
+    label_list_button = T("Sync Settings")
     msg_record_modified = T("Sync Settings updated")
     s3.crud_strings.sync_setting = Storage(title_update=title_update,label_list_button=label_list_button,msg_record_modified=msg_record_modified)
     crud.settings.update_next = URL(r=request, args=["update", 1])

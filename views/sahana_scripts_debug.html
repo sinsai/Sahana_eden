@@ -12,11 +12,8 @@
 <script type="text/javascript">//<![CDATA[
 jQuery(document).ready(function() {
     jQuery("input[type='checkbox'].delete").click(function() { if(this.checked) if(!confirm("{{=T('Sure you want to delete this object?')}}")) this.checked=false; }); 
-    //try {jQuery("input.date").focus( function() {Calendar.setup({
-    //     inputField:this.id, ifFormat:"{{=T('%Y-%m-%d')}}", showsTime:false
-    //}); }); } catch(e) {};
     try { jQuery("input.datetime").focus( function() {Calendar.setup({
-         inputField:this.id, ifFormat:"{{=T('%Y-%m-%d %H:%M')}}", showsTime: true,timeFormat: "24"
+         inputField:this.id, ifFormat:"{{=T('%Y-%m-%d %H:%M:%S')}}", showsTime: true,timeFormat: "24"
     }); }); } catch(e) {};
 });
 //]]></script>
@@ -51,39 +48,13 @@ jQuery(document).ready(function(){
 
 function viewMap(feature_id) {
     var url = '{{=URL(r=request, c='gis', f='display_feature')}}/' + feature_id;
-    var iframe = "<iframe width='810' height='610' src='" + url + "'></iframe>";
-    if (jQuery.support.scriptEval==true) {
-        // Firefox, Chrome
-        // ToDo: catch Chrome somehow as it prefers the IE method
-        $.get(url, function(data){
-            // Hack from http://stackoverflow.com/questions/1197575/can-scripts-be-inserted-with-innerhtml
-            var n = document.createElement("div");
-            n.innerHTML = data;
-            document.body.appendChild(n);
-        });
-    } else {
-        // IE
-        //$.getScript() will be too complex to engineer
-        $('#map').html(iframe);
-    }
+    var iframe = "<iframe width='640' height='480' src='" + url + "'></iframe>";
+    $('#map').html(iframe);
 }
 function viewMapMulti(module, resource, instance, jresource) {
     var url = '{{=URL(r=request, c='gis', f='display_features')}}/?module=' + module + '&resource=' + resource + '&instance=' + instance + '&jresource=' + jresource;
-    var iframe = "<iframe width='810' height='610' src='" + url + "'></iframe>";
-    if (jQuery.support.scriptEval==true) {
-        // Firefox, Chrome
-        // ToDo: catch Chrome somehow as it prefers the IE method
-        $.get(url, function(data){
-            // Hack from http://stackoverflow.com/questions/1197575/can-scripts-be-inserted-with-innerhtml
-            var n = document.createElement("div");
-            n.innerHTML = data;
-            document.body.appendChild(n);
-        });
-    } else {
-        // IE
-        //$.getScript() will be too complex to engineer
-        $('#map').html(iframe);
-    }
+    var iframe = "<iframe width='640' height='480' src='" + url + "'></iframe>";
+    $('#map').html(iframe);
 }
 jQuery(document).ready(function() {
     jQuery("input.date").datepicker({ changeMonth: true, changeYear: true, dateFormat: 'yy-mm-dd', isRTL: false });

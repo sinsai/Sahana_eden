@@ -6,12 +6,19 @@
 function collapse(id) { jQuery('#'+id).slideToggle(); }
 function fade(id,value) { if(value>0) jQuery('#'+id).hide().fadeIn('slow'); else jQuery('#'+id).show().fadeOut('slow'); }
 function ajax(u,s,t) {
-  var query="";
-  for(i=0; i<s.length; i++) { 
-     if(i>0) query=query+"&";
-     query=query+encodeURIComponent(s[i])+"="+encodeURIComponent(document.getElementById(s[i]).value);
-  }
-  jQuery.ajax({type: "POST", url: u, data: query, success: function(msg) { if(t==':eval') eval(msg); else document.getElementById(t).innerHTML=msg; } });  
+    query = '';
+    if (typeof s == "string") {
+        d = jQuery(s).serialize();
+        if(d){ query = d; }
+    } else {
+        pcs = [];
+        for(i=0; i<s.length; i++) {
+            q = jQuery("#"+s[i]).serialize();
+            if(q){pcs.push(q);}
+        }
+        if (pcs.length>0){query = pcs.join("&");}
+    }
+    jQuery.ajax({type: "POST", url: u, data: query, success: function(msg) { if(t) { if(t==':eval') eval(msg); else jQuery("#" + t).html(msg); } } }); 
 }
 String.prototype.reverse = function () { return this.split('').reverse().join('');};
 function web2py_ajax_init() {
@@ -35,7 +42,8 @@ jQuery(document).ready(function() {
 function web2py_trap_form(action,target) {
    jQuery('#'+target+' form').each(function(i){
       var form=jQuery(this);
-      jQuery('input[type="submit"]',this).click(function(){
+      if(!form.hasClass('no_trap'))
+        form.submit(function(obj){
          jQuery('.flash').hide().html('');
          web2py_ajax_page('post',action,form.serialize(),target);
          return false;

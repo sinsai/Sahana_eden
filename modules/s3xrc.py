@@ -334,7 +334,11 @@ class S3Resource(object):
 
         elif method == "search" and not r.component:
             authorised = permit("read", tablename)
-
+	
+	#Own hack
+	elif method == "list_fields":
+		authorised = permit("read",tablename)
+	#Hack ends
         elif method == "clear" and not r.component:
             self.manager.clear_session(r.session, self.prefix, self.name)
             if "_next" in r.request.vars:

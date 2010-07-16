@@ -2226,6 +2226,16 @@ def shn_search(jr, **attr):
 
     return output
 
+#Own code
+def shn_list_fields(jr,**attr):
+    
+    if jr.http == "POST":
+        item = s3xrc.xml.json_message(False, 400 , "%s requests not supported." % jr.http)
+    module, resource, table, tablename = jr.target()
+    f=file("/home/shikhar/Desktop/abc.txt","wb")
+    f.write(module+'_'+resource)
+    f.close()
+#Code ends
 # *****************************************************************************
 # Main controller function
 
@@ -2309,7 +2319,7 @@ def shn_rest_controller(module, resource, **attr):
             - SMS, LDIF
 
     """
-
+    #When creating a new handler for an action, set the handler in __get in s3xrc.py
     s3xrc.set_handler("import_xml", import_xml)
     s3xrc.set_handler("import_json", import_json)
     s3xrc.set_handler("list", shn_list)
@@ -2319,7 +2329,10 @@ def shn_rest_controller(module, resource, **attr):
     s3xrc.set_handler("delete", shn_delete)
     s3xrc.set_handler("search", shn_search)
     s3xrc.set_handler("options", shn_options)
-
+ 
+    #Own hack
+    s3xrc.set_handler("list_fields",shn_list_fields)
+    #Hack ends
     res, req = s3xrc.parse_request(module, resource, session, request, response)
     output = res.execute_request(req, **attr)
 

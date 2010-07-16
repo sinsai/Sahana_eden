@@ -142,3 +142,13 @@ if deployment_settings.has_module(module):
             db.commit()
     s3xrc.model.configure(db.survey_question_options,
                       onaccept=lambda form: question_options_onaccept(form))
+
+    def question_onaccept(form):
+        if form.vars.id and session.rcvars.survey_question:
+            table = db.survey_question_options
+            opts = db(db.survey_question_options.question_id == form.vars.id).select().first()
+            if opts:                    
+                redirect(URL(r=request,f="question_options",args=[opts.id,"update"]))
+
+    s3xrc.model.configure(db.survey_question,
+                      onaccept=lambda form: question_onaccept(form))

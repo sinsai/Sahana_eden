@@ -181,18 +181,20 @@ def question():
         msg_record_modified = T("Survey Question updated"),
         msg_record_deleted = T("Survey Question deleted"),
         msg_list_empty = T("No Survey Questions currently registered"))
-
+    
     output = shn_rest_controller(module, resource,listadd=False)
+    
     return transform_buttons(output,next=True,cancel=True)
 
 def question_options():
     resource = "question_options"
     question_type = None
-    question_id = session.rcvars.question_id
+    question_id = session.rcvars.question_id   
     if session.rcvars and "survey_question" in session.rcvars:
         question = db(db.survey_question.id == session.rcvars.survey_question).select().first()
         question_type = question.question_type
     tablename = "%s_%s" % (module, resource)
+
     table = db[tablename]
     table.uuid.requires = IS_NOT_IN_DB(db,"%s.uuid" % tablename)
     table.question_id.readable = False
@@ -206,9 +208,6 @@ def question_options():
     table.column_choices.label = T("Column Choices (One Per Line")
     table.tf_choices.label = T("Text before each Text Field (One per line)")
     id = db(table.id == question_id).select().first()
-    if id:
-        redirect(URL(r=request,f="question_options",args=[id,"update"]))
-        return
     output = shn_rest_controller(module, resource,listadd=False)
     output.update(question_type=question_type)
     return transform_buttons(output,prev=True,finish=True,cancel=True)
@@ -217,6 +216,8 @@ def layout():
     """Deals with Rendering the survey editor"""    
 
     template_id = None
+    section_rendered = []
+    question_rendered = []
     if session.rcvars and "survey_template" in session.rcvars:
         template_id = session.rcvars["survey_template"]
     output = {}
@@ -226,37 +227,40 @@ def layout():
     # Get sections for this template.
     section_query = (db.survey_template_link_table.survey_template_id == template_id) & (db.survey_section.id == db.survey_template_link_table.survey_section_id)
     sections = db(section_query).select(db.survey_section.ALL)
-
-    ui = DIV(_class="sections")
-    if not sections:
-        ui.append(DIV(A(T("Add Section"),_class="colorbox",
-                                       _href=URL(r=request, f="section", args=["create"], vars=dict(format="popup")),
-                                       _target="top",
-                                       _title=T("Add Section")),_class="title"))
+    
+    ui = DIV(_class="sections")   
     # build the UI
     for section in sections:
+        section_rendered.append(section.id)        
         link = A(section.name,_class="colorbox",
                                        _href=URL(r=request, c="survey", f="section", args=[section.id,"update"], vars=dict(format="popup")),
                                        _target="top",
                                        _title=T("Edit Section"))
 
         ui.append(BR())
-        ui.append(DIV(link,_class="title"))
+
+        if not section_rendered.count(section.id) > 1:
+            ui.append(DIV(link,_class="title"))
         question_query = (db.survey_template_link_table.survey_section_id == section.id) & (db.survey_question.id == db.survey_template_link_table.survey_question_id)
         questions = db(question_query).select(db.survey_question.ALL)
         if not questions:
             ui.append(DIV(A (T("Add Question"),_href=URL(r=request,f="question"))))
         for question in questions:
+            question_rendered.append(question.id)
+            if question_rendered.count(question.id) > 1:
+                continue            
             question_type = session.rcvars.survey_question_type
             #TODO: take order into account.
             # MC (Only One Answer allowed)
             options = db(db.survey_question_options.question_id == question.id).select().first()
             ui.append(BR())
+            ui.append(DIV(question.name,_class="question"))
             if question.question_type is 1:
-               pass
+               if options:
+                   print options.answer_choices
             elif question.question_type is 2:
                 pass
-            elif question_type is 3:
+            elif question.question_type is 3:
                 pass
             elif question.question_type == 4:
                 pass
@@ -295,6 +299,7 @@ def layout():
     output.update(ui=ui)
     return output
     
+
 def add_buttons(form, save = None, prev = None, next = None, finish = None,cancel=None):
     """
         Utility Function to reduce code duplication as this deals with:
@@ -326,8 +331,9 @@ def transform_buttons(output,save = None, prev = None, next = None, finish = Non
         if form:
             add_buttons(form,save,prev,next,finish,cancel)
     return output
+
 def check_comments(allow_comments,text):
     ret = None
     if allow_comments:
         ret = DIV(text,INPUT())
-    return ret
+    return ret    

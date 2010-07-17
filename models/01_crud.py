@@ -65,7 +65,7 @@ s3xrc = _s3xrc.S3ResourceController(db,
             xml_export_formats = shn_xml_export_formats,
             json_import_formats = shn_json_import_formats,
             json_export_formats = shn_json_export_formats,
-            debug = True)
+            debug = False)
 
 # *****************************************************************************
 def shn_field_represent(field, row, col):
@@ -1316,8 +1316,6 @@ def shn_list(jr, **attr):
     # Filter deleted records
     if "deleted" in table:
         query = ((table.deleted == False) | (table.deleted == None)) & query
-
-    print query
 
     # Call audit
     shn_audit_read(operation="list",

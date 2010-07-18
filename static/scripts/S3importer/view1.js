@@ -72,18 +72,19 @@ function view1(importsheet){
        edit[i]=new Ext.form.TextField();
    }
    //makes column model objects
-   for( i=1 ; i< importsheet.columns + 1; i++)
+   for( i=2 ; i< importsheet.columns + 2; i++)
    {
        var obj={};
-       obj.header="Column "+(i);
+       obj.header="Column "+(i-1);
        obj.sortable=true;
-       obj.dataIndex=columnlist[i-1];
+       obj.dataIndex=columnlist[i-2];
        obj.editor=edit[i];
        column_model[i]=obj;
    }
     var new_row_string="{";
     var sm2 = new Ext.grid.CheckboxSelectionModel({singleSelect: 'true'});
-    column_model[0]=sm2;	//placing the checkboxes before the first column
+    column_model[1]=sm2;	//placing the checkboxes before the first column
+    column_model[0]=new Ext.grid.RowNumberer();
     //column_model[0]=new Ext.grid.RowNumberer();
     column_model.push(action);
     importsheet.column_model=column_model;

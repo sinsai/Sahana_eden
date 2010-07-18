@@ -301,8 +301,60 @@ function view4(importsheet)//header,table,numcol,grid_data)
 							failure: function(r,o)
 							{
 								lm.hide();
-								Ext.Msg.alert("Failure","Import Failed");
-									document.write(r.responseText+"<br/>");
+								importsheet.error_rows=new Array();
+							 	try{
+									var re_import = eval('('+r.responseText+')');
+									var i=0;
+									var j=0;
+									var jlim=importsheet.datastore.getCount();
+									while(j < jlim )
+									{
+										i=0;
+										while(i < importsheet.columns)
+										{
+											if(re_import.tree[str][j][importsheet.map[i][2]].hasOwnProperty('@error'))
+											{
+												console.log("Error detected in row ",j+1,re_import.tree[str][j]);
+												importsheet.error_rows.push(re_import.tree[str][j]);
+												re_import.tree[str].splice(j,1);
+												console.log(importsheet.error_rows);
+											}
+											i++;
+										}
+										j++;
+									}
+									//console.log("The erroneous records are ",importsheet.error_rows);
+									console.log("And the correct tree is ",re_import.tree);
+								}
+								catch(err)
+								{
+									Ext.Msg.alert("","Error processing returned tree in row "+j+" column"+i);
+									console.log("The erroneous records are ",importsheet.error_rows);
+								}
+								var field='\"'+importsheet.map[j][2]+'\"';
+								/*
+								while(i < importsheet.rows)
+								{
+									var record = re_import["tree"][str];
+									document.write(record+'<br/>');
+									i++;
+								}*/
+
+
+								/*			
+								Ext.Msg.show({
+										title : "Import failed",
+										msg   : "Some records could not be imported. Would you like to edit the records which could not be imported?",
+										buttons: Ext.Msg.YESNO,
+										fn : function(btn)
+											{
+												if(btn=="no")
+													return;
+												else
+												//call post import function
+												{}
+											}
+										});*/	//	document.write(r.responseText+"<br/>");
 							}
 							});}.defer(50,this));
 	

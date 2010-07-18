@@ -23,20 +23,29 @@ def index():
 def googledoc():
     next = 'http://' + request.env.http_host + '/' + \
 		    request.application + '/importer/gettoken'
-    scope = 'https://spreadsheets.google.com/feeds/'
+    scope = 'https://spreadsheets.google.com/feeds'
     secure = False
     sessionval = True
     url2token = gd_client.GenerateAuthSubURL(next, scope, \
-		    secure, sessionval)
+		    secure=secure, session = sessionval)
     return dict(module_name=module_name,auth_url=url2token)	
 
 
 def gettoken():
     #gd_client = importer.gdata.spreadsheet.service.SpreadsheetsService()
-    authsub_token = request.vars['token']
-    authsub_token.replace('\r','')
-    authsub_token.replace('\n','')
-    gd_client.SetAuthSubToken(authsub_token)
+    getvars=repr(request.get_vars)
+    auth_url='http://'+request.env.http_host+request.url+'?auth_sub_scopes='+request.get_vars['auth_sub_scopes']+'&token='+request.get_vars['token']
+    f=file("/home/shikhar/Desktop/abc.txt","wb")
+    f.write(repr(auth_url))
+     
+    #authsub_token = importer.gdata.auth.extract_auth_sub_token_from_url(auth_url)
+    
+    authsub_token = importer.gdata.auth.AuthSubTokenFromUrl(auth_url) 
+    #gd_client.token_store.add_token(authsub_token)
+    user_sreadsheets = gd_client.AuthSubTokenInfo()
+    f.write('Not working'+repr(authsub_token))
+    f.close()
+    #gd_client.UpgradeToSessionToken()
     '''Google documentation is outdated on this, gd_client.auth_token doesn't work'''
     
     user_spreadsheets = getspreadsheetlist()

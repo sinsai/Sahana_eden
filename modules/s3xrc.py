@@ -65,6 +65,12 @@ class S3Resource(object):
 
     """ API for S3Resources """
 
+    # Error messages
+    BADRECORD = "Record not found"
+    BADMETHOD = "Invalid method"
+    BADFORMAT = "Invalid data format"
+    BADREQUEST = "Invalid request"
+
     # -------------------------------------------------------------------------
     def __init__(self, manager, prefix, name,
                  id=None,
@@ -87,6 +93,7 @@ class S3Resource(object):
             self.__debug = debug
 
         self.__permit = self.__manager.auth.shn_has_permission
+        self.__accessible = self.__manager.auth.shn_accessible_query
 
         self.prefix = prefix
         self.name = name
@@ -202,7 +209,14 @@ class S3Resource(object):
     # -------------------------------------------------------------------------
     def build_query(self, id=None, uid=None, filter=None, url_vars=None):
 
-        """ Query builder """
+        """ Query builder
+
+            @param id: record ID or list of record IDs to include
+            @param uid: record UID or list of record UIDs to include
+            @filter: filtering query (DAL only)
+            @url_vars: dict of URL query variables
+
+        """
 
         # Initialize
         self.clear()
@@ -213,30 +227,41 @@ class S3Resource(object):
         else:
             url_query = Storage()
 
-        if self.__storage is None: # build DAL query
+        if self.__storage is None:
+
+            deletion_status = self.__manager.DELETED
 
             self.__multiple = True # multiple results expected by default
 
-            if self.parent: # build component query
+            # Master Query
+            if self.__accessible is not None:
+                master_query = self.__accessible("read", self.table)
+            else:
+                master_query = (self.table.id > 0)
+
+            self.__query = master_query
+
+            # Component Query
+            if self.parent:
+
                 parent_query = self.parent.get_parent_query()
+                if parent_query:
+                    self.__query = self.__query & parent_query
+
                 component = self.parent.components.get(self.name, None)
                 if component:
                     pkey = component.pkey
                     fkey = component.fkey
                     self.__multiple = component.multiple
                     join = (self.parent.table[pkey] == self.table[fkey])
-                else:
-                    join = (self.table.id > 0)
-                if parent_query:
-                    query = parent_query & join
-                else:
-                    query = join
-                if self.__manager.DELETED in self.table.fields:
-                    query = query & \
-                            (self.table[self.__manager.DELETED] == False)
-                self.__query = query
+                    self.__query = self.__query & join
 
-            else: # build master query
+                if deletion_status in self.table.fields:
+                    remaining = (self.table[deletion_status] == False)
+                    self.__query = self.__query & remaining
+
+            # Primary Resource Query
+            else:
 
                 if id or uid:
                     if self.name not in url_query:
@@ -286,9 +311,9 @@ class S3Resource(object):
                     if self.__manager.UID not in url_query[self.name]:
                         url_query[self.name][self.manager.__UID] = uid_queries
 
-                # URL Query
-                master_query = None
+                # URL Queries
                 for rname in url_query:
+
                     if rname == self.name:
                         table = self.table
                     elif rname in self.components:
@@ -296,13 +321,14 @@ class S3Resource(object):
                         table = component.resource.table
                         pkey = component.pkey
                         fkey = component.fkey
-                        q = (self.table[pkey]==table[fkey])
-                        if self.__manager.DELETED in table:
-                            q = (table[self.__manager.DELETED] == False) & q
-                        if master_query:
-                            master_query = master_query & q
-                        else:
-                            master_query = q
+
+                        join = (self.table[pkey]==table[fkey])
+                        self.__query = self.__query & join
+
+                        if deletion_status in table.fields:
+                            remaining = (table[deletion_status] == False)
+                            self.__query = self.__query & remaining
+
                     for field in url_query[rname]:
                         if field in table.fields:
                             for op in url_query[rname][field]:
@@ -351,32 +377,21 @@ class S3Resource(object):
                                     query = (query)
                                 else:
                                     continue
-                                if master_query:
-                                    master_query = master_query & query
-                                else:
-                                    master_query = query
+                                self.__query = self.__query & query
 
                 # Filter
                 if filter:
-                    if master_query:
-                        master_query = master_query & filter
-                    else:
-                        master_query = filter
-
-                if not master_query:
-                    master_query = (self.table.id > 0)
+                    self.__query = self.__query & filter
 
                 # Deletion status
-                deleted = self.__manager.DELETED
-                if deleted in self.table:
-                    master_query = (self.table[deleted] == False) & master_query
+                if deletion_status in self.table.fields:
+                    remaining = (self.table[deletion_status] == False)
+                    self.__query = self.__query & remaining
 
-                self.__query = master_query
-
-        else: # build XPath Query
-
+        else:
             raise NotImplementedError
 
+        return self.__query
 
     # -------------------------------------------------------------------------
     def get_query(self):
@@ -704,10 +719,10 @@ class S3Resource(object):
                     redirect(URL(r=r.request, f=self.name, args="search_simple",
                                  vars={"_next": r.same()}))
                 else:
-                    r.session.error = r.BADRECORD
+                    r.session.error = self.BADRECORD
                     redirect(URL(r=r.request, c=self.prefix, f=self.name))
             else:
-                raise HTTP(404, body=r.BADRECORD)
+                raise HTTP(404, body=self.BADRECORD)
 
         # Pre-process
         if hooks is not None:
@@ -728,11 +743,11 @@ class S3Resource(object):
                             return output
                         else:
                             status = pre.get("status", 400)
-                            message = pre.get("message", r.INVALIDREQUEST)
+                            message = pre.get("message", self.BADREQUEST)
                             raise HTTP(status, message)
             elif not pre:
                 self.__dbg("pre-process returned an error - aborting")
-                raise HTTP(400, body=r.INVALIDREQUEST)
+                raise HTTP(400, body=self.BADREQUEST)
 
         # Default view
         if r.representation <> "html":
@@ -755,7 +770,7 @@ class S3Resource(object):
             elif r.http == "DELETE":
                 handler = self.__delete(r)
             else:
-                raise HTTP(501, body=r.BADMETHOD)
+                raise HTTP(501, body=self.BADMETHOD)
             if handler is not None:
                 self.__dbg("method handler found - executing request")
                 output = handler(r, **attr)
@@ -841,7 +856,7 @@ class S3Resource(object):
             return None
 
         else:
-            raise HTTP(501, body=r.BADMETHOD)
+            raise HTTP(501, body=self.BADMETHOD)
 
         if not authorised:
             r.unauthorised()
@@ -865,7 +880,7 @@ class S3Resource(object):
         elif r.representation in self.__manager.json_import_formats:
             return self.get_handler("import_json")
         else:
-            raise HTTP(501, body=r.BADFORMAT)
+            raise HTTP(501, body=self.BADFORMAT)
 
 
     # -------------------------------------------------------------------------
@@ -911,7 +926,7 @@ class S3Resource(object):
                 r.next = r.there()
             return self.get_handler("delete")
         else:
-            raise HTTP(501, body=r.BADMETHOD)
+            raise HTTP(501, body=self.BADMETHOD)
 
     # XML/JSON functions ======================================================
 
@@ -1069,9 +1084,9 @@ class S3Request(object):
                 self.pkey, self.fkey = c.pkey, c.fkey
                 self.multiple = self.component.attr.get("multiple", True)
             else:
-                self.error = "%s not a component of %s" % \
-                             (self.component_name, self.resource.tablename)
-                raise SyntaxError(self.error)
+                manager.error = "%s not a component of %s" % \
+                                (self.component_name, self.resource.tablename)
+                raise SyntaxError(manager.error)
 
         # Find primary record
         uid = self.request.vars.get("%s.uid" % self.name, None)
@@ -1090,8 +1105,8 @@ class S3Request(object):
                 self.record = self.resource.records().first()
                 self.id = self.record.id
             else:
-                self.error = "No matching record found"
-                raise KeyError(self.error)
+                manager.error = "No matching record found"
+                raise KeyError(manager.error)
 
         # Check for custom action
         model = manager.model
@@ -2330,11 +2345,18 @@ class S3ResourceController(object):
 
         """
 
-        req = self.request(prefix, name,
-                           request=request,
-                           session=session,
-                           response=response,
-                           debug=self.debug)
+        self.error = None
+
+        try:
+            req = self.request(prefix, name,
+                               request=request,
+                               session=session,
+                               response=response,
+                               debug=self.debug)
+        except SyntaxError:
+            raise HTTP(400, body=self.error)
+        except KeyError:
+            raise HTTP(404, body=self.error)
 
         res = req.resource
 

@@ -1006,11 +1006,13 @@ class S3Resource(object):
                                                   fields=fields)
             return tree
 
+
     # -------------------------------------------------------------------------
     def options_xml(self, component=None, fields=None):
 
         tree = self.options_tree(component=component, fields=fields)
         return self.__manager.xml.tostring(tree, pretty_print=True)
+
 
     # -------------------------------------------------------------------------
     def options_json(self, component=None, fields=None):
@@ -1018,6 +1020,7 @@ class S3Resource(object):
         tree = etree.ElementTree(self.options_tree(component=component,
                                                    fields=fields))
         return self.__manager.xml.tree2json(tree, pretty_print=True)
+
 
     # -------------------------------------------------------------------------
     def fields_tree(self, component=None):
@@ -1033,17 +1036,20 @@ class S3Resource(object):
             tree = self.__manager.xml.get_fields(self.prefix, self.name)
             return tree
 
+
     # -------------------------------------------------------------------------
     def fields_xml(self, component=None):
 
         tree = self.fields_tree(component=component)
         return self.__manager.xml.tostring(tree, pretty_print=True)
 
+
     # -------------------------------------------------------------------------
     def fields_json(self, component=None):
 
         tree = etree.ElementTree(self.fields_tree(component=component))
         return self.__manager.xml.tree2json(tree, pretty_print=True)
+
 
     # -------------------------------------------------------------------------
     def push_xml(self):
@@ -1599,68 +1605,6 @@ class S3Request(object):
                                   audit=audit,
                                   push_limit=push_limit,
                                   ignore_errors=ignore_errors)
-
-
-    def options_tree(self):
-
-        """ Export field options in the current resource as element tree """
-
-        fields = self.request.vars.get("field", None)
-        if fields and not isinstance(fields, list):
-            if "," in fields:
-                fields = fields.split(",")
-            else:
-                fields = [fields]
-
-        if not fields:
-            if self.component:
-                tree = self.__manager.options_xml(self.component.prefix,
-                                           self.component.name)
-            else:
-                joins = self.__manager.model.get_components(self.prefix, self.name)
-                tree = self.__manager.options_xml(self.prefix, self.name, joins=joins)
-        else:
-            if self.component:
-                table = self.component.table
-            else:
-                table = self.table
-            tree = etree.Element(self.__manager.xml.TAG.options)
-            for field in fields:
-                opt_list = self.__manager.xml.get_field_options(table, field)
-                opt_list.set("id", "%s_%s" % (table._tablename, field))
-                opt_list.set("name", "%s" % field)
-                tree.append(opt_list)
-            if len(tree) == 1:
-                tree = tree.findall("select")[0]
-            else:
-                tree.set(self.__manager.xml.TAG.resource, table._tablename)
-            tree = etree.ElementTree(tree)
-
-        return tree
-
-
-    def options_xml(self, pretty_print=False):
-
-        """ Export field options in the current resource as XML
-
-            @param pretty_print: provide pretty formatted output
-
-        """
-
-        tree = self.options_tree()
-        return self.__manager.xml.tostring(tree, pretty_print=pretty_print)
-
-
-    def options_json(self, pretty_print=False):
-
-        """ Export field options in the current resource as JSON
-
-            @param pretty_print: provide pretty formatted output
-
-        """
-
-        tree = self.options_tree()
-        return self.__manager.xml.tree2json(tree, pretty_print=pretty_print)
 
 
 # *****************************************************************************
@@ -3433,6 +3377,7 @@ class S3XML(object):
     )
 
     ATTRIBUTE = Storage(
+        id="id",
         name="name",
         table="table",
         field="field",
@@ -4178,7 +4123,9 @@ class S3XML(object):
             return select
 
         requires = field.requires
-        select.set(self.TAG.field, fieldname)
+        select.set(self.ATTRIBUTE.id, "%s_%s" % (table._tablename, fieldname))
+        select.set(self.ATTRIBUTE.name, fieldname)
+
         if not isinstance(requires, (list, tuple)):
             requires = [requires]
         if requires:
@@ -4207,8 +4154,11 @@ class S3XML(object):
 
         options = etree.Element(self.TAG.options)
 
-        if fields and not isinstance(fields, (list, tuple)):
-            fields = [fields]
+        if fields:
+            if not isinstance(fields, (list, tuple)):
+                fields = [fields]
+            if len(fields) == 1:
+                return(self.get_field_options(table, fields[0]))
 
         if table:
             options.set(self.ATTRIBUTE.resource, tablename)

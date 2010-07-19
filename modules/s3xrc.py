@@ -1178,6 +1178,10 @@ class S3Request(object):
             if len(self.resource) == 1:
                 self.record = self.resource.records().first()
                 self.id = self.record.id
+                self.__manager.store_session(self.session,
+                                             self.resource.prefix,
+                                             self.resource.name,
+                                             self.id)
             else:
                 manager.error = "No matching record found"
                 raise KeyError(manager.error)

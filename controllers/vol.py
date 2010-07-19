@@ -136,8 +136,8 @@ def person():
         sticky=True,
         rss=dict(
             title=shn_pr_person_represent,
-            description="ID Label: %(pr_pe_label)s\n%(comment)s"
-        ))
+            description="ID Label: %(pr_pe_label)s\n%(comment)s"),
+        listadd=False)
 
     shn_menu()
     return output
@@ -212,20 +212,49 @@ def skill_types():
 
 # -----------------------------------------------------------------------------
 def view_map():
-    "Map Location of Volunteer"
+    """
+    Map Location of Volunteer.
+    Use most recent presence if available, else any address that's available.
+    """
 
-    volunteer = {"feature_group" : "People"}
-    html = gis.show_map(
-                feature_groups = [volunteer],
-                wms_browser = {"name" : "Risk Maps", "url" : "http://preview.grid.unep.ch:8080/geoserver/ows?service=WMS&request=GetCapabilities"},
-                catalogue_overlays = True,
-                catalogue_toolbar = True,
-                toolbar = True,
-                search = True,
-                window = True,
-                )
+    person_id = request.args(0)
 
-    return dict(map=html)
+    presence_query = (db.pr_person.id == person_id) and (db.pr_presence.pr_pe_id == db.pr_person.pr_pe_id) and (db.gis_location.id == db.pr_presence.location_id)
+
+    # Need sql.Rows object for show_map, so don't extract individual row.
+    location = db(presence_query).select(db.gis_location.ALL, orderby=~db.pr_presence.time, limitby=(0, 1))
+
+    if not location:
+        address_query = (db.pr_person.id == person_id) and (db.pr_address.pr_pe_id == db.pr_person.pr_pe_id) and (db.gis_location.id == db.pr_address.location_id)
+        # TODO: If there are multiple addresses, which should we choose?
+        # For now, take whichever address is supplied first.
+        location = db(address_query).select(db.gis_location.ALL, limitby=(0, 1))
+
+    if location:
+        # Center and zoom the map.
+        location_row = location.first()  # location is a sql.Rows
+        lat = location_row.lat
+        lon = location_row.lon
+        bounds = gis.get_bounds(features=location)
+
+        volunteer = {"feature_group" : "People"}
+        html = gis.show_map(
+            feature_queries = [{"name" : "Volunteer", "query" : location, "active" : True, "marker" : db(db.gis_marker.name == "volunteer").select().first().id}],
+            feature_groups = [volunteer],
+            wms_browser = {"name" : "Risk Maps", "url" : "http://preview.grid.unep.ch:8080/geoserver/ows?service=WMS&request=GetCapabilities"},
+            catalogue_overlays = True,
+            catalogue_toolbar = True,
+            toolbar = True,
+            search = True,
+            lat = lat,
+            lon = lon,
+            bbox = bounds,
+            window = True,
+        )
+        return dict(map=html)
+
+    # TODO: What is an appropriate response if no location is available?
+    return None
 
 
 # -----------------------------------------------------------------------------

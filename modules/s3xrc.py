@@ -36,7 +36,7 @@
 __name__ = "S3XRC"
 __all__ = ["S3Resource", "S3Request", "S3ResourceController"]
 
-import sys, uuid, datetime, time, urllib
+import os, sys, uuid, datetime, time, urllib
 import gluon.contrib.simplejson as json
 
 from gluon.storage import Storage
@@ -70,6 +70,7 @@ class S3Resource(object):
     BADMETHOD = "Invalid method"
     BADFORMAT = "Invalid data format"
     BADREQUEST = "Invalid request"
+    BADTEMPLATE = "XSLT Template not found"
 
     # -------------------------------------------------------------------------
     def __init__(self, manager, prefix, name,
@@ -116,7 +117,8 @@ class S3Resource(object):
             self.build_query(id=id, uid=uid, filter=filter, url_vars=url_vars)
 
         self.__handler = Storage(options=self.__get_options,
-                                 fields=self.__get_fields)
+                                 fields=self.__get_fields,
+                                 export=self.__get_tree)
 
 
     # -------------------------------------------------------------------------
@@ -817,7 +819,12 @@ class S3Resource(object):
 
         if method is None or method in ("read", "display"):
             authorised = permit("read", tablename)
-            if r.component:
+            xml_formats = self.__manager.xml_export_formats
+            json_formats = self.__manager.json_export_formats
+            if r.representation in xml_formats or \
+               r.representation in json_formats:
+                method = "export"
+            elif r.component:
                 if r.multiple and not r.component_id:
                     method = "list"
                 else:
@@ -901,6 +908,96 @@ class S3Resource(object):
             raise HTTP(501, body=self.BADFORMAT)
 
 
+    def __get_tree(self, r, **attr):
+
+        xml_formats = self.__manager.xml_export_formats
+        json_formats = self.__manager.json_export_formats
+
+        template = None
+        show_urls = True
+        dereference = True
+
+        if r.representation in xml_formats:
+            r.response.headers["Content-Type"] = \
+                xml_formats.get(r.representation, "application/xml")
+        else:
+            r.response.headers["Content-Type"] = \
+                json_formats.get(r.representation, "text/x-json")
+            if r.representation == "json":
+                show_urls = False
+                dereference = False
+
+        if r.representation not in ("xml", "json"):
+            template_name = "%s.%s" % (r.representation,
+                                       self.__manager.XSLT_FILE_EXTENSION)
+
+            template = os.path.join(r.request.folder,
+                                    self.__manager.XSLT_EXPORT_TEMPLATES,
+                                    template_name)
+
+            if not os.path.exists(template):
+                raise HTTP(501, body="%s: %s" % (self.BADTEMPLATE, template))
+
+        start = r.request.vars.get("start", None)
+        if start is not None:
+            try:
+                start = int(start)
+            except ValueError:
+                start = None
+
+        limit = r.request.vars.get("limit", None)
+        if limit is not None:
+            try:
+                limit = int(limit)
+            except ValueError:
+                limit = None
+
+        marker = r.request.vars.get("marker", None)
+
+        msince = r.request.vars.get("msince", None)
+        if msince is not None:
+            tfmt = "%Y-%m-%dT%H:%M:%SZ"
+            try:
+                (y,m,d,hh,mm,ss,t0,t1,t2) = time.strptime(msince, tfmt)
+                msince = datetime.datetime(y,m,d,hh,mm,ss)
+            except ValueError:
+                msince = None
+
+        tree = self.export_tree(start=start,
+                                limit=limit,
+                                marker=marker,
+                                msince=msince,
+                                show_urls=True,
+                                dereference=True)
+
+        if template is not None:
+            tfmt = "%Y-%m-%d %H:%M:%S"
+            args = dict(domain=self.__manager.domain,
+                        base_url=self.__manager.base_url,
+                        prefix=self.prefix,
+                        name=self.name,
+                        utcnow=datetime.datetime.utcnow().strftime(tfmt))
+
+            if r.component:
+                args.update(id=r.id, component=r.component.tablename)
+
+            mode = r.request.vars.get("mode", None)
+            if mode is not None:
+                args.update(mode=mode)
+
+            tree = self.__manager.xml.transform(tree, template, **args)
+            if not tree:
+                error = self.__manager.xml.json_message(False, 400,
+                            str(T("XSLT Transformation Error: %s ")) % \
+                            self.__manager.xml.error)
+                raise HTTP(400, body=error)
+
+        if r.representation in xml_formats:
+            return self.__manager.xml.tostring(tree, pretty_print=True)
+        else:
+            return self.__manager.xml.tree2json(tree, pretty_print=True)
+
+
     # -------------------------------------------------------------------------
     def __put(self, r):
 
@@ -967,16 +1064,64 @@ class S3Resource(object):
 
     # XML/JSON functions ======================================================
 
-    def export_tree(self):
-        raise NotImplementedError
+    def export_tree(self,
+                    start=None,
+                    limit=None,
+                    marker=None,
+                    msince=None,
+                    show_urls=True,
+                    dereference=True):
+
+        return self.__manager.export_tree(self,
+                                          audit=self.__manager.audit,
+                                          start=start,
+                                          limit=limit,
+                                          marker=marker,
+                                          msince=msince,
+                                          show_urls=show_urls,
+                                          dereference=dereference)
 
     # -------------------------------------------------------------------------
-    def export_xml(self):
-        raise NotImplementedError
+    def export_xml(self, template=None, pretty_print=False, **args):
+
+        tree = self.export_tree()
+
+        if tree and template is not None:
+            tfmt = "%Y-%m-%d %H:%M:%S"
+            args.update(domain=self.__manager.domain,
+                        base_url=self.__manager.base_url,
+                        prefix=self.prefix,
+                        name=self.name,
+                        utcnow=datetime.datetime.utcnow().strftime(tfmt))
+
+            tree = self.__manager.xml.transform(tree, template, **args)
+
+        if tree:
+            return self.__manager.xml.tostring(tree, pretty_print=pretty_print)
+        else:
+            return None
+
 
     # -------------------------------------------------------------------------
-    def export_json(self):
-        raise NotImplementedError
+    def export_json(self, template=None, pretty_print=False, **args):
+
+        tree = self.export_tree()
+
+        if tree and template is not None:
+            tfmt = "%Y-%m-%d %H:%M:%S"
+            args.update(domain=self.__manager.domain,
+                        base_url=self.__manager.base_url,
+                        prefix=self.prefix,
+                        name=self.name,
+                        utcnow=datetime.datetime.utcnow().strftime(tfmt))
+
+            tree = self.__manager.xml.transform(tree, template, **args)
+
+        if tree:
+            return self.__manager.xml.tree2json(tree, pretty_print=pretty_print)
+        else:
+            return None
+
 
     # -------------------------------------------------------------------------
     def import_tree(self):
@@ -1397,173 +1542,6 @@ class S3Request(object):
 
     # XML+JSON helpers ========================================================
 
-    def export_xml(self,
-                   permit=None,
-                   audit=None,
-                   title=None,
-                   template=None,
-                   filterby=None,
-                   pretty_print=False):
-
-        """ Export the requested resources as XML
-
-            @param permit: permit hook (function to check table permissions)
-            @param audit: audit hook (function to audit table access)
-            @param template: the XSLT template (filename)
-            @param filterby: filter option
-            @param pretty_print: provide pretty formatted output
-
-        """
-
-        if self.component:
-            joins = [(self.component, self.pkey, self.fkey)]
-        else:
-            if "components" in self.request.vars:
-                joins = []
-                if not self.request.vars["components"] == "NONE":
-                    components = self.request.vars["components"].split(",")
-                    for c in components:
-                        component, pkey, fkey = \
-                            self.__manager.model.get_component(self.prefix,
-                                                        self.name, c)
-                        if component is not None:
-                            joins.append([component, pkey, fkey])
-            else:
-                joins = self.__manager.model.get_components(self.prefix, self.name)
-
-        start = self.request.vars.get("start", None)
-        if start is not None:
-            try:
-                start = int(self.request.vars["start"])
-            except ValueError:
-                start = None
-
-        limit = self.request.vars.get("limit", None)
-        if limit is not None:
-            try:
-                limit = int(self.request.vars["limit"])
-            except ValueError:
-                limit = None
-
-        marker = self.request.vars.get("marker", None)
-
-        msince = self.request.vars.get("msince", None)
-        if msince is not None:
-            tfmt = "%Y-%m-%dT%H:%M:%SZ"
-            try:
-                (y,m,d,hh,mm,ss,t0,t1,t2) = time.strptime(msince, tfmt)
-                msince = datetime.datetime(y,m,d,hh,mm,ss)
-            except ValueError:
-                msince = None
-
-        tree = self.__manager.export_xml(self.prefix, self.name, self.id,
-                                  joins=joins,
-                                  filterby=filterby,
-                                  permit=permit,
-                                  audit=audit,
-                                  msince=msince,
-                                  start=start,
-                                  limit=limit,
-                                  marker=marker)
-
-        if template is not None:
-            tfmt = "%Y-%m-%d %H:%M:%S"
-            args = dict(domain=self.__manager.domain,
-                        base_url=self.__manager.base_url,
-                        prefix=self.prefix,
-                        name=self.name,
-                        utcnow=datetime.datetime.utcnow().strftime(tfmt))
-            if title:
-                args.update(title=title)
-            if self.component:
-                args.update(id=self.id, component=self.component.tablename)
-            mode = self.request.vars.get("mode", None)
-            if mode is not None:
-                args.update(mode=mode)
-            tree = self.__manager.xml.transform(tree, template, **args)
-            if not tree:
-                self.error = self.__manager.error
-                return None
-
-        return self.__manager.xml.tostring(tree, pretty_print=pretty_print)
-
-
-    def export_json(self,
-                    permit=None,
-                    audit=None,
-                    title=None,
-                    template=None,
-                    filterby=None,
-                    pretty_print=False):
-
-        """ Export the requested resources as JSON
-
-            @param permit: permit hook (function to check table permissions)
-            @param audit: audit hook (function to audit table access)
-            @param template: the XSLT template (filename)
-            @param filterby: filter option
-            @param pretty_print: provide pretty formatted output
-
-        """
-
-        if self.component:
-            joins = [(self.component, self.pkey, self.fkey)]
-        else:
-            if "components" in self.request.vars:
-                joins = []
-                if not components == "NONE":
-                    components = self.request.vars["components"].split(",")
-                    for c in components:
-                        component, pkey, fkey = \
-                            self.model.get_component(self.prefix, self.name, c)
-                        if component is not None:
-                            joins.append(component, pkey, fkey)
-            else:
-                joins = self.__manager.model.get_components(self.prefix, self.name)
-
-        if "start" in self.request.vars:
-            start = int(self.request.vars["start"])
-        else:
-            start = None
-
-        if "limit" in self.request.vars:
-            limit = int(self.request.vars["limit"])
-        else:
-            limit = None
-
-        # marker and msince not supported in JSON
-
-        tree = self.__manager.export_xml(self.prefix, self.name, self.id,
-                               joins=joins,
-                               filterby=filterby,
-                               permit=permit,
-                               audit=audit,
-                               start=start,
-                               limit=limit,
-                               show_urls=False)
-
-        if template is not None:
-            tfmt = "%Y-%m-%d %H:%M:%S"
-            args = dict(domain=self.__manager.domain,
-                        base_url=self.__manager.base_url,
-                        prefix=self.prefix,
-                        name=self.name,
-                        utcnow=datetime.datetime.utcnow().strftime(tfmt))
-            if title:
-                args.update(title=title)
-            if self.component:
-                args.update(id=self.id, component=self.component.tablename)
-            mode = self.request.vars.get("mode", None)
-            if mode is not None:
-                args.update(mode=mode)
-            tree = self.__manager.xml.transform(tree, template, **args)
-            if not tree:
-                self.error = self.__manager.error
-                return None
-
-        return self.__manager.xml.tree2json(tree, pretty_print=pretty_print)
-
-
     def import_xml(self, tree, permit=None, audit=None, push_limit=1):
 
         """ import the requested resources from an element tree
@@ -1966,6 +1944,10 @@ class S3ResourceController(object):
     HOOKS = "s3"
     RCVARS = "rcvars"
 
+    XSLT_FILE_EXTENSION = "xsl"
+    XSLT_IMPORT_TEMPLATES = "static/xslt/import"
+    XSLT_EXPORT_TEMPLATES = "static/xslt/export"
+
     ACTION = dict(
         create="create",
         read="read",
@@ -1981,6 +1963,7 @@ class S3ResourceController(object):
                  base_url=None,
                  cache=None,
                  auth=None,
+                 audit=None,
                  rpp=None,
                  gis=None,
                  messages=None,
@@ -2004,6 +1987,7 @@ class S3ResourceController(object):
 
         self.cache = cache
         self.auth = auth
+        self.audit = audit
         self.debug = debug
 
         self.error = None
@@ -2495,256 +2479,185 @@ class S3ResourceController(object):
 
     # Resource functions ======================================================
 
-    def export_tree(self, prefix, name, id,
-                   joins=[],
-                   filterby=None,
-                   skip=[],
-                   permit=None,
-                   audit=None,
-                   start=None,
-                   limit=None,
-                   marker=None,
-                   msince=None,
-                   show_urls=True,
-                   dereference=True):
+    def export_tree(self, resource,
+                    skip=[],
+                    audit=None,
+                    start=None,
+                    limit=None,
+                    marker=None,
+                    msince=None,
+                    show_urls=True,
+                    dereference=True):
 
-        """ Exports data as XML tree
+        prefix = resource.prefix
+        name = resource.name
+        tablename = resource.tablename
+        table = resource.table
 
-            @param prefix: prefix of the resource name (=module name)
-            @param name: resource name (=without prefix)
-            @param id: ID of the record to export (may be None, single or list)
-            @param joins: list of component joins to include in the export
-            @param filterby: filter option
-            @param skip: list of field names to skip
-            @param permit: permit hook (function to check table permissions)
-            @param audit: audit hook (function to audit table access)
-            @param start: starting record (for server-side pagination)
-            @param limit: page size (for server-side pagination)
-            @marker: URL to override map marker URL in location references
-            @msince: report only resources which have been modified since that datetime
-            @show_urls: show resource URLs in <resource> elements
-            @dereference: include referenced resources into the export
+        (rfields, dfields) = self.__fields(resource.table, skip=skip)
 
-        """
+        # Total number of results
+        results = resource.count()
 
-        self.error = None
-
-        resources = []
-        tablename = "%s_%s" % (prefix, name)
-
-        burl = show_urls and self.base_url or None
-        if tablename not in self.db or \
-           (permit and not permit(self.ACTION["read"], tablename)):
-            return self.xml.root(resources, domain=self.domain, url=burl)
-
-        table = self.db[tablename]
-        (rfields, dfields) = self.__fields(table, skip=skip)
-
-        # Master query
-        if id and isinstance(id, (list, tuple)):
-            query = (table.id.belongs(id))
-        elif id is not None:
-            query = (table.id == id)
-        else:
-            query = (table.id > 0)
-
-        if "deleted" in table:
-            query = (table.deleted == False) & query
-        if filterby:
-            query = (filterby) & query
-
-        #results = self.db(query).count()
-
-        # Server-side pagination
-        if start is not None: # can't be 'if start': 0 is a valid value
-            if not limit:
-                limit = self.ROWSPERPAGE
-            if limit <= 0:
-                limit = 1
-            if start < 0:
-                start = 0
-            limitby = (start, start + limit)
-        else:
-            limitby = None
-
-        # Load primary records
-        results = self.db(query).count()
-        records = self.db(query).select(table.ALL, limitby=limitby) or []
-
-        # Filter by permission
-        if records and permit:
-            records = filter(lambda r: permit(self.ACTION["read"],
-                             tablename, record_id=r.id), records)
-        if joins and permit:
-            joins = filter(lambda j: permit(self.ACTION["read"],
-                           j[0].tablename), joins)
+        # Load slice
+        resource.load(start=start, limit=limit)
 
         # Load component records
-        cdata = {}
-        crfields = {}
-        cdfields = {}
-        if records:
-            for i in xrange(0, len(joins)):
-                (c, pkey, fkey) = joins[i]
-                pkeys = map(lambda r: r[pkey], records)
-                cquery = (c.table[fkey].belongs(pkeys))
-                if "deleted" in c.table.fields:
-                    cquery = (c.table.deleted == False) & cquery
-                if msince and "modified_on" in c.table.fields:
-                    cquery = (c.table.modified_on >= msince) & cquery
-                cdata[c.tablename] = self.db(cquery).select(c.table.ALL) or []
-                _skip = [fkey,]
-                if skip:
-                    _skip.extend(skip)
-                cfields = self.__fields(c.table, skip=_skip)
-                crfields[c.tablename] = cfields[0]
-                cdfields[c.tablename] = cfields[1]
+        crfields = Storage()
+        cdfields = Storage()
+        for c in resource.components.values():
+            cresource = c.resource
+            cresource.load()
+            ctablename = cresource.tablename
+            crfields[ctablename], \
+            cdfields[ctablename] = self.__fields(cresource.table, skip=skip)
 
+        # Resource base URL
         if self.base_url:
             url = "%s/%s/%s" % (self.base_url, prefix, name)
         else:
             url = "/%s/%s" % (prefix, name)
-        exp_map = Storage()
-        ref_map = []
-        for i in xrange(0, len(records)):
 
-            # Export primary record
-            record = records[i]
+        element_list = []
+        export_map = Storage()
+        reference_map = []
+
+        for record in resource:
             if audit:
                 audit(self.ACTION["read"], prefix, name,
-                      record=record.id, representation="xml")
+                      record=record.id,
+                      representation="xml")
+
             if show_urls:
                 resource_url = "%s/%s" % (url, record.id)
             else:
                 resource_url = None
+
             rmap = self.xml.rmap(table, record, rfields)
-            resource = self.xml.element(table, record,
-                                        fields=dfields,
-                                        url=resource_url,
-                                        download_url=self.download_url,
-                                        marker=marker)
-            self.xml.add_references(resource, rmap)
+            element = self.xml.element(table, record,
+                                       fields=dfields,
+                                       url=resource_url,
+                                       download_url=self.download_url,
+                                       marker=marker)
+            self.xml.add_references(element, rmap)
             self.xml.gis_encode(rmap,
                                 download_url=self.download_url,
                                 marker=marker)
 
+
             # Export components of this record
             r_url = "%s/%s" % (url, record.id)
-            for j in xrange(0, len(joins)):
-                (c, pkey, fkey) = joins[j]
-                pkey = record[pkey]
-                ctablename = c.tablename
-                crecords = cdata[ctablename]
-                crecords = filter(lambda r: r[fkey] == pkey, crecords)
-                c_url = "%s/%s" % (r_url, c.name)
-                for k in xrange(0, len(crecords)):
-                    crecord = crecords[k]
-                    if permit and \
-                       not permit(self.ACTION["read"], ctablename, crecord.id):
-                        continue
+            for c in resource.components.values():
+
+                component = c.component
+                cresource = c.resource
+                cprefix = component.prefix
+                cname = component.name
+                ctable = component.table
+                c_url = "%s/%s" % (r_url, cname)
+
+                ctablename = component.tablename
+                _rfields = crfields[ctablename]
+                _dfields = cdfields[ctablename]
+
+                for crecord in resource(record.id, component=cname):
+
                     if audit:
-                        audit(self.ACTION["read"], c.prefix, c.name,
-                              record=crecord.id, representation="xml")
+                        audit(self.ACTION["read"], cprefix, cname,
+                              record=crecord.id,
+                              representation="xml")
+
                     if show_urls:
                         resource_url = "%s/%s" % (c_url, crecord.id)
                     else:
                         resource_url = None
-                    rmap = self.xml.rmap(c.table, crecord,
-                                         crfields[ctablename])
-                    cresource = self.xml.element(c.table, crecord,
-                                                fields=cdfields[ctablename],
+
+                    rmap = self.xml.rmap(ctable, crecord, _rfields)
+                    celement = self.xml.element(ctable, crecord,
+                                                fields=_dfields,
                                                 url=resource_url,
                                                 download_url=self.download_url,
                                                 marker=marker)
-                    self.xml.add_references(cresource, rmap)
+                    self.xml.add_references(celement, rmap)
                     self.xml.gis_encode(rmap,
                                         download_url=self.download_url,
                                         marker=marker)
-                    resource.append(cresource)
-                    ref_map.extend(rmap)
-                    if exp_map.get(c.tablename, None):
-                        exp_map[c.tablename].append(crecord.id)
+
+                    element.append(celement)
+                    reference_map.extend(rmap)
+
+                    if export_map.get(c.tablename, None):
+                        export_map[c.tablename].append(crecord.id)
                     else:
-                        exp_map[c.tablename] = [crecord.id]
+                        export_map[c.tablename] = [crecord.id]
 
-            if msince and "modified_on" in table.fields:
-                mtime = record.get("modified_on", None)
-                if mtime and mtime < msince and \
-                   not len(resource.findall("resource")):
-                    continue
-
-            ref_map.extend(rmap)
-            resources.append(resource)
-            if exp_map.get(table._tablename, None):
-                exp_map[table._tablename].append(record.id)
+            reference_map.extend(rmap)
+            element_list.append(element)
+            if export_map.get(resource.tablename, None):
+                export_map[resource.tablename].append(record.id)
             else:
-                exp_map[table._tablename] = [record.id]
-
-        #results = len(resources)
+                export_map[resource.tablename] = [record.id]
 
         # Add referenced resources to the tree
         depth = dereference and self.MAX_DEPTH or 0
-        while ref_map and depth:
+        while reference_map and depth:
             depth -= 1
-            load_map = self.__directory(None, ref_map, "table", "id", e=exp_map)
-            ref_map = []
+            load_map = self.__directory(None, reference_map, "table", "id", e=export_map)
+            reference_map = []
 
             for tablename in load_map.keys():
+
+                load_list = load_map[tablename]
                 prefix, name = tablename.split("_", 1)
+                rresource = self.resource(prefix, name, id=load_list, components=[])
+                rresource.load()
+
                 if self.base_url:
                     url = "%s/%s/%s" % (self.base_url, prefix, name)
                 else:
                     url = "/%s/%s" % (prefix, name)
-                load_list = load_map[tablename]
-                if permit:
-                    if not permit(self.ACTION["read"], tablename):
-                        continue
-                    load_list = filter(lambda id:
-                                permit(self.ACTION["read"], tablename, id),
-                                load_list)
-                    if not load_list:
-                        continue
-                table = self.db[tablename]
-                (rfields, dfields) = self.__fields(table, skip=skip)
-                query = (table.id.belongs(load_list))
-                if "deleted" in table:
-                    query = (table.deleted == False) & query
-                records = self.db(query).select(table.ALL) or []
-                for record in records:
+
+                table = rresource.table
+                rfields, dfields = self.__fields(table, skip=skip)
+                for record in rresource:
                     if audit:
                         audit(self.ACTION["read"], prefix, name,
-                              record=record.id, representation="xml")
+                              record=record.id,
+                              representation="xml")
+
                     rmap = self.xml.rmap(table, record, rfields)
                     if show_urls:
                         resource_url = "%s/%s" % (url, record.id)
                     else:
                         resource_url = None
-                    resource = self.xml.element(table, record,
-                                                fields=dfields,
-                                                url=resource_url,
-                                                download_url=self.download_url,
-                                                marker=marker)
-                    self.xml.add_references(resource, rmap)
+
+                    element = self.xml.element(table, record,
+                                               fields=dfields,
+                                               url=resource_url,
+                                               download_url=self.download_url,
+                                               marker=marker)
+
+                    self.xml.add_references(element, rmap)
+
                     self.xml.gis_encode(rmap,
                                         download_url=self.download_url,
                                         marker=marker)
-                    resources.append(resource)
-                    ref_map.extend(rmap)
-                    if exp_map.get(tablename, None):
-                        exp_map[tablename].append(record.id)
+
+                    element_list.append(element)
+
+                    reference_map.extend(rmap)
+                    if export_map.get(tablename, None):
+                        export_map[tablename].append(record.id)
                     else:
-                        exp_map[tablename] = [record.id]
+                        export_map[tablename] = [record.id]
 
         # Complete the tree
-        return self.xml.tree(resources,
+        return self.xml.tree(element_list,
                              domain=self.domain,
-                             url=burl,
+                             url= show_urls and self.base_url or None,
                              results=results,
                              start=start,
                              limit=limit)
-
-
-    export_xml = export_tree # for backward compatibility
 
 
     # -------------------------------------------------------------------------

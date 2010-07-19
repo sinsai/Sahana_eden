@@ -251,77 +251,6 @@ def export_pdf(table, query, list_fields=None):
     return output.read()
 
 #
-# export_rss ------------------------------------------------------------------
-#
-def export_rss(module, resource, query, rss=None, linkto=None):
-
-    """ Export record(s) as RSS feed
-
-        @deprecated
-    """
-
-    # This can not work when proxied through Apache (since it's always a local request):
-    #if request.env.remote_addr == '127.0.0.1':
-        #server = "http://127.0.0.1:" + request.env.server_port
-    #else:
-        #server = "http://" + request.env.server_name + ":" + request.env.server_port
-
-    server = deployment_settings.get_base_public_url()
-
-    tablename = "%s_%s" % (module, resource)
-    title_list = shn_get_crud_strings(tablename).subtitle_list
-
-    if not linkto:
-        link = "/%s/%s/%s" % (request.application, module, resource)
-    else:
-        link = linkto
-
-    entries = []
-    table = db[tablename]
-    rows = db(query).select(table.ALL)
-    if rows:
-        for row in rows:
-            if rss and "title" in rss:
-                try:
-                    title = rss.get("title")(row)
-                except TypeError:
-                    title = rss.get("title") % row
-            else:
-                title = row["id"]
-
-            if rss and "description" in rss:
-                try:
-                    description = rss.get("description")(row)
-                except TypeError:
-                    description = rss.get("description") % row
-            else:
-                description = ""
-
-            entries.append(dict(
-                title = str(title).decode("utf-8"),
-                link = server + link + "/%d" % row.id,
-                description = str(description).decode("utf-8"),
-                modified_on = row.modified_on))
-
-    import gluon.contrib.rss2 as rss2
-
-    items = [rss2.RSSItem(
-        title = entry["title"],
-        link = entry["link"],
-        description = entry["description"],
-        pubDate = entry["modified_on"]) for entry in entries]
-
-    rss = rss2.RSS2(
-        title = str(title_list).decode("utf-8"),
-        link = server + link,
-        description = "",
-        lastBuildDate = request.utcnow,
-        items = items)
-
-    response.headers["Content-Type"] = "application/rss+xml"
-    return rss2.dumps(rss)
-
-#
 # export_xls ------------------------------------------------------------------
 #
 def export_xls(table, query, list_fields=None):
@@ -398,85 +327,6 @@ def export_xls(table, query, list_fields=None):
     response.headers["Content-disposition"] = "attachment; filename=\"%s\"" % filename
     return output.read()
 
-#
-# export_json -----------------------------------------------------------------
-#
-def export_json(jr):
-
-    """ Export data as JSON """
-
-    try:
-        response.headers["Content-Type"] = shn_json_export_formats[jr.representation]
-    except:
-        response.headers["Content-Type"] = "text/x-json"
-
-    if jr.representation == "json":
-        template = None
-    else:
-        template_name = "%s.%s" % (jr.representation, XSLT_FILE_EXTENSION)
-        template = os.path.join(request.folder, XSLT_EXPORT_TEMPLATES, template_name)
-        if not os.path.exists(template):
-            session.error = str(T("XSLT Template Not Found: ")) + \
-                            XSLT_EXPORT_TEMPLATES + "/" + template_name
-            raise HTTP(501, body=s3xrc.xml.json_message(False, 501, session.error))
-            #redirect(URL(r=request, f="index"))
-
-    prefix, name, table, tablename = jr.target()
-    title = shn_get_crud_strings(tablename).subtitle_list
-
-    output = jr.export_json(permit=shn_has_permission,
-                            audit=shn_audit,
-                            title=title,
-                            template=template,
-                            pretty_print=PRETTY_PRINT,
-                            filterby=response.s3.filter)
-
-    if not output:
-        session.error = str(T("XSLT Transformation Error: ")) + jr.error
-        raise HTTP(400, body=s3xrc.xml.json_message(False, 400, session.error))
-        #redirect(URL(r=request, f="index"))
-
-    return output
-
-#
-# export_xml ------------------------------------------------------------------
-#
-def export_xml(jr):
-
-    """ Export data as XML """
-
-    try:
-        response.headers["Content-Type"] = shn_xml_export_formats[jr.representation]
-    except:
-        response.headers["Content-Type"] = "application/xml"
-
-    if jr.representation == "xml":
-        template = None
-    else:
-        template_name = "%s.%s" % (jr.representation, XSLT_FILE_EXTENSION)
-        template = os.path.join(request.folder, XSLT_EXPORT_TEMPLATES, template_name)
-        if not os.path.exists(template):
-            session.error = str(T("XSLT Template Not Found: ")) + \
-                            XSLT_EXPORT_TEMPLATES + "/" + template_name
-            raise HTTP(501, body=s3xrc.xml.json_message(False, 501, session.error))
-            #redirect(URL(r=request, f="index"))
-
-    prefix, name, table, tablename = jr.target()
-    title = shn_get_crud_strings(tablename).subtitle_list
-
-    output = jr.export_xml(permit=shn_has_permission,
-                           audit=shn_audit,
-                           title=title,
-                           template=template,
-                           pretty_print=PRETTY_PRINT,
-                           filterby=response.s3.filter)
-
-    if not output:
-        session.error = str(T("XSLT Transformation Error: ")) + (jr.error or "")
-        raise HTTP(400, body=s3xrc.xml.json_message(False, 400, session.error))
-        #redirect(URL(r=request, f="index"))
-
-    return output
 
 # *****************************************************************************
 # Imports
@@ -1185,16 +1035,6 @@ def shn_read(jr, **attr):
             query = db[table].id == record_id
             return export_xls(table, query, list_fields)
 
-        elif jr.representation in shn_json_export_formats:
-            return export_json(jr)
-
-        elif jr.representation in shn_xml_export_formats:
-            return export_xml(jr)
-
-        #elif jr.representation == "rss": # TODO: replace by XML export
-            #query = db[table].id == record_id
-            #return export_rss(module, resource, query, rss=rss, linkto=jr.here("html"))
-
         else:
             session.error = BADFORMAT
             redirect(URL(r=request, f="index"))
@@ -1580,15 +1420,6 @@ def shn_list(jr, **attr):
 
     elif jr.representation == "xls":
         return export_xls(table, query, list_fields)
-
-    elif jr.representation in shn_json_export_formats:
-        return export_json(jr)
-
-    elif jr.representation in shn_xml_export_formats:
-        return export_xml(jr)
-
-    #elif jr.representation == "rss":
-        #return export_rss(module, resource, query, rss=rss, linkto=jr.there("html"))
 
     else:
         session.error = BADFORMAT
@@ -2301,6 +2132,8 @@ def shn_rest_controller(module, resource, **attr):
     s3xrc.set_handler("update", shn_update)
     s3xrc.set_handler("delete", shn_delete)
     s3xrc.set_handler("search", shn_search)
+
+    s3xrc.audit = shn_audit
 
     res, req = s3xrc.parse_request(module, resource, session, request, response)
 

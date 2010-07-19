@@ -43,7 +43,7 @@ $(document).ready(function() {
         // Set the action buttons in the id (first) column for each row
         "fnRowCallback": function( nRow, aData, iDisplayIndex )
             {
-            Actions = {{=response.s3.actions}};
+            Actions = {{=XML(response.s3.actions)}};
             Buttons = '';
             // loop through each action to build the button
             for (i=0;i<Actions.length;i++)

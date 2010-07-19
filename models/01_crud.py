@@ -2067,25 +2067,6 @@ def shn_delete(jr, **attr):
     return output
 
 #
-# shn_options -----------------------------------------------------------------
-#
-def shn_options(jr, **attr):
-
-    if jr.representation == "xml":
-        response.headers["Content-Type"] = "text/xml"
-        response.view = "plain.html"
-        return jr.options_xml(pretty_print=PRETTY_PRINT)
-
-    elif jr.representation == "json":
-        response.headers["Content-Type"] = "text/x-json"
-        response.view = "plain.html"
-        return jr.options_json(pretty_print=PRETTY_PRINT)
-
-    else:
-        session.error = BADFORMAT
-        redirect(URL(r=request, f="index"))
-
-#
 # shn_search ------------------------------------------------------------------
 #
 def shn_search(jr, **attr):
@@ -2320,7 +2301,6 @@ def shn_rest_controller(module, resource, **attr):
     s3xrc.set_handler("update", shn_update)
     s3xrc.set_handler("delete", shn_delete)
     s3xrc.set_handler("search", shn_search)
-    s3xrc.set_handler("options", shn_options)
 
     res, req = s3xrc.parse_request(module, resource, session, request, response)
 

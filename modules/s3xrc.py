@@ -115,7 +115,8 @@ class S3Resource(object):
             self.__attach(select=components)
             self.build_query(id=id, uid=uid, filter=filter, url_vars=url_vars)
 
-        self.__handler = Storage()
+        self.__handler = Storage(options=self.__get_options,
+                                 fields=self.__get_fields)
 
 
     # -------------------------------------------------------------------------
@@ -709,7 +710,8 @@ class S3Resource(object):
 
         # Enforce primary record ID
         if not r.id and (r.component or r.method == "read") and \
-           not r.method == "options" and not "select" in r.request.vars:
+           not r.method in ("fields", "options") and \
+           not "select" in r.request.vars:
             if r.representation == "html":
                 model = self.__manager.model
                 search_simple = model.get_method(self.prefix, self.name,
@@ -780,7 +782,7 @@ class S3Resource(object):
         # Post-process
         if hooks is not None:
             postprocess = hooks.get("postp", None)
-        if postprocess:
+        if postprocess is not None:
             self.__dbg("post-processing")
             output = postprocess(r, output)
 
@@ -835,6 +837,9 @@ class S3Resource(object):
         elif method == "options":
             authorised = permit("read", tablename)
 
+        elif method == "fields":
+            authorised = permit("read", tablename)
+
         elif method == "search" and not r.component:
             authorised = permit("read", tablename)
 
@@ -862,6 +867,38 @@ class S3Resource(object):
             r.unauthorised()
         else:
             return self.get_handler(method)
+
+
+    def __get_options(self, r, **attr):
+
+        if "field" in r.request.get_vars:
+            items = r.request.get_vars["field"]
+            if not isinstance(items, (list, tuple)):
+                items = [items]
+            fields = []
+            for item in items:
+                f = item.split(",")
+                if f:
+                    fields.extend(f)
+        else:
+            fields = None
+
+        if r.representation == "xml":
+            return self.options_xml(component=r.component_name, fields=fields)
+        elif r.representation == "json":
+            return self.options_json(component=r.component_name, fields=fields)
+        else:
+            raise HTTP(501, body=self.BADFORMAT)
+
+
+    def __get_fields(self, r, **attr):
+
+        if r.representation == "xml":
+            return self.fields_xml(component=r.component_name)
+        elif r.representation == "json":
+            return self.fields_json(component=r.component_name)
+        else:
+            raise HTTP(501, body=self.BADFORMAT)
 
 
     # -------------------------------------------------------------------------
@@ -954,28 +991,59 @@ class S3Resource(object):
         raise NotImplementedError
 
     # -------------------------------------------------------------------------
-    def options_tree(field=None):
-        raise NotImplementedError
+    def options_tree(self, component=None, fields=None):
+
+        if component is not None:
+            c = self.components.get(component, None)
+            if c:
+                tree = c.resource.options_tree(fields=fields)
+                return tree
+            else:
+                raise AttributeError
+        else:
+            tree = self.__manager.xml.get_options(self.prefix,
+                                                  self.name,
+                                                  fields=fields)
+            return tree
 
     # -------------------------------------------------------------------------
-    def options_xml(field=None):
-        raise NotImplementedError
+    def options_xml(self, component=None, fields=None):
+
+        tree = self.options_tree(component=component, fields=fields)
+        return self.__manager.xml.tostring(tree, pretty_print=True)
 
     # -------------------------------------------------------------------------
-    def options_json(field=None):
-        raise NotImplementedError
+    def options_json(self, component=None, fields=None):
+
+        tree = etree.ElementTree(self.options_tree(component=component,
+                                                   fields=fields))
+        return self.__manager.xml.tree2json(tree, pretty_print=True)
 
     # -------------------------------------------------------------------------
-    def fields_tree(component=None):
-        raise NotImplementedError
+    def fields_tree(self, component=None):
+
+        if component is not None:
+            c = self.components.get(component, None)
+            if c:
+                tree = c.resource.fields_tree()
+                return tree
+            else:
+                raise AttributeError
+        else:
+            tree = self.__manager.xml.get_fields(self.prefix, self.name)
+            return tree
 
     # -------------------------------------------------------------------------
-    def fields_xml(component=None):
-        raise NotImplementedError
+    def fields_xml(self, component=None):
+
+        tree = self.fields_tree(component=component)
+        return self.__manager.xml.tostring(tree, pretty_print=True)
 
     # -------------------------------------------------------------------------
-    def fields_json(component=None):
-        raise NotImplementedError
+    def fields_json(self, component=None):
+
+        tree = etree.ElementTree(self.fields_tree(component=component))
+        return self.__manager.xml.tree2json(tree, pretty_print=True)
 
     # -------------------------------------------------------------------------
     def push_xml(self):
@@ -3360,7 +3428,8 @@ class S3XML(object):
         select="select",
         field="field",
         option="option",
-        options="options"
+        options="options",
+        fields="fields"
     )
 
     ATTRIBUTE = Storage(
@@ -3383,7 +3452,11 @@ class S3XML(object):
         lonmin="lonmin",
         lonmax="lonmax",
         marker="marker",
-        sym="sym"
+        sym="sym",
+        type="type",
+        readable="readable",
+        writable="writable",
+        has_options="has_options"
     )
 
     ACTION = Storage(
@@ -4097,13 +4170,6 @@ class S3XML(object):
 
     def get_field_options(self, table, fieldname):
 
-        """ Reads all options for a field
-
-            @param table: the database table
-            @param fieldname: the name of the field
-
-        """
-
         select = etree.Element(self.TAG.select)
 
         if fieldname in table.fields:
@@ -4119,9 +4185,6 @@ class S3XML(object):
             r = requires[0]
             options = []
             if isinstance(r, (IS_NULL_OR, IS_EMPTY_OR)) and hasattr(r.other, "options"):
-                #null = etree.SubElement(select, self.TAG.option)
-                #null.set(self.ATTRIBUTE.value, "")
-                #null.text = ""
                 options = r.other.options()
             elif hasattr(r, "options"):
                 options = r.options()
@@ -4135,38 +4198,56 @@ class S3XML(object):
         return select
 
 
-    def get_options(self, prefix, name, joins=[]):
+    # -------------------------------------------------------------------------
+    def get_options(self, prefix, name, fields=None):
 
-        """ Gets all field options for a resource
-
-            @param prefix: prefix of the resource name (=module name)
-            @param name: the resource name (=without prefix)
-            @param joins: list of component joins to include
-
-        """
-
-        resource = "%s_%s" % (prefix, name)
+        db = self.db
+        tablename = "%s_%s" % (prefix, name)
+        table = db.get(tablename, None)
 
         options = etree.Element(self.TAG.options)
-        options.set(self.ATTRIBUTE.resource, resource)
 
-        if resource in self.db:
-            table = self.db[resource]
+        if fields and not isinstance(fields, (list, tuple)):
+            fields = [fields]
+
+        if table:
+            options.set(self.ATTRIBUTE.resource, tablename)
             for f in table.fields:
+                if fields and f not in fields:
+                    continue
                 select = self.get_field_options(table, f)
                 if select is not None and len(select):
                     options.append(select)
-            for j in joins:
-                component = j[0]
-                coptions = etree.Element(self.TAG.options)
-                coptions.set(self.ATTRIBUTE.resource, component.tablename)
-                for f in component.table.fields:
-                    select = self.get_field_options(component.table, f)
-                    if select is not None and len(select):
-                        coptions.append(select)
-                options.append(coptions)
 
         return options
+
+
+    # -------------------------------------------------------------------------
+    def get_fields(self, prefix, name):
+
+        db = self.db
+        tablename = "%s_%s" % (prefix, name)
+        table = db.get(tablename, None)
+
+        fields = etree.Element(self.TAG.fields)
+
+        if table:
+            fields.set(self.ATTRIBUTE.resource, tablename)
+            for f in table.fields:
+                field = etree.Element(self.TAG.field)
+                field.set(self.ATTRIBUTE.name, self.xml_encode(f))
+                ftype = str(table[f].type)
+                field.set(self.ATTRIBUTE.type, self.xml_encode(ftype))
+                readable = table[f].readable
+                writable = table[f].writable
+                field.set(self.ATTRIBUTE.readable, str(readable))
+                field.set(self.ATTRIBUTE.writable, str(writable))
+                options = self.get_field_options(table, f)
+                field.set(self.ATTRIBUTE.has_options,
+                          str(len(options) and True or False))
+                fields.append(field)
+
+        return fields
 
 
     # JSON toolkit ============================================================

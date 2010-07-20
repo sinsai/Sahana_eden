@@ -156,7 +156,11 @@ if deployment_settings.has_module(module):
                                         "record_uuid",
                                         "resource",
                                        ])
-
+    # The following was added to show only the supported messaging methods
+    msg_contact_method_opts = { # pr_contact_method dependency
+        1:T("E-Mail"),
+        2:T("Mobile Phone"),
+    }
     resource = "outbox"
     tablename = "%s_%s" % (module, resource)
     table = db.define_table(tablename, timestamp, uuidstamp, deletion_status,
@@ -165,10 +169,10 @@ if deployment_settings.has_module(module):
         Field("address"), # If set used instead of picking up from pr_pe_id
         Field("pr_message_method",
                 "integer",
-                requires = IS_IN_SET(pr_contact_method_opts, zero=None),
+                requires = IS_IN_SET(msg_contact_method_opts, zero=None),
                 default = 1,
                 label = T("Contact Method"),
-                represent = lambda opt: pr_contact_method_opts.get(opt, UNKNOWN_OPT)),
+                represent = lambda opt: msg_contact_method_opts.get(opt, UNKNOWN_OPT)),
         opt_msg_status,
         Field("system_generated", "boolean", default = False),
         Field("log"),

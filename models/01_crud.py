@@ -2032,7 +2032,7 @@ def shn_search(jr, **attr):
             item = s3xrc.xml.json_message(False, 400, "Search requires specifying Field, Filter & Value!")
             raise HTTP(400, body=item)
 
-        response.view = "plain.html"
+        response.view = "xml.html"
         output = dict(item=item)
 
     else:

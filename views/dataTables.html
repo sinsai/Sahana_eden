@@ -22,7 +22,7 @@ $(document).ready(function() {
     $('#list').dataTable({
     {{try:}}
         {{if sortby:}}
-            {"aaSorting": {{=sortby}}},
+            {"aaSorting": {{=XML(sortby)}}},
         {{else:}}
         {{pass}}
     {{except:}}

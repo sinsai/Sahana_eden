@@ -115,7 +115,7 @@ if deployment_settings.has_module(module):
         Field("actionable", "boolean", default = True),
         Field("actioned", "boolean", default = False),
         Field("actioned_comments", "text"),
-        Field("priority", "integer"),
+        Field("priority", "integer", default = 1),
         migrate=migrate)
 
     table.uuid.requires = IS_NOT_IN_DB(db, "%s.uuid" % tablename)

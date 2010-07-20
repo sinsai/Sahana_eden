@@ -1775,55 +1775,6 @@ class S3Request(object):
                     self.tablename)
 
 
-    # XML+JSON helpers ========================================================
-
-    def import_xml(self, tree, permit=None, audit=None, push_limit=1):
-
-        """ import the requested resources from an element tree
-
-            @param tree: the element tree
-            @param permit: permit hook (function to check table permissions)
-            @param audit: audit hook (function to audit table access)
-            @param push_limit: number of resources allowed in pushes
-
-        """
-
-        if self.http not in ("PUT", "POST"):
-            push_limit = None
-
-        if self.component:
-            skip_resource = True
-            joins = [(self.component, self.pkey, self.fkey)]
-        else:
-            skip_resource = False
-            joins = self.__manager.model.get_components(self.prefix, self.name)
-
-        if self.method == "create":
-            self.id = None
-
-        # Add "&ignore_errors=True" to the URL to override any import errors:
-        # Unsuccessful commits simply get ignored, no error message is
-        # returned, invalid records are not imported at all, but all valid
-        # records in the source are committed (whereas the standard method
-        # stops at any errors).
-        # This is a backdoor for experts who exactly know what they're doing,
-        # it's not recommended for general use, and should not be represented
-        # in the UI!
-        # Also note that this option is subject to change in future versions!
-        if "ignore_errors" in self.request.vars:
-            ignore_errors = True
-        else:
-            ignore_errors = False
-
-        return self.__manager.import_xml(self.prefix, self.name, self.id, tree,
-                                  joins=joins,
-                                  skip_resource=skip_resource,
-                                  permit=permit,
-                                  audit=audit,
-                                  push_limit=push_limit,
-                                  ignore_errors=ignore_errors)
-
-
 # *****************************************************************************
 class S3ResourceComponent(object):
 

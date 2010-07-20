@@ -36,13 +36,14 @@
 __name__ = "S3XRC"
 __all__ = ["S3Resource", "S3Request", "S3ResourceController"]
 
-import sys, uuid, datetime, time, urllib
+import os, sys, uuid, datetime, time, urllib
 import gluon.contrib.simplejson as json
 
 from gluon.storage import Storage
+from gluon.sql import Set, Row
 from gluon.html import URL
 from gluon.http import HTTP, redirect
-from gluon.validators import IS_NULL_OR, IS_EMPTY_OR
+from gluon.validators import IS_NULL_OR, IS_EMPTY_OR, IS_DATE, IS_TIME
 from xml.etree.cElementTree import ElementTree
 from lxml import etree
 
@@ -64,213 +65,629 @@ class S3Resource(object):
 
     """ API for S3Resources """
 
-    __UID = "uuid"
-    __DELETED = "deleted"
+    # Error messages
+    BADRECORD = "Record not found"
+    BADMETHOD = "Invalid method"
+    BADFORMAT = "Invalid data format"
+    BADREQUEST = "Invalid request"
+    BADTEMPLATE = "XSLT Template not found"
 
-    __HOOKS = "s3"
-
-    def __init__(self, manager, prefix, name, id=None, uid=None, query=None, **attr):
+    # -------------------------------------------------------------------------
+    def __init__(self, manager, prefix, name,
+                 id=None,
+                 uid=None,
+                 filter=None,
+                 url_vars=None,
+                 parent=None,
+                 components=None,
+                 storage=None,
+                 debug=None):
 
         """ Constructor """
 
         assert manager is not None, "Undefined Resource Manager"
         self.__manager = manager
 
-        self.__permit = self.__manager.auth.shn_has_permission
-
-        self.__attr = Storage(attr)
-
-        self.__debug = self.__attr.debug
-        if self.__debug is None:
+        if debug is None:
             self.__debug = self.__manager.debug
+        else:
+            self.__debug = debug
 
-        self._prefix = prefix
-        self._name = name
+        self.__permit = self.__manager.auth.shn_has_permission
+        self.__accessible = self.__manager.auth.shn_accessible_query
 
-        self.__storage = self.__attr.storage
-        self.__bind()
+        self.prefix = prefix
+        self.name = name
 
-        self.__parent = self.__attr.parent
+        self.__query = None
+        self.__length = None
+        self.__multiple = True
 
+        self.__set = None
         self.__ids = []
         self.__uids = []
-        self.__set = None
 
-        self.__handler = Storage()
+        self.__bind(storage)
 
-        self.__query = Storage()
-        self._filter(id=id, uid=uid, query=query)
+        self.components = None
+        self.parent = parent
 
-        self.__components = None
+        if self.parent is None:
+            self.__attach(select=components)
+            self.build_query(id=id, uid=uid, filter=filter, url_vars=url_vars)
+
+        self.__handler = Storage(options=self.__get_options,
+                                 fields=self.__get_fields,
+                                 export=self.__get_tree)
 
 
-    # Helper functions --------------------------------------------------------
-
+    # -------------------------------------------------------------------------
     def __dbg(self, msg):
 
         if self.__debug:
             print >> sys.stderr, "S3Resource: %s" % msg
 
 
-    # Data binding ------------------------------------------------------------
+    # Configuration ===========================================================
 
-    def __bind(self):
+    def set_handler(self, method, handler):
+
+        """ Set REST method handler for this resource """
+
+        self.__handler[method] = handler
+
+
+    # -------------------------------------------------------------------------
+    def get_handler(self, method):
+
+        """ Get REST method handler for this resource """
+
+        return self.__handler.get(method, None)
+
+
+    # Data binding ============================================================
+
+    def __bind(self, storage):
 
         """ Bind this resource to model and data store """
 
-        self.__db = self.__manager.db
-        self._tablename = "%s_%s" % (self._prefix, self._name)
+        self.__storage = storage
 
-        self._table = self.__db.get(self._tablename, None)
-        if not self._table:
-            raise KeyError("Undefined table: %s" % self._tablename)
+        self.__db = self.__manager.db
+        self.tablename = "%s_%s" % (self.prefix, self.name)
+
+        self.table = self.__db.get(self.tablename, None)
+        if not self.table:
+            raise KeyError("Undefined table: %s" % self.tablename)
 
         if self.__storage is not None:
             raise NotImplementedError
 
 
-    def _filter(self, id=None, uid=None, query=None):
+    # -------------------------------------------------------------------------
+    def __attach(self, select=None):
 
-        """ Generate filter query """
+        """ Attach components to this resource """
 
-        if "master" in self.__query:
-            del self.__query["master"]
+        if select and not isinstance(select, (list, tuple)):
+            select = [select]
 
-        # ID filter
-        if id:
-            if not isinstance(id, (list, tuple)):
-                id = [id]
-            self.__ids = list(id)
+        self.components = Storage()
+
+        if self.parent is None:
+            components = self.__manager.model.get_components(self.prefix, self.name)
+
+            for (c, pkey, fkey) in components:
+
+                if select and c.name not in select:
+                    continue
+
+                resource = S3Resource(self.__manager, c.prefix, c.name,
+                                      parent=self,
+                                      storage=self.__storage,
+                                      debug=self.__debug)
+
+                self.components[c.name] = Storage(component=c,
+                                                   pkey=pkey,
+                                                   fkey=fkey,
+                                                   resource=resource)
+
+
+    # -------------------------------------------------------------------------
+    def get_parent_query(self):
+
+        """ Get parent query for component joins """
+
+        if self.__set is not None:
             if len(self.__ids) == 1:
-                q = (self._table.id == self.__ids[0])
+                query = (self.table.id == self.__ids[0])
+            elif len(self.__ids) > 1:
+                query = (self.table.id.belongs(self.__ids))
             else:
-                q = (self._table.id.belongs(self.__ids))
-            self.__query.id = q
-
-        # UID filter
-        if uid and self.__UID in self._table.fields:
-            if not isinstance(uid, (list, tuple)):
-                uid = [uid]
-            self.__uids = list(uid)
-            if len(self.__uids) == 1:
-                q = (self._table[self.__UID] == self.__uids[0])
-            else:
-                q = (self._table[self.__UID].belongs(self.__uids))
-            self.__query.uid = self.__query.uid & q
-
-        # Custom filter
-        if query:
-            self.__query.query = query
-
-        # Deletion status filter
-        if self.__DELETED in self._table.fields:
-            self.__query.deleted = (self._table[self.__DELETED] == False)
-
-        mq = None
-        for k in self.__query.keys():
-            q = self.__query[k]
-            if q and mq:
-                mq = mq & q
-            elif q:
-                mq = q
-
-        if not mq:
-            mq = (self._table.id > 0)
-        self.__query.master = mq
-
-
-    def _count():
-        raise NotImplementedError
-
-
-    def _load():
-        raise NotImplementedError
-
-
-    def _save():
-        raise NotImplementedError
-
-
-    # Data access -------------------------------------------------------------
-
-    #def __getitem__(self, key):
-        #return self.get(key)
-
-
-    #def __setitem__(self, key, value):
-        #return self.set(key, value)
-
-
-    #def __len__(self):
-        #raise NotImplementedError
-
-
-    def _get(self, key, *default):
-
-        keys = key.split(".")
-        if len(keys) > 1:
-            c, f = keys[:2]
-            component = self._get_component(c)
-            if component:
-                return component.get(f, *default)
-            elif len(default):
-                return default[0]
-            else:
-                raise KeyError("%s" % c)
+                query = (self.table.id == 0)
         else:
-            f = components[0]
-            if f in self._table.fields:
-                records = self._records()
-                values = [r.get(f, None) for r in records]
-                return values
-            elif len(default):
-                return default[0]
-            else:
-                raise KeyError("%s" % f)
+            query = self.get_query()
 
 
-    def _set(self, key, value):
+    # -------------------------------------------------------------------------
+    def build_query(self, id=None, uid=None, filter=None, url_vars=None):
 
-        raise NotImplementedError
+        """ Query builder
 
+            @param id: record ID or list of record IDs to include
+            @param uid: record UID or list of record UIDs to include
+            @filter: filtering query (DAL only)
+            @url_vars: dict of URL query variables
 
-    def _get_component(self, name):
+        """
 
-        if self.__components:
-            component = self.__components.get(name, None)
+        # Initialize
+        self.clear()
+        self.clear_query()
+
+        if url_vars:
+            url_query = self.__manager.url_query(self, url_vars)
         else:
+            url_query = Storage()
+
+        if self.__storage is None:
+
+            deletion_status = self.__manager.DELETED
+
+            self.__multiple = True # multiple results expected by default
+
+            # Master Query
+            if self.__accessible is not None:
+                master_query = self.__accessible("read", self.table)
+            else:
+                master_query = (self.table.id > 0)
+
+            self.__query = master_query
+
+            # Component Query
+            if self.parent:
+
+                parent_query = self.parent.get_parent_query()
+                if parent_query:
+                    self.__query = self.__query & parent_query
+
+                component = self.parent.components.get(self.name, None)
+                if component:
+                    pkey = component.pkey
+                    fkey = component.fkey
+                    self.__multiple = component.multiple
+                    join = (self.parent.table[pkey] == self.table[fkey])
+                    self.__query = self.__query & join
+
+                if deletion_status in self.table.fields:
+                    remaining = (self.table[deletion_status] == False)
+                    self.__query = self.__query & remaining
+
+            # Primary Resource Query
+            else:
+
+                if id or uid:
+                    if self.name not in url_query:
+                        url_query[self.name] = Storage()
+
+                # Collect IDs
+                if id:
+                    if not isinstance(id, (list, tuple)):
+                        self.__multiple = False # single result expected
+                        id = [id]
+                    id_queries = url_query[self.name].get("id", Storage())
+
+                    ne = id_queries.get("ne", [])
+                    eq = id_queries.get("eq", [])
+
+                    for v in id:
+                        if v not in eq:
+                            eq.append(v)
+
+                    if ne and "ne" not in id_queries:
+                        id_queries.ne = ne
+                    if eq and "eq" not in id_queries:
+                        id_queries.eq = eq
+
+                    if "id" not in url_query[self.name]:
+                        url_query[self.name]["id"] = id_queries
+
+                # Collect UIDs
+                if uid:
+                    if not isinstance(uid, (list, tuple)):
+                        self.__multiple = False # single result expected
+                        uid = [uid]
+                    uid_queries = url_query[self.name].get(self.__manager.UID, Storage())
+
+                    ne = uid_queries.get("ne", [])
+                    eq = uid_queries.get("eq", [])
+
+                    for v in uid:
+                        if v not in eq:
+                            eq.append(v)
+
+                    if ne and "ne" not in uid_queries:
+                        uid_queries.ne = ne
+                    if eq and "eq" not in uid_queries:
+                        uid_queries.eq = eq
+
+                    if self.__manager.UID not in url_query[self.name]:
+                        url_query[self.name][self.manager.__UID] = uid_queries
+
+                # URL Queries
+                for rname in url_query:
+
+                    if rname == self.name:
+                        table = self.table
+                    elif rname in self.components:
+                        component = self.components[rname]
+                        table = component.resource.table
+                        pkey = component.pkey
+                        fkey = component.fkey
+
+                        join = (self.table[pkey]==table[fkey])
+                        self.__query = self.__query & join
+
+                        if deletion_status in table.fields:
+                            remaining = (table[deletion_status] == False)
+                            self.__query = self.__query & remaining
+
+                    for field in url_query[rname]:
+                        if field in table.fields:
+                            for op in url_query[rname][field]:
+                                values = url_query[rname][field][op]
+                                if op == "eq":
+                                    if len(values) == 1:
+                                        query = (table[field] == values[0])
+                                    elif len(values):
+                                        query = (table[field].belongs(values))
+                                elif op == "ne":
+                                    if len(values) == 1:
+                                        query = (table[field] != values[0])
+                                    elif len(values):
+                                        query = (~(table[field].belongs(values)))
+                                elif op == "lt":
+                                    v = values[-1]
+                                    query = (table[field] < v)
+                                elif op == "le":
+                                    v = values[-1]
+                                    query = (table[field] <= v)
+                                elif op == "gt":
+                                    v = values[-1]
+                                    query = (table[field] > v)
+                                elif op == "ge":
+                                    v = values[-1]
+                                    query = (table[field] >= v)
+                                elif op == "like":
+                                    query = None
+                                    for v in values:
+                                        v = "%%%s%%" % v
+                                        q = (table[field].like(v))
+                                        if query:
+                                            query = query | q
+                                        else:
+                                            query = q
+                                    query = (query)
+                                elif op == "unlike":
+                                    query = None
+                                    for v in values:
+                                        v = "%%%s%%" % v
+                                        q = (~(table[field].like(v)))
+                                        if query:
+                                            query = query & q
+                                        else:
+                                            query = q
+                                    query = (query)
+                                else:
+                                    continue
+                                self.__query = self.__query & query
+
+                # Filter
+                if filter:
+                    self.__query = self.__query & filter
+
+                # Deletion status
+                if deletion_status in self.table.fields:
+                    remaining = (self.table[deletion_status] == False)
+                    self.__query = self.__query & remaining
+
+        else:
+            raise NotImplementedError
+
+        return self.__query
+
+    # -------------------------------------------------------------------------
+    def get_query(self):
+
+        """ Get the current query for this resource """
+
+        if not self.__query:
+            self.build_query()
+
+        return self.__query
+
+
+    # Data access =============================================================
+
+    def count(self):
+
+        """ Get the total number of available records in this resource """
+
+        if not self.__query:
+            self.build_query()
+            self.__length = None
+
+        if self.__length is None:
+
+            if self.__storage is None:
+                self.__length = self.__db(self.__query).count()
+            else:
+                raise NotImplementedError
+
+        return self.__length
+
+
+    # -------------------------------------------------------------------------
+    def __load_ids(self):
+
+        """ Loads the IDs of all records matching the master query, or,
+            if no query is given, all IDs in the primary table
+        """
+
+        if self.__query is None:
+            self.build_query()
+
+        if self.__storage is None:
+
+            if self.__manager.UID in self.table.fields:
+                fields = (self.table.id, self.table[self.__manager.UID])
+            else:
+                fields = (self.table.id,)
+
+            set = self.__db(self.__query).select(*fields)
+            self.__ids = [row.id for row in set]
+            if self.__manager.UID in self.table.fields:
+                self.__uids = [row.uid for row in set]
+
+        else:
+            raise NotImplementedError
+
+
+    # -------------------------------------------------------------------------
+    def get_id(self):
+
+        """ Returns all IDs of the current set, or, if no set is loaded,
+            all IDs of the resource
+        """
+
+        if not self.__ids:
+            self.__load_ids()
+
+        if not self.__ids:
+            return None
+        elif len(self.__ids) == 1:
+            return self.__ids[0]
+        else:
+            return self.__ids
+
+
+    # -------------------------------------------------------------------------
+    def get_uid(self):
+
+        """ Returns all UIDs of the current set, or, if no set is loaded,
+            all UIDs of the resource
+        """
+
+        if self.__manager.UID not in self.table.fields:
             return None
 
-        if component and "resource" in component:
-            return component.resource
-        else:
+        if not self.__uids:
+            self.__load_ids()
+
+        if not self.__uids:
             return None
+        elif len(self.__uids) == 1:
+            return self.__uids[0]
+        else:
+            return self.__uids
 
 
-    def _records(self):
+    # -------------------------------------------------------------------------
+    def load(self, start=None, limit=None):
 
-        # TODO: pagination (slicing)
+        """ Loads a set of records of the current resource, which can be
+            either a slice (for pagination) or all records
+        """
+
+        if self.__set is not None:
+            self.clear()
+
+        if not self.__query:
+            self.build_query()
+
+        if self.__storage is None:
+
+            if not self.__multiple:
+                limitby = (0,1)
+            else:
+                # Slicing
+                if start is not None:
+                    self.__slice = True
+                    if not limit:
+                        limit = self.__manager.ROWSPERPAGE
+                    if limit <= 0:
+                        limit = 1
+                    if start < 0:
+                        start = 0
+                    limitby = (start, start + limit)
+                else:
+                    limitby = None
+
+            self.__set = self.__db(self.__query).select(self.table.ALL, limitby=limitby)
+
+            self.__ids = [row.id for row in self.__set]
+            uid = self.__manager.UID
+            if uid in self.table.fields:
+                self.__uids = [row[uid] for row in self.__set]
+
+        else:
+            raise NotImplementedError
+
+
+    # -------------------------------------------------------------------------
+    def save(self):
+        raise NotImplementedError
+
+
+    # -------------------------------------------------------------------------
+    def clear(self):
+
+        """ Removes the current set """
+
+        self.__set = None
+        self.__length = None
+        self.__ids = []
+        self.__uids = []
+
+        self.__slice = False
+
+        if self.components:
+            for c in self.components.keys():
+                self.components[c].resource.clear()
+
+
+    # -------------------------------------------------------------------------
+    def clear_query(self):
+
+        """ Removes the current query (does not remove the set) """
+
+        self.__query = None
+
+        if self.components:
+            for c in self.components.keys():
+                self.components[c].resource.clear_query()
+
+
+    # -------------------------------------------------------------------------
+    def records(self):
+
+        """ Get the current set """
 
         if self.__set is None:
-            query = self.__query.master
-            self.__set = self.__db(query).select(self._table.ALL)
+            return []
+        else:
+            return self.__set
 
-        return self.__set
+
+    # -------------------------------------------------------------------------
+    def __getitem__(self, key):
+
+        """ Retrieves a record from the current set by its ID """
+
+        if self.__set is None:
+            self.load()
+
+        for i in xrange(len(self.__set)):
+            row = self.__set[i]
+            if row.id == key:
+                return row
+
+        raise IndexError
 
 
-    # Representation ----------------------------------------------------------
+    # -------------------------------------------------------------------------
+    def __iter__(self):
+
+        """ Generator for the current set """
+
+        if self.__set is None:
+            self.load()
+
+        for i in xrange(len(self.__set)):
+            yield self.__set[i]
+
+        return
+
+
+    # -------------------------------------------------------------------------
+    def __call__(self, key, component=None):
+
+        """ Retrieves component records of a record in the current set """
+
+        if not component:
+            return self[key]
+        else:
+            if isinstance(key, Row):
+                master = key
+            else:
+                master = self[key]
+            if component in self.components.keys():
+                c = self.components[component]
+                r = c.resource
+                pkey, fkey = c.pkey, c.fkey
+                l = [record for record in r if master[pkey] == record[fkey]]
+                return l
+            else:
+                raise AttributeError
+
+
+    # Representation ==========================================================
 
     def __repr__(self):
 
-        return "<S3Resource %s>" % self._tablename
+        """ String representation of this resource """
+
+        if self.__set:
+            ids = [r.id for r in self]
+            return "<S3Resource %s %s>" % (self.tablename, ids)
+        else:
+            return "<S3Resource %s>" % self.tablename
 
 
-    def _url(self, request=None):
+    # -------------------------------------------------------------------------
+    def __len__(self):
 
+        """ The number of records in the current set """
+
+        if self.__set is not None:
+            return len(self.__set)
+        else:
+            return 0
+
+
+    # -------------------------------------------------------------------------
+    def __nonzero__(self):
+
+        """ Boolean test of this resource """
+
+        return self is not None
+
+
+    # -------------------------------------------------------------------------
+    def __contains__(self, item):
+
+        """ Tests whether a record is currently loaded """
+
+        id = item.get("id", None)
+        uid = item.get(self.__manager.UID, None)
+
+        if (id or uid) and not self.__ids:
+            self.__load_ids()
+
+        if id and id in self.__ids:
+            return 1
+        elif uid and uid in self.__uids:
+            return 1
+        else:
+            return 0
+
+
+    # -------------------------------------------------------------------------
+    def url(self, request=None):
         raise NotImplementedError
 
 
-    # REST Interface ----------------------------------------------------------
+    # REST Interface ==========================================================
 
     def execute_request(self, r, **attr):
 
@@ -281,7 +698,7 @@ class S3Resource(object):
 
         """
 
-        self.__dbg("executing REST request")
+        self.__dbg("execute_request(%s)" % self)
 
         r._bind(self) # Bind request to resource
         r.next = None
@@ -289,26 +706,27 @@ class S3Resource(object):
         bypass = False
         output = None
 
-        hooks = r.response.get(self.__HOOKS, None)
+        hooks = r.response.get(self.__manager.HOOKS, None)
         preprocess = None
         postprocess = None
 
         # Enforce primary record ID
         if not r.id and (r.component or r.method == "read") and \
-           not r.method == "options" and not "select" in r.request.vars:
+           not r.method in ("fields", "options") and \
+           not "select" in r.request.vars:
             if r.representation == "html":
                 model = self.__manager.model
-                search_simple = model.get_method(self._prefix, self._name,
+                search_simple = model.get_method(self.prefix, self.name,
                                                  method="search_simple")
                 if search_simple:
                     self.__dbg("no record ID - redirecting to search_simple")
-                    redirect(URL(r=r.request, f=self._name, args="search_simple",
+                    redirect(URL(r=r.request, f=self.name, args="search_simple",
                                  vars={"_next": r.same()}))
                 else:
-                    r.session.error = r.BADRECORD
-                    redirect(URL(r=r.request, c=self._prefix, f=self._name))
+                    r.session.error = self.BADRECORD
+                    redirect(URL(r=r.request, c=self.prefix, f=self.name))
             else:
-                raise HTTP(404, body=r.BADRECORD)
+                raise HTTP(404, body=self.BADRECORD)
 
         # Pre-process
         if hooks is not None:
@@ -329,11 +747,11 @@ class S3Resource(object):
                             return output
                         else:
                             status = pre.get("status", 400)
-                            message = pre.get("message", r.INVALIDREQUEST)
+                            message = pre.get("message", self.BADREQUEST)
                             raise HTTP(status, message)
             elif not pre:
                 self.__dbg("pre-process returned an error - aborting")
-                raise HTTP(400, body=r.INVALIDREQUEST)
+                raise HTTP(400, body=self.BADREQUEST)
 
         # Default view
         if r.representation <> "html":
@@ -356,7 +774,7 @@ class S3Resource(object):
             elif r.http == "DELETE":
                 handler = self.__delete(r)
             else:
-                raise HTTP(501, body=r.BADMETHOD)
+                raise HTTP(501, body=self.BADMETHOD)
             if handler is not None:
                 self.__dbg("method handler found - executing request")
                 output = handler(r, **attr)
@@ -366,7 +784,7 @@ class S3Resource(object):
         # Post-process
         if hooks is not None:
             postprocess = hooks.get("postp", None)
-        if postprocess:
+        if postprocess is not None:
             self.__dbg("post-processing")
             output = postprocess(r, output)
 
@@ -381,6 +799,7 @@ class S3Resource(object):
         return output
 
 
+    # -------------------------------------------------------------------------
     def __get(self, r):
 
         """ Get GET method handler
@@ -400,7 +819,12 @@ class S3Resource(object):
 
         if method is None or method in ("read", "display"):
             authorised = permit("read", tablename)
-            if r.component:
+            xml_formats = self.__manager.xml_export_formats
+            json_formats = self.__manager.json_export_formats
+            if r.representation in xml_formats or \
+               r.representation in json_formats:
+                method = "export"
+            elif r.component:
                 if r.multiple and not r.component_id:
                     method = "list"
                 else:
@@ -420,28 +844,31 @@ class S3Resource(object):
         elif method == "options":
             authorised = permit("read", tablename)
 
+        elif method == "fields":
+            authorised = permit("read", tablename)
+
         elif method == "search" and not r.component:
             authorised = permit("read", tablename)
 
         elif method == "clear" and not r.component:
-            self.__manager.clear_session(r.session, self._prefix, self._name)
+            self.__manager.clear_session(r.session, self.prefix, self.name)
             if "_next" in r.request.vars:
                 request_vars = dict(_next=r.request.vars._next)
             else:
                 request_vars = {}
-            search_simple = model.get_method(self._prefix, self._name,
+            search_simple = model.get_method(self.prefix, self.name,
                                              method="search_simple")
             if r.representation == "html" and search_simple:
                 r.next = URL(r=r.request,
-                             f=self._name,
+                             f=self.name,
                              args="search_simple",
                              vars=request_vars)
             else:
-                r.next = URL(r=r.request, f=self._name)
+                r.next = URL(r=r.request, f=self.name)
             return None
 
         else:
-            raise HTTP(501, body=r.BADMETHOD)
+            raise HTTP(501, body=self.BADMETHOD)
 
         if not authorised:
             r.unauthorised()
@@ -449,6 +876,129 @@ class S3Resource(object):
             return self.get_handler(method)
 
 
+    def __get_options(self, r, **attr):
+
+        if "field" in r.request.get_vars:
+            items = r.request.get_vars["field"]
+            if not isinstance(items, (list, tuple)):
+                items = [items]
+            fields = []
+            for item in items:
+                f = item.split(",")
+                if f:
+                    fields.extend(f)
+        else:
+            fields = None
+
+        if r.representation == "xml":
+            return self.options_xml(component=r.component_name, fields=fields)
+        elif r.representation == "json":
+            return self.options_json(component=r.component_name, fields=fields)
+        else:
+            raise HTTP(501, body=self.BADFORMAT)
+
+
+    def __get_fields(self, r, **attr):
+
+        if r.representation == "xml":
+            return self.fields_xml(component=r.component_name)
+        elif r.representation == "json":
+            return self.fields_json(component=r.component_name)
+        else:
+            raise HTTP(501, body=self.BADFORMAT)
+
+
+    def __get_tree(self, r, **attr):
+
+        xml_formats = self.__manager.xml_export_formats
+        json_formats = self.__manager.json_export_formats
+
+        template = None
+        show_urls = True
+        dereference = True
+
+        if r.representation in xml_formats:
+            r.response.headers["Content-Type"] = \
+                xml_formats.get(r.representation, "application/xml")
+        else:
+            r.response.headers["Content-Type"] = \
+                json_formats.get(r.representation, "text/x-json")
+            if r.representation == "json":
+                show_urls = False
+                dereference = False
+
+        if r.representation not in ("xml", "json"):
+            template_name = "%s.%s" % (r.representation,
+                                       self.__manager.XSLT_FILE_EXTENSION)
+
+            template = os.path.join(r.request.folder,
+                                    self.__manager.XSLT_EXPORT_TEMPLATES,
+                                    template_name)
+
+            if not os.path.exists(template):
+                raise HTTP(501, body="%s: %s" % (self.BADTEMPLATE, template))
+
+        start = r.request.vars.get("start", None)
+        if start is not None:
+            try:
+                start = int(start)
+            except ValueError:
+                start = None
+
+        limit = r.request.vars.get("limit", None)
+        if limit is not None:
+            try:
+                limit = int(limit)
+            except ValueError:
+                limit = None
+
+        marker = r.request.vars.get("marker", None)
+
+        msince = r.request.vars.get("msince", None)
+        if msince is not None:
+            tfmt = "%Y-%m-%dT%H:%M:%SZ"
+            try:
+                (y,m,d,hh,mm,ss,t0,t1,t2) = time.strptime(msince, tfmt)
+                msince = datetime.datetime(y,m,d,hh,mm,ss)
+            except ValueError:
+                msince = None
+
+        tree = self.export_tree(start=start,
+                                limit=limit,
+                                marker=marker,
+                                msince=msince,
+                                show_urls=True,
+                                dereference=True)
+
+        if template is not None:
+            tfmt = "%Y-%m-%d %H:%M:%S"
+            args = dict(domain=self.__manager.domain,
+                        base_url=self.__manager.base_url,
+                        prefix=self.prefix,
+                        name=self.name,
+                        utcnow=datetime.datetime.utcnow().strftime(tfmt))
+
+            if r.component:
+                args.update(id=r.id, component=r.component.tablename)
+
+            mode = r.request.vars.get("mode", None)
+            if mode is not None:
+                args.update(mode=mode)
+
+            tree = self.__manager.xml.transform(tree, template, **args)
+            if not tree:
+                error = self.__manager.xml.json_message(False, 400,
+                            str(T("XSLT Transformation Error: %s ")) % \
+                            self.__manager.xml.error)
+                raise HTTP(400, body=error)
+
+        if r.representation in xml_formats:
+            return self.__manager.xml.tostring(tree, pretty_print=True)
+        else:
+            return self.__manager.xml.tree2json(tree, pretty_print=True)
+
+
+    # -------------------------------------------------------------------------
     def __put(self, r):
 
         """ Get PUT method handler
@@ -464,9 +1014,10 @@ class S3Resource(object):
         elif r.representation in self.__manager.json_import_formats:
             return self.get_handler("import_json")
         else:
-            raise HTTP(501, body=r.BADFORMAT)
+            raise HTTP(501, body=self.BADFORMAT)
 
 
+    # -------------------------------------------------------------------------
     def __post(self, r):
 
         """ Get POST method handler
@@ -484,6 +1035,7 @@ class S3Resource(object):
             return self.__get(r)
 
 
+    # -------------------------------------------------------------------------
     def __delete(self, r):
 
         """ Get DELETE method handler
@@ -508,253 +1060,296 @@ class S3Resource(object):
                 r.next = r.there()
             return self.get_handler("delete")
         else:
-            raise HTTP(501, body=r.BADMETHOD)
+            raise HTTP(501, body=self.BADMETHOD)
 
-    # XML/JSON functions ------------------------------------------------------
+    # XML/JSON functions ======================================================
 
-    def export_tree(self):
-        raise NotImplementedError
+    def export_tree(self,
+                    start=None,
+                    limit=None,
+                    marker=None,
+                    msince=None,
+                    show_urls=True,
+                    dereference=True):
 
-    def export_xml(self):
-        raise NotImplementedError
+        return self.__manager.export_tree(self,
+                                          audit=self.__manager.audit,
+                                          start=start,
+                                          limit=limit,
+                                          marker=marker,
+                                          msince=msince,
+                                          show_urls=show_urls,
+                                          dereference=dereference)
 
-    def export_json(self):
-        raise NotImplementedError
+    # -------------------------------------------------------------------------
+    def export_xml(self, template=None, pretty_print=False, **args):
+
+        tree = self.export_tree()
+
+        if tree and template is not None:
+            tfmt = "%Y-%m-%d %H:%M:%S"
+            args.update(domain=self.__manager.domain,
+                        base_url=self.__manager.base_url,
+                        prefix=self.prefix,
+                        name=self.name,
+                        utcnow=datetime.datetime.utcnow().strftime(tfmt))
+
+            tree = self.__manager.xml.transform(tree, template, **args)
+
+        if tree:
+            return self.__manager.xml.tostring(tree, pretty_print=pretty_print)
+        else:
+            return None
 
 
+    # -------------------------------------------------------------------------
+    def export_json(self, template=None, pretty_print=False, **args):
+
+        tree = self.export_tree()
+
+        if tree and template is not None:
+            tfmt = "%Y-%m-%d %H:%M:%S"
+            args.update(domain=self.__manager.domain,
+                        base_url=self.__manager.base_url,
+                        prefix=self.prefix,
+                        name=self.name,
+                        utcnow=datetime.datetime.utcnow().strftime(tfmt))
+
+            tree = self.__manager.xml.transform(tree, template, **args)
+
+        if tree:
+            return self.__manager.xml.tree2json(tree, pretty_print=pretty_print)
+        else:
+            return None
+
+
+    # -------------------------------------------------------------------------
     def import_tree(self):
         raise NotImplementedError
 
+    # -------------------------------------------------------------------------
     def import_xml(self):
         raise NotImplementedError
 
+    # -------------------------------------------------------------------------
     def import_json(self):
         raise NotImplementedError
 
+    # -------------------------------------------------------------------------
+    def options_tree(self, component=None, fields=None):
 
-    def options_tree(field=None):
-        raise NotImplementedError
-
-    def options_xml(field=None):
-        raise NotImplementedError
-
-    def options_json(field=None):
-        raise NotImplementedError
-
-
-    def fields_tree(component=None):
-        raise NotImplementedError
-
-    def fields_xml(component=None):
-        raise NotImplementedError
-
-    def fields_json(component=None):
-        raise NotImplementedError
+        if component is not None:
+            c = self.components.get(component, None)
+            if c:
+                tree = c.resource.options_tree(fields=fields)
+                return tree
+            else:
+                raise AttributeError
+        else:
+            tree = self.__manager.xml.get_options(self.prefix,
+                                                  self.name,
+                                                  fields=fields)
+            return tree
 
 
+    # -------------------------------------------------------------------------
+    def options_xml(self, component=None, fields=None):
+
+        tree = self.options_tree(component=component, fields=fields)
+        return self.__manager.xml.tostring(tree, pretty_print=True)
+
+
+    # -------------------------------------------------------------------------
+    def options_json(self, component=None, fields=None):
+
+        tree = etree.ElementTree(self.options_tree(component=component,
+                                                   fields=fields))
+        return self.__manager.xml.tree2json(tree, pretty_print=True)
+
+
+    # -------------------------------------------------------------------------
+    def fields_tree(self, component=None):
+
+        if component is not None:
+            c = self.components.get(component, None)
+            if c:
+                tree = c.resource.fields_tree()
+                return tree
+            else:
+                raise AttributeError
+        else:
+            tree = self.__manager.xml.get_fields(self.prefix, self.name)
+            return tree
+
+
+    # -------------------------------------------------------------------------
+    def fields_xml(self, component=None):
+
+        tree = self.fields_tree(component=component)
+        return self.__manager.xml.tostring(tree, pretty_print=True)
+
+
+    # -------------------------------------------------------------------------
+    def fields_json(self, component=None):
+
+        tree = etree.ElementTree(self.fields_tree(component=component))
+        return self.__manager.xml.tree2json(tree, pretty_print=True)
+
+
+    # -------------------------------------------------------------------------
     def push_xml(self):
         raise NotImplementedError
 
+    # -------------------------------------------------------------------------
     def push_json(self):
         raise NotImplementedError
 
+    # -------------------------------------------------------------------------
     def fetch_xml(self):
         raise NotImplementedError
 
+    # -------------------------------------------------------------------------
     def fetch_json(self):
         raise NotImplementedError
-
-    # Configuration -----------------------------------------------------------
-
-    def set_handler(self, method, handler):
-
-        """ Set REST method handler for this resource """
-
-        self.__handler[method] = handler
-
-
-    def get_handler(self, method):
-
-        """ Get REST method handler for this resource """
-
-        return self.__handler.get(method, None)
 
 
 # *****************************************************************************
 class S3Request(object):
 
-    """ Class to represent RESTful requests """
+    """ Class to handle requests """
 
     DEFAULT_REPRESENTATION = "html"
 
-    # Error messages
-    INVALIDREQUEST = "Invalid request."
-    UNAUTHORISED = "Not authorised."
-    BADFORMAT = "Unsupported data format."
-    BADMETHOD = "Unsupported method."
-    BADRECORD = "Record not found."
-
-    def __init__(self, rc, prefix, name,
+    def __init__(self, manager, prefix, name,
                  request=None,
                  session=None,
                  response=None,
-                 debug=False):
+                 debug=None):
 
         """ Constructor
 
-            @param rc: the resource controller
+            @param manager: the resource controller
             @param prefix: prefix of the resource name (=module name)
             @param name: name of the resource (=without prefix)
             @param request: the web2py request object
             @param session: the session store
+            @param response: the web2py response object
             @param debug: whether to print debug messages or not
 
         """
 
-        assert rc is not None, "Resource controller must not be None."
-        self.rc = rc
+        assert manager is not None, "Undefined Resource Manager"
+        self.__manager = manager
+
+        if debug is None:
+            self.debug = self.__manager.debug
+        else:
+            self.debug = debug
+
+        self.error = None
 
         self.prefix = prefix or request.controller
         self.name = name or request.function
 
-        self.resource = None
-
         self.request = request
-        if session is not None:
-            self.session = session
-        else:
-            self.session = Storage()
-
         self.response = response
+        self.session = session or Storage()
 
-        self.debug = debug
-        self.error = None
-        self.invalid = False
-        self.badmethod = False
-        self.badrecord = False
-        self.badrequest = False
-
+        # Prepare parsing
         self.representation = request.extension
         self.http = request.env.request_method
         self.extension = False
 
-        self.tablename = "%s_%s" % (self.prefix, self.name)
-        self.table = self.rc.db[self.tablename]
-        self.method = None
+        self.args = []
         self.id = None
-        self.record = None
-
-        self.component = None
-        self.pkey = self.fkey = None
         self.component_name = None
         self.component_id = None
-        self.multiple = True
+        self.method = None
 
-        # Parse request
-        if not self.__parse():
-            self.__dbg("S3Request: Parsing of request failed.")
-            return None
+        # Parse the request
+        self.__parse()
+
+        # Append component ID to the URL query
+        if self.component_name and self.component_id:
+            varname = "%s.id" % self.component_name
+            if varname in self.request.vars:
+                var = self.request.vars[varname]
+                if not isinstance(var, (list, tuple)):
+                    var = [var]
+                var.append(self.component_id)
+                self.request.vars[varname] = var
+            else:
+                self.request.vars[varname] = self.component_id
+
+        # Create the resource
+        self.resource = manager.resource(self.prefix, self.name,
+                                         id=self.id,
+                                         filter=self.response[manager.HOOKS].filter,
+                                         url_vars=self.request.vars,
+                                         components=self.component_name)
+
+        self.tablename = self.resource.tablename
+        self.table = self.resource.table
 
         # Check for component
+        self.component = None
+        self.pkey = None
+        self.fkey = None
+        self.multiple = True
         if self.component_name:
-            self.component, self.pkey, self.fkey = \
-                self.rc.model.get_component(self.prefix, self.name,
-                                            self.component_name)
-            if not self.component:
-                self.__dbg("S3Request: %s not a component of %s" %
-                           (self.component_name, self.tablename))
-                self.invalid = self.badrequest = True
-                return None
-            if "multiple" in self.component.attr:
-                self.multiple = self.component.attr.multiple
+            c = self.resource.components.get(self.component_name, None)
+            if c:
+                self.component = c.component
+                self.pkey, self.fkey = c.pkey, c.fkey
+                self.multiple = self.component.attr.get("multiple", True)
+            else:
+                manager.error = "%s not a component of %s" % \
+                                (self.component_name, self.resource.tablename)
+                raise SyntaxError(manager.error)
 
         # Find primary record
-        if not self.__record():
-            self.__dbg("S3Request: Primary record identification failed.")
-            return None
+        uid = self.request.vars.get("%s.uid" % self.name, None)
+        if self.component_name:
+            cuid = self.request.vars.get("%s.uid" % self.component_name, None)
+        else:
+            cuid = None
+
+        # Try to load primary record, if expected
+        if self.id or self.component_id or \
+           uid and not isinstance(uid, (list, tuple)) or \
+           cuid and not isinstance(cuid, (list, tuple)):
+            # Single record expected
+            self.resource.load()
+            if len(self.resource) == 1:
+                self.record = self.resource.records().first()
+                self.id = self.record.id
+                self.__manager.store_session(self.session,
+                                             self.resource.prefix,
+                                             self.resource.name,
+                                             self.id)
+            else:
+                manager.error = "No matching record found"
+                raise KeyError(manager.error)
 
         # Check for custom action
-        self.custom_action = \
-            self.rc.model.get_method(self.prefix, self.name,
-                                     component_name=self.component_name,
-                                     method=self.method)
-
-        # Append record ID to request as necessary
-        if self.id:
-            if len(self.args) > 0 or \
-               len(self.args) == 0 and \
-               ("select" in self.request.vars):
-                if self.component and not self.args[0].isdigit():
-                    self.args.insert(0, str(self.id))
-                    if self.representation == self.DEFAULT_REPRESENTATION or \
-                       self.extension:
-                        self.request.args.insert(0, str(self.id))
-                    else:
-                        self.request.args.insert(0, "%s.%s" %
-                                                (self.id, self.representation))
-                elif not self.component and not (str(self.id) in self.args):
-                    self.args.append(self.id)
-                    if self.representation == self.DEFAULT_REPRESENTATION or \
-                       self.extension:
-                        self.request.args.append(self.id)
-                    else:
-                        self.request.args.append("%s.%s" %
-                                                (self.id, self.representation))
-
-        self.__dbg("S3Request: *** Init complete ***")
-        self.__dbg("S3Request: Resource=%s" % self.tablename)
-        self.__dbg("S3Request: ID=%s" % self.id)
-        self.__dbg("S3Request: Component=%s" % self.component_name)
-        self.__dbg("S3Request: ComponentID=%s" % self.component_id)
-        self.__dbg("S3Request: Method=%s" % self.method)
-        self.__dbg("S3Request: Representation=%s" % self.representation)
-
-        return
-
-
-    def __dbg(self, msg):
-
-        """ Output debug messages
-
-            @param msg: the message
-
-        """
-
-        if self.debug:
-            print >> sys.stderr, "S3Request: %s" % msg
-
-
-    def __repr__(self):
-
-        return self.here()
-
-
-    def __str__(self):
-
-        return str(self.here())
-
-
-    def unauthorised(self):
-
-        """ Action upon unauthorised request """
-
-        if self.representation == "html":
-            self.session.error = self.UNAUTHORISED
-            login = URL(r=self.request,
-                        c="default",
-                        f="user",
-                        args="login",
-                        vars={"_next": self.here()})
-            redirect(login)
-        else:
-            raise HTTP(401, body = self.UNAUTHORISED)
+        model = manager.model
+        self.custom_action = model.get_method(self.prefix, self.name,
+                                              component_name=self.component_name,
+                                              method=self.method)
 
 
     def _bind(self, resource):
 
         self.resource = resource
 
-    # Request parser ==========================================================
+
+    def __dbg(self, msg):
+
+        if self.debug:
+            print >> sys.stderr, "S3Request: %s" % msg
+
+
+    # Request Parser ==========================================================
 
     def __parse(self):
 
@@ -762,8 +1357,8 @@ class S3Request(object):
 
         self.args = []
 
-        components = [c[0].name for c in
-                      self.rc.model.get_components(self.prefix, self.name)]
+        model = self.__manager.model
+        components = [c[0].name for c in model.get_components(self.prefix, self.name)]
 
         if len(self.request.args) > 0:
             for i in xrange(0, len(self.request.args)):
@@ -814,154 +1409,6 @@ class S3Request(object):
 
         if not self.representation:
             self.representation = self.DEFAULT_REPRESENTATION
-
-        return True
-
-
-    # Resource finder =========================================================
-
-    def __record(self):
-
-        """ Tries to identify and load the primary record of the resource """
-
-        # TODO: allow SOME result (current options: ALL or ONE)
-
-        uid = self.request.vars.get("%s.uid" % self.name, None)
-        if isinstance(uid, list):
-            uid = uid[0]
-        uids = [uid, None]
-        if self.component_name:
-            uid = self.request.vars.get("%s.uid" % self.component_name, None)
-            if isinstance(uid, list):
-                uid = uid[0]
-            uids[1] = uid
-        if self.rc.xml.domain_mapping:
-            uids = map(lambda uid: \
-                       uid and self.rc.xml.import_uid(uid) or None, uids)
-
-        if self.id:
-            # Primary record ID is specified
-            query = (self.table.id == self.id)
-            if "deleted" in self.table:
-                query = ((self.table.deleted == False) |
-                         (self.table.deleted == None)) & query
-            records = self.rc.db(query).select(self.table.ALL, limitby=(0, 1))
-            if not records:
-                self.__dbg("Invalid resource record ID")
-                self.id = None
-                self.invalid = self.badrecord = True
-                return False
-            else:
-                self.record = records[0]
-
-        elif uids and uids[0] is not None and "uuid" in self.table:
-            # Primary record UUID is specified
-            query = (self.table.uuid == uids[0])
-            if "deleted" in self.table:
-                query = ((self.table.deleted == False) |
-                         (self.table.deleted == None)) & query
-            records = self.rc.db(query).select(self.table.ALL, limitby=(0, 1))
-            if not records:
-                self.__dbg("Invalid resource record UUID")
-                self.id = None
-                self.invalid = self.badrecord = True
-                return False
-            else:
-                self.record = records[0]
-                self.id = self.record.id
-
-        if self.component and self.component_id:
-            # Component record ID is specified
-            query = ((self.component.table.id == self.component_id) &
-                     (self.table[self.pkey] == self.component.table[self.fkey]))
-            if self.id:
-                # Must match if a primary record has been found
-                query = (self.table.id == self.id) & query
-            if "deleted" in self.table:
-                query = ((self.table.deleted == False) |
-                         (self.table.deleted == None)) & query
-            if "deleted" in self.component.table:
-                query = ((self.component.table.deleted == False) |
-                         (self.component.table.deleted == None)) & query
-            records = self.rc.db(query).select(self.table.ALL, limitby=(0, 1))
-            if not records:
-                self.__dbg("Invalid component record ID or component not matching primary record.")
-                self.id = None
-                self.invalid = self.badrecord = True
-                return False
-            else:
-                self.record = records[0]
-                self.id = self.record.id
-
-        elif self.component and \
-             uids and uids[1] is not None and "uuid" in self.component.table:
-            # Component record ID is specified
-            query = ((self.component.table.uuid == uids[1]) &
-                     (self.table[self.pkey] == self.component.table[self.fkey]))
-            if self.id:
-                # Must match if a primary record has been found
-                query = (self.table.id == self.id) & query
-            if "deleted" in self.table:
-                query = ((self.table.deleted == False) |
-                         (self.table.deleted == None)) & query
-            if "deleted" in self.component.table:
-                query = ((self.component.table.deleted == False) |
-                         (self.component.table.deleted == None)) & query
-            records = self.rc.db(query).select(
-                        self.table.ALL, self.component.table.id, limitby=(0, 1))
-            if not records:
-                self.__dbg("Invalid component record UUID or component not matching primary record.")
-                self.id = None
-                self.invalid = self.badrecord = True
-                return False
-            else:
-                self.record = records[0][self.tablename]
-                self.id = self.record.id
-                self.component_id = records[0][self.component.tablename].id
-
-        # Check for ?select=
-        if not self.id and "select" in self.request.vars:
-            if self.request.vars["select"] == "ALL":
-                return True
-            id_label = str.strip(self.request.vars.id_label)
-            if "pr_pe_label" in self.table:
-                query = (self.table.pr_pe_label == id_label)
-                if "deleted" in self.table:
-                    query = ((self.table.deleted == False) |
-                             (self.table.deleted == None)) & query
-                records = self.rc.db(query).select(self.table.ALL,
-                                                   limitby=(0, 1))
-                if records:
-                    self.record = records[0]
-                    self.id = self.record.id
-                else:
-                    self.__dbg("No record with ID label %s" % id_label)
-                    self.id = 0
-                    self.invalid = self.badrecord = True
-                    return False
-
-        # Retrieve prior selected ID, if any
-        if not self.id and len(self.request.args) > 0:
-            self.id = self.rc.get_session(self.session, self.prefix, self.name)
-            if self.id:
-                query = (self.table.id == self.id)
-                if "deleted" in self.table:
-                    query = ((self.table.deleted == False) |
-                             (self.table.deleted == None)) & query
-                records = self.rc.db(query).select(self.table.ALL,
-                                                   limitby=(0, 1))
-                if not records:
-                    self.id = None
-                    self.rc.clear_session(self.session, self.prefix, self.name)
-                else:
-                    self.record = records[0]
-
-        # Remember primary record ID for further requests
-        if self.id:
-            self.rc.store_session(self.session,
-                                  self.prefix, self.name, self.id)
-
-        return True
 
 
     # URL helpers =============================================================
@@ -1095,173 +1542,6 @@ class S3Request(object):
 
     # XML+JSON helpers ========================================================
 
-    def export_xml(self,
-                   permit=None,
-                   audit=None,
-                   title=None,
-                   template=None,
-                   filterby=None,
-                   pretty_print=False):
-
-        """ Export the requested resources as XML
-
-            @param permit: permit hook (function to check table permissions)
-            @param audit: audit hook (function to audit table access)
-            @param template: the XSLT template (filename)
-            @param filterby: filter option
-            @param pretty_print: provide pretty formatted output
-
-        """
-
-        if self.component:
-            joins = [(self.component, self.pkey, self.fkey)]
-        else:
-            if "components" in self.request.vars:
-                joins = []
-                if not self.request.vars["components"] == "NONE":
-                    components = self.request.vars["components"].split(",")
-                    for c in components:
-                        component, pkey, fkey = \
-                            self.rc.model.get_component(self.prefix,
-                                                        self.name, c)
-                        if component is not None:
-                            joins.append([component, pkey, fkey])
-            else:
-                joins = self.rc.model.get_components(self.prefix, self.name)
-
-        start = self.request.vars.get("start", None)
-        if start is not None:
-            try:
-                start = int(self.request.vars["start"])
-            except ValueError:
-                start = None
-
-        limit = self.request.vars.get("limit", None)
-        if limit is not None:
-            try:
-                limit = int(self.request.vars["limit"])
-            except ValueError:
-                limit = None
-
-        marker = self.request.vars.get("marker", None)
-
-        msince = self.request.vars.get("msince", None)
-        if msince is not None:
-            tfmt = "%Y-%m-%dT%H:%M:%SZ"
-            try:
-                (y,m,d,hh,mm,ss,t0,t1,t2) = time.strptime(msince, tfmt)
-                msince = datetime.datetime(y,m,d,hh,mm,ss)
-            except ValueError:
-                msince = None
-
-        tree = self.rc.export_xml(self.prefix, self.name, self.id,
-                                  joins=joins,
-                                  filterby=filterby,
-                                  permit=permit,
-                                  audit=audit,
-                                  msince=msince,
-                                  start=start,
-                                  limit=limit,
-                                  marker=marker)
-
-        if template is not None:
-            tfmt = "%Y-%m-%d %H:%M:%S"
-            args = dict(domain=self.rc.domain,
-                        base_url=self.rc.base_url,
-                        prefix=self.prefix,
-                        name=self.name,
-                        utcnow=datetime.datetime.utcnow().strftime(tfmt))
-            if title:
-                args.update(title=title)
-            if self.component:
-                args.update(id=self.id, component=self.component.tablename)
-            mode = self.request.vars.get("mode", None)
-            if mode is not None:
-                args.update(mode=mode)
-            tree = self.rc.xml.transform(tree, template, **args)
-            if not tree:
-                self.error = self.rc.error
-                return None
-
-        return self.rc.xml.tostring(tree, pretty_print=pretty_print)
-
-
-    def export_json(self,
-                    permit=None,
-                    audit=None,
-                    title=None,
-                    template=None,
-                    filterby=None,
-                    pretty_print=False):
-
-        """ Export the requested resources as JSON
-
-            @param permit: permit hook (function to check table permissions)
-            @param audit: audit hook (function to audit table access)
-            @param template: the XSLT template (filename)
-            @param filterby: filter option
-            @param pretty_print: provide pretty formatted output
-
-        """
-
-        if self.component:
-            joins = [(self.component, self.pkey, self.fkey)]
-        else:
-            if "components" in self.request.vars:
-                joins = []
-                if not components == "NONE":
-                    components = self.request.vars["components"].split(",")
-                    for c in components:
-                        component, pkey, fkey = \
-                            self.model.get_component(self.prefix, self.name, c)
-                        if component is not None:
-                            joins.append(component, pkey, fkey)
-            else:
-                joins = self.rc.model.get_components(self.prefix, self.name)
-
-        if "start" in self.request.vars:
-            start = int(self.request.vars["start"])
-        else:
-            start = None
-
-        if "limit" in self.request.vars:
-            limit = int(self.request.vars["limit"])
-        else:
-            limit = None
-
-        # marker and msince not supported in JSON
-
-        tree = self.rc.export_xml(self.prefix, self.name, self.id,
-                               joins=joins,
-                               filterby=filterby,
-                               permit=permit,
-                               audit=audit,
-                               start=start,
-                               limit=limit,
-                               show_urls=False)
-
-        if template is not None:
-            tfmt = "%Y-%m-%d %H:%M:%S"
-            args = dict(domain=self.rc.domain,
-                        base_url=self.rc.base_url,
-                        prefix=self.prefix,
-                        name=self.name,
-                        utcnow=datetime.datetime.utcnow().strftime(tfmt))
-            if title:
-                args.update(title=title)
-            if self.component:
-                args.update(id=self.id, component=self.component.tablename)
-            mode = self.request.vars.get("mode", None)
-            if mode is not None:
-                args.update(mode=mode)
-            tree = self.rc.xml.transform(tree, template, **args)
-            if not tree:
-                self.error = self.rc.error
-                return None
-
-        return self.rc.xml.tree2json(tree, pretty_print=pretty_print)
-
-
     def import_xml(self, tree, permit=None, audit=None, push_limit=1):
 
         """ import the requested resources from an element tree
@@ -1281,7 +1561,7 @@ class S3Request(object):
             joins = [(self.component, self.pkey, self.fkey)]
         else:
             skip_resource = False
-            joins = self.rc.model.get_components(self.prefix, self.name)
+            joins = self.__manager.model.get_components(self.prefix, self.name)
 
         if self.method == "create":
             self.id = None
@@ -1300,75 +1580,13 @@ class S3Request(object):
         else:
             ignore_errors = False
 
-        return self.rc.import_xml(self.prefix, self.name, self.id, tree,
+        return self.__manager.import_xml(self.prefix, self.name, self.id, tree,
                                   joins=joins,
                                   skip_resource=skip_resource,
                                   permit=permit,
                                   audit=audit,
                                   push_limit=push_limit,
                                   ignore_errors=ignore_errors)
-
-
-    def options_tree(self):
-
-        """ Export field options in the current resource as element tree """
-
-        fields = self.request.vars.get("field", None)
-        if fields and not isinstance(fields, list):
-            if "," in fields:
-                fields = fields.split(",")
-            else:
-                fields = [fields]
-
-        if not fields:
-            if self.component:
-                tree = self.rc.options_xml(self.component.prefix,
-                                           self.component.name)
-            else:
-                joins = self.rc.model.get_components(self.prefix, self.name)
-                tree = self.rc.options_xml(self.prefix, self.name, joins=joins)
-        else:
-            if self.component:
-                table = self.component.table
-            else:
-                table = self.table
-            tree = etree.Element(self.rc.xml.TAG.options)
-            for field in fields:
-                opt_list = self.rc.xml.get_field_options(table, field)
-                opt_list.set("id", "%s_%s" % (table._tablename, field))
-                opt_list.set("name", "%s" % field)
-                tree.append(opt_list)
-            if len(tree) == 1:
-                tree = tree.findall("select")[0]
-            else:
-                tree.set(self.rc.xml.TAG.resource, table._tablename)
-            tree = etree.ElementTree(tree)
-
-        return tree
-
-
-    def options_xml(self, pretty_print=False):
-
-        """ Export field options in the current resource as XML
-
-            @param pretty_print: provide pretty formatted output
-
-        """
-
-        tree = self.options_tree()
-        return self.rc.xml.tostring(tree, pretty_print=pretty_print)
-
-
-    def options_json(self, pretty_print=False):
-
-        """ Export field options in the current resource as JSON
-
-            @param pretty_print: provide pretty formatted output
-
-        """
-
-        tree = self.options_tree()
-        return self.rc.xml.tree2json(tree, pretty_print=pretty_print)
 
 
 # *****************************************************************************
@@ -1718,9 +1936,18 @@ class S3ResourceModel(object):
 # *****************************************************************************
 class S3ResourceController(object):
 
-    """ Resource controller class """
+    """ S3 Resource Controller """
 
+    UID = "uuid"
+    DELETED = "deleted"
+
+    HOOKS = "s3"
     RCVARS = "rcvars"
+
+    XSLT_FILE_EXTENSION = "xsl"
+    XSLT_IMPORT_TEMPLATES = "static/xslt/import"
+    XSLT_EXPORT_TEMPLATES = "static/xslt/export"
+
     ACTION = dict(
         create="create",
         read="read",
@@ -1728,15 +1955,15 @@ class S3ResourceController(object):
         delete="delete"
     )
     ROWSPERPAGE = 10
-
     MAX_DEPTH = 10
 
-
+    # -------------------------------------------------------------------------
     def __init__(self, db,
                  domain=None,
                  base_url=None,
                  cache=None,
                  auth=None,
+                 audit=None,
                  rpp=None,
                  gis=None,
                  messages=None,
@@ -1760,6 +1987,7 @@ class S3ResourceController(object):
 
         self.cache = cache
         self.auth = auth
+        self.audit = audit
         self.debug = debug
 
         self.error = None
@@ -1791,8 +2019,7 @@ class S3ResourceController(object):
         self.__handler = Storage()
 
 
-    # Helper functions --------------------------------------------------------
-
+    # -------------------------------------------------------------------------
     def __dbg(self, msg):
 
         """ Print out debug messages. """
@@ -1801,122 +2028,7 @@ class S3ResourceController(object):
             print >> sys.stderr, "S3ResourceController: %s" % msg
 
 
-    # Configuration -----------------------------------------------------------
-
-    def set_handler(self, method, handler):
-
-        """ Set the default handler for a resource method """
-
-        self.__handler[method] = handler
-
-
-    def get_handler(self, method):
-
-        """ Get the default handler for a resource method """
-
-        return self.__handler.get(method, None)
-
-
-    # Resource + Request ======================================================
-
-    def resource(self, prefix, name, id=None, uid=None, query=None, **attr):
-
-        """ Wrapper function for the S3Resource class """
-
-        resource = S3Resource(self, prefix, name, id=id, uid=uid, query=query, **attr)
-
-        for method in self.__handler.keys():
-            resource.set_handler(method, self.__handler[method])
-
-        return resource
-
-
-    def parse_request(self, prefix, name, session, request, response):
-
-        """ Parse an HTTP request and generate the corresponding
-            S3Request and S3Resource objects.
-
-        """
-
-        self.__dbg("parsing request")
-
-        req = S3Request(self, prefix, name,
-                            request=request,
-                            session=session,
-                            response=response,
-                            debug=self.debug)
-
-        res = self.resource(prefix, name,
-                            id=req.id,
-                            debug=self.debug)
-
-        req.resource = res
-
-        return (res, req)
-
-
-    # Session helpers =========================================================
-
-    def get_session(self, session, prefix, name):
-
-        """ Reads the last record ID for a resource from a session
-
-            @param session: the session store
-            @param prefix: the prefix of the resource name (=module name)
-            @param name: the name of the resource (=without prefix)
-
-        """
-
-        tablename = "%s_%s" % (prefix, name)
-        if self.RCVARS in session and tablename in session[self.RCVARS]:
-            return session[self.RCVARS][tablename]
-        else:
-            return None
-
-
-    def store_session(self, session, prefix, name, id):
-
-        """ Stores a record ID for a resource in a session
-
-            @param session: the session store
-            @param prefix: the prefix of the resource name (=module name)
-            @param name: the name of the resource (=without prefix)
-            @id: the ID to store
-
-        """
-
-        if self.RCVARS not in session:
-            session[self.RCVARS] = Storage()
-        if self.RCVARS in session:
-            tablename = "%s_%s" % (prefix, name)
-            session[self.RCVARS][tablename] = id
-
-        return True # always return True to make this chainable
-
-
-    def clear_session(self, session, prefix=None, name=None):
-
-        """ Clears one or all record IDs stored in a session
-
-            @param session: the session store
-            @param prefix: the prefix of the resource name (=module name)
-            @param name: the name of the resource (=without prefix)
-
-        """
-
-        if prefix and name:
-            tablename = "%s_%s" % (prefix, name)
-            if self.RCVARS in session and tablename in session[self.RCVARS]:
-                del session[self.RCVARS][tablename]
-        else:
-            if self.RCVARS in session:
-                del session[self.RCVARS]
-
-        return True # always return True to make this chainable
-
-
-    # Table helpers ===========================================================
-
+    # -------------------------------------------------------------------------
     def __directory(self, d, l, k, v, e={}):
 
         """ Converts a list of dicts into a directory
@@ -1945,6 +2057,7 @@ class S3ResourceController(object):
         return d
 
 
+    # -------------------------------------------------------------------------
     def __fields(self, table, skip=[]):
 
         """
@@ -1973,270 +2086,19 @@ class S3ResourceController(object):
 
         return (rfields, dfields)
 
-    # XML Export ==============================================================
 
-    def export_xml(self, prefix, name, id,
-                   joins=[],
-                   filterby=None,
-                   skip=[],
-                   permit=None,
-                   audit=None,
-                   start=None,
-                   limit=None,
-                   marker=None,
-                   msince=None,
-                   show_urls=True,
-                   dereference=True):
-
-        """ Exports data as XML tree
-
-            @param prefix: prefix of the resource name (=module name)
-            @param name: resource name (=without prefix)
-            @param id: ID of the record to export (may be None, single or list)
-            @param joins: list of component joins to include in the export
-            @param filterby: filter option
-            @param skip: list of field names to skip
-            @param permit: permit hook (function to check table permissions)
-            @param audit: audit hook (function to audit table access)
-            @param start: starting record (for server-side pagination)
-            @param limit: page size (for server-side pagination)
-            @marker: URL to override map marker URL in location references
-            @msince: report only resources which have been modified since that datetime
-            @show_urls: show resource URLs in <resource> elements
-            @dereference: include referenced resources into the export
-
-        """
-
-        self.error = None
-
-        resources = []
-        tablename = "%s_%s" % (prefix, name)
-
-        burl = show_urls and self.base_url or None
-        if tablename not in self.db or \
-           (permit and not permit(self.ACTION["read"], tablename)):
-            return self.xml.root(resources, domain=self.domain, url=burl)
-
-        table = self.db[tablename]
-        (rfields, dfields) = self.__fields(table, skip=skip)
-
-        # Master query
-        if id and isinstance(id, (list, tuple)):
-            query = (table.id.belongs(id))
-        elif id is not None:
-            query = (table.id == id)
-        else:
-            query = (table.id > 0)
-
-        if "deleted" in table:
-            query = (table.deleted == False) & query
-        if filterby:
-            query = (filterby) & query
-
-        #results = self.db(query).count()
-
-        # Server-side pagination
-        if start is not None: # can't be 'if start': 0 is a valid value
-            if not limit:
-                limit = self.ROWSPERPAGE
-            if limit <= 0:
-                limit = 1
-            if start < 0:
-                start = 0
-            limitby = (start, start + limit)
-        else:
-            limitby = None
-
-        # Load primary records
-        results = self.db(query).count()
-        records = self.db(query).select(table.ALL, limitby=limitby) or []
-
-        # Filter by permission
-        if records and permit:
-            records = filter(lambda r: permit(self.ACTION["read"],
-                             tablename, record_id=r.id), records)
-        if joins and permit:
-            joins = filter(lambda j: permit(self.ACTION["read"],
-                           j[0].tablename), joins)
-
-        # Load component records
-        cdata = {}
-        crfields = {}
-        cdfields = {}
-        if records:
-            for i in xrange(0, len(joins)):
-                (c, pkey, fkey) = joins[i]
-                pkeys = map(lambda r: r[pkey], records)
-                cquery = (c.table[fkey].belongs(pkeys))
-                if "deleted" in c.table.fields:
-                    cquery = (c.table.deleted == False) & cquery
-                if msince and "modified_on" in c.table.fields:
-                    cquery = (c.table.modified_on >= msince) & cquery
-                cdata[c.tablename] = self.db(cquery).select(c.table.ALL) or []
-                _skip = [fkey,]
-                if skip:
-                    _skip.extend(skip)
-                cfields = self.__fields(c.table, skip=_skip)
-                crfields[c.tablename] = cfields[0]
-                cdfields[c.tablename] = cfields[1]
-
-        if self.base_url:
-            url = "%s/%s/%s" % (self.base_url, prefix, name)
-        else:
-            url = "/%s/%s" % (prefix, name)
-        exp_map = Storage()
-        ref_map = []
-        for i in xrange(0, len(records)):
-
-            # Export primary record
-            record = records[i]
-            if audit:
-                audit(self.ACTION["read"], prefix, name,
-                      record=record.id, representation="xml")
-            if show_urls:
-                resource_url = "%s/%s" % (url, record.id)
-            else:
-                resource_url = None
-            rmap = self.xml.rmap(table, record, rfields)
-            resource = self.xml.element(table, record,
-                                        fields=dfields,
-                                        url=resource_url,
-                                        download_url=self.download_url,
-                                        marker=marker)
-            self.xml.add_references(resource, rmap)
-            self.xml.gis_encode(rmap,
-                                download_url=self.download_url,
-                                marker=marker)
-
-            # Export components of this record
-            r_url = "%s/%s" % (url, record.id)
-            for j in xrange(0, len(joins)):
-                (c, pkey, fkey) = joins[j]
-                pkey = record[pkey]
-                ctablename = c.tablename
-                crecords = cdata[ctablename]
-                crecords = filter(lambda r: r[fkey] == pkey, crecords)
-                c_url = "%s/%s" % (r_url, c.name)
-                for k in xrange(0, len(crecords)):
-                    crecord = crecords[k]
-                    if permit and \
-                       not permit(self.ACTION["read"], ctablename, crecord.id):
-                        continue
-                    if audit:
-                        audit(self.ACTION["read"], c.prefix, c.name,
-                              record=crecord.id, representation="xml")
-                    if show_urls:
-                        resource_url = "%s/%s" % (c_url, crecord.id)
-                    else:
-                        resource_url = None
-                    rmap = self.xml.rmap(c.table, crecord,
-                                         crfields[ctablename])
-                    cresource = self.xml.element(c.table, crecord,
-                                                fields=cdfields[ctablename],
-                                                url=resource_url,
-                                                download_url=self.download_url,
-                                                marker=marker)
-                    self.xml.add_references(cresource, rmap)
-                    self.xml.gis_encode(rmap,
-                                        download_url=self.download_url,
-                                        marker=marker)
-                    resource.append(cresource)
-                    ref_map.extend(rmap)
-                    if exp_map.get(c.tablename, None):
-                        exp_map[c.tablename].append(crecord.id)
-                    else:
-                        exp_map[c.tablename] = [crecord.id]
-
-            if msince and "modified_on" in table.fields:
-                mtime = record.get("modified_on", None)
-                if mtime and mtime < msince and \
-                   not len(resource.findall("resource")):
-                    continue
-
-            ref_map.extend(rmap)
-            resources.append(resource)
-            if exp_map.get(table._tablename, None):
-                exp_map[table._tablename].append(record.id)
-            else:
-                exp_map[table._tablename] = [record.id]
-
-        #results = len(resources)
-
-        # Add referenced resources to the tree
-        depth = dereference and self.MAX_DEPTH or 0
-        while ref_map and depth:
-            depth -= 1
-            load_map = self.__directory(None, ref_map, "table", "id", e=exp_map)
-            ref_map = []
-
-            for tablename in load_map.keys():
-                prefix, name = tablename.split("_", 1)
-                if self.base_url:
-                    url = "%s/%s/%s" % (self.base_url, prefix, name)
-                else:
-                    url = "/%s/%s" % (prefix, name)
-                load_list = load_map[tablename]
-                if permit:
-                    if not permit(self.ACTION["read"], tablename):
-                        continue
-                    load_list = filter(lambda id:
-                                permit(self.ACTION["read"], tablename, id),
-                                load_list)
-                    if not load_list:
-                        continue
-                table = self.db[tablename]
-                (rfields, dfields) = self.__fields(table, skip=skip)
-                query = (table.id.belongs(load_list))
-                if "deleted" in table:
-                    query = (table.deleted == False) & query
-                records = self.db(query).select(table.ALL) or []
-                for record in records:
-                    if audit:
-                        audit(self.ACTION["read"], prefix, name,
-                              record=record.id, representation="xml")
-                    rmap = self.xml.rmap(table, record, rfields)
-                    if show_urls:
-                        resource_url = "%s/%s" % (url, record.id)
-                    else:
-                        resource_url = None
-                    resource = self.xml.element(table, record,
-                                                fields=dfields,
-                                                url=resource_url,
-                                                download_url=self.download_url,
-                                                marker=marker)
-                    self.xml.add_references(resource, rmap)
-                    self.xml.gis_encode(rmap,
-                                        download_url=self.download_url,
-                                        marker=marker)
-                    resources.append(resource)
-                    ref_map.extend(rmap)
-                    if exp_map.get(tablename, None):
-                        exp_map[tablename].append(record.id)
-                    else:
-                        exp_map[tablename] = [record.id]
-
-        # Complete the tree
-        return self.xml.tree(resources,
-                             domain=self.domain,
-                             url=burl,
-                             results=results,
-                             start=start,
-                             limit=limit)
-
-
-    # XML Import ==============================================================
-
-    def vectorize(self, resource, element,
-                  id=None,
-                  validate=None,
-                  permit=None,
-                  audit=None,
-                  sync=None,
-                  log=None,
-                  tree=None,
-                  directory=None,
-                  vmap=None,
-                  lookahead=True):
+    # -------------------------------------------------------------------------
+    def __vectorize(self, resource, element,
+                    id=None,
+                    validate=None,
+                    permit=None,
+                    audit=None,
+                    sync=None,
+                    log=None,
+                    tree=None,
+                    directory=None,
+                    vmap=None,
+                    lookahead=True):
 
         """ Builds a list of vectors from an element
 
@@ -2304,7 +2166,7 @@ class S3ResourceController(object):
             relement = entry.get("element")
             if relement is None:
                 continue
-            vectors = self.vectorize(entry.get("resource"),
+            vectors = self.__vectorize(entry.get("resource"),
                                      relement,
                                      validate=validate,
                                      permit=permit,
@@ -2323,7 +2185,483 @@ class S3ResourceController(object):
         return imports
 
 
-    def import_xml(self, prefix, name, id, tree,
+    # -------------------------------------------------------------------------
+    def validate(self, table, record, fieldname, value):
+
+        """ Validates a single value
+
+            @param table: the DB table
+            @param record: the existing DB record
+            @param fieldname: name of the field
+            @param value: value to check
+
+        """
+
+        requires = table[fieldname].requires
+
+        if not requires:
+            return (value, None)
+        else:
+            if record:
+                v = record.get(fieldname, None)
+                if v:
+                    if v == value:
+                        return (value, None)
+            if not isinstance(requires, (list, tuple)):
+                requires = [requires]
+            for validator in requires:
+                (value, error) = validator(value)
+                if error:
+                    return (value, error)
+            return(value, None)
+
+
+    # -------------------------------------------------------------------------
+    def get_session(self, session, prefix, name):
+
+        """ Reads the last record ID for a resource from a session
+
+            @param session: the session store
+            @param prefix: the prefix of the resource name (=module name)
+            @param name: the name of the resource (=without prefix)
+
+        """
+
+        tablename = "%s_%s" % (prefix, name)
+        if self.RCVARS in session and tablename in session[self.RCVARS]:
+            return session[self.RCVARS][tablename]
+        else:
+            return None
+
+
+    # -------------------------------------------------------------------------
+    def store_session(self, session, prefix, name, id):
+
+        """ Stores a record ID for a resource in a session
+
+            @param session: the session store
+            @param prefix: the prefix of the resource name (=module name)
+            @param name: the name of the resource (=without prefix)
+            @id: the ID to store
+
+        """
+
+        if self.RCVARS not in session:
+            session[self.RCVARS] = Storage()
+        if self.RCVARS in session:
+            tablename = "%s_%s" % (prefix, name)
+            session[self.RCVARS][tablename] = id
+
+        return True # always return True to make this chainable
+
+
+    # -------------------------------------------------------------------------
+    def clear_session(self, session, prefix=None, name=None):
+
+        """ Clears one or all record IDs stored in a session
+
+            @param session: the session store
+            @param prefix: the prefix of the resource name (=module name)
+            @param name: the name of the resource (=without prefix)
+
+        """
+
+        if prefix and name:
+            tablename = "%s_%s" % (prefix, name)
+            if self.RCVARS in session and tablename in session[self.RCVARS]:
+                del session[self.RCVARS][tablename]
+        else:
+            if self.RCVARS in session:
+                del session[self.RCVARS]
+
+        return True # always return True to make this chainable
+
+
+    # -------------------------------------------------------------------------
+    def set_handler(self, method, handler):
+
+        """ Set the default handler for a resource method """
+
+        self.__handler[method] = handler
+
+
+    # -------------------------------------------------------------------------
+    def get_handler(self, method):
+
+        """ Get the default handler for a resource method """
+
+        return self.__handler.get(method, None)
+
+
+    # REST Interface ==========================================================
+
+    def resource(self, prefix, name,
+                 id=None,
+                 uid=None,
+                 filter=None,
+                 url_vars=None,
+                 parent=None,
+                 components=None,
+                 storage=None,
+                 debug=None):
+
+        """ Wrapper function for S3Resource """
+
+        resource = S3Resource(self, prefix, name,
+                              id=id,
+                              uid=uid,
+                              filter=filter,
+                              url_vars=url_vars,
+                              parent=parent,
+                              components=components,
+                              storage=storage,
+                              debug=debug)
+
+        # Set default handlers
+        for method in self.__handler.keys():
+            resource.set_handler(method, self.__handler[method])
+
+        return resource
+
+
+    # -------------------------------------------------------------------------
+    def request(self, prefix, name,
+                request=None, session=None, response=None, debug=None):
+
+        """ Wrapper function for S3Request """
+
+        return S3Request(self, prefix, name,
+                         request=request,
+                         session=session,
+                         response=response,
+                         debug=self.debug)
+
+
+    # -------------------------------------------------------------------------
+    def parse_request(self, prefix, name, session, request, response):
+
+        """ Parse an HTTP request and generate the corresponding
+            S3Request and S3Resource objects.
+
+        """
+
+        self.error = None
+
+        try:
+            req = self.request(prefix, name,
+                               request=request,
+                               session=session,
+                               response=response,
+                               debug=self.debug)
+        except SyntaxError:
+            raise HTTP(400, body=self.error)
+        except KeyError:
+            raise HTTP(404, body=self.error)
+
+        res = req.resource
+
+        return (res, req)
+
+
+    # -------------------------------------------------------------------------
+    def url_query(self, resource, url_vars):
+
+        """ URL query parser """
+
+        q = Storage()
+        for k in url_vars.keys():
+            if k.find(".") > 0:
+                rname, field = k.split(".", 1)
+                if rname == resource.name:
+                    table = resource.table
+                elif rname in resource.components:
+                    table = resource.components[rname].component.table
+                else:
+                    continue
+                if field.find("__") > 0:
+                    field, op = field.split("__", 1)
+                else:
+                    op = "eq"
+                if field == "uid":
+                    field = self.UID
+                if field not in table.fields:
+                    continue
+                else:
+                    ftype = str(table[field].type)
+                    values = url_vars[k]
+
+                    if op in ("lt", "le", "gt", "ge"):
+                        if ftype not in ("integer", "double", "date", "time", "datetime"):
+                            continue
+                        if not isinstance(values, (list, tuple)):
+                            values = [values]
+                        vlist = []
+                        for v in values:
+                            if v.find(",") > 0:
+                                v = v.split(",", 1)[-1]
+                            vlist.append(v)
+                        values = vlist
+                    elif op == "eq":
+                        if isinstance(values, (list, tuple)):
+                            values = values[-1]
+                        if values.find(",") > 0:
+                            values = values.split(",")
+                        else:
+                            values = [values]
+                    elif op == "ne":
+                        if not isinstance(values, (list, tuple)):
+                            values = [values]
+                        vlist = []
+                        for v in values:
+                            if v.find(",") > 0:
+                                v = v.split(",")
+                                vlist.extend(v)
+                            else:
+                                vlist.append(v)
+                        values = vlist
+                    elif op in ("like", "unlike"):
+                        if ftype not in ("string", "text"):
+                            continue
+                        if not isinstance(values, (list, tuple)):
+                            values = [values]
+                    else:
+                        continue
+
+                    vlist = []
+                    for v in values:
+                        if ftype == "boolean":
+                            if value in ("true", "True"):
+                                value = True
+                            else:
+                                value = False
+                        elif ftype == "integer":
+                            try:
+                                value = float(v)
+                            except ValueError:
+                                continue
+                        elif ftype == "double":
+                            try:
+                                value = float(v)
+                            except ValueError:
+                                continue
+                        elif ftype == "date":
+                            validator = IS_DATE()
+                            value, error = validator(v)
+                            if error:
+                                continue
+                        elif ftype == "time":
+                            validator = IS_TIME()
+                            value, error = validator(v)
+                            if error:
+                                continue
+                        elif ftype == "datetime":
+                            tfmt = "%Y-%m-%dT%H:%M:%SZ"
+                            try:
+                                (y,m,d,hh,mm,ss,t0,t1,t2) = time.strptime(v, tfmt)
+                                value = datetime.datetime(y,m,d,hh,mm,ss)
+                            except ValueError:
+                                continue
+                        else:
+                            value = v
+
+                        vlist.append(value)
+                    values = vlist
+
+                    if values:
+                        if rname not in q:
+                            q[rname] = Storage()
+                        if field not in q[rname]:
+                            q[rname][field] = Storage()
+                        q[rname][field][op] = values
+
+        return q
+
+
+    # Resource functions ======================================================
+
+    def export_tree(self, resource,
+                    skip=[],
+                    audit=None,
+                    start=None,
+                    limit=None,
+                    marker=None,
+                    msince=None,
+                    show_urls=True,
+                    dereference=True):
+
+        prefix = resource.prefix
+        name = resource.name
+        tablename = resource.tablename
+        table = resource.table
+
+        (rfields, dfields) = self.__fields(resource.table, skip=skip)
+
+        # Total number of results
+        results = resource.count()
+
+        # Load slice
+        resource.load(start=start, limit=limit)
+
+        # Load component records
+        crfields = Storage()
+        cdfields = Storage()
+        for c in resource.components.values():
+            cresource = c.resource
+            cresource.load()
+            ctablename = cresource.tablename
+            crfields[ctablename], \
+            cdfields[ctablename] = self.__fields(cresource.table, skip=skip)
+
+        # Resource base URL
+        if self.base_url:
+            url = "%s/%s/%s" % (self.base_url, prefix, name)
+        else:
+            url = "/%s/%s" % (prefix, name)
+
+        element_list = []
+        export_map = Storage()
+        reference_map = []
+
+        for record in resource:
+            if audit:
+                audit(self.ACTION["read"], prefix, name,
+                      record=record.id,
+                      representation="xml")
+
+            if show_urls:
+                resource_url = "%s/%s" % (url, record.id)
+            else:
+                resource_url = None
+
+            rmap = self.xml.rmap(table, record, rfields)
+            element = self.xml.element(table, record,
+                                       fields=dfields,
+                                       url=resource_url,
+                                       download_url=self.download_url,
+                                       marker=marker)
+            self.xml.add_references(element, rmap)
+            self.xml.gis_encode(rmap,
+                                download_url=self.download_url,
+                                marker=marker)
+
+
+            # Export components of this record
+            r_url = "%s/%s" % (url, record.id)
+            for c in resource.components.values():
+
+                component = c.component
+                cresource = c.resource
+                cprefix = component.prefix
+                cname = component.name
+                ctable = component.table
+                c_url = "%s/%s" % (r_url, cname)
+
+                ctablename = component.tablename
+                _rfields = crfields[ctablename]
+                _dfields = cdfields[ctablename]
+
+                for crecord in resource(record.id, component=cname):
+
+                    if audit:
+                        audit(self.ACTION["read"], cprefix, cname,
+                              record=crecord.id,
+                              representation="xml")
+
+                    if show_urls:
+                        resource_url = "%s/%s" % (c_url, crecord.id)
+                    else:
+                        resource_url = None
+
+                    rmap = self.xml.rmap(ctable, crecord, _rfields)
+                    celement = self.xml.element(ctable, crecord,
+                                                fields=_dfields,
+                                                url=resource_url,
+                                                download_url=self.download_url,
+                                                marker=marker)
+                    self.xml.add_references(celement, rmap)
+                    self.xml.gis_encode(rmap,
+                                        download_url=self.download_url,
+                                        marker=marker)
+
+                    element.append(celement)
+                    reference_map.extend(rmap)
+
+                    if export_map.get(c.tablename, None):
+                        export_map[c.tablename].append(crecord.id)
+                    else:
+                        export_map[c.tablename] = [crecord.id]
+
+            reference_map.extend(rmap)
+            element_list.append(element)
+            if export_map.get(resource.tablename, None):
+                export_map[resource.tablename].append(record.id)
+            else:
+                export_map[resource.tablename] = [record.id]
+
+        # Add referenced resources to the tree
+        depth = dereference and self.MAX_DEPTH or 0
+        while reference_map and depth:
+            depth -= 1
+            load_map = self.__directory(None, reference_map, "table", "id", e=export_map)
+            reference_map = []
+
+            for tablename in load_map.keys():
+
+                load_list = load_map[tablename]
+                prefix, name = tablename.split("_", 1)
+                rresource = self.resource(prefix, name, id=load_list, components=[])
+                rresource.load()
+
+                if self.base_url:
+                    url = "%s/%s/%s" % (self.base_url, prefix, name)
+                else:
+                    url = "/%s/%s" % (prefix, name)
+
+                table = rresource.table
+                rfields, dfields = self.__fields(table, skip=skip)
+                for record in rresource:
+                    if audit:
+                        audit(self.ACTION["read"], prefix, name,
+                              record=record.id,
+                              representation="xml")
+
+                    rmap = self.xml.rmap(table, record, rfields)
+                    if show_urls:
+                        resource_url = "%s/%s" % (url, record.id)
+                    else:
+                        resource_url = None
+
+                    element = self.xml.element(table, record,
+                                               fields=dfields,
+                                               url=resource_url,
+                                               download_url=self.download_url,
+                                               marker=marker)
+
+                    self.xml.add_references(element, rmap)
+
+                    self.xml.gis_encode(rmap,
+                                        download_url=self.download_url,
+                                        marker=marker)
+
+                    element_list.append(element)
+
+                    reference_map.extend(rmap)
+                    if export_map.get(tablename, None):
+                        export_map[tablename].append(record.id)
+                    else:
+                        export_map[tablename] = [record.id]
+
+        # Complete the tree
+        return self.xml.tree(element_list,
+                             domain=self.domain,
+                             url= show_urls and self.base_url or None,
+                             results=results,
+                             start=start,
+                             limit=limit)
+
+
+    # -------------------------------------------------------------------------
+    def import_tree(self, prefix, name, id, tree,
                    joins=[],
                    skip_resource=False,
                    permit=None,
@@ -2396,7 +2734,7 @@ class S3ResourceController(object):
 
         for i in xrange(0, len(elements)):
             element = elements[i]
-            vectors = self.vectorize(tablename, element,
+            vectors = self.__vectorize(tablename, element,
                                      id=id,
                                      validate=self.validate,
                                      permit=permit,
@@ -2438,7 +2776,7 @@ class S3ResourceController(object):
                                     fields.append(
                                         component.table[self.xml.UID])
                                 query = (component.table[fkey] == p)
-                                orig = self.db(quert).select(limitby=(0,1),
+                                orig = self.db(query).select(limitby=(0,1),
                                                              *fields)
                                 if orig:
                                     c_id = orig[0].id
@@ -2451,7 +2789,7 @@ class S3ResourceController(object):
 
                     for k in xrange(0, len(celements)):
                         celement = celements[k]
-                        cvectors = self.vectorize(component.tablename,
+                        cvectors = self.__vectorize(component.tablename,
                                                   celement,
                                                   validate=self.validate,
                                                   permit=permit,
@@ -2488,39 +2826,11 @@ class S3ResourceController(object):
         return ignore_errors or not self.error
 
 
-    # Model functions =========================================================
-
-    def validate(self, table, record, fieldname, value):
-
-        """ Validates a single value
-
-            @param table: the DB table
-            @param record: the existing DB record
-            @param fieldname: name of the field
-            @param value: value to check
-
-        """
-
-        requires = table[fieldname].requires
-
-        if not requires:
-            return (value, None)
-        else:
-            if record:
-                v = record.get(fieldname, None)
-                if v:
-                    if v == value:
-                        return (value, None)
-            if not isinstance(requires, (list, tuple)):
-                requires = [requires]
-            for validator in requires:
-                (value, error) = validator(value)
-                if error:
-                    return (value, error)
-            return(value, None)
+    import_xml = import_tree # for backward compatibility
 
 
-    def options_xml(self, prefix, name, joins=[]):
+    # -------------------------------------------------------------------------
+    def options_tree(self, prefix, name, joins=[]):
 
         """ Exports field options in a resource as element tree
 
@@ -2535,8 +2845,15 @@ class S3ResourceController(object):
         return self.xml.tree([options], domain=self.domain, url=self.base_url)
 
 
-    # Search Simple ===========================================================
+    options_xml = options_tree # for backward compatibility
 
+
+    # -------------------------------------------------------------------------
+    def fields_tree(self, *f, **a):
+        raise NotImplementedError
+
+
+    # -------------------------------------------------------------------------
     def search_simple(self, table, fields=None, label=None, filterby=None):
 
         """ Simple search function for resources
@@ -2972,10 +3289,12 @@ class S3XML(object):
         select="select",
         field="field",
         option="option",
-        options="options"
+        options="options",
+        fields="fields"
     )
 
     ATTRIBUTE = Storage(
+        id="id",
         name="name",
         table="table",
         field="field",
@@ -2995,7 +3314,11 @@ class S3XML(object):
         lonmin="lonmin",
         lonmax="lonmax",
         marker="marker",
-        sym="sym"
+        sym="sym",
+        type="type",
+        readable="readable",
+        writable="writable",
+        has_options="has_options"
     )
 
     ACTION = Storage(
@@ -3709,13 +4032,6 @@ class S3XML(object):
 
     def get_field_options(self, table, fieldname):
 
-        """ Reads all options for a field
-
-            @param table: the database table
-            @param fieldname: the name of the field
-
-        """
-
         select = etree.Element(self.TAG.select)
 
         if fieldname in table.fields:
@@ -3724,16 +4040,15 @@ class S3XML(object):
             return select
 
         requires = field.requires
-        select.set(self.TAG.field, fieldname)
+        select.set(self.ATTRIBUTE.id, "%s_%s" % (table._tablename, fieldname))
+        select.set(self.ATTRIBUTE.name, fieldname)
+
         if not isinstance(requires, (list, tuple)):
             requires = [requires]
         if requires:
             r = requires[0]
             options = []
             if isinstance(r, (IS_NULL_OR, IS_EMPTY_OR)) and hasattr(r.other, "options"):
-                #null = etree.SubElement(select, self.TAG.option)
-                #null.set(self.ATTRIBUTE.value, "")
-                #null.text = ""
                 options = r.other.options()
             elif hasattr(r, "options"):
                 options = r.options()
@@ -3747,38 +4062,59 @@ class S3XML(object):
         return select
 
 
-    def get_options(self, prefix, name, joins=[]):
+    # -------------------------------------------------------------------------
+    def get_options(self, prefix, name, fields=None):
 
-        """ Gets all field options for a resource
-
-            @param prefix: prefix of the resource name (=module name)
-            @param name: the resource name (=without prefix)
-            @param joins: list of component joins to include
-
-        """
-
-        resource = "%s_%s" % (prefix, name)
+        db = self.db
+        tablename = "%s_%s" % (prefix, name)
+        table = db.get(tablename, None)
 
         options = etree.Element(self.TAG.options)
-        options.set(self.ATTRIBUTE.resource, resource)
 
-        if resource in self.db:
-            table = self.db[resource]
+        if fields:
+            if not isinstance(fields, (list, tuple)):
+                fields = [fields]
+            if len(fields) == 1:
+                return(self.get_field_options(table, fields[0]))
+
+        if table:
+            options.set(self.ATTRIBUTE.resource, tablename)
             for f in table.fields:
+                if fields and f not in fields:
+                    continue
                 select = self.get_field_options(table, f)
                 if select is not None and len(select):
                     options.append(select)
-            for j in joins:
-                component = j[0]
-                coptions = etree.Element(self.TAG.options)
-                coptions.set(self.ATTRIBUTE.resource, component.tablename)
-                for f in component.table.fields:
-                    select = self.get_field_options(component.table, f)
-                    if select is not None and len(select):
-                        coptions.append(select)
-                options.append(coptions)
 
         return options
+
+
+    # -------------------------------------------------------------------------
+    def get_fields(self, prefix, name):
+
+        db = self.db
+        tablename = "%s_%s" % (prefix, name)
+        table = db.get(tablename, None)
+
+        fields = etree.Element(self.TAG.fields)
+
+        if table:
+            fields.set(self.ATTRIBUTE.resource, tablename)
+            for f in table.fields:
+                field = etree.Element(self.TAG.field)
+                field.set(self.ATTRIBUTE.name, self.xml_encode(f))
+                ftype = str(table[f].type)
+                field.set(self.ATTRIBUTE.type, self.xml_encode(ftype))
+                readable = table[f].readable
+                writable = table[f].writable
+                field.set(self.ATTRIBUTE.readable, str(readable))
+                field.set(self.ATTRIBUTE.writable, str(writable))
+                options = self.get_field_options(table, f)
+                field.set(self.ATTRIBUTE.has_options,
+                          str(len(options) and True or False))
+                fields.append(field)
+
+        return fields
 
 
     # JSON toolkit ============================================================

@@ -12,7 +12,7 @@ if module not in deployment_settings.modules:
 
 # Options Menu (available in all Functions' Views)
 response.menu_options = [
-	#[T("Compose"), False, URL(r=request, f="outbox", args="create")], #TODO
+	[T("Compose"), False, URL(r=request, c="msg", f="compose")],
 	#[T("Outbox"), False, URL(r=request, f="outbox")],#TODO
 	[T("Distribution groups"), False, URL(r=request, f="group"), [
 		[T("List/Add"), False, URL(r=request, f="group")],
@@ -173,76 +173,7 @@ def search():
 		return dict(item=item)
     return
 
-#-------------------------------------------------------------------------------
-#def outbox():
-    #"RESTful CRUD controller"
-    #resource = request.function
-    #tablename = module + "_" + resource
-    #table = db[tablename]
-    #if auth.is_logged_in() or auth.basic():
-        #if auth.has_membership(1):
-            #pass
-        #else:
-            #person = db(db.pr_person.uuid == auth.user.person_uuid).select(db.pr_person.id, limitby=(0, 1)).first().id
-            #db.msg_outbox.id.readable = False
-            #response.s3.filter = (db.msg_outbox.person_id == person)
-    #else:
-        #redirect(URL(r=request, c="default", f="user", args="login",
-            #vars={"_next":URL(r=request, c="msg", f="outbox")}))
 
-    #table.pr_pe_id.label = T("Recipients ")
-    #table.person_id.label = T("Sender")
-    #table.subject.label = T("Subject")
-    #table.body.label = T("Body")
-    #SEND_MESSAGE = T("Send Message")
-    #VIEW_MESSAGE_OUTBOX = T("View Outbox")
-    #s3.crud_strings[tablename] = Storage(
-            #title_create = SEND_MESSAGE,
-            #title_display = T("Message Details"),
-            #title_list = VIEW_MESSAGE_OUTBOX,
-            #title_update = T("Edit Message"),
-            #title_search = T("Search Outbox"),
-            #subtitle_create = SEND_MESSAGE,
-            #subtitle_list = T("Outbox"),
-            #label_list_button = VIEW_MESSAGE_OUTBOX,
-            #label_create_button = SEND_MESSAGE,
-            #msg_record_created = T("Message created"),
-            #msg_record_modified = T("Message updated"),
-            #msg_record_deleted = T("Message deleted"),
-            #msg_list_empty = T("No Message currently in your Outbox"))
-    
-    #def restrict_methods(jr):
-		#if jr.method == "create":
-			#db.msg_outbox.pr_pe_id.widget = lambda f, v: StringWidget.widget(f, v)
-			#return True
-		#if jr.method == "delete" or jr.method == "update":
-			#if auth.has_membership(1):
-				#return True
-			#else:
-				#session.error = T("Restricted method")
-				#return dict(bypass = True, output = redirect(URL(r=request)))
-		#else:
-			#return True
-    #def msg_outbox_onvalidation(form):
-        #"""This onvalidation method adds the person id to the record"""
-        #person = db(db.pr_person.uuid == auth.user.person_uuid).select(db.pr_person.id, limitby=(0, 1)).first().id
-        #form.vars.person_id = person
-        #if not form.vars.pr_pe_id:
-			#session.error = T("Empty Recipients")
-			#redirect(URL(r=request,c="msg", f="outbox", args="create"))
-    
-    #db.msg_outbox.status.writable = False
-    #db.msg_outbox.status.readable = True
-    #db.msg_outbox.person_id.readable = False
-    #db.msg_outbox.person_id.writable = False
-    
-    #response.s3.prep = restrict_methods
-    #s3xrc.model.configure(db.msg_outbox,
-            #onvalidation=lambda form: msg_outbox_onvalidation(form))
-    
-    #return shn_rest_controller("msg", "outbox", listadd=False)
-
-#-------------------------------------------------------------------------------
 def process_sms_via_api():
 	"Controller for SMS api processing - to be called via cron"
 	msg.process_outbox(contact_method = 2)
@@ -350,7 +281,7 @@ def gateway_settings():
 
 @auth.shn_requires_membership(1)
 def setting():
-    """Overall settings for the messaging framework"""
+    "Overall settings for the messaging framework"
     resource = request.function
     tablename = module + "_" + resource
     table = db[tablename]
@@ -380,8 +311,9 @@ def setting():
     return shn_rest_controller(module, resource, deletable=False,
     listadd=False)
 
+@auth.shn_requires_membership(1) #Enabled only for testing
 def log():
-    """ RESTful CRUD controller """
+    " RESTful CRUD controller "
     resource = 'log'
     tablename = "%s_%s" % (module, resource)
     table = db[tablename]
@@ -394,7 +326,6 @@ def log():
             DIV(IMG(_src='/%s/static/img/priority/priority_4.gif' % request.application), _height=12)
         ][0].xml())
     table.priority.label = T('Priority')
-    table.person_id.label = T('Sender')
     # Add Auth Restrictions
 
     # CRUD Strings
@@ -422,8 +353,9 @@ def log():
         listadd=False,
         )
 
+@auth.shn_requires_membership(1) #Enabled only for testing
 def tag():
-    """ RESTful CRUD controller """
+    " RESTful CRUD controller "
     resource = 'tag'
     tablename = "%s_%s" % (module, resource)
     table = db[tablename]
@@ -433,4 +365,64 @@ def tag():
     return shn_rest_controller(module, resource,
     listadd=False,
     )
+
+def compose():
+    " Message Compose page"
+    resource1 = 'log'
+    tablename1 = module + "_" + resource1
+    table1 = db[tablename1]
+    resource2 = 'outbox'
+    tablename2 = module + "_" + resource2
+    table2 = db[tablename2]
+
+    if auth.is_logged_in() or auth.basic():
+        pass
+    else:
+        redirect(URL(r=request, c="default", f="user", args="login",
+            vars={"_next":URL(r=request, c="msg", f="compose")}))
+
+    # Model options
+    table1.sender.writable = False
+    table1.sender.readable = False
+    table1.fromaddress.writable = False
+    table1.fromaddress.readable = False
+    table1.pr_pe_id.writable = False
+    table1.pr_pe_id.readable = False
+    table1.verified.writable = False
+    table1.verified.readable = False
+    table1.verified_comments.writable = False
+    table1.verified_comments.readable = False
+    table1.actioned.writable = False
+    table1.actioned.readable = False
+    table1.actionable.writable = False
+    table1.actionable.readable = False
+    table1.actioned_comments.writable = False
+    table1.actioned_comments.readable = False
+    table1.subject.label = T('Subject')
+    table1.message.label = T('Message')
+    table1.priority.label = T('Priority')
+    table2.pr_pe_id.label = T('Recipients')
+
+
+    def compose_onvalidation(form):
+        """This onvalidation sets the sender and uses msg.send_by_pr_pe_id to route the message"""
+        if not request.vars.pr_pe_id:
+            session.error = T('Please enter the recipient')
+            redirect(URL(r=request,c="msg", f="compose"))
+        sender_pr_pe_id = db(db.pr_person.uuid == auth.user.person_uuid).select(db.pr_person.pr_pe_id, limitby=(0, 1)).first().pr_pe_id
+        if msg.send_by_pr_pe_id(request.vars.pr_pe_id,
+                                request.vars.subject,
+                                request.vars.message,
+                                request.vars.pr_message_method):
+                                    session.flash = T('Message sent to outbox')
+                                    redirect(URL(r=request, c="msg", f="compose"))
+        else:
+            session.error = T('Error in message')
+            redirect(URL(r=request,c="msg", f="compose"))
+
+
+    logform = crud.create(table1, 
+                            onvalidation = compose_onvalidation)
+    outboxform = crud.create(db.msg_outbox)
     
+    return dict(logform = logform, outboxform = outboxform, title = T('Send Message'))

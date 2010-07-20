@@ -88,12 +88,13 @@ class Msg(object):
         else:
             return False
 
-    def send_by_pr_pe_id(self, pr_pe_id, subject="", 
+    def send_by_pr_pe_id(self, pr_pe_id, 
+                                subject="", 
                                 message="", 
                                 sender_pr_pe_id = None, 
+                                pr_message_method = 1,
                                 sender="", 
                                 fromaddress="",
-                                pr_message_method = 1,
                                 system_generated = False):
         """As the function name suggests - depends on pr_message_method """
         try:
@@ -138,9 +139,9 @@ class Msg(object):
                                         subject, 
                                         message, 
                                         sender_pr_pe_id, 
+                                        1, # To set as an email
                                         sender, 
                                         fromaddress,
-                                        1, # To set as an email
                                         system_generated)
 
     def process_outbox(self, contact_method = 1, option = 1):

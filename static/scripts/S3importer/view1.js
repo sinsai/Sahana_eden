@@ -78,7 +78,7 @@ function view1(importsheet){
        obj.header="Column "+(i-1);
        obj.sortable=true;
        obj.dataIndex=columnlist[i-2];
-       obj.editor=edit[i];
+       obj.editor=edit[i-1];
        column_model[i]=obj;
    }
     var new_row_string="{";

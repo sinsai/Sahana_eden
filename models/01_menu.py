@@ -75,7 +75,7 @@ admin_menu_options = [
     [T("Database"), False, "#", [
         [T("Import"), False, URL(r=request, c="admin", f="import_data")],
         [T("Export"), False, URL(r=request, c="admin", f="export_data")],
-        [T("Import Jobs"), False, URL(r=request, c="admin", f="import_job")],
+        #[T("Import Jobs"), False, URL(r=request, c="admin", f="import_job")],
         [T("Raw Database access"), False, URL(r=request, c="appadmin", f="index")]
     ]],
     [T("Synchronisation"), False, URL(r=request, c="sync", f="index"), [

@@ -110,6 +110,7 @@ opt_gis_layout = db.Table(None, "opt_gis_layout",
 resource = "config"
 tablename = "%s_%s" % (module, resource)
 table = db.define_table(tablename, timestamp, uuidstamp,
+                pr_pe_id,                           # Personal Entity Reference
                 Field("lat", "double"),
                 Field("lon", "double"),
                 Field("zoom", "integer"),
@@ -129,6 +130,9 @@ table = db.define_table(tablename, timestamp, uuidstamp,
                 migrate=migrate)
 
 table.uuid.requires = IS_NOT_IN_DB(db, "gis_config.uuid")
+table.pr_pe_id.requires = IS_NULL_OR(IS_ONE_OF(db, "pr_pentity.id",
+                                    shn_pentity_represent))
+table.pr_pe_id.readable = table.pr_pe_id.writable = False
 table.lat.requires = IS_LAT()
 table.lon.requires = IS_LON()
 table.zoom.requires = IS_INT_IN_RANGE(0, 19)
@@ -150,7 +154,45 @@ table.map_width.label = T("Map Width")
 table.zoom_levels.label = T("Zoom Levels")
 table.cluster_distance.label = T("Cluster Distance")
 table.cluster_threshold.label = T("Cluster Threshold")
+# Defined here since Component
+table.lat.comment = DIV(SPAN("*", _class="req"), DIV( _class="tooltip", _title=Tstr("Latitude") + "|" + Tstr("Latitude is North-South (Up-Down). Latitude is zero on the equator and positive in the northern hemisphere and negative in the southern hemisphere.")))
+table.lon.comment = DIV(SPAN("*", _class="req"), DIV( _class="tooltip", _title=Tstr("Longitude") + "|" + Tstr("Longitude is West - East (sideways). Longitude is zero on the prime meridian (Greenwich Mean Time) and is positive to the east, across Europe and Asia.  Longitude is negative to the west, across the Atlantic and the Americas.")))
+table.zoom.comment = DIV(SPAN("*", _class="req"), DIV( _class="tooltip", _title=Tstr("Zoom") + "|" + Tstr("How much detail is seen. A high Zoom level means lot of detail, but not a wide area. A low Zoom level means seeing a wide area, but not a high level of detail.")))
+table.map_height.comment = DIV(SPAN("*", _class="req"), DIV( _class="tooltip", _title=Tstr("Height") + "|" + Tstr("Default Height of the map window. In Window layout the map maximises to fill the window, so no need to set a large value here.")))
+table.map_width.comment = DIV(SPAN("*", _class="req"), DIV( _class="tooltip", _title=Tstr("Width") + "|" + Tstr("Default Width of the map window. In Window layout the map maximises to fill the window, so no need to set a large value here.")))
+ADD_CONFIG = T("Add Config")
+LIST_CONFIGS = T("List Configs")
+s3.crud_strings[tablename] = Storage(
+    title_create = ADD_CONFIG,
+    title_display = T("Config"),
+    title_list = T("Configs"),
+    title_update = T("Edit Config"),
+    title_search = T("Search Configs"),
+    subtitle_create = T("Add New Config"),
+    subtitle_list = LIST_CONFIGS,
+    label_list_button = LIST_CONFIGS,
+    label_create_button = ADD_CONFIG,
+    label_delete_button = T("Delete Config"),
+    msg_record_created = T("Config added"),
+    msg_record_modified = T("Config updated"),
+    msg_record_deleted = T("Config deleted"),
+    msg_list_empty = T("No Configs currently defined")
+)
 
+# Configs as component of Persons
+s3xrc.model.add_component(module, resource,
+                          multiple=False,
+                          joinby="pr_pe_id",
+                          deletable=False,
+                          editable=True)
+
+s3xrc.model.configure(table,
+                      list_fields = ["lat",
+                                     "lon",
+                                     "zoom",
+                                     "projection_id",
+                                     "map_height",
+                                     "map_width"])
 # GIS Feature Classes
 # These are used in groups (for display/export), for icons & for URLs to edit data
 #gis_resource_opts = {
@@ -346,9 +388,8 @@ table = db.define_table(tablename, timestamp, uuidstamp, deletion_status,
                 Field("name", notnull=True),
                 Field("code"),
                 Field("description"),
-                feature_class_id,
-                marker_id,
-                #Field("resource_id", "integer"), # ID in associated resource table. FIXME: Remove as link should be reversed?
+                feature_class_id,       # Will be removed
+                marker_id,              # Will be removed
                 Field("level", length=2),
                 Field("parent", "reference gis_location", ondelete = "RESTRICT"),   # This form of hierarchy may not work on all Databases
                 Field("lft", "integer", readable=False, writable=False), # Left will be for MPTT: http://eden.sahanafoundation.org/wiki/HaitiGISToDo#HierarchicalTrees
@@ -413,6 +454,13 @@ location_id = db.Table(None, "location_id",
                                        _title=Tstr("Location") + "|" + Tstr("The Location of this Site, which can be general (for Reporting) or precise (for displaying on a Map)."))),
                        ondelete = "RESTRICT"))
 
+# Locations as component of Locations ('Parent')
+s3xrc.model.add_component(module, resource,
+                          multiple=False,
+                          joinby=dict(gis_location="location_id"),
+                          deletable=True,
+                          editable=True)
+
 s3xrc.model.configure(db.gis_location,
                       onvalidation=lambda form: gis.wkt_centroid(form),
                       onaccept=gis.update_location_tree())
@@ -420,7 +468,6 @@ s3xrc.model.configure(db.gis_location,
 # -----------------------------------------------------------------------------
 #
 def shn_gis_location_represent(id):
-    # TODO: optimize! (very slow)
     try:
         location = db(db.gis_location.id == id).select(db.gis_location.name, db.gis_location.level, db.gis_location.lat, db.gis_location.lon, db.gis_location.id, limitby=(0, 1)).first()
         if location.level in ["L0", "L1", "L2"]:
@@ -459,9 +506,61 @@ def shn_gis_location_represent(id):
             represent = None
     return represent
 
+# Landmarks
+# Used to store items which should be placed on the map, but which we don't maintain other details on
+# i.e. not Hospitals, Offices, Warehouses
+gis_landmark_type_opts = {
+    1:T("Airport"),
+    2:T("Bridge"),
+    3:T("Church"),
+    4:T("Port"),
+    5:T("School"),
+    99:T("other"),
+    }
+resource = "landmark"
+tablename = "%s_%s" % (module, resource)
+table = db.define_table(tablename, timestamp, uuidstamp, authorstamp, deletion_status,
+                Field("name", length=128, notnull=True, unique=True),
+                Field("category"),
+                location_id,
+                shn_comments_field,
+                migrate=migrate)
+table.uuid.requires = IS_NOT_IN_DB(db, "%s.uuid" % tablename)
+table.name.requires = [IS_NOT_EMPTY(), IS_NOT_IN_DB(db, "%s.name" % tablename)]
+table.name.label = T("Name")
+table.category.requires = IS_IN_SET(gis_landmark_type_opts)
+table.category.represent = lambda opt: gis_landmark_type_opts.get(opt, UNKNOWN_OPT)
+table.category.label = T("Category")
+
+
+# Feature Layers
+# Used to select a set of Features for either Display or Export
+# (replaces feature_group)
+resource = "feature_layer"
+tablename = "%s_%s" % (module, resource)
+table = db.define_table(tablename, timestamp, uuidstamp, authorstamp, deletion_status,
+                Field("name", length=128, notnull=True, unique=True),
+                Field("resource"),              # Used to build a simple query
+                Field("filter_field"),          # Used to build a simple query
+                Field("filter_value"),          # Used to build a simple query
+                Field("query", notnull=True),   
+                marker_id,                      # Optional Marker to over-ride the values from the Feature Classes
+                shn_comments_field,
+                migrate=migrate)
+table.uuid.requires = IS_NOT_IN_DB(db, "%s.uuid" % tablename)
+#table.author.requires = IS_ONE_OF(db, "auth_user.id","%(id)s: %(first_name)s %(last_name)s")
+table.name.requires = [IS_NOT_EMPTY(), IS_NOT_IN_DB(db, "%s.name" % tablename)]
+table.name.label = T("Name")
+table.resource.label = T("Resource")
+# In zzz_last.py
+#table.resource.requires = IS_IN_SET(db.tables)
+table.filter_field.label = T("Filter Field")
+table.filter_value.label = T("Filter Value")
+table.query.label = T("Query")
 
 # Feature Groups
 # Used to select a set of Feature Classes for either Display or Export
+# This is being deprecated by feature_layer
 resource = "feature_group"
 tablename = "%s_%s" % (module, resource)
 table = db.define_table(tablename, timestamp, uuidstamp, authorstamp, deletion_status,
@@ -496,6 +595,7 @@ feature_group_id = db.Table(None, "feature_group_id",
 #                location_id,
 #                migrate=migrate)
 
+# This is being deprecated by feature_layer
 resource = "feature_class_to_feature_group"
 tablename = "%s_%s" % (module, resource)
 table = db.define_table(tablename, timestamp, deletion_status,
@@ -514,7 +614,7 @@ table = db.define_table(tablename, timestamp,
 # FIXME
 # We want a THIS_NOT_IN_DB here: http://groups.google.com/group/web2py/browse_thread/thread/27b14433976c0540/fc129fd476558944?lnk=gst&q=THIS_NOT_IN_DB#fc129fd476558944
 table.name.requires = IS_IN_SET(["google", "multimap", "yahoo"], zero=None)
-#table.apikey.requires = THIS_NOT_IN_DB(db(table.name==request.vars.name), "gis_apikey.name", request.vars.name, "Service already in use")
+#table.apikey.requires = THIS_NOT_IN_DB(db(table.name == request.vars.name), "gis_apikey.name", request.vars.name, "Service already in use")
 table.apikey.requires = IS_NOT_EMPTY()
 table.name.label = T("Service")
 table.apikey.label = T("Key")

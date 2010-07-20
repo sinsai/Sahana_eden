@@ -23,6 +23,7 @@ try:
 	from xlrd import *
 except ImportError:
 	print >> sys.stderr, "WARNING: %s: XLRD not installed" % __name__
+
 import os
 def removerowcol(path_to_file):
     

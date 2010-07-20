@@ -238,14 +238,49 @@ function view4(importsheet)//header,table,numcol,grid_data)
 						}	
 						i++;	
 					}
-					     var lm = new Ext.LoadMask(Ext.getBody(),{msg : 'Importing...'});
+					 var lm = new Ext.LoadMask(Ext.getBody(),{msg : 'Importing...'});
 				     	 lm.enable();	     
 					 lm.show();
-					
+				         var send={};
+				 	 send.spreadsheet = importsheet.data;
+					 send.map = importsheet.map;
+					 send.header_row = importsheet.header_row_index;
+					 send.rows=importsheet.rows;
+					 send.columns=importsheet.columns;
+					 var temp=importsheet.table.split("_");
+					 var prefix=temp[0];
+					 var name=temp[1];
+					 var str="$_";
+					 str+=prefix+"_"+name;
+					 send.resource=str;
+					 var time=new Date();
+				         var modifydate=''+(time.getUTCFullYear()+"-"+time.getUTCMonth()+"-"+time.getUTCDate()+" "+time.getUTCHours()+":"+time.getUTCMinutes()+":"+time.getUTCSeconds());
+	
+					 send.modtime=modifydate;
+					 var posturl = "http://"+url+"/"+application+"/importer/import_spreadsheet";
+					 Ext.Ajax.request({
+						url : posturl,
+						method : 'POST',
+						jsonData : send,
+						success : function(r,o){
+								lm.hide();
+									},
+						failure : function(r,o){
+								lm.hide();
+								Ext.Msg.alert("Error","Could not send data to server "+r.responseText);
+							}
+						});
+					 Ext.Msg.show({title : "Re-import?",
+							 msg : "Some records could not be imported, would you like to edit?",
+							 buttons : Ext.Msg.YESNO,
+							 fn : function(btn,text)								
+							 {
+							 	if(btn=="yes")
+							 		window.location = "http://localhost:8000/newins/importer/re_import";		
+							 }
+							 });
 					//Import function
-					(function()
-					      {
-					      	var temp=importsheet.table.split("_");
+					      	/*var temp=importsheet.table.split("_");
 						var prefix=temp[0];
 						var name=temp[1];
 						var str="$_";
@@ -259,14 +294,18 @@ function view4(importsheet)//header,table,numcol,grid_data)
 							if(i==importsheet.header_row_index)
 								continue;
 							var rowobj="{";
+						//	var rowobj={};
 							for(var j=0;j<importsheet.columns;j++)
 							{
+								
 								var field="\""+importsheet.map[j][2]+"\"";
 								//Ext.Msg.alert("",field);
 								if(field!=''){
-								if(importsheet.map[j][2].substring(0,3)=="opt")
+								if(importsheet.map[j][2].substring(0,4)=="\"opt")
 								{
+									console.log(importsheet.map[j][2],"_");
 									rowobj+=field+":";
+									//rowobj[field]["@value"]=
 									rowobj+="{\"@value\":\"1\"";
 									rowobj+=",\"$\":\""+importsheet.data[i][j]+"\"}";
 								}
@@ -274,19 +313,21 @@ function view4(importsheet)//header,table,numcol,grid_data)
 									rowobj+=field+":\""+importsheet.data[i][j]+"\"";
 								if(j!=importsheet.columns-1) 
 									rowobj+=",";
-								}		
+								}
+										
 			
 							}
 							rowobj+=",\"@modified_on\":\"";
 							rowobj+=modifydate;
 							rowobj+="\"}";
-							//rowobj=eval('('+rowobj+')');
-							rowobj=Ext.util.JSON.decode(rowobj);
 							jsonss.push(rowobj);
 						}
+						//document.write(jsonss);
+						/*
 						var posturl="http://"+url+"/"+application+"/"+prefix+"/"+name+"/create.json?p_l="+jsonss.length;
-						var send="{\""+str+"\":\"\"}";
-					 	send=eval('('+send+')');
+						//var send="{\""+str+"\":\"\"}";
+						var send={};
+					 	//send=eval('('+send+')');
 						send[str]=jsonss;
 						Ext.Ajax.request({
 							scope: this,
@@ -304,27 +345,39 @@ function view4(importsheet)//header,table,numcol,grid_data)
 								importsheet.error_rows=new Array();
 							 	try{
 									var re_import = eval('('+r.responseText+')');
+									re_import=re_import.tree
 									var i=0;
 									var j=0;
 									var jlim=importsheet.datastore.getCount();
-									while(j < jlim )
+									importsheet.incorrect_rows=[];
+									importsheet.correct_rows=[];
+									while(j < jlim-1 )
 									{
+										if( j == importsheet.header_row_index)
+											continue;
 										i=0;
 										while(i < importsheet.columns)
 										{
-											if(re_import.tree[str][j][importsheet.map[i][2]].hasOwnProperty('@error'))
+											if(re_import[str][j][importsheet.map[i][2]].hasOwnProperty('@error'))
 											{
-												console.log("Error detected in row ",j+1,re_import.tree[str][j]);
-												importsheet.error_rows.push(re_import.tree[str][j]);
-												re_import.tree[str].splice(j,1);
-												console.log(importsheet.error_rows);
-											}
+												console.log("Error detected in row ",j+1,re_import[str][j]);
+												importsheet.incorrect_rows.push(j);
+												break;																				}
 											i++;
 										}
 										j++;
 									}
 									//console.log("The erroneous records are ",importsheet.error_rows);
-									console.log("And the correct tree is ",re_import.tree);
+									//console.log("and the incorrect rows are ",importsheet.incorrect_rows);
+									var num_errors=importsheet.incorrect_rows.length;
+									var i=0;
+									while(i < importsheet.incorrect_rows.length)
+									{
+										rowloc = importsheet.incorrect_rows[i];
+										importsheet.incorrect_rows[i]=re_import[importsheet.incorrect_rows[i]];
+										i++;
+									}
+									console.log(importsheet.incorrect_rows);
 								}
 								catch(err)
 								{
@@ -332,15 +385,14 @@ function view4(importsheet)//header,table,numcol,grid_data)
 									console.log("The erroneous records are ",importsheet.error_rows);
 								}
 								var field='\"'+importsheet.map[j][2]+'\"';
-								/*
 								while(i < importsheet.rows)
 								{
 									var record = re_import["tree"][str];
 									document.write(record+'<br/>');
 									i++;
-								}*/
-
-
+								}
+						
+					*/
 								/*			
 								Ext.Msg.show({
 										title : "Import failed",
@@ -354,9 +406,10 @@ function view4(importsheet)//header,table,numcol,grid_data)
 												//call post import function
 												{}
 											}
-										});*/	//	document.write(r.responseText+"<br/>");
+										});
 							}
-							});}.defer(50,this));
+							});
+							}.defer(50,this));*/
 	
     			}
     		}],

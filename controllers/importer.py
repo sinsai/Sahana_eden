@@ -4,6 +4,8 @@ module = 'importer'
 # Current Module (for sidebar title)
 module_name = 'Spreadsheet importer' 
 
+import gluon.contrib.simplejson as json
+
 response.menu_options = [
     [
 	    T('Spreadsheet'), False, URL(r=request, f='spreadsheet/create')
@@ -35,7 +37,6 @@ def gettoken():
     #gd_client = importer.gdata.spreadsheet.service.SpreadsheetsService()
     getvars=repr(request.get_vars)
     auth_url='http://'+request.env.http_host+request.url+'?auth_sub_scopes='+request.get_vars['auth_sub_scopes']+'&token='+request.get_vars['token']
-    f=file("/home/shikhar/Desktop/abc.txt","wb")
     f.write(repr(auth_url))
      
     #authsub_token = importer.gdata.auth.extract_auth_sub_token_from_url(auth_url)
@@ -43,8 +44,6 @@ def gettoken():
     authsub_token = importer.gdata.auth.AuthSubTokenFromUrl(auth_url) 
     #gd_client.token_store.add_token(authsub_token)
     user_sreadsheets = gd_client.AuthSubTokenInfo()
-    f.write('Not working'+repr(authsub_token))
-    f.close()
     #gd_client.UpgradeToSessionToken()
     '''Google documentation is outdated on this, gd_client.auth_token doesn't work'''
     
@@ -86,22 +85,105 @@ def getspreadsheetlist():
 	        		l.append(' %s: %s' % (key, entry.custom[key].text))
 	        else:
 			l.append('%s %s\n' % (i,entry.title.text))
-	f=file("/home/shikhar/Desktop/test.txt")
-	f.write(repr(l))
-	f.close()
 	return l
-'''
-def allfields(prefix,name):
-    table = prefix+'_'+name
-    fields = db.table.fields
-    #remove first seven field names
-    fields = fields[8:]
-'''
 
-    
+def import_spreadsheet():
+    spreadsheet=request.body.read()
+    #tree=s3xrc.xml.json2tree(spreadsheet)
+    #s3xrc.import_xml(tree=tree,prefix=request.args[0],name=request.args[1],id=None)
+    f = file("/home/shikhar/Desktop/abc.txt","wb")
+    from StringIO import StringIO
+    f.write(spreadsheet)
+    spreadsheet_json = StringIO(spreadsheet)
+    f.write("\n\n\n\n"+spreadsheet_json.read())
+    spreadsheet_json.seek(0)
+    j = json.load(spreadsheet_json)
+    i=k=0
+    resource = j['resource']
+    resource = resource.encode('ascii')
+    send_dict={};
+    send_dict[resource]=[]
+    while (i < j['rows']):
+	temp = {}
+	k = 0
+	while (k < j['columns']) :
+            temp[j['map'][k][2]] = {}
+	    if "opt_" in j['map'][k][2]:
+		    temp[j['map'][k][2]]["@value"] = j['spreadsheet'][i][k].encode('ascii')
+	    	    temp[j['map'][k][2]]["$"]=j['spreadsheet'][i][k].encode('ascii')
+	    else:
+	    	temp[j['map'][k][2].encode('ascii')]=j['spreadsheet'][i][k].encode('ascii')
+	    k+=1
+	    temp["@modified_on"] = j['modtime']
+        send_dict[resource].append(temp)
+	i+=1
+    word = json.dumps(send_dict)
+    new_word = ""
+    k = 1
+    for i in range(0,len(word)):
+	if word[i] == "\"":
+	    k = k + 1
+	    k = k % 2
+	if k == 0:
+	    new_word += word[i]
+	if k == 1:
+	    if word[i] == " " or word[i] == "\n":
+	 	continue
+	    else:
+	        new_word += word[i]
+    #f.write(new_word)
+    send = StringIO(new_word)
+    tree = s3xrc.xml.json2tree(send)
+    prefix = resource.split('_')[1]
+    name = resource.split('_')[2]
+    if s3xrc.import_xml(tree = tree, id = None, prefix = prefix, name = name):
+	    success = True
+    else:
+	    incorrect_rows = []
+	    correct_rows = []
+	    success = False
+	    returned_tree = tree
+	    returned_json = s3xrc.xml.tree2json(returned_tree)
+	    returned_json = returned_json.encode('ascii')
+	    returned_json = json.loads(returned_json)
+	    #f.write(repr(returned_json[resource]))
+	    '''for i in returned_json:
+		    #f.write(repr(i)+"\n")
+		    #for j in returned_json[i]:
+		#	    f.write("-------------------------\n")
+			    for k in range(0,len(returned_json[i])):
+			    	#f.write(repr(returned_json[i][k])+"\n")
+				for j in returned_json[i][k]:
+					#f.write("--------->"+j)
+					for l in returned_json[i][k][j]:
+						if '@error' in l:
+							#f.write("\n-> "+repr(returned_json[i][k][j])+" <-\n")
+							f.write("-------->>>>>"+repr(k)+"<<<<<------\n")
+							incorrect_rows.append(returned_json[i][k])
+						else:
+							correct_rows.append(returned_json[i][k])
+	    '''
+	    for i in returned_json.keys():
+		    for k in range(0,len(returned_json[i])):
+	    		   if '@error' in repr(returned_json[i][k]):
+				   f.write("Error flagged at "+repr(k))
+	    			   incorrect_rows.append(returned_json[i][k])
+		           else:
+				   correct_rows.append(returned_json[i][k])
+	    #f.write("\nCorrect rows -> "+repr(correct_rows))
+	    correct_rows_send={}
+	    correct_rows_send[resource]=correct_rows
+	    f.write("And the incorrect rows are...\n")
+	    f.write(repr(correct_rows))
+	    send_json = json.dumps(correct_rows_send)
+	    send_json = StringIO(send_json)
+	    tree = s3xrc.xml.json2tree(send_json)
+	    s3xrc.import_xml(tree = tree, id = None, prefix = prefix, name = name)
+	    json_test = s3xrc.xml.tree2json(tree)
+	    #f.write("\nTHE RETURNED JSON IS --->\n"+json.dumps(json_test))
+	    session.invalid_rows = incorrect_rows
+    f.close()	
+    return dict(success=success,spreadsheet=incorrect_rows)
 
-'''def recvdata():
-    spreadsheet=request.body
-    tree=s3xrc.xml.json2tree(spreadsheet)
-    s3xrc.import_xml(tree=tree,prefix=request.args[0],name=request.args[1],id=None)
-    return dict(spreadsheet=spreadsheet)'''
+def re_import():
+	return dict(module_name=module_name)

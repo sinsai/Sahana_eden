@@ -151,7 +151,7 @@ class IS_ONE_OF_EMPTY(Validator):
         else:
             self.dbset = dbset
 
-    def __call__(self,value):
+    def __call__(self, value):
 
         try:
             _table = self.dbset._db[self.ktable]
@@ -161,7 +161,7 @@ class IS_ONE_OF_EMPTY(Validator):
             else:
                 values = [value]
 
-            deleted_q = ("deleted" in _table) and (_table["deleted"]==False) or False
+            deleted_q = ("deleted" in _table) and (_table["deleted"] == False) or False
 
             filter_opts_q = False
 
@@ -171,7 +171,7 @@ class IS_ONE_OF_EMPTY(Validator):
 
             for v in values:
 
-                query = (_table[self.kfield]==v)
+                query = (_table[self.kfield] == v)
                 if deleted_q != False:
                     query = deleted_q & query
                 if filter_opts_q != False:

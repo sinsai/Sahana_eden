@@ -996,7 +996,7 @@ def import_json(jr, **attr):
     else:
         # TODO: export the whole tree on error
         tree = s3xrc.xml.tree2json(tree)
-        item = s3xrc.xml.json_message(False, 400, s3xrc.xml.error, tree=tree)
+        item = s3xrc.xml.json_message(False, 400, s3xrc.error, tree=tree)
         raise HTTP(400, body=item)
 
     return dict(item=item)
@@ -1047,7 +1047,7 @@ def import_xml(jr, **attr):
     else:
         # TODO: export the whole tree on error
         tree = s3xrc.xml.tree2json(tree)
-        item = s3xrc.xml.json_message(False, 400, s3xrc.xml.error, tree=tree)
+        item = s3xrc.xml.json_message(False, 400, s3xrc.error, tree=tree)
         raise HTTP(400, body=item)
 
     return dict(item=item)
@@ -1276,6 +1276,8 @@ def shn_list(jr, **attr):
     # Provide the ability to get a subset of records
     _vars = request.vars
     if _vars.limit:
+        # disable Server-Side Pagination
+        response.s3.pagination = False
         limit = int(_vars.limit)
         if _vars.start:
             start = int(_vars.start)
@@ -1745,12 +1747,13 @@ def shn_create(jr, **attr):
         # Read in POST
         import csv
         csv.field_size_limit(1000000000)
-        infile = open(request.vars.filename, "rb")
-        #try:
-        import_csv(infile, table)
-        session.flash = T("Data uploaded")
-        #except:
-            #session.error = T("Unable to parse CSV file!")
+        #infile = open(request.vars.filename, "rb")
+        infile = request.vars.filename.file
+        try:
+            import_csv(infile, table)
+            session.flash = T("Data uploaded")
+        except:
+            session.error = T("Unable to parse CSV file!")
         redirect(jr.there())
 
     elif jr.representation in shn_json_import_formats:
@@ -2227,13 +2230,17 @@ def shn_search(jr, **attr):
     return output
 
 #Own code
-def shn_list_fields(jr,**attr):
+def shn_import_spreadsheet(jr,**attr):
     
-    if jr.http == "POST":
+    if jr.http == "GET":
         item = s3xrc.xml.json_message(False, 400 , "%s requests not supported." % jr.http)
     module, resource, table, tablename = jr.target()
-    f=file("/home/shikhar/Desktop/abc.txt","wb")
-    f.write(module+'_'+resource)
+    l=[]
+    for k in jr:
+	    l.append(k)
+    	
+    f=file("/home/shikhar/Desktop/abckfld.txt","wb")
+    f.write(module+'_'+resource)#+'_'+repr(l))
     f.close()
 #Code ends
 # *****************************************************************************
@@ -2331,7 +2338,7 @@ def shn_rest_controller(module, resource, **attr):
     s3xrc.set_handler("options", shn_options)
  
     #Own hack
-    s3xrc.set_handler("list_fields",shn_list_fields)
+    s3xrc.set_handler("import_spreadsheet",shn_import_spreadsheet)
     #Hack ends
     res, req = s3xrc.parse_request(module, resource, session, request, response)
     output = res.execute_request(req, **attr)

@@ -43,6 +43,7 @@ __all__ = ["GIS", "GoogleGeocoder", "YahooGeocoder"]
 import os
 import re
 import sys
+import random           # Needed when feature_queries are passed in without a name
 import urllib           # Needed for urlencoding
 import urllib2          # Needed for error handling on fetch
 #import uuid
@@ -216,6 +217,8 @@ class GIS(object):
         """
             Calculate the Bounds of a list of Features
             e.g. to use in GPX export for correct zooming
+            @ToDo: Support Polygons
+            @ToDo: Optimised Geospatial routines rather than this crude hack
         """
         # If we have a list of features, then use this to build the bounds
         if features:
@@ -278,9 +281,11 @@ class GIS(object):
         # Default config is the 1st
         config = 1 
         if auth.is_logged_in():
-            # ToDo: Read personalised config, if available
-            pass
-        
+            # Read personalised config, if available
+            personalised = db((db.pr_person.uuid == auth.user.person_uuid) & (_config.pr_pe_id == db.pr_person.pr_pe_id)).select(_config.id, limitby=(0, 1)).first()
+            if personalised:
+                config = personalised.id
+            
         query = (_config.id == config)
         
         query = query & (_projection.id == _config.projection_id)
@@ -358,9 +363,11 @@ class GIS(object):
 
         """
 
+        cache = self.cache
         db = self.db
         table_feature = db.gis_location
         table_marker = db.gis_marker
+        _image = table_marker.image
         table_fclass = db.gis_feature_class
         table_symbology = db.gis_symbology_to_feature_class
 
@@ -384,8 +391,8 @@ class GIS(object):
             # 1st choice for a Marker is the Feature's
             if marker_id:
                 query = (table_marker.id == marker_id)
-                marker = db(query).select(table_marker.image, limitby=(0, 1),
-                                          cache=self.cache)
+                marker = db(query).select(_image, limitby=(0, 1),
+                                          cache=cache)
                 if marker:
                     return marker.first().image
 
@@ -393,23 +400,23 @@ class GIS(object):
             query = (table_symbology.feature_class_id == feature_class) & \
                     (table_symbology.symbology_id == symbology) & \
                     (table_marker.id == table_symbology.marker_id)
-            marker = db(query).select(table_marker.image, limitby=(0, 1),
-                                      cache=self.cache)
+            marker = db(query).select(_image, limitby=(0, 1),
+                                      cache=cache)
             if marker:
                 return marker.first().image
 
             # 3rd choice for a Marker is the Feature Class's
             query = (table_fclass.id == feature_class) & \
                     (table_marker.id == table_fclass.marker_id)
-            marker = db(query).select(table_marker.image, limitby=(0, 1),
-                                      cache=self.cache)
+            marker = db(query).select(_image, limitby=(0, 1),
+                                      cache=cache)
             if marker:
                 return marker.first().image
 
         # 4th choice for a Marker is the default
         query = (table_marker.id == config.marker_id)
-        marker = db(query).select(table_marker.image, limitby=(0, 1),
-                                  cache=self.cache)
+        marker = db(query).select(_image, limitby=(0, 1),
+                                  cache=cache)
         if marker:
             return marker.first().image
         else:
@@ -482,8 +489,8 @@ class GIS(object):
                   lon = None,
                   zoom = None,
                   projection = None,
-                  features = {},
-                  feature_overlays = [],
+                  feature_queries = [],
+                  feature_groups = [],
                   wms_browser = {},
                   catalogue_overlays = False,
                   catalogue_toolbar = False,
@@ -515,22 +522,24 @@ class GIS(object):
             @param lon: default Longitude of viewport (if not provided then the default setting from the Map Service Catalogue is used)
             @param zoom: default Zoom level of viewport (if not provided then the default setting from the Map Service Catalogue is used)
             @param projection: EPSG code for the Projection to use (if not provided then the default setting from the Map Service Catalogue is used)
-            @param features: A Query of Features to overlay onto the map & their options (Dict):
-                {
+            @param feature_queries: Feature Queries to overlay onto the map & their options (List of Dicts):
+                [{
                  name   : "Query",      # A string: the label for the layer
                  query  : query,        # A gluon.sql.Rows of gis_locations
                  active : False,        # Is the feed displayed upon load or needs ticking to load afterwards?
                  popup_url : None,      # The URL which will be used to fill the pop-up. it will be appended by the Location ID.
-                 marker : None          # The icon used to display the feature (over-riding the normal process). Can be a lambda to vary icon (size/colour) based on attribute levels.
-                }
-            @param feature_overlays: Which Feature Groups to overlay onto the map & their options (List of Dicts):
+                 marker : None          # The marker_id for the icon used to display the feature (over-riding the normal process).
+                                        # [Plan: Can be a lambda to vary icon (size/colour) based on attribute levels.]
+                }]
+            @param feature_groups: Feature Groups to overlay onto the map & their options (List of Dicts):
                 [{
                  feature_group : db.gis_feature_group.name,
                  parent : None,         # Only display features with this parent set. ToDo: search recursively to allow all descendants
                  filter : None,         # A query to further limit which features from the feature group are loaded
                  active : False,        # Is the feed displayed upon load or needs ticking to load afterwards?
                  popup_url : None,      # The URL which will be used to fill the pop-up. it will be appended by the Location ID.
-                 marker : None          # The icon used to display the feature (over-riding the normal process). Can be a lambda to vary icon (size/colour) based on attribute levels.
+                 marker : None          # The marker_id for the icon used to display the feature (over-riding the normal process).
+                                        # [Plan: Can be a lambda to vary icon (size/colour) based on attribute levels.]
                 }]
             @param wms_browser: WMS Server's GetCapabilities & options (dict)
                 {
@@ -566,6 +575,7 @@ class GIS(object):
         T = self.T
         db = self.db
         auth = self.auth
+        cache = self.cache
 
         # Read configuration
         config = self.get_config()
@@ -1681,7 +1691,7 @@ OpenLayers.Util.extend( selectPdfControl, {
         # Features
         #
         layers_features = ""
-        if feature_overlays or features:
+        if feature_groups or feature_queries:
 
             layers_features += """
         var featureLayers = new Array();
@@ -1731,23 +1741,24 @@ OpenLayers.Util.extend( selectPdfControl, {
                 );
         }
         """
-            if features:
+            for layer in feature_queries:
                 # Features passed as Query
-                name = features["name"] or "Query"
-                if "popup_url" in features:
-                    popup_url = features["popup_url"]
-                # We'd like to do something like this:
-                #elif feature_class is office:
-                #    popup_url = str(URL(r=request, c="or", f="office"))
+                if "name" in layer:
+                    name = layer["name"]
                 else:
+                    name = "Query" + str(int(random.random()*1000))
+                if "popup_url" in layer:
+                    popup_url = layer["popup_url"]
+                else:
+                    #popup_url = str(URL(r=request, c=feature_class.module, f=feature_class.resource, args=["read.popup"]))
                     popup_url = str(URL(r=request, c="gis", f="location", args=["read.popup"]))
 
                 # Generate HTML snippet
                 name_safe = re.sub("\W", "_", name)
-                if "active" in features and features["active"]:
-                    visibility = "featureLayer" + name_safe +".setVisibility(true);"
+                if "active" in layer and layer["active"]:
+                    visibility = "featureLayer" + name_safe + ".setVisibility(true);"
                 else:
-                    visibility = "featureLayer" + name_safe +".setVisibility(false);"
+                    visibility = "featureLayer" + name_safe + ".setVisibility(false);"
                 layers_features += """
         features = [];
         // Style Rule For Clusters
@@ -1838,47 +1849,50 @@ OpenLayers.Util.extend( selectPdfControl, {
             }
         }
         """
-                features = features["query"]
-                for feature in features:
+                features = layer["query"]
+                for _feature in features:
                     try:
-                        feature.gis_location.id
+                        _feature.gis_location.id
                         # Query was generated by a Join
-                        _feature = feature.gis_location
+                        feature = _feature.gis_location
                     except AttributeError:
                         # Query is a simple select
-                        _feature = feature
-                    marker = self.get_marker(_feature.id)
-                    marker_url = URL(r=request, c='default', f='download', args=[marker])
+                        feature = _feature
+                    if "marker" in layer:
+                        _marker = db(db.gis_marker.id == layer["marker"]).select(db.gis_marker.image, limitby=(0, 1), cache=cache).first()
+                        if _marker:
+                            marker = _marker.image
+                        else:
+                            marker = self.get_marker(feature.id)
+                    else:
+                        marker = self.get_marker(feature.id)
+                    marker_url = URL(r=request, c="default", f="download", args=[marker])
                     # Deal with null Feature Classes
-                    if _feature.feature_class_id:
-                        fc = "'" + str(_feature.feature_class_id) + "'"
+                    if feature.feature_class_id:
+                        fc = "'" + str(feature.feature_class_id) + "'"
                     else:
                         fc = "null"
                     # Deal with manually-imported Features which are missing WKT
-                    if _feature.wkt:
-                        wkt = _feature.wkt
+                    if feature.wkt:
+                        wkt = feature.wkt
                     else:
-                        wkt = self.latlon_to_wkt(_feature.lat, _feature.lon)
+                        wkt = self.latlon_to_wkt(feature.lat, feature.lon)
                     # Deal with apostrophes in Feature Names
-                    fname = re.sub("'", "\\'", _feature.name)
+                    fname = re.sub("'", "\\'", feature.name)
                     
                     layers_features += """
         geom = parser.read('""" + wkt + """').geometry;
         iconURL = '""" + marker_url + """';
-        featureVec = addFeature('""" + _feature.uuid + """', '""" + fname + """', """ + fc + """, geom, iconURL)
+        featureVec = addFeature('""" + feature.uuid + """', '""" + fname + """', """ + fc + """, geom, iconURL)
         features.push(featureVec);
         """
                 # Append to Features layer
                 layers_features += """
         featureLayer""" + name_safe + """.addFeatures(features);
         """
-            # Append to Features section
-            layers_features += """
-        allLayers = allLayers.concat(featureLayers);
-        """        
-            
+
             # Feature Groups
-            for layer in feature_overlays:
+            for layer in feature_groups:
                 name = layer["feature_group"]
                 if "popup_url" in layer:
                     popup_url = layer["popup_url"]
@@ -1891,9 +1905,9 @@ OpenLayers.Util.extend( selectPdfControl, {
                 # Generate HTML snippet
                 name_safe = re.sub("\W", "_", name)
                 if "active" in layer and layer["active"]:
-                    visibility = "featureLayer" + name_safe +".setVisibility(true);"
+                    visibility = "featureLayer" + name_safe + ".setVisibility(true);"
                 else:
-                    visibility = "featureLayer" + name_safe +".setVisibility(false);"
+                    visibility = "featureLayer" + name_safe + ".setVisibility(false);"
                 layers_features += """
         features = [];
         // Style Rule For Clusters
@@ -1985,13 +1999,20 @@ OpenLayers.Util.extend( selectPdfControl, {
         }
         """
                 query = (db.gis_location.deleted == False) & (db.gis_feature_group.name == name) & (db.gis_feature_class_to_feature_group.feature_group_id == db.gis_feature_group.id) & (db.gis_location.feature_class_id == db.gis_feature_class_to_feature_group.feature_class_id)
-                if "parent" in feature_overlays:
-                    parent_id = db(db.gis_location.name == feature_overlays["parent"]).select(limitby=(0, 1)).first().id
+                if "parent" in layer:
+                    parent_id = db(db.gis_location.name == layer["parent"]).select(db.gis_location.id, limitby=(0, 1)).first().id
                     query = query & (db.gis_location.parent == parent_id)
                 features = db(query).select()
                 for feature in features:
-                    marker = self.get_marker(feature.gis_location.id)
-                    marker_url = URL(r=request, c='default', f='download', args=[marker])
+                    if "marker" in layer:
+                        _marker = db(db.gis_marker.id == layer["marker"]).select(db.gis_marker.image, limitby=(0, 1), cache=cache).first()
+                        if _marker:
+                            marker = _marker.image
+                        else:
+                            marker = self.get_marker(feature.gis_location.id)
+                    else:
+                        marker = self.get_marker(feature.gis_location.id)
+                    marker_url = URL(r=request, c="default", f="download", args=[marker])
                     # Deal with null Feature Classes
                     if feature.gis_location.feature_class_id:
                         fc = "'" + str(feature.gis_location.feature_class_id) + "'"

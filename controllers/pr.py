@@ -94,7 +94,18 @@ def person():
     """ RESTful CRUD controller """
 
     resource = request.function
-    
+
+    def person_prep(jr):
+        if jr.component_name == "config":
+            _config = db.gis_config
+            defaults = db(_config.id == 1).select(limitby=(0, 1)).first()
+            for key in defaults.keys():
+                if key not in ["id", "uuid", "mci", "update_record", "delete_record"]:
+                    _config[key].default = defaults[key]
+        return True
+
+    response.s3.prep = person_prep
+
     response.s3.pagination = True
 
     s3xrc.model.configure(db.pr_group_membership,
@@ -127,7 +138,8 @@ def person():
                             (T("Contact Data"), "pe_contact"),
                             (T("Memberships"), "group_membership"),
                             (T("Presence Log"), "presence"),
-                            (T("Subscriptions"), "pe_subscription")
+                            (T("Subscriptions"), "pe_subscription"),
+                            (T("Map Settings"), "config")
                             ]),
                 sticky=True)
 
@@ -140,7 +152,7 @@ def group():
     """ RESTful CRUD controller """
 
     resource = request.function
-    
+
     response.s3.filter = (db.pr_group.system == False) # do not show system groups
     response.s3.pagination = True
 

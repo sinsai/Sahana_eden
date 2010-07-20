@@ -132,7 +132,8 @@ class S3Resource(object):
 
         self.__handler = Storage(options=self.__get_options,
                                  fields=self.__get_fields,
-                                 export=self.__get_tree)
+                                 export_tree=self.__get_tree,
+                                 import_tree=self.__put_tree)
 
 
     # -------------------------------------------------------------------------
@@ -858,13 +859,14 @@ class S3Resource(object):
 
         tablename = r.component and r.component.tablename or r.tablename
 
+        xml_formats = self.__manager.xml_export_formats
+        json_formats = self.__manager.json_export_formats
+
         if method is None or method in ("read", "display"):
             authorised = permit("read", tablename)
-            xml_formats = self.__manager.xml_export_formats
-            json_formats = self.__manager.json_export_formats
             if r.representation in xml_formats or \
                r.representation in json_formats:
-                method = "export"
+                method = "export_tree"
             elif r.component:
                 if r.multiple and not r.component_id:
                     method = "list"
@@ -878,6 +880,9 @@ class S3Resource(object):
 
         elif method in ("create", "update"):
             authorised = permit(method, tablename)
+            if r.representation in xml_formats or \
+               r.representation in json_formats:
+                method = "import_tree"
 
         elif method == "delete":
             return self.__delete(r)
@@ -1073,12 +1078,97 @@ class S3Resource(object):
 
         self.__dbg("PUT method")
 
-        if r.representation in self.__manager.xml_import_formats:
-            return self.get_handler("import_xml")
-        elif r.representation in self.__manager.json_import_formats:
-            return self.get_handler("import_json")
+        xml_formats = self.__manager.xml_import_formats
+        json_formats = self.__manager.json_import_formats
+
+        if r.representation in xml_formats or \
+           r.representation in json_formats:
+            return self.get_handler("import_tree")
         else:
             raise HTTP(501, body=self.BADFORMAT)
+
+    # -------------------------------------------------------------------------
+    def __put_tree(self, r, **attr):
+
+        """ Import XML/JSON data """
+
+        xml = self.__manager.xml
+        xml_formats = self.__manager.xml_import_formats
+
+        vars = r.request.vars
+        if r.representation in xml_formats:
+            if "filename" in vars:
+                source = vars["filename"]
+            elif "fetchurl" in vars:
+                source = vars["fetchurl"]
+            else:
+                source = r.request.body
+            tree = xml.parse(source)
+        else:
+            if "filename" in vars:
+                source = open(vars["filename"])
+            elif "fetchurl" in vars:
+                import urllib
+                source = urllib.urlopen(_vars["fetchurl"])
+            else:
+                from StringIO import StringIO
+                source = StringIO(r.request.body)
+            tree = xml.json2tree(source)
+
+        if not tree:
+            item = xml.json_message(False, 400, xml.error)
+            raise HTTP(400, body=item)
+
+
+        # XSLT Transformation
+        if not r.representation in ("xml", "json"):
+            template_name = "%s.%s" % (r.representation,
+                                       self.__manager.XSLT_FILE_EXTENSION)
+
+            template = os.path.join(r.request.folder,
+                                    self.__manager.XSLT_IMPORT_TEMPLATES,
+                                    template_name)
+
+            if not os.path.exists(template):
+                raise HTTP(501, body="%s: %s" % (self.BADTEMPLATE, template))
+
+            tree = xml.transform(tree, template,
+                                 domain=self.__manager.domain,
+                                 base_url=self.__manager.base_url)
+
+            if not tree:
+                error = xml.json_message(False, 400,
+                            str(T("XSLT Transformation Error: %s ")) % \
+                            self.__manager.xml.error)
+                raise HTTP(400, body=error)
+
+        if r.component:
+            skip_resource = True
+        else:
+            skip_resource = False
+
+        if r.method == "create":
+            id = None
+        else:
+            id = r.id
+
+        if "ignore_errors" in r.request.vars:
+            ignore_errors = True
+        else:
+            ignore_errors = False
+
+        success = self.import_tree(id, tree,
+                                   push_limit=None,
+                                   ignore_errors=ignore_errors)
+
+        if success:
+            item = xml.json_message()
+        else:
+            tree = xml.tree2json(tree)
+            item = xml.json_message(False, 400, self.__manager.error, tree=tree)
+            raise HTTP(400, body=item)
+
+        return dict(item=item)
 
 
     # -------------------------------------------------------------------------
@@ -1196,12 +1286,15 @@ class S3Resource(object):
 
 
     # -------------------------------------------------------------------------
-    def import_tree(self):
+    def import_tree(self, id, tree,
+                    push_limit=None,
+                    ignore_errors=False):
 
         """ Import data from an element tree to this resource """
 
-        # Not implemented yet
-        raise NotImplementedError
+        return self.__manager.import_tree(self, id, tree,
+                                          push_limit=push_limit,
+                                          ignore_errors=ignore_errors)
 
 
     # -------------------------------------------------------------------------
@@ -2835,13 +2928,10 @@ class S3ResourceController(object):
 
 
     # -------------------------------------------------------------------------
-    def import_tree(self, prefix, name, id, tree,
-                   joins=[],
-                   skip_resource=False,
-                   permit=None,
-                   audit=None,
-                   push_limit=None,
-                   ignore_errors=False):
+    def import_tree(self, resource, id, tree,
+                    skip_resource=False,
+                    push_limit=None,
+                    ignore_errors=False):
 
         """ Imports data from an element tree
 
@@ -2859,12 +2949,11 @@ class S3ResourceController(object):
 
         self.error = None
 
-        tablename = "%s_%s" % (prefix, name)
-        if tablename in self.db:
-            table = self.db[tablename]
-        else:
-            self.error = S3XRC_BAD_RESOURCE
-            return False
+        permit = self.auth.shn_has_permission
+        audit = self.audit
+
+        tablename = resource.tablename
+        table = resource.table
 
         elements = self.xml.select_resources(tree, tablename)
         if not elements: # nothing to import
@@ -2872,7 +2961,7 @@ class S3ResourceController(object):
 
         if id:
             try:
-                db_record = self.db(table.id == id).select(table.ALL)[0]
+                db_record = resource[id]
             except:
                 self.error = S3XRC_BAD_RECORD
                 return False
@@ -2893,11 +2982,9 @@ class S3ResourceController(object):
                 self.error = S3XRC_NO_MATCH
                 return False
 
-        if joins is None:
-            joins = []
+        joins = resource.components or []
 
-        if push_limit is not None and \
-           len(elements) > push_limit:
+        if push_limit is not None and len(elements) > push_limit:
             self.error = S3XRC_NOT_PERMITTED
             return False
 
@@ -2930,10 +3017,14 @@ class S3ResourceController(object):
             #if skip_resource:
                 #vector.committed = True
 
-            # Import components
-            for j in xrange(0, len(joins)):
+            joins = resource.components
 
-                component, pkey, fkey = joins[j]
+            # Import components
+            for c in resource.components.values():
+
+                component = c.component
+                pkey = c.pkey
+                fkey = c.fkey
                 celements = self.xml.select_resources(element,
                                                       component.tablename)
 
@@ -2998,33 +3089,6 @@ class S3ResourceController(object):
                     continue
 
         return ignore_errors or not self.error
-
-
-    import_xml = import_tree # for backward compatibility
-
-
-    # -------------------------------------------------------------------------
-    def options_tree(self, prefix, name, joins=[]):
-
-        """ Exports field options in a resource as element tree
-
-            @param prefix: prefix of the resource name (=module name)
-            @param name: name of the resource (=without prefix)
-            @param joins: list of component joins to include
-
-        """
-
-        self.error = None
-        options = self.xml.get_options(prefix, name, joins=joins)
-        return self.xml.tree([options], domain=self.domain, url=self.base_url)
-
-
-    options_xml = options_tree # for backward compatibility
-
-
-    # -------------------------------------------------------------------------
-    def fields_tree(self, *f, **a):
-        raise NotImplementedError
 
 
     # -------------------------------------------------------------------------

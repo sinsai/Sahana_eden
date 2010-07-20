@@ -413,6 +413,7 @@ def compose():
         if msg.send_by_pr_pe_id(request.vars.pr_pe_id,
                                 request.vars.subject,
                                 request.vars.message,
+                                sender_pr_pe_id,
                                 request.vars.pr_message_method):
                                     session.flash = T('Message sent to outbox')
                                     redirect(URL(r=request, c="msg", f="compose"))
@@ -423,6 +424,6 @@ def compose():
 
     logform = crud.create(table1, 
                             onvalidation = compose_onvalidation)
-    outboxform = crud.create(db.msg_outbox)
+    outboxform = crud.create(table2)
     
     return dict(logform = logform, outboxform = outboxform, title = T('Send Message'))

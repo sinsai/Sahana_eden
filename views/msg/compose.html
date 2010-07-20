@@ -12,7 +12,7 @@ $(function() {
         minChars: 2,
 		//mustMatch: true,
 		// TODO : Should get multiple working 
-		multiple: true,
+		multiple: false,
 		matchContains: true,
 		autofill: true,
 		dataType: 'json',
@@ -35,6 +35,14 @@ $(function() {
 //     $("#dummy_submit").click(function(){
 // 		return true;
 //     });
+$("#msg_outbox_pr_message_method").change(function() {
+    if ($(this).val() == 1){//Dependent on pr_message_method
+        $("#msg_log_subject__row").show();
+    }
+    else{
+        $("#msg_log_subject__row").hide();
+    }
+    });
 });
 //]]></script>
 
@@ -43,6 +51,17 @@ $(function() {
  {{=logform.custom.begin}}
  <table>
  <tbody>
+ <tr id="msg_outbox_pr_message_method__row">
+ <td>
+ <label>{{=outboxform.custom.label.pr_message_method}}</label>
+ </td>
+ <td>
+ {{=outboxform.custom.widget.pr_message_method}}
+ </td>
+ <td>
+ {{=outboxform.custom.comment.pr_message_method}}
+ </td>
+ </tr>
  <tr id="msg_outbox_pr_pe_id__row">
  <td>
  <label>{{=outboxform.custom.label.pr_pe_id}}</label>
@@ -75,17 +94,6 @@ $(function() {
  </td>
  <td>
  {{=logform.custom.comment.message}}
- </td>
- </tr>
-  <tr id="msg_outbox_pr_message_method__row">
- <td>
- <label>{{=outboxform.custom.label.pr_message_method}}</label>
- </td>
- <td>
- {{=outboxform.custom.widget.pr_message_method}}
- </td>
- <td>
- {{=outboxform.custom.comment.pr_message_method}}
  </td>
  </tr>
  <tr id="msg_log_priority__row">

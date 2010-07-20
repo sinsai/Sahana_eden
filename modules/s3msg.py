@@ -144,12 +144,13 @@ class Msg(object):
                                         fromaddress,
                                         system_generated)
 
-    def process_outbox(self, contact_method = 1, option = 1):
+    def process_outbox(self, contact_method = 1, option = 1): #pr_message_method dependent
         """ Send Pending Messages from OutBox.
         If succesful then move from OutBox to Sent. A modified copy of send_email """
         table = self.db.msg_outbox
         query = ((table.status == 1) & (table.pr_message_method == contact_method))
         rows = self.db(query).select()
+        chainrun = False # Used to fire process_outbox again - Used when messages are sent to groups
         for row in rows:
             status = True
             message_id = row.message_id
@@ -180,6 +181,7 @@ class Msg(object):
                             return False
                     if (contact_method == 1):
                         return self.send_email_via_api(recipient.value, subject, message)
+                return False
             if entity_type == 2:
                 # Entity type 2 implies that this is a group
                 # Take the entities of it and add in the messaging queue - with
@@ -201,6 +203,7 @@ class Msg(object):
                                                 pr_message_method = contact_method,
                                                 system_generated = True)
                 status = True
+                chainrun = True
             if entity_type == 1:
                 # Person
                 status = dispatch_to_pr_pe_id(entity)
@@ -211,4 +214,6 @@ class Msg(object):
                 self.db(self.db.msg_log.id == message_id).update(actioned = True)
                 # Explicitly commit DB operations when running from Cron
                 self.db.commit()
+        if chainrun :
+            self.process_outbox(contact_method, option)
         return

@@ -82,7 +82,16 @@ def email_settings():
 # The following 2 functions hook into the pr functions
 # -----------------------------------------------------------------------------
 def group():
+    if auth.is_logged_in() or auth.basic():
+        pass
+    else:
+        redirect(URL(r=request, c="default", f="user", args="login",
+        vars={"_next":URL(r=request, c="msg", f="group")}))
     resource = request.function
+
+    db.pr_group.group_description.readable = False
+    db.pr_group.group_description.writable = False
+
     response.s3.filter = (db.pr_group.system == False) # do not show system groups
     response.s3.pagination = True
     "RESTful CRUD controller"
@@ -94,6 +103,22 @@ def group():
 # -----------------------------------------------------------------------------
 def group_membership():
     "RESTful CRUD controller"
+    if auth.is_logged_in() or auth.basic():
+        pass
+    else:
+        redirect(URL(r=request, c="default", f="user", args="login",
+        vars={"_next":URL(r=request, c="msg", f="group_membership")}))
+
+    db.pr_group_membership.description.readable = False
+    db.pr_group_membership.description.writable = False
+    
+    db.pr_group_membership.comment.readable = False
+    db.pr_group_membership.comment.writable = False
+    
+    db.pr_group_membership.group_head.readable = False
+    db.pr_group_membership.group_head.writable = False
+    
+    
     resource = request.function
     return shn_rest_controller("pr", resource)
 
@@ -145,6 +170,11 @@ def search():
     """Do a search of groups which match a type
     Used for auto-completion
     """
+    if auth.is_logged_in() or auth.basic():
+        pass
+    else:
+        return
+
     import gluon.contrib.simplejson as sj
     table1 = db.pr_group
     field1 = "group_name"

@@ -261,9 +261,9 @@ def layout():
                    answer_choices = options.answer_choices
                    if answer_choices:
                         choices = answer_choices.split("\r\n")
-                        table_row.append(TD(DIV(question.name,_class="question")))
+                        table_row.append(DIV(TD(question.name),_class="question")
                         for choice in choices:
-                            table_row.append(TD((DIV(choice,INPUT(_type="radio"),_class="question_answer"))))
+                            `table_row.append(TD((DIV(choice,INPUT(_type="radio"),_class="question_answer"))))
                 table.append(table_row)
                 ui.append(table)
             elif question.question_type is 2:
@@ -285,7 +285,11 @@ def layout():
             elif question.question_type == 10:
                 pass
             elif question.question_type == 11:     
-                ui.append(DIV(DIV("%s " % (question.name),INPUT(_class="date")),_class="question_answer")) # Date/Time
+                table = TABLE()
+                table_row = TR()
+                table_row.append(TD(DIV("%s " % (question.name),_class="question")))
+                table_row.append(TD(INPUT(_class="date")),_class="question_answer") # Date/Time
+                ui.append(table_row)
             elif question.question_type == 12:
                 pass
             elif question.question_type == 13:
@@ -344,4 +348,4 @@ def check_comments(allow_comments,text):
     ret = None
     if allow_comments:
         ret = DIV(text,INPUT())
-    return ret    
+    return ret

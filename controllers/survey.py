@@ -254,10 +254,18 @@ def layout():
             # MC (Only One Answer allowed)
             options = db(db.survey_question_options.question_id == question.id).select().first()
             ui.append(BR())
-            ui.append(DIV(question.name,_class="question"))
             if question.question_type is 1:
-               if options:
-                   print options.answer_choices
+                table = TABLE()
+                table_row = TR()
+                if options:
+                   answer_choices = options.answer_choices
+                   if answer_choices:
+                        choices = answer_choices.split("\r\n")
+                        table_row.append(TD(DIV(question.name,_class="question")))
+                        for choice in choices:
+                            table_row.append(TD((DIV(choice,INPUT(_type="radio"),_class="question_answer"))))
+                table.append(table_row)
+                ui.append(table)
             elif question.question_type is 2:
                 pass
             elif question.question_type is 3:
@@ -276,8 +284,8 @@ def layout():
                 pass
             elif question.question_type == 10:
                 pass
-            elif question.question_type == 11:
-                ui.append(DIV("%s " % (question.name),INPUT(_class="date")))
+            elif question.question_type == 11:     
+                ui.append(DIV(DIV("%s " % (question.name),INPUT(_class="date")),_class="question_answer")) # Date/Time
             elif question.question_type == 12:
                 pass
             elif question.question_type == 13:

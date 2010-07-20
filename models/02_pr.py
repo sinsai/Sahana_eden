@@ -585,6 +585,8 @@ s3xrc.model.configure(table,
 table.group_head.represent = lambda group_head: (group_head and [T("yes")] or [""])[0]
 
 # Field labels
+table.group_id.label = T("Group")
+table.person_id.label = T("Person")
 
 # CRUD Strings
 if request.function in ("person", "group_membership"):

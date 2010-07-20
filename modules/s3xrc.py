@@ -83,7 +83,21 @@ class S3Resource(object):
                  storage=None,
                  debug=None):
 
-        """ Constructor """
+        """ Constructor
+
+            @param manager: the resource controller
+            @param prefix: prefix of the resource name (=module name)
+            @param name: name of the resource (without prefix)
+            @param id: record ID (or list of record IDs)
+            @param uid: record UID (or list of record UIDs)
+            @param filter: filter query (DAL resources only)
+            @param get_vars: dictionary of URL query variables
+            @param parent: the parent resource
+            @param components: component name (or list of component names)
+            @param storage: URL of the data store, None for DAL
+            @param debug: whether to write debug messages to stderr or not
+
+        """
 
         assert manager is not None, "Undefined Resource Manager"
         self.__manager = manager
@@ -124,6 +138,12 @@ class S3Resource(object):
     # -------------------------------------------------------------------------
     def __dbg(self, msg):
 
+        """ Write debug messages to stderr.
+
+            @param msg: the debug message
+
+        """
+
         if self.__debug:
             print >> sys.stderr, "S3Resource: %s" % msg
 
@@ -132,7 +152,11 @@ class S3Resource(object):
 
     def set_handler(self, method, handler):
 
-        """ Set REST method handler for this resource """
+        """ Set REST method handler for this resource
+
+            @param method: the method name
+            @param handler: the handler function
+        """
 
         self.__handler[method] = handler
 
@@ -140,7 +164,11 @@ class S3Resource(object):
     # -------------------------------------------------------------------------
     def get_handler(self, method):
 
-        """ Get REST method handler for this resource """
+        """ Get REST method handler for this resource
+
+            @param method: the method name
+            @returns: the handler function
+        """
 
         return self.__handler.get(method, None)
 
@@ -149,7 +177,11 @@ class S3Resource(object):
 
     def __bind(self, storage):
 
-        """ Bind this resource to model and data store """
+        """ Bind this resource to model and data store
+
+            @param storage: the URL of the data store, None for DAL
+
+        """
 
         self.__storage = storage
 
@@ -396,6 +428,7 @@ class S3Resource(object):
 
         return self.__query
 
+
     # -------------------------------------------------------------------------
     def get_query(self):
 
@@ -536,6 +569,10 @@ class S3Resource(object):
 
     # -------------------------------------------------------------------------
     def save(self):
+
+        """ Write the current set to the data store """
+
+        # Not implemented yet
         raise NotImplementedError
 
 
@@ -684,6 +721,10 @@ class S3Resource(object):
 
     # -------------------------------------------------------------------------
     def url(self, request=None):
+
+        """ URL of this resource """
+
+        # Not implemented yet
         raise NotImplementedError
 
 
@@ -876,7 +917,15 @@ class S3Resource(object):
             return self.get_handler(method)
 
 
+    # -------------------------------------------------------------------------
     def __get_options(self, r, **attr):
+
+        """ Method handler to get field options in the current resource
+
+            @param r: the request
+            @param attr: request attributes
+
+        """
 
         if "field" in r.request.get_vars:
             items = r.request.get_vars["field"]
@@ -898,7 +947,14 @@ class S3Resource(object):
             raise HTTP(501, body=self.BADFORMAT)
 
 
+    # -------------------------------------------------------------------------
     def __get_fields(self, r, **attr):
+
+        """ Method handler to get all fields in the primary table
+
+            @param r: the request
+            @param attr: the request attributes
+        """
 
         if r.representation == "xml":
             return self.fields_xml(component=r.component_name)
@@ -908,7 +964,15 @@ class S3Resource(object):
             raise HTTP(501, body=self.BADFORMAT)
 
 
+    # -------------------------------------------------------------------------
     def __get_tree(self, r, **attr):
+
+        """ Method handler to export this resource in XML or JSON formats
+
+            @param r: the request
+            @param attr: request attributes
+
+        """
 
         xml_formats = self.__manager.xml_export_formats
         json_formats = self.__manager.json_export_formats
@@ -1062,6 +1126,7 @@ class S3Resource(object):
         else:
             raise HTTP(501, body=self.BADMETHOD)
 
+
     # XML/JSON functions ======================================================
 
     def export_tree(self,
@@ -1072,6 +1137,8 @@ class S3Resource(object):
                     show_urls=True,
                     dereference=True):
 
+        """ Export this resource as element tree """
+
         return self.__manager.export_tree(self,
                                           audit=self.__manager.audit,
                                           start=start,
@@ -1081,8 +1148,11 @@ class S3Resource(object):
                                           show_urls=show_urls,
                                           dereference=dereference)
 
+
     # -------------------------------------------------------------------------
     def export_xml(self, template=None, pretty_print=False, **args):
+
+        """ Export this resource as XML """
 
         tree = self.export_tree()
 
@@ -1105,6 +1175,8 @@ class S3Resource(object):
     # -------------------------------------------------------------------------
     def export_json(self, template=None, pretty_print=False, **args):
 
+        """ Export this resource as JSON """
+
         tree = self.export_tree()
 
         if tree and template is not None:
@@ -1125,18 +1197,35 @@ class S3Resource(object):
 
     # -------------------------------------------------------------------------
     def import_tree(self):
+
+        """ Import data from an element tree to this resource """
+
+        # Not implemented yet
         raise NotImplementedError
+
 
     # -------------------------------------------------------------------------
     def import_xml(self):
+
+        """ Import data from an XML source to this resource """
+
+        # Not implemented yet
         raise NotImplementedError
+
 
     # -------------------------------------------------------------------------
     def import_json(self):
+
+        """ Import data from a JSON source to this resource """
+
+        # Not implemented yet
         raise NotImplementedError
+
 
     # -------------------------------------------------------------------------
     def options_tree(self, component=None, fields=None):
+
+        """ Export field options of this resource as element tree """
 
         if component is not None:
             c = self.components.get(component, None)
@@ -1155,12 +1244,16 @@ class S3Resource(object):
     # -------------------------------------------------------------------------
     def options_xml(self, component=None, fields=None):
 
+        """ Export field options of this resource as XML """
+
         tree = self.options_tree(component=component, fields=fields)
         return self.__manager.xml.tostring(tree, pretty_print=True)
 
 
     # -------------------------------------------------------------------------
     def options_json(self, component=None, fields=None):
+
+        """ Export field options of this resource as JSON """
 
         tree = etree.ElementTree(self.options_tree(component=component,
                                                    fields=fields))
@@ -1169,6 +1262,8 @@ class S3Resource(object):
 
     # -------------------------------------------------------------------------
     def fields_tree(self, component=None):
+
+        """ Export a list of fields in the primary table as element tree """
 
         if component is not None:
             c = self.components.get(component, None)
@@ -1185,6 +1280,8 @@ class S3Resource(object):
     # -------------------------------------------------------------------------
     def fields_xml(self, component=None):
 
+        """ Export a list of fields in the primary table as XML """
+
         tree = self.fields_tree(component=component)
         return self.__manager.xml.tostring(tree, pretty_print=True)
 
@@ -1192,24 +1289,45 @@ class S3Resource(object):
     # -------------------------------------------------------------------------
     def fields_json(self, component=None):
 
+        """ Export a list of fields in the primary table as JSON """
+
         tree = etree.ElementTree(self.fields_tree(component=component))
         return self.__manager.xml.tree2json(tree, pretty_print=True)
 
 
     # -------------------------------------------------------------------------
     def push_xml(self):
+
+        """ Push this resource as XML to a target URL """
+
+        # Not implemented yet
         raise NotImplementedError
+
 
     # -------------------------------------------------------------------------
     def push_json(self):
+
+        """ Push this resource as JSON to a target URL """
+
+        # Not implemented yet
         raise NotImplementedError
+
 
     # -------------------------------------------------------------------------
     def fetch_xml(self):
+
+        """ Fetch XML data from a URL and import them to this resource """
+
+        # Not implemented yet
         raise NotImplementedError
+
 
     # -------------------------------------------------------------------------
     def fetch_json(self):
+
+        """ Fetch JSON data from a URL and import them to this resource """
+
+        # Not implemented yet
         raise NotImplementedError
 
 
@@ -1220,6 +1338,7 @@ class S3Request(object):
 
     DEFAULT_REPRESENTATION = "html"
 
+    # -------------------------------------------------------------------------
     def __init__(self, manager, prefix, name,
                  request=None,
                  session=None,
@@ -1338,11 +1457,30 @@ class S3Request(object):
                                               method=self.method)
 
 
+    # -------------------------------------------------------------------------
+    def unauthorised(self):
+
+        """ Action upon unauthorised request """
+
+        if self.representation == "html":
+            self.session.error = self.UNAUTHORISED
+            login = URL(r=self.request,
+                        c="default",
+                        f="user",
+                        args="login",
+                        vars={"_next": self.here()})
+            redirect(login)
+        else:
+            raise HTTP(401, body = self.UNAUTHORISED)
+
+
+    # -------------------------------------------------------------------------
     def _bind(self, resource):
 
         self.resource = resource
 
 
+    # -------------------------------------------------------------------------
     def __dbg(self, msg):
 
         if self.debug:
@@ -1474,6 +1612,7 @@ class S3Request(object):
                    f=self.name, args=args, vars=vars))
 
 
+    # -------------------------------------------------------------------------
     def here(self, representation=None):
 
         """ URL of the current request
@@ -1485,6 +1624,7 @@ class S3Request(object):
         return self.__next(id=self.id, representation=representation)
 
 
+    # -------------------------------------------------------------------------
     def other(self, method=None, record_id=None, representation=None):
 
         """ URL of a request with different method and/or record_id
@@ -1500,6 +1640,7 @@ class S3Request(object):
                            representation=representation)
 
 
+    # -------------------------------------------------------------------------
     def there(self, representation=None):
 
         """ URL of a HTTP/list request on the same resource
@@ -1511,6 +1652,7 @@ class S3Request(object):
         return self.__next(method="", representation=representation)
 
 
+    # -------------------------------------------------------------------------
     def same(self, representation=None):
 
         """ URL of the same request with neutralized primary record ID
@@ -1594,6 +1736,7 @@ class S3ResourceComponent(object):
 
     """ Class to represent component relations between resources """
 
+    # -------------------------------------------------------------------------
     def __init__(self, db, prefix, name, **attr):
 
         """ Constructor
@@ -1635,6 +1778,7 @@ class S3ResourceComponent(object):
         self.attr[name] = value
 
 
+    # -------------------------------------------------------------------------
     def get_attr(self, name):
 
         """ Reads an attribute of the component
@@ -1649,6 +1793,7 @@ class S3ResourceComponent(object):
             return None
 
 
+    # -------------------------------------------------------------------------
     def get_join_keys(self, prefix, name):
 
         """ Reads the join keys of this component and a resource
@@ -1681,6 +1826,7 @@ class S3ResourceModel(object):
     """ Class to handle the compound resources model """
 
 
+    # -------------------------------------------------------------------------
     def __init__(self, db):
 
         """ Constructor
@@ -1712,6 +1858,7 @@ class S3ResourceModel(object):
         self.config[table._tablename] = cfg
 
 
+    # -------------------------------------------------------------------------
     def get_config(self, table, key):
 
         """ Reads a configuration attribute of a resource
@@ -1727,6 +1874,7 @@ class S3ResourceModel(object):
             return None
 
 
+    # -------------------------------------------------------------------------
     def clear_config(self, table, *keys):
 
         """ Removes configuration attributes of a resource
@@ -1746,6 +1894,7 @@ class S3ResourceModel(object):
                         del self.config[table._tablename][k]
 
 
+    # -------------------------------------------------------------------------
     def add_component(self, prefix, name, **attr):
 
         """ Adds a component to the model
@@ -1762,6 +1911,7 @@ class S3ResourceModel(object):
         return component
 
 
+    # -------------------------------------------------------------------------
     def get_component(self, prefix, name, component_name):
 
         """ Retrieves a component of a resource
@@ -1782,6 +1932,7 @@ class S3ResourceModel(object):
         return (None, None, None)
 
 
+    # -------------------------------------------------------------------------
     def get_components(self, prefix, name):
 
         """ Retrieves all components related to a resource
@@ -1801,6 +1952,7 @@ class S3ResourceModel(object):
         return component_list
 
 
+    # -------------------------------------------------------------------------
     def get_many2many(self, prefix, name):
 
         """ Finds all many-to-many links of a resource (introspective)
@@ -1842,6 +1994,7 @@ class S3ResourceModel(object):
         return m2m
 
 
+    # -------------------------------------------------------------------------
     def set_method(self, prefix, name,
                    component_name=None,
                    method=None,
@@ -1876,6 +2029,7 @@ class S3ResourceModel(object):
         return True
 
 
+    # -------------------------------------------------------------------------
     def get_method(self, prefix, name, component_name=None, method=None):
 
         """ Retrieves a custom method for a resource or component
@@ -1908,6 +2062,7 @@ class S3ResourceModel(object):
                 return None
 
 
+    # -------------------------------------------------------------------------
     def set_attr(self, component_name, name, value):
 
         """ Sets an attribute for a component
@@ -1921,6 +2076,7 @@ class S3ResourceModel(object):
         return self.components[component_name].set_attr(name, value)
 
 
+    # -------------------------------------------------------------------------
     def get_attr(self, component_name, name):
 
         """ Retrieves an attribute value of a component
@@ -2928,6 +3084,7 @@ class S3Vector(object):
     MTIME = "modified_on"
 
 
+    # -------------------------------------------------------------------------
     def __init__(self, db, prefix, name, id,
                  record=None,
                  element=None,
@@ -3052,6 +3209,7 @@ class S3Vector(object):
         return r
 
 
+    # -------------------------------------------------------------------------
     def commit(self):
 
         """ Commits the vector to the database """
@@ -3208,6 +3366,7 @@ class S3Vector(object):
         return True
 
 
+    # -------------------------------------------------------------------------
     def resolve(self):
 
         """ Resolve references of this record """
@@ -3231,6 +3390,7 @@ class S3Vector(object):
                         vector.update.append(dict(vector=self, field=r.field))
 
 
+    # -------------------------------------------------------------------------
     def writeback(self, field, value):
 
         """ Update a field in the record
@@ -3343,6 +3503,7 @@ class S3XML(object):
               ("'", "&apos;"), ("&", "&amp;")]
 
 
+    # -------------------------------------------------------------------------
     def __init__(self, db, domain=None, base_url=None, gis=None, cache=None):
 
         """ Constructor
@@ -3384,6 +3545,7 @@ class S3XML(object):
             return None
 
 
+    # -------------------------------------------------------------------------
     def transform(self, tree, template_path, **args):
 
         """ Transform an element tree with XSLT
@@ -3421,6 +3583,7 @@ class S3XML(object):
             return None
 
 
+    # -------------------------------------------------------------------------
     def tostring(self, tree, pretty_print=False):
 
         """ Convert an element tree into XML as string
@@ -3436,6 +3599,7 @@ class S3XML(object):
                               pretty_print=pretty_print)
 
 
+    # -------------------------------------------------------------------------
     def tree(self, resources, domain=None, url=None,
              start=None, limit=None, results=None):
 
@@ -3487,6 +3651,7 @@ class S3XML(object):
         return etree.ElementTree(root)
 
 
+    # -------------------------------------------------------------------------
     def xml_encode(self, obj):
 
         """ Encodes a Python string into an XML text node
@@ -3501,6 +3666,7 @@ class S3XML(object):
         return obj
 
 
+    # -------------------------------------------------------------------------
     def xml_decode(self, obj):
 
         """ Decodes an XML text node into a Python string
@@ -3515,6 +3681,7 @@ class S3XML(object):
         return obj
 
 
+    # -------------------------------------------------------------------------
     def export_uid(self, uid):
 
         """ Maps internal UUIDs to export format
@@ -3532,6 +3699,7 @@ class S3XML(object):
             return uid
 
 
+    # -------------------------------------------------------------------------
     def import_uid(self, uid):
 
         """ Maps imported UUIDs to internal format
@@ -3579,6 +3747,7 @@ class S3XML(object):
         return text
 
 
+    # -------------------------------------------------------------------------
     def rmap(self, table, record, fields):
 
         """ Generates a reference map for a record
@@ -3635,6 +3804,7 @@ class S3XML(object):
         return reference_map
 
 
+    # -------------------------------------------------------------------------
     def add_references(self, element, rmap):
 
         """ Adds <reference> elements to a <resource>
@@ -3658,6 +3828,7 @@ class S3XML(object):
             r.element = reference
 
 
+    # -------------------------------------------------------------------------
     def gis_encode(self, rmap, download_url="", marker=None):
 
         """ GIS-encodes location references
@@ -3718,6 +3889,8 @@ class S3XML(object):
                     r.element.set(self.ATTRIBUTE.sym,
                                   self.xml_encode(symbol))
 
+
+    # -------------------------------------------------------------------------
     def element(self, table, record,
                 fields=[],
                 url=None,
@@ -3846,6 +4019,7 @@ class S3XML(object):
         return resources
 
 
+    # -------------------------------------------------------------------------
     def lookahead(self, table, element, fields, tree=None, directory=None):
 
         """ Resolves references in XML resources
@@ -3933,6 +4107,7 @@ class S3XML(object):
         return reference_list
 
 
+    # -------------------------------------------------------------------------
     def record(self, table, element, validate=None, skip=[]):
 
         """ Creates a Storage() record from an element and validates it
@@ -4154,6 +4329,7 @@ class S3XML(object):
             return element
 
 
+    # -------------------------------------------------------------------------
     def __obj2element(self, tag, obj, native=False):
 
         """ Converts a JSON object into an element
@@ -4217,6 +4393,7 @@ class S3XML(object):
         return element
 
 
+    # -------------------------------------------------------------------------
     def json2tree(self, source, format=None):
 
         """ Converts JSON into an element tree
@@ -4246,6 +4423,7 @@ class S3XML(object):
         return None
 
 
+    # -------------------------------------------------------------------------
     def __element2json(self, element, native=False):
 
         """ Converts an element into JSON
@@ -4322,6 +4500,7 @@ class S3XML(object):
             return obj
 
 
+    # -------------------------------------------------------------------------
     def tree2json(self, tree, pretty_print=False):
 
         """ Converts an element tree into JSON
@@ -4347,6 +4526,7 @@ class S3XML(object):
             return json.dumps(root_dict)
 
 
+    # -------------------------------------------------------------------------
     def json_message(self,
                      success=True,
                      status_code="200",

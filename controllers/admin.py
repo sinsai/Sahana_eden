@@ -253,6 +253,7 @@ def user():
         subtitle_list = T("Users"),
         label_list_button = LIST_USERS,
         label_create_button = ADD_USER,
+        label_delete_button = T("Delete User"),
         msg_record_created = T("User added"),
         msg_record_modified = T("User updated"),
         msg_record_deleted = T("User deleted"),

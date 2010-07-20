@@ -199,7 +199,7 @@ def search():
 		for row in query:
 			item.append({"id":row.pr_pe_id, "name":shn_pentity_represent(row.pr_pe_id, default_label = "")})
 		item = sj.dumps(item)
-		response.view = "plain.html"
+		response.view = "xml.html"
 		return dict(item=item)
     return
 

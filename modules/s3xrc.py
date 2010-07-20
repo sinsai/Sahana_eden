@@ -2185,6 +2185,24 @@ class S3ResourceController(object):
 
 
     # -------------------------------------------------------------------------
+    def invoke_hook(self, hook, *args, **vars):
+
+        name = vars.pop("name", None)
+
+        if name and isinstance(hook, dict):
+            hook = hook.get(name, None)
+
+        if hook:
+            if isinstance(hook, (list, tuple)):
+                result = [f(*args, **vars) for f in hook]
+            else:
+                result = hook(*args, **vars)
+            return result
+        else:
+            return None
+
+
+    # -------------------------------------------------------------------------
     def __directory(self, d, l, k, v, e={}):
 
         """ Converts a list of dicts into a directory
@@ -2301,7 +2319,7 @@ class S3ResourceController(object):
         (prefix, name) = resource.split("_", 1)
         onvalidation = self.model.get_config(table, "onvalidation")
         onaccept = self.model.get_config(table, "onaccept")
-        vector = S3Vector(self.db, prefix, name, id,
+        vector = S3Vector(self, prefix, name, id,
                           record=record,
                           element=element,
                           mtime=mtime,
@@ -3085,7 +3103,7 @@ class S3Vector(object):
 
 
     # -------------------------------------------------------------------------
-    def __init__(self, db, prefix, name, id,
+    def __init__(self, manager, prefix, name, id,
                  record=None,
                  element=None,
                  mtime=None,
@@ -3100,7 +3118,7 @@ class S3Vector(object):
 
         """ Constructor
 
-            @param db: the database (DAL)
+            @param manager: the resource controller
             @param prefix: prefix of the resource name (=module name)
             @param name: the resource name (=without prefix)
             @param id: the target record ID
@@ -3117,7 +3135,8 @@ class S3Vector(object):
 
         """
 
-        self.db=db
+        self.__manager = manager
+        self.db=self.__manager.db
         self.prefix=prefix
         self.name=name
 
@@ -3232,7 +3251,7 @@ class S3Vector(object):
 
                 # Validate
                 if self.onvalidation:
-                    self.onvalidation(form)
+                    self.__manager.invoke_hook(self.onvalidation, form, name=self.tablename)
                 if form.errors:
                     #print >> sys.stderr, form.errors
                     if self.element:
@@ -3338,7 +3357,7 @@ class S3Vector(object):
                         self.audit(self.method, self.prefix, self.name,
                                    form=form, record=self.id, representation="xml")
                     if self.onaccept:
-                        self.onaccept(form)
+                        self.__manager.invoke_hook(self.onaccept, form, name=self.tablename)
 
         # Load record if components pending
         if self.id and self.components and not skip_components:

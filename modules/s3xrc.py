@@ -263,6 +263,8 @@ class S3Resource(object):
         self.clear()
         self.clear_query()
 
+        xml = self.__manager.xml
+
         if url_vars:
             url_query = self.__manager.url_query(self, url_vars)
         else:
@@ -374,6 +376,9 @@ class S3Resource(object):
                         if field in table.fields:
                             for op in url_query[rname][field]:
                                 values = url_query[rname][field][op]
+                                if field == xml.UID and xml.domain_mapping:
+                                    uids = [xml.import_uid(v) for v in values]
+                                    values = uids
                                 if op == "eq":
                                     if len(values) == 1:
                                         query = (table[field] == values[0])

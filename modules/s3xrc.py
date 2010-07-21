@@ -2751,6 +2751,11 @@ class S3ResourceController(object):
             else:
                 resource_url = None
 
+            msince_add = True
+            if msince is not None and self.xml.MTIME in record:
+                if record[self.xml.MTIME] < msince:
+                    msince_add = False
+
             rmap = self.xml.rmap(table, record, rfields)
             element = self.xml.element(table, record,
                                        fields=dfields,
@@ -2779,6 +2784,11 @@ class S3ResourceController(object):
                 _dfields = cdfields[ctablename]
 
                 for crecord in resource(record.id, component=cname):
+
+                    if msince is not None and self.xml.MTIME in crecord:
+                        if crecord[self.xml.MTIME] < msince:
+                            continue
+                    msince_add = True
 
                     if audit:
                         audit(self.ACTION["read"], cprefix, cname,
@@ -2809,12 +2819,15 @@ class S3ResourceController(object):
                     else:
                         export_map[c.tablename] = [crecord.id]
 
-            reference_map.extend(rmap)
-            element_list.append(element)
-            if export_map.get(resource.tablename, None):
-                export_map[resource.tablename].append(record.id)
+            if msince_add:
+                reference_map.extend(rmap)
+                element_list.append(element)
+                if export_map.get(resource.tablename, None):
+                    export_map[resource.tablename].append(record.id)
+                else:
+                    export_map[resource.tablename] = [record.id]
             else:
-                export_map[resource.tablename] = [record.id]
+                results -= 1
 
         # Add referenced resources to the tree
         depth = dereference and self.MAX_DEPTH or 0

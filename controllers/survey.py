@@ -248,8 +248,7 @@ def layout():
         for question in questions:
             question_rendered.append(question.id)
             if question_rendered.count(question.id) > 1:
-                continue            
-            question_type = session.rcvars.survey_question_type
+                continue
             #TODO: take order into account.
             # MC (Only One Answer allowed)
             options = db(db.survey_question_options.question_id == question.id).select().first()
@@ -264,11 +263,15 @@ def layout():
                         table_row.append(TD(DIV(question.name,_class="question")))
                         for choice in choices:
                             table_row.append(TD((DIV(choice,INPUT(_type="radio",_name="%s" % (question.uuid)),_class="question_answer"))))
-                            if options.allow_comments:
-                                pass
+                        if options.allow_comments:
+                            comment_text = options.comment_display_label
+                            if comment_text:
+                                table_row.append(TD(DIV(comment_text,TD(INPUT(_type="text",name="%s_comment" % (question.uuid))))))
+                            else:
+                                table_row.append(TD(DIV("Comments",TD(INPUT(_type="text",name="%s_comment" % (question.uuid))))))
                 table.append(table_row)
                 ui.append(table)
-            elif question.question_type is 2:
+            elif question.question_type is 2: # MC (more than one answer)
                 table = TABLE()
                 table_row = TR()
                 if options:
@@ -278,6 +281,12 @@ def layout():
                         table_row.append(TD(DIV(question.name,_class="question")))
                         for choice in choices:
                             table_row.append(TD((DIV(choice,INPUT(_type="checkbox",_name="%s" % (question.uuid)),_class="question_answer"))))
+                        if options.allow_comments:
+                            comment_text = options.comment_display_label
+                            if comment_text:
+                                table_row.append(TD(DIV(comment_text,TD(INPUT(_type="text",name="%s_comment" % (question.uuid))))))
+                            else:
+                                table_row.append(TD(DIV("Comments",TD(INPUT(_type="text",name="%s_comment" % (question.uuid))))))
                 table.append(table_row)
                 ui.append(table)
             elif question.question_type is 3:
@@ -297,7 +306,18 @@ def layout():
             elif question.question_type == 10:
                 pass
             elif question.question_type == 11:     
-                ui.append(DIV(DIV("%s " % (question.name),INPUT(_class="date")),_class="question_answer")) # Date/Time
+                table = TABLE()
+                table_row = TR()
+                table_row.append(TD(DIV(DIV("%s " % (question.name),TD(INPUT(_class="date")),_class="question_answer")))) # Date/Time
+                if options.allow_comments:
+                    comment_text = options.comment_display_label
+                    if comment_text:
+                        table_row.append(TD(DIV(DIV("%s: " % (comment_text),TD(INPUT())))))
+                    else:
+                        table_row.append(TD(DIV(DIV("Comments: ",TD(INPUT())))))
+                table.append(table_row)
+                ui.append(table)
+
             elif question.question_type == 12:
                 pass
             elif question.question_type == 13:

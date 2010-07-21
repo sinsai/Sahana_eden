@@ -441,7 +441,7 @@ ADD_LOCATION = T("Add Location")
 repr_select = lambda l: len(l.name) > 48 and "%s..." % l.name[:44] or l.name
 location_id = db.Table(None, "location_id",
                        FieldS3("location_id", db.gis_location, sortby="name",
-                       requires = IS_NULL_OR(IS_ONE_OF(db, "gis_location.id", repr_select, alphasort=True)),
+                       requires = IS_NULL_OR(IS_ONE_OF(db, "gis_location.id", repr_select, sort=True)),
                        represent = lambda id: shn_gis_location_represent(id),
                        label = T("Location"),
                        comment = DIV(A(ADD_LOCATION,

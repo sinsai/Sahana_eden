@@ -228,7 +228,7 @@ def layout():
     section_query = (db.survey_template_link_table.survey_template_id == template_id) & (db.survey_section.id == db.survey_template_link_table.survey_section_id)
     sections = db(section_query).select(db.survey_section.ALL)
     
-    ui = DIV(_class="sections")   
+    ui = DIV(_class="sections")    
     # build the UI
     for section in sections:
         section_rendered.append(section.id)        
@@ -263,11 +263,23 @@ def layout():
                         choices = answer_choices.split("\r\n")
                         table_row.append(TD(DIV(question.name,_class="question")))
                         for choice in choices:
-                            table_row.append(TD((DIV(choice,INPUT(_type="radio"),_class="question_answer"))))
+                            table_row.append(TD((DIV(choice,INPUT(_type="radio",_name="%s" % (question.uuid)),_class="question_answer"))))
+                            if options.allow_comments:
+                                pass
                 table.append(table_row)
                 ui.append(table)
             elif question.question_type is 2:
-                pass
+                table = TABLE()
+                table_row = TR()
+                if options:
+                   answer_choices = options.answer_choices
+                   if answer_choices:
+                        choices = answer_choices.split("\r\n")
+                        table_row.append(TD(DIV(question.name,_class="question")))
+                        for choice in choices:
+                            table_row.append(TD((DIV(choice,INPUT(_type="checkbox",_name="%s" % (question.uuid)),_class="question_answer"))))
+                table.append(table_row)
+                ui.append(table)
             elif question.question_type is 3:
                 pass
             elif question.question_type == 4:

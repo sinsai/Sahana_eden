@@ -1355,13 +1355,16 @@ class S3Resource(object):
 
         xml = self.__manager.xml
 
-        if not isinstance(tree, etree._ElementTree):
+        if isinstance(source, etree._ElementTree):
+            tree = source
+        else:
             tree = xml.parse(source)
+
         if tree:
             if template is not None:
                 tree = xml.transform(tree, template, **args)
-            if not tree:
-                raise SyntaxError(xml.error)
+                if not tree:
+                    raise SyntaxError(xml.error)
             return self.import_tree(id, tree, push_limit=None,
                                     ignore_errors=ignore_errors)
         else:
@@ -2710,7 +2713,7 @@ class S3ResourceController(object):
                     vlist = []
                     for v in values:
                         if ftype == "boolean":
-                            if value in ("true", "True"):
+                            if v in ("true", "True"):
                                 value = True
                             else:
                                 value = False

@@ -1,54 +1,55 @@
 # -*- coding: utf-8 -*-
 
-"""
-    MPR Missing Person Registry (Sahana Legacy)
+""" MPR Missing Persons Registry
+
+    @author: nursix
+    @see: U{http://eden.sahanafoundation.org/wiki/BluePrintVITA}
+
 """
 
 module = "mpr"
+
 if deployment_settings.has_module(module):
 
     #
     # Settings --------------------------------------------------------------------
     #
     resource = 'setting'
-    table = module + '_' + resource
-    db.define_table(table,
-                    Field('audit_read', 'boolean'),
-                    Field('audit_write', 'boolean'),
-                    migrate=migrate)
+    tablename = "%s_%s" % (module, resource)
+    table = db.define_table(tablename,
+                            Field('audit_read', 'boolean'),
+                            Field('audit_write', 'boolean'),
+                            migrate=migrate)
 
-    #
-    # Missing Person --------------------------------------------------------------
-    #
-
-    resource = 'missing_person'
-    table = module + '_' + resource
-    db.define_table(table, timestamp, uuidstamp, deletion_status,
-                    pr_pe_fieldset,
-                    migrate=migrate)
-
-    # Hide label
-    db[table].pr_pe_label.readable=False
-    db[table].pr_pe_label.writable=False
-
-    ADD_PERSON = T('Add Person')
-    LIST_PEOPLE = T('List People')
-    s3.crud_strings[table] = Storage(
-        title_create = ADD_PERSON,
-        title_display = T('Person Details'),
-        title_list = LIST_PEOPLE,
-        title_update = T('Edit Person'),
-        title_search = T('Search People'),
-        subtitle_create = T('Add New Person'),
-        subtitle_list = T('People'),
-        label_list_button = LIST_PEOPLE,
-        label_create_button = ADD_PERSON,
-        msg_record_created = T('Person added'),
-        msg_record_modified = T('Person updated'),
-        msg_record_deleted = T('Person deleted'),
-        msg_list_empty = T('No People currently registered'))
+    # Missing Report ----------------------------------------------------------
+    reporter = db.Table(None, "reporter",
+                        FieldS3("reporter",
+                                db.pr_person,
+                                sortby=["first_name", "middle_name", "last_name"],
+                                requires = IS_NULL_OR(IS_ONE_OF(db,
+                                                "pr_person.id",
+                                                shn_pr_person_represent)),
+                                represent = lambda id: \
+                                            (id and
+                                            [shn_pr_person_represent(id)] or
+                                            ["None"])[0],
+                                comment = shn_person_comment,
+                                ondelete = "RESTRICT"))
 
     resource = 'missing_report'
-    table = module + '_' + resource
-    db.define_table(table, timestamp, uuidstamp, deletion_status,
-                    migrate=migrate)
+    tablename = "%s_%s" % (module, resource)
+    table = db.define_table(tablename,
+                            timestamp, uuidstamp, authorstamp, deletion_status,
+                            person_id,
+                            reporter,
+                            migrate=migrate)
+
+    s3xrc.model.add_component(module, resource,
+                              multiple=False,
+                              joinby=dict(pr_person="person_id"),
+                              deletable=True,
+                              editable=True)
+
+    s3xrc.model.configure(table,
+                          list_fields = ["id",
+                                         "reporter"])

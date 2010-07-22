@@ -1524,6 +1524,7 @@ class S3Request(object):
     """ Class to handle requests """
 
     DEFAULT_REPRESENTATION = "html"
+    UNAUTHORISED = "Not Authorised"
 
     # -------------------------------------------------------------------------
     def __init__(self, manager, prefix, name,

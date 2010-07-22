@@ -59,6 +59,7 @@ s3xrc = _s3xrc.S3ResourceController(db,
             base_url="%s/%s" % (deployment_settings.get_base_public_url(), request.application),
             cache=cache,
             auth=auth,
+	    modules = deployment_settings.modules,   #Own code
             gis=gis,
             rpp=ROWSPERPAGE,
             xml_import_formats = shn_xml_import_formats,

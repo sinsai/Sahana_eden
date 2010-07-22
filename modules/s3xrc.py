@@ -2175,6 +2175,7 @@ class S3ResourceController(object):
                  gis=None,
                  messages=None,
                  debug=False,
+		 modules = None,     #Own code
                  **attr):
 
         """ Constructor
@@ -2205,9 +2206,13 @@ class S3ResourceController(object):
 
         if rpp:
             self.ROWSPERPAGE = rpp
+	#Own code for module nice names
+	if modules:
+		self.modules = modules
+	#End
 
         self.model = S3ResourceModel(self.db)
-        self.xml = S3XML(self.db, domain=domain, base_url=base_url, gis=gis, cache=cache)
+        self.xml = S3XML(self.db, domain=domain, base_url=base_url, gis=gis, cache=cache, modules = self.modules) #added modules parameter
 
         self.sync_resolve = None
         self.sync_log = None
@@ -3550,7 +3555,7 @@ class S3XML(object):
 
 
     # -------------------------------------------------------------------------
-    def __init__(self, db, domain=None, base_url=None, gis=None, cache=None):
+    def __init__(self, db, domain=None, base_url=None, gis=None, cache=None, modules = None):
 
         """ Constructor
 
@@ -3568,6 +3573,8 @@ class S3XML(object):
         self.domain_mapping = True
         self.gis = gis
         self.cache = cache
+	#if modules:
+	self.modules = modules
 
     # XML+XSLT tools ==========================================================
 
@@ -4322,6 +4329,8 @@ class S3XML(object):
 
         if table:
             fields.set(self.ATTRIBUTE.resource, tablename)
+            #name_nice = self.modules[prefix]['name_nice']
+	    #fields.set(self.ATTRIBUTE.name_nice, self.xml_encode(name_nice))
             for f in table.fields:
                 field = etree.Element(self.TAG.field)
                 field.set(self.ATTRIBUTE.name, self.xml_encode(f))

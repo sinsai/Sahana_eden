@@ -1343,7 +1343,7 @@ class S3Resource(object):
 
         """ Import data from an XML source to this resource
 
-            @param source: the XML source
+            @param source: the XML source (or ElementTree)
             @param id: the ID or list of IDs of records to update (None for all)
             @param template: the XSLT template
             @param ignore_errors: do not stop on errors (skip invalid elements)
@@ -1355,7 +1355,8 @@ class S3Resource(object):
 
         xml = self.__manager.xml
 
-        tree = xml.parse(source)
+        if not isinstance(tree, etree._ElementTree):
+            tree = xml.parse(source)
         if tree:
             if template is not None:
                 tree = xml.transform(tree, template, **args)

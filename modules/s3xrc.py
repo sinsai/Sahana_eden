@@ -1372,12 +1372,41 @@ class S3Resource(object):
 
 
     # -------------------------------------------------------------------------
-    def import_json(self):
+    def import_json(self, source, id=None, template=None, ignore_errors=False, **args):
 
-        """ Import data from a JSON source to this resource """
 
-        # Not implemented yet
-        raise NotImplementedError
+        """ Import data from a JSON source to this resource
+
+            @param source: the JSON source (or ElementTree)
+            @param id: the ID or list of IDs of records to update (None for all)
+            @param template: the XSLT template
+            @param ignore_errors: do not stop on errors (skip invalid elements)
+            @param args: arguments to pass to the XSLT template
+
+            @raise SyntaxError: in case of a parser or transformation error
+
+        """
+
+        xml = self.__manager.xml
+
+        if isinstance(source, etree._ElementTree):
+            tree = source
+        elif isinstance(source, basestring):
+            from StringIO import StringIO
+            source = StringIO(source)
+            tree = xml.json2tree(source)
+        else:
+            tree = xml.json2tree(source)
+
+        if tree:
+            if template is not None:
+                tree = xml.transform(tree, template, **args)
+                if not tree:
+                    raise SyntaxError(xml.error)
+            return self.import_tree(id, tree, push_limit=None,
+                                    ignore_errors=ignore_errors)
+        else:
+            raise SyntaxError("Invalid JSON source.")
 
 
     # -------------------------------------------------------------------------

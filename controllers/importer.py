@@ -26,7 +26,7 @@ def googledoc():
     next = 'http://' + request.env.http_host + '/' + \
 		    request.application + '/importer/gettoken'
     scope = 'https://spreadsheets.google.com/feeds'
-    secure = False
+    secure = True
     sessionval = True
     url2token = gd_client.GenerateAuthSubURL(next, scope, \
 		    secure=secure, session = sessionval)
@@ -37,8 +37,9 @@ def gettoken():
     #gd_client = importer.gdata.spreadsheet.service.SpreadsheetsService()
     getvars=repr(request.get_vars)
     auth_url='http://'+request.env.http_host+request.url+'?auth_sub_scopes='+request.get_vars['auth_sub_scopes']+'&token='+request.get_vars['token']
-    f.write(repr(auth_url))
-     
+    f = file("/home/shikhar/Desktop/abc.txt","wb")
+    f.write(auth_url)
+    f.close() 
     #authsub_token = importer.gdata.auth.extract_auth_sub_token_from_url(auth_url)
     
     authsub_token = importer.gdata.auth.AuthSubTokenFromUrl(auth_url) 
@@ -88,7 +89,7 @@ def getspreadsheetlist():
 	return l
 
 def import_spreadsheet():
-    spreadsheet=request.body.read()
+    spreadsheet = request.body.read()
     #tree=s3xrc.xml.json2tree(spreadsheet)
     #s3xrc.import_xml(tree=tree,prefix=request.args[0],name=request.args[1],id=None)
     f = file("/home/shikhar/Desktop/abc.txt","wb")
@@ -137,7 +138,7 @@ def import_spreadsheet():
     prefix = resource.split('_')[1]
     name = resource.split('_')[2]
     if s3xrc.import_xml(tree = tree, id = None, prefix = prefix, name = name):
-	    success = True
+	    session.import_success = 1 
     else:
 	    incorrect_rows = []
 	    correct_rows = []
@@ -174,14 +175,35 @@ def import_spreadsheet():
 	    correct_rows_send={}
 	    correct_rows_send[resource]=correct_rows
 	    f.write("And the incorrect rows are...\n")
-	    f.write(repr(correct_rows))
+	    #f.write(repr(incorrect_rows))
+	    for k in incorrect_rows:
+		    del k['@modified_on']
 	    send_json = json.dumps(correct_rows_send)
 	    send_json = StringIO(send_json)
 	    tree = s3xrc.xml.json2tree(send_json)
 	    s3xrc.import_xml(tree = tree, id = None, prefix = prefix, name = name)
 	    json_test = s3xrc.xml.tree2json(tree)
+	    session.fields = incorrect_rows[0].keys()
+	    #session.fields.remove(u'@modified_on')
+	    for i in range(0,len(session.fields)):
+		    session.fields[i]=session.fields[i].encode('ascii')
+	    f.write(repr(session.fields))
+	    session.import_rows = len(incorrect_rows)
+	    for record in incorrect_rows:
+		    for field in record.keys():
+			    if '@error' in record[field].keys():
+				    record[field] = record[field]['@error']
+				    record[field] = "*_error_*" + record[field]
+			    else:
+				    record[field] = record[field]['@value']
 	    #f.write("\nTHE RETURNED JSON IS --->\n"+json.dumps(json_test))
+	    incorrect_rows = json.dumps(incorrect_rows,ensure_ascii=True)
 	    session.invalid_rows = incorrect_rows
+	    session.import_success = 0
+	    session.import_columns = j['columns']
+	    session.import_map = json.dumps(j['map'],ensure_ascii=True)
+	    session.import_resource = resource.encode('ascii') 
+	    #session.columns = j['columns']
     f.close()	
     return dict(success=success,spreadsheet=incorrect_rows)
 

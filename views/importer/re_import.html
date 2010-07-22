@@ -1,0 +1,22 @@
+{{extend 'layout.html'}}
+{{include 'ext.html'}}
+<h1>This is the importer/re_import.html template</h1>
+<script type="text/javascript">
+	var success = {{=session.import_success}};
+	var invalid_rows = {{=session.invalid_rows}};
+	var number_column = {{=session.import_columns}};
+	var fields = {{=session.fields}};
+	var map = {{=session.import_map}};
+	var rows = {{=session.import_rows}};
+	var resource = "{{=session.import_resource}}";
+	var url = "{{=request.env.http_host}}";
+	var application = "{{=request.application}}";
+
+</script>
+<script type="text/javascript" src="../static/scripts/S3importer/re_import.js"></script>
+<div id = "spreadsheet"></div>
+<b>Debug information</b>
+{{=BEAUTIFY(session)}}
+{{=BEAUTIFY(session.invalid_rows)}}
+{{=BEAUTIFY(session.fields)}}
+{{=BEAUTIFY(session.import_success)}}

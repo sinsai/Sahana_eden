@@ -135,9 +135,7 @@ def import_spreadsheet():
     #f.write(new_word)
     send = StringIO(new_word)
     tree = s3xrc.xml.json2tree(send)
-    prefix = resource.split('_')[1]
-    name = resource.split('_')[2]
-    if s3xrc.import_xml(tree = tree, id = None, prefix = prefix, name = name):
+    if s3xrc.import_tree(tree = tree, id = None, resource = resource, push_limit = j['rows']):
 	    session.import_success = 1 
     else:
 	    incorrect_rows = []

@@ -138,6 +138,8 @@ class S3Resource(object):
                                  export_tree=self.__get_tree,
                                  import_tree=self.__put_tree)
 
+        #: maximum number of records accepted in PUT/POST
+        self.push_limit = 1
 
     # -------------------------------------------------------------------------
     def __dbg(self, msg):
@@ -796,6 +798,8 @@ class S3Resource(object):
         preprocess = None
         postprocess = None
 
+        push_limit = self.push_limit
+
         # Enforce primary record ID
         if not r.id and not r.custom_action and r.representation == "html":
             if r.component or r.method in ("read", "update"):
@@ -848,6 +852,7 @@ class S3Resource(object):
                 self.__dbg("custom method %s" % r.method)
                 handler = r.custom_action
             elif r.http == "GET":
+                self.push_limit = None
                 handler = self.__get(r)
             elif r.http == "PUT":
                 handler = self.__put(r)
@@ -860,6 +865,7 @@ class S3Resource(object):
             if handler is not None:
                 self.__dbg("method handler found - executing request")
                 output = handler(r, **attr)
+                self.push_limit = push_limit
             else:
                 self.__dbg("no method handler - finalizing request")
 
@@ -1073,12 +1079,12 @@ class S3Resource(object):
             except ValueError:
                 msince = None
 
-        tree = self.export_tree(start=start,
-                                limit=limit,
-                                marker=marker,
-                                msince=msince,
-                                show_urls=True,
-                                dereference=True)
+        tree = self.__export_tree(start=start,
+                                  limit=limit,
+                                  marker=marker,
+                                  msince=msince,
+                                  show_urls=True,
+                                  dereference=True)
 
         if template is not None:
             tfmt = "%Y-%m-%d %H:%M:%S"
@@ -1118,13 +1124,19 @@ class S3Resource(object):
         """
 
         self.__dbg("PUT method")
+        permit = self.__permit
 
         xml_formats = self.__manager.xml_import_formats
         json_formats = self.__manager.json_import_formats
 
         if r.representation in xml_formats or \
            r.representation in json_formats:
-            return self.get_handler("import_tree")
+            authorised = permit("create", tablename) and \
+                         permit("update", tablename)
+            if not authorised:
+                r.unauthorised()
+            else:
+                return self.get_handler("import_tree")
         else:
             raise HTTP(501, body=self.BADFORMAT)
 
@@ -1198,9 +1210,9 @@ class S3Resource(object):
         else:
             ignore_errors = False
 
-        success = self.import_tree(id, tree,
-                                   push_limit=None,
-                                   ignore_errors=ignore_errors)
+        success = self.__import_tree(id, tree,
+                                     push_limit=self.push_limit,
+                                     ignore_errors=ignore_errors)
 
         if success:
             item = xml.json_message()
@@ -1260,13 +1272,13 @@ class S3Resource(object):
 
     # XML/JSON functions ======================================================
 
-    def export_tree(self,
-                    start=None,
-                    limit=None,
-                    marker=None,
-                    msince=None,
-                    show_urls=True,
-                    dereference=True):
+    def __export_tree(self,
+                      start=None,
+                      limit=None,
+                      marker=None,
+                      msince=None,
+                      show_urls=True,
+                      dereference=True):
 
         """ Export this resource as element tree """
 
@@ -1285,7 +1297,7 @@ class S3Resource(object):
 
         """ Export this resource as XML """
 
-        tree = self.export_tree()
+        tree = self.__export_tree()
 
         if tree and template is not None:
             tfmt = "%Y-%m-%d %H:%M:%S"
@@ -1308,7 +1320,7 @@ class S3Resource(object):
 
         """ Export this resource as JSON """
 
-        tree = self.export_tree()
+        tree = self.__export_tree()
 
         if tree and template is not None:
             tfmt = "%Y-%m-%d %H:%M:%S"
@@ -1327,11 +1339,12 @@ class S3Resource(object):
 
 
     # -------------------------------------------------------------------------
-    def import_tree(self, id, tree,
-                    push_limit=None,
-                    ignore_errors=False):
+    def __import_tree(self, id, tree, push_limit=None, ignore_errors=False):
 
-        """ Import data from an element tree to this resource """
+        """ Import data from an element tree to this resource
+
+            @raise IOError: at insufficient permissions
+        """
 
         return self.__manager.import_tree(self, id, tree,
                                           push_limit=push_limit,
@@ -1350,10 +1363,17 @@ class S3Resource(object):
             @param args: arguments to pass to the XSLT template
 
             @raise SyntaxError: in case of a parser or transformation error
+            @raise IOError: at insufficient permissions
 
         """
 
         xml = self.__manager.xml
+        permit = self.__permit
+
+        authorised = permit("create", self.table) and \
+                     permit("update", self.table)
+        if not authorised:
+            raise IOError("Insufficient permissions")
 
         if isinstance(source, etree._ElementTree):
             tree = source
@@ -1365,15 +1385,15 @@ class S3Resource(object):
                 tree = xml.transform(tree, template, **args)
                 if not tree:
                     raise SyntaxError(xml.error)
-            return self.import_tree(id, tree, push_limit=None,
-                                    ignore_errors=ignore_errors)
+            return self.__import_tree(id, tree,
+                                      push_limit=None,
+                                      ignore_errors=ignore_errors)
         else:
-            raise SyntaxError("Invalid XML source.")
+            raise SyntaxError("Invalid XML source")
 
 
     # -------------------------------------------------------------------------
     def import_json(self, source, id=None, template=None, ignore_errors=False, **args):
-
 
         """ Import data from a JSON source to this resource
 
@@ -1384,10 +1404,17 @@ class S3Resource(object):
             @param args: arguments to pass to the XSLT template
 
             @raise SyntaxError: in case of a parser or transformation error
+            @raise IOError: at insufficient permissions
 
         """
 
         xml = self.__manager.xml
+        permit = self.__permit
+
+        authorised = permit("create", self.table) and \
+                     permit("update", self.table)
+        if not authorised:
+            raise IOError("Insufficient permissions")
 
         if isinstance(source, etree._ElementTree):
             tree = source
@@ -1403,8 +1430,9 @@ class S3Resource(object):
                 tree = xml.transform(tree, template, **args)
                 if not tree:
                     raise SyntaxError(xml.error)
-            return self.import_tree(id, tree, push_limit=None,
-                                    ignore_errors=ignore_errors)
+            return self.__import_tree(id, tree,
+                                      push_limit=None,
+                                      ignore_errors=ignore_errors)
         else:
             raise SyntaxError("Invalid JSON source.")
 

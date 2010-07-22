@@ -52,8 +52,7 @@ S3XRC_BAD_RESOURCE = "Invalid Resource"
 S3XRC_PARSE_ERROR = "XML Parse Error"
 S3XRC_TRANSFORMATION_ERROR = "XSLT Transformation Error"
 S3XRC_BAD_SOURCE = "Invalid XML Source"
-S3XRC_BAD_RECORD = "Record Not Found"
-S3XRC_NO_MATCH = "No Matching Element"
+S3XRC_NO_MATCH = "No matching element found in the data source"
 S3XRC_VALIDATION_ERROR = "Validation Error"
 S3XRC_DATA_IMPORT_ERROR = "Data Import Error"
 S3XRC_NOT_PERMITTED = "Operation Not Permitted"
@@ -91,7 +90,7 @@ class S3Resource(object):
             @param id: record ID (or list of record IDs)
             @param uid: record UID (or list of record UIDs)
             @param filter: filter query (DAL resources only)
-            @param get_vars: dictionary of URL query variables
+            @param url_vars: dictionary of URL query variables
             @param parent: the parent resource
             @param components: component name (or list of component names)
             @param storage: URL of the data store, None for DAL
@@ -200,7 +199,13 @@ class S3Resource(object):
     # -------------------------------------------------------------------------
     def __attach(self, select=None):
 
-        """ Attach components to this resource """
+        """ Attach components to this resource
+
+            @param select: name or list of names of components to attach
+                if select is None (default), then all declared components
+                of this resource will be attached, to attach none of the
+                components, pass an empty list instead
+        """
 
         if select and not isinstance(select, (list, tuple)):
             select = [select]
@@ -257,6 +262,8 @@ class S3Resource(object):
         # Initialize
         self.clear()
         self.clear_query()
+
+        xml = self.__manager.xml
 
         if url_vars:
             url_query = self.__manager.url_query(self, url_vars)
@@ -369,6 +376,9 @@ class S3Resource(object):
                         if field in table.fields:
                             for op in url_query[rname][field]:
                                 values = url_query[rname][field][op]
+                                if field == xml.UID and xml.domain_mapping:
+                                    uids = [xml.import_uid(v) for v in values]
+                                    values = uids
                                 if op == "eq":
                                     if len(values) == 1:
                                         query = (table[field] == values[0])
@@ -753,22 +763,18 @@ class S3Resource(object):
         postprocess = None
 
         # Enforce primary record ID
-        if not r.id and (r.component or r.method == "read") and \
-           not r.method in ("fields", "options") and \
-           not "select" in r.request.vars:
-            if r.representation == "html":
+        if not r.id and not r.custom_action and r.representation == "html":
+            if r.component or r.method in ("read", "update"):
                 model = self.__manager.model
                 search_simple = model.get_method(self.prefix, self.name,
-                                                 method="search_simple")
+                                                method="search_simple")
                 if search_simple:
                     self.__dbg("no record ID - redirecting to search_simple")
                     redirect(URL(r=r.request, f=self.name, args="search_simple",
-                                 vars={"_next": r.same()}))
+                                vars={"_next": r.same()}))
                 else:
                     r.session.error = self.BADRECORD
                     redirect(URL(r=r.request, c=self.prefix, f=self.name))
-            else:
-                raise HTTP(404, body=self.BADRECORD)
 
         # Pre-process
         if hooks is not None:
@@ -880,6 +886,7 @@ class S3Resource(object):
 
         elif method in ("create", "update"):
             authorised = permit(method, tablename)
+            # TODO: Add user confirmation here:
             if r.representation in xml_formats or \
                r.representation in json_formats:
                 method = "import_tree"
@@ -2867,9 +2874,7 @@ class S3ResourceController(object):
                                                url=resource_url,
                                                download_url=self.download_url,
                                                marker=marker)
-
                     self.xml.add_references(element, rmap)
-
                     self.xml.gis_encode(rmap,
                                         download_url=self.download_url,
                                         marker=marker)
@@ -2893,21 +2898,16 @@ class S3ResourceController(object):
 
     # -------------------------------------------------------------------------
     def import_tree(self, resource, id, tree,
-                    skip_resource=False,
-                    push_limit=None,
-                    ignore_errors=False):
+                    push_limit=None, ignore_errors=False):
 
-        """ Imports data from an element tree
+        """ Imports data from an element tree to a resource
 
-            @param prefix: the prefix of the resource name (=module name)
-            @param name: the resource name (=without prefix)
-            @param id: the target record ID
+            @param resource: the resource
+            @param id: record ID or list of record IDs to update
             @param tree: the element tree
-            @param joins: list of component joins to include
-            @param skip_resource: skip the main resource record (currently unused)
-            @param permit: permit hook (function to check table permissions)
-            @param audit: audit hook (function to audit table access)
-            @param ignore_errors: continue at errors (skip invalid elements)
+            @param push_limit: maximum allowed number of imports
+                (None for unlimited)
+            @param ignore_errors: continue at errors (=skip invalid elements)
 
         """
 
@@ -2920,33 +2920,31 @@ class S3ResourceController(object):
         table = resource.table
 
         elements = self.xml.select_resources(tree, tablename)
-        if not elements: # nothing to import
+        if not elements:
             return True
 
-        if id:
-            try:
-                db_record = resource[id]
-            except:
-                self.error = S3XRC_BAD_RECORD
-                return False
-        else:
-            db_record = None
-
-        if id and len(elements) > 1:
-            if self.xml.UID in table:
-                uid = db_record[self.xml.UID]
-                for element in elements:
-                    xuid = element.get(self.xml.UID)
-                    if self.xml.domain_mapping:
-                        xuid = self.xml.import_uid(xuid)
-                    if xuid == uid:
-                        elements = [element]
-                        break
-            if len(elements) > 1:
+        # if a record ID is given, import only matching elements
+        if id and self.xml.UID in table:
+            if not isinstance(id, (tuple, list)):
+                query = (table.id == id)
+            else:
+                query = (table.id.belongs(id))
+            set = self.db(query).select(table[self.xml.UID])
+            uids = [row[self.xml.UID] for row in set]
+            matches = []
+            for element in elements:
+                element_uid = element.get(self.xml.UID, None)
+                if not element_uid:
+                    continue
+                if self.xml.domain_mapping:
+                    element_uid = self.xml.import_uid(element_uid)
+                if element_uid in uids:
+                    matches.append(element)
+            if not matches:
                 self.error = S3XRC_NO_MATCH
                 return False
-
-        joins = resource.components or []
+            else:
+                elements = matches
 
         if push_limit is not None and len(elements) > push_limit:
             self.error = S3XRC_NOT_PERMITTED
@@ -2960,75 +2958,70 @@ class S3ResourceController(object):
         for i in xrange(0, len(elements)):
             element = elements[i]
             vectors = self.__vectorize(tablename, element,
-                                     id=id,
-                                     validate=self.validate,
-                                     permit=permit,
-                                     audit=audit,
-                                     sync=self.sync_resolve,
-                                     log=self.sync_log,
-                                     tree=tree,
-                                     directory=directory,
-                                     vmap=vmap,
-                                     lookahead=True)
+                                       id=id,
+                                       validate=self.validate,
+                                       permit=permit,
+                                       audit=audit,
+                                       sync=self.sync_resolve,
+                                       log=self.sync_log,
+                                       tree=tree,
+                                       directory=directory,
+                                       vmap=vmap,
+                                       lookahead=True)
 
             if vectors:
                 vector = vectors[-1]
             else:
                 continue
 
-            # Mark as committed if requested
-            # TODO: do not create new components if skip_resource
-            #if skip_resource:
-                #vector.committed = True
-
-            joins = resource.components
-
             # Import components
-            for c in resource.components.values():
+            for item in resource.components.values():
 
-                component = c.component
-                pkey = c.pkey
-                fkey = c.fkey
-                celements = self.xml.select_resources(element,
-                                                      component.tablename)
+                # Get component details
+                c = item.component
+                pkey = item.pkey
+                fkey = item.fkey
+                ctablename = c.tablename
+                ctable = c.table
+
+                # Find elements for the component
+                celements = self.xml.select_resources(element, ctablename)
 
                 if celements:
                     c_id = c_uid = None
-                    if not component.attr.multiple:
+
+                    # Get the original record ID/UID, if not multiple
+                    if not c.attr.multiple:
                         if vector.id:
-                            p = self.db(table.id == vector.id).select(
-                                table[pkey], limitby=(0,1))
-                            if p:
-                                p = p[0][pkey]
-                                fields = [component.table.id]
-                                if self.xml.UID in component.table:
-                                    fields.append(
-                                        component.table[self.xml.UID])
-                                query = (component.table[fkey] == p)
-                                orig = self.db(query).select(limitby=(0,1),
-                                                             *fields)
-                                if orig:
-                                    c_id = orig[0].id
-                                    if self.xml.UID in component.table:
-                                        c_uid = orig[0][self.UID]
+                            query = (table.id == vector.id) & (table[pkey] == ctable[pkey])
+                            if self.xml.UID in ctable:
+                                fields = (ctable.id, ctable[self.xml.UID])
+                            else:
+                                fields = (ctable.id,)
+                            orig = self.db(query).select(limitby=(0,1), *fields).first()
+                            if orig:
+                                c_id = orig.id
+                                c_uid = orig.get(self.xml.UID, None)
 
                         celements = [celements[0]]
                         if c_uid:
                             celements[0].set(self.xml.UID, c_uid)
 
+                    # Generate vectors for the component elements
                     for k in xrange(0, len(celements)):
                         celement = celements[k]
-                        cvectors = self.__vectorize(component.tablename,
-                                                  celement,
-                                                  validate=self.validate,
-                                                  permit=permit,
-                                                  audit=audit,
-                                                  sync=self.sync_resolve,
-                                                  log=self.sync_log,
-                                                  tree=tree,
-                                                  directory=directory,
-                                                  vmap=vmap,
-                                                  lookahead=True)
+                        cvectors = self.__vectorize(ctablename,
+                                                    celement,
+                                                    validate=self.validate,
+                                                    permit=permit,
+                                                    audit=audit,
+                                                    sync=self.sync_resolve,
+                                                    log=self.sync_log,
+                                                    tree=tree,
+                                                    directory=directory,
+                                                    vmap=vmap,
+                                                    lookahead=True)
+
                         if cvectors:
                             cvector = cvectors.pop()
                         if cvectors:
@@ -3041,16 +3034,22 @@ class S3ResourceController(object):
             if self.error is None:
                 imports.extend(vectors)
 
+        # Commit all vectors
         if self.error is None or ignore_errors:
             for i in xrange(0, len(imports)):
                 vector = imports[i]
                 success = vector.commit()
-                if not success and not vector.permitted:
-                    self.error = S3XRC_NOT_PERMITTED
-                    continue
-                elif not success:
-                    self.error = S3XRC_DATA_IMPORT_ERROR
-                    continue
+                if not success:
+                    if not vector.permitted:
+                        self.error = S3XRC_NOT_PERMITTED
+                    else:
+                        self.error = S3XRC_DATA_IMPORT_ERROR
+                    if vector.element:
+                        vector.element.set(self.ATTRIBUTE.error, self.error)
+                    if ignore_errors:
+                        continue
+                    else:
+                        return False
 
         return ignore_errors or not self.error
 
@@ -3576,7 +3575,8 @@ class S3XML(object):
 
         """ Parse an XML source into an element tree
 
-            @param source: the XML source
+            @param source: the XML source,
+                can be a file-like object, a filename or a URL
 
         """
 

@@ -138,6 +138,7 @@ class S3Resource(object):
                                  export_tree=self.__get_tree,
                                  import_tree=self.__put_tree)
 
+        #: maximum number of records accepted in PUT/POST
         self.push_limit = 1
 
     # -------------------------------------------------------------------------
@@ -1210,6 +1211,7 @@ class S3Resource(object):
             ignore_errors = False
 
         success = self.__import_tree(id, tree,
+                                     push_limit=self.push_limit,
                                      ignore_errors=ignore_errors)
 
         if success:
@@ -1337,7 +1339,7 @@ class S3Resource(object):
 
 
     # -------------------------------------------------------------------------
-    def __import_tree(self, id, tree, ignore_errors=False):
+    def __import_tree(self, id, tree, push_limit=None, ignore_errors=False):
 
         """ Import data from an element tree to this resource
 
@@ -1345,7 +1347,7 @@ class S3Resource(object):
         """
 
         return self.__manager.import_tree(self, id, tree,
-                                          push_limit=self.push_limit,
+                                          push_limit=push_limit,
                                           ignore_errors=ignore_errors)
 
 
@@ -1383,7 +1385,9 @@ class S3Resource(object):
                 tree = xml.transform(tree, template, **args)
                 if not tree:
                     raise SyntaxError(xml.error)
-            return self.__import_tree(id, tree, ignore_errors=ignore_errors)
+            return self.__import_tree(id, tree,
+                                      push_limit=None,
+                                      ignore_errors=ignore_errors)
         else:
             raise SyntaxError("Invalid XML source")
 
@@ -1426,7 +1430,9 @@ class S3Resource(object):
                 tree = xml.transform(tree, template, **args)
                 if not tree:
                     raise SyntaxError(xml.error)
-            return self.__import_tree(id, tree, ignore_errors=ignore_errors)
+            return self.__import_tree(id, tree,
+                                      push_limit=None,
+                                      ignore_errors=ignore_errors)
         else:
             raise SyntaxError("Invalid JSON source.")
 

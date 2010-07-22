@@ -1,10 +1,10 @@
 # -*- coding: utf-8 -*-
 
-"""
-    S3 Person Registry
+""" S3 Person Registry
 
     @author: nursix
     @see: U{http://eden.sahanafoundation.org/wiki/BluePrintVITA}
+
 """
 
 module = "pr"

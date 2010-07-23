@@ -40,7 +40,7 @@ marker_id = db.Table(None, "marker_id",
                 requires = IS_NULL_OR(IS_ONE_OF(db, "gis_marker.id", "%(name)s", zero=T("Use default from feature class"))),
                 represent = lambda id: (id and [DIV(IMG(_src=URL(r=request, c="default", f="download", args=db(db.gis_marker.id == id).select(db.gis_marker.image, limitby=(0, 1)).first().image), _height=40))] or [""])[0],
                 label = T("Marker"),
-                comment = DIV(A(ADD_MARKER, _class="colorbox", _href=URL(r=request, c="gis", f="marker", args="create", vars=dict(format="popup")), _target="top", _title=ADD_MARKER), 
+                comment = DIV(A(ADD_MARKER, _class="colorbox", _href=URL(r=request, c="gis", f="marker", args="create", vars=dict(format="popup")), _target="top", _title=ADD_MARKER),
                           DIV( _class="tooltip", _title=MARKER + "|" + Tstr("Defines the icon used for display of features on interactive map & KML exports. A Marker assigned to an individual Location is set if there is a need to override the Marker assigned to the Feature Class. If neither are defined, then the Default Marker is used."))),
                 ondelete = "RESTRICT"
                 ))
@@ -109,7 +109,7 @@ opt_gis_layout = db.Table(None, "opt_gis_layout",
 resource = "config"
 tablename = "%s_%s" % (module, resource)
 table = db.define_table(tablename, timestamp, uuidstamp,
-                pr_pe_id,                           # Personal Entity Reference
+                pe_id,                           # Personal Entity Reference
                 Field("lat", "double"),
                 Field("lon", "double"),
                 Field("zoom", "integer"),
@@ -129,9 +129,8 @@ table = db.define_table(tablename, timestamp, uuidstamp,
                 migrate=migrate)
 
 table.uuid.requires = IS_NOT_IN_DB(db, "gis_config.uuid")
-table.pr_pe_id.requires = IS_NULL_OR(IS_ONE_OF(db, "pr_pentity.id",
-                                    shn_pentity_represent))
-table.pr_pe_id.readable = table.pr_pe_id.writable = False
+table.pe_id.requires = IS_NULL_OR(IS_ONE_OF(db, "pr_pentity.id", shn_pentity_represent))
+table.pe_id.readable = table.pe_id.writable = False
 table.lat.requires = IS_LAT()
 table.lon.requires = IS_LON()
 table.zoom.requires = IS_INT_IN_RANGE(0, 19)
@@ -349,7 +348,7 @@ feature_class_id = db.Table(None, "feature_class_id",
                 requires = IS_NULL_OR(IS_ONE_OF(db, "gis_feature_class.id", "%(name)s")),
                 represent = lambda id: (id and [db(db.gis_feature_class.id == id).select(db.gis_feature_class.name, limitby=(0, 1)).first().name] or ["None"])[0],
                 label = T("Feature Class"),
-                comment = DIV(A(ADD_FEATURE_CLASS, _class="colorbox", _href=URL(r=request, c="gis", f="feature_class", args="create", vars=dict(format="popup")), _target="top", _title=ADD_FEATURE_CLASS), 
+                comment = DIV(A(ADD_FEATURE_CLASS, _class="colorbox", _href=URL(r=request, c="gis", f="feature_class", args="create", vars=dict(format="popup")), _target="top", _title=ADD_FEATURE_CLASS),
                           DIV( _class="tooltip", _title=Tstr("Feature Class") + "|" + Tstr("Defines the marker used for display & the attributes visible in the popup."))),
                 ondelete = "RESTRICT"
                 ))
@@ -542,7 +541,7 @@ table = db.define_table(tablename, timestamp, uuidstamp, authorstamp, deletion_s
                 Field("resource"),              # Used to build a simple query
                 Field("filter_field"),          # Used to build a simple query
                 Field("filter_value"),          # Used to build a simple query
-                Field("query", notnull=True),   
+                Field("query", notnull=True),
                 marker_id,                      # Optional Marker to over-ride the values from the Feature Classes
                 shn_comments_field,
                 migrate=migrate)

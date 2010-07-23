@@ -2,7 +2,7 @@
 
 """
     Sahana Eden Tools Module
-    
+
     @requires: U{B{I{gluon}} <http://web2py.com>}
 
     @author: Fran Boon <francisboon@gmail.com>
@@ -72,16 +72,16 @@ class AuthS3(Auth):
         shn_link_to_person()
     - language
     """
-    
+
     def __init__(self, environment, deployment_settings, db=None):
-    
+
         "Initialise parent class & make any necessary modifications"
-        
+
         Auth.__init__(self, environment, db)
-        
+
         self.deployment_settings = deployment_settings
         self.session = self.environment.session
-        
+
         self.settings.lock_keys = False
         self.settings.username_field = False
         self.settings.lock_keys = True
@@ -604,7 +604,7 @@ class AuthS3(Auth):
         #deployment_settings = self.deployment_settings
         db = self.db
         session = self.session
-        
+
         try:
             role = int(role)
         except:
@@ -624,7 +624,7 @@ class AuthS3(Auth):
         Designed to be called from the RESTlike controller
         @note: This is planned to be rewritten: http://eden.sahanafoundation.org/wiki/BluePrintAuthorization
         """
-        
+
         session = self.session
 
         if session.s3.security_policy == 1:
@@ -716,7 +716,7 @@ class AuthS3(Auth):
         """
 
         def decorator(action):
-            
+
             def f(*a, **b):
                 if not self.basic() and not self.is_logged_in():
                     request = self.environment.request
@@ -775,39 +775,37 @@ class AuthS3(Auth):
 
                 query = (ptable.first_name == first_name) & \
                         (ptable.last_name == last_name) & \
-                        (ctable.pr_pe_id == ptable.pr_pe_id) & \
-                        (ctable.opt_pr_contact_method == 1) & \
+                        (ctable.pe_id == ptable.pe_id) & \
+                        (ctable.contact_method == 1) & \
                         (ctable.value.lower() == email)
-                person = db(query).select(ptable.uuid)
-                if person and len(person) == 1:
-                    person = person.first()
+                person = db(query).select(ptable.uuid).first()
+                if person:
                     if not db(utable.person_uuid == person.uuid).count():
                         db(utable.id == user.id).update(person_uuid=person.uuid)
                         if self.user and self.user.id == user.id:
                             self.user.person_uuid = person.uuid
                         continue
-                    #else:
-                        #email = None
 
-                pr_pe_id = etable.insert(opt_pr_entity_type=1)
-                if pr_pe_id:
+                pe_id = etable.insert(type="pr_person")
+                if pe_id:
                     new_id = ptable.insert(
-                        pr_pe_id = pr_pe_id,
+                        pe_id = pe_id,
                         first_name = user.first_name,
                         last_name = user.last_name)
                     if new_id:
                         person_uuid = ptable[new_id].uuid
                         db(utable.id == user.id).update(person_uuid=person_uuid)
+                        db(etable.id == pe_id).update(uuid=person_uuid)
                         # The following adds the email to pr_pe_contact
                         ctable.insert(
-                                pr_pe_id = pr_pe_id,
-                                opt_pr_contact_method = 1,
+                                pe_id = pe_id,
+                                contact_method = 1,
                                 priority = 1,
                                 value = email)
                         # The following adds the mobile to pr_pe_contact
                         ctable.insert(
-                                pr_pe_id = pr_pe_id,
-                                opt_pr_contact_method = 2,
+                                pe_id = pe_id,
+                                contact_method = 2,
                                 priority = 2,
                                 value = self.environment.request.vars["mobile"])
 
@@ -821,7 +819,7 @@ class CrudS3(Crud):
     Extended version of Crud from gluon/tools.py
     - select() uses SQLTABLE2 (to allow different linkto construction)
     """
-    
+
     def __init__(self, environment, db=None):
         "Initialise parent class & make any necessary modifications"
         Crud.__init__(self, environment, db)

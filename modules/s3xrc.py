@@ -4,9 +4,12 @@
     S3XRC Resource Framework
 
     @version: 2.0
+    @see: U{B{I{S3XRC-2}} <http://eden.sahanafoundation.org/wiki/S3XRC-2>} on Eden wiki
+
     @requires: U{B{I{lxml}} <http://codespeak.net/lxml>}
 
     @author: nursix
+    @contact: dominic AT nursix DOT org
     @copyright: 2009-2010 (c) Sahana Software Foundation
     @license: MIT
 
@@ -62,7 +65,7 @@ S3XRC_NOT_IMPLEMENTED = "Not Implemented"
 # *****************************************************************************
 class S3Resource(object):
 
-    """ API for S3Resources """
+    """ API for resources """
 
     # Error messages
     BADRECORD = "Record not found"
@@ -95,6 +98,7 @@ class S3Resource(object):
             @param components: component name (or list of component names)
             @param storage: URL of the data store, None for DAL
             @param debug: whether to write debug messages to stderr or not
+            @type debug: bool
 
         """
 
@@ -152,10 +156,12 @@ class S3Resource(object):
 
     def set_handler(self, method, handler):
 
-        """ Set REST method handler for this resource
+        """ Set method handler for this resource
 
             @param method: the method name
             @param handler: the handler function
+            @type handler: handler(S3Request, **attr)
+
         """
 
         self.__handler[method] = handler
@@ -164,10 +170,11 @@ class S3Resource(object):
     # -------------------------------------------------------------------------
     def get_handler(self, method):
 
-        """ Get REST method handler for this resource
+        """ Get method handler for this resource
 
             @param method: the method name
             @returns: the handler function
+
         """
 
         return self.__handler.get(method, None)
@@ -180,6 +187,7 @@ class S3Resource(object):
         """ Bind this resource to model and data store
 
             @param storage: the URL of the data store, None for DAL
+            @type storage: str
 
         """
 
@@ -201,10 +209,11 @@ class S3Resource(object):
 
         """ Attach components to this resource
 
-            @param select: name or list of names of components to attach
-                if select is None (default), then all declared components
+            @param select: name or list of names of components to attach.
+                If select is None (default), then all declared components
                 of this resource will be attached, to attach none of the
-                components, pass an empty list instead
+                components, pass an empty list instead.
+
         """
 
         if select and not isinstance(select, (list, tuple)):
@@ -254,8 +263,8 @@ class S3Resource(object):
 
             @param id: record ID or list of record IDs to include
             @param uid: record UID or list of record UIDs to include
-            @filter: filtering query (DAL only)
-            @url_vars: dict of URL query variables
+            @param filter: filtering query (DAL only)
+            @param url_vars: dict of URL query variables
 
         """
 
@@ -476,6 +485,7 @@ class S3Resource(object):
 
         """ Loads the IDs of all records matching the master query, or,
             if no query is given, all IDs in the primary table
+
         """
 
         if self.__query is None:
@@ -502,6 +512,7 @@ class S3Resource(object):
 
         """ Returns all IDs of the current set, or, if no set is loaded,
             all IDs of the resource
+
         """
 
         if not self.__ids:
@@ -520,6 +531,7 @@ class S3Resource(object):
 
         """ Returns all UIDs of the current set, or, if no set is loaded,
             all UIDs of the resource
+
         """
 
         if self.__manager.UID not in self.table.fields:
@@ -541,6 +553,10 @@ class S3Resource(object):
 
         """ Loads a set of records of the current resource, which can be
             either a slice (for pagination) or all records
+
+            @param start: the index of the first record to load
+            @param limit: the maximum number of records to load
+
         """
 
         if self.__set is not None:
@@ -581,7 +597,10 @@ class S3Resource(object):
     # -------------------------------------------------------------------------
     def save(self):
 
-        """ Write the current set to the data store """
+        """ Write the current set to the data store (not implemented yet)
+
+            @todo 2.1: implement this.
+        """
 
         # Not implemented yet
         raise NotImplementedError
@@ -630,7 +649,11 @@ class S3Resource(object):
     # -------------------------------------------------------------------------
     def __getitem__(self, key):
 
-        """ Retrieves a record from the current set by its ID """
+        """ Retrieves a record from the current set by its ID
+
+            @param key: the record ID
+
+        """
 
         if self.__set is None:
             self.load()
@@ -660,7 +683,13 @@ class S3Resource(object):
     # -------------------------------------------------------------------------
     def __call__(self, key, component=None):
 
-        """ Retrieves component records of a record in the current set """
+        """ Retrieves component records of a record in the current set
+
+            @param key: the record ID
+            @param component: the name of the component
+                (None to get the primary record)
+
+        """
 
         if not component:
             return self[key]
@@ -731,9 +760,13 @@ class S3Resource(object):
 
 
     # -------------------------------------------------------------------------
-    def url(self, request=None):
+    def url(self):
 
-        """ URL of this resource """
+        """ URL of this resource (not implemented yet)
+
+            @todo 2.1: implement this.
+
+        """
 
         # Not implemented yet
         raise NotImplementedError
@@ -743,9 +776,10 @@ class S3Resource(object):
 
     def execute_request(self, r, **attr):
 
-        """ Execute a S3Request on this resource
+        """ Execute a request on this resource
 
-            @param r: the S3Request to execute
+            @param r: the request to execute
+            @type r: S3Request
             @param attr: attributes to pass to method handlers
 
         """
@@ -1303,14 +1337,37 @@ class S3Resource(object):
                                           push_limit=push_limit,
                                           ignore_errors=ignore_errors)
 
-
+    # ------------------------------------------------------------------------- 
+    
     # -------------------------------------------------------------------------
-    def import_xml(self):
+    def import_xml(self, source, id=None, template=None, ignore_errors=False, **args):
 
-        """ Import data from an XML source to this resource """
+        """ Import data from an XML source to this resource
 
-        # Not implemented yet
-        raise NotImplementedError
+            @param source: the XML source (or ElementTree)
+            @param id: the ID or list of IDs of records to update (None for all)
+            @param template: the XSLT template
+            @param ignore_errors: do not stop on errors (skip invalid elements)
+            @param args: arguments to pass to the XSLT template
+
+            @raise SyntaxError: in case of a parser or transformation error
+
+        """
+
+        xml = self.__manager.xml
+	if isinstance(source , etree._ElementTree): #source was tree
+            tree = source
+	else:
+	    tree = xml.parse(source)
+        if tree:
+            if template is not None:
+                tree = xml.transform(tree, template, **args)
+            if not tree:
+                raise SyntaxError(xml.error)
+            return self.import_tree(id, tree, push_limit=None,
+                                    ignore_errors=ignore_errors)
+        else:
+            raise SyntaxError("Invalid XML source.")
 
 
     # -------------------------------------------------------------------------
@@ -2472,7 +2529,7 @@ class S3ResourceController(object):
             @param session: the session store
             @param prefix: the prefix of the resource name (=module name)
             @param name: the name of the resource (=without prefix)
-            @id: the ID to store
+            @param id: the ID to store
 
         """
 
@@ -2926,7 +2983,10 @@ class S3ResourceController(object):
 
         elements = self.xml.select_resources(tree, tablename)
         if not elements:
-            return True
+            f = file("/home/shikhar/Desktop/abc.txt","wb")
+	    f.write(repr(elements))
+	    f.close()
+	    return True
 
         # if a record ID is given, import only matching elements
         if id and self.xml.UID in table:
@@ -4261,6 +4321,8 @@ class S3XML(object):
 
     def get_field_options(self, table, fieldname):
 
+        """ Get options of a field as <select> """
+
         select = etree.Element(self.TAG.select)
 
         if fieldname in table.fields:
@@ -4294,6 +4356,8 @@ class S3XML(object):
     # -------------------------------------------------------------------------
     def get_options(self, prefix, name, fields=None):
 
+        """ Get options of option fields in a table as <select>s """
+
         db = self.db
         tablename = "%s_%s" % (prefix, name)
         table = db.get(tablename, None)
@@ -4321,6 +4385,8 @@ class S3XML(object):
     # -------------------------------------------------------------------------
     def get_fields(self, prefix, name):
 
+        """ Get fields in a table as <fields> element """
+
         db = self.db
         tablename = "%s_%s" % (prefix, name)
         table = db.get(tablename, None)
@@ -4330,7 +4396,7 @@ class S3XML(object):
         if table:
             fields.set(self.ATTRIBUTE.resource, tablename)
             #name_nice = self.modules[prefix]['name_nice']
-	    #fields.set(self.ATTRIBUTE.name_nice, self.xml_encode(name_nice))
+	    #fields.set(self.ATTRIBUTE.name_nice, str(self.xml_encode(name_nice)))
             for f in table.fields:
                 field = etree.Element(self.TAG.field)
                 field.set(self.ATTRIBUTE.name, self.xml_encode(f))
@@ -4355,7 +4421,9 @@ class S3XML(object):
         """ Converts a data field from JSON into an element
 
             @param key: key (field name)
-            @param name: value for the field
+            @param value: value for the field
+            @param native: use native mode
+            @type native: bool
 
         """
 

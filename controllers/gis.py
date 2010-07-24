@@ -364,7 +364,6 @@ def location():
     table = db[tablename]
     
     # Model options
-    table.name.comment = SPAN("*", _class="req")
     table.level.comment = DIV( _class="tooltip", _title=T("Level|Is the location is a geographic area, then state at what level here."))
     table.code.comment = DIV( _class="tooltip", _title=T("Code|For a country this would be the ISO2 code, for a Town, it would be the Airport Locode."))
     table.parent.comment = DIV(A(ADD_LOCATION,

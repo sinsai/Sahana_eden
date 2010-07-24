@@ -76,13 +76,34 @@ def person():
 
     response.s3.pagination = True
 
-    output = shn_rest_controller("pr", resource, main="first_name", extra="last_name",
-        rheader=shn_pr_rheader,
-        sticky=True,
-        rss=dict(
-            title=shn_pr_person_represent,
-            description="ID Label: %(pr_pe_label)s\n%(comment)s"
-        ))
+    def person_postp(jr, output):
+        if jr.representation in ("html", "popup"):
+            if not jr.component:
+                label = READ
+            else:
+                label = UPDATE
+            linkto = shn_linkto(jr, sticky=True)("[id]")
+            response.s3.actions = [
+                dict(label=str(label), _class="action-btn", url=linkto)
+            ]
+        return output
+    response.s3.postp = person_postp
+
+    output = shn_rest_controller("pr", resource,
+                main="first_name",
+                extra="last_name",
+                rheader=lambda jr: shn_pr_rheader(jr,
+                    tabs = [(T("Basic Details"), None),
+                            (T("Volunteer Status"), "volunteer"),
+                            (T("Resources"), "resource"),
+                            (T("Images"), "image"),
+                            (T("Identity"), "identity"),
+                            (T("Address"), "address"),
+                            (T("Contact Data"), "pe_contact"),
+                            (T("Memberships"), "group_membership"),
+                            (T("Presence Log"), "presence"),
+                            ]),
+                sticky=True)
 
     shn_menu()
     return output

@@ -80,75 +80,74 @@ deployment_settings.modules = Storage(
             description = "Site Administration",
             access = "|1|",     # Only Administrators can see this module in the default menu & access the controller
             module_type = 0,     # This item is handled separately in the menu
-            resources = [
-            ]
+            resources = Storage()
             
         ),
     gis = Storage(
             name_nice = "Map",
             description = "Situation Awareness & Geospatial Analysis",
             module_type = 1,     # 1st item in the menu
-            resources = [
-                 'gis_setting',
-	         'gis_marker',
-		 'gis_projection',
-		 'gis_symbology',
-		 'gis_config',
-		 'gis_feature_class',
-		 'gis_symbology_to_feature_class',
-		 'gis_location',
-		 'gis_landmark',
-		 'gis_feature_layer',
-		 'gis_feature_group',
-		 'gis_feature_class_to_feature_group',
-		 'gis_apikey',
-		 'gis_track',
-		 'gis_layer_openstreetmap',
-		 'gis_layer_georss',
-		 'gis_layer_google',
-		 'gis_layer_gpx',
-		 'gis_layer_js',
-		 'gis_layer_kml',
-		 'gis_layer_mgrs',
-		 'gis_layer_tms',
-		 'gis_layer_wms',
-		 'gis_layer_xyz',
-		 'gis_layer_yahoo',
-		 ]
+            resources = Storage(
+                  gis_setting = {'importer' : False},
+	          gis_marker = {'importer' : False},
+		  gis_projection = {'importer' : True},
+		  gis_symbology = {'importer' : False},
+		  gis_config = {'importer' : False},
+		  gis_feature_class = {'importer' : False},
+		  gis_symbology_to_feature_class = {'importer' : False},
+		  gis_location = {'importer' : True},
+		  gis_landmark = {'importer' : False},
+		  gis_feature_layer = {'importer' : False},
+		  gis_feature_group = {'importer' : False},
+		  gis_feature_class_to_feature_group = {'importer' : False},
+		  gis_apikey = {'importer' : False},
+		  gis_track = {'importer' : False},
+		  gis_layer_openstreetmap = {'importer' : False},
+		  gis_layer_georss = {'importer' : False},
+		  gis_layer_google = {'importer' : False},
+		  gis_layer_gpx = {'importer' : False},
+		  gis_layer_js = {'importer' : False},
+		  gis_layer_kml = {'importer' : False},
+		  gis_layer_mgrs = {'importer' : False},
+		  gis_layer_tms = {'importer' : False},
+		  gis_layer_wms = {'importer' : False},
+		  gis_layer_xyz = {'importer' : False},
+		  gis_layer_yahoo = {'importer' : False}
+		 )
         ),
     mpr = Storage(
             name_nice = "Missing Persons",
             description = "Helps to report and search for Missing Persons",
             module_type = 2,
-            resources = [
-             'mpr_setting',
- 	     'mpr_missing_report'
- 	     ]
+            resources = Storage(
+              mpr_setting = {'importer' : False},
+ 	      mpr_missing_report = {'importer' : False}
+ 	     )
         ),
     rms = Storage(
             name_nice = "Requests",
             description = "Tracks requests for aid and matches them against donors who have pledged aid",
             module_type = 3,
-            resources = [
-             'rms_setting',
- 	     'rms_req',
-	     'rms_pledge',
-	     'rms_req_detail'
-	     ]
+            resources = Storage(
+              rms_setting = {'importer' : False},
+  	      rms_req = {'importer' : True},
+	      rms_pledge = {'importer' : False},
+	      rms_req_detail = {'importer' : False}
+	     )
         ),
     hms = Storage(
             name_nice = "Hospitals",
             description = "Helps to monitor status of hospitals",
             module_type = 4,
             resources = Storage(
-             hms_setting={},
+             hms_setting={'importer' : False},
  	     hms_hospital = {'importer' : True},
- 	     hms_hcontact = {},
- 	     hms_hactivity = {},
-             hms_bed_capacity = {},
-	     hms_services = {},
-	     hms_himage = {},
-	     hms_resources = {},
+ 	     hms_hcontact = {'importer' : False},
+ 	     hms_hactivity = {'importer' : False},
+             hms_bed_capacity = {'importer' : False},
+	     hms_services = {'importer' : False},
+	     hms_himage = {'importer' : False},
+	     hms_resources = {'importer' : False},
 	     hms_hrequest = {'importer' : True},
 	     hms_hpledge = {'importer' : True}
 	     )
@@ -158,47 +157,47 @@ deployment_settings.modules = Storage(
             description = "Manage volunteers by capturing their skills, availability and allocation",
             module_type = 5,
             rsources = Storage(
-             vol_setting = {},
- 	     vol_volunteer = {},
- 	     vol_resource = {}
+             vol_setting = {'importer' : False},
+ 	     vol_volunteer = {'importer' : False},
+ 	     vol_resource = {'importer' : False}
  	     )
         ),
     msg = Storage(
             name_nice = "Messaging",
             description = "Sends & Receives Alerts via Email & SMS",
             module_type = 10,
-            resources = [
-             'msg_setting',
- 	     'msg_email_settings',
- 	     'msg_email_inbound_status',
- 	     'msg_xforms_store',
- 	     'msg_modem_settings',
- 	     'msg_gateway_settings',
- 	     'msg_log',
- 	     'msg_tag',
- 	     'msg_outbox',
- 	     'msg_read_status',
- 	     'msg_report'
- 	     ]
+            resources = Storage(
+              msg_setting = {'importer' : False},
+ 	      msg_email_settings = {'importer' : False},
+ 	      msg_email_inbound_status = {'importer' : False},
+ 	      msg_xforms_store = {'importer' : False},
+ 	      msg_modem_settings = {'importer' : False},
+ 	      msg_gateway_settings = {'importer' : False},
+ 	      msg_log = {'importer' : False},
+ 	      msg_tag = {'importer' : False},
+ 	      msg_outbox = {'importer' : False},
+ 	      msg_read_status = {'importer' : False},
+ 	      msg_report = {'importer' : False}
+ 	     )
         ),
     pr = Storage(
             name_nice = "Person Registry",
             description = "Central point to record details on People",
             module_type = 10,
             resources = Storage(
-                 pr_address = {},
- 		 pr_pe_contact = {},
-		 pr_image = {},
+                 pr_address = {'importer' : True},
+ 		 pr_pe_contact = {'importer' : True},
+		 pr_image = {'importer' : False},
 		 pr_presence = {'importer' : True},
-	 	 pr_pe_subscription = {},
- 		 pr_identity = {},
- 		 pr_pd_general  = {},
- 		 pr_pd_head  = {},
- 		 pr_pd_face = {},
- 		 pr_pd_teeth = {},
- 		 pr_pd_body = {},
- 		 pr_setting = {},
- 		 pr_pentity = {},
+	 	 pr_pe_subscription = {'importer' : False},
+ 		 pr_identity = {'importer' : True},
+ 		 pr_pd_general  = {'importer' : False},
+ 		 pr_pd_head  = {'importer' : False},
+ 		 pr_pd_face = {'importer' : False},
+ 		 pr_pd_teeth = {'importer' : False},
+ 		 pr_pd_body = {'importer' : False},
+ 		 pr_setting = {'importer' : False},
+ 		 pr_pentity = {'importer' : False},
  		 pr_person = {'importer' : True},
  		 pr_group = {'importer' : True},
         	 pr_group_membership = {'importer' : True},
@@ -210,12 +209,12 @@ deployment_settings.modules = Storage(
             description = "Disaster Victim Identification",
             module_type = 10,
             resources = Storage(
-              dvi_setting = {},
+              dvi_setting = {'importer' : False},
  	      dvi_recreq = {'importer' : True},
-  	      dvi_body = {},
- 	      dvi_checklist = {},
- 	      dvi_effects = {},
-	      dvi_identification = {}
+  	      dvi_body = {'importer' : False},
+ 	      dvi_checklist = {'importer' : False},
+ 	      dvi_effects = {'importer' : False},
+	      dvi_identification = {'importer' : False}
 	     )
         ),
     #dvr = Storage(
@@ -233,19 +232,19 @@ deployment_settings.modules = Storage(
             description = "Allows a Budget to be drawn up",
             module_type = 10,
             resources = Storage(
-              budget_setting = {},
+              budget_setting = {'importer' : False},
  	      budget_parameter = {'importer' : True},
  	      budget_item = {'importer' : True},
  	      budget_kit = {'importer' : True},
- 	      budget_kit_item = {},
+ 	      budget_kit_item = {'importer' : False},
  	      budget_bundle = {'importer' : True},
-	      budget_bundle_kit = {},
-	      budget_bundle_item = {},
-	      budget_staff = {},
- 	      budget_location = {},
- 	      budget_budget = {},
- 	      budget_budget_bundle = {},
- 	      budget_budget_staff = {}
+	      budget_bundle_kit = {'importer' : False},
+	      budget_bundle_item = {'importer' : False},
+	      budget_staff = {'importer' : False},
+ 	      budget_location = {'importer' : False},
+ 	      budget_budget = {'importer' : False},
+ 	      budget_budget_bundle = {'importer' : False},
+ 	      budget_budget_staff = {'importer' : False}
  	     )
         ),
     cr = Storage(
@@ -253,7 +252,7 @@ deployment_settings.modules = Storage(
             description = "Tracks the location, distibution, capacity and breakdown of victims in Shelters",
             module_type = 10,
             resource = Storage(
-              cr_setting = {},
+              cr_setting = {'importer' : False},
  	     cr_shelter = {'importer' : True }
  	    )
         ),
@@ -262,12 +261,12 @@ deployment_settings.modules = Storage(
             description = "Supports the decision making of large groups of Crisis Management Experts by helping the groups create ranked list.",
             module_type = 10,
             resources = Storage(
-              delphi_group = {},
-              delphi_user_to_group = {},
- 	      delphi_problem = {},
- 	      delphi_solution = {},
-     	      delphi_vote = {},
- 	      delphi_forum_post = {}
+              delphi_group = {'importer' : True},
+              delphi_user_to_group = {'importer' : True},
+ 	      delphi_problem = {'importer' : True},
+ 	      delphi_solution = {'importer' : False},
+     	      delphi_vote = {'importer' : False},
+ 	      delphi_forum_post = {'importer' : False}
  	     )
         ),
     doc = Storage(
@@ -275,9 +274,9 @@ deployment_settings.modules = Storage(
             description = "A library of digital resources, such as Photos, signed contracts and Office documents.",
             module_type = 10,
             resources = Storage(
-            	  doc_setting = {},
+            	  doc_setting = {'importer' : False},
 		  doc_metadata = {'importer' : True},
-		  doc_image = {},
+		  doc_image = {'importer' : False},
 		 )
         ),
     org = Storage(
@@ -285,8 +284,8 @@ deployment_settings.modules = Storage(
             description = 'Lists "who is doing what & where". Allows relief agencies to coordinate their activities',
             module_type = 10,
             resources = Storage(
-        	  org_setting = {},
-	 	  org_sector = {},
+        	  org_setting = {'importer' : False},
+	 	  org_sector = {'importer' : False},
 		  org_organisation = {'importer' : True},
 		  org_office = {'importer' : True},
 		  org_project = {'importer' : True},

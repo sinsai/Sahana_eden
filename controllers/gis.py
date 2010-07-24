@@ -44,7 +44,7 @@ def test():
         offices = {"feature_group" : "Offices", "popup_url" : URL(r=request, c="gis", f="location", args="read.popup")}
 
     query = db((db.gis_feature_class.name == "Town") & (db.gis_location.feature_class_id == db.gis_feature_class.id)).select()
-    
+
     html = gis.show_map(
                 feature_groups = [offices, hospitals],
                 feature_queries = [{"name" : "Towns", "query" : query, "active" : True}],
@@ -109,10 +109,10 @@ def apikey():
     response.s3.postp = user_postp
 
     output = shn_rest_controller(module, resource, deletable=False, listadd=False)
-    
+
     if not "gis" in response.view:
         response.view = "gis/" + response.view
-    
+
     return output
 
 def config():
@@ -128,7 +128,7 @@ def config():
     s3.crud_strings[tablename].title_update = T("Edit Defaults")
     s3.crud_strings[tablename].msg_record_modified = T("Defaults updated")
 
-    
+
     output = shn_rest_controller(module, resource, deletable=False, listadd=False)
 
     if not "gis" in response.view:
@@ -180,10 +180,10 @@ def feature_class():
     response.s3.postp = user_postp
 
     output = shn_rest_controller(module, resource)
-    
+
     if not "gis" in response.view and response.view != "popup.html":
         response.view = "gis/" + response.view
-    
+
     return output
 
 def feature_group():
@@ -222,10 +222,10 @@ def feature_group():
     response.s3.postp = user_postp
 
     output = shn_rest_controller(module, resource)
-    
+
     if not "gis" in response.view:
         response.view = "gis/" + response.view
-    
+
     return output
 
 def feature_class_to_feature_group():
@@ -244,10 +244,10 @@ def feature_class_to_feature_group():
     response.s3.postp = user_postp
 
     output = shn_rest_controller(module, resource)
-    
+
     if not "gis" in response.view:
         response.view = "gis/" + response.view
-    
+
     return output
 
 def feature_layer():
@@ -287,14 +287,14 @@ def feature_layer():
 
     crud.settings.create_onvalidation = lambda form: feature_layer_query(form)
     crud.settings.update_onvalidation = lambda form: feature_layer_query(form)
-    
+
     output = shn_rest_controller(module, resource)
-    
+
     return output
 
 def feature_layer_query(form):
     "OnValidation callback to build the simple Query from helpers"
-    
+
     if "advanced" in form.vars:
         # We should use the query field as-is
         pass
@@ -354,7 +354,7 @@ def landmark():
     response.s3.postp = user_postp
 
     output = shn_rest_controller(module, resource)
-    
+
     return output
 
 def location():
@@ -362,7 +362,7 @@ def location():
     resource = request.function
     tablename = module + "_" + resource
     table = db[tablename]
-    
+
     # Model options
     table.name.comment = SPAN("*", _class="req")
     table.level.comment = DIV( _class="tooltip", _title=T("Level|Is the location is a geographic area, then state at what level here."))
@@ -375,7 +375,7 @@ def location():
                                      DIV(
                                        _class="tooltip",
                                        _title=Tstr("Parent") + "|" + Tstr("The Area which this Site is located within."))),
-                       
+
     CONVERSION_TOOL = T("Conversion Tool")
     table.lat.comment = DIV(A(CONVERSION_TOOL, _style="cursor:pointer;", _title=CONVERSION_TOOL, _id="btnConvert"), DIV( _class="tooltip", _title=T("Latitude|Latitude is North-South (Up-Down). Latitude is zero on the equator and positive in the northern hemisphere and negative in the southern hemisphere. This needs to be added in Decimal Degrees. Use the popup to convert from either GPS coordinates or Degrees/Minutes/Seconds.")))
     table.lon.comment = DIV( _class="tooltip", _title=Tstr("Longitude") + "|" + Tstr("Longitude is West - East (sideways). Longitude is zero on the prime meridian (Greenwich Mean Time) and is positive to the east, across Europe and Asia.  Longitude is negative to the west, across the Atlantic and the Americas.  This needs to be added in Decimal Degrees. Use the popup to convert from either GPS coordinates or Degrees/Minutes/Seconds."))
@@ -403,13 +403,13 @@ def location():
     # Options
     _vars = request.vars
     filters = []
-    if "feature_class" in _vars:
-        fclass = _vars["feature_class"]
+    fclass = _vars.get("feature_class", None)
+    if fclass:
         filters.append((db.gis_location.feature_class_id == db.gis_feature_class.id) &
                               (db.gis_feature_class.name.like(fclass)))
 
-    if "feature_group" in _vars:
-        fgroup = _vars["feature_group"]
+    fgroup = _vars.get("fgroup", None)
+    if fgroup:
         # Filter to those Features which are in Feature Groups through their Feature Class
         filters.append((db.gis_location.feature_class_id == db.gis_feature_class_to_feature_group.feature_class_id) &
            (db.gis_feature_class_to_feature_group.feature_group_id == db.gis_feature_group.id) &
@@ -418,8 +418,8 @@ def location():
         #filters.append((db.gis_location.id == db.gis_location_to_feature_group.location_id) &
         #    (db.gis_location_to_feature_group.feature_group_id == db.gis_feature_group.id) & (db.gis_feature_group.name.like(fgroup)))
 
-    if "parent" in _vars:
-        parent = _vars["parent"]
+    parent = _vars.get("parent", None)
+    if parent:
         # Can't do this using a JOIN in DAL syntax
         # .belongs() not GAE-compatible!
         filters.append((db.gis_location.parent.belongs(db(db.gis_location.name.like(parent)).select(db.gis_location.id))))
@@ -436,7 +436,7 @@ def location():
             # Use default Marker for Class
             table.marker_id.readable = table.marker_id.writable = False
             #table.gis_feature_type.readable = table.gis_feature_type.writable = False
-            #table.gis_feature_type.default = 
+            #table.gis_feature_type.default =
             table.wkt.readable = table.wkt.writable = False
             table.addr_street.readable = table.addr_street.writable = False
             table.osm_id.readable = table.osm_id.writable = False
@@ -488,10 +488,10 @@ def location():
     response.s3.postp = user_postp
 
     output = shn_rest_controller(module, resource)
-    
+
     if isinstance(output, dict):
         output.update(gis_location_hierarchy=gis_location_hierarchy)
-    
+
     return output
 
 def marker():
@@ -528,10 +528,10 @@ def marker():
     response.s3.postp = user_postp
 
     output = shn_rest_controller(module, resource)
-    
+
     if not "gis" in response.view and response.view != "popup.html":
         response.view = "gis/" + response.view
-    
+
     return output
 
 def projection():
@@ -572,10 +572,10 @@ def projection():
     response.s3.postp = user_postp
 
     output = shn_rest_controller(module, resource, deletable=False)
-    
+
     if not "gis" in response.view:
         response.view = "gis/" + response.view
-    
+
     return output
 
 def track():
@@ -652,10 +652,10 @@ def layer_openstreetmap():
     response.s3.postp = user_postp
 
     output = shn_rest_controller(module, resource, deletable=False, listadd=False)
-    
+
     if not "gis" in response.view:
         response.view = "gis/" + response.view
-    
+
     return output
 
 def layer_google():
@@ -693,10 +693,10 @@ def layer_google():
     response.s3.postp = user_postp
 
     output = shn_rest_controller(module, resource, deletable=False, listadd=False)
-    
+
     if not "gis" in response.view:
         response.view = "gis/" + response.view
-    
+
     return output
 
 def layer_yahoo():
@@ -734,10 +734,10 @@ def layer_yahoo():
     response.s3.postp = user_postp
 
     output = shn_rest_controller(module, resource, deletable=False, listadd=False)
-    
+
     if not "gis" in response.view:
         response.view = "gis/" + response.view
-    
+
     return output
 
 def layer_mgrs():
@@ -775,10 +775,10 @@ def layer_mgrs():
     response.s3.postp = user_postp
 
     output = shn_rest_controller(module, resource, deletable=False, listadd=False)
-    
+
     if not "gis" in response.view:
         response.view = "gis/" + response.view
-    
+
     return output
 
 def layer_bing():
@@ -816,10 +816,10 @@ def layer_bing():
     response.s3.postp = user_postp
 
     output = shn_rest_controller(module, resource, deletable=False, listadd=False)
-    
+
     if not "gis" in response.view:
         response.view = "gis/" + response.view
-    
+
     return output
 
 def layer_georss():
@@ -861,10 +861,10 @@ def layer_georss():
     response.s3.postp = user_postp
 
     output = shn_rest_controller(module, resource)
-    
+
     if not "gis" in response.view:
         response.view = "gis/" + response.view
-    
+
     return output
 
 def layer_gpx():
@@ -905,10 +905,10 @@ def layer_gpx():
     response.s3.postp = user_postp
 
     output = shn_rest_controller(module, resource)
-    
+
     if not "gis" in response.view:
         response.view = "gis/" + response.view
-    
+
     return output
 
 def layer_kml():
@@ -950,10 +950,10 @@ def layer_kml():
     response.s3.postp = user_postp
 
     output = shn_rest_controller(module, resource)
-    
+
     if not "gis" in response.view:
         response.view = "gis/" + response.view
-    
+
     return output
 
 def layer_tms():
@@ -996,10 +996,10 @@ def layer_tms():
     response.s3.postp = user_postp
 
     output = shn_rest_controller(module, resource)
-    
+
     if not "gis" in response.view:
         response.view = "gis/" + response.view
-    
+
     return output
 
 def layer_wms():
@@ -1042,10 +1042,10 @@ def layer_wms():
     response.s3.postp = user_postp
 
     output = shn_rest_controller(module, resource)
-    
+
     if not "gis" in response.view:
         response.view = "gis/" + response.view
-    
+
     return output
 
 #@auth.shn_requires_membership("AdvancedJS")
@@ -1086,10 +1086,10 @@ def layer_js():
     response.s3.postp = user_postp
 
     output = shn_rest_controller(module, resource)
-    
+
     if not "gis" in response.view:
         response.view = "gis/" + response.view
-    
+
     return output
 
 def layer_xyz():
@@ -1131,10 +1131,10 @@ def layer_xyz():
     response.s3.postp = user_postp
 
     output = shn_rest_controller(module, resource)
-    
+
     if not "gis" in response.view:
         response.view = "gis/" + response.view
-    
+
     return output
 
 # Feature Groups
@@ -1351,7 +1351,7 @@ def display_feature():
     )
 
     return dict(map=map)
-    
+
 def display_features():
     """
     Cut-down version of the Map Viewing Client.
@@ -1687,7 +1687,7 @@ content type. It supports GET and POST requests."""
 ######################
 # Deprecated Functions
 ######################
-        
+
 def layers():
     """
     Deprecated!

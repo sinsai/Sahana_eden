@@ -112,6 +112,7 @@ def csvheader(parent, nodelist):
 def importxml(db, xmlinput):
     """
     Converts the XML to a CSV compatible with the import_from_csv_file of web2py
+    ToDo: rewrite this to go via S3XRC for proper Authz checking, Audit, Create/Update checking.
     """
     
     try:
@@ -135,7 +136,7 @@ def post():
     data = importxml(db, request.body.read())
     return data
 
-#@auth.shn_requires_membership(1)
+#@auth.shn_requires_membership(2)
 def submission():
     """ 
     Allows for submission of xforms by ODK Collect 
@@ -154,6 +155,7 @@ def formList():
     """
     Generates a list of Xforms based on database tables for ODK Collect
     http://code.google.com/p/opendatakit/
+    ToDo: Provide a static list of forms, such as RMS_Req, GIS_Landmark, MPR_Missing_Report, CR_Shelter, PR_Presence
     """
     xml = TAG.forms(*[TAG.form(t, _url = "http://" + request.env.http_host + URL(r=request, f="create", args=t)) for t in db.tables()])
     response.headers["Content-Type"] = "text/xml"

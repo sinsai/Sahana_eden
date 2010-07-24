@@ -155,7 +155,7 @@ s3xrc.model.add_component(module, resource,
 
 s3xrc.model.configure(table,
                       # Ensure that table is substituted when lambda defined not evaluated by using the default value
-                      onaccept=lambda form, tab=table: shn_pentity_onaccept(form, table=tab, entity_type=5),
+                      onaccept=lambda form, tab=table: shn_pentity_onaccept(form, table=tab),
                       delete_onaccept=lambda form: shn_pentity_ondelete(form),
                       list_fields = ["id",
                                      "name",
@@ -267,7 +267,7 @@ s3xrc.model.add_component(module, resource,
 
 s3xrc.model.configure(table,
                       # Ensure that table is substituted when lambda defined not evaluated by using the default value
-                      onaccept=lambda form, tab=table: shn_pentity_onaccept(form, table=tab, entity_type=6),
+                      onaccept=lambda form, tab=table: shn_pentity_onaccept(form, table=tab),
                       delete_onaccept=lambda form: shn_pentity_ondelete(form),
                       list_fields=["id",
                                    "name",

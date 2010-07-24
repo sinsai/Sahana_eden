@@ -101,8 +101,8 @@ class S3Vita(object):
                 query = (table.label.strip().lower() == entity.strip().lower()) & query
 
             elif isinstance(entity, dict):
-                if "pr_pe_id" in entity:
-                    query = (table.id == entity.pr_pe_id) & query
+                if "pe_id" in entity:
+                    query = (table.id == entity.pe_id) & query
                 else:
                     return entity # entity already given?
 
@@ -137,12 +137,12 @@ class S3Vita(object):
                 query = (table.id == entity) & query
 
             elif isinstance(entity, dict):
-                if "pr_pe_id" in entity:
-                    query = (table.pr_pe_id == entity.pr_pe_id) & query
+                if "pe_id" in entity:
+                    query = (table.pe_id == entity.pe_id) & query
                 elif "person_id" in entity:
                     query = (table.id == entity.person_id) & query
                 elif "id" in entity:
-                    query = (table.pr_pe_id == entity.id) & query
+                    query = (table.pe_id == entity.id) & query
                 else:
                     return None
 
@@ -177,12 +177,12 @@ class S3Vita(object):
                 query = (table.id == entity) & query
 
             elif isinstance(entity, dict):
-                if "pr_pe_id" in entity:
-                    query = (table.pr_pe_id == entity.pr_pe_id) & query
+                if "pe_id" in entity:
+                    query = (table.pe_id == entity.pe_id) & query
                 elif "group_id" in entity:
                     query = (table.id == entity.group_id) & query
                 elif "id" in entity:
-                    query = (table.pr_pe_id == entity.id) & query
+                    query = (table.pe_id == entity.id) & query
                 else:
                     return None
 

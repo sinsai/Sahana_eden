@@ -89,15 +89,15 @@ def group():
         vars={"_next":URL(r=request, c="msg", f="group")}))
     resource = request.function
 
-    db.pr_group.group_description.readable = False
-    db.pr_group.group_description.writable = False
+    db.pr_group.description.readable = False
+    db.pr_group.description.writable = False
 
     response.s3.filter = (db.pr_group.system == False) # do not show system groups
     response.s3.pagination = True
     "RESTful CRUD controller"
     return shn_rest_controller("pr", resource,
-                               main="group_name",
-                               extra="group_description",
+                               main="name",
+                               extra="description",
                                rheader=shn_pr_rheader,
                                deletable=False)
 # -----------------------------------------------------------------------------
@@ -128,8 +128,8 @@ def pe_contact():
     """ Allows the user to add,update and delete his contacts"""
     
     if auth.is_logged_in() or auth.basic():
-        person = db(db.pr_person.uuid == auth.user.person_uuid).select(db.pr_person.pr_pe_id, limitby=(0, 1)).first().pr_pe_id
-        response.s3.filter = (db.pr_pe_contact.pr_pe_id == person)
+        person = db(db.pr_person.uuid == auth.user.person_uuid).select(db.pr_person.pe_id, limitby=(0, 1)).first().pe_id
+        response.s3.filter = (db.pr_pe_contact.pe_id == person)
     else:
         redirect(URL(r=request, c="default", f="user", args="login",
             vars={"_next":URL(r=request, c="msg", f="pe_contact")}))
@@ -138,20 +138,20 @@ def pe_contact():
     db.pr_pe_contact.name.readable = False
     db.pr_pe_contact.id.writable = False
 #   db.pr_pe_contact.id.readable = False
-    db.pr_pe_contact.pr_pe_id.writable = False
-    db.pr_pe_contact.pr_pe_id.readable = False
+    db.pr_pe_contact.pe_id.writable = False
+    db.pr_pe_contact.pe_id.readable = False
     db.pr_pe_contact.person_name.writable = False
     db.pr_pe_contact.person_name.readable = False
     def msg_pe_contact_onvalidation(form):
         """This onvalidation method adds the person id to the record"""
-        person = db(db.pr_person.uuid == auth.user.person_uuid).select(db.pr_person.pr_pe_id, limitby=(0, 1)).first().pr_pe_id
-        form.vars.pr_pe_id = person
+        person = db(db.pr_person.uuid == auth.user.person_uuid).select(db.pr_person.pe_id, limitby=(0, 1)).first().pe_id
+        form.vars.pe_id = person
     def msg_pe_contact_restrict_access(jr):
         """The following restricts update and delete access to contacts not
         owned by the user"""
         if jr.id :
-            person = db(db.pr_person.uuid == auth.user.person_uuid).select(db.pr_person.pr_pe_id, limitby=(0, 1)).first().pr_pe_id
-            if person == db(db.pr_pe_contact.id == jr.id).select(db.pr_pe_contact.pr_pe_id, limitby=(0, 1)).first().pr_pe_id :
+            person = db(db.pr_person.uuid == auth.user.person_uuid).select(db.pr_person.pe_id, limitby=(0, 1)).first().pe_id
+            if person == db(db.pr_pe_contact.id == jr.id).select(db.pr_pe_contact.pe_id, limitby=(0, 1)).first().pe_id :
                 return True
             else:
                 session.error = T("Access denied")
@@ -177,7 +177,7 @@ def search():
 
     import gluon.contrib.simplejson as sj
     table1 = db.pr_group
-    field1 = "group_name"
+    field1 = "name"
     table2 = db.pr_person
     field21 = "first_name"
     field22 = "middle_name"
@@ -186,18 +186,18 @@ def search():
     value = request.vars.q
     if value:
 		item = []
-		query = db((table1[field1].like("%" + value + "%"))).select(db.pr_group.pr_pe_id)
+		query = db((table1[field1].like("%" + value + "%"))).select(db.pr_group.pe_id)
 		for row in query:
-			item.append({"id":row.pr_pe_id, "name":shn_pentity_represent(row.pr_pe_id, default_label = "")})
-		query = db((table2[field21].like("%" + value + "%"))).select(db.pr_person.pr_pe_id)
+			item.append({"id":row.pe_id, "name":shn_pentity_represent(row.pe_id, default_label = "")})
+		query = db((table2[field21].like("%" + value + "%"))).select(db.pr_person.pe_id)
 		for row in query:
-			item.append({"id":row.pr_pe_id, "name":shn_pentity_represent(row.pr_pe_id, default_label = "")})
-		query = db((table2[field22].like("%" + value + "%"))).select(db.pr_person.pr_pe_id)
+			item.append({"id":row.pe_id, "name":shn_pentity_represent(row.pe_id, default_label = "")})
+		query = db((table2[field22].like("%" + value + "%"))).select(db.pr_person.pe_id)
 		for row in query:
-			item.append({"id":row.pr_pe_id, "name":shn_pentity_represent(row.pr_pe_id, default_label = "")})
-		query = db((table2[field23].like("%" + value + "%"))).select(db.pr_person.pr_pe_id)
+			item.append({"id":row.pe_id, "name":shn_pentity_represent(row.pe_id, default_label = "")})
+		query = db((table2[field23].like("%" + value + "%"))).select(db.pr_person.pe_id)
 		for row in query:
-			item.append({"id":row.pr_pe_id, "name":shn_pentity_represent(row.pr_pe_id, default_label = "")})
+			item.append({"id":row.pe_id, "name":shn_pentity_represent(row.pe_id, default_label = "")})
 		item = sj.dumps(item)
 		response.view = "xml.html"
 		return dict(item=item)
@@ -416,8 +416,8 @@ def compose():
     table1.sender.readable = False
     table1.fromaddress.writable = False
     table1.fromaddress.readable = False
-    table1.pr_pe_id.writable = False
-    table1.pr_pe_id.readable = False
+    table1.pe_id.writable = False
+    table1.pe_id.readable = False
     table1.verified.writable = False
     table1.verified.readable = False
     table1.verified_comments.writable = False
@@ -431,19 +431,19 @@ def compose():
     table1.subject.label = T('Subject')
     table1.message.label = T('Message')
     table1.priority.label = T('Priority')
-    table2.pr_pe_id.label = T('Recipients')
+    table2.pe_id.label = T('Recipients')
 
 
     def compose_onvalidation(form):
-        """This onvalidation sets the sender and uses msg.send_by_pr_pe_id to route the message"""
-        if not request.vars.pr_pe_id:
+        """This onvalidation sets the sender and uses msg.send_by_pe_id to route the message"""
+        if not request.vars.pe_id:
             session.error = T('Please enter the recipient')
             redirect(URL(r=request,c="msg", f="compose"))
-        sender_pr_pe_id = db(db.pr_person.uuid == auth.user.person_uuid).select(db.pr_person.pr_pe_id, limitby=(0, 1)).first().pr_pe_id
-        if msg.send_by_pr_pe_id(request.vars.pr_pe_id,
+        sender_pe_id = db(db.pr_person.uuid == auth.user.person_uuid).select(db.pr_person.pe_id, limitby=(0, 1)).first().pe_id
+        if msg.send_by_pe_id(request.vars.pe_id,
                                 request.vars.subject,
                                 request.vars.message,
-                                sender_pr_pe_id,
+                                sender_pe_id,
                                 request.vars.pr_message_method):
                                     session.flash = T('Message sent to outbox')
                                     redirect(URL(r=request, c="msg", f="compose"))

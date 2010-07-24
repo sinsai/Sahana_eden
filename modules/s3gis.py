@@ -282,7 +282,7 @@ class GIS(object):
         config = 1 
         if auth.is_logged_in():
             # Read personalised config, if available
-            personalised = db((db.pr_person.uuid == auth.user.person_uuid) & (_config.pr_pe_id == db.pr_person.pr_pe_id)).select(_config.id, limitby=(0, 1)).first()
+            personalised = db((db.pr_person.uuid == auth.user.person_uuid) & (_config.pe_id == db.pr_person.pe_id)).select(_config.id, limitby=(0, 1)).first()
             if personalised:
                 config = personalised.id
             

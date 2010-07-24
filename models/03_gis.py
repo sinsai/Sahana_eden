@@ -180,7 +180,7 @@ s3.crud_strings[tablename] = Storage(
 # Configs as component of Persons
 s3xrc.model.add_component(module, resource,
                           multiple=False,
-                          joinby="pr_pe_id",
+                          joinby="pe_id",
                           deletable=False,
                           editable=True)
 

@@ -212,6 +212,7 @@ def group_membership():
 def pentity():
     "RESTful CRUD controller"
     resource = request.function
+    response.s3.pagination = True
     return shn_rest_controller(module, resource,
                                editable=False,
                                deletable=False,

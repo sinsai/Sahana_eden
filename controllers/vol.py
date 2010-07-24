@@ -33,16 +33,17 @@ def shn_menu():
     ]
     menu.extend(menu_persons)
     if session.rcvars and "pr_person" in session.rcvars:
-        selection = db.pr_person[session.rcvars["pr_person"]]
+        person_id = session.rcvars["pr_person"]
+        selection = db.pr_person[person_id]
         if selection:
             selection = shn_pr_person_represent(selection.id)
             menu_person = [
-                ["%s %s" % (T("Person:"), selection), False, URL(r=request, f="person"),[
-                    [T("Volunteer Status"), False, URL(r=request, f="person", args="volunteer")],
-                    [T("Resources"), False, URL(r=request, f="person", args="resource")],
-                    [T("Address"), False, URL(r=request, f="person", args="address")],
-                    [T("Contact"), False, URL(r=request, f="person", args="pe_contact")],
-                    [T("Identity"), False, URL(r=request, f="person", args="identity")],
+                ["%s %s" % (T("Person:"), selection), False, URL(r=request, f="person", args=[person_id]),[
+                    [T("Volunteer Status"), False, URL(r=request, f="person", args=[person_id, "volunteer"])],
+                    [T("Resources"), False, URL(r=request, f="person", args=[person_id, "resource"])],
+                    [T("Address"), False, URL(r=request, f="person", args=[person_id, "address"])],
+                    [T("Contact"), False, URL(r=request, f="person", args=[person_id, "pe_contact"])],
+                    [T("Identity"), False, URL(r=request, f="person", args=[person_id, "identity"])],
                 ]]
             ]
             menu.extend(menu_person)

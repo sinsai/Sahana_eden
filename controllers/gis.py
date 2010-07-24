@@ -424,8 +424,8 @@ def location():
         filters.append((db.gis_location.parent.belongs(db(db.gis_location.name.like(parent)).select(db.gis_location.id))))
         # ToDo: Make this recursive - want ancestor not just direct parent!
 
-    if "caller" in _vars:
-        caller = _vars["caller"]
+    caller = _vars.get("caller", None)
+    if caller:
         if "gis_location_parent" in caller:
             # If a Parent location then populate defaults for the fields & Hide unnecessary rows
             table.description.readable = table.description.writable = False

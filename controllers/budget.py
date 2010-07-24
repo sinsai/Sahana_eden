@@ -354,12 +354,13 @@ def kit():
 
 def kit_item():
     "Many to Many CRUD Controller"
-    if "format" in request.vars:
-        if request.vars.format == "xls":
+    format = request.vars.get("format", None)
+    if format:
+        if format == "xls":
             redirect(URL(r=request, f="kit_export_xls"))
-        elif request.vars.format == "pdf":
+        elif format == "pdf":
             redirect(URL(r=request, f="kit_export_pdf"))
-        elif request.vars.format == "csv":
+        elif format == "csv":
             if request.args(0):
                 if str.lower(request.args(0)) == "create":
                     return kit_import_csv()

@@ -128,11 +128,10 @@ def download():
 
 # -----------------------------------------------------------------------------
 def tooltip():
-
     """ Ajax tooltips """
-
-    if "formfield" in request.vars:
-        response.view = "pr/ajaxtips/%s.html" % request.vars.formfield
+    formfield = request.vars.get("formfield", None):
+    if formfield:
+        response.view = "pr/ajaxtips/%s.html" % formfield
     return dict()
 
 #

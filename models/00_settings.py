@@ -41,6 +41,10 @@ mail.settings.sender = deployment_settings.get_mail_sender()
 # Auth
 ######
 
+#auth.settings.username_field = True
+auth.settings.hmac_key = deployment_settings.get_auth_hmac_key()
+auth.define_tables()
+
 if deployment_settings.get_auth_openid():
     # Requires http://pypi.python.org/pypi/python-openid/
     # Requires https://code.launchpad.net/~keitheis/web2py/openid
@@ -53,9 +57,6 @@ if deployment_settings.get_auth_openid():
     except ImportError:
         session.warning = T("Library support not available for OpenID")
 
-#auth.settings.username_field = True
-auth.settings.hmac_key = deployment_settings.get_auth_hmac_key()
-auth.define_tables()
 auth.settings.expiration = 3600  # seconds
 # Require captcha verification for registration
 #auth.settings.captcha = RECAPTCHA(request, public_key="PUBLIC_KEY", private_key="PRIVATE_KEY")

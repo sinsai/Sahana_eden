@@ -1,5 +1,5 @@
 {{extend 'layout.html'}}
-{{extend '_list_create.html'}}
+{{include 'ext.html'}}
 <h1>This is the importer/spreadsheet.html template</h1>
 {{if session.s3.security_policy==1:}}
     <script type="text/javascript">//<![CDATA[
@@ -8,4 +8,25 @@
             $("#importer_slist_admin__row").hide();
     });
     //]]></script>
+<script type = "text/javascript">
+	token = "{{=request.get_vars['token']}}";
+	Ext.onReady(function()
+	{
+		Ext.Ajax.request({
+			url       :    "https:/www.google.com/accounts/AuthSubSessionToken",
+			method    :    "GET",
+			headers   :    { Authorization: 'AuthSub token=' + token},
+			success   : function()
+					{
+						Ext.Msg.alert("","Succeeded");
+					},
+			failure    : function()
+					{
+						Ext.Msg.alert("","Failed");
+					}
+			});
+	});
+</script>
+{{=module_name}}
+{{=BEAUTIFY(request)}}
 {{=BEAUTIFY(response._vars)}}

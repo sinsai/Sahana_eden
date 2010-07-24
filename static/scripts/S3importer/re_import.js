@@ -22,6 +22,7 @@ else
 {
 
 	Ext.onReady(function(){
+	Ext.Msg.alert("","These records could not be imported. Please edit and import again.");
 	var column_model = new Array(number_column);
 	var store = new Ext.data.JsonStore({
 		fields : fields,
@@ -100,10 +101,10 @@ else
 						jsonData : send,
 						success : function(r,o){
 							lm.hide();
-							Ext.Msg.Alert("","import successful");},
+							Ext.Msg.Alert("","Import successful "+location.href);},
 						failure : function(r,o){
 							lm.hide();
-							Ext.Msg.alert("","Import failed");
+							Ext.Msg.alert("","Import failed "+r.responseText);
 							}
 						});
 					console.log(send);

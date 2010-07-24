@@ -34,29 +34,30 @@ def googledoc():
 
 
 def gettoken():
-    #gd_client = importer.gdata.spreadsheet.service.SpreadsheetsService()
+    gd_client = importer.gdata.spreadsheet.service.SpreadsheetsService()
     getvars=repr(request.get_vars)
     auth_url='http://'+request.env.http_host+request.url+'?auth_sub_scopes='+request.get_vars['auth_sub_scopes']+'&token='+request.get_vars['token']
     f = file("/home/shikhar/Desktop/abc.txt","wb")
     f.write(auth_url)
     f.close() 
-    #authsub_token = importer.gdata.auth.extract_auth_sub_token_from_url(auth_url)
+    authsub_token = importer.gdata.auth.extract_auth_sub_token_from_url(auth_url)
     
     authsub_token = importer.gdata.auth.AuthSubTokenFromUrl(auth_url) 
     #gd_client.token_store.add_token(authsub_token)
+    gd_client.token_store.add_token(request.get_vars['token'])
     user_sreadsheets = gd_client.AuthSubTokenInfo()
-    #gd_client.UpgradeToSessionToken()
+    gd_client.UpgradeToSessionToken()
     '''Google documentation is outdated on this, gd_client.auth_token doesn't work'''
     
     user_spreadsheets = getspreadsheetlist()
     return dict(module_name=module_name,k=user_spreadsheets)
 
 def spreadsheet():
-    crud.settings.create_onaccept = lambda form : redirect(URL(r=request, c="importer", f="spreadsheetview")) 
-    return shn_rest_controller(module,'slist')
+    #crud.settings.create_onaccept = lambda form : redirect(URL(r=request, c="importer", f="spreadsheetview")) 
+    #return shn_rest_controller(module,'slist')
+    return dict(module_name = module_name)
 
 def spreadsheetview():
-    
     k=db(db.importer_slist.id>0).select().last()
     k=k.Path;
     str=importer.pathfind(k)
@@ -139,12 +140,11 @@ def import_spreadsheet():
     tree = s3xrc.xml.json2tree(send)
     symbol, prefix, name = resource.split('_')
     res = s3xrc.resource(prefix, name)
-    if res.import_xml(source = tree, id = None):#, resource = resource, push_limit = j['rows']):
+    if res.import_xml(source = tree):#, resource = resource, push_limit = j['rows']):
 	    session.import_success = 1 
     else:
 	    incorrect_rows = []
 	    correct_rows = []
-	    success = False
 	    returned_tree = tree
 	    returned_json = s3xrc.xml.tree2json(returned_tree)
 	    returned_json = returned_json.encode('ascii')
@@ -183,7 +183,7 @@ def import_spreadsheet():
 	    send_json = json.dumps(correct_rows_send)
 	    send_json = StringIO(send_json)
 	    tree = s3xrc.xml.json2tree(send_json)
-	    s3xrc.import_xml(tree = tree, id = None, prefix = prefix, name = name)
+	    res.import_xml( tree)
 	    json_test = s3xrc.xml.tree2json(tree)
 	    session.fields = incorrect_rows[0].keys()
 	    #session.fields.remove(u'@modified_on')
@@ -207,7 +207,9 @@ def import_spreadsheet():
 	    session.import_resource = resource.encode('ascii') 
 	    #session.columns = j['columns']
     f.close()	
-    return dict(success=success,spreadsheet=incorrect_rows)
+    #return dict(success=success,spreadsheet=incorrect_rows)
+    #return dict(spreadsheet=incorrect_rows)
+    return dict(module_name = module_name)
 
 def re_import():
 	return dict(module_name=module_name)

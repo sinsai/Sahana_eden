@@ -262,24 +262,52 @@ function view4(importsheet)//header,table,numcol,grid_data)
 						url : posturl,
 						method : 'POST',
 						jsonData : send,
-						success : function(r,o){
-								lm.hide();
-									},
-						failure : function(r,o){
-								lm.hide();
-								Ext.Msg.alert("Error","Could not send data to server "+r.responseText);
-							}
-						});
-					 Ext.Msg.show({title : "Re-import?",
-							 msg : "Some records could not be imported, would you like to edit?",
-							 buttons : Ext.Msg.YESNO,
-							 fn : function(btn,text)								
-							 {
-							 	if(btn=="yes")
-							 		window.location = "http://localhost:8000/newins/importer/re_import";		
-							 }
-							 });
-					//Import function
+						callback : function(options,success,response)
+							   {
+							        lm.hide();
+								var redirect = new Ext.LoadMask(Ext.getBody(),{msg : 'Redirecting to spreadsheet importer report...'});
+								redirect.enable();
+								redirect.show();
+								var delay = new Ext.util.DelayedTask(function(){});
+								delay.delay(2000);
+								redirect.hide();
+
+							   	/*if(success)
+									Ext.Msg.alert("Success","All records have been imported to database");
+								else
+								{
+								
+									 Ext.Msg.show({title : "Re-import?",
+											 msg : "Some records could not be imported, would you like to edit?",
+											 buttons : Ext.Msg.YESNO,
+											 fn : function(btn,text)		
+							 				 {
+							 					if(btn=="yes")
+							 					window.location = "http://"+url+"/"+application+"/importer/re_import";		
+							 	*/			 }
+										});
+							       	}
+					 		
+
+    			
+    		}],
+       buttonAlign: 'center'
+	});
+	
+ 
+
+
+
+
+
+
+
+
+
+
+
+
+				 //Import function
 					      	/*var temp=importsheet.table.split("_");
 						var prefix=temp[0];
 						var name=temp[1];
@@ -411,10 +439,6 @@ function view4(importsheet)//header,table,numcol,grid_data)
 							});
 							}.defer(50,this));*/
 	
-    			}
-    		}],
-       buttonAlign: 'center'
-	});
     /*
     	//build the sheet to be imported as 2d array
         var row=0;

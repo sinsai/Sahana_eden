@@ -123,9 +123,39 @@ def group_membership():
     return shn_rest_controller("pr", resource)
 
 #-------------------------------------------------------------------------------
+def m2m_handler(module, resource, m2m_list, title = T('Link resource')):
+    response.view = "create.html"
+    tablename = module + "_" + resource
+    table = db[tablename]
+    # Disable read/write of all modules except the ones in the m2m_list
+    for field in table:
+        field.writable = False
+        field.readable = False
 
+    for field in m2m_list:
+        table[field].writable = True
+        table[field].readable = True
+
+    table[m2m_list[0]].writable = False
+    table[m2m_list[0]].readable = False
+    form = crud.create(table)
+    return dict(form = form, title = title)
+
+def group_membership1():
+    " A neater UI for many to many relation between group and pr"
+
+    if auth.is_logged_in() or auth.basic():
+        person = db(db.pr_person.uuid == auth.user.person_uuid).select(db.pr_person.pr_pe_id, limitby=(0, 1)).first().pr_pe_id
+        response.s3.filter = (db.pr_pe_contact.pr_pe_id == person)
+    else:
+        redirect(URL(r=request, c="default", f="user", args="login",
+            vars={"_next":URL(r=request, c="msg", f="pe_contact")}))
+
+    return m2m_handler("pr","group_membership",["group_id","person_id"])
+
+#-------------------------------------------------------------------------------
 def pe_contact():
-    """ Allows the user to add,update and delete his contacts"""
+    " Allows the user to add,update and delete his contacts"
     
     if auth.is_logged_in() or auth.basic():
         person = db(db.pr_person.uuid == auth.user.person_uuid).select(db.pr_person.pr_pe_id, limitby=(0, 1)).first().pr_pe_id

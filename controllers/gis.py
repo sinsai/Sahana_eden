@@ -137,7 +137,7 @@ def config():
     output["list_btn"] = ""
 
     if auth.is_logged_in():
-        personalised = db((db.pr_person.uuid == auth.user.person_uuid) & (table.pr_pe_id == db.pr_person.pr_pe_id)).select(table.id, limitby=(0, 1)).first()
+        personalised = db((db.pr_person.uuid == auth.user.person_uuid) & (table.pe_id == db.pr_person.pe_id)).select(table.id, limitby=(0, 1)).first()
         if personalised:
             output["rheader"] = P(T("You have personalised settings, so changes made here won't be visible to you. To change your personalised settings, click "), A(T("here"), _href=URL(r=request, c="pr", f="person", args=["config"], vars={"person.uid":auth.user.person_uuid})))
         else:

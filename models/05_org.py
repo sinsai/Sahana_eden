@@ -72,7 +72,7 @@ org_organisation_type_opts = {
 resource = "organisation"
 tablename = module + "_" + resource
 table = db.define_table(tablename, timestamp, uuidstamp, deletion_status,
-                pr_pe_fieldset,                         # Person Entity Field Set
+                pe_id,
                 #Field("privacy", "integer", default=0),
                 #Field("archived", "boolean", default=False),
                 Field("name", length=128, notnull=True, unique=True),
@@ -90,8 +90,6 @@ table = db.define_table(tablename, timestamp, uuidstamp, deletion_status,
 
 # Field settings
 table.uuid.requires = IS_NOT_IN_DB(db, "%s.uuid" % tablename)
-table.pr_pe_label.readable = False
-table.pr_pe_label.writable = False
 table.name.requires = [IS_NOT_EMPTY(), IS_NOT_IN_DB(db, "%s.name" % tablename)]
 table.type.requires = IS_NULL_OR(IS_IN_SET(org_organisation_type_opts))
 table.type.represent = lambda opt: org_organisation_type_opts.get(opt, UNKNOWN_OPT)
@@ -157,7 +155,7 @@ s3xrc.model.add_component(module, resource,
 
 s3xrc.model.configure(table,
                       # Ensure that table is substituted when lambda defined not evaluated by using the default value
-                      onaccept=lambda form, tab=table: shn_pentity_onaccept(form, table=tab, entity_type=5),
+                      onaccept=lambda form, tab=table: shn_pentity_onaccept(form, table=tab),
                       delete_onaccept=lambda form: shn_pentity_ondelete(form),
                       list_fields = ["id",
                                      "name",
@@ -179,7 +177,7 @@ org_office_type_opts = {
 resource = "office"
 tablename = module + "_" + resource
 table = db.define_table(tablename, timestamp, uuidstamp, deletion_status,
-                pr_pe_fieldset,                         # Person Entity Field Set
+                pe_id,
                 Field("name", notnull=True),
                 organisation_id,
                 Field("type", "integer"),
@@ -202,8 +200,6 @@ table = db.define_table(tablename, timestamp, uuidstamp, deletion_status,
 
 # Field settings
 table.uuid.requires = IS_NOT_IN_DB(db, "%s.uuid" % tablename)
-table.pr_pe_label.readable = False
-table.pr_pe_label.writable = False
 #db[table].name.requires = IS_NOT_EMPTY()   # Office names don't have to be unique
 table.name.requires = [IS_NOT_EMPTY(), IS_NOT_IN_DB(db, "%s.name" % tablename)]
 table.type.requires = IS_NULL_OR(IS_IN_SET(org_office_type_opts))
@@ -250,7 +246,7 @@ s3.crud_strings[tablename] = Storage(
     msg_record_modified = T("Office updated"),
     msg_record_deleted = T("Office deleted"),
     msg_list_empty = T("No Offices currently registered"))
- 
+
 # Reusable field for other tables to reference
 office_id = db.Table(None, "office_id",
             FieldS3("office_id", db.org_office, sortby="name",
@@ -271,7 +267,7 @@ s3xrc.model.add_component(module, resource,
 
 s3xrc.model.configure(table,
                       # Ensure that table is substituted when lambda defined not evaluated by using the default value
-                      onaccept=lambda form, tab=table: shn_pentity_onaccept(form, table=tab, entity_type=6),
+                      onaccept=lambda form, tab=table: shn_pentity_onaccept(form, table=tab),
                       delete_onaccept=lambda form: shn_pentity_ondelete(form),
                       list_fields=["id",
                                    "name",
@@ -635,7 +631,7 @@ s3xrc.model.configure(table,
                                    "subject",
                                    "person_id",
                                    "status"])
-                                   
+
 # -----------------------------------------------------------------------------
 # shn_project_search_location:
 #   form function to search projects by location
@@ -736,16 +732,16 @@ s3xrc.model.set_method(module, "project", method="search_location", action=shn_p
 def shn_project_rheader(jr, tabs=[]):
 
     if jr.representation == "html":
-        
+
         rheader_tabs = shn_rheader_tabs(jr, tabs)
-        
+
         if jr.name == "project":
 
             _next = jr.here()
             _same = jr.same()
 
             project = jr.record
-            
+
             sectors = TABLE()
             if project.sector_id:
                 _sectors = re.split("\|", project.sector_id)[1:-1]

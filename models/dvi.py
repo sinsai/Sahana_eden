@@ -123,7 +123,8 @@ if deployment_settings.has_module(module):
     resource = "body"
     tablename = "%s_%s" % (module, resource)
     table = db.define_table(tablename, timestamp, deletion_status, uuidstamp,
-                            pr_pe_fieldset,
+                            pe_id,
+                            pe_label,
                             dvi_recreq_id,
                             Field("date_of_recovery", "datetime"),
                             location_id,
@@ -132,24 +133,24 @@ if deployment_settings.has_module(module):
                             Field("is_burned_or_charred","boolean"),
                             Field("is_decayed","boolean"),
                             Field("is_incomplete","boolean"),
-                            opt_pr_gender,
-                            opt_pr_age_group,
+                            pr_gender,
+                            pr_age_group,
                             migrate = migrate)
 
     # Settings and Restrictions
     #table.pr_pe_parent.readable = True         # not visible in body registration form
     #table.pr_pe_parent.writable = True         # not visible in body registration form
-    #table.pr_pe_parent.requires = IS_NULL_OR(IS_ONE_OF(db,"pr_pentity.id",shn_pentity_represent,filterby="opt_pr_entity_type",filter_opts=(3,)))
+    #table.pr_pe_parent.requires = IS_NULL_OR(IS_ONE_OF(db,"pr_pentity.id",shn_pentity_represent,filterby="type",filter_opts=("dvi_body",)))
 
-    table.pr_pe_label.comment = SPAN("*", _class="req")
-    table.pr_pe_label.requires = [IS_NOT_EMPTY(),IS_NOT_IN_DB(db, "dvi_body.pr_pe_label")]
+    table.pe_label.comment = SPAN("*", _class="req")
+    table.pe_label.requires = [IS_NOT_EMPTY(),IS_NOT_IN_DB(db, "dvi_body.pe_label")]
     table.date_of_recovery.comment = SPAN("*", _class="req")
     table.date_of_recovery.requires = IS_DATETIME()
 
     # Labels
     table.dvi_recreq_id.label = T("Recovery Request")
-    table.opt_pr_gender.label=T("Apparent Gender")
-    table.opt_pr_age_group.label=T("Apparent Age")
+    table.gender.label=T("Apparent Gender")
+    table.age_group.label=T("Apparent Age")
     table.location_id.label=T("Place of Recovery")
 
     # Representations
@@ -176,14 +177,12 @@ if deployment_settings.has_module(module):
         msg_list_empty = T("No recovery reports available"))
 
     s3xrc.model.configure(table,
-                          onaccept=lambda form: \
-                          shn_pentity_onaccept(form, table=db.dvi_body, entity_type=3),
-                          delete_onaccept=lambda form: \
-                          shn_pentity_ondelete(form),
+                          onaccept=lambda form: shn_pentity_onaccept(form, table=db.dvi_body),
+                          delete_onaccept=lambda form: shn_pentity_ondelete(form),
                           list_fields=["id",
-                                       "pr_pe_label",
-                                       "opt_pr_gender",
-                                       "opt_pr_age_group",
+                                       "pe_label",
+                                       "gender",
+                                       "age_group",
                                        "date_of_recovery",
                                        "location_id"])
 
@@ -193,7 +192,7 @@ if deployment_settings.has_module(module):
     resource = "checklist"
     tablename = "%s_%s" % (module, resource)
     table = db.define_table(tablename, timestamp, uuidstamp, deletion_status,
-                    pr_pe_id,
+                    pe_id,
                     Field("personal_effects","integer",
                         requires = IS_IN_SET(dvi_task_status_opts, zero=None),
                         default = 1,
@@ -258,7 +257,7 @@ if deployment_settings.has_module(module):
     # Joined Resource
     s3xrc.model.add_component(module, resource,
                               multiple = False,
-                              joinby = "pr_pe_id",
+                              joinby = "pe_id",
                               deletable = True,
                               editable = True)
 
@@ -270,7 +269,7 @@ if deployment_settings.has_module(module):
     resource = "effects"
     tablename = "%s_%s" % (module, resource)
     table = db.define_table(tablename, timestamp, uuidstamp, deletion_status,
-                    pr_pe_id,
+                    pe_id,
     #                person_id,
                     Field("clothing", "text"),    #TODO: elaborate
                     Field("jewellery", "text"),   #TODO: elaborate
@@ -304,7 +303,7 @@ if deployment_settings.has_module(module):
     # Joined Resource
     s3xrc.model.add_component(module, resource,
                               multiple = False,
-                              joinby = "pr_pe_id",
+                              joinby = "pe_id",
                               deletable = True,
                               editable = True)
 
@@ -346,7 +345,7 @@ if deployment_settings.has_module(module):
     resource = "identification"
     tablename = "%s_%s" % (module, resource)
     table = db.define_table(tablename, timestamp, uuidstamp, deletion_status,
-                    pr_pe_id,
+                    pe_id,
                     Field("identified_by", db.pr_person),  # Person identifying the body
                     Field("reported_by", db.pr_person),    # Person reporting
                     opt_dvi_id_status,                     # Identity status
@@ -392,7 +391,7 @@ if deployment_settings.has_module(module):
     # Joined Resource
     s3xrc.model.add_component(module, resource,
                               multiple = False,
-                              joinby = "pr_pe_id",
+                              joinby = "pe_id",
                               deletable = True,
                               editable = True)
 
@@ -416,17 +415,17 @@ if deployment_settings.has_module(module):
                     rheader = DIV(TABLE(
 
                         TR(TH(T("ID Label: ")),
-                           "%(pr_pe_label)s" % body,
+                           "%(pe_label)s" % body,
                            TH(""),
                            ""),
 
                         TR(TH(T("Gender: ")),
-                           "%s" % pr_person_gender_opts[body.opt_pr_gender],
+                           "%s" % pr_gender_opts[body.gender],
                            TH(""),
                            ""),
 
                         TR(TH(T("Age Group: ")),
-                           "%s" % pr_person_age_group_opts[body.opt_pr_age_group],
+                           "%s" % pr_age_group_opts[body.age_group],
                            TH(""),
                            ""),
 
@@ -452,7 +451,7 @@ if deployment_settings.has_module(module):
                 return None
         else:
             # No search fields specified at all => fallback
-            search_fields = ["pr_pe_label"]
+            search_fields = ["pe_label"]
 
         if label and isinstance(label,str):
             labels = label.split()
@@ -547,9 +546,9 @@ if deployment_settings.has_module(module):
                     for row in rows:
                         href = next.replace("%5bid%5d", "%s" % row.id)
                         records.append(TR(
-                            A(row.pr_pe_label or "[no label]", _href=href),
-                            row.opt_pr_gender and pr_person_gender_opts[row.opt_pr_gender] or "unknown",
-                            row.opt_pr_age_group and pr_person_age_group_opts[row.opt_pr_age_group] or "unknown",
+                            A(row.pe_label or "[no label]", _href=href),
+                            row.gender and pr_gender_opts[row.gender] or "unknown",
+                            row.age_group and pr_age_group_opts[row.age_group] or "unknown",
                             row.date_of_recovery,
                             (row.location_id and [db.gis_location[row.location_id].name] or [""])[0],
     #                        location_id.location_id.represent(row.location_id)

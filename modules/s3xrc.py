@@ -138,8 +138,8 @@ class S3Resource(object):
                                  export_tree=self.__get_tree,
                                  import_tree=self.__put_tree)
 
-        #: maximum number of records accepted in PUT/POST
-        self.push_limit = 1
+        self.push_limit = 1 #: maximum number of records accepted in PUT/POST
+
 
     # -------------------------------------------------------------------------
     def __dbg(self, msg):

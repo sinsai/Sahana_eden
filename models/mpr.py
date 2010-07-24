@@ -51,5 +51,7 @@ if deployment_settings.has_module(module):
                               editable=True)
 
     s3xrc.model.configure(table,
-                          list_fields = ["id",
-                                         "reporter"])
+        list_fields = [
+            "id",
+            "reporter"
+        ])

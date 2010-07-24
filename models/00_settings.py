@@ -41,6 +41,18 @@ mail.settings.sender = deployment_settings.get_mail_sender()
 # Auth
 ######
 
+if deployment_settings.get_auth_openid():
+    # Requires http://pypi.python.org/pypi/python-openid/
+    # Requires https://code.launchpad.net/~keitheis/web2py/openid
+    try:
+        from gluon.contrib.login_methods.openid_auth import OpenIDAuth
+        openid_login_form = OpenIDAuth(auth)
+        from gluon.contrib.login_methods.extended_login_form import ExtendedLoginForm
+        extended_login_form = ExtendedLoginForm(auth, openid_login_form, signals=["oid", "janrain_nonce"])
+        auth.settings.login_form = extended_login_form
+    except ImportError:
+        session.warning = T("Library support not available for OpenID")
+
 #auth.settings.username_field = True
 auth.settings.hmac_key = deployment_settings.get_auth_hmac_key()
 auth.define_tables()

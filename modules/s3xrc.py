@@ -1131,8 +1131,8 @@ class S3Resource(object):
 
         if r.representation in xml_formats or \
            r.representation in json_formats:
-            authorised = permit("create", tablename) and \
-                         permit("update", tablename)
+            authorised = permit("create", self.tablename) and \
+                         permit("update", self.tablename)
             if not authorised:
                 r.unauthorised()
             else:

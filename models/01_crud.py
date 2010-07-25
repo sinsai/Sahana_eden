@@ -733,7 +733,7 @@ def shn_convert_orderby(table, request, fields=None):
 
     def direction(i):
         dir = "sSortDir_" + str(i)
-        if dir in request.vars:
+        if request.vars.get(dir, None):
             return " " + request.vars[dir]
         return ""
 
@@ -764,15 +764,12 @@ def shn_build_ssp_filter(table, request, fields=None):
 # These functions are to handle REST methods.
 # Currently implemented methods are:
 #
-#   - import_json
-#   - import_xml
 #   - list
 #   - read
 #   - create
 #   - update
 #   - delete
 #   - search
-#   - options
 #
 # Handlers must be implemented as:
 #
@@ -780,121 +777,9 @@ def shn_build_ssp_filter(table, request, fields=None):
 #
 # where:
 #
-#   jr - is the XRequest
+#   jr - is the S3Request
 #   attr - attributes of the call, passed through
 #
-
-#
-# import_json -----------------------------------------------------------------
-#
-def import_json(jr, **attr):
-
-    #return json_message(False, 501, "Not implemented!")
-
-    if jr.http == "GET":
-        item = s3xrc.xml.json_message(False, 400, "%s requests not supported." % jr.http)
-        raise HTTP(400, body=item)
-
-    _vars = jr.request.vars
-    if "filename" in _vars and jr.http == "PUT":
-        source = open(_vars["filename"])
-    elif "fetchurl" in _vars and jr.http == "PUT":
-        import urllib
-        source = urllib.urlopen(_vars["fetchurl"])
-    else:
-        #from StringIO import StringIO
-        #source = StringIO(jr.request.body)
-        source = jr.request.body
-
-    tree = s3xrc.xml.json2tree(source)
-
-    if hasattr(source, "close"):
-        source.close()
-
-    # XSLT Transformation
-    if not jr.representation == "json":
-        template_name = "%s.%s" % (jr.representation, XSLT_FILE_EXTENSION)
-        template_file = os.path.join(request.folder, XSLT_IMPORT_TEMPLATES, template_name)
-        if os.path.exists(template_file):
-            tree = s3xrc.xml.transform(tree, template_file,
-                                       domain=s3xrc.domain,
-                                       base_url=s3xrc.base_url)
-            if not tree:
-                session.error = str(T("XSL Transformation Error: ")) + str(s3xrc.xml.error)
-                redirect(URL(r=request, f="index"))
-        else:
-            session.error = str(T("XSL Template Not Found: ")) + \
-                            XSLT_IMPORT_TEMPLATES + "/" + template_name
-            #redirect(URL(r=request, f="index"))
-            item = s3xrc.xml.json_message(False, 501, session.error)
-            raise HTTP(501)
-
-    # For testing:
-    #print s3xrc.xml.tostring(tree)
-    #return s3xrc.xml.tree2json(tree)
-
-    success = jr.import_xml(tree, permit=shn_has_permission, audit=shn_audit)
-
-    if success:
-        item = s3xrc.xml.json_message()
-    else:
-        # TODO: export the whole tree on error
-        tree = s3xrc.xml.tree2json(tree)
-        item = s3xrc.xml.json_message(False, 400, s3xrc.error, tree=tree)
-        raise HTTP(400, body=item)
-
-    return dict(item=item)
-
-#
-# import_xml ------------------------------------------------------------------
-#
-def import_xml(jr, **attr):
-
-    """ Import XML data """
-
-    if jr.http == "GET":
-        item = s3xrc.xml.json_message(False, 400, "%s requests not supported." % jr.http)
-        raise HTTP(400, body=item)
-
-    if "filename" in jr.request.vars and jr.http == "PUT":
-        source = jr.request.vars["filename"]
-    elif "fetchurl" in jr.request.vars and jr.http == "PUT":
-        source = jr.request.vars["fetchurl"]
-    else:
-        source = jr.request.body
-
-    tree = s3xrc.xml.parse(source)
-    if not tree:
-        item = s3xrc.xml.json_message(False, 400, s3xrc.xml.error)
-        raise HTTP(400, body=item)
-
-    # XSLT Transformation
-    if not jr.representation == "xml":
-        template_name = "%s.%s" % (jr.representation, XSLT_FILE_EXTENSION)
-        template_file = os.path.join(request.folder, XSLT_IMPORT_TEMPLATES, template_name)
-        if os.path.exists(template_file):
-            tree = s3xrc.xml.transform(tree, template_file, domain=s3xrc.domain, base_url=s3xrc.base_url)
-            if not tree:
-                session.error = str(T("XSLT Transformation Error: ")) + str(s3xrc.xml.error)
-                redirect(URL(r=request, f="index"))
-        else:
-            session.error = str(T("XSLT Template Not Found: ")) + \
-                            XSLT_IMPORT_TEMPLATES + "/" + template_name
-            #redirect(URL(r=request, f="index"))
-            item = s3xrc.xml.json_message(False, 501, session.error)
-            raise HTTP(501)
-
-    success = jr.import_xml(tree, permit=shn_has_permission, audit=shn_audit)
-
-    if success:
-        item = s3xrc.xml.json_message()
-    else:
-        # TODO: export the whole tree on error
-        tree = s3xrc.xml.tree2json(tree)
-        item = s3xrc.xml.json_message(False, 400, s3xrc.error, tree=tree)
-        raise HTTP(400, body=item)
-
-    return dict(item=item)
 
 #
 # shn_read --------------------------------------------------------------------
@@ -1169,12 +1054,14 @@ def shn_list(jr, **attr):
     # Migrate to an XSLT in future?
     if jr.representation.lower() == "aadata":
 
-        if "iDisplayStart" in request.vars:
-            start = int(request.vars.iDisplayStart)
+        iDisplayStart = request.vars.get("iDisplayStart", None)
+        if iDisplayStart:
+            start = int(iDisplayStart)
         else:
             start = 0
-        if "iDisplayLength" in request.vars:
-            limit = int(request.vars.iDisplayLength)
+        iDisplayLength = request.vars.get("iDisplayLength", None)
+        if iDisplayLength:
+            limit = int(iDisplayLength)
         else:
             limit = None
 
@@ -1191,7 +1078,8 @@ def shn_list(jr, **attr):
         if not fields:
             fields = [f for f in table.fields if table[f].readable]
 
-        if "iSortingCols" in request.vars and orderby is None:
+        iSortingCols = request.vars.get("iSortingCols", None)
+        if iSortingCols and orderby is None:
             orderby = shn_convert_orderby(table, request, fields=fields)
 
         if request.vars.sSearch and request.vars.sSearch <> "":
@@ -2124,8 +2012,6 @@ def shn_rest_controller(module, resource, **attr):
 
     """
 
-    s3xrc.set_handler("import_xml", import_xml)
-    s3xrc.set_handler("import_json", import_json)
     s3xrc.set_handler("list", shn_list)
     s3xrc.set_handler("read", shn_read)
     s3xrc.set_handler("create", shn_create)

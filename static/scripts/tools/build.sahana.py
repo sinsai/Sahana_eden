@@ -20,7 +20,7 @@ import shutil
 import os
 
 def mergeCSS(inputFilenames, outputFilename):
-    output = ''
+    output = ""
     for inputFilename in inputFilenames:
         output += file(inputFilename, "r").read()
     file(outputFilename, "w").write(output)
@@ -28,50 +28,50 @@ def mergeCSS(inputFilenames, outputFilename):
 
 def cleanline(theLine):
     # Kills line breaks, tabs, and double spaces
-    p = re.compile('(\n|\r|\t|\f|\v)+')
-    m = p.sub('', theLine)
+    p = re.compile("(\n|\r|\t|\f|\v)+")
+    m = p.sub("", theLine)
 
     # Kills double spaces
-    p = re.compile('(  )+')
-    m = p.sub(' ', m)
+    p = re.compile("(  )+")
+    m = p.sub(" ", m)
 
     # Removes last semicolon before }
-    p = re.compile('(; }|;})+')
-    m = p.sub('}', m)
+    p = re.compile("(; }|;})+")
+    m = p.sub("}", m)
 
     # Removes space before {
-    p = re.compile('({ )+')
-    m = p.sub('{', m)
+    p = re.compile("({ )+")
+    m = p.sub("{", m)
 
     # Removes all comments
-    p = re.compile('/\*([^*]|[\r\n]|(\*+([^*/]|[\r\n])))*\*+/')
-    m = p.sub('', m)
+    p = re.compile("/\*([^*]|[\r\n]|(\*+([^*/]|[\r\n])))*\*+/")
+    m = p.sub("", m)
 
     # Strip off the Charset
-    p = re.compile('@CHARSET .*;')
-    m = p.sub('', m)
+    p = re.compile("@CHARSET .*;")
+    m = p.sub("", m)
 
     # Strip spaces before the {
-    p = re.compile(' {')
-    m = p.sub('{', m)
+    p = re.compile(" {")
+    m = p.sub("{", m)
 
     # Strip space after :
-    p = re.compile(': ')
-    m = p.sub(':', m)
+    p = re.compile(": ")
+    m = p.sub(":", m)
 
     # Strip space after ,
-    p = re.compile(', ')
-    m = p.sub(',', m)
+    p = re.compile(", ")
+    m = p.sub(",", m)
 
     # Strip space after ;
-    p = re.compile('; ')
-    m = p.sub(';', m)
+    p = re.compile("; ")
+    m = p.sub(";", m)
 
     return m
 
 def compressCSS(inputFilename, outputFilename):
     theFile = file(inputFilename, "r").read()
-    output = ''
+    output = ""
     for line in theFile:
         output = output + cleanline(line)
 
@@ -81,16 +81,16 @@ def compressCSS(inputFilename, outputFilename):
     file(outputFilename, "w").write(_output)
     return
 
-mfbase = '../../mfbase'
+mfbase = "../../mfbase"
 
 def dojs(dogis = False):
     """ Minifies the js"""
     # Define which files we want to include
     # also need to amend sahana.js.cfg
     configDictCore = {
-        'web2py':                       '..',
-        'T2':                           '..',
-        'S3':                           '..'
+        "web2py":                       "..",
+        "T2":                           "..",
+        "S3":                           ".."
     }
 
 
@@ -129,18 +129,18 @@ def dojs(dogis = False):
 
         # also need to amend sahana.js.gis.cfg
         configDictGIS = {
-            'gis':                          '..'
+            "gis":                          ".."
         }
         configDictGeoExt = {
-            'GeoExt.js':                '../gis/geoext/lib',
-            'GeoExt':                   '../gis/geoext/lib',
-            'ux':                       '../gis/geoext'
+            "GeoExt.js":                "../gis/geoext/lib",
+            "GeoExt":                   "../gis/geoext/lib",
+            "ux":                       "../gis/geoext"
         }
         configDictOpenLayers = {
-            'OpenLayers.js':                '../gis/openlayers/lib',
-            'OpenLayers':                   '../gis/openlayers/lib',
-            'Rico':                         '../gis/openlayers/lib',
-            'Gears':                        '../gis/openlayers/lib'
+            "OpenLayers.js":                "../gis/openlayers/lib",
+            "OpenLayers":                   "../gis/openlayers/lib",
+            "Rico":                         "../gis/openlayers/lib",
+            "Gears":                        "../gis/openlayers/lib"
         }
         configDictGlobalGIS = {}
         configDictGlobalGIS.update(configDictOpenLayers)
@@ -196,17 +196,17 @@ def dojs(dogis = False):
 def docss(dogis = True):
     """Compresses the  CSS files"""
     listCSS = [
-        '../../styles/S3/sahana.css',
-        '../../styles/S3/jquery.autocomplete.css',
-        '../../styles/S3/jquery.cluetip.css',
-        '../../styles/S3/jquery.dataTables.css',
-        '../../styles/S3/jquery.jqplot.css',
-        '../../styles/S3/jquery.ui.core.css',
-        '../../styles/S3/jquery.ui.datepicker.css',
-        '../../styles/S3/jquery.ui.theme.css',
-        '../../styles/S3/ajaxS3.css',
-        '../../styles/T2/t2.css',
-        '../../styles/web2py/calendar.css',
+        "../../styles/S3/sahana.css",
+        "../../styles/S3/jquery.autocomplete.css",
+        "../../styles/S3/jquery.cluetip.css",
+        "../../styles/S3/jquery.dataTables.css",
+        "../../styles/S3/jquery.jqplot.css",
+        "../../styles/S3/jquery.ui.core.css",
+        "../../styles/S3/jquery.ui.datepicker.css",
+        "../../styles/S3/jquery.ui.theme.css",
+        "../../styles/S3/ajaxS3.css",
+        "../../styles/T2/t2.css",
+        "../../styles/web2py/calendar.css",
         "../../styles/S3/s3.multiselect.widget.css"
     ]
     outputFilenameCSS = "sahana.min.css"
@@ -229,13 +229,13 @@ def docss(dogis = True):
 
     if dogis:
         listCSSGIS = [
-            '../../styles/gis/gis.css',
-            '../../styles/gis/popup.css',
-            '../../styles/gis/layerlegend.css',
-            #mfbase+'/ext/resources/css/ext-all.css', # would need to copy images if included here
-            '../../styles/gis/google.css',
-            #'../../styles/gis/style.css',
-            '../../styles/gis/ie6-style.css'
+            "../../styles/gis/gis.css",
+            "../../styles/gis/popup.css",
+            "../../styles/gis/layerlegend.css",
+            #mfbase+"/ext/resources/css/ext-all.css", # would need to copy images if included here
+            "../../styles/gis/google.css",
+            #"../../styles/gis/style.css",
+            "../../styles/gis/ie6-style.css"
         ]
         outputFilenameCSSGIS = "gis.min.css"
     

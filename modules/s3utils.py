@@ -2,7 +2,7 @@
 
 """
     Sahana Eden Utilities Module
-    
+
     @requires: U{B{I{gluon}} <http://web2py.com>}
 
     @author: Fran Boon <fran@aidiq.com>
@@ -109,14 +109,14 @@ def getBrowserName(userAgent):
     else:
         return "Unknown"
 
-# shn_get_db_field_value -----------------------------------------------------    
+# shn_get_db_field_value -----------------------------------------------------
 def shn_split_multi_value(value):
     """
     @author: Michael Howden (michael@aidiq.com)
 
-    Splits a string of numbers delimitered by | into a list  
+    Splits a string of numbers delimitered by | into a list
 
-    If value = None, returns []  
+    If value = None, returns []
     """
     if value:
         return re.compile("[\w\-:]+").findall(str(value))
@@ -125,10 +125,10 @@ def shn_split_multi_value(value):
 
 # shn_get_db_field_value -----------------------------------------------------
 def shn_get_db_field_value(db,
-                           table, 
-                           field, 
-                           look_up, 
-                           look_up_field = "id", 
+                           table,
+                           field,
+                           look_up,
+                           look_up_field = "id",
                            match_case = True):
     """
     @author: Michael Howden (michael@aidiq.com)
@@ -137,10 +137,10 @@ def shn_get_db_field_value(db,
         returns the value of <field> from the first record in <table_name>
         with <look_up_field> = <look_up>
 
-    @arguements: 
+    @arguements:
         table - string - The name of the table
         field - string - the field to find the value from
-        look_up - string - the value to find 
+        look_up - string - the value to find
         look_up_field - string - the field to find <look_up> in
         match_case - bool
 
@@ -149,9 +149,9 @@ def shn_get_db_field_value(db,
         None - if there is no matching record
 
     @example
-        shn_get_db_field_value("or_organisation", 
-                               "id", 
-                               look_up = "UNDP", 
+        shn_get_db_field_value("or_organisation",
+                               "id",
+                               look_up = "UNDP",
                                look_up_field = "name" )
     """
     if match_case or db[table][look_up_field].type != "string":

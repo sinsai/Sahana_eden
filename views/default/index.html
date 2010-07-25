@@ -34,6 +34,7 @@
     <br/>{{=T("Email")}}: {{=admin_email}}
     <br/>{{=T("Telephone")}}: {{=admin_tel}}
     </p>
+{{include "rssviewer.html"}}
 {{else:}}
   <div id="login_form">
     <p>
@@ -54,6 +55,7 @@
     {{include "auth/_register.html"}}
   </div>
 {{pass}}
+{{include "rssviewer.html"}}
 </div>
 <script type="text/javascript">//<![CDATA[
 $(document).ready(function() {

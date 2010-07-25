@@ -1,9 +1,9 @@
 # -*- coding: utf-8 -*-
 
-"""
-    Missing Person Registry - Controllers
+""" MPR Missing Person Registry - Controllers
 
     @author: nursix
+
 """
 
 module = request.controller
@@ -12,72 +12,135 @@ if module not in deployment_settings.modules:
     session.error = T("Module disabled!")
     redirect(URL(r=request, c="default", f="index"))
 
-# Options Menu (available in all Functions' Views)
-response.menu_options = [
-    [T('Search for a Person'), False,  URL(r=request, f='person', args=['search_simple'])],
-    [T('View/Edit Person Details'), False, URL(r=request, f='person', args='read'),[
-        [T('Basic Details'), False, URL(r=request, f='person', args='read')],
-        [T('Images'), False, URL(r=request, f='person', args='image')],
-        [T('Identity'), False, URL(r=request, f='person', args='identity')],
-        [T('Address'), False, URL(r=request, f='person', args='address')],
-        [T('Contact Data'), False, URL(r=request, f='person', args='pe_contact')],
-        [T('Presence Log'), False, URL(r=request, f='person', args='presence')],
-    ]],
-    [T('Physical Description'), False, URL(r=request, f='person', args=['pd_general']),[
-        [T('Appearance'), False, URL(r=request, f='person', args=['pd_general'])],
-        [T('Head'), False, URL(r=request, f='person', args=['pd_head'])],
-        [T('Face'), False, URL(r=request, f='person', args=['pd_face'])],
-        [T('Teeth'), False, URL(r=request, f='person', args=['pd_teeth'])],
-        [T('Body'), False, URL(r=request, f='person', args=['pd_body'])],
-    ]]
-    #[T('Report a Missing Person'), False,  URL(r=request, f='report_missing')],
-    #[T('Edit a Missing Person'), False,  URL(r=request, f='edit_missing')],
-    #[T('Report a Found Person'), False,  URL(r=request, f='report_found')],
-    #[T('Reports'), False,  URL(r=request, f='missing_persons'),[
-    #    [T('List Missing People'), False, URL(r=request, f='missing_persons')],
-    #    [T('List Found People'), False, URL(r=request, f='found_persons')]
-    #]]
-]
+module = request.controller
 
+# -----------------------------------------------------------------------------
+# Options Menu (available in all Functions" Views)
+def shn_menu():
+    response.menu_options = [
+        [T("Search for a Person"), False, URL(r=request, f="person", args="search_simple")],
+        [T("Missing Persons"), False, URL(r=request, f="person"), [
+            [T("List"), False, URL(r=request, f="person")],
+            [T("Add"), False, URL(r=request, f="person", args="create")],
+        ]]]
+    menu_selected = []
+    if session.rcvars and "pr_person" in session.rcvars:
+        person = db.pr_person
+        query = (person.id == session.rcvars["pr_person"])
+        record = db(query).select(person.id, limitby=(0, 1)).first()
+        if record:
+            name = shn_pr_person_represent(record.id)
+            menu_selected.append(["%s: %s" % (T("Person"), name), False,
+                                 URL(r=request, f="person", args=[record.id])])
+    if menu_selected:
+        menu_selected = [T("Open recent"), True, None, menu_selected]
+        response.menu_options.append(menu_selected)
+
+shn_menu()
+
+# -----------------------------------------------------------------------------
 def index():
-    "Module's Home Page"
 
-    module_name = deployment_settings.modules[module].name_nice
+    """ Module's Home Page """
+
+    try:
+        module_name = deployment_settings.modules[module].name_nice
+    except:
+        module_name = T("Person Registry")
 
     return dict(module_name=module_name)
 
-# Main controller functions
+
+# -----------------------------------------------------------------------------
 def person():
+
+    """ RESTful CRUD controller """
+
     resource = request.function
-    db.pr_pd_general.est_age.readable=False
-    db.pr_person.missing.default = True
-    return shn_rest_controller('pr', resource, main='first_name', extra='last_name',
-        rheader=shn_pr_rheader,
-        rss=dict(
-            title=shn_pr_person_represent,
-            description="ID Label: %(pr_pe_label)s\n%(comment)s"
-        ))
 
-def person_search():
-    ""
+    def person_prep(jr):
+        if jr.component_name == "config":
+            _config = db.gis_config
+            defaults = db(_config.id == 1).select(limitby=(0, 1)).first()
+            for key in defaults.keys():
+                if key not in ["id", "uuid", "mci", "update_record", "delete_record"]:
+                    _config[key].default = defaults[key]
+
+        return True
+
+    response.s3.prep = person_prep
+
+    response.s3.pagination = True
+
+    s3xrc.model.configure(db.pr_group_membership,
+                          list_fields=["id",
+                                       "group_id",
+                                       "group_head",
+                                       "description"])
+
+    def person_postp(jr, output):
+        if jr.representation in ("html", "popup"):
+            if not jr.component:
+                label = READ
+            else:
+                label = UPDATE
+            linkto = shn_linkto(jr, sticky=True)("[id]")
+            report = URL(r=request, f="person", args=("[id]", "missing_report"))
+            response.s3.actions = [
+                dict(label=str(label), _class="action-btn", url=linkto),
+                dict(label=str(T("Report")), _class="action-btn", url=report)
+            ]
+            # Redirect on create
+            if jr.method == "create":
+                jr.next = response.s3.mpr_next
+        return output
+    response.s3.postp = person_postp
+
+    db.pr_person.missing.readable = False
+    db.pr_person.missing.writable = False
+
+    # Show only missing persons in list views
+    if len(request.args) == 0:
+        response.s3.filter = (db.pr_person.missing == True)
+
+    output = shn_rest_controller("pr", resource,
+                main="first_name",
+                extra="last_name",
+                listadd=False,
+                rheader=lambda jr: shn_pr_rheader(jr,
+                    tabs = [(T("Person Details"), None),
+                            (T("Missing Report"), "missing_report"),
+                            (T("Physical Description"), "physical_description"),
+                            (T("Images"), "image"),
+                            (T("Identity"), "identity"),
+                            (T("Address"), "address"),
+                            (T("Contact Data"), "pe_contact"),
+                            (T("Presence Log"), "presence"),
+                            ]),
+                sticky=True)
+
+    shn_menu()
+    return output
+
+# -----------------------------------------------------------------------------
+def download():
+
+    """ Download a file. """
+
+    return response.download(request, db)
+
+# -----------------------------------------------------------------------------
+def tooltip():
+
+    """ Ajax tooltips """
+
+    if "formfield" in request.vars:
+        response.view = "pr/ajaxtips/%s.html" % request.vars.formfield
     return dict()
 
-def report_missing():
-    ""
-    return dict()
+# -----------------------------------------------------------------------------
+def shn_mpr_person_onvalidate(form):
 
-def edit_missing():
-    ""
-    return dict()
-
-def report_found():
-    ""
-    return dict()
-
-def missing_persons():
-    ""
-    return dict()
-
-def found_persons():
-    ""
-    return dict()
+    pass
+#
+# -----------------------------------------------------------------------------

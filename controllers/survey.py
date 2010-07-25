@@ -260,7 +260,7 @@ def layout():
                    answer_choices = options.answer_choices
                    if answer_choices:
                         choices = answer_choices.split("\r\n")
-                        table_row.append(TD(DIV(question.name,_class="question")))
+                        table_row.append(DIV(question.name,_class="question"))
                         for choice in choices:
                             table_row.append(TD((DIV(choice,INPUT(_type="radio",_name="%s" % (question.uuid)),_class="question_answer"))))
                         if options.allow_comments:
@@ -272,8 +272,7 @@ def layout():
                 table.append(table_row)
                 ui.append(table)
             elif question.question_type is 2: # MC (more than one answer)
-                table = TABLE()
-                table_row = TR()
+                table,table_row = TABLE(),TR()
                 if options:
                    answer_choices = options.answer_choices
                    if answer_choices:
@@ -290,15 +289,92 @@ def layout():
                 table.append(table_row)
                 ui.append(table)
             elif question.question_type is 3:
-                pass
+                table,table_row = TABLE(),TR()
+                thead = THEAD()
+                tbody = TBODY()
+                column_choices = options.column_choices
+                c_choices = column_choices.split("\r\n")
+                if c_choices:
+                    table_row.append(DIV(question.name,_class="question"))
+                    table.append(table_row)                    
+                    thead.append(table_row.append(TH(XML("&nbsp;"),_style="width:20%;")))
+                    for choice in c_choices: 
+                        table_row.append(TH(choice,_scope="col",_style="width:16%;"))
+                    thead.append(table_row)
+                    num_columns = len(c_choices)
+                    row_choices = options.row_choices
+                    r_choices = row_choices.split("\r\n")                    
+                    for row in r_choices:
+                        table_row = TR()
+                        table_row.append(TH(row,_scope="row",_align="left"))
+                        for i in range(num_columns):
+                            table_row.append(TD(INPUT(_type="radio"),_align="center"))
+                    tbody.append(table_row)
+                    table.append(tbody)
             elif question.question_type == 4:
-                pass
-            elif question.question_type == 5:
-                pass
+                table,table_row = TABLE(),TR()
+                thead = THEAD()
+                tbody = TBODY()
+                column_choices = options.column_choices
+                c_choices = column_choices.split("\r\n")
+                if c_choices:
+                    table_row.append(DIV(question.name,_class="question"))
+                    table.append(table_row)
+                    thead.append(table_row.append(TH(XML("&nbsp;"),_style="width:20%;")))
+                    for choice in c_choices:
+                        table_row.append(TH(choice,_scope="col",_style="width:16%;"))
+                    thead.append(table_row)
+                    num_columns = len(c_choices)
+                    row_choices = options.row_choices
+                    r_choices = row_choices.split("\r\n")
+                    for row in r_choices:
+                        table_row = TR()
+                        table_row.append(TH(row,_scope="row",_align="left"))
+                        for i in range(num_columns):
+                            table_row.append(TD(INPUT(_type="checkbox"),_align="center"))                    
+                    tbody.append(table_row)
+                    table.append(tbody)
+            elif question.question_type == 5: #TODO: rating question -- take weights into account.
+                table = TABLE()
+                thead = THEAD()
+                tbody = TBODY()
+                column_choices = options.column_choices
+                c_choices = column_choices.split("\r\n")
+                if c_choices:
+                    table_row = TR()
+                    table_row.append(DIV(question.name,_class="question"))
+                    table.append(table_row)
+                    thead.append(table_row.append(TH(XML("&nbsp;"),_style="width:20%;")))
+                    for choice in c_choices:
+                        table_row.append(TH(choice,_scope="col",_style="width:16%;"))
+                    thead.append(table_row)
+                    num_columns = len(c_choices)
+                    row_choices = options.row_choices
+                    r_choices = row_choices.split("\r\n")
+                    for row in r_choices:
+                        table_row = TR()
+                        table_row.append(TH(row,_scope="row",_align="left"))
+                        for i in range(num_columns):
+                            table_row.append(TD(INPUT(_type="radio",_align="center")))
+                    tbody.append(table_row)
+                    table.append(tbody)
             elif question.question_type == 6:
-                pass
+                table,table_row = TABLE(), TR()
+                table_row.append(TD(DIV(DIV("%s " % (question.name),TD(INPUT()),_class="question_answer")))) # Date/Time
+                if options.allow_comments:
+                     comment_text = options.comment_display_label
+                     if comment_text:
+                         table_row.append(TD(DIV(DIV("%s: " % (comment_text),TD(INPUT())))))
+                     else:
+                         table_row.append(TD(DIV(DIV("Comments: ",TD(INPUT())))))
+                table.append(table_row)
+
+                ui.append(table)
+
             elif question.question_type == 7:
-                pass
+                table = TABLE()
+                table_row = TR()
+
             elif question.question_type == 8:
                 pass
             elif question.question_type == 9:
@@ -306,17 +382,17 @@ def layout():
             elif question.question_type == 10:
                 pass
             elif question.question_type == 11:     
-                table = TABLE()
-                table_row = TR()
-                table_row.append(TD(DIV(DIV("%s " % (question.name),TD(INPUT(_class="date")),_class="question_answer")))) # Date/Time
-                if options.allow_comments:
+               table,table_row = TABLE(), TR()
+               table_row.append(TD(DIV(DIV("%s " % (question.name),TD(INPUT()),_class="question_answer")))) # Date/Time
+               if options.allow_comments:
                     comment_text = options.comment_display_label
                     if comment_text:
                         table_row.append(TD(DIV(DIV("%s: " % (comment_text),TD(INPUT())))))
                     else:
                         table_row.append(TD(DIV(DIV("Comments: ",TD(INPUT())))))
-                table.append(table_row)
-                ui.append(table)
+               table.append(table_row)
+
+               ui.append(table)
 
             elif question.question_type == 12:
                 pass
@@ -325,11 +401,9 @@ def layout():
             elif question.question_type == 14:
                 pass
             elif question.question_type == 15:
-                pass
-            elif question.question_type == 16:
-                pass
+                pass           
             else:
-                pass        
+                pass
 
     ui.append(BR())
     ui.append(DIV(A(T("Add Section"),_class="colorbox",

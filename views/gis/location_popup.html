@@ -18,7 +18,7 @@
         $("#gis_location_gis_feature_type__row").hide();
     {{if "pr_presence" in request.vars.caller:}}
             // If a Person location then set defaults from main form & offer HTML5 GeoLocation
-            var location_name = self.parent.$('#pr_presence_pr_pe_id__row > td.w2p_fw').html();
+            var location_name = self.parent.$('#pr_presence_pe_id__row > td.w2p_fw').html();
             if (location_name) {
                 $("#gis_location_name").val(location_name);
                 $("#gis_location_name__row").hide();

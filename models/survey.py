@@ -80,15 +80,10 @@ if deployment_settings.has_module(module):
                              Field("survey_instance_id",db.survey_instance),
                              Field("question_id",db.survey_question),
                              Field("answer_value","text",length=600),                             
-                             Field("answer_image","upload")) # store the image if "Image" is selected.
-    
-
-    # this is to store the possible "answers" such as "Yes","No","Not Applicable"
-    resource = "answer_option"
-    tablename = module+"_"+resource
-    option = db.define_table(tablename,timestamp,uuidstamp,deletion_status,authorstamp,
-                             Field("question_id",db.survey_question),
-                             Field("option_value","text",length=600))
+                             Field("answer_image","upload"), # store the image if "Image" is selected.
+                             Field("answer_location",db.gis_location),
+                             Field("answer_person",db.pr_person),
+                             Field("answer_organisation",db.org_organisation))
 
     # Link table
     resource = "template_link_table"
@@ -118,28 +113,19 @@ if deployment_settings.has_module(module):
                                         Field("column_choices","text"), # column choices
                                         Field("tf_choices","text"), # text before the text fields.
                                         Field("number_of_options","integer"),
-                                        Field("ta_rows","integer"), # how many rows the Text Area has
-                                        Field("tf_ta_columns","integer"), # number of columns for text-fields and columns alike                                        
                                         Field("allow_comments","boolean"), # whether or not to allow comments
                                         Field("comment_display_label"), # the label for the comment field
                                         Field("required","boolean"), # marks the question as required                                        
                                         Field("validate","boolean"),  # whether or not to enable validation
                                         Field("validation_options","integer"), # pre-set validation regexps and such.
                                         Field("aggregation_type","string"))
-
-
-    resource = "answer_options"
-    tablename = module +"_" + resource
-    answer_options = db.define_table(tablename,uuidstamp,deletion_status,authorstamp,
-                                 Field("question_id",db.survey_question,readable=False,writable=False),
-                                 Field("answer_row_value","text",readable=False,writable=False),
-                                 Field("answer_column_choice","text",readable=False,writable=False))
-
+    
     def question_options_onaccept(form):
         if form.vars.id and session.rcvars.survey_question:
             table = db.survey_question_options
             opts = db(table.id == form.vars.id).update(question_id=session.rcvars.survey_question)
             db.commit()
+
     s3xrc.model.configure(db.survey_question_options,
                       onaccept=lambda form: question_options_onaccept(form))
 

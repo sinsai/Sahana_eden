@@ -47,7 +47,7 @@ def shn_sessions():
 
     settings = db(db.s3_setting.id > 0).select(db.s3_setting.debug, db.s3_setting.security_policy, db.s3_setting.self_registration, db.s3_setting.audit_read, db.s3_setting.audit_write, limitby=(0, 1)).first()
     # Are we running in debug mode?
-    session.s3.debug = "debug" in request.vars or settings and settings.debug
+    session.s3.debug = request.vars.get("debug", None) or settings and settings.debug
     session.s3.self_registration = (settings and settings.self_registration) or 1
     session.s3.security_policy = (settings and settings.security_policy) or 1
 

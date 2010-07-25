@@ -841,7 +841,7 @@ class S3Resource(object):
 
         # Default view
         if r.representation <> "html":
-            r.response.view = "plain.html"
+            r.response.view = "xml.html"
 
         # Method handling
         handler = None
@@ -1164,8 +1164,7 @@ class S3Resource(object):
                 import urllib
                 source = urllib.urlopen(_vars["fetchurl"])
             else:
-                from StringIO import StringIO
-                source = StringIO(r.request.body)
+                source = r.request.body
             tree = xml.json2tree(source)
 
         if not tree:

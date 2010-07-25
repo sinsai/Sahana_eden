@@ -368,14 +368,18 @@ s3.crud_strings[tablename] = Storage(
 
 
 # -----------------------------------------------------------------------------
-shn_person_comment = \
+shn_person_comment = lambda title, comment: \
     DIV(A(ADD_PERSON,
         _class="colorbox",
         _href=URL(r=request, c="pr", f="person", args="create", vars=dict(format="popup")),
         _target="top",
         _title=ADD_PERSON),
     DIV(DIV(_class="tooltip",
-        _title=Tstr("Person") + "|" + Tstr("Select the person associated with this scenario."))))
+        _title="%s|%s" % (title, comment))))
+
+shn_person_id_comment = shn_person_comment(
+    Tstr("Person"),
+    Tstr("Select the person associated with this scenario."))
 
 person_id = db.Table(None, "person_id",
                      FieldS3("person_id", db.pr_person,
@@ -384,7 +388,7 @@ person_id = db.Table(None, "person_id",
                                                              shn_pr_person_represent)),
                              represent = lambda id: (id and \
                                          [shn_pr_person_represent(id)] or ["None"])[0],
-                             comment = shn_person_comment,
+                             comment = shn_person_id_comment,
                              ondelete = "RESTRICT"))
 
 

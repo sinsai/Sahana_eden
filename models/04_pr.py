@@ -293,8 +293,8 @@ tablename = "%s_%s" % (module, resource)
 table = db.define_table(tablename,
                         timestamp, authorstamp, uuidstamp, deletion_status,
                         pe_id,
-                        Field("observer", db.pr_person),
                         Field("reporter", db.pr_person),
+                        Field("observer", db.pr_person),
                         location_id,
                         Field("location_details"),
                         Field("time", "datetime"),
@@ -316,12 +316,16 @@ table.uuid.requires = IS_NOT_IN_DB(db, "%s.uuid" % tablename)
 
 table.observer.requires = IS_NULL_OR(IS_ONE_OF(db, "pr_person.id", shn_pr_person_represent))
 table.observer.represent = lambda id: (id and [shn_pr_person_represent(id)] or ["None"])[0]
-table.observer.comment = shn_person_comment
+table.observer.comment = shn_person_comment(
+        Tstr("Observer"),
+        Tstr("Person who observed the presence (if different from reporter)."))
 table.observer.ondelete = "RESTRICT"
 
 table.reporter.requires = IS_NULL_OR(IS_ONE_OF(db, "pr_person.id", shn_pr_person_represent))
 table.reporter.represent = lambda id: (id and [shn_pr_person_represent(id)] or ["None"])[0]
-table.reporter.comment = shn_person_comment
+table.reporter.comment = shn_person_comment(
+        Tstr("Reporter"),
+        Tstr("Person who is reporting about the presence."))
 table.reporter.ondelete = "RESTRICT"
 
 table.time.requires = IS_UTC_DATETIME(utc_offset=shn_user_utc_offset(), allow_future=False)

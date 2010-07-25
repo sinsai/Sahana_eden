@@ -423,7 +423,7 @@ table.manager_id.represent = lambda id: (id and [shn_pr_person_represent(id)] or
 # Staff Resource called from multiple controllers
 # - so we define strings in the model
 table.person_id.label = T("Person")
-#table.person_id.comment = DIV(SPAN("*", _class="req"), shn_person_comment)
+#table.person_id.comment = DIV(SPAN("*", _class="req"), shn_person_id_comment)
 table.organisation_id.comment = DIV(SPAN("*", _class="req"), shn_organisation_comment)
 table.title.label = T("Job Title")
 table.title.comment = DIV( _class="tooltip", _title=Tstr("Title") + "|" + Tstr("The Role this person plays within this Office/Project."))

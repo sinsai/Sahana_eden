@@ -380,10 +380,18 @@ gis_location_hierarchy = {
     "L2":T("District"),
     "L3":T("Town"),
 }
+gis_location_languages = {
+    1:T("English"),
+    2:T("Hindi"),
+    #3:T("Local Language"),
+}
+gis_location_language_default = 1
 resource = "location"
 tablename = "%s_%s" % (module, resource)
 table = db.define_table(tablename, timestamp, uuidstamp, deletion_status,
-                Field("name", notnull=True),
+                Field("name", notnull=True),    # Primary name
+                Field("name_l10n"),             # Local Names are stored in this field
+                Field("name_dummy"),            # Dummy field to provide Widget
                 Field("code"),
                 Field("description"),
                 feature_class_id,       # Will be removed
@@ -412,6 +420,13 @@ table = db.define_table(tablename, timestamp, uuidstamp, deletion_status,
 
 table.uuid.requires = IS_NOT_IN_DB(db, "%s.uuid" % table)
 table.name.requires = IS_NOT_EMPTY()    # Placenames don't have to be unique
+table.name.label = T("Primary Name")
+table.name.comment = SPAN("*", _class="req")
+# We never access name_l10n directly
+table.name_l10n.readable = False
+table.name_l10n.writable = False
+table.name_dummy.label = T("Local Names")
+table.name_dummy.comment = DIV(_class="tooltip", _title=Tstr("Local Names") + "|" + Tstr("Names can be added in multiple languages"))
 table.level.requires = IS_NULL_OR(IS_IN_SET(gis_location_hierarchy))
 table.parent.requires = IS_NULL_OR(IS_ONE_OF(db, "gis_location.id", "%(name)s"))
 table.parent.represent = lambda id: (id and [db(db.gis_location.id == id).select(db.gis_location.name, limitby=(0, 1)).first().name] or ["None"])[0]
@@ -423,7 +438,6 @@ table.wkt.represent = lambda wkt: gis.abbreviate_wkt(wkt)
 table.lat.requires = IS_NULL_OR(IS_LAT())
 table.lon.requires = IS_NULL_OR(IS_LON())
 table.source.requires = IS_NULL_OR(IS_IN_SET(gis_source_opts))
-table.name.label = T("Name")
 table.level.label = T("Level")
 table.code.label = T("Code")
 table.description.label = T("Description")
@@ -459,9 +473,33 @@ s3xrc.model.add_component(module, resource,
                           deletable=True,
                           editable=True)
 
-s3xrc.model.configure(db.gis_location,
+s3xrc.model.configure(table,
                       onvalidation=lambda form: gis.wkt_centroid(form),
                       onaccept=gis.update_location_tree())
+                      
+resource = "location_name"
+tablename = module + "_" + resource
+table = db.define_table(tablename, timestamp, uuidstamp, deletion_status,
+                location_id,
+                Field("name_l10n"),
+                Field("language"),     
+                migrate=migrate)
+table.uuid.requires = IS_NOT_IN_DB(db, '%s.uuid' % tablename)
+table.name_l10n.label = T("Name")
+table.language.requires = IS_IN_SET(gis_location_languages)
+table.language.label = T("Language")
+
+# Multiselect Widget
+table = db.gis_location
+name_dummy_element = S3MultiSelectWidget(db = db,                                                             
+                                         link_table_name = tablename,                  
+                                         link_field_name = "location_id")
+table.name_dummy.widget = name_dummy_element.widget
+table.name_dummy.represent = name_dummy_element.represent
+def gis_location_onaccept(form):
+    name_dummy_element.onaccept(db, session.rcvars.gis_location, request)
+    gis.update_location_tree()
+s3xrc.model.configure(table, onaccept=gis_location_onaccept)
 
 # -----------------------------------------------------------------------------
 #

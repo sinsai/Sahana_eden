@@ -391,6 +391,8 @@ class AuthS3(Auth):
             if cas_user:
                 cas_user[passfield] = None
                 user = self.get_or_create_user(cas_user)
+            elif hasattr(cas, "login_form"):
+                return cas.login_form()
             else:
                 # we need to pass through login again before going on
                 next = URL(r=request) + "?_next=" + next

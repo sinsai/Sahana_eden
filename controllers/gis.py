@@ -364,7 +364,6 @@ def location():
     table = db[tablename]
 
     # Model options
-    table.name.comment = SPAN("*", _class="req")
     table.level.comment = DIV( _class="tooltip", _title=T("Level|Is the location is a geographic area, then state at what level here."))
     table.code.comment = DIV( _class="tooltip", _title=T("Code|For a country this would be the ISO2 code, for a Town, it would be the Airport Locode."))
     table.parent.comment = DIV(A(ADD_LOCATION,
@@ -425,8 +424,8 @@ def location():
         filters.append((db.gis_location.parent.belongs(db(db.gis_location.name.like(parent)).select(db.gis_location.id))))
         # ToDo: Make this recursive - want ancestor not just direct parent!
 
-    if "caller" in _vars:
-        caller = _vars["caller"]
+    caller = _vars.get("caller", None)
+    if caller:
         if "gis_location_parent" in caller:
             # If a Parent location then populate defaults for the fields & Hide unnecessary rows
             table.description.readable = table.description.writable = False

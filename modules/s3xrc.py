@@ -570,7 +570,7 @@ class S3Resource(object):
         if self.__storage is None:
 
             if not self.__multiple:
-                limitby = (0,1)
+                limitby = (0, 1)
             else:
                 # Slicing
                 if start is not None:

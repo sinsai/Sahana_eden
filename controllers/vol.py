@@ -19,12 +19,13 @@ def shn_menu():
         ]],
     ]
     if session.rcvars and "org_project" in session.rcvars:
-        selection = db.org_project[session.rcvars["org_project"]]
+        project_id = session.rcvars["org_project"]
+        selection = db.org_project[project_id]
         if selection:
             menu_project = [
-                    ["%s %s" % (T("Project:"), selection.name), False, URL(r=request, f="project", args=[selection.id]),[
-                        [T("Tasks"), False, URL(r=request, f="project", args=[str(selection.id), "task"])],
-                        [T("Positions"), False, URL(r=request, f="project", args=[str(selection.id), "position"])],
+                    ["%s %s" % (T("Project:"), selection.code), False, URL(r=request, f="project", args=[project_id]),[
+                        [T("Tasks"), False, URL(r=request, f="project", args=[project_id, "task"])],
+                        [T("Staff"), False, URL(r=request, f="project", args=[project_id, "staff"])],
                     ]]
             ]
             menu.extend(menu_project)
@@ -33,16 +34,20 @@ def shn_menu():
     ]
     menu.extend(menu_persons)
     if session.rcvars and "pr_person" in session.rcvars:
-        selection = db.pr_person[session.rcvars["pr_person"]]
+        person_id = session.rcvars["pr_person"]
+        selection = db.pr_person[person_id]
         if selection:
             selection = shn_pr_person_represent(selection.id)
             menu_person = [
-                ["%s %s" % (T("Person:"), selection), False, URL(r=request, f="person"),[
-                    [T("Volunteer Status"), False, URL(r=request, f="person", args="volunteer")],
-                    [T("Resources"), False, URL(r=request, f="person", args="resource")],
-                    [T("Address"), False, URL(r=request, f="person", args="address")],
-                    [T("Contact"), False, URL(r=request, f="person", args="pe_contact")],
-                    [T("Identity"), False, URL(r=request, f="person", args="identity")],
+                ["%s %s" % (T("Person:"), selection), False, URL(r=request, f="person", args=[person_id]),[
+                    [T("Volunteer Status"), False, URL(r=request, f="person", args=[person_id, "volunteer"])],
+                    [T("Resources"), False, URL(r=request, f="person", args=[person_id, "resource"])],
+                    [T("Images"), False, URL(r=request, f="person", args=[person_id, "image"])],
+                    [T("Identity"), False, URL(r=request, f="person", args=[person_id, "identity"])],
+                    [T("Address"), False, URL(r=request, f="person", args=[person_id, "address"])],
+                    [T("Contact"), False, URL(r=request, f="person", args=[person_id, "pe_contact"])],
+                    [T("Memberships"), False, URL(r=request, f="person", args=[person_id, "group_membership"])],
+                    [T("Presence Log"), False, URL(r=request, f="person", args=[person_id, "presence"])],
                 ]]
             ]
             menu.extend(menu_person)
@@ -75,13 +80,34 @@ def person():
 
     response.s3.pagination = True
 
-    output = shn_rest_controller("pr", resource, main="first_name", extra="last_name",
-        rheader=shn_pr_rheader,
-        sticky=True,
-        rss=dict(
-            title=shn_pr_person_represent,
-            description="ID Label: %(pr_pe_label)s\n%(comment)s"
-        ))
+    def person_postp(jr, output):
+        if jr.representation in ("html", "popup"):
+            if not jr.component:
+                label = READ
+            else:
+                label = UPDATE
+            linkto = shn_linkto(jr, sticky=True)("[id]")
+            response.s3.actions = [
+                dict(label=str(label), _class="action-btn", url=linkto)
+            ]
+        return output
+    response.s3.postp = person_postp
+
+    output = shn_rest_controller("pr", resource,
+                main="first_name",
+                extra="last_name",
+                rheader=lambda jr: shn_pr_rheader(jr,
+                    tabs = [(T("Basic Details"), None),
+                            (T("Volunteer Status"), "volunteer"),
+                            (T("Resources"), "resource"),
+                            (T("Images"), "image"),
+                            (T("Identity"), "identity"),
+                            (T("Address"), "address"),
+                            (T("Contact Data"), "pe_contact"),
+                            (T("Memberships"), "group_membership"),
+                            (T("Presence Log"), "presence"),
+                            ]),
+                sticky=True)
 
     shn_menu()
     return output

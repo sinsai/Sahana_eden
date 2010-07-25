@@ -766,7 +766,7 @@ def shn_project_rheader(jr, tabs=[]):
                         TH(T("Status: ")),
                         "%s" % org_project_status_opts[project.status],
                         TH(T("Sector(s): ")),
-                        sectors
+                        sectors,
                         #TH(A(T("Edit Project"),
                         #    _href=URL(r=request, f="project", args=[jr.id, "update"], vars={"_next": _next})))
                         )

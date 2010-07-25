@@ -89,7 +89,7 @@ def shn_pentity_represent(id, default_label="[no label]"):
                 group.group_name, pe_type_nice
             )
 
-    elif entity_type == "org_organisation":
+    elif pe_type == "org_organisation":
         organisation = db(table.pe_id == id).select(
                           table.name,
                           limitby=(0, 1)).first()
@@ -98,7 +98,7 @@ def shn_pentity_represent(id, default_label="[no label]"):
                 organisation.name, pe_type_nice
             )
 
-    elif entity_type == "org_office":
+    elif pe_type == "org_office":
         office = db(table.pe_id == id).select(
                     table.name,
                     limitby=(0, 1)).first()
@@ -110,7 +110,7 @@ def shn_pentity_represent(id, default_label="[no label]"):
     else:
         pe_str = "[%s] (%s)" % (
             label,
-            vita.trackable_types[entity_type]
+            vita.trackable_types[pe_type]
         )
 
     return pe_str

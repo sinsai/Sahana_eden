@@ -30,7 +30,8 @@ shn_xml_export_formats = dict(
     osm = "application/xml",
     rss = "application/rss+xml",
     georss = "application/rss+xml",
-    kml = "application/vnd.google-earth.kml+xml"
+    kml = "application/vnd.google-earth.kml+xml",
+    #geojson = "application/xml"
 ) #: Supported XML output formats and corresponding response headers
 
 shn_json_import_formats = ["json"] #: Supported JSON import formats
@@ -733,7 +734,7 @@ def shn_convert_orderby(table, request, fields=None):
 
     def direction(i):
         dir = "sSortDir_" + str(i)
-        if dir in request.vars:
+        if request.vars.get(dir, None):
             return " " + request.vars[dir]
         return ""
 
@@ -1054,12 +1055,14 @@ def shn_list(jr, **attr):
     # Migrate to an XSLT in future?
     if jr.representation.lower() == "aadata":
 
-        if "iDisplayStart" in request.vars:
-            start = int(request.vars.iDisplayStart)
+        iDisplayStart = request.vars.get("iDisplayStart", None)
+        if iDisplayStart:
+            start = int(iDisplayStart)
         else:
             start = 0
-        if "iDisplayLength" in request.vars:
-            limit = int(request.vars.iDisplayLength)
+        iDisplayLength = request.vars.get("iDisplayLength", None)
+        if iDisplayLength:
+            limit = int(iDisplayLength)
         else:
             limit = None
 
@@ -1076,7 +1079,8 @@ def shn_list(jr, **attr):
         if not fields:
             fields = [f for f in table.fields if table[f].readable]
 
-        if "iSortingCols" in request.vars and orderby is None:
+        iSortingCols = request.vars.get("iSortingCols", None)
+        if iSortingCols and orderby is None:
             orderby = shn_convert_orderby(table, request, fields=fields)
 
         if request.vars.sSearch and request.vars.sSearch <> "":

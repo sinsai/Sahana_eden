@@ -138,8 +138,8 @@ class S3Resource(object):
                                  export_tree=self.__get_tree,
                                  import_tree=self.__put_tree)
 
-        #: maximum number of records accepted in PUT/POST
-        self.push_limit = 1
+        self.push_limit = 1 #: maximum number of records accepted in PUT/POST
+
 
     # -------------------------------------------------------------------------
     def __dbg(self, msg):
@@ -570,7 +570,7 @@ class S3Resource(object):
         if self.__storage is None:
 
             if not self.__multiple:
-                limitby = (0,1)
+                limitby = (0, 1)
             else:
                 # Slicing
                 if start is not None:
@@ -841,7 +841,7 @@ class S3Resource(object):
 
         # Default view
         if r.representation <> "html":
-            r.response.view = "plain.html"
+            r.response.view = "xml.html"
 
         # Method handling
         handler = None
@@ -1104,7 +1104,7 @@ class S3Resource(object):
             tree = self.__manager.xml.transform(tree, template, **args)
             if not tree:
                 error = self.__manager.xml.json_message(False, 400,
-                            str(T("XSLT Transformation Error: %s ")) % \
+                            str("XSLT Transformation Error: %s ") % \
                             self.__manager.xml.error)
                 raise HTTP(400, body=error)
 
@@ -1131,8 +1131,8 @@ class S3Resource(object):
 
         if r.representation in xml_formats or \
            r.representation in json_formats:
-            authorised = permit("create", tablename) and \
-                         permit("update", tablename)
+            authorised = permit("create", self.tablename) and \
+                         permit("update", self.tablename)
             if not authorised:
                 r.unauthorised()
             else:
@@ -1162,10 +1162,9 @@ class S3Resource(object):
                 source = open(vars["filename"])
             elif "fetchurl" in vars:
                 import urllib
-                source = urllib.urlopen(_vars["fetchurl"])
+                source = urllib.urlopen(vars["fetchurl"])
             else:
-                from StringIO import StringIO
-                source = StringIO(r.request.body)
+                source = r.request.body
             tree = xml.json2tree(source)
 
         if not tree:
@@ -1191,7 +1190,7 @@ class S3Resource(object):
 
             if not tree:
                 error = xml.json_message(False, 400,
-                            str(T("XSLT Transformation Error: %s ")) % \
+                            str("XSLT Transformation Error: %s ") % \
                             self.__manager.xml.error)
                 raise HTTP(400, body=error)
 
@@ -2995,6 +2994,7 @@ class S3ResourceController(object):
                                         download_url=self.download_url,
                                         marker=marker)
 
+                    element.set(self.xml.ATTRIBUTE.ref, "True")
                     element_list.append(element)
 
                     reference_map.extend(rmap)
@@ -3622,6 +3622,7 @@ class S3XML(object):
         field="field",
         value="value",
         resource="resource",
+        ref="ref",
         domain="domain",
         url="url",
         error="error",

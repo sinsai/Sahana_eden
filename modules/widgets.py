@@ -39,9 +39,9 @@ class S3CheckboxesWidget(OptionsWidget):
     """
 
     def __init__(self,
-                 db,
-                 lookup_table_name, 
-                 lookup_field_name,
+                 db = None,
+                 lookup_table_name = None, 
+                 lookup_field_name = None,
                  multiple = False,
                  options = None,
                  num_column = 1,                                         
@@ -58,7 +58,9 @@ class S3CheckboxesWidget(OptionsWidget):
 
         self.help_lookup_field_name = help_lookup_field_name
         self.help_footer = help_footer
-        self.requires = IS_NULL_OR(IS_IN_DB(db, 
+
+        if db and lookup_table_name and lookup_field_name:
+            self.requires = IS_NULL_OR(IS_IN_DB(db, 
                                    db[lookup_table_name].id, 
                                    "%(" + lookup_field_name + ")s", 
                                    multiple = multiple))
@@ -66,18 +68,20 @@ class S3CheckboxesWidget(OptionsWidget):
         if options:
             self.options = options
         else:
-            if hasattr(self.requires, 'options'):
+            if hasattr(self.requires, "options"):
                 self.options = self.requires.options()
             else:
-                raise SyntaxError, 'widget cannot determine options of %s' % field  
+                raise SyntaxError, "widget cannot determine options of %s" % field  
 
 
     def widget( self,
                 field, 
                 value = None
                 ):
-
-        db = self.db
+        if self.db:
+            db = self.db
+        else:
+            db = field._db
 
         values = shn_split_multi_value(value)
 
@@ -88,25 +92,22 @@ class S3CheckboxesWidget(OptionsWidget):
         if len(self.options) % self.num_column > 0:
              num_row = num_row +1 
 
-        table = TABLE(_id = str(field).replace('.',"_"))
+        table = TABLE(_id = str(field).replace(".", "_"))
 
         for i in range(0,num_row):
             table_row = TR()
             for j in range(0, self.num_column):
-                #check that the index is still within self.options
+                # Check that the index is still within self.options
                 index = num_row*j + i
                 if index < len(self.options):
                     input_options = {}
-                    input_options = dict(requires = attr.get('requires',None),
-                                         _value = self.options[index][0], 
+                    input_options = dict(requires = attr.get("requires", None),
+                                         _value = str(self.options[index][0]), 
+                                         value = values,
                                          _type = "checkbox",
                                          _name = field.name,
                                          hideerror = True
                                         )
-                    if self.options[index][0] in values:
-                        input_options["value"] = "on"
-                    #table_row.append(TD(INPUT(**input_options)))\
-
                     tip_attr = {}
                     help_text = ""
                     if self.help_lookup_field_name: 
@@ -114,7 +115,7 @@ class S3CheckboxesWidget(OptionsWidget):
                                                                    table = self.lookup_table_name,
                                                                    field = self.help_lookup_field_name, 
                                                                    look_up = self.options[index][0], 
-                                                                   look_up_field = 'id')
+                                                                   look_up_field = "id")
                                           )
                                         )
                     if self.help_footer:
@@ -141,7 +142,7 @@ class S3CheckboxesWidget(OptionsWidget):
                                        table = self.lookup_table_name,
                                        field = self.lookup_field_name, 
                                        look_up = id, 
-                                       look_up_field = 'id')
+                                       look_up_field = "id")
                    for id in shn_split_multi_value(value) if id]
         if list and not None in list:
             return ", ".join(list)
@@ -165,35 +166,42 @@ class JSON(INPUT):
     * Better error handling
     * Make this compatible with the Multi Rows widget -> this would include a command to delete AND have to set the record of the field at the end
     * Save multiple ids as X|X|X|X
-    * have postprocessing to convert "id" -> "{'id':X}"
+    * have postprocessing to convert 'id' -> '{"id":X}'
     * Why are JSON attributes being saved?
     * Use S3XRC
     """    
     def _validate(self):
-        #must be post-processing - because it needs the id of the added record 
-        name = self['_name']
-        if name == None or name == '':
+        # must be post-processing - because it needs the id of the added record 
+        name = self["_name"]
+        if name == None or name == "":
             return True
         name = str(name)
 
         json_str = self.request_vars.get(name, None)
 
         if json_str == "":
-            #Don't do anything with a blank field
+            # Don't do anything with a blank field
             value =  self["existing_value"]
 
         elif not "link_field_name" in self.attributes:
             value = self._process_json(json_str,
                                        self["existing_value"] )
+            # This will be an autocomplete (not multi select), therefore extract value from list
+            if value:
+                value = value[0]
         else:
-            #If link_feild_name exists ((S3Multiselect, _process_json will require the record id
-            #therefore, it must be called from the onaccept, after the record is created 
-            value =  self["existing_value"]    
+            # If link_field_name exists ((S3Multiselect, _process_json will require the record id
+            # therefore, it must be called from the onaccept, after the record is created.
+            if self["existing_value"]:
+                # ERROR - this causes errors if self["existing_value"] contains '
+                value =  "'"  + self["existing_value"] + "'," + json_str
+            else:
+                value = json_str
 
         if value == "":
             value = None
 
-        self['value'] = self.vars[name] = value    
+        self["value"] = self.vars[name] = value    
 
         return True
 
@@ -201,13 +209,14 @@ class JSON(INPUT):
                  db,
                  link_field_value,
                  json_request):
-        json_str = json_request.post_vars.get(self['_name'], None)
+        json_str = json_request.post_vars.get(self["_name"], None)
         if json_str:
             value = self._process_json(json_str,
                                        self["existing_value"],
                                        link_field_value = link_field_value,
                                        json_request = json_request )    
-            update_dict = {self['_name']: value}
+            value = "|".join(value)
+            update_dict = {self["_name"]: value}
             db(db[self["table_name"]].id == link_field_value).update(**update_dict)
 
 
@@ -221,10 +230,14 @@ class JSON(INPUT):
         json_table = self.attributes["json_table"]        
         db = json_table._db
 
+        values = []
+
         if existing_value:
-            values = existing_value.split("|")
-        else:
-            values = []
+            existing_values = shn_split_multi_value(existing_value)
+            for id in existing_values:
+                id = str(id)
+                if id not in values:
+                    values.append(id)
 
         link_field_name = None
         if "link_field_name" in self.attributes:  
@@ -233,37 +246,57 @@ class JSON(INPUT):
         try:
             json_data = eval(json_str)
         except:
-            self.errors[name] = "Autocomplete Data Error. Please Contact Administrator"
-            return False
+            # TODO: This should record the error, but not hang
+            raise SyntaxError, "JSON String %s is invalid" % json_str
+            return None
 
-        #if there is only one JSON object, make it iterable
+        # If there is only one JSON object, make it iterable
         if type(json_data).__name__ != "tuple":
             json_data = [json_data]
         for json_record in json_data:
+            # This is to handle the existing values - fix if the validation fails on another field
+            # and there is no "on_accept" to save the JSON.
+            if isinstance( json_record, (tuple, list) ):
+                json_record = int(json_record[0])
+            if type(json_record).__name__ == "int":
+                id = str(json_record)
+                if id not in values:
+                    values.append(id)  
+                continue       
+            if isinstance( json_record, (str) ):
+                ids = shn_split_multi_value(json_record)
+                for id in ids:
+                    if id not in values:
+                        values.append(id)  
+                continue
+
             json_record = Storage(json_record)
 
-            #insert value to link this record back to the record currently being saved
+            # insert value to link this record back to the record currently being saved
             if link_field_name:
                 json_record[link_field_name] = link_field_value
 
             query = (json_table.deleted==False) 
             for field, value in json_record.iteritems():
                 if type(value).__name__ == "dict":
-                    #recurse through this JSON data
-                    #TODO - This doesn't work with nested multiselect, unless we access it's existing value. 
-                    #This could be done by doing the recurse AFTER the add... but then we would still need to get the variables out...
+                    # recurse through this JSON data
+                    # TODO - This doesn't work with nested multiselect, unless we access it's existing value. 
+                    # This could be done by doing the recurse AFTER the add... but then we would still need to get the variables out...
                     recurse_table_name = json_table[field].type[10:]
-                    json_record[field] = value = JSON(json_table = db[recurse_table_name])._process_json(str(value))
+                    value = JSON(json_table = db[recurse_table_name])._process_json(str(value))
+                    if value:
+                        value = value[0]
+                    json_record[field] = value 
 
                 if field == "file":
                     f = json_request.post_vars[value] 
 
-                    if hasattr(f,'file'):
+                    if hasattr(f, "file"):
                         (source_file, original_filename) = (f.file, f.filename)
                     elif isinstance(f, (str, unicode)):
                         ### do not know why this happens, it should not
                         (source_file, original_filename) = \
-                            (cStringIO.StringIO(f), 'file.txt')
+                            (cStringIO.StringIO(f), "file.txt")
                     filename = db.drrpp_file.file.store(source_file, original_filename)
 
                     json_record[field] = value = filename
@@ -276,9 +309,9 @@ class JSON(INPUT):
                 query = query & (json_table[field] == value)
 
             if "id" not in json_record:
-                #ADD
-                #Search for the value existing in the table already
-                #TODO - why is query becoming a bool?!?!
+                # ADD
+                # Search for the value existing in the table already
+                # TODO - why is query becoming a bool?!?!
                 #if query:
                 matching_row = db(query).select()
                 #else:
@@ -293,7 +326,7 @@ class JSON(INPUT):
                     values.append(id)
 
             else:
-                #DELETE / UPDATE  
+                # DELETE / UPDATE  
                 id = json_record.id
                 del json_record.id
                 #json_table[id] = json_record
@@ -303,10 +336,10 @@ class JSON(INPUT):
                 id = str(id)                
                 if json_record.deleted == True and id in values:
                     values.remove(id)
-                elif json_record.deleted == False:
+                elif id not in values:
                     values.append(id)
 
-        return "|".join(values)
+        return values
 
 # -----------------------------------------------------------------------------
 class S3MultiSelectWidget(FormWidget):
@@ -372,12 +405,6 @@ class S3MultiSelectWidget(FormWidget):
 
         widget_id = str(field).replace(".","_")
 
-        if type(value).__name__ == "str":
-            if len(value) > 0:
-                if value[0] == "{":
-                    #This means that it didn't save properly - clear value to avoid error
-                    value = ""
-
         input_json = JSON(_name = field.name,
                           _id = widget_id + "_json",
                           json_table = link_table,
@@ -392,7 +419,8 @@ class S3MultiSelectWidget(FormWidget):
         header_row = []
         input_row = []
         for column_field in column_fields:
-            header_row.append(TD(B(link_table[column_field].label)))
+            header_row.append(TD(link_table[column_field].label,
+                                 _class = "s3_multiselect_widget_column_label"))
             input_widget = link_table[column_field].widget 
             if not input_widget:
                 if link_table[column_field].type.startswith("reference"):
@@ -403,7 +431,7 @@ class S3MultiSelectWidget(FormWidget):
                                          None, 
                                          _id = widget_id + "_" + column_field,
                                          _name = None)
-            #insert the widget id in front of the element id
+            # Insert the widget id in front of the element id
             input_element.__setitem__("_id", 
                                       widget_id + "_" + column_field # input_element.__getitem__("_id")
                                       )
@@ -411,36 +439,49 @@ class S3MultiSelectWidget(FormWidget):
 
         widget_rows = [TR(header_row)]
 
-        #Get the current value to display rows for existing data.
+        if isinstance( value, ( str ) ):
+            if "{" in value:
+                value = eval(value)
+    
+        if isinstance( value, (tuple, list) ):
+            values = value
+        else:
+            values = [value]
+            
+        for value in values:
+            if isinstance( value, (tuple, list) ):
+                value = str( value[0] )
+            if isinstance( value, ( str ) ):
+                ids = shn_split_multi_value(value)
+                for id in ids:
+                    # We should put a check here to make sure we don't double display rows
+                    if id:
+                        row = db(link_table.id == id).select()
+                        if len(row) > 0:    # If is NOT true, it indicates that a error has occured
+                            widget_rows.append(self._generate_row(widget_id,
+                                                                  id, 
+                                                                  column_fields = column_fields, 
+                                                                  column_fields_represent = self.column_fields_represent,
+                                                                  row = row[0],
+                                                                  is_dummy_row = False)
+                                                )
+            elif isinstance( value, (dict) ):
+                if "deleted" not in value.keys():                    
+                    widget_rows.append(self._generate_row(widget_id, 
+                                                          "New", 
+                                                          column_fields = column_fields, 
+                                                          column_fields_represent = self.column_fields_represent,
+                                                          row = value,
+                                                          is_dummy_row = False)  
+                                        )
+            #else:
+            #    raise SyntaxError, "multiselectwidget got %s in it's value  - ERROR" % type(value).__name__
+                
+        # Get the current value to display rows for existing data.
         ids = shn_split_multi_value(value)
 
-        #if  value and value <> "":
-        #    if linked_table:
-                #ids = [ row.id for row in db((link_field==value)&(link_table.deleted == False)).select()]
-        #        ids =
-        #    else:    
-        #        if "|" in str(value):
-        #            #multiple rows
-        #            ids = value.split('|')
-        #        else:
-        #            #1 row
-        #            ids = [int(value)]
+        input_row.append(TD(A(DIV(_class = "s3_multiselect_widget_add_button"), 
 
-        for id in ids:
-            if id:
-                row = db(link_table.id == id).select()
-                if len(row) > 0:    #If is NOT true, it indicates that a error has occured
-                    widget_rows.append(self._generate_row(widget_id, 
-                                                           id, 
-                                                           column_fields = column_fields, 
-                                                           column_fields_represent = self.column_fields_represent,
-                                                           row = row[0],
-                                                           is_dummy_row = False)
-                                        )
-
-
-
-        input_row.append(TD(A("+", 
                               _id = widget_id + "_add", 
                               _class = "s3_multiselect_widget_add", 
                               _href = "javascript: void(0)"), 
@@ -466,10 +507,10 @@ class S3MultiSelectWidget(FormWidget):
         js_delete_click_args = dict(WidgetID = widget_id,
                                     ColumnFields = column_fields
                                     )     
-        js_delete_click = "$('." + widget_id + "_delete" + "').live('click',function () {" + \
+        js_delete_click = "$('." + widget_id + "_delete" + "').live('click', function () {" + \
                        "S3MultiselectWidgetDeleteClick(this," +  str(js_delete_click_args) + ")});"
 
-        #when the form is submitted, click the "add button" - just in case the user forgot to
+        # When the form is submitted, click the "add button" - just in case the user forgot to
         js_submit =  "$('form').submit( function() {" + \
                      "$('#" + widget_id + "_add" + "').click();" + "});"
 
@@ -505,10 +546,13 @@ class S3MultiSelectWidget(FormWidget):
         for column_field in column_fields:
             if is_dummy_row:
                 column_field_value = "DummyDisplay" + str(i)
-                #attributes to identify row when deleting added row
-                delete_attr['_' + column_field] = "DummyJSON" + str(i)             
-            else:
-                if column_fields_represent[column_field]:
+                # Attributes to identify row when deleting added row
+                delete_attr["_" + column_field] = "DummyJSON" + str(i)             
+            else:                
+                if isinstance(row[column_field], (dict) ):
+                    # Hack to get the rows to display after a failed validation
+                    column_field_value = row[column_field].values()[0]
+                elif column_fields_represent[column_field]:
                     column_field_value = column_fields_represent[column_field](row[column_field])
                 else:
                     column_field_value = row[column_field]      
@@ -516,11 +560,13 @@ class S3MultiSelectWidget(FormWidget):
             row_field_cells.append(TD(column_field_value))     
             i= i+1
 
-        #Delete button
-        row_field_cells.append(TD(A("x", 
+        # Delete button
+        row_field_cells.append(TD(A(DIV(_class = "s3_multiselect_widget_delete_button"), 
                                     _class = "s3_multiselect_widget_delete " + widget_id + "_delete", 
                                     _href = "javascript: void(0)", 
-                                    **delete_attr)))    
+                                    **delete_attr),
+                                  _class = "s3_multiselect_widget_delete_button") 
+                               )   
 
         return TR(*row_field_cells)
 
@@ -536,9 +582,9 @@ class S3MultiSelectWidget(FormWidget):
         ids = shn_split_multi_value(value)
 
         record_value_list = []
+        return_list = []
 
         for id in ids:
-            field_value_list = []
             if id:
                 row = db(link_table.id == id).select() 
                 if len(row) > 0:
@@ -547,10 +593,25 @@ class S3MultiSelectWidget(FormWidget):
                             field_value = column_fields_represent[field](row[0][field])
                         else:
                             field_value = row[0][field]
-                        field_value_list.append( str( field_value) )
-            record_value_list.append(self.represent_field_delim.join(field_value_list) )
+                        if not isinstance(field_value, (A) ):
+                            field_value = str(field_value)
+                        return_list.append( field_value )
+                        return_list.append( self.represent_field_delim )
+                    if return_list:    
+                        return_list.pop() # remove the last delim
+                    return_list.append( self.represent_record_delim )
 
-        if record_value_list:
-            return self.represent_record_delim.join(record_value_list)
+        if return_list:
+            return_list.pop() # remove the last delim
+            # XML will not escape links in the string
+            return_value = XML( TAG[""](*return_list) )
         else:
-            return None
+            return_value = None
+        
+        if len(str(return_value)) > 0:
+            if str(return_value)[0] != "<":
+                return_value = str(return_value)
+            else:
+                return_value = return_value
+
+        return return_value

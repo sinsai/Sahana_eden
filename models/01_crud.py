@@ -30,7 +30,8 @@ shn_xml_export_formats = dict(
     osm = "application/xml",
     rss = "application/rss+xml",
     georss = "application/rss+xml",
-    kml = "application/vnd.google-earth.kml+xml"
+    kml = "application/vnd.google-earth.kml+xml",
+    #geojson = "application/xml"
 ) #: Supported XML output formats and corresponding response headers
 
 shn_json_import_formats = ["json"] #: Supported JSON import formats

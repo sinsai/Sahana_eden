@@ -264,15 +264,15 @@ pr_religion = db.Table(None, "religion",
 pr_nations = shn_list_of_nations
 
 pr_nationality = db.Table(None, "nationality",
-                          Field("nationality", "integer",
-                                requires = IS_NULL_OR(IS_IN_SET(pr_nations)),
+                          Field("nationality", "string", length=2,
+                                requires = IS_NULL_OR(IS_IN_SET(pr_nations, sort=True)),
                                 label = T("Nationality"),
                                 represent = lambda opt: \
                                             pr_nations.get(opt, UNKNOWN_OPT)))
 
 pr_country = db.Table(None, "country",
-                      Field("country", "integer",
-                            requires = IS_NULL_OR(IS_IN_SET(pr_nations)),
+                      Field("country", "string", length=2,
+                            requires = IS_NULL_OR(IS_IN_SET(pr_nations, sort=True)),
                             label = T("Country of Residence"),
                             represent = lambda opt: \
                                         pr_nations.get(opt, UNKNOWN_OPT)))

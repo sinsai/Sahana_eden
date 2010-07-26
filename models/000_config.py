@@ -73,7 +73,7 @@ deployment_settings.modules = Storage(
             name_nice = "Home",
             access = None,      # All Users (inc Anonymous) can see this module in the default menu & access the controller
             module_type = 0,     # This item is always 1st in the menu
-            
+           resources = Storage() 
             ),
     admin = Storage(
             name_nice = "Administration",
@@ -156,7 +156,7 @@ deployment_settings.modules = Storage(
             name_nice = "Volunteers",
             description = "Manage volunteers by capturing their skills, availability and allocation",
             module_type = 5,
-            rsources = Storage(
+            resources = Storage(
              vol_setting = {'importer' : False},
  	     vol_volunteer = {'importer' : False},
  	     vol_resource = {'importer' : False}
@@ -251,7 +251,7 @@ deployment_settings.modules = Storage(
             name_nice = "Shelter Registry",
             description = "Tracks the location, distibution, capacity and breakdown of victims in Shelters",
             module_type = 10,
-            resource = Storage(
+            resources = Storage(
               cr_setting = {'importer' : False},
  	     cr_shelter = {'importer' : True }
  	    )

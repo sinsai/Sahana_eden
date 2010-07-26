@@ -30,7 +30,7 @@ function view4(importsheet)//header,table,numcol,grid_data)
     //Use Ext.Ajax.request here to fetch data about tables and resources from the server here, use callback config to process it, must put a mask here
     //This view must be refactored keeping in mind the import of multiple resources and multiple tables, it will have a multiselect of tables and a dropdown or resource
     //Remove hardcoded table data
-    var budget_kits=[
+    /*var budget_kits=[
 	['code','Code'],
 	['description','Description'],
 	['total_unit_cost','Total unit cost'],
@@ -136,6 +136,24 @@ function view4(importsheet)//header,table,numcol,grid_data)
 	    store=budget_item;
     if(importsheet.table=='budget_kit_item')
 	    store=budget_kit_item;
+    */
+    var field_store = {};
+    var num_resources = importsheet.final_resources.length;
+    var i=0;
+    while(i < num_resources)
+    {
+	    var resource = eval('('+importsheet.resource_fields[i]+')');
+	    field_store[resource['@resource']] = [];
+	    for(k in resource.field)
+	    {
+		    if(k['@writable'] == "True")
+			    field_store[resource['@resource']].push(k['@name']);
+	    }
+	    console.log('Resource');
+	    console.log(field_store);
+	    i++;
+    }
+    var store = importsheet.final_resources;
     Ext.QuickTips.init();
     var i=0;
     var colnames=new Array(importsheet.columns);

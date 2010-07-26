@@ -11,8 +11,20 @@
 <script type="text/javascript" src="/{{=request.application}}/static/scripts/ext-community-extensions/CheckColumn.js"></script>
 <script type="text/javascript" src="/{{=request.application}}/static/scripts/ext-community-extensions/rowactions/Ext.ux.grid.RowActions.js"></script>
 <link rel="stylesheet" type="text/css" href="../static/scripts/S3importer/css/importer.css"></link>
-
-
+      
+{{modules = {} }}
+{{importable_resources = {} }}
+{{
+for k in deployment_settings.modules:
+modules[deployment_settings.modules[k].name_nice] = k
+importable_resources[k] = deployment_settings.modules[k].resources
+}}
+{{pass}}
+{{
+for l in importable_resources:
+importable_resources[l] = dict(importable_resources[l])}}
+{{pass}}
+	
 
 <script type="text/javascript">
 	var json={{=ss}};
@@ -20,6 +32,15 @@
 	importsheet.datastore={};
 	var url="{{=request.env.http_host}}";
 	var application="{{=request.application}}";
+	{{del modules['Administration']}}
+	{{del modules['Home']}}
+	var modules_nice_names = {{=modules.keys()}};
+	var modules = {{=modules}};
+	var resources = "{{=importable_resources}}";
+	resources = resources.replace(/False/g,"false");
+	resources = resources.replace(/True/g,"true");
+	resources = eval('('+resources+')');
+	console.log(resources);
 </script>
 
 <script type="text/javascript" src='../static/scripts/S3importer/import.js'></script>
@@ -27,8 +48,6 @@
 <script type="text/javascript" src='../static/scripts/S3importer/view3.js'></script>
 <script type="text/javascript" src='../static/scripts/S3importer/view2.js'></script>
 <script type="text/javascript" src="../static/scripts/S3importer/view1.js"></script>
-
-<div class="hide" id="message1">Welcome to the spreadsheet importer. Make sure you have a row with column headers. You can edit cells, and and remove rows in this view.</div>
 <div id="message2" class="hide" >Select header row, the row which has titles of each column in the spreadsheet</div>
 <div id="message3" class="hide">Select a single table to import the spreadsheet to</div>
 <div id="message4" class="hide"> Map columns in the spreadsheet to fields in teh table</div>

@@ -1,6 +1,29 @@
 {{extend 'layout.html'}}
 {{include 'ext.html'}}
-<h1>This is the importer/re_import.html template</h1>
+<h1>Spreadsheet importer - Report</h1>
+{{modules = {} }}
+{{importable_resources = {} }}
+{{
+for k in deployment_settings.modules:
+modules[deployment_settings.modules[k].name_nice] = k
+importable_resources[k] = deployment_settings.modules[k].resources
+}}
+{{pass}}
+{{
+for l in importable_resources:
+importable_resources[l] = dict(importable_resources[l])}}
+{{pass}}
+{{=importable_resources}}
+<hr/>
+{{=type(deployment_settings.modules['pr']['resources'])}}
+<script type="text/javascript">
+	Ext.onReady(function()
+			{
+
+	var module = {{=modules}};
+	Ext.Msg.alert("",module);
+	});
+</script>
 <script type="text/javascript">
 	var success = {{=session.import_success}};
 	var invalid_rows = {{=session.invalid_rows}};
@@ -15,6 +38,15 @@
 </script>
 <script type="text/javascript" src="../static/scripts/S3importer/re_import.js"></script>
 <div id = "spreadsheet"></div>
+<script type="text/javascript">
+	Ext.onReady(function()
+			{
+
+	var module = {{=modules.values()}};
+	Ext.Msg.alert("",module);
+	});
+</script>
+
 <b>Debug information</b>
 {{=BEAUTIFY(deployment_settings.modules)}}
 {{=BEAUTIFY(session)}}

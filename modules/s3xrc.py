@@ -1162,7 +1162,7 @@ class S3Resource(object):
                 source = open(vars["filename"])
             elif "fetchurl" in vars:
                 import urllib
-                source = urllib.urlopen(_vars["fetchurl"])
+                source = urllib.urlopen(vars["fetchurl"])
             else:
                 source = r.request.body
             tree = xml.json2tree(source)

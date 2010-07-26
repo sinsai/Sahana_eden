@@ -360,6 +360,7 @@ def layout():
                     table.append(tbody)
             elif question.question_type == 6:
                 table,table_row = TABLE(), TR()
+                table_row.append(DIV(question.name,_class="question"))
                 table_row.append(TD(DIV(DIV("%s " % (question.name),TD(INPUT()),_class="question_answer")))) # Date/Time
                 if options.allow_comments:
                      comment_text = options.comment_display_label
@@ -373,17 +374,30 @@ def layout():
 
             elif question.question_type == 7:
                 table = TABLE()
-                table_row = TR()
-
+                tf_choices = options.tf_choices
+                choices = tf_choices.split("\r\n")
+                columns = options.tf_ta_columns # for now this isn't customizable on a TF by TF basis -- I have some ideas as to how to accomplish this.
+                table.append(TR(TD(DIV(question.name,_class="question"))))
+                for choice in choices:
+                    table_row = TR()
+                    table_row.append(TD(DIV(choice),TD(INPUT(_size="%s" % (columns)))))
+                    table.append(table_row)
+                ui.append(table)
             elif question.question_type == 8:
-                pass
+                pass # Deferred "Matrix of Text Fields" -- handy data type but not necessary for the first pass.
             elif question.question_type == 9:
-                pass
+                table = TABLE()
+                columns = options.tf_ta_columns
+                rows = options.ta_rows
+                table_row = TR()
+                table_row.append(DIV(question.name,_class="question"))
+                table_row.append(TEXTAREA(_rows="%s", _columns="%s" % (rows,columns)))
             elif question.question_type == 10:
                 pass
             elif question.question_type == 11:     
                table,table_row = TABLE(), TR()
-               table_row.append(TD(DIV(DIV("%s " % (question.name),TD(INPUT()),_class="question_answer")))) # Date/Time
+               table_row.append(DIV(question.name,_class="question"))
+               table_row.append((INPUT())) # Date/Time
                if options.allow_comments:
                     comment_text = options.comment_display_label
                     if comment_text:
@@ -395,15 +409,17 @@ def layout():
                ui.append(table)
 
             elif question.question_type == 12:
-                pass
+                pass # deferred -- "Image"
             elif question.question_type == 13:
-                pass
+                pass # deferred "Descriptive read-only text"
             elif question.question_type == 14:
-                pass
+                pass # Location
             elif question.question_type == 15:
-                pass           
+                pass # Organisation
+            elif question.question_type == 16:
+                pass # Person
             else:
-                pass
+                pass # Uh-oh -- something went wrong
 
     ui.append(BR())
     ui.append(DIV(A(T("Add Section"),_class="colorbox",

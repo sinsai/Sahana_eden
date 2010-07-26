@@ -89,7 +89,7 @@ def shn_pentity_represent(id, default_label="[no label]"):
                 group.group_name, pe_type_nice
             )
 
-    elif entity_type == "org_organisation":
+    elif pe_type == "org_organisation":
         organisation = db(table.pe_id == id).select(
                           table.name,
                           limitby=(0, 1)).first()
@@ -98,7 +98,7 @@ def shn_pentity_represent(id, default_label="[no label]"):
                 organisation.name, pe_type_nice
             )
 
-    elif entity_type == "org_office":
+    elif pe_type == "org_office":
         office = db(table.pe_id == id).select(
                     table.name,
                     limitby=(0, 1)).first()
@@ -264,15 +264,15 @@ pr_religion = db.Table(None, "religion",
 pr_nations = shn_list_of_nations
 
 pr_nationality = db.Table(None, "nationality",
-                          Field("nationality", "integer",
-                                requires = IS_NULL_OR(IS_IN_SET(pr_nations)),
+                          Field("nationality", "string", length=2,
+                                requires = IS_NULL_OR(IS_IN_SET(pr_nations, sort=True)),
                                 label = T("Nationality"),
                                 represent = lambda opt: \
                                             pr_nations.get(opt, UNKNOWN_OPT)))
 
 pr_country = db.Table(None, "country",
-                      Field("country", "integer",
-                            requires = IS_NULL_OR(IS_IN_SET(pr_nations)),
+                      Field("country", "string", length=2,
+                            requires = IS_NULL_OR(IS_IN_SET(pr_nations, sort=True)),
                             label = T("Country of Residence"),
                             represent = lambda opt: \
                                         pr_nations.get(opt, UNKNOWN_OPT)))

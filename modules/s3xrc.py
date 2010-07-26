@@ -1104,7 +1104,7 @@ class S3Resource(object):
             tree = self.__manager.xml.transform(tree, template, **args)
             if not tree:
                 error = self.__manager.xml.json_message(False, 400,
-                            str(T("XSLT Transformation Error: %s ")) % \
+                            str("XSLT Transformation Error: %s ") % \
                             self.__manager.xml.error)
                 raise HTTP(400, body=error)
 
@@ -1162,7 +1162,7 @@ class S3Resource(object):
                 source = open(vars["filename"])
             elif "fetchurl" in vars:
                 import urllib
-                source = urllib.urlopen(_vars["fetchurl"])
+                source = urllib.urlopen(vars["fetchurl"])
             else:
                 #from StringIO import StringIO
                 #source = StringIO(r.request.body)
@@ -1192,7 +1192,7 @@ class S3Resource(object):
 
             if not tree:
                 error = xml.json_message(False, 400,
-                            str(T("XSLT Transformation Error: %s ")) % \
+                            str("XSLT Transformation Error: %s ") % \
                             self.__manager.xml.error)
                 raise HTTP(400, body=error)
 
@@ -2996,6 +2996,7 @@ class S3ResourceController(object):
                                         download_url=self.download_url,
                                         marker=marker)
 
+                    element.set(self.xml.ATTRIBUTE.ref, "True")
                     element_list.append(element)
 
                     reference_map.extend(rmap)
@@ -3623,6 +3624,7 @@ class S3XML(object):
         field="field",
         value="value",
         resource="resource",
+        ref="ref",
         domain="domain",
         url="url",
         error="error",

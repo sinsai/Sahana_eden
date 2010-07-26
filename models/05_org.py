@@ -80,7 +80,7 @@ table = db.define_table(tablename, timestamp, uuidstamp, deletion_status,
                 Field("type", "integer"),
                 sector_id,
                 #Field("registration", label=T("Registration")),    # Registration Number
-                Field("country", "integer"),
+                Field("country", "string", length=2),
                 Field("website"),
                 Field("twitter"),   # deprecated by pe_contact component
                 Field("donation_phone"),
@@ -93,7 +93,7 @@ table.uuid.requires = IS_NOT_IN_DB(db, "%s.uuid" % tablename)
 table.name.requires = [IS_NOT_EMPTY(), IS_NOT_IN_DB(db, "%s.name" % tablename)]
 table.type.requires = IS_NULL_OR(IS_IN_SET(org_organisation_type_opts))
 table.type.represent = lambda opt: org_organisation_type_opts.get(opt, UNKNOWN_OPT)
-table.country.requires = IS_NULL_OR(IS_IN_SET(shn_list_of_nations))
+table.country.requires = IS_NULL_OR(IS_IN_SET(shn_list_of_nations, sort=True))
 table.country.represent = lambda opt: shn_list_of_nations.get(opt, UNKNOWN_OPT)
 table.website.requires = IS_NULL_OR(IS_URL())
 table.donation_phone.requires = shn_phone_requires

@@ -462,6 +462,10 @@ def shn_org_rheader(jr, tabs=[]):
 
             office = jr.record
             organisation = db(db.org_organisation.id == office.organisation_id).select(db.org_organisation.name, limitby=(0, 1)).first()
+            if organisation:
+                org_name = organisation.name
+            else:
+                org_name = None
 
             rheader = DIV(TABLE(
                     TR(
@@ -472,7 +476,7 @@ def shn_org_rheader(jr, tabs=[]):
                         ),
                     TR(
                         TH(T("Organization: ")),
-                        organisation.name,
+                        org_name,
                         TH(T("Location: ")),
                         shn_gis_location_represent(office.location_id),
                         ),

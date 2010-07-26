@@ -110,7 +110,7 @@ def shn_pentity_represent(id, default_label="[no label]"):
     else:
         pe_str = "[%s] (%s)" % (
             label,
-            vita.trackable_types[entity_type]
+            vita.trackable_types[pe_type]
         )
 
     return pe_str

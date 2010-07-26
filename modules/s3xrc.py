@@ -1164,8 +1164,6 @@ class S3Resource(object):
                 import urllib
                 source = urllib.urlopen(vars["fetchurl"])
             else:
-                #from StringIO import StringIO
-                #source = StringIO(r.request.body)
                 source = r.request.body
             tree = xml.json2tree(source)
 

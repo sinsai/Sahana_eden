@@ -19,13 +19,14 @@ def shn_menu():
         ]],
     ]
     if session.rcvars and "org_project" in session.rcvars:
-        selection = db.org_project[session.rcvars["org_project"]]
+        project_id = session.rcvars["org_project"]
+        selection = db.org_project[project_id]
         if selection:
             menu_project = [
-                ["%s %s" % (T("Project:"), selection.name), False, URL(r=request, f="project", args=[selection.id]),[
-                    [T("Tasks"), False, URL(r=request, f="project", args=[str(selection.id), "task"])],
-                    [T("Positions"), False, URL(r=request, f="project", args=[str(selection.id), "position"])],
-                ]]
+                    ["%s %s" % (T("Project:"), selection.code), False, URL(r=request, f="project", args=[project_id]),[
+                        [T("Tasks"), False, URL(r=request, f="project", args=[project_id, "task"])],
+                        [T("Staff"), False, URL(r=request, f="project", args=[project_id, "staff"])],
+                    ]]
             ]
             menu.extend(menu_project)
 
@@ -37,11 +38,12 @@ def shn_menu():
     ]
     menu.extend(menu_teams)
     if session.rcvars and "pr_group" in session.rcvars:
-        selection = db.pr_group[session.rcvars["pr_group"]]
+        group_id = session.rcvars["pr_group"]
+        selection = db.pr_group[group_id]
         if selection:
-            selection = shn_pr_group_represent(selection.id)
+            team_name = shn_pr_group_represent(group_id)
             menu_teams = [
-                ["%s %s" % (T("Team:"), selection), False, URL(r=request, f="group", args="read")],
+                ["%s %s" % (T("Team:"), team_name), False, URL(r=request, f="group", args=[group_id, "read"])],
             ]
             menu.extend(menu_teams)
 
@@ -53,14 +55,15 @@ def shn_menu():
     ]
     menu.extend(menu_persons)
     if session.rcvars and "pr_person" in session.rcvars:
-        selection = db.pr_person[session.rcvars["pr_person"]]
+        person_id = session.rcvars["pr_person"]
+        selection = db.pr_person[person_id]
         if selection:
             selection = shn_pr_person_represent(selection.id)
             menu_person = [
-                ["%s %s" % (T("Person:"), selection), False, URL(r=request, f="person", args="read"),[
-                    [T("Volunteer Data"), False, URL(r=request, f="volunteer")],
-                    [T("Person Data"), False, URL(r=request, f="person")],
-                    [T("View Map"), False, URL(r=request, f="view_map")],
+                ["%s %s" % (T("Person:"), selection), False, URL(r=request, f="person", args=[person_id, "read"]),[
+                    [T("Volunteer Data"), False, URL(r=request, f="volunteer", args=[person_id])],
+                    [T("Person Data"), False, URL(r=request, f="person", args=[person_id])],
+                    [T("View Map"), False, URL(r=request, f="view_map", args=[person_id])],
                 ]],
             ]
             menu.extend(menu_person)
@@ -70,7 +73,7 @@ def shn_menu():
     menu.extend(menu_skills)
     if auth.user is not None:
         menu_user = [
-            [T("My Tasks"), False, URL(r=request, f="task", args="")],
+            [T("My Tasks"), False, URL(r=request, f="task", args="")]
         ]
         menu.extend(menu_user)
     response.menu_options = menu
@@ -100,8 +103,6 @@ def person():
     db.pr_person.missing.default = False
 
     response.s3.pagination = True
-    response.files.append(URL(r=request,c='static/multiselect',f='jquery.multiSelect.js'))
-    response.files.append(URL(r=request,c='static/multiselect',f='jquery.multiSelect.css'))
 
     s3xrc.model.configure(db.pr_group_membership,
                           list_fields=["id",
@@ -112,9 +113,9 @@ def person():
     def person_postp(jr, output):
         if jr.representation in ("html", "popup"):
             if not jr.component:
-                label = T("Details")
+                label = READ
             else:
-                label = T("Update")
+                label = UPDATE
             linkto = shn_linkto(jr, sticky=True)("[id]")
             response.s3.actions = [
                 dict(label=str(label), _class="action-btn", url=linkto)
@@ -122,8 +123,8 @@ def person():
         return output
     response.s3.postp = person_postp
 
-    output = shn_rest_controller("pr", resource, 
-        main="first_name", 
+    output = shn_rest_controller("pr", resource,
+        main="first_name",
         extra="last_name",
         rheader=lambda jr: shn_pr_rheader(jr,
             tabs = [(T("Basic Details"), None),
@@ -134,9 +135,6 @@ def person():
                     (T("Memberships"), "group_membership"),
                     (T("Presence Log"), "presence")]),
         sticky=True,
-        rss=dict(
-            title=shn_pr_person_represent,
-            description="ID Label: %(pr_pe_label)s\n%(comment)s"),
         listadd=False)
 
     shn_menu()
@@ -219,13 +217,13 @@ def view_map():
 
     person_id = request.args(0)
 
-    presence_query = (db.pr_person.id == person_id) and (db.pr_presence.pr_pe_id == db.pr_person.pr_pe_id) and (db.gis_location.id == db.pr_presence.location_id)
+    presence_query = (db.pr_person.id == person_id) and (db.pr_presence.pe_id == db.pr_person.pe_id) and (db.gis_location.id == db.pr_presence.location_id)
 
     # Need sql.Rows object for show_map, so don't extract individual row.
     location = db(presence_query).select(db.gis_location.ALL, orderby=~db.pr_presence.time, limitby=(0, 1))
 
     if not location:
-        address_query = (db.pr_person.id == person_id) and (db.pr_address.pr_pe_id == db.pr_person.pr_pe_id) and (db.gis_location.id == db.pr_address.location_id)
+        address_query = (db.pr_person.id == person_id) and (db.pr_address.pe_id == db.pr_person.pe_id) and (db.gis_location.id == db.pr_address.location_id)
         # TODO: If there are multiple addresses, which should we choose?
         # For now, take whichever address is supplied first.
         location = db(address_query).select(db.gis_location.ALL, limitby=(0, 1))
@@ -261,15 +259,20 @@ def view_map():
 def volunteer():
 
     response.s3.pagination = True
+    response.files.append(URL(r=request,c='static/multiselect',f='jquery.multiSelect.js'))
+    response.files.append(URL(r=request,c='static/multiselect',f='jquery.multiSelect.css'))
 
-    output = shn_rest_controller(module , "resource",
+    resource = request.function
+    output = shn_rest_controller(module , resource,
         rheader = lambda jr: shn_vol_volunteer_rheader(jr,
             tabs=[
-                (T("Status Report"), None),
-                (T("Resources"), "resource"),
+                #(T("Status Report"), None),
                 (T("Availablity"), "volunteer"),
-                (T("Skills"), "skill")]),
-        sticky=True)
+                (T("Skills"), "skill"),
+                (T("Resources"), "resource"),
+            ]),
+        sticky=True,
+        listadd=False)
 
     shn_menu()
 
@@ -277,22 +280,18 @@ def volunteer():
 
 def shn_vol_volunteer_rheader(jr, tabs=[]):
 
-    if jr.name == "resource":
-        if jr.representation == "html":
-            _next = jr.here()
-            _same = jr.same()
-            rheader_tabs = shn_rheader_tabs(jr, tabs)
-            resource = jr.record
-            if resource:
-                rheader = DIV(TABLE(), rheader_tabs)
-                return rheader
+    if jr.representation == "html" and jr.name == "volunteer":
+        rheader_tabs = shn_rheader_tabs(jr, tabs)
+        if jr.record:
+            rheader = DIV(TABLE(), rheader_tabs)
+            return rheader
     return None
 
 
 # -----------------------------------------------------------------------------
 def group():
 
-    """ RESTful CRUD controller """
+    """ Team controller """
     resource = "group"
     table = "pr" + "_" + resource
 
@@ -349,9 +348,9 @@ def group():
     def group_postp(jr, output):
         if jr.representation in ("html", "popup"):
             if not jr.component:
-                label = T("Details")
+                label = READ
             else:
-                label = T("Update")
+                label = UPDATE
             linkto = shn_linkto(jr, sticky=True)("[id]")
             response.s3.actions = [
                 dict(label=str(label), _class="action-btn", url=linkto)

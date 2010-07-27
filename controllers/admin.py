@@ -253,6 +253,7 @@ def user():
         subtitle_list = T("Users"),
         label_list_button = LIST_USERS,
         label_create_button = ADD_USER,
+        label_delete_button = T("Delete User"),
         msg_record_created = T("User added"),
         msg_record_modified = T("User updated"),
         msg_record_deleted = T("User deleted"),
@@ -593,22 +594,24 @@ def import_data():
     "Import data via POST upload to CRUD controller. Old - being replaced by Sync/Importer."
     title = T("Import Data")
     crud.messages.submit_button = "Upload"
+    
+    # Deprecated
     import_job_form = crud.create(db.admin_import_job)
-    # Doesn't seem to be any proper way to tell the CRUD create form to post to
-    # a different location!!!
+    # Tell the CRUD create form to post to a different location
     import_job_form.custom.begin.text = str(import_job_form.custom.begin).replace(
             'action=""',
             'action="%s"' % URL(r=request, f="import_job", args=["create"]))
+    
     return dict(title=title,
                 import_job_form=import_job_form)
 
 @auth.shn_requires_membership(1)
-def import_csv():
+def import_csv_data():
     "Import CSV data via POST upload to Database."
     file = request.vars.multifile.file
     try:
         # Assumes that it is a concatenation of tables
-        shn_import_csv(file)
+        import_csv(file)
         session.flash = T("Data uploaded")
     except Exception, e:
         session.error = T("Unable to parse CSV file!")
@@ -636,8 +639,10 @@ def export_csv():
     response.headers["Content-disposition"] = "attachment; filename=%s" % filename
     return output.read()
 
+    
 
 # Unstructured Data Import
+# Deprecated - being replaced by Importer
 @auth.shn_requires_membership(1)
 def import_job():
     "RESTful CRUD controller to handle 'jobs' for importing unstructured data."
@@ -773,14 +778,6 @@ def _import_job_update_GET(jr, job):
         return dict(num_lines=num_lines, update_speed=60)
 
     return {}
-
-#      items = crud.select(table, query=query,
-#            fields=fields,
-#            orderby=orderby,
-#            limitby=limitby,
-#            headers=headers,
-#            linkto=linkto,
-#            truncate=48, _id="list", _class="display")
 
 def _import_job_update_POST(jr, job):
     if job.status == "new":
@@ -934,7 +931,7 @@ def make_link(path):
 
         editable = {"controllers": ".py", "models": ".py", "views": ".html"}
         for key in editable.keys():
-            check_extension = folder.endswith("%s/%s" % (app,key))
+            check_extension = folder.endswith("%s/%s" % (app, key))
             if ext.lower() == editable[key] and check_extension:
                 return A('"' + tryFile + '"',
                          _href=URL(r=request,
@@ -947,7 +944,7 @@ def make_links(traceback):
 
     lwords = traceback.split('"')
 
-    # Making the short circuit compatible with <= python2.4
+    # Make the short circuit compatible with <= python2.4
     result = (len(lwords) != 0) and lwords[0] or ""
 
     i = 1
@@ -989,7 +986,7 @@ def ticket():
     """ Ticket handler """
 
     if len(request.args) != 2:
-        session.flash = T("invalid ticket")
+        session.flash = T("Invalid ticket")
         redirect(URL(r=request))
 
     app = request.args[0]

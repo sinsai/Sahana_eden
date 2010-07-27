@@ -25,6 +25,7 @@ deployment_settings.auth.hmac_key = "akeytochange"
 # registered in order to secure the deployment
 deployment_settings.auth.registration_requires_verification = False
 deployment_settings.auth.registration_requires_approval = False
+deployment_settings.auth.openid = False
 
 # Base settings
 # Set this to the Public URL of the instance

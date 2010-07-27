@@ -7,7 +7,12 @@
 {{include "_update.html"}}
 <script type="text/javascript">//<![CDATA[
 $(function() {
-{{include "gis/feature_crud.js"}}
+    {{include "gis/feature_crud.js"}}
+    // If the Location is a Country then Parent makes no sense
+    var level = $('#gis_location_level').val();
+    if (level == 'L0'){
+        $('#gis_location_parent__row').hide();
+    }
 });
 //]]></script>
 {{include "gis/convert_gps.html"}}

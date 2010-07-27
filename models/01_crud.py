@@ -30,7 +30,8 @@ shn_xml_export_formats = dict(
     osm = "application/xml",
     rss = "application/rss+xml",
     georss = "application/rss+xml",
-    kml = "application/vnd.google-earth.kml+xml"
+    kml = "application/vnd.google-earth.kml+xml",
+    #geojson = "application/xml"
 ) #: Supported XML output formats and corresponding response headers
 
 shn_json_import_formats = ["json"] #: Supported JSON import formats
@@ -251,77 +252,6 @@ def export_pdf(table, query, list_fields=None):
     return output.read()
 
 #
-# export_rss ------------------------------------------------------------------
-#
-def export_rss(module, resource, query, rss=None, linkto=None):
-
-    """ Export record(s) as RSS feed
-
-        @deprecated
-    """
-
-    # This can not work when proxied through Apache (since it's always a local request):
-    #if request.env.remote_addr == '127.0.0.1':
-        #server = "http://127.0.0.1:" + request.env.server_port
-    #else:
-        #server = "http://" + request.env.server_name + ":" + request.env.server_port
-
-    server = deployment_settings.get_base_public_url()
-
-    tablename = "%s_%s" % (module, resource)
-    title_list = shn_get_crud_strings(tablename).subtitle_list
-
-    if not linkto:
-        link = "/%s/%s/%s" % (request.application, module, resource)
-    else:
-        link = linkto
-
-    entries = []
-    table = db[tablename]
-    rows = db(query).select(table.ALL)
-    if rows:
-        for row in rows:
-            if rss and "title" in rss:
-                try:
-                    title = rss.get("title")(row)
-                except TypeError:
-                    title = rss.get("title") % row
-            else:
-                title = row["id"]
-
-            if rss and "description" in rss:
-                try:
-                    description = rss.get("description")(row)
-                except TypeError:
-                    description = rss.get("description") % row
-            else:
-                description = ""
-
-            entries.append(dict(
-                title = str(title).decode("utf-8"),
-                link = server + link + "/%d" % row.id,
-                description = str(description).decode("utf-8"),
-                modified_on = row.modified_on))
-
-    import gluon.contrib.rss2 as rss2
-
-    items = [rss2.RSSItem(
-        title = entry["title"],
-        link = entry["link"],
-        description = entry["description"],
-        pubDate = entry["modified_on"]) for entry in entries]
-
-    rss = rss2.RSS2(
-        title = str(title_list).decode("utf-8"),
-        link = server + link,
-        description = "",
-        lastBuildDate = request.utcnow,
-        items = items)
-
-    response.headers["Content-Type"] = "application/rss+xml"
-    return rss2.dumps(rss)
-
-#
 # export_xls ------------------------------------------------------------------
 #
 def export_xls(table, query, list_fields=None):
@@ -398,85 +328,6 @@ def export_xls(table, query, list_fields=None):
     response.headers["Content-disposition"] = "attachment; filename=\"%s\"" % filename
     return output.read()
 
-#
-# export_json -----------------------------------------------------------------
-#
-def export_json(jr):
-
-    """ Export data as JSON """
-
-    try:
-        response.headers["Content-Type"] = shn_json_export_formats[jr.representation]
-    except:
-        response.headers["Content-Type"] = "text/x-json"
-
-    if jr.representation == "json":
-        template = None
-    else:
-        template_name = "%s.%s" % (jr.representation, XSLT_FILE_EXTENSION)
-        template = os.path.join(request.folder, XSLT_EXPORT_TEMPLATES, template_name)
-        if not os.path.exists(template):
-            session.error = str(T("XSLT Template Not Found: ")) + \
-                            XSLT_EXPORT_TEMPLATES + "/" + template_name
-            raise HTTP(501, body=s3xrc.xml.json_message(False, 501, session.error))
-            #redirect(URL(r=request, f="index"))
-
-    prefix, name, table, tablename = jr.target()
-    title = shn_get_crud_strings(tablename).subtitle_list
-
-    output = jr.export_json(permit=shn_has_permission,
-                            audit=shn_audit,
-                            title=title,
-                            template=template,
-                            pretty_print=PRETTY_PRINT,
-                            filterby=response.s3.filter)
-
-    if not output:
-        session.error = str(T("XSLT Transformation Error: ")) + jr.error
-        raise HTTP(400, body=s3xrc.xml.json_message(False, 400, session.error))
-        #redirect(URL(r=request, f="index"))
-
-    return output
-
-#
-# export_xml ------------------------------------------------------------------
-#
-def export_xml(jr):
-
-    """ Export data as XML """
-
-    try:
-        response.headers["Content-Type"] = shn_xml_export_formats[jr.representation]
-    except:
-        response.headers["Content-Type"] = "application/xml"
-
-    if jr.representation == "xml":
-        template = None
-    else:
-        template_name = "%s.%s" % (jr.representation, XSLT_FILE_EXTENSION)
-        template = os.path.join(request.folder, XSLT_EXPORT_TEMPLATES, template_name)
-        if not os.path.exists(template):
-            session.error = str(T("XSLT Template Not Found: ")) + \
-                            XSLT_EXPORT_TEMPLATES + "/" + template_name
-            raise HTTP(501, body=s3xrc.xml.json_message(False, 501, session.error))
-            #redirect(URL(r=request, f="index"))
-
-    prefix, name, table, tablename = jr.target()
-    title = shn_get_crud_strings(tablename).subtitle_list
-
-    output = jr.export_xml(permit=shn_has_permission,
-                           audit=shn_audit,
-                           title=title,
-                           template=template,
-                           pretty_print=PRETTY_PRINT,
-                           filterby=response.s3.filter)
-
-    if not output:
-        session.error = str(T("XSLT Transformation Error: ")) + (jr.error or "")
-        raise HTTP(400, body=s3xrc.xml.json_message(False, 400, session.error))
-        #redirect(URL(r=request, f="index"))
-
-    return output
 
 # *****************************************************************************
 # Imports
@@ -883,7 +734,7 @@ def shn_convert_orderby(table, request, fields=None):
 
     def direction(i):
         dir = "sSortDir_" + str(i)
-        if dir in request.vars:
+        if request.vars.get(dir, None):
             return " " + request.vars[dir]
         return ""
 
@@ -914,15 +765,12 @@ def shn_build_ssp_filter(table, request, fields=None):
 # These functions are to handle REST methods.
 # Currently implemented methods are:
 #
-#   - import_json
-#   - import_xml
 #   - list
 #   - read
 #   - create
 #   - update
 #   - delete
 #   - search
-#   - options
 #
 # Handlers must be implemented as:
 #
@@ -930,121 +778,9 @@ def shn_build_ssp_filter(table, request, fields=None):
 #
 # where:
 #
-#   jr - is the XRequest
+#   jr - is the S3Request
 #   attr - attributes of the call, passed through
 #
-
-#
-# import_json -----------------------------------------------------------------
-#
-def import_json(jr, **attr):
-
-    #return json_message(False, 501, "Not implemented!")
-
-    if jr.http == "GET":
-        item = s3xrc.xml.json_message(False, 400, "%s requests not supported." % jr.http)
-        raise HTTP(400, body=item)
-
-    _vars = jr.request.vars
-    if "filename" in _vars and jr.http == "PUT":
-        source = open(_vars["filename"])
-    elif "fetchurl" in _vars and jr.http == "PUT":
-        import urllib
-        source = urllib.urlopen(_vars["fetchurl"])
-    else:
-        #from StringIO import StringIO
-        #source = StringIO(jr.request.body)
-        source = jr.request.body
-
-    tree = s3xrc.xml.json2tree(source)
-
-    if hasattr(source, "close"):
-        source.close()
-
-    # XSLT Transformation
-    if not jr.representation == "json":
-        template_name = "%s.%s" % (jr.representation, XSLT_FILE_EXTENSION)
-        template_file = os.path.join(request.folder, XSLT_IMPORT_TEMPLATES, template_name)
-        if os.path.exists(template_file):
-            tree = s3xrc.xml.transform(tree, template_file,
-                                       domain=s3xrc.domain,
-                                       base_url=s3xrc.base_url)
-            if not tree:
-                session.error = str(T("XSL Transformation Error: ")) + str(s3xrc.xml.error)
-                redirect(URL(r=request, f="index"))
-        else:
-            session.error = str(T("XSL Template Not Found: ")) + \
-                            XSLT_IMPORT_TEMPLATES + "/" + template_name
-            #redirect(URL(r=request, f="index"))
-            item = s3xrc.xml.json_message(False, 501, session.error)
-            raise HTTP(501)
-
-    # For testing:
-    #print s3xrc.xml.tostring(tree)
-    #return s3xrc.xml.tree2json(tree)
-
-    success = jr.import_xml(tree, permit=shn_has_permission, audit=shn_audit)
-
-    if success:
-        item = s3xrc.xml.json_message()
-    else:
-        # TODO: export the whole tree on error
-        tree = s3xrc.xml.tree2json(tree)
-        item = s3xrc.xml.json_message(False, 400, s3xrc.error, tree=tree)
-        raise HTTP(400, body=item)
-
-    return dict(item=item)
-
-#
-# import_xml ------------------------------------------------------------------
-#
-def import_xml(jr, **attr):
-
-    """ Import XML data """
-
-    if jr.http == "GET":
-        item = s3xrc.xml.json_message(False, 400, "%s requests not supported." % jr.http)
-        raise HTTP(400, body=item)
-
-    if "filename" in jr.request.vars and jr.http == "PUT":
-        source = jr.request.vars["filename"]
-    elif "fetchurl" in jr.request.vars and jr.http == "PUT":
-        source = jr.request.vars["fetchurl"]
-    else:
-        source = jr.request.body
-
-    tree = s3xrc.xml.parse(source)
-    if not tree:
-        item = s3xrc.xml.json_message(False, 400, s3xrc.xml.error)
-        raise HTTP(400, body=item)
-
-    # XSLT Transformation
-    if not jr.representation == "xml":
-        template_name = "%s.%s" % (jr.representation, XSLT_FILE_EXTENSION)
-        template_file = os.path.join(request.folder, XSLT_IMPORT_TEMPLATES, template_name)
-        if os.path.exists(template_file):
-            tree = s3xrc.xml.transform(tree, template_file, domain=s3xrc.domain, base_url=s3xrc.base_url)
-            if not tree:
-                session.error = str(T("XSLT Transformation Error: ")) + str(s3xrc.xml.error)
-                redirect(URL(r=request, f="index"))
-        else:
-            session.error = str(T("XSLT Template Not Found: ")) + \
-                            XSLT_IMPORT_TEMPLATES + "/" + template_name
-            #redirect(URL(r=request, f="index"))
-            item = s3xrc.xml.json_message(False, 501, session.error)
-            raise HTTP(501)
-
-    success = jr.import_xml(tree, permit=shn_has_permission, audit=shn_audit)
-
-    if success:
-        item = s3xrc.xml.json_message()
-    else:
-        # TODO: export the whole tree on error
-        tree = s3xrc.xml.tree2json(tree)
-        item = s3xrc.xml.json_message(False, 400, s3xrc.error, tree=tree)
-        raise HTTP(400, body=item)
-
-    return dict(item=item)
 
 #
 # shn_read --------------------------------------------------------------------
@@ -1185,16 +921,6 @@ def shn_read(jr, **attr):
             query = db[table].id == record_id
             return export_xls(table, query, list_fields)
 
-        elif jr.representation in shn_json_export_formats:
-            return export_json(jr)
-
-        elif jr.representation in shn_xml_export_formats:
-            return export_xml(jr)
-
-        #elif jr.representation == "rss": # TODO: replace by XML export
-            #query = db[table].id == record_id
-            #return export_rss(module, resource, query, rss=rss, linkto=jr.here("html"))
-
         else:
             session.error = BADFORMAT
             redirect(URL(r=request, f="index"))
@@ -1270,6 +996,8 @@ def shn_list(jr, **attr):
     # Provide the ability to get a subset of records
     _vars = request.vars
     if _vars.limit:
+        # disable Server-Side Pagination
+        response.s3.pagination = False
         limit = int(_vars.limit)
         if _vars.start:
             start = int(_vars.start)
@@ -1295,10 +1023,15 @@ def shn_list(jr, **attr):
     else:
         href_add = URL(r=jr.request, f=jr.name, args=["create"])
 
+    rfilter = jr.resource.get_query()
+
     # SSPag filter handling
     if jr.representation == "html":
         # HTML call sets/clears the filter
-        session.s3.filter = response.s3.filter
+        if response.s3.filter:
+            session.s3.filter = response.s3.filter & rfilter
+        else:
+            session.s3.filter = rfilter
     elif jr.representation.lower() == "aadata":
         # aaData call uses the filter, if present
         if session.s3.filter is not None:
@@ -1322,12 +1055,14 @@ def shn_list(jr, **attr):
     # Migrate to an XSLT in future?
     if jr.representation.lower() == "aadata":
 
-        if "iDisplayStart" in request.vars:
-            start = int(request.vars.iDisplayStart)
+        iDisplayStart = request.vars.get("iDisplayStart", None)
+        if iDisplayStart:
+            start = int(iDisplayStart)
         else:
             start = 0
-        if "iDisplayLength" in request.vars:
-            limit = int(request.vars.iDisplayLength)
+        iDisplayLength = request.vars.get("iDisplayLength", None)
+        if iDisplayLength:
+            limit = int(iDisplayLength)
         else:
             limit = None
 
@@ -1344,7 +1079,8 @@ def shn_list(jr, **attr):
         if not fields:
             fields = [f for f in table.fields if table[f].readable]
 
-        if "iSortingCols" in request.vars and orderby is None:
+        iSortingCols = request.vars.get("iSortingCols", None)
+        if iSortingCols and orderby is None:
             orderby = shn_convert_orderby(table, request, fields=fields)
 
         if request.vars.sSearch and request.vars.sSearch <> "":
@@ -1574,15 +1310,6 @@ def shn_list(jr, **attr):
     elif jr.representation == "xls":
         return export_xls(table, query, list_fields)
 
-    elif jr.representation in shn_json_export_formats:
-        return export_json(jr)
-
-    elif jr.representation in shn_xml_export_formats:
-        return export_xml(jr)
-
-    #elif jr.representation == "rss":
-        #return export_rss(module, resource, query, rss=rss, linkto=jr.there("html"))
-
     else:
         session.error = BADFORMAT
         redirect(URL(r=request, f="index"))
@@ -1739,12 +1466,13 @@ def shn_create(jr, **attr):
         # Read in POST
         import csv
         csv.field_size_limit(1000000000)
-        infile = open(request.vars.filename, "rb")
-        #try:
-        import_csv(infile, table)
-        session.flash = T("Data uploaded")
-        #except:
-            #session.error = T("Unable to parse CSV file!")
+        #infile = open(request.vars.filename, "rb")
+        infile = request.vars.filename.file
+        try:
+            import_csv(infile, table)
+            session.flash = T("Data uploaded")
+        except:
+            session.error = T("Unable to parse CSV file!")
         redirect(jr.there())
 
     elif jr.representation in shn_json_import_formats:
@@ -2059,25 +1787,6 @@ def shn_delete(jr, **attr):
     return output
 
 #
-# shn_options -----------------------------------------------------------------
-#
-def shn_options(jr, **attr):
-
-    if jr.representation == "xml":
-        response.headers["Content-Type"] = "text/xml"
-        response.view = "plain.html"
-        return jr.options_xml(pretty_print=PRETTY_PRINT)
-
-    elif jr.representation == "json":
-        response.headers["Content-Type"] = "text/x-json"
-        response.view = "plain.html"
-        return jr.options_json(pretty_print=PRETTY_PRINT)
-
-    else:
-        session.error = BADFORMAT
-        redirect(URL(r=request, f="index"))
-
-#
 # shn_search ------------------------------------------------------------------
 #
 def shn_search(jr, **attr):
@@ -2212,7 +1921,7 @@ def shn_search(jr, **attr):
             item = s3xrc.xml.json_message(False, 400, "Search requires specifying Field, Filter & Value!")
             raise HTTP(400, body=item)
 
-        response.view = "plain.html"
+        response.view = "xml.html"
         output = dict(item=item)
 
     else:
@@ -2304,19 +2013,18 @@ def shn_rest_controller(module, resource, **attr):
 
     """
 
-    s3xrc.set_handler("import_xml", import_xml)
-    s3xrc.set_handler("import_json", import_json)
     s3xrc.set_handler("list", shn_list)
     s3xrc.set_handler("read", shn_read)
     s3xrc.set_handler("create", shn_create)
     s3xrc.set_handler("update", shn_update)
     s3xrc.set_handler("delete", shn_delete)
     s3xrc.set_handler("search", shn_search)
-    s3xrc.set_handler("options", shn_options)
+
+    s3xrc.audit = shn_audit
 
     res, req = s3xrc.parse_request(module, resource, session, request, response)
-    output = res.execute_request(req, **attr)
 
+    output = res.execute_request(req, **attr)
     return output
 
 # END

@@ -33,7 +33,7 @@ if deployment_settings.has_module(module):
                     #Field("outbound_mail_from"),
                     migrate=migrate)
     table.inbound_mail_type.requires = IS_IN_SET(["imap", "pop3"], zero=None)
-    
+
     # Status
     resource = "email_inbound_status"
     tablename = "%s_%s" % (module, resource)
@@ -78,7 +78,7 @@ if deployment_settings.has_module(module):
                 Field("enabled", "boolean", default = False),
                 #Field("preference", "integer", default = 5), To be used later
                 migrate=migrate)
-    
+
 
     # Settings for modem.
     resource = "gateway_settings"
@@ -104,7 +104,7 @@ if deployment_settings.has_module(module):
     resource = "log"
     tablename = "%s_%s" % (module, resource)
     table = db.define_table(tablename, timestamp, uuidstamp, deletion_status,
-        pr_pe_id,#Sender
+        pe_id,#Sender
         Field("sender"), #The name to go out incase of the email, if set used
         Field("fromaddress"), #From address if set changes sender to this
         Field("subject", length=78),
@@ -115,14 +115,14 @@ if deployment_settings.has_module(module):
         Field("actionable", "boolean", default = True),
         Field("actioned", "boolean", default = False),
         Field("actioned_comments", "text"),
-        Field("priority", "integer"),
+        Field("priority", "integer", default = 1),
         migrate=migrate)
 
     table.uuid.requires = IS_NOT_IN_DB(db, "%s.uuid" % tablename)
     table.priority.requires = IS_NULL_OR(IS_IN_SET(msg_priority_opts))
     s3xrc.model.configure(table,
                           list_fields=["id",
-                                       "pr_pe_id",
+                                       "pe_id",
                                        "subject",
                                        "verified",
                                        "verified_comments",
@@ -156,19 +156,23 @@ if deployment_settings.has_module(module):
                                         "record_uuid",
                                         "resource",
                                        ])
-
+    # The following was added to show only the supported messaging methods
+    msg_contact_method_opts = { # pr_contact_method dependency
+        1:T("E-Mail"),
+        2:T("Mobile Phone"),
+    }
     resource = "outbox"
     tablename = "%s_%s" % (module, resource)
     table = db.define_table(tablename, timestamp, uuidstamp, deletion_status,
         message_id,
-        pr_pe_id, # Person/Group to send the message out to 
-        Field("address"), # If set used instead of picking up from pr_pe_id
+        pe_id, # Person/Group to send the message out to
+        Field("address"), # If set used instead of picking up from pe_id
         Field("pr_message_method",
                 "integer",
-                requires = IS_IN_SET(pr_contact_method_opts, zero=None),
+                requires = IS_IN_SET(msg_contact_method_opts, zero=None),
                 default = 1,
                 label = T("Contact Method"),
-                represent = lambda opt: pr_contact_method_opts.get(opt, UNKNOWN_OPT)),
+                represent = lambda opt: msg_contact_method_opts.get(opt, UNKNOWN_OPT)),
         opt_msg_status,
         Field("system_generated", "boolean", default = False),
         Field("log"),
@@ -184,7 +188,7 @@ if deployment_settings.has_module(module):
     s3xrc.model.configure(table,
                           list_fields=[ "id",
                                         "message_id",
-                                        "pr_pe_id",
+                                        "pe_id",
                                         "status",
                                         "log",
                                        ])
@@ -205,7 +209,7 @@ if deployment_settings.has_module(module):
 
     # CAP: Common Alerting Protocol
     # http://docs.oasis-open.org/emergency/cap/v1.2/CAP-v1.2.html
-    # CAP alert Status Code (status) 
+    # CAP alert Status Code (status)
     cap_alert_status_code_opts = {
         "Actual":T("Actionable by all targeted recipients"),
         "Exercise":T("Actionable only by designated exercise participants; exercise identifier SHOULD appear in <note>"),
@@ -213,7 +217,7 @@ if deployment_settings.has_module(module):
         "Test":T("Technical testing only, all recipients disregard"),
         "Draft":T("preliminary template or draft, not actionable in its current form"),
     }
-    # CAP info Event Category (category) 
+    # CAP info Event Category (category)
     cap_info_category_opts = {
         "Geo":T("Geophysical (inc. landslide)"),
         "Met":T("Meteorological (inc. flood)"),
@@ -228,7 +232,7 @@ if deployment_settings.has_module(module):
         "CBRNE":T("Chemical, Biological, Radiological, Nuclear or High-Yield Explosive threat or attack"),
         "Other":T("Other events"),
     }
-    # CAP info Response Type (responseType) 
+    # CAP info Response Type (responseType)
     cap_info_responseType_opts = {
         "Shelter":T("Take shelter in place or per <instruction>"),
         "Evacuate":T("Relocate as instructed in the <instruction>"),
@@ -240,9 +244,9 @@ if deployment_settings.has_module(module):
         "AllClear":T("The subject event no longer poses a threat or concern and any follow on action is described in <instruction>"),
         "None":T("No action recommended"),
     }
-    
+
     # Reports
-    # Verified reports ready to be sent out as alerts or displayed on a map 
+    # Verified reports ready to be sent out as alerts or displayed on a map
     msg_report_type_opts = {
         "Shelter":T("Take shelter in place or per <instruction>"),
         "Evacuate":T("Relocate as instructed in the <instruction>"),

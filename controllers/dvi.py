@@ -34,9 +34,9 @@ def shn_menu():
     if session.rcvars and "dvi_body" in session.rcvars:
         body = db.dvi_body
         query = (body.id == session.rcvars["dvi_body"])
-        record = db(query).select(body.id, body.pr_pe_label, limitby=(0,1)).first()
+        record = db(query).select(body.id, body.pe_label, limitby=(0,1)).first()
         if record:
-            label = record.pr_pe_label
+            label = record.pe_label
             menu_selected.append(["%s: %s" % (T("Body"), label), False,
                                  URL(r=request, f="body", args=[record.id])])
     if menu_selected:
@@ -62,7 +62,7 @@ def recreq():
     """ RESTful CRUD controller """
 
     resource = request.function
-    
+
     response.s3.pagination = True
 
     def recreq_postp(jr, output):
@@ -85,7 +85,7 @@ def body():
     """ RESTful CRUD controller """
 
     resource = request.function
-    
+
     response.s3.pagination = True
 
     def body_postp(jr, output):
@@ -102,21 +102,17 @@ def body():
     response.s3.postp = body_postp
 
     output = shn_rest_controller(module, resource,
-                                 main="pr_pe_label",
-                                 extra="opt_pr_gender",
+                                 main="pe_label",
+                                 extra="gender",
                                  rheader=lambda jr: \
                                          shn_dvi_rheader(jr, tabs=[
                                             (T("Recovery"), ""),
                                             (T("Checklist"), "checklist"),
-                                            (T("Tracing"), "presence"),
                                             (T("Images"), "image"),
-                                            (T("Identity"), "identification"),
+                                            (T("Physical Description"), "physical_description"),
                                             (T("Effects Inventory"), "effects"),
-                                            (T("Description"), "pd_general"),
-                                            (T("Head"), "pd_head"),
-                                            (T("Face"), "pd_face"),
-                                            (T("Teeth"), "pd_teeth"),
-                                            (T("Body"), "pd_body")
+                                            (T("Tracing"), "presence"),
+                                            (T("Identity"), "identification"),
                                          ]),
                                  sticky=True,
                                  listadd=False)
@@ -132,11 +128,10 @@ def download():
 
 # -----------------------------------------------------------------------------
 def tooltip():
-
     """ Ajax tooltips """
-
-    if "formfield" in request.vars:
-        response.view = "pr/ajaxtips/%s.html" % request.vars.formfield
+    formfield = request.vars.get("formfield", None):
+    if formfield:
+        response.view = "pr/ajaxtips/%s.html" % formfield
     return dict()
 
 #

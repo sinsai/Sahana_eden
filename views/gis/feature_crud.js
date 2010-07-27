@@ -1,4 +1,4 @@
-﻿    feature_type=$("select#gis_location_gis_feature_type").val();
+﻿    feature_type=$("#gis_location_gis_feature_type").val();
     if (feature_type==1) {
         // Point
         // Hide the WKT input
@@ -8,7 +8,7 @@
         // Hide the Lat/Lon inputs
         $("#gis_location_lat__row").hide();
         $("#gis_location_lon__row").hide();
-        if ($('input#gis_location_wkt').val()===''){
+        if ($('#gis_location_wkt').val()===''){
             // Pre-populate the WKT field
             $(this).val('LINESTRING( , , )')
         }
@@ -17,13 +17,13 @@
         // Hide the Lat/Lon inputs
         $("#gis_location_lat__row").hide();
         $("#gis_location_lon__row").hide();
-        if ($('input#gis_location_wkt').val()===''){
+        if ($('#gis_location_wkt').val()===''){
             // Pre-populate the WKT field
             $(this).val('POLYGON(( , , ))')
         }
     }
     // When the Type changes:
-	$("select#gis_location_gis_feature_type").change(function() {
+	$("#gis_location_gis_feature_type").change(function() {
 		// What is the new type?
         feature_type=$(this).val();
         if (feature_type==1) {
@@ -40,9 +40,9 @@
             $("#gis_location_lon__row").hide();
             // Show the WKT input
             $("#gis_location_wkt__row").show();
-            if ($('input#gis_location_wkt').val()===''){
+            if ($('#gis_location_wkt').val()===''){
                 // Pre-populate the WKT field
-                $('input#gis_location_wkt').val('LINESTRING( , , )')
+                $('#gis_location_wkt').val('LINESTRING( , , )')
             }
         } else if (feature_type==3) {
             // Polygon
@@ -51,9 +51,9 @@
             $("#gis_location_lon__row").hide();
             // Show the WKT input
             $("#gis_location_wkt__row").show();
-            if ($('input#gis_location_wkt').val()===''){
+            if ($('#gis_location_wkt').val()===''){
                 // Pre-populate the WKT field
-                $('input#gis_location_wkt').val('POLYGON(( , , ))')
+                $('#gis_location_wkt').val('POLYGON(( , , ))')
             }
         }
     })

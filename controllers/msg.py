@@ -12,7 +12,7 @@ if module not in deployment_settings.modules:
 
 # Options Menu (available in all Functions' Views)
 response.menu_options = [
-	#[T("Compose"), False, URL(r=request, f="outbox", args="create")], #TODO
+	[T("Compose"), False, URL(r=request, c="msg", f="compose")],
 	#[T("Outbox"), False, URL(r=request, f="outbox")],#TODO
 	[T("Distribution groups"), False, URL(r=request, f="group"), [
 		[T("List/Add"), False, URL(r=request, f="group")],
@@ -82,18 +82,43 @@ def email_settings():
 # The following 2 functions hook into the pr functions
 # -----------------------------------------------------------------------------
 def group():
+    if auth.is_logged_in() or auth.basic():
+        pass
+    else:
+        redirect(URL(r=request, c="default", f="user", args="login",
+        vars={"_next":URL(r=request, c="msg", f="group")}))
     resource = request.function
+
+    db.pr_group.description.readable = False
+    db.pr_group.description.writable = False
+
     response.s3.filter = (db.pr_group.system == False) # do not show system groups
     response.s3.pagination = True
     "RESTful CRUD controller"
     return shn_rest_controller("pr", resource,
-                               main="group_name",
-                               extra="group_description",
+                               main="name",
+                               extra="description",
                                rheader=shn_pr_rheader,
                                deletable=False)
 # -----------------------------------------------------------------------------
 def group_membership():
     "RESTful CRUD controller"
+    if auth.is_logged_in() or auth.basic():
+        pass
+    else:
+        redirect(URL(r=request, c="default", f="user", args="login",
+        vars={"_next":URL(r=request, c="msg", f="group_membership")}))
+
+    db.pr_group_membership.description.readable = False
+    db.pr_group_membership.description.writable = False
+    
+    db.pr_group_membership.comment.readable = False
+    db.pr_group_membership.comment.writable = False
+    
+    db.pr_group_membership.group_head.readable = False
+    db.pr_group_membership.group_head.writable = False
+    
+    
     resource = request.function
     return shn_rest_controller("pr", resource)
 
@@ -103,8 +128,8 @@ def pe_contact():
     """ Allows the user to add,update and delete his contacts"""
     
     if auth.is_logged_in() or auth.basic():
-        person = db(db.pr_person.uuid == auth.user.person_uuid).select(db.pr_person.pr_pe_id, limitby=(0, 1)).first().pr_pe_id
-        response.s3.filter = (db.pr_pe_contact.pr_pe_id == person)
+        person = db(db.pr_person.uuid == auth.user.person_uuid).select(db.pr_person.pe_id, limitby=(0, 1)).first().pe_id
+        response.s3.filter = (db.pr_pe_contact.pe_id == person)
     else:
         redirect(URL(r=request, c="default", f="user", args="login",
             vars={"_next":URL(r=request, c="msg", f="pe_contact")}))
@@ -113,20 +138,20 @@ def pe_contact():
     db.pr_pe_contact.name.readable = False
     db.pr_pe_contact.id.writable = False
 #   db.pr_pe_contact.id.readable = False
-    db.pr_pe_contact.pr_pe_id.writable = False
-    db.pr_pe_contact.pr_pe_id.readable = False
+    db.pr_pe_contact.pe_id.writable = False
+    db.pr_pe_contact.pe_id.readable = False
     db.pr_pe_contact.person_name.writable = False
     db.pr_pe_contact.person_name.readable = False
     def msg_pe_contact_onvalidation(form):
         """This onvalidation method adds the person id to the record"""
-        person = db(db.pr_person.uuid == auth.user.person_uuid).select(db.pr_person.pr_pe_id, limitby=(0, 1)).first().pr_pe_id
-        form.vars.pr_pe_id = person
+        person = db(db.pr_person.uuid == auth.user.person_uuid).select(db.pr_person.pe_id, limitby=(0, 1)).first().pe_id
+        form.vars.pe_id = person
     def msg_pe_contact_restrict_access(jr):
         """The following restricts update and delete access to contacts not
         owned by the user"""
         if jr.id :
-            person = db(db.pr_person.uuid == auth.user.person_uuid).select(db.pr_person.pr_pe_id, limitby=(0, 1)).first().pr_pe_id
-            if person == db(db.pr_pe_contact.id == jr.id).select(db.pr_pe_contact.pr_pe_id, limitby=(0, 1)).first().pr_pe_id :
+            person = db(db.pr_person.uuid == auth.user.person_uuid).select(db.pr_person.pe_id, limitby=(0, 1)).first().pe_id
+            if person == db(db.pr_pe_contact.id == jr.id).select(db.pr_pe_contact.pe_id, limitby=(0, 1)).first().pe_id :
                 return True
             else:
                 session.error = T("Access denied")
@@ -145,9 +170,14 @@ def search():
     """Do a search of groups which match a type
     Used for auto-completion
     """
+    if auth.is_logged_in() or auth.basic():
+        pass
+    else:
+        return
+
     import gluon.contrib.simplejson as sj
     table1 = db.pr_group
-    field1 = "group_name"
+    field1 = "name"
     table2 = db.pr_person
     field21 = "first_name"
     field22 = "middle_name"
@@ -156,93 +186,24 @@ def search():
     value = request.vars.q
     if value:
 		item = []
-		query = db((table1[field1].like("%" + value + "%"))).select(db.pr_group.pr_pe_id)
+		query = db((table1[field1].like("%" + value + "%"))).select(db.pr_group.pe_id)
 		for row in query:
-			item.append({"id":row.pr_pe_id, "name":shn_pentity_represent(row.pr_pe_id, default_label = "")})
-		query = db((table2[field21].like("%" + value + "%"))).select(db.pr_person.pr_pe_id)
+			item.append({"id":row.pe_id, "name":shn_pentity_represent(row.pe_id, default_label = "")})
+		query = db((table2[field21].like("%" + value + "%"))).select(db.pr_person.pe_id)
 		for row in query:
-			item.append({"id":row.pr_pe_id, "name":shn_pentity_represent(row.pr_pe_id, default_label = "")})
-		query = db((table2[field22].like("%" + value + "%"))).select(db.pr_person.pr_pe_id)
+			item.append({"id":row.pe_id, "name":shn_pentity_represent(row.pe_id, default_label = "")})
+		query = db((table2[field22].like("%" + value + "%"))).select(db.pr_person.pe_id)
 		for row in query:
-			item.append({"id":row.pr_pe_id, "name":shn_pentity_represent(row.pr_pe_id, default_label = "")})
-		query = db((table2[field23].like("%" + value + "%"))).select(db.pr_person.pr_pe_id)
+			item.append({"id":row.pe_id, "name":shn_pentity_represent(row.pe_id, default_label = "")})
+		query = db((table2[field23].like("%" + value + "%"))).select(db.pr_person.pe_id)
 		for row in query:
-			item.append({"id":row.pr_pe_id, "name":shn_pentity_represent(row.pr_pe_id, default_label = "")})
+			item.append({"id":row.pe_id, "name":shn_pentity_represent(row.pe_id, default_label = "")})
 		item = sj.dumps(item)
-		response.view = "plain.html"
+		response.view = "xml.html"
 		return dict(item=item)
     return
 
-#-------------------------------------------------------------------------------
-#def outbox():
-    #"RESTful CRUD controller"
-    #resource = request.function
-    #tablename = module + "_" + resource
-    #table = db[tablename]
-    #if auth.is_logged_in() or auth.basic():
-        #if auth.has_membership(1):
-            #pass
-        #else:
-            #person = db(db.pr_person.uuid == auth.user.person_uuid).select(db.pr_person.id, limitby=(0, 1)).first().id
-            #db.msg_outbox.id.readable = False
-            #response.s3.filter = (db.msg_outbox.person_id == person)
-    #else:
-        #redirect(URL(r=request, c="default", f="user", args="login",
-            #vars={"_next":URL(r=request, c="msg", f="outbox")}))
 
-    #table.pr_pe_id.label = T("Recipients ")
-    #table.person_id.label = T("Sender")
-    #table.subject.label = T("Subject")
-    #table.body.label = T("Body")
-    #SEND_MESSAGE = T("Send Message")
-    #VIEW_MESSAGE_OUTBOX = T("View Outbox")
-    #s3.crud_strings[tablename] = Storage(
-            #title_create = SEND_MESSAGE,
-            #title_display = T("Message Details"),
-            #title_list = VIEW_MESSAGE_OUTBOX,
-            #title_update = T("Edit Message"),
-            #title_search = T("Search Outbox"),
-            #subtitle_create = SEND_MESSAGE,
-            #subtitle_list = T("Outbox"),
-            #label_list_button = VIEW_MESSAGE_OUTBOX,
-            #label_create_button = SEND_MESSAGE,
-            #msg_record_created = T("Message created"),
-            #msg_record_modified = T("Message updated"),
-            #msg_record_deleted = T("Message deleted"),
-            #msg_list_empty = T("No Message currently in your Outbox"))
-    
-    #def restrict_methods(jr):
-		#if jr.method == "create":
-			#db.msg_outbox.pr_pe_id.widget = lambda f, v: StringWidget.widget(f, v)
-			#return True
-		#if jr.method == "delete" or jr.method == "update":
-			#if auth.has_membership(1):
-				#return True
-			#else:
-				#session.error = T("Restricted method")
-				#return dict(bypass = True, output = redirect(URL(r=request)))
-		#else:
-			#return True
-    #def msg_outbox_onvalidation(form):
-        #"""This onvalidation method adds the person id to the record"""
-        #person = db(db.pr_person.uuid == auth.user.person_uuid).select(db.pr_person.id, limitby=(0, 1)).first().id
-        #form.vars.person_id = person
-        #if not form.vars.pr_pe_id:
-			#session.error = T("Empty Recipients")
-			#redirect(URL(r=request,c="msg", f="outbox", args="create"))
-    
-    #db.msg_outbox.status.writable = False
-    #db.msg_outbox.status.readable = True
-    #db.msg_outbox.person_id.readable = False
-    #db.msg_outbox.person_id.writable = False
-    
-    #response.s3.prep = restrict_methods
-    #s3xrc.model.configure(db.msg_outbox,
-            #onvalidation=lambda form: msg_outbox_onvalidation(form))
-    
-    #return shn_rest_controller("msg", "outbox", listadd=False)
-
-#-------------------------------------------------------------------------------
 def process_sms_via_api():
 	"Controller for SMS api processing - to be called via cron"
 	msg.process_outbox(contact_method = 2)
@@ -350,7 +311,7 @@ def gateway_settings():
 
 @auth.shn_requires_membership(1)
 def setting():
-    """Overall settings for the messaging framework"""
+    "Overall settings for the messaging framework"
     resource = request.function
     tablename = module + "_" + resource
     table = db[tablename]
@@ -380,8 +341,9 @@ def setting():
     return shn_rest_controller(module, resource, deletable=False,
     listadd=False)
 
+@auth.shn_requires_membership(1) #Enabled only for testing
 def log():
-    """ RESTful CRUD controller """
+    " RESTful CRUD controller "
     resource = 'log'
     tablename = "%s_%s" % (module, resource)
     table = db[tablename]
@@ -394,7 +356,6 @@ def log():
             DIV(IMG(_src='/%s/static/img/priority/priority_4.gif' % request.application), _height=12)
         ][0].xml())
     table.priority.label = T('Priority')
-    table.person_id.label = T('Sender')
     # Add Auth Restrictions
 
     # CRUD Strings
@@ -422,8 +383,9 @@ def log():
         listadd=False,
         )
 
+@auth.shn_requires_membership(1) #Enabled only for testing
 def tag():
-    """ RESTful CRUD controller """
+    " RESTful CRUD controller "
     resource = 'tag'
     tablename = "%s_%s" % (module, resource)
     table = db[tablename]
@@ -433,4 +395,65 @@ def tag():
     return shn_rest_controller(module, resource,
     listadd=False,
     )
+
+def compose():
+    " Message Compose page"
+    resource1 = 'log'
+    tablename1 = module + "_" + resource1
+    table1 = db[tablename1]
+    resource2 = 'outbox'
+    tablename2 = module + "_" + resource2
+    table2 = db[tablename2]
+
+    if auth.is_logged_in() or auth.basic():
+        pass
+    else:
+        redirect(URL(r=request, c="default", f="user", args="login",
+            vars={"_next":URL(r=request, c="msg", f="compose")}))
+
+    # Model options
+    table1.sender.writable = False
+    table1.sender.readable = False
+    table1.fromaddress.writable = False
+    table1.fromaddress.readable = False
+    table1.pe_id.writable = False
+    table1.pe_id.readable = False
+    table1.verified.writable = False
+    table1.verified.readable = False
+    table1.verified_comments.writable = False
+    table1.verified_comments.readable = False
+    table1.actioned.writable = False
+    table1.actioned.readable = False
+    table1.actionable.writable = False
+    table1.actionable.readable = False
+    table1.actioned_comments.writable = False
+    table1.actioned_comments.readable = False
+    table1.subject.label = T('Subject')
+    table1.message.label = T('Message')
+    table1.priority.label = T('Priority')
+    table2.pe_id.label = T('Recipients')
+
+
+    def compose_onvalidation(form):
+        """This onvalidation sets the sender and uses msg.send_by_pe_id to route the message"""
+        if not request.vars.pe_id:
+            session.error = T('Please enter the recipient')
+            redirect(URL(r=request,c="msg", f="compose"))
+        sender_pe_id = db(db.pr_person.uuid == auth.user.person_uuid).select(db.pr_person.pe_id, limitby=(0, 1)).first().pe_id
+        if msg.send_by_pe_id(request.vars.pe_id,
+                                request.vars.subject,
+                                request.vars.message,
+                                sender_pe_id,
+                                request.vars.pr_message_method):
+                                    session.flash = T('Message sent to outbox')
+                                    redirect(URL(r=request, c="msg", f="compose"))
+        else:
+            session.error = T('Error in message')
+            redirect(URL(r=request,c="msg", f="compose"))
+
+
+    logform = crud.create(table1, 
+                            onvalidation = compose_onvalidation)
+    outboxform = crud.create(table2)
     
+    return dict(logform = logform, outboxform = outboxform, title = T('Send Message'))

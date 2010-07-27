@@ -27,11 +27,11 @@ $(function() {
             self.opener.location.reload(true);
             // find which ID we need to make active
             {{field = '%s_%s_%s' % (module, resource, main)}}
-            value=$('input#{{=field}}').val();
+            value=$('#{{=field}}').val();
             $.getJSON("{{=URL(r=request, c=module, f=resource, args=['search'], vars=dict(format='json', field=main, filter='='))}}" + "&value=" + value,
                 function(data) {
                     // set the caller's lookup list to the new ID
-//                    self.opener.$('select#{{=caller}}').val(data[0].id);
+//                    self.opener.$('#{{=caller}}').val(data[0].id);
                     // close the popup
                     self.close();
                 });
@@ -53,7 +53,7 @@ function TB_refresh() {
     var $_GET = getQueryParams(document.location.search);
     var caller = $_GET["caller"];
     // The JSON of the resource we just created
-    var url = document.location.pathname.replace("/create","/options.json?field=pr_pe_id");
+    var url = document.location.pathname.replace("/create","/options.json?field=pe_id");
     var selector = self.parent.$('#' + caller);
     var dummy = self.parent.$('#dummy_' + caller);
     var has_dummy = (dummy.val() != undefined);

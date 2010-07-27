@@ -12,6 +12,9 @@ from gluon.validators import Validator, IS_MATCH, IS_NOT_IN_DB
 
 __all__ = ["IS_LAT", "IS_LON", "IS_HTML_COLOUR", "THIS_NOT_IN_DB", "IS_UTC_OFFSET", "IS_UTC_DATETIME", "IS_ONE_OF", "IS_ONE_OF_EMPTY", "IS_NOT_ONE_OF"]
 
+def options_sorter(x, y):
+    return (str(x[1]).upper() > str(y[1]).upper() and 1) or -1
+
 class IS_LAT(object):
     """
     example:
@@ -92,6 +95,9 @@ class THIS_NOT_IN_DB(object):
             return (self.value, self.error_message)
         return (value, None)
 
+regex1 = re.compile("[\w_]+\.[\w_]+")
+regex2 = re.compile("%\((?P<name>[^\)]+)\)s")
+
 # IS_ONE_OF_EMPTY -------------------------------------------------------------------
 # by sunneach 2010-02-03
 # copy of nursix's IS_ONE_OF with removed 'options' method
@@ -102,88 +108,186 @@ class IS_ONE_OF_EMPTY(Validator):
         validates a given value as key of another table, filtered by the 'filterby'
         field for one of the 'filter_opts' options (=a selective IS_IN_DB())
 
+        NB Filtering isn't active in GQL.
+
         For the dropdown representation:
 
-        'represent' can be a string template for the record, or a set of field
+        'label' can be a string template for the record, or a set of field
         names of the fields to be used as option labels, or a function or lambda
         to create an option label from the respective record (which has to return
         a string, of course)
+        
+        No 'options' method as designed to be called next to an Autocomplete field so don't download a large dropdown unnecessarily.
     """
 
     def __init__(
         self,
         dbset,
         field,
-        represent=None,
-        filterby=None,
+        label=None,
+        filterby=None,      # Overrides orderby
         filter_opts=None,
         error_message="invalid value!",
+        orderby=None,
+        groupby=None,
+        cache=None,
         multiple=False,
-        alphasort=True,
-        zero=""
+        zero="",
+        sort=False,
+        _and=None,
         ):
-
-        self.error_message = error_message
-
-        self.field = field
-        (ktable, kfield) = str(self.field).split(".")
-
-        self.ktable = ktable
-
-        if not kfield or not len(kfield):
-            self.kfield = "id"
-        else:
-            self.kfield = kfield
-
-        self.represent = represent or ("%%(%s)s" % self.kfield)
-
-        self.filterby = filterby
-        self.filter_opts = filter_opts
-
-        self.error_message = error_message
-
-        self.multiple = multiple
-        self.alphasort = alphasort
-        self.zero = zero
 
         if hasattr(dbset, "define_table"):
             self.dbset = dbset()
         else:
             self.dbset = dbset
+        self.field = field
+        (ktable, kfield) = str(self.field).split(".")
+        if not label:
+            label = "%%(%s)s" % kfield
+        if isinstance(label, str):
+            if regex1.match(str(label)):
+                label = "%%(%s)s" % str(label).split(".")[-1]
+            ks = regex2.findall(label)
+            if not kfield in ks:
+                ks += [kfield]
+            fields = ["%s.%s" % (ktable, k) for k in ks]
+        else:
+            ks = [kfield]
+            fields =[str(f) for f in self.dbset._db[ktable]]
+        self.fields = fields
+        self.label = label
+        self.ktable = ktable
+        if not kfield or not len(kfield):
+            self.kfield = "id"
+        else:
+            self.kfield = kfield
+        self.ks = ks
+        self.error_message = error_message
+        self.theset = None
+        self.orderby = orderby
+        self.groupby = groupby
+        self.cache = cache
+        self.multiple = multiple
+        self.zero = zero
+        self.sort = sort
+        self._and = _and
+        
+        self.filterby = filterby
+        self.filter_opts = filter_opts
 
-    def __call__(self,value):
+    def set_self_id(self, id):
+        if self._and:
+            self._and.record_id = id
+
+    def build_set(self):
+    
+        if self.ktable in self.dbset._db:
+        
+            _table = self.dbset._db[self.ktable]
+            
+            if self.dbset._db._dbname != "gql":
+                orderby = self.orderby or ", ".join(self.fields)
+                groupby = self.groupby
+                dd = dict(orderby=orderby, groupby=groupby, cache=self.cache)
+                if "deleted" in _table:
+                    query = ((_table["deleted"] == False) | (_table["deleted"] == None))
+                else:
+                    query = (_table["id"])
+                if self.filterby and self.filterby in _table:
+                    if self.filter_opts:
+                        query = (_table[self.filterby].belongs(self.filter_opts)) & query
+                    dd.update(orderby=_table[self.filterby])
+                records = self.dbset(query).select(*self.fields, **dd)
+            else:
+                import contrib.gql
+                orderby = self.orderby\
+                     or contrib.gql.SQLXorable("|".join([k for k in self.ks
+                        if k != "id"]))
+                dd = dict(orderby=orderby, cache=self.cache)
+                records = \
+                    self.dbset.select(self.dbset._db[self.ktable].ALL, **dd)
+            self.theset = [str(r[self.kfield]) for r in records]
+            labels = []
+            label = self.label
+            for r in records:
+                try:
+                    # Lambda
+                    labels.append(label(r))
+                except TypeError:
+                    if isinstance(label, str):
+                        labels.append(label % dict(r))
+                    elif isinstance(label, (list, tuple)):
+                        _label = ""
+                        for l in label:
+                            if l in r:
+                                _label = "%s %s" % (_label, r[l])
+                        labels.append(_label)
+                    elif "name" in _table:
+                        labels.append(r.name)
+                    else:
+                        # Default to raw ID
+                        labels.append(r[self.kfield])
+            self.labels = labels
+        else:
+            self.theset = None
+            self.labels = None
+
+    #def options(self):
+    #   "Removed as we don't want any options downloaded unnecessarily"
+    
+    def __call__(self, value):
 
         try:
             _table = self.dbset._db[self.ktable]
-
-            if self.multiple:
-                values = re.compile("[\w\-:]+").findall(str(value))
-            else:
-                values = [value]
-
-            deleted_q = ("deleted" in _table) and (_table["deleted"]==False) or False
-
+            deleted_q = ("deleted" in _table) and (_table["deleted"] == False) or False
             filter_opts_q = False
-
             if self.filterby and self.filterby in _table:
                 if self.filter_opts:
                     filter_opts_q = _table[self.filterby].belongs(self.filter_opts)
 
-            for v in values:
-
-                query = (_table[self.kfield]==v)
-                if deleted_q != False:
-                    query = deleted_q & query
-                if filter_opts_q != False:
-                    query = filter_opts_q & query
-
-                if self.dbset(query).count() < 1:
-                    return (value, self.error_message)
-
             if self.multiple:
-                return ("|%s|" % "|".join(values), None)
+                if isinstance(value, list):
+                    values = value
+                elif value:            
+                    values = [value]
+                else:
+                    values = []
+
+                for v in values:
+                    query = (_table[self.kfield] == v)
+                    if deleted_q != False:
+                        query = deleted_q & query
+                    if filter_opts_q != False:
+                        query = filter_opts_q & query
+
+                    if self.dbset(query).count() < 1:
+                        return (value, self.error_message)
+
+                if not [x for x in values if not x in self.theset]:
+                    return ("|%s|" % "|".join(values), None)
+
+            elif self.theset:
+                if value in self.theset:
+                    if self._and:
+                        return self._and(value)
+                    else:
+                        return (value, None)
+
             else:
-                return (value, None)
+                values = [value]
+                for v in values:
+                    query = (_table[self.kfield] == v)
+                    if deleted_q != False:
+                        query = deleted_q & query
+                    if filter_opts_q != False:
+                        query = filter_opts_q & query
+
+                    if self.dbset(query).count():
+                        if self._and:
+                            return self._and(value)
+                        else:
+                            return (value, None)
 
         except:
             pass
@@ -195,66 +299,17 @@ class IS_ONE_OF_EMPTY(Validator):
 # converted to subclass 2010-02-03 by sunneach: NO CHANGES in the method bodies
 class IS_ONE_OF(IS_ONE_OF_EMPTY):
     """
-        Filtered version of IS_IN_DB():
-
-        validates a given value as key of another table, filtered by the 'filterby'
-        field for one of the 'filter_opts' options (=a selective IS_IN_DB())
-
-        For the dropdown representation:
-
-        'represent' can be a string template for the record, or a set of field
-        names of the fields to be used as option labels, or a function or lambda
-        to create an option label from the respective record (which has to return
-        a string, of course)
+        Extends IS_ONE_OF_EMPTY by restoring the 'options' method.
     """
 
     def options(self):
-
-        if self.ktable in self.dbset._db:
-
-            _table = self.dbset._db[self.ktable]
-
-            if "deleted" in _table:
-                query = ((_table["deleted"] == False) | (_table["deleted"] == None))
-            else:
-                query = (_table["id"])
-
-            if self.filterby and self.filterby in _table:
-                if self.filter_opts:
-                    query = (_table[self.filterby].belongs(self.filter_opts)) & query
-                records = self.dbset(query).select(orderby=_table[self.filterby])
-            else:
-                records = self.dbset(query).select()
-
-            set = []
-            for r in records:
-                try:
-                    set.append((r[self.kfield], self.represent(r)))
-                except TypeError:
-                    if isinstance(self.represent, str):
-                        set.append((r[self.kfield], self.represent %dict(r)))
-                    elif isinstance(self.represent, (list, tuple)):
-                        _label = ""
-                        for l in self.represent:
-                            if l in r:
-                                _label = "%s %s" % ( _label, r[l] )
-                        set.append((r[self.kfield],  _label))
-                    elif "name" in _table:
-                        set.append((r[self.kfield], r.name))
-                    else:
-                        set.append(( r[self.kfield], r[self.kfield] ))
-
-            # AlphaSort:
-            if self.alphasort:
-                set.sort(key=lambda opt: opt[1])
-            # Zero
-            if self.zero != None and not self.multiple:
-                set.insert(0, ("", self.zero))
-
-            return( set )
-
-        else:
-            return None
+        self.build_set()
+        items = [(k, self.labels[i]) for (i, k) in enumerate(self.theset)]
+        if self.sort:
+            items.sort(options_sorter)
+        if self.zero != None and not self.multiple:
+            items.insert(0,("", self.zero))
+        return items
 
 class IS_NOT_ONE_OF(IS_NOT_IN_DB):
     """
@@ -276,7 +331,7 @@ class IS_NOT_ONE_OF(IS_NOT_IN_DB):
         field = _table[fieldname]
         query = (field == value)
         if "deleted" in _table:
-            query = (_table["deleted"]==False) & query
+            query = (_table["deleted"] == False) & query
         rows = self.dbset(query).select(limitby=(0, 1))
         if len(rows) > 0 and str(rows[0].id) != str(self.record_id):
             return (value, self.error_message)

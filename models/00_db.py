@@ -88,7 +88,7 @@ gis = s3gis.GIS(globals(), db, auth, cache=cache)
 
 # VITA
 s3vita = local_import("s3vita")
-vita = s3vita.Vita(globals(), db)
+vita = s3vita.S3Vita(globals(), db)
 
 # Logout session clearing
 # shn_on_login ----------------------------------------------------------------

@@ -495,7 +495,7 @@ group_id.group_id.comment = \
 
 # -----------------------------------------------------------------------------
 s3xrc.model.configure(table,
-    onaccept=lambda form: shn_pentity_onaccept(form, table=table),
+    onaccept=lambda form, table=table: shn_pentity_onaccept(form, table=table),
     delete_onaccept=lambda form: shn_pentity_ondelete(form))
 
 

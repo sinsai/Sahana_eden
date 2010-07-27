@@ -7,7 +7,12 @@
     @author: nursix
 """
 
+# Most of the tables for volunteers are components of pr, so the module name
+# "vol" is not used for these.  It is used in names of non-pr-component tables
+# such as skill types.
 module = "vol"
+component_module = "pr"
+
 if deployment_settings.has_module(module):
 
     # Settings
@@ -18,29 +23,32 @@ if deployment_settings.has_module(module):
                     Field("audit_write", "boolean"),
                     migrate=migrate)
 
-    # -----------------------------------------------------------------------------
-    # vol_volunteer (Component of pr_person)
+    # -------------------------------------------------------------------------
+    # pr_volunteer (Component of pr_person)
     #   describes a person's availability as a volunteer
-    #
-    vol_volunteer_status_opts = {
+
+    pr_volunteer_status_opts = {
     1: T("active"),
     2: T("retired")
     }
 
     resource = "volunteer"
-    tablename = module + "_" + resource
+    tablename = component_module + "_" + resource
     table = db.define_table(tablename, timestamp, uuidstamp,
-                    person_id,
+                    pe_id,
+                    # TODO: A person may volunteer for more than one org.
+                    # Remove this -- the org can be inferred from the project
+                    # or team in which the person participates.
                     organisation_id,
                     Field("date_avail_start", "date"),
                     Field("date_avail_end", "date"),
                     Field("hrs_avail_start", "time"),
                     Field("hrs_avail_end", "time"),
                     Field("status", "integer",
-                        requires = IS_IN_SET(vol_volunteer_status_opts, zero=None),
+                        requires = IS_IN_SET(pr_volunteer_status_opts, zero=None),
                         # default = 1,
                         label = T("Status"),
-                        represent = lambda opt: vol_volunteer_status_opts.get(opt, UNKNOWN_OPT)),
+                        represent = lambda opt: pr_volunteer_status_opts.get(opt, UNKNOWN_OPT)),
                     Field("special_needs", "text"),
                     migrate=migrate)
 
@@ -54,8 +62,8 @@ if deployment_settings.has_module(module):
     table.special_needs.label = T("Special needs")
 
     # Representation function
-    def shn_vol_volunteer_represent(id):
-        person = db((db.vol_volunteer.id == id) & (db.pr_person.id == db.vol_volunteer.person_id)).select(
+    def shn_pr_volunteer_represent(id):
+        person = db((db.pr_volunteer.id == id) & (db.pr_person.pe_id == db.pr_volunteer.pe_id)).select(
                     db.pr_person.first_name,
                     db.pr_person.middle_name,
                     db.pr_person.last_name,
@@ -84,40 +92,39 @@ if deployment_settings.has_module(module):
         msg_list_empty = T("No volunteer information registered"))
 
     # Reusable field
-    vol_volunteer_id = db.Table(None, "vol_volunteer_id",
-                                FieldS3("vol_volunteer_id", db.vol_volunteer, sortby=["first_name", "middle_name", "last_name"],
-                                requires = IS_NULL_OR(IS_ONE_OF(db(db.vol_volunteer.status == 1), "vol_volunteer.id", shn_vol_volunteer_represent)),
-                                represent = lambda id: (id and [shn_vol_volunteer_represent(id)] or ["None"])[0],
-                                comment = DIV(A(ADD_VOLUNTEER, _class="colorbox", _href=URL(r=request, c="vol", f="volunteer", args="create", vars=dict(format="popup")), _target="top", _title=ADD_VOLUNTEER),
-                                          DIV( _class="tooltip", _title=ADD_VOLUNTEER + "|" + Tstr("Add new volunteer."))),
-                                ondelete = "RESTRICT"
-                            ))
+    pr_volunteer_id = db.Table(None, "pr_volunteer_id",
+        FieldS3("pr_volunteer_id", db.pr_volunteer, sortby=["first_name", "middle_name", "last_name"],
+        requires = IS_NULL_OR(IS_ONE_OF(db(db.pr_volunteer.status == 1), "pr_volunteer.id", shn_pr_volunteer_represent)),
+        represent = lambda id: (id and [shn_pr_volunteer_represent(id)] or ["None"])[0],
+        # TODO: Creating a pr_volunteer entry requires a person, so does this
+        # make sense?  For now, turn this into add person.  Could add _next
+        # to go edit form for vol components.  How would we get the new pe_id?
+        comment = DIV(A(ADD_VOLUNTEER, _class="colorbox", _href=URL(r=request, c="vol", f="person", args="create", vars=dict(format="popup")), _target="top", _title=ADD_VOLUNTEER), DIV( _class="tooltip", _title=ADD_VOLUNTEER + "|" + Tstr("Add new volunteer."))),
+        ondelete = "RESTRICT",
+        ))
 
-    s3xrc.model.add_component(module, resource,
+    s3xrc.model.add_component(component_module, resource,
                               multiple=False,
-                              joinby=dict(pr_person="person_id"),
+                              joinby="pe_id",
                               deletable=True,
-                              editable=True,
-                              main="person_id", extra="organisation_id")
+                              editable=True)
 
     s3xrc.model.configure(table,
                           list_fields=["organisation_id",
                                        "status"])
 
-    # -----------------------------------------------------------------------------
-    # vol_resource (Component of pr_person)
-    #   describes resources (skills, tools) of a volunteer
-    #
-    vol_resource_type_opts = {
-        1:T("General Skills"),
+    # -------------------------------------------------------------------------
+    # pr_resource (Component of pr_person)
+    #   describes resources (e.g. vehicles, tools) of a volunteer
+
+    # TODO: Skills are now separate.  Either repurpose "resources" or remove it.
+    pr_resource_type_opts = {
         2:T("Resources"),
         3:T("Restrictions"),
-        4:T("Site Manager"),
-        5:T("Unskilled"),
         99:T("Other")
     }
 
-    vol_resource_subject_opts = {
+    pr_resource_subject_opts = {
         1:T("Animals"),
         2:T("Automotive"),
         3:T("Baby And Child Care"),
@@ -126,51 +133,50 @@ if deployment_settings.has_module(module):
         99:T("Other")
     }
 
-    vol_resource_deployment_opts = {
+    pr_resource_deployment_opts = {
         1:T("Building Aide"),
         2:T("Vehicle"),
         3:T("Warehouse"),
         99:T("Other")
     }
 
-    vol_resource_status_opts = {
+    pr_resource_status_opts = {
         1:T("approved"),
         2:T("unapproved"),
         3:T("denied")
     }
 
     resource = "resource"
-    tablename = module + "_" + resource
+    tablename = component_module + "_" + resource
     table = db.define_table(tablename, timestamp, uuidstamp,
-                    person_id,
+                    pe_id,
                     Field("type", "integer",
-                        requires = IS_IN_SET(vol_resource_type_opts, zero=None),
+                        requires = IS_IN_SET(pr_resource_type_opts, zero=None),
                         # default = 99,
                         label = T("Resource"),
-                        represent = lambda opt: vol_resource_type_opts.get(opt, UNKNOWN_OPT)),
+                        represent = lambda opt: pr_resource_type_opts.get(opt, UNKNOWN_OPT)),
                     Field("subject", "integer",
-                        requires = IS_IN_SET(vol_resource_subject_opts, zero=None),
+                        requires = IS_IN_SET(pr_resource_subject_opts, zero=None),
                         # default = 99,
                         label = T("Subject"),
-                        represent = lambda opt: vol_resource_subject_opts.get(opt, UNKNOWN_OPT)),
+                        represent = lambda opt: pr_resource_subject_opts.get(opt, UNKNOWN_OPT)),
                     Field("deployment", "integer",
-                        requires = IS_IN_SET(vol_resource_deployment_opts, zero=None),
+                        requires = IS_IN_SET(pr_resource_deployment_opts, zero=None),
                         # default = 99,
                         label = T("Deployment"),
-                        represent = lambda opt: vol_resource_deployment_opts.get(opt, UNKNOWN_OPT)),
+                        represent = lambda opt: pr_resource_deployment_opts.get(opt, UNKNOWN_OPT)),
                     Field("status", "integer",
-                        requires = IS_IN_SET(vol_resource_status_opts, zero=None),
+                        requires = IS_IN_SET(pr_resource_status_opts, zero=None),
                         # default = 2,
                         label = T("Status"),
-                        represent = lambda opt: vol_resource_status_opts.get(opt, UNKNOWN_OPT)),
+                        represent = lambda opt: pr_resource_status_opts.get(opt, UNKNOWN_OPT)),
                     migrate=migrate)
 
-    s3xrc.model.add_component(module, resource,
+    s3xrc.model.add_component(component_module, resource,
                               multiple=True,
-                              joinby=dict(pr_person="person_id"),
+                              joinby="pe_id",
                               deletable=True,
-                              editable=True,
-                              main="person_id", extra="subject")
+                              editable=True)
 
     s3xrc.model.configure(table,
                           list_fields=["id",
@@ -197,14 +203,17 @@ if deployment_settings.has_module(module):
         msg_record_deleted = T("Resource deleted"),
         msg_list_empty = T("No resources currently registered"))
 
-    # -----------------------------------------------------------------------------
-    # vol_hours:
+    # TODO: Rather than the hours a volunteer "has a position" this will likely
+    # become hours the volunteer "works on a task", so vol_postion_id will
+    # switch to the task id.
+    # -------------------------------------------------------------------------
+    # pr_hours:
     #   documents the hours a volunteer has a position
     #
     #resource = "hours"
-    #table = module + "_" + resource
+    #table = component_module + "_" + resource
     #db.define_table(table,
-    #                person_id,
+    #                pe_id,
     #                vol_position_id,
     #                Field("shift_start", "datetime", label=T("shift_start"), notnull=True),
     #                Field("shift_end", "datetime", label=T("shift_end"), notnull=True),
@@ -215,30 +224,7 @@ if deployment_settings.has_module(module):
     #db[table].shift_end.requires=[IS_NOT_EMPTY(),
     #                                      IS_DATETIME]
 
-    # -----------------------------------------------------------------------------
-    # vol_mailbox
-    #
-    #resource = "mailbox"
-    #table = module + "_" + resource
-    #db.define_table(table, timestamp, uuidstamp, deletion_status,
-    #                person_id,
-    #                Field("message_id", "integer", notnull=True,label=T("message_id"), default=0),
-    #    Field("box", "integer", notnull=True, label=T("box"), default=0),
-    #    Field("checked", "integer", label=T("checked"), default=0),
-    #    migrate=migrate)
-
-
-    # -----------------------------------------------------------------------------
-    # vol_message
-    #   a text message
-    #
-    #resource = "message"
-    #table = module + "_" + resource
-    #db.define_table(table, timestamp, uuidstamp, deletion_status,
-    #                Field("message", "text", label=T("message")),
-    #                Field("time", "datetime", label=T("time"), notnull=True, default=request.now),
-    #                migrate=migrate)
-
+    # TODO: Remove?
     # -----------------------------------------------------------------------------
     # courier
     #resource = "courier"
@@ -255,6 +241,10 @@ if deployment_settings.has_module(module):
     #db[table].from_id.requires = IS_NOT_EMPTY()
     #db[table].message_id.requires = IS_NOT_NULL()
 
+    # TODO: Which of these are requests for access or granted access,
+    # associated with a particular volunteer, and which represent types of
+    # access or types of requests?  Anything tied to a particular volunteer
+    # should be a component of pr.
     # -----------------------------------------------------------------------------
     # vol_access_request
     #resource = "access_request"
@@ -294,16 +284,18 @@ if deployment_settings.has_module(module):
     #    Field("crud", "string", length=4, notnull=True, default=" ", label=T("crud")),
     #    migrate=migrate)
 
-    # -----------------------------------------------------------------------------
-    # shn_vol_project_search_location:
+    # TODO: Is this in use?  Have project location fields changed, since a
+    # project could have multiple locations?
+    # -------------------------------------------------------------------------
+    # shn_org_project_search_location:
     #   form function to search projects by location
     #
-    def shn_vol_project_search_location(xrequest, **attr):
+    def shn_org_project_search_location(xrequest, **attr):
 
         if attr is None:
             attr = {}
 
-        if not shn_has_permission('read', db.vol_project):
+        if not shn_has_permission('read', db.org_project):
             session.error = UNAUTHORISED
             redirect(URL(r=request, c='default', f='user', args='login', vars={'_next':URL(r=request, args='search_location', vars=request.vars)}))
 
@@ -312,7 +304,7 @@ if deployment_settings.has_module(module):
             if request.vars._next:
                 next = str.lower(request.vars._next)
             else:
-                next = str.lower(URL(r=request, f='project', args='[id]'))
+                next = str.lower(URL(r=request, c="org", f="project", args="[id]"))
 
             # Custom view
             response.view = '%s/project_search.html' % xrequest.prefix
@@ -337,7 +329,7 @@ if deployment_settings.has_module(module):
             items = None
             if form.accepts(request.vars, session):
 
-                table = db.vol_project
+                table = db.org_project
                 query = (table.deleted == False)
 
                 if form.vars.location is None:
@@ -355,7 +347,7 @@ if deployment_settings.has_module(module):
                             result.start_date or "None",
                             result.end_date or "None",
                             result.description or "None",
-                            result.status and vol_project_status_opts[result.status] or "unknown",
+                            result.status and org_project_status_opts[result.status] or "unknown",
                             ))
                     items=DIV(TABLE(THEAD(TR(
                         TH("Name"),
@@ -368,11 +360,11 @@ if deployment_settings.has_module(module):
                         items = T("None")
 
             try:
-                label_create_button = s3.crud_strings["vol_project"].label_create_button
+                label_create_button = s3.crud_strings["org_project"].label_create_button
             except:
                 label_create_button = s3.crud_strings.label_create_button
 
-            add_btn = A(label_create_button, _href=URL(r=request, f="project", args="create"), _class='action-btn')
+            add_btn = A(label_create_button, _href=URL(r=request, c="org", f="project", args="create"), _class='action-btn')
 
             output.update(dict(items=items, add_btn=add_btn))
 
@@ -383,46 +375,10 @@ if deployment_settings.has_module(module):
             redirect(URL(r=request))
 
     # Plug into REST controller
-    s3xrc.model.set_method(module, "project", method="search_location", action=shn_vol_project_search_location )
+    s3xrc.model.set_method(module, "project", method="search_location", action=shn_org_project_search_location )
 
-    # -----------------------------------------------------------------------------
-    # shn_vol_project_search_location:
-    #   form function to search projects by location
-    #
-    def shn_vol_project_rheader(jr):
 
-        if jr.name == "project":
-            if jr.representation == "html":
-
-                _next = jr.here()
-                _same = jr.same()
-
-                project = jr.record
-                if project:
-                    rheader = TABLE(
-                        TR(
-                            TH(T('Name: ')),
-                            project.name,
-                            TH(A(T('Clear Selection'),
-                                _href=URL(r=request, f='project', args='clear', vars={'_next': _same})))
-                            ),
-                        TR(
-                            TH(T('Location: ')),
-                            location_id.location_id.represent(project.location_id),
-                            TH(""),
-                            ),
-                        TR(
-                            TH(T('Status: ')),
-                            "%s" % vol_project_status_opts[project.status],
-                            TH(A(T('Edit Project'),
-                                _href=URL(r=request, f='project', args=['update', jr.id], vars={'_next': _next})))
-                            )
-                    )
-                    return rheader
-
-        return None
-
-    # -----------------------------------------------------------------------------
+    # -------------------------------------------------------------------------
     # vol_skill_types
     #   Customize to add more client defined Skill
     #
@@ -488,9 +444,9 @@ if deployment_settings.has_module(module):
             return None
 
 
-    # -----------------------------------------------------------------------------
-    # vol_skill
-    #   Selecting a Skill
+    # -------------------------------------------------------------------------
+    # pr_skill
+    #   A volunteer's skills (component of pr)
     #
 
     def multiselect_widget(f,v):
@@ -518,24 +474,22 @@ if deployment_settings.has_module(module):
 	return wrapper
 
     resource = 'skill'
-    tablename = module + '_' + resource
+    tablename = component_module + '_' + resource
     table = db.define_table(tablename, timestamp, uuidstamp, deletion_status,
-                person_id,
+        pe_id,
         Field('skill_types_id'),   
         Field('status',requires=IS_IN_SET(['approved','unapproved','denied']),label=T('status'), notnull=True, default='unapproved'),             
                     migrate=migrate)  
    
-    db.vol_skill.skill_types_id.widget = multiselect_widget
-    db.vol_skill.skill_types_id.requires = IS_ONE_OF(db, 'vol_skill_types.id', vol_skill_types_represent, multiple=True)
-    #db.vol_skill.skill_types_id.represent = vol_skill_types_represent
+    db.pr_skill.skill_types_id.widget = multiselect_widget
+    db.pr_skill.skill_types_id.requires = IS_ONE_OF(db, 'vol_skill_types.id', vol_skill_types_represent, multiple=True)
+    #db.pr_skill.skill_types_id.represent = vol_skill_types_represent
 
-    s3xrc.model.add_component(module, resource,
+    s3xrc.model.add_component(component_module, resource,
         multiple=True,
-        joinby=dict(pr_person='person_id'),
+        joinby="pe_id",
         deletable=True,
-        editable=True,
-        main='person_id',
-        )
+        editable=True)
 
     s3xrc.model.configure(table,
                           list_fields=['id',

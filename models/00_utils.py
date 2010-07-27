@@ -545,13 +545,16 @@ def shn_rheader_tabs(jr, tabs=[]):
                jr.custom_action and jr.method == component:
                 _class = "rheader_tab_here"
             args = [jr.id, component]
-            _href = URL(r=request, f=jr.name, args=args)
+            _href = URL(r=request, f=jr.name, args=args, vars=jr.request.vars)
         else:
             if not jr.component:
                 _class = "rheader_tab_here"
             args = [jr.id]
-            _next = URL(r=request, f=jr.name, args=[jr.id])
-            _href = URL(r=request, f=jr.name, args=args, vars = {"_next": _next})
+            vars = jr.request.vars or {}
+            if not "_next" in jr.request.vars:
+                vars["_next"] = URL(r=request, f=jr.name, args=[jr.id])
+            _href = URL(r=request, f=jr.name, args=args, vars=vars)
+
         tab = SPAN(A(title, _href=_href), _class=_class)
         rheader_tabs.append(tab)
 

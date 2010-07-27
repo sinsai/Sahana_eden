@@ -813,12 +813,12 @@ def shn_read(jr, **attr):
 
         try:
             record_id = db(query).select(table.id, limitby=(0, 1)).first().id
-            href_delete = URL(r=jr.request, f=jr.name, args=[jr.id, resource, record_id, "delete"])
-            href_edit = URL(r=jr.request, f=jr.name, args=[jr.id, resource, record_id, "update"])
+            href_delete = URL(r=jr.request, f=jr.name, args=[jr.id, resource, record_id, "delete"], vars=jr.request.vars)
+            href_edit = URL(r=jr.request, f=jr.name, args=[jr.id, resource, record_id, "update"], vars=jr.request.vars)
         except:
             if not jr.multiple:
                 if shn_has_permission("create", table):
-                    redirect(URL(r=jr.request, f=jr.name, args=[jr.id, resource, "create"]))
+                    redirect(URL(r=jr.request, f=jr.name, args=[jr.id, resource, "create"], vars=jr.request.vars))
                 else:
                     record_id = None
                     href_edit = None
@@ -837,8 +837,8 @@ def shn_read(jr, **attr):
 
     else:
         record_id = jr.id
-        href_delete = URL(r=jr.request, f=jr.name, args=[record_id, "delete"])
-        href_edit = URL(r=jr.request, f=jr.name, args=[record_id, "update"])
+        href_delete = URL(r=jr.request, f=jr.name, args=[record_id, "delete"], vars=jr.request.vars)
+        href_edit = URL(r=jr.request, f=jr.name, args=[record_id, "update"], vars=jr.request.vars)
 
     # ToDo: Comment this out
     # Just because we have rights to edit a record, doens't mean that we always want to actually do so

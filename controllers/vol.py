@@ -48,9 +48,9 @@ def shn_menu():
             menu.extend(menu_teams)
 
     menu_persons = [
-        [T("Persons"), False, URL(r=request, f="person", args=["search_simple"], vars={"_next":URL(r=request, f="person", args=["[id]", "volunteer"])}),[
-            [T("List"), False, URL(r=request, f="person")],
-            [T("Add"), False, URL(r=request, f="person", args="create")],
+        [T("Persons"), False, URL(r=request, f="person", args=["search_simple"], vars={"_next":URL(r=request, f="person", args=["[id]", "volunteer"], vars={"vol.mode":"volunteer"})}),[
+            [T("List"), False, URL(r=request, f="person", vars={"_next":URL(r=request, f="person", args=["[id]", "volunteer"], vars={"vol.mode":"volunteer"})})],
+            [T("Add"), False, URL(r=request, f="person", args="create", vars={"_next":URL(r=request, f="person", args=["[id]", "volunteer"], vars={"vol.mode":"volunteer"})})],
         ]]
     ]
     menu.extend(menu_persons)
@@ -58,11 +58,16 @@ def shn_menu():
         person_id = session.rcvars["pr_person"]
         selection = db.pr_person[person_id]
         if selection:
-            selection = shn_pr_person_represent(selection.id)
+            person_name = shn_pr_person_represent(person_id)
+            # ?vol.mode=person and ?vol.mode=volunteer are used by the person
+            # controller to select which set of tabs to display.
             menu_person = [
-                ["%s %s" % (T("Person:"), selection), False, URL(r=request, f="person", args=[person_id, "read"]),[
-                    [T("Volunteer Data"), False, URL(r=request, f="volunteer", args=[person_id])],
-                    [T("Person Data"), False, URL(r=request, f="person", args=[person_id])],
+                ["%s %s" % (T("Person:"), person_name), False, URL(r=request, f="person", args=[person_id, "read"]),[
+                    # The arg "volunteer" causes this to display the
+                    # pr_volunteer tab initially.
+                    [T("Volunteer Data"), False, URL(r=request, f="person", args=[person_id, "volunteer"], vars={"vol.mode":"volunteer", "_next":URL(r=request, args=request.args, vars=request.vars)})],
+                    # The default tab is pr_person, which is fine here.
+                    [T("Person Data"), False, URL(r=request, f="person", args=[person_id], vars={"vol.mode":"person", "_next":URL(r=request, args=request.args, vars=request.vars)})],
                     [T("View Map"), False, URL(r=request, f="view_map", args=[person_id])],
                 ]],
             ]
@@ -93,22 +98,13 @@ def index():
 # -----------------------------------------------------------------------------
 def person():
 
-    """ Person Controller """
-
-    db.pr_group_membership.group_id.label = T("Team Id")
-    db.pr_group_membership.group_head.label = T("Team Head")
-
-    resource = request.function
-    
-    db.pr_person.missing.default = False
+    """
+    This controller produces either generic person component tabs or
+    volunteer-specific person component tabs, depending on whether "vol.mode"
+    in the URL's vars is "person" or "volunteer".
+    """
 
     response.s3.pagination = True
-
-    s3xrc.model.configure(db.pr_group_membership,
-                          list_fields=["id",
-                                       "group_id",
-                                       "group_head",
-                                       "description"])
 
     def person_postp(jr, output):
         if jr.representation in ("html", "popup"):
@@ -123,17 +119,44 @@ def person():
         return output
     response.s3.postp = person_postp
 
+    mode = "person"
+    if "vol.mode" in request.vars:
+        mode = request.vars["vol.mode"]
+    if mode == "person":
+        db.pr_person.missing.default = False
+        tabs = [(T("Basic Details"), None),
+                (T("Images"), "image"),
+                (T("Identity"), "identity"),
+                (T("Address"), "address"),
+                (T("Contact Data"), "pe_contact"),
+                (T("Presence Log"), "presence")]
+    else:
+        # TODO: These files are for the multiselect widget used for skills.
+        # Check if we still need them if we switch to a different widget.
+        response.files.append(URL(r=request,c='static/multiselect',f='jquery.multiSelect.js'))
+        response.files.append(URL(r=request,c='static/multiselect',f='jquery.multiSelect.css'))
+        db.pr_group_membership.group_id.label = T("Team Id")
+        db.pr_group_membership.group_head.label = T("Team Head")
+        s3xrc.model.configure(db.pr_group_membership,
+                              list_fields=["id",
+                                           "group_id",
+                                           "group_head",
+                                           "description"])
+        # TODO: If we don't know what a "status report" is supposed to be,
+        # take it out.  Take out resources til they're modernized.
+        tabs = [#(T("Status Report"), None),
+                (T("Availablity"), "volunteer"),
+                (T("Teams"), "group_membership"),
+                (T("Skills"), "skill"),
+                #(T("Resources"), "resource"),
+               ]
+
+    resource = request.function
+    # TODO: Use represent instead of "first_name" and "last_name"?
     output = shn_rest_controller("pr", resource,
         main="first_name",
         extra="last_name",
-        rheader=lambda jr: shn_pr_rheader(jr,
-            tabs = [(T("Basic Details"), None),
-                    (T("Images"), "image"),
-                    (T("Identity"), "identity"),
-                    (T("Address"), "address"),
-                    (T("Contact Data"), "pe_contact"),
-                    (T("Memberships"), "group_membership"),
-                    (T("Presence Log"), "presence")]),
+        rheader=lambda jr: shn_pr_rheader(jr, tabs),
         sticky=True,
         listadd=False)
 
@@ -143,10 +166,9 @@ def person():
 
 # -----------------------------------------------------------------------------
 def project():
-    "RESTful CRUD controller"
+    "Project controller"
+
     resource = request.function
-    tablename = "org_%s" % (resource)
-    table = db[tablename]
     
     def org_postp(jr, output):
         shn_action_buttons(jr)
@@ -157,18 +179,16 @@ def project():
     response.s3.pagination = True
 
     output = shn_rest_controller("org", resource,
-                                 listadd=False,
-                                 main="code",
-                                 rheader=lambda jr: shn_project_rheader(jr,
-                                                                    tabs = [(T("Basic Details"), None),
-                                                                            (T("Staff"), "staff"),
-                                                                            (T("Tasks"), "task"),
-                                                                            #(T("Donors"), "organisation"),
-                                                                            #(T("Sites"), "site"),          # Ticket 195
-                                                                           ]
-                                                                   ),
-                                 sticky=True
-                                )
+        listadd=False,
+        main="code",
+        rheader=lambda jr: shn_project_rheader(jr,
+            tabs = [(T("Basic Details"), None),
+                    (T("Staff"), "staff"),
+                    (T("Tasks"), "task"),
+                    #(T("Donors"), "organisation"),
+                    #(T("Sites"), "site"),          # Ticket 195
+                   ]),
+        sticky=True)
     
     return output
 
@@ -205,6 +225,7 @@ def task():
 
 # ----------------------------------------------------------------------------- 
 def skill_types():
+    "Allow user to define new skill types."
     return shn_rest_controller(module, "skill_types")
 
 
@@ -256,46 +277,16 @@ def view_map():
 
 
 # -----------------------------------------------------------------------------
-def volunteer():
-
-    response.s3.pagination = True
-    response.files.append(URL(r=request,c='static/multiselect',f='jquery.multiSelect.js'))
-    response.files.append(URL(r=request,c='static/multiselect',f='jquery.multiSelect.css'))
-
-    resource = request.function
-    output = shn_rest_controller(module , resource,
-        rheader = lambda jr: shn_vol_volunteer_rheader(jr,
-            tabs=[
-                #(T("Status Report"), None),
-                (T("Availablity"), "volunteer"),
-                (T("Skills"), "skill"),
-                (T("Resources"), "resource"),
-            ]),
-        sticky=True,
-        listadd=False)
-
-    shn_menu()
-
-    return output
-
-def shn_vol_volunteer_rheader(jr, tabs=[]):
-
-    if jr.representation == "html" and jr.name == "volunteer":
-        rheader_tabs = shn_rheader_tabs(jr, tabs)
-        if jr.record:
-            rheader = DIV(TABLE(), rheader_tabs)
-            return rheader
-    return None
-
-
-# -----------------------------------------------------------------------------
 def group():
 
-    """ Team controller """
-    resource = "group"
-    table = "pr" + "_" + resource
+    """
+    Team controller -- teams use the group table from pr.
+    """
 
-    db.pr_group.opt_pr_group_type.label = T("Team Type")
+    tablename = "pr_group"
+    table = db[tablename]
+
+    db.pr_group.pr_group_type.label = T("Team Type")
     db.pr_group.group_description.label = T("Team Description")
     db.pr_group.group_name.label = T("Team Name")
     db.pr_group_membership.group_id.label = T("Team Id")
@@ -304,7 +295,7 @@ def group():
     # CRUD Strings
     ADD_TEAM = T("Add Team")
     LIST_TEAMS = T("List Teams")
-    s3.crud_strings[table] = Storage(
+    s3.crud_strings[tablename] = Storage(
         title_create = ADD_TEAM,
         title_display = T("Team Details"),
         title_list = LIST_TEAMS,
@@ -376,11 +367,12 @@ def group():
 
 # -----------------------------------------------------------------------------
 def skill():
-    "RESTlike CRUD controller"
+    "Select skills a volunteer has."
     return shn_rest_controller(module, "skill")
 
 
 # -----------------------------------------------------------------------------
+# TODO: Is resource a bad name, due to possible confusion with other usage?
 def resource():
-    "RESTlike CRUD controller"
+    "Select resources a volunteer has."
     return shn_rest_controller(module, "resource")

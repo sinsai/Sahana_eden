@@ -25,12 +25,17 @@ def create():
     instance_list = []
     bindings_list = []
     controllers_list = []
+    itext_list = []
 
     for field in table.fields:
-        if field in ["id", "created_on", "modified_on", "uuid"] :
+        if field in ["id", "created_on", "modified_on", "uuid", "mci", "deleted", 
+                     "created_by", "modified_by", "pr_pe_id"] :
             # This will get added server-side
             pass
         else:
+
+            ref = "/" + title + "/" + field
+
             # Instances
             if table[field].default:
                 instance_list.append(TAG[field](table[field].default))
@@ -55,7 +60,7 @@ def create():
                 # Unknown type
                 _type = "string"
 
-            bindings_list.append(TAG["bind"](_nodeset=field, _type=_type, _required=required))
+            #bindings_list.append(TAG["bind"](_nodeset=ref, _type=_type, _required=required))
 
             # Controllers
             if hasattr(table[field].requires, "option"):
@@ -67,21 +72,33 @@ def create():
                 # ToDo (similar to IS_IN_SET)
                 pass
             elif "IS_IN_SET" in str(table[field].requires):
-                pass
-#                items_list=[]
-#               for option in table[field].requires.theset:
-#                    items_list.append(TAG["item"](TAG["label"](option), TAG["value"](option)))
-#                controllers_list.append(TAG["select1"](items_list, _ref=field))
+                items_list=[]
+                
+                itext_list.append(TAG["text"](TAG["value"](table[field].label), _id=ref+":label"))
+                itext_list.append(TAG["text"](TAG["value"](table[field].label), _id=ref+":hint"))
+                items_list.append(TAG["label"](_ref="jr:itext('" + ref + ":label')"))
+                items_list.append(TAG["hint"](_ref="jr:itext('" + ref + ":hint')"))
+
+                option_num = 0
+                for option in table[field].requires.theset:
+                    option_ref = ref + ":option" + str(option_num)
+                    items_list.append(TAG["item"](TAG["label"](_ref="jr:itext('" + option_ref + "')"), TAG["value"](option)))
+                    itext_list.append(TAG["text"](TAG["value"](table[field].represent(int(option))), _id=option_ref))
+                    option_num += 1
+                controllers_list.append(TAG["select1"](items_list, _ref=ref))
+		
             else:
                 # Normal Input field
-                controllers_list.append(TAG["input"](TAG["label"](table[field].label), _ref=field))
+                controllers_list.append(TAG["input"](TAG["label"](table[field].label), _ref=ref))
 
+    bindings_list.append(TAG["itext"](TAG["translation"](itext_list,_lang="eng")))
     instance = TAG[title](instance_list, _xmlns="")
     bindings = bindings_list
     controllers = TAG["h:body"](controllers_list)
 
     response.headers["Content-Type"] = "application/xml"
     response.view = "xforms.xml"
+
     return dict(title=title, instance=instance, bindings=bindings, controllers=controllers)
 
 def csvdata(nodelist):
@@ -128,7 +145,7 @@ def importxml(db, xmlinput):
     try:
         db[parent].import_from_csv_file(fh)
     except:
-        raise Exception("Import into database failed")
+        raise #Exception("Import into database failed")
 
 @auth.shn_requires_membership(1)
 def post():
@@ -155,7 +172,18 @@ def formList():
     Generates a list of Xforms based on database tables for ODK Collect
     http://code.google.com/p/opendatakit/
     """
-    xml = TAG.forms(*[TAG.form(t, _url = "http://" + request.env.http_host + URL(r=request, f="create", args=t)) for t in db.tables()])
+    #xml = TAG.forms(*[TAG.form(getName("Name"), _url = "http://" + request.env.http_host + URL(r=request, c='static', f='current.xml'))])
+    xml = TAG.forms(*[TAG.form(getName(t), _url = "http://" + request.env.http_host + URL(r=request, f="create", args=t)) for t in db.tables()])
     response.headers["Content-Type"] = "text/xml"
     response.view = "xforms.xml"
     return xml
+
+def getName(name):
+    """
+    Generates a pretty(er) name from a database table name.
+    """
+    return name.replace('_',' ').capitalize()
+
+#def test():
+#    return  dict(blah=str(db["pr_person"]["opt_pr_marital_status"].requires))
+    

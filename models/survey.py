@@ -112,6 +112,8 @@ if deployment_settings.has_module(module):
                                         Field("row_choices","text"), # row choices
                                         Field("column_choices","text"), # column choices
                                         Field("tf_choices","text"), # text before the text fields.
+                                        Field("tf_ta_columns","integer"), # number of columns for TF/TA
+                                        Field("ta_rows","integer"), # number of rows for text areas
                                         Field("number_of_options","integer"),
                                         Field("allow_comments","boolean"), # whether or not to allow comments
                                         Field("comment_display_label"), # the label for the comment field

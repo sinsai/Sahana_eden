@@ -84,6 +84,17 @@ table = db.define_table(tablename,
                 Field("sync_method"),                       # whether this was a Pull only, Push only, Remote Push or a Pull-Push sync operation
                 migrate=migrate)
 
+# Sync Now - stored state
+resource = "now"
+tablename = "%s_%s" % (module, resource)
+table = db.define_table(tablename,
+                Field("sync_jobs", "text"),                 # comma-separated list of sync jobs (partner uuids for now, sync job ids from scheduler in future)
+                Field("started_on", "datetime"),            # timestamp when the sync now process began
+                Field("job_resources_done", "text"),        # comma-separated list of resources synced of the currently running job
+                Field("job_resources_pending", "text"),     # comma-separated list of resources to be synced of the currently running job
+                Field("job_sync_errors", "text"),           # sync errors encountered while processing the current job
+                migrate=migrate)
+
 sync_schedule_period_opts = {
     "h":T("Hourly"),
     "d":T("Daily"),

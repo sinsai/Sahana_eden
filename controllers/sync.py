@@ -91,6 +91,12 @@ def now():
     if "start" in request.args:
         sync_start = True
 
+    # retrieve sync now state
+    states = db().select(db.sync_now.ALL)
+    state = None
+    if states:
+        state = states[0]
+
     if sync_start:
         # retrieve sync partners from DB
         peers = db().select(db.sync_partner.ALL)
@@ -124,14 +130,39 @@ def now():
             final_status = "There are no sync partners. Please add peers (Sync Partners) to sync with.<br /><br /><a href=\"" + URL(r=request, c="sync", f="partner") + "\">Click here</a> to go to Sync Partners page.<br /><br />\n"
             return dict(module_name=module_name, sync_status=final_status, sync_start=False)
 
+        if not state:
+            # begin new sync now session
+            sync_now_id = db["sync_now"].insert(
+                sync_jobs = ", ".join(map(lambda x: str(x.uuid) + "||" + str(x.name), peers)),
+                started_on = datetime.datetime.utcnow(),
+                job_resources_done = "",
+                job_resources_pending = ", ".join(map(lambda x: str(x[0]) + "||" + str(x[1]), tables)),
+                job_sync_errors = ""
+            )
+            state = db(db.sync_now.id==sync_now_id).select(db.sync_now.ALL)[0]
+            final_status += "Sync Now started:<br /><br /><br />\n"
+        else:
+            sync_now_id = state.id
+            final_status += "Sync Now resumed (originally started on " + state.started_on.strftime("%x %H:%M:%S")+ "):<br /><br /><br />\n"
+
         # unlock session
         +133
         session._unlock(response)
 
+        # get job (peer in this case) from queue
+        sync_jobs_list = state.sync_jobs.split(", ")
+        if "" in sync_jobs_list:
+            sync_jobs_list.remove("")
+        sync_job = sync_jobs_list[0]
+        sync_job_partner = sync_job.split("||")
+        peers_sel = db(db.sync_partner.uuid==sync_job_partner[0] and db.sync_partner.name==sync_job_partner[1]).select()
+        if peers_sel:
+            peer = peers_sel[0]
+
         # Whether a push was successful => means Push + Pull Sync was performed
         push_success = False
-        for peer in peers:
-            final_status += "<br />Begin sync with: " + peer.name + ", " + peer.instance_url + " (" + peer.instance_type + "):<br />\n\n"
+        if peer:
+            final_status += "<br />Syncing with: " + peer.name + ", " + peer.instance_url + " (" + peer.instance_type + "):<br />\n\n"
             peer_sync_success = True
             last_sync_on = peer.last_sync_on
             sync_resources = []
@@ -141,7 +172,15 @@ def now():
                     last_sync_on_str = "?msince=" + last_sync_on.strftime("%Y-%m-%dT%H:%M:%SZ")
                 else:
                     last_sync_on_str = ""
-                for _module, _resource in tables:
+                job_res_tmp = state.job_resources_pending.split(", ")
+                if "" in job_res_tmp:
+                    job_res_tmp.remove("")
+                job_res_list = []
+                for i in xrange(5):
+                    if len(job_res_tmp) > 0 and i < len(job_res_tmp):
+                        job_res = job_res_tmp[i].split("||")
+                        job_res_list.append([job_res[0], job_res[1]])
+                for _module, _resource in job_res_list:
                     _resource_name = _module + "_" + _resource
 #                    if not (_module == "budget" and _resource == "item"):
 #                        continue
@@ -190,36 +229,63 @@ def now():
                         if not _resource_name + " (error)" in sync_resources and not _resource_name in sync_resources:
                             sync_resources.append(_resource_name)
                         final_status += ".........processed http://" + peer_instance_url[1] + resource_remote_push_url + " (Push Sync)<br />\n"
-                final_status += "......completed<br />\n"
+#                final_status += "......completed<br />\n"
             else:
                 peer_sync_success = False
 
 #            if len(sync_resources) == 0:
 #                peer_sync_success = False
 
-            # log sync job and update sync partner's last_sync_on
-            if peer_sync_success:
+            # update sync now state
+            if state.job_resources_done:
+                state.job_resources_done += ", "
+            state.job_resources_done += ", ".join(map(str, sync_resources))
+            job_res_pending = state.job_resources_pending.split(", ")
+            if "" in job_res_pending:
+                job_res_pending.remove("")
+            for _module, _resource in job_res_list:
+                job_res_pending.remove(_module + "||" + _resource)
+            state.job_resources_pending = ", ".join(map(str, job_res_pending))
+            state.job_sync_errors += sync_errors
+            vals = {"job_resources_done": state.job_resources_done, "job_resources_pending": state.job_resources_pending, "job_sync_errors": state.job_sync_errors}
+            db(db.sync_now.id==sync_now_id).update(**vals)
+            state = db(db.sync_now.id==sync_now_id).select(db.sync_now.ALL)[0]
+
+            # check if all resources are synced for the current job, i.e. is it done?
+            if not state.job_resources_pending:
+                # job completed, check if there are any more jobs, if not, then sync now completed
                 # log sync job
                 log_table_id = db[log_table].insert(
-                    partner_uuid = peer.uuid,
-                    partner_name = peer.name,
+                    partner_uuid = sync_job_partner[0],
+                    partner_name = sync_job_partner[1],
                     timestamp = datetime.datetime.utcnow(),
-                    sync_resources = ", ".join(map(str, sync_resources)),
-                    sync_errors = sync_errors,
+                    sync_resources = state.job_resources_done,
+                    sync_errors = state.job_sync_errors,
                     sync_mode = "online",
                     sync_method = "Pull-Push",
                     complete_sync = False
                 )
-                # sync log link
-                if log_table_id:
-                    final_status += "Log generated: " + str(A(T("Click here to open log for this sync operation"),_href=URL(r=request, c="sync", f="history", args = log_table_id))) + "<br /><br />\n"
+                # remove this job from queue and process next
+                sync_jobs_list = state.sync_jobs.split(", ")
+                if "" in sync_jobs_list:
+                    sync_jobs_list.remove("")
+                if len(sync_jobs_list) > 0:
+                    sync_jobs_list.remove(sync_jobs_list[0])
+                    state.sync_jobs = ", ".join(map(str, sync_jobs_list))
+                    vals = {"sync_jobs": state.sync_jobs}
+                    db(db.sync_now.id==sync_now_id).update(**vals)
+                    state = db(db.sync_now.id==sync_now_id).select(db.sync_now.ALL)[0]
                 # update last_sync_on
                 vals = {"last_sync_on": datetime.datetime.utcnow()}
                 db(db.sync_partner.id==peer.id).update(**vals)
 
-        final_status += "Sync completed sucessfully."
+            if not state.sync_jobs:
+                # remove sync now session state
+                db(db.sync_now.id==sync_now_id).delete()
+                # we're done
+                final_status += "Sync completed successfully. Logs generated: " + str(A(T("Click here to open log"),_href=URL(r=request, c="sync", f="history"))) + "<br /><br />\n"
     
-    return dict(module_name=module_name, sync_status=final_status, sync_start=sync_start)
+    return dict(module_name=module_name, sync_status=final_status, sync_start=sync_start, sync_state=state)
 
 def sync():
     global sync_peer

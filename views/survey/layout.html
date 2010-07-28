@@ -1,5 +1,5 @@
 {{ extend "layout.html"}}
-{{include 'colorbox.html'}} 
+{{ include "colorbox.html"}}        
 <script type="text/javascript">//<![CDATA[
 jQuery(document).ready(function(){
     jQuery("input.date").datepicker({ changeMonth: true, changeYear: true, dateFormat: 'yy-mm-dd', isRTL: false });
@@ -40,9 +40,9 @@ jQuery(document).ready(function(){
         font-weight:bolder;
     }
      /*the title box for sections; the "Add" box for sections and questions */
-    .title a {
+    .section_title a {
         border: 1px solid #000000;
-        padding-top: 6px;                
+        padding-top: 6px;
         padding-bottom: 6px;
         padding-left:6px;
         width: 30em;
@@ -53,17 +53,26 @@ jQuery(document).ready(function(){
         font-weight:bolder;
     }
 
-    .question_answers {
-        padding-top: 10px;
-        padding-right: inherit;
-        padding-left: inherit;
-        padding-bottom: 10px;
+    .question_title a {
+        border: 1px solid #000000;
+        padding-top: 6px;
+        padding-bottom: 6px;
+        padding-left:6px;
+        margin: 0 0 0 25px;
+        width: 30em;
         text-align: justify;
-        margin: 0 0 0 45px;
         display: block;
-        font-size: 14px;
+        color:#006699;
+        font-size:14px;
+        font-weight:bolder;
+    }
+
+    .question_answer {   
+        text-align: justify;        
+        display: block;
+        font-size: 12px;
         font-family: inherit;
-        font-weight: bolder;
+
     }
     td {
         padding: 10px;
@@ -84,7 +93,8 @@ jQuery(document).ready(function(){
 
 <div class="box">
     {{try:}}
-        {{=ui}}    
+        {{=ui}}
+        {{=add}}
     {{except:}}
         {{pass}}
 </div>        

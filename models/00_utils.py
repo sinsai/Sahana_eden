@@ -72,7 +72,7 @@ auth.settings.table_user.language.requires = IS_IN_SET(shn_languages, zero=None)
 
 # -----------------------------------------------------------------------------
 # List of Nations (ISO-3166-1 Country Codes)
-# 
+#
 shn_list_of_nations = {
     "AF": "Afghanistan",
     "AX": "Åland Islands",
@@ -545,13 +545,14 @@ def shn_rheader_tabs(jr, tabs=[]):
                jr.custom_action and jr.method == component:
                 _class = "rheader_tab_here"
             args = [jr.id, component]
-            _href = URL(r=request, f=jr.name, args=args)
+            _href = URL(r=request, f=jr.name, args=args, vars=jr.request.vars)
         else:
             if not jr.component:
                 _class = "rheader_tab_here"
             args = [jr.id]
             _next = URL(r=request, f=jr.name, args=[jr.id])
-            _href = URL(r=request, f=jr.name, args=args, vars = {"_next": _next})
+            jr.request.vars.update(_next=_next)
+            _href = URL(r=request, f=jr.name, args=args, vars=jr.request.vars)
         tab = SPAN(A(title, _href=_href), _class=_class)
         rheader_tabs.append(tab)
 

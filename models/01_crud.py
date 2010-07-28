@@ -979,14 +979,13 @@ def shn_list(jr, **attr):
     onaccept = s3xrc.model.get_config(table, "onaccept")
     list_fields = s3xrc.model.get_config(table, "list_fields")
 
-    # Get request arguments
+    # Get controller parameters
     rheader = attr.get("rheader", None)
     _attr = jr.component and jr.component.attr or attr
 
     editable = _attr.get("editable", True)
     deletable = _attr.get("deletable", True)
     sticky = _attr.get("sticky", False)
-    #rss = _attr.get("rss", None)
     listadd = _attr.get("listadd", True)
     main = _attr.get("main", None)
     extra = _attr.get("extra", None)
@@ -1008,48 +1007,29 @@ def shn_list(jr, **attr):
         limitby = None
 
     # Get the initial query
-    query = shn_accessible_query("read", table)
-
-    # Get qualified query and create link
     if jr.component:
-        if jr.record:
-            query = ((table[jr.fkey] == jr.table[jr.pkey]) & \
-                     (table[jr.fkey] == jr.record[jr.pkey])) & query
-        else:
-            query = (table[jr.fkey] == jr.table[jr.pkey]) & query
-        if jr.component_id:
-            query = (table.id == jr.component_id) & query
+        resource = jr.resource.components.get(jr.component_name).resource
         href_add = URL(r=jr.request, f=jr.name, args=[jr.id, resource, "create"])
     else:
+        resource = jr.resource
         href_add = URL(r=jr.request, f=jr.name, args=["create"])
-
-    rfilter = jr.resource.get_query()
+    query = jr.resource.get_query()
 
     # SSPag filter handling
     if jr.representation == "html":
-        # HTML call sets/clears the filter
-        if response.s3.filter:
-            session.s3.filter = response.s3.filter & rfilter
-        else:
-            session.s3.filter = rfilter
+        session.s3.filter = query
     elif jr.representation.lower() == "aadata":
-        # aaData call uses the filter, if present
         if session.s3.filter is not None:
-            response.s3.filter = session.s3.filter
-
-    # Add filter to query
-    if response.s3.filter:
-        query = response.s3.filter & query
-
-    # Filter deleted records
-    if "deleted" in table:
-        query = ((table.deleted == False) | (table.deleted == None)) & query
+            query = session.s3.filter
 
     # Call audit
     shn_audit_read(operation="list",
                    module=module,
                    resource=resource,
                    representation=jr.representation)
+
+    # Where to link the ID column?
+    linkto = shn_linkto(jr, sticky)
 
     # dataTables representation
     # Migrate to an XSLT in future?
@@ -1095,9 +1075,6 @@ def shn_list(jr, **attr):
             rows = db(query).select(table.ALL, limitby = (start, start + limit), orderby = orderby)
         else:
             rows = db(query).select(table.ALL, orderby = orderby)
-
-        # Where to link the ID column?
-        linkto = shn_linkto(jr, sticky)
 
         r = dict(sEcho = sEcho,
                iTotalRecords = len(rows),
@@ -1146,8 +1123,6 @@ def shn_list(jr, **attr):
             # Server-side pagination, so only download 1 record
             # initially & let the view request what it wants via AJAX
             limitby = (0, 1)
-
-        linkto = shn_linkto(jr, sticky)
 
         items = crud.select(table, query=query,
             fields=fields,

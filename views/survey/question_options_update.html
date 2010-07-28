@@ -43,12 +43,6 @@
         $("#survey_question_options_tf_choices__row").attr("disabled","true");
 
 
-        // only show the comment display label tf if it's enabled!
-        $("#survey_question_options_comment_display_label__row").hide();        
-        $("#survey_question_options_allow_comments").click(function() {
-            $("#survey_question_options_comment_display_label__row").toggle();
-        });
-
         {{if question_type:}}
         var question_type = {{=question_type}}        
         switch(question_type) {

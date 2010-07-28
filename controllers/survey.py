@@ -153,12 +153,12 @@ def question():
         5:T("Rating Scale"),
         6:T("Single Text Field"),
         7:T("Multiple Text Fields"),
-        8:T("Matrix of Text Fields"),
+#        8:T("Matrix of Text Fields"),
         9:T("Comment/Essay Box"),
         10:T("Numerical Text Field"),
         11:T("Date and/or Time"),
-        12:T("Image"),
-        13:T("Descriptive Text (e.g., Prose, etc)"),
+#        12:T("Image"),
+#        13:T("Descriptive Text (e.g., Prose, etc)"),
         14:T("Location"),
         15:T("Organisation"),
         16:T("Person"),
@@ -231,20 +231,19 @@ def layout():
     ui = DIV(_class="sections")    
     # build the UI
     for section in sections:
-        section_rendered.append(section.id)        
-        link = A(section.name,_class="colorbox",
-                                       _href=URL(r=request, c="survey", f="section", args=[section.id,"update"], vars=dict(format="popup")),
+        section_rendered.append(section.id)
+        link = A(section.name,_class="colorbox",_id="%s" % (section.uuid),_href=URL(r=request, c="survey", f="section", args=[section.id, "update"], vars=dict(format="popup")),
                                        _target="top",
-                                       _title=T("Edit Section"))
+                                       _title="Edit Section"),
 
         ui.append(BR())
 
         if not section_rendered.count(section.id) > 1:
-            ui.append(DIV(link,_class="title"))
+            ui.append(DIV(link,_class="section_title"))
         question_query = (db.survey_template_link_table.survey_section_id == section.id) & (db.survey_question.id == db.survey_template_link_table.survey_question_id)
         questions = db(question_query).select(db.survey_question.ALL)
         if not questions:
-            ui.append(DIV(A (T("Add Question"),_href=URL(r=request,f="question"))))
+            ui.append(DIV(A (T("Add Question"),_href=URL(r=request,f="question")),_class="question_title"))
         for question in questions:
             question_rendered.append(question.id)
             if question_rendered.count(question.id) > 1:
@@ -252,15 +251,15 @@ def layout():
             #TODO: take order into account.
             # MC (Only One Answer allowed)
             options = db(db.survey_question_options.question_id == question.id).select().first()
-            ui.append(BR())
+            ui.append(BR())           
             if question.question_type is 1:
-                table = TABLE()
+                table = TABLE(_class="question")
                 table_row = TR()
                 if options:
                    answer_choices = options.answer_choices
                    if answer_choices:
                         choices = answer_choices.split("\r\n")
-                        table_row.append(DIV(question.name,_class="question"))
+                        table_row.append(DIV(question.name))
                         for choice in choices:
                             table_row.append(TD((DIV(choice,INPUT(_type="radio",_name="%s" % (question.uuid)),_class="question_answer"))))
                         if options.allow_comments:
@@ -272,24 +271,21 @@ def layout():
                 table.append(table_row)
                 ui.append(table)
             elif question.question_type is 2: # MC (more than one answer)
-                table,table_row = TABLE(),TR()
+                table,table_row = TABLE(_class="question"),TR()
                 if options:
                    answer_choices = options.answer_choices
                    if answer_choices:
                         choices = answer_choices.split("\r\n")
-                        table_row.append(TD(DIV(question.name,_class="question")))
+                        table_row.append(TD(DIV(question.name)))
                         for choice in choices:
                             table_row.append(TD((DIV(choice,INPUT(_type="checkbox",_name="%s" % (question.uuid)),_class="question_answer"))))
                         if options.allow_comments:
-                            comment_text = options.comment_display_label
-                            if comment_text:
-                                table_row.append(TD(DIV(comment_text,TD(INPUT(_type="text",name="%s_comment" % (question.uuid))))))
-                            else:
-                                table_row.append(TD(DIV("Comments",TD(INPUT(_type="text",name="%s_comment" % (question.uuid))))))
+                            comment_text = options.comment_display_label                            
+                            table_row.append(TD(DIV((INPUT(_type="checkbox"),comment_text,TD(INPUT(_type="text",name="%s_comment" % (question.uuid)))))))
                 table.append(table_row)
                 ui.append(table)
             elif question.question_type is 3:
-                table,table_row = TABLE(),TR()
+                table,table_row = TABLE(_class="question"),TR()
                 thead = THEAD()
                 tbody = TBODY()
                 column_choices = options.column_choices
@@ -312,13 +308,13 @@ def layout():
                     tbody.append(table_row)
                     table.append(tbody)
             elif question.question_type == 4:
-                table,table_row = TABLE(),TR()
+                table,table_row = TABLE(_class="question"),TR()
                 thead = THEAD()
                 tbody = TBODY()
                 column_choices = options.column_choices
                 c_choices = column_choices.split("\r\n")
                 if c_choices:
-                    table_row.append(DIV(question.name,_class="question"))
+                    table_row.append(DIV(question.name))
                     table.append(table_row)
                     thead.append(table_row.append(TH(XML("&nbsp;"),_style="width:20%;")))
                     for choice in c_choices:
@@ -335,7 +331,7 @@ def layout():
                     tbody.append(table_row)
                     table.append(tbody)
             elif question.question_type == 5: #TODO: rating question -- take weights into account.
-                table = TABLE()
+                table = TABLE(_class="question")
                 thead = THEAD()
                 tbody = TBODY()
                 column_choices = options.column_choices
@@ -359,9 +355,9 @@ def layout():
                     tbody.append(table_row)
                     table.append(tbody)
             elif question.question_type == 6:
-                table,table_row = TABLE(), TR()
-                table_row.append(DIV(question.name,_class="question"))
-                table_row.append(TD(DIV(DIV("%s " % (question.name),TD(INPUT()),_class="question_answer")))) # Date/Time
+                table,table_row = TABLE(_class="question"), TR()
+                table_row.append(DIV(question.name))
+                table_row.append(TD(DIV(DIV("%s " % (question.name),TD(INPUT()),_class="question_answer"))))
                 if options.allow_comments:
                      comment_text = options.comment_display_label
                      if comment_text:
@@ -373,11 +369,11 @@ def layout():
                 ui.append(table)
 
             elif question.question_type == 7:
-                table = TABLE()
+                table = TABLE(_class="question")
                 tf_choices = options.tf_choices
                 choices = tf_choices.split("\r\n")
                 columns = options.tf_ta_columns # for now this isn't customizable on a TF by TF basis -- I have some ideas as to how to accomplish this.
-                table.append(TR(TD(DIV(question.name,_class="question"))))
+                table.append(TR(TD(DIV(question.name))))
                 for choice in choices:
                     table_row = TR()
                     table_row.append(TD(DIV(choice),TD(INPUT(_size="%s" % (columns)))))
@@ -390,14 +386,25 @@ def layout():
                 columns = options.tf_ta_columns
                 rows = options.ta_rows
                 table_row = TR()
-                table_row.append(DIV(question.name,_class="question"))
+                table_row.append(DIV(question.name))
                 table_row.append(TEXTAREA(_rows="%s", _columns="%s" % (rows,columns)))
             elif question.question_type == 10:
-                pass
+               table,table_row = TABLE(_class="question"), TR()
+               table_row.append(DIV(question.name))
+               table_row.append((INPUT())) 
+               if options.allow_comments:
+                    comment_text = options.comment_display_label
+                    if comment_text:
+                        table_row.append(TD(DIV(DIV("%s: " % (comment_text),TD(INPUT())))))
+                    else:
+                        table_row.append(TD(DIV(DIV("Comments: ",TD(INPUT())))))
+               table.append(table_row)
+
+               ui.append(table)
             elif question.question_type == 11:     
-               table,table_row = TABLE(), TR()
-               table_row.append(DIV(question.name,_class="question"))
-               table_row.append((INPUT())) # Date/Time
+               table,table_row = TABLE(_class="question"), TR()
+               table_row.append(DIV(question.name))
+               table_row.append((INPUT(_class="date"))) # Date/Time
                if options.allow_comments:
                     comment_text = options.comment_display_label
                     if comment_text:
@@ -422,10 +429,14 @@ def layout():
                 pass # Uh-oh -- something went wrong
 
     ui.append(BR())
+    if sections:
+        ui.append(DIV(DIV(A (T("Add Question"), _class="colorbox",_href=URL(r=request,f="question",args=["create"],vars=dict(format="popup")), ),_class="question_title")))
+    ui.append(BR())
+
     ui.append(DIV(A(T("Add Section"),_class="colorbox",
                                        _href=URL(r=request, f="section", args=["create"], vars=dict(format="popup")),
                                        _target="top",
-                                       _title=T("Add Section")),_class="title"))
+                                       _title=T("Add Section")),_class="section_title"))
     output.update(ui=ui)
     return output
     

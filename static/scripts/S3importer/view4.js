@@ -24,7 +24,7 @@ function alertmessage4()
 	});
 }
 
-function view4(importsheet)//header,table,numcol,grid_data)
+function view4(importsheet)
 {
     
     //Use Ext.Ajax.request here to fetch data about tables and resources from the server here, use callback config to process it, must put a mask here
@@ -146,11 +146,12 @@ function view4(importsheet)//header,table,numcol,grid_data)
 	    field_store[resource['@resource']] = [];
 	    for(k in resource.field)
 	    {
-		    if(k['@writable'] == "True")
-			    field_store[resource['@resource']].push(k['@name']);
+		    //console.log(resource.field[k]['@name']);
+		    if(resource.field[k]['@writable'] == "True" && resource.field[k]['@name'] != "id")
+			    field_store[resource['@resource']].push(resource.field[k]['@name']);
 	    }
-	    console.log('Resource');
-	    console.log(field_store);
+	    //console.log('Resource');
+	    //console.log(field_store);
 	    i++;
     }
     var store = importsheet.final_resources;
@@ -164,25 +165,57 @@ function view4(importsheet)//header,table,numcol,grid_data)
 	    i++;
     }
     i=0;
-    var colobjs=new Array(importsheet.columns);
-    while(i<importsheet.columns)
+    var resource_combo=new Array(importsheet.columns);
+    while(i < importsheet.columns)
     {
-	    colobjs[i]="{fieldLabel : \'"+colnames[i]+"\'}";
-	    try{
-		    colobjs[i]=Ext.util.JSON.decode(colobjs[i]);
-	    }
-	    catch(err){
-		    Ext.Msg.alert("","Object decode error");
-	    }
-	    colobjs[i].name=colnames[i];
-	    colobjs[i].store=store;
-	    colobjs[i].allowBlank=false;
-	    colobjs[i].blankText='You must select a field';
-	    colobjs[i].emptyText='Select a field';
-	    colobjs[i].editable=false;
-	    colobjs[i].triggerAction='all';
-	    colobjs[i].typeAhead=true;
-	    colobjs[i]=new Ext.form.ComboBox(colobjs[i]);
+	    resource_combo[i] = {};
+	    resource_combo[i].fieldLabel = colnames[i];
+	    resource_combo[i].name=colnames[i]+'_resource';
+	    resource_combo[i].id=colnames[i]+'_resource';
+	    resource_combo[i].store=importsheet.final_resources;
+	    resource_combo[i].allowBlank=false;
+	    resource_combo[i].blankText='You must select a resource';
+	    resource_combo[i].emptyText='Select a resource';
+	    resource_combo[i].editable=false;
+	    resource_combo[i].triggerAction='all';
+	    resource_combo[i].typeAhead=true;
+	    resource_combo[i]= new Ext.form.ComboBox(resource_combo[i]);
+	    i++;
+    }
+    i = 0;
+    var fields_combo = new Array(importsheet.columns);
+    while( i < importsheet.columns)
+    {
+	    fields_combo[i] = {};
+	    fields_combo[i].fieldLabel = resource_combo[i];
+	    fields_combo[i].name = colnames[i]+'_field';
+	    fields_combo[i].id = colnames[i]+'_field';
+	    fields_combo[i].store = ['Select resources'];
+	    fields_combo[i].allowBlank = false;
+	    fields_combo[i].blankText = 'You must select a field';
+	    fields_combo[i].emptyText = 'Select field';
+	    fields_combo[i].triggerAction = 'all';
+	    fields_combo[i].typeAhead = true;
+	    fields_combo[i] = new Ext.form.ComboBox(fields_combo[i]);
+	    resource_combo.push(fields_combo[i]);
+	    i++;
+    }
+    i = 0;
+    console.log('Adding listener');
+    while(i < importsheet.columns)
+    {
+	    resource_combo[i].on({ 'select' : {
+			    			fn : function(combo,record,index)
+			    		   	{
+					   		Ext.Msg.alert("",combo.getValue());
+							var name = "cool";
+							var name = this.getId().replace('_resource','_field');
+							console.log("in listener "+name);
+							Ext.getCmp(name).getStore().removeAll(true);
+							Ext.getCmp(name).getStore().loadData(field_store[combo.getValue()]);
+						}
+					    }
+					});
 	    i++;
     }
     var columnmap=new Ext.form.FormPanel({
@@ -191,7 +224,7 @@ function view4(importsheet)//header,table,numcol,grid_data)
         frame: true,
 	labelAlign: 'right',
         height : 'auto',
-        items: colobjs,
+        items: resource_combo,
 	buttons:[
 		{
 			text: 'Back',
@@ -223,18 +256,18 @@ function view4(importsheet)//header,table,numcol,grid_data)
 					map_from_ss_to_field=[];
 					while(i<importsheet.columns)
 					{
-						if(colobjs[i].getValue()=='')
+						if(resource_combo[i].getValue()=='')
 						{
 							Ext.Msg.alert("Error","Map all columns");
 							break;
 						}
-						map_from_ss_to_field.push([i,colobjs[i].getName(),colobjs[i].getValue()]);
+						map_from_ss_to_field.push([i,resource_combo[i].getName(),resource_combo[i].getValue()]);
 						i++;
 					}
 					importsheet.map=map_from_ss_to_field;
 					var headrow=new Array();
 					i=0;
-					while(i<importsheet.columns)
+					while(i < importsheet.columns)
 					{
 						headrow.push(importsheet.headerobject.get('column'+i));
 						i++;
@@ -309,10 +342,11 @@ function view4(importsheet)//header,table,numcol,grid_data)
 
     			
     		}],
-       buttonAlign: 'center'
+       buttonAlign: 'center',
+       autoShow : true
 	});
 	
- 
+	columnmap.show(); 
 
 
 

@@ -133,8 +133,8 @@ def person():
     else:
         # TODO: These files are for the multiselect widget used for skills.
         # Check if we still need them if we switch to a different widget.
-        response.files.append(URL(r=request,c='static/multiselect',f='jquery.multiSelect.js'))
-        response.files.append(URL(r=request,c='static/multiselect',f='jquery.multiSelect.css'))
+        response.files.append(URL(r=request,c='static/scripts/S3',f='jquery.multiSelect.js'))
+        response.files.append(URL(r=request,c='static/styles/S3',f='jquery.multiSelect.css'))
         db.pr_group_membership.group_id.label = T("Team Id")
         db.pr_group_membership.group_head.label = T("Team Head")
         s3xrc.model.configure(db.pr_group_membership,

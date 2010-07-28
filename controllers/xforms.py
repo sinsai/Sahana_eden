@@ -25,7 +25,7 @@ def create():
     instance_list = []
     bindings_list = []
     controllers_list = []
-    itext_list = []
+    itext_list = [] # Internationalization
 
     for field in table.fields:
         if field in ["id", "created_on", "modified_on", "uuid", "mci", "deleted", 
@@ -52,15 +52,19 @@ def create():
                 _type = "string"
             elif table[field].type == "double":
                 _type = "decimal"
-            elif table[field].type == "datetime":
-                _type = "datetime"
+            elif table[field].type == "date":
+                _type = "date"
             elif table[field].type == "integer":
+                _type = "string" # Hack for now
+            elif table[field].type == "boolean":
                 _type = "integer"
             else:
                 # Unknown type
                 _type = "string"
 
-            #bindings_list.append(TAG["bind"](_nodeset=ref, _type=_type, _required=required))
+            bindings_list.append(TAG["bind"](_nodeset=ref, _type=_type, _required=required))
+            itext_list.append(TAG["text"](TAG["value"](table[field].label), _id=ref+":label"))
+            itext_list.append(TAG["text"](TAG["value"](table[field].label), _id=ref+":hint"))
 
             # Controllers
             if hasattr(table[field].requires, "option"):
@@ -71,22 +75,43 @@ def create():
             elif "IS_IN_DB" in str(table[field].requires):
                 # ToDo (similar to IS_IN_SET)
                 pass
-            elif "IS_IN_SET" in str(table[field].requires):
+            elif hasattr(table[field].requires, "other") or "IS_IN_SET" in str(table[field].requires):
+                flag = False  # These statements can probably be cleaned up a lot
+                if hasattr(table[field].requires, "other"):
+                    if "IS_IN_SET" in str(table[field].requires.other):
+                        theset =  table[field].requires.other.theset
+                        flag = True
+                elif "IS_IN_SET" in str(table[field].requires):
+                    theset=table[field].requires.theset
+                    flag = True
+
+                if flag:
+                    items_list=[]
+                    items_list.append(TAG["label"](_ref="jr:itext('" + ref + ":label')"))
+                    items_list.append(TAG["hint"](_ref="jr:itext('" + ref + ":hint')"))
+
+                    option_num = 0 # for formatting something like "jr:itext('stuff:option0')"
+                    for option in theset:
+                        option_ref = ref + ":option" + str(option_num)
+                        items_list.append(TAG["item"](TAG["label"](_ref="jr:itext('" + option_ref + "')"), TAG["value"](option)))
+                        itext_list.append(TAG["text"](TAG["value"](table[field].represent(int(option))), _id=option_ref))
+                        option_num += 1
+                    controllers_list.append(TAG["select1"](items_list, _ref=ref))
+
+            elif table[field].type == "boolean":
                 items_list=[]
-                
-                itext_list.append(TAG["text"](TAG["value"](table[field].label), _id=ref+":label"))
-                itext_list.append(TAG["text"](TAG["value"](table[field].label), _id=ref+":hint"))
+
                 items_list.append(TAG["label"](_ref="jr:itext('" + ref + ":label')"))
                 items_list.append(TAG["hint"](_ref="jr:itext('" + ref + ":hint')"))
+                # True option
+                items_list.append(TAG["item"](TAG["label"](_ref="jr:itext('" + ref + ":option0')"), TAG["value"](1)))
+                itext_list.append(TAG["text"](TAG["value"]("True"), _id= ref + ":option0"))
+                # False option
+                items_list.append(TAG["item"](TAG["label"](_ref="jr:itext('" + ref + ":option1')"), TAG["value"](0)))
+                itext_list.append(TAG["text"](TAG["value"]("False"), _id=ref + ":option1"))
 
-                option_num = 0
-                for option in table[field].requires.theset:
-                    option_ref = ref + ":option" + str(option_num)
-                    items_list.append(TAG["item"](TAG["label"](_ref="jr:itext('" + option_ref + "')"), TAG["value"](option)))
-                    itext_list.append(TAG["text"](TAG["value"](table[field].represent(int(option))), _id=option_ref))
-                    option_num += 1
                 controllers_list.append(TAG["select1"](items_list, _ref=ref))
-		
+
             else:
                 # Normal Input field
                 controllers_list.append(TAG["input"](TAG["label"](table[field].label), _ref=ref))
@@ -98,8 +123,9 @@ def create():
 
     response.headers["Content-Type"] = "application/xml"
     response.view = "xforms.xml"
-
+    #return dict(got=got, hurp=hurp)
     return dict(title=title, instance=instance, bindings=bindings, controllers=controllers)
+
 
 def csvdata(nodelist):
     """
@@ -145,7 +171,7 @@ def importxml(db, xmlinput):
     try:
         db[parent].import_from_csv_file(fh)
     except:
-        raise #Exception("Import into database failed")
+        raise Exception("Import into database failed")
 
 @auth.shn_requires_membership(1)
 def post():
@@ -172,8 +198,16 @@ def formList():
     Generates a list of Xforms based on database tables for ODK Collect
     http://code.google.com/p/opendatakit/
     """
+    # Test statements
     #xml = TAG.forms(*[TAG.form(getName("Name"), _url = "http://" + request.env.http_host + URL(r=request, c='static', f='current.xml'))])
-    xml = TAG.forms(*[TAG.form(getName(t), _url = "http://" + request.env.http_host + URL(r=request, f="create", args=t)) for t in db.tables()])
+    #xml = TAG.forms(*[TAG.form(getName(t), _url = "http://" + request.env.http_host + URL(r=request, f="create", args=t)) for t in db.tables()])
+
+    # List of a couple simple tables to avoid a giant list of all the tables
+    tables = ["pr_person","hms_hospital","vol_volunteer","org_project","gis_landmark"]
+    xml = TAG.forms()
+    for table in tables:
+        xml.append(TAG.form(getName(table), _url = "http://" + request.env.http_host + URL(r=request, f="create", args=db[table])))
+       
     response.headers["Content-Type"] = "text/xml"
     response.view = "xforms.xml"
     return xml
@@ -182,8 +216,9 @@ def getName(name):
     """
     Generates a pretty(er) name from a database table name.
     """
-    return name.replace('_',' ').capitalize()
+    return name[name.find('_')+1:].replace('_',' ').capitalize()
 
-#def test():
-#    return  dict(blah=str(db["pr_person"]["opt_pr_marital_status"].requires))
+def test():
+    test = ("IS_IN_SET" in str(db["pr_person"]["opt_pr_marital_status"].requires.other))
+    return dict(test=test)
     

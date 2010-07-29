@@ -507,7 +507,7 @@ def shn_audit(operation, prefix, name,
 
     return True
 
-# Set this as audit function for the resource controller
+# Set shn_audit as audit function for the resource controller
 s3xrc.audit = shn_audit
 
 #
@@ -1057,11 +1057,14 @@ def shn_list(r, **attr):
 
         sEcho = int(vars.sEcho)
 
-        totalrows = db(query).count()
+        totalrows = resource.count()
         if limit:
-            rows = db(query).select(table.ALL, limitby = (start, start + limit), orderby = orderby)
+            rows = db(query).select(table.ALL,
+                                    limitby = (start, start + limit),
+                                    orderby = orderby)
         else:
-            rows = db(query).select(table.ALL, orderby = orderby)
+            rows = db(query).select(table.ALL,
+                                    orderby = orderby)
 
         result = dict(sEcho = sEcho,
                       iTotalRecords = len(rows),
@@ -1111,7 +1114,7 @@ def shn_list(r, **attr):
 
         if not items:
             items = shn_get_crud_strings(tablename).msg_list_empty
-        output.update(dict(items=items))
+        output.update(items=items)
 
         authorised = shn_has_permission("create", table)
         if authorised and listadd:
@@ -1131,12 +1134,14 @@ def shn_list(r, **attr):
 
             if onaccept:
                 _onaccept = lambda form: \
-                            s3xrc.audit("create", prefix, name, form=form, representation=representation) and \
+                            s3xrc.audit("create", prefix, name, form=form,
+                                        representation=representation) and \
                             s3xrc.store_session(session, prefix, name, 0) and \
                             onaccept(form)
             else:
                 _onaccept = lambda form: \
-                            s3xrc.audit("create", prefix, name, form=form, representation=representation) and \
+                            s3xrc.audit("create", prefix, name, form=form,
+                                        representation=representation) and \
                             s3xrc.store_session(session, prefix, name, 0)
 
             message = shn_get_crud_strings(tablename).msg_record_created
@@ -1162,7 +1167,7 @@ def shn_list(r, **attr):
             addtitle = shn_get_crud_strings(tablename).subtitle_create
 
             shn_custom_view(r, "list_create.html")
-            output.update(dict(form=form, addtitle=addtitle))
+            output.update(form=form, addtitle=addtitle)
 
         else:
             # List only with create button below
@@ -1173,7 +1178,7 @@ def shn_list(r, **attr):
                 add_btn = ""
 
             shn_custom_view(r, "list.html")
-            output.update(dict(add_btn=add_btn))
+            output.update(add_btn=add_btn)
 
         return output
 
@@ -1263,14 +1268,18 @@ def shn_create(r, **attr):
 
         if onaccept:
             _onaccept = lambda form: \
-                        s3xrc.audit("create", prefix, name, form=form, representation=representation) and \
-                        s3xrc.store_session(session, prefix, name, form.vars.id) and \
+                        s3xrc.audit("create", prefix, name, form=form,
+                                    representation=representation) and \
+                        s3xrc.store_session(session,
+                                            prefix, name, form.vars.id) and \
                         onaccept(form)
 
         else:
             _onaccept = lambda form: \
-                        s3xrc.audit("create", prefix, name, form=form, representation=representation) and \
-                        s3xrc.store_session(session, prefix, name, form.vars.id)
+                        s3xrc.audit("create", prefix, name, form=form,
+                                    representation=representation) and \
+                        s3xrc.store_session(session,
+                                            prefix, name, form.vars.id)
 
         # Get the form
         message = shn_get_crud_strings(tablename).msg_record_created
@@ -1308,26 +1317,32 @@ def shn_create(r, **attr):
     elif representation == "plain":
         if onaccept:
             _onaccept = lambda form: \
-                        s3xrc.audit("create", prefix, name, form=form, representation=representation) and \
+                        s3xrc.audit("create", prefix, name, form=form,
+                                    representation=representation) and \
                         onaccept(form)
         else:
             _onaccept = lambda form: \
-                        s3xrc.audit("create", prefix, name, form=form, representation=representation)
+                        s3xrc.audit("create", prefix, name, form=form,
+                                    representation=representation)
 
-        form = crud.create(table, onvalidation=onvalidation, onaccept=_onaccept)
+        form = crud.create(table,
+                           onvalidation=onvalidation, onaccept=_onaccept)
         response.view = "plain.html"
         return dict(item=form)
 
     elif representation == "popup":
         if onaccept:
             _onaccept = lambda form: \
-                        s3xrc.audit("create", prefix, name, form=form, representation=representation) and \
+                        s3xrc.audit("create", prefix, name, form=form,
+                                    representation=representation) and \
                         onaccept(form)
         else:
             _onaccept = lambda form: \
-                        s3xrc.audit("create", prefix, name, form=form, representation=representation)
+                        s3xrc.audit("create", prefix, name, form=form,
+                                    representation=representation)
 
-        form = crud.create(table, onvalidation=onvalidation, onaccept=_onaccept)
+        form = crud.create(table,
+                           onvalidation=onvalidation, onaccept=_onaccept)
         shn_custom_view(r, "popup.html")
         return dict(form=form,
                     module=module,
@@ -1468,12 +1483,14 @@ def shn_update(r, **attr):
 
         if onaccept:
             _onaccept = lambda form: \
-                        s3xrc.audit("update", prefix, name, form=form, representation=representation) and \
+                        s3xrc.audit("update", prefix, name, form=form,
+                                    representation=representation) and \
                         s3xrc.store_session(session, prefix, name, form.vars.id) and \
                         onaccept(form)
         else:
             _onaccept = lambda form: \
-                        s3xrc.audit("update", prefix, name, form=form, representation=representation) and \
+                        s3xrc.audit("update", prefix, name, form=form,
+                                    representation=representation) and \
                         s3xrc.store_session(session, prefix, name, form.vars.id)
 
         crud.settings.update_deletable = deletable
@@ -1510,11 +1527,13 @@ def shn_update(r, **attr):
     elif representation == "plain":
         if onaccept:
             _onaccept = lambda form: \
-                        s3xrc.audit("update", prefix, name, form=form, representation=representation) and \
+                        s3xrc.audit("update", prefix, name, form=form,
+                                    representation=representation) and \
                         onaccept(form)
         else:
             _onaccept = lambda form: \
-                        s3xrc.audit("update", prefix, name, form=form, representation=representation)
+                        s3xrc.audit("update", prefix, name, form=form,
+                                    representation=representation)
 
         form = crud.update(table, record_id,
                            onvalidation=onvalidation,
@@ -1549,7 +1568,13 @@ def shn_delete(r, **attr):
     # Table-specific controller attributes
     attr = r.component and r.component.attr or attr
     deletable = attr.get("deletable", True)
+
+    # custom delete_next?
     delete_next = attr.get("delete_next", None)
+    if delete_next:
+        r.next = delete_next
+
+    print "r.next is %s" % r.next
 
     if r.component:
         query = ((table[r.fkey] == r.table[r.pkey]) & \
@@ -1566,19 +1591,11 @@ def shn_delete(r, **attr):
     rows = db(query).select(table.ALL)
 
     # Nothing to do? Return here!
-    if not rows or len(rows) == 0:
+    if not rows:
         session.confirmation = T("No records to delete")
-        return
+        return {}
 
     message = shn_get_crud_strings(tablename).msg_record_deleted
-
-    if not r.component and not delete_next:
-        delete_next = crud.settings.delete_next
-
-    # Set callbacks, no redirection!
-    crud.settings.delete_onvalidation = onvalidation
-    crud.settings.delete_onaccept = onaccept
-    crud.settings.delete_next = None
 
     # Delete all accessible records
     numrows = 0
@@ -1592,8 +1609,8 @@ def shn_delete(r, **attr):
                 # Reset session vars if necessary
                 if "deleted" in db[table] and \
                    db(db.s3_setting.id == 1).select(db.s3_setting.archive_not_delete, limitby=(0, 1)).first().archive_not_delete:
-                    if crud.settings.delete_onvalidation:
-                        crud.settings.delete_onvalidation(row)
+                    if onvalidation:
+                        onvalidation(row)
                     # Avoid collisions of values in unique fields between deleted records and
                     # later new records => better solution could be: move the deleted data to
                     # a separate table (e.g. in JSON) and delete from this table (that would
@@ -1604,15 +1621,15 @@ def shn_delete(r, **attr):
                         if f not in ("id", "uuid") and table[f].unique:
                             deleted.update({f:None}) # not good => data loss!
                     db(db[table].id == row.id).update(**deleted)
-                    if crud.settings.delete_onaccept:
-                        crud.settings.delete_onaccept(row)
+                    if onaccept:
+                        onaccept(row)
                 else:
                     # Do not CRUD.delete! (it never returns, but redirects)
-                    if crud.settings.delete_onvalidation:
-                        crud.settings.delete_onvalidation(row)
+                    if onvalidation:
+                        onvalidation(row)
                     del db[table][row.id]
-                    if crud.settings.delete_onaccept:
-                        crud.settings.delete_onaccept(row)
+                    if onaccept:
+                        onaccept(row)
 
             # Would prefer to import sqlite3 & catch specific error, but
             # this isn't generalisable to other DBs...we need a DB config to pull in.
@@ -1627,9 +1644,6 @@ def shn_delete(r, **attr):
             session.confirmation = "%s %s" % ( numrows, T("records deleted"))
         else:
             session.confirmation = message
-
-    if r.component and delete_next: # but redirect here!
-        redirect(delete_next)
 
     item = s3xrc.xml.json_message()
     response.view = "plain.html"

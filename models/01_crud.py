@@ -1585,37 +1585,37 @@ def shn_delete(r, **attr):
     for row in rows:
         if shn_has_permission("delete", table, row.id):
             numrows += 1
-            #try:
-            shn_audit("delete", prefix, name, record=row.id, representation=representation)
-            if "deleted" in db[table] and \
-                db(db.s3_setting.id == 1).select(db.s3_setting.archive_not_delete, limitby=(0, 1)).first().archive_not_delete:
-                if crud.settings.delete_onvalidation:
-                    crud.settings.delete_onvalidation(row)
-                # Avoid collisions of values in unique fields between deleted records and
-                # later new records => better solution could be: move the deleted data to
-                # a separate table (e.g. in JSON) and delete from this table (that would
-                # also eliminate the need for special deletion status awareness throughout
-                # the system). Should at best be solved in the DAL.
-                deleted = dict(deleted=True)
-                for f in table.fields:
-                    if f not in ("id", "uuid") and table[f].unique:
-                        deleted.update({f:None}) # not good => data loss!
-                db(db[table].id == row.id).update(**deleted)
-                if crud.settings.delete_onaccept:
-                    crud.settings.delete_onaccept(row)
-            else:
-                # Do not CRUD.delete! (it never returns, but redirects)
-                if crud.settings.delete_onvalidation:
-                    crud.settings.delete_onvalidation(row)
-                del db[table][row.id]
-                if crud.settings.delete_onaccept:
-                    crud.settings.delete_onaccept(row)
+            try:
+                shn_audit("delete", prefix, name, record=row.id, representation=representation)
+                if "deleted" in db[table] and \
+                   db(db.s3_setting.id == 1).select(db.s3_setting.archive_not_delete, limitby=(0, 1)).first().archive_not_delete:
+                    if crud.settings.delete_onvalidation:
+                        crud.settings.delete_onvalidation(row)
+                    # Avoid collisions of values in unique fields between deleted records and
+                    # later new records => better solution could be: move the deleted data to
+                    # a separate table (e.g. in JSON) and delete from this table (that would
+                    # also eliminate the need for special deletion status awareness throughout
+                    # the system). Should at best be solved in the DAL.
+                    deleted = dict(deleted=True)
+                    for f in table.fields:
+                        if f not in ("id", "uuid") and table[f].unique:
+                            deleted.update({f:None}) # not good => data loss!
+                    db(db[table].id == row.id).update(**deleted)
+                    if crud.settings.delete_onaccept:
+                        crud.settings.delete_onaccept(row)
+                else:
+                    # Do not CRUD.delete! (it never returns, but redirects)
+                    if crud.settings.delete_onvalidation:
+                        crud.settings.delete_onvalidation(row)
+                    del db[table][row.id]
+                    if crud.settings.delete_onaccept:
+                        crud.settings.delete_onaccept(row)
 
             # Would prefer to import sqlite3 & catch specific error, but
             # this isn't generalisable to other DBs...we need a DB config to pull in.
             #except sqlite3.IntegrityError:
-            #except:
-                #session.error = T("Cannot delete whilst there are linked records. Please delete linked records first.")
+            except:
+                session.error = T("Cannot delete whilst there are linked records. Please delete linked records first.")
         else:
             continue
 

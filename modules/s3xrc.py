@@ -258,6 +258,7 @@ class S3Resource(object):
         else:
             query = self.get_query()
 
+        return query
 
     # -------------------------------------------------------------------------
     def build_query(self, id=None, uid=None, filter=None, url_vars=None):
@@ -1812,9 +1813,9 @@ class S3Request(object):
                 id = str(id)
                 if len(id) == 0:
                     id = "[id]"
-                if self.component:
-                    component_id = None
-                    method = None
+                #if self.component:
+                    #component_id = None
+                    #method = None
 
         if self.component:
             if id:

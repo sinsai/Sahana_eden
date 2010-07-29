@@ -486,7 +486,7 @@ def shn_audit(operation, prefix, name,
               record=None,
               representation=None):
 
-    print "Audit: %s on %s_%s #%s" % (operation, prefix, name, record or 0)
+    #print "Audit: %s on %s_%s #%s" % (operation, prefix, name, record or 0)
 
     if operation in ("list", "read"):
         return shn_audit_read(operation, prefix, name,
@@ -1871,7 +1871,6 @@ def shn_rest_controller(module, resource, **attr):
     s3xrc.set_handler("search", shn_search)
 
     res, req = s3xrc.parse_request(module, resource, session, request, response)
-
     output = res.execute_request(req, **attr)
 
     return output

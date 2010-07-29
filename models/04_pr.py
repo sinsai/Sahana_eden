@@ -215,6 +215,13 @@ table.image.represent = lambda image: image and \
               _href=URL(r=request, c="default", f="download", args=image))) or \
         T("No Image")
 
+def shn_pr_image_onvalidation(form):
+
+    if not form.vars.image and not form.vars.url:
+        form.errors.image = \
+        form.errors.url = T("Either file upload or image URL required.")
+
+    return False
 
 s3xrc.model.add_component(module, resource,
                           multiple=True,
@@ -223,6 +230,7 @@ s3xrc.model.add_component(module, resource,
                           editable=True)
 
 s3xrc.model.configure(table,
+    onvalidation=shn_pr_image_onvalidation,
     list_fields=[
         "id",
         "type",

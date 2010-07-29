@@ -20,7 +20,7 @@ $(function() {
 $(function() {
     if (self.opener) {
         // Legacy popups
-        // bind form and provide a simple callback function 
+        // bind form and provide a simple callback function
         $('form').ajaxForm(function() {
             // FIXME: Refresh just the SELECT not the whole page
             // otherwise existing inputs lost & form won't submit!
@@ -43,7 +43,7 @@ $(function() {
 
 function TB_cleanup(caller) {
     if(self.parent.cleanup)
-       self.parent.cleanup(caller); 
+       self.parent.cleanup(caller);
     self.parent.tb_remove();
 }
 
@@ -65,8 +65,6 @@ function TB_refresh() {
     var value_high = 1;
     var represent_high = "";
     $.getJSONS3(url, function (data) {
-        // Clean-up
-        TB_cleanup(caller);
         var value, represent;
         $.each(data['option'], function() {
             value = this['@value'];
@@ -88,18 +86,21 @@ function TB_refresh() {
         });
         if (has_dummy) {
             dummy.val(represent_high);
+            selector.val(value_high);
         }
         if (dropdown) {
-           // We have been called next to a drop-down
-           // Clean up the caller
-           options.remove();
-           selector.append(append);
+            // We have been called next to a drop-down
+            // Clean up the caller
+            options.remove();
+            selector.append(append.join(''));
         }
         // IE6 needs time for DOM to settle: http://csharperimage.jeremylikness.com/2009/05/jquery-ie6-and-could-not-set-selected.html
         setTimeout(function() {
-                       // Set the newly-created value (one with highest value)
-                           selector.val(value_high);
-                       }, 1 );
+                // Set the newly-created value (one with highest value)
+                selector.val(value_high);
+            }, 1);
+        // Clean-up
+        TB_cleanup(caller);
     });
 }
 // Function to get the URL parameters

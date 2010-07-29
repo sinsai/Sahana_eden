@@ -232,7 +232,7 @@ def layout():
     # build the UI
     for section in sections:
         section_rendered.append(section.id)
-        link = A(section.name,_class="colorbox",_id="survey_section_%s" % (section.uuid),_href=URL(r=request, c="survey", f="section", args=[section.id, "update"], vars=dict(format="popup",caller="survey_section_%s" % (section.uuid))),
+        link = A(section.name,_class="colorbox",_id="survey_section_%s" % (section.uuid),_href=URL(r=request, c="survey", f="section", args=[section.id, "update.popup"], vars=dict(caller="survey_section_%s" % (section.uuid))),
                                        _target="top",
                                        _title="Edit Section")
 
@@ -433,13 +433,14 @@ def layout():
         ui.append(DIV(DIV(A (T("Add Question"), _class="colorbox",_href=URL(r=request,f="question",args=["create"],vars=dict(format="popup")), ),_class="question_title")))
     ui.append(BR())
 
-    ui.append(DIV(A(T("Add Section"),_class="colorbox",
-                                       _href=URL(r=request, f="section", args=["create"], vars=dict(format="popup")),
+    ui.append(DIV(A(T("Add Section"),_class="colorbox", _id="new",
+                                       _href=URL(r=request, f="section", args=["create"], vars=dict(caller="new", format="popup")),
                                        _target="top",
                                        _title=T("Add Section")),_class="section_title"))
     output.update(ui=ui)
     return output
-    
+def process():
+    return 
 
 def add_buttons(form, save = None, prev = None, next = None, finish = None,cancel=None):
     """

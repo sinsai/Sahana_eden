@@ -38,6 +38,9 @@ function TB_refresh() {
     // The Get parameters
     var $_GET = getQueryParams(document.location.search);
     var caller = $_GET["caller"];
+    if(caller == "new") {
+        $("#"+caller).insertBefore($("#caller"))
+    }
     
     $.getJSONS3(url, function (data) {
         $.each(data['option'], function() {

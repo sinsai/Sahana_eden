@@ -139,7 +139,16 @@ if deployment_settings.has_module(module):
                 redirect(URL(r=request,f="question_options",args="create"))
             else:
                 redirect(URL(r=request,f="question_options",args=[opts.id,"update"]))
-
-
+        if form.vars.id and session.rcvars.survey_section and session.rcvars.survey_template:
+            db.survey_template_link_table.insert(survey_section_id=session.rcvars.survey_section, survey_template_id=session.rcvars.survey_template)
+            db.commit()
     s3xrc.model.configure(db.survey_question,
                       onaccept=lambda form: question_onaccept(form))
+
+    def section_onaccept(form):
+        if form.vars.id and session.rcvars.survey_template:
+            db.survey_template_link_table.insert(survey_section_id=form.vars.id,survey_template_id=session.rcvars.survey_template)
+            db.commit()
+    s3xrc.model.configure(db.survey_section,
+                      onaccept=lambda form: section_onaccept(form))
+

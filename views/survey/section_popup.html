@@ -1,0 +1,93 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+{{if session.s3.debug:}}
+  {{include "sahana_styles_debug.html"}}
+  {{include "sahana_scripts_debug.html"}}
+{{else:}}
+  <link href="/{{=request.application}}/static/styles/S3/sahana.min.css" rel="stylesheet" type="text/css" media="screen" charset="utf-8" />
+  {{include "sahana_scripts_min.html"}}
+{{pass}}
+{{include "colorbox.html"}}
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+{{if session.s3.debug:}}
+  {{include "sahana_styles_debug.html"}}
+  {{include "sahana_scripts_debug.html"}}
+{{else:}}
+  <link href="/{{=request.application}}/static/styles/S3/sahana.min.css" rel="stylesheet" type="text/css" media="screen" charset="utf-8" />
+  {{include "sahana_scripts_min.html"}}
+{{pass}}
+{{include "colorbox.html"}}
+
+<script type="text/javascript">//<![CDATA[
+
+$(document).ready( function() {
+    // Reset the parent's toggle
+    self.parent.window.togglecallerappend = "True";
+});
+
+function TB_cleanup(caller) {
+    if(self.parent.cleanup)
+       self.parent.cleanup(caller);
+    self.parent.tb_remove();
+}
+
+function TB_refresh() {
+    // The Get parameters
+    var $_GET = getQueryParams(document.location.search);
+    var caller = $_GET["caller"];
+    
+    $.getJSONS3(url, function (data) {
+        $.each(data['option'], function() {
+            // TODO
+        });
+        // Clean-up
+        TB_cleanup(caller);
+    });
+}
+// Function to get the URL parameters
+function getQueryParams(qs) {
+// We want all the vars, i.e. after the ?
+    var query_str = qs.split('?')[1]
+    var pairs = query_str.split('&');
+    var params = {};
+    var check = [];
+    for( var i = 0; i < pairs.length; i++ ) {
+            check = pairs[i].split('=');
+            params[decodeURIComponent(check[0])] = decodeURIComponent(check[1]);
+        }
+    return params;
+}
+
+// If submission succesful
+{{if response.flash or response.confirmation:}}
+// Refresh the DIV and close the pop up
+$(document).ready( function() {
+        self.parent.$(".TB_closeAjaxWindow").html('');
+    });
+TB_refresh();
+{{pass}}
+
+//]]></script>
+
+</head>
+
+<body>
+{{if response.flash or response.confirmation:}}
+    <div id='popup' class='clearfix'>
+        <p style='padding:20px 20px;'>
+            <center>
+                <h2>
+                    {{=T("Submission successful - please wait...")}}
+                </h2>
+            </center>
+        <p>
+    </div>
+{{else:}}
+    {{include "_popup.html"}}    
+{{pass}}
+</body>
+
+</html>

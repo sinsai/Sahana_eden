@@ -13,6 +13,12 @@ def create():
     http://code.javarosa.org/wiki/buildxforms
     http://www.w3schools.com/xforms/
     http://oreilly.com/catalog/9780596003692/preview.html
+    Known field requirements that don't work properly:
+    IS_IN_DB
+    IS_NOT_IN_DB
+    IS_EMAIL
+    IS_DATE_IN_RANGE
+    IS_DATETIME_IN_RANGE
     """
     if len(request.args) == 0:
         session.error = T("Need to specify a table!")
@@ -62,9 +68,31 @@ def create():
                 # Unknown type
                 _type = "string"
 
-            bindings_list.append(TAG["bind"](_nodeset=ref, _type=_type, _required=required))
+            if uses_requirement("IS_INT_IN_RANGE", table[field]) or uses_requirement("IS_FLOAT_IN_RANGE", table[field]):
+#               or uses_requirement("IS_DATE_IN_RANGE", table[field]):
+                if hasattr(table[field].requires, "other"):
+                    maximum = table[field].requires.other.maximum
+                    minimum = table[field].requires.other.minimum
+                else:
+                    maximum = table[field].requires.maximum
+                    minimum = table[field].requires.minimum
+                if minimum is None:
+                    constraint = "(. < " + str(maximum) + ")"
+                elif maximum is None:
+                    constraint = "(. > " + str(minimum) + ")"
+                else:
+                    constraint = "(. > " + str(minimum) + " and . < " + str(maximum) + ")"
+                bindings_list.append(TAG["bind"](_nodeset=ref, _type=_type, _required=required, _constraint=constraint))
+
+#            elif uses_requirement("IS_DATETIME_IN_RANGE", table[field]):
+#                pass
+#            elif uses_requirement("IS_EMAIL", table[field]):
+#                pass
+            else:
+                bindings_list.append(TAG["bind"](_nodeset=ref, _type=_type, _required=required))
+
             itext_list.append(TAG["text"](TAG["value"](table[field].label), _id=ref+":label"))
-            itext_list.append(TAG["text"](TAG["value"](table[field].label), _id=ref+":hint"))
+            itext_list.append(TAG["text"](TAG["value"](table[field].comment), _id=ref+":hint"))
 
             # Controllers
             if hasattr(table[field].requires, "option"):
@@ -72,31 +100,29 @@ def create():
                 for option in table[field].requires.theset:
                     items_list.append(TAG["item"](TAG["label"](option), TAG["value"](option)))
                 controllers_list.append(TAG["select1"](items_list, _ref=field))
-            elif "IS_IN_DB" in str(table[field].requires):
-                # ToDo (similar to IS_IN_SET)
-                pass
-            elif hasattr(table[field].requires, "other") or "IS_IN_SET" in str(table[field].requires):
-                flag = False  # These statements can probably be cleaned up a lot
+            #elif uses_requirement("IS_IN_DB", table[field]):
+                # ToDo (similar to IS_IN_SET)?
+                #pass
+            #elif uses_requirement("IS_NOT_IN_DB", table[field]):
+                # ToDo
+                #pass
+            elif uses_requirement("IS_IN_SET", table[field]): # Defined below
                 if hasattr(table[field].requires, "other"):
-                    if "IS_IN_SET" in str(table[field].requires.other):
-                        theset =  table[field].requires.other.theset
-                        flag = True
-                elif "IS_IN_SET" in str(table[field].requires):
-                    theset=table[field].requires.theset
-                    flag = True
+                    theset = table[field].requires.other.theset
+                else:
+                    theset = table[field].requires.theset
 
-                if flag:
-                    items_list=[]
-                    items_list.append(TAG["label"](_ref="jr:itext('" + ref + ":label')"))
-                    items_list.append(TAG["hint"](_ref="jr:itext('" + ref + ":hint')"))
+                items_list=[]
+                items_list.append(TAG["label"](_ref="jr:itext('" + ref + ":label')"))
+                items_list.append(TAG["hint"](_ref="jr:itext('" + ref + ":hint')"))
 
-                    option_num = 0 # for formatting something like "jr:itext('stuff:option0')"
-                    for option in theset:
-                        option_ref = ref + ":option" + str(option_num)
-                        items_list.append(TAG["item"](TAG["label"](_ref="jr:itext('" + option_ref + "')"), TAG["value"](option)))
-                        itext_list.append(TAG["text"](TAG["value"](table[field].represent(int(option))), _id=option_ref))
-                        option_num += 1
-                    controllers_list.append(TAG["select1"](items_list, _ref=ref))
+                option_num = 0 # for formatting something like "jr:itext('stuff:option0')"
+                for option in theset:
+                    option_ref = ref + ":option" + str(option_num)
+                    items_list.append(TAG["item"](TAG["label"](_ref="jr:itext('" + option_ref + "')"), TAG["value"](option)))
+                    itext_list.append(TAG["text"](TAG["value"](table[field].represent(int(option))), _id=option_ref))
+                    option_num += 1
+                controllers_list.append(TAG["select1"](items_list, _ref=ref))
 
             elif table[field].type == "boolean":
                 items_list=[]
@@ -123,9 +149,21 @@ def create():
 
     response.headers["Content-Type"] = "application/xml"
     response.view = "xforms.xml"
-    #return dict(got=got, hurp=hurp)
+
     return dict(title=title, instance=instance, bindings=bindings, controllers=controllers)
 
+def uses_requirement(requirement, field):
+    """
+    Check if a given database field uses the specified requirement
+    (IS_IN_SET, IS_INT_IN_RANGE, etc)
+    """
+    if hasattr(field.requires, "other") or requirement in str(field.requires):
+        if hasattr(field.requires, "other"):
+            if requirement in str(field.requires.other):
+                return True
+        elif requirement in str(field.requires):
+            return True
+    return False
 
 def csvdata(nodelist):
     """
@@ -168,10 +206,7 @@ def importxml(db, xmlinput):
     fh = StringIO.StringIO()
     fh.write(csvout)
     fh.seek(0, 0)
-    try:
-        db[parent].import_from_csv_file(fh)
-    except:
-        raise Exception("Import into database failed")
+    db[parent].import_from_csv_file(fh)
 
 @auth.shn_requires_membership(1)
 def post():
@@ -203,22 +238,18 @@ def formList():
     #xml = TAG.forms(*[TAG.form(getName(t), _url = "http://" + request.env.http_host + URL(r=request, f="create", args=t)) for t in db.tables()])
 
     # List of a couple simple tables to avoid a giant list of all the tables
-    tables = ["pr_person","hms_hospital","vol_volunteer","org_project","gis_landmark"]
+    tables = ["pr_person","hms_hospital","vol_volunteer","org_project","gis_landmark", "budget_parameter"]
     xml = TAG.forms()
     for table in tables:
-        xml.append(TAG.form(getName(table), _url = "http://" + request.env.http_host + URL(r=request, f="create", args=db[table])))
+        xml.append(TAG.form(get_name(table), _url = "http://" + request.env.http_host + URL(r=request, f="create", args=db[table])))
        
     response.headers["Content-Type"] = "text/xml"
     response.view = "xforms.xml"
     return xml
 
-def getName(name):
+def get_name(name):
     """
     Generates a pretty(er) name from a database table name.
     """
     return name[name.find('_')+1:].replace('_',' ').capitalize()
-
-def test():
-    test = ("IS_IN_SET" in str(db["pr_person"]["opt_pr_marital_status"].requires.other))
-    return dict(test=test)
     

@@ -815,8 +815,8 @@ def shn_read(r, **attr):
     href_delete = r.other(method="delete", representation=representation)
     href_edit = r.other(method="update", representation=representation)
 
+    # Get the correct record ID
     if r.component:
-
         resource = r.resource.components.get(r.component_name).resource
         resource.load(start=0, limit=1)
         if not len(resource):
@@ -828,7 +828,6 @@ def shn_read(r, **attr):
                 redirect(r.there())
         else:
             record_id = resource.records().first().id
-
     else:
         record_id = r.id
 
@@ -874,7 +873,7 @@ def shn_read(r, **attr):
             output.update(form=item)
             shn_custom_view(r, "popup.html")
 
-        if href_edit and editable:
+        if href_edit and editable and r.method <> "update":
             edit = A(T("Edit"), _href=href_edit, _class="action-btn")
             output.update(edit=edit)
         if href_delete and deletable:
@@ -964,19 +963,19 @@ def shn_list(r, **attr):
     # Request GET vars
     vars = r.request.get_vars
 
-    # Get controller parameters
+    # Get controller attributes
     rheader = attr.get("rheader", None)
-    _attr = r.component and r.component.attr or attr
+    sticky = attr.get("sticky", False)
 
-    editable = _attr.get("editable", True)
-    deletable = _attr.get("deletable", True)
-    listadd = _attr.get("listadd", True)
-    sticky = _attr.get("sticky", False)
-
-    main = _attr.get("main", None)
-    extra = _attr.get("extra", None)
-    orderby = _attr.get("orderby", None)
-    sortby = _attr.get("sortby", None)
+    # Table-specific controller attributes
+    attr = r.component and r.component.attr or attr
+    editable = attr.get("editable", True)
+    deletable = attr.get("deletable", True)
+    listadd = attr.get("listadd", True)
+    main = attr.get("main", None)
+    extra = attr.get("extra", None)
+    orderby = attr.get("orderby", None)
+    sortby = attr.get("sortby", None)
 
     # Provide the ability to get a subset of records
     start = vars.get("start", 0)
@@ -1374,194 +1373,169 @@ def shn_update(r, **attr):
 
     # Get target table
     name, prefix, table, tablename = r.target()
+    representation = r.representation
 
     # Get callbacks
     onvalidation = s3xrc.model.get_config(table, "onvalidation")
     onaccept = s3xrc.model.get_config(table, "onaccept")
 
     # Get controller attributes
-    attr = r.component and r.component.attr or attr
     rheader = attr.get("rheader", None)
     sticky = attr.get("sticky", False)
+
+    # Table-specific controller attributes
+    attr = r.component and r.component.attr or attr
     editable = attr.get("editable", True)
     deletable = attr.get("deletable", True)
+    update_next = attr.get("update_next", None)
 
+    # Find the correct record ID
     if r.component:
-        if r.multiple and not r.component_id:
-            return shn_create(r, rheader=rheader)
-
-        query = (table[jr.fkey] == jr.record[jr.pkey])
-        if jr.component_id:
-            query = (table.id == jr.component_id) & query
-        if "deleted" in table:
-            query = ((table.deleted == False) | (table.deleted == None)) & query
-
-        try:
-            record_id = db(query).select(table.id, limitby=(0, 1)).first().id
-        except:
-            record_id = None
-            href_delete = None
-            href_edit = None
-            session.error = BADRECORD
-            redirect(jr.there())
-
-        editable = s3xrc.model.get_attr(resource, "editable")
-        deletable = s3xrc.model.get_attr(resource, "deletable")
-
-    else:
-        record_id = jr.id
-        deletable = deletable and shn_has_permission("delete", table, record_id)
-
-    representation = r.representation
-
-    if not editable and jr.representation == "html":
-        return shn_read(jr, **attr)
-
-    authorised = shn_has_permission("update", table, record_id)
-    if authorised:
-        crud.settings.update_deletable = deletable
-
-        if jr.representation == "html" or jr.representation == "popup":
-
-
-            if jr.representation == "html":
-                shn_custom_view(jr, "update.html")
-            elif jr.representation == "popup":
-                shn_custom_view(jr, "popup.html")
-
-            output = dict()
-
-            if jr.component:
-                title = shn_get_crud_strings(jr.tablename).title_display
-                subtitle = shn_get_crud_strings(tablename).title_update
-                output.update(subtitle=subtitle)
-
+        resource = r.resource.components.get(r.component_name).resource
+        resource.load(start=0, limit=1)
+        if not len(resource):
+            if not r.multiple:
+                r.component_id = None
+                redirect(r.other(method="create", representation=representation))
             else:
-                title = shn_get_crud_strings(tablename).title_update
-
-            if rheader and jr.id and (jr.component or sticky):
-                try:
-                    _rheader = rheader(jr)
-                except:
-                    _rheader = rheader
-                if _rheader:
-                    output.update(rheader=_rheader)
-
-            label_list_button = shn_get_crud_strings(tablename).label_list_button
-            list_btn = A(label_list_button, _href=jr.there(), _class="action-btn")
-
-            if deletable:
-                del_href = jr.other(method="delete", representation=jr.representation)
-                label_del_button = shn_get_crud_strings(tablename).label_delete_button
-                del_btn = A(label_del_button, _href=del_href, _id="delete-btn", _class="action-btn")
-                output.update(del_btn=del_btn)
-
-            output.update(title=title, list_btn=list_btn)
-
-            if jr.component:
-                # Block join field
-                _comment = table[jr.fkey].comment
-                table[jr.fkey].comment = None
-                table[jr.fkey].default = jr.record[jr.pkey]
-                # Fix for #447:
-                if jr.http == "POST":
-                    table[jr.fkey].writable = True
-                    request.post_vars.update({jr.fkey: str(jr.record[jr.pkey])})
-                else:
-                    table[jr.fkey].writable = False
-                # Save callbacks
-                update_onvalidation = crud.settings.update_onvalidation
-                update_onaccept = crud.settings.update_onaccept
-                update_next = crud.settings.update_next
-                # Neutralize callbacks
-                crud.settings.update_onvalidation = None
-                crud.settings.update_onaccept = None
-                crud.settings.update_next = s3xrc.model.get_attr(jr.component_name, "update_next") or \
-                                            jr.there()
-            else:
-                if not crud.settings.update_next:
-                    crud.settings.update_next = jr.here()
-                if not onvalidation:
-                    onvalidation = crud.settings.update_onvalidation
-                if not onaccept:
-                    onaccept = crud.settings.update_onaccept
-
-            message = shn_get_crud_strings(tablename).msg_record_modified
-
-            if onaccept:
-                _onaccept = lambda form: \
-                    shn_audit_update(form, module, resource, jr.representation) and \
-                    s3xrc.store_session(session, module, resource, form.vars.id) and \
-                    onaccept(form)
-            else:
-                _onaccept = lambda form: \
-                    shn_audit_update(form, module, resource, jr.representation) and \
-                    s3xrc.store_session(session, module, resource, form.vars.id)
-
-            form = crud.update(table, record_id,
-                               message=message,
-                               onvalidation=onvalidation,
-                               onaccept=_onaccept,
-                               deletable=False) # TODO: add extra delete button to form
-
-            #form[0].append(TR(TD(), TD(INPUT(_type="reset", _value="Reset form"))))
-            if response.s3.cancel:
-                form[0][-1][1].append(INPUT(_type="button", _value="Cancel", _onclick="window.location='%s';" % response.s3.cancel))
-
-            if jr.component:
-                # Restore comment
-                table[jr.fkey].comment = _comment
-                # Restore callbacks
-                crud.settings.update_onvalidation = update_onvalidation
-                crud.settings.update_onaccept = update_onaccept
-                crud.settings.update_next = update_next
-
-            output.update(form=form, jr=jr)
-
-            if jr.component and not jr.multiple:
-                del output["list_btn"]
-
-            return(output)
-
-        elif jr.representation == "plain":
-            if onaccept:
-                _onaccept = lambda form: \
-                            shn_audit_update(form, module, resource, jr.representation) and \
-                            onaccept(form)
-            else:
-                _onaccept = lambda form: \
-                            shn_audit_update(form, module, resource, jr.representation)
-
-            form = crud.update(table, record_id,
-                               onvalidation=onvalidation,
-                               onaccept=_onaccept,
-                               deletable=False)
-
-            response.view = "plain.html"
-            return dict(item=form, jr=jr)
-
-        elif jr.representation == "ext":
-            shn_custom_view(jr, "update.html", format="ext")
-            return dict()
-
-        elif jr.representation == "url":
-            return import_url(jr, table, method="update")
-
-        elif jr.representation in shn_json_import_formats:
-            response.view = "plain.html"
-            return import_json(jr)
-
-        elif jr.representation in shn_xml_import_formats:
-            response.view = "plain.html"
-            return import_xml(jr)
-
+                session.error = BADRECORD
+                redirect(r.there())
         else:
-            session.error = BADFORMAT
-            redirect(URL(r=request, f="index"))
+            record_id = resource.records().first().id
+    else:
+        record_id = r.id
+
+    # Redirect to read view if not editable
+    if not editable and representation == "html":
+        return shn_read(r, **attr)
+
+    # Check authorisation
+    authorised = shn_has_permission("update", table, record_id)
+    if not authorised:
+        r.unauthorised()
+
+    if r.representation == "html" or r.representation == "popup":
+
+        # Custom view
+        if r.representation == "html":
+            shn_custom_view(r, "update.html")
+        elif r.representation == "popup":
+            shn_custom_view(r, "popup.html")
+
+        # Title and subtitle
+        if r.component:
+            title = shn_get_crud_strings(r.tablename).title_display
+            subtitle = shn_get_crud_strings(tablename).title_update
+            output = dict(title=title, subtitle=subtitle)
+        else:
+            title = shn_get_crud_strings(tablename).title_update
+            output = dict(title=title)
+
+        # Resource header
+        if rheader and r.id and (r.component or sticky):
+            try:
+                rh = rheader(r)
+            except TypeError:
+                rh = rheader
+            output.update(rheader=rh)
+
+        # Add delete button
+        if deletable:
+            href_delete = r.other(method="delete", representation=representation)
+            label_del_button = shn_get_crud_strings(tablename).label_delete_button
+            del_btn = A(label_del_button,
+                        _href=href_delete,
+                        _id="delete-btn",
+                        _class="action-btn")
+            output.update(del_btn=del_btn)
+
+        if r.component:
+            _comment = table[r.fkey].comment
+            table[r.fkey].comment = None
+            table[r.fkey].default = r.record[r.pkey]
+            # Fix for #447:
+            if r.http == "POST":
+                table[r.fkey].writable = True
+                request.post_vars.update({r.fkey: str(r.record[r.pkey])})
+            else:
+                table[r.fkey].writable = False
+            crud.settings.update_onvalidation = None
+            crud.settings.update_onaccept = None
+            crud.settings.update_next = update_next or r.there()
+        else:
+            if not crud.settings.update_next:
+                crud.settings.update_next = r.here()
+            if not onvalidation:
+                onvalidation = crud.settings.update_onvalidation
+            if not onaccept:
+                onaccept = crud.settings.update_onaccept
+
+        if onaccept:
+            onaccept = lambda form: \
+                       shn_audit_update(form, module, resource, representation) and \
+                       s3xrc.store_session(session, module, resource, form.vars.id) and \
+                       onaccept(form)
+        else:
+            onaccept = lambda form: \
+                       shn_audit_update(form, module, resource, representation) and \
+                       s3xrc.store_session(session, module, resource, form.vars.id)
+
+        crud.settings.update_deletable = deletable
+        message = shn_get_crud_strings(tablename).msg_record_modified
+
+        form = crud.update(table, record_id,
+                            message=message,
+                            onvalidation=onvalidation,
+                            onaccept=onaccept,
+                            deletable=False) # TODO: add extra delete button to form
+
+        # Cancel button?
+        #form[0].append(TR(TD(), TD(INPUT(_type="reset", _value="Reset form"))))
+        if response.s3.cancel:
+            form[0][-1][1].append(INPUT(_type="button",
+                                        _value="Cancel",
+                                        _onclick="window.location='%s';" %
+                                                 response.s3.cancel))
+
+        output.update(form=form)
+
+        # Restore comment
+        if r.component:
+            table[r.fkey].comment = _comment
+
+        # Add a list button if appropriate
+        if not r.component or r.multiple:
+            label_list_button = shn_get_crud_strings(tablename).label_list_button
+            list_btn = A(label_list_button, _href=r.there(), _class="action-btn")
+            output.update(list_btn=list_btn)
+
+        return output
+
+    elif representation == "plain":
+        if onaccept:
+            onaccept = lambda form: \
+                       shn_audit_update(form, module, resource, r.representation) and \
+                       onaccept(form)
+        else:
+            onaccept = lambda form: \
+                       shn_audit_update(form, module, resource, r.representation)
+
+        form = crud.update(table, record_id,
+                           onvalidation=onvalidation,
+                           onaccept=onaccept,
+                           deletable=False)
+
+        response.view = "plain.html"
+        return dict(item=form)
+
+    elif r.representation == "url":
+        return import_url(r, table, method="update")
 
     else:
-        session.error = UNAUTHORISED
-        redirect(URL(r=request, c="default", f="user", args="login", vars={"_next": jr.here()}))
+        session.error = BADFORMAT
+        redirect(URL(r=request, f="index"))
+
+
 #
 # shn_delete ------------------------------------------------------------------
 #

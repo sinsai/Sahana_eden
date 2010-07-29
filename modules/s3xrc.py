@@ -244,23 +244,6 @@ class S3Resource(object):
 
 
     # -------------------------------------------------------------------------
-    def get_parent_query(self):
-
-        """ Get parent query for component joins """
-
-        if self.__set is not None:
-            if len(self.__ids) == 1:
-                query = (self.table.id == self.__ids[0])
-            elif len(self.__ids) > 1:
-                query = (self.table.id.belongs(self.__ids))
-            else:
-                query = (self.table.id == 0)
-        else:
-            query = self.get_query()
-
-        return query
-
-    # -------------------------------------------------------------------------
     def build_query(self, id=None, uid=None, filter=None, url_vars=None):
 
         """ Query builder
@@ -302,7 +285,7 @@ class S3Resource(object):
             # Component Query
             if self.parent:
 
-                parent_query = self.parent.get_parent_query()
+                parent_query = self.parent.get_query()
                 if parent_query:
                     self.__query = self.__query & parent_query
 
@@ -311,8 +294,9 @@ class S3Resource(object):
                     pkey = component.pkey
                     fkey = component.fkey
                     self.__multiple = component.multiple
-                    join = (self.parent.table[pkey] == self.table[fkey])
-                    self.__query = self.__query & join
+                    join = self.parent.table[pkey] == self.table[fkey]
+                    if str(self.__query).find(str(join)) == -1:
+                        self.__query = self.__query & (join)
 
                 if deletion_status in self.table.fields:
                     remaining = (self.table[deletion_status] == False)

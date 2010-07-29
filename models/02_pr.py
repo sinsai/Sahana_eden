@@ -448,8 +448,13 @@ table.group_type.label = T("Group type")
 table.name.label = T("Group name")
 table.name.requires = IS_NOT_EMPTY()
 table.name.comment = DIV(SPAN("*", _class="req", _style="padding-right: 5px;"))
-table.description.label = T("Group description")
 
+table.description.label = T("Group description")
+table.description.comment = DIV(DIV(_class="tooltip",
+    _title=Tstr("Group description") + "|" + Tstr("A brief description of the group (optional)")))
+
+table.comment.comment = DIV(DIV(_class="tooltip",
+    _title=Tstr("Comment") + "|" + Tstr("Field for comments (optional)")))
 
 # -----------------------------------------------------------------------------
 ADD_GROUP = T("Add Group")

@@ -6,7 +6,7 @@
 <script type="text/javascript">//<![CDATA[
 $(function() {
     // Hide the real Input Field
-    $('#msg_outbox_pr_pe_id').hide();
+    $('#msg_outbox_pe_id').hide();
     // Autocomplete-enable the Dummy Input
     $('#dummy').autocomplete('{{=URL(r=request, c="msg", f="search")}}', {
         minChars: 2,
@@ -30,7 +30,7 @@ $(function() {
     // Populate the real Input when the Dummy is selected
     $('#dummy').result(function(event, data, formatted) {
         var newvalue = data.id;
-        $('#msg_outbox_pr_pe_id').val(newvalue);
+        $('#msg_outbox_pe_id').val(newvalue);
     });
 //     $('#dummy_submit').click(function(){
 // 		return true;
@@ -62,16 +62,16 @@ $('#msg_outbox_pr_message_method').change(function() {
  {{=outboxform.custom.comment.pr_message_method}}
  </td>
  </tr>
- <tr id='msg_outbox_pr_pe_id__row'>
+ <tr id='msg_outbox_pe_id__row'>
  <td>
- <label>{{=outboxform.custom.label.pr_pe_id}}</label>
+ <label>{{=outboxform.custom.label.pe_id}}</label>
  </td>
  <td>
  {{=INPUT(_id="dummy", _class="ac_input", _size="50")}}
-  {{=outboxform.custom.widget.pr_pe_id}}
+  {{=outboxform.custom.widget.pe_id}}
  </td>
  <td>
- {{=outboxform.custom.comment.pr_pe_id}}
+ {{=outboxform.custom.comment.pe_id}}
  </td>
 </tr>
  <tr id='msg_log_subject__row'>

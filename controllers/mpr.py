@@ -110,14 +110,12 @@ def person():
                 rheader=lambda jr: shn_pr_rheader(jr,
                     tabs = [(T("Person Details"), None),
                             (T("Missing Report"), "missing_report"),
+                            (T("Physical Description"), "physical_description"),
                             (T("Images"), "image"),
                             (T("Identity"), "identity"),
                             (T("Address"), "address"),
                             (T("Contact Data"), "pe_contact"),
-                            (T("Memberships"), "group_membership"),
                             (T("Presence Log"), "presence"),
-                            (T("Subscriptions"), "pe_subscription"),
-                            (T("Map Settings"), "config")
                             ]),
                 sticky=True)
 

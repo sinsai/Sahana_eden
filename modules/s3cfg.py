@@ -19,6 +19,8 @@ class S3Config(Storage):
         return self.auth.get("registration_requires_verification", False)
     def get_auth_registration_requires_approval(self):
         return self.auth.get("registration_requires_approval", False)
+    def get_auth_openid(self):
+        return self.auth.get("openid", False)
 
     # Base settings
     def get_base_public_url(self):

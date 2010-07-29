@@ -1,9 +1,9 @@
 # -*- coding: utf-8 -*-
 
-"""
-    Person Registry, controllers
+""" S3 Person Registry, controllers
 
     @author: nursix
+
 """
 
 module = request.controller
@@ -25,9 +25,9 @@ def shn_menu():
     if session.rcvars and "pr_group" in session.rcvars:
         group = db.pr_group
         query = (group.id == session.rcvars["pr_group"])
-        record = db(query).select(group.id, group.group_name, limitby=(0, 1)).first()
+        record = db(query).select(group.id, group.name, limitby=(0, 1)).first()
         if record:
-            name = record.group_name
+            name = record.name
             menu_selected.append(["%s: %s" % (T("Group"), name), False,
                                  URL(r=request, f="group", args=[record.id])])
     if session.rcvars and "pr_person" in session.rcvars:
@@ -55,16 +55,16 @@ def index():
         module_name = T("Person Registry")
 
     gender = []
-    for g_opt in pr_person_gender_opts:
+    for g_opt in pr_gender_opts:
         count = db((db.pr_person.deleted == False) & \
-                   (db.pr_person.opt_pr_gender == g_opt)).count()
-        gender.append([str(pr_person_gender_opts[g_opt]), int(count)])
+                   (db.pr_person.gender == g_opt)).count()
+        gender.append([str(pr_gender_opts[g_opt]), int(count)])
 
     age = []
-    for a_opt in pr_person_age_group_opts:
+    for a_opt in pr_age_group_opts:
         count = db((db.pr_person.deleted == False) & \
-                   (db.pr_person.opt_pr_age_group == a_opt)).count()
-        age.append([str(pr_person_age_group_opts[a_opt]), int(count)])
+                   (db.pr_person.age_group == a_opt)).count()
+        age.append([str(pr_age_group_opts[a_opt]), int(count)])
 
     total = int(db(db.pr_person.deleted == False).count())
 
@@ -159,8 +159,8 @@ def group():
     response.s3.postp = group_postp
 
     output = shn_rest_controller(module, resource,
-                main="group_name",
-                extra="group_description",
+                main="name",
+                extra="description",
                 rheader=lambda jr: shn_pr_rheader(jr,
                     tabs = [(T("Group Details"), None),
                             (T("Address"), "address"),
@@ -174,45 +174,39 @@ def group():
 
 # -----------------------------------------------------------------------------
 def image():
-    "RESTful CRUD controller"
+
+    """ RESTful CRUD controller """
+
     resource = request.function
     return shn_rest_controller(module, resource)
 
 # -----------------------------------------------------------------------------
 def pe_contact():
-    "RESTful CRUD controller"
+
+    """ RESTful CRUD controller """
+
     resource = request.function
     return shn_rest_controller(module, resource)
 
 # -----------------------------------------------------------------------------
-def address():
-    "RESTful CRUD controller"
-    resource = request.function
-    return shn_rest_controller(module, resource)
+#def group_membership():
 
-# -----------------------------------------------------------------------------
-def presence():
-    "RESTful CRUD controller"
-    resource = request.function
-    return shn_rest_controller(module, resource)
+    #""" RESTful CRUD controller """
 
-# -----------------------------------------------------------------------------
-def identity():
-    "RESTful CRUD controller"
-    resource = request.function
-    return shn_rest_controller(module, resource)
-
-# -----------------------------------------------------------------------------
-def group_membership():
-    "RESTful CRUD controller"
-    resource = request.function
-    return shn_rest_controller(module, resource)
+    #resource = request.function
+    #return shn_rest_controller(module, resource)
 
 # -----------------------------------------------------------------------------
 def pentity():
-    "RESTful CRUD controller"
+
+    """ RESTful CRUD controller """
+
     resource = request.function
-    return shn_rest_controller(module, resource)
+    response.s3.pagination = True
+    return shn_rest_controller(module, resource,
+                               editable=False,
+                               deletable=False,
+                               listadd=False)
 
 # -----------------------------------------------------------------------------
 def download():
@@ -230,5 +224,4 @@ def tooltip():
         response.view = "pr/ajaxtips/%s.html" % request.vars.formfield
     return dict()
 
-#
 # -----------------------------------------------------------------------------

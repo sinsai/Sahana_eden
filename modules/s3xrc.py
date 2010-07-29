@@ -115,6 +115,7 @@ class S3Resource(object):
 
         self.prefix = prefix
         self.name = name
+        self.url_vars = None
 
         self.__query = None
         self.__length = None
@@ -138,8 +139,8 @@ class S3Resource(object):
                                  export_tree=self.__get_tree,
                                  import_tree=self.__put_tree)
 
-        #: maximum number of records accepted in PUT/POST
-        self.push_limit = 1
+        self.push_limit = 1 #: maximum number of records accepted in PUT/POST
+
 
     # -------------------------------------------------------------------------
     def __dbg(self, msg):
@@ -257,6 +258,7 @@ class S3Resource(object):
         else:
             query = self.get_query()
 
+        return query
 
     # -------------------------------------------------------------------------
     def build_query(self, id=None, uid=None, filter=None, url_vars=None):
@@ -278,6 +280,8 @@ class S3Resource(object):
 
         if url_vars:
             url_query = self.__manager.url_query(self, url_vars)
+            if url_query:
+                self.url_vars = url_vars
         else:
             url_query = Storage()
 
@@ -416,7 +420,7 @@ class S3Resource(object):
                                     query = None
                                     for v in values:
                                         v = "%%%s%%" % v
-                                        q = (table[field].like(v))
+                                        q = (table[field].lower().like(v.lower()))
                                         if query:
                                             query = query | q
                                         else:
@@ -426,7 +430,7 @@ class S3Resource(object):
                                     query = None
                                     for v in values:
                                         v = "%%%s%%" % v
-                                        q = (~(table[field].like(v)))
+                                        q = (~(table[field].lower().like(v.lower())))
                                         if query:
                                             query = query & q
                                         else:
@@ -570,7 +574,7 @@ class S3Resource(object):
         if self.__storage is None:
 
             if not self.__multiple:
-                limitby = (0,1)
+                limitby = (0, 1)
             else:
                 # Slicing
                 if start is not None:
@@ -803,16 +807,21 @@ class S3Resource(object):
         # Enforce primary record ID
         if not r.id and not r.custom_action and r.representation == "html":
             if r.component or r.method in ("read", "update"):
-                model = self.__manager.model
-                search_simple = model.get_method(self.prefix, self.name,
-                                                method="search_simple")
-                if search_simple:
-                    self.__dbg("no record ID - redirecting to search_simple")
-                    redirect(URL(r=r.request, f=self.name, args="search_simple",
-                                vars={"_next": r.same()}))
+                count = self.count()
+                if self.url_vars is not None and count == 1:
+                    self.load()
+                    r.record = self.__set.first()
                 else:
-                    r.session.error = self.BADRECORD
-                    redirect(URL(r=r.request, c=self.prefix, f=self.name))
+                    model = self.__manager.model
+                    search_simple = model.get_method(self.prefix, self.name,
+                                                    method="search_simple")
+                    if search_simple:
+                        self.__dbg("no record ID - redirecting to search_simple")
+                        redirect(URL(r=r.request, f=self.name, args="search_simple",
+                                    vars={"_next": r.same()}))
+                    else:
+                        r.session.error = self.BADRECORD
+                        redirect(URL(r=r.request, c=self.prefix, f=self.name))
 
         # Pre-process
         if hooks is not None:
@@ -841,7 +850,7 @@ class S3Resource(object):
 
         # Default view
         if r.representation <> "html":
-            r.response.view = "plain.html"
+            r.response.view = "xml.html"
 
         # Method handling
         handler = None
@@ -1097,14 +1106,14 @@ class S3Resource(object):
             if r.component:
                 args.update(id=r.id, component=r.component.tablename)
 
-            mode = r.request.vars.get("mode", None)
+            mode = r.request.vars.get("xsltmode", None)
             if mode is not None:
                 args.update(mode=mode)
 
             tree = self.__manager.xml.transform(tree, template, **args)
             if not tree:
                 error = self.__manager.xml.json_message(False, 400,
-                            str(T("XSLT Transformation Error: %s ")) % \
+                            str("XSLT Transformation Error: %s ") % \
                             self.__manager.xml.error)
                 raise HTTP(400, body=error)
 
@@ -1131,8 +1140,8 @@ class S3Resource(object):
 
         if r.representation in xml_formats or \
            r.representation in json_formats:
-            authorised = permit("create", tablename) and \
-                         permit("update", tablename)
+            authorised = permit("create", self.tablename) and \
+                         permit("update", self.tablename)
             if not authorised:
                 r.unauthorised()
             else:
@@ -1162,10 +1171,9 @@ class S3Resource(object):
                 source = open(vars["filename"])
             elif "fetchurl" in vars:
                 import urllib
-                source = urllib.urlopen(_vars["fetchurl"])
+                source = urllib.urlopen(vars["fetchurl"])
             else:
-                from StringIO import StringIO
-                source = StringIO(r.request.body)
+                source = r.request.body
             tree = xml.json2tree(source)
 
         if not tree:
@@ -1191,7 +1199,7 @@ class S3Resource(object):
 
             if not tree:
                 error = xml.json_message(False, 400,
-                            str(T("XSLT Transformation Error: %s ")) % \
+                            str("XSLT Transformation Error: %s ") % \
                             self.__manager.xml.error)
                 raise HTTP(400, body=error)
 
@@ -1767,7 +1775,7 @@ class S3Request(object):
 
     # URL helpers =============================================================
 
-    def __next(self, id=None, method=None, representation=None):
+    def __next(self, id=None, method=None, representation=None, vars=None):
 
         """ Returns a URL of the current resource
 
@@ -1777,11 +1785,16 @@ class S3Request(object):
 
         """
 
+        if vars is None:
+            vars = self.request.get_vars
+        if "format" in vars.keys():
+            del vars["format"]
+
         args = []
-        vars = {}
 
         component_id = self.component_id
-        id = self.id
+        if id is None:
+            id = self.id
 
         if not representation:
             representation = self.representation
@@ -1800,9 +1813,9 @@ class S3Request(object):
                 id = str(id)
                 if len(id) == 0:
                     id = "[id]"
-                if self.component:
-                    component_id = None
-                    method = None
+                #if self.component:
+                    #component_id = None
+                    #method = None
 
         if self.component:
             if id:
@@ -1822,14 +1835,14 @@ class S3Request(object):
             if len(args) > 0:
                 args[-1] = "%s.%s" % (args[-1], representation)
             else:
-                vars = {"format": representation}
+                vars.update(format=representation)
 
         return(URL(r=self.request, c=self.request.controller,
                    f=self.name, args=args, vars=vars))
 
 
     # -------------------------------------------------------------------------
-    def here(self, representation=None):
+    def here(self, representation=None, vars=None):
 
         """ URL of the current request
 
@@ -1837,11 +1850,11 @@ class S3Request(object):
 
         """
 
-        return self.__next(id=self.id, representation=representation)
+        return self.__next(id=self.id, representation=representation, vars=vars)
 
 
     # -------------------------------------------------------------------------
-    def other(self, method=None, record_id=None, representation=None):
+    def other(self, method=None, record_id=None, representation=None, vars=None):
 
         """ URL of a request with different method and/or record_id
             of the same resource
@@ -1853,11 +1866,11 @@ class S3Request(object):
         """
 
         return self.__next(method=method, id=record_id,
-                           representation=representation)
+                           representation=representation, vars=vars)
 
 
     # -------------------------------------------------------------------------
-    def there(self, representation=None):
+    def there(self, representation=None, vars=None):
 
         """ URL of a HTTP/list request on the same resource
 
@@ -1865,11 +1878,11 @@ class S3Request(object):
 
         """
 
-        return self.__next(method="", representation=representation)
+        return self.__next(method="", representation=representation, vars=vars)
 
 
     # -------------------------------------------------------------------------
-    def same(self, representation=None):
+    def same(self, representation=None, vars=None):
 
         """ URL of the same request with neutralized primary record ID
 
@@ -1877,7 +1890,7 @@ class S3Request(object):
 
         """
 
-        return self.__next(id="[id]", representation=representation)
+        return self.__next(id="[id]", representation=representation, vars=vars)
 
 
     # Method handler helpers ==================================================
@@ -2995,6 +3008,7 @@ class S3ResourceController(object):
                                         download_url=self.download_url,
                                         marker=marker)
 
+                    element.set(self.xml.ATTRIBUTE.ref, "True")
                     element_list.append(element)
 
                     reference_map.extend(rmap)
@@ -3622,6 +3636,7 @@ class S3XML(object):
         field="field",
         value="value",
         resource="resource",
+        ref="ref",
         domain="domain",
         url="url",
         error="error",

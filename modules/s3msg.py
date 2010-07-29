@@ -81,24 +81,24 @@ class Msg(object):
         """
         return self.mail.send(to, subject, message)
 
-    def check_pr_pe_id_validity(self, pr_pe_id):
-        """To check if the pr_pe_id passed is valid or not"""
-        if pr_pe_id == self.db(self.db.pr_person.pr_pe_id == 1).select(self.db.pr_person.pr_pe_id,limitby=(0,1)).first()['pr_pe_id'] :
+    def check_pe_id_validity(self, pe_id):
+        """To check if the pe_id passed is valid or not"""
+        if pe_id == self.db(self.db.pr_person.pe_id == 1).select(self.db.pr_person.pe_id,limitby=(0,1)).first()['pe_id'] :
             return True
         else:
             return False
 
-    def send_by_pr_pe_id(self, pr_pe_id, 
+    def send_by_pe_id(self, pe_id,
                                 subject="", 
                                 message="", 
-                                sender_pr_pe_id = None, 
+                                sender_pe_id = None,
                                 pr_message_method = 1,
                                 sender="", 
                                 fromaddress="",
                                 system_generated = False):
         """As the function name suggests - depends on pr_message_method """
         try:
-            message_log_id = self.db.msg_log.insert(pr_pe_id = sender_pr_pe_id,
+            message_log_id = self.db.msg_log.insert(pe_id = sender_pe_id,
                                              subject = subject,
                                              message = message,
                                              sender  = sender,
@@ -106,12 +106,12 @@ class Msg(object):
         except:
             return False
             #2) This is not transaction safe - power failure in the middle will cause no message in the outbox
-        if isinstance(pr_pe_id,list):
+        if isinstance(pe_id,list):
             listindex = 0
-            for prpeid in pr_pe_id:
+            for prpeid in pe_id:
                 try:
                     self.db.msg_outbox.insert(message_id = message_log_id, 
-                                        pr_pe_id = prpeid, 
+                                        pe_id = prpeid,
                                         pr_message_method = pr_message_method,
                                         system_generated = system_generated)
                     listindex = listindex+1
@@ -120,7 +120,7 @@ class Msg(object):
         else:
             try:
                 self.db.msg_outbox.insert(message_id = message_log_id, 
-                                        pr_pe_id = pr_pe_id, 
+                                        pe_id = pe_id,
                                         pr_message_method = pr_message_method,
                                         system_generated = system_generated)
             except:
@@ -128,17 +128,17 @@ class Msg(object):
         self.db.commit()
         return True
 
-    def send_email_by_pr_pe_id(self, pr_pe_id, subject="", 
+    def send_email_by_pe_id(self, pe_id, subject="",
                                 message="", 
-                                sender_pr_pe_id = None, 
+                                sender_pe_id = None,
                                 sender="", 
                                 fromaddress="",
                                 system_generated = False):
-        """Api over send_by_pr_pe_id - depends on pr_message_method """
-        return self.send_by_pr_pe_id(pr_pe_id, 
+        """Api over send_by_pe_id - depends on pr_message_method """
+        return self.send_by_pe_id(pe_id,
                                         subject, 
                                         message, 
-                                        sender_pr_pe_id, 
+                                        sender_pe_id, 
                                         1, # To set as an email
                                         sender, 
                                         fromaddress,
@@ -158,15 +158,15 @@ class Msg(object):
             # Get message from msg_log
             message = logrow.message
             subject = logrow.subject
-            sender_pr_pe_id = logrow.pr_pe_id
+            sender_pe_id = logrow.pe_id
             # Determine list of users
-            entity = row.pr_pe_id
+            entity = row.pe_id
             table2 = self.db.pr_pentity
             query = table2.id == entity
             entity_type = self.db(query).select(limitby=(0, 1)).first().opt_pr_entity_type
-            def dispatch_to_pr_pe_id(pr_pe_id):
+            def dispatch_to_pe_id(pe_id):
                 table3 = self.db.pr_pe_contact
-                query = (table3.pr_pe_id == pr_pe_id) & (table3.opt_pr_contact_method == contact_method)
+                query = (table3.pe_id == pe_id) & (table3.opt_pr_contact_method == contact_method)
                 recipient = self.db(query).select(table3.value, orderby = table3.priority).first()
                 if recipient:
                     if (contact_method == 2 and option == 2):
@@ -188,7 +188,7 @@ class Msg(object):
                 # sender as the original sender and marks group email processed
                 # Set system generated = True
                 table3 = self.db.pr_group
-                query = (table3.pr_pe_id == entity)
+                query = (table3.pe_id == entity)
                 group_id = self.db(query).select(limitby=(0, 1)).first().id
                 table4 = self.db.pr_group_membership
                 query = (table4.group_id == group_id)
@@ -197,16 +197,16 @@ class Msg(object):
                     person_id = recipient.person_id
                     table5 = self.db.pr_person
                     query = (table5.id == person_id)
-                    pr_pe_id = self.db(query).select(limitby=(0, 1)).first().pr_pe_id
+                    pe_id = self.db(query).select(limitby=(0, 1)).first().pe_id
                     self.db.msg_outbox.insert( message_id = message_id, 
-                                                pr_pe_id = pr_pe_id, 
+                                                pe_id = pe_id,
                                                 pr_message_method = contact_method,
                                                 system_generated = True)
                 status = True
                 chainrun = True
             if entity_type == 1:
                 # Person
-                status = dispatch_to_pr_pe_id(entity)
+                status = dispatch_to_pe_id(entity)
             if status:
                 # Update status to sent in OutBox
                 self.db(table.id == row.id).update(status=2)

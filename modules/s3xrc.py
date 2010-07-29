@@ -1105,7 +1105,7 @@ class S3Resource(object):
             if r.component:
                 args.update(id=r.id, component=r.component.tablename)
 
-            mode = r.request.vars.get("mode", None)
+            mode = r.request.vars.get("xsltmode", None)
             if mode is not None:
                 args.update(mode=mode)
 
@@ -1785,7 +1785,7 @@ class S3Request(object):
         """
 
         if vars is None:
-            vars = self.request.vars
+            vars = self.request.get_vars
         if "format" in vars.keys():
             del vars["format"]
 

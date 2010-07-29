@@ -91,6 +91,11 @@ deployment_settings.modules = Storage(
             description = "Helps to report and search for Missing Persons",
             module_type = 2
         ),
+    #irs = Storage(
+            #name_nice = "Incidents",
+            #description = "Incident Report System",
+            #module_type = 2
+        #),
     rms = Storage(
             name_nice = "Requests",
             description = "Tracks requests for aid and matches them against donors who have pledged aid",
@@ -124,11 +129,6 @@ deployment_settings.modules = Storage(
     #dvr = Storage(
     #        name_nice = "Disaster Victim Registry",
     #        description = "Traces internally displaced people (IDPs) and their needs",
-    #        module_type = 10
-    #    ),
-    #nim = Storage(
-    #        name_nice = "Nursing Information Manager",
-    #        description = "Module to assist disaster nurses.",
     #        module_type = 10
     #    ),
     budget = Storage(

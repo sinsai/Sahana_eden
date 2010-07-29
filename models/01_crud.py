@@ -1362,7 +1362,7 @@ def shn_update(r, **attr):
 
     """ Update an existing record """
 
-    name, prefix, table, tablename = r.target()
+    prefix, name, table, tablename = r.target()
     representation = r.representation.lower()
 
     # Get callbacks
@@ -1539,7 +1539,7 @@ def shn_delete(r, **attr):
 
     """ Delete record(s) """
 
-    name, prefix, table, tablename = r.target()
+    prefix, name, table, tablename = r.target()
     representation = r.representation.lower()
 
     # Get callbacks
@@ -1585,8 +1585,11 @@ def shn_delete(r, **attr):
     for row in rows:
         if shn_has_permission("delete", table, row.id):
             numrows += 1
+            if s3xrc.get_session(session, prefix=prefix, name=name) == row.id:
+                s3xrc.clear_session(session, prefix=prefix, name=name)
             try:
                 shn_audit("delete", prefix, name, record=row.id, representation=representation)
+                # Reset session vars if necessary
                 if "deleted" in db[table] and \
                    db(db.s3_setting.id == 1).select(db.s3_setting.archive_not_delete, limitby=(0, 1)).first().archive_not_delete:
                     if crud.settings.delete_onvalidation:

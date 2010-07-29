@@ -52,11 +52,9 @@ function TB_refresh() {
     // ToDo: Make this less fragile by passing these fields as separate vars?
     var $_GET = getQueryParams(document.location.search);
     var caller = $_GET["caller"];
-    alert(caller);
     // The JSON of the resource we just created
     var url = document.location.pathname.replace("/create","/options.json?field=pe_id");
     var selector = self.parent.$('#' + caller);
-    alert(selector);
     var dummy = self.parent.$('#dummy_' + caller);
     var has_dummy = (dummy.val() != undefined);
     var options = self.parent.$('#' + caller + ' >option')

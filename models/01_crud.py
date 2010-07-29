@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 """
-    CRUD+LSO Method Handlers (Frontend for S3REST)
+    CRUD+LS Method Handlers (Frontend for S3REST)
 
     @author: Fran Boon
     @author: nursix
@@ -57,7 +57,8 @@ _s3xrc = local_import("s3xrc")
 
 s3xrc = _s3xrc.S3ResourceController(db,
             domain=request.env.server_name,
-            base_url="%s/%s" % (deployment_settings.get_base_public_url(), request.application),
+            base_url="%s/%s" % (deployment_settings.get_base_public_url(),
+                                request.application),
             cache=cache,
             auth=auth,
             gis=gis,
@@ -348,7 +349,7 @@ def import_csv(file, table=None):
 #
 # import_url ------------------------------------------------------------------
 #
-def import_url(jr, table, method):
+def import_url(r, table, method):
 
     """
         Import GET/URL vars into Database & respond in JSON,
@@ -359,7 +360,7 @@ def import_url(jr, table, method):
     uuid = None
     original = None
 
-    module, resource, table, tablename = jr.target()
+    module, resource, table, tablename = r.target()
 
     onvalidation = s3xrc.model.get_config(table, "onvalidation")
     onaccept = s3xrc.model.get_config(table, "onaccept")
@@ -437,13 +438,13 @@ def import_url(jr, table, method):
 
     # Create/update record
     try:
-        if jr.component:
-            record[jr.fkey] = jr.record[jr.pkey]
+        if r.component:
+            record[r.fkey] = r.record[r.pkey]
         if method == "create":
             id = table.insert(**dict(record))
             if id:
                 error = 201
-                item = s3xrc.xml.json_message(True, error, "Created as " + str(jr.other(method=None, record_id=id)))
+                item = s3xrc.xml.json_message(True, error, "Created as " + str(r.other(method=None, record_id=id)))
                 form.vars.id = id
                 if onaccept:
                     onaccept(form)
@@ -696,27 +697,27 @@ def shn_list_item(table, resource, action, main="name", extra=None):
 #
 # shn_custom_view -------------------------------------------------------------
 #
-def shn_custom_view(jr, default_name, format=None):
+def shn_custom_view(r, default_name, format=None):
 
     """ Check for custom view """
 
-    prefix = jr.request.controller
+    prefix = r.request.controller
 
-    if jr.component:
+    if r.component:
 
-        custom_view = "%s_%s_%s" % (jr.name, jr.component_name, default_name)
+        custom_view = "%s_%s_%s" % (r.name, r.component_name, default_name)
 
         _custom_view = os.path.join(request.folder, "views", prefix, custom_view)
 
         if not os.path.exists(_custom_view):
-            custom_view = "%s_%s" % (jr.name, default_name)
+            custom_view = "%s_%s" % (r.name, default_name)
             _custom_view = os.path.join(request.folder, "views", prefix, custom_view)
 
     else:
         if format:
-            custom_view = "%s_%s_%s" % (jr.name, default_name, format)
+            custom_view = "%s_%s_%s" % (r.name, default_name, format)
         else:
-            custom_view = "%s_%s" % (jr.name, default_name)
+            custom_view = "%s_%s" % (r.name, default_name)
         _custom_view = os.path.join(request.folder, "views", prefix, custom_view)
 
     if os.path.exists(_custom_view):
@@ -784,11 +785,11 @@ def shn_build_ssp_filter(table, request, fields=None):
 #
 # Handlers must be implemented as:
 #
-#   def method_handler(jr, **attr)
+#   def method_handler(r, **attr)
 #
 # where:
 #
-#   jr - is the S3Request
+#   r - is the S3Request
 #   attr - attributes of the call, passed through
 #
 
@@ -921,23 +922,23 @@ def shn_read(r, **attr):
 #
 # shn_linkto ------------------------------------------------------------------
 #
-def shn_linkto(jr, sticky=False):
+def shn_linkto(r, sticky=False):
 
     """ Helper function to generate links in list views """
 
-    def shn_list_linkto(field, jr=jr, sticky=sticky):
-        if jr.component:
-            authorised = shn_has_permission("update", jr.component.table)
+    def shn_list_linkto(field, r=r, sticky=sticky):
+        if r.component:
+            authorised = shn_has_permission("update", r.component.table)
             if authorised:
-                return jr.component.attr.linkto_update or \
-                       URL(r=request, args=[jr.id, jr.component_name, field, "update"],
+                return r.component.attr.linkto_update or \
+                       URL(r=request, args=[r.id, r.component_name, field, "update"],
                            vars={"_next":URL(r=request, args=request.args, vars=request.vars)})
             else:
-                return jr.component.attr.linkto or \
-                       URL(r=request, args=[jr.id, jr.component_name, field],
+                return r.component.attr.linkto or \
+                       URL(r=request, args=[r.id, r.component_name, field],
                            vars={"_next":URL(r=request, args=request.args, vars=request.vars)})
         else:
-            authorised = shn_has_permission("update", jr.table)
+            authorised = shn_has_permission("update", r.table)
             if authorised:
                 if sticky:
                     # Render "sticky" update form (returns to itself)
@@ -1534,24 +1535,29 @@ def shn_update(r, **attr):
 #
 # shn_delete ------------------------------------------------------------------
 #
-def shn_delete(jr, **attr):
+def shn_delete(r, **attr):
 
     """ Delete record(s) """
 
-    module, resource, table, tablename = jr.target()
+    name, prefix, table, tablename = r.target()
+    representation = r.representation.lower()
 
+    # Get callbacks
     onvalidation = s3xrc.model.get_config(table, "delete_onvalidation")
     onaccept = s3xrc.model.get_config(table, "delete_onaccept")
 
-    if jr.component:
+    # Table-specific controller attributes
+    attr = r.component and r.component.attr or attr
+    deletable = attr.get("deletable", True)
+    delete_next = attr.get("delete_next", None)
 
-        query = ((table[jr.fkey] == jr.table[jr.pkey]) & (table[jr.fkey] == jr.record[jr.pkey]))
-        if jr.component_id:
-            query = (table.id == jr.component_id) & query
-        if "deleted" in table:
-            query = (table.deleted == False) & query
+    if r.component:
+        query = ((table[r.fkey] == r.table[r.pkey]) & \
+                 (table[r.fkey] == r.record[r.pkey]))
+        if r.component_id:
+            query = (table.id == r.component_id) & query
     else:
-        query = (table.id == jr.id)
+        query = (table.id == r.id)
 
     if "deleted" in table:
         query = (table.deleted == False) & query
@@ -1566,62 +1572,52 @@ def shn_delete(jr, **attr):
 
     message = shn_get_crud_strings(tablename).msg_record_deleted
 
-    if jr.component:
-        # Save callback settings
-        delete_onvalidation = crud.settings.delete_onvalidation
-        delete_onaccept = crud.settings.delete_onaccept
+    if not r.component and not delete_next:
         delete_next = crud.settings.delete_next
 
-        # Set resource specific callbacks, if any
-        crud.settings.delete_onvalidation = onvalidation
-        crud.settings.delete_onaccept = onaccept
-        crud.settings.delete_next = None # do not set here!
+    # Set callbacks, no redirection!
+    crud.settings.delete_onvalidation = onvalidation
+    crud.settings.delete_onaccept = onaccept
+    crud.settings.delete_next = None
 
     # Delete all accessible records
     numrows = 0
     for row in rows:
         if shn_has_permission("delete", table, row.id):
             numrows += 1
-            try:
-                shn_audit_delete(module, resource, row.id, jr.representation)
-                if "deleted" in db[table] and \
-                   db(db.s3_setting.id == 1).select(db.s3_setting.archive_not_delete, limitby=(0, 1)).first().archive_not_delete:
-                    if crud.settings.delete_onvalidation:
-                        crud.settings.delete_onvalidation(row)
-                    # Avoid collisions of values in unique fields between deleted records and
-                    # later new records => better solution could be: move the deleted data to
-                    # a separate table (e.g. in JSON) and delete from this table (that would
-                    # also eliminate the need for special deletion status awareness throughout
-                    # the system). Should at best be solved in the DAL.
-                    deleted = dict(deleted=True)
-                    for f in table.fields:
-                        if f not in ("id", "uuid") and table[f].unique:
-                            deleted.update({f:None}) # not good => data loss!
-                    db(db[table].id == row.id).update(**deleted)
-                    if crud.settings.delete_onaccept:
-                        crud.settings.delete_onaccept(row)
-                else:
-                    # Do not CRUD.delete! (it never returns, but redirects)
-                    if crud.settings.delete_onvalidation:
-                        crud.settings.delete_onvalidation(row)
-                    del db[table][row.id]
-                    if crud.settings.delete_onaccept:
-                        crud.settings.delete_onaccept(row)
+            #try:
+            shn_audit("delete", prefix, name, record=row.id, representation=representation)
+            if "deleted" in db[table] and \
+                db(db.s3_setting.id == 1).select(db.s3_setting.archive_not_delete, limitby=(0, 1)).first().archive_not_delete:
+                if crud.settings.delete_onvalidation:
+                    crud.settings.delete_onvalidation(row)
+                # Avoid collisions of values in unique fields between deleted records and
+                # later new records => better solution could be: move the deleted data to
+                # a separate table (e.g. in JSON) and delete from this table (that would
+                # also eliminate the need for special deletion status awareness throughout
+                # the system). Should at best be solved in the DAL.
+                deleted = dict(deleted=True)
+                for f in table.fields:
+                    if f not in ("id", "uuid") and table[f].unique:
+                        deleted.update({f:None}) # not good => data loss!
+                db(db[table].id == row.id).update(**deleted)
+                if crud.settings.delete_onaccept:
+                    crud.settings.delete_onaccept(row)
+            else:
+                # Do not CRUD.delete! (it never returns, but redirects)
+                if crud.settings.delete_onvalidation:
+                    crud.settings.delete_onvalidation(row)
+                del db[table][row.id]
+                if crud.settings.delete_onaccept:
+                    crud.settings.delete_onaccept(row)
 
-            except:
-            # Would prefer to import sqlite3 & catch specific error, but this isn't generalisable to other DBs...we need a DB config to pull in.
+            # Would prefer to import sqlite3 & catch specific error, but
+            # this isn't generalisable to other DBs...we need a DB config to pull in.
             #except sqlite3.IntegrityError:
-                session.error = T("Cannot delete whilst there are linked records. Please delete linked records first.")
+            #except:
+                #session.error = T("Cannot delete whilst there are linked records. Please delete linked records first.")
         else:
             continue
-
-    if jr.component:
-        # Restore callback settings
-        crud.settings.delete_onvalidation = delete_onvalidation
-        crud.settings.delete_onaccept = delete_onaccept
-        crud.settings.delete_next = delete_next
-
-        delete_next =  jr.component.attr.delete_next
 
     if not session.error:
         if numrows > 1:
@@ -1629,7 +1625,7 @@ def shn_delete(jr, **attr):
         else:
             session.confirmation = message
 
-    if jr.component and delete_next: # but redirect here!
+    if r.component and delete_next: # but redirect here!
         redirect(delete_next)
 
     item = s3xrc.xml.json_message()
@@ -1641,7 +1637,7 @@ def shn_delete(jr, **attr):
 #
 # shn_search ------------------------------------------------------------------
 #
-def shn_search(jr, **attr):
+def shn_search(r, **attr):
 
     """ Search function responding in JSON """
 
@@ -1649,36 +1645,36 @@ def shn_search(jr, **attr):
     main = attr.get("main", None)
     extra = attr.get("extra", None)
 
-    request = jr.request
+    request = r.request
 
     # Filter Search list to just those records which user can read
-    query = shn_accessible_query("read", jr.table)
+    query = shn_accessible_query("read", r.table)
 
     # Filter search to items which aren't deleted
-    if "deleted" in jr.table:
-        query = (jr.table.deleted == False) & query
+    if "deleted" in r.table:
+        query = (r.table.deleted == False) & query
 
     # Respect response.s3.filter
     if response.s3.filter:
         query = response.s3.filter & query
 
-    if jr.representation == "html":
+    if r.representation == "html":
 
-        shn_represent(jr.table, jr.prefix, jr.name, deletable, main, extra)
-        search = t2.search(jr.table, query=query)
+        shn_represent(r.table, r.prefix, r.name, deletable, main, extra)
+        search = t2.search(r.table, query=query)
 
         # Check for presence of Custom View
-        shn_custom_view(jr, "search.html")
+        shn_custom_view(r, "search.html")
 
         # CRUD Strings
         title = s3.crud_strings.title_search
 
         output = dict(search=search, title=title)
 
-    elif jr.representation == "json":
+    elif r.representation == "json":
 
         _vars = request.vars
-        _table = jr.table
+        _table = r.table
 
         # JQuery Autocomplete uses "q" instead of "value"
         value = _vars.value or _vars.q or None

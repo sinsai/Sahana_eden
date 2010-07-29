@@ -47,7 +47,11 @@ from gluon.sql import Set, Row
 from gluon.html import URL
 from gluon.http import HTTP, redirect
 from gluon.validators import IS_NULL_OR, IS_EMPTY_OR, IS_DATE, IS_TIME
-from xml.etree.cElementTree import ElementTree
+try:
+    from xml.etree.cElementTree import ElementTree
+except ImportError:
+    from xml.etree.ElementTree import ElementTree
+
 from lxml import etree
 
 # Error messages

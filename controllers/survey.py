@@ -157,7 +157,7 @@ def question():
         9:T("Comment/Essay Box"),
         10:T("Numerical Text Field"),
         11:T("Date and/or Time"),
-#        12:T("Image"),
+#        12:T("Image"),         
 #        13:T("Descriptive Text (e.g., Prose, etc)"),
         14:T("Location"),
         15:T("Organisation"),
@@ -232,9 +232,9 @@ def layout():
     # build the UI
     for section in sections:
         section_rendered.append(section.id)
-        link = A(section.name,_class="colorbox",_id="%s" % (section.uuid),_href=URL(r=request, c="survey", f="section", args=[section.id, "update"], vars=dict(format="popup")),
+        link = A(section.name,_class="colorbox",_id="survey_section_%s" % (section.uuid),_href=URL(r=request, c="survey", f="section", args=[section.id, "update"], vars=dict(format="popup",caller="survey_section_%s" % (section.uuid))),
                                        _target="top",
-                                       _title="Edit Section"),
+                                       _title="Edit Section")
 
         ui.append(BR())
 

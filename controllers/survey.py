@@ -242,8 +242,8 @@ def layout():
             ui.append(DIV(link,_class="section_title"))
         question_query = (db.survey_template_link_table.survey_section_id == section.id) & (db.survey_question.id == db.survey_template_link_table.survey_question_id)
         questions = db(question_query).select(db.survey_question.ALL)
-        if not questions:
-            ui.append(DIV(A (T("Add Question"),_href=URL(r=request,f="question")),_class="question_title"))
+#        if not questions:
+#            ui.append(DIV(A (T("Add Question"),_href=URL(r=request,f="question")),_class="question_title"))
         for question in questions:
             question_rendered.append(question.id)
             if question_rendered.count(question.id) > 1:
@@ -427,20 +427,17 @@ def layout():
                 pass # Person
             else:
                 pass # Uh-oh -- something went wrong
-
-    ui.append(BR())
-    if sections:
-        ui.append(DIV(DIV(A (T("Add Question"), _class="colorbox",_href=URL(r=request,f="question",args=["create"],vars=dict(format="popup")), ),_class="question_title")))
+        
     ui.append(BR())
 
-    ui.append(DIV(A(T("Add Section"),_class="colorbox", _id="new",
-                                       _href=URL(r=request, f="section", args=["create"], vars=dict(caller="new", format="popup")),
+    ui.append(DIV(A(T("Add Section"),_class="colorbox", _id="newS",
+                                       _href=URL(r=request, f="section", args=["create"], vars=dict(caller="newS", format="popup")),
                                        _target="top",
                                        _title=T("Add Section")),_class="section_title"))
     output.update(ui=ui)
     return output
-def process():
-    return 
+def edit_section():
+     
 
 def add_buttons(form, save = None, prev = None, next = None, finish = None,cancel=None):
     """

@@ -1,9 +1,9 @@
 # -*- coding: utf-8 -*-
 
-"""
-    Person Registry, controllers
+""" S3 Person Registry, controllers
 
     @author: nursix
+
 """
 
 module = request.controller
@@ -174,43 +174,33 @@ def group():
 
 # -----------------------------------------------------------------------------
 def image():
-    "RESTful CRUD controller"
+
+    """ RESTful CRUD controller """
+
     resource = request.function
     return shn_rest_controller(module, resource)
 
 # -----------------------------------------------------------------------------
 def pe_contact():
-    "RESTful CRUD controller"
+
+    """ RESTful CRUD controller """
+
     resource = request.function
     return shn_rest_controller(module, resource)
 
 # -----------------------------------------------------------------------------
-def address():
-    "RESTful CRUD controller"
-    resource = request.function
-    return shn_rest_controller(module, resource)
+#def group_membership():
 
-# -----------------------------------------------------------------------------
-def presence():
-    "RESTful CRUD controller"
-    resource = request.function
-    return shn_rest_controller(module, resource)
+    #""" RESTful CRUD controller """
 
-# -----------------------------------------------------------------------------
-def identity():
-    "RESTful CRUD controller"
-    resource = request.function
-    return shn_rest_controller(module, resource)
-
-# -----------------------------------------------------------------------------
-def group_membership():
-    "RESTful CRUD controller"
-    resource = request.function
-    return shn_rest_controller(module, resource)
+    #resource = request.function
+    #return shn_rest_controller(module, resource)
 
 # -----------------------------------------------------------------------------
 def pentity():
-    "RESTful CRUD controller"
+
+    """ RESTful CRUD controller """
+
     resource = request.function
     response.s3.pagination = True
     return shn_rest_controller(module, resource,
@@ -234,5 +224,4 @@ def tooltip():
         response.view = "pr/ajaxtips/%s.html" % request.vars.formfield
     return dict()
 
-#
 # -----------------------------------------------------------------------------

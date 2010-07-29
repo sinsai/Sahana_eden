@@ -481,23 +481,33 @@ def import_url(jr, table, method):
 #
 # shn_audit -------------------------------------------------------------------
 #
-def shn_audit(operation, module, resource, form=None, record=None, representation=None):
+def shn_audit(operation, prefix, name,
+              form=None,
+              record=None,
+              representation=None):
 
-    #print "Audit: %s on %s_%s #%s" % (operation, module, resource, record or 0)
+    print "Audit: %s on %s_%s #%s" % (operation, prefix, name, record or 0)
 
     if operation in ("list", "read"):
-        return shn_audit_read(operation, module, resource,
+        return shn_audit_read(operation, prefix, name,
                               record=record, representation=representation)
+
     elif operation == "create":
-        return shn_audit_create(form, module, resource, representation=representation)
+        return shn_audit_create(form, prefix, name,
+                                representation=representation)
 
     elif operation == "update":
-        return shn_audit_update(form, module, resource, representation=representation)
+        return shn_audit_update(form, prefix, name,
+                                representation=representation)
 
     elif operation == "delete":
-        return shn_audit_create(module, resource, record, representation=representation)
+        return shn_audit_delete(prefix, name, record,
+                                representation=representation)
 
     return True
+
+# Set this as audit function for the resource controller
+s3xrc.audit = shn_audit
 
 #
 # shn_audit_read --------------------------------------------------------------
@@ -837,11 +847,8 @@ def shn_read(r, **attr):
         r.unauthorised()
 
     # Audit
-    shn_audit_read(operation="read",
-                    module=prefix,
-                    resource=name,
-                    record=record_id,
-                    representation=representation)
+    s3xrc.audit("read", prefix, name,
+                record=record_id, representation=representation)
 
     if r.representation in ("html", "popup"):
 
@@ -1010,11 +1017,7 @@ def shn_list(r, **attr):
         if session.s3.filter is not None:
             query = session.s3.filter
 
-    # Call audit
-    shn_audit_read(operation="list",
-                   module=prefix,
-                   resource=name,
-                   representation=r.representation)
+    s3xrc.audit("list", prefix, name, representation=r.representation)
 
     # Which fields do we display?
     fields = None
@@ -1126,21 +1129,21 @@ def shn_list(r, **attr):
                     table[r.fkey].writable = False
 
             if onaccept:
-                onaccept = lambda form: \
-                           shn_audit_create(form, module, resource, representation) and \
-                           s3xrc.store_session(session, module, resource, 0) and \
-                           onaccept(form)
+                _onaccept = lambda form: \
+                            s3xrc.audit("create", prefix, name, form=form, representation=representation) and \
+                            s3xrc.store_session(session, prefix, name, 0) and \
+                            onaccept(form)
             else:
-                onaccept = lambda form: \
-                           shn_audit_create(form, module, resource, representation) and \
-                           s3xrc.store_session(session, module, resource, 0)
+                _onaccept = lambda form: \
+                            s3xrc.audit("create", prefix, name, form=form, representation=representation) and \
+                            s3xrc.store_session(session, prefix, name, 0)
 
             message = shn_get_crud_strings(tablename).msg_record_created
 
             # Display the Add form above List
             form = crud.create(table,
                                onvalidation=onvalidation,
-                               onaccept=onaccept,
+                               onaccept=_onaccept,
                                message=message,
                                next=r.there())
 
@@ -1258,22 +1261,22 @@ def shn_create(r, **attr):
                 onaccept = crud.settings.create_onaccept
 
         if onaccept:
-            onaccept = lambda form: \
-                       shn_audit_create(form, module, resource, r.representation) and \
-                       s3xrc.store_session(session, module, resource, form.vars.id) and \
-                       onaccept(form)
+            _onaccept = lambda form: \
+                        s3xrc.audit("create", prefix, name, form=form, representation=representation) and \
+                        s3xrc.store_session(session, prefix, name, form.vars.id) and \
+                        onaccept(form)
 
         else:
-            onaccept = lambda form: \
-                       shn_audit_create(form, module, resource, r.representation) and \
-                       s3xrc.store_session(session, module, resource, form.vars.id)
+            _onaccept = lambda form: \
+                        s3xrc.audit("create", prefix, name, form=form, representation=representation) and \
+                        s3xrc.store_session(session, prefix, name, form.vars.id)
 
         # Get the form
         message = shn_get_crud_strings(tablename).msg_record_created
         form = crud.create(table,
                            message=message,
                            onvalidation=onvalidation,
-                           onaccept=onaccept)
+                           onaccept=_onaccept)
 
         # Cancel button?
         #form[0].append(TR(TD(), TD(INPUT(_type="reset", _value="Reset form"))))
@@ -1303,27 +1306,27 @@ def shn_create(r, **attr):
 
     elif representation == "plain":
         if onaccept:
-            onaccept = lambda form: \
-                       shn_audit_create(form, module, resource, r.representation) and \
-                       onaccept(form)
+            _onaccept = lambda form: \
+                        s3xrc.audit("create", prefix, name, form=form, representation=representation) and \
+                        onaccept(form)
         else:
-            onaccept = lambda form: \
-                       shn_audit_create(form, module, resource, r.representation)
+            _onaccept = lambda form: \
+                        s3xrc.audit("create", prefix, name, form=form, representation=representation)
 
-        form = crud.create(table, onvalidation=onvalidation, onaccept=onaccept)
+        form = crud.create(table, onvalidation=onvalidation, onaccept=_onaccept)
         response.view = "plain.html"
         return dict(item=form)
 
     elif representation == "popup":
         if onaccept:
-            onaccept = lambda form: \
-                       shn_audit_create(form, module, resource, r.representation) and \
-                       onaccept(form)
+            _onaccept = lambda form: \
+                        s3xrc.audit("create", prefix, name, form=form, representation=representation) and \
+                        onaccept(form)
         else:
-            onaccept = lambda form: \
-                       shn_audit_create(form, module, resource, r.representation)
+            _onaccept = lambda form: \
+                        s3xrc.audit("create", prefix, name, form=form, representation=representation)
 
-        form = crud.create(table, onvalidation=onvalidation, onaccept=onaccept)
+        form = crud.create(table, onvalidation=onvalidation, onaccept=_onaccept)
         shn_custom_view(r, "popup.html")
         return dict(form=form,
                     module=module,
@@ -1400,6 +1403,10 @@ def shn_update(r, **attr):
     if not authorised:
         r.unauthorised()
 
+    # Audit read
+    s3xrc.audit("read", prefix, name,
+                record=record_id, representation=representation)
+
     if r.representation == "html" or r.representation == "popup":
 
         # Custom view
@@ -1457,14 +1464,14 @@ def shn_update(r, **attr):
                 onaccept = crud.settings.update_onaccept
 
         if onaccept:
-            onaccept = lambda form: \
-                       shn_audit_update(form, module, resource, representation) and \
-                       s3xrc.store_session(session, module, resource, form.vars.id) and \
-                       onaccept(form)
+            _onaccept = lambda form: \
+                        s3xrc.audit("update", prefix, name, form=form, representation=representation) and \
+                        s3xrc.store_session(session, prefix, name, form.vars.id) and \
+                        onaccept(form)
         else:
-            onaccept = lambda form: \
-                       shn_audit_update(form, module, resource, representation) and \
-                       s3xrc.store_session(session, module, resource, form.vars.id)
+            _onaccept = lambda form: \
+                        s3xrc.audit("update", prefix, name, form=form, representation=representation) and \
+                        s3xrc.store_session(session, prefix, name, form.vars.id)
 
         crud.settings.update_deletable = deletable
         message = shn_get_crud_strings(tablename).msg_record_modified
@@ -1472,7 +1479,7 @@ def shn_update(r, **attr):
         form = crud.update(table, record_id,
                             message=message,
                             onvalidation=onvalidation,
-                            onaccept=onaccept,
+                            onaccept=_onaccept,
                             deletable=False) # TODO: add extra delete button to form
 
         # Cancel button?
@@ -1499,16 +1506,16 @@ def shn_update(r, **attr):
 
     elif representation == "plain":
         if onaccept:
-            onaccept = lambda form: \
-                       shn_audit_update(form, module, resource, r.representation) and \
-                       onaccept(form)
+            _onaccept = lambda form: \
+                        s3xrc.audit("update", prefix, name, form=form, representation=representation) and \
+                        onaccept(form)
         else:
-            onaccept = lambda form: \
-                       shn_audit_update(form, module, resource, r.representation)
+            _onaccept = lambda form: \
+                        s3xrc.audit("update", prefix, name, form=form, representation=representation)
 
         form = crud.update(table, record_id,
                            onvalidation=onvalidation,
-                           onaccept=onaccept,
+                           onaccept=_onaccept,
                            deletable=False)
 
         response.view = "plain.html"
@@ -1862,8 +1869,6 @@ def shn_rest_controller(module, resource, **attr):
     s3xrc.set_handler("update", shn_update)
     s3xrc.set_handler("delete", shn_delete)
     s3xrc.set_handler("search", shn_search)
-
-    s3xrc.audit = shn_audit
 
     res, req = s3xrc.parse_request(module, resource, session, request, response)
 

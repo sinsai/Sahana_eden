@@ -833,12 +833,9 @@ def shn_read(r, **attr):
         record_id = r.id
 
     # ToDo: Comment this out
-    # Just because we have rights to edit a record, doens't mean that we always want to actually do so
-    # => was intentional, because somebody said:
-    #    If we have the right to edit, why should we need to first click "Update" to do so?
-    #authorised = shn_has_permission("update", table, record_id)
-    #if authorised and representation == "html" and editable:
-        #return shn_update(r, **attr)
+    authorised = shn_has_permission("update", table, record_id)
+    if authorised and representation == "html" and editable:
+        return shn_update(r, **attr)
 
     authorised = shn_has_permission("read", table, record_id)
     if not authorised:
@@ -851,11 +848,6 @@ def shn_read(r, **attr):
                     representation=representation)
 
     if r.representation in ("html", "popup"):
-
-        if r.representation == "html":
-            shn_custom_view(r, "display.html")
-        elif r.representation == "popup":
-            shn_custom_view(r, "popup.html")
 
         title = shn_get_crud_strings(r.tablename).title_display
         output = dict(title=title)
@@ -876,19 +868,18 @@ def shn_read(r, **attr):
             item = shn_get_crud_strings(tablename).msg_list_empty
 
         if representation == "html":
+            shn_custom_view(r, "display.html")
             output.update(item=item)
         elif representation == "popup":
             output.update(form=item)
+            shn_custom_view(r, "popup.html")
 
         if href_edit and editable:
             edit = A(T("Edit"), _href=href_edit, _class="action-btn")
-        else:
-            edit = ""
+            output.update(edit=edit)
         if href_delete and deletable:
             delete = A(T("Delete"), _href=href_delete, _id="delete-btn", _class="action-btn")
-        else:
-            delete = ""
-        output.update(edit=edit, delete=delete)
+            output.update(delete=delete)
 
         if not r.component or r.multiple:
             label_list_button = shn_get_crud_strings(tablename).label_list_button
@@ -906,7 +897,7 @@ def shn_read(r, **attr):
         query = db[table].id == record_id
         return export_csv(resource, query)
 
-    elif representation == "pdf": # TODO: encoding problems, doesn't quite work
+    elif representation == "pdf":
         query = db[table].id == record_id
         return export_pdf(table, query, list_fields)
 

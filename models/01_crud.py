@@ -1454,9 +1454,11 @@ def shn_update(r, **attr):
                 table[r.fkey].writable = False
             crud.settings.update_onvalidation = None
             crud.settings.update_onaccept = None
-            crud.settings.update_next = update_next or r.there()
+            if not representation == "popup":
+                crud.settings.update_next = update_next or r.there()
         else:
-            if not crud.settings.update_next:
+            if not representation == "popup" and \
+               not crud.settings.update_next:
                 crud.settings.update_next = r.here()
             if not onvalidation:
                 onvalidation = crud.settings.update_onvalidation

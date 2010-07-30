@@ -7,12 +7,7 @@
     @author: nursix
 """
 
-# Most of the tables for volunteers are components of pr, so the module name
-# "vol" is not used for these.  It is used in names of non-pr-component tables
-# such as skill types.
 module = "vol"
-component_module = "pr"
-
 if deployment_settings.has_module(module):
 
     # Settings
@@ -33,9 +28,9 @@ if deployment_settings.has_module(module):
     }
 
     resource = "volunteer"
-    tablename = component_module + "_" + resource
+    tablename = module + "_" + resource
     table = db.define_table(tablename, timestamp, uuidstamp,
-                    pe_id,
+                    person_id,
                     # TODO: A person may volunteer for more than one org.
                     # Remove this -- the org can be inferred from the project
                     # or team in which the person participates.
@@ -62,8 +57,8 @@ if deployment_settings.has_module(module):
     table.special_needs.label = T("Special needs")
 
     # Representation function
-    def shn_pr_volunteer_represent(id):
-        person = db((db.pr_volunteer.id == id) & (db.pr_person.pe_id == db.pr_volunteer.pe_id)).select(
+    def shn_vol_volunteer_represent(id):
+        person = db((db.vol_volunteer.id == id) & (db.pr_person.id == db.vol_volunteer.person_id)).select(
                     db.pr_person.first_name,
                     db.pr_person.middle_name,
                     db.pr_person.last_name,
@@ -92,20 +87,20 @@ if deployment_settings.has_module(module):
         msg_list_empty = T("No volunteer information registered"))
 
     # Reusable field
-    pr_volunteer_id = db.Table(None, "pr_volunteer_id",
-        FieldS3("pr_volunteer_id", db.pr_volunteer, sortby=["first_name", "middle_name", "last_name"],
-        requires = IS_NULL_OR(IS_ONE_OF(db(db.pr_volunteer.status == 1), "pr_volunteer.id", shn_pr_volunteer_represent)),
-        represent = lambda id: (id and [shn_pr_volunteer_represent(id)] or ["None"])[0],
-        # TODO: Creating a pr_volunteer entry requires a person, so does this
+    vol_volunteer_id = db.Table(None, "vol_volunteer_id",
+        FieldS3("vol_volunteer_id", db.vol_volunteer, sortby=["first_name", "middle_name", "last_name"],
+        requires = IS_NULL_OR(IS_ONE_OF(db(db.vol_volunteer.status == 1), "vol_volunteer.id", shn_vol_volunteer_represent)),
+        represent = lambda id: (id and [shn_vol_volunteer_represent(id)] or ["None"])[0],
+        # TODO: Creating a vol_volunteer entry requires a person, so does this
         # make sense?  For now, turn this into add person.  Could add _next
-        # to go edit form for vol components.  How would we get the new pe_id?
-        comment = DIV(A(ADD_VOLUNTEER, _class="colorbox", _href=URL(r=request, c="vol", f="person", args="create", vars=dict(format="popup")), _target="top", _title=ADD_VOLUNTEER), DIV( _class="tooltip", _title=ADD_VOLUNTEER + "|" + Tstr("Add new volunteer."))),
+        # to go edit form for vol components.  How would we get the new person id?
+        comment = DIV(A(ADD_VOLUNTEER, _class="colorbox", _href=URL(r=request, c="pr", f="person", args="create", vars=dict(format="popup")), _target="top", _title=ADD_VOLUNTEER), DIV( _class="tooltip", _title=ADD_VOLUNTEER + "|" + Tstr("Add new person."))),
         ondelete = "RESTRICT",
         ))
 
-    s3xrc.model.add_component(component_module, resource,
+    s3xrc.model.add_component(module, resource,
                               multiple=False,
-                              joinby="pe_id",
+                              joinby=dict(pr_person="person_id"),
                               deletable=True,
                               editable=True)
 
@@ -114,17 +109,17 @@ if deployment_settings.has_module(module):
                                        "status"])
 
     # -------------------------------------------------------------------------
-    # pr_resource (Component of pr_person)
+    # vol_resource (Component of pr_person)
     #   describes resources (e.g. vehicles, tools) of a volunteer
 
     # TODO: Skills are now separate.  Either repurpose "resources" or remove it.
-    pr_resource_type_opts = {
+    vol_resource_type_opts = {
         2:T("Resources"),
         3:T("Restrictions"),
         99:T("Other")
     }
 
-    pr_resource_subject_opts = {
+    vol_resource_subject_opts = {
         1:T("Animals"),
         2:T("Automotive"),
         3:T("Baby And Child Care"),
@@ -133,48 +128,48 @@ if deployment_settings.has_module(module):
         99:T("Other")
     }
 
-    pr_resource_deployment_opts = {
+    vol_resource_deployment_opts = {
         1:T("Building Aide"),
         2:T("Vehicle"),
         3:T("Warehouse"),
         99:T("Other")
     }
 
-    pr_resource_status_opts = {
+    vol_resource_status_opts = {
         1:T("approved"),
         2:T("unapproved"),
         3:T("denied")
     }
 
     resource = "resource"
-    tablename = component_module + "_" + resource
+    tablename = module + "_" + resource
     table = db.define_table(tablename, timestamp, uuidstamp,
-                    pe_id,
+                    person_id,
                     Field("type", "integer",
-                        requires = IS_IN_SET(pr_resource_type_opts, zero=None),
+                        requires = IS_IN_SET(vol_resource_type_opts, zero=None),
                         # default = 99,
                         label = T("Resource"),
-                        represent = lambda opt: pr_resource_type_opts.get(opt, UNKNOWN_OPT)),
+                        represent = lambda opt: vol_resource_type_opts.get(opt, UNKNOWN_OPT)),
                     Field("subject", "integer",
-                        requires = IS_IN_SET(pr_resource_subject_opts, zero=None),
+                        requires = IS_IN_SET(vol_resource_subject_opts, zero=None),
                         # default = 99,
                         label = T("Subject"),
-                        represent = lambda opt: pr_resource_subject_opts.get(opt, UNKNOWN_OPT)),
+                        represent = lambda opt: vol_resource_subject_opts.get(opt, UNKNOWN_OPT)),
                     Field("deployment", "integer",
-                        requires = IS_IN_SET(pr_resource_deployment_opts, zero=None),
+                        requires = IS_IN_SET(vol_resource_deployment_opts, zero=None),
                         # default = 99,
                         label = T("Deployment"),
-                        represent = lambda opt: pr_resource_deployment_opts.get(opt, UNKNOWN_OPT)),
+                        represent = lambda opt: vol_resource_deployment_opts.get(opt, UNKNOWN_OPT)),
                     Field("status", "integer",
-                        requires = IS_IN_SET(pr_resource_status_opts, zero=None),
+                        requires = IS_IN_SET(vol_resource_status_opts, zero=None),
                         # default = 2,
                         label = T("Status"),
-                        represent = lambda opt: pr_resource_status_opts.get(opt, UNKNOWN_OPT)),
+                        represent = lambda opt: vol_resource_status_opts.get(opt, UNKNOWN_OPT)),
                     migrate=migrate)
 
-    s3xrc.model.add_component(component_module, resource,
+    s3xrc.model.add_component(module, resource,
                               multiple=True,
-                              joinby="pe_id",
+                              joinby=dict(pr_person="person_id"),
                               deletable=True,
                               editable=True)
 
@@ -207,13 +202,13 @@ if deployment_settings.has_module(module):
     # become hours the volunteer "works on a task", so vol_postion_id will
     # switch to the task id.
     # -------------------------------------------------------------------------
-    # pr_hours:
+    # vol_hours:
     #   documents the hours a volunteer has a position
     #
     #resource = "hours"
-    #table = component_module + "_" + resource
+    #table = module + "_" + resource
     #db.define_table(table,
-    #                pe_id,
+    #                person_id,
     #                vol_position_id,
     #                Field("shift_start", "datetime", label=T("shift_start"), notnull=True),
     #                Field("shift_end", "datetime", label=T("shift_end"), notnull=True),
@@ -445,7 +440,7 @@ if deployment_settings.has_module(module):
 
 
     # -------------------------------------------------------------------------
-    # pr_skill
+    # vol_skill
     #   A volunteer's skills (component of pr)
     #
 
@@ -474,20 +469,20 @@ if deployment_settings.has_module(module):
 	return wrapper
 
     resource = 'skill'
-    tablename = component_module + '_' + resource
+    tablename = module + '_' + resource
     table = db.define_table(tablename, timestamp, uuidstamp, deletion_status,
-        pe_id,
+                person_id,
         Field('skill_types_id'),   
         Field('status',requires=IS_IN_SET(['approved','unapproved','denied']),label=T('status'), notnull=True, default='unapproved'),             
                     migrate=migrate)  
    
-    db.pr_skill.skill_types_id.widget = multiselect_widget
-    db.pr_skill.skill_types_id.requires = IS_ONE_OF(db, 'vol_skill_types.id', vol_skill_types_represent, multiple=True)
-    #db.pr_skill.skill_types_id.represent = vol_skill_types_represent
+    db.vol_skill.skill_types_id.widget = multiselect_widget
+    db.vol_skill.skill_types_id.requires = IS_ONE_OF(db, 'vol_skill_types.id', vol_skill_types_represent, multiple=True)
+    #db.vol_skill.skill_types_id.represent = vol_skill_types_represent
 
-    s3xrc.model.add_component(component_module, resource,
+    s3xrc.model.add_component(module, resource,
         multiple=True,
-        joinby="pe_id",
+        joinby=dict(pr_person='person_id'),
         deletable=True,
         editable=True)
 
@@ -522,15 +517,15 @@ def teamname(record):
     """
 
     tname = ""
-    if record and record.group_name:
-        tname = "%s " % record.group_name.strip()
+    if record and record.name:
+        tname = "%s " % record.name.strip()
     return tname
 
 def shn_pr_group_represent(id):
 
     def _represent(id):
         table = db.pr_group
-        group = db(table.id == id).select(table.group_name)
+        group = db(table.id == id).select(table.name)
         if group:
             return teamname(group[0])
         else:

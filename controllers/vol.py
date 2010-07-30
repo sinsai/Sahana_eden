@@ -48,9 +48,9 @@ def shn_menu():
             menu.extend(menu_teams)
 
     menu_persons = [
-        [T("Persons"), False, URL(r=request, f="person", args=["search_simple"], vars={"_next":URL(r=request, f="person", args=["[id]", "volunteer"], vars={"vol.mode":"volunteer"})}),[
-            [T("List"), False, URL(r=request, f="person", vars={"_next":URL(r=request, f="person", args=["[id]", "volunteer"], vars={"vol.mode":"volunteer"})})],
-            [T("Add"), False, URL(r=request, f="person", args="create", vars={"_next":URL(r=request, f="person", args=["[id]", "volunteer"], vars={"vol.mode":"volunteer"})})],
+        [T("Persons"), False, URL(r=request, f="person", args=["search_simple"], vars={"_next":URL(r=request, f="person", args=["[id]", "volunteer"], vars={"vol_tabs":"volunteer"})}),[
+            [T("List"), False, URL(r=request, f="person", vars={"_next":URL(r=request, f="person", args=["[id]", "volunteer"], vars={"vol_tabs":"volunteer"})})],
+            [T("Add"), False, URL(r=request, f="person", args="create", vars={"_next":URL(r=request, f="person", args=["[id]", "volunteer"], vars={"vol_tabs":"volunteer"})})],
         ]]
     ]
     menu.extend(menu_persons)
@@ -59,15 +59,15 @@ def shn_menu():
         selection = db.pr_person[person_id]
         if selection:
             person_name = shn_pr_person_represent(person_id)
-            # ?vol.mode=person and ?vol.mode=volunteer are used by the person
+            # ?vol_tabs=person and ?vol_tabs=volunteer are used by the person
             # controller to select which set of tabs to display.
             menu_person = [
                 ["%s %s" % (T("Person:"), person_name), False, URL(r=request, f="person", args=[person_id, "read"]),[
                     # The arg "volunteer" causes this to display the
-                    # pr_volunteer tab initially.
-                    [T("Volunteer Data"), False, URL(r=request, f="person", args=[person_id, "volunteer"], vars={"vol.mode":"volunteer", "_next":URL(r=request, args=request.args, vars=request.vars)})],
+                    # vol_volunteer tab initially.
+                    [T("Volunteer Data"), False, URL(r=request, f="person", args=[person_id, "volunteer"], vars={"vol_tabs":"volunteer"})],
                     # The default tab is pr_person, which is fine here.
-                    [T("Person Data"), False, URL(r=request, f="person", args=[person_id], vars={"vol.mode":"person", "_next":URL(r=request, args=request.args, vars=request.vars)})],
+                    [T("Person Data"), False, URL(r=request, f="person", args=[person_id], vars={"vol_tabs":"person"})],
                     [T("View Map"), False, URL(r=request, f="view_map", args=[person_id])],
                 ]],
             ]
@@ -100,7 +100,7 @@ def person():
 
     """
     This controller produces either generic person component tabs or
-    volunteer-specific person component tabs, depending on whether "vol.mode"
+    volunteer-specific person component tabs, depending on whether "vol_tabs"
     in the URL's vars is "person" or "volunteer".
     """
 
@@ -119,10 +119,10 @@ def person():
         return output
     response.s3.postp = person_postp
 
-    mode = "person"
-    if "vol.mode" in request.vars:
-        mode = request.vars["vol.mode"]
-    if mode == "person":
+    tab_set = "person"
+    if "vol_tabs" in request.vars:
+        tab_set = request.vars["vol_tabs"]
+    if tab_set == "person":
         db.pr_person.missing.default = False
         tabs = [(T("Basic Details"), None),
                 (T("Images"), "image"),
@@ -152,7 +152,6 @@ def person():
                ]
 
     resource = request.function
-    # TODO: Use represent instead of "first_name" and "last_name"?
     output = shn_rest_controller("pr", resource,
         main="first_name",
         extra="last_name",
@@ -286,9 +285,9 @@ def group():
     tablename = "pr_group"
     table = db[tablename]
 
-    db.pr_group.pr_group_type.label = T("Team Type")
-    db.pr_group.group_description.label = T("Team Description")
-    db.pr_group.group_name.label = T("Team Name")
+    table.group_type.label = T("Team Type")
+    table.description.label = T("Team Description")
+    table.name.label = T("Team Name")
     db.pr_group_membership.group_id.label = T("Team Id")
     db.pr_group_membership.group_head.label = T("Team Head")
  
@@ -350,8 +349,8 @@ def group():
     response.s3.postp = group_postp
 
     output = shn_rest_controller("pr", "group",
-        main="group_name",
-        extra="group_description",
+        main="name",
+        extra="description",
         rheader=lambda jr: shn_pr_rheader(jr,
             tabs = [(T("Team Details"), None),
                     (T("Address"), "address"),

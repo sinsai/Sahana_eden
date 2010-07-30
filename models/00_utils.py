@@ -551,7 +551,8 @@ def shn_rheader_tabs(jr, tabs=[]):
                 _class = "rheader_tab_here"
             args = [jr.id]
             _next = URL(r=request, f=jr.name, args=[jr.id])
-            jr.request.vars.update(_next=_next)
+            if not jr.request.vars.get("_next", None):
+                jr.request.vars.update(_next=_next)
             _href = URL(r=request, f=jr.name, args=args, vars=jr.request.vars)
         tab = SPAN(A(title, _href=_href), _class=_class)
         rheader_tabs.append(tab)

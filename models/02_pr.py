@@ -33,7 +33,7 @@ pr_pe_types = Storage(
 
 resource = "pentity"
 tablename = "%s_%s" % (module, resource)
-table = db.define_table(tablename,
+table = db.define_table(tablename, deletion_status,
                         Field("type"),
                         Field("uuid", length=128),
                         Field("pe_id", "integer"),
@@ -82,11 +82,11 @@ def shn_pentity_represent(id, default_label="[no label]"):
 
     elif pe_type == "pr_group":
         group = db(table.pe_id == id).select(
-                   table.group_name,
+                   table.name,
                    limitby=(0, 1)).first()
         if group:
             pe_str = "%s (%s)" % (
-                group.group_name, pe_type_nice
+                group.name, pe_type_nice
             )
 
     elif pe_type == "org_organisation":
@@ -139,7 +139,7 @@ def shn_pentity_ondelete(record):
     if uid:
 
         pentity = db.pr_pentity
-        db(pentity.uuid == uid).delete()
+        db(pentity.uuid == uid).update(deleted=True)
 
     return True
 
@@ -173,7 +173,7 @@ def shn_pentity_onaccept(form, table=None):
             type = table._tablename
             pe_label = record.get("pe_label", None)
             pe_id = pentity.insert(uuid=uid, pe_label=pe_label, type=type)
-            db(pentity.id == pe_id).update(pe_id=pe_id)
+            db(pentity.id == pe_id).update(pe_id=pe_id, deleted=False)
             db(table.id == id).update(pe_id=pe_id)
 
         return True
@@ -448,8 +448,13 @@ table.group_type.label = T("Group type")
 table.name.label = T("Group name")
 table.name.requires = IS_NOT_EMPTY()
 table.name.comment = DIV(SPAN("*", _class="req", _style="padding-right: 5px;"))
-table.description.label = T("Group description")
 
+table.description.label = T("Group description")
+table.description.comment = DIV(DIV(_class="tooltip",
+    _title=Tstr("Group description") + "|" + Tstr("A brief description of the group (optional)")))
+
+table.comment.comment = DIV(DIV(_class="tooltip",
+    _title=Tstr("Comment") + "|" + Tstr("Field for comments (optional)")))
 
 # -----------------------------------------------------------------------------
 ADD_GROUP = T("Add Group")
@@ -575,35 +580,25 @@ elif request.function == "group":
 # *****************************************************************************
 # Functions:
 #
-def shn_pr_person_search_simple(xrequest, **attr):
+def shn_pr_person_search_simple(r, **attr):
 
-    """
-        Simple search form for persons
-    """
+    """ Simple search form for persons """
 
-    if attr is None:
-        attr = {}
+    resource = r.resource
+    table = resource.table
 
-    table = db.pr_person
+    r.id = None
 
+    # Check permission
     if not shn_has_permission("read", table):
-        session.error = UNAUTHORISED
-        redirect(URL(r=request, c="default", f="user", args="login",
-            vars={"_next":URL(r=request, args="search_simple", vars=request.vars)}))
+        r.unauthorised()
 
-    if xrequest.representation == "html":
+    if r.representation == "html":
+
         # Check for redirection
-        if request.vars._next:
-            next = str.lower(request.vars._next)
-        else:
-            next = str.lower(URL(r=request, f="person", args="[id]"))
-
-        # Custom view
-        response.view = "%s/person_search.html" % xrequest.prefix
-
-        # Title and subtitle
-        title = T("Search for a Person")
-        subtitle = T("Matching Records")
+        next = r.request.vars.get("_next", None)
+        if not next:
+            next = URL(r=request, f="person", args="[id]")
 
         # Select form
         form = FORM(TABLE(
@@ -613,7 +608,7 @@ def shn_pr_person_search_simple(xrequest, **attr):
                            _title=T("Name and/or ID Label|To search for a person, enter any of the first, middle or last names and/or the ID label of a person, separated by spaces. You may use % as wildcard. Press 'Search' without input to list all persons.")))),
                 TR("", INPUT(_type="submit", _value="Search"))))
 
-        output = dict(title=title, subtitle=subtitle, form=form, vars=form.vars)
+        output = dict(form=form, vars=form.vars)
 
         # Accept action
         items = None
@@ -622,45 +617,34 @@ def shn_pr_person_search_simple(xrequest, **attr):
             if form.vars.label == "":
                 form.vars.label = "%"
 
-            results = s3xrc.search_simple(db.pr_person,
-                fields = ["pr_pe_label", "first_name", "middle_name", "last_name"],
-                label = form.vars.label)
+            # Search
+            results = s3xrc.search_simple(table,
+                        fields = ["pe_label",
+                                  "first_name",
+                                  "middle_name",
+                                  "last_name"],
+                        label = form.vars.label)
 
-            if results and len(results):
-                query = table.id.belongs(results)
+            # Get the results
+            if results:
+                resource.build_query(id=results)
+                report = shn_list(r, listadd=False)
             else:
-                query = (table.id == 0)
-                rows = None
-
-            # Add filter
-            if response.s3.filter:
-                response.s3.filter = (response.s3.filter) & (query)
-            else:
-                response.s3.filter = (query)
-
-            xrequest.id = None
-
-            # Get report from HTML exporter
-            report = shn_list(xrequest, listadd=False)
+                report = dict(items=T("No matching records found."))
 
             output.update(dict(report))
 
         # Title and subtitle
-        title = T("List of persons")
+        title = T("Search for a Person")
         subtitle = T("Matching Records")
-        output.update(title=title, subtitle=subtitle)
 
-        # Custom view
-        response.view = "%s/person_search.html" % xrequest.prefix
+        # Add-button
+        label_create_button = shn_get_crud_strings("pr_person").label_create_button
+        add_btn = A(label_create_button, _class="action-btn",
+                    _href=URL(r=request, f="person", args="create"))
 
-        try:
-            label_create_button = s3.crud_strings["pr_person"].label_create_button
-        except:
-            label_create_button = s3.crud_strings.label_create_button
-
-        add_btn = A(label_create_button, _href=URL(r=request, f="person", args="create"), _class="action-btn")
-
-        output.update(add_btn=add_btn)
+        output.update(title=title, subtitle=subtitle, add_btn=add_btn)
+        response.view = "%s/person_search.html" % resource.prefix
         return output
 
     else:

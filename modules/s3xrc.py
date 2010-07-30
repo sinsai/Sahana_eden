@@ -47,7 +47,11 @@ from gluon.sql import Set, Row
 from gluon.html import URL
 from gluon.http import HTTP, redirect
 from gluon.validators import IS_NULL_OR, IS_EMPTY_OR, IS_DATE, IS_TIME
-from xml.etree.cElementTree import ElementTree
+try:
+    from xml.etree.cElementTree import ElementTree
+except ImportError:
+    from xml.etree.ElementTree import ElementTree
+
 from lxml import etree
 
 # Error messages
@@ -115,6 +119,7 @@ class S3Resource(object):
 
         self.prefix = prefix
         self.name = name
+        self.url_vars = None
 
         self.__query = None
         self.__length = None
@@ -243,22 +248,6 @@ class S3Resource(object):
 
 
     # -------------------------------------------------------------------------
-    def get_parent_query(self):
-
-        """ Get parent query for component joins """
-
-        if self.__set is not None:
-            if len(self.__ids) == 1:
-                query = (self.table.id == self.__ids[0])
-            elif len(self.__ids) > 1:
-                query = (self.table.id.belongs(self.__ids))
-            else:
-                query = (self.table.id == 0)
-        else:
-            query = self.get_query()
-
-
-    # -------------------------------------------------------------------------
     def build_query(self, id=None, uid=None, filter=None, url_vars=None):
 
         """ Query builder
@@ -278,6 +267,8 @@ class S3Resource(object):
 
         if url_vars:
             url_query = self.__manager.url_query(self, url_vars)
+            if url_query:
+                self.url_vars = url_vars
         else:
             url_query = Storage()
 
@@ -298,7 +289,7 @@ class S3Resource(object):
             # Component Query
             if self.parent:
 
-                parent_query = self.parent.get_parent_query()
+                parent_query = self.parent.get_query()
                 if parent_query:
                     self.__query = self.__query & parent_query
 
@@ -307,8 +298,9 @@ class S3Resource(object):
                     pkey = component.pkey
                     fkey = component.fkey
                     self.__multiple = component.multiple
-                    join = (self.parent.table[pkey] == self.table[fkey])
-                    self.__query = self.__query & join
+                    join = self.parent.table[pkey] == self.table[fkey]
+                    if str(self.__query).find(str(join)) == -1:
+                        self.__query = self.__query & (join)
 
                 if deletion_status in self.table.fields:
                     remaining = (self.table[deletion_status] == False)
@@ -416,7 +408,7 @@ class S3Resource(object):
                                     query = None
                                     for v in values:
                                         v = "%%%s%%" % v
-                                        q = (table[field].like(v))
+                                        q = (table[field].lower().like(v.lower()))
                                         if query:
                                             query = query | q
                                         else:
@@ -426,7 +418,7 @@ class S3Resource(object):
                                     query = None
                                     for v in values:
                                         v = "%%%s%%" % v
-                                        q = (~(table[field].like(v)))
+                                        q = (~(table[field].lower().like(v.lower())))
                                         if query:
                                             query = query & q
                                         else:
@@ -803,16 +795,21 @@ class S3Resource(object):
         # Enforce primary record ID
         if not r.id and not r.custom_action and r.representation == "html":
             if r.component or r.method in ("read", "update"):
-                model = self.__manager.model
-                search_simple = model.get_method(self.prefix, self.name,
-                                                method="search_simple")
-                if search_simple:
-                    self.__dbg("no record ID - redirecting to search_simple")
-                    redirect(URL(r=r.request, f=self.name, args="search_simple",
-                                vars={"_next": r.same()}))
+                count = self.count()
+                if self.url_vars is not None and count == 1:
+                    self.load()
+                    r.record = self.__set.first()
                 else:
-                    r.session.error = self.BADRECORD
-                    redirect(URL(r=r.request, c=self.prefix, f=self.name))
+                    model = self.__manager.model
+                    search_simple = model.get_method(self.prefix, self.name,
+                                                    method="search_simple")
+                    if search_simple:
+                        self.__dbg("no record ID - redirecting to search_simple")
+                        redirect(URL(r=r.request, f=self.name, args="search_simple",
+                                    vars={"_next": r.same()}))
+                    else:
+                        r.session.error = self.BADRECORD
+                        redirect(URL(r=r.request, c=self.prefix, f=self.name))
 
         # Pre-process
         if hooks is not None:
@@ -1097,7 +1094,7 @@ class S3Resource(object):
             if r.component:
                 args.update(id=r.id, component=r.component.tablename)
 
-            mode = r.request.vars.get("mode", None)
+            mode = r.request.vars.get("xsltmode", None)
             if mode is not None:
                 args.update(mode=mode)
 
@@ -1766,7 +1763,7 @@ class S3Request(object):
 
     # URL helpers =============================================================
 
-    def __next(self, id=None, method=None, representation=None):
+    def __next(self, id=None, method=None, representation=None, vars=None):
 
         """ Returns a URL of the current resource
 
@@ -1776,11 +1773,16 @@ class S3Request(object):
 
         """
 
+        if vars is None:
+            vars = self.request.get_vars
+        if "format" in vars.keys():
+            del vars["format"]
+
         args = []
-        vars = {}
 
         component_id = self.component_id
-        id = self.id
+        if id is None:
+            id = self.id
 
         if not representation:
             representation = self.representation
@@ -1799,9 +1801,9 @@ class S3Request(object):
                 id = str(id)
                 if len(id) == 0:
                     id = "[id]"
-                if self.component:
-                    component_id = None
-                    method = None
+                #if self.component:
+                    #component_id = None
+                    #method = None
 
         if self.component:
             if id:
@@ -1821,14 +1823,14 @@ class S3Request(object):
             if len(args) > 0:
                 args[-1] = "%s.%s" % (args[-1], representation)
             else:
-                vars = {"format": representation}
+                vars.update(format=representation)
 
         return(URL(r=self.request, c=self.request.controller,
                    f=self.name, args=args, vars=vars))
 
 
     # -------------------------------------------------------------------------
-    def here(self, representation=None):
+    def here(self, representation=None, vars=None):
 
         """ URL of the current request
 
@@ -1836,11 +1838,11 @@ class S3Request(object):
 
         """
 
-        return self.__next(id=self.id, representation=representation)
+        return self.__next(id=self.id, representation=representation, vars=vars)
 
 
     # -------------------------------------------------------------------------
-    def other(self, method=None, record_id=None, representation=None):
+    def other(self, method=None, record_id=None, representation=None, vars=None):
 
         """ URL of a request with different method and/or record_id
             of the same resource
@@ -1852,11 +1854,11 @@ class S3Request(object):
         """
 
         return self.__next(method=method, id=record_id,
-                           representation=representation)
+                           representation=representation, vars=vars)
 
 
     # -------------------------------------------------------------------------
-    def there(self, representation=None):
+    def there(self, representation=None, vars=None):
 
         """ URL of a HTTP/list request on the same resource
 
@@ -1864,11 +1866,11 @@ class S3Request(object):
 
         """
 
-        return self.__next(method="", representation=representation)
+        return self.__next(method="", representation=representation, vars=vars)
 
 
     # -------------------------------------------------------------------------
-    def same(self, representation=None):
+    def same(self, representation=None, vars=None):
 
         """ URL of the same request with neutralized primary record ID
 
@@ -1876,7 +1878,7 @@ class S3Request(object):
 
         """
 
-        return self.__next(id="[id]", representation=representation)
+        return self.__next(id="[id]", representation=representation, vars=vars)
 
 
     # Method handler helpers ==================================================

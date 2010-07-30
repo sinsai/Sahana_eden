@@ -817,8 +817,10 @@ def shn_read(r, **attr):
     deletable = attr.get("deletable", True)
 
     # Delete & Update links
-    href_delete = r.other(method="delete", representation=representation, vars=vars)
-    href_edit = r.other(method="update", representation=representation, vars=vars)
+    #href_delete = r.other(method="delete", representation=representation, vars=vars)
+    #href_edit = r.other(method="update", representation=representation, vars=vars)
+    href_delete = r.other(method="delete", representation=representation)
+    href_edit = r.other(method="update", representation=representation)
 
     # Get the correct record ID
     if r.component:

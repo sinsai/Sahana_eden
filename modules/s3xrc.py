@@ -1780,8 +1780,9 @@ class S3Request(object):
 
         if vars is None:
             vars = self.request.get_vars
-        if "format" in vars.keys():
-            del vars["format"]
+        #TypeError: argument of type 'builtin_function_or_method' is not iterable
+        #if "format" in vars.keys():
+        #    del vars["format"]
 
         args = []
 
@@ -1793,7 +1794,7 @@ class S3Request(object):
             representation = self.representation
         if method is None:
             method = self.method
-        elif method=="":
+        elif method == "":
             method = None
             if self.component:
                 component_id = None
@@ -1831,7 +1832,8 @@ class S3Request(object):
                 vars.update(format=representation)
 
         return(URL(r=self.request, c=self.request.controller,
-                   f=self.name, args=args, vars=vars))
+                   f=self.name, args=args))
+                   #f=self.name, args=args, vars=vars))
 
 
     # -------------------------------------------------------------------------

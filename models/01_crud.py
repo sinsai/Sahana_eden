@@ -801,7 +801,6 @@ def shn_read(r, **attr):
     """ Read a single record. """
 
     prefix, name, table, tablename = r.target()
-    vars = r.request.get_vars
     representation = r.representation.lower()
 
     # Get the callbacks of the target table

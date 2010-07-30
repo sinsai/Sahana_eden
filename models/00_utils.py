@@ -72,7 +72,7 @@ auth.settings.table_user.language.requires = IS_IN_SET(shn_languages, zero=None)
 
 # -----------------------------------------------------------------------------
 # List of Nations (ISO-3166-1 Country Codes)
-#
+# 
 shn_list_of_nations = {
     "AF": "Afghanistan",
     "AX": "Åland Islands",
@@ -550,10 +550,13 @@ def shn_rheader_tabs(jr, tabs=[]):
             if not jr.component:
                 _class = "rheader_tab_here"
             args = [jr.id]
+            # If caller supplied _next, don't change it.  If not, provide
+            # one that propagates the caller's vars.
             vars = Storage(jr.request.vars)
             if not vars.get("_next", None):
                 vars.update(_next=URL(r=request, f=jr.name, args=args, vars=jr.request.vars))
             _href = URL(r=request, f=jr.name, args=args, vars=vars)
+
         tab = SPAN(A(title, _href=_href), _class=_class)
         rheader_tabs.append(tab)
 

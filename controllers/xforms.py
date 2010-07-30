@@ -51,6 +51,8 @@ def create():
                 _type = "datetime"
             elif table[field].type == "integer":
                 _type = "integer"
+            elif table[field].type == "boolean":
+                _type = "boolean"
             else:
                 # Unknown type
                 _type = "string"

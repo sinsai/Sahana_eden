@@ -436,8 +436,6 @@ def layout():
                                        _title=T("Add Section")),_class="section_title"))
     output.update(ui=ui)
     return output
-def edit_section():
-     
 
 def add_buttons(form, save = None, prev = None, next = None, finish = None,cancel=None):
     """

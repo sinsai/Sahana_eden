@@ -37,11 +37,16 @@ function TB_cleanup(caller) {
 function TB_refresh() {
     // The Get parameters
     var $_GET = getQueryParams(document.location.search);
-    var caller = $_GET["caller"];        
+    var caller = $_GET["caller"];
+    var id = $_GET["id"]
+        
+    alert(url)
     $.getJSONS3(url, function (data) {
         $.each(data['$_survey_section'], function() {
             if(caller == "newS") {
-                $("#new_section").clone().insertBefore("newS").html("<a class=\"section_title\" href=\"+this['@url']+\">"+this['name']+"</a>")
+//                $("#new_section").clone().insertBefore('newS').html("<a class=\"section_title\" href='\"+this['@url']+\">"+this['name']+"</a>")
+            } else {
+                $("#"+caller).html(this['name'])
             }
         });
         // Clean-up

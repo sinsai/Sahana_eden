@@ -232,7 +232,7 @@ def layout():
     # build the UI
     for section in sections:
         section_rendered.append(section.id)
-        link = A(section.name,_class="colorbox",_id="survey_section_%s" % (section.uuid),_href=URL(r=request, c="survey", f="section", args=[section.id, "update.popup"], vars=dict(caller="survey_section_%s" % (section.uuid))),
+        link = A(section.name,_class="colorbox",_id="survey_section_%s" % (section.uuid),_href=URL(r=request, c="survey", f="section", args=[section.id, "update.popup"], vars=dict(id=section.id,caller="survey_section_%s" % (section.uuid))),
                                        _target="top",
                                        _title="Edit Section")
 

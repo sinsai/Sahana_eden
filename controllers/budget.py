@@ -1392,7 +1392,7 @@ def budget_totals(budget):
         quantity = row.quantity
         months = row.months
         row2 = db(db.budget_staff.id == staff.staff_id).select(db.budget_staff.travel, db.budget_staff.salary, limitby=(0, 1)).first()
-        row3 = db(db.budget_location.id == staff.location_id).selx`ect(db.budget_location.subsistence, db.budget_location.hazard_pay, limitby=(0, 1)).first()
+        row3 = db(db.budget_location.id == staff.location_id).select(db.budget_location.subsistence, db.budget_location.hazard_pay, limitby=(0, 1)).first()
         total_onetime_cost += row2.travel * quantity
         total_recurring_cost += row2.salary * quantity * months
         total_recurring_cost += row3.subsistence * quantity * months

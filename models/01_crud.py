@@ -801,7 +801,6 @@ def shn_read(r, **attr):
     """ Read a single record. """
 
     prefix, name, table, tablename = r.target()
-    vars = r.request.get_vars
     representation = r.representation.lower()
 
     # Get the callbacks of the target table
@@ -1475,7 +1474,7 @@ def shn_update(r, **attr):
         else:
             if not representation == "popup" and \
                not crud.settings.update_next:
-                crud.settings.update_next = r.here()
+                crud.settings.update_next = update_next or r.here()
             if not onvalidation:
                 onvalidation = crud.settings.update_onvalidation
             if not onaccept:

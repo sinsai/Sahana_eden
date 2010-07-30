@@ -878,6 +878,11 @@ class S3Resource(object):
 
         # Redirection
         if r.next is not None:
+            if r.http == "POST":
+                if isinstance(output, dict):
+                    form = output.get("form", None)
+                    if form and form.errors:
+                        return output
             self.__dbg("redirecting to %s" % str(r.next))
             redirect(r.next)
 

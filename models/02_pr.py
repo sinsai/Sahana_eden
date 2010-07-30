@@ -401,9 +401,8 @@ s3xrc.model.configure(table,
         "first_name",
         "middle_name",
         "last_name",
-        "date_of_birth",
-        "nationality",
-        "missing"
+        "gender",
+        "age_group"
     ])
 
 

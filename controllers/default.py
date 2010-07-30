@@ -81,7 +81,7 @@ def user():
         #_table_user.organisation.writable = False
         _table_user.utc_offset.readable = True
         _table_user.utc_offset.writable = True
-
+        
     form = auth()
     if request.args and request.args(0) == "login":
         login_form = form
@@ -91,6 +91,9 @@ def user():
         register_form = form
     else:
         register_form = None
+
+    if request.args and request.args(0) == "profile" and deployment_settings.get_auth_openid():
+            form = DIV(form, openid_login_form.list_user_openids())
 
     self_registration = session.s3.self_registration
 

@@ -98,10 +98,12 @@ function view1(importsheet){
        loadMask: true,
        viewConfig:
        {	
-       		forceFit : true
+       		autoFill : true
 	},
+       autoFill : true,
        plugins: action,
        height: 380,
+       //minColumnWidth : 50,
        store: importsheet.datastore,
        columnLines: true,
        sm: sm2,  
@@ -221,6 +223,7 @@ function view1(importsheet){
 	hidden: true
         });
     action.init(grid);
+    grid.setAutoScroll(true);
     grid.show();
 }
 

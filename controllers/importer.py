@@ -53,9 +53,8 @@ def gettoken():
     return dict(module_name=module_name,k=user_spreadsheets)
 
 def spreadsheet():
-    #crud.settings.create_onaccept = lambda form : redirect(URL(r=request, c="importer", f="spreadsheetview")) 
-    #return shn_rest_controller(module,'slist')
-    return dict(module_name = module_name)
+    crud.settings.create_onaccept = lambda form : redirect(URL(r=request, c="importer", f="spreadsheetview")) 
+    return shn_rest_controller(module,'slist')
 
 def spreadsheetview():
     k=db(db.importer_slist.id>0).select().last()
@@ -84,42 +83,47 @@ def getspreadsheetlist():
 		elif isintance(feed, gdata.spreadsheet.SpreadsheetsListFeed):
 	 		l.append('%s %s %s' %(i, entry.title.text. entry.content.text))
 	        	for key in entry.custom:
-	        		l.append(' %s: %s' % (key, entry.custom[key].text))
+				l.append(' %s: %s' % (key, entry.custom[key].text))
 	        else:
 			l.append('%s %s\n' % (i,entry.title.text))
 	return l
 
 def import_spreadsheet():
     spreadsheet = request.body.read()
-    #tree=s3xrc.xml.json2tree(spreadsheet)
-    #s3xrc.import_xml(tree=tree,prefix=request.args[0],name=request.args[1],id=None)
     f = file("/home/shikhar/Desktop/abc.txt","wb")
+    f.write(spreadsheet + "\n\n\n\"")
     from StringIO import StringIO
-    f.write(spreadsheet)
     spreadsheet_json = StringIO(spreadsheet)
-    f.write("\n\n\n\n"+spreadsheet_json.read())
     spreadsheet_json.seek(0)
-    j = json.load(spreadsheet_json)
+    #j = json.load(spreadsheet_json,encoding = 'ascii')
+    j = json.loads(spreadsheet)
     i=k=0
-    resource = j['resource']
-    resource = resource.encode('ascii')
-    send_dict={};
-    send_dict[resource]=[]
+    #resource = j['resource']
+    #resource = resource.encode('ascii')
+    send_dict = {} 
+    for key in j['json'].keys():
+	    send_dict[key.encode('ascii')] = []
+    f.write("------"+repr(send_dict))
     while (i < j['rows']):
-	temp = {}
+	res = {}
+	for keys in j['json']:
+	   res[keys.encode('ascii')] = {} 
 	k = 0
-	while (k < j['columns']) :
-            temp[j['map'][k][2]] = {}
-	    if "opt_" in j['map'][k][2]:
-		    temp[j['map'][k][2]]["@value"] = j['spreadsheet'][i][k].encode('ascii')
-	    	    temp[j['map'][k][2]]["$"]=j['spreadsheet'][i][k].encode('ascii')
+	while (k < j['columns']):
+	    if "opt_" in j['map'][k][3]:
+		res[j['map'][k][2].encode('ascii')][j['map'][k][3].encode('ascii')]["@value"] = j['spreadsheet'][i][k].encode('ascii')
+	    	res[j['map'][k][2].encode('ascii')][j['map'][k][3].encode('ascii')]["$"] = j['spreadsheet'][i][k].encode('ascii')
 	    else:
-	    	temp[j['map'][k][2].encode('ascii')]=j['spreadsheet'][i][k].encode('ascii')
+		res[j['map'][k][2].encode('ascii')] = {}
+		res[j['map'][k][2].encode('ascii')][j['map'][k][3].encode('ascii')] = j['spreadsheet'][i][k].encode('ascii')
+	    res[j['map'][k][2].encode('ascii')]['@modified_at'] = j['modtime']
 	    k+=1
-	    temp["@modified_on"] = j['modtime']
-        send_dict[resource].append(temp)
+	f.write("\n according to resource \n" + repr(res))
+        for resource in res:
+	    send_dict[resource].append(res[resource])
 	i+=1
     word = json.dumps(send_dict)
+    f.write("Final structure\n"+repr(send_dict))
     new_word = ""
     k = 1
     for i in range(0,len(word)):

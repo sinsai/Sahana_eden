@@ -29,114 +29,9 @@ function view4(importsheet)
     
     //Use Ext.Ajax.request here to fetch data about tables and resources from the server here, use callback config to process it, must put a mask here
     //This view must be refactored keeping in mind the import of multiple resources and multiple tables, it will have a multiselect of tables and a dropdown or resource
-    //Remove hardcoded table data
-    /*var budget_kits=[
-	['code','Code'],
-	['description','Description'],
-	['total_unit_cost','Total unit cost'],
-	['total_monthly_cost','Total monthly cost'],
-	['total_minute_cost','Total minute cost'],
-	['total_megabyte_cost','Total megabyte cost']
-	];
-    var budget_item=[
-    	['category_type','Budget Item'],
-    	['code','Code'],
-    	['description','Description'],
-    	['cost_type','Cost type'],
-    	['unit_cost','Unit Cost'],
-    	['monthly_cost','Monthly Cost'],
-    	['minute_cost','Minute Cost'],
-    	['megabyte_cost','Megabyte Cost'],
-    	['comments','Comments']
-    	];
-    var budget_kit_item=[
-    	['kit_id','Kit ID'],
-    	['item_id','Item ID'],
-    	['quantity','Quantity']
-    	];
-    var org_office=[
-    	['name','Name'],
-	['organisation_id','ID'],
-	['type','Type'],
-	['admin','Admin'],
-	['location_id','Location ID'],
-	['parent','Parent'],
-	['address','Address'],
-	['postcode','Postcode'],
-	['phone1','Phone 1'],
-	['phone2','Phone 2'],
-	['email','E-mail'],
-	['fax','Fax'],
-	['national_staff','National Staff'],
-	['international_staff','International Staff'],
-	['number_of_vehicles','Number of vehicles'],
-	['vehicle_types','Vehicle types'],
-	['equipment','Equipment'],
-	['source_id','Source ID'],
-	['comments','Comments']
-	];
-
-    var org_organisation=[
-    	['name','Name'],
-	['acronym','Acronym'],
-	['type','Type'],
-	['sector_id','Sector ID'],
-	['admin','Admin'],
-	['country','Country'],
-	['website','Website'],
-	['twitter','Twitter'],
-	['donation_phone','Donation Phone'],
-	['comments','Comments']
-	];
-    var pr_person=[
-    	['pr_pe_id','ID'],
-    	['pr_pe_label','Label'],
-	['missing','Missing'],
-	['first_name','First name'],
-	['middle_name','Middle name'],
-	['last_name','Last name'],
-	['preferred_name','Preferred name'],
-	['local_name','Local Name'],
-	['opt_pr_gender','Gender'],
-	['opt_pr_age_group','Age group'],
-	['email','E-mail'],
-	['mobile_phone','Mobile Phone'],
-	['date_of_birth','Date of Birth'],
-	['opt_pr_nationality','Nationality'],
-	['opt_pr_country','Country'],
-	['opt_pr_religion','Religion'],
-	['opt_pr_marital_status','Marital Status'],
-	['occupation','Occupation'],
-	['comment','Comment']
-	];
-    var cr_shelter=[
-        ['name','Name'],
-	['description','Description'],
-	['admin','Admin'],
-	['location_id','Location ID'],
-	['person_id','Person ID'],
-	['address','Address'],
-	['capacity','Capacity'],
-	['dwellings','Dwellings'],
-	['persons_per_dwelling','Persons per dwelling'],
-	['area','Area']
-	];
-    var store='';
-    if(importsheet.table=='org_organisation')
-	    store=org_organisation;
-    if(importsheet.table=='org_office')
-	    	store=org_office;
-    if(importsheet.table=='pr_person')
-	    store=pr_person;
-    if(importsheet.table=='cr_shelter')
-	    store=cr_shelter;
-    if(importsheet.table=='budget_kits')
-	    store=budget_kits;
-    if(importsheet.table=='budget_item')
-	    store=budget_item;
-    if(importsheet.table=='budget_kit_item')
-	    store=budget_kit_item;
-    */
+    var render_mask = new Ext.LoadMask(Ext.get('spreadsheet'),{msg : 'Rendering...'});
+    render_mask.enable();
+    render_mask.show(); 
     var field_store = {};
     var num_resources = importsheet.final_resources.length;
     var i=0;
@@ -187,7 +82,7 @@ function view4(importsheet)
     while( i < importsheet.columns)
     {
 	    fields_combo[i] = {};
-	    fields_combo[i].fieldLabel = resource_combo[i];
+	    fields_combo[i].fieldLabel = 'Field '+(i+1);
 	    fields_combo[i].name = colnames[i]+'_field';
 	    fields_combo[i].id = colnames[i]+'_field';
 	    fields_combo[i].store = ['Select resources'];
@@ -207,10 +102,10 @@ function view4(importsheet)
 	    resource_combo[i].on({ 'select' : {
 			    			fn : function(combo,record,index)
 			    		   	{
-					   		Ext.Msg.alert("",combo.getValue());
-							var name = "cool";
-							var name = this.getId().replace('_resource','_field');
+							var name = combo.getId().replace('_resource','_field');
 							console.log("in listener "+name);
+							Ext.getCmp(name).clearInvalid();
+							Ext.getCmp(name).clearValue();
 							Ext.getCmp(name).getStore().removeAll(true);
 							Ext.getCmp(name).getStore().loadData(field_store[combo.getValue()]);
 						}
@@ -218,13 +113,35 @@ function view4(importsheet)
 					});
 	    i++;
     }
-    var columnmap=new Ext.form.FormPanel({
+    render_mask.hide();
+    var modules = new Ext.form.FieldSet({
+		items : resource_combo,
+		labelWidth : 350,
+		autoHeight : true,
+		width :650 });
+    var fields = new Ext.form.FieldSet({
+		width : 700,
+		//height : 5000,
+		autoHeight : true,
+		items :	fields_combo});
+    var container = { xtype : 'container',
+	    	      layout : 'hbox',
+		      height : 600,
+		      //autoHeight : true,
+		      layoutConfig :{
+				align : 'stretch'
+				},
+			items : [modules,fields]
+    		    };
+	var columnmap=new Ext.form.FormPanel({
 	title: 'Edit spreadsheet \u2794 Select table \u2794 <u>Map columns to fields</u><br/>Select which columns go to which table fields',
         renderTo: 'spreadsheet',
         frame: true,
-	labelAlign: 'right',
-        height : 'auto',
-        items: resource_combo,
+	autoScroll : true,
+	labelAlign: 'left',
+        height : 500,
+	//items: resource_combo,
+	items : container,
 	buttons:[
 		{
 			text: 'Back',
@@ -254,6 +171,8 @@ function view4(importsheet)
  					//extract column headers from the header row object
 					var i=0;
 					map_from_ss_to_field=[];
+					var send = {};
+					send.json = {}
 					while(i<importsheet.columns)
 					{
 						if(resource_combo[i].getValue()=='')
@@ -261,7 +180,8 @@ function view4(importsheet)
 							Ext.Msg.alert("Error","Map all columns");
 							break;
 						}
-						map_from_ss_to_field.push([i,resource_combo[i].getName(),resource_combo[i].getValue()]);
+						map_from_ss_to_field.push([i,resource_combo[i].getName().replace('_resource',''),resource_combo[i].getValue(),fields_combo[i].getValue()]);
+						send.json[resource_combo[i].getValue()] = {};
 						i++;
 					}
 					importsheet.map=map_from_ss_to_field;
@@ -292,18 +212,20 @@ function view4(importsheet)
 					 var lm = new Ext.LoadMask(Ext.getBody(),{msg : 'Importing...'});
 				     	 lm.enable();	     
 					 lm.show();
-				         var send={};
+				         
 				 	 send.spreadsheet = importsheet.data;
 					 send.map = importsheet.map;
+					 console.log(send.map);
 					 send.header_row = importsheet.header_row_index;
 					 send.rows=importsheet.rows;
 					 send.columns=importsheet.columns;
-					 var temp=importsheet.table.split("_");
+					 console.log(send);
+					 /*var temp=importsheet.table.split("_");
 					 var prefix=temp[0];
 					 var name=temp[1];
 					 var str="$_";
 					 str+=prefix+"_"+name;
-					 send.resource=str;
+					 send.resource=str;*/
 					 var time=new Date();
 				         var modifydate=''+(time.getUTCFullYear()+"-"+time.getUTCMonth()+"-"+time.getUTCDate()+" "+time.getUTCHours()+":"+time.getUTCMinutes()+":"+time.getUTCSeconds());
 	
@@ -323,7 +245,10 @@ function view4(importsheet)
 								delay.delay(2000);
 								redirect.hide();
 
-							   	/*if(success)
+					
+					
+					
+								/*if(success)
 									Ext.Msg.alert("Success","All records have been imported to database");
 								else
 								{
@@ -335,13 +260,14 @@ function view4(importsheet)
 							 				 {
 							 					if(btn=="yes")
 							 					window.location = "http://"+url+"/"+application+"/importer/re_import";		
-							 	*/			 }
+							 				 }
 										});
-							       	}
-					 		
+							       	}*/
+								}	
 
     			
-    		}],
+    		});
+		}}],
        buttonAlign: 'center',
        autoShow : true
 	});

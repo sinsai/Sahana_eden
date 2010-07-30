@@ -38,12 +38,12 @@ function view3(importsheet)
                 }
             }],
 		listeners:{
-			change : function()
+			'change' : function()
 				 {
 					 resource_select.removeAll();
 					 var mod = msForm.getForm().findField('module_selected').getValue();
 					 var modname = modules[mod];
-					 console.log(resources);
+					 //console.log(resources);
 					 var importable_resource=[];
 					 for(k in resources[modname])
 					 {
@@ -125,8 +125,7 @@ function view3(importsheet)
             handler: function()
             {
                 var module = msForm.getForm().findField('module_selected').getValue();
-		 //console.log(resource_select.findById('selected_resources').getValue());
-                console.log(module);
+                //console.log(module);
 		if(module == 'Multiple rows selected')
                     Ext.Msg.alert("Error","Select one module only");
                 else
@@ -139,15 +138,15 @@ function view3(importsheet)
 			     {
 				     final_resources[x] = final_resources[x].boxLabel;
 		             }
-			     console.log(final_resources);
+			     //console.log(final_resources);
 			     var get_fields = new Ext.LoadMask(Ext.get('spreadsheet'),{msg : 'Getting fields. This may take a while'});
 			     get_fields.enable();
 			     get_fields.show();
 			     var resource_fields = [];
 			     var temp = final_resources.length;
-			     for(var x = 0; x < temp-1; x++)
+			     for(var x = 0; x < temp; x++)
 			     {
-				console.log('Fields urls http://'+url+'/'+application+'/'+final_resources[x].replace('_','/')+'/fields.json');
+				//console.log('Fields urls http://'+url+'/'+application+'/'+final_resources[x].replace('_','/')+'/fields.json');
 				Ext.Ajax.request({
 					url : 'http://'+url+'/'+application+'/'+final_resources[x].replace('_','/')+'/fields.json',
 					method : 'GET',
@@ -159,11 +158,22 @@ function view3(importsheet)
 							//console.log("Resource->"+final_resources[x]);
 							var tempobj = response.responseText;
 							resource_fields.push(tempobj);
+							if(resource_fields.length == temp)
+							{
+								get_fields.hide();
+								importsheet.module = module;
+								importsheet.resource_fields = resource_fields;
+								importsheet.final_resources = final_resources;
+								msForm.hide();
+								view4(importsheet);
+							}
+
 							//if(!success)
 							//	x = x-1;	
 						}
 					});
 			     }
+			     /*
 			     Ext.Ajax.request({
 					url : 'http://'+url+'/'+application+'/'+final_resources[final_resources.length-1].replace('_','/')+'/fields.json',
 					method : 'GET',
@@ -172,8 +182,8 @@ function view3(importsheet)
 						   {
 							  get_fields.hide();
 							  resource_fields.push(response.responseText);
-							  console.log("Resources and correspoding fields");
-							  console.log(resource_fields);
+							  //console.log("Resources and correspoding fields");
+							  //console.log(resource_fields);
 						          importsheet.module = module;
 			     				  importsheet.resource_fields = resource_fields;
 			                                  importsheet.final_resources = final_resources;
@@ -181,6 +191,7 @@ function view3(importsheet)
                              				  view4(importsheet);
 			       			  }
 					});
+			     */
 			     //console.log(resource_fields);
 			     //module = module.substring(15);
                              /*importsheet.module = module;

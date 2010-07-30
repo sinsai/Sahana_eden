@@ -817,8 +817,8 @@ def shn_read(r, **attr):
     deletable = attr.get("deletable", True)
 
     # Delete & Update links
-    href_delete = r.other(method="delete", representation=representation)
-    href_edit = r.other(method="update", representation=representation)
+    href_delete = r.other(method="delete", representation=representation, vars=vars)
+    href_edit = r.other(method="update", representation=representation, vars=vars)
 
     # Get the correct record ID
     if r.component:
@@ -827,7 +827,7 @@ def shn_read(r, **attr):
         if not len(resource):
             if not r.multiple:
                 r.component_id = None
-                redirect(r.other(method="create", representation=representation))
+                redirect(r.other(method="create", representation=representation, vars=vars))
             else:
                 session.error = BADRECORD
                 redirect(r.there())

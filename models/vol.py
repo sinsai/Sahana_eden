@@ -18,11 +18,11 @@ if deployment_settings.has_module(module):
                     Field("audit_write", "boolean"),
                     migrate=migrate)
 
-    # -----------------------------------------------------------------------------
-    # vol_volunteer (Component of pr_person)
+    # -------------------------------------------------------------------------
+    # pr_volunteer (Component of pr_person)
     #   describes a person's availability as a volunteer
-    #
-    vol_volunteer_status_opts = {
+
+    pr_volunteer_status_opts = {
     1: T("active"),
     2: T("retired")
     }
@@ -31,16 +31,19 @@ if deployment_settings.has_module(module):
     tablename = module + "_" + resource
     table = db.define_table(tablename, timestamp, uuidstamp,
                     person_id,
+                    # TODO: A person may volunteer for more than one org.
+                    # Remove this -- the org can be inferred from the project
+                    # or team in which the person participates.
                     organisation_id,
                     Field("date_avail_start", "date"),
                     Field("date_avail_end", "date"),
                     Field("hrs_avail_start", "time"),
                     Field("hrs_avail_end", "time"),
                     Field("status", "integer",
-                        requires = IS_IN_SET(vol_volunteer_status_opts, zero=None),
+                        requires = IS_IN_SET(pr_volunteer_status_opts, zero=None),
                         # default = 1,
                         label = T("Status"),
-                        represent = lambda opt: vol_volunteer_status_opts.get(opt, UNKNOWN_OPT)),
+                        represent = lambda opt: pr_volunteer_status_opts.get(opt, UNKNOWN_OPT)),
                     Field("special_needs", "text"),
                     migrate=migrate)
 
@@ -85,35 +88,34 @@ if deployment_settings.has_module(module):
 
     # Reusable field
     vol_volunteer_id = db.Table(None, "vol_volunteer_id",
-                                FieldS3("vol_volunteer_id", db.vol_volunteer, sortby=["first_name", "middle_name", "last_name"],
-                                requires = IS_NULL_OR(IS_ONE_OF(db(db.vol_volunteer.status == 1), "vol_volunteer.id", shn_vol_volunteer_represent)),
-                                represent = lambda id: (id and [shn_vol_volunteer_represent(id)] or ["None"])[0],
-                                comment = DIV(A(ADD_VOLUNTEER, _class="colorbox", _href=URL(r=request, c="vol", f="volunteer", args="create", vars=dict(format="popup")), _target="top", _title=ADD_VOLUNTEER),
-                                          DIV( _class="tooltip", _title=ADD_VOLUNTEER + "|" + Tstr("Add new volunteer."))),
-                                ondelete = "RESTRICT"
-                            ))
+        FieldS3("vol_volunteer_id", db.vol_volunteer, sortby=["first_name", "middle_name", "last_name"],
+        requires = IS_NULL_OR(IS_ONE_OF(db(db.vol_volunteer.status == 1), "vol_volunteer.id", shn_vol_volunteer_represent)),
+        represent = lambda id: (id and [shn_vol_volunteer_represent(id)] or ["None"])[0],
+        # TODO: Creating a vol_volunteer entry requires a person, so does this
+        # make sense?  For now, turn this into add person.  Could add _next
+        # to go edit form for vol components.  How would we get the new person id?
+        comment = DIV(A(ADD_VOLUNTEER, _class="colorbox", _href=URL(r=request, c="pr", f="person", args="create", vars=dict(format="popup")), _target="top", _title=ADD_VOLUNTEER), DIV( _class="tooltip", _title=ADD_VOLUNTEER + "|" + Tstr("Add new person."))),
+        ondelete = "RESTRICT",
+        ))
 
     s3xrc.model.add_component(module, resource,
                               multiple=False,
                               joinby=dict(pr_person="person_id"),
                               deletable=True,
-                              editable=True,
-                              main="person_id", extra="organisation_id")
+                              editable=True)
 
     s3xrc.model.configure(table,
                           list_fields=["organisation_id",
                                        "status"])
 
-    # -----------------------------------------------------------------------------
+    # -------------------------------------------------------------------------
     # vol_resource (Component of pr_person)
-    #   describes resources (skills, tools) of a volunteer
-    #
+    #   describes resources (e.g. vehicles, tools) of a volunteer
+
+    # TODO: Skills are now separate.  Either repurpose "resources" or remove it.
     vol_resource_type_opts = {
-        1:T("General Skills"),
         2:T("Resources"),
         3:T("Restrictions"),
-        4:T("Site Manager"),
-        5:T("Unskilled"),
         99:T("Other")
     }
 
@@ -169,8 +171,7 @@ if deployment_settings.has_module(module):
                               multiple=True,
                               joinby=dict(pr_person="person_id"),
                               deletable=True,
-                              editable=True,
-                              main="person_id", extra="subject")
+                              editable=True)
 
     s3xrc.model.configure(table,
                           list_fields=["id",
@@ -197,7 +198,10 @@ if deployment_settings.has_module(module):
         msg_record_deleted = T("Resource deleted"),
         msg_list_empty = T("No resources currently registered"))
 
-    # -----------------------------------------------------------------------------
+    # TODO: Rather than the hours a volunteer "has a position" this will likely
+    # become hours the volunteer "works on a task", so vol_postion_id will
+    # switch to the task id.
+    # -------------------------------------------------------------------------
     # vol_hours:
     #   documents the hours a volunteer has a position
     #
@@ -215,30 +219,7 @@ if deployment_settings.has_module(module):
     #db[table].shift_end.requires=[IS_NOT_EMPTY(),
     #                                      IS_DATETIME]
 
-    # -----------------------------------------------------------------------------
-    # vol_mailbox
-    #
-    #resource = "mailbox"
-    #table = module + "_" + resource
-    #db.define_table(table, timestamp, uuidstamp, deletion_status,
-    #                person_id,
-    #                Field("message_id", "integer", notnull=True,label=T("message_id"), default=0),
-    #    Field("box", "integer", notnull=True, label=T("box"), default=0),
-    #    Field("checked", "integer", label=T("checked"), default=0),
-    #    migrate=migrate)
-
-
-    # -----------------------------------------------------------------------------
-    # vol_message
-    #   a text message
-    #
-    #resource = "message"
-    #table = module + "_" + resource
-    #db.define_table(table, timestamp, uuidstamp, deletion_status,
-    #                Field("message", "text", label=T("message")),
-    #                Field("time", "datetime", label=T("time"), notnull=True, default=request.now),
-    #                migrate=migrate)
-
+    # TODO: Remove?
     # -----------------------------------------------------------------------------
     # courier
     #resource = "courier"
@@ -255,6 +236,10 @@ if deployment_settings.has_module(module):
     #db[table].from_id.requires = IS_NOT_EMPTY()
     #db[table].message_id.requires = IS_NOT_NULL()
 
+    # TODO: Which of these are requests for access or granted access,
+    # associated with a particular volunteer, and which represent types of
+    # access or types of requests?  Anything tied to a particular volunteer
+    # should be a component of pr.
     # -----------------------------------------------------------------------------
     # vol_access_request
     #resource = "access_request"
@@ -294,3 +279,257 @@ if deployment_settings.has_module(module):
     #    Field("crud", "string", length=4, notnull=True, default=" ", label=T("crud")),
     #    migrate=migrate)
 
+    # TODO: Is this in use?  Have project location fields changed, since a
+    # project could have multiple locations?
+    # -------------------------------------------------------------------------
+    # shn_org_project_search_location:
+    #   form function to search projects by location
+    #
+    def shn_org_project_search_location(xrequest, **attr):
+
+        if attr is None:
+            attr = {}
+
+        if not shn_has_permission('read', db.org_project):
+            session.error = UNAUTHORISED
+            redirect(URL(r=request, c='default', f='user', args='login', vars={'_next':URL(r=request, args='search_location', vars=request.vars)}))
+
+        if xrequest.representation=="html":
+            # Check for redirection
+            if request.vars._next:
+                next = str.lower(request.vars._next)
+            else:
+                next = str.lower(URL(r=request, c="org", f="project", args="[id]"))
+
+            # Custom view
+            response.view = '%s/project_search.html' % xrequest.prefix
+
+            # Title and subtitle
+            title = T('Search for a Project')
+            subtitle = T('Matching Records')
+
+            # Select form:
+            l_opts = [OPTION(_value='')]
+            l_opts += [OPTION(location.name, _value=location.id)
+                    for location in db(db.gis_location.deleted == False).select(db.gis_location.ALL, cache=(cache.ram, 3600))]
+            form = FORM(TABLE(
+                    TR(T('Location: '),
+                    SELECT(_name="location", *l_opts, **dict(name="location", requires=IS_NULL_OR(IS_IN_DB(db, 'gis_location.id'))))),
+                    TR("", INPUT(_type="submit", _value="Search"))
+                    ))
+
+            output = dict(title=title, subtitle=subtitle, form=form, vars=form.vars)
+
+            # Accept action
+            items = None
+            if form.accepts(request.vars, session):
+
+                table = db.org_project
+                query = (table.deleted == False)
+
+                if form.vars.location is None:
+                    results = db(query).select(table.ALL)
+                else:
+                    query = query & (table.location_id == form.vars.location)
+                    results = db(query).select(table.ALL)
+
+                if results and len(results):
+                    records = []
+                    for result in results:
+                        href = next.replace("%5bid%5d", "%s" % result.id)
+                        records.append(TR(
+                            A(result.name, _href=href),
+                            result.start_date or "None",
+                            result.end_date or "None",
+                            result.description or "None",
+                            result.status and org_project_status_opts[result.status] or "unknown",
+                            ))
+                    items=DIV(TABLE(THEAD(TR(
+                        TH("Name"),
+                        TH("Start date"),
+                        TH("End date"),
+                        TH("Description"),
+                        TH("Status"))),
+                        TBODY(records), _id='list', _class="display"))
+                else:
+                        items = T("None")
+
+            try:
+                label_create_button = s3.crud_strings["org_project"].label_create_button
+            except:
+                label_create_button = s3.crud_strings.label_create_button
+
+            add_btn = A(label_create_button, _href=URL(r=request, c="org", f="project", args="create"), _class='action-btn')
+
+            output.update(dict(items=items, add_btn=add_btn))
+
+            return output
+
+        else:
+            session.error = BADFORMAT
+            redirect(URL(r=request))
+
+    # Plug into REST controller
+    s3xrc.model.set_method(module, "project", method="search_location", action=shn_org_project_search_location )
+
+
+    # -------------------------------------------------------------------------
+    # vol_skill_types
+    #   Customize to add more client defined Skill
+    #
+
+    resource = 'skill_types'
+    tablename = module + '_' + resource
+    table = db.define_table(tablename, timestamp, uuidstamp, deletion_status,
+            Field('name',  length=128,notnull=True),                      
+            Field('category', 'string', length=50),
+            Field('description'),
+            migrate=migrate)
+
+    # Field settings
+    table.uuid.requires = IS_NOT_IN_DB(db, '%s.uuid' % tablename)
+    table.name.requires = [IS_NOT_EMPTY(), IS_NOT_IN_DB(db, '%s.name' % tablename)]
+    table.name.label = T('Name')
+    table.name.comment = SPAN("*", _class="req")
+
+    # CRUD strings
+    s3.crud_strings[tablename] = Storage(
+        title_create = T('Add Skill Type'),
+        title_display = T('Skill Type Details'),
+        title_list = T('Skill Type'),
+        title_update = T('Edit Skill Type'),
+        title_search = T('Search Skill Type'),
+        subtitle_create = T('Add New Skill Type'),
+        subtitle_list = T('Skill Type'),
+        label_list_button = T('List Skill Types'),
+        label_create_button = T('Add Skill Types'),
+        label_delete_button = T('Delete Skill Type'),
+        msg_record_created = T('Skill Type added'),
+        msg_record_modified = T('Skill Type updated'),
+        msg_record_deleted = T('Skill Type deleted'),
+        msg_list_empty = T('No Skill Types currently set'))
+
+    field_settings = S3CheckboxesWidget(db = db, 
+                                        lookup_table_name = "vol_skill_types", 
+                                        lookup_field_name = "name",
+                                        multiple = True,
+                                        num_column=3
+                                        )
+
+    # Reusable field
+    skill_ids = db.Table(None, 'skill_ids',
+                         FieldS3('skill_ids',
+                         requires = field_settings.requires,
+                         widget = field_settings.widget,
+                         represent = field_settings.represent,
+                         label = T("skills"),
+                         ondelete = "RESTRICT"))
+
+    # Representation function
+    def vol_skill_types_represent(id):
+        if id:
+            record = db(db.vol_skill_types.id == id).select().first()
+            category = record.category
+            name = record.name
+            if category:
+                return "%s: %s" % (category, name)
+            else:
+                return name
+        else:
+            return None
+
+
+    # -------------------------------------------------------------------------
+    # vol_skill
+    #   A volunteer's skills (component of pr)
+    #
+
+    def multiselect_widget(f,v):
+	import uuid
+	d_id = "multiselect-" + str(uuid.uuid4())[:8]
+	wrapper = DIV(_id=d_id)
+	inp = SQLFORM.widgets.options.widget(f,v)
+	inp['_multiple'] = 'multiple'
+	inp['_style'] = 'min-width: %spx;' % (len(f.name) * 20 + 50)
+	if v:
+	    if not isinstance(v,list): v = str(v).split('|')
+	    opts = inp.elements('option')
+	    for op in opts:
+	        if op['_value'] in v:
+	            op['_selected'] = 'selected'            
+	scr = SCRIPT('jQuery("#%s select").multiSelect({'\
+	             'noneSelected:"Select %ss"});' % (d_id,f.name))
+	wrapper.append(inp)
+	wrapper.append(scr)
+	if request.vars.get(inp['_id']+'[]',None):
+	    var = request.vars[inp['_id']+'[]']
+	    if not isinstance(var,list): var = [var]
+	    request.vars[f.name] = '|'.join(var)
+	    del request.vars[inp['_id']+'[]']
+	return wrapper
+
+    resource = 'skill'
+    tablename = module + '_' + resource
+    table = db.define_table(tablename, timestamp, uuidstamp, deletion_status,
+                person_id,
+        Field('skill_types_id'),   
+        Field('status',requires=IS_IN_SET(['approved','unapproved','denied']),label=T('status'), notnull=True, default='unapproved'),             
+                    migrate=migrate)  
+   
+    db.vol_skill.skill_types_id.widget = multiselect_widget
+    db.vol_skill.skill_types_id.requires = IS_ONE_OF(db, 'vol_skill_types.id', vol_skill_types_represent, multiple=True)
+    #db.vol_skill.skill_types_id.represent = vol_skill_types_represent
+
+    s3xrc.model.add_component(module, resource,
+        multiple=True,
+        joinby=dict(pr_person='person_id'),
+        deletable=True,
+        editable=True)
+
+    s3xrc.model.configure(table,
+                          list_fields=['id',
+                                       'skill_types_id',
+                                       'status'])
+
+    # CRUD Strings
+    ADD_SKILL = T('Add Skill')
+    SKILL = T('Skill')
+    s3.crud_strings[tablename] = Storage(
+        title_create = ADD_SKILL,
+        title_display = T('Skill Details'),
+        title_list = SKILL,
+        title_update = T('Edit Skill'),
+        title_search = T('Search Skill'),
+        subtitle_create = T('Add New Skill'),
+        subtitle_list = SKILL,
+        label_list_button = T('List Skill'),
+        label_create_button = ADD_SKILL,
+        msg_record_created = T('Skill added'),
+        msg_record_modified = T('Skill updated'),
+        msg_record_deleted = T('Skill deleted'),
+        msg_list_empty = T('No skills currently set'))
+
+# shn_pr_group_represent -----------------------------------------------------
+#
+def teamname(record):
+    """
+        Returns the Team Name
+    """
+
+    tname = ""
+    if record and record.name:
+        tname = "%s " % record.name.strip()
+    return tname
+
+def shn_pr_group_represent(id):
+
+    def _represent(id):
+        table = db.pr_group
+        group = db(table.id == id).select(table.name)
+        if group:
+            return teamname(group[0])
+        else:
+            return None
+
+    name = cache.ram("pr_group_%s" % id, lambda: _represent(id))
+    return name

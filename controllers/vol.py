@@ -65,9 +65,9 @@ def shn_menu():
                 ["%s %s" % (T("Person:"), person_name), False, URL(r=request, f="person", args=[person_id, "read"]),[
                     # The arg "volunteer" causes this to display the
                     # vol_volunteer tab initially.
-                    [T("Volunteer Data"), False, URL(r=request, f="person", args=[person_id, "volunteer"], vars={"vol_tabs":"volunteer"})],
+                    [T("Volunteer Data"), False, URL(r=request, f="volunteer", args=[person_id, "volunteer"])],
                     # The default tab is pr_person, which is fine here.
-                    [T("Person Data"), False, URL(r=request, f="person", args=[person_id], vars={"vol_tabs":"person"})],
+                    [T("Person Data"), False, URL(r=request, f="person", args=[person_id])],
                     [T("View Map"), False, URL(r=request, f="view_map", args=[person_id])],
                 ]],
             ]
@@ -98,11 +98,7 @@ def index():
 # -----------------------------------------------------------------------------
 def person():
 
-    """
-    This controller produces either generic person component tabs or
-    volunteer-specific person component tabs, depending on whether "vol_tabs"
-    in the URL's vars is "person" or "volunteer".
-    """
+    """ Personal Data of the volunteer """
 
     response.s3.pagination = True
 
@@ -119,39 +115,68 @@ def person():
         return output
     response.s3.postp = person_postp
 
-    tab_set = "person"
-    if "vol_tabs" in request.vars:
-        tab_set = request.vars["vol_tabs"]
-    if tab_set == "person":
-        db.pr_person.missing.default = False
-        tabs = [(T("Basic Details"), None),
-                (T("Images"), "image"),
-                (T("Identity"), "identity"),
-                (T("Address"), "address"),
-                (T("Contact Data"), "pe_contact"),
-                (T("Presence Log"), "presence")]
-    else:
-        # TODO: These files are for the multiselect widget used for skills.
-        # Check if we still need them if we switch to a different widget.
-        response.files.append(URL(r=request,c='static/scripts/S3',f='jquery.multiSelect.js'))
-        response.files.append(URL(r=request,c='static/styles/S3',f='jquery.multiSelect.css'))
-        db.pr_group_membership.group_id.label = T("Team Id")
-        db.pr_group_membership.group_head.label = T("Team Head")
-        s3xrc.model.configure(db.pr_group_membership,
-                              list_fields=["id",
-                                           "group_id",
-                                           "group_head",
-                                           "description"])
-        # TODO: If we don't know what a "status report" is supposed to be,
-        # take it out.  Take out resources til they're modernized.
-        tabs = [#(T("Status Report"), None),
-                (T("Availablity"), "volunteer"),
-                (T("Teams"), "group_membership"),
-                (T("Skills"), "skill"),
-                #(T("Resources"), "resource"),
-               ]
+    db.pr_person.missing.default = False
+    tabs = [(T("Basic Details"), None),
+            (T("Images"), "image"),
+            (T("Identity"), "identity"),
+            (T("Address"), "address"),
+            (T("Contact Data"), "pe_contact"),
+            (T("Presence Log"), "presence")]
 
     resource = request.function
+    output = shn_rest_controller("pr", resource,
+        main="first_name",
+        extra="last_name",
+        rheader=lambda jr: shn_pr_rheader(jr, tabs),
+        sticky=True,
+        listadd=False)
+
+    shn_menu()
+    return output
+
+
+# -----------------------------------------------------------------------------
+def volunteer():
+
+    """ Volunteer information """
+
+    response.s3.pagination = True
+
+    def person_postp(jr, output):
+        if jr.representation in ("html", "popup"):
+            if not jr.component:
+                label = READ
+            else:
+                label = UPDATE
+            linkto = shn_linkto(jr, sticky=True)("[id]")
+            response.s3.actions = [
+                dict(label=str(label), _class="action-btn", url=linkto)
+            ]
+        return output
+    response.s3.postp = person_postp
+
+    # TODO: These files are for the multiselect widget used for skills.
+    # Check if we still need them if we switch to a different widget.
+    response.files.append(URL(r=request,c='static/scripts/S3',f='jquery.multiSelect.js'))
+    response.files.append(URL(r=request,c='static/styles/S3',f='jquery.multiSelect.css'))
+
+    db.pr_group_membership.group_id.label = T("Team Id")
+    db.pr_group_membership.group_head.label = T("Team Head")
+
+    s3xrc.model.configure(db.pr_group_membership,
+                            list_fields=["id",
+                                        "group_id",
+                                        "group_head",
+                                        "description"])
+
+    tabs = [(T("Availablity"), "volunteer/volunteer"),
+            (T("Teams"), "volunteer/group_membership"),
+            (T("Skills"), "volunteer/skill")]
+
+    crud.settings.update_next = URL(r=request)
+    crud.settings.create_next = URL(r=request)
+
+    resource = "person"
     output = shn_rest_controller("pr", resource,
         main="first_name",
         extra="last_name",
@@ -168,12 +193,12 @@ def project():
     "Project controller"
 
     resource = request.function
-    
+
     def org_postp(jr, output):
         shn_action_buttons(jr)
         return output
     response.s3.postp = org_postp
-    
+
     # ServerSidePagination
     response.s3.pagination = True
 
@@ -188,7 +213,7 @@ def project():
                     #(T("Sites"), "site"),          # Ticket 195
                    ]),
         sticky=True)
-    
+
     return output
 
 
@@ -222,7 +247,7 @@ def task():
     return shn_rest_controller("org", resource, listadd=False)
 
 
-# ----------------------------------------------------------------------------- 
+# -----------------------------------------------------------------------------
 def skill_types():
     "Allow user to define new skill types."
     return shn_rest_controller(module, "skill_types")
@@ -290,7 +315,7 @@ def group():
     table.name.label = T("Team Name")
     db.pr_group_membership.group_id.label = T("Team Id")
     db.pr_group_membership.group_head.label = T("Team Head")
- 
+
     # CRUD Strings
     ADD_TEAM = T("Add Team")
     LIST_TEAMS = T("List Teams")

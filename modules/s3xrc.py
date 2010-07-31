@@ -1770,7 +1770,7 @@ class S3Request(object):
 
     def __next(self, id=None, method=None, representation=None, vars=None):
 
-        """ Returns a URL of the current resource
+        """ Returns a URL of the current request
 
             @param id: the record ID for the URL
             @param method: an explicit method for the URL
@@ -1830,8 +1830,10 @@ class S3Request(object):
             else:
                 vars.update(format=representation)
 
-        return(URL(r=self.request, c=self.request.controller,
-                   f=self.name, args=args, vars=vars))
+        return(URL(r=self.request,
+                   c=self.request.controller,
+                   f=self.request.function,
+                   args=args, vars=vars))
 
 
     # -------------------------------------------------------------------------

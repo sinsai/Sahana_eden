@@ -18,17 +18,17 @@ def shn_menu():
             [T("Add Project"), False, URL(r=request, f="project", args="create")],
         ]],
     ]
-    if session.rcvars and "org_project" in session.rcvars:
-        project_id = session.rcvars["org_project"]
-        selection = db.org_project[project_id]
-        if selection:
-            menu_project = [
-                    ["%s %s" % (T("Project:"), selection.code), False, URL(r=request, f="project", args=[project_id]),[
-                        [T("Tasks"), False, URL(r=request, f="project", args=[project_id, "task"])],
-                        [T("Staff"), False, URL(r=request, f="project", args=[project_id, "staff"])],
-                    ]]
-            ]
-            menu.extend(menu_project)
+    #if session.rcvars and "org_project" in session.rcvars:
+        #project_id = session.rcvars["org_project"]
+        #selection = db.org_project[project_id]
+        #if selection:
+            #menu_project = [
+                    #["%s %s" % (T("Project:"), selection.code), False, URL(r=request, f="project", args=[project_id]),[
+                        #[T("Tasks"), False, URL(r=request, f="project", args=[project_id, "task"])],
+                        #[T("Staff"), False, URL(r=request, f="project", args=[project_id, "staff"])],
+                    #]]
+            #]
+            #menu.extend(menu_project)
 
     menu_teams = [
         [T("Teams"), False, URL(r=request, f="group"),[
@@ -37,15 +37,15 @@ def shn_menu():
         ]]
     ]
     menu.extend(menu_teams)
-    if session.rcvars and "pr_group" in session.rcvars:
-        group_id = session.rcvars["pr_group"]
-        selection = db.pr_group[group_id]
-        if selection:
-            team_name = shn_pr_group_represent(group_id)
-            menu_teams = [
-                ["%s %s" % (T("Team:"), team_name), False, URL(r=request, f="group", args=[group_id, "read"])],
-            ]
-            menu.extend(menu_teams)
+    #if session.rcvars and "pr_group" in session.rcvars:
+        #group_id = session.rcvars["pr_group"]
+        #selection = db.pr_group[group_id]
+        #if selection:
+            #team_name = shn_pr_group_represent(group_id)
+            #menu_teams = [
+                #["%s %s" % (T("Team:"), team_name), False, URL(r=request, f="group", args=[group_id, "read"])],
+            #]
+            ##menu.extend(menu_teams)
 
     menu_persons = [
         [T("Persons"), False, URL(r=request, f="person", args=["search_simple"], vars={"_next":URL(r=request, f="person", args=["[id]", "volunteer"], vars={"vol_tabs":"volunteer"})}),[

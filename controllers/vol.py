@@ -40,10 +40,15 @@ def shn_menu():
     ]
     menu.extend(menu_skills)
     if auth.user is not None:
-        menu_user = [
-            [T("My Tasks"), False, URL(r=request, f="task", args="")]
-        ]
-        menu.extend(menu_user)
+        if auth.user.person_uuid:
+            set = db(db.pr_person.uuid == auth.user.person_uuid)
+            me = set.select(db.pr_person.id, limitby=(0,1)).first()
+            if me:
+                menu_user = [
+                    [T("My Volunteer Info"), False, URL(r=request, f="volunteer", args=[me.id, "volunteer"])],
+                    [T("My Tasks"), False, URL(r=request, f="task", args="")]
+                ]
+                menu.extend(menu_user)
 
     # Last selections:
     menu_selected = []

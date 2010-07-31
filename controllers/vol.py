@@ -54,24 +54,24 @@ def shn_menu():
         ]]
     ]
     menu.extend(menu_persons)
-    if session.rcvars and "pr_person" in session.rcvars:
-        person_id = session.rcvars["pr_person"]
-        selection = db.pr_person[person_id]
-        if selection:
-            person_name = shn_pr_person_represent(person_id)
-            # ?vol_tabs=person and ?vol_tabs=volunteer are used by the person
-            # controller to select which set of tabs to display.
-            menu_person = [
-                ["%s %s" % (T("Person:"), person_name), False, URL(r=request, f="person", args=[person_id, "read"]),[
-                    # The arg "volunteer" causes this to display the
-                    # vol_volunteer tab initially.
-                    [T("Volunteer Data"), False, URL(r=request, f="volunteer", args=[person_id, "volunteer"])],
-                    # The default tab is pr_person, which is fine here.
-                    [T("Person Data"), False, URL(r=request, f="person", args=[person_id])],
-                    [T("View Map"), False, URL(r=request, f="view_map", args=[person_id])],
-                ]],
-            ]
-            menu.extend(menu_person)
+    #if session.rcvars and "pr_person" in session.rcvars:
+        #person_id = session.rcvars["pr_person"]
+        #selection = db.pr_person[person_id]
+        #if selection:
+            #person_name = shn_pr_person_represent(person_id)
+            ## ?vol_tabs=person and ?vol_tabs=volunteer are used by the person
+            ## controller to select which set of tabs to display.
+            #menu_person = [
+                #["%s %s" % (T("Person:"), person_name), False, URL(r=request, f="person", args=[person_id, "read"]),[
+                    ## The arg "volunteer" causes this to display the
+                    ## vol_volunteer tab initially.
+                    #[T("Volunteer Data"), False, URL(r=request, f="volunteer", args=[person_id, "volunteer"])],
+                    ## The default tab is pr_person, which is fine here.
+                    #[T("Person Data"), False, URL(r=request, f="person", args=[person_id])],
+                    #[T("View Map"), False, URL(r=request, f="view_map", args=[person_id])],
+                #]],
+            #]
+            #menu.extend(menu_person)
     menu_skills = [
         [T("Skill Types"), False, URL(r=request, f="skill_types")],
     ]
@@ -127,7 +127,7 @@ def person():
     output = shn_rest_controller("pr", resource,
         main="first_name",
         extra="last_name",
-        rheader=lambda jr: shn_pr_rheader(jr, tabs),
+        rheader=lambda jr: shn_vol_rheader(jr, tabs),
         sticky=True,
         listadd=False)
 
@@ -177,7 +177,7 @@ def volunteer():
     output = shn_rest_controller("pr", resource,
         main="first_name",
         extra="last_name",
-        rheader=lambda jr: shn_pr_rheader(jr, tabs),
+        rheader=lambda jr: shn_vol_rheader(jr, tabs),
         sticky=True,
         listadd=False)
 
@@ -397,3 +397,54 @@ def skill():
 def resource():
     "Select resources a volunteer has."
     return shn_rest_controller(module, "resource")
+
+# -----------------------------------------------------------------------------
+def shn_vol_rheader(jr, tabs=[]):
+
+    """ Volunteer registry page headers """
+
+    if jr.representation == "html":
+        rheader_tabs = shn_rheader_tabs(jr, tabs)
+
+        if jr.name == "person":
+
+            _next = jr.here()
+            _same = jr.same()
+
+            person = jr.record
+
+            if jr.request.function == "person":
+                _href = URL(r=request, f="volunteer", args=[jr.id, "volunteer"])
+                link = A(T("Volunteer Info"), _href=_href, _class="action-btn")
+            elif jr.request.function == "volunteer":
+                _href = URL(r=request, f="person", args=[jr.id])
+                link = A(T("Personal Data"), _href=_href, _class="action-btn")
+
+            if person:
+                rheader = DIV(TABLE(
+
+                    TR(TH(T("Name: ")),
+                       vita.fullname(person),
+                       TH(T("ID Label: ")),
+                       "%(pe_label)s" % person,
+                       TH(link)),
+
+                    TR(TH(T("Date of Birth: ")),
+                       "%s" % (person.date_of_birth or T("unknown")),
+                       TH(T("Gender: ")),
+                       "%s" % pr_gender_opts.get(person.gender, T("unknown")),
+                       TH("")),
+
+                    TR(TH(T("Nationality: ")),
+                       "%s" % pr_nations.get(person.nationality, T("unknown")),
+                       TH(T("Age Group: ")),
+                       "%s" % pr_age_group_opts.get(person.age_group, T("unknown")),
+                       TH("")),
+
+                    #))
+                    ), rheader_tabs)
+
+                return rheader
+
+    return None
+

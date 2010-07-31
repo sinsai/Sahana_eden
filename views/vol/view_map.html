@@ -1,2 +1,18 @@
 {{extend 'layout.html'}}
+{{try:}}
+ {{=H2(title)}}
+{{except:}}
+{{pass}}
+<div id='rheader'>
+{{try:}}
+ {{=rheader}}
+{{except:}}
+ {{pass}}
+</div>
+<div id='table-container'>
+{{try:}}
 {{=XML(map)}}
+ <p>&nbsp;</p>
+{{except:}}
+{{pass}}
+</div>

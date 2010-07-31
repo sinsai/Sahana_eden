@@ -84,7 +84,6 @@ def shn_menu():
 
 shn_menu()
 
-
 def index():
 
     """ Module's Home Page """
@@ -93,7 +92,6 @@ def index():
 
     return dict(module_name=module_name)
 
-
 # -----------------------------------------------------------------------------
 def person():
 
@@ -101,11 +99,10 @@ def person():
 
     response.s3.pagination = True
 
-    volunteer_data = ("volunteer", "group_membership", "skill")
-
     def prep(jr):
         if jr.representation == "html":
-            if jr.component and jr.component_name in volunteer_data:
+            if jr.component and jr.component_name in shn_vol_volunteer_data or \
+               jr.method and jr.method == "view_map":
                 # TODO: These files are for the multiselect widget used for skills.
                 # Check if we still need them if we switch to a different widget.
                 response.files.append(URL(r=request,
@@ -145,8 +142,7 @@ def person():
     output = shn_rest_controller("pr", resource,
         main="first_name",
         extra="last_name",
-        rheader=lambda jr, volunteer_data=volunteer_data: \
-                shn_vol_rheader(jr, volunteer_data),
+        rheader=lambda jr: shn_vol_rheader(jr),
         sticky=True,
         listadd=False)
 
@@ -217,54 +213,6 @@ def task():
 def skill_types():
     "Allow user to define new skill types."
     return shn_rest_controller(module, "skill_types")
-
-
-# -----------------------------------------------------------------------------
-def view_map():
-    """
-    Map Location of Volunteer.
-    Use most recent presence if available, else any address that's available.
-    """
-
-    person_id = request.args(0)
-
-    presence_query = (db.pr_person.id == person_id) and (db.pr_presence.pe_id == db.pr_person.pe_id) and (db.gis_location.id == db.pr_presence.location_id)
-
-    # Need sql.Rows object for show_map, so don't extract individual row.
-    location = db(presence_query).select(db.gis_location.ALL, orderby=~db.pr_presence.time, limitby=(0, 1))
-
-    if not location:
-        address_query = (db.pr_person.id == person_id) and (db.pr_address.pe_id == db.pr_person.pe_id) and (db.gis_location.id == db.pr_address.location_id)
-        # TODO: If there are multiple addresses, which should we choose?
-        # For now, take whichever address is supplied first.
-        location = db(address_query).select(db.gis_location.ALL, limitby=(0, 1))
-
-    if location:
-        # Center and zoom the map.
-        location_row = location.first()  # location is a sql.Rows
-        lat = location_row.lat
-        lon = location_row.lon
-        bounds = gis.get_bounds(features=location)
-
-        volunteer = {"feature_group" : "People"}
-        html = gis.show_map(
-            feature_queries = [{"name" : "Volunteer", "query" : location, "active" : True, "marker" : db(db.gis_marker.name == "volunteer").select().first().id}],
-            feature_groups = [volunteer],
-            wms_browser = {"name" : "Risk Maps", "url" : "http://preview.grid.unep.ch:8080/geoserver/ows?service=WMS&request=GetCapabilities"},
-            catalogue_overlays = True,
-            catalogue_toolbar = True,
-            toolbar = True,
-            search = True,
-            lat = lat,
-            lon = lon,
-            bbox = bounds,
-            window = True,
-        )
-        return dict(map=html)
-
-    # TODO: What is an appropriate response if no location is available?
-    return None
-
 
 # -----------------------------------------------------------------------------
 def group():
@@ -368,16 +316,18 @@ def resource():
     return shn_rest_controller(module, "resource")
 
 # -----------------------------------------------------------------------------
-def shn_vol_rheader(jr, volunteer_data):
+def shn_vol_rheader(jr):
 
     """ Volunteer registry page headers """
 
     if jr.representation == "html":
 
-        if jr.component and jr.component_name in volunteer_data:
+        if jr.component and jr.component_name in shn_vol_volunteer_data or \
+            jr.method and jr.method == "view_map":
             tabs = [(T("Availablity"), "volunteer"),
                     (T("Teams"), "group_membership"),
-                    (T("Skills"), "skill")]
+                    (T("Skills"), "skill"),
+                    (T("Show Location on Map"), "view_map")]
             _href = URL(r=request, f="person", args=[jr.id])
             link = A(T("Personal Data"), _href=_href, _class="action-btn")
         else:

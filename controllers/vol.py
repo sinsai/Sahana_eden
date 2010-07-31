@@ -173,9 +173,6 @@ def volunteer():
             (T("Teams"), "volunteer/group_membership"),
             (T("Skills"), "volunteer/skill")]
 
-    crud.settings.update_next = URL(r=request)
-    crud.settings.create_next = URL(r=request)
-
     resource = "person"
     output = shn_rest_controller("pr", resource,
         main="first_name",

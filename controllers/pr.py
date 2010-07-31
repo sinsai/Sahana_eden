@@ -56,8 +56,11 @@ def index():
 
     def prep(jr):
         if jr.representation == "html":
-            jr.method = "search_simple"
-            jr.custom_action = shn_pr_person_search_simple
+            if not jr.id:
+                jr.method = "search_simple"
+                jr.custom_action = shn_pr_person_search_simple
+            else:
+               redirect(URL(r=request, f="person", args=[jr.id]))
         return True
     response.s3.prep = prep
 
@@ -77,13 +80,22 @@ def index():
 
             total = int(db(db.pr_person.deleted == False).count())
             output.update(module_name=module_name, gender=gender, age=age, total=total)
+        if jr.representation in ("html", "popup"):
+            if not jr.component:
+                label = READ
+            else:
+                label = UPDATE
+            linkto = shn_linkto(jr, sticky=True)("[id]")
+            response.s3.actions = [
+                dict(label=str(label), _class="action-btn", url=linkto)
+            ]
         return output
     response.s3.postp = postp
 
     response.s3.pagination = True
     output = shn_rest_controller("pr", "person")
-
     response.view = "pr/index.html"
+
     shn_menu()
     return output
 

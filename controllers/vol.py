@@ -18,17 +18,6 @@ def shn_menu():
             [T("Add Project"), False, URL(r=request, f="project", args="create")],
         ]],
     ]
-    #if session.rcvars and "org_project" in session.rcvars:
-        #project_id = session.rcvars["org_project"]
-        #selection = db.org_project[project_id]
-        #if selection:
-            #menu_project = [
-                    #["%s %s" % (T("Project:"), selection.code), False, URL(r=request, f="project", args=[project_id]),[
-                        #[T("Tasks"), False, URL(r=request, f="project", args=[project_id, "task"])],
-                        #[T("Staff"), False, URL(r=request, f="project", args=[project_id, "staff"])],
-                    #]]
-            #]
-            #menu.extend(menu_project)
 
     menu_teams = [
         [T("Teams"), False, URL(r=request, f="group"),[
@@ -37,15 +26,6 @@ def shn_menu():
         ]]
     ]
     menu.extend(menu_teams)
-    #if session.rcvars and "pr_group" in session.rcvars:
-        #group_id = session.rcvars["pr_group"]
-        #selection = db.pr_group[group_id]
-        #if selection:
-            #team_name = shn_pr_group_represent(group_id)
-            #menu_teams = [
-                #["%s %s" % (T("Team:"), team_name), False, URL(r=request, f="group", args=[group_id, "read"])],
-            #]
-            ##menu.extend(menu_teams)
 
     menu_persons = [
         [T("Persons"), False, URL(r=request, f="person", args=["search_simple"], vars={"_next":URL(r=request, f="person", args=["[id]", "volunteer"], vars={"vol_tabs":"volunteer"})}),[
@@ -54,24 +34,7 @@ def shn_menu():
         ]]
     ]
     menu.extend(menu_persons)
-    #if session.rcvars and "pr_person" in session.rcvars:
-        #person_id = session.rcvars["pr_person"]
-        #selection = db.pr_person[person_id]
-        #if selection:
-            #person_name = shn_pr_person_represent(person_id)
-            ## ?vol_tabs=person and ?vol_tabs=volunteer are used by the person
-            ## controller to select which set of tabs to display.
-            #menu_person = [
-                #["%s %s" % (T("Person:"), person_name), False, URL(r=request, f="person", args=[person_id, "read"]),[
-                    ## The arg "volunteer" causes this to display the
-                    ## vol_volunteer tab initially.
-                    #[T("Volunteer Data"), False, URL(r=request, f="volunteer", args=[person_id, "volunteer"])],
-                    ## The default tab is pr_person, which is fine here.
-                    #[T("Person Data"), False, URL(r=request, f="person", args=[person_id])],
-                    #[T("View Map"), False, URL(r=request, f="view_map", args=[person_id])],
-                #]],
-            #]
-            #menu.extend(menu_person)
+
     menu_skills = [
         [T("Skill Types"), False, URL(r=request, f="skill_types")],
     ]
@@ -81,6 +44,37 @@ def shn_menu():
             [T("My Tasks"), False, URL(r=request, f="task", args="")]
         ]
         menu.extend(menu_user)
+
+    # Last selections:
+    menu_selected = []
+    if session.rcvars and "pr_person" in session.rcvars:
+        person = db.pr_person
+        query = (person.id == session.rcvars["pr_person"])
+        record = db(query).select(person.id, limitby=(0, 1)).first()
+        if record:
+            name = shn_pr_person_represent(record.id)
+            menu_selected.append(["%s: %s" % (T("Person"), name), False,
+                                 URL(r=request, f="person", args=[record.id])])
+    if session.rcvars and "org_project" in session.rcvars:
+        project = db.org_project
+        query = (project.id == session.rcvars["org_project"])
+        record = db(query).select(project.id, project.code, limitby=(0, 1)).first()
+        if record:
+            code = record.code
+            menu_selected.append(["%s: %s" % (T("Project"), code), False,
+                                 URL(r=request, f="project", args=[record.id])])
+    if session.rcvars and "pr_group" in session.rcvars:
+        group = db.pr_group
+        query = (group.id == session.rcvars["pr_group"])
+        record = db(query).select(group.id, group.name, limitby=(0, 1)).first()
+        if record:
+            name = record.name
+            menu_selected.append(["%s: %s" % (T("Team"), name), False,
+                                 URL(r=request, f="group", args=[record.id])])
+    if menu_selected:
+        menu_selected = [T("Open recent"), True, None, menu_selected]
+        menu.append(menu_selected)
+
     response.menu_options = menu
 
 shn_menu()

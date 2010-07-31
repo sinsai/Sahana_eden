@@ -552,8 +552,8 @@ if deployment_settings.has_module(module):
         if jr.id:
             person_id = jr.id
 
-            presence_query = (db.pr_person.id == person_id) and \
-                             (db.pr_presence.pe_id == db.pr_person.pe_id) and \
+            presence_query = (db.pr_person.id == person_id) & \
+                             (db.pr_presence.pe_id == db.pr_person.pe_id) & \
                              (db.gis_location.id == db.pr_presence.location_id)
 
             # Need sql.Rows object for show_map, so don't extract individual row.
@@ -562,8 +562,8 @@ if deployment_settings.has_module(module):
                                                 limitby=(0, 1))
 
             if not location:
-                address_query = (db.pr_person.id == person_id) and \
-                                (db.pr_address.pe_id == db.pr_person.pe_id) and \
+                address_query = (db.pr_person.id == person_id) & \
+                                (db.pr_address.pe_id == db.pr_person.pe_id) & \
                                 (db.gis_location.id == db.pr_address.location_id)
 
                 # TODO: If there are multiple addresses, which should we choose?
@@ -605,7 +605,8 @@ if deployment_settings.has_module(module):
 
             else:
                 # TODO: What is an appropriate response if no location is available?
-                pass
+                html = T("No location known of this person.")
+                output.update(map=html)
 
         return output
 

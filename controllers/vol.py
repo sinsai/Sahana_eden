@@ -45,7 +45,7 @@ def shn_menu():
             me = set.select(db.pr_person.id, limitby=(0,1)).first()
             if me:
                 menu_user = [
-                    [T("My Volunteer Info"), False, URL(r=request, f="volunteer", args=[me.id, "volunteer"])],
+                    [T("My Volunteer Info"), False, URL(r=request, f="person", args=[me.id, "volunteer"])],
                     [T("My Tasks"), False, URL(r=request, f="task", args="")]
                 ]
                 menu.extend(menu_user)
@@ -101,7 +101,34 @@ def person():
 
     response.s3.pagination = True
 
-    def person_postp(jr, output):
+    volunteer_data = ("volunteer", "group_membership", "skill")
+
+    def prep(jr):
+        if jr.representation == "html":
+            if jr.component and jr.component_name in volunteer_data:
+                # TODO: These files are for the multiselect widget used for skills.
+                # Check if we still need them if we switch to a different widget.
+                response.files.append(URL(r=request,
+                                          c="static/scripts/S3",
+                                          f="jquery.multiSelect.js"))
+                response.files.append(URL(r=request,
+                                          c="static/styles/S3",
+                                          f="jquery.multiSelect.css"))
+
+                db.pr_group_membership.group_id.label = T("Team Id")
+                db.pr_group_membership.group_head.label = T("Team Head")
+
+                s3xrc.model.configure(db.pr_group_membership,
+                                        list_fields=["id",
+                                                    "group_id",
+                                                    "group_head",
+                                                    "description"])
+            else:
+                db.pr_person.missing.default = False
+        return True
+    response.s3.prep = prep
+
+    def postp(jr, output):
         if jr.representation in ("html", "popup"):
             if not jr.component:
                 label = READ
@@ -112,71 +139,14 @@ def person():
                 dict(label=str(label), _class="action-btn", url=linkto)
             ]
         return output
-    response.s3.postp = person_postp
-
-    db.pr_person.missing.default = False
-    tabs = [(T("Basic Details"), None),
-            (T("Images"), "image"),
-            (T("Identity"), "identity"),
-            (T("Address"), "address"),
-            (T("Contact Data"), "pe_contact"),
-            (T("Presence Log"), "presence")]
+    response.s3.postp = postp
 
     resource = request.function
     output = shn_rest_controller("pr", resource,
         main="first_name",
         extra="last_name",
-        rheader=lambda jr: shn_vol_rheader(jr, tabs),
-        sticky=True,
-        listadd=False)
-
-    shn_menu()
-    return output
-
-
-# -----------------------------------------------------------------------------
-def volunteer():
-
-    """ Volunteer information """
-
-    response.s3.pagination = True
-
-    def person_postp(jr, output):
-        if jr.representation in ("html", "popup"):
-            if not jr.component:
-                label = READ
-            else:
-                label = UPDATE
-            linkto = shn_linkto(jr, sticky=True)("[id]")
-            response.s3.actions = [
-                dict(label=str(label), _class="action-btn", url=linkto)
-            ]
-        return output
-    response.s3.postp = person_postp
-
-    # TODO: These files are for the multiselect widget used for skills.
-    # Check if we still need them if we switch to a different widget.
-    response.files.append(URL(r=request,c='static/scripts/S3',f='jquery.multiSelect.js'))
-    response.files.append(URL(r=request,c='static/styles/S3',f='jquery.multiSelect.css'))
-
-    db.pr_group_membership.group_id.label = T("Team Id")
-    db.pr_group_membership.group_head.label = T("Team Head")
-
-    s3xrc.model.configure(db.pr_group_membership,
-                            list_fields=["id",
-                                        "group_id",
-                                        "group_head",
-                                        "description"])
-
-    tabs = [(T("Availablity"), "volunteer/volunteer"),
-            (T("Teams"), "volunteer/group_membership"),
-            (T("Skills"), "volunteer/skill")]
-
-    resource = "person"
-    output = shn_rest_controller("pr", resource,
-        main="first_name",
-        extra="last_name",
-        rheader=lambda jr: shn_vol_rheader(jr, tabs),
+        rheader=lambda jr, volunteer_data=volunteer_data: \
+                shn_vol_rheader(jr, volunteer_data),
         sticky=True,
         listadd=False)
 
@@ -398,11 +368,28 @@ def resource():
     return shn_rest_controller(module, "resource")
 
 # -----------------------------------------------------------------------------
-def shn_vol_rheader(jr, tabs=[]):
+def shn_vol_rheader(jr, volunteer_data):
 
     """ Volunteer registry page headers """
 
     if jr.representation == "html":
+
+        if jr.component and jr.component_name in volunteer_data:
+            tabs = [(T("Availablity"), "volunteer"),
+                    (T("Teams"), "group_membership"),
+                    (T("Skills"), "skill")]
+            _href = URL(r=request, f="person", args=[jr.id])
+            link = A(T("Personal Data"), _href=_href, _class="action-btn")
+        else:
+            tabs = [(T("Basic Details"), None),
+                    (T("Images"), "image"),
+                    (T("Identity"), "identity"),
+                    (T("Address"), "address"),
+                    (T("Contact Data"), "pe_contact"),
+                    (T("Presence Log"), "presence")]
+            _href = URL(r=request, f="person", args=[jr.id, "volunteer"])
+            link = A(T("Volunteer Info"), _href=_href, _class="action-btn")
+
         rheader_tabs = shn_rheader_tabs(jr, tabs)
 
         if jr.name == "person":
@@ -411,13 +398,6 @@ def shn_vol_rheader(jr, tabs=[]):
             _same = jr.same()
 
             person = jr.record
-
-            if jr.request.function == "person":
-                _href = URL(r=request, f="volunteer", args=[jr.id, "volunteer"])
-                link = A(T("Volunteer Info"), _href=_href, _class="action-btn")
-            elif jr.request.function == "volunteer":
-                _href = URL(r=request, f="person", args=[jr.id])
-                link = A(T("Personal Data"), _href=_href, _class="action-btn")
 
             if person:
                 rheader = DIV(TABLE(

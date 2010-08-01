@@ -82,11 +82,11 @@ def shn_pentity_represent(id, default_label="[no label]"):
 
     elif pe_type == "pr_group":
         group = db(table.pe_id == id).select(
-                   table.group_name,
+                   table.name,
                    limitby=(0, 1)).first()
         if group:
             pe_str = "%s (%s)" % (
-                group.group_name, pe_type_nice
+                group.name, pe_type_nice
             )
 
     elif pe_type == "org_organisation":

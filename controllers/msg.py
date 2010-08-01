@@ -13,6 +13,7 @@ if module not in deployment_settings.modules:
 # Options Menu (available in all Functions' Views)
 response.menu_options = [
 	[T("Compose"), False, URL(r=request, c="msg", f="compose")],
+	[T("Compose"), False, URL(r=request, c="msg", f="compose")],
 	#[T("Outbox"), False, URL(r=request, f="outbox")],#TODO
 	[T("Distribution groups"), False, URL(r=request, f="group"), [
 		[T("List/Add"), False, URL(r=request, f="group")],

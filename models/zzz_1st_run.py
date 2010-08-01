@@ -426,6 +426,10 @@ if empty:
             name = "water",
             image = "gis_marker.image.Water_Supply_Infrastructure_Theme_S1.png"
         )
+        table.insert(
+            name = "volunteer",
+            image = "gis_marker.image.Volunteer.png"
+        )
     tablename = "gis_projection"
     table = db[tablename]
     if not db(table.id > 0).count():
@@ -580,6 +584,12 @@ if empty:
             gps_marker = "Car",
         )
         table.insert(
+            uuid = "www.sahanafoundation.org/GIS-FEATURE-CLASS-VOLUNTEER",
+            name = "Volunteer",
+            marker_id = db(db.gis_marker.name == "volunteer").select(limitby=(0, 1)).first().id,
+            gps_marker = "volunteer",
+        )
+        table.insert(
             uuid = "www.sahanafoundation.org/GIS-FEATURE-CLASS-WAREHOUSE",
             name = "Warehouse",
             gps_marker = "Building",
@@ -681,6 +691,10 @@ if empty:
         table.insert(
             feature_group_id = db(db.gis_feature_group.name == "People").select(db.gis_feature_group.id, limitby=(0, 1)).first().id,
             feature_class_id = db(db.gis_feature_class.name == "Person").select(db.gis_feature_class.id, limitby=(0, 1)).first().id,
+        )
+        table.insert(
+            feature_group_id = db(db.gis_feature_group.name == "People").select(db.gis_feature_group.id, limitby=(0, 1)).first().id,
+            feature_class_id = db(db.gis_feature_class.name == "Volunteer").select(db.gis_feature_class.id, limitby=(0, 1)).first().id,
         )
         table.insert(
             feature_group_id = db(db.gis_feature_group.name == "Projects").select(db.gis_feature_group.id, limitby=(0, 1)).first().id,

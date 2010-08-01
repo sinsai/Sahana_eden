@@ -126,11 +126,6 @@ deployment_settings.modules = Storage(
     #        description = "Traces internally displaced people (IDPs) and their needs",
     #        module_type = 10
     #    ),
-    #nim = Storage(
-    #        name_nice = "Nursing Information Manager",
-    #        description = "Module to assist disaster nurses.",
-    #        module_type = 10
-    #    ),
     budget = Storage(
             name_nice = "Budgeting Module",
             description = "Allows a Budget to be drawn up",

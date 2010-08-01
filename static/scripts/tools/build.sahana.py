@@ -207,7 +207,8 @@ def docss(dogis = True):
         "../../styles/S3/ajaxS3.css",
         "../../styles/T2/t2.css",
         "../../styles/web2py/calendar.css",
-        "../../styles/S3/s3.multiselect.widget.css"
+        "../../styles/S3/s3.multiselect.widget.css",
+        "../../styles/S3/jquery.multiSelect.css"
     ]
     outputFilenameCSS = "sahana.min.css"
 

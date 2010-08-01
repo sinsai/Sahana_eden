@@ -801,7 +801,6 @@ def shn_read(r, **attr):
     """ Read a single record. """
 
     prefix, name, table, tablename = r.target()
-    vars = r.request.get_vars
     representation = r.representation.lower()
 
     # Get the callbacks of the target table
@@ -818,6 +817,8 @@ def shn_read(r, **attr):
     deletable = attr.get("deletable", True)
 
     # Delete & Update links
+    #href_delete = r.other(method="delete", representation=representation, vars=vars)
+    #href_edit = r.other(method="update", representation=representation, vars=vars)
     href_delete = r.other(method="delete", representation=representation)
     href_edit = r.other(method="update", representation=representation)
 
@@ -828,7 +829,7 @@ def shn_read(r, **attr):
         if not len(resource):
             if not r.multiple:
                 r.component_id = None
-                redirect(r.other(method="create", representation=representation))
+                redirect(r.other(method="create", representation=representation, vars=vars))
             else:
                 session.error = BADRECORD
                 redirect(r.there())
@@ -1475,7 +1476,7 @@ def shn_update(r, **attr):
         else:
             if not representation == "popup" and \
                not crud.settings.update_next:
-                crud.settings.update_next = r.here()
+                crud.settings.update_next = update_next or r.here()
             if not onvalidation:
                 onvalidation = crud.settings.update_onvalidation
             if not onaccept:

@@ -1833,16 +1833,20 @@ class S3Request(object):
             if method:
                 args.append(method)
 
+        f = self.request.function
         if not representation==self.DEFAULT_REPRESENTATION:
             if len(args) > 0:
                 args[-1] = "%s.%s" % (args[-1], representation)
             else:
-                vars.update(format=representation)
+                #vars.update(format=representation)
+                f = "%s.%s" % (f, representation)
 
-        return(URL(r=self.request,
+        url = URL(r=self.request,
                    c=self.request.controller,
-                   f=self.request.function,
-                   args=args, vars=vars))
+                   f=f,
+                   args=args, vars=vars)
+        print url
+        return url
 
 
     # -------------------------------------------------------------------------

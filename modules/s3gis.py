@@ -1748,10 +1748,10 @@ OpenLayers.Util.extend( selectPdfControl, {
                 else:
                     name = "Query" + str(int(random.random()*1000))
                 if "popup_url" in layer:
-                    popup_url = layer["popup_url"]
+                    _popup_url = layer["popup_url"]
                 else:
                     #popup_url = str(URL(r=request, c=feature_class.module, f=feature_class.resource, args=["read.popup"]))
-                    popup_url = str(URL(r=request, c="gis", f="location", args=["read.popup"]))
+                    _popup_url = str(URL(r=request, c="gis", f="location", args=["read.popup?location.id="]))
 
                 # Generate HTML snippet
                 name_safe = re.sub("\W", "_", name)
@@ -1845,7 +1845,7 @@ OpenLayers.Util.extend( selectPdfControl, {
                 map.addPopup(popup);
                 // call AJAX to get the contentHTML
                 var uuid = feature.fid;
-                loadDetails('""" + popup_url + """' + '?location.uid=' + uuid, id, popup);
+                loadDetails('""" + _popup_url + """' + uuid, id, popup);
             }
         }
         """
@@ -1883,7 +1883,7 @@ OpenLayers.Util.extend( selectPdfControl, {
                     layers_features += """
         geom = parser.read('""" + wkt + """').geometry;
         iconURL = '""" + marker_url + """';
-        featureVec = addFeature('""" + feature.uuid + """', '""" + fname + """', """ + fc + """, geom, iconURL)
+        featureVec = addFeature('""" + str(feature.id) + """', '""" + fname + """', """ + fc + """, geom, iconURL)
         features.push(featureVec);
         """
                 # Append to Features layer
@@ -1900,7 +1900,7 @@ OpenLayers.Util.extend( selectPdfControl, {
                 #elif feature_class is office:
                 #    popup_url = str(URL(r=request, c="or", f="office"))
                 else:
-                    popup_url = str(URL(r=request, c="gis", f="location", args=["read.popup"]))
+                    popup_url = str(URL(r=request, c="gis", f="location", args=["read.popup?location.id="]))
 
                 # Generate HTML snippet
                 name_safe = re.sub("\W", "_", name)

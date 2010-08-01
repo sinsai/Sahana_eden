@@ -1,4 +1,5 @@
 {{extend "layout.html"}}
 {{=H2(T("Incident Reporting System"))}}
-{{=LI(A("List Event", _href=URL(r=request, f="event")))}}
-{{=LI(A("List Eevent Status", _href=URL(r=request, f="eventstatus")))}}
+{{=LI(A("Add Report", _href=URL(r=request, f="report", args="create")))}}
+{{=LI(A("List Reports", _href=URL(r=request, f="report")))}}
+{{=LI(A("Show Map", _href=URL(r=request, f="maps")))}}

@@ -156,7 +156,7 @@ if deployment_settings.has_module(module):
                         represent = lambda opt: hms_resource_status_opts.get(opt, UNKNOWN_OPT)),
                     Field("access_status"),                     # Access Status
                     Field("info_source"),                       # Source of Information
-                    shn_comments_field,                         # Comments field
+                    comments,                         # Comments field
                     migrate=migrate)
 
 

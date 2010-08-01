@@ -1074,7 +1074,7 @@ def shn_list(r, **attr):
         from gluon.serializers import json
         return json(result)
 
-    elif representation=="html":
+    elif representation == "html":
 
         output = dict(main=main, extra=extra, sortby=sortby)
 

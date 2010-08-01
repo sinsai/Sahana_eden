@@ -46,7 +46,7 @@ table = db.define_table(tablename,
 table.uuid.requires = IS_NOT_IN_DB(db, "%s.uuid" % tablename)
 
 table.pe_id.requires = IS_ONE_OF(db, "pr_pentity.id", shn_pentity_represent,
-                                 filterby="type",
+                                 filterby="pe_type",
                                  filter_opts=("pr_person", "pr_group"))
 
 table.co_name.label = T("c/o Name")
@@ -131,7 +131,7 @@ table = db.define_table(tablename,
 table.uuid.requires = IS_NOT_IN_DB(db, "%s.uuid" % tablename)
 table.pe_id.requires = IS_ONE_OF(db, "pr_pentity.id",
                                     shn_pentity_represent,
-                                    filterby="type",
+                                    filterby="pe_type",
                                     filter_opts=("pr_person", "pr_group"))
 
 table.value.requires = IS_NOT_EMPTY()
@@ -392,7 +392,7 @@ table = db.define_table(tablename, timestamp, uuidstamp, deletion_status,
 table.uuid.requires = IS_NOT_IN_DB(db, "%s.uuid" % tablename)
 table.pe_id.requires = IS_ONE_OF(db, "pr_pentity.id",
                                     shn_pentity_represent,
-                                    filterby="type",
+                                    filterby="pe_type",
                                     filter_opts=("pr_person", "pr_group"))
 
 # Moved to zzz_last.py to ensure all tables caught!

@@ -1512,6 +1512,7 @@ def shn_update(r, **attr):
                                         _onclick="window.location='%s';" %
                                                  response.s3.cancel))
 
+        print s3xrc.xml.tree2json(etree.ElementTree(etree.XML(form.xml())), pretty_print=True)
         output.update(form=form)
 
         # Restore comment

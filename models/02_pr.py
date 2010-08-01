@@ -34,14 +34,14 @@ pr_pe_types = Storage(
 resource = "pentity"
 tablename = "%s_%s" % (module, resource)
 table = db.define_table(tablename, deletion_status,
-                        Field("type"),
+                        Field("pe_type"),
                         Field("uuid", length=128),
                         Field("pe_id", "integer"),
                         Field("pe_label", length=128),
                         migrate=migrate)
 
-table.type.writable = False
-table.type.represent = lambda opt: pr_pe_types.get(opt, opt)
+table.pe_type.writable = False
+table.pe_type.represent = lambda opt: pr_pe_types.get(opt, opt)
 table.uuid.writable = False
 table.pe_label.writable = False
 
@@ -56,14 +56,14 @@ def shn_pentity_represent(id, default_label="[no label]"):
     pe_str = T("None (no such record)")
 
     pe_table = db.pr_pentity
-    pe = db(pe_table.id == id).select(pe_table.type,
+    pe = db(pe_table.id == id).select(pe_table.pe_type,
                                      pe_table.pe_label,
                                      limitby=(0, 1)).first()
     if not pe:
         return pe_str
 
-    pe_type = pe.type
-    pe_type_nice = pe_table.type.represent(pe_type)
+    pe_type = pe.pe_type
+    pe_type_nice = pe_table.pe_type.represent(pe_type)
 
     table = db.get(pe_type, None)
     if not table:
@@ -170,9 +170,9 @@ def shn_pentity_onaccept(form, table=None):
                 values.update(pe_label = record.pe_label)
             db(pentity.uuid == uid).update(**values)
         else:
-            type = table._tablename
+            pe_type = table._tablename
             pe_label = record.get("pe_label", None)
-            pe_id = pentity.insert(uuid=uid, pe_label=pe_label, type=type)
+            pe_id = pentity.insert(uuid=uid, pe_label=pe_label, pe_type=pe_type)
             db(pentity.id == pe_id).update(pe_id=pe_id, deleted=False)
             db(table.id == id).update(pe_id=pe_id)
 

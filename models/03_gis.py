@@ -497,7 +497,8 @@ name_dummy_element = S3MultiSelectWidget(db = db,
 table.name_dummy.widget = name_dummy_element.widget
 table.name_dummy.represent = name_dummy_element.represent
 def gis_location_onaccept(form):
-    name_dummy_element.onaccept(db, session.rcvars.gis_location, request)
+    if session.rcvars:
+        name_dummy_element.onaccept(db, session.rcvars.gis_location, request)
     gis.update_location_tree()
 s3xrc.model.configure(table, onaccept=gis_location_onaccept)
 
@@ -559,7 +560,7 @@ table = db.define_table(tablename, timestamp, uuidstamp, authorstamp, deletion_s
                 Field("name", length=128, notnull=True, unique=True),
                 Field("category"),
                 location_id,
-                shn_comments_field,
+                comments,
                 migrate=migrate)
 table.uuid.requires = IS_NOT_IN_DB(db, "%s.uuid" % tablename)
 table.name.requires = [IS_NOT_EMPTY(), IS_NOT_IN_DB(db, "%s.name" % tablename)]
@@ -581,7 +582,7 @@ table = db.define_table(tablename, timestamp, uuidstamp, authorstamp, deletion_s
                 Field("filter_value"),          # Used to build a simple query
                 Field("query", notnull=True),
                 marker_id,                      # Optional Marker to over-ride the values from the Feature Classes
-                shn_comments_field,
+                comments,
                 migrate=migrate)
 table.uuid.requires = IS_NOT_IN_DB(db, "%s.uuid" % tablename)
 #table.author.requires = IS_ONE_OF(db, "auth_user.id","%(id)s: %(first_name)s %(last_name)s")

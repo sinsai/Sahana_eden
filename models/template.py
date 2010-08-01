@@ -15,32 +15,32 @@ if deployment_settings.has_module(module):
     # -----------------------------------------------------------------------------
     # Settings
     #
-    resource = 'setting'
+    resource = "setting"
     table_name = "%s_%s" % (module, resource)
     table = table = db.define_table(table_name,
-                    Field('audit_read', 'boolean'),
-                    Field('audit_write', 'boolean'),
+                    Field("audit_read", "boolean"),
+                    Field("audit_write", "boolean"),
                     migrate=migrate)
 
     # -----------------------------------------------------------------------------
     # Hazard
     # Example Table
 
-    resource = 'hazard'
-    table_name = module + '_' + resource
+    resource = "hazard"
+    table_name = module + "_" + resource
     table = db.define_table(table_name, timestamp, uuidstamp, deletion_status,
                     #fields for table >>>
-                    Field('name',
+                    Field("name",
                           length=128,
                           notnull=True,
                           unique=True),
                     #<<<
-                    Field('comment'),
+                    comments,
                     migrate=migrate)
 
     # Field settings
-    table.uuid.requires = IS_NOT_IN_DB(db, '%s.uuid' % tablename)
-    table.name.requires = [IS_NOT_EMPTY(), IS_NOT_IN_DB(db, '%s.name' % tablename)]
+    table.uuid.requires = IS_NOT_IN_DB(db, "%s.uuid" % tablename)
+    table.name.requires = [IS_NOT_EMPTY(), IS_NOT_IN_DB(db, "%s.name" % tablename)]
 
     # CRUD strings
     s3.crud_strings[table_name] = shn_crud_strings("Hazard")
@@ -49,19 +49,19 @@ if deployment_settings.has_module(module):
                                         lookup_table_name = "template_hazard",
                                         lookup_field_name = "name",
                                         multiple = True,
-                                        num_column=3,
+                                        num_column = 3,
                                         help_lookup_field_name = "comment",
                                         help_footer = P(I("source: PreventionWeb"))
                                         )
 
     # Reusable field
-    hazard_ids = db.Table(None, 'hazard_ids',
-                         Field('hazard_ids',
+    hazard_ids = db.Table(None, "hazard_ids",
+                         Field("hazard_ids",
                                requires = field_settings.requires,
                                widget = field_settings.widget,
                                represent = field_settings.represent,
                                label = T("Hazard"),
-                               ondelete = 'RESTRICT'
+                               ondelete = "RESTRICT"
                               ))
 
     # Import Data
@@ -78,8 +78,8 @@ if deployment_settings.has_module(module):
                              #fields for table >>>
                              Field("name"),
                              hazard_ids,
-                             Field("vulnerability","integer"),
-                             Field("update_dummy"), #This field is mainly used as a place holder
+                             Field("vulnerability", "integer"),
+                             Field("update_dummy"), # This field is mainly used as a place holder
                              #<<<
                              migrate=migrate)
 
@@ -100,17 +100,17 @@ if deployment_settings.has_module(module):
     #  Example table
 
     resource = "update"
-    tablename = module + '_' + resource
+    tablename = module + "_" + resource
     table = db.define_table(tablename, timestamp, uuidstamp, deletion_status,
                     Field("disaster_id"),
-                    Field("date","date"),
-                    Field("comments", "string"),
+                    Field("date", "date"),
+                    comments,
                     migrate=migrate)
 
     # Field settings
-    table.uuid.requires = IS_NOT_IN_DB(db, '%s.uuid' % tablename)
+    table.uuid.requires = IS_NOT_IN_DB(db, "%s.uuid" % tablename)
 
-    db.template_disaster.update_dummy.label = T('Update')
+    db.template_disaster.update_dummy.label = T("Update")
 
     update_dummy_element = S3MultiSelectWidget(db = db,
                                                link_table_name = tablename,

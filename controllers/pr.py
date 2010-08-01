@@ -47,29 +47,57 @@ shn_menu()
 # -----------------------------------------------------------------------------
 def index():
 
-    """ Module"s Home Page """
+    """ Module's Home Page """
 
     try:
         module_name = deployment_settings.modules[module].name_nice
     except:
         module_name = T("Person Registry")
 
-    gender = []
-    for g_opt in pr_gender_opts:
-        count = db((db.pr_person.deleted == False) & \
-                   (db.pr_person.gender == g_opt)).count()
-        gender.append([str(pr_gender_opts[g_opt]), int(count)])
+    def prep(jr):
+        if jr.representation == "html":
+            if not jr.id:
+                jr.method = "search_simple"
+                jr.custom_action = shn_pr_person_search_simple
+            else:
+               redirect(URL(r=request, f="person", args=[jr.id]))
+        return True
+    response.s3.prep = prep
 
-    age = []
-    for a_opt in pr_age_group_opts:
-        count = db((db.pr_person.deleted == False) & \
-                   (db.pr_person.age_group == a_opt)).count()
-        age.append([str(pr_age_group_opts[a_opt]), int(count)])
+    def postp(jr, output):
+        if isinstance(output, dict):
+            gender = []
+            for g_opt in pr_gender_opts:
+                count = db((db.pr_person.deleted == False) & \
+                        (db.pr_person.gender == g_opt)).count()
+                gender.append([str(pr_gender_opts[g_opt]), int(count)])
 
-    total = int(db(db.pr_person.deleted == False).count())
+            age = []
+            for a_opt in pr_age_group_opts:
+                count = db((db.pr_person.deleted == False) & \
+                        (db.pr_person.age_group == a_opt)).count()
+                age.append([str(pr_age_group_opts[a_opt]), int(count)])
 
-    return dict(module_name=module_name, gender=gender, age=age, total=total)
+            total = int(db(db.pr_person.deleted == False).count())
+            output.update(module_name=module_name, gender=gender, age=age, total=total)
+        if jr.representation in ("html", "popup"):
+            if not jr.component:
+                label = READ
+            else:
+                label = UPDATE
+            linkto = shn_linkto(jr, sticky=True)("[id]")
+            response.s3.actions = [
+                dict(label=str(label), _class="action-btn", url=linkto)
+            ]
+        return output
+    response.s3.postp = postp
 
+    response.s3.pagination = True
+    output = shn_rest_controller("pr", "person")
+    response.view = "pr/index.html"
+
+    shn_menu()
+    return output
 
 # -----------------------------------------------------------------------------
 def person():

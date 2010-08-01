@@ -15,7 +15,7 @@ if module not in deployment_settings.modules:
 
 # Options Menu (available in all Functions" Views)
 response.menu_options = [
-    [T("Dashboard"), False, URL(r=request, f="dashboard")],
+    #[T("Dashboard"), False, URL(r=request, f="dashboard")],
     [T("Organizations"), False, URL(r=request, f="organisation"),[
         [T("List"), False, URL(r=request, f="organisation")],
         [T("Add"), False, URL(r=request, f="organisation", args="create")],
@@ -428,8 +428,8 @@ def shn_org_rheader(jr, tabs=[]):
         
         if jr.name == "organisation":
         
-            _next = jr.here()
-            _same = jr.same()
+            #_next = jr.here()
+            #_same = jr.same()
 
             organisation = jr.record
 
@@ -437,6 +437,11 @@ def shn_org_rheader(jr, tabs=[]):
             _sectors = TABLE()
             for sector in sectors:
                 _sectors.append(TR(db(db.org_sector.id == sector).select(db.org_sector.name, limitby=(0, 1)).first().name))
+            
+            try:
+                _type = org_organisation_type_opts[organisation.type]
+            except KeyError:
+                _type = None
             
             rheader = DIV(TABLE(
                 TR(
@@ -449,7 +454,7 @@ def shn_org_rheader(jr, tabs=[]):
                     #TH(A(T("Edit Organization"),
                     #    _href=URL(r=request, c="org", f="organisation", args=[jr.id, "update"], vars={"_next": _next})))
                     TH(T("Type: ")),
-                    org_organisation_type_opts[organisation.type],
+                    _type,
                     )
             ), rheader_tabs)
 
@@ -457,8 +462,8 @@ def shn_org_rheader(jr, tabs=[]):
 
         elif jr.name == "office":
         
-            _next = jr.here()
-            _same = jr.same()
+            #_next = jr.here()
+            #_same = jr.same()
 
             office = jr.record
             organisation = db(db.org_organisation.id == office.organisation_id).select(db.org_organisation.name, limitby=(0, 1)).first()

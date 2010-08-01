@@ -812,13 +812,14 @@ def shn_read(r, **attr):
     sticky = attr.get("sticky", False)
 
     # Get the table-specific attributes
-    attr = r.component and r.component.attr or attr
-    editable = attr.get("editable", True)
-    deletable = attr.get("deletable", True)
+    _attr = r.component and r.component.attr or attr
+    main = _attr.get("main", None)
+    extra = _attr.get("extra", None)
+    caller = _attr.get("caller", None)
+    editable = _attr.get("editable", True)
+    deletable = _attr.get("deletable", True)
 
     # Delete & Update links
-    #href_delete = r.other(method="delete", representation=representation, vars=vars)
-    #href_edit = r.other(method="update", representation=representation, vars=vars)
     href_delete = r.other(method="delete", representation=representation)
     href_edit = r.other(method="update", representation=representation)
 
@@ -829,7 +830,7 @@ def shn_read(r, **attr):
         if not len(resource):
             if not r.multiple:
                 r.component_id = None
-                redirect(r.other(method="create", representation=representation, vars=vars))
+                redirect(r.other(method="create", representation=representation))
             else:
                 session.error = BADRECORD
                 redirect(r.there())
@@ -881,7 +882,7 @@ def shn_read(r, **attr):
             output.update(item=item)
         elif representation == "popup":
             shn_custom_view(r, "popup.html")
-            output.update(form=item)
+            output.update(form=item, main=main, extra=extra, caller=caller)
 
         # Add edit and delete buttons as appropriate
         if href_edit and editable and r.method <> "update":
@@ -978,14 +979,14 @@ def shn_list(r, **attr):
     sticky = attr.get("sticky", False)
 
     # Table-specific controller attributes
-    attr = r.component and r.component.attr or attr
-    editable = attr.get("editable", True)
-    deletable = attr.get("deletable", True)
-    listadd = attr.get("listadd", True)
-    main = attr.get("main", None)
-    extra = attr.get("extra", None)
-    orderby = attr.get("orderby", None)
-    sortby = attr.get("sortby", None)
+    _attr = r.component and r.component.attr or attr
+    editable = _attr.get("editable", True)
+    deletable = _attr.get("deletable", True)
+    listadd = _attr.get("listadd", True)
+    main = _attr.get("main", None)
+    extra = _attr.get("extra", None)
+    orderby = _attr.get("orderby", None)
+    sortby = _attr.get("sortby", None)
 
     # Provide the ability to get a subset of records
     start = vars.get("start", 0)
@@ -1076,7 +1077,7 @@ def shn_list(r, **attr):
         from gluon.serializers import json
         return json(result)
 
-    elif representation=="html":
+    elif representation in ("html", "popup"):
 
         output = dict(main=main, extra=extra, sortby=sortby)
 
@@ -1220,10 +1221,10 @@ def shn_create(r, **attr):
     sticky = attr.get("sticky", False)
 
     # Table-specific controller attributes
-    attr = r.component and r.component.attr or attr
-    main = attr.get("main", None)
-    extra = attr.get("extra", None)
-    create_next = attr.get("create_next")
+    _attr = r.component and r.component.attr or attr
+    main = _attr.get("main", None)
+    extra = _attr.get("extra", None)
+    create_next = _attr.get("create_next")
 
     if representation == "html":
 
@@ -1390,10 +1391,10 @@ def shn_update(r, **attr):
     sticky = attr.get("sticky", False)
 
     # Table-specific controller attributes
-    attr = r.component and r.component.attr or attr
-    editable = attr.get("editable", True)
-    deletable = attr.get("deletable", True)
-    update_next = attr.get("update_next", None)
+    _attr = r.component and r.component.attr or attr
+    editable = _attr.get("editable", True)
+    deletable = _attr.get("deletable", True)
+    update_next = _attr.get("update_next", None)
 
     # Find the correct record ID
     if r.component:
@@ -1567,15 +1568,13 @@ def shn_delete(r, **attr):
     onaccept = s3xrc.model.get_config(table, "delete_onaccept")
 
     # Table-specific controller attributes
-    attr = r.component and r.component.attr or attr
-    deletable = attr.get("deletable", True)
+    _attr = r.component and r.component.attr or attr
+    deletable = _attr.get("deletable", True)
 
     # custom delete_next?
-    delete_next = attr.get("delete_next", None)
+    delete_next = _attr.get("delete_next", None)
     if delete_next:
         r.next = delete_next
-
-    print "r.next is %s" % r.next
 
     if r.component:
         query = ((table[r.fkey] == r.table[r.pkey]) & \

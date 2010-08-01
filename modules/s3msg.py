@@ -166,7 +166,7 @@ class Msg(object):
             entity_type = self.db(query).select(limitby=(0, 1)).first().type
             def dispatch_to_pe_id(pe_id):
                 table3 = self.db.pr_pe_contact
-                query = (table3.pe_id == pe_id) & (table3.opt_pr_contact_method == contact_method)
+                query = (table3.pe_id == pe_id) & (table3.contact_method == contact_method)
                 recipient = self.db(query).select(table3.value, orderby = table3.priority).first()
                 if recipient:
                     if (contact_method == 2 and option == 2):

@@ -907,7 +907,7 @@ def shn_read(r, **attr):
 
     elif representation == "csv":
         query = db[table].id == record_id
-        return export_csv(resource, query)
+        return export_csv(tablename, query)
 
     elif representation == "pdf":
         query = db[table].id == record_id
@@ -1190,7 +1190,7 @@ def shn_list(r, **attr):
         return dict(item=items)
 
     elif representation == "csv":
-        return export_csv(resource, query)
+        return export_csv(tablename, query)
 
     elif representation == "pdf":
         return export_pdf(table, query, list_fields)

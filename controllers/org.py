@@ -331,6 +331,7 @@ def org_sub_list(tablename, org_id):
     return list
 
 def dashboard():
+    " Deprecated function which was used before we had Component Tabs "
 
     INVALID_ORGANIZATION = T("Invalid Organization ID!")
     # Get Organization to display from Arg, Var, Session or Default
@@ -433,11 +434,14 @@ def shn_org_rheader(jr, tabs=[]):
 
             organisation = jr.record
 
-            sectors = re.split("\|", organisation.sector_id)[1:-1]
-            _sectors = TABLE()
-            for sector in sectors:
-                _sectors.append(TR(db(db.org_sector.id == sector).select(db.org_sector.name, limitby=(0, 1)).first().name))
-            
+            if organisation.sector_id:
+                sectors = re.split("\|", organisation.sector_id)[1:-1]
+                _sectors = TABLE()
+                for sector in sectors:
+                    _sectors.append(TR(db(db.org_sector.id == sector).select(db.org_sector.name, limitby=(0, 1)).first().name))
+            else:
+                _sectors = None
+
             try:
                 _type = org_organisation_type_opts[organisation.type]
             except KeyError:

@@ -299,7 +299,7 @@ if deployment_settings.has_module(module):
         Field("status", "integer"),
         organisation_id,
         person_id,
-        shn_comments_field,
+        comments,
         migrate=migrate)
 
     #table.id.represent = lambda id: shn_req_pledge_represent(id)

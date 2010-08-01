@@ -84,7 +84,7 @@ table = db.define_table(tablename, timestamp, uuidstamp, deletion_status,
                 Field("website"),
                 Field("twitter"),   # deprecated by pe_contact component
                 Field("donation_phone"),
-                shn_comments_field,
+                comments,
                 source_id,
                 migrate=migrate)
 
@@ -195,7 +195,7 @@ table = db.define_table(tablename, timestamp, uuidstamp, deletion_status,
                 Field("vehicle_types"),
                 Field("equipment"),
                 source_id,
-                shn_comments_field,
+                comments,
                 migrate=migrate)
 
 # Field settings
@@ -411,7 +411,7 @@ table = db.define_table(tablename, timestamp, deletion_status,
                 Field("focal_point", "boolean"),
                 #Field("slots", "integer", default=1),
                 #Field("payrate", "double", default=0.0), # Wait for Bugeting integration
-                shn_comments_field,
+                comments,
                 migrate=migrate)
 
 # Field settings

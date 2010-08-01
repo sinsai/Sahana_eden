@@ -454,6 +454,8 @@ def location():
                 fc = db(db.gis_feature_class.name == "Hospital").select(db.gis_feature_class.id, limitby=(0, 1)).first()
             elif "cr_shelter" in caller:
                 fc = db(db.gis_feature_class.name == "Shelter").select(db.gis_feature_class.id, limitby=(0, 1)).first()
+            elif "ir_report" in caller:
+                fc = db(db.gis_feature_class.name == "Incident").select(db.gis_feature_class.id, limitby=(0, 1)).first()
 
             try:
                 table.feature_class_id.default = fc.id

@@ -89,11 +89,11 @@ class Msg(object):
             return False
 
     def send_by_pe_id(self, pe_id,
-                                subject="", 
-                                message="", 
+                                subject="",
+                                message="",
                                 sender_pe_id = None,
                                 pr_message_method = 1,
-                                sender="", 
+                                sender="",
                                 fromaddress="",
                                 system_generated = False):
         """As the function name suggests - depends on pr_message_method """
@@ -110,7 +110,7 @@ class Msg(object):
             listindex = 0
             for prpeid in pe_id:
                 try:
-                    self.db.msg_outbox.insert(message_id = message_log_id, 
+                    self.db.msg_outbox.insert(message_id = message_log_id,
                                         pe_id = prpeid,
                                         pr_message_method = pr_message_method,
                                         system_generated = system_generated)
@@ -119,7 +119,7 @@ class Msg(object):
                     return listindex
         else:
             try:
-                self.db.msg_outbox.insert(message_id = message_log_id, 
+                self.db.msg_outbox.insert(message_id = message_log_id,
                                         pe_id = pe_id,
                                         pr_message_method = pr_message_method,
                                         system_generated = system_generated)
@@ -129,18 +129,18 @@ class Msg(object):
         return True
 
     def send_email_by_pe_id(self, pe_id, subject="",
-                                message="", 
+                                message="",
                                 sender_pe_id = None,
-                                sender="", 
+                                sender="",
                                 fromaddress="",
                                 system_generated = False):
         """Api over send_by_pe_id - depends on pr_message_method """
         return self.send_by_pe_id(pe_id,
-                                        subject, 
-                                        message, 
-                                        sender_pe_id, 
+                                        subject,
+                                        message,
+                                        sender_pe_id,
                                         1, # To set as an email
-                                        sender, 
+                                        sender,
                                         fromaddress,
                                         system_generated)
 
@@ -163,10 +163,10 @@ class Msg(object):
             entity = row.pe_id
             table2 = self.db.pr_pentity
             query = table2.id == entity
-            entity_type = self.db(query).select(limitby=(0, 1)).first().opt_pr_entity_type
+            entity_type = self.db(query).select(limitby=(0, 1)).first().pe_type
             def dispatch_to_pe_id(pe_id):
                 table3 = self.db.pr_pe_contact
-                query = (table3.pe_id == pe_id) & (table3.opt_pr_contact_method == contact_method)
+                query = (table3.pe_id == pe_id) & (table3.contact_method == contact_method)
                 recipient = self.db(query).select(table3.value, orderby = table3.priority).first()
                 if recipient:
                     if (contact_method == 2 and option == 2):
@@ -182,8 +182,7 @@ class Msg(object):
                     if (contact_method == 1):
                         return self.send_email_via_api(recipient.value, subject, message)
                 return False
-            if entity_type == 2:
-                # Entity type 2 implies that this is a group
+            if entity_type == "pr_group":
                 # Take the entities of it and add in the messaging queue - with
                 # sender as the original sender and marks group email processed
                 # Set system generated = True
@@ -198,13 +197,13 @@ class Msg(object):
                     table5 = self.db.pr_person
                     query = (table5.id == person_id)
                     pe_id = self.db(query).select(limitby=(0, 1)).first().pe_id
-                    self.db.msg_outbox.insert( message_id = message_id, 
+                    self.db.msg_outbox.insert( message_id = message_id,
                                                 pe_id = pe_id,
                                                 pr_message_method = contact_method,
                                                 system_generated = True)
                 status = True
                 chainrun = True
-            if entity_type == 1:
+            if entity_type == "pr_person":
                 # Person
                 status = dispatch_to_pe_id(entity)
             if status:

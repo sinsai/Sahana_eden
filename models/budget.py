@@ -82,7 +82,7 @@ if deployment_settings.has_module(module):
                     Field("monthly_cost", "double", default=0.00),
                     Field("minute_cost", "double", default=0.00),
                     Field("megabyte_cost", "double", default=0.00),
-                    Field("comments"),
+                    comments,
                     migrate=migrate)
 
     table.code.requires = [IS_NOT_EMPTY(), IS_NOT_IN_DB(db, "%s.code" % table)]
@@ -133,7 +133,7 @@ if deployment_settings.has_module(module):
                     Field("total_monthly_cost", "double", writable=False),
                     Field("total_minute_cost", "double", writable=False),
                     Field("total_megabyte_cost", "double", writable=False),
-                    Field("comments"),
+                    comments,
                     migrate=migrate)
 
     table.code.requires = [IS_NOT_EMPTY(), IS_NOT_IN_DB(db, "%s.code" % table)]
@@ -192,7 +192,7 @@ if deployment_settings.has_module(module):
                     Field("description"),
                     Field("total_unit_cost", "double", writable=False),
                     Field("total_monthly_cost", "double", writable=False),
-                    Field("comments"),
+                    comments,
                     migrate=migrate)
 
     table.name.requires = [IS_NOT_EMPTY(), IS_NOT_IN_DB(db, "%s.name" % table)]
@@ -290,7 +290,7 @@ if deployment_settings.has_module(module):
                     #Field("subsistence", "double", default=0.00),
                     # Location-dependent
                     #Field("hazard_pay", "double", default=0.00),
-                    Field("comments"),
+                    comments,
                     migrate=migrate)
 
     table.name.requires = [IS_NOT_EMPTY(), IS_NOT_IN_DB(db, "%s.name" % table)]
@@ -305,7 +305,7 @@ if deployment_settings.has_module(module):
                     Field("description"),
                     Field("subsistence", "double", default=0.00),
                     Field("hazard_pay", "double", default=0.00),
-                    Field("comments"),
+                    comments,
                     migrate=migrate)
 
     table.code.requires = [IS_NOT_EMPTY(), IS_NOT_IN_DB(db, "%s.code" % table)]
@@ -317,7 +317,7 @@ if deployment_settings.has_module(module):
     #table = db.define_table(tablename, timestamp, uuidstamp, deletion_status,
     #                Field("code", length=128, notnull=True, unique=True),
     #                Field("title"),
-    #                Field("comments"),
+    #                comments,
     #                migrate=migrate)
 
     #table.code.requires = [IS_NOT_EMPTY(), IS_NOT_IN_DB(db, "%s.code" % table)]
@@ -330,7 +330,7 @@ if deployment_settings.has_module(module):
                     Field("description"),
                     Field("total_onetime_costs", "double", writable=False),
                     Field("total_recurring_costs", "double", writable=False),
-                    Field("comments"),
+                    comments,
                     migrate=migrate)
 
     table.name.requires = [IS_NOT_EMPTY(), IS_NOT_IN_DB(db, "%s.name" % table)]

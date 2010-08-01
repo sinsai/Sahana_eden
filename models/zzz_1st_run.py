@@ -587,7 +587,7 @@ if empty:
             uuid = "www.sahanafoundation.org/GIS-FEATURE-CLASS-VOLUNTEER",
             name = "Volunteer",
             marker_id = db(db.gis_marker.name == "volunteer").select(limitby=(0, 1)).first().id,
-            gps_marker = "volunteer",
+            gps_marker = "Contact, Dreadlocks",
         )
         table.insert(
             uuid = "www.sahanafoundation.org/GIS-FEATURE-CLASS-WAREHOUSE",
@@ -623,6 +623,10 @@ if empty:
         table.insert(
             uuid = "www.sahanafoundation.org/GIS-FEATURE-GROUP-HOSPITALS",
             name = "Hospitals",
+        )
+        table.insert(
+            uuid = "www.sahanafoundation.org/GIS-FEATURE-GROUP-INCIDENTS",
+            name = "Incidents",
         )
         table.insert(
             uuid = "www.sahanafoundation.org/GIS-FEATURE-GROUP-OFFICES",
@@ -667,6 +671,10 @@ if empty:
         table.insert(
             feature_group_id = db(db.gis_feature_group.name == "Hospitals").select(db.gis_feature_group.id, limitby=(0, 1)).first().id,
             feature_class_id = db(db.gis_feature_class.name == "Hospital").select(db.gis_feature_class.id, limitby=(0, 1)).first().id,
+        )
+        table.insert(
+            feature_group_id = db(db.gis_feature_group.name == "Incidents").select(db.gis_feature_group.id, limitby=(0, 1)).first().id,
+            feature_class_id = db(db.gis_feature_class.name == "Incident").select(db.gis_feature_class.id, limitby=(0, 1)).first().id,
         )
         table.insert(
             feature_group_id = db(db.gis_feature_group.name == "Infrastructure").select(db.gis_feature_group.id, limitby=(0, 1)).first().id,

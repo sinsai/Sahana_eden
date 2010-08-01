@@ -110,7 +110,7 @@ def shn_pentity_represent(id, default_label="[no label]"):
     else:
         pe_str = "[%s] (%s)" % (
             label,
-            vita.trackable_types[pe_type]
+            pe_type_nice
         )
 
     return pe_str
@@ -401,9 +401,8 @@ s3xrc.model.configure(table,
         "first_name",
         "middle_name",
         "last_name",
-        "date_of_birth",
-        "nationality",
-        "missing"
+        "gender",
+        "age_group"
     ])
 
 

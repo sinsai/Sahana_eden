@@ -1770,7 +1770,7 @@ class S3Request(object):
 
     def __next(self, id=None, method=None, representation=None, vars=None):
 
-        """ Returns a URL of the current resource
+        """ Returns a URL of the current request
 
             @param id: the record ID for the URL
             @param method: an explicit method for the URL
@@ -1780,9 +1780,8 @@ class S3Request(object):
 
         if vars is None:
             vars = self.request.get_vars
-        #TypeError: argument of type 'builtin_function_or_method' is not iterable
-        #if "format" in vars.keys():
-        #    del vars["format"]
+        if "format" in vars.keys():
+            del vars["format"]
 
         args = []
 
@@ -1794,7 +1793,7 @@ class S3Request(object):
             representation = self.representation
         if method is None:
             method = self.method
-        elif method == "":
+        elif method=="":
             method = None
             if self.component:
                 component_id = None
@@ -1831,9 +1830,10 @@ class S3Request(object):
             else:
                 vars.update(format=representation)
 
-        return(URL(r=self.request, c=self.request.controller,
-                   f=self.name, args=args))
-                   #f=self.name, args=args, vars=vars))
+        return(URL(r=self.request,
+                   c=self.request.controller,
+                   f=self.request.function,
+                   args=args, vars=vars))
 
 
     # -------------------------------------------------------------------------

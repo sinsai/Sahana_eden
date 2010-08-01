@@ -921,8 +921,15 @@ class S3Resource(object):
                 else:
                     method = "read"
             else:
-                if r.id:
-                    method = "read"
+                if r.id or method in ("read", "display"):
+                    self.load(start=0, limit=1)
+                    if self.__set:
+                        r.record = self.__set[0]
+                        r.id = self.get_id()
+                        r.uid = self.get_uid()
+                        method = "read"
+                    else:
+                        raise HTTP(404, BADRECORD)
                 else:
                     method = "list"
 

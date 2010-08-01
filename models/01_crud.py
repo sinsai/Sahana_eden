@@ -813,6 +813,9 @@ def shn_read(r, **attr):
 
     # Get the table-specific attributes
     _attr = r.component and r.component.attr or attr
+    main = _attr.get("main", None)
+    extra = _attr.get("extra", None)
+    caller = _attr.get("caller", None)
     editable = _attr.get("editable", True)
     deletable = _attr.get("deletable", True)
 
@@ -879,7 +882,7 @@ def shn_read(r, **attr):
             output.update(item=item)
         elif representation == "popup":
             shn_custom_view(r, "popup.html")
-            output.update(form=item)
+            output.update(form=item, main=main, extra=extra, caller=caller)
 
         # Add edit and delete buttons as appropriate
         if href_edit and editable and r.method <> "update":
@@ -1074,7 +1077,7 @@ def shn_list(r, **attr):
         from gluon.serializers import json
         return json(result)
 
-    elif representation=="html":
+    elif representation in ("html", "popup"):
 
         output = dict(main=main, extra=extra, sortby=sortby)
 

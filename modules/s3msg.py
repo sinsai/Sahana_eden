@@ -163,7 +163,7 @@ class Msg(object):
             entity = row.pe_id
             table2 = self.db.pr_pentity
             query = table2.id == entity
-            entity_type = self.db(query).select(limitby=(0, 1)).first().opt_pr_entity_type
+            entity_type = self.db(query).select(limitby=(0, 1)).first().type
             def dispatch_to_pe_id(pe_id):
                 table3 = self.db.pr_pe_contact
                 query = (table3.pe_id == pe_id) & (table3.opt_pr_contact_method == contact_method)
@@ -182,8 +182,7 @@ class Msg(object):
                     if (contact_method == 1):
                         return self.send_email_via_api(recipient.value, subject, message)
                 return False
-            if entity_type == 2:
-                # Entity type 2 implies that this is a group
+            if entity_type == "pr_group":
                 # Take the entities of it and add in the messaging queue - with
                 # sender as the original sender and marks group email processed
                 # Set system generated = True
@@ -204,7 +203,7 @@ class Msg(object):
                                                 system_generated = True)
                 status = True
                 chainrun = True
-            if entity_type == 1:
+            if entity_type == "pr_person":
                 # Person
                 status = dispatch_to_pe_id(entity)
             if status:

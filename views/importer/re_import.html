@@ -13,19 +13,11 @@ importable_resources[k] = deployment_settings.modules[k].resources
 for l in importable_resources:
 importable_resources[l] = dict(importable_resources[l])}}
 {{pass}}
-{{=importable_resources}}
 <hr/>
-{{=type(deployment_settings.modules['pr']['resources'])}}
-<script type="text/javascript">
-	Ext.onReady(function()
-			{
-
-	var module = {{=modules}};
-	Ext.Msg.alert("",module);
-	});
+<hr/>
 </script>
 <script type="text/javascript">
-	var success = {{=session.import_success}};
+	var success = {{=len(session.invalid_rows)}};
 	var invalid_rows = {{=session.invalid_rows}};
 	var number_column = {{=session.import_columns}};
 	var fields = {{=session.fields}};
@@ -38,14 +30,6 @@ importable_resources[l] = dict(importable_resources[l])}}
 </script>
 <script type="text/javascript" src="../static/scripts/S3importer/re_import.js"></script>
 <div id = "spreadsheet"></div>
-<script type="text/javascript">
-	Ext.onReady(function()
-			{
-
-	var module = {{=modules.values()}};
-	Ext.Msg.alert("",module);
-	});
-</script>
 
 <b>Debug information</b>
 {{=BEAUTIFY(deployment_settings.modules)}}

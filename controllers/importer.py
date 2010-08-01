@@ -91,128 +91,133 @@ def getspreadsheetlist():
 def import_spreadsheet():
     spreadsheet = request.body.read()
     f = file("/home/shikhar/Desktop/abc.txt","wb")
-    f.write(spreadsheet + "\n\n\n\"")
     from StringIO import StringIO
     spreadsheet_json = StringIO(spreadsheet)
     spreadsheet_json.seek(0)
     #j = json.load(spreadsheet_json,encoding = 'ascii')
     j = json.loads(spreadsheet)
+    f.write("\n"+repr(len(j['spreadsheet']))+"\n")
+    similar_rows = []
+    importable_rows = []
+    for x in range(0,len(j['spreadsheet'])):
+	for y in range(x+1,len(j['spreadsheet'])):
+ 	    k = importer.jaro_winkler_distance_row(j['spreadsheet'][x],j['spreadsheet'][y])
+	    if k is True:
+	       similar_rows.append(j['spreadsheet'][x])
+	       similar_rows.append(j['spreadsheet'][y])
+	    else:
+	       pass 
+    session.similar_rows = similar_rows
+    for k in j['spreadsheet']:
+        if k in similar_rows:
+	    j['spreadsheet'].remove(k)
+	    j['rows'] -= 1
+    f.write("\n\n\nSimilar" + repr(similar_rows) + "\n\nNumber of rows" + repr(j['rows']))
+
     i=k=0
-    #resource = j['resource']
-    #resource = resource.encode('ascii')
     send_dict = {} 
     for key in j['json'].keys():
 	    send_dict[key.encode('ascii')] = []
-    f.write("------"+repr(send_dict))
+    #f.write("------"+repr(send_dict))
     while (i < j['rows']):
 	res = {}
 	for keys in j['json']:
 	   res[keys.encode('ascii')] = {} 
+	for keys in j['map']:
+	   res[keys[2]][keys[3]] = {}
 	k = 0
 	while (k < j['columns']):
 	    if "opt_" in j['map'][k][3]:
 		res[j['map'][k][2].encode('ascii')][j['map'][k][3].encode('ascii')]["@value"] = j['spreadsheet'][i][k].encode('ascii')
 	    	res[j['map'][k][2].encode('ascii')][j['map'][k][3].encode('ascii')]["$"] = j['spreadsheet'][i][k].encode('ascii')
 	    else:
-		res[j['map'][k][2].encode('ascii')] = {}
 		res[j['map'][k][2].encode('ascii')][j['map'][k][3].encode('ascii')] = j['spreadsheet'][i][k].encode('ascii')
+		if j['map'][k][3].encode('ascii') == 'comments':
+			res[j['map'][k][2].encode('ascii')][j['map'][k][3].encode('ascii')] = j['map'][k][1] + '-->' + j['spreadsheet'][i][k].encode('ascii')
 	    res[j['map'][k][2].encode('ascii')]['@modified_at'] = j['modtime']
 	    k+=1
-	f.write("\n according to resource \n" + repr(res))
+	#f.write("\n according to resource \n" + repr(res))
         for resource in res:
 	    send_dict[resource].append(res[resource])
 	i+=1
-    word = json.dumps(send_dict)
-    f.write("Final structure\n"+repr(send_dict))
-    new_word = ""
-    k = 1
-    for i in range(0,len(word)):
-	if word[i] == "\"":
-	    k = k + 1
-	    k = k % 2
-	if k == 0:
-	    new_word += word[i]
-	if k == 1:
-	    if word[i] == " " or word[i] == "\n":
-	 	continue
-	    else:
-	        new_word += word[i]
-    f.write(new_word)
-    send = StringIO(new_word)
-    f.write("\n\n\n\n"+send.read())
-    send.seek(0)
-    tree = s3xrc.xml.json2tree(send)
-    symbol, prefix, name = resource.split('_')
-    res = s3xrc.resource(prefix, name)
-    if res.import_xml(source = tree):#, resource = resource, push_limit = j['rows']):
+    for k in send_dict:   
+        word = json.dumps(send_dict[k])
+        #Removing all white spaces and newlines in the JSON
+        new_word = ""
+        cntr = 1
+        for i in range(0,len(word)):
+           if word[i] == "\"":
+	      cntr = cntr + 1
+	      cntr = cntr % 2
+	   if cntr == 0:
+	      new_word += word[i]
+	   if cntr == 1:
+	       if word[i] == " " or word[i] == "\n":
+                  continue
+	       else:
+	          new_word += word[i]
+	#new_word is without newlines and whitespaces	  
+	new_word  = "{\"$_" + k + "\":"+ new_word + "}"
+	#added resource name
+	f.write(repr(k)+"\n\n"+new_word)
+	send = StringIO(new_word)
+	tree = s3xrc.xml.json2tree(send)
+	prefix, name = k.split('_')
+        res = s3xrc.resource(prefix, name)
+        if res.import_xml(source = tree) and session.import_success == 1:
 	    session.import_success = 1 
-    else:
+        else:
+	    f.write("IMPORT DID NOT SUCCEED")
+	    session.import_success = 0
 	    incorrect_rows = []
 	    correct_rows = []
 	    returned_tree = tree
 	    returned_json = s3xrc.xml.tree2json(returned_tree)
 	    returned_json = returned_json.encode('ascii')
-	    returned_json = json.loads(returned_json)
-	    #f.write(repr(returned_json[resource]))
-	    '''for i in returned_json:
-		    #f.write(repr(i)+"\n")
-		    #for j in returned_json[i]:
-		#	    f.write("-------------------------\n")
-			    for k in range(0,len(returned_json[i])):
-			    	#f.write(repr(returned_json[i][k])+"\n")
-				for j in returned_json[i][k]:
-					#f.write("--------->"+j)
-					for l in returned_json[i][k][j]:
-						if '@error' in l:
-							#f.write("\n-> "+repr(returned_json[i][k][j])+" <-\n")
-							f.write("-------->>>>>"+repr(k)+"<<<<<------\n")
-							incorrect_rows.append(returned_json[i][k])
-						else:
-							correct_rows.append(returned_json[i][k])
-	    '''
+	    returned_json = json.loads(returned_json,encoding = 'ascii')
 	    for i in returned_json.keys():
 		    for k in range(0,len(returned_json[i])):
-	    		   if '@error' in repr(returned_json[i][k]):
+			   if '@error' in repr(returned_json[i][k]):
 				   f.write("Error flagged at "+repr(k))
-	    			   incorrect_rows.append(returned_json[i][k])
-		           else:
+				   incorrect_rows.append(returned_json[i][k])
+			   else:
 				   correct_rows.append(returned_json[i][k])
-	    #f.write("\nCorrect rows -> "+repr(correct_rows))
 	    correct_rows_send={}
-	    correct_rows_send[resource]=correct_rows
-	    f.write("And the incorrect rows are...\n")
-	    #f.write(repr(incorrect_rows))
+	    correct_rows_send['$_'+prefix+'_'+name]=correct_rows
 	    for k in incorrect_rows:
-		    del k['@modified_on']
+	         del k['@modified_at']
 	    send_json = json.dumps(correct_rows_send)
 	    send_json = StringIO(send_json)
 	    tree = s3xrc.xml.json2tree(send_json)
-	    res.import_xml( tree)
+	    if res.import_xml(tree):
+		    f.write("RE_IMPORT SUCCEEDED\n\n\n")
+	    else:
+	            f.write("DID NOT SUCCEED AGAIN")
 	    json_test = s3xrc.xml.tree2json(tree)
-	    session.fields = incorrect_rows[0].keys()
-	    #session.fields.remove(u'@modified_on')
-	    for i in range(0,len(session.fields)):
+	    if len(incorrect_rows) == 0:
+	       f.write("\nALL imported")
+	    else:
+	    	session.fields = incorrect_rows[0].keys()
+	    	for i in range(0,len(session.fields)):
 		    session.fields[i]=session.fields[i].encode('ascii')
-	    f.write(repr(session.fields))
-	    session.import_rows = len(incorrect_rows)
-	    for record in incorrect_rows:
-		    for field in record.keys():
-			    if '@error' in record[field].keys():
-				    record[field] = record[field]['@error']
-				    record[field] = "*_error_*" + record[field]
-			    else:
-				    record[field] = record[field]['@value']
-	    #f.write("\nTHE RETURNED JSON IS --->\n"+json.dumps(json_test))
-	    incorrect_rows = json.dumps(incorrect_rows,ensure_ascii=True)
-	    session.invalid_rows = incorrect_rows
-	    session.import_success = 0
-	    session.import_columns = j['columns']
-	    session.import_map = json.dumps(j['map'],ensure_ascii=True)
-	    session.import_resource = resource.encode('ascii') 
-	    #session.columns = j['columns']
+	   	f.write(repr(session.fields)+"\n\n\n")
+	    	session.import_rows = len(incorrect_rows)
+	    	for record in incorrect_rows:
+	            for field in record:
+		    	if '@error' in record[field]:
+			    f.write(repr(record[field]))
+			    record[field] = '*_error_*' + record[field]['@error'] + '. You entered ' + record[field]['@value']
+		        else:
+			    f.write("in else " + repr(record[field]))
+			    record[field] = record[field]['@value'] 
+	    	f.write("These rows are incorrect "+repr(incorrect_rows))
+	    	incorrect_rows = json.dumps(incorrect_rows,ensure_ascii=True)
+	    	session.invalid_rows = incorrect_rows
+	    	session.import_success = 0
+	    	session.import_columns = j['columns']
+	    	session.import_map = json.dumps(j['map'],ensure_ascii=True)
+	    	session.import_resource = resource.encode('ascii') 
     f.close()	
-    #return dict(success=success,spreadsheet=incorrect_rows)
-    #return dict(spreadsheet=incorrect_rows)
     return dict(module_name = module_name)
 
 def re_import():

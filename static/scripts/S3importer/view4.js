@@ -209,7 +209,7 @@ function view4(importsheet)
 						}	
 						i++;	
 					}
-					 var lm = new Ext.LoadMask(Ext.getBody(),{msg : 'Importing...'});
+					 var lm = new Ext.LoadMask(Ext.get('spreadsheet'),{msg : 'Importing...'});
 				     	 lm.enable();	     
 					 lm.show();
 				         
@@ -238,34 +238,13 @@ function view4(importsheet)
 						callback : function(options,success,response)
 							   {
 							        lm.hide();
-								var redirect = new Ext.LoadMask(Ext.getBody(),{msg : 'Redirecting to spreadsheet importer report...'});
+								var redirect = new Ext.LoadMask(Ext.get('spreadsheet'),{msg : 'Redirecting to spreadsheet importer report...'});
 								redirect.enable();
 								redirect.show();
 								var delay = new Ext.util.DelayedTask(function(){});
 								delay.delay(2000);
-								redirect.hide();
-
-					
-					
-					
-								/*if(success)
-									Ext.Msg.alert("Success","All records have been imported to database");
-								else
-								{
-								
-									 Ext.Msg.show({title : "Re-import?",
-											 msg : "Some records could not be imported, would you like to edit?",
-											 buttons : Ext.Msg.YESNO,
-											 fn : function(btn,text)		
-							 				 {
-							 					if(btn=="yes")
-							 					window.location = "http://"+url+"/"+application+"/importer/re_import";		
-							 				 }
-										});
-							       	}*/
-								}	
-
-    			
+								setTimeout(redirect.hide(),2000);
+						            }	
     		});
 		}}],
        buttonAlign: 'center',
@@ -274,7 +253,7 @@ function view4(importsheet)
 	
 	columnmap.show(); 
 
-
+}
 
 
 
@@ -472,5 +451,5 @@ function view4(importsheet)
 			header_row=i;
 			break;
 		}
-	}*/
-}
+	}
+}*/

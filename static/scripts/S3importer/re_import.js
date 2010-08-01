@@ -11,7 +11,7 @@ function error_color(val,metadata,record,row,col,store)
 	return val;
 }
 
-if(success)
+if(success == 0)
 {
 	Ext.onReady(function(){
 	Ext.Msg.alert("Success!","All records were successfully imported ");
@@ -23,26 +23,28 @@ else
 
 	Ext.onReady(function(){
 	Ext.Msg.alert("","These records could not be imported. Please edit and import again.");
-	var column_model = new Array(number_column);
+	var column_model = new Array();
 	var store = new Ext.data.JsonStore({
 		fields : fields,
 		root : 'rows',
 	});
 	var data={};
+	number_column = fields.length;
 	data['rows'] = invalid_rows;
 	console.log(data);
 	store.loadData(data);
 	store.each(function(record)
 		{
-			console.log(record.get('occupation'));
+			console.log(record.get(fields[0]));
 		});
 	for( i=0 ; i < number_column ; i++)
 	{
-		column_model[i] = {};
-		column_model[i].header = fields[i];
-		column_model[i].dataIndex = fields[i];
-		column_model[i].editor = new Ext.form.TextField();
-		column_model[i].renderer = error_color;
+		temp = {};
+		temp.header = fields[i];
+		temp.dataIndex = fields[i];
+		temp.editor = new Ext.form.TextField();
+		temp.renderer = error_color;
+		column_model.push(temp);
 	}
 	var re_import_grid = new Ext.grid.EditorGridPanel({
 		title : "Edit invalid rows ",
@@ -58,11 +60,11 @@ else
 		hidden : true,
 		buttonAlign : 'center',
 		listeners:
-				{
-					afteredit: function(e){
-						e.record.commit();
-					}
-				},
+			{
+				afteredit: function(e){
+					e.record.commit();
+				}
+			},
 		buttons :[
 			{
 				text : 'Import',

@@ -146,6 +146,11 @@ deployment_settings.modules = Storage(
             description = "A library of digital resources, such as Photos, signed contracts and Office documents.",
             module_type = 10
         ),
+    ir = Storage(
+        name_nice = "Incident Reporting",
+        description = "Incident Reporting System",
+        module_type = 10
+    ),
     org = Storage(
             name_nice = "Organization Registry",
             description = 'Lists "who is doing what & where". Allows relief agencies to coordinate their activities',

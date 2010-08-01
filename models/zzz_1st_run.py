@@ -587,7 +587,7 @@ if empty:
             uuid = "www.sahanafoundation.org/GIS-FEATURE-CLASS-VOLUNTEER",
             name = "Volunteer",
             marker_id = db(db.gis_marker.name == "volunteer").select(limitby=(0, 1)).first().id,
-            gps_marker = "volunteer",
+            gps_marker = "Contact, Dreadlocks",
         )
         table.insert(
             uuid = "www.sahanafoundation.org/GIS-FEATURE-CLASS-WAREHOUSE",

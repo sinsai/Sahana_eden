@@ -1841,12 +1841,10 @@ class S3Request(object):
                 #vars.update(format=representation)
                 f = "%s.%s" % (f, representation)
 
-        url = URL(r=self.request,
+        return URL(r=self.request,
                    c=self.request.controller,
                    f=f,
                    args=args, vars=vars)
-        print url
-        return url
 
 
     # -------------------------------------------------------------------------

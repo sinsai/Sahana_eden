@@ -950,7 +950,7 @@ def shn_linkto(r, sticky=False):
                 else:
                     _next = URL(r=request, args=request.args, vars=request.vars)
                 return response.s3.linkto_update or \
-                       URL(r=request, args=[field, "update"], vars={"_next":_next})
+                       URL(r=request, args=[field, "update"])
             else:
                 return response.s3.linkto or \
                        URL(r=request, args=[field],

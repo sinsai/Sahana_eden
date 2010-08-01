@@ -638,7 +638,7 @@ def shn_pr_person_search_simple(r, **attr):
         subtitle = T("Matching Records")
 
         # Add-button
-        label_create_button = shn_get_crud_strings("pr_person").label_create_button
+        label_create_button = shn_get_crud_string("pr_person", "label_create_button")
         add_btn = A(label_create_button, _class="action-btn",
                     _href=URL(r=request, f="person", args="create"))
 

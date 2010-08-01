@@ -22,15 +22,15 @@ def shn_menu():
     menu_teams = [
         [T("Teams"), False, URL(r=request, f="group"),[
             [T("List"), False, URL(r=request, f="group")],
-            [T("Add"), False, URL(r=request, f="group", args="create", vars={"_next":URL(r=request, args=request.args, vars=request.vars)})],
+            [T("Add"), False, URL(r=request, f="group", args="create")],
         ]]
     ]
     menu.extend(menu_teams)
 
     menu_persons = [
-        [T("Persons"), False, URL(r=request, f="person", args=["search_simple"], vars={"_next":URL(r=request, f="person", args=["[id]", "volunteer"], vars={"vol_tabs":"volunteer"})}),[
-            [T("List"), False, URL(r=request, f="person", vars={"_next":URL(r=request, f="person", args=["[id]", "volunteer"], vars={"vol_tabs":"volunteer"})})],
-            [T("Add"), False, URL(r=request, f="person", args="create", vars={"_next":URL(r=request, f="person", args=["[id]", "volunteer"], vars={"vol_tabs":"volunteer"})})],
+        [T("Persons"), False, URL(r=request, f="person", args=["search_simple"]),[
+            [T("List"), False, URL(r=request, f="person")],
+            [T("Add"), False, URL(r=request, f="person", args="create")],
         ]]
     ]
     menu.extend(menu_persons)

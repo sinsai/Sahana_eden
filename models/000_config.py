@@ -126,11 +126,6 @@ deployment_settings.modules = Storage(
     #        description = "Traces internally displaced people (IDPs) and their needs",
     #        module_type = 10
     #    ),
-    #nim = Storage(
-    #        name_nice = "Nursing Information Manager",
-    #        description = "Module to assist disaster nurses.",
-    #        module_type = 10
-    #    ),
     budget = Storage(
             name_nice = "Budgeting Module",
             description = "Allows a Budget to be drawn up",
@@ -151,6 +146,11 @@ deployment_settings.modules = Storage(
             description = "A library of digital resources, such as Photos, signed contracts and Office documents.",
             module_type = 10
         ),
+    ir = Storage(
+        name_nice = "Incident Reporting",
+        description = "Incident Reporting System",
+        module_type = 10
+    ),
     org = Storage(
             name_nice = "Organization Registry",
             description = 'Lists "who is doing what & where". Allows relief agencies to coordinate their activities',

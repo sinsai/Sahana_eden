@@ -344,7 +344,7 @@ def setting():
 @auth.shn_requires_membership(1) #Enabled only for testing
 def log():
     " RESTful CRUD controller "
-    resource = 'log'
+    resource = "log"
     tablename = "%s_%s" % (module, resource)
     table = db[tablename]
 
@@ -352,29 +352,29 @@ def log():
     table.message.comment = SPAN("*", _class="req")
     table.priority.represent = lambda id: (
         [id and
-            DIV(IMG(_src='/%s/static/img/priority/priority_%d.gif' % (request.application,id,), _height=12)) or
-            DIV(IMG(_src='/%s/static/img/priority/priority_4.gif' % request.application), _height=12)
+            DIV(IMG(_src="/%s/static/img/priority/priority_%d.gif" % (request.application,id,), _height=12)) or
+            DIV(IMG(_src="/%s/static/img/priority/priority_4.gif" % request.application), _height=12)
         ][0].xml())
-    table.priority.label = T('Priority')
+    table.priority.label = T("Priority")
     # Add Auth Restrictions
 
     # CRUD Strings
-    ADD_MESSAGE = T('Add Message')
-    LIST_MESSAGES = T('List Messages')
+    ADD_MESSAGE = T("Add Message")
+    LIST_MESSAGES = T("List Messages")
     s3.crud_strings[tablename] = Storage(
         title_create = ADD_MESSAGE,
-        title_display = T('Message Ddetails'),
+        title_display = T("Message Ddetails"),
         title_list = LIST_MESSAGES,
-        title_update = T('Edit message'),
-        title_search = T('Search messages'),
-        subtitle_create = T('Send new message'),
-        subtitle_list = T('Messages'),
+        title_update = T("Edit message"),
+        title_search = T("Search messages"),
+        subtitle_create = T("Send new message"),
+        subtitle_list = T("Messages"),
         label_list_button = LIST_MESSAGES,
         label_create_button = ADD_MESSAGE,
-        msg_record_created = T('Message added'),
-        msg_record_modified = T('Message updated'),
-        msg_record_deleted = T('Message deleted'),
-        msg_list_empty = T('No messages in the system '))
+        msg_record_created = T("Message added"),
+        msg_record_modified = T("Message updated"),
+        msg_record_deleted = T("Message deleted"),
+        msg_list_empty = T("No messages in the system"))
 
     # Server-side Pagination
     response.s3.pagination = True
@@ -386,7 +386,7 @@ def log():
 @auth.shn_requires_membership(1) #Enabled only for testing
 def tag():
     " RESTful CRUD controller "
-    resource = 'tag'
+    resource = "tag"
     tablename = "%s_%s" % (module, resource)
     table = db[tablename]
     # Server-side Pagination
@@ -398,10 +398,10 @@ def tag():
 
 def compose():
     " Message Compose page"
-    resource1 = 'log'
+    resource1 = "log"
     tablename1 = module + "_" + resource1
     table1 = db[tablename1]
-    resource2 = 'outbox'
+    resource2 = "outbox"
     tablename2 = module + "_" + resource2
     table2 = db[tablename2]
 
@@ -428,16 +428,18 @@ def compose():
     table1.actionable.readable = False
     table1.actioned_comments.writable = False
     table1.actioned_comments.readable = False
-    table1.subject.label = T('Subject')
-    table1.message.label = T('Message')
-    table1.priority.label = T('Priority')
-    table2.pe_id.label = T('Recipients')
+    table1.subject.label = T("Subject")
+    table1.message.label = T("Message")
+    table1.priority.label = T("Priority")
+    table2.pe_id.writable = True
+    table2.pe_id.readable = True
+    table2.pe_id.label = T("Recipients")
 
 
     def compose_onvalidation(form):
         """This onvalidation sets the sender and uses msg.send_by_pe_id to route the message"""
         if not request.vars.pe_id:
-            session.error = T('Please enter the recipient')
+            session.error = T("Please enter the recipient")
             redirect(URL(r=request,c="msg", f="compose"))
         sender_pe_id = db(db.pr_person.uuid == auth.user.person_uuid).select(db.pr_person.pe_id, limitby=(0, 1)).first().pe_id
         if msg.send_by_pe_id(request.vars.pe_id,
@@ -445,10 +447,10 @@ def compose():
                                 request.vars.message,
                                 sender_pe_id,
                                 request.vars.pr_message_method):
-                                    session.flash = T('Message sent to outbox')
+                                    session.flash = T("Message sent to outbox")
                                     redirect(URL(r=request, c="msg", f="compose"))
         else:
-            session.error = T('Error in message')
+            session.error = T("Error in message")
             redirect(URL(r=request,c="msg", f="compose"))
 
 
@@ -456,4 +458,4 @@ def compose():
                             onvalidation = compose_onvalidation)
     outboxform = crud.create(table2)
     
-    return dict(logform = logform, outboxform = outboxform, title = T('Send Message'))
+    return dict(logform = logform, outboxform = outboxform, title = T("Send Message"))

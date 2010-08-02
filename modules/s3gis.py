@@ -1748,10 +1748,10 @@ OpenLayers.Util.extend( selectPdfControl, {
                 else:
                     name = "Query" + str(int(random.random()*1000))
                 if "popup_url" in layer:
-                    popup_url = layer["popup_url"]
+                    _popup_url = urllib.unquote(layer["popup_url"])
                 else:
-                    #popup_url = str(URL(r=request, c=feature_class.module, f=feature_class.resource, args=["read.popup"]))
-                    popup_url = str(URL(r=request, c="gis", f="location", args=["read.popup"]))
+                    #popup_url = urllib.unquote(URL(r=request, c=feature_class.module, f=feature_class.resource, args=["read.popup"]))
+                    _popup_url = urllib.unquote(URL(r=request, c="gis", f="location", args=["read.popup?location.id="]))
 
                 # Generate HTML snippet
                 name_safe = re.sub("\W", "_", name)
@@ -1845,7 +1845,7 @@ OpenLayers.Util.extend( selectPdfControl, {
                 map.addPopup(popup);
                 // call AJAX to get the contentHTML
                 var uuid = feature.fid;
-                loadDetails('""" + popup_url + """' + '?location.uid=' + uuid, id, popup);
+                loadDetails('""" + _popup_url + """' + uuid, id, popup);
             }
         }
         """
@@ -1875,15 +1875,17 @@ OpenLayers.Util.extend( selectPdfControl, {
                     # Deal with manually-imported Features which are missing WKT
                     if feature.get("wkt"):
                         wkt = feature.wkt
-                    else:
+                    elif feature.lat and feature.lon:
                         wkt = self.latlon_to_wkt(feature.lat, feature.lon)
+                    else:
+                        continue
                     # Deal with apostrophes in Feature Names
                     fname = re.sub("'", "\\'", feature.name)
                     
                     layers_features += """
         geom = parser.read('""" + wkt + """').geometry;
         iconURL = '""" + marker_url + """';
-        featureVec = addFeature('""" + feature.uuid + """', '""" + fname + """', """ + fc + """, geom, iconURL)
+        featureVec = addFeature('""" + str(feature.id) + """', '""" + fname + """', """ + fc + """, geom, iconURL)
         features.push(featureVec);
         """
                 # Append to Features layer
@@ -1895,12 +1897,12 @@ OpenLayers.Util.extend( selectPdfControl, {
             for layer in feature_groups:
                 name = layer["feature_group"]
                 if "popup_url" in layer:
-                    popup_url = layer["popup_url"]
+                    popup_url = urllib.unquote(layer["popup_url"])
                 # We'd like to do something like this:
                 #elif feature_class is office:
-                #    popup_url = str(URL(r=request, c="or", f="office"))
+                #    popup_url = urllib.unquote(URL(r=request, c="or", f="office"))
                 else:
-                    popup_url = str(URL(r=request, c="gis", f="location", args=["read.popup"]))
+                    popup_url = urllib.unquote(URL(r=request, c="gis", f="location", args=["read.popup?location.id="]))
 
                 # Generate HTML snippet
                 name_safe = re.sub("\W", "_", name)
@@ -2021,8 +2023,10 @@ OpenLayers.Util.extend( selectPdfControl, {
                     # Deal with manually-imported Features which are missing WKT
                     if feature.gis_location.wkt:
                         wkt = feature.gis_location.wkt
-                    else:
+                    elif feature.gis_location.lat and feature.gis_location.lon:
                         wkt = self.latlon_to_wkt(feature.gis_location.lat, feature.gis_location.lon)
+                    else:
+                        continue
                     # Deal with apostrophes in Feature Names
                     fname = re.sub("'", "\\'", feature.gis_location.name)
                     

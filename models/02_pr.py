@@ -33,7 +33,7 @@ pr_pe_types = Storage(
 
 resource = "pentity"
 tablename = "%s_%s" % (module, resource)
-table = db.define_table(tablename,
+table = db.define_table(tablename, deletion_status,
                         Field("type"),
                         Field("uuid", length=128),
                         Field("pe_id", "integer"),
@@ -82,11 +82,11 @@ def shn_pentity_represent(id, default_label="[no label]"):
 
     elif pe_type == "pr_group":
         group = db(table.pe_id == id).select(
-                   table.group_name,
+                   table.name,
                    limitby=(0, 1)).first()
         if group:
             pe_str = "%s (%s)" % (
-                group.group_name, pe_type_nice
+                group.name, pe_type_nice
             )
 
     elif pe_type == "org_organisation":
@@ -110,7 +110,7 @@ def shn_pentity_represent(id, default_label="[no label]"):
     else:
         pe_str = "[%s] (%s)" % (
             label,
-            vita.trackable_types[pe_type]
+            pe_type_nice
         )
 
     return pe_str
@@ -139,7 +139,7 @@ def shn_pentity_ondelete(record):
     if uid:
 
         pentity = db.pr_pentity
-        db(pentity.uuid == uid).delete()
+        db(pentity.uuid == uid).update(deleted=True)
 
     return True
 
@@ -173,7 +173,7 @@ def shn_pentity_onaccept(form, table=None):
             type = table._tablename
             pe_label = record.get("pe_label", None)
             pe_id = pentity.insert(uuid=uid, pe_label=pe_label, type=type)
-            db(pentity.id == pe_id).update(pe_id=pe_id)
+            db(pentity.id == pe_id).update(pe_id=pe_id, deleted=False)
             db(table.id == id).update(pe_id=pe_id)
 
         return True
@@ -401,9 +401,8 @@ s3xrc.model.configure(table,
         "first_name",
         "middle_name",
         "last_name",
-        "date_of_birth",
-        "nationality",
-        "missing"
+        "gender",
+        "age_group"
     ])
 
 
@@ -448,8 +447,13 @@ table.group_type.label = T("Group type")
 table.name.label = T("Group name")
 table.name.requires = IS_NOT_EMPTY()
 table.name.comment = DIV(SPAN("*", _class="req", _style="padding-right: 5px;"))
-table.description.label = T("Group description")
 
+table.description.label = T("Group description")
+table.description.comment = DIV(DIV(_class="tooltip",
+    _title=Tstr("Group description") + "|" + Tstr("A brief description of the group (optional)")))
+
+table.comment.comment = DIV(DIV(_class="tooltip",
+    _title=Tstr("Comment") + "|" + Tstr("Field for comments (optional)")))
 
 # -----------------------------------------------------------------------------
 ADD_GROUP = T("Add Group")
@@ -604,7 +608,7 @@ def shn_pr_person_search_simple(r, **attr):
                 TR("", INPUT(_type="submit", _value="Search"))))
 
         output = dict(form=form, vars=form.vars)
-        
+
         # Accept action
         items = None
         if form.accepts(request.vars, session):

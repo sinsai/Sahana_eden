@@ -61,9 +61,11 @@ def create():
             elif table[field].type == "date":
                 _type = "date"
             elif table[field].type == "integer":
-                _type = "string" # Hack for now
+                _type = "int"
             elif table[field].type == "boolean":
-                _type = "integer"
+                _type = "boolean"
+            elif table[field].type == "upload":
+               _type = "binary"
             else:
                 # Unknown type
                 _type = "string"
@@ -88,6 +90,8 @@ def create():
 #                pass
 #            elif uses_requirement("IS_EMAIL", table[field]):
 #                pass
+            elif uses_requirement("IS_IN_SET", table[field]):
+                bindings_list.append(TAG["bind"](_nodeset=ref, _required=required))
             else:
                 bindings_list.append(TAG["bind"](_nodeset=ref, _type=_type, _required=required))
 
@@ -115,16 +119,18 @@ def create():
                 items_list=[]
                 items_list.append(TAG["label"](_ref="jr:itext('" + ref + ":label')"))
                 items_list.append(TAG["hint"](_ref="jr:itext('" + ref + ":hint')"))
-
+               
                 option_num = 0 # for formatting something like "jr:itext('stuff:option0')"
                 for option in theset:
+                    if table[field].type == "integer":
+                        option = int(option)
                     option_ref = ref + ":option" + str(option_num)
                     items_list.append(TAG["item"](TAG["label"](_ref="jr:itext('" + option_ref + "')"), TAG["value"](option)))
-                    itext_list.append(TAG["text"](TAG["value"](table[field].represent(int(option))), _id=option_ref))
+                    itext_list.append(TAG["text"](TAG["value"](table[field].represent(option)), _id=option_ref))
                     option_num += 1
                 controllers_list.append(TAG["select1"](items_list, _ref=ref))
 
-            elif table[field].type == "boolean":
+            elif table[field].type == "boolean": # Using select1, is there an easier way to do this?
                 items_list=[]
 
                 items_list.append(TAG["label"](_ref="jr:itext('" + ref + ":label')"))
@@ -138,6 +144,12 @@ def create():
 
                 controllers_list.append(TAG["select1"](items_list, _ref=ref))
 
+            elif table[field].type == "upload":
+                items_list=[]
+
+                items_list.append(TAG["label"](_ref="jr:itext('" + ref + ":label')"))
+                items_list.append(TAG["hint"](_ref="jr:itext('" + ref + ":hint')"))
+                controllers_list.append(TAG["upload"](items_list, _ref=ref, _mediatype="image/*"))
             else:
                 # Normal Input field
                 controllers_list.append(TAG["input"](TAG["label"](table[field].label), _ref=ref))
@@ -240,7 +252,7 @@ def formList():
     #xml = TAG.forms(*[TAG.form(getName(t), _url = "http://" + request.env.http_host + URL(r=request, f="create", args=t)) for t in db.tables()])
 
     # List of a couple simple tables to avoid a giant list of all the tables
-    tables = ["pr_person","hms_hospital","vol_volunteer","org_project","gis_landmark", "budget_parameter"]
+    tables = ["pr_person","hms_hospital","vol_volunteer","org_project","gis_landmark", "budget_parameter", "pr_image"]
     xml = TAG.forms()
     for table in tables:
         xml.append(TAG.form(get_name(table), _url = "http://" + request.env.http_host + URL(r=request, f="create", args=db[table])))

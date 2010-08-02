@@ -539,21 +539,30 @@ def shn_rheader_tabs(jr, tabs=[]):
 
     rheader_tabs = []
     for (title, component) in tabs:
+        if component and component.find("/") > 0:
+            function, component = component.split("/", 1)
+            if not component:
+                component = None
+        else:
+            function = jr.request.function
         _class = "rheader_tab_other"
         if component:
             if jr.component and jr.component.name == component or \
                jr.custom_action and jr.method == component:
                 _class = "rheader_tab_here"
             args = [jr.id, component]
-            _href = URL(r=request, f=jr.name, args=args, vars=jr.request.vars)
+            _href = URL(r=request, f=function, args=args, vars=jr.request.vars)
         else:
             if not jr.component:
                 _class = "rheader_tab_here"
             args = [jr.id]
-            _next = URL(r=request, f=jr.name, args=[jr.id])
-            if not jr.request.vars.get("_next", None):
-                jr.request.vars.update(_next=_next)
-            _href = URL(r=request, f=jr.name, args=args, vars=jr.request.vars)
+            # If caller supplied _next, don't change it.  If not, provide
+            # one that propagates the caller's vars.
+            vars = Storage(jr.request.vars)
+            if not vars.get("_next", None):
+                vars.update(_next=URL(r=request, f=function, args=args, vars=jr.request.vars))
+            _href = URL(r=request, f=function, args=args, vars=vars)
+
         tab = SPAN(A(title, _href=_href), _class=_class)
         rheader_tabs.append(tab)
 

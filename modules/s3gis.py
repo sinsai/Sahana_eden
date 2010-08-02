@@ -2023,7 +2023,7 @@ OpenLayers.Util.extend( selectPdfControl, {
                     # Deal with manually-imported Features which are missing WKT
                     if feature.gis_location.wkt:
                         wkt = feature.gis_location.wkt
-                    elif feature.gis_location.lat & feature.gis_location.lon:
+                    elif feature.gis_location.lat and feature.gis_location.lon:
                         wkt = self.latlon_to_wkt(feature.gis_location.lat, feature.gis_location.lon)
                     else:
                         continue

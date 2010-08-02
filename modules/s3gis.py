@@ -1748,10 +1748,10 @@ OpenLayers.Util.extend( selectPdfControl, {
                 else:
                     name = "Query" + str(int(random.random()*1000))
                 if "popup_url" in layer:
-                    _popup_url = layer["popup_url"]
+                    _popup_url = urllib.unquote(layer["popup_url"])
                 else:
-                    #popup_url = str(URL(r=request, c=feature_class.module, f=feature_class.resource, args=["read.popup"]))
-                    _popup_url = str(URL(r=request, c="gis", f="location", args=["read.popup?location.id="]))
+                    #popup_url = urllib.unquote(URL(r=request, c=feature_class.module, f=feature_class.resource, args=["read.popup"]))
+                    _popup_url = urllib.unquote(URL(r=request, c="gis", f="location", args=["read.popup?location.id="]))
 
                 # Generate HTML snippet
                 name_safe = re.sub("\W", "_", name)
@@ -1895,12 +1895,12 @@ OpenLayers.Util.extend( selectPdfControl, {
             for layer in feature_groups:
                 name = layer["feature_group"]
                 if "popup_url" in layer:
-                    popup_url = layer["popup_url"]
+                    popup_url = urllib.unquote(layer["popup_url"])
                 # We'd like to do something like this:
                 #elif feature_class is office:
-                #    popup_url = str(URL(r=request, c="or", f="office"))
+                #    popup_url = urllib.unquote(URL(r=request, c="or", f="office"))
                 else:
-                    popup_url = str(URL(r=request, c="gis", f="location", args=["read.popup?location.id="]))
+                    popup_url = urllib.unquote(URL(r=request, c="gis", f="location", args=["read.popup?location.id="]))
 
                 # Generate HTML snippet
                 name_safe = re.sub("\W", "_", name)

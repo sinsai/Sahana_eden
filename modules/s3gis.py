@@ -1875,8 +1875,10 @@ OpenLayers.Util.extend( selectPdfControl, {
                     # Deal with manually-imported Features which are missing WKT
                     if feature.get("wkt"):
                         wkt = feature.wkt
-                    else:
+                    elif feature.lat and feature.lon:
                         wkt = self.latlon_to_wkt(feature.lat, feature.lon)
+                    else:
+                        continue
                     # Deal with apostrophes in Feature Names
                     fname = re.sub("'", "\\'", feature.name)
                     
@@ -2021,8 +2023,10 @@ OpenLayers.Util.extend( selectPdfControl, {
                     # Deal with manually-imported Features which are missing WKT
                     if feature.gis_location.wkt:
                         wkt = feature.gis_location.wkt
-                    else:
+                    elif feature.gis_location.lat & feature.gis_location.lon:
                         wkt = self.latlon_to_wkt(feature.gis_location.lat, feature.gis_location.lon)
+                    else:
+                        continue
                     # Deal with apostrophes in Feature Names
                     fname = re.sub("'", "\\'", feature.gis_location.name)
                     

@@ -27,29 +27,25 @@ function alertmessage4()
 function view4(importsheet)
 {
     
-    //Use Ext.Ajax.request here to fetch data about tables and resources from the server here, use callback config to process it, must put a mask here
-    //This view must be refactored keeping in mind the import of multiple resources and multiple tables, it will have a multiselect of tables and a dropdown or resource
     var render_mask = new Ext.LoadMask(Ext.get('spreadsheet'),{msg : 'Rendering...'});
     render_mask.enable();
     render_mask.show(); 
     var field_store = {};
     var num_resources = importsheet.final_resources.length;
     var i=0;
-    while(i < num_resources)
-    {
-	    var resource = eval('('+importsheet.resource_fields[i]+')');
-	    field_store[resource['@resource']] = [];
+	    var resource = eval('('+importsheet.resource_fields+')');
+	    field_store = [];
 	    for(k in resource.field)
 	    {
 		    //console.log(resource.field[k]['@name']);
 		    if(resource.field[k]['@writable'] == "True" && resource.field[k]['@name'] != "id")
-			    field_store[resource['@resource']].push(resource.field[k]['@name']);
+			    field_store.push(resource.field[k]['@name']);
 	    }
-	    //console.log('Resource');
-	    //console.log(field_store);
-	    i++;
-    }
-    var store = importsheet.final_resources;
+	    console.log('Resource');
+	    console.log(field_store);
+	    
+    
+    var store = field_store;//importsheet.final_resources;
     Ext.QuickTips.init();
     var i=0;
     var colnames=new Array(importsheet.columns);
@@ -67,7 +63,7 @@ function view4(importsheet)
 	    resource_combo[i].fieldLabel = colnames[i];
 	    resource_combo[i].name=colnames[i]+'_resource';
 	    resource_combo[i].id=colnames[i]+'_resource';
-	    resource_combo[i].store=importsheet.final_resources;
+	    resource_combo[i].store= field_store;//importsheet.final_resources;
 	    resource_combo[i].allowBlank=false;
 	    resource_combo[i].blankText='You must select a resource';
 	    resource_combo[i].emptyText='Select a resource';
@@ -77,7 +73,7 @@ function view4(importsheet)
 	    resource_combo[i]= new Ext.form.ComboBox(resource_combo[i]);
 	    i++;
     }
-    i = 0;
+    /*i = 0;
     var fields_combo = new Array(importsheet.columns);
     while( i < importsheet.columns)
     {
@@ -112,26 +108,26 @@ function view4(importsheet)
 					    }
 					});
 	    i++;
-    }
+    }*/
     render_mask.hide();
     var modules = new Ext.form.FieldSet({
 		items : resource_combo,
 		labelWidth : 350,
 		autoHeight : true,
 		width :650 });
-    var fields = new Ext.form.FieldSet({
+    /*var fields = new Ext.form.FieldSet({
 		width : 700,
 		//height : 5000,
 		autoHeight : true,
 		items :	fields_combo});
+    */
     var container = { xtype : 'container',
 	    	      layout : 'hbox',
 		      height : 600,
-		      //autoHeight : true,
 		      layoutConfig :{
 				align : 'stretch'
 				},
-			items : [modules,fields]
+			items : [modules]//,fields]
     		    };
 	var columnmap=new Ext.form.FormPanel({
 	title: 'Edit spreadsheet \u2794 Select table \u2794 <u>Map columns to fields</u><br/>Select which columns go to which table fields',
@@ -180,10 +176,11 @@ function view4(importsheet)
 							Ext.Msg.alert("Error","Map all columns");
 							break;
 						}
-						map_from_ss_to_field.push([i,resource_combo[i].getName().replace('_resource',''),resource_combo[i].getValue(),fields_combo[i].getValue()]);
-						send.json[resource_combo[i].getValue()] = {};
+						map_from_ss_to_field.push([i,resource_combo[i].getName().replace('_resource',''),resource_combo[i].getValue()]);
+						//send.json[resource_combo[i].getValue()] = {};
 						i++;
 					}
+				        importsheet.resource = importsheet.final_resources;	
 					importsheet.map=map_from_ss_to_field;
 					var headrow=new Array();
 					i=0;
@@ -200,7 +197,7 @@ function view4(importsheet)
 					}*/
 					var header_row=0;
 					//find location of header row
-					while(i<importsheet.rows){
+					while(i < importsheet.rows){
  						if(cmparr(importsheet.data[i],importsheet.header_row_labels))
 						{
 							header_row=i;
@@ -214,6 +211,7 @@ function view4(importsheet)
 					 lm.show();
 				         
 				 	 send.spreadsheet = importsheet.data;
+					 send.resource = importsheet.final_resources;
 					 send.map = importsheet.map;
 					 console.log(send.map);
 					 send.header_row = importsheet.header_row_index;

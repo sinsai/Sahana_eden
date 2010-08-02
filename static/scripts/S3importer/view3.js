@@ -59,12 +59,14 @@ function view3(importsheet)
 					 {
 						checkboxes[i] = {};
 						checkboxes[i]['boxLabel'] = importable_resource[i];
+						checkboxes[i]['name'] = 'radio';
 						i++;
 					 }
 					 var checkbox_object = {};
 					 checkbox_object['items'] = checkboxes;
-					 checkbox_object['xtype'] = 'checkboxgroup';
+					 checkbox_object['xtype'] = 'radiogroup';
 					 checkbox_object['columns'] = 3;
+					 checkbox_object['singleSelect'] = true;
 					 checkbox_object['fieldLabel'] = 'Select resources';
 					 checkbox_object['width'] = 800;
 					 checkbox_object['id'] = 'selected_resources';
@@ -134,21 +136,18 @@ function view3(importsheet)
                     else
                         {
                              var final_resources = msForm.getForm().findField('selected_resources').getValue();
-			     for(var x=0 ; x < final_resources.length ;  x++)
+			     /*for(var x=0 ; x < final_resources.length ;  x++)
 			     {
 				     final_resources[x] = final_resources[x].boxLabel;
-		             }
-			     //console.log(final_resources);
+		             }*/
+			     final_resources = final_resources.boxLabel;
+			     console.log(final_resources);
 			     var get_fields = new Ext.LoadMask(Ext.get('spreadsheet'),{msg : 'Getting fields. This may take a while'});
 			     get_fields.enable();
 			     get_fields.show();
 			     var resource_fields = [];
-			     var temp = final_resources.length;
-			     for(var x = 0; x < temp; x++)
-			     {
-				//console.log('Fields urls http://'+url+'/'+application+'/'+final_resources[x].replace('_','/')+'/fields.json');
-				Ext.Ajax.request({
-					url : 'http://'+url+'/'+application+'/'+final_resources[x].replace('_','/')+'/fields.json',
+			     Ext.Ajax.request({
+					url : 'http://'+url+'/'+application+'/'+final_resources.replace('_','/')+'/fields.json',
 					method : 'GET',
 					timeout : 90000,
 					async : false,
@@ -157,22 +156,16 @@ function view3(importsheet)
 							//console.log(response.responseText);
 							//console.log("Resource->"+final_resources[x]);
 							var tempobj = response.responseText;
-							resource_fields.push(tempobj);
-							if(resource_fields.length == temp)
-							{
-								get_fields.hide();
-								importsheet.module = module;
-								importsheet.resource_fields = resource_fields;
-								importsheet.final_resources = final_resources;
-								msForm.hide();
-								view4(importsheet);
-							}
-
-							//if(!success)
-							//	x = x-1;	
+							resource_fields = (tempobj);
+							get_fields.hide();
+							importsheet.module = module;
+							importsheet.resource_fields = resource_fields;
+							importsheet.final_resources = final_resources;
+							msForm.hide();
+							view4(importsheet);
+							
 						}
 					});
-			     }
 			     /*
 			     Ext.Ajax.request({
 					url : 'http://'+url+'/'+application+'/'+final_resources[final_resources.length-1].replace('_','/')+'/fields.json',

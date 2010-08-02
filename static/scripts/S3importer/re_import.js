@@ -40,8 +40,8 @@ else
 	for( i=0 ; i < number_column ; i++)
 	{
 		temp = {};
-		temp.header = fields[i];
-		temp.dataIndex = fields[i];
+		temp.header = map[i][1];//fields[i];
+		temp.dataIndex = map[i][2];//fields[i];
 		temp.editor = new Ext.form.TextField();
 		temp.renderer = error_color;
 		column_model.push(temp);
@@ -89,6 +89,7 @@ else
 						send.map = map;
 						send.rows = rows
 					});
+					
 					send.map = map;
 					send.rows = rows;
 					send.columns = number_column;

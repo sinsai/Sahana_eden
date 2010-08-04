@@ -100,7 +100,8 @@ def import_spreadsheet():
     f.write("\n"+repr(len(j['spreadsheet']))+"\n")
     similar_rows = []
     importable_rows = []
-    j['spreadsheet'].pop(j['header_row'])
+    if j.has_key('header_row'):
+         j['spreadsheet'].pop(j['header_row'])
     j['rows'] -= 1
     for x in range(0,len(j['spreadsheet'])):
 	for y in range(x+1,len(j['spreadsheet'])):
@@ -115,8 +116,6 @@ def import_spreadsheet():
         if k in similar_rows:
 	    j['spreadsheet'].remove(k)
 	    j['rows'] -= 1
-    f.write("\n\n\nSimilar" + repr(similar_rows) + "\n\nNumber of rows" + repr(j['rows']))
-
     i=k=0
     send_dict = {}
     resource = j['resource'].encode('ascii')
@@ -125,6 +124,19 @@ def import_spreadsheet():
 	res = {}
 	k = 0
 	while (k < j['columns']):
+	    if ' --> ' in j['map'][k][2]:
+		field,nested_resource,nested_field = j['map'][k][2].split(' --> ')
+		field = "$k_" + field
+		nr = nested_resource
+		nested_resource= "$_" + nested_resource
+		if res.has_key(field) is False: 
+		   res[field] = {}
+		   res[field]['@resource'] = nr 
+		   res[field][nested_resource] = {}
+		res[field][nested_resource][nested_field] = j['spreadsheet'][i][k].encode('ascii')
+		k += 1
+		#f.write("res-->" + repr(res) + "\n")
+		continue
 	    if "opt_" in j['map'][k][2]:
 		res[j['map'][k][2].encode('ascii')]['@value'] = j['spreadsheet'][i][k].encode('ascii')
 	    	res[j['map'][k][2].encode('ascii')]["$"] = j['spreadsheet'][i][k].encode('ascii')
@@ -138,7 +150,7 @@ def import_spreadsheet():
 	i += 1
 	
     word = json.dumps(send_dict[resource])
-    f.write("hihih" + repr(len(send_dict[resource])))
+    #f.write("hihih" + repr(send_dict))
     #Removing all white spaces and newlines in the JSON
     new_word = ""
     cntr = 1
@@ -156,7 +168,7 @@ def import_spreadsheet():
      #new_word is without newlines and whitespaces	  
     new_word  = "{\"$_" + resource + "\":"+ new_word + "}"
     #added resource name
-    #f.write("The outgoing json is " + "\n\n" + new_word)
+    f.write("The outgoing json is " + "\n\n" + new_word)
     send = StringIO(new_word)
     tree = s3xrc.xml.json2tree(send)
     prefix, name = resource.split('_')
@@ -217,3 +229,6 @@ def import_spreadsheet():
 
 def re_import():
 	return dict(module_name=module_name)
+
+def similar_rows():
+    return dict(module_name = module_name)

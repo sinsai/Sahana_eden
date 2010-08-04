@@ -26,32 +26,28 @@ function alertmessage4()
 
 function view4(importsheet)
 {
-    
-    var render_mask = new Ext.LoadMask(Ext.get('spreadsheet'),{msg : 'Rendering...'});
+    /*var render_mask = new Ext.LoadMask(Ext.get('spreadsheet'),{msg : 'Rendering...'});
     render_mask.enable();
     render_mask.show(); 
-    var field_store = {};
+    */
     var num_resources = importsheet.final_resources.length;
-    var i=0;
-	    var resource = eval('('+importsheet.resource_fields+')');
-	    field_store = [];
-	    for(k in resource.field)
-	    {
-		    //console.log(resource.field[k]['@name']);
-		    if(resource.field[k]['@writable'] == "True" && resource.field[k]['@name'] != "id")
-			    field_store.push(resource.field[k]['@name']);
-	    }
-	    console.log('Resource');
-	    console.log(field_store);
-	    
-    
-    var store = field_store;//importsheet.final_resources;
+    /*var i=0;
+    var resource = eval('('+importsheet.resource_fields+')');
+    field_store = [];
+    for(k in resource.field)
+    {
+	    //console.log(resource.field[k]['@name']);
+	    if(resource.field[k]['@writable'] == "True" && resource.field[k]['@name'] != "id")
+		    field_store.push(resource.field[k]['@name']);
+    }
+    console.log('Resource');
+    console.log(field_store);*/
+    var store = importsheet.fields;
     Ext.QuickTips.init();
     var i=0;
     var colnames=new Array(importsheet.columns);
     while(i<importsheet.columns)
     {
-	    //colnames[i]=header.get('column'+i);
 	    colnames[i]=importsheet.headerobject.get('column'+i);
 	    i++;
     }
@@ -63,12 +59,13 @@ function view4(importsheet)
 	    resource_combo[i].fieldLabel = colnames[i];
 	    resource_combo[i].name=colnames[i]+'_resource';
 	    resource_combo[i].id=colnames[i]+'_resource';
-	    resource_combo[i].store= field_store;//importsheet.final_resources;
+	    resource_combo[i].store=importsheet.fields;
 	    resource_combo[i].allowBlank=false;
 	    resource_combo[i].blankText='You must select a resource';
 	    resource_combo[i].emptyText='Select a resource';
 	    resource_combo[i].editable=false;
 	    resource_combo[i].triggerAction='all';
+	    resource_combo[i].width = 400;
 	    resource_combo[i].typeAhead=true;
 	    resource_combo[i]= new Ext.form.ComboBox(resource_combo[i]);
 	    i++;
@@ -109,7 +106,6 @@ function view4(importsheet)
 					});
 	    i++;
     }*/
-    render_mask.hide();
     var modules = new Ext.form.FieldSet({
 		items : resource_combo,
 		labelWidth : 350,
@@ -136,8 +132,8 @@ function view4(importsheet)
 	autoScroll : true,
 	labelAlign: 'left',
         height : 500,
-	//items: resource_combo,
-	items : container,
+	items: resource_combo,
+	//items : container,
 	buttons:[
 		{
 			text: 'Back',
@@ -169,7 +165,7 @@ function view4(importsheet)
 					map_from_ss_to_field=[];
 					var send = {};
 					send.json = {}
-					while(i<importsheet.columns)
+					while(i < importsheet.columns)
 					{
 						if(resource_combo[i].getValue()=='')
 						{
@@ -209,7 +205,6 @@ function view4(importsheet)
 					 var lm = new Ext.LoadMask(Ext.get('spreadsheet'),{msg : 'Importing...'});
 				     	 lm.enable();	     
 					 lm.show();
-				         
 				 	 send.spreadsheet = importsheet.data;
 					 send.resource = importsheet.final_resources;
 					 send.map = importsheet.map;

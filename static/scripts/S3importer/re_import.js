@@ -1,5 +1,6 @@
 function error_color(val,metadata,record,row,col,store)
 {
+        
 	var error = val.substring(0,9);
 	console.log("",error);
 	if( error == "*_error_*")
@@ -37,6 +38,35 @@ else
 		{
 			console.log(record.get(fields[0]));
 		});
+	var action = new Ext.ux.grid.RowActions({
+			 header:'Click to delete',
+			 autoWidth: false,
+			 //keepSelection: true,
+			 actions:[{
+				 iconCls: 'action-delete',
+				 text: 'Delete',
+				 tooltip : 'delete',
+				 //autoWidth: true,
+				 keepSelection: true
+			}]
+
+		});
+   //actions handler for the delete button of each row 
+   action.on({
+		action:function(grid, record, action, row, col) {
+			Ext.Msg.show({
+				title :'Delete?',
+			        msg   : 'Are you sure you want to delete this row?',
+				buttons: Ext.Msg.YESNO,
+			        fn: function(btn)
+			        	{ 
+					if(btn=='yes'){
+						grid.getStore().remove(record);
+						}
+				 }
+				});
+		}
+   });
 	for( i=0 ; i < number_column ; i++)
 	{
 		temp = {};
@@ -46,10 +76,12 @@ else
 		temp.renderer = error_color;
 		column_model.push(temp);
 	}
+	column_model.push(action);
 	var re_import_grid = new Ext.grid.EditorGridPanel({
 		title : "Edit invalid rows ",
 		renderTo: 'spreadsheet',
 		width : 'auto',
+		plugins : action,
 		height : 300,
 		viewConfig:{
 			forceFit : true

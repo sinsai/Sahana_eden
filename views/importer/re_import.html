@@ -1,5 +1,9 @@
 {{extend 'layout.html'}}
 {{include 'ext.html'}}
+<link rel ="stylesheet" type="text/css" href="/{{=request.application}}/static/scripts/ext-community-extensions/rowactions/css/Ext.ux.grid.RowActions.css"/>
+<link rel ="stylesheet" type="text/css" href="/{{=request.application}}/static/scripts/ext-community-extensions/rowactions/css/icons.css"/>
+<link rel="stylesheet" type="text/css" href="../static/scripts/S3importer/css/importer.css"></link>
+<script type="text/javascript" src="/{{=request.application}}/static/scripts/ext-community-extensions/rowactions/Ext.ux.grid.RowActions.js"></script>
 <h1>Spreadsheet importer - Report</h1>
 {{modules = {} }}
 {{importable_resources = {} }}

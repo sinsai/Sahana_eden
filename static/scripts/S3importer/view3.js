@@ -156,13 +156,70 @@ function view3(importsheet)
 							//console.log(response.responseText);
 							//console.log("Resource->"+final_resources[x]);
 							var tempobj = response.responseText;
-							resource_fields = (tempobj);
-							get_fields.hide();
+							resource_fields = eval('('+ tempobj + ')');
+							//get_fields.hide();
 							importsheet.module = module;
 							importsheet.resource_fields = resource_fields;
+							var fields = [];
+							var reference_fields = [];
+							for(k in resource_fields.field)
+							{
+							        //console.log(resource_fields.field[k]);
+								if ( resource_fields.field[k]['@writable'] == "True" && resource_fields.field[k]['@name'] != 'id' && resource_fields.field[k]['@type'] != 'reference auth_user')
+								{
+									console.log(resource_fields.field[k]);
+									
+									if(resource_fields.field[k]['@type'].substring(0,9) == 'reference')
+									{
+										reference_fields.push([resource_fields.field[k]['@name'],resource_fields.field[k]['@type'].substring(10)]);
+									}
+									else
+										fields.push(resource_fields.field[k]['@name']);
+								}
+							}
+							console.log('Reference ');
+							console.log(reference_fields);
+							console.log(' Fields ');
+							console.log(fields);
+							var nested_fields = 0;
+							var nested_resources_structure = {};
+							for( var i = 0 ; i < reference_fields.length ; i++)
+							{
+							        var res = reference_fields[i][1];
+							        var field = reference_fields[i][0];
+							        //var res = res[0];
+								Ext.Ajax.request({
+									url : 'http://' + url + '/' + application + '/' + res.replace('_','/') + '/fields.json',
+									method : 'GET',
+									timeout : 90000,
+									field_name : field,
+									callback : function(options, success, response)
+										{
+											nested_fields += 1;
+											var fields_ = response.responseText;fields_ = eval( '(' + fields_ + ')');
+											nested_resources_structure[fields_['@resource']] = [];
+											for(k in fields_.field)
+											{
+							 				       //console.log(resource_fields.field[k]);
+												if ( fields_.field[k]['@writable'] == "True" && fields_.field[k]['@name'] != 'id')// && fields_.field[k]['@type'].substring(0,9) != 'reference')
+								{
+									
+									fields.push(options.field_name + ' --> ' + fields_['@resource'] + ' --> ' + fields_.field[k]['@name']);
+									nested_resources_structure[fields_['@resource']].push(fields_.field[k]['@name']);
+								}
+							}
+							if(nested_fields == reference_fields.length)
+							{get_fields.hide();				
 							importsheet.final_resources = final_resources;
+							importsheet.fields = fields;
 							msForm.hide();
-							view4(importsheet);
+							console.log("And all the fields are ");
+							console.log(importsheet.fields);
+							console.log(nested_resources_structure);
+							view4(importsheet);}
+							}
+							});
+							}
 							
 						}
 					});

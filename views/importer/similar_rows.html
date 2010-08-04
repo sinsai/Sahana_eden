@@ -1,0 +1,16 @@
+{{extend 'layout.html'}}
+{{include 'ext.html'}}
+<link rel ="stylesheet" type="text/css" href="/{{=request.application}}/static/scripts/ext-community-extensions/rowactions/css/Ext.ux.grid.RowActions.css"/>
+<link rel ="stylesheet" type="text/css" href="/{{=request.application}}/static/scripts/ext-community-extensions/rowactions/css/icons.css"/>
+<link rel="stylesheet" type="text/css" href="../static/scripts/S3importer/css/importer.css"></link>
+<script type="text/javascript" src="/{{=request.application}}/static/scripts/ext-community-extensions/rowactions/Ext.ux.grid.RowActions.js"></script>
+<script type="text/javascript" src="/{{=request.application}}/static/scripts/S3importer/similar_rows.js"></script>
+<script type="text/javascript">
+	var similar_rows = {{=len(session.similar_rows)}};
+	if(similar_rows)
+		similar();
+	else
+		no_similar();
+</script>		
+<h1>This is the importer/similar_rows.html template</h1>
+{{=BEAUTIFY(response._vars)}}

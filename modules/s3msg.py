@@ -53,14 +53,30 @@ class Msg(object):
         except:
             pass
 
-    def sanitise_mobile(self, mobile)
+    def sanitise_phone(self, phone):
         """
-        Strip out unnecessary characters from the string
+        Strip out unnecessary characters from the string:
+        +()- & space
         """
 
-        # tbc
+        phonePattern = re.compile(r'''
+                        # don't match beginning of string, number can start anywhere
+            (\d{3})     # area code is 3 digits (e.g. '800')
+            \D*         # optional separator is any number of non-digits
+            (\d{3})     # trunk is 3 digits (e.g. '555')
+            \D*         # optional separator
+            (\d{4})     # rest of number is 4 digits (e.g. '1212')
+            \D*         # optional separator
+            (\d*)       # extension is optional and can be any number of digits
+            $           # end of string
+            ''', re.VERBOSE)
+
+        
         #clean = re.
-        clean = mobile
+        # If number starts with a 0 then need to remove this & add the country code in
+        # (Beware: Italy keeps zero, even with country code!)
+        
+        clean = phone
 
         return clean
     
@@ -69,7 +85,7 @@ class Msg(object):
         Function to send SMS via locally-attached Modem
         """
         
-        mobile = self.sanitise_mobile(mobile)
+        mobile = self.sanitise_phone(mobile)
         
         try:
             self.modem.send_sms(mobile, text)
@@ -82,7 +98,7 @@ class Msg(object):
         Function to send SMS via API
         """
         
-        mobile = self.sanitise_mobile(mobile)
+        mobile = self.sanitise_phone(mobile)
         
         try:
             self.sms_api_post_config[self.sms_api.message_variable] = text

@@ -740,10 +740,18 @@ if empty:
     if not db(table.id > 0).count():
         # Populate table
         for subtype in gis_layer_openstreetmap_subtypes:
-            table.insert(
-                    name = "OSM " + subtype,
-                    subtype = subtype
-                )
+            if subtype in ["Taiwan"]:
+                # Local OSM layers should be disabled by default in default builds
+                table.insert(
+                        name = "OSM " + subtype,
+                        subtype = subtype,
+                        enabled = False
+                    )
+            else:
+                table.insert(
+                        name = "OSM " + subtype,
+                        subtype = subtype
+                    )
     tablename = "gis_layer_google"
     table = db[tablename]
     if not db(table.id > 0).count():

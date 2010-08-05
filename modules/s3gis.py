@@ -437,7 +437,7 @@ class GIS(object):
 
         if layer == "openstreetmap":
             #return ["Mapnik", "Osmarender", "Aerial"]
-            return ["Mapnik", "Osmarender"]
+            return ["Mapnik", "Osmarender", "Taiwan"]
         elif layer == "google":
             return ["Satellite", "Maps", "Hybrid", "Terrain"]
         elif layer == "yahoo":
@@ -1462,6 +1462,11 @@ OpenLayers.Util.extend( selectPdfControl, {
         var oam = new OpenLayers.Layer.TMS( '""" + openstreetmap.Aerial + """', 'http://tile.openaerialmap.org/tiles/1.0.0/openaerialmap-900913/', {type: 'png', getURL: osm_getTileURL } );
         map.addLayer(oam);
                     """
+                if openstreetmap.Taiwan:
+                    layers_openstreetmap += """
+        var osmtw = new OpenLayers.Layer.TMS( '""" + openstreetmap.Taiwan + """', 'http://tile.openstreetmap.tw/tiles/', {type: 'png', getURL: osm_getTileURL } );
+        map.addLayer(osmtw);
+                    """
             else:
                 functions_openstreetmap = ""
 
@@ -1875,10 +1880,10 @@ OpenLayers.Util.extend( selectPdfControl, {
                     # Deal with manually-imported Features which are missing WKT
                     if feature.get("wkt"):
                         wkt = feature.wkt
-                    elif feature.lat and feature.lon:
-                        wkt = self.latlon_to_wkt(feature.lat, feature.lon)
-                    else:
+                    elif (feature.lat == None) or (feature.lon == None):
                         continue
+                    else:
+                        wkt = self.latlon_to_wkt(feature.lat, feature.lon)
                     # Deal with apostrophes in Feature Names
                     fname = re.sub("'", "\\'", feature.name)
                     
@@ -2023,10 +2028,10 @@ OpenLayers.Util.extend( selectPdfControl, {
                     # Deal with manually-imported Features which are missing WKT
                     if feature.gis_location.wkt:
                         wkt = feature.gis_location.wkt
-                    elif feature.gis_location.lat and feature.gis_location.lon:
-                        wkt = self.latlon_to_wkt(feature.gis_location.lat, feature.gis_location.lon)
-                    else:
+                    elif (feature.gis_location.lat == None) or (feature.gis_location.lon == None):
                         continue
+                    else:
+                        wkt = self.latlon_to_wkt(feature.gis_location.lat, feature.gis_location.lon)
                     # Deal with apostrophes in Feature Names
                     fname = re.sub("'", "\\'", feature.gis_location.name)
                     

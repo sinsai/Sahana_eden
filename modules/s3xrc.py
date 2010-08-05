@@ -39,7 +39,7 @@
 __name__ = "S3XRC"
 __all__ = ["S3Resource", "S3Request", "S3ResourceController"]
 
-import os, sys, uuid, datetime, time, urllib
+import os, sys, cgi, uuid, datetime, time, urllib, StringIO
 import gluon.contrib.simplejson as json
 
 from gluon.storage import Storage
@@ -137,6 +137,8 @@ class S3Resource(object):
         if self.parent is None:
             self.__attach(select=components)
             self.build_query(id=id, uid=uid, filter=filter, url_vars=url_vars)
+
+        self.__files = Storage()
 
         self.__handler = Storage(options=self.__get_options,
                                  fields=self.__get_fields,
@@ -609,6 +611,7 @@ class S3Resource(object):
         self.__length = None
         self.__ids = []
         self.__uids = []
+        self.__files = Storage()
 
         self.__slice = False
 
@@ -1151,6 +1154,43 @@ class S3Resource(object):
         else:
             raise HTTP(501, body=self.BADFORMAT)
 
+
+    # -------------------------------------------------------------------------
+    def __read_body(self, r):
+
+        """ Read data from request body """
+
+        self.__files = Storage()
+        content_type = r.request.env.get("content_type", None)
+
+        if content_type and content_type.startswith("multipart/"):
+
+            # Get all attached files from POST
+            for k in r.request.post_vars.keys():
+                p = r.request.post_vars[k]
+                if isinstance(p, cgi.FieldStorage) and p.filename:
+                    self.__files[p.filename] = p.file
+
+            # Find the source
+            source_name = "%s.%s" % (r.name, r.representation)
+            if source_name in self.__files.keys():
+                source = self.__files[source_name]
+            else:
+                post_vars = r.request.post_vars
+                source = post_vars.get(source_name, None)
+                if isinstance(source, cgi.FieldStorage):
+                    source = source.value
+                if isinstance(source, basestring):
+                    source = StringIO.StringIO(source)
+        else:
+
+            # Body is source
+            source = r.request.body
+            source.seek(0)
+
+        return source
+
+
     # -------------------------------------------------------------------------
     def __put_tree(self, r, **attr):
 
@@ -1166,7 +1206,7 @@ class S3Resource(object):
             elif "fetchurl" in vars:
                 source = vars["fetchurl"]
             else:
-                source = r.request.body
+                source = self.__read_body(r)
             tree = xml.parse(source)
         else:
             if "filename" in vars:
@@ -1175,7 +1215,7 @@ class S3Resource(object):
                 import urllib
                 source = urllib.urlopen(vars["fetchurl"])
             else:
-                source = r.request.body
+                source = self.__read_body(r)
             tree = xml.json2tree(source)
 
         if not tree:
@@ -2557,23 +2597,17 @@ class S3ResourceController(object):
 
         """
 
-        requires = table[fieldname].requires
-
-        if not requires:
-            return (value, None)
-        else:
+        field = table.get(fieldname, None)
+        if field:
             if record:
                 v = record.get(fieldname, None)
-                if v:
-                    if v == value:
-                        return (value, None)
-            if not isinstance(requires, (list, tuple)):
-                requires = [requires]
-            for validator in requires:
-                (value, error) = validator(value)
-                if error:
-                    return (value, error)
-            return(value, None)
+                if v and v == value:
+                    return (value, None)
+
+            value, error = field.validate(value)
+            return (value, error)
+        else:
+            raise AttributeError("No field %s in %s" % (fieldname, table._tablename))
 
 
     # -------------------------------------------------------------------------

@@ -217,7 +217,9 @@ table.image.represent = lambda image: image and \
 
 def shn_pr_image_onvalidation(form):
 
-    if not form.vars.image and not form.vars.url:
+    image = form.vars.image
+    url = form.vars.url
+    if image is None and not url:
         form.errors.image = \
         form.errors.url = T("Either file upload or image URL required.")
 

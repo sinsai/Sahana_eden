@@ -132,8 +132,8 @@ def import_spreadsheet():
 		if res.has_key(field) is False: 
 		   res[field] = {}
 		   res[field]['@resource'] = nr 
-		   res[field][nested_resource] = {}
-		res[field][nested_resource][nested_field] = j['spreadsheet'][i][k].encode('ascii')
+		   res[field][nested_resource] = [{}]
+		res[field][nested_resource][0][nested_field] = j['spreadsheet'][i][k].encode('ascii')
 		k += 1
 		#f.write("res-->" + repr(res) + "\n")
 		continue

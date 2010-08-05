@@ -476,7 +476,8 @@ def shn_get_crud_string(tablename, name):
     """ Get the CRUD strings for a table """
 
     crud_strings = s3.crud_strings.get(tablename, s3.crud_strings)
-    return crud_strings.get(name, None)
+    not_found = s3.crud_strings.get(name, None)
+    return crud_strings.get(name, not_found)
 
 
 def shn_import_table(table_name,

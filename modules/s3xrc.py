@@ -1166,22 +1166,21 @@ class S3Resource(object):
         if content_type and content_type.startswith("multipart/"):
 
             # Get all attached files from POST
-            for k in r.request.post_vars.keys():
-                p = r.request.post_vars[k]
+            for p in r.request.post_vars.values():
                 if isinstance(p, cgi.FieldStorage) and p.filename:
                     self.__files[p.filename] = p.file
 
             # Find the source
             source_name = "%s.%s" % (r.name, r.representation)
-            if source_name in self.__files.keys():
-                source = self.__files[source_name]
-            else:
-                post_vars = r.request.post_vars
-                source = post_vars.get(source_name, None)
-                if isinstance(source, cgi.FieldStorage):
+            post_vars = r.request.post_vars
+            source = post_vars.get(source_name, None)
+            if isinstance(source, cgi.FieldStorage):
+                if source.filename:
+                    source = source.file
+                else:
                     source = source.value
-                if isinstance(source, basestring):
-                    source = StringIO.StringIO(source)
+            if isinstance(source, basestring):
+                source = StringIO.StringIO(source)
         else:
 
             # Body is source

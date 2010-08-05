@@ -6,6 +6,8 @@
 
 import StringIO
 import xml.dom.minidom
+from lxml import etree
+module = request.controller
 
 def create():
     """
@@ -20,9 +22,9 @@ def create():
     IS_DATE_IN_RANGE
     IS_DATETIME_IN_RANGE
     """
-    #if len(request.args) == 0:
-     #   session.error = T("Need to specify a table!")
-      #  redirect(URL(r=request))
+    if len(request.args) == 0:
+        session.error = T("Need to specify a table!")
+        redirect(URL(r=request))
     _table = request.args(0)
 
     title = _table
@@ -95,7 +97,7 @@ def generate_bindings(table, field, ref):
         _type = "string"
     elif table[field].type == "double":
         _type = "decimal"
-    # Collect doesn't support datetime yet
+    # Collect doesn't support datetime yet 
     elif table[field].type == "date" or table[field].type == "datetime":
         _type = "date"
     elif table[field].type == "integer":
@@ -145,7 +147,6 @@ def generate_controllers(table, field, ref):
     itext_list.append(TAG["text"](TAG["value"](table[field].label), _id=ref+":label"))
     itext_list.append(TAG["text"](TAG["value"](table[field].comment), _id=ref+":hint"))
 
-    # Controllers---------------------------------------------------
     if hasattr(table[field].requires, "option"):
         items_list = []
         for option in table[field].requires.theset:
@@ -251,8 +252,8 @@ def post():
     data = importxml(db, request.body.read())
     return data
 
-#@auth.shn_requires_membership(2)
-def submission():
+@auth.shn_requires_membership(2)
+def submission_old():
     """ 
     Allows for submission of xforms by ODK Collect 
     http://code.google.com/p/opendatakit/
@@ -263,6 +264,37 @@ def submission():
         raise HTTP(400, "Need some xml!")
     importxml(db, xml)
     r = HTTP(201, "Saved.")
+    r.headers["Location"] = request.env.http_host
+    raise r
+
+@auth.shn_requires_membership(2)
+def submission():
+    """
+    Allows for submission of Xforms by ODK Collect
+    using the S3XRC framework.
+    ToDo: Figure out what the proper format is for
+    importing XML files and how to convert ODK Collect's
+    Xforms to this format.
+    """
+    
+    xmlinput = str(request.post_vars.xml_submission_file.value)
+    
+    io = StringIO.StringIO()
+    io.write(xmlinput)
+    io.seek(0, 0)
+    
+    tree = etree.parse(io)
+    resource = tree.getroot().tag
+    
+    prefix, name = resource.split('_')
+    res = s3xrc.resource(prefix, name)
+    
+    try:
+        res.import_xml(source = tree)
+    except:
+        raise
+    
+    r = HTTP(201, "Saved.") # ODK Collect only accepts 201
     r.headers["Location"] = request.env.http_host
     raise r
 
@@ -277,7 +309,7 @@ def formList():
     #xml = TAG.forms(*[TAG.form(getName(t), _url = "http://" + request.env.http_host + URL(r=request, f="create", args=t)) for t in db.tables()])
 
     # List of a couple simple tables to avoid a giant list of all the tables
-    tables = ["rms_req","gis_landmark","mpr_missing_report","cr_shelter","pr_presence", "pr_person"]
+    tables = ["rms_req","gis_landmark","mpr_missing_report","cr_shelter","pr_presence", "pr_person", "pr_image"]
     xml = TAG.forms()
     for table in tables:
         xml.append(TAG.form(get_name(table), _url = "http://" + request.env.http_host + URL(r=request, f="create", args=db[table])))

@@ -293,9 +293,9 @@ if deployment_settings.has_module(module):
         if attr is None:
             attr = {}
 
-        if not shn_has_permission('read', db.org_project):
+        if not shn_has_permission("read", db.org_project):
             session.error = UNAUTHORISED
-            redirect(URL(r=request, c='default', f='user', args='login', vars={'_next':URL(r=request, args='search_location', vars=request.vars)}))
+            redirect(URL(r=request, c="default", f="user", args="login", vars={"_next":URL(r=request, args="search_location", vars=request.vars)}))
 
         if xrequest.representation=="html":
             # Check for redirection
@@ -305,19 +305,19 @@ if deployment_settings.has_module(module):
                 next = str.lower(URL(r=request, c="org", f="project", args="[id]"))
 
             # Custom view
-            response.view = '%s/project_search.html' % xrequest.prefix
+            response.view = "%s/project_search.html" % xrequest.prefix
 
             # Title and subtitle
-            title = T('Search for a Project')
-            subtitle = T('Matching Records')
+            title = T("Search for a Project")
+            subtitle = T("Matching Records")
 
             # Select form:
-            l_opts = [OPTION(_value='')]
+            l_opts = [OPTION(_value="")]
             l_opts += [OPTION(location.name, _value=location.id)
                     for location in db(db.gis_location.deleted == False).select(db.gis_location.ALL, cache=(cache.ram, 3600))]
             form = FORM(TABLE(
-                    TR(T('Location: '),
-                    SELECT(_name="location", *l_opts, **dict(name="location", requires=IS_NULL_OR(IS_IN_DB(db, 'gis_location.id'))))),
+                    TR(T("Location: "),
+                    SELECT(_name="location", *l_opts, **dict(name="location", requires=IS_NULL_OR(IS_IN_DB(db, "gis_location.id"))))),
                     TR("", INPUT(_type="submit", _value="Search"))
                     ))
 
@@ -353,7 +353,7 @@ if deployment_settings.has_module(module):
                         TH("End date"),
                         TH("Description"),
                         TH("Status"))),
-                        TBODY(records), _id='list', _class="display"))
+                        TBODY(records), _id="list", _class="display"))
                 else:
                         items = T("None")
 
@@ -362,7 +362,7 @@ if deployment_settings.has_module(module):
             except:
                 label_create_button = s3.crud_strings.label_create_button
 
-            add_btn = A(label_create_button, _href=URL(r=request, c="org", f="project", args="create"), _class='action-btn')
+            add_btn = A(label_create_button, _href=URL(r=request, c="org", f="project", args="create"), _class="action-btn")
 
             output.update(dict(items=items, add_btn=add_btn))
 
@@ -381,36 +381,36 @@ if deployment_settings.has_module(module):
     #   Customize to add more client defined Skill
     #
 
-    resource = 'skill_types'
-    tablename = module + '_' + resource
+    resource = "skill_types"
+    tablename = module + "_" + resource
     table = db.define_table(tablename, timestamp, uuidstamp, deletion_status,
-            Field('name',  length=128,notnull=True),
-            Field('category', 'string', length=50),
-            Field('description'),
+            Field("name",  length=128,notnull=True),
+            Field("category", "string", length=50),
+            Field("description"),
             migrate=migrate)
 
     # Field settings
-    table.uuid.requires = IS_NOT_IN_DB(db, '%s.uuid' % tablename)
-    table.name.requires = [IS_NOT_EMPTY(), IS_NOT_IN_DB(db, '%s.name' % tablename)]
-    table.name.label = T('Name')
+    table.uuid.requires = IS_NOT_IN_DB(db, "%s.uuid" % tablename)
+    table.name.requires = [IS_NOT_EMPTY(), IS_NOT_IN_DB(db, "%s.name" % tablename)]
+    table.name.label = T("Name")
     table.name.comment = SPAN("*", _class="req")
 
     # CRUD strings
     s3.crud_strings[tablename] = Storage(
-        title_create = T('Add Skill Type'),
-        title_display = T('Skill Type Details'),
-        title_list = T('Skill Type'),
-        title_update = T('Edit Skill Type'),
-        title_search = T('Search Skill Type'),
-        subtitle_create = T('Add New Skill Type'),
-        subtitle_list = T('Skill Type'),
-        label_list_button = T('List Skill Types'),
-        label_create_button = T('Add Skill Types'),
-        label_delete_button = T('Delete Skill Type'),
-        msg_record_created = T('Skill Type added'),
-        msg_record_modified = T('Skill Type updated'),
-        msg_record_deleted = T('Skill Type deleted'),
-        msg_list_empty = T('No Skill Types currently set'))
+        title_create = T("Add Skill Type"),
+        title_display = T("Skill Type Details"),
+        title_list = T("Skill Type"),
+        title_update = T("Edit Skill Type"),
+        title_search = T("Search Skill Type"),
+        subtitle_create = T("Add New Skill Type"),
+        subtitle_list = T("Skill Type"),
+        label_list_button = T("List Skill Types"),
+        label_create_button = T("Add Skill Types"),
+        label_delete_button = T("Delete Skill Type"),
+        msg_record_created = T("Skill Type added"),
+        msg_record_modified = T("Skill Type updated"),
+        msg_record_deleted = T("Skill Type deleted"),
+        msg_list_empty = T("No Skill Types currently set"))
 
     field_settings = S3CheckboxesWidget(db = db,
                                         lookup_table_name = "vol_skill_types",
@@ -420,8 +420,8 @@ if deployment_settings.has_module(module):
                                         )
 
     # Reusable field
-    skill_ids = db.Table(None, 'skill_ids',
-                         FieldS3('skill_ids',
+    skill_ids = db.Table(None, "skill_ids",
+                         FieldS3("skill_ids",
                          requires = field_settings.requires,
                          widget = field_settings.widget,
                          represent = field_settings.represent,
@@ -447,70 +447,70 @@ if deployment_settings.has_module(module):
     #   A volunteer's skills (component of pr)
     #
 
-    def multiselect_widget(f,v):
+    def multiselect_widget(f, v):
 	import uuid
 	d_id = "multiselect-" + str(uuid.uuid4())[:8]
 	wrapper = DIV(_id=d_id)
-	inp = SQLFORM.widgets.options.widget(f,v)
-	inp['_multiple'] = 'multiple'
-	inp['_style'] = 'min-width: %spx;' % (len(f.name) * 20 + 50)
+	inp = SQLFORM.widgets.options.widget(f, v)
+	inp["_multiple"] = "multiple"
+	inp["_style"] = "min-width: %spx;" % (len(f.name) * 20 + 50)
 	if v:
-	    if not isinstance(v,list): v = str(v).split('|')
-	    opts = inp.elements('option')
+	    if not isinstance(v,list): v = str(v).split("|")
+	    opts = inp.elements("option")
 	    for op in opts:
-	        if op['_value'] in v:
-	            op['_selected'] = 'selected'
+	        if op["_value"] in v:
+	            op["_selected"] = "selected"
 	scr = SCRIPT('jQuery("#%s select").multiSelect({'\
-	             'noneSelected:"Select %ss"});' % (d_id,f.name))
+	             'noneSelected:"Select %ss"});' % (d_id, f.name))
 	wrapper.append(inp)
 	wrapper.append(scr)
-	if request.vars.get(inp['_id']+'[]',None):
-	    var = request.vars[inp['_id']+'[]']
+	if request.vars.get(inp["_id"] + "[]", None):
+	    var = request.vars[inp["_id"] + "[]"]
 	    if not isinstance(var,list): var = [var]
-	    request.vars[f.name] = '|'.join(var)
-	    del request.vars[inp['_id']+'[]']
+	    request.vars[f.name] = "|".join(var)
+	    del request.vars[inp["_id"] + "[]"]
 	return wrapper
 
-    resource = 'skill'
-    tablename = module + '_' + resource
+    resource = "skill"
+    tablename = module + "_" + resource
     table = db.define_table(tablename, timestamp, uuidstamp, deletion_status,
                 person_id,
-        Field('skill_types_id'),
-        Field('status',requires=IS_IN_SET(['approved','unapproved','denied']),label=T('status'), notnull=True, default='unapproved'),
+        Field("skill_types_id"),
+        Field("status", requires=IS_IN_SET(["approved", "unapproved", "denied"]), label=T("status"), notnull=True, default="unapproved"),
                     migrate=migrate)
 
     db.vol_skill.skill_types_id.widget = multiselect_widget
-    db.vol_skill.skill_types_id.requires = IS_ONE_OF(db, 'vol_skill_types.id', vol_skill_types_represent, multiple=True)
+    db.vol_skill.skill_types_id.requires = IS_ONE_OF(db, "vol_skill_types.id", vol_skill_types_represent, multiple=True)
     #db.vol_skill.skill_types_id.represent = vol_skill_types_represent
 
     s3xrc.model.add_component(module, resource,
         multiple=True,
-        joinby=dict(pr_person='person_id'),
+        joinby=dict(pr_person="person_id"),
         deletable=True,
         editable=True)
 
     s3xrc.model.configure(table,
-                          list_fields=['id',
-                                       'skill_types_id',
-                                       'status'])
+                          list_fields=["id",
+                                       "skill_types_id",
+                                       "status"])
 
     # CRUD Strings
-    ADD_SKILL = T('Add Skill')
-    SKILL = T('Skill')
+    ADD_SKILL = T("Add Skill")
+    SKILL = T("Skill")
     s3.crud_strings[tablename] = Storage(
         title_create = ADD_SKILL,
-        title_display = T('Skill Details'),
+        title_display = T("Skill Details"),
         title_list = SKILL,
-        title_update = T('Edit Skill'),
-        title_search = T('Search Skill'),
-        subtitle_create = T('Add New Skill'),
+        title_update = T("Edit Skill"),
+        title_search = T("Search Skill"),
+        subtitle_create = T("Add New Skill"),
         subtitle_list = SKILL,
-        label_list_button = T('List Skill'),
+        label_list_button = T("List Skill"),
         label_create_button = ADD_SKILL,
-        msg_record_created = T('Skill added'),
-        msg_record_modified = T('Skill updated'),
-        msg_record_deleted = T('Skill deleted'),
-        msg_list_empty = T('No skills currently set'))
+        msg_record_created = T("Skill added"),
+        msg_record_modified = T("Skill updated"),
+        msg_record_deleted = T("Skill deleted"),
+        msg_list_empty = T("No skills currently set"))
 
     # shn_pr_group_represent -----------------------------------------------------
     #
@@ -590,8 +590,6 @@ if deployment_settings.has_module(module):
                                         "active" : True,
                                         "marker" : marker}],
                     feature_groups = [volunteer],
-                    wms_browser = {"name" : "Risk Maps",
-                                   "url" : "http://preview.grid.unep.ch:8080/geoserver/ows?service=WMS&request=GetCapabilities"},
                     catalogue_overlays = True,
                     catalogue_toolbar = False,
                     toolbar = True,

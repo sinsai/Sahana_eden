@@ -1,0 +1,212 @@
+{{extend "layout.html"}}
+{{=H2("Add Section")}}
+<link href="/{{=request.application}}/static/styles/S3/colorbox.css" rel="stylesheet" type="text/css" media="screen" charset="utf-8" />
+{{if session.s3.debug:}}
+ <script src="/{{=request.application}}/static/scripts/S3/jquery.colorbox.js" type="text/javascript" charset="utf-8"></script>
+{{else:}}
+ <script src="/{{=request.application}}/static/scripts/S3/jquery.colorbox-min.js" type="text/javascript" charset="utf-8"></script>
+{{pass}}
+<style type="text/css">
+
+    .box {
+        border: 1px solid #8FABC7;
+        width: 100%;
+        padding: 5px 2px 5px 2px;
+        text-align: left;
+        margin-left: auto;
+        margin-right: auto;
+    }
+
+    .boxHeader {
+        background-color: #8FABC7;
+        color: white;
+        display: block;
+        padding: 2px;
+    }
+
+    .buttonsAtBottom {
+        margin-top: 10px;
+        padding: 5px;
+    }
+
+    .odd {
+        background-color: #808080;
+    }
+
+    .even {
+        background-color: #ffffff;
+    }
+</style>
+
+<script type="text/javascript">
+
+    $(document).ready(function() {
+
+        updateRowColors();
+
+        $("#dummy_submit").click;(function() {
+            removeHiddenRows();
+        });
+    });
+    function updateRowColors() {
+        var tbody = document.getElementById("questionList");
+        var alternator = 1;
+        for (var i = 0; i < tbody.rows.length; i++) {
+            var qRow = tbody.rows[i];
+            if (qRow.style.display != "none") { // skip deleted rows
+                qRow.className = alternator < 0 ? "odd" : "even";
+                alternator = alternator * -1;
+            }
+        }
+    }
+
+    function removeHiddenRows() {       
+        var rows = document.getElementsByTagName('tr');
+        var i = 0;
+        while (i < rows.length) {
+            if (rows[i].style.display == 'none') {
+                rows[i].parentNode.removeChild(rows[i]);
+            }
+            else {
+                i++;
+            }
+        }
+    }
+
+    function remove(btn) {
+        var parent = btn.parentNode;
+        while (parent.tagName.toLowerCase() != 'tr')
+            parent = parent.parentNode;
+        parent.style.display = 'none';
+        updateRowColors();
+    }
+
+    function addQuestion() {
+        var tbody = document.getElementById('questionList');
+        var tmpQ = document.getElementById('newQuestion');
+        var newQ = tmpQ.cloneNode(true);
+        newQ.style.display = '';
+        newQ.id = '';
+        tbody.appendChild(newQ);
+        updateRowColors(); 
+    }
+
+    function configureQuestion(type) {
+        $(this).appendChild("hai")
+    }
+</script>
+<div class='form-container'>   
+    {{=form.custom.begin}}
+    <table id="section_form">
+        <tbody>                                                                                                                     
+        <tr id='survey_section_name__row'>
+            <td>
+                <label>{{=form.custom.label.name}}</label>
+            </td>
+            <td>
+                {{=form.custom.widget.name}}
+                <span class="req">*</span>
+            </td>
+        </tr>
+        <tr id='survey_section_description__row'>
+            <td>
+                <label>{{=form.custom.label.description}}</label>
+            </td>
+            <td>
+                {{=form.custom.widget.description}}
+            </td>
+        </tr>
+        </tbody>
+    </table>
+    {{pass}}
+
+
+    <div class="questionTable">
+
+        <strong class="boxHeader" style="font-weight:bold;text-align:center;">{{=T("Add Questions")}}</strong>
+        <table class=" box questions">
+            <thead>
+            <th>Question Name <span class="req">*</span></th>
+            <th>Question Description</th>
+            <th>Question Type <span class="req">*</span></th>
+            <th>Configuration Settings</th>
+            <th>Delete</th>
+            </thead>
+            <tbody id="questionList" style="table-layout:auto;text-align:left;">
+            {{if questions:}}
+                {{for q in questions:}}
+            <input type="hidden" name="question_id" value="{{=q.id}}"/>
+            <tr>
+                <td>
+                    <input type="text" name="question_name" value="{{=q.name}}">
+                </td>
+
+                <td>
+                    <textarea name="question_description"></textarea>
+                </td>
+
+                <td>
+                    <select name="question_type" onchange="configureQuestion(this.value);">
+                        <option value="">
+                        </option>
+                        {{for k, v in types.iteritems():}}
+                        <option value="{{=k}}" {{if q.question_type == k:}}selected{{else:}}{{pass}}>{{=v}}</option>
+                        {{pass}}
+                    </select>
+                </td>
+
+                <td>
+                    ...
+                </td>
+                <td>
+                    {{=INPUT(_type="button",_value="delete", _name="action")}}
+                </td>
+            </tr>
+            {{pass}}
+            {{else:}}
+            <tr id="newQuestion" style="display:none;">
+                <input type="hidden" name="question_id" value=""/>
+                <td>
+                    <input type="text" name="question_name" value="">
+                </td>
+
+                <td>
+                    <textarea name="question_description"></textarea>
+                </td>
+
+                <td>
+                     <select name="question_type" onchange="configureQuestion(this.value);">
+                        <option value="" selected>
+                        </option>
+                        {{for k, v in types.iteritems():}}
+                        <option value="{{=k}}">{{=v}}</option>
+                        {{pass}}
+                    </select>
+                </td>
+
+                <td>
+                    ...
+                </td>
+                <td>
+                    {{=INPUT(_type="button",_value="delete", _name="action")}}
+                </td>
+            </tr>
+            {{pass}}
+            </tbody>
+        </table>
+        <br/>
+
+        <div align="left">
+            {{=INPUT(_type="button",_value=T("Add Question"), _class="ui-corner-all",_onclick="addQuestion();")}}
+        </div>
+
+        <table>
+            <br/>
+            <tr class="buttonsAtBottom">
+                {{=INPUT(_type="button", _value=T("Cancel"), _onclick="window.location='%s'" % (request.url))}}
+                {{=INPUT(_type="submit", _value=T("Save Section"), _id="dummy_submit", _onclick="removeHiddenRows();")}}
+            </tr>
+        </table>
+    </div>
+    {{=form.custom.end}}   
+</div>

@@ -33,7 +33,7 @@ def shn_menu():
     menu_teams = [
         [T("Teams"), False, URL(r=request, f="group"),[
             [T("List"), False, URL(r=request, f="group")],
-            [T("Add"), False, URL(r=request, f="group", args="create", vars={"_next":URL(r=request, args=request.args, vars=request.vars)})],
+            [T("Add"), False, URL(r=request, f="group", args="create")],
         ]]
     ]
     menu.extend(menu_teams)
@@ -48,9 +48,9 @@ def shn_menu():
             menu.extend(menu_teams)
 
     menu_persons = [
-        [T("Persons"), False, URL(r=request, f="person", args=["search_simple"], vars={"_next":URL(r=request, f="person", args=["[id]", "volunteer"], vars={"vol_tabs":"volunteer"})}),[
-            [T("List"), False, URL(r=request, f="person", vars={"_next":URL(r=request, f="person", args=["[id]", "volunteer"], vars={"vol_tabs":"volunteer"})})],
-            [T("Add"), False, URL(r=request, f="person", args="create", vars={"_next":URL(r=request, f="person", args=["[id]", "volunteer"], vars={"vol_tabs":"volunteer"})})],
+        [T("Persons"), False, URL(r=request, f="person", args=["search_simple"]),[
+            [T("List"), False, URL(r=request, f="person")],
+            [T("Add"), False, URL(r=request, f="person", args="create")],
         ]]
     ]
     menu.extend(menu_persons)
@@ -237,13 +237,13 @@ def view_map():
 
     person_id = request.args(0)
 
-    presence_query = (db.pr_person.id == person_id) and (db.pr_presence.pe_id == db.pr_person.pe_id) and (db.gis_location.id == db.pr_presence.location_id)
+    presence_query = (db.pr_person.id == person_id) & (db.pr_presence.pe_id == db.pr_person.pe_id) & (db.gis_location.id == db.pr_presence.location_id)
 
     # Need sql.Rows object for show_map, so don't extract individual row.
     location = db(presence_query).select(db.gis_location.ALL, orderby=~db.pr_presence.time, limitby=(0, 1))
 
     if not location:
-        address_query = (db.pr_person.id == person_id) and (db.pr_address.pe_id == db.pr_person.pe_id) and (db.gis_location.id == db.pr_address.location_id)
+        address_query = (db.pr_person.id == person_id) & (db.pr_address.pe_id == db.pr_person.pe_id) & (db.gis_location.id == db.pr_address.location_id)
         # TODO: If there are multiple addresses, which should we choose?
         # For now, take whichever address is supplied first.
         location = db(address_query).select(db.gis_location.ALL, limitby=(0, 1))

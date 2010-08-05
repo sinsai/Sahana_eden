@@ -18,7 +18,7 @@
         $("#gis_location_gis_feature_type__row").hide();
     {{if "pr_presence" in request.vars.caller:}}
             // If a Person location then set defaults from main form & offer HTML5 GeoLocation
-            var location_name = self.parent.$('#pr_presence_pr_pe_id__row > td.w2p_fw').html();
+            var location_name = self.parent.$('#pr_presence_pe_id__row > td.w2p_fw').html();
             if (location_name) {
                 $("#gis_location_name").val(location_name);
                 $("#gis_location_name__row").hide();
@@ -47,6 +47,13 @@
     {{elif "hms_hospital" in request.vars.caller:}}
             // If coming from the HMS then populate defaults for the fields & Hide unnecessary rows
             var location_name = self.parent.$('#hms_hospital_name').val();
+            if (location_name) {
+                $("#gis_location_name").val(location_name);
+                $("#gis_location_name__row").hide();
+            }
+    {{elif "ir_report" in request.vars.caller:}}
+            // If coming from the IR then populate defaults for the fields & Hide unnecessary rows
+            var location_name = self.parent.$('#ir_report_name').val();
             if (location_name) {
                 $("#gis_location_name").val(location_name);
                 $("#gis_location_name__row").hide();

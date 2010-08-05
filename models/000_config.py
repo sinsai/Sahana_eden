@@ -25,6 +25,7 @@ deployment_settings.auth.hmac_key = "akeytochange"
 # registered in order to secure the deployment
 deployment_settings.auth.registration_requires_verification = False
 deployment_settings.auth.registration_requires_approval = False
+deployment_settings.auth.openid = False
 
 # Base settings
 # Set this to the Public URL of the instance
@@ -222,11 +223,6 @@ deployment_settings.modules = Storage(
     #        description = "Traces internally displaced people (IDPs) and their needs",
     #        module_type = 10
     #    ),
-    #nim = Storage(
-    #        name_nice = "Nursing Information Manager",
-    #        description = "Module to assist disaster nurses.",
-    #        module_type = 10
-    #    ),
     budget = Storage(
             name_nice = "Budgeting Module",
             description = "Allows a Budget to be drawn up",
@@ -279,6 +275,11 @@ deployment_settings.modules = Storage(
 		  doc_image = {'importer' : False},
 		 )
         ),
+    ir = Storage(
+        name_nice = "Incident Reporting",
+        description = "Incident Reporting System",
+        module_type = 10
+    ),
     org = Storage(
             name_nice = "Organization Registry",
             description = 'Lists "who is doing what & where". Allows relief agencies to coordinate their activities',

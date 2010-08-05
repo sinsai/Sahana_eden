@@ -1,0 +1,5 @@
+{{extend "layout.html"}}
+{{=H2(T("Incident Reporting System"))}}
+{{=LI(A("Add Report", _href=URL(r=request, f="report", args="create")))}}
+{{=LI(A("List Reports", _href=URL(r=request, f="report")))}}
+{{=LI(A("Show Map", _href=URL(r=request, f="maps")))}}

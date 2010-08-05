@@ -1,33 +1,43 @@
 {{extend 'layout.html'}}
 <div id="home">
-{{=H2(T(module_name))}}
-<p>
-{{=T("The")}} {{=T(module_name)}} {{=T("is a central online repository where information on all the people can be stored.")}}
-</p>
-<h3>Total Persons: {{try:}}{{=total}}{{except:}}?{{pass}}</h3>
-<div id="charts">
-<table>
-<tr>
-<td>
-<div id="chart1" style="width:320px; height:200px;"></div>
-</td>
-<td>
-<div id="chart2" style="width:320px; height:200px;"></div>
-</td>
-</tr>
-</table>
+{{=H2(module_name)}}
+<div style="margin:20px auto; width:96%; max-width:1000px;" >
+    <div style="width:65%; float:left;">
+        {{=H4(T("Search for a Person"))}}
+        {{try:}}{{=form}}{{except:pass}}
+        <div><br /></div>
+        <div id='table-container'>
+            {{try:}}
+            {{=items}}
+            {{except:}}
+            {{pass}}
+        </div>
+        <p>&nbsp;</p>
+        {{try:}}
+        {{=add_btn}}
+        {{except:}}
+        {{pass}}
+        {{include 'dataTables.html'}}
+    </div>
+    <div style="width:30%; float:right;">
+        {{=H4("%s: %s" % (T("Total Persons"), total and total or "?"))}}
+        <div id='charts'>
+            <table>
+                <tr>
+                    <td>
+                        <div id='chart1' style='width:260px; height:200px;'></div>
+                    </td>
+                </tr>
+                <tr>
+                    <td>
+                        <div id='chart2' style='width:260px; height:200px;'></div>
+                    </td>
+                </tr>
+            </table>
+        </div>
+    </div>
 </div>
-<h3>{{=T("Features Include")}}:</h3>
-<ul>
-<li>{{=T("Tracking and Tracing of Persons and Groups")}}</li>
-<li>{{=T("Capture Contact Information")}}</li>
-<li>{{=T("Capture Identity Information")}}</li>
-<li>{{=T("Manage Images")}}</li>
-<!--<li>{{=type(k)}}</li>
-<li>{{=xmlstr}}</li>
-<li>{{=stat}}</li>-->
-</ul>
-</div>
+</div><!-- home -->
 {{if session.s3.debug:}}
  <script language="javascript" type="text/javascript" src="/{{=request.application}}/static/scripts/S3/jquery.jqplot.js"></script>
 {{else:}}
@@ -36,18 +46,18 @@
 <script language="javascript" type="text/javascript" src="/{{=request.application}}/static/scripts/S3/jqplot_plugins/jqplot.pieRenderer.js"></script>
 <script type="text/javascript" language="javascript">//<![CDATA[
 $(document).ready(function(){
-    gender = {{try:}}{{=gender}}{{except:}}{{pass}}
-    age = {{try:}}{{=age}}{{except:}}{{pass}}
+    gender = {{try:}}{{=XML(gender)}}{{except:}}{{pass}};
+    age = {{try:}}{{=XML(age)}}{{except:}}{{pass}};
 
     plot1 = $.jqplot('chart1', [gender], {
       title: 'Persons by Gender',
-      seriesDefaults:{renderer:$.jqplot.PieRenderer, rendererOptions:{diameter:120}},
+      seriesDefaults:{renderer:$.jqplot.PieRenderer, rendererOptions:{diameter:100}},
       legend:{show:true, escapeHtml:true}
     });
 
     plot2 = $.jqplot('chart2', [age], {
       title: 'Persons by Age Group',
-      seriesDefaults:{renderer:$.jqplot.PieRenderer, rendererOptions:{diameter:120}},
+      seriesDefaults:{renderer:$.jqplot.PieRenderer, rendererOptions:{diameter:100}},
       legend:{show:true, escapeHtml:true}
     });
 });

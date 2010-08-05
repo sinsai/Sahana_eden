@@ -2,7 +2,7 @@ var popupWin = null;
 
 function openPopup(url) {
     if ( !popupWin || popupWin.closed ) {
-        popupWin = window.open( url, "popupWin", "width=640,height=480" );
+        popupWin = window.open( url, 'popupWin', 'width=640,height=480' );
     } else popupWin.focus();
 }
 $(document).ready(function() {
@@ -14,15 +14,20 @@ $(document).ready(function() {
     $('.information').click(function() { $(this).fadeOut('slow'); return false; });
     $('.confirmation').hide().slideDown('slow')
     $('.confirmation').click(function() { $(this).fadeOut('slow'); return false; });
-    $("input.date").datepicker({ changeMonth: true, changeYear: true, dateFormat: 'yy-mm-dd', isRTL: false });
+    $('input.date').datepicker({ changeMonth: true, changeYear: true, dateFormat: 'yy-mm-dd', isRTL: false });
     $('a.colorbox').click(function(){
         // Function to Add a Resource from within a form
         $(this).attr('href', function() {
             // Add the caller to the URL vars so that the popup knows which field to refresh/set
             var url_in = $(this).attr('href');
-            var caller = $(this).parents('tr').attr('id').replace(/__row/, '');
+            var caller = '';
+            try {
+                caller = $(this).parents('tr').attr('id').replace(/__row/, '');
+            } catch(e) {
+                if(caller == "") return url_in;  
+            }
             var url_out = url_in;
-            if (url_out.indexOf("&caller=") == -1){
+            if (url_out.indexOf('&caller=') == -1){
                 url_out = url_out + '&caller=' + caller;
             }
             return url_out;
@@ -178,15 +183,15 @@ function StatusBar(sel,options)
     var _I = this;
     var _sb = null;
     // options
-    this.elementId = "_showstatus";
+    this.elementId = '_showstatus';
     this.prependMultiline = true;
     this.showCloseButton = false;
     this.afterTimeoutText = null;
 
-    this.cssClass = "statusbar";
-    this.highlightClass = "statusbarhighlight";
-    this.errorClass = "statusbarerror";
-    this.closeButtonClass = "statusbarclose";
+    this.cssClass = 'statusbar';
+    this.highlightClass = 'statusbarhighlight';
+    this.errorClass = 'statusbarerror';
+    this.closeButtonClass = 'statusbarclose';
     this.additive = false;
     $.extend(this, options);
     if (sel)
@@ -201,12 +206,12 @@ function StatusBar(sel,options)
                 .show();
     }
     //if (_I.showCloseButton)
-        $("." + _I.cssClass).click(function(e) { $(_sb).hide(); });
+        $('.' + _I.cssClass).click(function(e) { $(_sb).hide(); });
     this.show = function(message, timeout, additive, isError)
     {
         if (additive || ((additive == undefined) && _I.additive))
         {
-            var html = "<div style='margin-bottom: 2px;' >" + message + "</div>";
+            var html = "<div style='margin-bottom: 2px;' >" + message + '</div>';
             if (_I.prependMultiline)
                 _sb.prepend(html);
             else
@@ -218,7 +223,7 @@ function StatusBar(sel,options)
                 _sb.text(message);
             else
             {
-                var t = _sb.find("div.statusbarclose");
+                var t = _sb.find('div.statusbarclose');
                 _sb.text(message).prepend(t);
             }
         }

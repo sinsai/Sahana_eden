@@ -80,7 +80,7 @@ class S3Vita(object):
         self.DEFAULT_PRESENCE = 4
 
     # -------------------------------------------------------------------------
-    def pentity(self,entity):
+    def pentity(self, entity):
 
         """ Get the PersonEntity record for the given ID, ID label, sub-entity
             or related record
@@ -101,8 +101,8 @@ class S3Vita(object):
                 query = (table.label.strip().lower() == entity.strip().lower()) & query
 
             elif isinstance(entity, dict):
-                if "pr_pe_id" in entity:
-                    query = (table.id == entity.pr_pe_id) & query
+                if "pe_id" in entity:
+                    query = (table.id == entity.pe_id) & query
                 else:
                     return entity # entity already given?
 
@@ -119,7 +119,7 @@ class S3Vita(object):
             return None
 
     # -------------------------------------------------------------------------
-    def person(self,entity):
+    def person(self, entity):
 
         """ Get the Person record for the given ID, PersonEntity record or
             Person-related record
@@ -137,12 +137,12 @@ class S3Vita(object):
                 query = (table.id == entity) & query
 
             elif isinstance(entity, dict):
-                if "pr_pe_id" in entity:
-                    query = (table.pr_pe_id == entity.pr_pe_id) & query
+                if "pe_id" in entity:
+                    query = (table.pe_id == entity.pe_id) & query
                 elif "person_id" in entity:
                     query = (table.id == entity.person_id) & query
                 elif "id" in entity:
-                    query = (table.pr_pe_id == entity.id) & query
+                    query = (table.pe_id == entity.id) & query
                 else:
                     return None
 
@@ -159,7 +159,7 @@ class S3Vita(object):
             return None
 
     # -------------------------------------------------------------------------
-    def group(self,entity):
+    def group(self, entity):
 
         """ Get the Group record for the given ID, PersonEntity record or
             Group-related record
@@ -177,12 +177,12 @@ class S3Vita(object):
                 query = (table.id == entity) & query
 
             elif isinstance(entity, dict):
-                if "pr_pe_id" in entity:
-                    query = (table.pr_pe_id == entity.pr_pe_id) & query
+                if "pe_id" in entity:
+                    query = (table.pe_id == entity.pe_id) & query
                 elif "group_id" in entity:
                     query = (table.id == entity.group_id) & query
                 elif "id" in entity:
-                    query = (table.pr_pe_id == entity.id) & query
+                    query = (table.pe_id == entity.id) & query
                 else:
                     return None
 
@@ -200,7 +200,7 @@ class S3Vita(object):
 
 
     # -------------------------------------------------------------------------
-    def fullname(self,record):
+    def fullname(self, record):
 
         """ Returns the full name of a person
 

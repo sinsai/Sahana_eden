@@ -3226,7 +3226,7 @@ class S3ResourceController(object):
                     else:
                         self.error = S3XRC_DATA_IMPORT_ERROR
                     if vector.element:
-                        vector.element.set(self.ATTRIBUTE.error, self.error)
+                        vector.element.set(self.xml.ATTRIBUTE.error, self.error)
                     if ignore_errors:
                         continue
                     else:

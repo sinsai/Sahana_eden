@@ -46,7 +46,7 @@ table = db.define_table(tablename,
 table.uuid.requires = IS_NOT_IN_DB(db, "%s.uuid" % tablename)
 
 table.pe_id.requires = IS_ONE_OF(db, "pr_pentity.id", shn_pentity_represent,
-                                 filterby="type",
+                                 filterby="pe_type",
                                  filter_opts=("pr_person", "pr_group"))
 
 table.co_name.label = T("c/o Name")
@@ -131,7 +131,7 @@ table = db.define_table(tablename,
 table.uuid.requires = IS_NOT_IN_DB(db, "%s.uuid" % tablename)
 table.pe_id.requires = IS_ONE_OF(db, "pr_pentity.id",
                                     shn_pentity_represent,
-                                    filterby="type",
+                                    filterby="pe_type",
                                     filter_opts=("pr_person", "pr_group"))
 
 table.value.requires = IS_NOT_EMPTY()
@@ -208,7 +208,7 @@ table = db.define_table(tablename,
 table.uuid.requires = IS_NOT_IN_DB(db, "%s.uuid" % tablename)
 
 table.url.label = T("URL")
-table.url.represent = lambda url: len(url) and DIV(A(IMG(_src=url, _height=60), _href=url)) or T("None")
+table.url.represent = lambda url: url and DIV(A(IMG(_src=url, _height=60), _href=url)) or T("None")
 
 table.image.represent = lambda image: image and \
         DIV(A(IMG(_src=URL(r=request, c="default", f="download", args=image),_height=60, _alt=T("View Image")),
@@ -217,7 +217,9 @@ table.image.represent = lambda image: image and \
 
 def shn_pr_image_onvalidation(form):
 
-    if not form.vars.image and not form.vars.url:
+    image = form.vars.image
+    url = form.vars.url
+    if image is None and not url:
         form.errors.image = \
         form.errors.url = T("Either file upload or image URL required.")
 
@@ -392,7 +394,7 @@ table = db.define_table(tablename, timestamp, uuidstamp, deletion_status,
 table.uuid.requires = IS_NOT_IN_DB(db, "%s.uuid" % tablename)
 table.pe_id.requires = IS_ONE_OF(db, "pr_pentity.id",
                                     shn_pentity_represent,
-                                    filterby="type",
+                                    filterby="pe_type",
                                     filter_opts=("pr_person", "pr_group"))
 
 # Moved to zzz_last.py to ensure all tables caught!

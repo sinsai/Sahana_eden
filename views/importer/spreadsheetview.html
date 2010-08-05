@@ -17,12 +17,16 @@
 {{
 for k in deployment_settings.modules:
 modules[deployment_settings.modules[k].name_nice] = k
+if deployment_settings.modules[k].resources is not None:
 importable_resources[k] = deployment_settings.modules[k].resources
 }}
 {{pass}}
+{{pass}}
 {{
 for l in importable_resources:
+if importable_resources is not None:
 importable_resources[l] = dict(importable_resources[l])}}
+{{pass}}
 {{pass}}
 	
 

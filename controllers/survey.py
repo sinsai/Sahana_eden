@@ -6,6 +6,7 @@
     @author: Robert O'Connor
 """
 from gluon.html import *
+from gluon.sqlhtml import SQLFORM
 
 module = "survey"
 
@@ -53,6 +54,61 @@ def template():
 
     return transform_buttons(output,next=True,cancel=True)
 
+def section():
+    """
+       At this stage, the user the following workflow will be implemented:
+
+       1) User creates a section
+       2) User clicks "Add Questions to this section" which triggers a popup
+       3) The questions appear in an area below the section.
+
+    """
+    table = db["survey_section"]
+    table.uuid.requires = IS_NOT_IN_DB(db,"%s.uuid" % tablename)
+    table.name.requires = IS_NOT_EMPTY()
+    table.name.comment = SPAN("*", _class="req")
+    table.name.label = T("Survey Section Display Name")
+    table.description.label = T("Description")
+    record = table[request.args(0)]
+    section = SQLFORM(table,record,deletable=True)
+    questions = None
+    output = dict(questions=questions) # initially it's nothing
+    # Let's avoid blowing up! 
+    try:
+        section_id = request.args(0)        
+        question_query = (db.survey_template_link_table.survey_section_id == section_id) & (db.survey_question.id == db.survey_template_link_table.survey_question_id)
+        questions = db(question_query).select(db.survey_question.ALL)        
+        output.update(questions=questions)                                                  
+    except:
+        pass # this means we didn't pass an id, e.g., making a new section!        
+    if section.accepts(request.vars,session,keepvalues=True):         
+        redirect(URL(r=request,c="survey",f="section",args=[section.vars.id]))
+    elif section.errors:
+       response.flash = T("Please correct all errors.")
+    output.update(form=section)
+
+    question_types = {
+        1:T("Multiple Choice (Only One Answer)"),
+        2:T("Multiple Choice (Multiple Answers)"),
+        3:T("Matrix of Choices (Only one answer)"),
+        4:T("Matrix of Choices (Multiple Answers)"),
+        5:T("Rating Scale"),
+        6:T("Single Text Field"),
+        7:T("Multiple Text Fields"),
+#        8:T("Matrix of Text Fields"),
+        9:T("Comment/Essay Box"),
+        10:T("Numerical Text Field"),
+        11:T("Date and/or Time"),
+#        12:T("Image"),
+#        13:T("Descriptive Text (e.g., Prose, etc)"),
+        14:T("Location"),
+        15:T("Organisation"),
+        16:T("Person"),
+#        16:T("Custom Database Resource (e.g., anything defined as a resource in Sahana)")
+    }
+    output.update(types=question_types)
+    return output
+
 def series():
     """ RESTlike CRUD controller """
     resource = "series"
@@ -93,36 +149,36 @@ def series():
     output = shn_rest_controller(module, resource,listadd=False)
 
     return transform_buttons(output)
-def section():
-    """ RESTlike CRUD controller """
-    resource = "section"
-    tablename = "%s_%s" % (module, resource)
-    table = db[tablename]
-    table.uuid.requires = IS_NOT_IN_DB(db,"%s.uuid" % tablename)
-    table.name.requires = IS_NOT_EMPTY()
-    table.name.comment = SPAN("*", _class="req")
-    table.name.label = T("Survey Section Display Name")
-    table.description.label = T("Description")
 
-
-    # CRUD Strings
-    s3.crud_strings[tablename] = Storage(
-        title_create = T("Add Survey Section"),
-        title_display = T("Survey Section Details"),
-        title_list = T("List Survey Sections"),
-        title_update = T("Edit Survey Section"),
-        subtitle_create = T("Add New Survey Section"),
-        subtitle_list = T("Survey Section"),
-        label_list_button = T("List Survey Sections"),
-        label_create_button = T("Add Survey Section"),
-        msg_record_created = T("Survey Section added"),
-        msg_record_modified = T("Survey Section updated"),
-        msg_record_deleted = T("Survey Section deleted"),
-        msg_list_empty = T("No Survey Sections currently registered"))     
-    output = shn_rest_controller(module, resource,listadd=False)
-
-    return transform_buttons(output,save=True,cancel=True)
-
+#def section():
+#    """ RESTlike CRUD controller """
+#    resource = "section"
+#    tablename = "%s_%s" % (module, resource)
+#    table = db[tablename]
+#    table.uuid.requires = IS_NOT_IN_DB(db,"%s.uuid" % tablename)
+#    table.name.requires = IS_NOT_EMPTY()
+#    table.name.comment = SPAN("*", _class="req")
+#    table.name.label = T("Survey Section Display Name")
+#    table.description.label = T("Description")
+#
+#
+#    # CRUD Strings
+#    s3.crud_strings[tablename] = Storage(
+#        title_create = T("Add Survey Section"),
+#        title_display = T("Survey Section Details"),
+#        title_list = T("List Survey Sections"),
+#        title_update = T("Edit Survey Section"),
+#        subtitle_create = T("Add New Survey Section"),
+#        subtitle_list = T("Survey Section"),
+#        label_list_button = T("List Survey Sections"),
+#        label_create_button = T("Add Survey Section"),
+#        msg_record_created = T("Survey Section added"),
+#        msg_record_modified = T("Survey Section updated"),
+#        msg_record_deleted = T("Survey Section deleted"),
+#        msg_list_empty = T("No Survey Sections currently registered"))
+#    output = shn_rest_controller(module, resource,listadd=False)
+#
+#    return transform_buttons(output,save=True,cancel=True)
 
 def question():
     # Question data, e.g., name,description, etc.
@@ -188,17 +244,10 @@ def question():
 
 def question_options():
     resource = "question_options"
-    question_type = None
-    question_id = session.rcvars.question_id   
-    if session.rcvars and "survey_question" in session.rcvars:
-        question = db(db.survey_question.id == session.rcvars.survey_question).select().first()
-        question_type = question.question_type
     tablename = "%s_%s" % (module, resource)
-
+    question_type = session.s3.question_type
     table = db[tablename]
-    table.uuid.requires = IS_NOT_IN_DB(db,"%s.uuid" % tablename)
-    table.question_id.readable = False
-    table.question_id.writable = False
+    table.uuid.requires = IS_NOT_IN_DB(db,"%s.uuid" % tablename)   
     table.tf_ta_columns.label = T("Number of Columns")
     table.ta_rows.label = T("Number of Rows")
     table.answer_choices.label = T("Answer Choices (One Per Line)")
@@ -206,8 +255,7 @@ def question_options():
     table.aggregation_type.readable = False
     table.row_choices.label = T("Row Choices (One Per Line)")
     table.column_choices.label = T("Column Choices (One Per Line")
-    table.tf_choices.label = T("Text before each Text Field (One per line)")
-    id = db(table.id == question_id).select().first()
+    table.tf_choices.label = T("Text before each Text Field (One per line)")    
     output = shn_rest_controller(module, resource,listadd=False)
     output.update(question_type=question_type)
     return transform_buttons(output,prev=True,finish=True,cancel=True)
@@ -436,6 +484,8 @@ def layout():
                                        _title=T("Add Section")),_class="section_title"))
     output.update(ui=ui)
     return output
+
+
 
 def add_buttons(form, save = None, prev = None, next = None, finish = None,cancel=None):
     """

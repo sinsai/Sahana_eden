@@ -586,16 +586,32 @@
         
         "string-asc": function ( a, b )
 		{
-			var x = a.toLowerCase();
-			var y = b.toLowerCase();
-			return ((x < y) ? -1 : ((x > y) ? 1 : 0));
+			//var x = a.toLowerCase();
+			//var y = b.toLowerCase();
+            if (a.indexOf('<a href=') && b.indexOf('<a href=')) {
+                var x = a.replace( /<.*?>/g, "" ).toLowerCase();
+                var y = b.replace( /<.*?>/g, "" ).toLowerCase();
+                x = parseFloat(x);
+                y = parseFloat(y);
+                return x - y;
+            } else {
+                return ((x < y) ? -1 : ((x > y) ? 1 : 0));
+            }
 		},
 		
 		"string-desc": function ( a, b )
 		{
-			var x = a.toLowerCase();
-			var y = b.toLowerCase();
-			return ((x < y) ? 1 : ((x > y) ? -1 : 0));
+			//var x = a.toLowerCase();
+			//var y = b.toLowerCase();
+            if (a.indexOf('<a href=') && b.indexOf('<a href=')) {
+                var x = a.replace( /<.*?>/g, "" ).toLowerCase();
+                var y = b.replace( /<.*?>/g, "" ).toLowerCase();
+                x = parseFloat(x);
+                y = parseFloat(y);
+                return y - x;
+            } else {
+                return ((x < y) ? 1 : ((x > y) ? -1 : 0));
+            }
 		},
 		
 		

@@ -61,11 +61,31 @@ if deployment_settings.has_module(module):
     tablename = module +"_" + resource
     section = db.define_table(tablename,name_desc)
 
+    # Question options e.g., Row choices, Column Choices, Layout Configuration data, etc...
+    resource = "question_options"
+    tablename = module +"_" + resource
+    question_options = db.define_table(tablename,uuidstamp,deletion_status,authorstamp,
+    #                                        Field("display_option","integer"),
+                                            Field("answer_choices","text",length=700),
+                                            Field("row_choices","text"), # row choices
+                                            Field("column_choices","text"), # column choices
+                                            Field("tf_choices","text"), # text before the text fields.
+                                            Field("tf_ta_columns","integer"), # number of columns for TF/TA
+                                            Field("ta_rows","integer"), # number of rows for text areas
+                                            Field("number_of_options","integer"),
+                                            Field("allow_comments","boolean"), # whether or not to allow comments
+                                            Field("comment_display_label"), # the label for the comment field
+                                            Field("required","boolean"), # marks the question as required
+                                            Field("validate","boolean"),  # whether or not to enable validation
+                                            Field("validation_options","integer"), # pre-set validation regexps and such.
+                                            Field("aggregation_type","string"))
+
     # Survey Question
     resource = "question"
     tablename = module +"_" + resource
     question = db.define_table(tablename,name_desc,
-                               Field("question_type","integer"))
+                               Field("question_type","integer"),
+                               Field("options_id",db.survey_question_options))
 
     #Survey Instance
     resource = "instance"
@@ -102,26 +122,7 @@ if deployment_settings.has_module(module):
                                     Field("question_id",db.survey_question),
                                     Field("widget","text",length=750))
     
-    # Question options e.g., Row choices, Column Choices, Layout Configuration data, etc...
-    resource = "question_options"
-    tablename = module +"_" + resource
-    question_options = db.define_table(tablename,uuidstamp,deletion_status,authorstamp,
-                                        Field("question_id",db.survey_question), # the question
-#                                        Field("display_option","integer"),
-                                        Field("answer_choices","text",length=700),
-                                        Field("row_choices","text"), # row choices
-                                        Field("column_choices","text"), # column choices
-                                        Field("tf_choices","text"), # text before the text fields.
-                                        Field("tf_ta_columns","integer"), # number of columns for TF/TA
-                                        Field("ta_rows","integer"), # number of rows for text areas
-                                        Field("number_of_options","integer"),
-                                        Field("allow_comments","boolean"), # whether or not to allow comments
-                                        Field("comment_display_label"), # the label for the comment field
-                                        Field("required","boolean"), # marks the question as required                                        
-                                        Field("validate","boolean"),  # whether or not to enable validation
-                                        Field("validation_options","integer"), # pre-set validation regexps and such.
-                                        Field("aggregation_type","string"))
-    
+
     def question_options_onaccept(form):
         if form.vars.id and session.rcvars.survey_question:
             table = db.survey_question_options

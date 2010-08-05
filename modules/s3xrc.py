@@ -1372,8 +1372,8 @@ class S3Resource(object):
 
         authorised = permit("create", self.table) and \
                      permit("update", self.table)
-        #if not authorised:
-        #    raise IOError("Insufficient permissions")
+        if not authorised:
+            raise IOError("Insufficient permissions")
 
         if isinstance(source, etree._ElementTree):
             tree = source

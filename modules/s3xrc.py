@@ -299,7 +299,7 @@ class S3Resource(object):
                 if component:
                     pkey = component.pkey
                     fkey = component.fkey
-                    self.__multiple = component.multiple
+                    self.__multiple = component.get("multiple", True)
                     join = self.parent.table[pkey] == self.table[fkey]
                     if str(self.__query).find(str(join)) == -1:
                         self.__query = self.__query & (join)
@@ -767,6 +767,14 @@ class S3Resource(object):
 
         # Not implemented yet
         raise NotImplementedError
+
+
+    # -------------------------------------------------------------------------
+    def files(self):
+
+        """ Get the list of attached files """
+
+        return self.__files
 
 
     # REST Interface ==========================================================
@@ -2489,6 +2497,7 @@ class S3ResourceController(object):
     # -------------------------------------------------------------------------
     def __vectorize(self, resource, element,
                     id=None,
+                    files=[],
                     validate=None,
                     permit=None,
                     audit=None,
@@ -2522,7 +2531,7 @@ class S3ResourceController(object):
             return imports
 
         table = self.db[resource]
-        record = self.xml.record(table, element, validate=validate)
+        record = self.xml.record(table, element, files=files, validate=validate)
 
         mtime = element.get(self.xml.MTIME, None)
         if mtime:
@@ -2958,7 +2967,8 @@ class S3ResourceController(object):
                 _rfields = crfields[ctablename]
                 _dfields = cdfields[ctablename]
 
-                for crecord in resource(record.id, component=cname):
+                crecords = resource(record.id, component=cname)
+                for crecord in crecords:
 
                     if msince is not None and self.xml.MTIME in crecord:
                         if crecord[self.xml.MTIME] < msince:
@@ -3128,6 +3138,7 @@ class S3ResourceController(object):
             element = elements[i]
             vectors = self.__vectorize(tablename, element,
                                        id=id,
+                                       files = resource.files(),
                                        validate=self.validate,
                                        permit=permit,
                                        audit=audit,
@@ -3181,6 +3192,7 @@ class S3ResourceController(object):
                         celement = celements[k]
                         cvectors = self.__vectorize(ctablename,
                                                     celement,
+                                                    files = resource.files(),
                                                     validate=self.validate,
                                                     permit=permit,
                                                     audit=audit,
@@ -3678,6 +3690,7 @@ class S3XML(object):
         ref="ref",
         domain="domain",
         url="url",
+        filename="filename",
         error="error",
         start="start",
         limit="limit",
@@ -4181,7 +4194,10 @@ class S3XML(object):
             elif fieldtype == "upload":
                 data = etree.SubElement(resource, self.TAG.data)
                 data.set(self.ATTRIBUTE.field, f)
-                data.text = "%s/%s" % (download_url, value)
+                fileurl = self.xml_encode("%s/%s" % (download_url, value))
+                filename = self.xml_encode(value)
+                data.set(self.ATTRIBUTE.url, fileurl)
+                data.set(self.ATTRIBUTE.filename, filename)
 
             elif fieldtype == "password":
                 # Do not export password fields
@@ -4325,7 +4341,7 @@ class S3XML(object):
 
 
     # -------------------------------------------------------------------------
-    def record(self, table, element, validate=None, skip=[]):
+    def record(self, table, element, files=[], validate=None, skip=[]):
 
         """ Creates a Storage() record from an element and validates it
 
@@ -4379,12 +4395,32 @@ class S3XML(object):
                     continue
 
                 field_type = str(table[f].type)
-                if field_type in ("id", "upload", "blob", "password") or \
+                if field_type in ("id", "blob", "password") or \
                    field_type.startswith("reference"):
                     continue
-
-                value = child.get(self.ATTRIBUTE.value, None)
-                value = self.xml_decode(value)
+                elif field_type == "upload":
+                    # Handling of uploads goes here
+                    download_url = child.get(self.ATTRIBUTE.url, None)
+                    filename = child.get(self.ATTRIBUTE.filename, None)
+                    file = None
+                    if filename:
+                        if filename in files:
+                            file = files[filename]
+                        elif download_url:
+                            # Try to download the file
+                            import urllib
+                            try:
+                                file = urllib.urlopen(download_url)
+                            except IOError:
+                                pass
+                        if file:
+                            field = table[f]
+                            value = field.store(file, filename)
+                        else:
+                            continue
+                else:
+                    value = child.get(self.ATTRIBUTE.value, None)
+                    value = self.xml_decode(value)
 
                 if field_type == 'boolean':
                     if value and value in ["True", "true"]:

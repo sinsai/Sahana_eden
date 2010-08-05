@@ -20,9 +20,9 @@ def create():
     IS_DATE_IN_RANGE
     IS_DATETIME_IN_RANGE
     """
-    if len(request.args) == 0:
-        session.error = T("Need to specify a table!")
-        redirect(URL(r=request))
+    #if len(request.args) == 0:
+     #   session.error = T("Need to specify a table!")
+      #  redirect(URL(r=request))
     _table = request.args(0)
 
     title = _table
@@ -31,128 +31,20 @@ def create():
     instance_list = []
     bindings_list = []
     controllers_list = []
-    itext_list = [] # Internationalization
+    itext_list = []
 
     for field in table.fields:
         if field in ["id", "created_on", "modified_on", "uuid", "mci", "deleted", 
-                     "created_by", "modified_by", "pr_pe_id"] :
+                     "created_by", "modified_by"] :
             # This will get added server-side
             pass
         else:
-
             ref = "/" + title + "/" + field
-
-            # Instances
-            if table[field].default:
-                instance_list.append(TAG[field](table[field].default))
-            else:
-                instance_list.append(TAG[field]())
-
-            # Bindings
-            if "IS_NOT_EMPTY" in str(table[field].requires):
-                required = "true()"
-            else:
-                required = "false()"
-
-            if table[field].type == "string":
-                _type = "string"
-            elif table[field].type == "double":
-                _type = "decimal"
-            elif table[field].type == "date":
-                _type = "date"
-            elif table[field].type == "integer":
-                _type = "int"
-            elif table[field].type == "boolean":
-                _type = "boolean"
-            elif table[field].type == "upload":
-               _type = "binary"
-            else:
-                # Unknown type
-                _type = "string"
-
-            if uses_requirement("IS_INT_IN_RANGE", table[field]) or uses_requirement("IS_FLOAT_IN_RANGE", table[field]):
-#               or uses_requirement("IS_DATE_IN_RANGE", table[field]):
-                if hasattr(table[field].requires, "other"):
-                    maximum = table[field].requires.other.maximum
-                    minimum = table[field].requires.other.minimum
-                else:
-                    maximum = table[field].requires.maximum
-                    minimum = table[field].requires.minimum
-                if minimum is None:
-                    constraint = "(. < " + str(maximum) + ")"
-                elif maximum is None:
-                    constraint = "(. > " + str(minimum) + ")"
-                else:
-                    constraint = "(. > " + str(minimum) + " and . < " + str(maximum) + ")"
-                bindings_list.append(TAG["bind"](_nodeset=ref, _type=_type, _required=required, _constraint=constraint))
-
-#            elif uses_requirement("IS_DATETIME_IN_RANGE", table[field]):
-#                pass
-#            elif uses_requirement("IS_EMAIL", table[field]):
-#                pass
-            elif uses_requirement("IS_IN_SET", table[field]):
-                bindings_list.append(TAG["bind"](_nodeset=ref, _required=required))
-            else:
-                bindings_list.append(TAG["bind"](_nodeset=ref, _type=_type, _required=required))
-
-            itext_list.append(TAG["text"](TAG["value"](table[field].label), _id=ref+":label"))
-            itext_list.append(TAG["text"](TAG["value"](table[field].comment), _id=ref+":hint"))
-
-            # Controllers
-            if hasattr(table[field].requires, "option"):
-                items_list = []
-                for option in table[field].requires.theset:
-                    items_list.append(TAG["item"](TAG["label"](option), TAG["value"](option)))
-                controllers_list.append(TAG["select1"](items_list, _ref=field))
-            #elif uses_requirement("IS_IN_DB", table[field]):
-                # ToDo (similar to IS_IN_SET)?
-                #pass
-            #elif uses_requirement("IS_NOT_IN_DB", table[field]):
-                # ToDo
-                #pass
-            elif uses_requirement("IS_IN_SET", table[field]): # Defined below
-                if hasattr(table[field].requires, "other"):
-                    theset = table[field].requires.other.theset
-                else:
-                    theset = table[field].requires.theset
-
-                items_list=[]
-                items_list.append(TAG["label"](_ref="jr:itext('" + ref + ":label')"))
-                items_list.append(TAG["hint"](_ref="jr:itext('" + ref + ":hint')"))
-               
-                option_num = 0 # for formatting something like "jr:itext('stuff:option0')"
-                for option in theset:
-                    if table[field].type == "integer":
-                        option = int(option)
-                    option_ref = ref + ":option" + str(option_num)
-                    items_list.append(TAG["item"](TAG["label"](_ref="jr:itext('" + option_ref + "')"), TAG["value"](option)))
-                    itext_list.append(TAG["text"](TAG["value"](table[field].represent(option)), _id=option_ref))
-                    option_num += 1
-                controllers_list.append(TAG["select1"](items_list, _ref=ref))
-
-            elif table[field].type == "boolean": # Using select1, is there an easier way to do this?
-                items_list=[]
-
-                items_list.append(TAG["label"](_ref="jr:itext('" + ref + ":label')"))
-                items_list.append(TAG["hint"](_ref="jr:itext('" + ref + ":hint')"))
-                # True option
-                items_list.append(TAG["item"](TAG["label"](_ref="jr:itext('" + ref + ":option0')"), TAG["value"](1)))
-                itext_list.append(TAG["text"](TAG["value"]("True"), _id= ref + ":option0"))
-                # False option
-                items_list.append(TAG["item"](TAG["label"](_ref="jr:itext('" + ref + ":option1')"), TAG["value"](0)))
-                itext_list.append(TAG["text"](TAG["value"]("False"), _id=ref + ":option1"))
-
-                controllers_list.append(TAG["select1"](items_list, _ref=ref))
-
-            elif table[field].type == "upload":
-                items_list=[]
-
-                items_list.append(TAG["label"](_ref="jr:itext('" + ref + ":label')"))
-                items_list.append(TAG["hint"](_ref="jr:itext('" + ref + ":hint')"))
-                controllers_list.append(TAG["upload"](items_list, _ref=ref, _mediatype="image/*"))
-            else:
-                # Normal Input field
-                controllers_list.append(TAG["input"](TAG["label"](table[field].label), _ref=ref))
+            instance_list.append(generate_instance(table, field))
+            bindings_list.append(generate_bindings(table, field, ref))
+            controller, _itext_list = generate_controllers(table, field, ref)
+            controllers_list.append(controller)
+            itext_list.extend(_itext_list)
 
     bindings_list.append(TAG["itext"](TAG["translation"](itext_list,_lang="eng")))
     instance = TAG[title](instance_list, _xmlns="")
@@ -176,6 +68,139 @@ def uses_requirement(requirement, field):
         elif requirement in str(field.requires):
             return True
     return False
+
+def generate_instance(table, field):
+    """
+    Generates XML for the instance of the specified field.
+    """
+   
+    if table[field].default:
+        instance = TAG[field](table[field].default)
+    else:
+        instance = TAG[field]()
+
+    return instance
+
+def generate_bindings(table, field, ref):
+    """ 
+    Generates the XML for bindings for the specified database field.
+    """
+
+    if "IS_NOT_EMPTY" in str(table[field].requires):
+        required = "true()"
+    else:
+        required = "false()"
+
+    if table[field].type == "string":
+        _type = "string"
+    elif table[field].type == "double":
+        _type = "decimal"
+    # Collect doesn't support datetime yet
+    elif table[field].type == "date" or table[field].type == "datetime":
+        _type = "date"
+    elif table[field].type == "integer":
+        _type = "int"
+    elif table[field].type == "boolean":
+        _type = "boolean"
+    elif table[field].type == "upload": # For images
+         _type = "binary"
+    else:
+         # Unknown type
+         _type = "string"
+
+    if uses_requirement("IS_INT_IN_RANGE", table[field]) \
+       or uses_requirement("IS_FLOAT_IN_RANGE", table[field]):
+
+        if hasattr(table[field].requires, "other"):
+            maximum = table[field].requires.other.maximum
+            minimum = table[field].requires.other.minimum
+        else:
+            maximum = table[field].requires.maximum
+            minimum = table[field].requires.minimum
+        if minimum is None:
+            constraint = "(. < " + str(maximum) + ")"
+        elif maximum is None:
+            constraint = "(. > " + str(minimum) + ")"
+        else:
+            constraint = "(. > " + str(minimum) + " and . < " + str(maximum) + ")"
+        binding = TAG["bind"](_nodeset=ref, _type=_type, _required=required, _constraint=constraint)
+#   elif uses_requirement("IS_DATETIME_IN_RANGE", field):
+#      pass
+#   elif uses_requirement("IS_EMAIL", field):
+#      pass
+    elif uses_requirement("IS_IN_SET", table[field]):
+        binding = TAG["bind"](_nodeset=ref, _required=required)
+    else:
+        binding = TAG["bind"](_nodeset=ref, _type=_type, _required=required)
+
+    return binding
+
+def generate_controllers(table, field, ref):
+    """
+    Generates the controllers XML for the database table field.
+    """
+    itext_list = [] # Internationalization
+    controllers_list = []
+
+    itext_list.append(TAG["text"](TAG["value"](table[field].label), _id=ref+":label"))
+    itext_list.append(TAG["text"](TAG["value"](table[field].comment), _id=ref+":hint"))
+
+    # Controllers---------------------------------------------------
+    if hasattr(table[field].requires, "option"):
+        items_list = []
+        for option in table[field].requires.theset:
+            items_list.append(TAG["item"](TAG["label"](option), TAG["value"](option)))
+        controllers_list.append(TAG["select1"](items_list, _ref=field))
+    #elif uses_requirement("IS_IN_DB", field):
+        # ToDo (similar to IS_IN_SET)?
+        #pass
+    #elif uses_requirement("IS_NOT_IN_DB", field):
+        # ToDo
+        #pass
+    elif uses_requirement("IS_IN_SET", table[field]): # Defined below
+        if hasattr(table[field].requires, "other"):
+            theset = table[field].requires.other.theset
+        else:
+            theset = table[field].requires.theset
+        items_list=[]
+        items_list.append(TAG["label"](_ref="jr:itext('" + ref + ":label')"))
+        items_list.append(TAG["hint"](_ref="jr:itext('" + ref + ":hint')"))
+       
+        option_num = 0 # for formatting something like "jr:itext('stuff:option0')"
+        for option in theset:
+            if table[field].type == "integer":
+                option = int(option)
+            option_ref = ref + ":option" + str(option_num)
+            items_list.append(TAG["item"](TAG["label"](_ref="jr:itext('" + option_ref + "')"), TAG["value"](option)))
+            itext_list.append(TAG["text"](TAG["value"](table[field].represent(option)), _id=option_ref))
+            option_num += 1
+        controller = TAG["select1"](items_list, _ref=ref)
+
+    elif table[field].type == "boolean": # Using select1, is there an easier way to do this?
+        items_list=[]
+
+        items_list.append(TAG["label"](_ref="jr:itext('" + ref + ":label')"))
+        items_list.append(TAG["hint"](_ref="jr:itext('" + ref + ":hint')"))
+        # True option
+        items_list.append(TAG["item"](TAG["label"](_ref="jr:itext('" + ref + ":option0')"), TAG["value"](1)))
+        itext_list.append(TAG["text"](TAG["value"]("True"), _id= ref + ":option0"))
+        # False option
+        items_list.append(TAG["item"](TAG["label"](_ref="jr:itext('" + ref + ":option1')"), TAG["value"](0)))
+        itext_list.append(TAG["text"](TAG["value"]("False"), _id=ref + ":option1"))
+
+        controller = TAG["select1"](items_list, _ref=ref)
+
+    elif table[field].type == "upload": # For uploading images
+        items_list=[]
+
+        items_list.append(TAG["label"](_ref="jr:itext('" + ref + ":label')"))
+        items_list.append(TAG["hint"](_ref="jr:itext('" + ref + ":hint')"))
+        controller = TAG["upload"](items_list, _ref=ref, _mediatype="image/*")
+    else:
+        # Normal Input field
+        controller = TAG["input"](TAG["label"](table[field].label), _ref=ref)
+
+    return controller, itext_list
 
 def csvdata(nodelist):
     """
@@ -252,7 +277,7 @@ def formList():
     #xml = TAG.forms(*[TAG.form(getName(t), _url = "http://" + request.env.http_host + URL(r=request, f="create", args=t)) for t in db.tables()])
 
     # List of a couple simple tables to avoid a giant list of all the tables
-    tables = ["pr_person","hms_hospital","vol_volunteer","org_project","gis_landmark", "budget_parameter", "pr_image"]
+    tables = ["rms_req","gis_landmark","mpr_missing_report","cr_shelter","pr_presence", "pr_person"]
     xml = TAG.forms()
     for table in tables:
         xml.append(TAG.form(get_name(table), _url = "http://" + request.env.http_host + URL(r=request, f="create", args=db[table])))

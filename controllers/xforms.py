@@ -144,8 +144,8 @@ def generate_controllers(table, field, ref):
     itext_list = [] # Internationalization
     controllers_list = []
 
-    itext_list.append(TAG["text"](TAG["value"](table[field].label), _id=ref+":label"))
-    itext_list.append(TAG["text"](TAG["value"](table[field].comment), _id=ref+":hint"))
+    itext_list.append(TAG["text"](TAG["value"](table[field].label), _id=ref + ":label"))
+    itext_list.append(TAG["text"](TAG["value"](table[field].comment), _id=ref + ":hint"))
 
     if hasattr(table[field].requires, "option"):
         items_list = []
@@ -184,7 +184,7 @@ def generate_controllers(table, field, ref):
         items_list.append(TAG["hint"](_ref="jr:itext('" + ref + ":hint')"))
         # True option
         items_list.append(TAG["item"](TAG["label"](_ref="jr:itext('" + ref + ":option0')"), TAG["value"](1)))
-        itext_list.append(TAG["text"](TAG["value"]("True"), _id= ref + ":option0"))
+        itext_list.append(TAG["text"](TAG["value"]("True"), _id=ref + ":option0"))
         # False option
         items_list.append(TAG["item"](TAG["label"](_ref="jr:itext('" + ref + ":option1')"), TAG["value"](0)))
         itext_list.append(TAG["text"](TAG["value"]("False"), _id=ref + ":option1"))
@@ -272,9 +272,8 @@ def submission():
     """
     Allows for submission of Xforms by ODK Collect
     using the S3XRC framework.
-    ToDo: Figure out what the proper format is for
-    importing XML files and how to convert ODK Collect's
-    Xforms to this format.
+    ToDo: Convert ODK Collect's Xforms to the format needed for S3XRC
+    using an appropriate XSLT
     """
     
     xmlinput = str(request.post_vars.xml_submission_file.value)
@@ -286,11 +285,13 @@ def submission():
     tree = etree.parse(io)
     resource = tree.getroot().tag
     
-    prefix, name = resource.split('_')
+    prefix, name = resource.split("_")
     res = s3xrc.resource(prefix, name)
     
     try:
-        res.import_xml(source = tree)
+        # Use XSLT here:
+        #res.import_xml(source=tree, template="path_to_template")
+        res.import_xml(source=tree)
     except:
         raise
     
@@ -305,11 +306,11 @@ def formList():
     ToDo: Provide a static list of forms, such as RMS_Req, GIS_Landmark, MPR_Missing_Report, CR_Shelter, PR_Presence
     """
     # Test statements
-    #xml = TAG.forms(*[TAG.form(getName("Name"), _url = "http://" + request.env.http_host + URL(r=request, c='static', f='current.xml'))])
+    #xml = TAG.forms(*[TAG.form(getName("Name"), _url = "http://" + request.env.http_host + URL(r=request, c="static", f="current.xml"))])
     #xml = TAG.forms(*[TAG.form(getName(t), _url = "http://" + request.env.http_host + URL(r=request, f="create", args=t)) for t in db.tables()])
 
     # List of a couple simple tables to avoid a giant list of all the tables
-    tables = ["rms_req","gis_landmark","mpr_missing_report","cr_shelter","pr_presence", "pr_person", "pr_image"]
+    tables = ["rms_req", "gis_landmark", "mpr_missing_report", "cr_shelter", "pr_presence", "pr_person", "pr_image"]
     xml = TAG.forms()
     for table in tables:
         xml.append(TAG.form(get_name(table), _url = "http://" + request.env.http_host + URL(r=request, f="create", args=db[table])))
@@ -322,5 +323,5 @@ def get_name(name):
     """
     Generates a pretty(er) name from a database table name.
     """
-    return name[name.find('_')+1:].replace('_',' ').capitalize()
+    return name[name.find("_") + 1:].replace("_", " ").capitalize()
     

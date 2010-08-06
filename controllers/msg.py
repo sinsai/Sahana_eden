@@ -47,10 +47,10 @@ def email_settings():
     table.inbound_mail_password.label = T("Password")
     table.inbound_mail_delete.label = T("Delete from Server?")
     table.inbound_mail_port.comment = DIV(DIV(_class="tooltip",
-        _title=T("Port|For POP-3 this is usually 110 (995 for SSL), for IMAP \
+        _title=Tstr("Port") + "|" + Tstr("For POP-3 this is usually 110 (995 for SSL), for IMAP \
             this is usually 143 (993 for IMAP).")))
     table.inbound_mail_delete.comment = DIV(DIV(_class="tooltip",
-            _title=T("Delete|If this is set to True then mails will be \
+            _title=Tstr("Delete") + "|" + Tstr("If this is set to True then mails will be \
             deleted from the server after downloading.")))
 
     if not auth.has_membership(auth.id_group("Administrator")):
@@ -247,13 +247,13 @@ def modem_settings():
     table.modem_port.label = T("Port")
     table.modem_baud.label = T("Baud")
     table.modem_port.comment = DIV(DIV(_class="tooltip",
-        _title=T("Port|The serial port at which the modem is connected -\
+        _title=Tstr("Port") + "|" + Tstr("The serial port at which the modem is connected -\
             /dev/ttyUSB0, etc on linux and com1, com2, etc on Windows")))
     table.modem_baud.comment = DIV(DIV(_class="tooltip",
-        _title=T("Baud|Baud rate to use for your modem - The default is safe\
+        _title=Tstr("Baud") + "|" + Tstr("Baud rate to use for your modem - The default is safe\
             for most cases")))
     table.enabled.comment = DIV(DIV(_class="tooltip",
-        _title=T("Enabled|Unselect to disable the modem")))
+        _title=Tstr("Enabled") + "|" + Tstr("Unselect to disable the modem")))
     
     # CRUD Strings
     ADD_SETTING = T("Add Setting")
@@ -290,17 +290,17 @@ def gateway_settings():
     table.to_variable.label = T("To variable")
     table.message_variable.label = T("Message variable")
     table.url.comment = DIV(DIV(_class="tooltip",
-        _title=T("URL|The URL of your web gateway without the post parameters")))
+        _title="URL|" + Tstr("The URL of your web gateway without the post parameters")))
     table.parameters.comment = DIV(DIV(_class="tooltip",
-        _title=T("Parameters|The post variables other than the ones containing\
+        _title=Tstr("Parameters") + "|" + Tstr("The post variables other than the ones containing\
             the message and the phone number")))
     table.message_variable.comment = DIV(DIV(_class="tooltip",
-        _title=T("Message Variable|The post variable on the URL used for\
+        _title=Tstr("Message Variable") + "|" + Tstr("The post variable on the URL used for\
         sending messages")))
     table.to_variable.comment = DIV(DIV(_class="tooltip",
-        _title=T("To variable|The post variable containing the phone number")))
+        _title=Tstr("To variable") + "|" + Tstr("The post variable containing the phone number")))
     table.enabled.comment = DIV(DIV(_class="tooltip",
-        _title=T("Enabled|Unselect to disable the modem")))
+        _title=Tstr("Enabled") + "|" + Tstr("Unselect to disable the modem")))
 
     # CRUD Strings
     ADD_SETTING = T("Add Setting")
@@ -333,7 +333,7 @@ def setting():
     table = db[tablename]
     table.outgoing_sms_handler.label = T("Outgoing SMS handler")
     table.outgoing_sms_handler.comment = DIV(DIV(_class="tooltip",
-    _title=Tstr("Outgoing SMS handler") + "|" + TStr("Selects whether to use the gateway or the Modem for sending out SMS")))
+    _title=Tstr("Outgoing SMS handler") + "|" + Tstr("Selects whether to use the gateway or the Modem for sending out SMS")))
     # CRUD Strings
     ADD_SETTING = T("Add Setting")
     VIEW_SETTINGS = T("View Settings")
@@ -452,9 +452,7 @@ def log():
     # Server-side Pagination
     response.s3.pagination = True
 
-    return shn_rest_controller(module, resource,
-        listadd=False,
-        )
+    return shn_rest_controller(module, resource, listadd=False)
 
 # Enabled only for testing
 @auth.shn_requires_membership(1)
@@ -466,7 +464,5 @@ def tag():
     # Server-side Pagination
     response.s3.pagination = True
     
-    return shn_rest_controller(module, resource,
-    listadd=False,
-    )
+    return shn_rest_controller(module, resource, listadd=False)
 

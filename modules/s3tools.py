@@ -596,6 +596,19 @@ class AuthS3(Auth):
 
         return decorator
 
+    def shn_logged_in(self):
+
+        session = self.session
+        if not self.is_logged_in():
+            if not self.basic():
+                return False
+            else:
+                roles = []
+                table = self.db.auth_membership
+                set = self.db(table.user_id == self.user.id).select(table.group_id)
+                session.s3.roles = [s.group_id for s in set]
+
+        return True
 
     def shn_has_role(self, role):
         """
@@ -629,18 +642,6 @@ class AuthS3(Auth):
 
         session = self.session
 
-        def logged_in():
-            if not self.is_logged_in():
-                if not self.basic():
-                    return False
-                else:
-                    roles = []
-                    table = self.db.auth_membership
-                    set = self.db(table.user_id == self.user.id).select(table.group_id)
-                    session.s3.roles = [s.group_id for s in set]
-
-            return True
-
         if session.s3.security_policy == 1:
             # Simple policy
             # Anonymous users can Read.
@@ -648,10 +649,10 @@ class AuthS3(Auth):
                 authorised = True
             else:
                 # Authentication required for Create/Update/Delete.
-                authorised = logged_in()
+                authorised = self.shn_logged_in()
         else:
             # Full policy
-            if logged_in():
+            if shn_logged_in():
                 # Administrators are always authorised
                 if self.shn_has_role(1):
                     authorised = True
@@ -733,7 +734,7 @@ class AuthS3(Auth):
         def decorator(action):
 
             def f(*a, **b):
-                if not self.basic() and not self.is_logged_in():
+                if not self.shn_logged_in():
                     request = self.environment.request
                     next = URL(r=request, args=request.args, vars=request.get_vars)
                     redirect(self.settings.login_url + "?_next=" + urllib.quote(next))

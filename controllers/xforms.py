@@ -267,7 +267,7 @@ def submission_old():
     r.headers["Location"] = request.env.http_host
     raise r
 
-@auth.shn_requires_membership(2)
+@auth.shn_requires_membership(1)
 def submission():
     """
     Allows for submission of Xforms by ODK Collect
@@ -288,15 +288,20 @@ def submission():
     
     prefix, name = resource.split('_')
     res = s3xrc.resource(prefix, name)
-    
+
     try:
-        res.import_xml(source = tree)
-    except:
-        raise
+        # ToDo: Better way to get this file? 
+        success = res.import_xml(source=tree, template='http://' + request.env.http_host + URL(r=request, c='static', f='xslt/import/odk.xsl'))
+    except IOError, SyntaxError:
+        raise HTTP(500, "Internal server error.")
     
-    r = HTTP(201, "Saved.") # ODK Collect only accepts 201
-    r.headers["Location"] = request.env.http_host
-    raise r
+    # ToDo: Not sure if I'm handling this correctly.  Which response code to use?
+    if success:
+        r = HTTP(201, "Saved.") # ODK Collect only accepts 201
+        r.headers["Location"] = request.env.http_host
+        raise r
+    else:
+        raise HTTP(500, "Internal server error?")
 
 def formList(): 
     """

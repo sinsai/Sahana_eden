@@ -23,48 +23,83 @@
 
 __doc__ = \
 """
-Module provides api to send messages - Currently SMS and Email
-
+Module providing an API to send messages
+- Currently SMS and Email
 """
 
 __author__ = "Praneeth Bodduluri <lifeeth[at]gmail.com>"
 
-
+import re
 import urllib
 
 class Msg(object):
     """ Toolkit for hooking into the Messaging framework """
+
     sms_api_post_config = {}
     sms_api_enabled = False
+
     def __init__(self, environment, db=None, T=None, mail=None, modem=None):
         try:
             self.db = db
             self.outgoing_is_gateway = db(db.msg_setting.outgoing_sms_handler ==  "Gateway").select(limitby=(0, 1)).first()
             self.sms_api = db(db.msg_gateway_settings.enabled == True).select(limitby=(0, 1)).first()
             if self.sms_api:
-                tmp_parameters = self.sms_api.parameters.split('&')
+                tmp_parameters = self.sms_api.parameters.split("&")
                 self.sms_api_enabled = self.sms_api.enabled
                 for tmp_parameter in tmp_parameters:
-                    self.sms_api_post_config[tmp_parameter.split('=')[0]] = tmp_parameter.split('=')[1]
+                    self.sms_api_post_config[tmp_parameter.split("=")[0]] = tmp_parameter.split("=")[1]
             self.mail = mail
             self.modem = modem
         except:
             pass
 
-    def send_sms_via_modem(self, mobile, text = ""):
+    def sanitise_phone(self, phone):
         """
-        Function to send SMS via MODEM
+        Strip out unnecessary characters from the string:
+        +()- & space
         """
+
+        phonePattern = re.compile(r'''
+                        # don't match beginning of string, number can start anywhere
+            (\d{3})     # area code is 3 digits (e.g. '800')
+            \D*         # optional separator is any number of non-digits
+            (\d{3})     # trunk is 3 digits (e.g. '555')
+            \D*         # optional separator
+            (\d{4})     # rest of number is 4 digits (e.g. '1212')
+            \D*         # optional separator
+            (\d*)       # extension is optional and can be any number of digits
+            $           # end of string
+            ''', re.VERBOSE)
+
+        
+        #clean = re.
+        # If number starts with a 0 then need to remove this & add the country code in
+        # (Beware: Italy keeps zero, even with country code!)
+        
+        clean = phone
+
+        return clean
+    
+    def send_sms_via_modem(self, mobile, text=""):
+        """
+        Function to send SMS via locally-attached Modem
+        """
+        
+        mobile = self.sanitise_phone(mobile)
+        
         try:
             self.modem.send_sms(mobile, text)
             return True
         except:
             return False
 
-    def send_sms_via_api(self, mobile, text = ""):
+    def send_sms_via_api(self, mobile, text=""):
         """
         Function to send SMS via API
         """
+        
+        mobile = self.sanitise_phone(mobile)
+        
         try:
             self.sms_api_post_config[self.sms_api.message_variable] = text
             self.sms_api_post_config[self.sms_api.to_variable] = str(mobile)
@@ -77,97 +112,116 @@ class Msg(object):
 
     def send_email_via_api(self, to, subject, message):
         """
-        Wrapper over web2py's email setup
+        Function to send Email via API
+        - simple Wrapper over Web2Py's Email API
         """
+
         return self.mail.send(to, subject, message)
 
     def check_pe_id_validity(self, pe_id):
-        """To check if the pe_id passed is valid or not"""
-        if pe_id == self.db(self.db.pr_person.pe_id == 1).select(self.db.pr_person.pe_id,limitby=(0,1)).first()['pe_id'] :
+        """ To check if the pe_id passed is valid or not """
+
+        db = self.db
+
+        if pe_id == db(db.pr_person.pe_id == 1).select(db.pr_person.pe_id, limitby=(0, 1)).first()["pe_id"]:
             return True
         else:
             return False
 
-    def send_by_pe_id(self, pe_id,
-                                subject="", 
-                                message="", 
-                                sender_pe_id = None,
-                                pr_message_method = 1,
-                                sender="", 
-                                fromaddress="",
-                                system_generated = False):
-        """As the function name suggests - depends on pr_message_method """
+    def send_by_pe_id(self,
+                      pe_id,
+                      subject="",
+                      message="",
+                      sender_pe_id = None,
+                      pr_message_method = 1,
+                      sender="",
+                      fromaddress="",
+                      system_generated = False):
+        """ As the function name suggests - depends on pr_message_method """
+
+        db = self.db
+
         try:
-            message_log_id = self.db.msg_log.insert(pe_id = sender_pe_id,
-                                             subject = subject,
-                                             message = message,
-                                             sender  = sender,
-                                             fromaddress = fromaddress)
+            message_log_id = db.msg_log.insert(pe_id = sender_pe_id,
+                                               subject = subject,
+                                               message = message,
+                                               sender  = sender,
+                                               fromaddress = fromaddress)
         except:
             return False
             #2) This is not transaction safe - power failure in the middle will cause no message in the outbox
-        if isinstance(pe_id,list):
+
+        if isinstance(pe_id, list):
             listindex = 0
             for prpeid in pe_id:
                 try:
-                    self.db.msg_outbox.insert(message_id = message_log_id, 
-                                        pe_id = prpeid,
-                                        pr_message_method = pr_message_method,
-                                        system_generated = system_generated)
-                    listindex = listindex+1
+                    db.msg_outbox.insert(message_id = message_log_id,
+                                         pe_id = prpeid,
+                                         pr_message_method = pr_message_method,
+                                         system_generated = system_generated)
+                    listindex = listindex + 1
                 except:
                     return listindex
         else:
             try:
-                self.db.msg_outbox.insert(message_id = message_log_id, 
-                                        pe_id = pe_id,
-                                        pr_message_method = pr_message_method,
-                                        system_generated = system_generated)
+                db.msg_outbox.insert(message_id = message_log_id,
+                                     pe_id = pe_id,
+                                     pr_message_method = pr_message_method,
+                                     system_generated = system_generated)
             except:
                 return False
-        self.db.commit()
+        # Explicitly commit DB operations when running from Cron
+        db.commit()
         return True
 
-    def send_email_by_pe_id(self, pe_id, subject="",
-                                message="", 
-                                sender_pe_id = None,
-                                sender="", 
-                                fromaddress="",
-                                system_generated = False):
-        """Api over send_by_pe_id - depends on pr_message_method """
+    def send_email_by_pe_id(self,
+                            pe_id,
+                            subject="",
+                            message="",
+                            sender_pe_id=None,
+                            sender="",
+                            fromaddress="",
+                            system_generated=False):
+        """ API wrapper over send_by_pe_id - depends on pr_message_method """
+        
         return self.send_by_pe_id(pe_id,
-                                        subject, 
-                                        message, 
-                                        sender_pe_id, 
-                                        1, # To set as an email
-                                        sender, 
-                                        fromaddress,
-                                        system_generated)
+                                  subject,
+                                  message,
+                                  sender_pe_id,
+                                  1, # To set as an email
+                                  sender,
+                                  fromaddress,
+                                  system_generated)
 
-    def process_outbox(self, contact_method = 1, option = 1): #pr_message_method dependent
-        """ Send Pending Messages from OutBox.
-        If succesful then move from OutBox to Sent. A modified copy of send_email """
+    def process_outbox(self, contact_method=1, option=1): #pr_message_method dependent
+        """
+        Send Pending Messages from Outbox.
+        If succesful then move from Outbox to Sent. A modified copy of send_email
+        """
+
+        db = self.db
+
         table = self.db.msg_outbox
         query = ((table.status == 1) & (table.pr_message_method == contact_method))
-        rows = self.db(query).select()
+        rows = db(query).select()
         chainrun = False # Used to fire process_outbox again - Used when messages are sent to groups
         for row in rows:
             status = True
             message_id = row.message_id
-            logrow = self.db(self.db.msg_log.id == message_id).select(limitby=(0,1)).first()
+            logrow = db(db.msg_log.id == message_id).select(limitby=(0, 1)).first()
             # Get message from msg_log
             message = logrow.message
             subject = logrow.subject
             sender_pe_id = logrow.pe_id
             # Determine list of users
             entity = row.pe_id
-            table2 = self.db.pr_pentity
+            table2 = db.pr_pentity
             query = table2.id == entity
-            entity_type = self.db(query).select(limitby=(0, 1)).first().type
+            entity_type = db(query).select(limitby=(0, 1)).first().pe_type
             def dispatch_to_pe_id(pe_id):
-                table3 = self.db.pr_pe_contact
+                table3 = db.pr_pe_contact
                 query = (table3.pe_id == pe_id) & (table3.contact_method == contact_method)
-                recipient = self.db(query).select(table3.value, orderby = table3.priority).first()
+                recipient = db(query).select(table3.value, orderby = table3.priority).first()
                 if recipient:
                     if (contact_method == 2 and option == 2):
                         if self.outgoing_is_gateway:
@@ -186,33 +240,33 @@ class Msg(object):
                 # Take the entities of it and add in the messaging queue - with
                 # sender as the original sender and marks group email processed
                 # Set system generated = True
-                table3 = self.db.pr_group
+                table3 = db.pr_group
                 query = (table3.pe_id == entity)
-                group_id = self.db(query).select(limitby=(0, 1)).first().id
-                table4 = self.db.pr_group_membership
+                group_id = db(query).select(limitby=(0, 1)).first().id
+                table4 = db.pr_group_membership
                 query = (table4.group_id == group_id)
-                recipients = self.db(query).select()
+                recipients = db(query).select()
                 for recipient in recipients:
                     person_id = recipient.person_id
-                    table5 = self.db.pr_person
+                    table5 = db.pr_person
                     query = (table5.id == person_id)
-                    pe_id = self.db(query).select(limitby=(0, 1)).first().pe_id
-                    self.db.msg_outbox.insert( message_id = message_id, 
-                                                pe_id = pe_id,
-                                                pr_message_method = contact_method,
-                                                system_generated = True)
+                    pe_id = db(query).select(limitby=(0, 1)).first().pe_id
+                    db.msg_outbox.insert(message_id = message_id,
+                                         pe_id = pe_id,
+                                         pr_message_method = contact_method,
+                                         system_generated = True)
                 status = True
                 chainrun = True
             if entity_type == "pr_person":
                 # Person
                 status = dispatch_to_pe_id(entity)
             if status:
-                # Update status to sent in OutBox
-                self.db(table.id == row.id).update(status=2)
+                # Update status to sent in Outbox
+                db(table.id == row.id).update(status=2)
                 # Set message log to actioned
-                self.db(self.db.msg_log.id == message_id).update(actioned = True)
+                db(db.msg_log.id == message_id).update(actioned=True)
                 # Explicitly commit DB operations when running from Cron
-                self.db.commit()
+                db.commit()
         if chainrun :
             self.process_outbox(contact_method, option)
         return

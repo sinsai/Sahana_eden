@@ -788,7 +788,7 @@ class AuthS3(Auth):
                             self.user.person_uuid = person.uuid
                         continue
 
-                pe_id = etable.insert(type="pr_person")
+                pe_id = etable.insert(pe_type="pr_person")
                 db(etable.id==pe_id).update(pe_id=pe_id)
                 if pe_id:
                     new_id = ptable.insert(

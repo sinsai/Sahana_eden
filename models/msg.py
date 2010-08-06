@@ -15,7 +15,7 @@ if deployment_settings.has_module(module):
                     Field("audit_write", "boolean"),
                     Field("outgoing_sms_handler"),
                     migrate=migrate)
-    table.outgoing_sms_handler.requires = IS_IN_SET(["Modem","Gateway"], zero = None)
+    table.outgoing_sms_handler.requires = IS_IN_SET(["Modem", "Gateway"], zero=None)
 
     resource = "email_settings"
     tablename = "%s_%s" % (module, resource)

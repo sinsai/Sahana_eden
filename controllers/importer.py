@@ -173,7 +173,7 @@ def import_spreadsheet():
     tree = s3xrc.xml.json2tree(send)
     prefix, name = resource.split('_')
     res = s3xrc.resource(prefix, name)
-    if res.import_xml(source = tree,ignore_errors = True):
+    if res.import_xml(source = tree):
         session.import_success = 1 
     else:
         f.write("IMPORT DID NOT SUCCEED")

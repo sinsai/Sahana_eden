@@ -1396,24 +1396,40 @@ class S3Resource(object):
 
 
     # -------------------------------------------------------------------------
-    def __import_tree(self, id, tree, push_limit=None, ignore_errors=False):
+    def __import_tree(self, id, tree,
+                      files=None,
+                      push_limit=None,
+                      ignore_errors=False):
 
         """ Import data from an element tree to this resource
+
+            @param files: file attachments as {filename:file}
 
             @raise IOError: at insufficient permissions
         """
 
-        return self.__manager.import_tree(self, id, tree,
-                                          push_limit=push_limit,
-                                          ignore_errors=ignore_errors)
+        if files is not None and isinstance(files, dict):
+            self.__files = Storage(files)
+
+        success = self.__manager.import_tree(self, id, tree,
+                                             push_limit=push_limit,
+                                             ignore_errors=ignore_errors)
+
+        self.__files = Storage()
+        return success
 
 
     # -------------------------------------------------------------------------
-    def import_xml(self, source, id=None, template=None, ignore_errors=False, **args):
+    def import_xml(self, source,
+                   files=None,
+                   id=None,
+                   template=None,
+                   ignore_errors=False, **args):
 
         """ Import data from an XML source to this resource
 
             @param source: the XML source (or ElementTree)
+            @param files: file attachments as {filename:file}
             @param id: the ID or list of IDs of records to update (None for all)
             @param template: the XSLT template
             @param ignore_errors: do not stop on errors (skip invalid elements)
@@ -1443,6 +1459,7 @@ class S3Resource(object):
                 if not tree:
                     raise SyntaxError(xml.error)
             return self.__import_tree(id, tree,
+                                      files=files,
                                       push_limit=None,
                                       ignore_errors=ignore_errors)
         else:
@@ -1450,11 +1467,16 @@ class S3Resource(object):
 
 
     # -------------------------------------------------------------------------
-    def import_json(self, source, id=None, template=None, ignore_errors=False, **args):
+    def import_json(self, source,
+                    files=None,
+                    id=None,
+                    template=None,
+                    ignore_errors=False, **args):
 
         """ Import data from a JSON source to this resource
 
             @param source: the JSON source (or ElementTree)
+            @param files: file attachments as {filename:file}
             @param id: the ID or list of IDs of records to update (None for all)
             @param template: the XSLT template
             @param ignore_errors: do not stop on errors (skip invalid elements)
@@ -1488,6 +1510,7 @@ class S3Resource(object):
                 if not tree:
                     raise SyntaxError(xml.error)
             return self.__import_tree(id, tree,
+                                      files=files,
                                       push_limit=None,
                                       ignore_errors=ignore_errors)
         else:

@@ -72,9 +72,10 @@ class Msg(object):
             ''', re.VERBOSE)
 
         
-        #clean = re.
+        #clean = phonePattern.search(phone)
+        
         # If number starts with a 0 then need to remove this & add the country code in
-        # (Beware: Italy keeps zero, even with country code!)
+        # (Beware: Italy (+39) keeps zero, even with country code!)
         
         clean = phone
 
@@ -86,6 +87,9 @@ class Msg(object):
         """
         
         mobile = self.sanitise_phone(mobile)
+
+        # Add '+' before country code
+        mobile = "+" + mobile
         
         try:
             self.modem.send_sms(mobile, text)

@@ -629,6 +629,18 @@ class AuthS3(Auth):
 
         session = self.session
 
+        def logged_in():
+            if not self.is_logged_in():
+                if not self.basic():
+                    return False
+                else:
+                    roles = []
+                    table = self.db.auth_membership
+                    set = self.db(table.user_id == self.user.id).select(table.group_id)
+                    session.s3.roles = [s.group_id for s in set]
+
+            return True
+
         if session.s3.security_policy == 1:
             # Simple policy
             # Anonymous users can Read.
@@ -636,10 +648,10 @@ class AuthS3(Auth):
                 authorised = True
             else:
                 # Authentication required for Create/Update/Delete.
-                authorised = self.is_logged_in() or self.basic()
+                authorised = logged_in()
         else:
             # Full policy
-            if self.is_logged_in() or self.basic():
+            if logged_in():
                 # Administrators are always authorised
                 if self.shn_has_role(1):
                     authorised = True
@@ -649,6 +661,7 @@ class AuthS3(Auth):
             else:
                 # No access for anonymous
                 authorised = False
+
         return authorised
 
     #

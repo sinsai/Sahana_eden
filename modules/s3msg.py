@@ -29,7 +29,7 @@ Module providing an API to send messages
 
 __author__ = "Praneeth Bodduluri <lifeeth[at]gmail.com>"
 
-import re
+import string
 import urllib
 
 class Msg(object):
@@ -41,7 +41,9 @@ class Msg(object):
     def __init__(self, environment, db=None, T=None, mail=None, modem=None):
         try:
             self.db = db
-            self.outgoing_is_gateway = db(db.msg_setting.outgoing_sms_handler ==  "Gateway").select(limitby=(0, 1)).first()
+            settings = db(db.msg_setting.id > 0).select(limitby=(0, 1)).first()
+            self.default_country_code = settings.default_country_code
+            self.outgoing_is_gateway = settings.outgoing_sms_handler ==  "Gateway"
             self.sms_api = db(db.msg_gateway_settings.enabled == True).select(limitby=(0, 1)).first()
             if self.sms_api:
                 tmp_parameters = self.sms_api.parameters.split("&")
@@ -59,24 +61,17 @@ class Msg(object):
         +()- & space
         """
 
-        phonePattern = re.compile(r'''
-                        # don't match beginning of string, number can start anywhere
-            (\d{3})     # area code is 3 digits (e.g. '800')
-            \D*         # optional separator is any number of non-digits
-            (\d{3})     # trunk is 3 digits (e.g. '555')
-            \D*         # optional separator
-            (\d{4})     # rest of number is 4 digits (e.g. '1212')
-            \D*         # optional separator
-            (\d*)       # extension is optional and can be any number of digits
-            $           # end of string
-            ''', re.VERBOSE)
+        deletechars = string.translate(string.printable, None, string.digits)
+        clean = string.translate(phone, None, deletechars)
 
-        
-        #clean = re.
         # If number starts with a 0 then need to remove this & add the country code in
-        # (Beware: Italy keeps zero, even with country code!)
-        
-        clean = phone
+        if clean[0] == "0":
+            # Add default country code
+            if self.default_country_code == 39:
+                # Italy keeps 0 after country code
+                clean = str(self.default_country_code) + clean
+            else:
+                clean = str(self.default_country_code) + string.lstrip(clean, "0")
 
         return clean
     
@@ -86,6 +81,9 @@ class Msg(object):
         """
         
         mobile = self.sanitise_phone(mobile)
+
+        # Add '+' before country code
+        mobile = "+" + mobile
         
         try:
             self.modem.send_sms(mobile, text)

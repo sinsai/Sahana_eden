@@ -138,7 +138,7 @@ deployment_settings.modules = Storage(
             description = str(T("A library of digital resources, such as Photos, signed contracts and Office documents.")),
             module_type = 10
         ),
-    ir = Storage(
+    irs = Storage(
         name_nice = str(T("Incident Reporting")),
         description = str(T("Incident Reporting System")),
         module_type = 10

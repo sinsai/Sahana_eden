@@ -18,7 +18,7 @@ response.menu_options = [
 		[T("List/Add"), False, URL(r=request, f="group")],
 		[T("Group Memberships"), False, URL(r=request, f="group_membership")],
 	]],
-    #[T("CAP"), False, URL(r=request, f="tbc")]
+    #["CAP", False, URL(r=request, f="tbc")]
 ]
 
 # S3 framework functions
@@ -47,11 +47,9 @@ def email_settings():
     table.inbound_mail_password.label = T("Password")
     table.inbound_mail_delete.label = T("Delete from Server?")
     table.inbound_mail_port.comment = DIV(DIV(_class="tooltip",
-        _title=Tstr("Port") + "|" + Tstr("For POP-3 this is usually 110 (995 for SSL), for IMAP \
-            this is usually 143 (993 for IMAP).")))
+        _title=Tstr("Port") + "|" + Tstr("For POP-3 this is usually 110 (995 for SSL), for IMAP this is usually 143 (993 for IMAP).")))
     table.inbound_mail_delete.comment = DIV(DIV(_class="tooltip",
-            _title=Tstr("Delete") + "|" + Tstr("If this is set to True then mails will be \
-            deleted from the server after downloading.")))
+            _title=Tstr("Delete") + "|" + Tstr("If this is set to True then mails will be deleted from the server after downloading.")))
 
     if not auth.has_membership(auth.id_group("Administrator")):
 		session.error = UNAUTHORISED
@@ -237,8 +235,7 @@ def modem_settings():
     try:
         import serial
     except ImportError:
-        session.error = T("Python Serial module not available within the\
-        Python - this needs installing to activate the Modem")
+        session.error = T("Python Serial module not available within the running Python - this needs installing to activate the Modem")
         redirect(URL(r=request, c="admin", f="index"))
     resource = request.function
     tablename = module + "_" + resource
@@ -247,11 +244,9 @@ def modem_settings():
     table.modem_port.label = T("Port")
     table.modem_baud.label = T("Baud")
     table.modem_port.comment = DIV(DIV(_class="tooltip",
-        _title=Tstr("Port") + "|" + Tstr("The serial port at which the modem is connected -\
-            /dev/ttyUSB0, etc on linux and com1, com2, etc on Windows")))
+        _title=Tstr("Port") + "|" + Tstr("The serial port at which the modem is connected - /dev/ttyUSB0, etc on linux and com1, com2, etc on Windows")))
     table.modem_baud.comment = DIV(DIV(_class="tooltip",
-        _title=Tstr("Baud") + "|" + Tstr("Baud rate to use for your modem - The default is safe\
-            for most cases")))
+        _title=Tstr("Baud") + "|" + Tstr("Baud rate to use for your modem - The default is safe for most cases")))
     table.enabled.comment = DIV(DIV(_class="tooltip",
         _title=Tstr("Enabled") + "|" + Tstr("Unselect to disable the modem")))
     
@@ -292,11 +287,9 @@ def gateway_settings():
     table.url.comment = DIV(DIV(_class="tooltip",
         _title="URL|" + Tstr("The URL of your web gateway without the post parameters")))
     table.parameters.comment = DIV(DIV(_class="tooltip",
-        _title=Tstr("Parameters") + "|" + Tstr("The post variables other than the ones containing\
-            the message and the phone number")))
+        _title=Tstr("Parameters") + "|" + Tstr("The post variables other than the ones containing the message and the phone number")))
     table.message_variable.comment = DIV(DIV(_class="tooltip",
-        _title=Tstr("Message Variable") + "|" + Tstr("The post variable on the URL used for\
-        sending messages")))
+        _title=Tstr("Message Variable") + "|" + Tstr("The post variable on the URL used for sending messages")))
     table.to_variable.comment = DIV(DIV(_class="tooltip",
         _title=Tstr("To variable") + "|" + Tstr("The post variable containing the phone number")))
     table.enabled.comment = DIV(DIV(_class="tooltip",

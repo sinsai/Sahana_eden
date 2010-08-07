@@ -51,7 +51,7 @@ table.pe_id.requires = IS_ONE_OF(db, "pr_pentity.id", shn_pentity_represent,
 
 table.co_name.label = T("c/o Name")
 table.street1.label = T("Street")
-table.street2.label = T("Street (add.)")
+table.street2.label = T("Street (continued)")
 table.postcode.label = T("ZIP/Postcode")
 table.country.label = T("Country")
 
@@ -101,7 +101,7 @@ s3xrc.model.configure(table,
 pr_contact_method_opts = {
     1:T("E-Mail"),
     2:T("Mobile Phone"),
-    3:T("XMPP"),
+    3:"XMPP",
     4:T("Twitter"),
     5:T("Telephone"),
     6:T("Fax"),

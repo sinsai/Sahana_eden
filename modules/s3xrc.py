@@ -3153,6 +3153,7 @@ class S3ResourceController(object):
             return False
 
         # Import all matching elements
+        error = None
         imports = []
         directory = {}
         vmap = {} # Element<->Vector Map
@@ -3237,6 +3238,11 @@ class S3ResourceController(object):
 
             if self.error is None:
                 imports.extend(vectors)
+            else:
+                error = self.error
+                self.error = None
+
+        self.error = error
 
         # Commit all vectors
         if self.error is None or ignore_errors:

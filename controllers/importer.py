@@ -95,9 +95,7 @@ def import_spreadsheet():
     spreadsheet_json = StringIO(spreadsheet)
     f.write("The recd JSON is " + repr(spreadsheet_json.read()))
     spreadsheet_json.seek(0)
-    #j = json.load(spreadsheet_json,encoding = 'ascii')
     j = json.loads(spreadsheet)
-    f.write("\n"+repr(len(j['spreadsheet']))+"\n")
     similar_rows = []
     importable_rows = []
     if j.has_key('header_row'):
@@ -165,16 +163,18 @@ def import_spreadsheet():
 	      continue
            else:
     	      new_word += word[i] 
-     #new_word is without newlines and whitespaces	  
+    #new_word is without newlines and whitespaces	  
     new_word  = "{\"$_" + resource + "\":"+ new_word + "}"
     #added resource name
     f.write("The outgoing json is " + "\n\n" + new_word)
     send = StringIO(new_word)
     tree = s3xrc.xml.json2tree(send)
     prefix, name = resource.split('_')
+    f.write("RESOURCE->>" + resource)
     res = s3xrc.resource(prefix, name)
     if res.import_xml(source = tree):
-        session.import_success = 1 
+        session.import_success = 1
+	f.write(repr(s3xrc.xml.tree2json(tree)))
     else:
         f.write("IMPORT DID NOT SUCCEED")
     	session.import_success = 0
@@ -183,33 +183,41 @@ def import_spreadsheet():
     	returned_tree = tree
     	returned_json = s3xrc.xml.tree2json(returned_tree)
     	returned_json = returned_json.encode('ascii')
+	f.write("THIS IS ASCII returned_json " + returned_json + "\n\n\n")
     	returned_json = json.loads(returned_json,encoding = 'ascii')
-    	for resource_name in returned_json:
+    	f.write("-->\n\n\n<--" + repr(type(returned_json)))
+	for resource_name in returned_json:
 		for record in returned_json[resource_name]:
 		     if '@error' in repr(record):
 			incorrect_rows.append(record)
-		     else:
 			f.write("\n\n\n" + repr(record))
+		     else:
 			correct_rows.append(record)
-			
-    	correct_rows_send = {}
-    	correct_rows_send['$_'+prefix+'_'+name] = correct_rows
-    	f.write("The correct rows are " + repr(incorrect_rows))
+	correct_rows_send = {}
+    	correct_rows_send[('$_'+prefix+'_'+name)] = correct_rows
+    	f.write("The correct rows are " + repr(correct_rows_send))
     	for k in incorrect_rows:
 		 del k['@modified_at']
     	send_json = json.dumps(correct_rows_send)
     	send_json = StringIO(send_json)
     	tree = s3xrc.xml.json2tree(send_json)
-	if len(correct_rows) and res.import_xml(tree):
+	k = res.import_xml(tree)
+	if k:
 	    f.write("RE_IMPORT SUCCEEDED\n\n\n")
 	else:
-	    f.write("DID NOT SUCCEED AGAIN")
-    	session.fields = incorrect_rows[0].keys()
+	    f.write("DID NOT SUCCEED AGAIN\n\n")
+    	session.fields = []
+	for k in incorrect_rows:
+	    for l in k.keys():
+		    if l[0:3] == "$k_":
+		    	nest_res = k[l]['@resource']
+		        for m in k[l]["$_"+nest_res][0].keys():
+		            session.fields.append(l[3:].encode('ascii') + ' --> ' + nest_res.encode('ascii') + ' --> ' + m.encode('ascii'))
     	for i in range(0,len(session.fields)):
        	    session.fields[i]=session.fields[i].encode('ascii')
-    	f.write(repr(session.fields)+"\n\n\n")
+    	f.write("Session fields \n" + repr(session.fields)+"\n\n\n")
     	session.import_rows = len(incorrect_rows)
-    	for record in incorrect_rows:
+    	'''for record in incorrect_rows:
        	   for field in record:
                if '@error' in record[field]:
                   f.write(repr(record[field]))
@@ -218,7 +226,8 @@ def import_spreadsheet():
 	          f.write("in else " + repr(record[field]))
 	          record[field] = record[field]['@value'] 
     	f.write("These rows are incorrect "+repr(incorrect_rows))
-    	incorrect_rows = json.dumps(incorrect_rows,ensure_ascii=True)
+    	'''
+	incorrect_rows = json.dumps(incorrect_rows,ensure_ascii=True)
     	session.invalid_rows = incorrect_rows
     	session.import_success = 0
     	session.import_columns = j['columns']

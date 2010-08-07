@@ -58,112 +58,104 @@ deployment_settings.mail.approver = "useradmin@your.org"
 # Default timezone for users
 deployment_settings.L10n.utc_offset = "UTC +0000"
 
-# Module settings
-s3_module_type_opts = {
-    1:T("Home"),
-    2:T("Situation Awareness"),
-    3:T("Person Management"),
-    4:T("Aid Management"),
-    5:T("Communications")
-    }
 # Comment/uncomment modules here to disable/enable them
 # Modules menu is defined in 01_menu.py
 from gluon.storage import Storage
 deployment_settings.modules = Storage(
     default = Storage(
-            name_nice = "Home",
+            name_nice = str(T("Home")),
             access = None,      # All Users (inc Anonymous) can see this module in the default menu & access the controller
             module_type = 0     # This item is always 1st in the menu
         ),
     admin = Storage(
-            name_nice = "Administration",
-            description = "Site Administration",
+            name_nice = str(T("Administration")),
+            description = str(T("Site Administration")),
             access = "|1|",     # Only Administrators can see this module in the default menu & access the controller
             module_type = 0     # This item is handled separately in the menu
         ),
     gis = Storage(
-            name_nice = "Map",
-            description = "Situation Awareness & Geospatial Analysis",
+            name_nice = str(T("Map")),
+            description = str(T("Situation Awareness & Geospatial Analysis")),
             module_type = 1     # 1st item in the menu
         ),
     mpr = Storage(
-            name_nice = "Missing Persons",
-            description = "Helps to report and search for Missing Persons",
+            name_nice = str(T("Missing Persons")),
+            description = str(T("Helps to report and search for Missing Persons")),
             module_type = 2
         ),
     rms = Storage(
-            name_nice = "Requests",
-            description = "Tracks requests for aid and matches them against donors who have pledged aid",
+            name_nice = str(T("Requests")),
+            description = str(T("Tracks requests for aid and matches them against donors who have pledged aid")),
             module_type = 3
         ),
     hms = Storage(
-            name_nice = "Hospitals",
-            description = "Helps to monitor status of hospitals",
+            name_nice = str(T("Hospitals")),
+            description = str(T("Helps to monitor status of hospitals")),
             module_type = 4
         ),
     vol = Storage(
-            name_nice = "Volunteers",
-            description = "Manage volunteers by capturing their skills, availability and allocation",
+            name_nice = str(T("Volunteers")),
+            description = str(T("Manage volunteers by capturing their skills, availability and allocation")),
             module_type = 5
         ),
     msg = Storage(
-            name_nice = "Messaging",
-            description = "Sends & Receives Alerts via Email & SMS",
+            name_nice = str(T("Messaging")),
+            description = str(T("Sends & Receives Alerts via Email & SMS")),
             module_type = 10
         ),
     pr = Storage(
-            name_nice = "Person Registry",
-            description = "Central point to record details on People",
+            name_nice = str(T("Person Registry")),
+            description = str(T("Central point to record details on People")),
             module_type = 10
         ),
     dvi = Storage(
-            name_nice = "Disaster Victim Identification",
-            description = "Disaster Victim Identification",
+            name_nice = str(T("Disaster Victim Identification")),
+            description = str(T("Disaster Victim Identification")),
             module_type = 10,
         ),
     #dvr = Storage(
-    #        name_nice = "Disaster Victim Registry",
-    #        description = "Traces internally displaced people (IDPs) and their needs",
+    #        name_nice = str(T("Disaster Victim Registry")),
+    #        description = str(T("Traces internally displaced people (IDPs) and their needs")),
     #        module_type = 10
     #    ),
     budget = Storage(
-            name_nice = "Budgeting Module",
-            description = "Allows a Budget to be drawn up",
+            name_nice = str(T("Budgeting Module")),
+            description = str(T("Allows a Budget to be drawn up")),
             module_type = 10
         ),
     cr = Storage(
-            name_nice = "Shelter Registry",
-            description = "Tracks the location, distibution, capacity and breakdown of victims in Shelters",
+            name_nice = str(T("Shelter Registry")),
+            description = str(T("Tracks the location, distibution, capacity and breakdown of victims in Shelters")),
             module_type = 10,
         ),
     delphi = Storage(
-            name_nice = "Delphi Decision Maker",
-            description = "Supports the decision making of large groups of Crisis Management Experts by helping the groups create ranked list.",
+            name_nice = str(T("Delphi Decision Maker")),
+            description = str(T("Supports the decision making of large groups of Crisis Management Experts by helping the groups create ranked list.")),
             module_type = 10
         ),
     doc = Storage(
-            name_nice = "Document Library",
-            description = "A library of digital resources, such as Photos, signed contracts and Office documents.",
+            name_nice = str(T("Document Library")),
+            description = str(T("A library of digital resources, such as Photos, signed contracts and Office documents.")),
             module_type = 10
         ),
     ir = Storage(
-        name_nice = "Incident Reporting",
-        description = "Incident Reporting System",
+        name_nice = str(T("Incident Reporting")),
+        description = str(T("Incident Reporting System")),
         module_type = 10
     ),
     org = Storage(
-            name_nice = "Organization Registry",
-            description = 'Lists "who is doing what & where". Allows relief agencies to coordinate their activities',
+            name_nice = str(T("Organization Registry")),
+            description = T('Lists "who is doing what & where". Allows relief agencies to coordinate their activities'),
             module_type = 10
         ),
     ticket = Storage(
-            name_nice = "Ticketing Module",
-            description = "Master Message Log to process incoming reports & requests",
+            name_nice = str(T("Ticketing Module")),
+            description = str(T("Master Message Log to process incoming reports & requests")),
             module_type = 10
         ),
     #lms = Storage(
-    #        name_nice = "Logistics Management System",
-    #        description = "An intake system, a warehouse management system, commodity tracking, supply chain management, procurement and other asset and resource management capabilities.",
+    #        name_nice = str(T("Logistics Management System")),
+    #        description = str(T("An intake system, a warehouse management system, commodity tracking, supply chain management, procurement and other asset and resource management capabilities.")),
     #        module_type = 10
     #    ),
 )

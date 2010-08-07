@@ -32,6 +32,8 @@ __author__ = "Praneeth Bodduluri <lifeeth[at]gmail.com>"
 import string
 import urllib
 
+DELETECHARS = string.translate(string.printable, None, string.digits)
+
 class Msg(object):
     """ Toolkit for hooking into the Messaging framework """
 
@@ -61,8 +63,7 @@ class Msg(object):
         +()- & space
         """
 
-        deletechars = string.translate(string.printable, None, string.digits)
-        clean = string.translate(phone, None, deletechars)
+        clean = string.translate(phone, None, DELETECHARS)
 
         # If number starts with a 0 then need to remove this & add the country code in
         if clean[0] == "0":
@@ -234,6 +235,7 @@ class Msg(object):
                     if (contact_method == 1):
                         return self.send_email_via_api(recipient.value, subject, message)
                 return False
+
             if entity_type == "pr_group":
                 # Take the entities of it and add in the messaging queue - with
                 # sender as the original sender and marks group email processed
@@ -255,9 +257,11 @@ class Msg(object):
                                          system_generated = True)
                 status = True
                 chainrun = True
+
             if entity_type == "pr_person":
                 # Person
                 status = dispatch_to_pe_id(entity)
+
             if status:
                 # Update status to sent in Outbox
                 db(table.id == row.id).update(status=2)
@@ -265,6 +269,8 @@ class Msg(object):
                 db(db.msg_log.id == message_id).update(actioned=True)
                 # Explicitly commit DB operations when running from Cron
                 db.commit()
+
         if chainrun :
             self.process_outbox(contact_method, option)
+
         return

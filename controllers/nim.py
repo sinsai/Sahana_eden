@@ -31,7 +31,7 @@ response.menu_options = [
         [T('Physical'), False, URL(r=request, f='person', args=['care_status_physical'])],
         [T('Mental'), False, URL(r=request, f='person', args=['care_status_mental'])],
         [T('Social'), False, URL(r=request, f='person', args=['care_status_social'])],
-        [T('ADL'), False, URL(r=request, f='person', args=['care_status_adl'])],
+        ['ADL', False, URL(r=request, f='person', args=['care_status_adl'])],
     ]],
     [T('Care Report'), False, URL(r=request, f='person', args=['care_report_measures']),[
         [T('Problems'), False, URL(r=request, f='person', args=['care_report_problems'])],

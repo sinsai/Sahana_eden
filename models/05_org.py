@@ -62,11 +62,11 @@ org_organisation_type_opts = {
     3:T("International NGO"),
     4:T("Donor"),               # Don't change this number without changing organisation_popup.html
     6:T("National NGO"),
-    7:T("UN"),
+    7:"UN",
     8:T("International Organization"),
     9:T("Military"),
     10:T("Private")
-    #12:T("MINUSTAH")   Haiti-specific
+    #12:"MINUSTAH"   Haiti-specific
 }
 
 resource = "organisation"
@@ -222,7 +222,7 @@ table.postcode.label = T("Postcode")
 table.phone1.label = T("Phone 1")
 table.phone2.label = T("Phone 2")
 table.email.label = T("Email")
-table.fax.label = T("FAX")
+table.fax.label = T("Fax")
 table.national_staff.label = T("National Staff")
 table.international_staff.label = T("International Staff")
 table.number_of_vehicles.label = T("Number of Vehicles")

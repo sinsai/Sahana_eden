@@ -83,7 +83,7 @@ if empty:
     if not db(table.id > 0).count():
         table.insert(
             admin_name = T("Sahana Administrator"),
-            admin_email = T("support@Not Set"),
+            admin_email = "support@Not Set",
             admin_tel = T("Not Set"),
             theme = 1
         )

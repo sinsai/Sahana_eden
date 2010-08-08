@@ -30,15 +30,12 @@ def shn_sessions():
     response.s3.formats = Storage()
 
     roles = []
-    try:
+    if auth.is_logged_in():
         user_id = auth.user.id
         _memberships = db.auth_membership
         memberships = db(_memberships.user_id == user_id).select(_memberships.group_id) # Cache this & invalidate when memberships are changed?
         for membership in memberships:
             roles.append(membership.group_id)
-    except:
-        # User not authenticated therefore has no roles other than '0'
-        pass
     session.s3.roles = roles
 
     controller_settings_table = "%s_setting" % request.controller
@@ -471,11 +468,13 @@ def shn_crud_strings(table_name,
     return table_strings
 
 
-def shn_get_crud_strings(tablename):
+def shn_get_crud_string(tablename, name):
 
     """ Get the CRUD strings for a table """
 
-    return s3.crud_strings.get(tablename, s3.crud_strings)
+    crud_strings = s3.crud_strings.get(tablename, s3.crud_strings)
+    not_found = s3.crud_strings.get(name, None)
+    return crud_strings.get(name, not_found)
 
 
 def shn_import_table(table_name,

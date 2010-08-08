@@ -20,7 +20,7 @@ XSLT_IMPORT_TEMPLATES = "static/xslt/import" #: Path to XSLT templates for data 
 XSLT_EXPORT_TEMPLATES = "static/xslt/export" #: Path to XSLT templates for data export
 
 # XSLT available formats
-shn_xml_import_formats = ["xml", "lmx", "osm", "pfif", "ushahidi"] #: Supported XML import formats
+shn_xml_import_formats = ["xml", "lmx", "osm", "pfif", "ushahidi", "odk"] #: Supported XML import formats
 shn_xml_export_formats = dict(
     xml = "application/xml",
     gpx = "application/xml",
@@ -857,10 +857,10 @@ def shn_read(r, **attr):
     if r.representation in ("html", "popup"):
 
         # Title and subtitle
-        title = shn_get_crud_strings(r.tablename).title_display
+        title = shn_get_crud_string(r.tablename, "title_display")
         output = dict(title=title)
         if r.component:
-            subtitle = shn_get_crud_strings(tablename).title_display
+            subtitle = shn_get_crud_string(tablename, "title_display")
             output.update(subtitle=subtitle)
 
         # Resource header
@@ -875,7 +875,7 @@ def shn_read(r, **attr):
         if record_id:
             item = crud.read(table, record_id)
         else:
-            item = shn_get_crud_strings(tablename).msg_list_empty
+            item = shn_get_crud_string(tablename, "msg_list_empty")
 
         # Put into view
         if representation == "html":
@@ -895,7 +895,7 @@ def shn_read(r, **attr):
 
         # Add a list button if appropriate
         if not r.component or r.multiple:
-            label_list_button = shn_get_crud_strings(tablename).label_list_button
+            label_list_button = shn_get_crud_string(tablename, "label_list_button")
             list_btn = A(label_list_button, _href=r.there(), _class="action-btn")
             output.update(list_btn=list_btn)
 
@@ -908,7 +908,7 @@ def shn_read(r, **attr):
 
     elif representation == "csv":
         query = db[table].id == record_id
-        return export_csv(resource, query)
+        return export_csv(tablename, query)
 
     elif representation == "pdf":
         query = db[table].id == record_id
@@ -951,7 +951,7 @@ def shn_linkto(r, sticky=False):
                 else:
                     _next = URL(r=request, args=request.args, vars=request.vars)
                 return response.s3.linkto_update or \
-                       URL(r=request, args=[field, "update"], vars={"_next":_next})
+                       URL(r=request, args=[field, "update"])
             else:
                 return response.s3.linkto or \
                        URL(r=request, args=[field],
@@ -1083,7 +1083,7 @@ def shn_list(r, **attr):
         output = dict(main=main, extra=extra, sortby=sortby)
 
         if r.component:
-            title = shn_get_crud_strings(r.tablename).title_display
+            title = shn_get_crud_string(r.tablename, "title_display")
             if rheader:
                 try:
                     rh = rheader(r)
@@ -1091,9 +1091,9 @@ def shn_list(r, **attr):
                     rh = rheader
                 output.update(rheader=rh)
         else:
-            title = shn_get_crud_strings(tablename).title_list
+            title = shn_get_crud_string(tablename, "title_list")
 
-        subtitle = shn_get_crud_strings(tablename).subtitle_list
+        subtitle = shn_get_crud_string(tablename, "subtitle_list")
         output.update(title=title, subtitle=subtitle)
 
         # Column labels: use custom or prettified label
@@ -1116,7 +1116,7 @@ def shn_list(r, **attr):
                             truncate=48, _id="list", _class="display")
 
         if not items:
-            items = shn_get_crud_strings(tablename).msg_list_empty
+            items = shn_get_crud_string(tablename, "msg_list_empty")
         output.update(items=items)
 
         authorised = shn_has_permission("create", table)
@@ -1147,7 +1147,7 @@ def shn_list(r, **attr):
                                         representation=representation) and \
                             s3xrc.store_session(session, prefix, name, 0)
 
-            message = shn_get_crud_strings(tablename).msg_record_created
+            message = shn_get_crud_string(tablename, "msg_record_created")
 
             # Display the Add form above List
             form = crud.create(table,
@@ -1167,7 +1167,7 @@ def shn_list(r, **attr):
             if r.component:
                 table[r.fkey].comment = _comment
 
-            addtitle = shn_get_crud_strings(tablename).subtitle_create
+            addtitle = shn_get_crud_string(tablename, "subtitle_create")
 
             shn_custom_view(r, "list_create.html")
             output.update(form=form, addtitle=addtitle)
@@ -1175,7 +1175,7 @@ def shn_list(r, **attr):
         else:
             # List only with create button below
             if listadd:
-                label_create_button = shn_get_crud_strings(tablename).label_create_button
+                label_create_button = shn_get_crud_string(tablename, "label_create_button")
                 add_btn = A(label_create_button, _href=href_add, _class="action-btn")
             else:
                 add_btn = ""
@@ -1191,7 +1191,7 @@ def shn_list(r, **attr):
         return dict(item=items)
 
     elif representation == "csv":
-        return export_csv(resource, query)
+        return export_csv(tablename, query)
 
     elif representation == "pdf":
         return export_pdf(table, query, list_fields)
@@ -1234,8 +1234,8 @@ def shn_create(r, **attr):
 
         # Title, subtitle and resource header
         if r.component:
-            title = shn_get_crud_strings(r.tablename).title_display
-            subtitle = shn_get_crud_strings(tablename).subtitle_create
+            title = shn_get_crud_string(r.tablename, "title_display")
+            subtitle = shn_get_crud_string(tablename, "subtitle_create")
             output.update(subtitle=subtitle)
             if rheader and r.id:
                 try:
@@ -1244,7 +1244,7 @@ def shn_create(r, **attr):
                     rh = rheader
                 output.update(rheader=rh)
         else:
-            title = shn_get_crud_strings(tablename).title_create
+            title = shn_get_crud_string(tablename, "title_create")
         output.update(title=title)
 
         if r.component:
@@ -1285,7 +1285,7 @@ def shn_create(r, **attr):
                                             prefix, name, form.vars.id)
 
         # Get the form
-        message = shn_get_crud_strings(tablename).msg_record_created
+        message = shn_get_crud_string(tablename, "msg_record_created")
         form = crud.create(table,
                            message=message,
                            onvalidation=onvalidation,
@@ -1308,7 +1308,7 @@ def shn_create(r, **attr):
 
         # Add a list button if appropriate
         if not r.component or r.multiple:
-            label_list_button = shn_get_crud_strings(tablename).label_list_button
+            label_list_button = shn_get_crud_string(tablename, "label_list_button")
             list_btn = A(label_list_button, _href=r.there(), _class="action-btn")
             output.update(list_btn=list_btn)
 
@@ -1436,11 +1436,11 @@ def shn_update(r, **attr):
 
         # Title and subtitle
         if r.component:
-            title = shn_get_crud_strings(r.tablename).title_display
-            subtitle = shn_get_crud_strings(tablename).title_update
+            title = shn_get_crud_string(r.tablename, "title_display")
+            subtitle = shn_get_crud_string(tablename, "title_update")
             output = dict(title=title, subtitle=subtitle)
         else:
-            title = shn_get_crud_strings(tablename).title_update
+            title = shn_get_crud_string(tablename, "title_update")
             output = dict(title=title)
 
         # Resource header
@@ -1454,7 +1454,7 @@ def shn_update(r, **attr):
         # Add delete button
         if deletable:
             href_delete = r.other(method="delete", representation=representation)
-            label_del_button = shn_get_crud_strings(tablename).label_delete_button
+            label_del_button = shn_get_crud_string(tablename, "label_delete_button")
             del_btn = A(label_del_button,
                         _href=href_delete,
                         _id="delete-btn",
@@ -1497,7 +1497,7 @@ def shn_update(r, **attr):
                         s3xrc.store_session(session, prefix, name, form.vars.id)
 
         crud.settings.update_deletable = deletable
-        message = shn_get_crud_strings(tablename).msg_record_modified
+        message = shn_get_crud_string(tablename, "msg_record_modified")
 
         form = crud.update(table, record_id,
                             message=message,
@@ -1521,7 +1521,7 @@ def shn_update(r, **attr):
 
         # Add a list button if appropriate
         if not r.component or r.multiple:
-            label_list_button = shn_get_crud_strings(tablename).label_list_button
+            label_list_button = shn_get_crud_string(tablename, "label_list_button")
             list_btn = A(label_list_button, _href=r.there(), _class="action-btn")
             output.update(list_btn=list_btn)
 
@@ -1596,7 +1596,7 @@ def shn_delete(r, **attr):
         session.confirmation = T("No records to delete")
         return {}
 
-    message = shn_get_crud_strings(tablename).msg_record_deleted
+    message = shn_get_crud_string(tablename, "msg_record_deleted")
 
     # Delete all accessible records
     numrows = 0

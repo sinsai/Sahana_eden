@@ -32,11 +32,12 @@ else
 	var data={};
 	number_column = fields.length;
 	data['rows'] = invalid_rows;
+
 	console.log(data);
 	store.loadData(data);
 	store.each(function(record)
 		{
-			console.log(record.get(fields[0]));
+			console.log(record.get(fields[2]));
 		});
 	var action = new Ext.ux.grid.RowActions({
 			 header:'Click to delete',
@@ -76,7 +77,9 @@ else
 		temp.renderer = error_color;
 		column_model.push(temp);
 	}
+	console.log(column_model);
 	column_model.push(action);
+	column_model = new Ext.grid.ColumnModel(column_model);
 	var re_import_grid = new Ext.grid.EditorGridPanel({
 		title : "Edit invalid rows ",
 		renderTo: 'spreadsheet',

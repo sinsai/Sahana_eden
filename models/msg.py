@@ -11,11 +11,12 @@ if deployment_settings.has_module(module):
     resource = "setting"
     tablename = "%s_%s" % (module, resource)
     table = db.define_table(tablename,
-                    Field("audit_read", "boolean"),
-                    Field("audit_write", "boolean"),
-                    Field("outgoing_sms_handler"),
-                    migrate=migrate)
-    table.outgoing_sms_handler.requires = IS_IN_SET(["Modem","Gateway"], zero = None)
+                            Field("audit_read", "boolean"),
+                            Field("audit_write", "boolean"),
+                            Field("outgoing_sms_handler"),
+                            Field("default_country_code", "integer", default = 44),
+                            migrate=migrate)
+    table.outgoing_sms_handler.requires = IS_IN_SET(["Modem", "Gateway"], zero=None)
 
     resource = "email_settings"
     tablename = "%s_%s" % (module, resource)
@@ -84,10 +85,8 @@ if deployment_settings.has_module(module):
     resource = "gateway_settings"
     tablename = "%s_%s" % (module, resource)
     table = db.define_table(tablename,
-               Field("url", default =\
-                "https://api.clickatell.com/http/sendmsg"),
-                Field("parameters", default =\
-                "user=yourusername&password=yourpassword&api_id=yourapiid"),
+                Field("url", default = "https://api.clickatell.com/http/sendmsg"),
+                Field("parameters", default = "user=yourusername&password=yourpassword&api_id=yourapiid"),
                 Field("message_variable", "string", default = "text"),
                 Field("to_variable", "string", default = "to"),
                 Field("enabled", "boolean", default = False),

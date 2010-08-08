@@ -5,18 +5,7 @@
 <link rel="stylesheet" type="text/css" href="../static/scripts/S3importer/css/importer.css"></link>
 <script type="text/javascript" src="/{{=request.application}}/static/scripts/ext-community-extensions/rowactions/Ext.ux.grid.RowActions.js"></script>
 <h1>Spreadsheet importer - Report</h1>
-{{modules = {} }}
-{{importable_resources = {} }}
-{{
-for k in deployment_settings.modules:
-modules[deployment_settings.modules[k].name_nice] = k
-importable_resources[k] = deployment_settings.modules[k].resources
-}}
-{{pass}}
-{{
-for l in importable_resources:
-importable_resources[l] = dict(importable_resources[l])}}
-{{pass}}
+
 <hr/>
 <hr/>
 </script>
@@ -24,9 +13,14 @@ importable_resources[l] = dict(importable_resources[l])}}
 	var success = {{=len(session.invalid_rows)}};
 	var invalid_rows = {{=session.invalid_rows}};
 	var number_column = {{=session.import_columns}};
-	var fields = {{=session.fields}};
 	var map = {{=session.import_map}};
-	var rows = {{=session.import_rows}};
+	var fields = [];
+	console.log(map);
+	for(var i=0 ; i < map.length ; i++)
+	{
+	    fields.push(map[i][2]);
+	}
+	//var rows = {{=session.import_rows}};
 	var resource = "{{=session.import_resource}}";
 	var url = "{{=request.env.http_host}}";
 	var application = "{{=request.application}}";

@@ -567,35 +567,48 @@ class AuthS3(Auth):
             redirect(next)
         return form
 
-    def requires_membership(self, role):
-        """
-        Decorator that prevents access to action if not logged in or
-        if user logged in is not a member of group_id.
-        If role is provided instead of group_id then the group_id is calculated.
+    #def requires_membership(self, role):
+        #"""
+        #Decorator that prevents access to action if not logged in or
+        #if user logged in is not a member of group_id.
+        #If role is provided instead of group_id then the group_id is calculated.
 
-        Overrides Web2Py's requires_membership() to add new functionality:
-            * Custom Flash style
-        """
+        #Overrides Web2Py's requires_membership() to add new functionality:
+            #* Custom Flash style
+        #"""
 
-        def decorator(action):
-            group_id = self.id_group(role)
+        #def decorator(action):
+            #group_id = self.id_group(role)
 
-            def f(*a, **b):
-                if not self.basic() and not self.is_logged_in():
-                    request = self.environment.request
-                    next = URL(r=request, args=request.args, vars=request.get_vars)
-                    redirect(self.settings.login_url + "?_next=" + urllib.quote(next))
-                if not self.has_membership(group_id):
-                    self.environment.session.flash = \
-                        self.messages.access_denied
-                    next = self.settings.on_failed_authorization
-                    redirect(next)
-                return action(*a, **b)
-            f.__doc__ = action.__doc__
-            return f
+            #def f(*a, **b):
+                #if not self.basic() and not self.is_logged_in():
+                    #request = self.environment.request
+                    #next = URL(r=request, args=request.args, vars=request.get_vars)
+                    #redirect(self.settings.login_url + "?_next=" + urllib.quote(next))
+                #if not self.has_membership(group_id):
+                    #self.environment.session.flash = \
+                        #self.messages.access_denied
+                    #next = self.settings.on_failed_authorization
+                    #redirect(next)
+                #return action(*a, **b)
+            #f.__doc__ = action.__doc__
+            #return f
 
-        return decorator
+        #return decorator
 
+    def shn_logged_in(self):
+
+        session = self.session
+        if not self.is_logged_in():
+            if not self.basic():
+                return False
+            else:
+                roles = []
+                table = self.db.auth_membership
+                set = self.db(table.user_id == self.user.id).select(table.group_id)
+                session.s3.roles = [s.group_id for s in set]
+
+        return True
 
     def shn_has_role(self, role):
         """
@@ -636,10 +649,10 @@ class AuthS3(Auth):
                 authorised = True
             else:
                 # Authentication required for Create/Update/Delete.
-                authorised = self.is_logged_in() or self.basic()
+                authorised = self.shn_logged_in()
         else:
             # Full policy
-            if self.is_logged_in() or self.basic():
+            if shn_logged_in():
                 # Administrators are always authorised
                 if self.shn_has_role(1):
                     authorised = True
@@ -649,6 +662,7 @@ class AuthS3(Auth):
             else:
                 # No access for anonymous
                 authorised = False
+
         return authorised
 
     #
@@ -720,7 +734,7 @@ class AuthS3(Auth):
         def decorator(action):
 
             def f(*a, **b):
-                if not self.basic() and not self.is_logged_in():
+                if not self.shn_logged_in():
                     request = self.environment.request
                     next = URL(r=request, args=request.args, vars=request.get_vars)
                     redirect(self.settings.login_url + "?_next=" + urllib.quote(next))
@@ -735,6 +749,8 @@ class AuthS3(Auth):
 
         return decorator
 
+    # Override original method
+    requires_membership = shn_requires_membership
 
     def shn_link_to_person(self, user=None):
 
@@ -788,7 +804,7 @@ class AuthS3(Auth):
                             self.user.person_uuid = person.uuid
                         continue
 
-                pe_id = etable.insert(type="pr_person")
+                pe_id = etable.insert(pe_type="pr_person")
                 db(etable.id==pe_id).update(pe_id=pe_id)
                 if pe_id:
                     new_id = ptable.insert(

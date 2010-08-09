@@ -6,6 +6,10 @@
     Deployers shouldn't typically need to edit any other files.
 """
 
+def Tstr(text):
+    """Convenience function for non web2py modules"""
+    return str(T(text))
+
 s3cfg = local_import("s3cfg")
 deployment_settings = s3cfg.S3Config()
 
@@ -25,6 +29,7 @@ deployment_settings.auth.hmac_key = "akeytochange"
 # registered in order to secure the deployment
 deployment_settings.auth.registration_requires_verification = False
 deployment_settings.auth.registration_requires_approval = False
+deployment_settings.auth.openid = False
 
 # Base settings
 # Set this to the Public URL of the instance
@@ -47,6 +52,9 @@ deployment_settings.base.prepopulate = True
 # Email settings
 # Outbound server
 deployment_settings.mail.server = "127.0.0.1:25"
+# Useful for Windows Laptops:
+#deployment_settings.mail.server = "smtp.gmail.com:587"
+#deployment_settings.mail.login = "username:password"
 # From Address
 deployment_settings.mail.sender = "sahana@your.org"
 # Address to which mails get sent to approve new users
@@ -57,112 +65,104 @@ deployment_settings.mail.approver = "useradmin@your.org"
 # Default timezone for users
 deployment_settings.L10n.utc_offset = "UTC +0000"
 
-# Module settings
-s3_module_type_opts = {
-    1:T("Home"),
-    2:T("Situation Awareness"),
-    3:T("Person Management"),
-    4:T("Aid Management"),
-    5:T("Communications")
-    }
 # Comment/uncomment modules here to disable/enable them
 # Modules menu is defined in 01_menu.py
 from gluon.storage import Storage
 deployment_settings.modules = Storage(
     default = Storage(
-            name_nice = "Home",
+            name_nice = Tstr("Home"),
             access = None,      # All Users (inc Anonymous) can see this module in the default menu & access the controller
             module_type = 0     # This item is always 1st in the menu
         ),
     admin = Storage(
-            name_nice = "Administration",
-            description = "Site Administration",
+            name_nice = Tstr("Administration"),
+            description = Tstr("Site Administration"),
             access = "|1|",     # Only Administrators can see this module in the default menu & access the controller
             module_type = 0     # This item is handled separately in the menu
         ),
     gis = Storage(
-            name_nice = "Map",
-            description = "Situation Awareness & Geospatial Analysis",
+            name_nice = Tstr("Map"),
+            description = Tstr("Situation Awareness & Geospatial Analysis"),
             module_type = 1     # 1st item in the menu
         ),
     mpr = Storage(
-            name_nice = "Missing Persons",
-            description = "Helps to report and search for Missing Persons",
+            name_nice = Tstr("Missing Persons"),
+            description = Tstr("Helps to report and search for Missing Persons"),
             module_type = 2
         ),
     rms = Storage(
-            name_nice = "Requests",
-            description = "Tracks requests for aid and matches them against donors who have pledged aid",
+            name_nice = Tstr("Requests"),
+            description = Tstr("Tracks requests for aid and matches them against donors who have pledged aid"),
             module_type = 3
         ),
     hms = Storage(
-            name_nice = "Hospitals",
-            description = "Helps to monitor status of hospitals",
+            name_nice = Tstr("Hospitals"),
+            description = Tstr("Helps to monitor status of hospitals"),
             module_type = 4
         ),
     vol = Storage(
-            name_nice = "Volunteers",
-            description = "Manage volunteers by capturing their skills, availability and allocation",
+            name_nice = Tstr("Volunteers"),
+            description = Tstr("Manage volunteers by capturing their skills, availability and allocation"),
             module_type = 5
         ),
     msg = Storage(
-            name_nice = "Messaging",
-            description = "Sends & Receives Alerts via Email & SMS",
+            name_nice = Tstr("Messaging"),
+            description = Tstr("Sends & Receives Alerts via Email & SMS"),
             module_type = 10
         ),
     pr = Storage(
-            name_nice = "Person Registry",
-            description = "Central point to record details on People",
+            name_nice = Tstr("Person Registry"),
+            description = Tstr("Central point to record details on People"),
             module_type = 10
         ),
     dvi = Storage(
-            name_nice = "Disaster Victim Identification",
-            description = "Disaster Victim Identification",
+            name_nice = Tstr("Disaster Victim Identification"),
+            description = Tstr("Disaster Victim Identification"),
             module_type = 10,
         ),
     #dvr = Storage(
-    #        name_nice = "Disaster Victim Registry",
-    #        description = "Traces internally displaced people (IDPs) and their needs",
-    #        module_type = 10
-    #    ),
-    #nim = Storage(
-    #        name_nice = "Nursing Information Manager",
-    #        description = "Module to assist disaster nurses.",
+    #        name_nice = Tstr("Disaster Victim Registry"),
+    #        description = Tstr("Traces internally displaced people (IDPs) and their needs"),
     #        module_type = 10
     #    ),
     budget = Storage(
-            name_nice = "Budgeting Module",
-            description = "Allows a Budget to be drawn up",
+            name_nice = Tstr("Budgeting Module"),
+            description = Tstr("Allows a Budget to be drawn up"),
             module_type = 10
         ),
     cr = Storage(
-            name_nice = "Shelter Registry",
-            description = "Tracks the location, distibution, capacity and breakdown of victims in Shelters",
+            name_nice = Tstr("Shelter Registry"),
+            description = Tstr("Tracks the location, distibution, capacity and breakdown of victims in Shelters"),
             module_type = 10,
         ),
     delphi = Storage(
-            name_nice = "Delphi Decision Maker",
-            description = "Supports the decision making of large groups of Crisis Management Experts by helping the groups create ranked list.",
+            name_nice = Tstr("Delphi Decision Maker"),
+            description = Tstr("Supports the decision making of large groups of Crisis Management Experts by helping the groups create ranked list."),
             module_type = 10
         ),
     doc = Storage(
-            name_nice = "Document Library",
-            description = "A library of digital resources, such as Photos, signed contracts and Office documents.",
+            name_nice = Tstr("Document Library"),
+            description = Tstr("A library of digital resources, such as Photos, signed contracts and Office documents."),
             module_type = 10
         ),
+    irs = Storage(
+        name_nice = Tstr("Incident Reporting"),
+        description = Tstr("Incident Reporting System"),
+        module_type = 10
+    ),
     org = Storage(
-            name_nice = "Organization Registry",
-            description = 'Lists "who is doing what & where". Allows relief agencies to coordinate their activities',
+            name_nice = Tstr("Organization Registry"),
+            description = Tstr('Lists "who is doing what & where". Allows relief agencies to coordinate their activities'),
             module_type = 10
         ),
     ticket = Storage(
-            name_nice = "Ticketing Module",
-            description = "Master Message Log to process incoming reports & requests",
+            name_nice = Tstr("Ticketing Module"),
+            description = Tstr("Master Message Log to process incoming reports & requests"),
             module_type = 10
         ),
     #lms = Storage(
-    #        name_nice = "Logistics Management System",
-    #        description = "An intake system, a warehouse management system, commodity tracking, supply chain management, procurement and other asset and resource management capabilities.",
+    #        name_nice = Tstr("Logistics Management System"),
+    #        description = Tstr("An intake system, a warehouse management system, commodity tracking, supply chain management, procurement and other asset and resource management capabilities."),
     #        module_type = 10
     #    ),
 )

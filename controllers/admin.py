@@ -36,17 +36,17 @@ def setting():
     table.theme.label = T("Theme")
     table.theme.comment = DIV(A(T("Add Theme"), _class="colorbox", _href=URL(r=request, c="admin", f="theme", args="create", vars=dict(format="popup")), _target="top", _title=T("Add Theme"))),
     table.debug.label = T("Debug")
-    table.debug.comment = A(SPAN("[Help]"), _class="tooltip", _title=T("Debug|Switch this on to use individual CSS/Javascript files for diagnostics during development."))
+    table.debug.comment = A(SPAN("[Help]"), _class="tooltip", _title=Tstr("Debug") + "|" + Tstr("Switch this on to use individual CSS/Javascript files for diagnostics during development."))
     table.self_registration.label = T("Self Registration")
-    table.self_registration.comment = A(SPAN("[Help]"), _class="tooltip", _title=T("Self-registration|Can users register themselves for authenticated login access?"))
+    table.self_registration.comment = A(SPAN("[Help]"), _class="tooltip", _title=Tstr("Self-registration") + "|" + Tstr("Can users register themselves for authenticated login access?"))
     table.security_policy.label = T("Security Policy")
-    table.security_policy.comment = A(SPAN("[Help]"), _class="tooltip", _title=T("Security Policy|The simple policy allows anonymous users to Read & registered users to Edit. The full security policy allows the administrator to set permissions on individual tables or records - see models/zzz.py."))
+    table.security_policy.comment = A(SPAN("[Help]"), _class="tooltip", _title=Tstr("Security Policy") + "|" + Tstr("The simple policy allows anonymous users to Read & registered users to Edit. The full security policy allows the administrator to set permissions on individual tables or records - see models/zzz.py."))
     table.archive_not_delete.label = T("Archive not Delete")
-    table.archive_not_delete.comment = A(SPAN("[Help]"), _class="tooltip", _title=T("Archive not Delete|If this setting is enabled then all deleted records are just flagged as deleted instead of being really deleted. They will appear in the raw database access but won't be visible to normal users."))
+    table.archive_not_delete.comment = A(SPAN("[Help]"), _class="tooltip", _title=Tstr("Archive not Delete") + "|" + Tstr("If this setting is enabled then all deleted records are just flagged as deleted instead of being really deleted. They will appear in the raw database access but won't be visible to normal users."))
     table.audit_read.label = T("Audit Read")
-    table.audit_read.comment = A(SPAN("[Help]"), _class="tooltip", _title=T("Audit Read|If enabled then a log is maintained of all records a user accesses. If disabled then it can still be enabled on a per-module basis."))
+    table.audit_read.comment = A(SPAN("[Help]"), _class="tooltip", _title=Tstr("Audit Read") + "|" + Tstr("If enabled then a log is maintained of all records a user accesses. If disabled then it can still be enabled on a per-module basis."))
     table.audit_write.label = T("Audit Write")
-    table.audit_write.comment = A(SPAN("[Help]"), _class="tooltip", _title=T("Audit Write|If enabled then a log is maintained of all records a user edits. If disabled then it can still be enabled on a per-module basis."))
+    table.audit_write.comment = A(SPAN("[Help]"), _class="tooltip", _title=Tstr("Audit Write") + "|" + Tstr("If enabled then a log is maintained of all records a user edits. If disabled then it can still be enabled on a per-module basis."))
 
     s3.crud_strings.setting.title_update = T("Edit Settings")
     s3.crud_strings.setting.msg_record_modified = T("Settings updated")
@@ -70,13 +70,13 @@ def theme():
     table.name.label = T("Name")
     table.name.comment = SPAN("*", _class="req")
     #table.logo.label = T("Logo")
-    #table.logo.comment = A(SPAN("[Help]"), _class="tooltip", _title=T("Logo|Name of the file (& optional sub-path) located in static which should be used for the top-left image."))
+    #table.logo.comment = A(SPAN("[Help]"), _class="tooltip", _title=Tstr("Logo") + "|" + Tstr("Name of the file (& optional sub-path) located in static which should be used for the top-left image."))
     #table.header_background.label = T("Header Background")
-    #table.header_background.comment = A(SPAN("[Help]"), _class="tooltip", _title=T("Header Background|Name of the file (& optional sub-path) located in static which should be used for the background of the header."))
+    #table.header_background.comment = A(SPAN("[Help]"), _class="tooltip", _title=Tstr("Header Background") + "|" + Tstr("Name of the file (& optional sub-path) located in static which should be used for the background of the header."))
     #table.footer.label = T("Footer")
-    #table.footer.comment = A(SPAN("[Help]"), _class="tooltip", _title=T("Footer|Name of the file (& optional sub-path) located in views which should be used for footer."))
+    #table.footer.comment = A(SPAN("[Help]"), _class="tooltip", _title=Tstr("Footer") + "|" + Tstr("Name of the file (& optional sub-path) located in views which should be used for footer."))
     table.text_direction.label = T("Text Direction")
-    table.text_direction.comment = A(SPAN("[Help]"), _class="tooltip", _title=T("Text Direction|Whilst most languages are read from Left-to-Right, Arabic, Hebrew & Farsi go from Right-to-Left."))
+    table.text_direction.comment = A(SPAN("[Help]"), _class="tooltip", _title=Tstr("Text Direction") + "|" + Tstr("Whilst most languages are read from Left-to-Right, Arabic, Hebrew & Farsi go from Right-to-Left."))
     table.col_background.label = T("Background Colour")
     table.col_txt.label = T("Text Colour for Text blocks")
     table.col_txt_background.label = T("Background Colour for Text blocks")
@@ -253,6 +253,7 @@ def user():
         subtitle_list = T("Users"),
         label_list_button = LIST_USERS,
         label_create_button = ADD_USER,
+        label_delete_button = T("Delete User"),
         msg_record_created = T("User added"),
         msg_record_modified = T("User updated"),
         msg_record_deleted = T("User deleted"),

@@ -2,7 +2,7 @@
 
 """
     Sahana Eden Tools Module
-    
+
     @requires: U{B{I{gluon}} <http://web2py.com>}
 
     @author: Fran Boon <francisboon@gmail.com>
@@ -72,20 +72,22 @@ class AuthS3(Auth):
         shn_link_to_person()
     - language
     """
-    
+
     def __init__(self, environment, deployment_settings, db=None):
-    
+
         "Initialise parent class & make any necessary modifications"
-        
+
         Auth.__init__(self, environment, db)
-        
+
         self.deployment_settings = deployment_settings
         self.session = self.environment.session
-        
+
         self.settings.lock_keys = False
         self.settings.username_field = False
         self.settings.lock_keys = True
         self.messages.lock_keys = False
+        self.messages.email_sent = 'Verification Email sent - please check your email to validate'
+        self.messages.email_verified = 'Email verified - you can now login'
         self.messages.registration_disabled = "Registration Disabled!"
         self.messages.lock_keys = True
 
@@ -391,6 +393,8 @@ class AuthS3(Auth):
             if cas_user:
                 cas_user[passfield] = None
                 user = self.get_or_create_user(cas_user)
+            elif hasattr(cas, "login_form"):
+                return cas.login_form()
             else:
                 # we need to pass through login again before going on
                 next = URL(r=request) + "?_next=" + next
@@ -565,35 +569,48 @@ class AuthS3(Auth):
             redirect(next)
         return form
 
-    def requires_membership(self, role):
-        """
-        Decorator that prevents access to action if not logged in or
-        if user logged in is not a member of group_id.
-        If role is provided instead of group_id then the group_id is calculated.
+    #def requires_membership(self, role):
+        #"""
+        #Decorator that prevents access to action if not logged in or
+        #if user logged in is not a member of group_id.
+        #If role is provided instead of group_id then the group_id is calculated.
 
-        Overrides Web2Py's requires_membership() to add new functionality:
-            * Custom Flash style
-        """
+        #Overrides Web2Py's requires_membership() to add new functionality:
+            #* Custom Flash style
+        #"""
 
-        def decorator(action):
-            group_id = self.id_group(role)
+        #def decorator(action):
+            #group_id = self.id_group(role)
 
-            def f(*a, **b):
-                if not self.basic() and not self.is_logged_in():
-                    request = self.environment.request
-                    next = URL(r=request, args=request.args, vars=request.get_vars)
-                    redirect(self.settings.login_url + "?_next=" + urllib.quote(next))
-                if not self.has_membership(group_id):
-                    self.environment.session.flash = \
-                        self.messages.access_denied
-                    next = self.settings.on_failed_authorization
-                    redirect(next)
-                return action(*a, **b)
-            f.__doc__ = action.__doc__
-            return f
+            #def f(*a, **b):
+                #if not self.basic() and not self.is_logged_in():
+                    #request = self.environment.request
+                    #next = URL(r=request, args=request.args, vars=request.get_vars)
+                    #redirect(self.settings.login_url + "?_next=" + urllib.quote(next))
+                #if not self.has_membership(group_id):
+                    #self.environment.session.flash = \
+                        #self.messages.access_denied
+                    #next = self.settings.on_failed_authorization
+                    #redirect(next)
+                #return action(*a, **b)
+            #f.__doc__ = action.__doc__
+            #return f
 
-        return decorator
+        #return decorator
 
+    def shn_logged_in(self):
+
+        session = self.session
+        if not self.is_logged_in():
+            if not self.basic():
+                return False
+            else:
+                roles = []
+                table = self.db.auth_membership
+                set = self.db(table.user_id == self.user.id).select(table.group_id)
+                session.s3.roles = [s.group_id for s in set]
+
+        return True
 
     def shn_has_role(self, role):
         """
@@ -604,7 +621,7 @@ class AuthS3(Auth):
         #deployment_settings = self.deployment_settings
         db = self.db
         session = self.session
-        
+
         try:
             role = int(role)
         except:
@@ -624,7 +641,7 @@ class AuthS3(Auth):
         Designed to be called from the RESTlike controller
         @note: This is planned to be rewritten: http://eden.sahanafoundation.org/wiki/BluePrintAuthorization
         """
-        
+
         session = self.session
 
         if session.s3.security_policy == 1:
@@ -634,10 +651,10 @@ class AuthS3(Auth):
                 authorised = True
             else:
                 # Authentication required for Create/Update/Delete.
-                authorised = self.is_logged_in() or self.basic()
+                authorised = self.shn_logged_in()
         else:
             # Full policy
-            if self.is_logged_in() or self.basic():
+            if shn_logged_in():
                 # Administrators are always authorised
                 if self.shn_has_role(1):
                     authorised = True
@@ -647,6 +664,7 @@ class AuthS3(Auth):
             else:
                 # No access for anonymous
                 authorised = False
+
         return authorised
 
     #
@@ -716,9 +734,9 @@ class AuthS3(Auth):
         """
 
         def decorator(action):
-            
+
             def f(*a, **b):
-                if not self.basic() and not self.is_logged_in():
+                if not self.shn_logged_in():
                     request = self.environment.request
                     next = URL(r=request, args=request.args, vars=request.get_vars)
                     redirect(self.settings.login_url + "?_next=" + urllib.quote(next))
@@ -733,6 +751,8 @@ class AuthS3(Auth):
 
         return decorator
 
+    # Override original method
+    requires_membership = shn_requires_membership
 
     def shn_link_to_person(self, user=None):
 
@@ -775,39 +795,38 @@ class AuthS3(Auth):
 
                 query = (ptable.first_name == first_name) & \
                         (ptable.last_name == last_name) & \
-                        (ctable.pr_pe_id == ptable.pr_pe_id) & \
-                        (ctable.opt_pr_contact_method == 1) & \
+                        (ctable.pe_id == ptable.pe_id) & \
+                        (ctable.contact_method == 1) & \
                         (ctable.value.lower() == email)
-                person = db(query).select(ptable.uuid)
-                if person and len(person) == 1:
-                    person = person.first()
+                person = db(query).select(ptable.uuid).first()
+                if person:
                     if not db(utable.person_uuid == person.uuid).count():
                         db(utable.id == user.id).update(person_uuid=person.uuid)
                         if self.user and self.user.id == user.id:
                             self.user.person_uuid = person.uuid
                         continue
-                    #else:
-                        #email = None
 
-                pr_pe_id = etable.insert(opt_pr_entity_type=1)
-                if pr_pe_id:
+                pe_id = etable.insert(pe_type="pr_person")
+                db(etable.id==pe_id).update(pe_id=pe_id)
+                if pe_id:
                     new_id = ptable.insert(
-                        pr_pe_id = pr_pe_id,
+                        pe_id = pe_id,
                         first_name = user.first_name,
                         last_name = user.last_name)
                     if new_id:
                         person_uuid = ptable[new_id].uuid
                         db(utable.id == user.id).update(person_uuid=person_uuid)
+                        db(etable.id == pe_id).update(uuid=person_uuid)
                         # The following adds the email to pr_pe_contact
                         ctable.insert(
-                                pr_pe_id = pr_pe_id,
-                                opt_pr_contact_method = 1,
+                                pe_id = pe_id,
+                                contact_method = 1,
                                 priority = 1,
                                 value = email)
                         # The following adds the mobile to pr_pe_contact
                         ctable.insert(
-                                pr_pe_id = pr_pe_id,
-                                opt_pr_contact_method = 2,
+                                pe_id = pe_id,
+                                contact_method = 2,
                                 priority = 2,
                                 value = self.environment.request.vars["mobile"])
 
@@ -821,7 +840,7 @@ class CrudS3(Crud):
     Extended version of Crud from gluon/tools.py
     - select() uses SQLTABLE2 (to allow different linkto construction)
     """
-    
+
     def __init__(self, environment, db=None):
         "Initialise parent class & make any necessary modifications"
         Crud.__init__(self, environment, db)

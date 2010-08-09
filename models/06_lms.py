@@ -13,8 +13,8 @@ if deployment_settings.has_module(module):
     resource = 'setting'
     tablename = "%s_%s" % (module, resource)
     table = db.define_table(tablename,
-                    db.Field('audit_read', 'boolean'),
-                    db.Field('audit_write', 'boolean'),
+                    Field('audit_read', 'boolean'),
+                    Field('audit_write', 'boolean'),
                     migrate=migrate)
 
 
@@ -31,7 +31,7 @@ if deployment_settings.has_module(module):
         }
 
     opt_lms_unit_type = db.Table(None, 'opt_lms_unit_type',
-                        db.Field('opt_lms_unit_type', 'integer',
+                        Field('opt_lms_unit_type', 'integer',
                         requires = IS_IN_SET(lms_unit_type_opts, zero=None),
                         # default = 1,
                         label = T('Unit Set'),
@@ -81,7 +81,7 @@ if deployment_settings.has_module(module):
     table.name.comment = SPAN("*", _class="req"), DIV( _class="tooltip", _title=Tstr("Unit Name") + "|" + Tstr("Complete Unit Label for e.g. meter for m."))
     table.base_unit.comment = SPAN("*", _class="req"), DIV( _class="tooltip", _title=Tstr("Base Unit") + "|" + Tstr("The entered unit links to this unit. For e.g. if you are entering m for meter then choose kilometer(if it exists) and enter the value 0.001 as multiplicator."))
     table.multiplicator.comment = SPAN("*", _class="req"), DIV( _class="tooltip", _title=Tstr("Multiplicator") + "|" + Tstr("If Unit = m, Base Unit = Km, then multiplicator is 0.0001 since 1m = 0.001 km."))
-    ADD_UNIT = T('Add Unit ')
+    ADD_UNIT = T('Add Unit')
     LIST_UNITS = T('List Units')
     s3.crud_strings[tablename] = Storage(
         title_create = ADD_UNIT,
@@ -116,17 +116,17 @@ if deployment_settings.has_module(module):
     resource = 'site'
     tablename = "%s_%s" % (module, resource)
     table = db.define_table(tablename, timestamp, uuidstamp, deletion_status,
-                    db.Field('name', notnull=True),
-                    db.Field('description'),
-                                    opt_site_category,
+                    Field('name', notnull=True),
+                    Field('description'),
+                    opt_site_category,
                     person_id,
-                                    organisation_id, #db.Field('organisation', db.org_organisation),
-                    db.Field('address', 'text'),
-                                    db.Field('site_phone'),
-                                    db.Field('site_fax'),
-                                    location_id,
-                                    db.Field('attachment', 'upload', autodelete=True),
-                    db.Field('comments'),
+                    organisation_id, #Field('organisation', db.org_organisation),
+                    Field('address', 'text'),
+                    Field('site_phone'),
+                    Field('site_fax'),
+                    location_id,
+                    Field('attachment', 'upload', autodelete=True),
+                    comments,
                     migrate=migrate)
     table.uuid.requires = IS_NOT_IN_DB(db,'%s.uuid' % tablename)
     table.name.requires = IS_NOT_EMPTY()   # Sites don't have to have unique names
@@ -138,7 +138,7 @@ if deployment_settings.has_module(module):
     table.attachment.label = T("Image/Other Attachment")
     table.attachment.comment = DIV( _class="tooltip", _title=Tstr("Image/Attachment") + "|" + Tstr("A snapshot of the location or additional documents that contain supplementary information about the Site can be uploaded here."))
     table.comments.comment = DIV( _class="tooltip", _title=Tstr("Additional Comments") + "|" + Tstr("Use this space to add additional comments and notes about the Site/Warehouse."))
-    ADD_SITE = T('Add Site ')
+    ADD_SITE = T('Add Site')
     LIST_SITES = T('List Sites')
     s3.crud_strings[tablename] = Storage(
         title_create = ADD_SITE,
@@ -159,15 +159,15 @@ if deployment_settings.has_module(module):
     resource = 'storage_loc'
     tablename = "%s_%s" % (module, resource)
     table = db.define_table(tablename, timestamp, uuidstamp, deletion_status,
-                    db.Field('site_id', db.lms_site),
-                    db.Field('name', notnull=True),
-                    db.Field('description'),
+                    Field('site_id', db.lms_site),
+                    Field('name', notnull=True),
+                    Field('description'),
                     location_id,
-                    db.Field('capacity'),
-                                    db.Field('capacity_unit'),
-                    db.Field('max_weight'),
-                                    db.Field('weight_unit'),
-                                    db.Field('attachment', 'upload', autodelete=True),
+                    Field('capacity'),
+                                    Field('capacity_unit'),
+                    Field('max_weight'),
+                                    Field('weight_unit'),
+                                    Field('attachment', 'upload', autodelete=True),
                     migrate=migrate)
     table.uuid.requires = IS_NOT_IN_DB(db,'%s.uuid' % tablename)
     table.name.requires = IS_NOT_EMPTY()   # Storage Locations don't have to have unique names
@@ -207,12 +207,12 @@ if deployment_settings.has_module(module):
     resource = 'storage_bin_type'
     tablename = "%s_%s" % (module, resource)
     table = db.define_table(tablename, timestamp, uuidstamp, deletion_status,
-                    db.Field('name', notnull=True),
-                    db.Field('description'),
+                    Field('name', notnull=True),
+                    Field('description'),
                     migrate=migrate)
     table.uuid.requires = IS_NOT_IN_DB(db,'%s.uuid' % tablename)
     table.name.requires = IS_NOT_EMPTY()
-    table.name.comment = SPAN("*", _class="req"), DIV( _class="tooltip", _title=T("Storage Bin Type|Name of Storage Bin Type."))
+    table.name.comment = SPAN("*", _class="req"), DIV( _class="tooltip", _title=Tstr("Storage Bin Type") + "|" + Tstr("Name of Storage Bin Type."))
     table.description.comment = DIV( _class="tooltip", _title=Tstr("Description of Bin Type") + "|" + Tstr("Use this space to add a description about the Bin Type."))
     ADD_STORAGE_BIN_TYPE = T('Add Storage Bin Type')
     LIST_STORAGE_BIN_TYPES = T('List Storage Bin Type(s)')
@@ -235,16 +235,16 @@ if deployment_settings.has_module(module):
     resource = 'storage_bin'
     tablename = "%s_%s" % (module, resource)
     table = db.define_table(tablename, timestamp, uuidstamp, deletion_status,
-                    db.Field('site_id', db.lms_site),
-                                    db.Field('storage_id', db.lms_storage_loc),
-                                    db.Field('number', notnull=True),
-                    db.Field('bin_type', db.lms_storage_bin_type),
-                    db.Field('capacity'),
-                                    db.Field('capacity_unit'),
-                                    db.Field('max_weight'),
-                                    db.Field('weight_unit'),
-                                    db.Field('attachment', 'upload', autodelete=True),
-                                    db.Field('comments', 'text'),
+                    Field('site_id', db.lms_site),
+                                    Field('storage_id', db.lms_storage_loc),
+                                    Field('number', notnull=True),
+                    Field('bin_type', db.lms_storage_bin_type),
+                    Field('capacity'),
+                                    Field('capacity_unit'),
+                                    Field('max_weight'),
+                                    Field('weight_unit'),
+                                    Field('attachment', 'upload', autodelete=True),
+                                    comments,
                     migrate=migrate)
     table.uuid.requires = IS_NOT_IN_DB(db,'%s.uuid' % tablename)
     table.site_id.requires = IS_IN_DB(db, 'lms_site.id', 'lms_storage_loc.name')
@@ -292,9 +292,9 @@ if deployment_settings.has_module(module):
     tablename = "%s_%s" % (module, resource)
     table = db.define_table(tablename, timestamp, uuidstamp, deletion_status,
                     organisation_id,
-                                    db.Field('name'),
-                    db.Field('description'),
-                                    db.Field('comments', 'text'),
+                                    Field('name'),
+                    Field('description'),
+                                    comments,
                     migrate=migrate)
     table.uuid.requires = IS_NOT_IN_DB(db, '%s.uuid' % tablename)
     table.name.requires = IS_NOT_EMPTY()
@@ -321,9 +321,9 @@ if deployment_settings.has_module(module):
     resource = 'catalog_cat'
     tablename = "%s_%s" % (module, resource)
     table = db.define_table(tablename, timestamp, uuidstamp, deletion_status,
-                    db.Field('name'),
-                    db.Field('description'),
-                                    db.Field('comments', 'text'),
+                    Field('name'),
+                    Field('description'),
+                                    comments,
                     migrate=migrate)
     table.uuid.requires = IS_NOT_IN_DB(db,'%s.uuid' % tablename)
     table.name.requires = IS_NOT_EMPTY()
@@ -350,10 +350,10 @@ if deployment_settings.has_module(module):
     resource = 'catalog_subcat'
     tablename = "%s_%s" % (module, resource)
     table = db.define_table(tablename, timestamp, uuidstamp, deletion_status,
-                    db.Field('parent_category', db.lms_catalog_cat),
-                                    db.Field('name'),
-                    db.Field('description'),
-                                    db.Field('comments', 'text'),
+                    Field('parent_category', db.lms_catalog_cat),
+                                    Field('name'),
+                    Field('description'),
+                                    comments,
                     migrate=migrate)
     table.uuid.requires = IS_NOT_IN_DB(db,'%s.uuid' % tablename)
     table.name.requires = IS_NOT_EMPTY()
@@ -420,23 +420,23 @@ if deployment_settings.has_module(module):
     resource = 'shipment'
     tablename = "%s_%s" % (module, resource)
     table = db.define_table(tablename, timestamp, uuidstamp, deletion_status,
-                                    db.Field('way_bill', notnull=True),
-                                    db.Field('sender_site', db.lms_site),
-                                    db.Field('sender_person'),
-                                    db.Field('sent_date', 'datetime'),
-                                    db.Field('recipient_site', db.lms_site),
-                                    db.Field('recieving_person'),
-                                    db.Field('recieved_date', 'datetime'),
-                                    db.Field('cost', 'double', default=0.00),
-                                    db.Field('currency'),
-                                    db.Field('track_status', readable='False'), #Linked to Shipment Transit Log table
+                                    Field('way_bill', notnull=True),
+                                    Field('sender_site', db.lms_site),
+                                    Field('sender_person'),
+                                    Field('sent_date', 'datetime'),
+                                    Field('recipient_site', db.lms_site),
+                                    Field('recieving_person'),
+                                    Field('recieved_date', 'datetime'),
+                                    Field('cost', 'double', default=0.00),
+                                    Field('currency'),
+                                    Field('track_status', readable='False'), #Linked to Shipment Transit Log table
                     migrate=migrate)
     table.uuid.requires = IS_NOT_IN_DB(db,'%s.uuid' % tablename)
     table.way_bill.requires = IS_NOT_EMPTY()
     table.way_bill.label = T("Shipment/Way Bills")
     table.way_bill.comment = SPAN("*", _class="req")
     table.sender_site.requires = IS_IN_DB(db, 'lms_site.id', 'lms_site.name')
-    table.sender_site.comment = DIV(A(T('Add Sender Site'), _class='colorbox', _href=URL(r=request, c='lms', f='site', args='create', vars=dict(format='popup')), _target='top'), DIV( _class="tooltip", _title=T("Add Site|Add a new Site from where the Item is being sent.")))
+    table.sender_site.comment = DIV(A(T('Add Sender Site'), _class='colorbox', _href=URL(r=request, c='lms', f='site', args='create', vars=dict(format='popup')), _target='top'), DIV( _class="tooltip", _title=Tstr("Add Site") + "|" + Tstr("Add a new Site from where the Item is being sent.")))
     table.recipient_site.requires = IS_IN_DB(db, 'lms_site.id', 'lms_site.name')
     table.recipient_site.comment = DIV(A(T('Add Recipient Site'), _class='colorbox', _href=URL(r=request, c='lms', f='site', args='create', vars=dict(format='popup')), _target='top'), DIV( _class="tooltip", _title=Tstr("Add Recipient") + "|" + Tstr("Add a new Site where the Item is being sent to.")))
     ADD_SHIPMENT = T('Add Shipment/Way Bills')
@@ -460,34 +460,34 @@ if deployment_settings.has_module(module):
     resource = 'item'
     tablename = "%s_%s" % (module, resource)
     table = db.define_table(tablename, timestamp, uuidstamp, deletion_status,
-                    db.Field('site_id', db.lms_site),
-                                    db.Field('storage_id', db.lms_storage_loc, writable=False, default=0), #No storage location assigned
-                                    db.Field('bin_id', db.lms_storage_bin, writable=False, default=0), #No Storage Bin assigned
-                                    db.Field('catalog', db.lms_catalog, writable=False, default=1), #default catalog assigned
+                    Field('site_id', db.lms_site),
+                                    Field('storage_id', db.lms_storage_loc, writable=False, default=0), #No storage location assigned
+                                    Field('bin_id', db.lms_storage_bin, writable=False, default=0), #No Storage Bin assigned
+                                    Field('catalog', db.lms_catalog, writable=False, default=1), #default catalog assigned
                                     #Shipment Details
-                                    db.Field('way_bill'),
-                                    db.Field('sender_site', db.lms_site),
-                                    db.Field('sender_person'),
-                                    db.Field('recipient_site', db.lms_site),
-                                    db.Field('recieving_person'),
+                                    Field('way_bill'),
+                                    Field('sender_site', db.lms_site),
+                                    Field('sender_person'),
+                                    Field('recipient_site', db.lms_site),
+                                    Field('recieving_person'),
                                     #Item Details
-                                    db.Field('name'), #Item Catalog
-                    db.Field('description'), #Item Catalog
-                                    db.Field('category', db.lms_catalog_cat), #Item Catalog
-                                    db.Field('sub_category', db.lms_catalog_subcat), #Item Catalog
-                                    db.Field('designated'), #More details to be added, maybe a new table.
-                                    db.Field('quantity_sent', 'double', default=0.00),
-                                    db.Field('quantity_received', 'double', default=0.00),
-                                    db.Field('quantity_shortage', default=0.00),
-                                    db.Field('quantity_unit'), #Item Catalog
-                                    db.Field('specifications'), #Item Catalog
-                                    db.Field('specifications_unit'), #Item Catalog
-                                    db.Field('weight', 'double', default=0.00), #Item Catalog
-                                    db.Field('weight_unit'), #Item Catalog
-                                    db.Field('date_time', 'datetime'),
-                                    db.Field('comments', 'text'),
-                                    db.Field('attachment', 'upload', autodelete=True),
-                    db.Field('unit_cost', 'double', default=0.00),
+                                    Field('name'), #Item Catalog
+                    Field('description'), #Item Catalog
+                                    Field('category', db.lms_catalog_cat), #Item Catalog
+                                    Field('sub_category', db.lms_catalog_subcat), #Item Catalog
+                                    Field('designated'), #More details to be added, maybe a new table.
+                                    Field('quantity_sent', 'double', default=0.00),
+                                    Field('quantity_received', 'double', default=0.00),
+                                    Field('quantity_shortage', default=0.00),
+                                    Field('quantity_unit'), #Item Catalog
+                                    Field('specifications'), #Item Catalog
+                                    Field('specifications_unit'), #Item Catalog
+                                    Field('weight', 'double', default=0.00), #Item Catalog
+                                    Field('weight_unit'), #Item Catalog
+                                    Field('date_time', 'datetime'),
+                                    comments,
+                                    Field('attachment', 'upload', autodelete=True),
+                    Field('unit_cost', 'double', default=0.00),
                     migrate=migrate)
     table.uuid.requires = IS_NOT_IN_DB(db,'%s.uuid' % tablename)
     table.site_id.requires = IS_IN_DB(db, 'lms_site.id', 'lms_storage_loc.name') #this should be automatically done. Using LMS User Preferences
@@ -541,8 +541,8 @@ if deployment_settings.has_module(module):
     resource = 'shipment_item'
     tablename = "%s_%s" % (module, resource)
     table = db.define_table(tablename, timestamp, uuidstamp, deletion_status,
-                                    db.Field('shipment_id', db.lms_shipment),
-                                    db.Field('item_id', db.lms_item),
+                                    Field('shipment_id', db.lms_shipment),
+                                    Field('item_id', db.lms_item),
                     migrate=migrate)
     table.uuid.requires = IS_NOT_IN_DB(db,'%s.uuid' % tablename)
     table.shipment_id.requires = IS_IN_DB(db, 'lms_shipment.id', 'lms_shipment.way_bill')
@@ -568,8 +568,8 @@ if deployment_settings.has_module(module):
     resource = 'shipment_transit_logs'
     tablename = "%s_%s" % (module, resource)
     table = db.define_table(tablename, timestamp, uuidstamp, deletion_status,
-                                    db.Field('shipment_id', db.lms_shipment),
-                                    db.Field('item_id', db.lms_item),
+                                    Field('shipment_id', db.lms_shipment),
+                                    Field('item_id', db.lms_item),
                     migrate=migrate)
     table.uuid.requires = IS_NOT_IN_DB(db,'%s.uuid' % tablename)
     table.shipment_id.requires = IS_IN_DB(db, 'lms_shipment.id', 'lms_shipment.way_bill')
@@ -601,7 +601,7 @@ if deployment_settings.has_module(module):
                     Field('total_monthly_cost', 'double', writable=False),
                     Field('total_minute_cost', 'double', writable=False),
                     Field('total_megabyte_cost', 'double', writable=False),
-                    Field('comments'),
+                    comments,
                     migrate=migrate)
     table.code.requires = [IS_NOT_EMPTY(), IS_NOT_IN_DB(db, '%s.code' % tablename)]
     table.code.label = T('Code')

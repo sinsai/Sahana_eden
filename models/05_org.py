@@ -62,17 +62,17 @@ org_organisation_type_opts = {
     3:T("International NGO"),
     4:T("Donor"),               # Don't change this number without changing organisation_popup.html
     6:T("National NGO"),
-    7:T("UN"),
+    7:"UN",
     8:T("International Organization"),
     9:T("Military"),
     10:T("Private")
-    #12:T("MINUSTAH")   Haiti-specific
+    #12:"MINUSTAH"   Haiti-specific
 }
 
 resource = "organisation"
 tablename = module + "_" + resource
 table = db.define_table(tablename, timestamp, uuidstamp, deletion_status,
-                pr_pe_fieldset,                         # Person Entity Field Set
+                pe_id,
                 #Field("privacy", "integer", default=0),
                 #Field("archived", "boolean", default=False),
                 Field("name", length=128, notnull=True, unique=True),
@@ -80,22 +80,20 @@ table = db.define_table(tablename, timestamp, uuidstamp, deletion_status,
                 Field("type", "integer"),
                 sector_id,
                 #Field("registration", label=T("Registration")),    # Registration Number
-                Field("country", "integer"),
+                Field("country", "string", length=2),
                 Field("website"),
                 Field("twitter"),   # deprecated by pe_contact component
                 Field("donation_phone"),
-                shn_comments_field,
+                comments,
                 source_id,
                 migrate=migrate)
 
 # Field settings
 table.uuid.requires = IS_NOT_IN_DB(db, "%s.uuid" % tablename)
-table.pr_pe_label.readable = False
-table.pr_pe_label.writable = False
 table.name.requires = [IS_NOT_EMPTY(), IS_NOT_IN_DB(db, "%s.name" % tablename)]
 table.type.requires = IS_NULL_OR(IS_IN_SET(org_organisation_type_opts))
 table.type.represent = lambda opt: org_organisation_type_opts.get(opt, UNKNOWN_OPT)
-table.country.requires = IS_NULL_OR(IS_IN_SET(shn_list_of_nations))
+table.country.requires = IS_NULL_OR(IS_IN_SET(shn_list_of_nations, sort=True))
 table.country.represent = lambda opt: shn_list_of_nations.get(opt, UNKNOWN_OPT)
 table.website.requires = IS_NULL_OR(IS_URL())
 table.donation_phone.requires = shn_phone_requires
@@ -157,7 +155,7 @@ s3xrc.model.add_component(module, resource,
 
 s3xrc.model.configure(table,
                       # Ensure that table is substituted when lambda defined not evaluated by using the default value
-                      onaccept=lambda form, tab=table: shn_pentity_onaccept(form, table=tab, entity_type=5),
+                      onaccept=lambda form, tab=table: shn_pentity_onaccept(form, table=tab),
                       delete_onaccept=lambda form: shn_pentity_ondelete(form),
                       list_fields = ["id",
                                      "name",
@@ -179,7 +177,7 @@ org_office_type_opts = {
 resource = "office"
 tablename = module + "_" + resource
 table = db.define_table(tablename, timestamp, uuidstamp, deletion_status,
-                pr_pe_fieldset,                         # Person Entity Field Set
+                pe_id,
                 Field("name", notnull=True),
                 organisation_id,
                 Field("type", "integer"),
@@ -197,13 +195,11 @@ table = db.define_table(tablename, timestamp, uuidstamp, deletion_status,
                 Field("vehicle_types"),
                 Field("equipment"),
                 source_id,
-                shn_comments_field,
+                comments,
                 migrate=migrate)
 
 # Field settings
 table.uuid.requires = IS_NOT_IN_DB(db, "%s.uuid" % tablename)
-table.pr_pe_label.readable = False
-table.pr_pe_label.writable = False
 #db[table].name.requires = IS_NOT_EMPTY()   # Office names don't have to be unique
 table.name.requires = [IS_NOT_EMPTY(), IS_NOT_IN_DB(db, "%s.name" % tablename)]
 table.type.requires = IS_NULL_OR(IS_IN_SET(org_office_type_opts))
@@ -226,7 +222,7 @@ table.postcode.label = T("Postcode")
 table.phone1.label = T("Phone 1")
 table.phone2.label = T("Phone 2")
 table.email.label = T("Email")
-table.fax.label = T("FAX")
+table.fax.label = T("Fax")
 table.national_staff.label = T("National Staff")
 table.international_staff.label = T("International Staff")
 table.number_of_vehicles.label = T("Number of Vehicles")
@@ -250,7 +246,7 @@ s3.crud_strings[tablename] = Storage(
     msg_record_modified = T("Office updated"),
     msg_record_deleted = T("Office deleted"),
     msg_list_empty = T("No Offices currently registered"))
- 
+
 # Reusable field for other tables to reference
 office_id = db.Table(None, "office_id",
             FieldS3("office_id", db.org_office, sortby="name",
@@ -271,7 +267,7 @@ s3xrc.model.add_component(module, resource,
 
 s3xrc.model.configure(table,
                       # Ensure that table is substituted when lambda defined not evaluated by using the default value
-                      onaccept=lambda form, tab=table: shn_pentity_onaccept(form, table=tab, entity_type=6),
+                      onaccept=lambda form, tab=table: shn_pentity_onaccept(form, table=tab),
                       delete_onaccept=lambda form: shn_pentity_ondelete(form),
                       list_fields=["id",
                                    "name",
@@ -415,7 +411,7 @@ table = db.define_table(tablename, timestamp, deletion_status,
                 Field("focal_point", "boolean"),
                 #Field("slots", "integer", default=1),
                 #Field("payrate", "double", default=0.0), # Wait for Bugeting integration
-                shn_comments_field,
+                comments,
                 migrate=migrate)
 
 # Field settings
@@ -427,7 +423,7 @@ table.manager_id.represent = lambda id: (id and [shn_pr_person_represent(id)] or
 # Staff Resource called from multiple controllers
 # - so we define strings in the model
 table.person_id.label = T("Person")
-#table.person_id.comment = DIV(SPAN("*", _class="req"), shn_person_comment)
+#table.person_id.comment = DIV(SPAN("*", _class="req"), shn_person_id_comment)
 table.organisation_id.comment = DIV(SPAN("*", _class="req"), shn_organisation_comment)
 table.title.label = T("Job Title")
 table.title.comment = DIV( _class="tooltip", _title=Tstr("Title") + "|" + Tstr("The Role this person plays within this Office/Project."))
@@ -635,7 +631,7 @@ s3xrc.model.configure(table,
                                    "subject",
                                    "person_id",
                                    "status"])
-                                   
+
 # -----------------------------------------------------------------------------
 # shn_project_search_location:
 #   form function to search projects by location
@@ -736,16 +732,16 @@ s3xrc.model.set_method(module, "project", method="search_location", action=shn_p
 def shn_project_rheader(jr, tabs=[]):
 
     if jr.representation == "html":
-        
+
         rheader_tabs = shn_rheader_tabs(jr, tabs)
-        
+
         if jr.name == "project":
 
             _next = jr.here()
             _same = jr.same()
 
             project = jr.record
-            
+
             sectors = TABLE()
             if project.sector_id:
                 _sectors = re.split("\|", project.sector_id)[1:-1]
@@ -770,7 +766,7 @@ def shn_project_rheader(jr, tabs=[]):
                         TH(T("Status: ")),
                         "%s" % org_project_status_opts[project.status],
                         TH(T("Sector(s): ")),
-                        sectors
+                        sectors,
                         #TH(A(T("Edit Project"),
                         #    _href=URL(r=request, f="project", args=[jr.id, "update"], vars={"_next": _next})))
                         )

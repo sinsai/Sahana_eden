@@ -40,7 +40,7 @@ marker_id = db.Table(None, "marker_id",
                 requires = IS_NULL_OR(IS_ONE_OF(db, "gis_marker.id", "%(name)s", zero=T("Use default from feature class"))),
                 represent = lambda id: (id and [DIV(IMG(_src=URL(r=request, c="default", f="download", args=db(db.gis_marker.id == id).select(db.gis_marker.image, limitby=(0, 1)).first().image), _height=40))] or [""])[0],
                 label = T("Marker"),
-                comment = DIV(A(ADD_MARKER, _class="colorbox", _href=URL(r=request, c="gis", f="marker", args="create", vars=dict(format="popup")), _target="top", _title=ADD_MARKER), 
+                comment = DIV(A(ADD_MARKER, _class="colorbox", _href=URL(r=request, c="gis", f="marker", args="create", vars=dict(format="popup")), _target="top", _title=ADD_MARKER),
                           DIV( _class="tooltip", _title=MARKER + "|" + Tstr("Defines the icon used for display of features on interactive map & KML exports. A Marker assigned to an individual Location is set if there is a need to override the Marker assigned to the Feature Class. If neither are defined, then the Default Marker is used."))),
                 ondelete = "RESTRICT"
                 ))
@@ -109,7 +109,7 @@ opt_gis_layout = db.Table(None, "opt_gis_layout",
 resource = "config"
 tablename = "%s_%s" % (module, resource)
 table = db.define_table(tablename, timestamp, uuidstamp,
-                pr_pe_id,                           # Personal Entity Reference
+                pe_id,                           # Personal Entity Reference
                 Field("lat", "double"),
                 Field("lon", "double"),
                 Field("zoom", "integer"),
@@ -129,9 +129,8 @@ table = db.define_table(tablename, timestamp, uuidstamp,
                 migrate=migrate)
 
 table.uuid.requires = IS_NOT_IN_DB(db, "gis_config.uuid")
-table.pr_pe_id.requires = IS_NULL_OR(IS_ONE_OF(db, "pr_pentity.id",
-                                    shn_pentity_represent))
-table.pr_pe_id.readable = table.pr_pe_id.writable = False
+table.pe_id.requires = IS_NULL_OR(IS_ONE_OF(db, "pr_pentity.id", shn_pentity_represent))
+table.pe_id.readable = table.pe_id.writable = False
 table.lat.requires = IS_LAT()
 table.lon.requires = IS_LON()
 table.zoom.requires = IS_INT_IN_RANGE(0, 19)
@@ -181,7 +180,7 @@ s3.crud_strings[tablename] = Storage(
 # Configs as component of Persons
 s3xrc.model.add_component(module, resource,
                           multiple=False,
-                          joinby="pr_pe_id",
+                          joinby="pe_id",
                           deletable=False,
                           editable=True)
 
@@ -349,7 +348,7 @@ feature_class_id = db.Table(None, "feature_class_id",
                 requires = IS_NULL_OR(IS_ONE_OF(db, "gis_feature_class.id", "%(name)s")),
                 represent = lambda id: (id and [db(db.gis_feature_class.id == id).select(db.gis_feature_class.name, limitby=(0, 1)).first().name] or ["None"])[0],
                 label = T("Feature Class"),
-                comment = DIV(A(ADD_FEATURE_CLASS, _class="colorbox", _href=URL(r=request, c="gis", f="feature_class", args="create", vars=dict(format="popup")), _target="top", _title=ADD_FEATURE_CLASS), 
+                comment = DIV(A(ADD_FEATURE_CLASS, _class="colorbox", _href=URL(r=request, c="gis", f="feature_class", args="create", vars=dict(format="popup")), _target="top", _title=ADD_FEATURE_CLASS),
                           DIV( _class="tooltip", _title=Tstr("Feature Class") + "|" + Tstr("Defines the marker used for display & the attributes visible in the popup."))),
                 ondelete = "RESTRICT"
                 ))
@@ -381,10 +380,18 @@ gis_location_hierarchy = {
     "L2":T("District"),
     "L3":T("Town"),
 }
+gis_location_languages = {
+    1:T("English"),
+    2:T("Hindi"),
+    #3:T("Local Language"),
+}
+gis_location_language_default = 1
 resource = "location"
 tablename = "%s_%s" % (module, resource)
 table = db.define_table(tablename, timestamp, uuidstamp, deletion_status,
-                Field("name", notnull=True),
+                Field("name", notnull=True),    # Primary name
+                Field("name_l10n"),             # Local Names are stored in this field
+                Field("name_dummy"),            # Dummy field to provide Widget
                 Field("code"),
                 Field("description"),
                 feature_class_id,       # Will be removed
@@ -413,6 +420,13 @@ table = db.define_table(tablename, timestamp, uuidstamp, deletion_status,
 
 table.uuid.requires = IS_NOT_IN_DB(db, "%s.uuid" % table)
 table.name.requires = IS_NOT_EMPTY()    # Placenames don't have to be unique
+table.name.label = T("Primary Name")
+table.name.comment = SPAN("*", _class="req")
+# We never access name_l10n directly
+table.name_l10n.readable = False
+table.name_l10n.writable = False
+table.name_dummy.label = T("Local Names")
+table.name_dummy.comment = DIV(_class="tooltip", _title=Tstr("Local Names") + "|" + Tstr("Names can be added in multiple languages"))
 table.level.requires = IS_NULL_OR(IS_IN_SET(gis_location_hierarchy))
 table.parent.requires = IS_NULL_OR(IS_ONE_OF(db, "gis_location.id", "%(name)s"))
 table.parent.represent = lambda id: (id and [db(db.gis_location.id == id).select(db.gis_location.name, limitby=(0, 1)).first().name] or ["None"])[0]
@@ -424,7 +438,6 @@ table.wkt.represent = lambda wkt: gis.abbreviate_wkt(wkt)
 table.lat.requires = IS_NULL_OR(IS_LAT())
 table.lon.requires = IS_NULL_OR(IS_LON())
 table.source.requires = IS_NULL_OR(IS_IN_SET(gis_source_opts))
-table.name.label = T("Name")
 table.level.label = T("Level")
 table.code.label = T("Code")
 table.description.label = T("Description")
@@ -441,7 +454,7 @@ ADD_LOCATION = T("Add Location")
 repr_select = lambda l: len(l.name) > 48 and "%s..." % l.name[:44] or l.name
 location_id = db.Table(None, "location_id",
                        FieldS3("location_id", db.gis_location, sortby="name",
-                       requires = IS_NULL_OR(IS_ONE_OF(db, "gis_location.id", repr_select, alphasort=True)),
+                       requires = IS_NULL_OR(IS_ONE_OF(db, "gis_location.id", repr_select, sort=True)),
                        represent = lambda id: shn_gis_location_represent(id),
                        label = T("Location"),
                        comment = DIV(A(ADD_LOCATION,
@@ -460,9 +473,34 @@ s3xrc.model.add_component(module, resource,
                           deletable=True,
                           editable=True)
 
-s3xrc.model.configure(db.gis_location,
+s3xrc.model.configure(table,
                       onvalidation=lambda form: gis.wkt_centroid(form),
                       onaccept=gis.update_location_tree())
+                      
+resource = "location_name"
+tablename = module + "_" + resource
+table = db.define_table(tablename, timestamp, uuidstamp, deletion_status,
+                location_id,
+                Field("name_l10n"),
+                Field("language"),     
+                migrate=migrate)
+table.uuid.requires = IS_NOT_IN_DB(db, '%s.uuid' % tablename)
+table.name_l10n.label = T("Name")
+table.language.requires = IS_IN_SET(gis_location_languages)
+table.language.label = T("Language")
+
+# Multiselect Widget
+table = db.gis_location
+name_dummy_element = S3MultiSelectWidget(db = db,                                                             
+                                         link_table_name = tablename,                  
+                                         link_field_name = "location_id")
+table.name_dummy.widget = name_dummy_element.widget
+table.name_dummy.represent = name_dummy_element.represent
+def gis_location_onaccept(form):
+    if session.rcvars:
+        name_dummy_element.onaccept(db, session.rcvars.gis_location, request)
+    gis.update_location_tree()
+s3xrc.model.configure(table, onaccept=gis_location_onaccept)
 
 # -----------------------------------------------------------------------------
 #
@@ -522,7 +560,7 @@ table = db.define_table(tablename, timestamp, uuidstamp, authorstamp, deletion_s
                 Field("name", length=128, notnull=True, unique=True),
                 Field("category"),
                 location_id,
-                shn_comments_field,
+                comments,
                 migrate=migrate)
 table.uuid.requires = IS_NOT_IN_DB(db, "%s.uuid" % tablename)
 table.name.requires = [IS_NOT_EMPTY(), IS_NOT_IN_DB(db, "%s.name" % tablename)]
@@ -542,9 +580,9 @@ table = db.define_table(tablename, timestamp, uuidstamp, authorstamp, deletion_s
                 Field("resource"),              # Used to build a simple query
                 Field("filter_field"),          # Used to build a simple query
                 Field("filter_value"),          # Used to build a simple query
-                Field("query", notnull=True),   
+                Field("query", notnull=True),
                 marker_id,                      # Optional Marker to over-ride the values from the Feature Classes
-                shn_comments_field,
+                comments,
                 migrate=migrate)
 table.uuid.requires = IS_NOT_IN_DB(db, "%s.uuid" % tablename)
 #table.author.requires = IS_ONE_OF(db, "auth_user.id","%(id)s: %(first_name)s %(last_name)s")

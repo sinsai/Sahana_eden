@@ -19,6 +19,8 @@ class S3Config(Storage):
         return self.auth.get("registration_requires_verification", False)
     def get_auth_registration_requires_approval(self):
         return self.auth.get("registration_requires_approval", False)
+    def get_auth_openid(self):
+        return self.auth.get("openid", False)
 
     # Base settings
     def get_base_public_url(self):
@@ -56,6 +58,8 @@ class S3Config(Storage):
     # Mail settings
     def get_mail_server(self):
         return self.mail.get("server", "127.0.0.1:25")
+    def get_mail_server_login(self):
+        return self.mail.get("login", False)
     def get_mail_sender(self):
         return self.mail.get("sender", "sahana@your.org")
     def get_mail_approver(self):

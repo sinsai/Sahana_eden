@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 """
-    CRUD+LSO Method Handlers (Frontend for S3REST)
+    CRUD+LS Method Handlers (Frontend for S3REST)
 
     @author: Fran Boon
     @author: nursix
@@ -20,7 +20,7 @@ XSLT_IMPORT_TEMPLATES = "static/xslt/import" #: Path to XSLT templates for data 
 XSLT_EXPORT_TEMPLATES = "static/xslt/export" #: Path to XSLT templates for data export
 
 # XSLT available formats
-shn_xml_import_formats = ["xml", "lmx", "osm", "pfif", "ushahidi"] #: Supported XML import formats
+shn_xml_import_formats = ["xml", "lmx", "osm", "pfif", "ushahidi", "odk"] #: Supported XML import formats
 shn_xml_export_formats = dict(
     xml = "application/xml",
     gpx = "application/xml",
@@ -30,7 +30,8 @@ shn_xml_export_formats = dict(
     osm = "application/xml",
     rss = "application/rss+xml",
     georss = "application/rss+xml",
-    kml = "application/vnd.google-earth.kml+xml"
+    kml = "application/vnd.google-earth.kml+xml",
+    #geojson = "application/xml"
 ) #: Supported XML output formats and corresponding response headers
 
 shn_json_import_formats = ["json"] #: Supported JSON import formats
@@ -45,6 +46,9 @@ BADFORMAT = T("Unsupported data format!")
 BADMETHOD = T("Unsupported method!")
 BADRECORD = T("Record not found!")
 INVALIDREQUEST = T("Invalid request!")
+XLWT_ERROR = T("xlwt module not available within the running Python - this needs installing for XLS output!")
+GERALDO_ERROR = T("Geraldo module not available within the running Python - this needs installing for PDF output!")
+REPORTLAB_ERROR = T("ReportLab module not available within the running Python - this needs installing for PDF output!")
 
 # How many rows to show per page in list outputs
 ROWSPERPAGE = 20
@@ -56,7 +60,8 @@ _s3xrc = local_import("s3xrc")
 
 s3xrc = _s3xrc.S3ResourceController(db,
             domain=request.env.server_name,
-            base_url="%s/%s" % (deployment_settings.get_base_public_url(), request.application),
+            base_url="%s/%s" % (deployment_settings.get_base_public_url(),
+                                request.application),
             cache=cache,
             auth=auth,
             gis=gis,
@@ -145,13 +150,13 @@ def export_pdf(table, query, list_fields=None):
         from reportlab.lib.pagesizes import A4
         from reportlab.lib.enums import TA_CENTER, TA_RIGHT
     except ImportError:
-        session.error = T("ReportLab module not available within the running Python - this needs installing for PDF output!")
+        session.error = REPORTLAB_ERROR
         redirect(URL(r=request))
     try:
         from geraldo import Report, ReportBand, Label, ObjectValue, SystemField, landscape, BAND_WIDTH
         from geraldo.generators import PDFGenerator
     except ImportError:
-        session.error = T("Geraldo module not available within the running Python - this needs installing for PDF output!")
+        session.error = GERALDO_ERROR
         redirect(URL(r=request))
 
     records = db(query).select(table.ALL)
@@ -251,77 +256,6 @@ def export_pdf(table, query, list_fields=None):
     return output.read()
 
 #
-# export_rss ------------------------------------------------------------------
-#
-def export_rss(module, resource, query, rss=None, linkto=None):
-
-    """ Export record(s) as RSS feed
-
-        @deprecated
-    """
-
-    # This can not work when proxied through Apache (since it's always a local request):
-    #if request.env.remote_addr == '127.0.0.1':
-        #server = "http://127.0.0.1:" + request.env.server_port
-    #else:
-        #server = "http://" + request.env.server_name + ":" + request.env.server_port
-
-    server = deployment_settings.get_base_public_url()
-
-    tablename = "%s_%s" % (module, resource)
-    title_list = shn_get_crud_strings(tablename).subtitle_list
-
-    if not linkto:
-        link = "/%s/%s/%s" % (request.application, module, resource)
-    else:
-        link = linkto
-
-    entries = []
-    table = db[tablename]
-    rows = db(query).select(table.ALL)
-    if rows:
-        for row in rows:
-            if rss and "title" in rss:
-                try:
-                    title = rss.get("title")(row)
-                except TypeError:
-                    title = rss.get("title") % row
-            else:
-                title = row["id"]
-
-            if rss and "description" in rss:
-                try:
-                    description = rss.get("description")(row)
-                except TypeError:
-                    description = rss.get("description") % row
-            else:
-                description = ""
-
-            entries.append(dict(
-                title = str(title).decode("utf-8"),
-                link = server + link + "/%d" % row.id,
-                description = str(description).decode("utf-8"),
-                modified_on = row.modified_on))
-
-    import gluon.contrib.rss2 as rss2
-
-    items = [rss2.RSSItem(
-        title = entry["title"],
-        link = entry["link"],
-        description = entry["description"],
-        pubDate = entry["modified_on"]) for entry in entries]
-
-    rss = rss2.RSS2(
-        title = str(title_list).decode("utf-8"),
-        link = server + link,
-        description = "",
-        lastBuildDate = request.utcnow,
-        items = items)
-
-    response.headers["Content-Type"] = "application/rss+xml"
-    return rss2.dumps(rss)
-
-#
 # export_xls ------------------------------------------------------------------
 #
 def export_xls(table, query, list_fields=None):
@@ -333,7 +267,7 @@ def export_xls(table, query, list_fields=None):
     try:
         import xlwt
     except ImportError:
-        session.error = T("xlwt module not available within the running Python - this needs installing for XLS output!")
+        session.error = XLWT_ERROR
         redirect(URL(r=request))
 
     import StringIO
@@ -398,85 +332,6 @@ def export_xls(table, query, list_fields=None):
     response.headers["Content-disposition"] = "attachment; filename=\"%s\"" % filename
     return output.read()
 
-#
-# export_json -----------------------------------------------------------------
-#
-def export_json(jr):
-
-    """ Export data as JSON """
-
-    try:
-        response.headers["Content-Type"] = shn_json_export_formats[jr.representation]
-    except:
-        response.headers["Content-Type"] = "text/x-json"
-
-    if jr.representation == "json":
-        template = None
-    else:
-        template_name = "%s.%s" % (jr.representation, XSLT_FILE_EXTENSION)
-        template = os.path.join(request.folder, XSLT_EXPORT_TEMPLATES, template_name)
-        if not os.path.exists(template):
-            session.error = str(T("XSLT Template Not Found: ")) + \
-                            XSLT_EXPORT_TEMPLATES + "/" + template_name
-            raise HTTP(501, body=s3xrc.xml.json_message(False, 501, session.error))
-            #redirect(URL(r=request, f="index"))
-
-    prefix, name, table, tablename = jr.target()
-    title = shn_get_crud_strings(tablename).subtitle_list
-
-    output = jr.export_json(permit=shn_has_permission,
-                            audit=shn_audit,
-                            title=title,
-                            template=template,
-                            pretty_print=PRETTY_PRINT,
-                            filterby=response.s3.filter)
-
-    if not output:
-        session.error = str(T("XSLT Transformation Error: ")) + jr.error
-        raise HTTP(400, body=s3xrc.xml.json_message(False, 400, session.error))
-        #redirect(URL(r=request, f="index"))
-
-    return output
-
-#
-# export_xml ------------------------------------------------------------------
-#
-def export_xml(jr):
-
-    """ Export data as XML """
-
-    try:
-        response.headers["Content-Type"] = shn_xml_export_formats[jr.representation]
-    except:
-        response.headers["Content-Type"] = "application/xml"
-
-    if jr.representation == "xml":
-        template = None
-    else:
-        template_name = "%s.%s" % (jr.representation, XSLT_FILE_EXTENSION)
-        template = os.path.join(request.folder, XSLT_EXPORT_TEMPLATES, template_name)
-        if not os.path.exists(template):
-            session.error = str(T("XSLT Template Not Found: ")) + \
-                            XSLT_EXPORT_TEMPLATES + "/" + template_name
-            raise HTTP(501, body=s3xrc.xml.json_message(False, 501, session.error))
-            #redirect(URL(r=request, f="index"))
-
-    prefix, name, table, tablename = jr.target()
-    title = shn_get_crud_strings(tablename).subtitle_list
-
-    output = jr.export_xml(permit=shn_has_permission,
-                           audit=shn_audit,
-                           title=title,
-                           template=template,
-                           pretty_print=PRETTY_PRINT,
-                           filterby=response.s3.filter)
-
-    if not output:
-        session.error = str(T("XSLT Transformation Error: ")) + (jr.error or "")
-        raise HTTP(400, body=s3xrc.xml.json_message(False, 400, session.error))
-        #redirect(URL(r=request, f="index"))
-
-    return output
 
 # *****************************************************************************
 # Imports
@@ -497,7 +352,7 @@ def import_csv(file, table=None):
 #
 # import_url ------------------------------------------------------------------
 #
-def import_url(jr, table, method):
+def import_url(r, table, method):
 
     """
         Import GET/URL vars into Database & respond in JSON,
@@ -508,7 +363,7 @@ def import_url(jr, table, method):
     uuid = None
     original = None
 
-    module, resource, table, tablename = jr.target()
+    module, resource, table, tablename = r.target()
 
     onvalidation = s3xrc.model.get_config(table, "onvalidation")
     onaccept = s3xrc.model.get_config(table, "onaccept")
@@ -586,13 +441,13 @@ def import_url(jr, table, method):
 
     # Create/update record
     try:
-        if jr.component:
-            record[jr.fkey] = jr.record[jr.pkey]
+        if r.component:
+            record[r.fkey] = r.record[r.pkey]
         if method == "create":
             id = table.insert(**dict(record))
             if id:
                 error = 201
-                item = s3xrc.xml.json_message(True, error, "Created as " + str(jr.other(method=None, record_id=id)))
+                item = s3xrc.xml.json_message(True, error, "Created as " + str(r.other(method=None, record_id=id)))
                 form.vars.id = id
                 if onaccept:
                     onaccept(form)
@@ -630,23 +485,33 @@ def import_url(jr, table, method):
 #
 # shn_audit -------------------------------------------------------------------
 #
-def shn_audit(operation, module, resource, form=None, record=None, representation=None):
+def shn_audit(operation, prefix, name,
+              form=None,
+              record=None,
+              representation=None):
 
-    #print "Audit: %s on %s_%s #%s" % (operation, module, resource, record or 0)
+    #print "Audit: %s on %s_%s #%s" % (operation, prefix, name, record or 0)
 
     if operation in ("list", "read"):
-        return shn_audit_read(operation, module, resource,
+        return shn_audit_read(operation, prefix, name,
                               record=record, representation=representation)
+
     elif operation == "create":
-        return shn_audit_create(form, module, resource, representation=representation)
+        return shn_audit_create(form, prefix, name,
+                                representation=representation)
 
     elif operation == "update":
-        return shn_audit_update(form, module, resource, representation=representation)
+        return shn_audit_update(form, prefix, name,
+                                representation=representation)
 
     elif operation == "delete":
-        return shn_audit_create(module, resource, record, representation=representation)
+        return shn_audit_delete(prefix, name, record,
+                                representation=representation)
 
     return True
+
+# Set shn_audit as audit function for the resource controller
+s3xrc.audit = shn_audit
 
 #
 # shn_audit_read --------------------------------------------------------------
@@ -835,27 +700,27 @@ def shn_list_item(table, resource, action, main="name", extra=None):
 #
 # shn_custom_view -------------------------------------------------------------
 #
-def shn_custom_view(jr, default_name, format=None):
+def shn_custom_view(r, default_name, format=None):
 
     """ Check for custom view """
 
-    prefix = jr.request.controller
+    prefix = r.request.controller
 
-    if jr.component:
+    if r.component:
 
-        custom_view = "%s_%s_%s" % (jr.name, jr.component_name, default_name)
+        custom_view = "%s_%s_%s" % (r.name, r.component_name, default_name)
 
         _custom_view = os.path.join(request.folder, "views", prefix, custom_view)
 
         if not os.path.exists(_custom_view):
-            custom_view = "%s_%s" % (jr.name, default_name)
+            custom_view = "%s_%s" % (r.name, default_name)
             _custom_view = os.path.join(request.folder, "views", prefix, custom_view)
 
     else:
         if format:
-            custom_view = "%s_%s_%s" % (jr.name, default_name, format)
+            custom_view = "%s_%s_%s" % (r.name, default_name, format)
         else:
-            custom_view = "%s_%s" % (jr.name, default_name)
+            custom_view = "%s_%s" % (r.name, default_name)
         _custom_view = os.path.join(request.folder, "views", prefix, custom_view)
 
     if os.path.exists(_custom_view):
@@ -883,7 +748,7 @@ def shn_convert_orderby(table, request, fields=None):
 
     def direction(i):
         dir = "sSortDir_" + str(i)
-        if dir in request.vars:
+        if request.vars.get(dir, None):
             return " " + request.vars[dir]
         return ""
 
@@ -914,318 +779,171 @@ def shn_build_ssp_filter(table, request, fields=None):
 # These functions are to handle REST methods.
 # Currently implemented methods are:
 #
-#   - import_json
-#   - import_xml
 #   - list
 #   - read
 #   - create
 #   - update
 #   - delete
 #   - search
-#   - options
 #
 # Handlers must be implemented as:
 #
-#   def method_handler(jr, **attr)
+#   def method_handler(r, **attr)
 #
 # where:
 #
-#   jr - is the XRequest
+#   r - is the S3Request
 #   attr - attributes of the call, passed through
 #
 
 #
-# import_json -----------------------------------------------------------------
-#
-def import_json(jr, **attr):
-
-    #return json_message(False, 501, "Not implemented!")
-
-    if jr.http == "GET":
-        item = s3xrc.xml.json_message(False, 400, "%s requests not supported." % jr.http)
-        raise HTTP(400, body=item)
-
-    _vars = jr.request.vars
-    if "filename" in _vars and jr.http == "PUT":
-        source = open(_vars["filename"])
-    elif "fetchurl" in _vars and jr.http == "PUT":
-        import urllib
-        source = urllib.urlopen(_vars["fetchurl"])
-    else:
-        #from StringIO import StringIO
-        #source = StringIO(jr.request.body)
-        source = jr.request.body
-
-    tree = s3xrc.xml.json2tree(source)
-
-    if hasattr(source, "close"):
-        source.close()
-
-    # XSLT Transformation
-    if not jr.representation == "json":
-        template_name = "%s.%s" % (jr.representation, XSLT_FILE_EXTENSION)
-        template_file = os.path.join(request.folder, XSLT_IMPORT_TEMPLATES, template_name)
-        if os.path.exists(template_file):
-            tree = s3xrc.xml.transform(tree, template_file,
-                                       domain=s3xrc.domain,
-                                       base_url=s3xrc.base_url)
-            if not tree:
-                session.error = str(T("XSL Transformation Error: ")) + str(s3xrc.xml.error)
-                redirect(URL(r=request, f="index"))
-        else:
-            session.error = str(T("XSL Template Not Found: ")) + \
-                            XSLT_IMPORT_TEMPLATES + "/" + template_name
-            #redirect(URL(r=request, f="index"))
-            item = s3xrc.xml.json_message(False, 501, session.error)
-            raise HTTP(501)
-
-    # For testing:
-    #print s3xrc.xml.tostring(tree)
-    #return s3xrc.xml.tree2json(tree)
-
-    # get push_limit from attr if present and pass along to jr.import_xml
-    push_limit = attr.get("push_limit", 1)
-    success = jr.import_xml(tree, permit=shn_has_permission, audit=shn_audit, push_limit=push_limit)
-
-    if success:
-        item = s3xrc.xml.json_message()
-    else:
-        # TODO: export the whole tree on error
-        tree = s3xrc.xml.tree2json(tree)
-        item = s3xrc.xml.json_message(False, 400, s3xrc.error, tree=tree)
-        raise HTTP(400, body=item)
-
-    return dict(item=item)
-
-#
-# import_xml ------------------------------------------------------------------
-#
-def import_xml(jr, **attr):
-
-    """ Import XML data """
-
-    if jr.http == "GET":
-        item = s3xrc.xml.json_message(False, 400, "%s requests not supported." % jr.http)
-        raise HTTP(400, body=item)
-
-    if "filename" in jr.request.vars and jr.http == "PUT":
-        source = jr.request.vars["filename"]
-    elif "fetchurl" in jr.request.vars and jr.http == "PUT":
-        source = jr.request.vars["fetchurl"]
-    else:
-        source = jr.request.body
-
-    tree = s3xrc.xml.parse(source)
-    if not tree:
-        item = s3xrc.xml.json_message(False, 400, s3xrc.xml.error)
-        raise HTTP(400, body=item)
-
-    # XSLT Transformation
-    if not jr.representation == "xml":
-        template_name = "%s.%s" % (jr.representation, XSLT_FILE_EXTENSION)
-        template_file = os.path.join(request.folder, XSLT_IMPORT_TEMPLATES, template_name)
-        if os.path.exists(template_file):
-            tree = s3xrc.xml.transform(tree, template_file, domain=s3xrc.domain, base_url=s3xrc.base_url)
-            if not tree:
-                session.error = str(T("XSLT Transformation Error: ")) + str(s3xrc.xml.error)
-                redirect(URL(r=request, f="index"))
-        else:
-            session.error = str(T("XSLT Template Not Found: ")) + \
-                            XSLT_IMPORT_TEMPLATES + "/" + template_name
-            #redirect(URL(r=request, f="index"))
-            item = s3xrc.xml.json_message(False, 501, session.error)
-            raise HTTP(501)
-
-    # get push_limit from attr if present and pass along to jr.import_xml
-    push_limit = attr.get("push_limit", 1)
-    success = jr.import_xml(tree, permit=shn_has_permission, audit=shn_audit, push_limit=push_limit)
-
-    if success:
-        item = s3xrc.xml.json_message()
-    else:
-        # TODO: export the whole tree on error
-        tree = s3xrc.xml.tree2json(tree)
-        item = s3xrc.xml.json_message(False, 400, s3xrc.error, tree=tree)
-        raise HTTP(400, body=item)
-
-    return dict(item=item)
-
-#
 # shn_read --------------------------------------------------------------------
 #
-def shn_read(jr, **attr):
+def shn_read(r, **attr):
 
     """ Read a single record. """
 
-    rheader = attr.get("rheader", None)
-    sticky = attr.get("sticky", False)
-    editable = attr.get("editable", True)
-    deletable = attr.get("deletable", True)
-    #rss = attr.get("rss", None)
+    prefix, name, table, tablename = r.target()
+    representation = r.representation.lower()
 
-    # TODO: this function not filter-aware!
-
-    module, resource, table, tablename = jr.target()
-
+    # Get the callbacks of the target table
     onvalidation = s3xrc.model.get_config(table, "onvalidation")
     onaccept = s3xrc.model.get_config(table, "onaccept")
-    list_fields = s3xrc.model.get_config(table, "list_fields")
 
-    if jr.component:
+    # Get the controller attributes
+    rheader = attr.get("rheader", None)
+    sticky = attr.get("sticky", False)
 
-        query = ((table[jr.fkey] == jr.table[jr.pkey]) & (table[jr.fkey] == jr.record[jr.pkey]))
-        if jr.component_id:
-            query = (table.id == jr.component_id) & query
-        if "deleted" in table:
-            query = ((table.deleted == False) | (table.deleted == None)) & query
+    # Get the table-specific attributes
+    _attr = r.component and r.component.attr or attr
+    main = _attr.get("main", None)
+    extra = _attr.get("extra", None)
+    caller = _attr.get("caller", None)
+    editable = _attr.get("editable", True)
+    deletable = _attr.get("deletable", True)
 
-        try:
-            record_id = db(query).select(table.id, limitby=(0, 1)).first().id
-            href_delete = URL(r=jr.request, f=jr.name, args=[jr.id, resource, record_id, "delete"])
-            href_edit = URL(r=jr.request, f=jr.name, args=[jr.id, resource, record_id, "update"])
-        except:
-            if not jr.multiple:
-                if shn_has_permission("create", table):
-                    redirect(URL(r=jr.request, f=jr.name, args=[jr.id, resource, "create"]))
-                else:
-                    record_id = None
-                    href_edit = None
-                    href_delete = None
+    # Delete & Update links
+    href_delete = r.other(method="delete", representation=representation)
+    href_edit = r.other(method="update", representation=representation)
+
+    # Get the correct record ID
+    if r.component:
+        resource = r.resource.components.get(r.component_name).resource
+        resource.load(start=0, limit=1)
+        if not len(resource):
+            if not r.multiple:
+                r.component_id = None
+                redirect(r.other(method="create", representation=representation))
             else:
-                record_id = None
-                href_delete = None
-                href_edit = None
                 session.error = BADRECORD
-                redirect(jr.there()) # TODO: this is wrong when no records exist!
-
-        editable = s3xrc.model.get_attr(resource, "editable")
-        deletable = s3xrc.model.get_attr(resource, "deletable")
-
-        #rss = s3xrc.model.get_attr(resource, "rss")
-
+                redirect(r.there())
+        else:
+            record_id = resource.records().first().id
     else:
-        record_id = jr.id
-        href_delete = URL(r=jr.request, f=jr.name, args=[record_id, "delete"])
-        href_edit = URL(r=jr.request, f=jr.name, args=[record_id, "update"])
+        record_id = r.id
 
     # ToDo: Comment this out
-    # Just because we have rights to edit a record, doens't mean that we always want to actually do so
-    # => was intentional, because somebody said:
-    #    If we have the right to edit, why should we need to first click "Update" to do so?
     authorised = shn_has_permission("update", table, record_id)
-    if authorised and jr.representation == "html" and editable:
-        return shn_update(jr, **attr)
+    if authorised and representation == "html" and editable:
+        return shn_update(r, **attr)
 
+    # Check for read permission
     authorised = shn_has_permission("read", table, record_id)
-    if authorised:
+    if not authorised:
+        r.unauthorised()
 
-        shn_audit_read(operation="read", module=module, resource=resource, record=record_id, representation=jr.representation)
+    # Audit
+    s3xrc.audit("read", prefix, name,
+                record=record_id, representation=representation)
 
-        if jr.representation == "html" or jr.representation == "popup":
+    if r.representation in ("html", "popup"):
 
-            if jr.representation == "html":
-                shn_custom_view(jr, "display.html")
-            elif jr.representation == "popup":
-                shn_custom_view(jr, "popup.html")
+        # Title and subtitle
+        title = shn_get_crud_string(r.tablename, "title_display")
+        output = dict(title=title)
+        if r.component:
+            subtitle = shn_get_crud_string(tablename, "title_display")
+            output.update(subtitle=subtitle)
 
-            title = shn_get_crud_strings(jr.tablename).title_display
-            output = dict(title=title)
-            if jr.component:
-                subtitle = shn_get_crud_strings(tablename).title_display
-                output.update(subtitle=subtitle)
+        # Resource header
+        if rheader and r.id and (r.component or sticky):
+            try:
+                rh = rheader(r)
+            except TypeError:
+                rh = rheader
+            output.update(rheader=rh)
 
-            if rheader and jr.id and (jr.component or sticky):
-                try:
-                    _rheader = rheader(jr)
-                except:
-                    _rheader = rheader
-                if _rheader:
-                    output.update(rheader=_rheader)
-
-            if record_id:
-                item = crud.read(table, record_id)
-            else:
-                item = shn_get_crud_strings(tablename).msg_list_empty
-
-            if jr.representation == "html":
-                output.update(item=item)
-            elif jr.representation == "popup":
-                output.update(form=item)
-
-            if href_edit and editable:
-                edit = A(T("Edit"), _href=href_edit, _class="action-btn")
-            else:
-                edit = ""
-            if href_delete and deletable:
-                delete = A(T("Delete"), _href=href_delete, _id="delete-btn", _class="action-btn")
-            else:
-                delete = ""
-
-            label_list_button = shn_get_crud_strings(tablename).label_list_button
-            list_btn = A(label_list_button, _href=jr.there(), _class="action-btn")
-
-            output.update(edit=edit, delete=delete, list_btn=list_btn)
-
-            if jr.component and not jr.multiple:
-                del output["list_btn"]
-
-            output.update(jr=jr)
-            return(output)
-
-        elif jr.representation == "plain":
+        # Item
+        if record_id:
             item = crud.read(table, record_id)
-            response.view = "plain.html"
-            return dict(item=item, jr=jr)
-
-        elif jr.representation == "csv":
-            query = db[table].id == record_id
-            return export_csv(resource, query)
-
-        elif jr.representation == "pdf": # TODO: encoding problems, doesn't quite work
-            query = db[table].id == record_id
-            return export_pdf(table, query, list_fields)
-
-        elif jr.representation == "xls":
-            query = db[table].id == record_id
-            return export_xls(table, query, list_fields)
-
-        elif jr.representation in shn_json_export_formats:
-            return export_json(jr)
-
-        elif jr.representation in shn_xml_export_formats:
-            return export_xml(jr)
-
-        #elif jr.representation == "rss": # TODO: replace by XML export
-            #query = db[table].id == record_id
-            #return export_rss(module, resource, query, rss=rss, linkto=jr.here("html"))
-
         else:
-            session.error = BADFORMAT
-            redirect(URL(r=request, f="index"))
+            item = shn_get_crud_string(tablename, "msg_list_empty")
+
+        # Put into view
+        if representation == "html":
+            shn_custom_view(r, "display.html")
+            output.update(item=item)
+        elif representation == "popup":
+            shn_custom_view(r, "popup.html")
+            output.update(form=item, main=main, extra=extra, caller=caller)
+
+        # Add edit and delete buttons as appropriate
+        if href_edit and editable and r.method <> "update":
+            edit = A(T("Edit"), _href=href_edit, _class="action-btn")
+            output.update(edit=edit)
+        if href_delete and deletable:
+            delete = A(T("Delete"), _href=href_delete, _id="delete-btn", _class="action-btn")
+            output.update(delete=delete)
+
+        # Add a list button if appropriate
+        if not r.component or r.multiple:
+            label_list_button = shn_get_crud_string(tablename, "label_list_button")
+            list_btn = A(label_list_button, _href=r.there(), _class="action-btn")
+            output.update(list_btn=list_btn)
+
+        return output
+
+    elif representation == "plain":
+        item = crud.read(table, record_id)
+        response.view = "plain.html"
+        return dict(item=item)
+
+    elif representation == "csv":
+        query = db[table].id == record_id
+        return export_csv(tablename, query)
+
+    elif representation == "pdf":
+        query = db[table].id == record_id
+        return export_pdf(table, query, list_fields)
+
+    elif representation == "xls":
+        query = db[table].id == record_id
+        return export_xls(table, query, list_fields)
+
     else:
-        session.error = UNAUTHORISED
-        redirect(URL(r=request, c="default", f="user", args="login", vars={"_next": jr.here()}))
+        session.error = BADFORMAT
+        redirect(URL(r=request, f="index"))
 
 #
 # shn_linkto ------------------------------------------------------------------
 #
-def shn_linkto(jr, sticky=False):
+def shn_linkto(r, sticky=False):
 
     """ Helper function to generate links in list views """
 
-    def shn_list_linkto(field, jr=jr, sticky=sticky):
-        if jr.component:
-            authorised = shn_has_permission("update", jr.component.table)
+    def shn_list_linkto(field, r=r, sticky=sticky):
+        if r.component:
+            authorised = shn_has_permission("update", r.component.table)
             if authorised:
-                return jr.component.attr.linkto_update or \
-                       URL(r=request, args=[jr.id, jr.component_name, field, "update"],
+                return r.component.attr.linkto_update or \
+                       URL(r=request, args=[r.id, r.component_name, field, "update"],
                            vars={"_next":URL(r=request, args=request.args, vars=request.vars)})
             else:
-                return jr.component.attr.linkto or \
-                       URL(r=request, args=[jr.id, jr.component_name, field],
+                return r.component.attr.linkto or \
+                       URL(r=request, args=[r.id, r.component_name, field],
                            vars={"_next":URL(r=request, args=request.args, vars=request.vars)})
         else:
-            authorised = shn_has_permission("update", jr.table)
+            authorised = shn_has_permission("update", r.table)
             if authorised:
                 if sticky:
                     # Render "sticky" update form (returns to itself)
@@ -1235,7 +953,7 @@ def shn_linkto(jr, sticky=False):
                 else:
                     _next = URL(r=request, args=request.args, vars=request.vars)
                 return response.s3.linkto_update or \
-                       URL(r=request, args=[field, "update"], vars={"_next":_next})
+                       URL(r=request, args=[field, "update"])
             else:
                 return response.s3.linkto or \
                        URL(r=request, args=[field],
@@ -1246,25 +964,27 @@ def shn_linkto(jr, sticky=False):
 #
 # shn_list --------------------------------------------------------------------
 #
-def shn_list(jr, **attr):
+def shn_list(r, **attr):
 
     """ List records matching the request """
 
-    # Get the target table
-    module, resource, table, tablename = jr.target()
+    prefix, name, table, tablename = r.target()
+    vars = r.request.get_vars
+    representation = r.representation.lower()
 
+    # Get callbacks and list fields
     onvalidation = s3xrc.model.get_config(table, "onvalidation")
     onaccept = s3xrc.model.get_config(table, "onaccept")
     list_fields = s3xrc.model.get_config(table, "list_fields")
 
-    # Get request arguments
+    # Get controller attributes
     rheader = attr.get("rheader", None)
-    _attr = jr.component and jr.component.attr or attr
+    sticky = attr.get("sticky", False)
 
+    # Table-specific controller attributes
+    _attr = r.component and r.component.attr or attr
     editable = _attr.get("editable", True)
     deletable = _attr.get("deletable", True)
-    sticky = _attr.get("sticky", False)
-    #rss = _attr.get("rss", None)
     listadd = _attr.get("listadd", True)
     main = _attr.get("main", None)
     extra = _attr.get("extra", None)
@@ -1272,322 +992,214 @@ def shn_list(jr, **attr):
     sortby = _attr.get("sortby", None)
 
     # Provide the ability to get a subset of records
-    _vars = request.vars
-    if _vars.limit:
-        # disable Server-Side Pagination
-        response.s3.pagination = False
-        limit = int(_vars.limit)
-        if _vars.start:
-            start = int(_vars.start)
-            limitby = (start, start + limit)
+    start = vars.get("start", 0)
+    limit = vars.get("limit", None)
+    if limit is not None:
+        try:
+            start = int(start)
+            limit = int(limit)
+        except ValueError:
+            limitby = None
         else:
-            limitby = (0, limit)
+            # disable Server-Side Pagination
+            response.s3.pagination = False
+            limitby = (start, start + limit)
     else:
         limitby = None
 
     # Get the initial query
-    query = shn_accessible_query("read", table)
-
-    # Get qualified query and create link
-    if jr.component:
-        if jr.record:
-            query = ((table[jr.fkey] == jr.table[jr.pkey]) & \
-                     (table[jr.fkey] == jr.record[jr.pkey])) & query
-        else:
-            query = (table[jr.fkey] == jr.table[jr.pkey]) & query
-        if jr.component_id:
-            query = (table.id == jr.component_id) & query
-        href_add = URL(r=jr.request, f=jr.name, args=[jr.id, resource, "create"])
+    if r.component:
+        resource = r.resource.components.get(r.component_name).resource
+        href_add = URL(r=r.request, f=r.name, args=[r.id, name, "create"])
     else:
-        href_add = URL(r=jr.request, f=jr.name, args=["create"])
+        resource = r.resource
+        href_add = URL(r=r.request, f=r.name, args=["create"])
+    query = resource.get_query()
 
     # SSPag filter handling
-    if jr.representation == "html":
-        # HTML call sets/clears the filter
-        session.s3.filter = response.s3.filter
-    elif jr.representation.lower() == "aadata":
-        # aaData call uses the filter, if present
+    if r.representation == "html":
+        session.s3.filter = query
+    elif r.representation.lower() == "aadata":
         if session.s3.filter is not None:
-            response.s3.filter = session.s3.filter
+            query = session.s3.filter
 
-    # Add filter to query
-    if response.s3.filter:
-        query = response.s3.filter & query
+    s3xrc.audit("list", prefix, name, representation=r.representation)
 
-    # Filter deleted records
-    if "deleted" in table:
-        query = ((table.deleted == False) | (table.deleted == None)) & query
+    # Which fields do we display?
+    fields = None
+    if list_fields:
+        fkey = r.fkey or None
+        fields = [f for f in list_fields if table[f].readable and f != fkey]
+    if fields and len(fields) == 0:
+        fields.append("id")
+    if not fields:
+        fields = [f for f in table.fields if table[f].readable]
 
-    # Call audit
-    shn_audit_read(operation="list",
-                   module=module,
-                   resource=resource,
-                   representation=jr.representation)
+    # Where to link the ID column?
+    linkto = shn_linkto(r, sticky)
 
-    # dataTables representation
-    # Migrate to an XSLT in future?
-    if jr.representation.lower() == "aadata":
+    if representation == "aadata":
 
-        if "iDisplayStart" in request.vars:
-            start = int(request.vars.iDisplayStart)
-        else:
-            start = 0
-        if "iDisplayLength" in request.vars:
-            limit = int(request.vars.iDisplayLength)
-        else:
-            limit = None
+        iDisplayStart = vars.get("iDisplayStart", 0)
+        iDisplayLength = vars.get("iDisplayLength", None)
 
-        # Which fields do we display?
-        fields = None
+        if iDisplayLength is not None:
+            try:
+                start = int(iDisplayStart)
+                limit = int(iDisplayLength)
+            except ValueError:
+                start = 0
+                limit = None
 
-        if list_fields:
-            fkey = jr.fkey or None
-            fields = [f for f in list_fields if table[f].readable and f != fkey]
-
-        if fields and len(fields) == 0:
-            fields.append("id")
-
-        if not fields:
-            fields = [f for f in table.fields if table[f].readable]
-
-        if "iSortingCols" in request.vars and orderby is None:
+        iSortingCols = vars.get("iSortingCols", None)
+        if iSortingCols and orderby is None:
             orderby = shn_convert_orderby(table, request, fields=fields)
 
-        if request.vars.sSearch and request.vars.sSearch <> "":
+        if vars.sSearch:
             squery = shn_build_ssp_filter(table, request, fields=fields)
             if squery is not None:
                 query = squery & query
 
-        sEcho = int(_vars.sEcho)
+        sEcho = int(vars.sEcho)
 
-        totalrows = db(query).count()
+        totalrows = resource.count()
         if limit:
-            rows = db(query).select(table.ALL, limitby = (start, start + limit), orderby = orderby)
+            rows = db(query).select(table.ALL,
+                                    limitby = (start, start + limit),
+                                    orderby = orderby)
         else:
-            rows = db(query).select(table.ALL, orderby = orderby)
+            rows = db(query).select(table.ALL,
+                                    orderby = orderby)
 
-        # Where to link the ID column?
-        linkto = shn_linkto(jr, sticky)
-
-        r = dict(sEcho = sEcho,
-               iTotalRecords = len(rows),
-               iTotalDisplayRecords = totalrows,
-               aaData = [[shn_field_represent_sspage(table[f], row, f, linkto=linkto)
-                          for f in fields] for row in rows])
+        result = dict(sEcho = sEcho,
+                      iTotalRecords = len(rows),
+                      iTotalDisplayRecords = totalrows,
+                      aaData = [[shn_field_represent_sspage(table[f], row, f, linkto=linkto)
+                                for f in fields] for row in rows])
 
         from gluon.serializers import json
-        return json(r)
+        return json(result)
 
-    if jr.representation=="html":
+    elif representation in ("html", "popup"):
+
         output = dict(main=main, extra=extra, sortby=sortby)
 
-        if jr.component:
-            title = shn_get_crud_strings(jr.tablename).title_display
+        if r.component:
+            title = shn_get_crud_string(r.tablename, "title_display")
             if rheader:
                 try:
-                    _rheader = rheader(jr)
-                except:
-                    _rheader = rheader
-                if _rheader:
-                    output.update(rheader=_rheader)
+                    rh = rheader(r)
+                except TypeError:
+                    rh = rheader
+                output.update(rheader=rh)
         else:
-            title = shn_get_crud_strings(tablename).title_list
+            title = shn_get_crud_string(tablename, "title_list")
 
-        subtitle = shn_get_crud_strings(tablename).subtitle_list
+        subtitle = shn_get_crud_string(tablename, "subtitle_list")
         output.update(title=title, subtitle=subtitle)
 
-        # Which fields do we display?
-        fields = None
-
-        if list_fields:
-            fkey = jr.fkey or None
-            fields = [table[f] for f in list_fields if table[f].readable and f != fkey]
-
-        if fields and len(fields) == 0:
-            fields.append(table.id)
-
-        if not fields:
-            fields = [table[f] for f in table.fields if table[f].readable]
-
         # Column labels: use custom or prettified label
+        fields = [table[f] for f in fields]
         headers = dict(map(lambda f: (str(f), f.label), fields))
 
+        # SSPag: only download 1 record initially & let
+        # the view request what it wants via AJAX
         if response.s3.pagination and not limitby:
-            # Server-side pagination, so only download 1 record
-            # initially & let the view request what it wants via AJAX
             limitby = (0, 1)
 
-        linkto = shn_linkto(jr, sticky)
-
-        items = crud.select(table, query=query,
-            fields=fields,
-            orderby=orderby,
-            limitby=limitby,
-            headers=headers,
-            linkto=linkto,
-            truncate=48, _id="list", _class="display")
+        # Get the items
+        items = crud.select(table,
+                            query=query,
+                            fields=fields,
+                            orderby=orderby,
+                            limitby=limitby,
+                            headers=headers,
+                            linkto=linkto,
+                            truncate=48, _id="list", _class="display")
 
         if not items:
-            items = shn_get_crud_strings(tablename).msg_list_empty
-
-        # Update the Return with common items
-        output.update(dict(items=items))
+            items = shn_get_crud_string(tablename, "msg_list_empty")
+        output.update(items=items)
 
         authorised = shn_has_permission("create", table)
         if authorised and listadd:
 
             # Block join field
-            if jr.component:
-                _comment = table[jr.fkey].comment
-                table[jr.fkey].comment = None
-                table[jr.fkey].default = jr.record[jr.pkey]
+            if r.component:
+                _comment = table[r.fkey].comment
+                table[r.fkey].comment = None
+                table[r.fkey].default = r.record[r.pkey]
+
                 # Fix for #447:
-                if jr.http == "POST":
-                    table[jr.fkey].writable = True
-                    request.post_vars.update({jr.fkey: str(jr.record[jr.pkey])})
+                if r.http == "POST":
+                    table[r.fkey].writable = True
+                    request.post_vars.update({r.fkey: str(r.record[r.pkey])})
                 else:
-                    table[jr.fkey].writable = False
+                    table[r.fkey].writable = False
 
             if onaccept:
                 _onaccept = lambda form: \
-                            shn_audit_create(form, module, resource, jr.representation) and \
-                            s3xrc.store_session(session, module, resource, 0) and \
+                            s3xrc.audit("create", prefix, name, form=form,
+                                        representation=representation) and \
+                            s3xrc.store_session(session, prefix, name, 0) and \
                             onaccept(form)
             else:
                 _onaccept = lambda form: \
-                            shn_audit_create(form, module, resource, jr.representation) and \
-                            s3xrc.store_session(session, module, resource, 0)
+                            s3xrc.audit("create", prefix, name, form=form,
+                                        representation=representation) and \
+                            s3xrc.store_session(session, prefix, name, 0)
 
-            message = shn_get_crud_strings(tablename).msg_record_created
+            message = shn_get_crud_string(tablename, "msg_record_created")
 
             # Display the Add form above List
             form = crud.create(table,
                                onvalidation=onvalidation,
                                onaccept=_onaccept,
                                message=message,
-                               next=jr.there())
+                               next=r.there())
 
+            # Cancel button?
             #form[0].append(TR(TD(), TD(INPUT(_type="reset", _value="Reset form"))))
             if response.s3.cancel:
-                form[0][-1][1].append(INPUT(_type="button", _value="Cancel", _onclick="window.location='%s';" % response.s3.cancel))
+                form[0][-1][1].append(INPUT(_type="button",
+                                            _value="Cancel",
+                                            _onclick="window.location='%s';" %
+                                                     response.s3.cancel))
 
-            if jr.component:
-                table[jr.fkey].comment = _comment
+            if r.component:
+                table[r.fkey].comment = _comment
 
-            addtitle = shn_get_crud_strings(tablename).subtitle_create
+            addtitle = shn_get_crud_string(tablename, "subtitle_create")
 
-            # Check for presence of Custom View
-            shn_custom_view(jr, "list_create.html")
-
-            # Add specificities to Return
-            output.update(dict(form=form, addtitle=addtitle))
+            shn_custom_view(r, "list_create.html")
+            output.update(form=form, addtitle=addtitle)
 
         else:
             # List only with create button below
             if listadd:
-                label_create_button = shn_get_crud_strings(tablename).label_create_button
+                label_create_button = shn_get_crud_string(tablename, "label_create_button")
                 add_btn = A(label_create_button, _href=href_add, _class="action-btn")
             else:
                 add_btn = ""
 
-            # Add specificities to Return
-            output.update(dict(add_btn=add_btn))
-
-            # Check for presence of Custom View
-            shn_custom_view(jr, "list.html")
+            shn_custom_view(r, "list.html")
+            output.update(add_btn=add_btn)
 
         return output
 
-    elif jr.representation == "ext":
-        output = dict(main=main, extra=extra, sortby=sortby)
-
-        if jr.component:
-            title = shn_get_crud_strings(jr.tablename).title_display
-        else:
-            title = shn_get_crud_strings(tablename).title_list
-
-        # Add to Return
-        output.update(title=title)
-
-        # Block join field
-        if jr.component:
-            _comment = table[jr.fkey].comment
-            table[jr.fkey].comment = None
-            table[jr.fkey].default = jr.record[jr.pkey]
-            table[jr.fkey].writable = False
-
-        if onaccept:
-            _onaccept = lambda form: \
-                        shn_audit_create(form, module, resource, jr.representation) and \
-                        s3xrc.store_session(session, module, resource, form.vars.id) and \
-                        onaccept(form)
-        else:
-            _onaccept = lambda form: \
-                        shn_audit_create(form, module, resource, jr.representation) and \
-                        s3xrc.store_session(session, module, resource, form.vars.id)
-
-        message = shn_get_crud_strings(tablename).msg_record_created
-
-        # Form is used to build the initial list view
-        form = crud.create(table,
-                           onvalidation=onvalidation,
-                           onaccept=_onaccept,
-                           message=message,
-                           next=jr.there())
-
-        if jr.component:
-            table[jr.fkey].comment = _comment
-
-        # Update the Return with the Form
-        output.update(form=form, pagesize=ROWSPERPAGE)
-
-        authorised = shn_has_permission("update", table)
-        if authorised:
-            # Provide an Editable Grid
-
-            # Check for presence of Custom View
-            shn_custom_view(jr, "list_create.html", format="ext")
-
-        else:
-            # Provide a read-only Ext grid
-            # (We could do this from the HTML table using TableGrid, but then we wouldn't have client-side pagination)
-
-            if listadd:
-                label_create_button = shn_get_crud_strings(tablename).label_create_button
-                add_btn = A(label_create_button, _href=href_add, _class="action-btn")
-            else:
-                add_btn = ""
-
-            # Add to Return
-            output.update(dict(add_btn=add_btn))
-
-            # Check for presence of Custom View
-            shn_custom_view(jr, "list.html", format="ext")
-
-        return output
-
-    elif jr.representation == "plain":
+    elif representation == "plain":
         items = crud.select(table, query, truncate=24)
         response.view = "plain.html"
-        return dict(item=items, jr=jr)
+        return dict(item=items)
 
-    elif jr.representation == "csv":
-        return export_csv(resource, query)
+    elif representation == "csv":
+        return export_csv(tablename, query)
 
-    elif jr.representation == "pdf":
+    elif representation == "pdf":
         return export_pdf(table, query, list_fields)
 
-    elif jr.representation == "xls":
+    elif representation == "xls":
         return export_xls(table, query, list_fields)
-
-    elif jr.representation in shn_json_export_formats:
-        return export_json(jr)
-
-    elif jr.representation in shn_xml_export_formats:
-        return export_xml(jr)
-
-    #elif jr.representation == "rss":
-        #return export_rss(module, resource, query, rss=rss, linkto=jr.there("html"))
 
     else:
         session.error = BADFORMAT
@@ -1596,72 +1208,64 @@ def shn_list(jr, **attr):
 #
 # shn_create ------------------------------------------------------------------
 #
-def shn_create(jr, **attr):
+def shn_create(r, **attr):
 
     """ Create new records """
 
-    rheader = attr.get("rheader", None)
-    sticky = attr.get("sticky", False)
-    main = attr.get("main", None)
+    prefix, name, table, tablename = r.target()
+    representation = r.representation.lower()
 
-    module, resource, table, tablename = jr.target()
-
+    # Callbacks
     onvalidation = s3xrc.model.get_config(table, "onvalidation")
     onaccept = s3xrc.model.get_config(table, "onaccept")
 
-    if jr.component:
-        main = s3xrc.model.get_attr(resource, "main")
-        extra = s3xrc.model.get_attr(resource, "extra")
+    # Controller attributes
+    rheader = attr.get("rheader", None)
+    sticky = attr.get("sticky", False)
 
-    if jr.representation == "html":
+    # Table-specific controller attributes
+    _attr = r.component and r.component.attr or attr
+    main = _attr.get("main", None)
+    extra = _attr.get("extra", None)
+    create_next = _attr.get("create_next")
 
-        # Check for presence of Custom View
-        shn_custom_view(jr, "create.html")
+    if representation == "html":
 
-        output = dict(module=module, resource=resource, main=main)
+        # Default components
+        output = dict(module=prefix, resource=name, main=main, extra=extra)
 
-        if jr.component:
-            title = shn_get_crud_strings(jr.tablename).title_display
-            subtitle = shn_get_crud_strings(tablename).subtitle_create
+        # Title, subtitle and resource header
+        if r.component:
+            title = shn_get_crud_string(r.tablename, "title_display")
+            subtitle = shn_get_crud_string(tablename, "subtitle_create")
             output.update(subtitle=subtitle)
-
-            if rheader and jr.id:
+            if rheader and r.id:
                 try:
-                    _rheader = rheader(jr)
-                except:
-                    _rheader = rheader
-                if _rheader:
-                    output.update(rheader=_rheader)
+                    rh = rheader(r)
+                except TypeError:
+                    rh = rheader
+                output.update(rheader=rh)
         else:
-            title = shn_get_crud_strings(tablename).title_create
+            title = shn_get_crud_string(tablename, "title_create")
+        output.update(title=title)
 
-        label_list_button = shn_get_crud_strings(tablename).label_list_button
-        list_btn = A(label_list_button, _href=jr.there(), _class="action-btn")
-
-        output.update(title=title, list_btn=list_btn)
-
-        if jr.component:
+        if r.component:
             # Block join field
-            _comment = table[jr.fkey].comment
-            table[jr.fkey].comment = None
-            table[jr.fkey].default = jr.record[jr.pkey]
-            # Fix for #447:
-            if jr.http == "POST":
-                table[jr.fkey].writable = True
-                request.post_vars.update({jr.fkey: str(jr.record[jr.pkey])})
+            _comment = table[r.fkey].comment
+            table[r.fkey].comment = None
+            table[r.fkey].default = r.record[r.pkey]
+            if r.http == "POST":
+                table[r.fkey].writable = True
+                request.post_vars.update({r.fkey: str(r.record[r.pkey])})
             else:
-                table[jr.fkey].writable = False
-            # Save callbacks
-            create_onvalidation = crud.settings.create_onvalidation
-            create_onaccept = crud.settings.create_onaccept
-            create_next = crud.settings.create_next
+                table[r.fkey].writable = False
             # Neutralize callbacks
             crud.settings.create_onvalidation = None
             crud.settings.create_onaccept = None
-            crud.settings.create_next = s3xrc.model.get_attr(jr.component_name, "create_next") or jr.there()
+            crud.settings.create_next = create_next or r.there()
         else:
             if not crud.settings.create_next:
-                crud.settings.create_next = jr.there()
+                crud.settings.create_next = r.there()
             if not onvalidation:
                 onvalidation = crud.settings.create_onvalidation
             if not onaccept:
@@ -1669,98 +1273,103 @@ def shn_create(jr, **attr):
 
         if onaccept:
             _onaccept = lambda form: \
-                        shn_audit_create(form, module, resource, jr.representation) and \
-                        s3xrc.store_session(session, module, resource, form.vars.id) and \
+                        s3xrc.audit("create", prefix, name, form=form,
+                                    representation=representation) and \
+                        s3xrc.store_session(session,
+                                            prefix, name, form.vars.id) and \
                         onaccept(form)
 
         else:
             _onaccept = lambda form: \
-                        shn_audit_create(form, module, resource, jr.representation) and \
-                        s3xrc.store_session(session, module, resource, form.vars.id)
+                        s3xrc.audit("create", prefix, name, form=form,
+                                    representation=representation) and \
+                        s3xrc.store_session(session,
+                                            prefix, name, form.vars.id)
 
-        message = shn_get_crud_strings(tablename).msg_record_created
-
+        # Get the form
+        message = shn_get_crud_string(tablename, "msg_record_created")
         form = crud.create(table,
                            message=message,
                            onvalidation=onvalidation,
                            onaccept=_onaccept)
 
-
+        # Cancel button?
         #form[0].append(TR(TD(), TD(INPUT(_type="reset", _value="Reset form"))))
         if response.s3.cancel:
-            form[0][-1][1].append(INPUT(_type="button", _value="Cancel", _onclick="window.location='%s';" % response.s3.cancel))
+            form[0][-1][1].append(INPUT(_type="button",
+                                        _value="Cancel",
+                                        _onclick="window.location='%s';" %
+                                                 response.s3.cancel))
 
-        if jr.component:
-            # Restore comment
-            table[jr.fkey].comment = _comment
-            # Restore callbacks
-            crud.settings.create_onvalidation = create_onvalidation
-            crud.settings.create_onaccept = create_onaccept
-            crud.settings.create_next = create_next
-
+        # Put the form into output
         output.update(form=form)
 
-        if jr.component and not jr.multiple:
-            del output["list_btn"]
+        # Restore comment
+        if r.component:
+            table[r.fkey].comment = _comment
 
-        output.update(jr=jr)
+        # Add a list button if appropriate
+        if not r.component or r.multiple:
+            label_list_button = shn_get_crud_string(tablename, "label_list_button")
+            list_btn = A(label_list_button, _href=r.there(), _class="action-btn")
+            output.update(list_btn=list_btn)
+
+        # Custom view
+        shn_custom_view(r, "create.html")
+
         return output
 
-    elif jr.representation == "plain":
+    elif representation == "plain":
         if onaccept:
             _onaccept = lambda form: \
-                        shn_audit_create(form, module, resource, jr.representation) and \
+                        s3xrc.audit("create", prefix, name, form=form,
+                                    representation=representation) and \
                         onaccept(form)
         else:
             _onaccept = lambda form: \
-                        shn_audit_create(form, module, resource, jr.representation)
+                        s3xrc.audit("create", prefix, name, form=form,
+                                    representation=representation)
 
-        form = crud.create(table, onvalidation=onvalidation, onaccept=_onaccept)
+        form = crud.create(table,
+                           onvalidation=onvalidation, onaccept=_onaccept)
         response.view = "plain.html"
-        return dict(item=form, jr=jr)
+        return dict(item=form)
 
-    elif jr.representation == "ext":
-        shn_custom_view(jr, "create.html", format="ext")
-        return dict()
-
-    elif jr.representation == "popup":
+    elif representation == "popup":
         if onaccept:
             _onaccept = lambda form: \
-                        shn_audit_create(form, module, resource, jr.representation) and \
+                        s3xrc.audit("create", prefix, name, form=form,
+                                    representation=representation) and \
                         onaccept(form)
         else:
             _onaccept = lambda form: \
-                        shn_audit_create(form, module, resource, jr.representation)
+                        s3xrc.audit("create", prefix, name, form=form,
+                                    representation=representation)
 
-        form = crud.create(table, onvalidation=onvalidation, onaccept=_onaccept)
-        # Check for presence of Custom View
-        shn_custom_view(jr, "popup.html")
-        return dict(form=form, module=module,
-                    resource=resource, main=main, caller=request.vars.caller)
+        form = crud.create(table,
+                           onvalidation=onvalidation, onaccept=_onaccept)
+        shn_custom_view(r, "popup.html")
+        return dict(form=form,
+                    module=module,
+                    resource=resource,
+                    main=main,
+                    caller=request.vars.caller)
 
-    elif jr.representation == "url":
-        return import_url(jr, table, method="create")
+    elif representation == "url":
+        return import_url(r, table, method="create")
 
-    elif jr.representation == "csv":
+    elif representation == "csv":
         # Read in POST
         import csv
         csv.field_size_limit(1000000000)
         #infile = open(request.vars.filename, "rb")
-        infile = request.vars.filename.file
+        infile = r.request.vars.filename.file
         try:
             import_csv(infile, table)
             session.flash = T("Data uploaded")
         except:
             session.error = T("Unable to parse CSV file!")
-        redirect(jr.there())
-
-    elif jr.representation in shn_json_import_formats:
-        response.view = "plain.html"
-        return import_json(jr, **attr)
-
-    elif jr.representation in shn_xml_import_formats:
-        response.view = "plain.html"
-        return import_xml(jr, **attr)
+        redirect(r.there())
 
     else:
         session.error = BADFORMAT
@@ -1769,216 +1378,214 @@ def shn_create(jr, **attr):
 #
 # shn_update ------------------------------------------------------------------
 #
-def shn_update(jr, **attr):
+def shn_update(r, **attr):
 
     """ Update an existing record """
 
-    rheader = attr.get("rheader", None)
-    sticky = attr.get("sticky", False)
-    editable = attr.get("editable", True)
-    deletable = attr.get("deletable", True)
+    prefix, name, table, tablename = r.target()
+    representation = r.representation.lower()
 
-    module, resource, table, tablename = jr.target()
-
+    # Get callbacks
     onvalidation = s3xrc.model.get_config(table, "onvalidation")
     onaccept = s3xrc.model.get_config(table, "onaccept")
 
-    if jr.component:
+    # Get controller attributes
+    rheader = attr.get("rheader", None)
+    sticky = attr.get("sticky", False)
 
-        if jr.multiple and not jr.component_id:
-            return shn_create(jr, rheader)
+    # Table-specific controller attributes
+    _attr = r.component and r.component.attr or attr
+    editable = _attr.get("editable", True)
+    deletable = _attr.get("deletable", True)
+    update_next = _attr.get("update_next", None)
 
-        query = (table[jr.fkey] == jr.record[jr.pkey])
-        if jr.component_id:
-            query = (table.id == jr.component_id) & query
-        if "deleted" in table:
-            query = ((table.deleted == False) | (table.deleted == None)) & query
-
-        try:
-            record_id = db(query).select(table.id, limitby=(0, 1)).first().id
-        except:
-            record_id = None
-            href_delete = None
-            href_edit = None
-            session.error = BADRECORD
-            redirect(jr.there())
-
-        editable = s3xrc.model.get_attr(resource, "editable")
-        deletable = s3xrc.model.get_attr(resource, "deletable")
-
-    else:
-        record_id = jr.id
-        deletable = deletable and shn_has_permission("delete", table, record_id)
-
-    if not editable and jr.representation == "html":
-        return shn_read(jr, **attr)
-
-    authorised = shn_has_permission("update", table, record_id)
-    if authorised:
-        crud.settings.update_deletable = deletable
-
-        if jr.representation == "html" or jr.representation == "popup":
-
-
-            if jr.representation == "html":
-                shn_custom_view(jr, "update.html")
-            elif jr.representation == "popup":
-                shn_custom_view(jr, "popup.html")
-
-            output = dict()
-
-            if jr.component:
-                title = shn_get_crud_strings(jr.tablename).title_display
-                subtitle = shn_get_crud_strings(tablename).title_update
-                output.update(subtitle=subtitle)
-
+    # Find the correct record ID
+    if r.component:
+        resource = r.resource.components.get(r.component_name).resource
+        resource.load(start=0, limit=1)
+        if not len(resource):
+            if not r.multiple:
+                r.component_id = None
+                redirect(r.other(method="create", representation=representation))
             else:
-                title = shn_get_crud_strings(tablename).title_update
-
-            if rheader and jr.id and (jr.component or sticky):
-                try:
-                    _rheader = rheader(jr)
-                except:
-                    _rheader = rheader
-                if _rheader:
-                    output.update(rheader=_rheader)
-
-            label_list_button = shn_get_crud_strings(tablename).label_list_button
-            list_btn = A(label_list_button, _href=jr.there(), _class="action-btn")
-
-            if deletable:
-                del_href = jr.other(method="delete", representation=jr.representation)
-                label_del_button = shn_get_crud_strings(tablename).label_delete_button
-                del_btn = A(label_del_button, _href=del_href, _id="delete-btn", _class="action-btn")
-                output.update(del_btn=del_btn)
-
-            output.update(title=title, list_btn=list_btn)
-
-            if jr.component:
-                # Block join field
-                _comment = table[jr.fkey].comment
-                table[jr.fkey].comment = None
-                table[jr.fkey].default = jr.record[jr.pkey]
-                # Fix for #447:
-                if jr.http == "POST":
-                    table[jr.fkey].writable = True
-                    request.post_vars.update({jr.fkey: str(jr.record[jr.pkey])})
-                else:
-                    table[jr.fkey].writable = False
-                # Save callbacks
-                update_onvalidation = crud.settings.update_onvalidation
-                update_onaccept = crud.settings.update_onaccept
-                update_next = crud.settings.update_next
-                # Neutralize callbacks
-                crud.settings.update_onvalidation = None
-                crud.settings.update_onaccept = None
-                crud.settings.update_next = s3xrc.model.get_attr(jr.component_name, "update_next") or \
-                                            jr.there()
-            else:
-                if not crud.settings.update_next:
-                    crud.settings.update_next = jr.here()
-                if not onvalidation:
-                    onvalidation = crud.settings.update_onvalidation
-                if not onaccept:
-                    onaccept = crud.settings.update_onaccept
-
-            message = shn_get_crud_strings(tablename).msg_record_modified
-
-            if onaccept:
-                _onaccept = lambda form: \
-                    shn_audit_update(form, module, resource, jr.representation) and \
-                    s3xrc.store_session(session, module, resource, form.vars.id) and \
-                    onaccept(form)
-            else:
-                _onaccept = lambda form: \
-                    shn_audit_update(form, module, resource, jr.representation) and \
-                    s3xrc.store_session(session, module, resource, form.vars.id)
-
-            form = crud.update(table, record_id,
-                               message=message,
-                               onvalidation=onvalidation,
-                               onaccept=_onaccept,
-                               deletable=False) # TODO: add extra delete button to form
-
-            #form[0].append(TR(TD(), TD(INPUT(_type="reset", _value="Reset form"))))
-            if response.s3.cancel:
-                form[0][-1][1].append(INPUT(_type="button", _value="Cancel", _onclick="window.location='%s';" % response.s3.cancel))
-
-            if jr.component:
-                # Restore comment
-                table[jr.fkey].comment = _comment
-                # Restore callbacks
-                crud.settings.update_onvalidation = update_onvalidation
-                crud.settings.update_onaccept = update_onaccept
-                crud.settings.update_next = update_next
-
-            output.update(form=form, jr=jr)
-
-            if jr.component and not jr.multiple:
-                del output["list_btn"]
-
-            return(output)
-
-        elif jr.representation == "plain":
-            if onaccept:
-                _onaccept = lambda form: \
-                            shn_audit_update(form, module, resource, jr.representation) and \
-                            onaccept(form)
-            else:
-                _onaccept = lambda form: \
-                            shn_audit_update(form, module, resource, jr.representation)
-
-            form = crud.update(table, record_id,
-                               onvalidation=onvalidation,
-                               onaccept=_onaccept,
-                               deletable=False)
-
-            response.view = "plain.html"
-            return dict(item=form, jr=jr)
-
-        elif jr.representation == "ext":
-            shn_custom_view(jr, "update.html", format="ext")
-            return dict()
-
-        elif jr.representation == "url":
-            return import_url(jr, table, method="update")
-
-        elif jr.representation in shn_json_import_formats:
-            response.view = "plain.html"
-            return import_json(jr)
-
-        elif jr.representation in shn_xml_import_formats:
-            response.view = "plain.html"
-            return import_xml(jr)
-
+                session.error = BADRECORD
+                redirect(r.there())
         else:
-            session.error = BADFORMAT
-            redirect(URL(r=request, f="index"))
+            record_id = resource.records().first().id
+    else:
+        record_id = r.id
+
+    # Redirect to read view if not editable
+    if not editable and representation == "html":
+        return shn_read(r, **attr)
+
+    # Check authorisation
+    authorised = shn_has_permission("update", table, record_id)
+    if not authorised:
+        r.unauthorised()
+
+    # Audit read
+    s3xrc.audit("read", prefix, name,
+                record=record_id, representation=representation)
+
+    if r.representation == "html" or r.representation == "popup":
+
+        # Custom view
+        if r.representation == "html":
+            shn_custom_view(r, "update.html")
+        elif r.representation == "popup":
+            shn_custom_view(r, "popup.html")
+
+        # Title and subtitle
+        if r.component:
+            title = shn_get_crud_string(r.tablename, "title_display")
+            subtitle = shn_get_crud_string(tablename, "title_update")
+            output = dict(title=title, subtitle=subtitle)
+        else:
+            title = shn_get_crud_string(tablename, "title_update")
+            output = dict(title=title)
+
+        # Resource header
+        if rheader and r.id and (r.component or sticky):
+            try:
+                rh = rheader(r)
+            except TypeError:
+                rh = rheader
+            output.update(rheader=rh)
+
+        # Add delete button
+        if deletable:
+            href_delete = r.other(method="delete", representation=representation)
+            label_del_button = shn_get_crud_string(tablename, "label_delete_button")
+            del_btn = A(label_del_button,
+                        _href=href_delete,
+                        _id="delete-btn",
+                        _class="action-btn")
+            output.update(del_btn=del_btn)
+
+        if r.component:
+            _comment = table[r.fkey].comment
+            table[r.fkey].comment = None
+            table[r.fkey].default = r.record[r.pkey]
+            # Fix for #447:
+            if r.http == "POST":
+                table[r.fkey].writable = True
+                request.post_vars.update({r.fkey: str(r.record[r.pkey])})
+            else:
+                table[r.fkey].writable = False
+            crud.settings.update_onvalidation = None
+            crud.settings.update_onaccept = None
+            if not representation == "popup":
+                crud.settings.update_next = update_next or r.there()
+        else:
+            if not representation == "popup" and \
+               not crud.settings.update_next:
+                crud.settings.update_next = update_next or r.here()
+            if not onvalidation:
+                onvalidation = crud.settings.update_onvalidation
+            if not onaccept:
+                onaccept = crud.settings.update_onaccept
+
+        if onaccept:
+            _onaccept = lambda form: \
+                        s3xrc.audit("update", prefix, name, form=form,
+                                    representation=representation) and \
+                        s3xrc.store_session(session, prefix, name, form.vars.id) and \
+                        onaccept(form)
+        else:
+            _onaccept = lambda form: \
+                        s3xrc.audit("update", prefix, name, form=form,
+                                    representation=representation) and \
+                        s3xrc.store_session(session, prefix, name, form.vars.id)
+
+        crud.settings.update_deletable = deletable
+        message = shn_get_crud_string(tablename, "msg_record_modified")
+
+        form = crud.update(table, record_id,
+                            message=message,
+                            onvalidation=onvalidation,
+                            onaccept=_onaccept,
+                            deletable=False) # TODO: add extra delete button to form
+
+        # Cancel button?
+        #form[0].append(TR(TD(), TD(INPUT(_type="reset", _value="Reset form"))))
+        if response.s3.cancel:
+            form[0][-1][1].append(INPUT(_type="button",
+                                        _value="Cancel",
+                                        _onclick="window.location='%s';" %
+                                                 response.s3.cancel))
+
+        output.update(form=form)
+
+        # Restore comment
+        if r.component:
+            table[r.fkey].comment = _comment
+
+        # Add a list button if appropriate
+        if not r.component or r.multiple:
+            label_list_button = shn_get_crud_string(tablename, "label_list_button")
+            list_btn = A(label_list_button, _href=r.there(), _class="action-btn")
+            output.update(list_btn=list_btn)
+
+        return output
+
+    elif representation == "plain":
+        if onaccept:
+            _onaccept = lambda form: \
+                        s3xrc.audit("update", prefix, name, form=form,
+                                    representation=representation) and \
+                        onaccept(form)
+        else:
+            _onaccept = lambda form: \
+                        s3xrc.audit("update", prefix, name, form=form,
+                                    representation=representation)
+
+        form = crud.update(table, record_id,
+                           onvalidation=onvalidation,
+                           onaccept=_onaccept,
+                           deletable=False)
+
+        response.view = "plain.html"
+        return dict(item=form)
+
+    elif r.representation == "url":
+        return import_url(r, table, method="update")
 
     else:
-        session.error = UNAUTHORISED
-        redirect(URL(r=request, c="default", f="user", args="login", vars={"_next": jr.here()}))
+        session.error = BADFORMAT
+        redirect(URL(r=request, f="index"))
+
+
 #
 # shn_delete ------------------------------------------------------------------
 #
-def shn_delete(jr, **attr):
+def shn_delete(r, **attr):
 
     """ Delete record(s) """
 
-    module, resource, table, tablename = jr.target()
+    prefix, name, table, tablename = r.target()
+    representation = r.representation.lower()
 
+    # Get callbacks
     onvalidation = s3xrc.model.get_config(table, "delete_onvalidation")
     onaccept = s3xrc.model.get_config(table, "delete_onaccept")
 
-    if jr.component:
+    # Table-specific controller attributes
+    _attr = r.component and r.component.attr or attr
+    deletable = _attr.get("deletable", True)
 
-        query = ((table[jr.fkey] == jr.table[jr.pkey]) & (table[jr.fkey] == jr.record[jr.pkey]))
-        if jr.component_id:
-            query = (table.id == jr.component_id) & query
-        if "deleted" in table:
-            query = (table.deleted == False) & query
+    # custom delete_next?
+    delete_next = _attr.get("delete_next", None)
+    if delete_next:
+        r.next = delete_next
+
+    if r.component:
+        query = ((table[r.fkey] == r.table[r.pkey]) & \
+                 (table[r.fkey] == r.record[r.pkey]))
+        if r.component_id:
+            query = (table.id == r.component_id) & query
     else:
-        query = (table.id == jr.id)
+        query = (table.id == r.id)
 
     if "deleted" in table:
         query = (table.deleted == False) & query
@@ -1987,34 +1594,26 @@ def shn_delete(jr, **attr):
     rows = db(query).select(table.ALL)
 
     # Nothing to do? Return here!
-    if not rows or len(rows) == 0:
+    if not rows:
         session.confirmation = T("No records to delete")
-        return
+        return {}
 
-    message = shn_get_crud_strings(tablename).msg_record_deleted
-
-    if jr.component:
-        # Save callback settings
-        delete_onvalidation = crud.settings.delete_onvalidation
-        delete_onaccept = crud.settings.delete_onaccept
-        delete_next = crud.settings.delete_next
-
-        # Set resource specific callbacks, if any
-        crud.settings.delete_onvalidation = onvalidation
-        crud.settings.delete_onaccept = onaccept
-        crud.settings.delete_next = None # do not set here!
+    message = shn_get_crud_string(tablename, "msg_record_deleted")
 
     # Delete all accessible records
     numrows = 0
     for row in rows:
         if shn_has_permission("delete", table, row.id):
             numrows += 1
+            if s3xrc.get_session(session, prefix=prefix, name=name) == row.id:
+                s3xrc.clear_session(session, prefix=prefix, name=name)
             try:
-                shn_audit_delete(module, resource, row.id, jr.representation)
+                shn_audit("delete", prefix, name, record=row.id, representation=representation)
+                # Reset session vars if necessary
                 if "deleted" in db[table] and \
                    db(db.s3_setting.id == 1).select(db.s3_setting.archive_not_delete, limitby=(0, 1)).first().archive_not_delete:
-                    if crud.settings.delete_onvalidation:
-                        crud.settings.delete_onvalidation(row)
+                    if onvalidation:
+                        onvalidation(row)
                     # Avoid collisions of values in unique fields between deleted records and
                     # later new records => better solution could be: move the deleted data to
                     # a separate table (e.g. in JSON) and delete from this table (that would
@@ -2025,39 +1624,29 @@ def shn_delete(jr, **attr):
                         if f not in ("id", "uuid") and table[f].unique:
                             deleted.update({f:None}) # not good => data loss!
                     db(db[table].id == row.id).update(**deleted)
-                    if crud.settings.delete_onaccept:
-                        crud.settings.delete_onaccept(row)
+                    if onaccept:
+                        onaccept(row)
                 else:
                     # Do not CRUD.delete! (it never returns, but redirects)
-                    if crud.settings.delete_onvalidation:
-                        crud.settings.delete_onvalidation(row)
+                    if onvalidation:
+                        onvalidation(row)
                     del db[table][row.id]
-                    if crud.settings.delete_onaccept:
-                        crud.settings.delete_onaccept(row)
+                    if onaccept:
+                        onaccept(row)
 
-            except:
-            # Would prefer to import sqlite3 & catch specific error, but this isn't generalisable to other DBs...we need a DB config to pull in.
+            # Would prefer to import sqlite3 & catch specific error, but
+            # this isn't generalisable to other DBs...we need a DB config to pull in.
             #except sqlite3.IntegrityError:
+            except:
                 session.error = T("Cannot delete whilst there are linked records. Please delete linked records first.")
         else:
             continue
-
-    if jr.component:
-        # Restore callback settings
-        crud.settings.delete_onvalidation = delete_onvalidation
-        crud.settings.delete_onaccept = delete_onaccept
-        crud.settings.delete_next = delete_next
-
-        delete_next =  jr.component.attr.delete_next
 
     if not session.error:
         if numrows > 1:
             session.confirmation = "%s %s" % ( numrows, T("records deleted"))
         else:
             session.confirmation = message
-
-    if jr.component and delete_next: # but redirect here!
-        redirect(delete_next)
 
     item = s3xrc.xml.json_message()
     response.view = "plain.html"
@@ -2066,28 +1655,9 @@ def shn_delete(jr, **attr):
     return output
 
 #
-# shn_options -----------------------------------------------------------------
-#
-def shn_options(jr, **attr):
-
-    if jr.representation == "xml":
-        response.headers["Content-Type"] = "text/xml"
-        response.view = "plain.html"
-        return jr.options_xml(pretty_print=PRETTY_PRINT)
-
-    elif jr.representation == "json":
-        response.headers["Content-Type"] = "text/x-json"
-        response.view = "plain.html"
-        return jr.options_json(pretty_print=PRETTY_PRINT)
-
-    else:
-        session.error = BADFORMAT
-        redirect(URL(r=request, f="index"))
-
-#
 # shn_search ------------------------------------------------------------------
 #
-def shn_search(jr, **attr):
+def shn_search(r, **attr):
 
     """ Search function responding in JSON """
 
@@ -2095,36 +1665,36 @@ def shn_search(jr, **attr):
     main = attr.get("main", None)
     extra = attr.get("extra", None)
 
-    request = jr.request
+    request = r.request
 
     # Filter Search list to just those records which user can read
-    query = shn_accessible_query("read", jr.table)
+    query = shn_accessible_query("read", r.table)
 
     # Filter search to items which aren't deleted
-    if "deleted" in jr.table:
-        query = (jr.table.deleted == False) & query
+    if "deleted" in r.table:
+        query = (r.table.deleted == False) & query
 
     # Respect response.s3.filter
     if response.s3.filter:
         query = response.s3.filter & query
 
-    if jr.representation == "html":
+    if r.representation == "html":
 
-        shn_represent(jr.table, jr.prefix, jr.name, deletable, main, extra)
-        search = t2.search(jr.table, query=query)
+        shn_represent(r.table, r.prefix, r.name, deletable, main, extra)
+        search = t2.search(r.table, query=query)
 
         # Check for presence of Custom View
-        shn_custom_view(jr, "search.html")
+        shn_custom_view(r, "search.html")
 
         # CRUD Strings
         title = s3.crud_strings.title_search
 
         output = dict(search=search, title=title)
 
-    elif jr.representation == "json":
+    elif r.representation == "json":
 
         _vars = request.vars
-        _table = jr.table
+        _table = r.table
 
         # JQuery Autocomplete uses "q" instead of "value"
         value = _vars.value or _vars.q or None
@@ -2219,7 +1789,7 @@ def shn_search(jr, **attr):
             item = s3xrc.xml.json_message(False, 400, "Search requires specifying Field, Filter & Value!")
             raise HTTP(400, body=item)
 
-        response.view = "plain.html"
+        response.view = "xml.html"
         output = dict(item=item)
 
     else:
@@ -2311,15 +1881,12 @@ def shn_rest_controller(module, resource, **attr):
 
     """
 
-    s3xrc.set_handler("import_xml", import_xml)
-    s3xrc.set_handler("import_json", import_json)
     s3xrc.set_handler("list", shn_list)
     s3xrc.set_handler("read", shn_read)
     s3xrc.set_handler("create", shn_create)
     s3xrc.set_handler("update", shn_update)
     s3xrc.set_handler("delete", shn_delete)
     s3xrc.set_handler("search", shn_search)
-    s3xrc.set_handler("options", shn_options)
 
     res, req = s3xrc.parse_request(module, resource, session, request, response)
     output = res.execute_request(req, **attr)

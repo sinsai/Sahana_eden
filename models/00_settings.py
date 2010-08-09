@@ -24,7 +24,6 @@ else:
     # Use what browser requests
     T.force(T.http_accept_language)
 
-
 ######
 # Mail
 ######
@@ -33,8 +32,9 @@ else:
 # - however also need to be used by Auth (order issues), DB calls are overheads
 # - as easy for admin to edit source here as to edit DB (although an admin panel can be nice)
 mail.settings.server = deployment_settings.get_mail_server()
-#mail.settings.server = "smtp.gmail.com:587"
-#mail.settings.login = "username:password"
+mail_server_login = deployment_settings.get_mail_server_login()
+if mail_server_login:
+    mail.settings.login = mail_server_login
 mail.settings.sender = deployment_settings.get_mail_sender()
 
 ######
@@ -44,6 +44,19 @@ mail.settings.sender = deployment_settings.get_mail_sender()
 #auth.settings.username_field = True
 auth.settings.hmac_key = deployment_settings.get_auth_hmac_key()
 auth.define_tables()
+
+if deployment_settings.get_auth_openid():
+    # Requires http://pypi.python.org/pypi/python-openid/
+    # Requires https://code.launchpad.net/~keitheis/web2py/openid
+    try:
+        from gluon.contrib.login_methods.openid_auth import OpenIDAuth
+        openid_login_form = OpenIDAuth(auth)
+        from gluon.contrib.login_methods.extended_login_form import ExtendedLoginForm
+        extended_login_form = ExtendedLoginForm(auth, openid_login_form, signals=["oid", "janrain_nonce"])
+        auth.settings.login_form = extended_login_form
+    except ImportError:
+        session.warning = T("Library support not available for OpenID")
+
 auth.settings.expiration = 3600  # seconds
 # Require captcha verification for registration
 #auth.settings.captcha = RECAPTCHA(request, public_key="PUBLIC_KEY", private_key="PRIVATE_KEY")
@@ -51,18 +64,19 @@ auth.settings.expiration = 3600  # seconds
 auth.settings.registration_requires_verification = deployment_settings.get_auth_registration_requires_verification()
 # Email settings for registration verification
 auth.settings.mailer = mail
-auth.messages.verify_email = "Click on the link " + deployment_settings.get_base_public_url() + "/" + request.application + "/default/user/verify_email/%(key)s to verify your email"
+auth.messages.verify_email = Tstr("Click on the link ") + deployment_settings.get_base_public_url() + "/" + request.application + "/default/user/verify_email/%(key)s " + Tstr("to verify your email")
 auth.settings.on_failed_authorization = URL(r=request, c="default", f="user", args="not_authorized")
 auth.settings.reset_password_requires_verification = True
-auth.messages.reset_password = "Click on the link "+deployment_settings.get_base_public_url() + "/" + request.application + "/default/user/reset_password/%(key)s to reset your password"
+auth.messages.reset_password = Tstr("Click on the link ") + deployment_settings.get_base_public_url() + "/" + request.application + "/default/user/reset_password/%(key)s " + Tstr("to reset your password")
 # Require Admin approval for self-registered users
 auth.settings.registration_requires_approval = deployment_settings.get_auth_registration_requires_approval()
-auth.messages.registration_pending = "Email address verified, however registration is still pending approval - please wait until confirmation received."
+auth.messages.registration_pending = T("Email address verified, however registration is still pending approval - please wait until confirmation received.")
 # Notify UserAdmin of new pending user registration to action
-auth.settings.verify_email_onaccept = lambda form: \
-    auth.settings.mailer.send(to=deployment_settings.get_mail_approver(),
-                              subject="Sahana Login Approval Pending",
-                              message="Your action is required. Please approve user %s asap: " % form.email +
+if deployment_settings.get_auth_registration_requires_approval():
+    auth.settings.verify_email_onaccept = lambda form: \
+        auth.settings.mailer.send(to=deployment_settings.get_mail_approver(),
+                              subject=T("Sahana Login Approval Pending"),
+                              message=Tstr("Your action is required. Please approve user %s asap: " % form.email) +
                               deployment_settings.get_base_public_url() + "/" + request.application + "/admin/user")
 
 # Allow use of LDAP accounts for login
@@ -118,5 +132,5 @@ crud.messages.submit_button = T("Save")
 
 from gluon.storage import Messages
 s3.messages = Messages(T)
-s3.messages.confirmation_email_subject = "Sahana access granted"
-s3.messages.confirmation_email = "Welcome to the Sahana Portal at " + deployment_settings.get_base_public_url() + ". Thanks for your assistance."
+s3.messages.confirmation_email_subject = T("Sahana access granted")
+s3.messages.confirmation_email = Tstr("Welcome to the Sahana Portal at ") + deployment_settings.get_base_public_url() + Tstr(". Thanks for your assistance.")

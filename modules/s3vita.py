@@ -1,9 +1,9 @@
 # -*- coding: utf-8 -*-
 
 """
-    S3VITA Sahana-Eden Personal Data Toolkit
+    VITA Sahana-Eden Person Data Toolkit
 
-    @version: 0.5.0
+    @version: 0.5
 
     @author: nursix
     @copyright: 2010 (c) Sahana Software Foundation
@@ -32,46 +32,14 @@
 
 """
 
-import time
-import datetime
+from gluon.storage import Storage
 
-from gluon.storage import Storage, Messages
-from gluon.http import *
-from gluon.validators import *
-from gluon.sqlhtml import *
-from gluon.contrib.markdown import WIKI
-try:
-    from gluon.contrib.gql import SQLTable
-except ImportError:
-    from gluon.sql import SQLTable
-import traceback
-
-# Copied from Selenium Plone Tool
-def getBrowserName(userAgent):
-    "Determine which browser is being used."
-    if userAgent.find("MSIE") > -1:
-        return "IE"
-    elif userAgent.find("Firefox") > -1:
-        return "Firefox"
-    elif userAgent.find("Gecko") > -1:
-        return "Mozilla"
-    else:
-        return "Unknown"
-
-from gluon.html import *
-
-__all__ = ["Vita"]
+__all__ = ["S3Vita",]
 
 # *****************************************************************************
-class Vita(object):
+class S3Vita(object):
 
     """ Toolkit for Person Identification, Tracking and Tracing """
-
-    trackable_types = None
-    presence_conditions = None
-
-    DEFAULT_TRACKABLE = 1
-    DEFAULT_PRESENCE = 4
 
     # -------------------------------------------------------------------------
     def __init__(self, environment, db=None, T=None):
@@ -85,7 +53,7 @@ class Vita(object):
             self.T = self.environment["T"]
 
         # -------------------------------------------------------------------------
-        # Trackable entity types
+        #: Trackable entity types
         self.trackable_types = {
             1:self.T("Person"),          # an individual
             2:self.T("Group"),           # a group
@@ -97,7 +65,7 @@ class Vita(object):
         self.DEFAULT_TRACKABLE = 1
 
         # -------------------------------------------------------------------------
-        # Presence Conditions
+        #: Presence Conditions
         self.presence_conditions = {
             1:self.T("Check-In"),        # Arriving at a location for accommodation/storage
             2:self.T("Reconfirmation"),  # Reconfirmation of accomodation/storage at a location
@@ -112,9 +80,11 @@ class Vita(object):
         self.DEFAULT_PRESENCE = 4
 
     # -------------------------------------------------------------------------
-    def pentity(self,entity):
-        """
-            Get the PersonEntity record for the given ID, ID label, sub-entity or related record
+    def pentity(self, entity):
+
+        """ Get the PersonEntity record for the given ID, ID label, sub-entity
+            or related record
+
         """
 
         table = self.db.pr_pentity
@@ -131,8 +101,8 @@ class Vita(object):
                 query = (table.label.strip().lower() == entity.strip().lower()) & query
 
             elif isinstance(entity, dict):
-                if "pr_pe_id" in entity:
-                    query = (table.id == entity.pr_pe_id) & query
+                if "pe_id" in entity:
+                    query = (table.id == entity.pe_id) & query
                 else:
                     return entity # entity already given?
 
@@ -149,9 +119,11 @@ class Vita(object):
             return None
 
     # -------------------------------------------------------------------------
-    def person(self,entity):
-        """
-            Get the Person record for the given ID, PersonEntity record or Person-related record
+    def person(self, entity):
+
+        """ Get the Person record for the given ID, PersonEntity record or
+            Person-related record
+
         """
 
         table = self.db.pr_person
@@ -165,12 +137,12 @@ class Vita(object):
                 query = (table.id == entity) & query
 
             elif isinstance(entity, dict):
-                if "pr_pe_id" in entity:
-                    query = (table.pr_pe_id == entity.pr_pe_id) & query
+                if "pe_id" in entity:
+                    query = (table.pe_id == entity.pe_id) & query
                 elif "person_id" in entity:
                     query = (table.id == entity.person_id) & query
                 elif "id" in entity:
-                    query = (table.pr_pe_id == entity.id) & query
+                    query = (table.pe_id == entity.id) & query
                 else:
                     return None
 
@@ -187,9 +159,11 @@ class Vita(object):
             return None
 
     # -------------------------------------------------------------------------
-    def group(self,entity):
-        """
-            Get the Group record for the given ID, PersonEntity record or Group-related record
+    def group(self, entity):
+
+        """ Get the Group record for the given ID, PersonEntity record or
+            Group-related record
+
         """
 
         table = self.db.pr_group
@@ -203,12 +177,12 @@ class Vita(object):
                 query = (table.id == entity) & query
 
             elif isinstance(entity, dict):
-                if "pr_pe_id" in entity:
-                    query = (table.pr_pe_id == entity.pr_pe_id) & query
+                if "pe_id" in entity:
+                    query = (table.pe_id == entity.pe_id) & query
                 elif "group_id" in entity:
                     query = (table.id == entity.group_id) & query
                 elif "id" in entity:
-                    query = (table.pr_pe_id == entity.id) & query
+                    query = (table.pe_id == entity.id) & query
                 else:
                     return None
 
@@ -226,9 +200,10 @@ class Vita(object):
 
 
     # -------------------------------------------------------------------------
-    def fullname(self,record):
-        """
-            Returns the full name of a person
+    def fullname(self, record):
+
+        """ Returns the full name of a person
+
         """
 
         if record:
@@ -249,8 +224,8 @@ class Vita(object):
 
     # -------------------------------------------------------------------------
     def rlevenshtein(self, str1, str2):
-        """
-            Returns a relative value for the Levenshtein distance of two strings
+
+        """ Returns a relative value for the Levenshtein distance of two strings
 
             Levenshtein distance:
             Number of character insertions/deletions/replacements necessary to
@@ -259,6 +234,7 @@ class Vita(object):
             different strings.
 
             Note: Unfortunately, this doesn't work in SQL queries :(
+
         """
 
         matrix = {}

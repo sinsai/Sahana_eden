@@ -6,37 +6,27 @@
 */
 
 table tbody tr.s3_multiselect_widget_entry_row td,                     
-table.s3_multiselect_widget_rows td { border: 1px solid; 
-                                   padding: 4px;}
-                                   
+table.s3_multiselect_widget_rows td { border: 1px solid #B3B3B3; 
+                                      padding: 3px; }
+
 table tbody tr.s3_multiselect_widget_entry_row td input,                       
 table tbody tr.s3_multiselect_widget_entry_row td select { margin: 0px; 
-                                            padding: 0px; ! important}      
-                                            
+                                            padding: 0px; ! important}     
+ 
+.s3_multiselect_widget_column_label { color: #B3B3B3;
+                                      font-weight: 700; 
+                                      text-align: center; }                                             
+
 /* Formats the Delete and Add Buttons*/     
-.s3_multiselect_widget_add  {margin-top: 2px;}   
 .s3_multiselect_widget_delete,
-.s3_multiselect_widget_add { text-decoration: none; 
-                                       color: #006699; 
-                                       background-color: #f3f6ff; 
-                                       border-right: 1px solid #6699cc; 
-                                       border-bottom: 1px solid #6699cc; 
-                                       border-left: 1px solid #c6d1f5; 
-                                       border-top: 1px solid #c6d1f5; 
-                                       padding-left: 2px;
-                                       padding-right: 2px; 
-                                       margin-left: 5px;
-                                       margin-right: 5px;}                             
-.s3_multiselect_widget_delete:hover,
-.s3_multiselect_widget_add:hover { text-decoration: none; 
-                                             color: #fff; 
-                                             background-color: #3377bb; 
-                                             border-right: 1px solid #4589ce; 
-                                             border-bottom: 1px solid #4589ce; 
-                                             border-left: 1px solid #000; 
-                                             border-top: 1px solid #000; 
-                                             padding-left: 2px;
-                                             padding-right: 2px;
-                                             margin-left: 5px; }
-                                             
-.s3_multiselect_widget_add_cell  {padding-top: 4px;}                                             
+.s3_multiselect_widget_add  {margin-top: 2px;}   
+
+.s3_multiselect_widget_delete_button { height: 23px;
+                                width: 23px;
+                                background: url( ../../img/icon_white_remove23px.png ) no-repeat; }
+.s3_multiselect_widget_add_button { height: 23px;
+                                  width: 23px;
+                                  background: url( ../../img/icon_white_add23px.png ) no-repeat; }
+
+table.s3_multiselect_widget_rows td.s3_multiselect_widget_delete_button,                                             
+table.s3_multiselect_widget_rows td.s3_multiselect_widget_add_cell  {padding: 0px;}

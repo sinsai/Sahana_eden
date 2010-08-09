@@ -161,7 +161,7 @@ if deployment_settings.has_module(module):
             labels = label.split()
             results = []
             query = None
-            # TODO: make a more sophisticated search function (levenshtein?)
+            # TODO: make a more sophisticated search function (Levenshtein?)
             for l in labels:
 
                 # append wildcards
@@ -176,7 +176,7 @@ if deployment_settings.has_module(module):
                         query = (db.rms_req[f].like(_l))
 
                 # undeleted records only
-                query = (db.rms_req.deleted==False) & (query)
+                query = (db.rms_req.deleted == False) & (query)
                 # restrict to prior results (AND)
                 if len(results):
                     query = (db.rms_req.id.belongs(results)) & query
@@ -299,7 +299,7 @@ if deployment_settings.has_module(module):
         Field("status", "integer"),
         organisation_id,
         person_id,
-        shn_comments_field,
+        comments,
         migrate=migrate)
 
     #table.id.represent = lambda id: shn_req_pledge_represent(id)

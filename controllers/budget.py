@@ -229,13 +229,13 @@ def item_export_pdf():
         from reportlab.lib.pagesizes import A4
         from reportlab.lib.enums import TA_CENTER, TA_RIGHT
     except ImportError:
-        session.error = T("ReportLab module not available within the running Python - this needs installing to do PDF Reporting!")
+        session.error = REPORTLAB_ERROR
         redirect(URL(r=request, c="item"))
     try:
         from geraldo import Report, ReportBand, ReportGroup, Label, ObjectValue, SystemField, landscape, BAND_WIDTH
         from geraldo.generators import PDFGenerator
     except ImportError:
-        session.error = T("Geraldo module not available within the running Python - this needs installing to do PDF Reporting!")
+        session.error = GERALDO_ERROR
         redirect(URL(r=request, c="item"))
 
     table = db.budget_item
@@ -354,12 +354,13 @@ def kit():
 
 def kit_item():
     "Many to Many CRUD Controller"
-    if "format" in request.vars:
-        if request.vars.format == "xls":
+    format = request.vars.get("format", None)
+    if format:
+        if format == "xls":
             redirect(URL(r=request, f="kit_export_xls"))
-        elif request.vars.format == "pdf":
+        elif format == "pdf":
             redirect(URL(r=request, f="kit_export_pdf"))
-        elif request.vars.format == "csv":
+        elif format == "csv":
             if request.args(0):
                 if str.lower(request.args(0)) == "create":
                     return kit_import_csv()
@@ -519,7 +520,7 @@ def kit_export_xls():
     try:
         import xlwt
     except ImportError:
-        session.error = T("xlwt module not available within the running Python - this needs installing to do XLS Reporting!")
+        session.error = XLWT_ERROR
         redirect(URL(r=request, c="kit"))
 
     import StringIO
@@ -605,13 +606,13 @@ def kit_export_pdf():
         from reportlab.lib.pagesizes import A4
         from reportlab.lib.enums import TA_CENTER, TA_RIGHT
     except ImportError:
-        session.error = T("ReportLab module not available within the running Python - this needs installing to do PDF Reporting!")
+        session.error = REPORTLAB_ERROR
         redirect(URL(r=request, c="kit"))
     try:
         from geraldo import Report, ReportBand, SubReport, Label, ObjectValue, SystemField, landscape, BAND_WIDTH
         from geraldo.generators import PDFGenerator
     except ImportError:
-        session.error = T("Geraldo module not available within the running Python - this needs installing to do PDF Reporting!")
+        session.error = GERALDO_ERROR
         redirect(URL(r=request, c="kit"))
 
     table = db.budget_kit

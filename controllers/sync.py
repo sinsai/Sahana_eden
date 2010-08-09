@@ -508,12 +508,80 @@ def setting():
 @auth.shn_requires_membership(1)
 def schedule():
     "Synchronisation Schedules"
+    import gluon.contrib.simplejson as json
     title = T("Syncronisation Schedules")
 
+    jobs = None
     if "create" in request.args:
-        return shn_rest_controller("sync", "schedule")
+        response.view = "sync/schedule_create.html"
 
-    jobs = db().select(db.sync_schedule.ALL)
+        if "form_action" in request.vars and request.vars["form_action"] == "submit":
+            # create new job - add it to database
+            print request.vars
+            sch_enabled = True
+            if "job_enabled" in request.vars and request.vars["job_enabled"] == "0":
+                sch_enabled = False
+            sch_comments = None
+            if "comments" in request.vars:
+                sch_comments = request.vars["comments"]
+            sch_source_type = "eden"
+            if "sync_data_source_type" in request.vars: 
+                sch_source_type = request.vars["sync_data_source_type"]
+            sch_period = "h"
+            if "sync_schedule_period" in request.vars: 
+                sch_period = request.vars["sync_schedule_period"]
+            sch_period_hours = 5
+            if "sync_schedule_period_hours" in request.vars: 
+                sch_period_hours = request.vars["sync_schedule_period_hours"]
+            sch_days_of_week = []
+            if "days_of_week" in request.vars and request.vars["days_of_week"]:
+                sch_days_of_week = map(lambda x: x-1, request.vars["days_of_week"])
+            sch_time_of_day = None
+            if sch_period == "d":
+                sch_time_of_day = datetime.datetime.strptime(str(request.vars["sync_schedule_daily_time"]), "%H:%M").time()
+            elif sch_period == "w":
+                sch_time_of_day = datetime.datetime.strptime(str(request.vars["sync_schedule_weekly_time"]), "%H:%M").time()
+            sch_runonce_datetime = None
+            if "sync_schedule_once_datetime" in request.vars and request.vars["sync_schedule_once_datetime"]:
+                sch_runonce_datetime = datetime.datetime.strptime(str(request.vars["sync_schedule_once_datetime"]), "%Y-%m-%d %H:%M:%S")
+
+            sch_job_type = 1
+            sch_cmd = dict()
+            sch_cmd["partner_uuid"] = request.vars["sync_partner_uuid"]
+            sch_cmd["policy"] = int(request.vars["sync_policy"])
+            if sch_source_type == "eden":
+                # eden data source
+                if "sync_resources" in request.vars and request.vars["sync_resources"]:
+                    sch_cmd["resources"] = request.vars["sync_resources"]
+                else:
+                    sch_cmd["resources"] = None
+                sch_cmd["complete"] = False
+                if "sync_complete" in request.vars and request.vars["sync_complete"] == "1":
+                    sch_cmd["complete"] = True
+                sch_cmd["mode"] = False
+                if "sync_mode" in request.vars and request.vars["sync_mode"]:
+                    sch_cmd["mode"] = int(request.vars["sync_mode"])
+            else:
+                # custom data source
+                sch_job_type = 2
+                sch_cmd["custom_command"] = request.vars["sync_custom"]
+
+            db["sync_schedule"].insert(
+                    comments = sch_comments,
+                    period = sch_period,
+                    hours = sch_period_hours,
+                    days_of_week = ", ".join(map(str, sch_days_of_week)),
+                    time_of_day = sch_time_of_day,
+                    runonce_datetime = sch_runonce_datetime,
+                    job_type = sch_job_type,
+                    job_command = json.dumps(sch_cmd),
+                    running = False,
+                    last_run = None,
+                    enabled = sch_enabled
+                )
+
+    else:
+        jobs = db().select(db.sync_schedule.ALL)
 
     return dict(title=title, jobs=jobs)
 

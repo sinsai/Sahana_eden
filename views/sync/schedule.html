@@ -1,5 +1,5 @@
 {{extend "layout.html"}}
-{{=H3(title)}}
+{{=H2(title)}}
 {{if len(jobs) == 0:}}
 <div align="center">There are no scheduled jobs. <a href="{{=URL(r=request, f="schedule/create")}}">Click here</a> to schedule a sync job.</div>
 {{else:}}

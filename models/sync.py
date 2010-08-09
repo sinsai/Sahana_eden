@@ -99,7 +99,8 @@ sync_schedule_period_opts = {
     "h":T("Hourly"),
     "d":T("Daily"),
     "w":T("Weekly"),
-    "o":T("Just Once")
+    "o":T("Just Once"),
+    "m":T("Manual")
 }
 
 sync_schedule_job_type_opts = {
@@ -111,7 +112,7 @@ sync_schedule_job_type_opts = {
 resource = "schedule"
 tablename = "%s_%s" % (module, resource)
 table = db.define_table(tablename,
-                Field("description", length=128),           # brief description about the scheduled job
+                Field("comments", length=128),              # brief comments about the scheduled job
                 Field("period",                             # schedule interval period, either hourly, "h", daily, "d", weekly, "w" or one-time, "o"
                     length=10,
                     notnull=True,
@@ -120,7 +121,8 @@ table = db.define_table(tablename,
                 Field("hours", "integer", default=4),       # specifies the number of hours when hourly period is specified in 'period' field
                 Field("days_of_week", length=30),           # comma-separated list of the day(s) of the week when job runs on weekly basis.
                                                             # A day in a week is represented as a number having value between 1 (Monday) and 7 (Sunday)
-                Field("time_of_day", "time"),               # the time (at day_of_week) when job runs on a weekly basis
+                Field("time_of_day", "time"),               # the time (at day_of_week) when job runs on a weekly or daily basis
+                Field("runonce_datetime", "datetime"),      # the date and time when job runs just once
                 Field("job_type", "integer", default=1,     # This specifies the type of job: 1 - SahanaEden <=> SahanaEden sync,
                     requires = IS_IN_SET(sync_schedule_job_type_opts) ),
                                                             # 2 - SahanaEden <= Other sync (could be SahanaAgasti, Ushahidi, etc.)

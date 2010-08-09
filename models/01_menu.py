@@ -85,7 +85,7 @@ admin_menu_options = [
             [T("Sync Partners"), False, URL(r=request, c="sync", f="partner")],
 #            [T("Sync Pools"), False, URL(r=request, c="sync", f="pool")],
             [T("Sync Conflicts"), False, URL(r=request, c="sync", f="conflict")],
-#            [T("Sync Schedules"), False, URL(r=request, c="sync", f="schedule")],
+            [T("Sync Schedules"), False, URL(r=request, c="sync", f="schedule")],
             [T("Sync History"), False, URL(r=request, c="sync", f="history")]
     ]],
     [T("Messaging"), False, "#",[

@@ -3242,7 +3242,8 @@ class S3ResourceController(object):
                 error = self.error
                 self.error = None
 
-        self.error = error
+        if error:
+            self.error = error
 
         # Commit all vectors
         if self.error is None or ignore_errors:

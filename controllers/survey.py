@@ -59,9 +59,7 @@ def section():
        At this stage, the user the following workflow will be implemented:
 
        1) User creates a section
-       2) User clicks "Add Questions to this section" which triggers a popup
-       3) The questions appear in an area below the section.
-
+       2) User adds questions via the drop down or clicks "Add Question" to add a new one.
     """
     table = db["survey_section"]
     table.uuid.requires = IS_NOT_IN_DB(db,"%s.uuid" % tablename)
@@ -72,53 +70,39 @@ def section():
     record = table[request.args(0)]
     section = SQLFORM(table,record,deletable=True)
     questions = db().select(db.survey_question.ALL)
-    output = dict(questions=questions)
-    # Let's avoid blowing up! 
+    output = dict(all_questions=questions)
+    # Let's avoid blowing up -- this loads quest
     try:
-        section_id = request.args(0)        
+        section_id = request.args(0)
         question_query = (db.survey_template_link_table.survey_section_id == section_id) & (db.survey_question.id == db.survey_template_link_table.survey_question_id)
-        questions = db(question_query).select(db.survey_question.ALL)
+        section_questions = db(question_query).select(db.survey_question.ALL)
         if len(questions) > 0:
-            output.update(questions=questions)
-
+            output.update(questions=section_questions)
     except:
         pass # this means we didn't pass an id, e.g., making a new section!        
-    if section.accepts(request.vars,session,keepvalues=True,):
+    if section.accepts(request.vars,session,keepvalues=True):
+        #loop over the questions and ensure that they're not already associated with the section
+        questions = response.post_vars.questions
+        if not questions:
+            pass # it's okay -- they just want a section, why I don't know, but it's their survey!
+        elif isinstance(questions,list):
+            for question in question:
+                if not check_question(section.vars.id,question): # more than one question in this section
+                    # avoid blowing up.
+                    try:
+                        db.survey_template_link_table.insert(survey_template_id=session.rcvars.survey_template, survey_section_id=section.vars.id,survey_question_id=question)
+                    except:
+                        pass # silent fail?
+        else:
+            if not check_question(section.vars.id,question): # only one.
+                try:
+                        db.survey_template_link_table.insert(survey_template_id=session.rcvars.survey_template, survey_section_id=section.vars.id,survey_question_id=question)
+                    except:
+                        pass # silent fail?
         redirect(URL(r=request,c="survey",f="section",args=[section.vars.id]))
     elif section.errors:
         response.flash= T("Please correct all errors.")
-        response.flash = section.errors
-
-    output.update(form=section)
-
-    question_types = {
-#        1:T("Multiple Choice (Only One Answer)"),
-#        2:T("Multiple Choice (Multiple Answers)"),
-#        3:T("Matrix of Choices (Only one answer)"),
-#        4:T("Matrix of Choices (Multiple Answers)"),
-#        5:T("Rating Scale"),
-        6:T("Single Text Field"),
-#        7:T("Multiple Text Fields"),
-#        8:T("Matrix of Text Fields"),
-        9:T("Comment/Essay Box"),
-        10:T("Numerical Text Field"),
-        11:T("Date and/or Time")
-#        12:T("Image"),
-#        13:T("Descriptive Text (e.g., Prose, etc)"),
-#        14:T("Location"),
-#        15:T("Organisation"),
-#        16:T("Person"),
-##        16:T("Custom Database Resource (e.g., anything defined as a resource in Sahana)")
-    }
-    output.update(types=question_types)
-    """
-    Field("tf_ta_columns","integer"), # number of columns for TF/TA
-                               Field("ta_rows","integer"), # number of rows for text areas
-                               Field("allow_comments","boolean"), # whether or not to allow comments
-                               Field("comment_display_label"), # the label for the comment field
-                               Field("required","boolean"), # marks the question as required
-                               Field("aggregation_type","string"))
-    """
+    output.update(form=section)    
     return output
 
 def series():
@@ -202,6 +186,10 @@ def question():
     table.name.label = T("Survey Question Display Name")
     table.name.comment = SPAN("*", _class="req")
     table.description.label = T("Description")
+    table.tf_ta_columns.label = T("Number of Columns")
+    table.ta_rows.label = T("Number of Rows")
+    table.aggregation_type.writable = False
+    table.aggregation_type.readable = False
 
     question_types = {
 #        1:T("Multiple Choice (Only One Answer)"),
@@ -527,3 +515,9 @@ def check_comments(allow_comments,text):
     if allow_comments:
         ret = DIV(text,INPUT())
     return ret    
+
+def check_question_dupe(section_id,question_id):                                                                                                                
+    question_query = (db.survey_template_link_table.survey_section_id == section_id) \
+                   & (db.survey_question.id == question_id)
+    questions = db(question_query).select(db.survey_question.ALL)
+    return questions

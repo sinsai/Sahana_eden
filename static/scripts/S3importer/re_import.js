@@ -1,8 +1,8 @@
 function error_color(val,metadata,record,row,col,store)
 {
-        
+        if(!val)
+		val = '';
 	var error = val.substring(0,9);
-	console.log("",error);
 	if( error == "*_error_*")
 	{
 		//record.set(col,val.substring(9));
@@ -25,19 +25,33 @@ else
 	Ext.onReady(function(){
 	Ext.Msg.alert("","These records could not be imported. Please edit and import again.");
 	var column_model = new Array();
+	fields = [];
+	for(i = 0 ;i < map.length; i++)
+	{
+	    var tempstr = map[i][2].indexOf("--");
+		if(tempstr!=-1)
+		{
+			var check = map[i][2].split(' --&gt; ');
+			fields.push( "$k_" + check[0] + ' --&gt; $_' + check[1] + ' --&gt; ' + check[2]);
+		}
+		
+		else
+			fields.push(map[i][2]);
+	}
 	var store = new Ext.data.JsonStore({
 		fields : fields,
-		root : 'rows',
+		root : 'rows'
 	});
 	var data={};
 	number_column = fields.length;
 	data['rows'] = invalid_rows;
 
 	console.log(data);
+	//console.log(data['rows'][0]["$k_organisation_id --&gt; $_org_organisation --&gt; name"]);
 	store.loadData(data);
 	store.each(function(record)
 		{
-			console.log(record.get(fields[2]));
+			console.log(record.get(fields[1]));
 		});
 	var action = new Ext.ux.grid.RowActions({
 			 header:'Click to delete',
@@ -72,7 +86,8 @@ else
 	{
 		temp = {};
 		temp.header = map[i][1];//fields[i];
-		temp.dataIndex = map[i][2];//fields[i];
+	        temp.dataIndex = fields[i];
+		console.log(temp.dataIndex);
 		temp.editor = new Ext.form.TextField();
 		temp.renderer = error_color;
 		column_model.push(temp);
@@ -83,6 +98,7 @@ else
 	var re_import_grid = new Ext.grid.EditorGridPanel({
 		title : "Edit invalid rows ",
 		renderTo: 'spreadsheet',
+		columnLines : true,
 		width : 'auto',
 		plugins : action,
 		height : 300,
@@ -91,7 +107,7 @@ else
 		},
 		store : store,
 		frame : true,
-		columns : column_model,
+		colModel : column_model,
 		hidden : true,
 		buttonAlign : 'center',
 		listeners:
@@ -110,23 +126,27 @@ else
 					lm.show();
 					var send = {};
 					send.spreadsheet = new Array();
+					send.rows = 0;
 					store.each(function()
 					{
 						var temp = new Array();
 						var i = 0;
 						while(i < number_column)
 						{
-							temp.push(this.get((map[i][2])));
+							temp.push(this.get((fields[i])));
 							i++;
 						}
 
 						send.spreadsheet.push(temp);
-						send.map = map;
-						send.rows = rows
+						send.rows += 1;
 					});
-					
+				        for( i=0 ;i< map.length; i++)
+					{
+						map[i][2] = fields[i];
+					}
+					send.re_import = 'True';	
 					send.map = map;
-					send.rows = rows;
+					console.log(send.map);
 					send.columns = number_column;
 					send.resource = resource;
 					var time= new Date();
@@ -145,7 +165,7 @@ else
 							Ext.Msg.alert("","Import failed "+r.responseText);
 							}
 						});
-					console.log(send);
+					//console.log(send);
 					lm.hide();
 				}
 				}]

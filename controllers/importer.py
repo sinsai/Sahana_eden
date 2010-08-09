@@ -100,16 +100,22 @@ def import_spreadsheet():
     importable_rows = []
     if j.has_key('header_row'):
          j['spreadsheet'].pop(j['header_row'])
-    j['rows'] -= 1
-    for x in range(0,len(j['spreadsheet'])):
-	for y in range(x+1,len(j['spreadsheet'])):
- 	    k = importer.jaro_winkler_distance_row(j['spreadsheet'][x],j['spreadsheet'][y])
-	    if k is True:
-	       similar_rows.append(j['spreadsheet'][x])
-	       similar_rows.append(j['spreadsheet'][y])
-	    else:
-	       pass 
-    session.similar_rows = similar_rows
+         j['rows'] -= 1
+    if j.has_key('re_import'):
+        for x in range(0,len(j['map'])):
+	    j['map'][x][2] = j['map'][x][2].replace('&gt;','>')
+    f.write('map is ' + repr(j['map'])
+
+    if not j.has_key('re_import'):# and j['re_import'] is not True:
+    	for x in range(0,len(j['spreadsheet'])):
+	    for y in range(x+1,len(j['spreadsheet'])):
+ 	        k = importer.jaro_winkler_distance_row(j['spreadsheet'][x],j['spreadsheet'][y])
+	        if k is True:
+	           similar_rows.append(j['spreadsheet'][x])
+	           similar_rows.append(j['spreadsheet'][y])
+	        else:
+	           pass 
+        session.similar_rows = similar_rows
     for k in j['spreadsheet']:
         if k in similar_rows:
 	    j['spreadsheet'].remove(k)
@@ -187,19 +193,20 @@ def import_spreadsheet():
 		nest_res = "$_" + record[field]['@resource']
 		for nested_fields in record[field][nest_res][0]:
 		    if '@error' in record[field][nest_res][0][nested_fields]:
-		        wrong_dict[field + ' --> ' + nest_res + ' --> ' + nested_fields] = record[field][nest_res][0][nested_fields.encode('ascii')]['@error'] + ' You entered ' + record[field][nest_res][0][nested_fields.encode('ascii')]['@value']
+		        wrong_dict[field + ' --> ' + nest_res + ' --> ' + nested_fields] = "*_error_*" + record[field][nest_res][0][nested_fields.encode('ascii')]['@error'] + ' You entered ' + record[field][nest_res][0][nested_fields.encode('ascii')]['@value']
 		    else:
 			    try:	    
 			        wrong_dict[field + ' --> ' + nest_res + ' --> ' + nested_fields] = record[field][nest_res][0][nested_fields.encode('ascii')]['@value']
 			    except:
 				    wrong_dict[field + ' --> ' + nest_res + ' --> ' + nested_fields] = record[field][nest_res][0][nested_fields.encode('ascii')]
-			    f.write('< ' + field + ' --> ' + nest_res + ' --> ' + nested_fields + ' >' + wrong_dict[field + ' --> ' + nest_res + ' --> ' + nested_fields])
+			    #f.write('< ' + field + ' --> ' + nest_res + ' --> ' + nested_fields + ' >' + wrong_dict[field + ' --> ' + nest_res + ' --> ' + nested_fields])
 	    else:
 	        if '@error' in record[field]:
-		    wrong_dict[field] = record[field]['@error'] + '. You entered ' + record[field]['@value']
+		    wrong_dict[field] = "*_error_*" + record[field]['@error'] + '. You entered ' + record[field]['@value']
 		else:
 		    wrong_dict[field]  = record[field]['@value']
         invalid_rows.append(wrong_dict)
+    f.write("WRONG \n" + repr(invalid_rows))
     '''f.write("\n\nInvalid rows " + repr(invalid_rows))
     session.import_success = len(invalid_rows) 
     incorrect_rows = []

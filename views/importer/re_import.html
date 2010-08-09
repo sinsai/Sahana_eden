@@ -14,13 +14,7 @@
 	var invalid_rows = {{=session.invalid_rows}};
 	var number_column = {{=session.import_columns}};
 	var map = {{=session.import_map}};
-	var fields = [];
 	console.log(map);
-	for(var i=0 ; i < map.length ; i++)
-	{
-	    fields.push(map[i][2]);
-	}
-	//var rows = {{=session.import_rows}};
 	var resource = "{{=session.import_resource}}";
 	var url = "{{=request.env.http_host}}";
 	var application = "{{=request.application}}";

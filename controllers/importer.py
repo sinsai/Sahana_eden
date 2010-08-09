@@ -17,40 +17,9 @@ response.menu_options = [
 
 importer=local_import("importer")
 
-gd_client = importer.gdata.spreadsheet.service.SpreadsheetsService()
-
 def index(): 
     return dict(module_name=module_name)
 
-def googledoc():
-    next = 'http://' + request.env.http_host + '/' + \
-		    request.application + '/importer/gettoken'
-    scope = 'https://spreadsheets.google.com/feeds'
-    secure = True
-    sessionval = True
-    url2token = gd_client.GenerateAuthSubURL(next, scope, \
-		    secure=secure, session = sessionval)
-    return dict(module_name=module_name,auth_url=url2token)	
-
-
-def gettoken():
-    gd_client = importer.gdata.spreadsheet.service.SpreadsheetsService()
-    getvars=repr(request.get_vars)
-    auth_url='http://'+request.env.http_host+request.url+'?auth_sub_scopes='+request.get_vars['auth_sub_scopes']+'&token='+request.get_vars['token']
-    f = file("/home/shikhar/Desktop/abc.txt","wb")
-    f.write(auth_url)
-    f.close() 
-    authsub_token = importer.gdata.auth.extract_auth_sub_token_from_url(auth_url)
-    
-    authsub_token = importer.gdata.auth.AuthSubTokenFromUrl(auth_url) 
-    #gd_client.token_store.add_token(authsub_token)
-    gd_client.token_store.add_token(request.get_vars['token'])
-    user_sreadsheets = gd_client.AuthSubTokenInfo()
-    gd_client.UpgradeToSessionToken()
-    '''Google documentation is outdated on this, gd_client.auth_token doesn't work'''
-    
-    user_spreadsheets = getspreadsheetlist()
-    return dict(module_name=module_name,k=user_spreadsheets)
 
 def spreadsheet():
     crud.settings.create_onaccept = lambda form : redirect(URL(r=request, c="importer", f="spreadsheetview")) 
@@ -70,24 +39,6 @@ def spreadsheetview():
 def slist():
     return shn_rest_controller(module,'slist',listadd=False)
     
-def getspreadsheetlist():		
-	'''
-	Get list of spreadsheets from Google Docs
-	client is the gdata spreadsheets client
-	'''
-	l=[]
-	feed=gd_client.GetSpreadsheetsFeed()
-	for i, entry in enumerate(feed.entry):
-		if isinstance(feed, gdata.spreadsheet.SpreadsheetsCellsFeed):
-			l.append('%s %s\n' % (entry.title.text, entry.content.text))
-		elif isintance(feed, gdata.spreadsheet.SpreadsheetsListFeed):
-	 		l.append('%s %s %s' %(i, entry.title.text. entry.content.text))
-	        	for key in entry.custom:
-				l.append(' %s: %s' % (key, entry.custom[key].text))
-	        else:
-			l.append('%s %s\n' % (i,entry.title.text))
-	return l
-
 def import_spreadsheet():
     spreadsheet = request.body.read()
     f = file("/home/shikhar/Desktop/abc.txt","wb")

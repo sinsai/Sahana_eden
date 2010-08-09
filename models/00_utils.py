@@ -365,11 +365,6 @@ shn_url_represent = lambda url: (url and [A(url, _href=url, _target="blank")] or
 # Phone number requires
 shn_phone_requires = IS_NULL_OR(IS_MATCH('\+?\s*[\s\-\.\(\)\d]+(?:(?: x| ext)\s?\d{1,5})?$'))
 
-def Tstr(text):
-    """Convenience function for non web2py modules"""
-    return str(T(text))
-
-
 def myname(user_id):
     user = db.auth_user[user_id]
     return user.first_name if user else "None"

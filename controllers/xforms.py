@@ -287,17 +287,19 @@ def submission():
     
     prefix, name = resource.split("_")
     res = s3xrc.resource(prefix, name)
-    
+
     try:
-        # Use XSLT here:
-        #res.import_xml(source=tree, template="path_to_template")
-        res.import_xml(source=tree)
-    except:
-        raise
+        success = res.import_xml(source=tree, template=os.path.join(request.folder, "static", "xslt", "import", "odk.xsl"))
+    except IOError, SyntaxError:
+        raise HTTP(500, "Internal server error.")
     
-    r = HTTP(201, "Saved.") # ODK Collect only accepts 201
-    r.headers["Location"] = request.env.http_host
-    raise r
+    # ToDo: Not sure if I'm handling this correctly.  Which response code to use?
+    if success:
+        r = HTTP(201, "Saved.") # ODK Collect only accepts 201
+        r.headers["Location"] = request.env.http_host
+        raise r
+    else:
+        raise HTTP(500, "Internal server error?")
 
 def formList(): 
     """

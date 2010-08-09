@@ -65,27 +65,34 @@ if deployment_settings.has_module(module):
     resource = "question_options"
     tablename = module +"_" + resource
     question_options = db.define_table(tablename,uuidstamp,deletion_status,authorstamp,
-    #                                        Field("display_option","integer"),
-                                            Field("answer_choices","text",length=700),
-                                            Field("row_choices","text"), # row choices
-                                            Field("column_choices","text"), # column choices
-                                            Field("tf_choices","text"), # text before the text fields.
+#    #                                        Field("display_option","integer"),
+##                                            Field("answer_choices","text",length=700),
+##                                            Field("row_choices","text"), # row choices
+##                                            Field("column_choices","text"), # column choices
+#                                            Field("tf_choices","text"), # text before the text fields.
                                             Field("tf_ta_columns","integer"), # number of columns for TF/TA
                                             Field("ta_rows","integer"), # number of rows for text areas
-                                            Field("number_of_options","integer"),
+##                                            Field("number_of_options","integer"),
                                             Field("allow_comments","boolean"), # whether or not to allow comments
                                             Field("comment_display_label"), # the label for the comment field
                                             Field("required","boolean"), # marks the question as required
-                                            Field("validate","boolean"),  # whether or not to enable validation
-                                            Field("validation_options","integer"), # pre-set validation regexps and such.
+#                                            Field("validate","boolean"),  # whether or not to enable validation
+##                                            Field("validation_options","integer"), # pre-set validation regexps and such.
                                             Field("aggregation_type","string"))
 
     # Survey Question
     resource = "question"
     tablename = module +"_" + resource
-    question = db.define_table(tablename,name_desc,
+    question = db.define_table(tablename,name_desc,timestamp, uuidstamp, deletion_status, authorstamp,
                                Field("question_type","integer"),
-                               Field("options_id",db.survey_question_options))
+#                               Field("options_id",db.survey_question_options),
+                               Field("tf_ta_columns","integer"), # number of columns for TF/TA
+                               Field("ta_rows","integer"), # number of rows for text areas
+                               Field("allow_comments","boolean"), # whether or not to allow comments
+                               Field("comment_display_label"), # the label for the comment field
+                               Field("required","boolean"), # marks the question as required
+                               Field("aggregation_type","string"))
+
 
     #Survey Instance
     resource = "instance"
@@ -120,31 +127,23 @@ if deployment_settings.has_module(module):
     tablename = module+"_"+resource
     custom_widget = db.define_table(tablename,name_desc,
                                     Field("question_id",db.survey_question),
-                                    Field("widget","text",length=750))
-    
+                                    Field("widget","text",length=750))    
 
-    def question_options_onaccept(form):
-        if form.vars.id and session.rcvars.survey_question:
-            table = db.survey_question_options
-            opts = db(table.id == form.vars.id).update(question_id=session.rcvars.survey_question)
-            db.commit()
+#    def question_options_onaccept(form):
+#        if form.vars.id and session.rcvars.survey_question:
+#            table = db.survey_question_options
+#            opts = db(table.id == form.vars.id).update(question_id=session.rcvars.survey_question)
+#            db.commit()
+#
+#    s3xrc.model.configure(db.survey_question_options,
+#                      onaccept=lambda form: question_options_onaccept(form))
 
-    s3xrc.model.configure(db.survey_question_options,
-                      onaccept=lambda form: question_options_onaccept(form))
-
-    def question_onaccept(form):
-        if form.vars.id and session.rcvars.survey_question:
-            table = db.survey_question_options            
-            opts = db(db.survey_question_options.question_id == form.vars.id).select().first()
-            if not opts:
-                redirect(URL(r=request,f="question_options",args="create"))
-            else:
-                redirect(URL(r=request,f="question_options",args=[opts.id,"update"]))
-        if form.vars.id and session.rcvars.survey_section and session.rcvars.survey_template:
-            db.survey_template_link_table.insert(survey_section_id=session.rcvars.survey_section, survey_template_id=session.rcvars.survey_template)
-            db.commit()
-    s3xrc.model.configure(db.survey_question,
-                      onaccept=lambda form: question_onaccept(form))
+#    def question_onaccept(form):
+#        if form.vars.id and session.rcvars.survey_section and session.rcvars.survey_template:
+#            db.survey_template_link_table.insert(survey_section_id=session.rcvars.survey_section, survey_template_id=session.rcvars.survey_template)
+#            db.commit()
+#    s3xrc.model.configure(db.survey_question,
+#                      onaccept=lambda form: question_onaccept(form))
 
     def section_onaccept(form):
         if form.vars.id and session.rcvars.survey_template:

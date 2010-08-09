@@ -13,13 +13,12 @@ if module not in deployment_settings.modules:
 # Options Menu (available in all Functions' Views)
 response.menu_options = [
 	[T("Compose"), False, URL(r=request, c="msg", f="compose")],
-	[T("Compose"), False, URL(r=request, c="msg", f="compose")],
-	#[T("Outbox"), False, URL(r=request, f="outbox")],#TODO
+	[T("Outbox"), False, URL(r=request, f="outbox")],#TODO
 	[T("Distribution groups"), False, URL(r=request, f="group"), [
 		[T("List/Add"), False, URL(r=request, f="group")],
 		[T("Group Memberships"), False, URL(r=request, f="group_membership")],
 	]],
-    #[T("CAP"), False, URL(r=request, f="tbc")]
+    #["CAP", False, URL(r=request, f="tbc")]
 ]
 
 # S3 framework functions
@@ -36,6 +35,7 @@ def tbc():
 
 def email_settings():
     """ RESTful CRUD controller for email settings - appears in the administration menu """
+
     resource = request.function
     tablename = module + "_" + resource
     table = db[tablename]
@@ -48,11 +48,9 @@ def email_settings():
     table.inbound_mail_password.label = T("Password")
     table.inbound_mail_delete.label = T("Delete from Server?")
     table.inbound_mail_port.comment = DIV(DIV(_class="tooltip",
-        _title=T("Port|For POP-3 this is usually 110 (995 for SSL), for IMAP \
-            this is usually 143 (993 for IMAP).")))
+        _title=Tstr("Port") + "|" + Tstr("For POP-3 this is usually 110 (995 for SSL), for IMAP this is usually 143 (993 for IMAP).")))
     table.inbound_mail_delete.comment = DIV(DIV(_class="tooltip",
-            _title=T("Delete|If this is set to True then mails will be \
-            deleted from the server after downloading.")))
+            _title=Tstr("Delete") + "|" + Tstr("If this is set to True then mails will be deleted from the server after downloading.")))
 
     if not auth.has_membership(auth.id_group("Administrator")):
 		session.error = UNAUTHORISED
@@ -238,9 +236,9 @@ def modem_settings():
     try:
         import serial
     except ImportError:
-        session.error = T("Python Serial module not available within the\
-        Python - this needs installing to activate the Modem")
+        session.error = T("Python Serial module not available within the running Python - this needs installing to activate the Modem")
         redirect(URL(r=request, c="admin", f="index"))
+
     resource = request.function
     tablename = module + "_" + resource
     table = db[tablename]
@@ -248,13 +246,11 @@ def modem_settings():
     table.modem_port.label = T("Port")
     table.modem_baud.label = T("Baud")
     table.modem_port.comment = DIV(DIV(_class="tooltip",
-        _title=T("Port|The serial port at which the modem is connected -\
-            /dev/ttyUSB0, etc on linux and com1, com2, etc on Windows")))
+        _title=Tstr("Port") + "|" + Tstr("The serial port at which the modem is connected - /dev/ttyUSB0, etc on linux and com1, com2, etc on Windows")))
     table.modem_baud.comment = DIV(DIV(_class="tooltip",
-        _title=T("Baud|Baud rate to use for your modem - The default is safe\
-            for most cases")))
+        _title=Tstr("Baud") + "|" + Tstr("Baud rate to use for your modem - The default is safe for most cases")))
     table.enabled.comment = DIV(DIV(_class="tooltip",
-        _title=T("Enabled|Unselect to disable the modem")))
+        _title=Tstr("Enabled") + "|" + Tstr("Unselect to disable the modem")))
     
     # CRUD Strings
     ADD_SETTING = T("Add Setting")
@@ -291,17 +287,15 @@ def gateway_settings():
     table.to_variable.label = T("To variable")
     table.message_variable.label = T("Message variable")
     table.url.comment = DIV(DIV(_class="tooltip",
-        _title=T("URL|The URL of your web gateway without the post parameters")))
+        _title="URL|" + Tstr("The URL of your web gateway without the post parameters")))
     table.parameters.comment = DIV(DIV(_class="tooltip",
-        _title=T("Parameters|The post variables other than the ones containing\
-            the message and the phone number")))
+        _title=Tstr("Parameters") + "|" + Tstr("The post variables other than the ones containing the message and the phone number")))
     table.message_variable.comment = DIV(DIV(_class="tooltip",
-        _title=T("Message Variable|The post variable on the URL used for\
-        sending messages")))
+        _title=Tstr("Message Variable") + "|" + Tstr("The post variable on the URL used for sending messages")))
     table.to_variable.comment = DIV(DIV(_class="tooltip",
-        _title=T("To variable|The post variable containing the phone number")))
+        _title=Tstr("To variable") + "|" + Tstr("The post variable containing the phone number")))
     table.enabled.comment = DIV(DIV(_class="tooltip",
-        _title=T("Enabled|Unselect to disable the modem")))
+        _title=Tstr("Enabled") + "|" + Tstr("Unselect to disable the modem")))
 
     # CRUD Strings
     ADD_SETTING = T("Add Setting")
@@ -334,7 +328,7 @@ def setting():
     table = db[tablename]
     table.outgoing_sms_handler.label = T("Outgoing SMS handler")
     table.outgoing_sms_handler.comment = DIV(DIV(_class="tooltip",
-    _title=Tstr("Outgoing SMS handler") + "|" + TStr("Selects whether to use the gateway or the Modem for sending out SMS")))
+    _title=Tstr("Outgoing SMS handler") + "|" + Tstr("Selects whether to use the gateway or the Modem for sending out SMS")))
     # CRUD Strings
     ADD_SETTING = T("Add Setting")
     VIEW_SETTINGS = T("View Settings")
@@ -347,6 +341,7 @@ def setting():
         subtitle_list = T("Settings"),
         label_list_button = VIEW_SETTINGS,
         label_create_button = ADD_SETTING,
+        label_delete_button = T("Delete Setting"),
         msg_record_created = T("Setting added"),
         msg_record_modified = T("Messaging settings updated"),
         msg_record_deleted = T("Setting deleted"),
@@ -358,7 +353,7 @@ def setting():
     return shn_rest_controller(module, resource, deletable=False, listadd=False)
 
 def compose():
-    " Message Compose page "
+    """ Form to Compose a Message """
     resource1 = "log"
     tablename1 = module + "_" + resource1
     table1 = db[tablename1]
@@ -407,18 +402,50 @@ def compose():
             redirect(URL(r=request,c="msg", f="compose"))
 
 
-    logform = crud.create(table1, 
-                            onvalidation = compose_onvalidation)
+    logform = crud.create(table1,
+                          onvalidation = compose_onvalidation)
     outboxform = crud.create(table2)
     
     return dict(logform = logform, outboxform = outboxform, title = T("Send Message"))
+
+def outbox():
+    "View the contents of the Outbox"
+
+    resource = request.function
+    tablename = module + "_" + resource
+    table = db[tablename]
+
+    table.message_id.label = T("Message")
+    table.message_id.writable = False
+    table.pe_id.readable = True
+    table.pe_id.label = T("Recipient")
+    
+    # Subject works for Email but not SMS
+    table.message_id.represent = lambda id: db(db.msg_log.id == id).select(db.msg_log.message, limitby=(0, 1)).first().message
+
+    # CRUD Strings
+    s3.crud_strings[tablename] = Storage(
+        title_list = T("View Outbox"),
+        title_update = T("Edit Message"),
+        subtitle_list = T("Available Messages"),
+        label_list_button = T("View Outbox"),
+        label_delete_button = T("Delete Message"),
+        msg_record_modified = T("Message updated"),
+        msg_record_deleted = T("Message deleted"),
+        msg_list_empty = T("No Messages currently in Outbox")
+    )
+
+    # Server-side Pagination
+    response.s3.pagination = True
+
+    return shn_rest_controller(module, resource, listadd=False)
 
 # Enabled only for testing - the ticketing module should be the normal interface
 # - although we should provide a menu item to that here...
 @auth.shn_requires_membership(1)
 def log():
     " RESTful CRUD controller "
-    resource = "log"
+    resource = request.function
     tablename = "%s_%s" % (module, resource)
     table = db[tablename]
 
@@ -453,9 +480,7 @@ def log():
     # Server-side Pagination
     response.s3.pagination = True
 
-    return shn_rest_controller(module, resource,
-        listadd=False,
-        )
+    return shn_rest_controller(module, resource, listadd=False)
 
 # Enabled only for testing
 @auth.shn_requires_membership(1)
@@ -467,7 +492,5 @@ def tag():
     # Server-side Pagination
     response.s3.pagination = True
     
-    return shn_rest_controller(module, resource,
-    listadd=False,
-    )
+    return shn_rest_controller(module, resource, listadd=False)
 

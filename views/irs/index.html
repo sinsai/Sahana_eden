@@ -1,5 +1,10 @@
 {{extend "layout.html"}}
-{{=H2(T("Incident Reporting System"))}}
+<div id="home">
+{{=H2(T(module_name))}}
+<p>
+{{=T("The")}} {{=module_name}} {{=T("System allows the Reporting & Tracking of Incidents.")}}
+</p>
+<h3>{{=T("Features Include")}}:</h3>
 {{=LI(A("Add Report", _href=URL(r=request, f="report", args="create")))}}
 {{=LI(A("List Reports", _href=URL(r=request, f="report")))}}
 {{=LI(A("Show Map", _href=URL(r=request, f="maps")))}}

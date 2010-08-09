@@ -30,15 +30,12 @@ def shn_sessions():
     response.s3.formats = Storage()
 
     roles = []
-    try:
+    if auth.is_logged_in():
         user_id = auth.user.id
         _memberships = db.auth_membership
         memberships = db(_memberships.user_id == user_id).select(_memberships.group_id) # Cache this & invalidate when memberships are changed?
         for membership in memberships:
             roles.append(membership.group_id)
-    except:
-        # User not authenticated therefore has no roles other than '0'
-        pass
     session.s3.roles = roles
 
     controller_settings_table = "%s_setting" % request.controller

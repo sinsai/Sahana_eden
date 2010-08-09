@@ -294,7 +294,7 @@ if deployment_settings.has_module(module):
     table.mobile.requires = shn_phone_requires
     table.email.requires = IS_NULL_OR(IS_EMAIL())
     table.email.label = T("Email")
-    table.fax.label = T("FAX")
+    table.fax.label = T("Fax")
     table.fax.requires = shn_phone_requires
     table.skype.label = T("Skype ID")
 

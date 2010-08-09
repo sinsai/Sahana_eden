@@ -22,8 +22,8 @@ def template():
     """ RESTlike CRUD controller """
     resource = "template"
     def _prep(jr):
-        crud.settings.create_next = URL(r = request, c="survey", f="layout")
-        crud.settings.update_next = URL(r = request, c="survey", f="layout")
+        crud.settings.create_next = URL(r = request, c="survey", f="section")
+        crud.settings.update_next = URL(r = request, c="survey", f="section")
         return True
     response.s3.prep = _prep
     tablename = "%s_%s" % (module, resource)
@@ -71,42 +71,54 @@ def section():
     table.description.label = T("Description")
     record = table[request.args(0)]
     section = SQLFORM(table,record,deletable=True)
-    questions = None
-    output = dict(questions=questions) # initially it's nothing
+    questions = db().select(db.survey_question.ALL)
+    output = dict(questions=questions)
     # Let's avoid blowing up! 
     try:
         section_id = request.args(0)        
         question_query = (db.survey_template_link_table.survey_section_id == section_id) & (db.survey_question.id == db.survey_template_link_table.survey_question_id)
-        questions = db(question_query).select(db.survey_question.ALL)        
-        output.update(questions=questions)                                                  
+        questions = db(question_query).select(db.survey_question.ALL)
+        if len(questions) > 0:
+            output.update(questions=questions)
+
     except:
         pass # this means we didn't pass an id, e.g., making a new section!        
-    if section.accepts(request.vars,session,keepvalues=True):         
+    if section.accepts(request.vars,session,keepvalues=True,):
         redirect(URL(r=request,c="survey",f="section",args=[section.vars.id]))
     elif section.errors:
-       response.flash = T("Please correct all errors.")
+        response.flash= T("Please correct all errors.")
+        response.flash = section.errors
+
     output.update(form=section)
 
     question_types = {
-        1:T("Multiple Choice (Only One Answer)"),
-        2:T("Multiple Choice (Multiple Answers)"),
-        3:T("Matrix of Choices (Only one answer)"),
-        4:T("Matrix of Choices (Multiple Answers)"),
-        5:T("Rating Scale"),
+#        1:T("Multiple Choice (Only One Answer)"),
+#        2:T("Multiple Choice (Multiple Answers)"),
+#        3:T("Matrix of Choices (Only one answer)"),
+#        4:T("Matrix of Choices (Multiple Answers)"),
+#        5:T("Rating Scale"),
         6:T("Single Text Field"),
-        7:T("Multiple Text Fields"),
+#        7:T("Multiple Text Fields"),
 #        8:T("Matrix of Text Fields"),
         9:T("Comment/Essay Box"),
         10:T("Numerical Text Field"),
-        11:T("Date and/or Time"),
+        11:T("Date and/or Time")
 #        12:T("Image"),
 #        13:T("Descriptive Text (e.g., Prose, etc)"),
-        14:T("Location"),
-        15:T("Organisation"),
-        16:T("Person"),
-#        16:T("Custom Database Resource (e.g., anything defined as a resource in Sahana)")
+#        14:T("Location"),
+#        15:T("Organisation"),
+#        16:T("Person"),
+##        16:T("Custom Database Resource (e.g., anything defined as a resource in Sahana)")
     }
     output.update(types=question_types)
+    """
+    Field("tf_ta_columns","integer"), # number of columns for TF/TA
+                               Field("ta_rows","integer"), # number of rows for text areas
+                               Field("allow_comments","boolean"), # whether or not to allow comments
+                               Field("comment_display_label"), # the label for the comment field
+                               Field("required","boolean"), # marks the question as required
+                               Field("aggregation_type","string"))
+    """
     return output
 
 def series():
@@ -182,43 +194,33 @@ def series():
 
 def question():
     # Question data, e.g., name,description, etc.
-    resource = "question"
-    def _prep(jr):
-        if jr.method == "create":
-            request.vars._next =  URL(r = request, f="question_options",args=["create"])
-        elif jr.method == "update":
-            request.vars._next =  URL(r = request, f="question_options",args=["update"])
-        crud.settings.create_next = URL(r = request, f="question_options",args=["create"])
-        crud.settings.update_next = URL(r = request, f="question_options", args=["update"])
-        return True
-    response.s3.prep = _prep
+    resource = "question"    
     tablename = "%s_%s" % (module, resource)
     table = db[tablename]
     table.uuid.requires = IS_NOT_IN_DB(db,"%s.uuid" % tablename)
     table.name.requires = IS_NOT_EMPTY()
     table.name.label = T("Survey Question Display Name")
     table.name.comment = SPAN("*", _class="req")
-
     table.description.label = T("Description")
 
     question_types = {
-        1:T("Multiple Choice (Only One Answer)"),
-        2:T("Multiple Choice (Multiple Answers)"),
-        3:T("Matrix of Choices (Only one answer)"),
-        4:T("Matrix of Choices (Multiple Answers)"),
-        5:T("Rating Scale"),
+#        1:T("Multiple Choice (Only One Answer)"),
+#        2:T("Multiple Choice (Multiple Answers)"),
+#        3:T("Matrix of Choices (Only one answer)"),
+#        4:T("Matrix of Choices (Multiple Answers)"),
+#        5:T("Rating Scale"),
         6:T("Single Text Field"),
-        7:T("Multiple Text Fields"),
+#        7:T("Multiple Text Fields"),
 #        8:T("Matrix of Text Fields"),
         9:T("Comment/Essay Box"),
         10:T("Numerical Text Field"),
         11:T("Date and/or Time"),
-#        12:T("Image"),         
+#        12:T("Image"),
 #        13:T("Descriptive Text (e.g., Prose, etc)"),
-        14:T("Location"),
-        15:T("Organisation"),
-        16:T("Person"),
-#        16:T("Custom Database Resource (e.g., anything defined as a resource in Sahana)")
+#        14:T("Location"),
+#        15:T("Organisation"),
+#        16:T("Person"),
+##        16:T("Custom Database Resource (e.g., anything defined as a resource in Sahana)")
     }
 
     table.question_type.requires = IS_IN_SET(question_types)
@@ -237,31 +239,32 @@ def question():
         msg_record_modified = T("Survey Question updated"),
         msg_record_deleted = T("Survey Question deleted"),
         msg_list_empty = T("No Survey Questions currently registered"))
-    
     output = shn_rest_controller(module, resource,listadd=False)
-    
-    return transform_buttons(output,next=True,cancel=True)
+
+    return transform_buttons(output,cancel=True,save=True)
 
 def question_options():
-    resource = "question_options"
+    resource = "question"
     tablename = "%s_%s" % (module, resource)
-    question_type = session.s3.question_type
     table = db[tablename]
     table.uuid.requires = IS_NOT_IN_DB(db,"%s.uuid" % tablename)   
     table.tf_ta_columns.label = T("Number of Columns")
     table.ta_rows.label = T("Number of Rows")
-    table.answer_choices.label = T("Answer Choices (One Per Line)")
+#    table.answer_choices.label = T("Answer Choices (One Per Line)")
     table.aggregation_type.writable = False
     table.aggregation_type.readable = False
-    table.row_choices.label = T("Row Choices (One Per Line)")
-    table.column_choices.label = T("Column Choices (One Per Line")
-    table.tf_choices.label = T("Text before each Text Field (One per line)")    
+#    table.row_choices.label = T("Row Choices (One Per Line)")
+#    table.column_choices.label = T("Column Choices (One Per Line")
+#    table.tf_choices.label = T("Text before each Text Field (One per line)")
     output = shn_rest_controller(module, resource,listadd=False)
     output.update(question_type=question_type)
     return transform_buttons(output,prev=True,finish=True,cancel=True)
 
-def layout():     
-    """Deals with Rendering the survey editor"""    
+def preview():
+    """
+    Deals with Rendering the survey preview page.
+    Note: most of these branches will never be hit -- for the sake of time, left all functionality here as it works.
+    """
 
     template_id = None
     section_rendered = []
@@ -328,7 +331,7 @@ def layout():
                         for choice in choices:
                             table_row.append(TD((DIV(choice,INPUT(_type="checkbox",_name="%s" % (question.uuid)),_class="question_answer"))))
                         if options.allow_comments:
-                            comment_text = options.comment_display_label                            
+                            comment_text = options.comment_display_label
                             table_row.append(TD(DIV((INPUT(_type="checkbox"),comment_text,TD(INPUT(_type="text",name="%s_comment" % (question.uuid)))))))
                 table.append(table_row)
                 ui.append(table)
@@ -340,14 +343,14 @@ def layout():
                 c_choices = column_choices.split("\r\n")
                 if c_choices:
                     table_row.append(DIV(question.name,_class="question"))
-                    table.append(table_row)                    
+                    table.append(table_row)
                     thead.append(table_row.append(TH(XML("&nbsp;"),_style="width:20%;")))
-                    for choice in c_choices: 
+                    for choice in c_choices:
                         table_row.append(TH(choice,_scope="col",_style="width:16%;"))
                     thead.append(table_row)
                     num_columns = len(c_choices)
                     row_choices = options.row_choices
-                    r_choices = row_choices.split("\r\n")                    
+                    r_choices = row_choices.split("\r\n")
                     for row in r_choices:
                         table_row = TR()
                         table_row.append(TH(row,_scope="row",_align="left"))
@@ -375,7 +378,7 @@ def layout():
                         table_row = TR()
                         table_row.append(TH(row,_scope="row",_align="left"))
                         for i in range(num_columns):
-                            table_row.append(TD(INPUT(_type="checkbox"),_align="center"))                    
+                            table_row.append(TD(INPUT(_type="checkbox"),_align="center"))
                     tbody.append(table_row)
                     table.append(tbody)
             elif question.question_type == 5: #TODO: rating question -- take weights into account.
@@ -402,7 +405,7 @@ def layout():
                             table_row.append(TD(INPUT(_type="radio",_align="center")))
                     tbody.append(table_row)
                     table.append(tbody)
-            elif question.question_type == 6:
+            if question.question_type == 6:
                 table,table_row = TABLE(_class="question"), TR()
                 table_row.append(DIV(question.name))
                 table_row.append(TD(DIV(DIV("%s " % (question.name),TD(INPUT()),_class="question_answer"))))
@@ -439,7 +442,7 @@ def layout():
             elif question.question_type == 10:
                table,table_row = TABLE(_class="question"), TR()
                table_row.append(DIV(question.name))
-               table_row.append((INPUT())) 
+               table_row.append((INPUT()))
                if options.allow_comments:
                     comment_text = options.comment_display_label
                     if comment_text:
@@ -511,7 +514,7 @@ def add_buttons(form, save = None, prev = None, next = None, finish = None,cance
         form[-1][-1][1].append(INPUT(_type="submit", _value=T("Finish"),_name="finish",_id="finish"))
     return form
 
-def transform_buttons(output,save = None, prev = None, next = None, finish = None,cancel=None,extra=None):
+def transform_buttons(output,save = None, prev = None, next = None, finish = None,cancel=None):
     # fails when output is not HTML (e.g., JSON)
     if isinstance(output, dict):
         form = output.get("form",None)

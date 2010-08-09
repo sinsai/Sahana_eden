@@ -29,8 +29,10 @@ Module providing an API to send messages
 
 __author__ = "Praneeth Bodduluri <lifeeth[at]gmail.com>"
 
-import re
+import string
 import urllib
+
+DELETECHARS = string.translate(string.printable, string.maketrans(string.printable, string.printable), string.digits)
 
 class Msg(object):
     """ Toolkit for hooking into the Messaging framework """
@@ -41,7 +43,9 @@ class Msg(object):
     def __init__(self, environment, db=None, T=None, mail=None, modem=None):
         try:
             self.db = db
-            self.outgoing_is_gateway = db(db.msg_setting.outgoing_sms_handler ==  "Gateway").select(limitby=(0, 1)).first()
+            settings = db(db.msg_setting.id > 0).select(limitby=(0, 1)).first()
+            self.default_country_code = settings.default_country_code
+            self.outgoing_is_gateway = settings.outgoing_sms_handler ==  "Gateway"
             self.sms_api = db(db.msg_gateway_settings.enabled == True).select(limitby=(0, 1)).first()
             if self.sms_api:
                 tmp_parameters = self.sms_api.parameters.split("&")
@@ -59,25 +63,16 @@ class Msg(object):
         +()- & space
         """
 
-        phonePattern = re.compile(r'''
-                        # don't match beginning of string, number can start anywhere
-            (\d{3})     # area code is 3 digits (e.g. '800')
-            \D*         # optional separator is any number of non-digits
-            (\d{3})     # trunk is 3 digits (e.g. '555')
-            \D*         # optional separator
-            (\d{4})     # rest of number is 4 digits (e.g. '1212')
-            \D*         # optional separator
-            (\d*)       # extension is optional and can be any number of digits
-            $           # end of string
-            ''', re.VERBOSE)
+        clean = string.translate(phone, None, DELETECHARS)
 
-        
-        #clean = phonePattern.search(phone)
-        
         # If number starts with a 0 then need to remove this & add the country code in
-        # (Beware: Italy (+39) keeps zero, even with country code!)
-        
-        clean = phone
+        if clean[0] == "0":
+            # Add default country code
+            if self.default_country_code == 39:
+                # Italy keeps 0 after country code
+                clean = str(self.default_country_code) + clean
+            else:
+                clean = str(self.default_country_code) + string.lstrip(clean, "0")
 
         return clean
     
@@ -240,6 +235,7 @@ class Msg(object):
                     if (contact_method == 1):
                         return self.send_email_via_api(recipient.value, subject, message)
                 return False
+
             if entity_type == "pr_group":
                 # Take the entities of it and add in the messaging queue - with
                 # sender as the original sender and marks group email processed
@@ -261,9 +257,11 @@ class Msg(object):
                                          system_generated = True)
                 status = True
                 chainrun = True
+
             if entity_type == "pr_person":
                 # Person
                 status = dispatch_to_pe_id(entity)
+
             if status:
                 # Update status to sent in Outbox
                 db(table.id == row.id).update(status=2)
@@ -271,6 +269,8 @@ class Msg(object):
                 db(db.msg_log.id == message_id).update(actioned=True)
                 # Explicitly commit DB operations when running from Cron
                 db.commit()
+
         if chainrun :
             self.process_outbox(contact_method, option)
+
         return

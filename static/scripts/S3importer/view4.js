@@ -231,12 +231,7 @@ function view4(importsheet)
 						callback : function(options,success,response)
 							   {
 							        lm.hide();
-								var redirect = new Ext.LoadMask(Ext.get('spreadsheet'),{msg : 'Redirecting to spreadsheet importer report...'});
-								redirect.enable();
-								redirect.show();
-								var delay = new Ext.util.DelayedTask(function(){});
-								delay.delay(2000);
-								setTimeout(redirect.hide(),2000);
+								window.location = 'http://' + url + "/" + application + "/importer/re_import";
 						            }	
     		});
 		}}],

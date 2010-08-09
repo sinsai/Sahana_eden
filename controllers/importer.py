@@ -104,8 +104,7 @@ def import_spreadsheet():
     if j.has_key('re_import'):
         for x in range(0,len(j['map'])):
 	    j['map'][x][2] = j['map'][x][2].replace('&gt;','>')
-    f.write('map is ' + repr(j['map'])
-
+    f.write('map is ' + repr(j['map']))
     if not j.has_key('re_import'):# and j['re_import'] is not True:
     	for x in range(0,len(j['spreadsheet'])):
 	    for y in range(x+1,len(j['spreadsheet'])):

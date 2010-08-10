@@ -12,9 +12,9 @@ if module not in deployment_settings.modules:
 
 # Options Menu (available in all Functions' Views)
 response.menu_options = [
-    [T("Reports"), False, URL(r=request, f="report"),[
-        [T("List"), False, URL(r=request, f="report")],
-        [T("Add"), False, URL(r=request, f="report", args="create")],
+    [T("Reports"), False, URL(r=request, f="ireport"),[
+        [T("List"), False, URL(r=request, f="ireport")],
+        [T("Add"), False, URL(r=request, f="ireport", args="create")],
         #[T("Search"), False, URL(r=request, f="report", args="search")]
     ]],
     [T("Incidents"), False, URL(r=request, f="incident"),[
@@ -22,9 +22,9 @@ response.menu_options = [
         [T("Add"), False, URL(r=request, f="incident", args="create")],
         #[T("Search"), False, URL(r=request, f="incident", args="search")]
     ]],
-    [T("Assessments"), False, URL(r=request, f="assessment"),[
-        [T("List"), False, URL(r=request, f="assessment")],
-        [T("Add"), False, URL(r=request, f="assessment", args="create")],
+    [T("Assessments"), False, URL(r=request, f="iassessment"),[
+        [T("List"), False, URL(r=request, f="iassessment")],
+        [T("Add"), False, URL(r=request, f="iassessment", args="create")],
         #[T("Search"), False, URL(r=request, f="assessment", args="search")]
     ]],
     [T("Map"), False, URL(r=request, f="maps")],
@@ -37,12 +37,12 @@ def index():
 
 def maps():
     "Show a Map of all Reports"
-    
+
     feature_class_id = db(db.gis_feature_class.name == "Incident").select(db.gis_feature_class.id, limitby=(0, 1)).first().id
     reports = db(db.gis_location.feature_class_id == feature_class_id).select()
     popup_url = URL(r=request, f="report", args="read.popup?report.location_id=")
     map = gis.show_map(feature_queries = [{"name":Tstr("Reports"), "query":reports, "active":True, "popup_url": popup_url}], window=True)
-    
+
     return dict(map=map)
 
 def incident():
@@ -51,58 +51,58 @@ def incident():
 
     response.s3.pagination = True
 
-    db.irs_image.assessment_id.readable = db.irs_image.assessment_id.writable = False
-    db.irs_image.incident_id.readable = db.irs_image.incident_id.writable = False
-    db.irs_image.report_id.readable = db.irs_image.report_id.writable = False
+    db.irs_iimage.assessment_id.readable = db.irs_iimage.assessment_id.writable = False
+    db.irs_iimage.incident_id.readable = db.irs_iimage.incident_id.writable = False
+    db.irs_iimage.report_id.readable = db.irs_iimage.report_id.writable = False
 
     output = shn_rest_controller(module, resource,
                                  rheader=lambda r: shn_irs_rheader(r,
                                                                     tabs = [(T("Incident Details"), None),
-                                                                            (T("Reports"), "report"),
-                                                                            (T("Images"), "image"),
-                                                                            (T("Assessments"), "assessment"),
+                                                                            (T("Reports"), "ireport"),
+                                                                            (T("Images"), "iimage"),
+                                                                            (T("Assessments"), "iassessment"),
                                                                             (T("Response"), "iresponse")]),
                                                                     sticky=True)
     return output
 
-def report():
+def ireport():
     "REST Controller"
     resource = request.function
 
-    db.irs_image.assessment_id.readable = db.irs_image.assessment_id.writable = False
-    db.irs_image.report_id.readable = db.irs_image.report_id.writable = False
+    db.irs_iimage.assessment_id.readable = db.irs_iimage.assessment_id.writable = False
+    db.irs_iimage.report_id.readable = db.irs_iimage.report_id.writable = False
 
     response.s3.pagination = True
 
     output = shn_rest_controller(module, resource,
                                  rheader=lambda r: shn_irs_rheader(r,
                                                                    tabs = [(T("Report Details"), None),
-                                                                           (T("Images"), "image")  ]),
+                                                                           (T("Images"), "iimage")  ]),
                                                                    sticky=True)
     return output
 
-def assessment():
+def iassessment():
     "REST Controller"
     resource = request.function
 
-    db.irs_image.assessment_id.readable = db.irs_image.assessment_id.writable = False
-    db.irs_image.report_id.readable = db.irs_image.report_id.writable = False
+    db.irs_iimage.assessment_id.readable = db.irs_iimage.assessment_id.writable = False
+    db.irs_iimage.report_id.readable = db.irs_iimage.report_id.writable = False
 
     response.s3.pagination = True
 
     output = shn_rest_controller(module, resource,
                                  rheader=lambda r: shn_irs_rheader(r,
                                                                    tabs = [(T("Assessment Details"), None),
-                                                                           (T("Images"), "image")  ]),
+                                                                           (T("Images"), "iimage")  ]),
                                                                    sticky=True)
     return output
 
 def shn_irs_rheader(r, tabs=[]):
-    
+
     if r.representation == "html":
         rheader_tabs = shn_rheader_tabs(r, tabs)
-        
-        if r.name == "report":
+
+        if r.name == "ireport":
             report = r.record
             reporter = report.person_id
             if reporter:
@@ -135,8 +135,8 @@ def shn_irs_rheader(r, tabs=[]):
                                 TH(T("Location: ")), location)
                             ),
                       rheader_tabs)
-                      
-        elif r.name == "assessment":
+
+        elif r.name == "iassessment":
             assessment = r.record
             author = shn_pr_person_represent(assessment.created_by)
             itype = irs_assessment_type_opts.get(assessment.itype, UNKNOWN_OPT)

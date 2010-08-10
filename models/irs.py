@@ -149,8 +149,8 @@ if deployment_settings.has_module(module):
             Field("time", "datetime"),
             Field("persons_affected", "integer"),
             Field("persons_injured", "integer"),
-            Field("persons_deceased", "integer"), 
-            comments, 
+            Field("persons_deceased", "integer"),
+            comments,
             )
     table.name.requires = IS_NOT_EMPTY()
     table.category.requires = IS_NULL_OR(IS_IN_SET(irs_incident_type_opts))
@@ -173,7 +173,7 @@ if deployment_settings.has_module(module):
         msg_record_modified = T("Incident updated"),
         msg_record_deleted = T("Incident deleted"),
         msg_list_empty = T("No Incidents currently registered"))
-        
+
     incident_id = db.Table(None, "incident_id",
                            Field("incident_id", table,
                                  requires = IS_NULL_OR(IS_ONE_OF(db, "irs_incident.id", "%(id)s")),
@@ -191,7 +191,7 @@ if deployment_settings.has_module(module):
     # Reports
     # This is a report of an Incident
     # A single incident may generate many reports
-    resource = "report"
+    resource = "ireport"
     tablename = "%s_%s" % (module, resource)
     table = db.define_table(tablename, timestamp, uuidstamp, authorstamp, deletion_status,
             incident_id,
@@ -203,8 +203,8 @@ if deployment_settings.has_module(module):
             Field("time", "datetime"),
             Field("persons_affected", "integer"),
             Field("persons_injured", "integer"),
-            Field("persons_deceased", "integer"), 
-            comments, 
+            Field("persons_deceased", "integer"),
+            comments,
             )
     table.name.requires = IS_NOT_EMPTY()
     table.category.requires = IS_NULL_OR(IS_IN_SET(irs_incident_type_opts))
@@ -235,7 +235,7 @@ if deployment_settings.has_module(module):
         msg_record_modified = T("Report updated"),
         msg_record_deleted = T("Report deleted"),
         msg_list_empty = T("No Reports currently registered"))
-        
+
     s3xrc.model.add_component(module, resource,
                               multiple = True,
                               joinby = dict(irs_incident="incident_id"),
@@ -268,7 +268,7 @@ if deployment_settings.has_module(module):
 
     # Assessments
     # This is a follow-up assessment of an Incident
-    resource = "assessment"
+    resource = "iassessment"
     tablename = "%s_%s" % (module, resource)
     table = db.define_table(tablename,
                             timestamp, uuidstamp, authorstamp, deletion_status,
@@ -317,7 +317,7 @@ if deployment_settings.has_module(module):
         msg_record_modified = T("Assessment updated"),
         msg_record_deleted = T("Assessment deleted"),
         msg_list_empty = T("No Assessments currently registered"))
-        
+
     s3xrc.model.configure(table,
         list_fields = [
             "id",
@@ -340,13 +340,13 @@ if deployment_settings.has_module(module):
         99:T("other")
     }
 
-    resource = "image"
+    resource = "iimage"
     tablename = "%s_%s" % (module, resource)
     table = db.define_table(tablename,
                             timestamp, uuidstamp, authorstamp, deletion_status,
-                            Field("report_id", db.irs_report),
+                            Field("report_id", db.irs_ireport),
                             incident_id,
-                            Field("assessment_id", db.irs_assessment),
+                            Field("assessment_id", db.irs_iassessment),
                             Field("type", "integer",
                                 requires = IS_IN_SET(irs_image_type_opts, zero=None),
                                 default = 1,
@@ -375,10 +375,12 @@ if deployment_settings.has_module(module):
         msg_record_modified = T("Image updated"),
         msg_record_deleted = T("Image deleted"),
         msg_list_empty = T("No Images currently registered"))
-        
+
     s3xrc.model.add_component(module, resource,
                               multiple = True,
-                              joinby = dict(irs_incident="incident_id", irs_report="report_id", irs_assessment="assessment_id"),
+                              joinby = dict(irs_incident="incident_id",
+                                            irs_ireport="report_id",
+                                            irs_iassessment="assessment_id"),
                               deletable = True,
                               editable = True)
 
@@ -421,7 +423,7 @@ if deployment_settings.has_module(module):
         msg_record_modified = T("Response updated"),
         msg_record_deleted = T("Response deleted"),
         msg_list_empty = T("No Responses currently registered"))
-        
+
     s3xrc.model.add_component(module, resource,
                               multiple = True,
                               joinby = dict(irs_incident="incident_id"),

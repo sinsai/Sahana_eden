@@ -4019,6 +4019,8 @@ class S3XML(object):
                 text = markup.xpath(".//text()")
                 if text:
                     text = " ".join(text)
+                else:
+                    text = ""
             except etree.XMLSyntaxError:
                 pass
         text = self.xml_encode(text)

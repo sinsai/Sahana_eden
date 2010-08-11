@@ -11,11 +11,11 @@
 </script>
 <script type="text/javascript">
 	var success = {{=len(session.invalid_rows)}};
-	var invalid_rows = {{=session.invalid_rows}};
-	var number_column = {{=session.import_columns}};
-	var map = {{=session.import_map}};
+	var invalid_rows = {{=XML(session.invalid_rows)}};
+	var number_column = {{=XML(session.import_columns)}};
+	var map = {{=XML(session.import_map)}};
 	console.log(map);
-	var resource = "{{=session.import_resource}}";
+	var resource = "{{=XML(session.import_resource)}}";
 	var url = "{{=request.env.http_host}}";
 	var application = "{{=request.application}}";
 

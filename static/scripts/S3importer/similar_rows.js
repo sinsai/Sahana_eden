@@ -18,24 +18,24 @@ function similar(similar_rows)
 	    var tempstr = map[i][2].indexOf("--");
 		if(tempstr!=-1)
 		{
-			var check = map[i][2].split(' --&gt; ');
-			fields.push( "$k_" + check[0] + ' --&gt; $_' + check[1] + ' --&gt; ' + check[2]);
+			var check = map[i][2].split(' --> ');
+			fields.push( "$k_" + check[0] + ' --> $_' + check[1] + ' --> ' + check[2]);
 		}
-		
 		else
 			fields.push(map[i][2]);
 	}
-	var store = new Ext.data.JsonStore({
-		fields : fields,
-		data : similar_rows
+	var store = new Ext.data.ArrayStore({
+		fields : fields
 	});
-	var data={};
+	var data = {};
+	data['rows'] = similar_rows;
+	store.loadData(similar_rows);
+	console.log(store);
 	number_column = fields.length;
-	console.log(store.getAt(0).get(fields[0]));
-	store.each(function(record)
+	/*store.each(function(record)
 		{
-			console.log(record.get(fields[1]));
-		});
+			console.log(record.get(fields[0]));
+		});*/
 	var action = new Ext.ux.grid.RowActions({
 			 header:'Click to delete',
 			 autoWidth: false,
@@ -79,7 +79,7 @@ function similar(similar_rows)
 	column_model.push(action);
 	column_model = new Ext.grid.ColumnModel(column_model);
 	var similar_rows_grid = new Ext.grid.EditorGridPanel({
-		title : "Edit invalid rows ",
+		title : "Edit similar rows ",
 		renderTo: 'spreadsheet',
 		columnLines : true,
 		width : 'auto',
@@ -88,7 +88,7 @@ function similar(similar_rows)
 		viewConfig:{
 			forceFit : true
 		},
-		store : similar_rows,
+		store : store,
 		frame : true,
 		colModel : column_model,
 		hidden : true,
@@ -123,10 +123,7 @@ function similar(similar_rows)
 						send.spreadsheet.push(temp);
 						send.rows += 1;
 					});
-				        for( i=0 ;i< map.length; i++)
-					{
-						map[i][2] = fields[i];
-					}
+				        
 					send.similar_rows = 'True';	
 					send.map = map;
 					console.log(send.map);

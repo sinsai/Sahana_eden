@@ -26,17 +26,18 @@ else
 	Ext.Msg.alert("","These records could not be imported. Please edit and import again.");
 	var column_model = new Array();
 	fields = [];
+	var tempmap = map;
 	for(i = 0 ;i < map.length; i++)
 	{
-	    var tempstr = map[i][2].indexOf("--");
+	    var tempstr = tempmap[i][2].indexOf("--");
 		if(tempstr!=-1)
 		{
-			var check = map[i][2].split(' --&gt; ');
-			fields.push( "$k_" + check[0] + ' --&gt; $_' + check[1] + ' --&gt; ' + check[2]);
+			var check = tempmap[i][2].split(' --> ');
+			fields.push( "$k_" + check[0] + ' --> $_' + check[1] + ' --> ' + check[2]);
 		}
 		
 		else
-			fields.push(map[i][2]);
+			fields.push(tempmap[i][2]);
 	}
 	var store = new Ext.data.JsonStore({
 		fields : fields,
@@ -140,10 +141,7 @@ else
 						send.spreadsheet.push(temp);
 						send.rows += 1;
 					});
-				        for( i=0 ;i< map.length; i++)
-					{
-						map[i][2] = fields[i];
-					}
+				        
 					send.re_import = 'True';	
 					send.map = map;
 					console.log(send.map);

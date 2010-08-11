@@ -149,7 +149,7 @@ def import_spreadsheet():
 		nest_res = "$_" + record[field]['@resource']
 		for nested_fields in record[field][nest_res][0]:
 		    if '@error' in record[field][nest_res][0][nested_fields]:
-		        wrong_dict[field + ' --> ' + nest_res + ' --> ' + nested_fields] = "*_error_*" + record[field][nest_res][0][nested_fields.encode('ascii')]['@error'] + ' You entered ' + record[field][nest_res][0][nested_fields.encode('ascii')]['@value']
+		       	wrong_dict[field + ' --> ' + nest_res + ' --> ' + nested_fields] = "*_error_*" + record[field][nest_res][0][nested_fields.encode('ascii')]['@error'] + ' You entered ' + record[field][nest_res][0][nested_fields.encode('ascii')]['@value']
 		    else:
 			    try:	    
 			        wrong_dict[field + ' --> ' + nest_res + ' --> ' + nested_fields] = record[field][nest_res][0][nested_fields.encode('ascii')]['@value']
@@ -161,7 +161,9 @@ def import_spreadsheet():
 		    wrong_dict[field] = "*_error_*" + record[field]['@error'] + '. You entered ' + record[field]['@value']
 		else:
 		    wrong_dict[field]  = record[field]['@value']
-        invalid_rows.append(wrong_dict)
+	f.write('\nDIE' + repr(wrong_dict.values()))
+	if 'Data Import Error' not in wrong_dict.values():
+	    invalid_rows.append(wrong_dict)
     f.write("WRONG \n" + repr(invalid_rows))
     '''f.write("\n\nInvalid rows " + repr(invalid_rows))
     session.import_success = len(invalid_rows) 

@@ -8,17 +8,17 @@
 <script type="text/javascript">
 	var similar_rows = {{=len(session.similar_rows)}};
 	var success = {{=len(session.similar_rows)}};
-	var similar_rows = {{=session.similar_rows}};
-	var number_column = {{=session.import_columns}};
-	var map = {{=session.import_map}};
+	var similar_rows = {{=XML(session.similar_rows)}};
+	var number_column = {{=XML(session.import_columns)}};
+	var map = {{=XML(session.import_map)}};
 	console.log(map);
 	var resource = "{{=session.import_resource}}";
 	var url = "{{=request.env.http_host}}";
 	var application = "{{=request.application}}";
-	console.log({{=session.similar_rows}});
+	console.log({{=XML(session.similar_rows)}});
 	if(similar_rows)
 	{
-		k = {{=session.similar_rows}};
+		k = similar_rows;
 		similar(k);
 	}
 	else

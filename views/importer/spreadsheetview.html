@@ -38,8 +38,8 @@ importable_resources[l] = dict(importable_resources[l])}}
 	var application="{{=request.application}}";
 	{{del modules['Administration']}}
 	{{del modules['Home']}}
-	var modules_nice_names = {{=modules.keys()}};
-	var modules = {{=modules}};
+	var modules_nice_names = {{=XML(modules.keys())}};
+	var modules = {{=XML(modules)}};
 	var resources = "{{=importable_resources}}";
 	resources = resources.replace(/False/g,"false");
 	resources = resources.replace(/True/g,"true");

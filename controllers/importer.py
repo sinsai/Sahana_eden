@@ -46,7 +46,8 @@ def import_spreadsheet():
     spreadsheet_json = StringIO(spreadsheet)
     f.write("The recd JSON is " + repr(spreadsheet_json.read()))
     spreadsheet_json.seek(0)
-    j = json.loads(spreadsheet)
+    #j = json.loads(spreadsheet)
+    exec("j = " + spreadsheet)
     similar_rows = []
     importable_rows = []
     if j.has_key('header_row'):
@@ -65,11 +66,16 @@ def import_spreadsheet():
 	           similar_rows.append(j['spreadsheet'][y])
 	        else:
 	           pass 
+	for k in similar_rows:
+	    for l in k:
+	       l = l.encode('ascii')
+	       f.write(l + "\n")
         session.similar_rows = similar_rows
     for k in j['spreadsheet']:
         if k in similar_rows:
 	    j['spreadsheet'].remove(k)
 	    j['rows'] -= 1
+    f.write('similar rows are \n' + repr(similar_rows))
     i=k=0
     send_dict = {}
     resource = j['resource'].encode('ascii')

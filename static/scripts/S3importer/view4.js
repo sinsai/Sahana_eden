@@ -231,7 +231,7 @@ function view4(importsheet)
 						callback : function(options,success,response)
 							   {
 							        lm.hide();
-								window.location = 'http://' + url + "/" + application + "/importer/re_import";
+								//window.location = 'http://' + url + "/" + application + "/importer/re_import";
 						            }	
     		});
 		}}],

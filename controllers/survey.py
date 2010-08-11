@@ -103,7 +103,7 @@ def section():
             if not has_dupe_questions(section.vars.id,question):               
                 db.survey_template_link.insert(survey_template_id=session.rcvars.survey_template,survey_section_id=section.vars.id,
                                               survey_question_id=question)           
-        redirect(URL(r=request,c="survey",f="section", args=[   "update",section.vars.id]))
+        redirect(URL(r=request,c="survey",f="section", args=[section.vars.id]))
     elif section.errors:
         response.flash= T("Please correct all errors.")
     output.update(form=section)

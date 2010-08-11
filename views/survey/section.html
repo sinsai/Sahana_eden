@@ -8,8 +8,10 @@
  <!--<script src="/{{=request.application}}/static/scripts/S3/jquery.colorbox-min.js" type="text/javascript" charset="utf-8"></script>-->
 <!--{{pass}}-->
 <script type="text/javascript" src="/{{=request.application}}/static/scripts/survey/jquery-ui-1.8.4.custom.js"></script>
-<script type="text/javascript" src="/{{=request.application}}/static/scripts/survey/jquery.bsmselect.js"></script>        
+<script type="text/javascript" src="/{{=request.application}}/static/scripts/survey/jquery.bsmselect.js"></script>
+<script type="text/javascript" src="/{{=request.application}}/static/scripts/survey/jquery.selectboxes.js"></script>
 <link rel="stylesheet" type="text/css" href="/{{=request.application}}/static/styles/survey/jquery.bsmselect.css"/>
+
 
 <style type="text/css">
 
@@ -44,6 +46,13 @@
 </style>
 
 <script type="text/javascript">
+    function getSectionQuestions() {
+        var questions = []
+        {{for question in section_questions:}}
+           questions.push({{=question.id}})
+        {{pass}}
+        $(".ms").selectOptions(questions).change();
+    }
     $(document).ready(function() {
             $("select[multiple]").bsmSelect({
                 addItemTarget: 'bottom',
@@ -53,10 +62,8 @@
                 hideWhenAdded: true,
                 title: 'Select a question...'
             });
-            $("a.colorbox").click(function() {
-
-            });
-    }); 
+            getSectionQuestions();
+    });
 
 </script>
 <div class='form-container'>   
@@ -79,19 +86,19 @@
             </td>
             <td>
                 {{=form.custom.widget.description}}
-            </td>
+            </td>                                                                                                   
         </tr>
-        <tr>
+        <tr id="survey_template_link_table_survey_question_id__row">
             <td><label>Questions:</label></td>
             <td>
-                <select name="questions" class="ms" multiple="multiple">
-                    {{for question in questions:}}
+                <select name="questions" class="ms"  id="survey_question_id" multiple="multiple">
+                    {{for question in all_questions:}}
                     <option value="{{=question.id}}">{{=question.name}}</option>
-                    {{pass}}
+                    {{pass}}{{pass}}
                 </select>
 
             </td>
-            <td>
+            <td style="float:right;overflow:hidden;">
                 <a href='{{=URL(r=request,c="survey",f="question", args="create", vars=dict(format="popup"))}}' class="colorbox" title="Add Question">
                     Add Question
                 </a>

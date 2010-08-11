@@ -113,13 +113,14 @@ if deployment_settings.has_module(module):
                              Field("answer_organisation",db.org_organisation))
 
     # Link table
-    resource = "template_link_table"
+    resource = "template_link"
     tablename = module +"_" + resource
     link_table = db.define_table(tablename,timestamp, uuidstamp, deletion_status, authorstamp,
                                  Field("survey_instance_id",db.survey_instance),
                                  Field("survey_question_id",db.survey_question),
                                  Field("survey_template_id", db.survey_template),
                                  Field("survey_section_id", db.survey_section))
+    link_table.survey_question_id.requires =IS_NULL_OR(IS_ONE_OF(db, "survey_question.id", "%(name)s"))
 
 
     # Widgets    

@@ -14,10 +14,15 @@ module = "survey"
 # Will populate later on.
 response.menu_options = None
 
+def template_link():
+    response.s3.prep = response.s3.prep = lambda jr: jr.representation in ("xml", "json") and True or False
+    return shn_rest_controller("survey", "template_link")
+
 def index():
     "Module's Home Page"
     module_name = deployment_settings.modules[module].name_nice    
     return dict(module_name=module_name)
+
 def template():
     """ RESTlike CRUD controller """
     resource = "template"
@@ -54,6 +59,14 @@ def template():
 
     return transform_buttons(output,next=True,cancel=True)
 
+def has_dupe_questions(section_id,question_id):
+    question_query = (db.survey_template_link.survey_section_id == section_id) \
+    & (question_id == db.survey_template_link.survey_question_id)
+    questions = db(question_query).select(db.survey_question.ALL)
+    if len(questions) > 1:
+        return True
+    else:
+        return False
 def section():
     """
        At this stage, the user the following workflow will be implemented:
@@ -70,39 +83,51 @@ def section():
     record = table[request.args(0)]
     section = SQLFORM(table,record,deletable=True)
     questions = db().select(db.survey_question.ALL)
-    output = dict(all_questions=questions)
-    # Let's avoid blowing up -- this loads quest
+    output = dict(all_questions=questions)    
+    # Let's avoid blowing up -- this loads questions
     try:
-        section_id = request.args(0)
-        question_query = (db.survey_template_link_table.survey_section_id == section_id) & (db.survey_question.id == db.survey_template_link_table.survey_question_id)
+        section_id = request.args(0)        
+        question_query = (db.survey_template_link.survey_section_id == section_id) & (db.survey_question.id == db.survey_template_link.survey_question_id)
         section_questions = db(question_query).select(db.survey_question.ALL)
-        if len(questions) > 0:
-            output.update(questions=section_questions)
-    except:
-        pass # this means we didn't pass an id, e.g., making a new section!        
-    if section.accepts(request.vars,session,keepvalues=True):
-        #loop over the questions and ensure that they're not already associated with the section
-        questions = response.post_vars.questions
-        if not questions:
-            pass # it's okay -- they just want a section, why I don't know, but it's their survey!
-        elif isinstance(questions,list):
-            for question in question:
-                if not check_question(section.vars.id,question): # more than one question in this section
-                    # avoid blowing up.
-                    try:
-                        db.survey_template_link_table.insert(survey_template_id=session.rcvars.survey_template, survey_section_id=section.vars.id,survey_question_id=question)
-                    except:
-                        pass # silent fail?
+
+        if len(section_questions) > 0:            
+            output.update(section_questions=section_questions)
         else:
-            if not check_question(section.vars.id,question): # only one.
-                try:
-                        db.survey_template_link_table.insert(survey_template_id=session.rcvars.survey_template, survey_section_id=section.vars.id,survey_question_id=question)
-                    except:
-                        pass # silent fail?
-        redirect(URL(r=request,c="survey",f="section",args=[section.vars.id]))
+            output.update(section_questions=sections_questions)
+    except:
+        output.update(section_questions=[])
+        pass # this means we didn't pass an id, e.g., making a new section!
+    if section.accepts(request.vars,session,keepvalues=True):
+        questions = request.post_vars.questions        
+        for question in questions:            
+            if not has_dupe_questions(section.vars.id,question):               
+                db.survey_template_link.insert(survey_template_id=session.rcvars.survey_template,survey_section_id=section.vars.id,
+                                              survey_question_id=question)           
+        redirect(URL(r=request,c="survey",f="series", args=["create"]))
     elif section.errors:
         response.flash= T("Please correct all errors.")
-    output.update(form=section)    
+    output.update(form=section)
+    question_types = {
+#        1:T("Multiple Choice (Only One Answer)"),
+#        2:T("Multiple Choice (Multiple Answers)"),
+#        3:T("Matrix of Choices (Only one answer)"),
+#        4:T("Matrix of Choices (Multiple Answers)"),
+#        5:T("Rating Scale"),
+        6:T("Single Text Field"),
+#        7:T("Multiple Text Fields"),
+#        8:T("Matrix of Text Fields"),
+        9:T("Comment/Essay Box"),
+        10:T("Numerical Text Field"),
+        11:T("Date and/or Time")
+#        12:T("Image"),
+#        13:T("Descriptive Text (e.g., Prose, etc)"),
+#        14:T("Location"),
+#        15:T("Organisation"),
+#        16:T("Person"),
+##        16:T("Custom Database Resource (e.g., anything defined as a resource in Sahana)")
+    }
+    output.update(types=question_types)
+
     return output
 
 def series():
@@ -144,7 +169,7 @@ def series():
         msg_list_empty = T("No Survey Series currently registered"))
     output = shn_rest_controller(module, resource,listadd=False)
 
-    return transform_buttons(output)
+    return transform_buttons(output,finish=True,cancel=True)
 
 #def section():
 #    """ RESTlike CRUD controller """
@@ -264,7 +289,7 @@ def preview():
         output.update(template_id=template_id)
     question_list = {}
     # Get sections for this template.
-    section_query = (db.survey_template_link_table.survey_template_id == template_id) & (db.survey_section.id == db.survey_template_link_table.survey_section_id)
+    section_query = (db.survey_template_link.survey_template_id == template_id) & (db.survey_section.id == db.survey_template_link.survey_section_id)
     sections = db(section_query).select(db.survey_section.ALL)
     
     ui = DIV(_class="sections")    
@@ -279,7 +304,7 @@ def preview():
 
         if not section_rendered.count(section.id) > 1:
             ui.append(DIV(link,_class="section_title"))
-        question_query = (db.survey_template_link_table.survey_section_id == section.id) & (db.survey_question.id == db.survey_template_link_table.survey_question_id)
+        question_query = (db.survey_template_link.survey_section_id == section.id) & (db.survey_question.id == db.survey_template_link.survey_question_id)
         questions = db(question_query).select(db.survey_question.ALL)
 #        if not questions:
 #            ui.append(DIV(A (T("Add Question"),_href=URL(r=request,f="question")),_class="question_title"))
@@ -514,10 +539,4 @@ def check_comments(allow_comments,text):
     ret = None
     if allow_comments:
         ret = DIV(text,INPUT())
-    return ret    
-
-def check_question_dupe(section_id,question_id):                                                                                                                
-    question_query = (db.survey_template_link_table.survey_section_id == section_id) \
-                   & (db.survey_question.id == question_id)
-    questions = db(question_query).select(db.survey_question.ALL)
-    return questions
+    return ret

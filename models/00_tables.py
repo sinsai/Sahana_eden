@@ -49,7 +49,7 @@ authorstamp = db.Table(None, "authorstamp",
 comments = db.Table(None, "comments",
                     Field("comments", "text",
                           comment = DIV(_class="tooltip",
-                                        _title=str(T("Comments")) + "|" + str(T("Please use this field to record any additional information, including a history of the record if it is updated.")))))
+                                        _title=Tstr("Comments") + "|" +Tstr("Please use this field to record any additional information, including a history of the record if it is updated."))))
 
 # Reusable UUID field to include in other table definitions
 s3uuid = SQLCustomType(

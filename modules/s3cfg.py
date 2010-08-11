@@ -58,6 +58,8 @@ class S3Config(Storage):
     # Mail settings
     def get_mail_server(self):
         return self.mail.get("server", "127.0.0.1:25")
+    def get_mail_server_login(self):
+        return self.mail.get("login", False)
     def get_mail_sender(self):
         return self.mail.get("sender", "sahana@your.org")
     def get_mail_approver(self):

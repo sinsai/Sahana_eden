@@ -36,7 +36,7 @@ def create():
     itext_list = []
 
     for field in table.fields:
-        if field in ["id", "created_on", "modified_on", "uuid", "mci", "deleted", 
+        if field in ["id", "created_on", "modified_on", "uuid", "mci", "deleted",
                      "created_by", "modified_by"] :
             # This will get added server-side
             pass
@@ -75,7 +75,7 @@ def generate_instance(table, field):
     """
     Generates XML for the instance of the specified field.
     """
-   
+
     if table[field].default:
         instance = TAG[field](table[field].default)
     else:
@@ -84,7 +84,7 @@ def generate_instance(table, field):
     return instance
 
 def generate_bindings(table, field, ref):
-    """ 
+    """
     Generates the XML for bindings for the specified database field.
     """
 
@@ -97,7 +97,7 @@ def generate_bindings(table, field, ref):
         _type = "string"
     elif table[field].type == "double":
         _type = "decimal"
-    # Collect doesn't support datetime yet 
+    # Collect doesn't support datetime yet
     elif table[field].type == "date" or table[field].type == "datetime":
         _type = "date"
     elif table[field].type == "integer":
@@ -166,7 +166,7 @@ def generate_controllers(table, field, ref):
         items_list=[]
         items_list.append(TAG["label"](_ref="jr:itext('" + ref + ":label')"))
         items_list.append(TAG["hint"](_ref="jr:itext('" + ref + ":hint')"))
-       
+
         option_num = 0 # for formatting something like "jr:itext('stuff:option0')"
         for option in theset:
             if table[field].type == "integer":
@@ -207,7 +207,7 @@ def csvdata(nodelist):
     """
     Returns the data in the given node as a comma seperated string
     """
-    
+
     data = ""
     for subnode in nodelist:
         if (subnode.nodeType == subnode.ELEMENT_NODE):
@@ -221,7 +221,7 @@ def csvheader(parent, nodelist):
     """
     Gives the header for the CSV
     """
-    
+
     header = ""
     for subnode in nodelist:
         if (subnode.nodeType == subnode.ELEMENT_NODE):
@@ -233,7 +233,7 @@ def importxml(db, xmlinput):
     Converts the XML to a CSV compatible with the import_from_csv_file of web2py
     ToDo: rewrite this to go via S3XRC for proper Authz checking, Audit, Create/Update checking.
     """
-    
+
     try:
         doc = xml.dom.minidom.parseString(xmlinput)
     except:
@@ -254,12 +254,12 @@ def post():
 
 @auth.shn_requires_membership(2)
 def submission_old():
-    """ 
-    Allows for submission of xforms by ODK Collect 
+    """
+    Allows for submission of xforms by ODK Collect
     http://code.google.com/p/opendatakit/
     """
     response.headers["Content-Type"] = "text/xml"
-    xml = str(request.post_vars.xml_submission_file.value) 
+    xml = str(request.post_vars.xml_submission_file.value)
     if len(xml) == 0:
         raise HTTP(400, "Need some xml!")
     importxml(db, xml)
@@ -275,16 +275,16 @@ def submission():
     ToDo: Convert ODK Collect's Xforms to the format needed for S3XRC
     using an appropriate XSLT
     """
-    
+
     xmlinput = str(request.post_vars.xml_submission_file.value)
-    
+
     io = StringIO.StringIO()
     io.write(xmlinput)
     io.seek(0, 0)
-    
+
     tree = etree.parse(io)
     resource = tree.getroot().tag
-    
+
     prefix, name = resource.split("_")
     res = s3xrc.resource(prefix, name)
 
@@ -292,7 +292,7 @@ def submission():
         success = res.import_xml(source=tree, template=os.path.join(request.folder, "static", "xslt", "import", "odk.xsl"))
     except IOError, SyntaxError:
         raise HTTP(500, "Internal server error.")
-    
+
     # ToDo: Not sure if I'm handling this correctly.  Which response code to use?
     if success:
         r = HTTP(201, "Saved.") # ODK Collect only accepts 201
@@ -301,7 +301,7 @@ def submission():
     else:
         raise HTTP(500, "Internal server error?")
 
-def formList(): 
+def formList():
     """
     Generates a list of Xforms based on database tables for ODK Collect
     http://code.google.com/p/opendatakit/
@@ -316,7 +316,7 @@ def formList():
     xml = TAG.forms()
     for table in tables:
         xml.append(TAG.form(get_name(table), _url = "http://" + request.env.http_host + URL(r=request, f="create", args=db[table])))
-       
+
     response.headers["Content-Type"] = "text/xml"
     response.view = "xforms.xml"
     return xml
@@ -326,4 +326,4 @@ def get_name(name):
     Generates a pretty(er) name from a database table name.
     """
     return name[name.find("_") + 1:].replace("_", " ").capitalize()
-    
+

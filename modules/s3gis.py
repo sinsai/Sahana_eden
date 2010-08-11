@@ -676,6 +676,7 @@ class GIS(object):
             html.append(SCRIPT(_type="text/javascript", _src=URL(r=request, c="static", f="scripts/ext/adapter/jquery/ext-jquery-adapter-debug.js")))
             html.append(SCRIPT(_type="text/javascript", _src=URL(r=request, c="static", f="scripts/ext/ext-all-debug.js")))
             html.append(SCRIPT(_type="text/javascript", _src=URL(r=request, c="static", f="scripts/gis/openlayers/lib/OpenLayers.js")))
+            html.append(SCRIPT(_type="text/javascript", _src=URL(r=request, c="static", f="scripts/gis/OpenStreetMap.js")))
             html.append(SCRIPT(_type="text/javascript", _src=URL(r=request, c="static", f="scripts/gis/MP.js")))
             html.append(SCRIPT(_type="text/javascript", _src=URL(r=request, c="static", f="scripts/gis/usng2.js")))
             html.append(SCRIPT(_type="text/javascript", _src=URL(r=request, c="static", f="scripts/gis/RemoveFeature.js")))
@@ -686,6 +687,7 @@ class GIS(object):
             html.append(SCRIPT(_type="text/javascript", _src=URL(r=request, c="static", f="scripts/ext/adapter/jquery/ext-jquery-adapter.js")))
             html.append(SCRIPT(_type="text/javascript", _src=URL(r=request, c="static", f="scripts/ext/ext-all.js")))
             html.append(SCRIPT(_type="text/javascript", _src=URL(r=request, c="static", f="scripts/gis/OpenLayers.js")))
+            html.append(SCRIPT(_type="text/javascript", _src=URL(r=request, c="static", f="scripts/gis/OpenStreetMap.js")))
             html.append(SCRIPT(_type="text/javascript", _src=URL(r=request, c="static", f="scripts/gis/RemoveFeature.js")))
             html.append(SCRIPT(_type="text/javascript", _src=URL(r=request, c="static", f="scripts/gis/GeoExt.js")))
 
@@ -1449,12 +1451,18 @@ OpenLayers.Util.extend( selectPdfControl, {
         """
                 if openstreetmap.Mapnik:
                     layers_openstreetmap += """
-        var mapnik = new OpenLayers.Layer.OSM('""" + openstreetmap.Mapnik + """');
+        var mapnik = new OpenLayers.Layer.OSM.Mapnik('""" + openstreetmap.Mapnik + """', {
+            displayOutsideMaxExtent: true,
+            wrapDateLine: true
+        });
         map.addLayer(mapnik);
                     """
                 if openstreetmap.Osmarender:
                     layers_openstreetmap += """
-        var osmarender = new OpenLayers.Layer.OSM('""" + openstreetmap.Osmarender + """', 'http://tah.openstreetmap.org/Tiles/tile/${z}/${x}/${y}.png');
+        var osmarender = new OpenLayers.Layer.OSM.Osmarender('""" + openstreetmap.Osmarender + """', {
+            displayOutsideMaxExtent: true,
+            wrapDateLine: true
+        });
         map.addLayer(osmarender);
                     """
                 if openstreetmap.Aerial:

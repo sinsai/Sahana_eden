@@ -6,6 +6,10 @@
     Deployers shouldn't typically need to edit any other files.
 """
 
+def Tstr(text):
+    """Convenience function for non web2py modules"""
+    return str(T(text))
+
 s3cfg = local_import("s3cfg")
 deployment_settings = s3cfg.S3Config()
 
@@ -48,6 +52,9 @@ deployment_settings.base.prepopulate = True
 # Email settings
 # Outbound server
 deployment_settings.mail.server = "127.0.0.1:25"
+# Useful for Windows Laptops:
+#deployment_settings.mail.server = "smtp.gmail.com:587"
+#deployment_settings.mail.login = "username:password"
 # From Address
 deployment_settings.mail.sender = "sahana@your.org"
 # Address to which mails get sent to approve new users
@@ -58,36 +65,26 @@ deployment_settings.mail.approver = "useradmin@your.org"
 # Default timezone for users
 deployment_settings.L10n.utc_offset = "UTC +0000"
 
-# Module settings
-s3_module_type_opts = {
-    1:T("Home"),
-    2:T("Situation Awareness"),
-    3:T("Person Management"),
-    4:T("Aid Management"),
-    5:T("Communications")
-    }
 # Comment/uncomment modules here to disable/enable them
 # Modules menu is defined in 01_menu.py
 from gluon.storage import Storage
 deployment_settings.modules = Storage(
     default = Storage(
-            name_nice = "Home",
+            name_nice = Tstr("Home"),
             access = None,      # All Users (inc Anonymous) can see this module in the default menu & access the controller
             module_type = 0,     # This item is always 1st in the menu
            resources = Storage() 
             ),
     admin = Storage(
-            name_nice = "Administration",
-            description = "Site Administration",
+            name_nice = Tstr("Administration"),
+            description = Tstr("Site Administration"),
             access = "|1|",     # Only Administrators can see this module in the default menu & access the controller
             module_type = 0,     # This item is handled separately in the menu
             resources = Storage()
             
         ),
     gis = Storage(
-            name_nice = "Map",
-            description = "Situation Awareness & Geospatial Analysis",
-            module_type = 1,     # 1st item in the menu
+
             resources = Storage(
                   gis_setting = {'importer' : False},
 	          gis_marker = {'importer' : False},
@@ -114,32 +111,41 @@ deployment_settings.modules = Storage(
 		  gis_layer_wms = {'importer' : False},
 		  gis_layer_xyz = {'importer' : False},
 		  gis_layer_yahoo = {'importer' : False}
-		 )
+		 ),
+
+            name_nice = Tstr("Map"),
+            description = Tstr("Situation Awareness & Geospatial Analysis"),
+            module_type = 1     # 1st item in the menu
+
         ),
     mpr = Storage(
-            name_nice = "Missing Persons",
-            description = "Helps to report and search for Missing Persons",
-            module_type = 2,
+
             resources = Storage(
               mpr_setting = {'importer' : False},
  	      mpr_missing_report = {'importer' : False}
- 	     )
+ 	     ),
+
+            name_nice = Tstr("Missing Persons"),
+            description = Tstr("Helps to report and search for Missing Persons"),
+            module_type = 2
+
         ),
     rms = Storage(
-            name_nice = "Requests",
-            description = "Tracks requests for aid and matches them against donors who have pledged aid",
-            module_type = 3,
+
             resources = Storage(
               rms_setting = {'importer' : False},
   	      rms_req = {'importer' : True},
 	      rms_pledge = {'importer' : False},
 	      rms_req_detail = {'importer' : False}
-	     )
+	     ),
+
+            name_nice = Tstr("Requests"),
+            description = Tstr("Tracks requests for aid and matches them against donors who have pledged aid"),
+            module_type = 3
+
         ),
     hms = Storage(
-            name_nice = "Hospitals",
-            description = "Helps to monitor status of hospitals",
-            module_type = 4,
+
             resources = Storage(
              hms_setting={'importer' : False},
  	     hms_hospital = {'importer' : True},
@@ -151,22 +157,28 @@ deployment_settings.modules = Storage(
 	     hms_resources = {'importer' : False},
 	     hms_hrequest = {'importer' : True},
 	     hms_hpledge = {'importer' : True}
-	     )
+	     ),
+
+            name_nice = Tstr("Hospitals"),
+            description = Tstr("Helps to monitor status of hospitals"),
+            module_type = 4
+
         ),
     vol = Storage(
-            name_nice = "Volunteers",
-            description = "Manage volunteers by capturing their skills, availability and allocation",
-            module_type = 5,
+
             resources = Storage(
              vol_setting = {'importer' : False},
  	     vol_volunteer = {'importer' : False},
  	     vol_resource = {'importer' : False}
- 	     )
+ 	     ),
+
+            name_nice = Tstr("Volunteers"),
+            description = Tstr("Manage volunteers by capturing their skills, availability and allocation"),
+            module_type = 5
+
         ),
     msg = Storage(
-            name_nice = "Messaging",
-            description = "Sends & Receives Alerts via Email & SMS",
-            module_type = 10,
+
             resources = Storage(
               msg_setting = {'importer' : False},
  	      msg_email_settings = {'importer' : False},
@@ -179,12 +191,15 @@ deployment_settings.modules = Storage(
  	      msg_outbox = {'importer' : False},
  	      msg_read_status = {'importer' : False},
  	      msg_report = {'importer' : False}
- 	     )
+ 	     ),
+
+            name_nice = Tstr("Messaging"),
+            description = Tstr("Sends & Receives Alerts via Email & SMS"),
+            module_type = 10
+
         ),
     pr = Storage(
-            name_nice = "Person Registry",
-            description = "Central point to record details on People",
-            module_type = 10,
+
             resources = Storage(
                  pr_address = {'importer' : True},
  		 pr_pe_contact = {'importer' : True},
@@ -202,12 +217,17 @@ deployment_settings.modules = Storage(
  		 pr_person = {'importer' : True},
  		 pr_group = {'importer' : True},
         	 pr_group_membership = {'importer' : True},
- 		)
+ 		),
+
+
+            name_nice = Tstr("Person Registry"),
+            description = Tstr("Central point to record details on People"),
+            module_type = 10
 
         ),
     dvi = Storage(
-            name_nice = "Disaster Victim Identification",
-            description = "Disaster Victim Identification",
+            name_nice = Tstr("Disaster Victim Identification"),
+            description = Tstr("Disaster Victim Identification"),
             module_type = 10,
             resources = Storage(
               dvi_setting = {'importer' : False},
@@ -219,14 +239,12 @@ deployment_settings.modules = Storage(
 	     )
         ),
     #dvr = Storage(
-    #        name_nice = "Disaster Victim Registry",
-    #        description = "Traces internally displaced people (IDPs) and their needs",
+    #        name_nice = Tstr("Disaster Victim Registry"),
+    #        description = Tstr("Traces internally displaced people (IDPs) and their needs"),
     #        module_type = 10
     #    ),
     budget = Storage(
-            name_nice = "Budgeting Module",
-            description = "Allows a Budget to be drawn up",
-            module_type = 10,
+
             resources = Storage(
               budget_setting = {'importer' : False},
  	      budget_parameter = {'importer' : True},
@@ -241,11 +259,16 @@ deployment_settings.modules = Storage(
  	      budget_budget = {'importer' : False},
  	      budget_budget_bundle = {'importer' : False},
  	      budget_budget_staff = {'importer' : False}
- 	     )
+ 	     ),
+
+            name_nice = Tstr("Budgeting Module"),
+            description = Tstr("Allows a Budget to be drawn up"),
+            module_type = 10
+
         ),
     cr = Storage(
-            name_nice = "Shelter Registry",
-            description = "Tracks the location, distibution, capacity and breakdown of victims in Shelters",
+            name_nice = Tstr("Shelter Registry"),
+            description = Tstr("Tracks the location, distibution, capacity and breakdown of victims in Shelters"),
             module_type = 10,
             resources = Storage(
               cr_setting = {'importer' : False},
@@ -253,9 +276,7 @@ deployment_settings.modules = Storage(
  	    )
         ),
     delphi = Storage(
-            name_nice = "Delphi Decision Maker",
-            description = "Supports the decision making of large groups of Crisis Management Experts by helping the groups create ranked list.",
-            module_type = 10,
+
             resources = Storage(
               delphi_group = {'importer' : True},
               delphi_user_to_group = {'importer' : True},
@@ -263,27 +284,33 @@ deployment_settings.modules = Storage(
  	      delphi_solution = {'importer' : False},
      	      delphi_vote = {'importer' : False},
  	      delphi_forum_post = {'importer' : False}
- 	     )
+ 	     ),
+
+            name_nice = Tstr("Delphi Decision Maker"),
+            description = Tstr("Supports the decision making of large groups of Crisis Management Experts by helping the groups create ranked list."),
+            module_type = 10
+
         ),
     doc = Storage(
-            name_nice = "Document Library",
-            description = "A library of digital resources, such as Photos, signed contracts and Office documents.",
-            module_type = 10,
+
             resources = Storage(
             	  doc_setting = {'importer' : False},
 		  doc_metadata = {'importer' : True},
 		  doc_image = {'importer' : False},
-		 )
+		 ),
+
+            name_nice = Tstr("Document Library"),
+            description = Tstr("A library of digital resources, such as Photos, signed contracts and Office documents."),
+            module_type = 10
+
         ),
-    ir = Storage(
-        name_nice = "Incident Reporting",
-        description = "Incident Reporting System",
+    irs = Storage(
+        name_nice = Tstr("Incident Reporting"),
+        description = Tstr("Incident Reporting System"),
         module_type = 10
     ),
     org = Storage(
-            name_nice = "Organization Registry",
-            description = 'Lists "who is doing what & where". Allows relief agencies to coordinate their activities',
-            module_type = 10,
+
             resources = Storage(
         	  org_setting = {'importer' : False},
 	 	  org_sector = {'importer' : False},
@@ -292,24 +319,39 @@ deployment_settings.modules = Storage(
 		  org_project = {'importer' : True},
 		  org_staff = {'importer' : True},
 		  org_task = {'importer' : True}
-		 )
+		 ),
+
+            name_nice = Tstr("Organization Registry"),
+            description = Tstr('Lists "who is doing what & where". Allows relief agencies to coordinate their activities'),
+            module_type = 10
+
         ),
     ticket = Storage(
-            name_nice = "Ticketing Module",
-            description = "Master Message Log to process incoming reports & requests",
-            module_type = 10,
+
             resources = Storage(
               ticket_setting = {'importer' : False},
  	      ticket_category = {'importer' : False},
 	      ticket_log = {'importer' : False},
-	     )
+	     ),
+            name_nice = Tstr("Ticketing Module"),
+            description = Tstr("Master Message Log to process incoming reports & requests"),
+            module_type = 10
+
         ),
+
     importer = Storage(
     	     name_nice = "Spreadsheet importer",
     	     description = "Used to extract data from spreadsheets and input it to the Eden database",
     	     module_type = 5,
     	     resources = Storage(
     	      importer_slist = {'importer' : True}
-    	     )
+    	     ),
     )
     )
+
+    #lms = Storage(
+    #        name_nice = Tstr("Logistics Management System"),
+    #        description = Tstr("An intake system, a warehouse management system, commodity tracking, supply chain management, procurement and other asset and resource management capabilities."),
+    #        module_type = 10
+    #    ),
+

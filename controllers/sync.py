@@ -54,10 +54,10 @@ def setting():
     "RESTful CRUD controller"
     db.sync_setting.uuid.writable = False
     db.sync_setting.uuid.label = 'UUID'
-    db.sync_setting.uuid.comment = A(SPAN("[Help]"), _class="tooltip", _title=T("UUID|The unique identifier which identifies this server to other instances."))
-    db.sync_setting.policy.comment = A(SPAN("[Help]"), _class="tooltip", _title=T("Policy|The default Sync Policy for new Partners."))
-    db.sync_setting.username.comment = A(SPAN("[Help]"), _class="tooltip", _title=T("Username|The default Username used to login to new Partners."))
-    db.sync_setting.password.comment = A(SPAN("[Help]"), _class="tooltip", _title=T("Password|The default Password used to login to new Partners."))
+    db.sync_setting.uuid.comment = A(SPAN("[Help]"), _class="tooltip", _title="UUID|" + Tstr("The unique identifier which identifies this server to other instances."))
+    db.sync_setting.policy.comment = A(SPAN("[Help]"), _class="tooltip", _title=Tstr("Policy") + "|" + Tstr("The default Sync Policy for new Partners."))
+    db.sync_setting.username.comment = A(SPAN("[Help]"), _class="tooltip", _title=Tstr("Username") + "|" + Tstr("The default Username used to login to new Partners."))
+    db.sync_setting.password.comment = A(SPAN("[Help]"), _class="tooltip", _title=Tstr("Password") + "|" + Tstr("The default Password used to login to new Partners."))
     db.sync_setting.rpc_service_url.writable = False
     db.sync_setting.rpc_service_url.label = T('RPC Service URL')
     title_update = T('Edit Sync Settings')

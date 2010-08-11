@@ -32,7 +32,7 @@ __author__ = "Praneeth Bodduluri <lifeeth[at]gmail.com>"
 import string
 import urllib
 
-DELETECHARS = string.translate(string.printable, None, string.digits)
+DELETECHARS = string.translate(string.printable, string.maketrans(string.printable, string.printable), string.digits)
 
 class Msg(object):
     """ Toolkit for hooking into the Messaging framework """

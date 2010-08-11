@@ -148,7 +148,7 @@ def about():
     try:
         sqlite_version = (subprocess.Popen(["sqlite3", "-version"], stdout=subprocess.PIPE).communicate()[0]).rstrip()
     except:
-        sqlite_version = T("Not installed or incorectly configured.")
+        sqlite_version = T("Not installed or incorrectly configured.")
     try:
         mysql_version = (subprocess.Popen(["mysql", "--version"], stdout=subprocess.PIPE).communicate()[0]).rstrip()[10:]
     except:

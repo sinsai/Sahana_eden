@@ -604,7 +604,7 @@ def shn_pr_person_search_simple(r, **attr):
                 TR(T("Name and/or ID Label: "),
                    INPUT(_type="text", _name="label", _size="40"),
                    DIV(DIV(_class="tooltip",
-                           _title=T("Name and/or ID Label|To search for a person, enter any of the first, middle or last names and/or the ID label of a person, separated by spaces. You may use % as wildcard. Press 'Search' without input to list all persons.")))),
+                           _title=Tstr("Name and/or ID Label") + "|" + Tstr("To search for a person, enter any of the first, middle or last names and/or the ID label of a person, separated by spaces. You may use % as wildcard. Press 'Search' without input to list all persons.")))),
                 TR("", INPUT(_type="submit", _value="Search"))))
 
         output = dict(form=form, vars=form.vars)

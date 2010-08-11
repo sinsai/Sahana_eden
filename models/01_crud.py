@@ -46,6 +46,9 @@ BADFORMAT = T("Unsupported data format!")
 BADMETHOD = T("Unsupported method!")
 BADRECORD = T("Record not found!")
 INVALIDREQUEST = T("Invalid request!")
+XLWT_ERROR = T("xlwt module not available within the running Python - this needs installing for XLS output!")
+GERALDO_ERROR = T("Geraldo module not available within the running Python - this needs installing for PDF output!")
+REPORTLAB_ERROR = T("ReportLab module not available within the running Python - this needs installing for PDF output!")
 
 # How many rows to show per page in list outputs
 ROWSPERPAGE = 20
@@ -148,13 +151,13 @@ def export_pdf(table, query, list_fields=None):
         from reportlab.lib.pagesizes import A4
         from reportlab.lib.enums import TA_CENTER, TA_RIGHT
     except ImportError:
-        session.error = T("ReportLab module not available within the running Python - this needs installing for PDF output!")
+        session.error = REPORTLAB_ERROR
         redirect(URL(r=request))
     try:
         from geraldo import Report, ReportBand, Label, ObjectValue, SystemField, landscape, BAND_WIDTH
         from geraldo.generators import PDFGenerator
     except ImportError:
-        session.error = T("Geraldo module not available within the running Python - this needs installing for PDF output!")
+        session.error = GERALDO_ERROR
         redirect(URL(r=request))
 
     records = db(query).select(table.ALL)
@@ -265,7 +268,7 @@ def export_xls(table, query, list_fields=None):
     try:
         import xlwt
     except ImportError:
-        session.error = T("xlwt module not available within the running Python - this needs installing for XLS output!")
+        session.error = XLWT_ERROR
         redirect(URL(r=request))
 
     import StringIO

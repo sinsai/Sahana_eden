@@ -81,7 +81,7 @@ if deployment_settings.has_module(module):
     table.name.comment = SPAN("*", _class="req"), DIV( _class="tooltip", _title=Tstr("Unit Name") + "|" + Tstr("Complete Unit Label for e.g. meter for m."))
     table.base_unit.comment = SPAN("*", _class="req"), DIV( _class="tooltip", _title=Tstr("Base Unit") + "|" + Tstr("The entered unit links to this unit. For e.g. if you are entering m for meter then choose kilometer(if it exists) and enter the value 0.001 as multiplicator."))
     table.multiplicator.comment = SPAN("*", _class="req"), DIV( _class="tooltip", _title=Tstr("Multiplicator") + "|" + Tstr("If Unit = m, Base Unit = Km, then multiplicator is 0.0001 since 1m = 0.001 km."))
-    ADD_UNIT = T('Add Unit ')
+    ADD_UNIT = T('Add Unit')
     LIST_UNITS = T('List Units')
     s3.crud_strings[tablename] = Storage(
         title_create = ADD_UNIT,
@@ -138,7 +138,7 @@ if deployment_settings.has_module(module):
     table.attachment.label = T("Image/Other Attachment")
     table.attachment.comment = DIV( _class="tooltip", _title=Tstr("Image/Attachment") + "|" + Tstr("A snapshot of the location or additional documents that contain supplementary information about the Site can be uploaded here."))
     table.comments.comment = DIV( _class="tooltip", _title=Tstr("Additional Comments") + "|" + Tstr("Use this space to add additional comments and notes about the Site/Warehouse."))
-    ADD_SITE = T('Add Site ')
+    ADD_SITE = T('Add Site')
     LIST_SITES = T('List Sites')
     s3.crud_strings[tablename] = Storage(
         title_create = ADD_SITE,
@@ -212,7 +212,7 @@ if deployment_settings.has_module(module):
                     migrate=migrate)
     table.uuid.requires = IS_NOT_IN_DB(db,'%s.uuid' % tablename)
     table.name.requires = IS_NOT_EMPTY()
-    table.name.comment = SPAN("*", _class="req"), DIV( _class="tooltip", _title=T("Storage Bin Type|Name of Storage Bin Type."))
+    table.name.comment = SPAN("*", _class="req"), DIV( _class="tooltip", _title=Tstr("Storage Bin Type") + "|" + Tstr("Name of Storage Bin Type."))
     table.description.comment = DIV( _class="tooltip", _title=Tstr("Description of Bin Type") + "|" + Tstr("Use this space to add a description about the Bin Type."))
     ADD_STORAGE_BIN_TYPE = T('Add Storage Bin Type')
     LIST_STORAGE_BIN_TYPES = T('List Storage Bin Type(s)')
@@ -436,7 +436,7 @@ if deployment_settings.has_module(module):
     table.way_bill.label = T("Shipment/Way Bills")
     table.way_bill.comment = SPAN("*", _class="req")
     table.sender_site.requires = IS_IN_DB(db, 'lms_site.id', 'lms_site.name')
-    table.sender_site.comment = DIV(A(T('Add Sender Site'), _class='colorbox', _href=URL(r=request, c='lms', f='site', args='create', vars=dict(format='popup')), _target='top'), DIV( _class="tooltip", _title=T("Add Site|Add a new Site from where the Item is being sent.")))
+    table.sender_site.comment = DIV(A(T('Add Sender Site'), _class='colorbox', _href=URL(r=request, c='lms', f='site', args='create', vars=dict(format='popup')), _target='top'), DIV( _class="tooltip", _title=Tstr("Add Site") + "|" + Tstr("Add a new Site from where the Item is being sent.")))
     table.recipient_site.requires = IS_IN_DB(db, 'lms_site.id', 'lms_site.name')
     table.recipient_site.comment = DIV(A(T('Add Recipient Site'), _class='colorbox', _href=URL(r=request, c='lms', f='site', args='create', vars=dict(format='popup')), _target='top'), DIV( _class="tooltip", _title=Tstr("Add Recipient") + "|" + Tstr("Add a new Site where the Item is being sent to.")))
     ADD_SHIPMENT = T('Add Shipment/Way Bills')

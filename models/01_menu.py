@@ -78,7 +78,7 @@ admin_menu_options = [
         #[T("Import Jobs"), False, URL(r=request, c="admin", f="import_job")],
         [T("Raw Database access"), False, URL(r=request, c="appadmin", f="index")]
     ]],
-    [T("Synchronisation"), False, URL(r=request, c="sync", f="index"), [
+    [T("Synchronization"), False, URL(r=request, c="sync", f="index"), [
             [T("Sync History"), False, URL(r=request, c="sync", f="history")],
             [T("Sync Partners"), False, URL(r=request, c="sync", f="partner")],
             [T("Sync Settings"), False, URL(r=request, c="sync", f="setting", args=[1, "update"])]

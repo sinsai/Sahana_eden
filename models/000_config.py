@@ -110,6 +110,11 @@ deployment_settings.modules = Storage(
             description = Tstr("Sends & Receives Alerts via Email & SMS"),
             module_type = 10
         ),
+    sitrep = Storage(
+            name_nice = Tstr("Situation Reports"),
+            description = Tstr("Assessments & Flood Reports"),
+            module_type = 10
+        ),
     pr = Storage(
             name_nice = Tstr("Person Registry"),
             description = Tstr("Central point to record details on People"),

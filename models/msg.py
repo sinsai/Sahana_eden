@@ -134,6 +134,7 @@ if deployment_settings.has_module(module):
     message_id = db.Table(None, "message_id",
                 FieldS3("message_id", db.msg_log,
                     requires = IS_NULL_OR(IS_ONE_OF(db, "msg_log.id")),
+                    # FIXME: Subject works for Email but not SMS
                     represent = lambda id: db(db.msg_log.id == id).select(db.msg_log.subject, limitby=(0, 1)).first().subject,
                     ondelete = "RESTRICT"
                 ))

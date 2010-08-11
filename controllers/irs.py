@@ -15,7 +15,7 @@ response.menu_options = [
     [T("Reports"), False, URL(r=request, f="ireport"),[
         [T("List"), False, URL(r=request, f="ireport")],
         [T("Add"), False, URL(r=request, f="ireport", args="create")],
-        #[T("Search"), False, URL(r=request, f="report", args="search")]
+        #[T("Search"), False, URL(r=request, f="ireport", args="search")]
     ]],
     [T("Incidents"), False, URL(r=request, f="incident"),[
         [T("List"), False, URL(r=request, f="incident")],
@@ -25,7 +25,7 @@ response.menu_options = [
     [T("Assessments"), False, URL(r=request, f="iassessment"),[
         [T("List"), False, URL(r=request, f="iassessment")],
         [T("Add"), False, URL(r=request, f="iassessment", args="create")],
-        #[T("Search"), False, URL(r=request, f="assessment", args="search")]
+        #[T("Search"), False, URL(r=request, f="iassessment", args="search")]
     ]],
     [T("Map"), False, URL(r=request, f="maps")],
 ]
@@ -40,8 +40,8 @@ def maps():
 
     feature_class_id = db(db.gis_feature_class.name == "Incident").select(db.gis_feature_class.id, limitby=(0, 1)).first().id
     reports = db(db.gis_location.feature_class_id == feature_class_id).select()
-    popup_url = URL(r=request, f="report", args="read.popup?report.location_id=")
-    map = gis.show_map(feature_queries = [{"name":Tstr("Reports"), "query":reports, "active":True, "popup_url": popup_url}], window=True)
+    popup_url = URL(r=request, f="ireport", args="read.popup?ireport.location_id=")
+    map = gis.show_map(feature_queries = [{"name":Tstr("Incident Reports"), "query":reports, "active":True, "popup_url": popup_url}], window=True)
 
     return dict(map=map)
 
@@ -54,6 +54,12 @@ def incident():
     db.irs_iimage.assessment_id.readable = db.irs_iimage.assessment_id.writable = False
     db.irs_iimage.incident_id.readable = db.irs_iimage.incident_id.writable = False
     db.irs_iimage.report_id.readable = db.irs_iimage.report_id.writable = False
+
+    # Post-processor
+    def user_postp(jr, output):
+        shn_action_buttons(jr, deletable=False)
+        return output
+    response.s3.postp = user_postp
 
     output = shn_rest_controller(module, resource,
                                  rheader=lambda r: shn_irs_rheader(r,
@@ -74,6 +80,12 @@ def ireport():
 
     response.s3.pagination = True
 
+    # Post-processor
+    def user_postp(jr, output):
+        shn_action_buttons(jr, deletable=False)
+        return output
+    response.s3.postp = user_postp
+
     output = shn_rest_controller(module, resource,
                                  rheader=lambda r: shn_irs_rheader(r,
                                                                    tabs = [(T("Report Details"), None),
@@ -89,6 +101,12 @@ def iassessment():
     db.irs_iimage.report_id.readable = db.irs_iimage.report_id.writable = False
 
     response.s3.pagination = True
+
+    # Post-processor
+    def user_postp(jr, output):
+        shn_action_buttons(jr, deletable=False)
+        return output
+    response.s3.postp = user_postp
 
     output = shn_rest_controller(module, resource,
                                  rheader=lambda r: shn_irs_rheader(r,

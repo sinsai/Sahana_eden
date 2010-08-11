@@ -43,6 +43,7 @@ if deployment_settings.has_module(module):
     resource = "template"
     tablename = module + "_" + resource
     template = db.define_table(tablename,name_desc,
+                               Field("table_name","string",readable=False,writable=False),
                                Field("locked","boolean",readable=False,writable=False),
                                person_id,
                                organisation_id)
@@ -115,8 +116,7 @@ if deployment_settings.has_module(module):
     # Link table
     resource = "template_link"
     tablename = module +"_" + resource
-    link_table = db.define_table(tablename,timestamp, uuidstamp, deletion_status, authorstamp,
-                                 Field("survey_instance_id",db.survey_instance),
+    link_table = db.define_table(tablename,timestamp, uuidstamp, deletion_status, authorstamp,                                 
                                  Field("survey_question_id",db.survey_question),
                                  Field("survey_template_id", db.survey_template),
                                  Field("survey_section_id", db.survey_section))

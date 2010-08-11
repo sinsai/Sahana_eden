@@ -73,19 +73,6 @@ function TB_refresh() {
         TB_cleanup("survey_question_id");
     });
 }
-// Function to get the URL parameters
-function getQueryParams(qs) {
-// We want all the vars, i.e. after the ?
-    qs = qs.split('?')[1]
-    var pairs = qs.split('&');
-    var params = {};
-    var check = [];
-    for( var i = 0; i < pairs.length; i++ ) {
-            check = pairs[i].split('=');
-            params[decodeURIComponent(check[0])] = decodeURIComponent(check[1]);
-        }
-    return params;
-}
 
 // If submission succesful
 {{if response.flash or response.confirmation:}}

@@ -446,6 +446,24 @@ class S3Resource(object):
 
 
     # -------------------------------------------------------------------------
+    def add_filter(self, filter=None):
+
+        """ Add a filter to the current query """
+
+        if filter is not None:
+
+            if self.__query:
+                query = self.__query
+                self.clear()
+                self.clear_query()
+                self.__query = (query) & (filter)
+            else:
+                self.build_query(filter=filter)
+
+        return self.__query
+
+
+    # -------------------------------------------------------------------------
     def get_query(self):
 
         """ Get the current query for this resource """
@@ -4001,6 +4019,8 @@ class S3XML(object):
                 text = markup.xpath(".//text()")
                 if text:
                     text = " ".join(text)
+                else:
+                    text = ""
             except etree.XMLSyntaxError:
                 pass
         text = self.xml_encode(text)

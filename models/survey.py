@@ -123,13 +123,6 @@ if deployment_settings.has_module(module):
     link_table.survey_question_id.requires =IS_NULL_OR(IS_ONE_OF(db, "survey_question.id", "%(name)s"))
 
 
-    # Widgets    
-    resource = "widget"
-    tablename = module+"_"+resource
-    custom_widget = db.define_table(tablename,name_desc,
-                                    Field("question_id",db.survey_question),
-                                    Field("widget","text",length=750))    
-
 #    def question_options_onaccept(form):
 #        if form.vars.id and session.rcvars.survey_question:
 #            table = db.survey_question_options
@@ -145,11 +138,3 @@ if deployment_settings.has_module(module):
 #            db.commit()
 #    s3xrc.model.configure(db.survey_question,
 #                      onaccept=lambda form: question_onaccept(form))
-
-    def section_onaccept(form):
-        if form.vars.id and session.rcvars.survey_template:
-            db.survey_template_link_table.insert(survey_section_id=form.vars.id,survey_template_id=session.rcvars.survey_template)
-            db.commit()
-    s3xrc.model.configure(db.survey_section,
-                      onaccept=lambda form: section_onaccept(form))
-

@@ -78,7 +78,7 @@ if deployment_settings.has_module(module):
         msg_record_modified = T("Flood Report updated"),
         msg_record_deleted = T("Flood Report deleted"),
         msg_list_empty = T("No Flood Reports currently registered"))
-            
+
     freport_id = db.Table(None, "freport_id",
                         Field("freport_id", table,
                               requires = IS_NULL_OR(IS_ONE_OF(db, "sitrep_freport.id", "%(time)s")),
@@ -240,7 +240,7 @@ if deployment_settings.has_module(module):
     table.union_council.represent = lambda id: shn_gis_location_represent(id)
     table.union_council.comment = A(ADD_LOCATION,
                                        _class="colorbox",
-                                       _href=URL(r=request, c="gis", f="location", args="create", vars=dict(format="popup")),
+                                       _href=URL(r=request, c="gis", f="location", args="create", vars=dict(format="popup", child="union_council")),
                                        _target="top",
                                        _title=ADD_LOCATION)
     table.pf.label = "PF"

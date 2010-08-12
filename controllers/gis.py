@@ -12,13 +12,14 @@ module = request.controller
 
 # Options Menu (available in all Functions' Views)
 response.menu_options = [
-    #, [ [T("List"), False, URL(r=request, f="location")],
-    #    [T("Add"), False, URL(r=request, f="location", args="create")] ]
     [T("Service Catalogue"), False, URL(r=request, f="map_service_catalogue")],
-    [T("Locations"), False, URL(r=request, f="location")],
+    [T("Locations"), False, URL(r=request, f="location"), [
+        [T("List"), False, URL(r=request, f="location")],
+        [T("Add"), False, URL(r=request, f="location", args="create")],
+    ]],
     [T("Map"), False, URL(r=request, f="map_viewing_client")],
     # Currently broken
-    #[T("Bulk Uploader"), False, URL(r=request, c="doc", f="bulk_upload")],
+    #[T("Bulk Uploader"), False, URL(r=request, c="doc", f="bulk_upload")]
 ]
 
 # Web2Py Tools functions

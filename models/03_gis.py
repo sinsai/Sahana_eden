@@ -373,6 +373,7 @@ gis_feature_type_opts = {
 gis_source_opts = {
     1:T("GPS"),
     2:T("Imagery"),
+    3:T("Wikipedia"),
     }
 gis_location_hierarchy = {
     "L0":T("Country"),
@@ -407,6 +408,7 @@ table = db.define_table(tablename, timestamp, uuidstamp, deletion_status,
                 Field("lat", "double"), # Points or Centroid for Polygons
                 Field("lon", "double"), # Points or Centroid for Polygons
                 Field("wkt", "text"),   # WKT is auto-calculated from lat/lon for Points
+                Field("url"),
                 Field("osm_id"),        # OpenStreetMap ID. Should this be used in UUID field instead?
                 Field("lon_min", "double", writable=False, readable=False), # bounding-box
                 Field("lat_min", "double", writable=False, readable=False), # bounding-box
@@ -433,10 +435,11 @@ table.parent.represent = lambda id: (id and [db(db.gis_location.id == id).select
 table.gis_feature_type.requires = IS_IN_SET(gis_feature_type_opts, zero=None)
 table.gis_feature_type.represent = lambda opt: gis_feature_type_opts.get(opt, UNKNOWN_OPT)
 # WKT validation is done in the onvalidation callback
-#table.wkt.requires=IS_NULL_OR(IS_WKT())
+#table.wkt.requires = IS_NULL_OR(IS_WKT())
 table.wkt.represent = lambda wkt: gis.abbreviate_wkt(wkt)
 table.lat.requires = IS_NULL_OR(IS_LAT())
 table.lon.requires = IS_NULL_OR(IS_LON())
+table.url.requires = IS_NULL_OR(IS_URL())
 table.source.requires = IS_NULL_OR(IS_IN_SET(gis_source_opts))
 table.level.label = T("Level")
 table.code.label = T("Code")
@@ -447,6 +450,7 @@ table.gis_feature_type.label = T("Feature Type")
 table.lat.label = T("Latitude")
 table.lon.label = T("Longitude")
 table.wkt.label = T("Well-Known Text")
+table.url.label = "URL"
 table.osm_id.label = "OpenStreetMap"
 
 # Reusable field to include in other table definitions

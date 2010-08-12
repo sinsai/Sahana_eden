@@ -34,14 +34,14 @@ pr_pe_types = Storage(
 resource = "pentity"
 tablename = "%s_%s" % (module, resource)
 table = db.define_table(tablename, deletion_status,
-                        Field("type"),
+                        Field("pe_type"),
                         Field("uuid", length=128),
                         Field("pe_id", "integer"),
                         Field("pe_label", length=128),
                         migrate=migrate)
 
-table.type.writable = False
-table.type.represent = lambda opt: pr_pe_types.get(opt, opt)
+table.pe_type.writable = False
+table.pe_type.represent = lambda opt: pr_pe_types.get(opt, opt)
 table.uuid.writable = False
 table.pe_label.writable = False
 
@@ -56,14 +56,14 @@ def shn_pentity_represent(id, default_label="[no label]"):
     pe_str = T("None (no such record)")
 
     pe_table = db.pr_pentity
-    pe = db(pe_table.id == id).select(pe_table.type,
+    pe = db(pe_table.id == id).select(pe_table.pe_type,
                                      pe_table.pe_label,
                                      limitby=(0, 1)).first()
     if not pe:
         return pe_str
 
-    pe_type = pe.type
-    pe_type_nice = pe_table.type.represent(pe_type)
+    pe_type = pe.pe_type
+    pe_type_nice = pe_table.pe_type.represent(pe_type)
 
     table = db.get(pe_type, None)
     if not table:
@@ -110,7 +110,7 @@ def shn_pentity_represent(id, default_label="[no label]"):
     else:
         pe_str = "[%s] (%s)" % (
             label,
-            vita.trackable_types[pe_type]
+            pe_type_nice
         )
 
     return pe_str
@@ -170,9 +170,9 @@ def shn_pentity_onaccept(form, table=None):
                 values.update(pe_label = record.pe_label)
             db(pentity.uuid == uid).update(**values)
         else:
-            type = table._tablename
+            pe_type = table._tablename
             pe_label = record.get("pe_label", None)
-            pe_id = pentity.insert(uuid=uid, pe_label=pe_label, type=type)
+            pe_id = pentity.insert(uuid=uid, pe_label=pe_label, pe_type=pe_type)
             db(pentity.id == pe_id).update(pe_id=pe_id, deleted=False)
             db(table.id == id).update(pe_id=pe_id)
 
@@ -318,7 +318,7 @@ table = db.define_table(tablename,
                         pr_religion,
                         pr_marital_status,
                         Field("occupation"),
-                        Field("comment"),
+                        comments,
                         migrate=migrate)
 
 
@@ -401,9 +401,8 @@ s3xrc.model.configure(table,
         "first_name",
         "middle_name",
         "last_name",
-        "date_of_birth",
-        "nationality",
-        "missing"
+        "gender",
+        "age_group"
     ])
 
 
@@ -438,7 +437,7 @@ table = db.define_table(tablename,
                         Field("system","boolean",default=False),
                         Field("name"),
                         Field("description"),
-                        Field("comment"),
+                        comments,
                         migrate=migrate)
 
 
@@ -452,9 +451,6 @@ table.name.comment = DIV(SPAN("*", _class="req", _style="padding-right: 5px;"))
 table.description.label = T("Group description")
 table.description.comment = DIV(DIV(_class="tooltip",
     _title=Tstr("Group description") + "|" + Tstr("A brief description of the group (optional)")))
-
-table.comment.comment = DIV(DIV(_class="tooltip",
-    _title=Tstr("Comment") + "|" + Tstr("Field for comments (optional)")))
 
 # -----------------------------------------------------------------------------
 ADD_GROUP = T("Add Group")
@@ -515,7 +511,7 @@ table = db.define_table(tablename,
                         person_id,
                         Field("group_head", "boolean", default=False),
                         Field("description"),
-                        Field("comment"),
+                        comments,
                         migrate=migrate)
 
 table.group_head.represent = lambda group_head: (group_head and [T("yes")] or [""])[0]
@@ -605,7 +601,7 @@ def shn_pr_person_search_simple(r, **attr):
                 TR(T("Name and/or ID Label: "),
                    INPUT(_type="text", _name="label", _size="40"),
                    DIV(DIV(_class="tooltip",
-                           _title=T("Name and/or ID Label|To search for a person, enter any of the first, middle or last names and/or the ID label of a person, separated by spaces. You may use % as wildcard. Press 'Search' without input to list all persons.")))),
+                           _title=Tstr("Name and/or ID Label") + "|" + Tstr("To search for a person, enter any of the first, middle or last names and/or the ID label of a person, separated by spaces. You may use % as wildcard. Press 'Search' without input to list all persons.")))),
                 TR("", INPUT(_type="submit", _value="Search"))))
 
         output = dict(form=form, vars=form.vars)
@@ -639,7 +635,7 @@ def shn_pr_person_search_simple(r, **attr):
         subtitle = T("Matching Records")
 
         # Add-button
-        label_create_button = shn_get_crud_strings("pr_person").label_create_button
+        label_create_button = shn_get_crud_string("pr_person", "label_create_button")
         add_btn = A(label_create_button, _class="action-btn",
                     _href=URL(r=request, f="person", args="create"))
 

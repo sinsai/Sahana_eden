@@ -156,7 +156,7 @@ if deployment_settings.has_module(module):
                         represent = lambda opt: hms_resource_status_opts.get(opt, UNKNOWN_OPT)),
                     Field("access_status"),                     # Access Status
                     Field("info_source"),                       # Source of Information
-                    shn_comments_field,                         # Comments field
+                    comments,                         # Comments field
                     migrate=migrate)
 
 
@@ -294,7 +294,7 @@ if deployment_settings.has_module(module):
     table.mobile.requires = shn_phone_requires
     table.email.requires = IS_NULL_OR(IS_EMAIL())
     table.email.label = T("Email")
-    table.fax.label = T("FAX")
+    table.fax.label = T("Fax")
     table.fax.requires = shn_phone_requires
     table.skype.label = T("Skype ID")
 

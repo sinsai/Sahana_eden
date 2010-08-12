@@ -61,15 +61,15 @@ def index():
         if self_registration:
             request.args = ["register"]
             register_form = auth()
-    
-    
+
+
     return dict(module_name=module_name, modules=modules, admin_name=admin_name, admin_email=admin_email, admin_tel=admin_tel, self_registration=self_registration, login_form=login_form, register_form=register_form)
 
 def user():
     "Auth functions based on arg. See gluon/tools.py"
 
     auth.settings.on_failed_authorization = URL(r=request, f="error")
-    
+
     if request.args and request.args(0) == "login_next":
         # Can redirect the user to another page on first login for workflow (set in 00_settings.py)
         # Note the timestamp of last login through the browser
@@ -81,7 +81,7 @@ def user():
         #_table_user.organisation.writable = False
         _table_user.utc_offset.readable = True
         _table_user.utc_offset.writable = True
-        
+
     form = auth()
     if request.args and request.args(0) == "login":
         login_form = form
@@ -148,7 +148,7 @@ def about():
     try:
         sqlite_version = (subprocess.Popen(["sqlite3", "-version"], stdout=subprocess.PIPE).communicate()[0]).rstrip()
     except:
-        sqlite_version = T("Not installed or incorectly configured.")
+        sqlite_version = T("Not installed or incorrectly configured.")
     try:
         mysql_version = (subprocess.Popen(["mysql", "--version"], stdout=subprocess.PIPE).communicate()[0]).rstrip()[10:]
     except:
@@ -194,3 +194,4 @@ def contact():
     "Custom View"
     response.title = T("Contact us")
     return dict()
+

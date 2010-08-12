@@ -30,15 +30,12 @@ def shn_sessions():
     response.s3.formats = Storage()
 
     roles = []
-    try:
+    if auth.is_logged_in():
         user_id = auth.user.id
         _memberships = db.auth_membership
         memberships = db(_memberships.user_id == user_id).select(_memberships.group_id) # Cache this & invalidate when memberships are changed?
         for membership in memberships:
             roles.append(membership.group_id)
-    except:
-        # User not authenticated therefore has no roles other than '0'
-        pass
     session.s3.roles = roles
 
     controller_settings_table = "%s_setting" % request.controller
@@ -368,11 +365,6 @@ shn_url_represent = lambda url: (url and [A(url, _href=url, _target="blank")] or
 # Phone number requires
 shn_phone_requires = IS_NULL_OR(IS_MATCH('\+?\s*[\s\-\.\(\)\d]+(?:(?: x| ext)\s?\d{1,5})?$'))
 
-def Tstr(text):
-    """Convenience function for non web2py modules"""
-    return str(T(text))
-
-
 def myname(user_id):
     user = db.auth_user[user_id]
     return user.first_name if user else "None"
@@ -471,11 +463,13 @@ def shn_crud_strings(table_name,
     return table_strings
 
 
-def shn_get_crud_strings(tablename):
+def shn_get_crud_string(tablename, name):
 
     """ Get the CRUD strings for a table """
 
-    return s3.crud_strings.get(tablename, s3.crud_strings)
+    crud_strings = s3.crud_strings.get(tablename, s3.crud_strings)
+    not_found = s3.crud_strings.get(name, None)
+    return crud_strings.get(name, not_found)
 
 
 def shn_import_table(table_name,
@@ -539,21 +533,30 @@ def shn_rheader_tabs(jr, tabs=[]):
 
     rheader_tabs = []
     for (title, component) in tabs:
+        if component and component.find("/") > 0:
+            function, component = component.split("/", 1)
+            if not component:
+                component = None
+        else:
+            function = jr.request.function
         _class = "rheader_tab_other"
         if component:
             if jr.component and jr.component.name == component or \
                jr.custom_action and jr.method == component:
                 _class = "rheader_tab_here"
             args = [jr.id, component]
-            _href = URL(r=request, f=jr.name, args=args, vars=jr.request.vars)
+            _href = URL(r=request, f=function, args=args, vars=jr.request.vars)
         else:
             if not jr.component:
                 _class = "rheader_tab_here"
             args = [jr.id]
-            _next = URL(r=request, f=jr.name, args=[jr.id])
-            if not jr.request.vars.get("_next", None):
-                jr.request.vars.update(_next=_next)
-            _href = URL(r=request, f=jr.name, args=args, vars=jr.request.vars)
+            # If caller supplied _next, don't change it.  If not, provide
+            # one that propagates the caller's vars.
+            vars = Storage(jr.request.vars)
+            if not vars.get("_next", None):
+                vars.update(_next=URL(r=request, f=function, args=args, vars=jr.request.vars))
+            _href = URL(r=request, f=function, args=args, vars=vars)
+
         tab = SPAN(A(title, _href=_href), _class=_class)
         rheader_tabs.append(tab)
 

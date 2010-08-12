@@ -11,11 +11,12 @@ if deployment_settings.has_module(module):
     resource = "setting"
     tablename = "%s_%s" % (module, resource)
     table = db.define_table(tablename,
-                    Field("audit_read", "boolean"),
-                    Field("audit_write", "boolean"),
-                    Field("outgoing_sms_handler"),
-                    migrate=migrate)
-    table.outgoing_sms_handler.requires = IS_IN_SET(["Modem","Gateway"], zero = None)
+                            Field("audit_read", "boolean"),
+                            Field("audit_write", "boolean"),
+                            Field("outgoing_sms_handler"),
+                            Field("default_country_code", "integer", default = 44),
+                            migrate=migrate)
+    table.outgoing_sms_handler.requires = IS_IN_SET(["Modem", "Gateway"], zero=None)
 
     resource = "email_settings"
     tablename = "%s_%s" % (module, resource)
@@ -84,10 +85,8 @@ if deployment_settings.has_module(module):
     resource = "gateway_settings"
     tablename = "%s_%s" % (module, resource)
     table = db.define_table(tablename,
-               Field("url", default =\
-                "https://api.clickatell.com/http/sendmsg"),
-                Field("parameters", default =\
-                "user=yourusername&password=yourpassword&api_id=yourapiid"),
+                Field("url", default = "https://api.clickatell.com/http/sendmsg"),
+                Field("parameters", default = "user=yourusername&password=yourpassword&api_id=yourapiid"),
                 Field("message_variable", "string", default = "text"),
                 Field("to_variable", "string", default = "to"),
                 Field("enabled", "boolean", default = False),
@@ -135,6 +134,8 @@ if deployment_settings.has_module(module):
     message_id = db.Table(None, "message_id",
                 FieldS3("message_id", db.msg_log,
                     requires = IS_NULL_OR(IS_ONE_OF(db, "msg_log.id")),
+                    # FIXME: Subject works for Email but not SMS
+                    represent = lambda id: db(db.msg_log.id == id).select(db.msg_log.subject, limitby=(0, 1)).first().subject,
                     ondelete = "RESTRICT"
                 ))
 
@@ -156,33 +157,34 @@ if deployment_settings.has_module(module):
                                         "record_uuid",
                                         "resource",
                                        ])
+
     # The following was added to show only the supported messaging methods
     msg_contact_method_opts = { # pr_contact_method dependency
         1:T("E-Mail"),
         2:T("Mobile Phone"),
     }
+    # Outbox - needs to be separate to Log since a single message sent needs different outbox entries for each recipient
     resource = "outbox"
     tablename = "%s_%s" % (module, resource)
     table = db.define_table(tablename, timestamp, uuidstamp, deletion_status,
         message_id,
         pe_id, # Person/Group to send the message out to
         Field("address"), # If set used instead of picking up from pe_id
-        Field("pr_message_method",
-                "integer",
-                requires = IS_IN_SET(msg_contact_method_opts, zero=None),
-                default = 1,
-                label = T("Contact Method"),
-                represent = lambda opt: msg_contact_method_opts.get(opt, UNKNOWN_OPT)),
+        Field("pr_message_method", "integer",
+              requires = IS_IN_SET(msg_contact_method_opts, zero=None),
+              default = 1,
+              label = T("Contact Method"),
+              represent = lambda opt: msg_contact_method_opts.get(opt, UNKNOWN_OPT)),
         opt_msg_status,
         Field("system_generated", "boolean", default = False),
         Field("log"),
         migrate=migrate)
 
     s3xrc.model.add_component(module, resource,
-                          multiple=True,
-                          joinby=dict(msg_log="message_id"),
-                          deletable=True,
-                          editable=True)
+                              multiple=True,
+                              joinby=dict(msg_log="message_id"),
+                              deletable=True,
+                              editable=True)
 
     table.uuid.requires = IS_NOT_IN_DB(db, "%s.uuid" % tablename)
     s3xrc.model.configure(table,
@@ -192,6 +194,7 @@ if deployment_settings.has_module(module):
                                         "status",
                                         "log",
                                        ])
+
     # Message Read Status - To replace Message Outbox #TODO
     resource = "read_status"
     tablename = "%s_%s" % (module, resource)

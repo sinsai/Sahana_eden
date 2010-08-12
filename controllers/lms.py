@@ -43,9 +43,9 @@ response.menu_options = [
                 [T('Expected Out'), False, '#'],
                 [T('Movements (Filter In/Out/Lost)'), False, '#'],
                 [T('Forms'), False, '#',[
-                    [T('GRN'), False, '#'],
+                    ['GRN', False, '#'],
                     [T('Way Bill(s)'), False, '#'],
-                    [T('WHIRF'), False, '#'],
+                    ['WHIRF', False, '#'],
                     [T('Dispose'), False, '#']
                 ]],
                 [T('Search for Items'), False, '#'],

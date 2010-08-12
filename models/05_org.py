@@ -62,11 +62,11 @@ org_organisation_type_opts = {
     3:T("International NGO"),
     4:T("Donor"),               # Don't change this number without changing organisation_popup.html
     6:T("National NGO"),
-    7:T("UN"),
+    7:"UN",
     8:T("International Organization"),
     9:T("Military"),
     10:T("Private")
-    #12:T("MINUSTAH")   Haiti-specific
+    #12:"MINUSTAH"   Haiti-specific
 }
 
 resource = "organisation"
@@ -84,7 +84,7 @@ table = db.define_table(tablename, timestamp, uuidstamp, deletion_status,
                 Field("website"),
                 Field("twitter"),   # deprecated by pe_contact component
                 Field("donation_phone"),
-                shn_comments_field,
+                comments,
                 source_id,
                 migrate=migrate)
 
@@ -195,7 +195,7 @@ table = db.define_table(tablename, timestamp, uuidstamp, deletion_status,
                 Field("vehicle_types"),
                 Field("equipment"),
                 source_id,
-                shn_comments_field,
+                comments,
                 migrate=migrate)
 
 # Field settings
@@ -222,7 +222,7 @@ table.postcode.label = T("Postcode")
 table.phone1.label = T("Phone 1")
 table.phone2.label = T("Phone 2")
 table.email.label = T("Email")
-table.fax.label = T("FAX")
+table.fax.label = T("Fax")
 table.national_staff.label = T("National Staff")
 table.international_staff.label = T("International Staff")
 table.number_of_vehicles.label = T("Number of Vehicles")
@@ -411,7 +411,7 @@ table = db.define_table(tablename, timestamp, deletion_status,
                 Field("focal_point", "boolean"),
                 #Field("slots", "integer", default=1),
                 #Field("payrate", "double", default=0.0), # Wait for Bugeting integration
-                shn_comments_field,
+                comments,
                 migrate=migrate)
 
 # Field settings

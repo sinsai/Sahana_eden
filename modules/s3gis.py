@@ -437,7 +437,7 @@ class GIS(object):
 
         if layer == "openstreetmap":
             #return ["Mapnik", "Osmarender", "Aerial"]
-            return ["Mapnik", "Osmarender"]
+            return ["Mapnik", "Osmarender", "Taiwan"]
         elif layer == "google":
             return ["Satellite", "Maps", "Hybrid", "Terrain"]
         elif layer == "yahoo":
@@ -676,6 +676,7 @@ class GIS(object):
             html.append(SCRIPT(_type="text/javascript", _src=URL(r=request, c="static", f="scripts/ext/adapter/jquery/ext-jquery-adapter-debug.js")))
             html.append(SCRIPT(_type="text/javascript", _src=URL(r=request, c="static", f="scripts/ext/ext-all-debug.js")))
             html.append(SCRIPT(_type="text/javascript", _src=URL(r=request, c="static", f="scripts/gis/openlayers/lib/OpenLayers.js")))
+            html.append(SCRIPT(_type="text/javascript", _src=URL(r=request, c="static", f="scripts/gis/OpenStreetMap.js")))
             html.append(SCRIPT(_type="text/javascript", _src=URL(r=request, c="static", f="scripts/gis/MP.js")))
             html.append(SCRIPT(_type="text/javascript", _src=URL(r=request, c="static", f="scripts/gis/usng2.js")))
             html.append(SCRIPT(_type="text/javascript", _src=URL(r=request, c="static", f="scripts/gis/RemoveFeature.js")))
@@ -686,6 +687,7 @@ class GIS(object):
             html.append(SCRIPT(_type="text/javascript", _src=URL(r=request, c="static", f="scripts/ext/adapter/jquery/ext-jquery-adapter.js")))
             html.append(SCRIPT(_type="text/javascript", _src=URL(r=request, c="static", f="scripts/ext/ext-all.js")))
             html.append(SCRIPT(_type="text/javascript", _src=URL(r=request, c="static", f="scripts/gis/OpenLayers.js")))
+            html.append(SCRIPT(_type="text/javascript", _src=URL(r=request, c="static", f="scripts/gis/OpenStreetMap.js")))
             html.append(SCRIPT(_type="text/javascript", _src=URL(r=request, c="static", f="scripts/gis/RemoveFeature.js")))
             html.append(SCRIPT(_type="text/javascript", _src=URL(r=request, c="static", f="scripts/gis/GeoExt.js")))
 
@@ -1449,18 +1451,29 @@ OpenLayers.Util.extend( selectPdfControl, {
         """
                 if openstreetmap.Mapnik:
                     layers_openstreetmap += """
-        var mapnik = new OpenLayers.Layer.OSM('""" + openstreetmap.Mapnik + """');
+        var mapnik = new OpenLayers.Layer.OSM.Mapnik('""" + openstreetmap.Mapnik + """', {
+            displayOutsideMaxExtent: true,
+            wrapDateLine: true
+        });
         map.addLayer(mapnik);
                     """
                 if openstreetmap.Osmarender:
                     layers_openstreetmap += """
-        var osmarender = new OpenLayers.Layer.OSM('""" + openstreetmap.Osmarender + """', 'http://tah.openstreetmap.org/Tiles/tile/${z}/${x}/${y}.png');
+        var osmarender = new OpenLayers.Layer.OSM.Osmarender('""" + openstreetmap.Osmarender + """', {
+            displayOutsideMaxExtent: true,
+            wrapDateLine: true
+        });
         map.addLayer(osmarender);
                     """
                 if openstreetmap.Aerial:
                     layers_openstreetmap += """
         var oam = new OpenLayers.Layer.TMS( '""" + openstreetmap.Aerial + """', 'http://tile.openaerialmap.org/tiles/1.0.0/openaerialmap-900913/', {type: 'png', getURL: osm_getTileURL } );
         map.addLayer(oam);
+                    """
+                if openstreetmap.Taiwan:
+                    layers_openstreetmap += """
+        var osmtw = new OpenLayers.Layer.TMS( '""" + openstreetmap.Taiwan + """', 'http://tile.openstreetmap.tw/tiles/', {type: 'png', getURL: osm_getTileURL } );
+        map.addLayer(osmtw);
                     """
             else:
                 functions_openstreetmap = ""
@@ -1748,10 +1761,10 @@ OpenLayers.Util.extend( selectPdfControl, {
                 else:
                     name = "Query" + str(int(random.random()*1000))
                 if "popup_url" in layer:
-                    popup_url = layer["popup_url"]
+                    _popup_url = urllib.unquote(layer["popup_url"])
                 else:
-                    #popup_url = str(URL(r=request, c=feature_class.module, f=feature_class.resource, args=["read.popup"]))
-                    popup_url = str(URL(r=request, c="gis", f="location", args=["read.popup"]))
+                    #popup_url = urllib.unquote(URL(r=request, c=feature_class.module, f=feature_class.resource, args=["read.popup"]))
+                    _popup_url = urllib.unquote(URL(r=request, c="gis", f="location", args=["read.popup?location.id="]))
 
                 # Generate HTML snippet
                 name_safe = re.sub("\W", "_", name)
@@ -1845,7 +1858,7 @@ OpenLayers.Util.extend( selectPdfControl, {
                 map.addPopup(popup);
                 // call AJAX to get the contentHTML
                 var uuid = feature.fid;
-                loadDetails('""" + popup_url + """' + '?location.uid=' + uuid, id, popup);
+                loadDetails('""" + _popup_url + """' + uuid, id, popup);
             }
         }
         """
@@ -1875,6 +1888,8 @@ OpenLayers.Util.extend( selectPdfControl, {
                     # Deal with manually-imported Features which are missing WKT
                     if feature.get("wkt"):
                         wkt = feature.wkt
+                    elif (feature.lat == None) or (feature.lon == None):
+                        continue
                     else:
                         wkt = self.latlon_to_wkt(feature.lat, feature.lon)
                     # Deal with apostrophes in Feature Names
@@ -1883,7 +1898,7 @@ OpenLayers.Util.extend( selectPdfControl, {
                     layers_features += """
         geom = parser.read('""" + wkt + """').geometry;
         iconURL = '""" + marker_url + """';
-        featureVec = addFeature('""" + feature.uuid + """', '""" + fname + """', """ + fc + """, geom, iconURL)
+        featureVec = addFeature('""" + str(feature.id) + """', '""" + fname + """', """ + fc + """, geom, iconURL)
         features.push(featureVec);
         """
                 # Append to Features layer
@@ -1895,12 +1910,12 @@ OpenLayers.Util.extend( selectPdfControl, {
             for layer in feature_groups:
                 name = layer["feature_group"]
                 if "popup_url" in layer:
-                    popup_url = layer["popup_url"]
+                    popup_url = urllib.unquote(layer["popup_url"])
                 # We'd like to do something like this:
                 #elif feature_class is office:
-                #    popup_url = str(URL(r=request, c="or", f="office"))
+                #    popup_url = urllib.unquote(URL(r=request, c="or", f="office"))
                 else:
-                    popup_url = str(URL(r=request, c="gis", f="location", args=["read.popup"]))
+                    popup_url = urllib.unquote(URL(r=request, c="gis", f="location", args=["read.popup?location.id="]))
 
                 # Generate HTML snippet
                 name_safe = re.sub("\W", "_", name)
@@ -2021,6 +2036,8 @@ OpenLayers.Util.extend( selectPdfControl, {
                     # Deal with manually-imported Features which are missing WKT
                     if feature.gis_location.wkt:
                         wkt = feature.gis_location.wkt
+                    elif (feature.gis_location.lat == None) or (feature.gis_location.lon == None):
+                        continue
                     else:
                         wkt = self.latlon_to_wkt(feature.gis_location.lat, feature.gis_location.lon)
                     # Deal with apostrophes in Feature Names

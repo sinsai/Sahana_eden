@@ -456,8 +456,23 @@ def location():
                 fc = db(db.gis_feature_class.name == "Hospital").select(db.gis_feature_class.id, limitby=(0, 1)).first()
             elif "cr_shelter" in caller:
                 fc = db(db.gis_feature_class.name == "Shelter").select(db.gis_feature_class.id, limitby=(0, 1)).first()
-            elif "ir_report" in caller:
+            elif "irs_ireport" in caller:
                 fc = db(db.gis_feature_class.name == "Incident").select(db.gis_feature_class.id, limitby=(0, 1)).first()
+            elif "school_district" in caller:
+                table.level.default = "L2"
+                table.feature_class_id.readable = table.feature_class_id.writable = False
+                table.marker_id.readable = table.marker_id.writable = False
+                table.addr_street.readable = table.addr_street.writable = False
+            elif "school_report_location" in caller:
+                table.level.default = "L2"
+                table.feature_class_id.readable = table.feature_class_id.writable = False
+                table.marker_id.readable = table.marker_id.writable = False
+                table.addr_street.readable = table.addr_street.writable = False
+            elif "school_report_union" in caller:
+                table.level.default = "L3"
+                table.feature_class_id.readable = table.feature_class_id.writable = False
+                table.marker_id.readable = table.marker_id.writable = False
+                table.addr_street.readable = table.addr_street.writable = False
 
             try:
                 table.feature_class_id.default = fc.id
@@ -468,7 +483,7 @@ def location():
                 pass
 
             table.description.readable = table.description.writable = False
-            table.level.readable = table.level.writable = False
+            #table.level.readable = table.level.writable = False
             table.code.readable = table.code.writable = False
             # Fails to submit if hidden server-side
             #table.gis_feature_type.readable = table.gis_feature_type.writable = False

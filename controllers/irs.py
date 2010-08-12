@@ -36,10 +36,9 @@ def index():
     return dict(module_name=module_name)
 
 def maps():
-    "Show a Map of all Reports"
+    "Show a Map of all Incident Reports"
 
-    feature_class_id = db(db.gis_feature_class.name == "Incident").select(db.gis_feature_class.id, limitby=(0, 1)).first().id
-    reports = db(db.gis_location.feature_class_id == feature_class_id).select()
+    reports = db(db.gis_location.id == db.irs_ireport.location_id).select()
     popup_url = URL(r=request, f="ireport", args="read.popup?ireport.location_id=")
     map = gis.show_map(feature_queries = [{"name":Tstr("Incident Reports"), "query":reports, "active":True, "popup_url": popup_url}], window=True)
 

@@ -590,11 +590,12 @@ class S3MultiSelectWidget(FormWidget):
                 if len(row) > 0:
                     for field in self.represent_fields:
                         if column_fields_represent[field]:
-                            field_value = column_fields_represent[field](row[0][field])
+                            #field_value = column_fields_represent[field](row[0][field])
+                            field_value = link_table[field].represent(row[0][field])
                         else:
                             field_value = row[0][field]
-                        if not isinstance(field_value, (A) ):
-                            field_value = str(field_value)
+                        #if not isinstance(field_value, (A) ):
+                        field_value = str(field_value)
                         return_list.append( field_value )
                         return_list.append( self.represent_field_delim )
                     if return_list:    
@@ -604,7 +605,7 @@ class S3MultiSelectWidget(FormWidget):
         if return_list:
             return_list.pop() # remove the last delim
             # XML will not escape links in the string
-            return_value = XML( TAG[""](*return_list) )
+            return_value = XML( "".join(return_list) )
         else:
             return_value = None
         

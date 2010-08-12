@@ -6,9 +6,10 @@
 */
 
 table tbody tr.s3_multiselect_widget_entry_row td,                     
+/*
 table.s3_multiselect_widget_rows td { border: 1px solid #B3B3B3; 
                                       padding: 3px; }
-
+*/
 table tbody tr.s3_multiselect_widget_entry_row td input,                       
 table tbody tr.s3_multiselect_widget_entry_row td select { margin: 0px; 
                                             padding: 0px; ! important}     

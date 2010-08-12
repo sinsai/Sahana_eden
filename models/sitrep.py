@@ -355,4 +355,37 @@ if deployment_settings.has_module(module):
     s3xrc.model.configure(table,
         onvalidation = lambda form: shn_sitrep_school_report_onvalidation(form))
 
+
+    # -----------------------------------------------------------------------------
+    def shn_sitrep_report(r, **attr):
+
+        """ Aggregate reports """
+
+        if r.name == "assessment":
+            if r.representation == "html":
+                # Assessment HTML/jqplot reporting here
+                return dict()
+            else:
+                # Other formats?
+                raise HTTP(501, body=BADFORMAT)
+        elif r.name == "school_district":
+            if r.representation == "html":
+                # School reports HTML/jqplot reporting here
+                return dict()
+            else:
+                # Other formats?
+                raise HTTP(501, body=BADFORMAT)
+        else:
+            raise HTTP(501, body=BADMETHOD)
+
+
+    s3xrc.model.set_method(module, "assessment",
+                           method="report",
+                           action=shn_sitrep_report )
+
+    s3xrc.model.set_method(module, "school_district",
+                           method="report",
+                           action=shn_sitrep_report )
+
+
     # -----------------------------------------------------------------------------

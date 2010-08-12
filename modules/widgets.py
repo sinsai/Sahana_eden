@@ -153,6 +153,8 @@ class JSON(INPUT):
     """
     @author: Michael Howden (michael@aidiq.com)   
 
+    Extends INPUT() from gluon/html.py
+    
     :param json_table: Table - The table where the data in the JSON will be saved to
 
     Required for S3MultiSelectWidget JSON input
@@ -276,7 +278,7 @@ class JSON(INPUT):
             if link_field_name:
                 json_record[link_field_name] = link_field_value
 
-            query = (json_table.deleted==False) 
+            query = (json_table.deleted == False) 
             for field, value in json_record.iteritems():
                 if type(value).__name__ == "dict":
                     # recurse through this JSON data
@@ -301,17 +303,14 @@ class JSON(INPUT):
 
                     json_record[field] = value = filename
 
-                #build query to test if this record is already in the DB
-                #Weird: Query & bool OK; bool & Query NOT! 
-                #if type(query).__name__ == "bool":
-                #    query = (json_table[field] == value) & query
-                #else:
+                # Build query to test if this record is already in the DB
+                # NB: Query & bool OK; bool & Query NOT! 
                 query = query & (json_table[field] == value)
 
             if "id" not in json_record:
                 # ADD
                 # Search for the value existing in the table already
-                # TODO - why is query becoming a bool?!?!
+                # TODO - why is query becoming a bool?
                 #if query:
                 matching_row = db(query).select()
                 #else:
@@ -346,12 +345,12 @@ class S3MultiSelectWidget(FormWidget):
     """
     @author: Michael Howden (michael@aidiq.com)
 
-    This widget will return a table which can have rows added or deleted (not currently editted).
+    This widget will return a table which can have rows added or deleted (not currently edited).
     This widget can be added to a table using a XXXX_dummy field. This field will only store the ID of the record and serve as a placeholder.
 
-    :param link_table_name: - string - the 
+    :param link_table_name: - string -
     :param link_field_name: - Field - 
-    :param column_fields:  - list of strings - optional. The fields from the link_table whcih will be display as columns. 
+    :param column_fields:  - list of strings - optional. The fields from the link_table which will be displayed as columns. 
     Default = All fields.    
 
     """
@@ -398,12 +397,12 @@ class S3MultiSelectWidget(FormWidget):
         """
 
         db = self.db       
-        link_field_name = self.link_field_name
         link_table_name = self.link_table_name
         link_table = db[link_table_name]
+        link_field_name = self.link_field_name
         column_fields = self.column_fields
 
-        widget_id = str(field).replace(".","_")
+        widget_id = str(field).replace(".", "_")
 
         input_json = JSON(_name = field.name,
                           _id = widget_id + "_json",

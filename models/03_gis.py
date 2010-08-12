@@ -479,7 +479,8 @@ s3xrc.model.add_component(module, resource,
 
 s3xrc.model.configure(table,
                       onvalidation=lambda form: gis.wkt_centroid(form),
-                      onaccept=gis.update_location_tree())
+                      onaccept=gis.update_location_tree() # Note that this is replaced below by the MultiSelect widget
+                      )
                       
 resource = "location_name"
 tablename = module + "_" + resource
@@ -494,15 +495,16 @@ table.language.requires = IS_IN_SET(gis_location_languages)
 table.language.label = T("Language")
 
 # Multiselect Widget
-table = db.gis_location
 name_dummy_element = S3MultiSelectWidget(db = db,                                                             
                                          link_table_name = tablename,                  
                                          link_field_name = "location_id")
+table = db.gis_location
 table.name_dummy.widget = name_dummy_element.widget
-table.name_dummy.represent = name_dummy_element.represent
+#table.name_dummy.represent = name_dummy_element.represent
 def gis_location_onaccept(form):
     if session.rcvars:
         name_dummy_element.onaccept(db, session.rcvars.gis_location, request)
+    # Include the normal onaccept
     gis.update_location_tree()
 s3xrc.model.configure(table, onaccept=gis_location_onaccept)
 

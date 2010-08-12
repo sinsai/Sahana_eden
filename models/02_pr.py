@@ -318,7 +318,7 @@ table = db.define_table(tablename,
                         pr_religion,
                         pr_marital_status,
                         Field("occupation"),
-                        Field("comment"),
+                        comments,
                         migrate=migrate)
 
 
@@ -437,7 +437,7 @@ table = db.define_table(tablename,
                         Field("system","boolean",default=False),
                         Field("name"),
                         Field("description"),
-                        Field("comment"),
+                        comments,
                         migrate=migrate)
 
 
@@ -451,9 +451,6 @@ table.name.comment = DIV(SPAN("*", _class="req", _style="padding-right: 5px;"))
 table.description.label = T("Group description")
 table.description.comment = DIV(DIV(_class="tooltip",
     _title=Tstr("Group description") + "|" + Tstr("A brief description of the group (optional)")))
-
-table.comment.comment = DIV(DIV(_class="tooltip",
-    _title=Tstr("Comment") + "|" + Tstr("Field for comments (optional)")))
 
 # -----------------------------------------------------------------------------
 ADD_GROUP = T("Add Group")
@@ -514,7 +511,7 @@ table = db.define_table(tablename,
                         person_id,
                         Field("group_head", "boolean", default=False),
                         Field("description"),
-                        Field("comment"),
+                        comments,
                         migrate=migrate)
 
 table.group_head.represent = lambda group_head: (group_head and [T("yes")] or [""])[0]

@@ -4,7 +4,6 @@
 """
 Usage:
     Install py2exe: http://sourceforge.net/projects/py2exe/files/
-    Check you have the right version of msvcr90.dll (http://www.py2exe.org/index.cgi/Tutorial#Step52)
     Copy script to the web2py directory
     c:\bin\python26\python standalone_exe.py py2exe
 """
@@ -12,14 +11,22 @@ Usage:
 from distutils.core import setup
 import py2exe
 from gluon.import_all import base_modules, contributed_modules
+from glob import glob
+import fnmatch
 import os
 import shutil
-import fnmatch
-try:
-	print 'Removing sneaky3 - Not Python 2.5 friendly'
-	os.remove('gluon/sneaky3.py')
-except:
-	pass
+import sys
+
+# Python base version
+python_version = sys.version[:3]
+
+# List of modules deprecated in python2.6 that are in the above set
+py26_deprecated = ['mhlib', 'multifile', 'mimify', 'sets', 'MimeWriter']
+
+if python_version == '2.6':
+    base_modules += ['json', 'multiprocessing']
+    base_modules = list(set(base_modules).difference(set(py26_deprecated)))
+
 try:
 	shutil.copytree('applications', 'dist/applications')
 except:
@@ -33,16 +40,22 @@ try:
 except:
 	print "Copy geos.dll and libgeos-3-2-2.dll from Python26\DLLs into the dist directory"
 
+if python_version == '2.6':
+    # Python26 compatibility: http://www.py2exe.org/index.cgi/Tutorial#Step52
+    try:
+        shutil.copytree('C:\Bin\Microsoft.VC90.CRT', 'dist/')
+    except:
+        print "Copy Microsoft.VC90.CRT folder into the dist directory"
+
 setup(
   console=['web2py.py'],
   windows=[{'script':'web2py.py',
-    'dest_base':'web2py_no_console',    # MUST NOT be just 'web2py' otherwise it overrides the standard web2py.exe
+    'dest_base':'web2py_no_console' # MUST NOT be just 'web2py' otherwise it overrides the standard web2py.exe
     }],
   data_files=[
-        'NEWINSTALL',
         'ABOUT',
         'LICENSE',
-        'VERSION',
+        'VERSION'
         ],
   options={'py2exe': {
     'packages': 
@@ -50,4 +63,3 @@ contributed_modules + ['lxml', 'serial', 'reportlab', 'geraldo', 'xlwt', 'shapel
     'includes': base_modules,
     }},
   )
-

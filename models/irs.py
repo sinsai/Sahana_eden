@@ -151,7 +151,8 @@ if deployment_settings.has_module(module):
             Field("persons_injured", "integer"),
             Field("persons_deceased", "integer"),
             comments,
-            )
+            migrate=migrate)
+
     table.name.requires = IS_NOT_EMPTY()
     table.category.requires = IS_NULL_OR(IS_IN_SET(irs_incident_type_opts))
     table.category.represent = lambda opt: irs_incident_type_opts.get(opt, opt)
@@ -205,7 +206,8 @@ if deployment_settings.has_module(module):
             Field("persons_injured", "integer"),
             Field("persons_deceased", "integer"),
             comments,
-            )
+            migrate=migrate)
+
     table.name.requires = IS_NOT_EMPTY()
     table.category.requires = IS_NULL_OR(IS_IN_SET(irs_incident_type_opts))
     table.category.represent = lambda opt: irs_incident_type_opts.get(opt, opt)

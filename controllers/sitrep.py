@@ -1,7 +1,10 @@
 # -*- coding: utf-8 -*-
 
-"""
-    Situation Reporting Module - Controllers
+""" Situation Reporting Module - Controllers
+
+    @author: Fran Boon
+    @see: http://eden.sahanafoundation.org/wiki/Pakistan
+
 """
 
 module = request.controller
@@ -31,12 +34,16 @@ response.menu_options = [
 ]
 
 def index():
-    "Custom View"
+
+    """ Custom View """
+
     module_name = deployment_settings.modules[module].name_nice
     return dict(module_name=module_name)
 
+
 def maps():
-    "Show a Map of all Flood Reports"
+
+    """ Show a Map of all Flood Reports """
 
     feature_class_id = db(db.gis_feature_class.name == "Report").select(db.gis_feature_class.id, limitby=(0, 1)).first().id
     reports = db(db.gis_location.feature_class_id == feature_class_id).select()
@@ -45,8 +52,11 @@ def maps():
 
     return dict(map=map)
 
+
 def river():
-    "REST Controller"
+
+    """ Rivers, RESTful controller """
+
     resource = request.function
 
     response.s3.pagination = True
@@ -60,27 +70,33 @@ def river():
     output = shn_rest_controller(module, resource)
     return output
 
-def freport():
-    "REST Controller"
-    resource = request.function
 
+def freport():
+
+    """ Flood Reports, RESTful controller """
+
+    resource = request.function
     response.s3.pagination = True
 
     # Post-processor
-    def user_postp(jr, output):
+    def postp(jr, output):
         shn_action_buttons(jr, deletable=False)
         return output
-    response.s3.postp = user_postp
+    response.s3.postp = postp
 
     output = shn_rest_controller(module, resource,
-                                 rheader=lambda r: shn_freport_rheader(r,
-                                                                   tabs = [(T("Basic Details"), None),
-                                                                           (T("Locations"), "freport_location")  ]),
-                                                                   sticky=True)
+                                 rheader=lambda r: \
+                                         shn_sitrep_rheader(r,
+                                            tabs = [(T("Basic Details"), None),
+                                                    (T("Locations"), "freport_location")  ]),
+                                                    sticky=True)
     return output
 
+
 def assessment():
-    "REST Controller"
+
+    """ Assessments, RESTful controller """
+
     resource = request.function
     tablename = "%s_%s" % (module, resource)
     table = db[tablename]
@@ -99,8 +115,11 @@ def assessment():
     output = shn_rest_controller(module, resource)
     return output
 
+
 def school_district():
-    "REST Controller"
+
+    """ REST Controller """
+
     resource = request.function
     tablename = "%s_%s" % (module, resource)
     table = db[tablename]
@@ -123,48 +142,67 @@ def school_district():
     response.s3.postp = user_postp
 
     output = shn_rest_controller(module, resource,
-                                 rheader=lambda r: shn_school_district_rheader(r,
-                                                                   tabs = [(T("Basic Details"), None),
-                                                                           (T("School Reports"), "school_report")  ]),
-                                                                   sticky=True)
+                                 rheader=lambda r: \
+                                         shn_sitrep_rheader(r,
+                                            tabs = [(T("Basic Details"), None),
+                                                    (T("School Reports"), "school_report")]),
+                                                    sticky=True)
     return output
 
-def shn_school_district_rheader(r, tabs=[]):
+
+# -----------------------------------------------------------------------------
+def download():
+
+    """ Download a file """
+
+    return response.download(request, db)
+
+
+# -----------------------------------------------------------------------------
+def shn_sitrep_rheader(r, tabs=[]):
+
+    """ Resource Headers """
 
     if r.representation == "html":
         rheader_tabs = shn_rheader_tabs(r, tabs)
 
-        report = r.record
-        location = report.location_id
-        if location:
-            location = shn_gis_location_represent(location)
-        rheader = DIV(TABLE(
-                        TR(
-                            TH(T("Title: ")), report.name,
-                            TH(T("Location: ")), location),
-                        TR(
-                            TH(T("Reported By: ")), report.reported_by,
-                            TH(T("Date: ")), report.date)
-                        ),
-                    rheader_tabs)
+        if r.name == "freport":
 
-        return rheader
-    else:
-        return None
+            report = r.record
+            location = report.location_id
+            if location:
+                location = shn_gis_location_represent(location)
+            rheader = DIV(TABLE(
+                            TR(
+                                TH(T("Title: ")), report.name,
+                                TH(T("Location: ")), location),
+                            TR(
+                                TH(T("Reported By: ")), report.reported_by,
+                                TH(T("Date: ")), report.date)
+                            ),
+                          rheader_tabs)
 
-def shn_freport_rheader(r, tabs=[]):
+            return rheader
 
-    if r.representation == "html":
-        rheader_tabs = shn_rheader_tabs(r, tabs)
+        elif r.name == "school_district":
 
-        report = r.record
-        rheader = DIV(TABLE(
-                        TR(
-                            TH(T("Time: ")), report.time,
-                            TH(T("Document: ")), report.document),
-                        ),
-                    rheader_tabs)
+            report = r.record
+            doc_url = URL(r=request, f="download", args=[report.document])
+            try:
+                doc_name, file = r.table.document.retrieve(report.document)
+                if hasattr(file, "close"):
+                    file.close()
+            except:
+                doc_name = report.document
 
-        return rheader
-    else:
-        return None
+            rheader = DIV(TABLE(
+                            TR(
+                                TH(T("Date: ")), report.date),
+                            TR(
+                                TH(T("Document: ")), A(doc_name, _href=doc_url)),
+                            ),
+                          rheader_tabs)
+
+            return rheader
+        else:
+            return None

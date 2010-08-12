@@ -58,11 +58,12 @@ if deployment_settings.has_module(module):
     # Flood Reports
     resource = "freport"
     tablename = "%s_%s" % (module, resource)
-    table = db.define_table(tablename, timestamp, uuidstamp, authorstamp, deletion_status,
-            Field("time", "datetime"),
-            document,
-            comments,
-            migrate=migrate)
+    table = db.define_table(tablename,
+                            timestamp, uuidstamp, authorstamp, deletion_status,
+                            Field("time", "datetime"),
+                            document,
+                            comments,
+                            migrate=migrate)
 
     # CRUD strings
     ADD_FLOOD_REPORT = T("Add Flood Report")
@@ -93,13 +94,14 @@ if deployment_settings.has_module(module):
     # Locations
     resource = "freport_location"
     tablename = "%s_%s" % (module, resource)
-    table = db.define_table(tablename, timestamp, uuidstamp, authorstamp, deletion_status,
-            freport_id,
-            river_id,
-            location_id,
-            Field("discharge", "integer"),
-            comments,
-            migrate=migrate)
+    table = db.define_table(tablename,
+                            timestamp, uuidstamp, authorstamp, deletion_status,
+                            freport_id,
+                            river_id,
+                            location_id,
+                            Field("discharge", "integer"),
+                            comments,
+                            migrate=migrate)
 
     table.discharge.label = T("Discharge (cusecs)")
 
@@ -131,18 +133,19 @@ if deployment_settings.has_module(module):
     # Assessments - WFP
     resource = "assessment"
     tablename = "%s_%s" % (module, resource)
-    table = db.define_table(tablename, timestamp, uuidstamp, authorstamp, deletion_status,
-            location_id,
-            organisation_id,
-            Field("date", "date"),
-            Field("households", "integer"),
-            Field("houses_destroyed", "integer"),
-            Field("houses_damaged", "integer"),
-            Field("crop_losses", "integer"),
-            Field("water_level", "boolean"),
-            Field("crops_affectees", "double"),
-            comments,
-            migrate=migrate)
+    table = db.define_table(tablename,
+                            timestamp, uuidstamp, authorstamp, deletion_status,
+                            location_id,
+                            organisation_id,
+                            Field("date", "date"),
+                            Field("households", "integer"),
+                            Field("houses_destroyed", "integer"),
+                            Field("houses_damaged", "integer"),
+                            Field("crop_losses", "integer"),
+                            Field("water_level", "boolean"),
+                            Field("crops_affectees", "double"),
+                            comments,
+                            migrate=migrate)
 
     table.crop_losses.requires = IS_NULL_OR(IS_INT_IN_RANGE(0, 100))
 
@@ -170,14 +173,15 @@ if deployment_settings.has_module(module):
     # School Districts
     resource = "school_district"
     tablename = "%s_%s" % (module, resource)
-    table = db.define_table(tablename, timestamp, uuidstamp, authorstamp, deletion_status,
-            Field("name"),
-            location_id,
-            Field("reported_by"),
-            Field("date", "date"),
-            document,
-            comments,
-            migrate=migrate)
+    table = db.define_table(tablename,
+                            timestamp, uuidstamp, authorstamp, deletion_status,
+                            Field("name"),
+                            location_id,
+                            Field("reported_by"),
+                            Field("date", "date"),
+                            document,
+                            comments,
+                            migrate=migrate)
 
     table.name.label = T("Title")
     table.location_id.label = T("District")
@@ -227,13 +231,13 @@ if deployment_settings.has_module(module):
                             Field("facilities_hygiene", "integer"),
                             Field("total_affected_male", "integer"),
                             Field("total_affected_female", "integer"),
-                            Field("total_affected_total", "integer"),   # Should create a custom validator to calculate totals
+                            Field("total_affected_total", "integer"),
                             Field("students_affected_male", "integer"),
                             Field("students_affected_female", "integer"),
-                            Field("students_affected_total", "integer"),   # Should create a custom validator to calculate totals
+                            Field("students_affected_total", "integer"),
                             Field("teachers_affected_male", "integer"),
                             Field("teachers_affected_female", "integer"),
-                            Field("teachers_affected_total", "integer"),   # Should create a custom validator to calculate totals
+                            Field("teachers_affected_total", "integer"),
                             comments,
                             migrate=migrate)
 

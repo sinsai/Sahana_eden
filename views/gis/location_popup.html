@@ -51,7 +51,7 @@
                 $("#gis_location_name").val(location_name);
                 $("#gis_location_name__row").hide();
             }
-    {{elif "ir_report" in request.vars.caller:}}
+    {{elif "irs_ireport" in request.vars.caller:}}
             // If coming from the IR then populate defaults for the fields & Hide unnecessary rows
             var location_name = self.parent.$('#ir_report_name').val();
             if (location_name) {

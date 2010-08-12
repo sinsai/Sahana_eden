@@ -213,7 +213,7 @@ if deployment_settings.has_module(module):
             school_district_id,
             Field("name"),
             Field("code", "integer"),
-            Field("union_council", "integer"),
+            Field("union_council", db.gis_location),
             Field("pf", "integer"),
             Field("rooms_occupied", "integer"),
             Field("families_settled", "integer"),
@@ -236,6 +236,13 @@ if deployment_settings.has_module(module):
     table.name.label = T("Name of School")
     table.code.label = T("School Code")
     table.union_council.label = T("Union Council")
+    table.union_council.requires = IS_NULL_OR(IS_ONE_OF(db(db.gis_location.level == "L3"), "gis_location.id", repr_select, sort=True))
+    table.union_council.represent = lambda id: shn_gis_location_represent(id)
+    table.union_council.comment = A(ADD_LOCATION,
+                                       _class="colorbox",
+                                       _href=URL(r=request, c="gis", f="location", args="create", vars=dict(format="popup")),
+                                       _target="top",
+                                       _title=ADD_LOCATION)
     table.pf.label = "PF"
     table.rooms_occupied.label = T("No of Rooms Occupied By Flood Affectees")
     table.families_settled.label = T("No of Families Settled in the Schools")

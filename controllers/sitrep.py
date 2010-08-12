@@ -82,6 +82,11 @@ def freport():
 def assessment():
     "REST Controller"
     resource = request.function
+    tablename = "%s_%s" % (module, resource)
+    table = db[tablename]
+
+    # Villages only
+    table.location_id.requires = IS_NULL_OR(IS_ONE_OF(db(db.gis_location.level == "L4"), "gis_location.id", repr_select, sort=True))
 
     response.s3.pagination = True
 
@@ -97,7 +102,18 @@ def assessment():
 def school_district():
     "REST Controller"
     resource = request.function
+    tablename = "%s_%s" % (module, resource)
+    table = db[tablename]
 
+    # Districts only
+    table.location_id.requires = IS_NULL_OR(IS_ONE_OF(db(db.gis_location.level == "L2"), "gis_location.id", repr_select, sort=True))
+    table.location_id.comment = DIV(A(ADD_LOCATION,
+                                       _class="colorbox",
+                                       _href=URL(r=request, c="gis", f="location", args="create", vars=dict(format="popup")),
+                                       _target="top",
+                                       _title=ADD_LOCATION),
+                                     DIV( _class="tooltip",
+                                       _title=Tstr("District") + "|" + Tstr("The District for this Report."))),
     response.s3.pagination = True
 
     # Post-processor

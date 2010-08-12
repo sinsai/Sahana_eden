@@ -417,7 +417,8 @@ def location():
         #filters.append((db.gis_location.id == db.gis_location_to_feature_group.location_id) &
         #    (db.gis_location_to_feature_group.feature_group_id == db.gis_feature_group.id) & (db.gis_feature_group.name.like(fgroup)))
 
-    parent = _vars.get("parent", None)
+    parent = _vars.get("parent_", None)
+    # Don't use 'parent' as the var as otherwise this will be triggered during form submission
     if parent:
         # Can't do this using a JOIN in DAL syntax
         # .belongs() not GAE-compatible!

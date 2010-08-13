@@ -211,9 +211,9 @@ def question():
         11:T("Date and/or Time"),
 #        12:T("Image"),
 #        13:T("Descriptive Text (e.g., Prose, etc)"),
-#        14:T("Location"),
-#        15:T("Organisation"),
-#        16:T("Person"),
+        14:T("Location"),
+        15:T("Organisation"),
+        16:T("Person"),
 ##        16:T("Custom Database Resource (e.g., anything defined as a resource in Sahana)")
     }
 
@@ -286,8 +286,66 @@ def transform_buttons(output,save = None, prev = None, next = None, finish = Non
             add_buttons(form,save,prev,next,finish,cancel)
     return output
 
-def check_comments(allow_comments,text):
-    ret = None
-    if allow_comments:
-        ret = DIV(text,INPUT())
-    return ret
+def get_table_for_template(template_id):
+    """ Returns the table for the given template and if it doesn't exist -- creates and returns that"""
+
+    # get the template first -- we need to get the table name
+    template = db(db.survey_template.id == template_id).select().first()
+    tbl = None
+    if template:
+        # now let's check if a table exists.
+        if template.table_name in db.tables:
+            tbl = eval(template.table_name)
+        else:
+            fields = [] # A list of Fields representing the questions
+            questions = db((db.survey_template_link.survey_template_id == template_id) & \
+            (db.survey_question.id == db.survey_template_link.survey_question_id)).select(db.survey_question.ALL)
+
+            # for each question, depending on its type create a Field
+            for question in questions:
+                type = question.question_type
+
+                if type == 6: # Single TF -- simple for now -- will introduce more types later.
+                    fields.append(Field("question_%s" % (question.id),label=question.name))
+
+                elif type  == 9:
+                    fields.append(Field("question_%s" % (question.id), "text", label=question.name))
+
+                elif type == 10:
+                    fields.append(Field("question_%s" % (question.id),"integer",label=question.name))
+
+                elif type == 11:
+                    fields.append(Field("question_%s" % (question.id), "datetime",label=question.name))
+
+                    
+                elif type == 14:
+                    field.append(location_id,label=question.name)
+
+                elif type == 15:
+                    field.append(organisation_id)
+
+                elif type == 16:
+                    field.append(person_id)
+
+            tbl = db.define_table(uuidstamp,deletion_status,authorstamp,
+                                  "survey_template_%s" % (template_id),
+                                  Field("series_id",db.survey_series),
+                                  fields)
+
+            # now add the table name to the template record so we can reference it later.
+            db(db.survey_template.id == template_id).update(table_name="survey_template_%s" % (template.id))
+            db.commit()
+
+    return tbl # finally we return the newly created or existing table.
+
+
+
+
+
+
+
+
+
+            
+
+    

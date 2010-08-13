@@ -13,9 +13,10 @@ module = "survey"
 
 # Will populate later on.
 response.menu_options = [
-    [T('Home'), False, URL(r=request, f='index')],
-    [T('Create Survey'), False, URL(r=request, f='template', args='create')]]    
-
+    [T("Surveys"), False, URL(r=request, f="template"),[
+        [T("List"), False, URL(r=request, f="template")],
+        [T("Add"), False, URL(r=request, f="template", args="create")]
+    ]]]
 
 def template_link():
     response.s3.prep = response.s3.prep = lambda jr: jr.representation in ("xml", "json") and True or False

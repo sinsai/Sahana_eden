@@ -249,7 +249,7 @@ s3.crud_strings[tablename] = Storage(
 
 # Reusable field for other tables to reference
 office_id = db.Table(None, "office_id",
-            FieldS3("office_id", db.org_office, sortby="name",
+            FieldS3("office_id", db.org_office, sortby="default/indexname",
                 requires = IS_NULL_OR(IS_ONE_OF(db, "org_office.id", "%(name)s")),
                 represent = lambda id: (id and [db(db.org_office.id == id).select(db.org_office.name, limitby=(0, 1)).first().name] or ["None"])[0],
                 label = T("Office"),
@@ -288,14 +288,14 @@ def shn_donor_represent(donor_ids):
 
 ADD_DONOR = Tstr("Add Donor")
 donor_id = db.Table(None, "donor_id",
-            FieldS3("donor_id", db.org_organisation, sortby="name",
-                requires = IS_NULL_OR(IS_ONE_OF(db, "org_organisation.id", "%(name)s", multiple=True, filterby="type", filter_opts=[4])),
-                represent = shn_donor_represent,
-                label = T("Donor"),
-                comment = DIV(A(ADD_DONOR, _class="colorbox", _href=URL(r=request, c="org", f="organisation", args="create", vars=dict(format="popup", child="donor_id")), _target="top", _title=ADD_DONOR),
-                          DIV( _class="tooltip", _title=ADD_DONOR + "|" + Tstr("The Donor(s) for this project. Multiple values can be selected by holding down the 'Control' key."))),
-                ondelete = "RESTRICT"
-                ))
+                    FieldS3("donor_id", sortby="name",
+                    requires = IS_NULL_OR(IS_ONE_OF(db, "org_organisation.id", "%(name)s", multiple=True, filterby="type", filter_opts=[4])),
+                    represent = shn_donor_represent,
+                    label = T("Donor"),
+                    comment = DIV(A(ADD_DONOR, _class="colorbox", _href=URL(r=request, c="org", f="organisation", args="create", vars=dict(format="popup", child="donor_id")), _target="top", _title=ADD_DONOR),
+                              DIV( _class="tooltip", _title=ADD_DONOR + "|" + Tstr("The Donor(s) for this project. Multiple values can be selected by holding down the 'Control' key."))),
+                    ondelete = "RESTRICT"
+                   ))
 
 # -----------------------------------------------------------------------------
 # Projects:

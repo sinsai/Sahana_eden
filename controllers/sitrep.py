@@ -45,8 +45,7 @@ def maps():
 
     """ Show a Map of all Flood Reports """
 
-    feature_class_id = db(db.gis_feature_class.name == "Report").select(db.gis_feature_class.id, limitby=(0, 1)).first().id
-    reports = db(db.gis_location.feature_class_id == feature_class_id).select()
+    reports = db(db.gis_location.id == db.sitrep_freport.location_id).select()
     popup_url = URL(r=request, f="freport", args="read.popup?freport.location_id=")
     map = gis.show_map(feature_queries = [{"name":Tstr("Flood Reports"), "query":reports, "active":True, "popup_url": popup_url}], window=True)
 
@@ -172,13 +171,21 @@ def shn_sitrep_rheader(r, tabs=[]):
             location = report.location_id
             if location:
                 location = shn_gis_location_represent(location)
+            doc_url = URL(r=request, f="download", args=[report.document])
+            try:
+                doc_name, file = r.table.document.retrieve(report.document)
+                if hasattr(file, "close"):
+                    file.close()
+            except:
+                doc_name = report.document
             rheader = DIV(TABLE(
                             TR(
-                                TH(T("Title: ")), report.name,
-                                TH(T("Location: ")), location),
+                                TH(T("Location: ")), location,
+                                TH(T("Date: ")), report.datetime
+                              ),
                             TR(
-                                TH(T("Reported By: ")), report.reported_by,
-                                TH(T("Date: ")), report.date)
+                                TH(T("Document: ")), A(doc_name, _href=doc_url)
+                              )
                             ),
                           rheader_tabs)
 
@@ -197,9 +204,11 @@ def shn_sitrep_rheader(r, tabs=[]):
 
             rheader = DIV(TABLE(
                             TR(
-                                TH(T("Date: ")), report.date),
+                                TH(T("Date: ")), report.date
+                              ),
                             TR(
-                                TH(T("Document: ")), A(doc_name, _href=doc_url)),
+                                TH(T("Document: ")), A(doc_name, _href=doc_url)
+                              )
                             ),
                           rheader_tabs)
 

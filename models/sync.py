@@ -50,6 +50,6 @@ tablename = "%s_%s" % (module, resource)
 table = db.define_table(tablename,
                 Field('uuid', length=36), # different from reusable uuidstamp: uuid of remote system we synced with
                 Field('function', 'string'),
-                Field('timestamp', 'datetime'), # different from reusable timestamp
+                Field('timestmp', 'datetime'), # different from reusable field ('timestamp' is a reserved word in Postgres)
                 Field('format', 'string'),
                 migrate=migrate)

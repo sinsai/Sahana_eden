@@ -5,7 +5,7 @@
 {{for i in synced:}}
  <tr>
  <td>&nbsp;{{=A(T(str(i.id)),_href=URL(r=request, c='appadmin', f='update/db/admin_synclog', args = i.id))}}&nbsp;</td>
- <td>&nbsp;{{=i.timestamp}}&nbsp;</td>
+ <td>&nbsp;{{=i.timestmp}}&nbsp;</td>
  <td>&nbsp;{{=i.uuid}}&nbsp;</td>
  <td>&nbsp;{{=i.function}}&nbsp;</td>
  </tr>
@@ -19,7 +19,7 @@
  {{if i.id not in syncedids:}}
  <tr>
  <td>&nbsp;{{=A(T(str(i.id)),_href=URL(r=request, c='appadmin', f='update/db/admin_synclog', args = i.id))}}&nbsp;</td>
- <td>&nbsp;{{=i.timestamp}}&nbsp;</td>
+ <td>&nbsp;{{=i.timestmp}}&nbsp;</td>
  <td>&nbsp;{{=i.uuid}}&nbsp;</td>
  <td>&nbsp;{{=i.function}}&nbsp;</td>
  </tr>

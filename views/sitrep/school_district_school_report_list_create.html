@@ -1,4 +1,5 @@
-{{extend 'layout.html'}}
+{{extend "layout.html"}}
+{{include "_list_create.html"}}
 <script type="text/javascript">//<![CDATA[
 jQuery(document).ready(function() {
     //Do not make readonly in view of cases where only totals are available
@@ -31,42 +32,3 @@ jQuery(document).ready(function() {
     $("#sitrep_school_report_teachers_affected_male").change(update_teachers);
 });
 //]]></script>
-{{try:}}
- {{=H2(title)}}
-<p>&nbsp;</p>
-{{except:}}
-{{pass}}
-<div id='rheader'>
-{{try:}}
- {{=rheader}}
-<p>&nbsp;</p>
-{{except:}}
- {{pass}}
-</div>
-{{try:}}
- {{=H3(addtitle)}}
-{{except:}}
-{{pass}}
-<div class='form-container'>
-{{try:}}
- {{=form}}
-{{except:}}
-{{pass}}
-</div>
-<p>&nbsp;</p>
-{{try:}}
- {{=H3(subtitle)}}
-{{except:}}
-{{pass}}
-{{include 'formats.html'}}
-<div id='table-container'>
-{{try:}}
- {{=items}}
-{{except:}}
-{{pass}}
-</div>
-{{include 'key.html'}}
-{{include 'pagenav.html'}}
-{{include 'searchbox.html'}}
-{{include 'colorbox.html'}}
-{{include 'dataTables.html'}}

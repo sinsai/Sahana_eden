@@ -146,7 +146,7 @@ if deployment_settings.has_module(module):
             Field("category", "integer"),
             Field("contact"),
             location_id,
-            Field("time", "datetime"),
+            Field("datetime", "datetime"),
             Field("persons_affected", "integer"),
             Field("persons_injured", "integer"),
             Field("persons_deceased", "integer"),
@@ -185,7 +185,7 @@ if deployment_settings.has_module(module):
                         list_fields = [
                             "id",
                             "category",
-                            "time",
+                            "datetime",
                             "location_id"
                         ])
     # -----------------------------------------------------------------------------
@@ -197,14 +197,18 @@ if deployment_settings.has_module(module):
     table = db.define_table(tablename, timestamp, uuidstamp, authorstamp, deletion_status,
             incident_id,
             Field("name"),
+            Field("message", "text"),
             Field("category", "integer"),
             person_id,
             Field("contact"),
+            Field("datetime", "datetime"),
             location_id,
-            Field("time", "datetime"),
             Field("persons_affected", "integer"),
             Field("persons_injured", "integer"),
             Field("persons_deceased", "integer"),
+            Field("source"),
+            Field("source_id"),
+            Field("verified", "boolean"),
             comments,
             migrate=migrate)
 
@@ -212,31 +216,38 @@ if deployment_settings.has_module(module):
     table.category.requires = IS_NULL_OR(IS_IN_SET(irs_incident_type_opts))
     table.category.represent = lambda opt: irs_incident_type_opts.get(opt, opt)
     table.person_id.default = session.auth.user.id if auth.is_logged_in() else None
-
+    
     table.name.label = T("Short Description")
     table.name.comment = SPAN("*", _class="req")
+    table.message.label = T("Message")
+    table.category.label = T("Category")
     table.person_id.label = T("Reporter Name")
+    table.contact.label = T("Contact Details")
+    table.datetime.label = T("Date/Time")
     table.persons_affected.label = T("Number of People Affected")
     table.persons_injured.label = T("Number of People Injured")
     table.persons_deceased.label = T("Number of People Deceased")
+    table.source.label = T("Source")
+    table.source_id.label = T("Source ID")
+    table.verified.label = T("Verified?")
 
     # CRUD strings
-    ADD_REPORT = T("Add Report")
-    LIST_REPORTS = T("List Reports")
+    ADD_INC_REPORT = T("Add Incident Report")
+    LIST_INC_REPORTS = T("List Incident Reports")
     s3.crud_strings[tablename] = Storage(
-        title_create = ADD_REPORT,
-        title_display = T("Report Details"),
-        title_list = LIST_REPORTS,
-        title_update = T("Edit Report"),
-        title_search = T("Search Reports"),
-        subtitle_create = T("Add New Report"),
-        subtitle_list = T("Reports"),
-        label_list_button = LIST_REPORTS,
-        label_create_button = ADD_REPORT,
-        msg_record_created = T("Report added"),
-        msg_record_modified = T("Report updated"),
-        msg_record_deleted = T("Report deleted"),
-        msg_list_empty = T("No Reports currently registered"))
+        title_create = ADD_INC_REPORT,
+        title_display = T("Incident Report Details"),
+        title_list = LIST_INC_REPORTS,
+        title_update = T("Edit Incident Report"),
+        title_search = T("Search Incident Reports"),
+        subtitle_create = T("Add New Incident Report"),
+        subtitle_list = T("Incident Reports"),
+        label_list_button = LIST_INC_REPORTS,
+        label_create_button = ADD_INC_REPORT,
+        msg_record_created = T("Incident Report added"),
+        msg_record_modified = T("Incident Report updated"),
+        msg_record_deleted = T("Incident Report deleted"),
+        msg_list_empty = T("No Incident Reports currently registered"))
 
     s3xrc.model.add_component(module, resource,
                               multiple = True,

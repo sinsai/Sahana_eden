@@ -70,11 +70,11 @@ def setting():
 @auth.requires_login()
 def history():
     "Shows history of database synchronizations"
-    title = T('Automatic Database Synchronization History')
+    title = T("Automatic Database Synchronization History")
     #http://groups.google.com/group/web2py/browse_thread/thread/cc6180d335b14d62/c78affba95fcd4b5?lnk=gst&q=database+selection+unique#c78affba95fcd4b5
     #there is no good way of avoiding this, we can't restrict 'distinct' to fewer attributes
-    history = db().select(db[logtable].ALL, orderby=db[logtable].timestamp)
-    functions = ['getdata', 'putdata'] #as of two, only two funtions require for true syncing
+    history = db().select(db[logtable].ALL, orderby=db[logtable].timestmp)
+    functions = ["getdata", "putdata"] #as of two, only two functions require for true syncing
     synced = {}
     for i in history:
         synced[i.uuid + i.function] = i
@@ -84,7 +84,7 @@ def history():
     synced = synced.values()
     syncedids = [i.id for i in synced]
     # Sort by time
-    timestamps = [i.timestamp for i in synced]
+    timestamps = [i.timestmp for i in synced]
 
     # insertion_sort
     for i in range(1, len(timestamps)):
@@ -292,8 +292,8 @@ def putdata(uuid, username, password, nicedbdump):
     # Logging (not auditing)
     db[logtable].insert(
         uuid=uuid,
-        function='putdata',
-        timestamp=request.utcnow,
+        function="putdata",
+        timestmp=request.utcnow,
         )
 
     return True
@@ -304,15 +304,15 @@ def putdata(uuid, username, password, nicedbdump):
 @service.xml
 @service.jsonrpc
 @service.xmlrpc
-def getdata(uuid, username, password, timestamp = None):
+def getdata(uuid, username, password, timestmp = None):
     """
     Export data using webservices
     This function will never be called by foreign service, so it doesn't require authentication, but for the sake of API, we add this facility
-    http://localhost:8000/sahana/sync/call/json/getdata?timestamp=0&uuid=myuuid&username=user@domain.com&password=mypassword
+    http://localhost:8000/sahana/sync/call/json/getdata?timestmp=0&uuid=myuuid&username=user@domain.com&password=mypassword
     If no timestamp is passed, system will return new data since the last sync operation
     """
 
-    if not IS_DATETIME(timestamp):
+    if not IS_DATETIME(timestmp):
         return "invalid call -- time?"
 
     # Authentication using username and password unless on localhost
@@ -323,15 +323,15 @@ def getdata(uuid, username, password, timestamp = None):
 
     #this is buggy, check it
     #timestamp determination
-    if timestamp == None:
-        lastsynctime = db(db[logtable].uuid == uuid).select(db[logtable].timestamp, orderby=~db[logtable].id)
+    if timestmp == None:
+        lastsynctime = db(db[logtable].uuid == uuid).select(db[logtable].timestmp, orderby=~db[logtable].id)
         if len(lastsynctime) == 0:
             # There is no sync operation with this uuid
             # so return everything
-            timestamp = 0
+            timestmp = 0
         else:
             # The date since last sync
-            timestamp = lastsynctime[0]
+            timestmp = lastsynctime[0]
 
     tables = [['budget', 'item'],
             ['budget', 'kit'],
@@ -347,7 +347,7 @@ def getdata(uuid, username, password, timestamp = None):
         _table = '%s_%s' % (module, resource)
         table = db[_table]
         query = shn_accessible_query('read', table)
-        query = query & (db[_table].modified_on > timestamp)
+        query = query & (db[_table].modified_on > timestmp)
         sqltabledump = db(query).select(db[_table].ALL)
         nicetabledump = []
         nicetabledump.append(_table)
@@ -364,8 +364,8 @@ def getdata(uuid, username, password, timestamp = None):
     # Logging (not auditing)
     db[logtable].insert(
         uuid=uuid,
-        function='getdata',
-        timestamp=request.utcnow,
+        function="getdata",
+        timestmp=request.utcnow,
         )
 
     return nicedbdump

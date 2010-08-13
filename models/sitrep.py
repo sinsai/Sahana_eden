@@ -27,6 +27,7 @@ if deployment_settings.has_module(module):
                             migrate=migrate)
 
     table.name.requires = IS_NOT_EMPTY()
+    table.name.comment = SPAN("*", _class="req")
 
     # CRUD strings
     ADD_RIVER = T("Add River")
@@ -60,10 +61,13 @@ if deployment_settings.has_module(module):
     tablename = "%s_%s" % (module, resource)
     table = db.define_table(tablename,
                             timestamp, uuidstamp, authorstamp, deletion_status,
-                            Field("time", "datetime"),
+                            location_id,
+                            Field("datetime", "datetime"),
                             document,
                             comments,
                             migrate=migrate)
+
+    table.datetime.label = T("Date/Time")
 
     # CRUD strings
     ADD_FLOOD_REPORT = T("Add Flood Report")
@@ -85,13 +89,19 @@ if deployment_settings.has_module(module):
 
     freport_id = db.Table(None, "freport_id",
                           Field("freport_id", table,
-                                requires = IS_NULL_OR(IS_ONE_OF(db, "sitrep_freport.id", "%(time)s")),
-                                represent = lambda id: (id and [db(db.sitrep_freport.id == id).select(db.sitrep_freport.time, limitby=(0, 1)).first().time] or ["None"])[0],
+                                requires = IS_NULL_OR(IS_ONE_OF(db, "sitrep_freport.id", "%(datetime)s")),
+                                represent = lambda id: (id and [db(db.sitrep_freport.id == id).select(db.sitrep_freport.datetime, limitby=(0, 1)).first().datetime] or ["None"])[0],
                                 label = T("Flood Report"),
                                 ondelete = "RESTRICT"))
 
     # -----------------------------------------------------------------------------
     # Locations
+    freport_flowstatus_opts = {
+        1:T("Normal"),
+        2:T("High"),
+        3:T("Very High"),
+        4:T("Low")
+    }
     resource = "freport_location"
     tablename = "%s_%s" % (module, resource)
     table = db.define_table(tablename,
@@ -100,10 +110,14 @@ if deployment_settings.has_module(module):
                             river_id,
                             location_id,
                             Field("discharge", "integer"),
+                            Field("flowstatus", "integer"),
                             comments,
                             migrate=migrate)
 
     table.discharge.label = T("Discharge (cusecs)")
+    table.flowstatus.label = T("Flow Status")
+    table.flowstatus.requires = IS_NULL_OR(IS_IN_SET(freport_flowstatus_opts))
+    table.flowstatus.represent = lambda opt: freport_flowstatus_opts.get(opt, opt)
 
     # CRUD strings
     ADD_LOCATION = T("Add Location")

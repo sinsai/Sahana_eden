@@ -153,7 +153,7 @@ class AuthS3(Auth):
                     Field("reset_password_key", length=512,
                             writable=False, readable=False, default="",
                             label=self.messages.label_registration_key),
-                    Field("timestamp", "datetime", writable=False,
+                    Field("timestmp", "datetime", writable=False,
                             readable=False, default=""),
                     migrate=\
                         self.__get_migrate(self.settings.table_user_name, migrate))
@@ -185,7 +185,7 @@ class AuthS3(Auth):
                     Field("reset_password_key", length=512,
                             writable=False, readable=False, default="",
                             label=self.messages.label_registration_key),
-                    Field("timestamp", "datetime", writable=False,
+                    Field("timestmp", "datetime", writable=False,
                             readable=False, default=""),
                     migrate=\
                         self.__get_migrate(self.settings.table_user_name, migrate))

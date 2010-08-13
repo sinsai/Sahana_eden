@@ -506,7 +506,7 @@ s3xrc.model.configure(table,
 resource = "group_membership"
 tablename = "%s_%s" % (module, resource)
 table = db.define_table(tablename,
-                        uuidstamp, authorstamp, timestamp, deletion_status,
+                        timestamp, uuidstamp, authorstamp, deletion_status,
                         group_id,
                         person_id,
                         Field("group_head", "boolean", default=False),

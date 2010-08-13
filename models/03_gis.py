@@ -503,8 +503,8 @@ table = db.gis_location
 table.name_dummy.widget = name_dummy_element.widget
 #table.name_dummy.represent = name_dummy_element.represent
 def gis_location_onaccept(form):
-    if session.rcvars:
-        name_dummy_element.onaccept(db, session.rcvars.gis_location, request)
+    #if session.rcvars:
+        #name_dummy_element.onaccept(db, session.rcvars.gis_location, request)
     # Include the normal onaccept
     gis.update_location_tree()
 s3xrc.model.configure(table, onaccept=gis_location_onaccept)

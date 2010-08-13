@@ -936,13 +936,15 @@ class S3Resource(object):
 
         tablename = r.component and r.component.tablename or r.tablename
 
-        xml_formats = self.__manager.xml_export_formats
-        json_formats = self.__manager.json_export_formats
+        xml_export_formats = self.__manager.xml_export_formats
+        json_export_formats = self.__manager.json_export_formats
+        xml_import_formats = self.__manager.xml_import_formats
+        json_import_formats = self.__manager.json_import_formats
 
         if method is None or method in ("read", "display"):
             authorised = permit("read", tablename)
-            if r.representation in xml_formats or \
-               r.representation in json_formats:
+            if r.representation in xml_export_formats or \
+               r.representation in json_export_formats:
                 method = "export_tree"
             elif r.component:
                 if r.multiple and not r.component_id:
@@ -967,8 +969,8 @@ class S3Resource(object):
         elif method in ("create", "update"):
             authorised = permit(method, tablename)
             # TODO: Add user confirmation here:
-            if r.representation in xml_formats or \
-               r.representation in json_formats:
+            if r.representation in xml_import_formats or \
+               r.representation in json_import_formats:
                 method = "import_tree"
 
         elif method == "delete":

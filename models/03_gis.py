@@ -501,9 +501,10 @@ name_dummy_element = S3MultiSelectWidget(db = db,
                                          link_field_name = "location_id")
 table = db.gis_location
 table.name_dummy.widget = name_dummy_element.widget
-#table.name_dummy.represent = name_dummy_element.represent
+table.name_dummy.represent = name_dummy_element.represent
 def gis_location_onaccept(form):
-    if session.rcvars:
+    if session.rcvars and hasattr(name_dummy_element, "onaccept"):
+        # HTML UI, not XML import
         name_dummy_element.onaccept(db, session.rcvars.gis_location, request)
     # Include the normal onaccept
     gis.update_location_tree()

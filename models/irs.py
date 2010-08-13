@@ -1,7 +1,9 @@
 # -*- coding: utf-8 -*-
 
-"""
-    Incident Reporting System - Model
+""" Incident Reporting System - Model
+
+    @author: Sahana Taiwan Team
+
 """
 
 module = "irs"
@@ -141,17 +143,18 @@ if deployment_settings.has_module(module):
     # This is the current status of an Incident
     resource = "incident"
     tablename = "%s_%s" % (module, resource)
-    table = db.define_table(tablename, timestamp, uuidstamp, authorstamp, deletion_status,
-            Field("name"),
-            Field("category", "integer"),
-            Field("contact"),
-            location_id,
-            Field("datetime", "datetime"),
-            Field("persons_affected", "integer"),
-            Field("persons_injured", "integer"),
-            Field("persons_deceased", "integer"),
-            comments,
-            migrate=migrate)
+    table = db.define_table(tablename,
+                            timestamp, uuidstamp, authorstamp, deletion_status,
+                            Field("name"),
+                            Field("category", "integer"),
+                            Field("contact"),
+                            location_id,
+                            Field("datetime", "datetime"),
+                            Field("persons_affected", "integer"),
+                            Field("persons_injured", "integer"),
+                            Field("persons_deceased", "integer"),
+                            comments,
+                            migrate=migrate)
 
     table.name.requires = IS_NOT_EMPTY()
     table.category.requires = IS_NULL_OR(IS_IN_SET(irs_incident_type_opts))
@@ -194,29 +197,30 @@ if deployment_settings.has_module(module):
     # A single incident may generate many reports
     resource = "ireport"
     tablename = "%s_%s" % (module, resource)
-    table = db.define_table(tablename, timestamp, uuidstamp, authorstamp, deletion_status,
-            incident_id,
-            Field("name"),
-            Field("message", "text"),
-            Field("category", "integer"),
-            person_id,
-            Field("contact"),
-            Field("datetime", "datetime"),
-            location_id,
-            Field("persons_affected", "integer"),
-            Field("persons_injured", "integer"),
-            Field("persons_deceased", "integer"),
-            Field("source"),
-            Field("source_id"),
-            Field("verified", "boolean"),
-            comments,
-            migrate=migrate)
+    table = db.define_table(tablename,
+                            timestamp, uuidstamp, authorstamp, deletion_status,
+                            incident_id,
+                            Field("name"),
+                            Field("message", "text"),
+                            Field("category", "integer"),
+                            person_id,
+                            Field("contact"),
+                            Field("datetime", "datetime"),
+                            location_id,
+                            Field("persons_affected", "integer"),
+                            Field("persons_injured", "integer"),
+                            Field("persons_deceased", "integer"),
+                            Field("source"),
+                            Field("source_id"),
+                            Field("verified", "boolean"),
+                            comments,
+                            migrate=migrate)
 
     table.name.requires = IS_NOT_EMPTY()
     table.category.requires = IS_NULL_OR(IS_IN_SET(irs_incident_type_opts))
     table.category.represent = lambda opt: irs_incident_type_opts.get(opt, opt)
     table.person_id.default = session.auth.user.id if auth.is_logged_in() else None
-    
+
     table.name.label = T("Short Description")
     table.name.comment = SPAN("*", _class="req")
     table.message.label = T("Message")
@@ -288,20 +292,20 @@ if deployment_settings.has_module(module):
                             incident_id,
                             Field("datetime", "datetime"),
                             Field("itype", "integer",
-                                requires = IS_IN_SET(irs_assessment_type_opts, zero=None),
-                                default = 1,
-                                label = T("Report Type"),
-                                represent = lambda opt: irs_assessment_type_opts.get(opt, UNKNOWN_OPT)),
+                                  requires = IS_IN_SET(irs_assessment_type_opts, zero=None),
+                                  default = 1,
+                                  label = T("Report Type"),
+                                  represent = lambda opt: irs_assessment_type_opts.get(opt, UNKNOWN_OPT)),
                             Field("event_type", "integer",
-                                requires = IS_IN_SET(irs_event_type_opts, zero=None),
-                                default = 1,
-                                label = T("Event type"),
-                                represent = lambda opt: irs_event_type_opts.get(opt, UNKNOWN_OPT)),
+                                  requires = IS_IN_SET(irs_event_type_opts, zero=None),
+                                  default = 1,
+                                  label = T("Event type"),
+                                  represent = lambda opt: irs_event_type_opts.get(opt, UNKNOWN_OPT)),
                             Field("cause_type", "integer",
-                                requires = IS_IN_SET(irs_cause_type_opts, zero=None),
-                                default = 1,
-                                label = T("Type of cause"),
-                                represent = lambda opt: irs_cause_type_opts.get(opt, UNKNOWN_OPT)),
+                                  requires = IS_IN_SET(irs_cause_type_opts, zero=None),
+                                  default = 1,
+                                  label = T("Type of cause"),
+                                  represent = lambda opt: irs_cause_type_opts.get(opt, UNKNOWN_OPT)),
                             Field("report", "text"),
                             Field("persons_affected", "integer"),
                             Field("persons_injured", "integer"),
@@ -361,10 +365,10 @@ if deployment_settings.has_module(module):
                             incident_id,
                             Field("assessment_id", db.irs_iassessment),
                             Field("type", "integer",
-                                requires = IS_IN_SET(irs_image_type_opts, zero=None),
-                                default = 1,
-                                label = T("Image Type"),
-                                represent = lambda opt: irs_image_type_opts.get(opt, UNKNOWN_OPT)),
+                                  requires = IS_IN_SET(irs_image_type_opts, zero=None),
+                                  default = 1,
+                                  label = T("Image Type"),
+                                  represent = lambda opt: irs_image_type_opts.get(opt, UNKNOWN_OPT)),
                             Field("image", "upload", autodelete=True),
                             #Field("url"),
                             Field("description"),
@@ -412,10 +416,10 @@ if deployment_settings.has_module(module):
                             incident_id,
                             Field("datetime", "datetime"),
                             Field("itype", "integer",
-                                requires = IS_IN_SET(irs_response_type_opts, zero=None),
-                                default = 1,
-                                label = T("Type"),
-                                represent = lambda opt: irs_response_type_opts.get(opt, UNKNOWN_OPT)),
+                                  requires = IS_IN_SET(irs_response_type_opts, zero=None),
+                                  default = 1,
+                                  label = T("Type"),
+                                  represent = lambda opt: irs_response_type_opts.get(opt, UNKNOWN_OPT)),
                             Field("report", "text"),
                             migrate=migrate)
 
@@ -442,5 +446,63 @@ if deployment_settings.has_module(module):
                               joinby = dict(irs_incident="incident_id"),
                               deletable = True,
                               editable = True)
+
+    # -----------------------------------------------------------------------------
+    @auth.shn_requires_membership(1) # must be Administrator
+    def shn_irs_ushahidi_import(r, **attr):
+
+        if r.representation == "html" and \
+           r.name == "ireport" and not r.component and not r.id:
+
+            url = r.request.get_vars.get("url", "http://")
+
+            title = T("Incident Reports")
+            subtitle = T("Import from Ushahidi Instance")
+
+            form = FORM(TABLE(TR(
+                        TH("%s: " % T("URL of the Ushahidi instance")),
+                        INPUT(_type="text", _name="url", _size="40", _value=url,
+                              requires=[IS_URL(), IS_NOT_EMPTY()]),
+                        TD(DIV(SPAN("*", _class="req", _style="padding-right: 5px;")))),
+                        TR("", INPUT(_type="submit", _value="Import"))))
+
+            label_list_btn = shn_get_crud_string(r.tablename, "title_list")
+            list_btn = A(label_list_btn,
+                         _href=r.other(method="", vars=None),
+                         _class="action-btn")
+
+            output = dict(title=title, form=form, subtitle=subtitle, list_btn=list_btn)
+
+            if form.accepts(request.vars, session):
+
+                ireports = r.resource
+                ushahidi = form.vars.url
+
+                template = os.path.join(request.folder, "static", "xslt", "import", "ushahidi.xsl")
+
+                if os.path.exists(template) and ushahidi:
+                    try:
+                        success = ireports.import_xml(ushahidi, template=template)
+                    except:
+                        import sys
+                        e = sys.exc_info()[1]
+                        response.error = e
+                    else:
+                        if success:
+                            response.flash = T("Reports successfully imported.")
+                        else:
+                            response.error = s3xrc.error
+
+
+            response.view = "create.html"
+            return output
+
+        else:
+            raise HTTP(501, BADMETHOD)
+
+    s3xrc.model.set_method(module, "ireport",
+                           method="ushahidi",
+                           action=shn_irs_ushahidi_import)
+
 
     # -----------------------------------------------------------------------------

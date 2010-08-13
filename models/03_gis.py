@@ -488,12 +488,15 @@ tablename = module + "_" + resource
 table = db.define_table(tablename, timestamp, uuidstamp, deletion_status,
                 location_id,
                 Field("name_l10n"),
-                Field("language"),
+                Field("language", "integer"),
                 migrate=migrate)
 table.uuid.requires = IS_NOT_IN_DB(db, '%s.uuid' % tablename)
 table.name_l10n.label = T("Name")
 table.language.requires = IS_IN_SET(gis_location_languages)
+table.language.represent = lambda opt: gis_location_languages.get(opt, UNKNOWN_OPT)
 table.language.label = T("Language")
+
+s3xrc.model.add_component(module, resource, joinby=dict(gis_location="location_id"), multiple=True)
 
 # Multiselect Widget
 name_dummy_element = S3MultiSelectWidget(db = db,
@@ -505,6 +508,16 @@ table.name_dummy.widget = name_dummy_element.widget
 def gis_location_onaccept(form):
     if session.rcvars and hasattr(name_dummy_element, "onaccept"):
         name_dummy_element.onaccept(db, session.rcvars.gis_location, request)
+    else:
+        location_id = form.vars.id
+        table = db.gis_location_name
+        names = db(table.location_id==location_id).select(table.id)
+        if names:
+            ids = [str(name.id) for name in names]
+            #name_dummy = "|%s|" % "|".join(ids)
+            name_dummy = "|".join(ids) # That's not how it should be
+            table = db.gis_location
+            db(table.id==location_id).update(name_dummy=name_dummy)
     # Include the normal onaccept
     gis.update_location_tree()
 s3xrc.model.configure(table, onaccept=gis_location_onaccept)

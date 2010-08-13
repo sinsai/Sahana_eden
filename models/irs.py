@@ -460,7 +460,9 @@ if deployment_settings.has_module(module):
 
             form = FORM(TABLE(TR(
                         TH("%s: " % T("URL of the Ushahidi instance")),
-                        INPUT(_type="text", _name="url", _size="40", _value=url)),
+                        INPUT(_type="text", _name="url", _size="40", _value=url,
+                              requires=[IS_URL(), IS_NOT_EMPTY()]),
+                        TD(DIV(SPAN("*", _class="req", _style="padding-right: 5px;")))),
                         TR("", INPUT(_type="submit", _value="Import"))))
 
             label_list_btn = shn_get_crud_string(r.tablename, "title_list")

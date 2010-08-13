@@ -58,9 +58,9 @@ if deployment_settings.has_module(module):
                              location_id)
 
     # Survey Section
-    resource = "section"
+    resource = "questions"
     tablename = module +"_" + resource
-    section = db.define_table(tablename,name_desc)
+    section = db.define_table(tablename)
 
     # Question options e.g., Row choices, Column Choices, Layout Configuration data, etc...
     resource = "question_options"
@@ -119,7 +119,7 @@ if deployment_settings.has_module(module):
     link_table = db.define_table(tablename,timestamp, uuidstamp, deletion_status, authorstamp,                                 
                                  Field("survey_question_id",db.survey_question),
                                  Field("survey_template_id", db.survey_template),
-                                 Field("survey_section_id", db.survey_section))
+                                 Field("survey_questions_id", db.survey_questions))
     link_table.survey_question_id.requires =IS_NULL_OR(IS_ONE_OF(db, "survey_question.id", "%(name)s"))
 
 

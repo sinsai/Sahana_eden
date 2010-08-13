@@ -16,8 +16,11 @@ response.menu_options = [
     [T("Surveys"), False, URL(r=request, f="template"),[
         [T("List"), False, URL(r=request, f="template")],
         [T("Add"), False, URL(r=request, f="template", args="create")]
+    ]],
+    [T("Survey Series"), False, URL(r=request, f="template"),[
+        [T("List"), False, URL(r=request, f="series")],
+        [T("Add"), False, URL(r=request, f="series", args="create")]
     ]]]
-
 def template_link():
     response.s3.prep = response.s3.prep = lambda jr: jr.representation in ("xml", "json") and True or False
     return shn_rest_controller("survey", "template_link")
@@ -152,7 +155,7 @@ def series():
     # CRUD Strings
     s3.crud_strings[tablename] = Storage(
         title_create = T("Add Survey Series"),
-        title_display = T("Survey Series Details"),
+       title_display = T("Survey Series Details"),
         title_list = T("List Survey Series"),
         title_update = T("Edit Survey Series"),
         subtitle_create = T("Add New Survey Series"),

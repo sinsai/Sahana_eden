@@ -67,6 +67,7 @@ if deployment_settings.has_module(module):
                             comments,
                             migrate=migrate)
 
+    table.document.represent = lambda document, table=table: A(table.document.retrieve(document)[0], _href=URL(r=request, f="download", args=[document]))
     table.datetime.label = T("Date/Time")
 
     # CRUD strings
@@ -197,6 +198,7 @@ if deployment_settings.has_module(module):
                             comments,
                             migrate=migrate)
 
+    table.document.represent = lambda document, table=table: A(table.document.retrieve(document)[0], _href=URL(r=request, f="download", args=[document]))
     table.name.label = T("Title")
     table.location_id.label = T("District")
     table.reported_by.label = T("Reported By")

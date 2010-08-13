@@ -292,11 +292,15 @@ def get_table_for_template(template_id):
 
     # get the template first -- we need to get the table name
     template = db(db.survey_template.id == template_id).select().first()
+
     tbl = None
-    if template:
+
+    if template: # avoid blow ups!
+
         # now let's check if a table exists.
         if template.table_name in db.tables:
-            tbl = eval(template.table_name)
+            tbl = eval("db.%s" % (template.table_name))
+
         else:
             fields = [] # A list of Fields representing the questions
             questions = db((db.survey_template_link.survey_template_id == template_id) & \
@@ -337,4 +341,5 @@ def get_table_for_template(template_id):
             db(db.survey_template.id == template_id).update(table_name="survey_template_%s" % (template.id))
             db.commit()
 
-    return tbl # finally we return the newly created or existing table.
+    # finally we return the newly created or existing table.
+    return tbl

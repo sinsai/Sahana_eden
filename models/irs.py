@@ -146,7 +146,7 @@ if deployment_settings.has_module(module):
             Field("category", "integer"),
             Field("contact"),
             location_id,
-            Field("time", "datetime"),
+            Field("datetime", "datetime"),
             Field("persons_affected", "integer"),
             Field("persons_injured", "integer"),
             Field("persons_deceased", "integer"),
@@ -185,7 +185,7 @@ if deployment_settings.has_module(module):
                         list_fields = [
                             "id",
                             "category",
-                            "time",
+                            "datetime",
                             "location_id"
                         ])
     # -----------------------------------------------------------------------------
@@ -201,7 +201,7 @@ if deployment_settings.has_module(module):
             person_id,
             Field("contact"),
             location_id,
-            Field("time", "datetime"),
+            Field("datetime", "datetime"),
             Field("persons_affected", "integer"),
             Field("persons_injured", "integer"),
             Field("persons_deceased", "integer"),
@@ -216,6 +216,7 @@ if deployment_settings.has_module(module):
     table.name.label = T("Short Description")
     table.name.comment = SPAN("*", _class="req")
     table.person_id.label = T("Reporter Name")
+    table.datetime.label = T("Date/Time")
     table.persons_affected.label = T("Number of People Affected")
     table.persons_injured.label = T("Number of People Injured")
     table.persons_deceased.label = T("Number of People Deceased")

@@ -307,7 +307,7 @@ table = db.define_table(tablename,
                         Field("observer", db.pr_person),
                         location_id,
                         Field("location_details"),
-                        Field("time", "datetime"),
+                        Field("datetime", "datetime"), # 'time' is a reserved word in Postgres
                         Field("presence_condition", "integer",
                               requires = IS_IN_SET(pr_presence_condition_opts,
                                                    zero=None),
@@ -338,11 +338,11 @@ table.reporter.comment = shn_person_comment(
         Tstr("Person who is reporting about the presence."))
 table.reporter.ondelete = "RESTRICT"
 
-table.time.requires = IS_UTC_DATETIME(utc_offset=shn_user_utc_offset(), allow_future=False)
-table.time.represent = lambda value: shn_as_local_time(value)
+table.datetime.requires = IS_UTC_DATETIME(utc_offset=shn_user_utc_offset(), allow_future=False)
+table.datetime.represent = lambda value: shn_as_local_time(value)
 
-table.time.label = T("Date/Time")
-table.time.comment = SPAN("*", _class="req")
+table.datetime.label = T("Date/Time")
+table.datetime.comment = SPAN("*", _class="req")
 
 s3xrc.model.add_component(module, resource,
                           multiple=True,
@@ -354,7 +354,7 @@ s3xrc.model.add_component(module, resource,
 s3xrc.model.configure(table,
     list_fields = [
         "id",
-        "time",
+        "time_",
         "location_id",
         "location_details",
         "presence_condition",

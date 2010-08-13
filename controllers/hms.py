@@ -329,7 +329,7 @@ def shn_hms_hrequest_rheader(jr):
                             ),
                         TR(
                             TH(T("Time of Request: ")),
-                            aid_request.timestamp,
+                            aid_request.timestmp,
                             TH(T("Priority: ")),
                             hms_hrequest_priority_opts.get(aid_request.priority, "unknown"),
                             TH(T("Status: ")),

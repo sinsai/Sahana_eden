@@ -828,7 +828,7 @@ table = db.define_table(tablename, timestamp,
 # upload folder needs to be visible to the download() function as well as the upload
 table.file.uploadfolder = os.path.join(request.folder, "uploads/gis_cache")
 
-# Not yet implemented
+# Below tables are not yet implemented
 
 # GIS Styles: SLD
 #db.define_table("gis_style", timestamp,

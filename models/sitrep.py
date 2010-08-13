@@ -60,10 +60,13 @@ if deployment_settings.has_module(module):
     tablename = "%s_%s" % (module, resource)
     table = db.define_table(tablename,
                             timestamp, uuidstamp, authorstamp, deletion_status,
-                            Field("time", "datetime"),
+                            location_id,
+                            Field("datetime", "datetime"),
                             document,
                             comments,
                             migrate=migrate)
+
+    table.datetime.label = T("Date/Time")
 
     # CRUD strings
     ADD_FLOOD_REPORT = T("Add Flood Report")
@@ -85,8 +88,8 @@ if deployment_settings.has_module(module):
 
     freport_id = db.Table(None, "freport_id",
                           Field("freport_id", table,
-                                requires = IS_NULL_OR(IS_ONE_OF(db, "sitrep_freport.id", "%(time)s")),
-                                represent = lambda id: (id and [db(db.sitrep_freport.id == id).select(db.sitrep_freport.time, limitby=(0, 1)).first().time] or ["None"])[0],
+                                requires = IS_NULL_OR(IS_ONE_OF(db, "sitrep_freport.id", "%(datetime)s")),
+                                represent = lambda id: (id and [db(db.sitrep_freport.id == id).select(db.sitrep_freport.datetime, limitby=(0, 1)).first().datetime] or ["None"])[0],
                                 label = T("Flood Report"),
                                 ondelete = "RESTRICT"))
 

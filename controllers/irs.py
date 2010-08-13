@@ -38,6 +38,15 @@ def index():
 def maps():
     "Show a Map of all Incident Reports"
 
+    class MyVirtualFields:
+        def shape(self):
+            return "star"
+        def color(self):
+            return "green"
+        def size(self):
+            return 18
+
+    #db.gis_location.virtualfields.append(MyVirtualFields())
     reports = db(db.gis_location.id == db.irs_ireport.location_id).select()
     popup_url = URL(r=request, f="ireport", args="read.popup?ireport.location_id=")
     map = gis.show_map(feature_queries = [{"name":Tstr("Incident Reports"), "query":reports, "active":True, "popup_url": popup_url}], window=True)

@@ -123,7 +123,7 @@ def shn_rms_rheader(jr):
                                 TH(T("Source Type: ")),
                                 rms_req_source_type.get(aid_request.source_type, T("unknown"))),
                                 TR(TH(T("Time of Request: ")),
-                                aid_request.timestamp,
+                                aid_request.timestmp,
                                 TH(T("Verified: ")),
                                 aid_request.verified),
                                 TR(TH(T("Location: ")),

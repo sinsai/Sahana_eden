@@ -1,7 +1,9 @@
 # -*- coding: utf-8 -*-
 
-"""
-    Situation Reporting Module - Model
+""" Situation Reporting Module - Model
+
+    @author: Fran Boon
+    @see: http://eden.sahanafoundation.org/wiki/Pakistan
 """
 
 module = "sitrep"
@@ -18,10 +20,11 @@ if deployment_settings.has_module(module):
     # Rivers
     resource = "river"
     tablename = "%s_%s" % (module, resource)
-    table = db.define_table(tablename, timestamp, uuidstamp, authorstamp, deletion_status,
-            Field("name"),
-            comments,
-            migrate=migrate)
+    table = db.define_table(tablename,
+                            timestamp, uuidstamp, authorstamp, deletion_status,
+                            Field("name"),
+                            comments,
+                            migrate=migrate)
 
     table.name.requires = IS_NOT_EMPTY()
 
@@ -55,11 +58,12 @@ if deployment_settings.has_module(module):
     # Flood Reports
     resource = "freport"
     tablename = "%s_%s" % (module, resource)
-    table = db.define_table(tablename, timestamp, uuidstamp, authorstamp, deletion_status,
-            Field("time", "datetime"),
-            document,
-            comments,
-            migrate=migrate)
+    table = db.define_table(tablename,
+                            timestamp, uuidstamp, authorstamp, deletion_status,
+                            Field("time", "datetime"),
+                            document,
+                            comments,
+                            migrate=migrate)
 
     # CRUD strings
     ADD_FLOOD_REPORT = T("Add Flood Report")
@@ -78,25 +82,26 @@ if deployment_settings.has_module(module):
         msg_record_modified = T("Flood Report updated"),
         msg_record_deleted = T("Flood Report deleted"),
         msg_list_empty = T("No Flood Reports currently registered"))
-            
+
     freport_id = db.Table(None, "freport_id",
-                        Field("freport_id", table,
-                              requires = IS_NULL_OR(IS_ONE_OF(db, "sitrep_freport.id", "%(time)s")),
-                              represent = lambda id: (id and [db(db.sitrep_freport.id == id).select(db.sitrep_freport.time, limitby=(0, 1)).first().time] or ["None"])[0],
-                              label = T("Flood Report"),
-                              ondelete = "RESTRICT"))
+                          Field("freport_id", table,
+                                requires = IS_NULL_OR(IS_ONE_OF(db, "sitrep_freport.id", "%(time)s")),
+                                represent = lambda id: (id and [db(db.sitrep_freport.id == id).select(db.sitrep_freport.time, limitby=(0, 1)).first().time] or ["None"])[0],
+                                label = T("Flood Report"),
+                                ondelete = "RESTRICT"))
 
     # -----------------------------------------------------------------------------
     # Locations
     resource = "freport_location"
     tablename = "%s_%s" % (module, resource)
-    table = db.define_table(tablename, timestamp, uuidstamp, authorstamp, deletion_status,
-            freport_id,
-            river_id,
-            location_id,
-            Field("discharge", "integer"),
-            comments,
-            migrate=migrate)
+    table = db.define_table(tablename,
+                            timestamp, uuidstamp, authorstamp, deletion_status,
+                            freport_id,
+                            river_id,
+                            location_id,
+                            Field("discharge", "integer"),
+                            comments,
+                            migrate=migrate)
 
     table.discharge.label = T("Discharge (cusecs)")
 
@@ -128,18 +133,19 @@ if deployment_settings.has_module(module):
     # Assessments - WFP
     resource = "assessment"
     tablename = "%s_%s" % (module, resource)
-    table = db.define_table(tablename, timestamp, uuidstamp, authorstamp, deletion_status,
-            location_id,
-            organisation_id,
-            Field("date", "date"),
-            Field("households", "integer"),
-            Field("houses_destroyed", "integer"),
-            Field("houses_damaged", "integer"),
-            Field("crop_losses", "integer"),
-            Field("water_level", "boolean"),
-            Field("crops_affectees", "double"),
-            comments,
-            migrate=migrate)
+    table = db.define_table(tablename,
+                            timestamp, uuidstamp, authorstamp, deletion_status,
+                            location_id,
+                            organisation_id,
+                            Field("date", "date"),
+                            Field("households", "integer"),
+                            Field("houses_destroyed", "integer"),
+                            Field("houses_damaged", "integer"),
+                            Field("crop_losses", "integer"),
+                            Field("water_level", "boolean"),
+                            Field("crops_affectees", "double"),
+                            comments,
+                            migrate=migrate)
 
     table.crop_losses.requires = IS_NULL_OR(IS_INT_IN_RANGE(0, 100))
 
@@ -167,14 +173,15 @@ if deployment_settings.has_module(module):
     # School Districts
     resource = "school_district"
     tablename = "%s_%s" % (module, resource)
-    table = db.define_table(tablename, timestamp, uuidstamp, authorstamp, deletion_status,
-            Field("name"),
-            location_id,
-            Field("reported_by"),
-            Field("date", "date"),
-            document,
-            comments,
-            migrate=migrate)
+    table = db.define_table(tablename,
+                            timestamp, uuidstamp, authorstamp, deletion_status,
+                            Field("name"),
+                            location_id,
+                            Field("reported_by"),
+                            Field("date", "date"),
+                            document,
+                            comments,
+                            migrate=migrate)
 
     table.name.label = T("Title")
     table.location_id.label = T("District")
@@ -209,29 +216,30 @@ if deployment_settings.has_module(module):
     # School Reports
     resource = "school_report"
     tablename = "%s_%s" % (module, resource)
-    table = db.define_table(tablename, timestamp, uuidstamp, authorstamp, deletion_status,
-            school_district_id,
-            Field("name"),
-            Field("code", "integer"),
-            Field("union_council", db.gis_location),
-            Field("pf", "integer"),
-            Field("rooms_occupied", "integer"),
-            Field("families_settled", "integer"),
-            location_id,
-            Field("facilities_food", "integer"),
-            Field("facilities_nfi", "integer"),
-            Field("facilities_hygiene", "integer"),
-            Field("total_affected_male", "integer"),
-            Field("total_affected_female", "integer"),
-            Field("total_affected_total", "integer"),   # Should create a custom validator to calculate totals
-            Field("students_affected_male", "integer"),
-            Field("students_affected_female", "integer"),
-            Field("students_affected_total", "integer"),   # Should create a custom validator to calculate totals
-            Field("teachers_affected_male", "integer"),
-            Field("teachers_affected_female", "integer"),
-            Field("teachers_affected_total", "integer"),   # Should create a custom validator to calculate totals
-            comments,
-            migrate=migrate)
+    table = db.define_table(tablename,
+                            timestamp, uuidstamp, authorstamp, deletion_status,
+                            school_district_id,
+                            Field("name"),
+                            Field("code", "integer"),
+                            Field("union_council", db.gis_location),
+                            Field("pf", "integer"),
+                            Field("rooms_occupied", "integer"),
+                            Field("families_settled", "integer"),
+                            location_id,
+                            Field("facilities_food", "integer"),
+                            Field("facilities_nfi", "integer"),
+                            Field("facilities_hygiene", "integer"),
+                            Field("total_affected_male", "integer"),
+                            Field("total_affected_female", "integer"),
+                            Field("total_affected_total", "integer"),
+                            Field("students_affected_male", "integer"),
+                            Field("students_affected_female", "integer"),
+                            Field("students_affected_total", "integer"),
+                            Field("teachers_affected_male", "integer"),
+                            Field("teachers_affected_female", "integer"),
+                            Field("teachers_affected_total", "integer"),
+                            comments,
+                            migrate=migrate)
 
     table.name.label = T("Name of School")
     table.code.label = T("School Code")
@@ -240,7 +248,7 @@ if deployment_settings.has_module(module):
     table.union_council.represent = lambda id: shn_gis_location_represent(id)
     table.union_council.comment = A(ADD_LOCATION,
                                        _class="colorbox",
-                                       _href=URL(r=request, c="gis", f="location", args="create", vars=dict(format="popup")),
+                                       _href=URL(r=request, c="gis", f="location", args="create", vars=dict(format="popup", child="union_council")),
                                        _target="top",
                                        _title=ADD_LOCATION)
     table.pf.label = "PF"
@@ -250,15 +258,27 @@ if deployment_settings.has_module(module):
     table.facilities_food.label = T("No of Families to whom Food Items are Available")
     table.facilities_nfi.label = T("No of Families to whom Non-Food Items are Available")
     table.facilities_hygiene.label = T("No of Families to whom Hygiene is Available")
+
     table.total_affected_male.label = T("Total No of Male Affectees (Including Students, Teachers & Others)")
+    table.total_affected_male.requires = IS_EMPTY_OR(IS_INT_IN_RANGE(0, 9999999))
     table.total_affected_female.label = T("Total No of Female Affectees (Including Students, Teachers & Others)")
+    table.total_affected_female.requires = IS_EMPTY_OR(IS_INT_IN_RANGE(0, 9999999))
     table.total_affected_total.label = T("Total No of Affectees (Including Students, Teachers & Others)")
+    table.total_affected_total.requires = IS_EMPTY_OR(IS_INT_IN_RANGE(0, 9999999))
+
     table.students_affected_male.label = T("No of Male Students (Primary To Higher Secondary) in the Total Affectees")
+    table.students_affected_male.requires = IS_EMPTY_OR(IS_INT_IN_RANGE(0, 9999999))
     table.students_affected_female.label = T("No of Female Students (Primary To Higher Secondary) in the Total Affectees")
+    table.students_affected_female.requires = IS_EMPTY_OR(IS_INT_IN_RANGE(0, 9999999))
     table.students_affected_total.label = T("Total No of Students (Primary To Higher Secondary) in the Total Affectees")
+    table.students_affected_total.requires = IS_EMPTY_OR(IS_INT_IN_RANGE(0, 9999999))
+
     table.teachers_affected_male.label = T("No of Male Teachers & Other Govt Servants in the Total Affectees")
+    table.teachers_affected_male.requires = IS_EMPTY_OR(IS_INT_IN_RANGE(0, 9999999))
     table.teachers_affected_female.label = T("No of Female Teachers & Other Govt Servants in the Total Affectees")
+    table.teachers_affected_female.requires = IS_EMPTY_OR(IS_INT_IN_RANGE(0, 9999999))
     table.teachers_affected_total.label = T("Total No of Teachers & Other Govt Servants in the Total Affectees")
+    table.teachers_affected_total.requires = IS_EMPTY_OR(IS_INT_IN_RANGE(0, 9999999))
 
     # CRUD strings
     ADD_SCHOOL_REPORT = T("Add School Report")
@@ -283,5 +303,89 @@ if deployment_settings.has_module(module):
                               joinby = dict(sitrep_school_district="school_district_id"),
                               deletable = True,
                               editable = True)
+
+    def shn_sitrep_school_report_onvalidation(form):
+
+        """ School report validation """
+
+        def validate_total(total, female, male):
+
+            error_msg = T("Contradictory values!")
+
+            _total = form.vars.get(total, None)
+            _female = form.vars.get(female, None)
+            _male = form.vars.get(male, None)
+
+            if _total is None:
+                form.vars[total] = int(_female or 0) + int(_male or 0)
+            else:
+                _total = int(_total)
+                if _male is None:
+                    if _female is not None:
+                        _female = int(_female)
+                        if _female <= _total:
+                            form.vars[male] = _total - _female
+                        else:
+                            form.errors[total] = form.errors[female] = error_msg
+                else:
+                    _male = int(_male)
+                    if _female is not None:
+                        _female = int(_female)
+                        if _total != _female + _male:
+                            form.errors[total] = form.errors[female] = form.errors[male] = error_msg
+                    else:
+                        if _male <= _total:
+                            form.vars[female] = _total - _male
+                        else:
+                            form.errors[total] = form.errors[male] = error_msg
+
+        validate_total("total_affected_total",
+                       "total_affected_female",
+                       "total_affected_male")
+
+        validate_total("teachers_affected_total",
+                       "teachers_affected_female",
+                       "teachers_affected_male")
+
+        validate_total("students_affected_total",
+                       "students_affected_female",
+                       "students_affected_male")
+
+
+    s3xrc.model.configure(table,
+        onvalidation = lambda form: shn_sitrep_school_report_onvalidation(form))
+
+
+    # -----------------------------------------------------------------------------
+    def shn_sitrep_report(r, **attr):
+
+        """ Aggregate reports """
+
+        if r.name == "assessment":
+            if r.representation == "html":
+                # Assessment HTML/jqplot reporting here
+                return dict()
+            else:
+                # Other formats?
+                raise HTTP(501, body=BADFORMAT)
+        elif r.name == "school_district":
+            if r.representation == "html":
+                # School reports HTML/jqplot reporting here
+                return dict()
+            else:
+                # Other formats?
+                raise HTTP(501, body=BADFORMAT)
+        else:
+            raise HTTP(501, body=BADMETHOD)
+
+
+    s3xrc.model.set_method(module, "assessment",
+                           method="report",
+                           action=shn_sitrep_report )
+
+    s3xrc.model.set_method(module, "school_district",
+                           method="report",
+                           action=shn_sitrep_report )
+
 
     # -----------------------------------------------------------------------------

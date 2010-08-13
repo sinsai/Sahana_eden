@@ -1818,7 +1818,7 @@ def shn_rest_controller(module, resource, **attr):
         You can still pass a "?format=" to override this.
 
             - B{html}: is the default (including full layout)
-            - B{plain}: is HTML with no layout
+            - B{pjlain}: is HTML with no layout
                 - can be inserted into DIVs via AJAX calls
                 - can be useful for clients on low-bandwidth or small screen sizes
             - B{ext}: is Ext layouts (experimental)

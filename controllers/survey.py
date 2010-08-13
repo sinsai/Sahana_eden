@@ -62,7 +62,7 @@ def template():
 
     return transform_buttons(output,next=True,cancel=True)
 
-def section():
+def section():        
     """
        At this stage, the user the following workflow will be implemented:
 
@@ -103,8 +103,30 @@ def section():
         response.flash= T("Please correct all errors.")
     output.update(form=section)
     return output
+
 def table():
-    return None 
+    # store the necessary information
+    method = request.args(0)
+    template_id = request.args(1)
+    series_id = request.args(2)
+
+    # query for the template to get the table name
+    template = db(db.survey_template.id == template_id).select().first()
+    if not template:
+        response.error = T("A survey template id %s does not exist. Please create one.") % (template_id)
+        return dict()
+
+    # first solely check the series exists.
+    series = db(db.survey_series.id == series_id).select().first()
+    if not series:
+        response.error = T("A survey series with id %s does not exist. Please go back and create one.") % (series_id)
+        return dict()                                       
+    else:
+        # everything is good at this point!
+        question_opts = get_options_for_questions(template_id)
+        table = get_table_for_template(template_id)
+        table.uuid.requires = IS_NOT_IN_DB(db,"%s.uuid" % template.table_name)
+        return shn_rest_controller("survey",table,method=   "create")
 def series():
     """ RESTlike CRUD controller """
     resource = "series"
@@ -302,7 +324,7 @@ def get_table_for_template(template_id):
             tbl = eval("db.%s" % (template.table_name))
 
         else:
-            fields = [] # A list of Fields representing the questions
+            fields = [Field("series_id",db.survey_series)] # A list of Fields representing the questions
             questions = db((db.survey_template_link.survey_template_id == template_id) & \
             (db.survey_question.id == db.survey_template_link.survey_question_id)).select(db.survey_question.ALL)
 
@@ -333,9 +355,7 @@ def get_table_for_template(template_id):
                     field.append(person_id)
 
             tbl = db.define_table(uuidstamp,deletion_status,authorstamp,
-                                  "survey_template_%s" % (template_id),
-                                  Field("series_id",db.survey_series),
-                                  fields)
+                                  "survey_template_%s" % (template_id),fields)
 
             # now add the table name to the template record so we can reference it later.
             db(db.survey_template.id == template_id).update(table_name="survey_template_%s" % (template.id))
@@ -343,3 +363,46 @@ def get_table_for_template(template_id):
 
     # finally we return the newly created or existing table.
     return tbl
+
+def get_options_for_questions(template_id):
+        questions = db((db.survey_template_link.survey_template_id == template_id) & \
+        (db.survey_question.id == db.survey_template_link.survey_question_id)).select(db.survey_question.ALL)
+        opt_map = {}
+        for question in questions:
+            question_type = question.question_type
+            if question_type == 6: # Single TF -- simple for now -- will introduce more types later.
+                opt_map[question.id] = [{"tf_ta_column":question.tf_ta_columns, \
+                                         "allow_comments":question.allow_comments,\
+                                         "comment_display_label":question.comment_display_label,\
+                                         "required":question.required}]
+                
+            elif question_type  == 9:
+                opt_map[question.id] = {"tf_ta_column":question.tf_ta_columns, \
+                                         "ta_rows":question.ta_rows,
+                                         "allow_comments":question.allow_comments,\
+                                         "comment_display_label":question.comment_display_label,\
+                                         "required":question.required}
+            elif question_type == 10:
+                opt_map[question.id] = {"tf_ta_column":question.tf_ta_columns, \
+                                        "allow_comments":question.allow_comments,\
+                                        "comment_display_label":question.comment_display_label,\
+                                        "required":question.required}
+
+            elif question_type == 11:
+                opt_map[question.id] = {"tf_ta_column":question.tf_ta_columns, \
+                                        "allow_comments":question.allow_comments,\
+                                        "comment_display_label":question.comment_display_label,\
+                                        "required":question.required}
+            elif question_type == 14:
+                opt_map[question.id] = {"allow_comments":question.allow_comments,\
+                                         "comment_display_label":question.comment_display_label,\
+                                         "required":question.required}
+            elif question_type == 15:
+                opt_map[question.id] = {"allow_comments":question.allow_comments,\
+                                         "comment_display_label":question.comment_display_label,\
+                                         "required":question.required}
+            elif question_type == 16:
+                opt_map[question.id] = {"allow_comments":question.allow_comments,\
+                                         "comment_display_label":question.comment_display_label,\
+                                         "required":question.required}
+        return opt_map

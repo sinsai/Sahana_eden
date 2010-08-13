@@ -1887,7 +1887,7 @@ OpenLayers.Util.extend( selectPdfControl, {
                     try:
                         # Has a per-feature Vector Shape been provided through VirtualFields?
                         graphicName = feature.shape
-                        if graphicName not in ["circle", "star"]:
+                        if graphicName not in ["circle", "square", "star", "x", "cross", "triangle"]:
                             # Default to Circle
                             graphicName = "circle"
                         try:

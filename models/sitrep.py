@@ -27,6 +27,7 @@ if deployment_settings.has_module(module):
                             migrate=migrate)
 
     table.name.requires = IS_NOT_EMPTY()
+    table.name.comment = SPAN("*", _class="req")
 
     # CRUD strings
     ADD_RIVER = T("Add River")
@@ -95,6 +96,12 @@ if deployment_settings.has_module(module):
 
     # -----------------------------------------------------------------------------
     # Locations
+    freport_flowstatus_opts = {
+        1:T("Normal"),
+        2:T("High"),
+        3:T("Very High"),
+        4:T("Low")
+    }
     resource = "freport_location"
     tablename = "%s_%s" % (module, resource)
     table = db.define_table(tablename,
@@ -103,10 +110,14 @@ if deployment_settings.has_module(module):
                             river_id,
                             location_id,
                             Field("discharge", "integer"),
+                            Field("flowstatus", "integer"),
                             comments,
                             migrate=migrate)
 
     table.discharge.label = T("Discharge (cusecs)")
+    table.flowstatus.label = T("Flow Status")
+    table.flowstatus.requires = IS_NULL_OR(IS_IN_SET(freport_flowstatus_opts))
+    table.flowstatus.represent = lambda opt: freport_flowstatus_opts.get(opt, opt)
 
     # CRUD strings
     ADD_LOCATION = T("Add Location")

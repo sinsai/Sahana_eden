@@ -354,7 +354,7 @@ s3xrc.model.add_component(module, resource,
 s3xrc.model.configure(table,
     list_fields = [
         "id",
-        "time_",
+        "datetime",
         "location_id",
         "location_details",
         "presence_condition",

@@ -281,10 +281,10 @@ def shn_donor_represent(donor_ids):
     if not donor_ids:
         return "None"
     elif "|" in str(donor_ids):
-        donors = [db(db.org_donor.id == id).select(db.org_donor.name, limitby=(0, 1)).first().name for id in donor_ids.split("|") if id]
+        donors = [db(db.org_organisation.id == id).select(db.org_organisation.name, limitby=(0, 1)).first().name for id in donor_ids.split("|") if id]
         return ", ".join(donors)
     else:
-        return db(db.org_donor.id == donor_ids).select(db.org_donor.name, limitby=(0, 1)).first().name
+        return db(db.org_organisation.id == donor_ids).select(db.org_organisation.name, limitby=(0, 1)).first().name
 
 ADD_DONOR = Tstr("Add Donor")
 donor_id = db.Table(None, "donor_id",

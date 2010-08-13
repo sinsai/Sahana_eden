@@ -475,6 +475,12 @@ if deployment_settings.has_module(module):
 
             if form.accepts(request.vars, session):
 
+                import_count = [0]
+                def sync(vector, import_count = import_count):
+                    if vector.tablename == "irs_ireport":
+                        import_count[0] += 1
+                s3xrc.sync_resolve = sync
+
                 ireports = r.resource
                 ushahidi = form.vars.url
 
@@ -489,7 +495,11 @@ if deployment_settings.has_module(module):
                         response.error = e
                     else:
                         if success:
-                            response.flash = T("Reports successfully imported.")
+                            count = import_count[0]
+                            if count:
+                                response.flash = "%s %s" % (import_count[0], T("reports successfully imported."))
+                            else:
+                                response.flash = T("No reports available.")
                         else:
                             response.error = s3xrc.error
 

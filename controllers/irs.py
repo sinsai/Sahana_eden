@@ -12,12 +12,12 @@ if module not in deployment_settings.modules:
 
 # Options Menu (available in all Functions' Views)
 response.menu_options = [
-    [T("Reports"), False, URL(r=request, f="ireport"),[
+    [T("Incident Reports"), False, URL(r=request, f="ireport"),[
         [T("List"), False, URL(r=request, f="ireport")],
         [T("Add"), False, URL(r=request, f="ireport", args="create")],
         #[T("Search"), False, URL(r=request, f="ireport", args="search")]
     ]],
-    [T("Incidents"), False, URL(r=request, f="incident"),[
+    [T("Confirmed Incidents"), False, URL(r=request, f="incident"),[
         [T("List"), False, URL(r=request, f="incident")],
         [T("Add"), False, URL(r=request, f="incident", args="create")],
         #[T("Search"), False, URL(r=request, f="incident", args="search")]

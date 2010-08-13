@@ -232,22 +232,22 @@ if deployment_settings.has_module(module):
     table.verified.label = T("Verified?")
 
     # CRUD strings
-    ADD_REPORT = T("Add Report")
-    LIST_REPORTS = T("List Reports")
+    ADD_INC_REPORT = T("Add Incident Report")
+    LIST_INC_REPORTS = T("List Incident Reports")
     s3.crud_strings[tablename] = Storage(
-        title_create = ADD_REPORT,
-        title_display = T("Report Details"),
-        title_list = LIST_REPORTS,
-        title_update = T("Edit Report"),
-        title_search = T("Search Reports"),
-        subtitle_create = T("Add New Report"),
-        subtitle_list = T("Reports"),
-        label_list_button = LIST_REPORTS,
-        label_create_button = ADD_REPORT,
-        msg_record_created = T("Report added"),
-        msg_record_modified = T("Report updated"),
-        msg_record_deleted = T("Report deleted"),
-        msg_list_empty = T("No Reports currently registered"))
+        title_create = ADD_INC_REPORT,
+        title_display = T("Incident Report Details"),
+        title_list = LIST_INC_REPORTS,
+        title_update = T("Edit Incident Report"),
+        title_search = T("Search Incident Reports"),
+        subtitle_create = T("Add New Incident Report"),
+        subtitle_list = T("Incident Reports"),
+        label_list_button = LIST_INC_REPORTS,
+        label_create_button = ADD_INC_REPORT,
+        msg_record_created = T("Incident Report added"),
+        msg_record_modified = T("Incident Report updated"),
+        msg_record_deleted = T("Incident Report deleted"),
+        msg_list_empty = T("No Incident Reports currently registered"))
 
     s3xrc.model.add_component(module, resource,
                               multiple = True,

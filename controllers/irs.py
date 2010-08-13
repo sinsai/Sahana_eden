@@ -114,6 +114,12 @@ def ireport():
     db.irs_iimage.report_id.readable = \
     db.irs_iimage.report_id.writable = False
 
+    def prep(r):
+        if r.method == "ushahidi":
+            auth.settings.on_failed_authorization = r.other(method="", vars=None)
+        return True
+    response.s3.prep = prep
+
     # Post-processor
     def user_postp(jr, output):
         shn_action_buttons(jr, deletable=False)
@@ -121,10 +127,11 @@ def ireport():
     response.s3.postp = user_postp
 
     output = shn_rest_controller(module, resource,
-                                 rheader=lambda r: shn_irs_rheader(r,
-                                                                   tabs = [(T("Report Details"), None),
-                                                                           (T("Images"), "iimage")  ]),
-                                                                   sticky=True)
+                                 rheader=lambda r: \
+                                         shn_irs_rheader(r,
+                                            tabs = [(T("Report Details"), None),
+                                                    (T("Images"), "iimage")  ]),
+                                            sticky=True)
     return output
 
 

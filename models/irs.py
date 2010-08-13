@@ -448,6 +448,7 @@ if deployment_settings.has_module(module):
                               editable = True)
 
     # -----------------------------------------------------------------------------
+    @auth.shn_requires_membership(1) # must be Administrator
     def shn_irs_ushahidi_import(r, **attr):
 
         if r.representation == "html" and \

@@ -197,14 +197,18 @@ if deployment_settings.has_module(module):
     table = db.define_table(tablename, timestamp, uuidstamp, authorstamp, deletion_status,
             incident_id,
             Field("name"),
+            Field("message", "text"),
             Field("category", "integer"),
             person_id,
             Field("contact"),
-            location_id,
             Field("datetime", "datetime"),
+            location_id,
             Field("persons_affected", "integer"),
             Field("persons_injured", "integer"),
             Field("persons_deceased", "integer"),
+            Field("source"),
+            Field("source_id"),
+            Field("verified", "boolean"),
             comments,
             migrate=migrate)
 
@@ -212,14 +216,20 @@ if deployment_settings.has_module(module):
     table.category.requires = IS_NULL_OR(IS_IN_SET(irs_incident_type_opts))
     table.category.represent = lambda opt: irs_incident_type_opts.get(opt, opt)
     table.person_id.default = session.auth.user.id if auth.is_logged_in() else None
-
+    
     table.name.label = T("Short Description")
     table.name.comment = SPAN("*", _class="req")
+    table.message.label = T("Message")
+    table.category.label = T("Category")
     table.person_id.label = T("Reporter Name")
+    table.contact.label = T("Contact Details")
     table.datetime.label = T("Date/Time")
     table.persons_affected.label = T("Number of People Affected")
     table.persons_injured.label = T("Number of People Injured")
     table.persons_deceased.label = T("Number of People Deceased")
+    table.source.label = T("Source")
+    table.source_id.label = T("Source ID")
+    table.verified.label = T("Verified?")
 
     # CRUD strings
     ADD_REPORT = T("Add Report")

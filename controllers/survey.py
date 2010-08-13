@@ -62,14 +62,6 @@ def template():
 
     return transform_buttons(output,next=True,cancel=True)
 
-def has_dupe_questions(section_id,question_id):
-    question_query = (db.survey_template_link.survey_section_id == section_id) \
-    & (question_id == db.survey_template_link.survey_question_id)
-    questions = db(question_query).select(db.survey_question.ALL)
-    if len(questions) > 1:
-        return True
-    else:
-        return False
 def section():
     """
        At this stage, the user the following workflow will be implemented:
@@ -286,6 +278,15 @@ def transform_buttons(output,save = None, prev = None, next = None, finish = Non
             add_buttons(form,save,prev,next,finish,cancel)
     return output
 
+def has_dupe_questions(section_id,question_id):
+    question_query = (db.survey_template_link.survey_section_id == section_id) \
+    & (question_id == db.survey_template_link.survey_question_id)
+    questions = db(question_query).select(db.survey_question.ALL)
+    if len(questions) > 1:
+        return True
+    else:
+        return False
+
 def get_table_for_template(template_id):
     """ Returns the table for the given template and if it doesn't exist -- creates and returns that"""
 
@@ -337,15 +338,3 @@ def get_table_for_template(template_id):
             db.commit()
 
     return tbl # finally we return the newly created or existing table.
-
-
-
-
-
-
-
-
-
-            
-
-    

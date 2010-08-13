@@ -13,6 +13,10 @@
 
     <xsl:output method="xml"/>
 
+    <xsl:variable name="import_domain">
+        <xsl:value-of select="/response/payload/domain/text()"/>
+    </xsl:variable>
+
     <!-- ****************************************************************** -->
     <xsl:template match="/">
         <xsl:apply-templates select="./response/payload"/>
@@ -20,11 +24,8 @@
 
     <xsl:template match="response/payload">
         <s3xrc>
-            <xsl:variable name="domain">
-                <xsl:value-of select="./domain/text()"/>
-            </xsl:variable>
             <xsl:attribute name="domain">
-                <xsl:value-of select="$domain"/>
+                <xsl:value-of select="$import_domain"/>
             </xsl:attribute>
             <xsl:apply-templates select="./incidents"/>
         </s3xrc>
@@ -40,11 +41,11 @@
                 <resource name="irs_ireport">
 
                     <xsl:attribute name="uuid">
-                        <xsl:value-of select="$domain"/>
+                        <xsl:value-of select="$import_domain"/>
                         <xsl:text>/</xsl:text>
                         <xsl:value-of select="id"/>
                     </xsl:attribute>
-            
+
                     <data field="name">
                         <xsl:value-of select="title"/>
                     </data>
@@ -54,7 +55,7 @@
                     </data>
 
                     <data field="source">
-                        <xsl:value-of select="$domain"/>
+                        <xsl:value-of select="$import_domain"/>
                     </data>
 
                     <data field="source_id">
@@ -79,7 +80,7 @@
 
                     <reference field="location_id" resource="gis_location">
                         <xsl:attribute name="uuid">
-                            <xsl:value-of select="$domain"/>
+                            <xsl:value-of select="$import_domain"/>
                             <xsl:text>/</xsl:text>
                             <xsl:value-of select="location/id"/>
                         </xsl:attribute>
@@ -108,7 +109,7 @@
         <resource name="gis_location">
 
             <xsl:attribute name="uuid">
-                <xsl:value-of select="$domain"/>
+                <xsl:value-of select="$import_domain"/>
                 <xsl:text>/</xsl:text>
                 <xsl:value-of select="id"/>
             </xsl:attribute>

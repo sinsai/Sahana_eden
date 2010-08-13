@@ -473,6 +473,11 @@ def location():
                 table.feature_class_id.readable = table.feature_class_id.writable = False
                 table.marker_id.readable = table.marker_id.writable = False
                 table.addr_street.readable = table.addr_street.writable = False
+            elif "assessment_location" in caller:
+                table.level.default = "L4"
+                table.feature_class_id.readable = table.feature_class_id.writable = False
+                table.marker_id.readable = table.marker_id.writable = False
+                table.addr_street.readable = table.addr_street.writable = False
 
             try:
                 table.feature_class_id.default = fc.id

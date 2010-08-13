@@ -380,6 +380,7 @@ gis_location_hierarchy = {
     "L1":T("Region"),
     "L2":T("District"),
     "L3":T("Town"),
+    "L4":T("Village")
 }
 gis_location_languages = {
     1:T("English"),
@@ -481,13 +482,13 @@ s3xrc.model.configure(table,
                       onvalidation=lambda form: gis.wkt_centroid(form),
                       onaccept=gis.update_location_tree() # Note that this is replaced below by the MultiSelect widget
                       )
-                      
+
 resource = "location_name"
 tablename = module + "_" + resource
 table = db.define_table(tablename, timestamp, uuidstamp, deletion_status,
                 location_id,
                 Field("name_l10n"),
-                Field("language"),     
+                Field("language"),
                 migrate=migrate)
 table.uuid.requires = IS_NOT_IN_DB(db, '%s.uuid' % tablename)
 table.name_l10n.label = T("Name")
@@ -495,8 +496,8 @@ table.language.requires = IS_IN_SET(gis_location_languages)
 table.language.label = T("Language")
 
 # Multiselect Widget
-name_dummy_element = S3MultiSelectWidget(db = db,                                                             
-                                         link_table_name = tablename,                  
+name_dummy_element = S3MultiSelectWidget(db = db,
+                                         link_table_name = tablename,
                                          link_field_name = "location_id")
 table = db.gis_location
 table.name_dummy.widget = name_dummy_element.widget

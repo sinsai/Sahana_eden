@@ -1,7 +1,9 @@
 # -*- coding: utf-8 -*-
 
-"""
-    Incident Reporting System - Controllers
+""" Incident Reporting System - Controllers
+
+    @author: Sahana Taiwan Team
+
 """
 
 module = request.controller
@@ -15,6 +17,7 @@ response.menu_options = [
     [T("Incident Reports"), False, URL(r=request, f="ireport"),[
         [T("List"), False, URL(r=request, f="ireport")],
         [T("Add"), False, URL(r=request, f="ireport", args="create")],
+        [T("Ushahidi"), False, URL(r=request, f="ireport", args="ushahidi")],
         #[T("Search"), False, URL(r=request, f="ireport", args="search")]
     ]],
     [T("Confirmed Incidents"), False, URL(r=request, f="incident"),[
@@ -30,13 +33,20 @@ response.menu_options = [
     [T("Map"), False, URL(r=request, f="maps")],
 ]
 
+
+# -----------------------------------------------------------------------------
 def index():
-    "Custom View"
+
+    """ Custom View """
+
     module_name = deployment_settings.modules[module].name_nice
     return dict(module_name=module_name)
 
+
+# -----------------------------------------------------------------------------
 def maps():
-    "Show a Map of all Incident Reports"
+
+    """ Show a Map of all Incident Reports """
 
     class MyVirtualFields:
         def shape(self):
@@ -53,15 +63,23 @@ def maps():
 
     return dict(map=map)
 
-def incident():
-    "REST Controller"
-    resource = request.function
 
+# -----------------------------------------------------------------------------
+def incident():
+
+    """ Incidents, RESTful controller """
+
+    resource = request.function
     response.s3.pagination = True
 
-    db.irs_iimage.assessment_id.readable = db.irs_iimage.assessment_id.writable = False
-    db.irs_iimage.incident_id.readable = db.irs_iimage.incident_id.writable = False
-    db.irs_iimage.report_id.readable = db.irs_iimage.report_id.writable = False
+    db.irs_iimage.assessment_id.readable = \
+    db.irs_iimage.assessment_id.writable = False
+
+    db.irs_iimage.incident_id.readable = \
+    db.irs_iimage.incident_id.writable = False
+
+    db.irs_iimage.report_id.readable = \
+    db.irs_iimage.report_id.writable = False
 
     # Post-processor
     def user_postp(jr, output):
@@ -70,23 +88,31 @@ def incident():
     response.s3.postp = user_postp
 
     output = shn_rest_controller(module, resource,
-                                 rheader=lambda r: shn_irs_rheader(r,
-                                                                    tabs = [(T("Incident Details"), None),
-                                                                            (T("Reports"), "ireport"),
-                                                                            (T("Images"), "iimage"),
-                                                                            (T("Assessments"), "iassessment"),
-                                                                            (T("Response"), "iresponse")]),
-                                                                    sticky=True)
+                                 rheader=lambda r: \
+                                         shn_irs_rheader(r,
+                                            tabs = [(T("Incident Details"), None),
+                                                    (T("Reports"), "ireport"),
+                                                    (T("Images"), "iimage"),
+                                                    (T("Assessments"), "iassessment"),
+                                                    (T("Response"), "iresponse")]),
+                                            sticky=True)
+
     return output
 
+
+# -----------------------------------------------------------------------------
 def ireport():
-    "REST Controller"
+
+    """ Incident Reports, RESTful controller """
+
     resource = request.function
-
-    db.irs_iimage.assessment_id.readable = db.irs_iimage.assessment_id.writable = False
-    db.irs_iimage.report_id.readable = db.irs_iimage.report_id.writable = False
-
     response.s3.pagination = True
+
+    db.irs_iimage.assessment_id.readable = \
+    db.irs_iimage.assessment_id.writable = False
+
+    db.irs_iimage.report_id.readable = \
+    db.irs_iimage.report_id.writable = False
 
     # Post-processor
     def user_postp(jr, output):
@@ -101,14 +127,20 @@ def ireport():
                                                                    sticky=True)
     return output
 
+
+# -----------------------------------------------------------------------------
 def iassessment():
-    "REST Controller"
+
+    """ Incident Assessment, RESTful controller """
+
     resource = request.function
-
-    db.irs_iimage.assessment_id.readable = db.irs_iimage.assessment_id.writable = False
-    db.irs_iimage.report_id.readable = db.irs_iimage.report_id.writable = False
-
     response.s3.pagination = True
+
+    db.irs_iimage.assessment_id.readable = \
+    db.irs_iimage.assessment_id.writable = False
+
+    db.irs_iimage.report_id.readable = \
+    db.irs_iimage.report_id.writable = False
 
     # Post-processor
     def user_postp(jr, output):
@@ -117,13 +149,19 @@ def iassessment():
     response.s3.postp = user_postp
 
     output = shn_rest_controller(module, resource,
-                                 rheader=lambda r: shn_irs_rheader(r,
-                                                                   tabs = [(T("Assessment Details"), None),
-                                                                           (T("Images"), "iimage")  ]),
-                                                                   sticky=True)
+                                 rheader=lambda r: \
+                                         shn_irs_rheader(r,
+                                            tabs = [(T("Assessment Details"), None),
+                                                    (T("Images"), "iimage")  ]),
+                                            sticky=True)
+
     return output
 
+
+# -----------------------------------------------------------------------------
 def shn_irs_rheader(r, tabs=[]):
+
+    """ Resource Headers for IRS """
 
     if r.representation == "html":
         rheader_tabs = shn_rheader_tabs(r, tabs)
@@ -178,5 +216,9 @@ def shn_irs_rheader(r, tabs=[]):
                       rheader_tabs)
 
         return rheader
+
     else:
         return None
+
+
+# -----------------------------------------------------------------------------

@@ -308,28 +308,28 @@ def get_table_for_template(template_id):
 
             # for each question, depending on its type create a Field
             for question in questions:
-                type = question.question_type
+                question_type = question.question_type
 
-                if type == 6: # Single TF -- simple for now -- will introduce more types later.
+                if question_type == 6: # Single TF -- simple for now -- will introduce more types later.
                     fields.append(Field("question_%s" % (question.id),label=question.name))
 
-                elif type  == 9:
+                elif question_type  == 9:
                     fields.append(Field("question_%s" % (question.id), "text", label=question.name))
 
-                elif type == 10:
+                elif question_type == 10:
                     fields.append(Field("question_%s" % (question.id),"integer",label=question.name))
 
-                elif type == 11:
+                elif question_type == 11:
                     fields.append(Field("question_%s" % (question.id), "datetime",label=question.name))
 
                     
-                elif type == 14:
+                elif question_type == 14:
                     field.append(location_id,label=question.name)
 
-                elif type == 15:
+                elif question_type == 15:
                     field.append(organisation_id)
 
-                elif type == 16:
+                elif question_type == 16:
                     field.append(person_id)
 
             tbl = db.define_table(uuidstamp,deletion_status,authorstamp,

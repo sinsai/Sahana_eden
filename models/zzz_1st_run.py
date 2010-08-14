@@ -618,7 +618,7 @@ if empty:
         )
         table.insert(
             uuid = "www.sahanafoundation.org/GIS-FEATURE-GROUP-PROGRAMME",
-            name = "Programme",
+            name = "Programmes",
         )
         table.insert(
             uuid = "www.sahanafoundation.org/GIS-FEATURE-GROUP-HOSPITALS",
@@ -685,11 +685,11 @@ if empty:
             feature_class_id = db(db.gis_feature_class.name == "School").select(db.gis_feature_class.id, limitby=(0, 1)).first().id,
         )
         table.insert(
-            feature_group_id = db(db.gis_feature_group.name == "Programme").select(db.gis_feature_group.id, limitby=(0, 1)).first().id,
+            feature_group_id = db(db.gis_feature_group.name == "Programmes").select(db.gis_feature_group.id, limitby=(0, 1)).first().id,
             feature_class_id = db(db.gis_feature_class.name == "Food").select(db.gis_feature_class.id, limitby=(0, 1)).first().id,
         )
         table.insert(
-            feature_group_id = db(db.gis_feature_group.name == "Programme").select(db.gis_feature_group.id, limitby=(0, 1)).first().id,
+            feature_group_id = db(db.gis_feature_group.name == "Programmes").select(db.gis_feature_group.id, limitby=(0, 1)).first().id,
             feature_class_id = db(db.gis_feature_class.name == "Water").select(db.gis_feature_class.id, limitby=(0, 1)).first().id,
         )
         table.insert(

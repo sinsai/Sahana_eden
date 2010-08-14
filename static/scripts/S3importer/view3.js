@@ -171,6 +171,8 @@ function view3(importsheet)
 									
 									if(resource_fields.field[k]['@type'].substring(0,9) == 'reference')
 									{
+										if(resource_fields.field[k]['@type'] == 'reference s3_source')
+											continue;
 										reference_fields.push([resource_fields.field[k]['@name'],resource_fields.field[k]['@type'].substring(10)]);
 									}
 									else

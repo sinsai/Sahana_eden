@@ -2979,16 +2979,16 @@ class S3ResourceController(object):
             for f in pvalues.keys():
                 _query = (table[f] == pvalues[f])
                 if query is not None:
-                    query = query & _query
+                    query = query | _query
                 else:
                     query = _query
 
-        # Return match,
-        # can use limitby and first here since unique=True is DB-level
         if query:
-            return self.db(query).select(table.ALL, limitby=(0,1)).first()
-        else:
-            return None
+            original = self.db(query).select(table.ALL)
+            if len(original) == 1:
+                return original[0]
+
+        return None
 
 
     # -------------------------------------------------------------------------

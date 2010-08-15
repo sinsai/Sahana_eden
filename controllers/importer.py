@@ -17,7 +17,7 @@ importer=local_import("importer")
 def index(): 
     return dict(module_name=module_name)
 
-
+@auth.requires_membership('Administrator')
 def spreadsheet():
     crud.settings.create_onaccept = lambda form : redirect(URL(r=request, c="importer", f="spreadsheetview")) 
     return shn_rest_controller(module,'slist')
@@ -211,7 +211,6 @@ def import_spreadsheet():
     session.import_columns = j['columns']
     session.import_map = json.dumps(j['map'],ensure_ascii=True)
     session.import_resource = resource.encode('ascii') 
-    f.close()
     return dict(module_name = module_name)
 
 def re_import():

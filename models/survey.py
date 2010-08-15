@@ -84,7 +84,7 @@ if deployment_settings.has_module(module):
     # Survey Question
     resource = "question"
     tablename = module +"_" + resource
-    question = db.define_table(tablename,name_desc,timestamp, uuidstamp, deletion_status, authorstamp,
+    question = db.define_table(tablename,name_desc,
                                Field("question_type","integer"),
 #                               Field("options_id",db.survey_question_options),
                                Field("tf_ta_columns","integer"), # number of columns for TF/TA

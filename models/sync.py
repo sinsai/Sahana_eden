@@ -4,52 +4,138 @@
     Synchronization
 """
 
-module = 'sync'
+module = "sync"
 
 sync_policy_opts = {
-    1:T('No Sync'),
-    2:T('Newer Timestamp'),
-    3:T('Keep All'),
-    4:T('Replace All')
-    }
-opt_sync_policy = db.Table(None, 'sync_policy',
-                        Field('policy', 'integer', notnull=True,
-                            requires = IS_IN_SET(sync_policy_opts, zero=None),
-                            default = 1,
+    0:T("No Sync"),
+    1:T("Keep Local"),
+    2:T("Replace with Remote"),
+    3:T("Newer Timestamp"),
+    4:T("Role-based"),
+    5:T("Choose Manually")
+}
+
+# Sync Policy
+opt_sync_policy = db.Table(None, "sync_policy",
+                        Field("policy", "integer", notnull=True,
+                            requires = IS_IN_SET(sync_policy_opts),
+                            default = 3,
                             represent = lambda opt: sync_policy_opts.get(opt, UNKNOWN_OPT)))
+
 # Settings
-resource = 'setting'
+resource = "setting"
 tablename = "%s_%s" % (module, resource)
 table = db.define_table(tablename,
-                Field('uuid', length=36),   # Our UUID for sync purposes
-                opt_sync_policy,            # Default sync_policy for new partners
-                Field('username'),          # Default login username for new partners
-                Field('password'),          # Default login password for new partners
-                Field('ip'),		        # IP which might be entered manually or pushed in by zeroconf
-                Field('webservice_port', 'integer', default = 8000), # Port which our webservice is accessible on
-                Field('rpc_service_url', default = "/sync/call/jsonrpc"), # URL our webservice is accessible on
-                Field('zeroconf_description', length=64, default = "This is a SahanaPy instance, see http://www.sahanapy.org" ),
+                Field("uuid", length=36, notnull=True),     # Our UUID for sync purposes
+                Field("beacon_service_url", default = "http://sync.eden.sahanafoundation.org/sync/beacon"), # URL of beacon service that our sahana instance is configured to work with
+                Field("sync_pools"),                        # Comma-separated list of sync pools we've subscribed to
+                Field("comments", length=128, default = "This is a SahanaEden instance, see http://eden.sahanafoundation.org" ),
                 migrate=migrate)
+
+sync_partner_instance_type_opts = {
+    "Sahana Eden":T("Sahana Eden"),
+    "Sahana Agasti":T("Sahana Agasti"),
+    "Ushahidi":T("Ushahidi"),
+    "Other":T("Other")
+}
 
 # Custom settings for sync partners
-resource = 'partner'
+resource = "partner"
 tablename = "%s_%s" % (module, resource)
 table = db.define_table(tablename,
-                Field('uuid', length=36), # uuid of this partner
-                opt_sync_policy,    # sync_policy for this partner
-                Field('username'),  # login username for this partner
-                Field('password'),  # login password for this partner
-                Field('webservice_port', 'integer', default = 8000), # Port which their webservice is accessible on
-                Field('rpc_service_url', default = "/sync/call/jsonrpc"), # URL their webservice is accessible on
-                Field('description', length=64),
+                Field("uuid", length=36, notnull=True),     # uuid of this partner
+                Field("name", default="Sahana Eden Instance"), # name of the partner (descriptive title)
+                Field("instance_url", default = "http://sync.eden.sahanafoundation.org/eden", notnull=True), # URL of their instance
+                Field("instance_type",                      # the type of instance => "SahanaEden", "SahanaAgasti", "Ushahidi", etc.
+                    default="Sahana Eden",
+                    requires = IS_IN_SET(sync_partner_instance_type_opts) ),
+                Field("username"),                          # username required to sync with this partner
+                Field("password", "password"),              # password required to sync with this partner
+                Field("sync_pools"),                        # Comma-separated list of sync pools they're subscribed to
+                opt_sync_policy,                            # sync_policy for this partner
+                Field("last_sync_on", "datetime"),          # the last time we sync-ed with this partner
+                Field("comments", length=128),
                 migrate=migrate)
 
-# Sync Log / Keeps log of all webservices calls. Used to view sync history
-resource = 'log'
+# Sync Conflicts - record all conflicts here
+resource = "conflict"
 tablename = "%s_%s" % (module, resource)
 table = db.define_table(tablename,
-                Field('uuid', length=36), # different from reusable uuidstamp: uuid of remote system we synced with
-                Field('function', 'string'),
-                Field('timestmp', 'datetime'), # different from reusable field ('timestamp' is a reserved word in Postgres)
-                Field('format', 'string'),
+                Field("uuid", length=36, notnull=True),     # uuid of the conflicting resource
+                Field("resource_table"),                    # the table name of the conflicting resource
+                Field("remote_record", "text"),             # String dump of the remote record
+                Field("remote_modified_by"),                # the user who modified the remote resource, empty if it is None
+                Field("remote_modified_on", "datetime"),    # the date and time when the remote record was modified
+                Field("logged_on", "datetime"),             # the date and time when this conflict was logged
+                Field("resolved", "boolean"),               # whether this conflict has been resolved or not
+                migrate=migrate)
+
+# Sync Log - Keeps log of all syncs
+resource = "log"
+tablename = "%s_%s" % (module, resource)
+table = db.define_table(tablename,
+                Field("partner_uuid", length=36),           # uuid of remote system we synced with
+                Field("partner_name"),                      # descriptive name of remote system we synced with
+                Field("timestmp", "datetime"),              # the date and time when sync was performed
+                Field("sync_resources", "text"),            # comma-separated list of resources synced
+                Field("sync_errors", "text"),               # sync errors encountered
+                Field("sync_mode"),                         # whether this was an "online" sync (standard sync mode) or "offline" sync (USB/File based)
+                Field("complete_sync", "boolean"),          # whether all resources were synced (complete sync) or only those modified since the last sync (partial sync)
+                Field("sync_method"),                       # whether this was a Pull only, Push only, Remote Push or a Pull-Push sync operation
+                migrate=migrate)
+
+# Sync Now - stored state
+resource = "now"
+tablename = "%s_%s" % (module, resource)
+table = db.define_table(tablename,
+                Field("sync_jobs", "text"),                 # comma-separated list of sync jobs (partner uuids for now, sync job ids from scheduler in future)
+                Field("started_on", "datetime"),            # timestamp when the sync now process began
+                Field("job_resources_done", "text"),        # comma-separated list of resources synced of the currently running job
+                Field("job_resources_pending", "text"),     # comma-separated list of resources to be synced of the currently running job
+                Field("job_sync_errors", "text"),           # sync errors encountered while processing the current job
+                migrate=migrate)
+
+sync_schedule_period_opts = {
+    "h":T("Hourly"),
+    "d":T("Daily"),
+    "w":T("Weekly"),
+    "o":T("Just Once"),
+    "m":T("Manual")
+}
+
+sync_schedule_job_type_opts = {
+    1:T("Sahana Eden <=> Sahana Eden sync"),
+    2:T("Sahana Eden <= Other sync (Sahana Agasti, Ushahidi, etc.)")
+}
+
+# Scheduled sync jobs
+resource = "schedule"
+tablename = "%s_%s" % (module, resource)
+table = db.define_table(tablename,
+                Field("comments", length=128),              # brief comments about the scheduled job
+                Field("period",                             # schedule interval period, either hourly, "h", daily, "d", weekly, "w" or one-time, "o"
+                    length=10,
+                    notnull=True,
+                    default="d",
+                    requires = IS_IN_SET(sync_schedule_period_opts) ),
+                Field("hours", "integer", default=4),       # specifies the number of hours when hourly period is specified in 'period' field
+                Field("days_of_week", length=30),           # comma-separated list of the day(s) of the week when job runs on weekly basis.
+                                                            # A day in a week is represented as a number having value between 1 (Monday) and 7 (Sunday)
+                Field("time_of_day", "time"),               # the time (at day_of_week) when job runs on a weekly or daily basis
+                Field("runonce_datetime", "datetime"),      # the date and time when job runs just once
+                Field("job_type", "integer", default=1,     # This specifies the type of job: 1 - SahanaEden <=> SahanaEden sync,
+                    requires = IS_IN_SET(sync_schedule_job_type_opts) ),
+                                                            # 2 - SahanaEden <= Other sync (could be SahanaAgasti, Ushahidi, etc.)
+                Field("job_command", "text", notnull=True), # sync command to execute when this job runs. This command is encoded as a JSON formatted object.
+                                                            # It contains the UUID of the sync partner (if present, 0 otherwise),
+                                                            # the instance URL (would be root location for Eden instance and full URL for other instance
+                                                            # types such as Agasti, Ushahidi or possibly spreadsheet source), the list of modules along
+                                                            # with resources within them to sync, whether this would be a complete or partial sync
+                                                            # (partial sync only retrieves data modified after the last sync, complete sync fetches all),
+                                                            # whether this sync would be a two-way (both push and pull) or one-way (push or pull),
+                                                            # and sync policy (default policy is taken from the sync partner's record
+                Field("running", "boolean"),                # indicates whether this job is currently executing or not
+                Field("last_run", "datetime"),              # the date and time of last scheduled run
+                Field("enabled", "boolean",                 # whether this schedule is enabled or not. Useful in cases when you want to temporarily
+                    notnull=True, default=True),            # disable a schedule
                 migrate=migrate)

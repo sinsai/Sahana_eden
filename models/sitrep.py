@@ -153,6 +153,7 @@ if deployment_settings.has_module(module):
                             organisation_id,
                             Field("date", "date"),
                             Field("households", "integer"),
+                            Field("population", "integer"),
                             Field("houses_destroyed", "integer"),
                             Field("houses_damaged", "integer"),
                             Field("crop_losses", "integer"),
@@ -161,9 +162,19 @@ if deployment_settings.has_module(module):
                             comments,
                             migrate=migrate)
 
-    table.crop_losses.requires = IS_NULL_OR(IS_INT_IN_RANGE(0, 100))
-
     table.households.label = T("Total Households")
+    table.households.requires = IS_INT_IN_RANGE(0,99999999)
+    table.households.default = 0
+    table.population.label = T("Population")
+    table.population.requires = IS_INT_IN_RANGE(0,99999999)
+    table.population.default = 0
+
+    table.houses_destroyed.requires = IS_INT_IN_RANGE(0,99999999)
+    table.houses_destroyed.default = 0
+    table.houses_damaged.requires = IS_INT_IN_RANGE(0,99999999)
+    table.houses_damaged.default = 0
+
+    table.crop_losses.requires = IS_NULL_OR(IS_INT_IN_RANGE(0, 100))
 
     # CRUD strings
     ADD_ASSESSMENT = T("Add Assessment")
@@ -371,14 +382,15 @@ if deployment_settings.has_module(module):
 
 
     # -----------------------------------------------------------------------------
-    def shn_sitrep_report(r, **attr):
+    def shn_sitrep_summary(r, **attr):
 
         """ Aggregate reports """
 
         if r.name == "assessment":
             if r.representation == "html":
-                # Assessment HTML/jqplot reporting here
                 return dict()
+            elif r.representation == "xls":
+                return None
             else:
                 # Other formats?
                 raise HTTP(501, body=BADFORMAT)
@@ -394,12 +406,12 @@ if deployment_settings.has_module(module):
 
 
     s3xrc.model.set_method(module, "assessment",
-                           method="report",
-                           action=shn_sitrep_report )
+                           method="summary",
+                           action=shn_sitrep_summary)
 
     s3xrc.model.set_method(module, "school_district",
-                           method="report",
-                           action=shn_sitrep_report )
+                           method="summary",
+                           action=shn_sitrep_summary)
 
 
     # -----------------------------------------------------------------------------

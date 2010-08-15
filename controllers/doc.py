@@ -27,9 +27,9 @@ def download():
 # S3 framework functions
 def index():
     "Module's Home Page"
-    
+
     module_name = deployment_settings.modules[module].name_nice
-    
+
     return dict(module_name=module_name)
 
 def metadata():
@@ -37,7 +37,7 @@ def metadata():
     resource = request.function
     tablename = module + "_" + resource
     table = db[tablename]
-    
+
     # Model options
     table.description.label = T("Description")
     table.person_id.label = T("Contact")
@@ -103,7 +103,7 @@ def bulk_upload():
 
     crud.messages.submit_button = T("Upload")
 
-    form = crud.create(db.media_metadata)
+    form = crud.create(db.doc_metadata)
 
     gpx_tracks = OptionsWidget()
     gpx_widget = gpx_tracks.widget(track_id.track_id, track_id.track_id.default, _id="gis_layer_gpx_track_id")

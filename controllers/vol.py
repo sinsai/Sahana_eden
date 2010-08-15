@@ -47,6 +47,7 @@ def shn_menu():
             menu_teams = [
                 ["%s %s" % (T("Team:"), team_name), False, URL(r=request, f="group", args=[group_id, "read"]),[
                     [T("Map Team"), False, URL(r=request, f="view_team_map", args=[group_id])],
+                    [T("Send Mail"), False, URL(r=request, f="compose_group", vars={"group_id":group_id})],
                 ]],
             ]
             menu.extend(menu_teams)
@@ -73,6 +74,7 @@ def shn_menu():
                     # The default tab is pr_person, which is fine here.
                     [T("Person Data"), False, URL(r=request, f="person", args=[person_id], vars={"vol_tabs":"person"})],
                     [T("View Map"), False, URL(r=request, f="view_map", args=[person_id])],
+                    [T("Send Mail"), False, URL(r=request, f="compose_person", vars={"person_id":person_id})],
                 ]],
             ]
             menu.extend(menu_person)
@@ -424,6 +426,34 @@ def view_team_map():
 
     # TODO: What is an appropriate response if no location is available?
     return None
+
+
+# -----------------------------------------------------------------------------
+def compose_person():
+    "Send message to volunteer"  
+
+    person_pe_id_query = (db.pr_person.id == request.vars.person_id)
+    pe_id_row = db(person_pe_id_query).select(db.pr_person.pe_id).first()
+    request.vars.pe_id = pe_id_row["pe_id"]
+    
+    return shn_msg_compose( redirect_module=module, 
+                            redirect_function="compose_person", 
+                            redirect_vars={"person_id":request.vars.person_id}, 
+                            title_name="Send a message to a volunteer" )
+
+
+# -----------------------------------------------------------------------------
+def compose_group():
+    "Send message to members of a team"  
+
+    group_pe_id_query = (db.pr_group.id == request.vars.group_id)
+    pe_id_row = db(group_pe_id_query).select(db.pr_group.pe_id).first()
+    request.vars.pe_id = pe_id_row["pe_id"]
+
+    return shn_msg_compose( redirect_module=module, 
+                            redirect_function="compose_group", 
+                            redirect_vars={"group_id":request.vars.group_id}, 
+                            title_name="Send a message to a team of volunteers" )
 
 
 # -----------------------------------------------------------------------------

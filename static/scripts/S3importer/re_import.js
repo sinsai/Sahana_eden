@@ -157,7 +157,9 @@ else
 						jsonData : send,
 						success : function(r,o){
 							lm.hide();
-							Ext.Msg.Alert("","Import successful "+location.href);},
+							Ext.Msg.Alert("","Import successful "+location.href);
+							window.location = 'http://' + url + '/' + application + '/importer/similar_rows';
+							},
 						failure : function(r,o){
 							lm.hide();
 							Ext.Msg.alert("","Import failed "+r.responseText);

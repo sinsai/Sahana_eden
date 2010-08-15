@@ -38,10 +38,8 @@ def slist():
     
 def import_spreadsheet():
     spreadsheet = request.body.read()
-    f = file("/home/shikhar/Desktop/abc.txt","wb")
     from StringIO import StringIO
     spreadsheet_json = StringIO(spreadsheet)
-    f.write("The recd JSON is " + repr(spreadsheet_json.read()))
     spreadsheet_json.seek(0)
     #j = json.loads(spreadsheet)
     exec("j = " + spreadsheet)
@@ -53,7 +51,6 @@ def import_spreadsheet():
     if j.has_key('re_import'):
         for x in range(0,len(j['map'])):
 	    j['map'][x][2] = j['map'][x][2].replace('&gt;','>')
-    f.write('map is ' + repr(j['map']))
     if not j.has_key('re_import'):# and j['re_import'] is not True:
     	for x in range(0,len(j['spreadsheet'])):
 	    for y in range(x+1,len(j['spreadsheet'])):
@@ -66,13 +63,11 @@ def import_spreadsheet():
 	for k in similar_rows:
 	    for l in k:
 	       l = l.encode('ascii')
-	       f.write(l + "\n")
         session.similar_rows = similar_rows
     for k in j['spreadsheet']:
         if k in similar_rows:
 	    j['spreadsheet'].remove(k)
 	    j['rows'] -= 1
-    f.write('similar rows are \n' + repr(similar_rows))
     i=k=0
     send_dict = {}
     resource = j['resource'].encode('ascii')
@@ -106,7 +101,6 @@ def import_spreadsheet():
 	i += 1
 	
     word = json.dumps(send_dict[resource])
-    #f.write("hihih" + repr(send_dict))
     #Removing all white spaces and newlines in the JSON
     new_word = ""
     cntr = 1
@@ -124,11 +118,9 @@ def import_spreadsheet():
     #new_word is without newlines and whitespaces	  
     new_word  = "{\"$_" + resource + "\":"+ new_word + "}"
     #added resource name
-    f.write("The outgoing json is " + "\n\n" + new_word)
     send = StringIO(new_word)
     tree = s3xrc.xml.json2tree(send)
     prefix, name = resource.split('_')
-    f.write("RESOURCE->>" + resource)
     res = s3xrc.resource(prefix, name)
     res.import_xml(source = tree, ignore_errors = True)
     returned_json = s3xrc.xml.tree2json(tree)
@@ -138,7 +130,6 @@ def import_spreadsheet():
     exec('returned_json = ' + returned_json)
     for record in returned_json['$_'+resource]:
 	 del record['@modified_at']
-    f.write("\n\n Returned JSON \n\n" + repr(returned_json))
     for record in returned_json['$_'+resource]:
 	wrong_dict = {}
         for field in record:
@@ -152,16 +143,13 @@ def import_spreadsheet():
 			        wrong_dict[field + ' --> ' + nest_res + ' --> ' + nested_fields] = record[field][nest_res][0][nested_fields.encode('ascii')]['@value']
 			    except:
 				    wrong_dict[field + ' --> ' + nest_res + ' --> ' + nested_fields] = record[field][nest_res][0][nested_fields.encode('ascii')]
-			    #f.write('< ' + field + ' --> ' + nest_res + ' --> ' + nested_fields + ' >' + wrong_dict[field + ' --> ' + nest_res + ' --> ' + nested_fields])
 	    else:
 	        if '@error' in record[field]:
 		    wrong_dict[field] = "*_error_*" + record[field]['@error'] + '. You entered ' + record[field]['@value']
 		else:
 		    wrong_dict[field]  = record[field]['@value']
-	f.write('\nDIE' + repr(wrong_dict.values()))
 	if 'Data Import Error' not in wrong_dict.values():
 	    invalid_rows.append(wrong_dict)
-    f.write("WRONG \n" + repr(invalid_rows))
     '''f.write("\n\nInvalid rows " + repr(invalid_rows))
     session.import_success = len(invalid_rows) 
     incorrect_rows = []

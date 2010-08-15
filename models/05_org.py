@@ -62,11 +62,11 @@ org_organisation_type_opts = {
     3:T("International NGO"),
     4:T("Donor"),               # Don't change this number without changing organisation_popup.html
     6:T("National NGO"),
-    7:T("UN"),
+    7:"UN",
     8:T("International Organization"),
     9:T("Military"),
     10:T("Private")
-    #12:T("MINUSTAH")   Haiti-specific
+    #12:"MINUSTAH"   Haiti-specific
 }
 
 resource = "organisation"
@@ -84,7 +84,7 @@ table = db.define_table(tablename, timestamp, uuidstamp, deletion_status,
                 Field("website"),
                 Field("twitter"),   # deprecated by pe_contact component
                 Field("donation_phone"),
-                shn_comments_field,
+                comments,
                 source_id,
                 migrate=migrate)
 
@@ -195,7 +195,7 @@ table = db.define_table(tablename, timestamp, uuidstamp, deletion_status,
                 Field("vehicle_types"),
                 Field("equipment"),
                 source_id,
-                shn_comments_field,
+                comments,
                 migrate=migrate)
 
 # Field settings
@@ -222,7 +222,7 @@ table.postcode.label = T("Postcode")
 table.phone1.label = T("Phone 1")
 table.phone2.label = T("Phone 2")
 table.email.label = T("Email")
-table.fax.label = T("FAX")
+table.fax.label = T("Fax")
 table.national_staff.label = T("National Staff")
 table.international_staff.label = T("International Staff")
 table.number_of_vehicles.label = T("Number of Vehicles")
@@ -249,7 +249,7 @@ s3.crud_strings[tablename] = Storage(
 
 # Reusable field for other tables to reference
 office_id = db.Table(None, "office_id",
-            FieldS3("office_id", db.org_office, sortby="name",
+            FieldS3("office_id", db.org_office, sortby="default/indexname",
                 requires = IS_NULL_OR(IS_ONE_OF(db, "org_office.id", "%(name)s")),
                 represent = lambda id: (id and [db(db.org_office.id == id).select(db.org_office.name, limitby=(0, 1)).first().name] or ["None"])[0],
                 label = T("Office"),
@@ -281,21 +281,21 @@ def shn_donor_represent(donor_ids):
     if not donor_ids:
         return "None"
     elif "|" in str(donor_ids):
-        donors = [db(db.org_donor.id == id).select(db.org_donor.name, limitby=(0, 1)).first().name for id in donor_ids.split("|") if id]
+        donors = [db(db.org_organisation.id == id).select(db.org_organisation.name, limitby=(0, 1)).first().name for id in donor_ids.split("|") if id]
         return ", ".join(donors)
     else:
-        return db(db.org_donor.id == donor_ids).select(db.org_donor.name, limitby=(0, 1)).first().name
+        return db(db.org_organisation.id == donor_ids).select(db.org_organisation.name, limitby=(0, 1)).first().name
 
 ADD_DONOR = Tstr("Add Donor")
 donor_id = db.Table(None, "donor_id",
-            FieldS3("donor_id", db.org_organisation, sortby="name",
-                requires = IS_NULL_OR(IS_ONE_OF(db, "org_organisation.id", "%(name)s", multiple=True, filterby="type", filter_opts=[4])),
-                represent = shn_donor_represent,
-                label = T("Donor"),
-                comment = DIV(A(ADD_DONOR, _class="colorbox", _href=URL(r=request, c="org", f="organisation", args="create", vars=dict(format="popup", child="donor_id")), _target="top", _title=ADD_DONOR),
-                          DIV( _class="tooltip", _title=ADD_DONOR + "|" + Tstr("The Donor(s) for this project. Multiple values can be selected by holding down the 'Control' key."))),
-                ondelete = "RESTRICT"
-                ))
+                    FieldS3("donor_id", sortby="name",
+                    requires = IS_NULL_OR(IS_ONE_OF(db, "org_organisation.id", "%(name)s", multiple=True, filterby="type", filter_opts=[4])),
+                    represent = shn_donor_represent,
+                    label = T("Donor"),
+                    comment = DIV(A(ADD_DONOR, _class="colorbox", _href=URL(r=request, c="org", f="organisation", args="create", vars=dict(format="popup", child="donor_id")), _target="top", _title=ADD_DONOR),
+                              DIV( _class="tooltip", _title=ADD_DONOR + "|" + Tstr("The Donor(s) for this project. Multiple values can be selected by holding down the 'Control' key."))),
+                    ondelete = "RESTRICT"
+                   ))
 
 # -----------------------------------------------------------------------------
 # Projects:
@@ -411,7 +411,7 @@ table = db.define_table(tablename, timestamp, deletion_status,
                 Field("focal_point", "boolean"),
                 #Field("slots", "integer", default=1),
                 #Field("payrate", "double", default=0.0), # Wait for Bugeting integration
-                shn_comments_field,
+                comments,
                 migrate=migrate)
 
 # Field settings

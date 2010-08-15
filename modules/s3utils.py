@@ -114,15 +114,26 @@ def shn_split_multi_value(value):
     """
     @author: Michael Howden (michael@aidiq.com)
 
-    Splits a string of numbers delimitered by | into a list
+    Converts a series of numbers delimited by |, or already in a string into a list
 
     If value = None, returns []
     """
-    if value:
-        return re.compile("[\w\-:]+").findall(str(value))
-    else:
+
+    if not value:
         return []
 
+    elif isinstance(value, ( str ) ):   
+        if "[" in value:
+            #Remove internal lists
+            value = value.replace("[", "")
+            value = value.replace("]", "")
+            value = value.replace("'", "")
+            value = value.replace('"', "")
+            return eval("[" + value + "]")  
+        else:
+            return re.compile('[\w\-:]+').findall(str(value))  
+    else:
+        return [str(value)]
 # shn_get_db_field_value -----------------------------------------------------
 def shn_get_db_field_value(db,
                            table,
@@ -155,11 +166,11 @@ def shn_get_db_field_value(db,
                                look_up_field = "name" )
     """
     if match_case or db[table][look_up_field].type != "string":
-        row = db(db[table][look_up_field] == look_up).select(field)
+        row = db(db[table][look_up_field] == look_up).select(field, limitby = [0, 1]).first()
     else:
-       row = db(db[table][look_up_field].lower() == look_up).select(field)
+       row = db(db[table][look_up_field].lower() == look_up).select(field, limitby = [0, 1]).first()
 
-    if len(row) > 0:
-        return row[0][field]
+    if row:
+        return row[field]
     else:
         return None

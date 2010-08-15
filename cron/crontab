@@ -1,17 +1,15 @@
 # Crontab - scheduled tasks
-# Import data into database
+# Import data into database at startup (not used)
 #@reboot root *applications/eden/cron/1st_run.py
-# AutoSync daemon running ZeroConf should be launched at startup
-#@reboot root **applications/eden/cron/daemonX.py
 # Send outgoing emails every 5 minutes
 #*/5   *       *       *       *       root *msg/process_email_via_api
 # Send outgoing SMS every 5 minutes
 #*/5   *       *       *       *       root *msg/process_sms_via_api
 # Collect incoming emails every 15 minutes
 #*/15  *       *       *       *       root *applications/eden/cron/email_receive.py
-# Process Import Jobs
+# Process Import Jobs (deprecated)
 #*/5    *       *       *       *       root *applications/eden/cron/import_job_do_processing.py
 #*/5    *       *       *       *       root *applications/eden/cron/import_job_do_import.py
-# Poll RMS Feeds
+# Poll RMS Feeds (Haiti-specific)
 #*/5   *       *       *       *       root *applications/eden/cron/rms_sms2record.py
 #*/5   *       *       *       *       root *applications/eden/cron/rms_tweet2request.py

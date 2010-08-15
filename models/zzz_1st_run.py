@@ -83,7 +83,7 @@ if empty:
     if not db(table.id > 0).count():
         table.insert(
             admin_name = T("Sahana Administrator"),
-            admin_email = T("support@Not Set"),
+            admin_email = "support@Not Set",
             admin_tel = T("Not Set"),
             theme = 1
         )
@@ -587,7 +587,7 @@ if empty:
             uuid = "www.sahanafoundation.org/GIS-FEATURE-CLASS-VOLUNTEER",
             name = "Volunteer",
             marker_id = db(db.gis_marker.name == "volunteer").select(limitby=(0, 1)).first().id,
-            gps_marker = "volunteer",
+            gps_marker = "Contact, Dreadlocks",
         )
         table.insert(
             uuid = "www.sahanafoundation.org/GIS-FEATURE-CLASS-WAREHOUSE",
@@ -618,11 +618,15 @@ if empty:
         )
         table.insert(
             uuid = "www.sahanafoundation.org/GIS-FEATURE-GROUP-PROGRAMME",
-            name = "Programme",
+            name = "Programmes",
         )
         table.insert(
             uuid = "www.sahanafoundation.org/GIS-FEATURE-GROUP-HOSPITALS",
             name = "Hospitals",
+        )
+        table.insert(
+            uuid = "www.sahanafoundation.org/GIS-FEATURE-GROUP-INCIDENTS",
+            name = "Incidents",
         )
         table.insert(
             uuid = "www.sahanafoundation.org/GIS-FEATURE-GROUP-OFFICES",
@@ -669,6 +673,10 @@ if empty:
             feature_class_id = db(db.gis_feature_class.name == "Hospital").select(db.gis_feature_class.id, limitby=(0, 1)).first().id,
         )
         table.insert(
+            feature_group_id = db(db.gis_feature_group.name == "Incidents").select(db.gis_feature_group.id, limitby=(0, 1)).first().id,
+            feature_class_id = db(db.gis_feature_class.name == "Incident").select(db.gis_feature_class.id, limitby=(0, 1)).first().id,
+        )
+        table.insert(
             feature_group_id = db(db.gis_feature_group.name == "Infrastructure").select(db.gis_feature_group.id, limitby=(0, 1)).first().id,
             feature_class_id = db(db.gis_feature_class.name == "Church").select(db.gis_feature_class.id, limitby=(0, 1)).first().id,
         )
@@ -677,11 +685,11 @@ if empty:
             feature_class_id = db(db.gis_feature_class.name == "School").select(db.gis_feature_class.id, limitby=(0, 1)).first().id,
         )
         table.insert(
-            feature_group_id = db(db.gis_feature_group.name == "Programme").select(db.gis_feature_group.id, limitby=(0, 1)).first().id,
+            feature_group_id = db(db.gis_feature_group.name == "Programmes").select(db.gis_feature_group.id, limitby=(0, 1)).first().id,
             feature_class_id = db(db.gis_feature_class.name == "Food").select(db.gis_feature_class.id, limitby=(0, 1)).first().id,
         )
         table.insert(
-            feature_group_id = db(db.gis_feature_group.name == "Programme").select(db.gis_feature_group.id, limitby=(0, 1)).first().id,
+            feature_group_id = db(db.gis_feature_group.name == "Programmes").select(db.gis_feature_group.id, limitby=(0, 1)).first().id,
             feature_class_id = db(db.gis_feature_class.name == "Water").select(db.gis_feature_class.id, limitby=(0, 1)).first().id,
         )
         table.insert(
@@ -732,10 +740,18 @@ if empty:
     if not db(table.id > 0).count():
         # Populate table
         for subtype in gis_layer_openstreetmap_subtypes:
-            table.insert(
-                    name = "OSM " + subtype,
-                    subtype = subtype
-                )
+            if subtype in ["Taiwan"]:
+                # Local OSM layers should be disabled by default in default builds
+                table.insert(
+                        name = "OSM " + subtype,
+                        subtype = subtype,
+                        enabled = False
+                    )
+            else:
+                table.insert(
+                        name = "OSM " + subtype,
+                        subtype = subtype
+                    )
     tablename = "gis_layer_google"
     table = db[tablename]
     if not db(table.id > 0).count():

@@ -79,9 +79,14 @@ admin_menu_options = [
         [T("Raw Database access"), False, URL(r=request, c="appadmin", f="index")]
     ]],
     [T("Synchronisation"), False, URL(r=request, c="sync", f="index"), [
-            [T("Sync History"), False, URL(r=request, c="sync", f="history")],
+            [T("Sync Now"), False, URL(r=request, c="sync", f="now")],
+#            [T("Offline Sync"), False, URL(r=request, c="sync", f="offline")],
+            [T("Sync Settings"), False, URL(r=request, c="sync", f="setting", args=[1, "update"])],
             [T("Sync Partners"), False, URL(r=request, c="sync", f="partner")],
-            [T("Sync Settings"), False, URL(r=request, c="sync", f="setting", args=[1, "update"])]
+#            [T("Sync Pools"), False, URL(r=request, c="sync", f="pool")],
+            [T("Sync Conflicts"), False, URL(r=request, c="sync", f="conflict")],
+            [T("Sync Schedules"), False, URL(r=request, c="sync", f="schedule")],
+            [T("Sync History"), False, URL(r=request, c="sync", f="history")]
     ]],
     [T("Messaging"), False, "#",[
             [T("Global Messaging Settings"), False, URL(r=request, c="msg", f="setting", args=[1, "update"])],

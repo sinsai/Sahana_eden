@@ -39,7 +39,7 @@
 __name__ = "S3XRC"
 __all__ = ["S3Resource", "S3Request", "S3ResourceController"]
 
-import os, sys, uuid, datetime, time, urllib
+import os, sys, cgi, uuid, datetime, time, urllib, StringIO
 import gluon.contrib.simplejson as json
 
 from gluon.storage import Storage
@@ -137,6 +137,8 @@ class S3Resource(object):
         if self.parent is None:
             self.__attach(select=components)
             self.build_query(id=id, uid=uid, filter=filter, url_vars=url_vars)
+
+        self.__files = Storage()
 
         self.__handler = Storage(options=self.__get_options,
                                  fields=self.__get_fields,
@@ -297,7 +299,7 @@ class S3Resource(object):
                 if component:
                     pkey = component.pkey
                     fkey = component.fkey
-                    self.__multiple = component.multiple
+                    self.__multiple = component.get("multiple", True)
                     join = self.parent.table[pkey] == self.table[fkey]
                     if str(self.__query).find(str(join)) == -1:
                         self.__query = self.__query & (join)
@@ -439,6 +441,24 @@ class S3Resource(object):
 
         else:
             raise NotImplementedError
+
+        return self.__query
+
+
+    # -------------------------------------------------------------------------
+    def add_filter(self, filter=None):
+
+        """ Add a filter to the current query """
+
+        if filter is not None:
+
+            if self.__query:
+                query = self.__query
+                self.clear()
+                self.clear_query()
+                self.__query = (query) & (filter)
+            else:
+                self.build_query(filter=filter)
 
         return self.__query
 
@@ -609,6 +629,7 @@ class S3Resource(object):
         self.__length = None
         self.__ids = []
         self.__uids = []
+        self.__files = Storage()
 
         self.__slice = False
 
@@ -766,6 +787,14 @@ class S3Resource(object):
         raise NotImplementedError
 
 
+    # -------------------------------------------------------------------------
+    def files(self):
+
+        """ Get the list of attached files """
+
+        return self.__files
+
+
     # REST Interface ==========================================================
 
     def execute_request(self, r, **attr):
@@ -878,6 +907,11 @@ class S3Resource(object):
 
         # Redirection
         if r.next is not None:
+            if r.http == "POST":
+                if isinstance(output, dict):
+                    form = output.get("form", None)
+                    if form and form.errors:
+                        return output
             self.__dbg("redirecting to %s" % str(r.next))
             redirect(r.next)
 
@@ -902,13 +936,15 @@ class S3Resource(object):
 
         tablename = r.component and r.component.tablename or r.tablename
 
-        xml_formats = self.__manager.xml_export_formats
-        json_formats = self.__manager.json_export_formats
+        xml_export_formats = self.__manager.xml_export_formats
+        json_export_formats = self.__manager.json_export_formats
+        xml_import_formats = self.__manager.xml_import_formats
+        json_import_formats = self.__manager.json_import_formats
 
         if method is None or method in ("read", "display"):
             authorised = permit("read", tablename)
-            if r.representation in xml_formats or \
-               r.representation in json_formats:
+            if r.representation in xml_export_formats or \
+               r.representation in json_export_formats:
                 method = "export_tree"
             elif r.component:
                 if r.multiple and not r.component_id:
@@ -916,7 +952,16 @@ class S3Resource(object):
                 else:
                     method = "read"
             else:
-                if r.id:
+                if r.id or method in ("read", "display"):
+                    # Enforce single record
+                    if not self.__set:
+                        self.load(start=0, limit=1)
+                    if self.__set:
+                        r.record = self.__set[0]
+                        r.id = self.get_id()
+                        r.uid = self.get_uid()
+                    else:
+                        raise HTTP(404, BADRECORD)
                     method = "read"
                 else:
                     method = "list"
@@ -924,8 +969,8 @@ class S3Resource(object):
         elif method in ("create", "update"):
             authorised = permit(method, tablename)
             # TODO: Add user confirmation here:
-            if r.representation in xml_formats or \
-               r.representation in json_formats:
+            if r.representation in xml_import_formats or \
+               r.representation in json_import_formats:
                 method = "import_tree"
 
         elif method == "delete":
@@ -1137,6 +1182,42 @@ class S3Resource(object):
         else:
             raise HTTP(501, body=self.BADFORMAT)
 
+
+    # -------------------------------------------------------------------------
+    def __read_body(self, r):
+
+        """ Read data from request body """
+
+        self.__files = Storage()
+        content_type = r.request.env.get("content_type", None)
+
+        if content_type and content_type.startswith("multipart/"):
+
+            # Get all attached files from POST
+            for p in r.request.post_vars.values():
+                if isinstance(p, cgi.FieldStorage) and p.filename:
+                    self.__files[p.filename] = p.file
+
+            # Find the source
+            source_name = "%s.%s" % (r.name, r.representation)
+            post_vars = r.request.post_vars
+            source = post_vars.get(source_name, None)
+            if isinstance(source, cgi.FieldStorage):
+                if source.filename:
+                    source = source.file
+                else:
+                    source = source.value
+            if isinstance(source, basestring):
+                source = StringIO.StringIO(source)
+        else:
+
+            # Body is source
+            source = r.request.body
+            source.seek(0)
+
+        return source
+
+
     # -------------------------------------------------------------------------
     def __put_tree(self, r, **attr):
 
@@ -1152,7 +1233,7 @@ class S3Resource(object):
             elif "fetchurl" in vars:
                 source = vars["fetchurl"]
             else:
-                source = r.request.body
+                source = self.__read_body(r)
             tree = xml.parse(source)
         else:
             if "filename" in vars:
@@ -1161,7 +1242,7 @@ class S3Resource(object):
                 import urllib
                 source = urllib.urlopen(vars["fetchurl"])
             else:
-                source = r.request.body
+                source = self.__read_body(r)
             tree = xml.json2tree(source)
 
         if not tree:
@@ -1335,24 +1416,40 @@ class S3Resource(object):
 
 
     # -------------------------------------------------------------------------
-    def __import_tree(self, id, tree, push_limit=None, ignore_errors=False):
+    def __import_tree(self, id, tree,
+                      files=None,
+                      push_limit=None,
+                      ignore_errors=False):
 
         """ Import data from an element tree to this resource
+
+            @param files: file attachments as {filename:file}
 
             @raise IOError: at insufficient permissions
         """
 
-        return self.__manager.import_tree(self, id, tree,
-                                          push_limit=push_limit,
-                                          ignore_errors=ignore_errors)
+        if files is not None and isinstance(files, dict):
+            self.__files = Storage(files)
+
+        success = self.__manager.import_tree(self, id, tree,
+                                             push_limit=push_limit,
+                                             ignore_errors=ignore_errors)
+
+        self.__files = Storage()
+        return success
 
 
     # -------------------------------------------------------------------------
-    def import_xml(self, source, id=None, template=None, ignore_errors=False, **args):
+    def import_xml(self, source,
+                   files=None,
+                   id=None,
+                   template=None,
+                   ignore_errors=False, **args):
 
         """ Import data from an XML source to this resource
 
             @param source: the XML source (or ElementTree)
+            @param files: file attachments as {filename:file}
             @param id: the ID or list of IDs of records to update (None for all)
             @param template: the XSLT template
             @param ignore_errors: do not stop on errors (skip invalid elements)
@@ -1382,6 +1479,7 @@ class S3Resource(object):
                 if not tree:
                     raise SyntaxError(xml.error)
             return self.__import_tree(id, tree,
+                                      files=files,
                                       push_limit=None,
                                       ignore_errors=ignore_errors)
         else:
@@ -1389,11 +1487,16 @@ class S3Resource(object):
 
 
     # -------------------------------------------------------------------------
-    def import_json(self, source, id=None, template=None, ignore_errors=False, **args):
+    def import_json(self, source,
+                    files=None,
+                    id=None,
+                    template=None,
+                    ignore_errors=False, **args):
 
         """ Import data from a JSON source to this resource
 
             @param source: the JSON source (or ElementTree)
+            @param files: file attachments as {filename:file}
             @param id: the ID or list of IDs of records to update (None for all)
             @param template: the XSLT template
             @param ignore_errors: do not stop on errors (skip invalid elements)
@@ -1427,6 +1530,7 @@ class S3Resource(object):
                 if not tree:
                     raise SyntaxError(xml.error)
             return self.__import_tree(id, tree,
+                                      files=files,
                                       push_limit=None,
                                       ignore_errors=ignore_errors)
         else:
@@ -1765,7 +1869,7 @@ class S3Request(object):
 
     def __next(self, id=None, method=None, representation=None, vars=None):
 
-        """ Returns a URL of the current resource
+        """ Returns a URL of the current request
 
             @param id: the record ID for the URL
             @param method: an explicit method for the URL
@@ -1819,14 +1923,18 @@ class S3Request(object):
             if method:
                 args.append(method)
 
+        f = self.request.function
         if not representation==self.DEFAULT_REPRESENTATION:
             if len(args) > 0:
                 args[-1] = "%s.%s" % (args[-1], representation)
             else:
-                vars.update(format=representation)
+                #vars.update(format=representation)
+                f = "%s.%s" % (f, representation)
 
-        return(URL(r=self.request, c=self.request.controller,
-                   f=self.name, args=args, vars=vars))
+        return URL(r=self.request,
+                   c=self.request.controller,
+                   f=f,
+                   args=args, vars=vars)
 
 
     # -------------------------------------------------------------------------
@@ -2432,6 +2540,7 @@ class S3ResourceController(object):
     # -------------------------------------------------------------------------
     def __vectorize(self, resource, element,
                     id=None,
+                    files=[],
                     validate=None,
                     permit=None,
                     audit=None,
@@ -2465,7 +2574,7 @@ class S3ResourceController(object):
             return imports
 
         table = self.db[resource]
-        record = self.xml.record(table, element, validate=validate)
+        record = self.xml.record(table, element, files=files, validate=validate)
 
         mtime = element.get(self.xml.MTIME, None)
         if mtime:
@@ -2539,23 +2648,17 @@ class S3ResourceController(object):
 
         """
 
-        requires = table[fieldname].requires
-
-        if not requires:
-            return (value, None)
-        else:
+        field = table.get(fieldname, None)
+        if field:
             if record:
                 v = record.get(fieldname, None)
-                if v:
-                    if v == value:
-                        return (value, None)
-            if not isinstance(requires, (list, tuple)):
-                requires = [requires]
-            for validator in requires:
-                (value, error) = validator(value)
-                if error:
-                    return (value, error)
-            return(value, None)
+                if v and v == value:
+                    return (value, None)
+
+            value, error = field.validate(value)
+            return (value, error)
+        else:
+            raise AttributeError("No field %s in %s" % (fieldname, table._tablename))
 
 
     # -------------------------------------------------------------------------
@@ -2907,7 +3010,8 @@ class S3ResourceController(object):
                 _rfields = crfields[ctablename]
                 _dfields = cdfields[ctablename]
 
-                for crecord in resource(record.id, component=cname):
+                crecords = resource(record.id, component=cname)
+                for crecord in crecords:
 
                     if msince is not None and self.xml.MTIME in crecord:
                         if crecord[self.xml.MTIME] < msince:
@@ -3069,6 +3173,7 @@ class S3ResourceController(object):
             return False
 
         # Import all matching elements
+        error = None
         imports = []
         directory = {}
         vmap = {} # Element<->Vector Map
@@ -3077,6 +3182,7 @@ class S3ResourceController(object):
             element = elements[i]
             vectors = self.__vectorize(tablename, element,
                                        id=id,
+                                       files = resource.files(),
                                        validate=self.validate,
                                        permit=permit,
                                        audit=audit,
@@ -3130,6 +3236,7 @@ class S3ResourceController(object):
                         celement = celements[k]
                         cvectors = self.__vectorize(ctablename,
                                                     celement,
+                                                    files = resource.files(),
                                                     validate=self.validate,
                                                     permit=permit,
                                                     audit=audit,
@@ -3151,6 +3258,12 @@ class S3ResourceController(object):
 
             if self.error is None:
                 imports.extend(vectors)
+            else:
+                error = self.error
+                self.error = None
+
+        if error:
+            self.error = error
 
         # Commit all vectors
         if self.error is None or ignore_errors:
@@ -3163,7 +3276,7 @@ class S3ResourceController(object):
                     else:
                         self.error = S3XRC_DATA_IMPORT_ERROR
                     if vector.element:
-                        vector.element.set(self.ATTRIBUTE.error, self.error)
+                        vector.element.set(self.xml.ATTRIBUTE.error, self.error)
                     if ignore_errors:
                         continue
                     else:
@@ -3627,6 +3740,7 @@ class S3XML(object):
         ref="ref",
         domain="domain",
         url="url",
+        filename="filename",
         error="error",
         start="start",
         limit="limit",
@@ -3907,6 +4021,8 @@ class S3XML(object):
                 text = markup.xpath(".//text()")
                 if text:
                     text = " ".join(text)
+                else:
+                    text = ""
             except etree.XMLSyntaxError:
                 pass
         text = self.xml_encode(text)
@@ -4130,7 +4246,10 @@ class S3XML(object):
             elif fieldtype == "upload":
                 data = etree.SubElement(resource, self.TAG.data)
                 data.set(self.ATTRIBUTE.field, f)
-                data.text = "%s/%s" % (download_url, value)
+                fileurl = self.xml_encode("%s/%s" % (download_url, value))
+                filename = self.xml_encode(value)
+                data.set(self.ATTRIBUTE.url, fileurl)
+                data.set(self.ATTRIBUTE.filename, filename)
 
             elif fieldtype == "password":
                 # Do not export password fields
@@ -4274,7 +4393,7 @@ class S3XML(object):
 
 
     # -------------------------------------------------------------------------
-    def record(self, table, element, validate=None, skip=[]):
+    def record(self, table, element, files=[], validate=None, skip=[]):
 
         """ Creates a Storage() record from an element and validates it
 
@@ -4328,12 +4447,32 @@ class S3XML(object):
                     continue
 
                 field_type = str(table[f].type)
-                if field_type in ("id", "upload", "blob", "password") or \
+                if field_type in ("id", "blob", "password") or \
                    field_type.startswith("reference"):
                     continue
-
-                value = child.get(self.ATTRIBUTE.value, None)
-                value = self.xml_decode(value)
+                elif field_type == "upload":
+                    # Handling of uploads goes here
+                    download_url = child.get(self.ATTRIBUTE.url, None)
+                    filename = child.get(self.ATTRIBUTE.filename, None)
+                    file = None
+                    if filename:
+                        if filename in files:
+                            file = files[filename]
+                        elif download_url:
+                            # Try to download the file
+                            import urllib
+                            try:
+                                file = urllib.urlopen(download_url)
+                            except IOError:
+                                pass
+                        if file:
+                            field = table[f]
+                            value = field.store(file, filename)
+                        else:
+                            continue
+                else:
+                    value = child.get(self.ATTRIBUTE.value, None)
+                    value = self.xml_decode(value)
 
                 if field_type == 'boolean':
                     if value and value in ["True", "true"]:

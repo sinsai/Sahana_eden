@@ -373,12 +373,14 @@ gis_feature_type_opts = {
 gis_source_opts = {
     1:T("GPS"),
     2:T("Imagery"),
+    3:T("Wikipedia"),
     }
 gis_location_hierarchy = {
     "L0":T("Country"),
     "L1":T("Region"),
     "L2":T("District"),
     "L3":T("Town"),
+    "L4":T("Village")
 }
 gis_location_languages = {
     1:T("English"),
@@ -407,6 +409,7 @@ table = db.define_table(tablename, timestamp, uuidstamp, deletion_status,
                 Field("lat", "double"), # Points or Centroid for Polygons
                 Field("lon", "double"), # Points or Centroid for Polygons
                 Field("wkt", "text"),   # WKT is auto-calculated from lat/lon for Points
+                Field("url"),
                 Field("osm_id"),        # OpenStreetMap ID. Should this be used in UUID field instead?
                 Field("lon_min", "double", writable=False, readable=False), # bounding-box
                 Field("lat_min", "double", writable=False, readable=False), # bounding-box
@@ -433,10 +436,11 @@ table.parent.represent = lambda id: (id and [db(db.gis_location.id == id).select
 table.gis_feature_type.requires = IS_IN_SET(gis_feature_type_opts, zero=None)
 table.gis_feature_type.represent = lambda opt: gis_feature_type_opts.get(opt, UNKNOWN_OPT)
 # WKT validation is done in the onvalidation callback
-#table.wkt.requires=IS_NULL_OR(IS_WKT())
+#table.wkt.requires = IS_NULL_OR(IS_WKT())
 table.wkt.represent = lambda wkt: gis.abbreviate_wkt(wkt)
 table.lat.requires = IS_NULL_OR(IS_LAT())
 table.lon.requires = IS_NULL_OR(IS_LON())
+table.url.requires = IS_NULL_OR(IS_URL())
 table.source.requires = IS_NULL_OR(IS_IN_SET(gis_source_opts))
 table.level.label = T("Level")
 table.code.label = T("Code")
@@ -447,6 +451,7 @@ table.gis_feature_type.label = T("Feature Type")
 table.lat.label = T("Latitude")
 table.lon.label = T("Longitude")
 table.wkt.label = T("Well-Known Text")
+table.url.label = "URL"
 table.osm_id.label = "OpenStreetMap"
 
 # Reusable field to include in other table definitions
@@ -475,29 +480,46 @@ s3xrc.model.add_component(module, resource,
 
 s3xrc.model.configure(table,
                       onvalidation=lambda form: gis.wkt_centroid(form),
-                      onaccept=gis.update_location_tree())
-                      
+                      onaccept=gis.update_location_tree() # Note that this is replaced below by the MultiSelect widget
+                      )
+
 resource = "location_name"
 tablename = module + "_" + resource
 table = db.define_table(tablename, timestamp, uuidstamp, deletion_status,
                 location_id,
                 Field("name_l10n"),
-                Field("language"),     
+                Field("language", "integer"),
                 migrate=migrate)
 table.uuid.requires = IS_NOT_IN_DB(db, '%s.uuid' % tablename)
 table.name_l10n.label = T("Name")
 table.language.requires = IS_IN_SET(gis_location_languages)
+table.language.represent = lambda opt: gis_location_languages.get(opt, UNKNOWN_OPT)
 table.language.label = T("Language")
 
+s3xrc.model.add_component(module, resource, joinby=dict(gis_location="location_id"), multiple=True)
+
 # Multiselect Widget
-table = db.gis_location
-name_dummy_element = S3MultiSelectWidget(db = db,                                                             
-                                         link_table_name = tablename,                  
+name_dummy_element = S3MultiSelectWidget(db = db,
+                                         link_table_name = tablename,
                                          link_field_name = "location_id")
+table = db.gis_location
 table.name_dummy.widget = name_dummy_element.widget
 table.name_dummy.represent = name_dummy_element.represent
 def gis_location_onaccept(form):
-    name_dummy_element.onaccept(db, session.rcvars.gis_location, request)
+    if session.rcvars and hasattr(name_dummy_element, "onaccept"):
+        # HTML UI, not XML import
+        name_dummy_element.onaccept(db, session.rcvars.gis_location, request)
+    else:
+        location_id = form.vars.id
+        table = db.gis_location_name
+        names = db(table.location_id==location_id).select(table.id)
+        if names:
+            ids = [str(name.id) for name in names]
+            #name_dummy = "|%s|" % "|".join(ids)
+            name_dummy = "|".join(ids) # That's not how it should be
+            table = db.gis_location
+            db(table.id==location_id).update(name_dummy=name_dummy)
+    # Include the normal onaccept
     gis.update_location_tree()
 s3xrc.model.configure(table, onaccept=gis_location_onaccept)
 
@@ -559,7 +581,7 @@ table = db.define_table(tablename, timestamp, uuidstamp, authorstamp, deletion_s
                 Field("name", length=128, notnull=True, unique=True),
                 Field("category"),
                 location_id,
-                shn_comments_field,
+                comments,
                 migrate=migrate)
 table.uuid.requires = IS_NOT_IN_DB(db, "%s.uuid" % tablename)
 table.name.requires = [IS_NOT_EMPTY(), IS_NOT_IN_DB(db, "%s.name" % tablename)]
@@ -581,7 +603,7 @@ table = db.define_table(tablename, timestamp, uuidstamp, authorstamp, deletion_s
                 Field("filter_value"),          # Used to build a simple query
                 Field("query", notnull=True),
                 marker_id,                      # Optional Marker to over-ride the values from the Feature Classes
-                shn_comments_field,
+                comments,
                 migrate=migrate)
 table.uuid.requires = IS_NOT_IN_DB(db, "%s.uuid" % tablename)
 #table.author.requires = IS_ONE_OF(db, "auth_user.id","%(id)s: %(first_name)s %(last_name)s")
@@ -820,7 +842,7 @@ table = db.define_table(tablename, timestamp,
 # upload folder needs to be visible to the download() function as well as the upload
 table.file.uploadfolder = os.path.join(request.folder, "uploads/gis_cache")
 
-# Not yet implemented
+# Below tables are not yet implemented
 
 # GIS Styles: SLD
 #db.define_table("gis_style", timestamp,

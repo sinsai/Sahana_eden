@@ -185,6 +185,20 @@ function view3(importsheet)
 							console.log(fields);
 							var nested_fields = 0;
 							var nested_resources_structure = {};
+						       if(reference_fields.length == 0)
+							{
+								get_fields.hide();				
+								importsheet.final_resources = final_resources;
+								importsheet.fields = fields;
+								msForm.hide();
+								console.log("And all the fields are ");
+								console.log(importsheet.fields);
+								console.log(nested_resources_structure);
+								view4(importsheet);}
+							
+
+							
+	
 							for( var i = 0 ; i < reference_fields.length ; i++)
 							{
 							        var res = reference_fields[i][1];
@@ -210,17 +224,31 @@ function view3(importsheet)
 									nested_resources_structure[fields_['@resource']].push(fields_.field[k]['@name']);
 								}
 							}
+
 							if(nested_fields == reference_fields.length)
-							{get_fields.hide();				
-							importsheet.final_resources = final_resources;
-							importsheet.fields = fields;
-							msForm.hide();
-							console.log("And all the fields are ");
-							console.log(importsheet.fields);
-							console.log(nested_resources_structure);
-							view4(importsheet);}
+							{
+								get_fields.hide();				
+								importsheet.final_resources = final_resources;
+								importsheet.fields = fields;
+								msForm.hide();
+								console.log("And all the fields are ");
+								console.log(importsheet.fields);
+								console.log(nested_resources_structure);
+								view4(importsheet);}
 							}
 							});
+							if(reference_fields.length == 0)
+							{
+								get_fields.hide();				
+								importsheet.final_resources = final_resources;
+								importsheet.fields = fields;
+								msForm.hide();
+								console.log("And all the fields are ");
+								console.log(importsheet.fields);
+								console.log(nested_resources_structure);
+								view4(importsheet);}
+							
+
 							}
 							
 						}

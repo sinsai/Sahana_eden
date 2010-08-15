@@ -9,9 +9,6 @@ import gluon.contrib.simplejson as json
 response.menu_options = [
     [
 	    T('Spreadsheet'), False, URL(r=request, f='spreadsheet/create')
-    ],
-    [
-	    T('Google Documents'), False, URL(r=request, f='googledoc')
     ]
 ]
 

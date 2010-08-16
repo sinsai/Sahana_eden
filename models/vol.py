@@ -422,6 +422,14 @@ if deployment_settings.has_module(module):
         else:
             return None
 
+    skill_types_id = db.Table(None, "skill_types_id",
+                              FieldS3("skill_types_id", db.vol_skill_types,
+                                      sortby = ["category", "name"],
+                                      requires = IS_ONE_OF(db, "vol_skill_types.id", vol_skill_types_represent),
+                                      represent = vol_skill_types_represent,
+                                      label = T("Skill"),
+                                      ondelete = "RESTRICT"))
+
 
     # -------------------------------------------------------------------------
     # vol_skill
@@ -432,13 +440,10 @@ if deployment_settings.has_module(module):
     tablename = module + '_' + resource
     table = db.define_table(tablename, timestamp, uuidstamp, deletion_status,
                 person_id,
-        Field('skill_types_id'),   
-        Field('status',requires=IS_IN_SET(['approved','unapproved','denied']),label=T('status'), notnull=True, default='unapproved'),             
+        skill_types_id,   
+        Field('status',requires=IS_IN_SET(['approved','unapproved','denied']),label=T('Status'), notnull=True, default='unapproved'),             
                     migrate=migrate)  
    
-    db.vol_skill.skill_types_id.requires = IS_ONE_OF(db, 'vol_skill_types.id', vol_skill_types_represent)
-    db.vol_skill.skill_types_id.represent = vol_skill_types_represent
-
     s3xrc.model.add_component(module, resource,
         multiple=True,
         joinby=dict(pr_person='person_id'),
@@ -463,6 +468,7 @@ if deployment_settings.has_module(module):
         subtitle_list = SKILL,
         label_list_button = T('List Skills'),
         label_create_button = ADD_SKILL,
+        label_delete_button = T('Delete Skill'),
         msg_record_created = T('Skill added'),
         msg_record_modified = T('Skill updated'),
         msg_record_deleted = T('Skill deleted'),

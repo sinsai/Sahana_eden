@@ -27,26 +27,26 @@ def template_link():
 
 def index():
     "Module's Home Page"
-    module_name = deployment_settings.modules[module].name_nice    
+    module_name = deployment_settings.modules[module].name_nice
     return dict(module_name=module_name)
 
 def template():
     """ RESTlike CRUD controller """
     resource = "template"
     def _prep(jr):
-        crud.settings.create_next = URL(r = request, c="survey", f="section")
-        crud.settings.update_next = URL(r = request, c="survey", f="section")
+        crud.settings.create_next = URL(r = request, c="survey", f="questions")
+        crud.settings.update_next = URL(r = request, c="survey", f="questions")
         return True
     response.s3.prep = _prep
     tablename = "%s_%s" % (module, resource)
-    table = db[tablename]    
+    table = db[tablename]
     table.uuid.requires = IS_NOT_IN_DB(db,"%s.uuid" % tablename)
     table.name.requires = IS_NOT_EMPTY()
     table.name.label = T("Survey Name")
     table.name.comment = SPAN("*", _class="req")
     table.description.label = T("Description")
-    
-    
+
+
     # CRUD Strings
     s3.crud_strings[tablename] = Storage(
         title_create = T("Add Survey Template"),
@@ -66,46 +66,47 @@ def template():
 
     return transform_buttons(output,next=True,cancel=True)
 
-def section():        
+def questions():
     """
        At this stage, the user the following workflow will be implemented:
 
-       1) User creates a section
-       2) User adds questions via the drop down or clicks "Add Question" to add a new one.
+       -  User adds questions via the drop down or clicks "Add Question" to add a new one.
     """
-    table = db["survey_section"]
+    table = db["survey_questions"]
     table.uuid.requires = IS_NOT_IN_DB(db,"%s.uuid" % tablename)
-    table.name.requires = IS_NOT_EMPTY()
-    table.name.comment = SPAN("*", _class="req")
-    table.name.label = T("Survey Section Display Name")
-    table.description.label = T("Description")
-    record = table[request.args(0)]
-    section = SQLFORM(table,record,deletable=True)
-    questions = db().select(db.survey_question.ALL)
-    output = dict(all_questions=questions)    
+    try:
+        record = request.args(0)
+        query = (db.survey_template_link.survey_questions_id == questions_id) & (db.survey_template_link.survey_template_id == session.rcvars.survey_template)
+        questions_id = db(query).select(db.survey_questions.id).first()
+        redirect(URL(r=request,f="questions",args=[questions_id,"update"]))
+    except:
+        pass
+    questions_form = SQLFORM(table,record,deletable=True,keepvalues=True)
+    all_questions = db().select(db.survey_question.ALL)
+    output = dict(all_questions=all_questions)
     # Let's avoid blowing up -- this loads questions
     try:
-        section_id = request.args(0)        
-        question_query = (db.survey_template_link.survey_section_id == section_id) & (db.survey_question.id == db.survey_template_link.survey_question_id)
-        section_questions = db(question_query).select(db.survey_question.ALL)
+        questions_id = request.args(0)
+        question_query = (db.survey_template_link.survey_questions_id == questions_id) & (db.survey_question.id == db.survey_template_link.survey_question_id)
+        contained_questions = db(question_query).select(db.survey_question.ALL)
 
-        if len(section_questions) > 0:            
-            output.update(section_questions=section_questions)
+        if len(contained_questions) > 0:
+            output.update(contained_questions=contained_questions)
         else:
-            output.update(section_questions=sections_questions)
+            output.update(contained_questions=contained_questions)
     except:
-        output.update(section_questions=[])
+        output.update(contained_questions=[])
         pass # this means we didn't pass an id, e.g., making a new section!
-    if section.accepts(request.vars,session,keepvalues=True):
-        questions = request.post_vars.questions        
-        for question in questions:            
-            if not has_dupe_questions(section.vars.id,question):               
-                db.survey_template_link.insert(survey_template_id=session.rcvars.survey_template,survey_section_id=section.vars.id,
-                                              survey_question_id=question)           
-        redirect(URL(r=request,c="survey",f="section", args=[section.vars.id]))
-    elif section.errors:
+    if questions_form.accepts(request.vars,session,keepvalues=True):
+        questions = request.post_vars.questions
+        for question in questions:
+            if not has_dupe_questions(questions_form.vars.id,question):
+                db.survey_template_link.insert(survey_template_id=session.rcvars.survey_template,survey_questions_id=questions_form.vars.id,
+                                              survey_question_id=question)
+        redirect(URL(r=request,c="survey",f="template"))
+    elif questions_form.errors:
         response.flash= T("Please correct all errors.")
-    output.update(form=section)
+    output.update(form=questions_form)
     return output
 
 def table():
@@ -124,7 +125,7 @@ def table():
     series = db(db.survey_series.id == series_id).select().first()
     if not series:
         response.error = T("A survey series with id %s does not exist. Please go back and create one.") % (series_id)
-        return dict()                                       
+        return dict()
     else:
         # everything is good at this point!
         question_opts = get_options_for_questions(template_id)
@@ -135,7 +136,7 @@ def series():
     """ RESTlike CRUD controller """
     resource = "series"
     tablename = "%s_%s" % (module, resource)
-    table = db[tablename]    
+    table = db[tablename]
     table.uuid.requires = IS_NOT_IN_DB(db,"%s.uuid" % tablename)
     table.name.requires = IS_NOT_EMPTY()
     table.name.label = T("Survey Series Name")
@@ -147,10 +148,10 @@ def series():
     table.survey_template_id.comment = SPAN("*", _class="req")
     table.from_date.label = T("Start of Period")
     table.from_date.requires = IS_NOT_EMPTY()
-    table.from_date.comment = SPAN("*", _class="req")    
-    table.to_date.label = T("End of Period")    
+    table.from_date.comment = SPAN("*", _class="req")
+    table.to_date.label = T("End of Period")
     table.to_date.requires = IS_NOT_EMPTY()
-    table.to_date.comment = SPAN("*", _class="req")    
+    table.to_date.comment = SPAN("*", _class="req")
 
     # CRUD Strings
     s3.crud_strings[tablename] = Storage(
@@ -202,7 +203,7 @@ def series():
 
 def question():
     # Question data, e.g., name,description, etc.
-    resource = "question"    
+    resource = "question"
     tablename = "%s_%s" % (module, resource)
     table = db[tablename]
     table.uuid.requires = IS_NOT_IN_DB(db,"%s.uuid" % tablename)
@@ -304,8 +305,8 @@ def transform_buttons(output,save = None, prev = None, next = None, finish = Non
             add_buttons(form,save,prev,next,finish,cancel)
     return output
 
-def has_dupe_questions(section_id,question_id):
-    question_query = (db.survey_template_link.survey_section_id == section_id) \
+def has_dupe_questions(questions_id,question_id):
+    question_query = (db.survey_template_link.survey_questions_id == questions_id) \
     & (question_id == db.survey_template_link.survey_question_id)
     questions = db(question_query).select(db.survey_question.ALL)
     if len(questions) > 1:
@@ -348,7 +349,7 @@ def get_table_for_template(template_id):
                 elif question_type == 11:
                     fields.append(Field("question_%s" % (question.id), "datetime",label=question.name))
 
-                    
+
                 elif question_type == 14:
                     field.append(location_id,label=question.name)
 
@@ -379,7 +380,7 @@ def get_options_for_questions(template_id):
                                          "allow_comments":question.allow_comments,\
                                          "comment_display_label":question.comment_display_label,\
                                          "required":question.required}]
-                
+
             elif question_type  == 9:
                 opt_map[question.id] = {"tf_ta_column":question.tf_ta_columns, \
                                          "ta_rows":question.ta_rows,

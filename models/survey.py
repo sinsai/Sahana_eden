@@ -1,4 +1,4 @@
-# -*- coding: utf-8 -*-     
+# -*- coding: utf-8 -*-
 
 """
    Survey Module
@@ -60,7 +60,7 @@ if deployment_settings.has_module(module):
     # Survey Section
     resource = "questions"
     tablename = module +"_" + resource
-    section = db.define_table(tablename)
+    section = db.define_table(tablename,name_desc)
 
     # Question options e.g., Row choices, Column Choices, Layout Configuration data, etc...
     resource = "question_options"
@@ -107,7 +107,7 @@ if deployment_settings.has_module(module):
     answer = db.define_table(tablename,timestamp, uuidstamp, deletion_status, authorstamp,
                              Field("survey_instance_id",db.survey_instance),
                              Field("question_id",db.survey_question),
-                             Field("answer_value","text",length=600),                             
+                             Field("answer_value","text",length=600),
                              Field("answer_image","upload"), # store the image if "Image" is selected.
                              Field("answer_location",db.gis_location),
                              Field("answer_person",db.pr_person),
@@ -116,7 +116,7 @@ if deployment_settings.has_module(module):
     # Link table
     resource = "template_link"
     tablename = module +"_" + resource
-    link_table = db.define_table(tablename,timestamp, uuidstamp, deletion_status, authorstamp,                                 
+    link_table = db.define_table(tablename,timestamp, uuidstamp, deletion_status, authorstamp,
                                  Field("survey_question_id",db.survey_question),
                                  Field("survey_template_id", db.survey_template),
                                  Field("survey_questions_id", db.survey_questions))

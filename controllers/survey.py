@@ -38,6 +38,7 @@ def template():
         crud.settings.update_next = URL(r = request, c="survey", f="questions")
         return True
     response.s3.prep = _prep
+
     tablename = "%s_%s" % (module, resource)
     table = db[tablename]
     table.uuid.requires = IS_NOT_IN_DB(db,"%s.uuid" % tablename)
@@ -62,8 +63,7 @@ def template():
         msg_record_deleted = T('Survey Template deleted'),
         msg_list_empty = T('No Survey Template currently registered'))
 
-    output = shn_rest_controller(module,resource,listadd=False)
-
+    output = shn_rest_controller(module,resource,listadd=False)    
     return transform_buttons(output,next=True,cancel=True)
 
 def questions():
@@ -72,22 +72,25 @@ def questions():
 
        -  User adds questions via the drop down or clicks "Add Question" to add a new one.
     """
-    table = db["survey_questions"]
-    table.uuid.requires = IS_NOT_IN_DB(db,"%s.uuid" % tablename)
-    try:
-        record = request.args(0)
-        query = (db.survey_template_link.survey_questions_id == questions_id) & (db.survey_template_link.survey_template_id == session.rcvars.survey_template)
-        questions_id = db(query).select(db.survey_questions.id).first()
-        redirect(URL(r=request,f="questions",args=[questions_id,"update"]))
-    except:
-        pass
+
+    table = db["survey_questions"]    
+    record = request.args(0)
+    print record
+    if not record:
+        questions_query = (db.survey_template_link.survey_questions_id == db.survey_questions.id) & \
+        (db.survey_question.id == db.survey_template_link.survey_question_id) & \
+        (db.survey_template.id == db.survey_template_link.survey_template_id)
+        record = db(questions_query).select(db.survey_questions.id).first()
+        redirect(URL(r=request,f="questions",args=[record.id]))
     questions_form = SQLFORM(table,record,deletable=True,keepvalues=True)
     all_questions = db().select(db.survey_question.ALL)
     output = dict(all_questions=all_questions)
     # Let's avoid blowing up -- this loads questions
     try:
         questions_id = request.args(0)
-        question_query = (db.survey_template_link.survey_questions_id == questions_id) & (db.survey_question.id == db.survey_template_link.survey_question_id)
+        question_query = (db.survey_template_link.survey_questions_id == questions_id) & \
+        (db.survey_question.id == db.survey_template_link.survey_question_id) & \
+        (db.survey_template.id == db.survey_template_link.survey_template_id)
         contained_questions = db(question_query).select(db.survey_question.ALL)
 
         if len(contained_questions) > 0:
@@ -103,7 +106,6 @@ def questions():
             if not has_dupe_questions(questions_form.vars.id,question):
                 db.survey_template_link.insert(survey_template_id=session.rcvars.survey_template,survey_questions_id=questions_form.vars.id,
                                               survey_question_id=question)
-        redirect(URL(r=request,c="survey",f="template"))
     elif questions_form.errors:
         response.flash= T("Please correct all errors.")
     output.update(form=questions_form)

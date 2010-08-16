@@ -60,7 +60,7 @@ if deployment_settings.has_module(module):
     # Survey Section
     resource = "questions"
     tablename = module +"_" + resource
-    section = db.define_table(tablename,name_desc)
+    section = db.define_table(tablename,uuidstamp,deletion_status,authorstamp)
 
     # Question options e.g., Row choices, Column Choices, Layout Configuration data, etc...
     resource = "question_options"

@@ -67,8 +67,7 @@ function TB_refresh() {
 
     // URL to retrieve the Options list for the field of the master resource
     var url = '{{=URL(r=request, c="aaa", f="bbb")}}'.replace('aaa/bbb', parent_module + '/' + parent_resource);
-    url += "/options.json?field=" + child_resource;
-    alert(url)
+    url += "/options.json?field=" + child_resource;    
     var selector = self.parent.$('#' + caller);
     var dummy = self.parent.$('#dummy_' + caller);
     var has_dummy = (dummy.val() != undefined);

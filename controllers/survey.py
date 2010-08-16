@@ -88,11 +88,7 @@ def questions():
     # Let's avoid blowing up -- this loads questions
     try:
         questions_id = request.args(0)
-        question_query = (db.survey_template_link.survey_questions_id == questions_id) & \
-        (db.survey_question.id == db.survey_template_link.survey_question_id) & \
-        (db.survey_template.id == db.survey_template_link.survey_template_id)
-        contained_questions = db(question_query).select(db.survey_question.ALL)
-
+        contained_questions = get_contained_questions(questions_id)
         if len(contained_questions) > 0:
             output.update(contained_questions=contained_questions)
         else:
@@ -100,12 +96,18 @@ def questions():
     except:
         output.update(contained_questions=[])
         pass # this means we didn't pass an id, e.g., making a new section!
-    if questions_form.accepts(request.vars,session,keepvalues=True):
+    if questions_form.accepts(request.vars,session,keepvalues=True):        
         questions = request.post_vars.questions
-        for question in questions:
-            if not has_dupe_questions(questions_form.vars.id,question):
-                db.survey_template_link.insert(survey_template_id=session.rcvars.survey_template,survey_questions_id=questions_form.vars.id,
+        if not questions:
+            db(db.survey_template_link.survey_questions_id == questions_id).delete()
+            output.update(contained_questions=get_contained_questions(questions_id))
+        if questions:
+            for question in questions:
+               if not has_dupe_questions(questions_form.vars.id,question):
+                    db.survey_template_link.insert(survey_template_id=session.rcvars.survey_template,survey_questions_id=questions_form.vars.id,
                                               survey_question_id=question)
+            prune_questions(questions_id,questions,contained_questions)
+            output.update(contained_questions=get_contained_questions(questions_id))
     elif questions_form.errors:
         response.flash= T("Please correct all errors.")
     output.update(form=questions_form)
@@ -339,7 +341,24 @@ def has_dupe_questions(questions_id,question_id):
         return True
     else:
         return False
-
+        
+def prune_questions(questions_id, questions,all_questions):
+    if not questions_id:
+        return # do nothing
+    if not questions:
+        return # nothing to act on.
+    for question in all_questions:
+        if not question in questions:
+            question_query = (db.survey_template_link.survey_questions_id == questions_id) \
+            & (question.id == db.survey_template_link.survey_question_id)
+            db(question_query).delete()
+            db.commit()
+def get_contained_questions(questions_id):
+    question_query = (db.survey_template_link.survey_questions_id == questions_id) & \
+        (db.survey_question.id == db.survey_template_link.survey_question_id) & \
+        (db.survey_template.id == db.survey_template_link.survey_template_id)
+    contained_questions = db(question_query).select(db.survey_question.ALL)
+    return contained_questions
 def get_table_for_template(template_id):
     """ Returns the table for the given template and if it doesn't exist -- creates and returns that"""
 

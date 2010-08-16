@@ -25,9 +25,5 @@
  {{=list_btn}}
 {{except:}}
 {{pass}}
-{{try:}}
- {{=del_btn}}
-{{except:}}
-{{pass}}
 {{=A("View Answers",_class="action-btn", _href=URL(r=request,f="table",vars={"series_id":jr.id}))}}        
 {{include "colorbox.html"}}

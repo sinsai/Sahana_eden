@@ -23,7 +23,7 @@
         {{for question in contained_questions:}}
            questions.push({{=question.id}})
         {{pass}}
-        $(".ms").selectOptions(questions).change();
+        $(".ms").selectOptions(questions).change();       
     }
     $(document).ready(function() {
             $("select[multiple]").bsmSelect({

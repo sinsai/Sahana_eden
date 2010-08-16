@@ -13,3 +13,4 @@
 # Poll RMS Feeds (Haiti-specific)
 #*/5   *       *       *       *       root *applications/eden/cron/rms_sms2record.py
 #*/5   *       *       *       *       root *applications/eden/cron/rms_tweet2request.py
+@reboot root *sync/schedule_cron

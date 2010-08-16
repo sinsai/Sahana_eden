@@ -23,19 +23,21 @@ for log in logs:
 	else:
 		tr_class = "even"
 	pass
+	
+	peer = db(db.sync_partner.uuid==log.partner_uuid).select(db.sync_partner.ALL)[0]
 }}
  <tr class='{{=tr_class}}'>
-  <td valign='top'>{{=A(T(str(log.id)), _href=URL(r=request, c="appadmin", f="update/db/sync_log", args = log.id))}}</td>
-  <td valign='top'>{{=log.partner_name}}</td>
-  <td valign='top'>{{=log.timestmp.strftime("%x %H:%M")}}</td>
-  <td valign='top'>{{=log.sync_resources}}</td>
-  <td valign='top'>{{=log.sync_errors}}</td>
-  <td valign='top'>{{=log.sync_mode}}</td>
-  <td valign='top'>{{=log.complete_sync}}</td>
-  <td valign='top'>{{=log.sync_method}}</td>
+ <td valign='top'>{{=A(T(str(log.id)),_href=URL(r=request, c="appadmin", f="update/db/sync_log", args = log.id))}}</td>
+ <td valign='top'>{{=peer.name}}</td>
+ <td valign='top'>{{=log.timstamp.strftime("%x %H:%M")}}</td>
+ <td valign='top'>{{=log.sync_resources}}</td>
+ <td valign='top'>{{=log.sync_errors}}</td>
+ <td valign='top'>{{=log.sync_mode}}</td>
+ <td valign='top'>{{=log.complete_sync}}</td>
+ <td valign='top'>{{=log.sync_method}}</td>
  </tr>
 {{pass}}
-</tbody>
+ </tbody>
 </table>
 </div>
 <p>&nbsp;</p>

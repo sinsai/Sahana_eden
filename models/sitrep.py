@@ -25,17 +25,20 @@ if deployment_settings.has_module(module):
     tablename = "%s_%s" % (module, resource)
     table = db.define_table(tablename,
                             timestamp, uuidstamp, authorstamp, deletion_status,
-                            Field("name"),
+                            Field("date", "date"),
                             location_id,
-                            person_id,
-                            organisation_id,
+                            staff_id,
+                            Field("staff2_id", db.org_staff, ondelete = "RESTRICT"),
                             document,
                             comments,
                             migrate=migrate)
 
-    table.name.requires = IS_NOT_EMPTY()
-    table.name.comment = SPAN("*", _class="req")
-
+    table.date.requires = IS_NULL_OR(IS_DATE())
+    table.staff2_id.requires = IS_NULL_OR(IS_ONE_OF(db, "org_staff.id", shn_org_staff_represent))
+    table.staff2_id.represent = lambda id: shn_org_staff_represent(id)
+    table.staff2_id.comment = DIV(A(ADD_STAFF, _class="colorbox", _href=URL(r=request, c="org", f="staff", args="create", vars=dict(format="popup", child="staff2_id")), _target="top", _title=ADD_STAFF), DIV( _class="tooltip", _title=ADD_STAFF + "|" + Tstr("Add new staff.")))
+    table.staff2_id.label = "Staff 2"
+    
     # CRUD strings
     ADD_ASSESSMENT = T("Add Assessment")
     LIST_ASSESSMENTS = T("List Assessments")
@@ -54,29 +57,55 @@ if deployment_settings.has_module(module):
         msg_record_deleted = T("Assessment deleted"),
         msg_list_empty = T("No Assessments currently registered"))
 
+    # re-usable field
+    def shn_rassessment_represent(id):
+        row = db(db.sitrep_rassessment == id).select(db.sitrep_rassessment.date,
+                                                        db.sitrep_rassessment.staff_id,
+                                                        db.sitrep_rassessment.staff2_id,
+                                                        db.sitrep_rassessment.location_id, 
+                                                        limitby = [0, 1]).first()
+        if row:
+            if row.date:
+                date = str(row.date)
+            else:
+                date = ""
+            if row.location_id:
+                location = shn_location_represent(row.location_id)
+            else:
+                location = ""
+            if row.staff_id:
+                staff = db(db.org_staff.id == row.staff_id).select(db.org_staff.organisation_id).first()
+                organisation = shn_organisation_represent(staff.organisation_id)
+            else:
+                organisation = ""
+            if row.staff2_id:
+                staff2 = db(db.org_staff.id == row.staff2_id).select(db.org_staff.organisation_id).first()
+                organisation2 = shn_organisation_represent(staff2.organisation_id)
+            else:
+                organisation2 = ""
+            rassessment_represent = location + organisation + ", " + organisation2 + date
+        else:
+            rassessment_represent = "-"
+
+        return rassessment_represent
+
     assessment_id = db.Table(None, "assessment_id",
-                        Field("assessment_id", table,
-                              requires = IS_NULL_OR(IS_ONE_OF(db, "sitrep_rassessment.id", "%(name)s")),
-                              represent = lambda id: (id and [db(db.sitrep_rassessment.id == id).select(db.sitrep_rassessment.name, limitby=(0, 1)).first().name] or ["None"])[0],
-                              label = T("Rapid Assessment"),
-                              comment = A(ADD_ASSESSMENT, _class="colorbox", _href=URL(r=request, c="sitrep", f="rassessment", args="create", vars=dict(format="popup")), _target="top", _title=ADD_ASSESSMENT),
-                              ondelete = "RESTRICT"))
+                             Field("assessment_id", table,
+                                   requires = IS_NULL_OR(IS_ONE_OF(db, "sitrep_rassessment.id", shn_rassessment_represent)),
+                                   represent = lambda id: shn_rassessment_represent(id),
+                                   label = T("Rapid Assessment"),
+                                   comment = A(ADD_ASSESSMENT, _class="colorbox", _href=URL(r=request, c="sitrep", f="rassessment", args="create", vars=dict(format="popup")), _target="top", _title=ADD_ASSESSMENT),
+                                   ondelete = "RESTRICT"))
 
 
     # Section 2
-    resource = "rassessment_section2"
+    resource = "section2"
     tablename = "%s_%s" % (module, resource)
     table = db.define_table(tablename,
                             timestamp, uuidstamp, authorstamp, deletion_status,
-                            Field("name"),
-                            location_id,
-                            person_id,
-                            document,
+                            assessment_id,
                             comments,
                             migrate=migrate)
-
-    table.name.requires = IS_NOT_EMPTY()
-    table.name.comment = SPAN("*", _class="req")
 
     # CRUD strings
     ADD_SECTION = T("Add Section")
@@ -97,11 +126,229 @@ if deployment_settings.has_module(module):
         msg_list_empty = T("No Sections currently registered"))
 
     s3xrc.model.add_component(module, resource,
-                              multiple = True,
+                              multiple = False,
                               joinby = dict(sitrep_rassessment="assessment_id"),
                               deletable = True,
                               editable = True)
 
+    # Section 3
+    resource = "section3"
+    tablename = "%s_%s" % (module, resource)
+    table = db.define_table(tablename,
+                            timestamp, uuidstamp, authorstamp, deletion_status,
+                            assessment_id,
+                            comments,
+                            migrate=migrate)
+
+    # CRUD strings
+    s3.crud_strings[tablename] = Storage(
+        title_create = ADD_SECTION,
+        title_display = T("Section Details"),
+        title_list = LIST_SECTIONS,
+        title_update = T("Edit Section"),
+        title_search = T("Search Sections"),
+        subtitle_create = T("Add New Section"),
+        subtitle_list = T("Sections"),
+        label_list_button = LIST_SECTIONS,
+        label_create_button = ADD_SECTION,
+        msg_record_created = T("Section added"),
+        msg_record_modified = T("Section updated"),
+        msg_record_deleted = T("Section deleted"),
+        msg_list_empty = T("No Sections currently registered"))
+
+    s3xrc.model.add_component(module, resource,
+                              multiple = False,
+                              joinby = dict(sitrep_rassessment="assessment_id"),
+                              deletable = True,
+                              editable = True)
+
+    # Section 4
+    resource = "section4"
+    tablename = "%s_%s" % (module, resource)
+    table = db.define_table(tablename,
+                            timestamp, uuidstamp, authorstamp, deletion_status,
+                            assessment_id,
+                            comments,
+                            migrate=migrate)
+
+    # CRUD strings
+    s3.crud_strings[tablename] = Storage(
+        title_create = ADD_SECTION,
+        title_display = T("Section Details"),
+        title_list = LIST_SECTIONS,
+        title_update = T("Edit Section"),
+        title_search = T("Search Sections"),
+        subtitle_create = T("Add New Section"),
+        subtitle_list = T("Sections"),
+        label_list_button = LIST_SECTIONS,
+        label_create_button = ADD_SECTION,
+        msg_record_created = T("Section added"),
+        msg_record_modified = T("Section updated"),
+        msg_record_deleted = T("Section deleted"),
+        msg_list_empty = T("No Sections currently registered"))
+
+    s3xrc.model.add_component(module, resource,
+                              multiple = False,
+                              joinby = dict(sitrep_rassessment="assessment_id"),
+                              deletable = True,
+                              editable = True)
+
+    # Section 5
+    resource = "section5"
+    tablename = "%s_%s" % (module, resource)
+    table = db.define_table(tablename,
+                            timestamp, uuidstamp, authorstamp, deletion_status,
+                            assessment_id,
+                            comments,
+                            migrate=migrate)
+
+    # CRUD strings
+    s3.crud_strings[tablename] = Storage(
+        title_create = ADD_SECTION,
+        title_display = T("Section Details"),
+        title_list = LIST_SECTIONS,
+        title_update = T("Edit Section"),
+        title_search = T("Search Sections"),
+        subtitle_create = T("Add New Section"),
+        subtitle_list = T("Sections"),
+        label_list_button = LIST_SECTIONS,
+        label_create_button = ADD_SECTION,
+        msg_record_created = T("Section added"),
+        msg_record_modified = T("Section updated"),
+        msg_record_deleted = T("Section deleted"),
+        msg_list_empty = T("No Sections currently registered"))
+
+    s3xrc.model.add_component(module, resource,
+                              multiple = False,
+                              joinby = dict(sitrep_rassessment="assessment_id"),
+                              deletable = True,
+                              editable = True)
+    
+    # Section 6
+    resource = "section6"
+    tablename = "%s_%s" % (module, resource)
+    table = db.define_table(tablename,
+                            timestamp, uuidstamp, authorstamp, deletion_status,
+                            assessment_id,
+                            comments,
+                            migrate=migrate)
+
+    # CRUD strings
+    s3.crud_strings[tablename] = Storage(
+        title_create = ADD_SECTION,
+        title_display = T("Section Details"),
+        title_list = LIST_SECTIONS,
+        title_update = T("Edit Section"),
+        title_search = T("Search Sections"),
+        subtitle_create = T("Add New Section"),
+        subtitle_list = T("Sections"),
+        label_list_button = LIST_SECTIONS,
+        label_create_button = ADD_SECTION,
+        msg_record_created = T("Section added"),
+        msg_record_modified = T("Section updated"),
+        msg_record_deleted = T("Section deleted"),
+        msg_list_empty = T("No Sections currently registered"))
+
+    s3xrc.model.add_component(module, resource,
+                              multiple = False,
+                              joinby = dict(sitrep_rassessment="assessment_id"),
+                              deletable = True,
+                              editable = True)
+
+    # Section 7
+    resource = "section7"
+    tablename = "%s_%s" % (module, resource)
+    table = db.define_table(tablename,
+                            timestamp, uuidstamp, authorstamp, deletion_status,
+                            assessment_id,
+                            comments,
+                            migrate=migrate)
+
+    # CRUD strings
+    s3.crud_strings[tablename] = Storage(
+        title_create = ADD_SECTION,
+        title_display = T("Section Details"),
+        title_list = LIST_SECTIONS,
+        title_update = T("Edit Section"),
+        title_search = T("Search Sections"),
+        subtitle_create = T("Add New Section"),
+        subtitle_list = T("Sections"),
+        label_list_button = LIST_SECTIONS,
+        label_create_button = ADD_SECTION,
+        msg_record_created = T("Section added"),
+        msg_record_modified = T("Section updated"),
+        msg_record_deleted = T("Section deleted"),
+        msg_list_empty = T("No Sections currently registered"))
+
+    s3xrc.model.add_component(module, resource,
+                              multiple = False,
+                              joinby = dict(sitrep_rassessment="assessment_id"),
+                              deletable = True,
+                              editable = True)
+    
+    # Section 8
+    resource = "section8"
+    tablename = "%s_%s" % (module, resource)
+    table = db.define_table(tablename,
+                            timestamp, uuidstamp, authorstamp, deletion_status,
+                            assessment_id,
+                            comments,
+                            migrate=migrate)
+
+    # CRUD strings
+    s3.crud_strings[tablename] = Storage(
+        title_create = ADD_SECTION,
+        title_display = T("Section Details"),
+        title_list = LIST_SECTIONS,
+        title_update = T("Edit Section"),
+        title_search = T("Search Sections"),
+        subtitle_create = T("Add New Section"),
+        subtitle_list = T("Sections"),
+        label_list_button = LIST_SECTIONS,
+        label_create_button = ADD_SECTION,
+        msg_record_created = T("Section added"),
+        msg_record_modified = T("Section updated"),
+        msg_record_deleted = T("Section deleted"),
+        msg_list_empty = T("No Sections currently registered"))
+
+    s3xrc.model.add_component(module, resource,
+                              multiple = False,
+                              joinby = dict(sitrep_rassessment="assessment_id"),
+                              deletable = True,
+                              editable = True)
+    
+    # Section 9
+    resource = "section9"
+    tablename = "%s_%s" % (module, resource)
+    table = db.define_table(tablename,
+                            timestamp, uuidstamp, authorstamp, deletion_status,
+                            assessment_id,
+                            comments,
+                            migrate=migrate)
+
+    # CRUD strings
+    s3.crud_strings[tablename] = Storage(
+        title_create = ADD_SECTION,
+        title_display = T("Section Details"),
+        title_list = LIST_SECTIONS,
+        title_update = T("Edit Section"),
+        title_search = T("Search Sections"),
+        subtitle_create = T("Add New Section"),
+        subtitle_list = T("Sections"),
+        label_list_button = LIST_SECTIONS,
+        label_create_button = ADD_SECTION,
+        msg_record_created = T("Section added"),
+        msg_record_modified = T("Section updated"),
+        msg_record_deleted = T("Section deleted"),
+        msg_list_empty = T("No Sections currently registered"))
+
+    s3xrc.model.add_component(module, resource,
+                              multiple = False,
+                              joinby = dict(sitrep_rassessment="assessment_id"),
+                              deletable = True,
+                              editable = True)
+
+    # -----------------------------------------------------------------------------
     # Rivers
     resource = "river"
     tablename = "%s_%s" % (module, resource)
@@ -245,6 +492,7 @@ if deployment_settings.has_module(module):
                             Field("crop_losses", "integer"),
                             Field("water_level", "boolean"),
                             Field("crops_affectees", "double"),
+                            Field("source"),
                             comments,
                             migrate=migrate)
 
@@ -261,6 +509,9 @@ if deployment_settings.has_module(module):
     table.houses_damaged.default = 0
 
     table.crop_losses.requires = IS_NULL_OR(IS_INT_IN_RANGE(0, 100))
+
+    table.source.comment = DIV(DIV(_class="tooltip",
+                              _title=Tstr("Source") + "|" + Tstr("Ideally a full URL to the source file, otherwise just a note on where data came from.")))
 
     # CRUD strings
     #ADD_ASSESSMENT = T("Add Assessment")

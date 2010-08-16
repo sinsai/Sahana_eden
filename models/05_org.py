@@ -153,7 +153,7 @@ shn_organisation_comment = DIV(A(ADD_ORGANIZATION,
                                  _title=ADD_ORGANIZATION + "|" + Tstr("The Organization this record is associated with."))))
 organisation_id = db.Table(None, "organisation_id",
                            FieldS3("organisation_id", db.org_organisation, sortby="name",
-                           requires = IS_NULL_OR(IS_ONE_OF(db, "org_organisation.id", "%(name)s")),
+                           requires = IS_NULL_OR(IS_ONE_OF(db, "org_organisation.id", shn_organisation_represent)),
                            represent = shn_organisation_represent,
                            label = T("Organization"),
                            comment = shn_organisation_comment,
@@ -471,7 +471,7 @@ def represent_focal_point(is_focal_point):
 
 def shn_org_staff_represent(staff_id):
     person = db((db.org_staff.id == staff_id) &
-                (db.pr_person.id == db.org_staff.person_id)).select(db.pr_person.ALL)
+                (db.pr_person.id == db.org_staff.person_id)).select(db.pr_person.first_name, db.pr_person.middle_name, db.pr_person.last_name)
     if person:
         return vita.fullname(person[0])
     else:
@@ -492,8 +492,8 @@ def shn_orgs_to_person(person_id):
 # Reusable field
 staff_id = db.Table(None, "staff_id",
                         FieldS3("staff_id", db.org_staff, sortby="name",
-                        requires = IS_NULL_OR(IS_ONE_OF(db, "org_staff.id", "%(code)s")),
-                        represent = lambda id: (id and [shn_person_represent(db.org_staff[id].person_id)] or ["None"])[0],
+                        requires = IS_NULL_OR(IS_ONE_OF(db, "org_staff.id", shn_org_staff_represent)),
+                        represent = lambda id: shn_org_staff_represent(id),
                         comment = DIV(A(ADD_STAFF, _class="colorbox", _href=URL(r=request, c="org", f="staff", args="create", vars=dict(format="popup")), _target="top", _title=ADD_STAFF),
                                   DIV( _class="tooltip", _title=ADD_STAFF + "|" + Tstr("Add new staff."))),
                         label = "Staff",

@@ -80,7 +80,19 @@ def rassessment():
         return output
     response.s3.postp = user_postp
 
-    output = shn_rest_controller(module, resource)
+    output = shn_rest_controller(module, resource,
+                                 rheader=lambda r: \
+                                         shn_sitrep_rheader(r,
+                                            tabs = [(T("Section 1"), None),
+                                                    (T("Section 2"), "section2"),
+                                                    (T("Section 3"), "section3"),
+                                                    (T("Section 4"), "section4"),
+                                                    (T("Section 5"), "section5"),
+                                                    (T("Section 6"), "section6"),
+                                                    (T("Section 7"), "section7"),
+                                                    (T("Section 8"), "section8"),
+                                                    (T("Section 9"), "section9") ]),
+                                                    sticky=True)
     return output
 
 def river():
@@ -205,6 +217,22 @@ def shn_sitrep_rheader(r, tabs=[]):
             location = report.location_id
             if location:
                 location = shn_gis_location_represent(location)
+            staff = report.staff_id
+            if staff:
+                organisation_id = db(db.org_staff.id == staff).select(db.org_staff.organisation_id).first().organisation_id
+                organisation = shn_organisation_represent(organisation_id)
+            else:
+                organisation = None
+            staff = report.staff2_id
+            if staff:
+                organisation_id = db(db.org_staff.id == staff).select(db.org_staff.organisation_id).first().organisation_id
+                organisation2 = shn_organisation_represent(organisation_id)
+            else:
+                organisation2 = None
+            if organisation2:
+                orgs = organisation + ", " + organisation2
+            else:
+                orgs = organisation
             doc_url = URL(r=request, f="download", args=[report.document])
             try:
                 doc_name, file = r.table.document.retrieve(report.document)
@@ -214,14 +242,17 @@ def shn_sitrep_rheader(r, tabs=[]):
                 doc_name = report.document
             rheader = DIV(TABLE(
                             TR(
-                                TH(T("Location: ")), location,
-                                TH(T("Date: ")), report.datetime
+                                TH(Tstr("Location") + ": "), location,
+                                TH(Tstr("Date") + ": "), report.date
                               ),
                             TR(
-                                TH(T("Document: ")), A(doc_name, _href=doc_url)
+                                TH(Tstr("Organisations") + ": "), orgs,
+                                TH(Tstr("Document") + ": "), A(doc_name, _href=doc_url)
                               )
                             ),
                           rheader_tabs)
+
+            return rheader
                           
         elif r.name == "freport":
 
@@ -238,11 +269,11 @@ def shn_sitrep_rheader(r, tabs=[]):
                 doc_name = report.document
             rheader = DIV(TABLE(
                             TR(
-                                TH(T("Location: ")), location,
-                                TH(T("Date: ")), report.datetime
+                                TH(Tstr("Location") + ": "), location,
+                                TH(Tstr("Date") + ": "), report.datetime
                               ),
                             TR(
-                                TH(T("Document: ")), A(doc_name, _href=doc_url)
+                                TH(Tstr("Document") + ": "), A(doc_name, _href=doc_url)
                               )
                             ),
                           rheader_tabs)
@@ -262,10 +293,10 @@ def shn_sitrep_rheader(r, tabs=[]):
 
             rheader = DIV(TABLE(
                             TR(
-                                TH(T("Date: ")), report.date
+                                TH(Tstr("Date") + ": "), report.date
                               ),
                             TR(
-                                TH(T("Document: ")), A(doc_name, _href=doc_url)
+                                TH(Tstr("Document") + ": "), A(doc_name, _href=doc_url)
                               )
                             ),
                           rheader_tabs)

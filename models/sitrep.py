@@ -20,6 +20,41 @@ if deployment_settings.has_module(module):
 
     # Rapid Assessments
     # See: http://www.ecbproject.org/page/48
+    rassessment_interview_location_opts = {
+        1:T("Village"),
+        2:T("Urban area"),
+        3:T("Collective center"),
+        4:T("Informal camp"),
+        5:T("Formal camp"),
+        6:T("School"),
+        7:T("Mosque"),
+        8:T("Church"),
+        99:T("Other")
+    }
+    rassessment_interviewee_opts = {
+        1:T("Male"),
+        2:T("Female"),
+        3:T("Village Leader"),
+        4:T("Informal Leader"),
+        5:T("Community Member"),
+        6:T("Religious Leader"),
+        7:T("Police"),
+        8:T("Healthcare Worker"),
+        9:T("School Teacher"),
+        10:T("Womens Focus Groups"),
+        11:T("Child (< 18 yrs)"),
+        99:T("Other")
+    }
+    rassessment_accessibility_opts = {
+        1:T("2x4 Car"),
+        2:T("4x4 Car"),
+        3:T("Truck"),
+        4:T("Motorcycle"),
+        5:T("Boat"),
+        6:T("Walking Only"),
+        7:T("No access at all"),
+        99:T("Other")
+    }
     # Main Resource contains Section 1
     resource = "rassessment"
     tablename = "%s_%s" % (module, resource)
@@ -29,15 +64,29 @@ if deployment_settings.has_module(module):
                             location_id,
                             staff_id,
                             Field("staff2_id", db.org_staff, ondelete = "RESTRICT"),
-                            document,
+                            Field("interview_location", "integer"),
+                            Field("interviewee", "integer"),
+                            Field("accessibility", "integer"),
                             comments,
+                            document,
                             migrate=migrate)
 
     table.date.requires = IS_NULL_OR(IS_DATE())
     table.staff2_id.requires = IS_NULL_OR(IS_ONE_OF(db, "org_staff.id", shn_org_staff_represent))
     table.staff2_id.represent = lambda id: shn_org_staff_represent(id)
-    table.staff2_id.comment = DIV(A(ADD_STAFF, _class="colorbox", _href=URL(r=request, c="org", f="staff", args="create", vars=dict(format="popup", child="staff2_id")), _target="top", _title=ADD_STAFF), DIV( _class="tooltip", _title=ADD_STAFF + "|" + Tstr("Add new staff.")))
-    table.staff2_id.label = "Staff 2"
+    table.staff2_id.comment = A(ADD_STAFF, _class="colorbox", _href=URL(r=request, c="org", f="staff", args="create", vars=dict(format="popup", child="staff2_id")), _target="top", _title=ADD_STAFF)
+    table.staff2_id.label = T("Staff 2")
+    table.interview_location.requires = IS_NULL_OR(IS_IN_SET(rassessment_interview_location_opts, multiple=True, zero=None))
+    table.interview_location.represent = lambda opt: rassessment_interview_location_opts.get(opt, opt)
+    table.interview_location.label = T("Interview taking place at")
+    table.interview_location.comment = "(" + Tstr("Select all that apply") + ")"
+    table.interviewee.requires = IS_NULL_OR(IS_IN_SET(rassessment_interviewee_opts, multiple=True, zero=None))
+    table.interviewee.represent = lambda opt: rassessment_interviewee_opts.get(opt, opt)
+    table.interviewee.label = T("Person interviewed")
+    table.interviewee.comment = "(" + Tstr("Select all that apply") + ")"
+    table.accessibility.requires = IS_NULL_OR(IS_IN_SET(rassessment_accessibility_opts, zero=None))
+    table.accessibility.represent = lambda opt: rassessment_accessibility_opts.get(opt, opt)
+    table.accessibility.label = T("Accessibility of Affected Location")
     
     # CRUD strings
     ADD_ASSESSMENT = T("Add Assessment")

@@ -72,15 +72,16 @@ def questions():
 
        -  User adds questions via the drop down or clicks "Add Question" to add a new one.
     """
-
     table = db["survey_questions"]    
-    record = request.args(0)    
+    record = request.args(0)
+    template = db(db.survey_template.id == session.rcvars.survey_template).select().first()
     if not record:
         questions_query = (db.survey_template_link.survey_questions_id == db.survey_questions.id) & \
         (db.survey_question.id == db.survey_template_link.survey_question_id) & \
-        (db.survey_template.id == db.survey_template_link.survey_template_id)
+        (template.id == db.survey_template_link.survey_template_id)
         record = db(questions_query).select(db.survey_questions.id).first()
-        redirect(URL(r=request,f="questions",args=[record.id]))
+        if record:
+           redirect(URL(r=request,f="questions",args=[record.id]))                    
     questions_form = SQLFORM(table,record,deletable=True,keepvalues=True)
     all_questions = db().select(db.survey_question.ALL)
     output = dict(all_questions=all_questions)
@@ -134,8 +135,8 @@ def table():
         # everything is good at this point!
         question_opts = get_options_for_questions(template_id)
         table = get_table_for_template(template_id)
-        resource = template.table_name
-        table.uuid.requires = IS_NOT_IN_DB(db,"%s.uuid" % template.table_name)
+        resource = "template_%s" % (template.id)
+        table.uuid.requires = IS_NOT_IN_DB(db,"%s.uuid" % template.table_name)        
         return shn_rest_controller("survey",resource)
 def series():
     """ RESTlike CRUD controller """
@@ -235,9 +236,9 @@ def question():
         11:T("Date and/or Time"),
 #        12:T("Image"),
 #        13:T("Descriptive Text (e.g., Prose, etc)"),
-        14:T("Location"),
-        15:T("Organisation"),
-        16:T("Person"),
+#        14:T("Location"),
+#        15:T("Organisation"),
+#        16:T("Person"),
 ##        16:T("Custom Database Resource (e.g., anything defined as a resource in Sahana)")
     }
 
@@ -334,9 +335,9 @@ def get_table_for_template(template_id):
             tbl = eval("db.%s" % (template.table_name))
 
         else:
-            fields = [Field("series_id",db.survey_series)] # A list of Fields representing the questions
+            fields = [Field("series_id",db.survey_series,writable=False,readable=False)] # A list of Fields representing the questions
             questions = db((db.survey_template_link.survey_template_id == template_id) & \
-            (db.survey_question.id == db.survey_template_link.survey_question_id)).select(db.survey_question.ALL)
+            (db.survey_question.id == db.survey_template_link.survey_question_id)).select(db.survey_question.ALL)            
 
             # for each question, depending on its type create a Field
             for question in questions:
@@ -354,25 +355,20 @@ def get_table_for_template(template_id):
                 elif question_type == 11:
                     fields.append(Field("question_%s" % (question.id), "datetime",label=question.name))
 
-
-                elif question_type == 14:
-                    field.append(location_id,label=question.name)
-
-                elif question_type == 15:
-                    field.append(organisation_id)
-
-                elif question_type == 16:
-                    field.append(person_id)
-
             tbl = db.define_table("survey_template_%s" % (template_id),uuidstamp,deletion_status,authorstamp,
-                                  *fields)
-
+                                  *fields,migrate=True)
             # now add the table name to the template record so we can reference it later.
             db(db.survey_template.id == template_id).update(table_name="survey_template_%s" % (template.id))
             db.commit()
 
-    # finally we return the newly created or existing table.
-    return tbl
+            # set up onaccept for this table.
+            def _onaccept(form):
+                db(tbl.id == form.vars.id).update(series_id=request.vars.series_id)
+                db.commit()
+            s3xrc.model.configure(tbl,
+                      onaccept=lambda form: _onaccept(form))
+        # finally we return the newly created or existing table.
+        return tbl
 
 def get_options_for_questions(template_id):
         questions = db((db.survey_template_link.survey_template_id == template_id) & \

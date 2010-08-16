@@ -13,11 +13,11 @@ module = "survey"
 
 # Will populate later on.
 response.menu_options = [
-    [T("Surveys"), False, URL(r=request, f="template"),[
+    [T("Template"), False, URL(r=request, f="template"),[
         [T("List"), False, URL(r=request, f="template")],
         [T("Add"), False, URL(r=request, f="template", args="create")]
     ]],
-    [T("Survey Series"), False, URL(r=request, f="series"),[
+    [T("Series"), False, URL(r=request, f="series"),[
         [T("List"), False, URL(r=request, f="series")],
         [T("Add"), False, URL(r=request, f="series", args="create")]
     ]]]
@@ -106,7 +106,7 @@ def questions():
                if not has_dupe_questions(questions_form.vars.id,question):
                     db.survey_template_link.insert(survey_template_id=session.rcvars.survey_template,survey_questions_id=questions_form.vars.id,
                                               survey_question_id=question)
-            prune_questions(questions_id,questions,contained_questions)
+            output(contained_questions=prune_questions(questions_id,questions,contained_questions))
             output.update(contained_questions=get_contained_questions(questions_id))
     elif questions_form.errors:
         response.flash= T("Please correct all errors.")
@@ -189,15 +189,14 @@ def series():
         msg_record_modified = T("Survey Series updated"),
         msg_record_deleted = T("Survey Series deleted"),
         msg_list_empty = T("No Survey Series currently registered"))
-    output = shn_rest_controller(module, resource,listadd=False)
-    def _postp(jr,output):
-      shn_action_buttons(jr,output)
-      response.s3.actions.append(
-              dict(label=str("View Responses"), _class="action-btn", url=str(URL(r=request, args = args))))
-      return output
+    def _postp(jr, output):
+        shn_action_buttons(jr, deletable=False)
+        return output
     response.s3.postp = _postp
 
-    return transform_buttons(output,finish=True,cancel=True)
+    output = shn_rest_controller(module, resource,listadd=False)
+
+    return output
 
 #def section():
 #    """ RESTlike CRUD controller """
@@ -250,12 +249,12 @@ def question():
 #        3:T("Matrix of Choices (Only one answer)"),
 #        4:T("Matrix of Choices (Multiple Answers)"),
 #        5:T("Rating Scale"),
-        6:T("Single Text Field"),
+        6:T("Text"),
 #        7:T("Multiple Text Fields"),
 #        8:T("Matrix of Text Fields"),
-        9:T("Comment/Essay Box"),
-        10:T("Numerical Text Field"),
-        11:T("Date and/or Time"),
+        9:T("Long Text"),
+        10:T("Number"),
+        11:T("Date"),
 #        12:T("Image"),
 #        13:T("Descriptive Text (e.g., Prose, etc)"),
 #        14:T("Location"),
@@ -353,6 +352,7 @@ def prune_questions(questions_id, questions,all_questions):
             & (question.id == db.survey_template_link.survey_question_id)
             db(question_query).delete()
             db.commit()
+    return questions
 def get_contained_questions(questions_id):
     question_query = (db.survey_template_link.survey_questions_id == questions_id) & \
         (db.survey_question.id == db.survey_template_link.survey_question_id) & \
@@ -390,7 +390,7 @@ def get_table_for_template(template_id):
                 fields.append(Field("question_%s" % (question.id), "integer", label=question.name))
 
             elif question_type == 11:
-                fields.append(Field("question_%s" % (question.id), "datetime", label=question.name))
+                fields.append(Field("question_%s" % (question.id), "date", label=question.name))
 
         tbl = db.define_table("survey_template_%s" % (template_id), uuidstamp, deletion_status, authorstamp,
                               *fields, migrate=True)
@@ -407,6 +407,62 @@ def get_table_for_template(template_id):
                               onaccept=lambda form: _onaccept(form))
         # finally we return the newly created or existing table.
         return tbl
+
+def shn_action_buttons(jr, deletable=True):
+
+    """ Provide the usual Action Buttons for Column views. Designed to be called from a postp """
+
+    if jr.component:
+        args = [jr.component_name, "[id]"]
+    else:
+        args = ["[id]"]       
+    if auth.is_logged_in():
+        # Provide the ability to delete records in bulk
+        if deletable:
+            response.s3.actions = [
+                dict(label=str(UPDATE), _class="action-btn", url=str(URL(r=request, args = args + ["update"]))),
+                dict(label=str(DELETE), _class="action-btn", url=str(URL(r=request, args = args + ["delete"])))
+            ]
+        else:
+            url =  URL(r=request,f="table",vars= {"series_id":args})
+            response.s3.actions = [
+                dict(label=str(UPDATE), _class="action-btn", url=str(URL(r=request, args = args + ["update"]))),             
+                dict(label="Answer", _class="action-btn", url=str( URL(r=request,f="table",args="create", vars= {"series_id":"[id]"}))),
+                dict(label="Results", _class="action-btn", url=str( URL(r=request,f="table",vars= {"series_id":"[id]"}))) ]
+    else:
+        response.s3.actions = [
+            dict(label=str(READ), _class="action-btn", url=str(URL(r=request, args = args)))
+        ]
+
+    return
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 #def get_options_for_questions(template_id):
 #        questions = db((db.survey_template_link.survey_template_id == template_id) & \
 #        (db.survey_question.id == db.survey_template_link.survey_question_id)).select(db.survey_question.ALL)

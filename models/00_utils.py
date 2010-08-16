@@ -585,7 +585,8 @@ def shn_action_buttons(jr, deletable=True):
             ]
         else:
             response.s3.actions = [
-                dict(label=str(UPDATE), _class="action-btn", url=str(URL(r=request, args = args + ["update"])))
+                dict(label=str(UPDATE), _class="action-btn", url=str(URL(r=request, args = args + ["update"]))),
+                dict(label="Answer", _class="action-btn", url=str( URL(r=request,f="table",vars= {"series_id":args})))
             ]
     else:
         response.s3.actions = [

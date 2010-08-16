@@ -247,7 +247,7 @@ pr_religion_opts = {
     2:T("Christian"),
     3:T("Muslim"),
     4:T("Jew"),
-    5:T("Bhuddist"),
+    5:T("Buddhist"),
     6:T("Hindu"),
     99:T("other")
 }

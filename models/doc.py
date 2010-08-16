@@ -34,7 +34,7 @@ table.url.requires = IS_NULL_OR(IS_URL())
 ADD_METADATA = Tstr("Add Metadata")
 metadata_id = db.Table(None, "metadata_id",
             Field("metadata_id", db.doc_metadata,
-                requires = IS_NULL_OR(IS_ONE_OF(db, "doc_metadata.id", "%(name)s")),
+                requires = IS_NULL_OR(IS_ONE_OF(db, "doc_metadata.id", "%(id)s")),
                 represent = lambda id: (id and [db(db.doc_metadata.id==id).select()[0].name] or ["None"])[0],
                 label = T("Metadata"),
                 comment = DIV(A(ADD_METADATA, _class="colorbox", _href=URL(r=request, c="doc", f="metadata", args="create", vars=dict(format="popup")), _target="top", _title=ADD_METADATA),

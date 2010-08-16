@@ -1,7 +1,11 @@
 # -*- coding: utf-8 -*-
 
-"""
-    Situation Reporting Module - Controllers
+""" Assessments Module - Controllers
+
+    @author: Fran Boon
+    @see: http://eden.sahanafoundation.org/wiki/Pakistan
+    @ToDo: Rename as 'assessment' (Deprioritised due to Data Migration issues being distracting for us currently)
+
 """
 
 module = request.controller
@@ -17,7 +21,7 @@ response.menu_options = [
         [T("Add"), False, URL(r=request, f="freport", args="create")],
         #[T("Search"), False, URL(r=request, f="freport", args="search")]
     ]],
-    [T("Assessments"), False, URL(r=request, f="assessment"),[
+    [T("WFP Assessments"), False, URL(r=request, f="assessment"),[
         [T("List"), False, URL(r=request, f="assessment")],
         [T("Add"), False, URL(r=request, f="assessment", args="create")],
         #[T("Search"), False, URL(r=request, f="assessment", args="search")]
@@ -27,26 +31,74 @@ response.menu_options = [
         [T("Add"), False, URL(r=request, f="school_district", args="create")],
         #[T("Search"), False, URL(r=request, f="school_district", args="search")]
     ]],
+    #[T("Rapid Assessments"), False, URL(r=request, f="rassessment"),[
+    #    [T("List"), False, URL(r=request, f="rassessment")],
+    #    [T("Add"), False, URL(r=request, f="rassessment", args="create")],
+        #[T("Search"), False, URL(r=request, f="rassessment", args="search")]
+    #]],
     #[T("Map"), False, URL(r=request, f="maps")],
 ]
 
 def index():
-    "Custom View"
+
+    """ Custom View """
+
     module_name = deployment_settings.modules[module].name_nice
     return dict(module_name=module_name)
 
-def maps():
-    "Show a Map of all Flood Reports"
 
-    feature_class_id = db(db.gis_feature_class.name == "Report").select(db.gis_feature_class.id, limitby=(0, 1)).first().id
-    reports = db(db.gis_location.feature_class_id == feature_class_id).select()
-    popup_url = URL(r=request, f="freport", args="read.popup?freport.location_id=")
-    map = gis.show_map(feature_queries = [{"name":Tstr("Flood Reports"), "query":reports, "active":True, "popup_url": popup_url}], window=True)
+def maps():
+
+    """ Show a Map of all Assessments """
+
+    freports = db(db.gis_location.id == db.sitrep_freport.location_id).select()
+    freport_popup_url = URL(r=request, f="freport", args="read.popup?freport.location_id=")
+    map = gis.show_map(feature_queries = [{"name":Tstr("Flood Reports"), "query":freports, "active":True, "popup_url": freport_popup_url}], window=True)
 
     return dict(map=map)
 
+
+def rassessment():
+
+    """ 
+        Rapid Assessments, RESTful controller 
+        http://www.ecbproject.org/page/48
+    """
+
+    resource = request.function
+    tablename = "%s_%s" % (module, resource)
+    table = db[tablename]
+
+    # Villages only
+    table.location_id.requires = IS_NULL_OR(IS_ONE_OF(db(db.gis_location.level == "L4"), "gis_location.id", repr_select, sort=True))
+
+    response.s3.pagination = True
+
+    # Post-processor
+    def user_postp(jr, output):
+        shn_action_buttons(jr, deletable=False)
+        return output
+    response.s3.postp = user_postp
+
+    output = shn_rest_controller(module, resource,
+                                 rheader=lambda r: \
+                                         shn_sitrep_rheader(r,
+                                            tabs = [(T("Section 1"), None),
+                                                    (T("Section 2"), "section2"),
+                                                    (T("Section 3"), "section3"),
+                                                    (T("Section 4"), "section4"),
+                                                    (T("Section 5"), "section5"),
+                                                    (T("Section 6"), "section6"),
+                                                    (T("Section 7"), "section7"),
+                                                    (T("Section 8"), "section8"),
+                                                    (T("Section 9"), "section9") ]),
+                                                    sticky=True)
+    return output
+
 def river():
-    "REST Controller"
+
+    """ Rivers, RESTful controller """
+
     resource = request.function
 
     response.s3.pagination = True
@@ -60,27 +112,33 @@ def river():
     output = shn_rest_controller(module, resource)
     return output
 
-def freport():
-    "REST Controller"
-    resource = request.function
 
+def freport():
+
+    """ Flood Reports, RESTful controller """
+
+    resource = request.function
     response.s3.pagination = True
 
     # Post-processor
-    def user_postp(jr, output):
+    def postp(jr, output):
         shn_action_buttons(jr, deletable=False)
         return output
-    response.s3.postp = user_postp
+    response.s3.postp = postp
 
     output = shn_rest_controller(module, resource,
-                                 rheader=lambda r: shn_freport_rheader(r,
-                                                                   tabs = [(T("Basic Details"), None),
-                                                                           (T("Locations"), "freport_location")  ]),
-                                                                   sticky=True)
+                                 rheader=lambda r: \
+                                         shn_sitrep_rheader(r,
+                                            tabs = [(T("Basic Details"), None),
+                                                    (T("Locations"), "freport_location")  ]),
+                                                    sticky=True)
     return output
 
+
 def assessment():
-    "REST Controller"
+
+    """ Assessments, RESTful controller """
+
     resource = request.function
     tablename = "%s_%s" % (module, resource)
     table = db[tablename]
@@ -99,8 +157,14 @@ def assessment():
     output = shn_rest_controller(module, resource)
     return output
 
+
 def school_district():
-    "REST Controller"
+
+    """
+        REST Controller
+        @ToDo: Move to CR
+    """
+
     resource = request.function
     tablename = "%s_%s" % (module, resource)
     table = db[tablename]
@@ -123,48 +187,120 @@ def school_district():
     response.s3.postp = user_postp
 
     output = shn_rest_controller(module, resource,
-                                 rheader=lambda r: shn_school_district_rheader(r,
-                                                                   tabs = [(T("Basic Details"), None),
-                                                                           (T("School Reports"), "school_report")  ]),
-                                                                   sticky=True)
+                                 rheader=lambda r: \
+                                         shn_sitrep_rheader(r,
+                                            tabs = [(T("Basic Details"), None),
+                                                    (T("School Reports"), "school_report")]),
+                                                    sticky=True)
     return output
 
-def shn_school_district_rheader(r, tabs=[]):
+
+# -----------------------------------------------------------------------------
+def download():
+
+    """ Download a file """
+
+    return response.download(request, db)
+
+
+# -----------------------------------------------------------------------------
+def shn_sitrep_rheader(r, tabs=[]):
+
+    """ Resource Headers """
 
     if r.representation == "html":
         rheader_tabs = shn_rheader_tabs(r, tabs)
 
-        report = r.record
-        location = report.location_id
-        if location:
-            location = shn_gis_location_represent(location)
-        rheader = DIV(TABLE(
-                        TR(
-                            TH(T("Title: ")), report.name,
-                            TH(T("Location: ")), location),
-                        TR(
-                            TH(T("Reported By: ")), report.reported_by,
-                            TH(T("Date: ")), report.date)
-                        ),
-                    rheader_tabs)
+        if r.name == "rassessment":
 
-        return rheader
-    else:
-        return None
+            report = r.record
+            location = report.location_id
+            if location:
+                location = shn_gis_location_represent(location)
+            staff = report.staff_id
+            if staff:
+                organisation_id = db(db.org_staff.id == staff).select(db.org_staff.organisation_id).first().organisation_id
+                organisation = shn_organisation_represent(organisation_id)
+            else:
+                organisation = None
+            staff = report.staff2_id
+            if staff:
+                organisation_id = db(db.org_staff.id == staff).select(db.org_staff.organisation_id).first().organisation_id
+                organisation2 = shn_organisation_represent(organisation_id)
+            else:
+                organisation2 = None
+            if organisation2:
+                orgs = organisation + ", " + organisation2
+            else:
+                orgs = organisation
+            doc_url = URL(r=request, f="download", args=[report.document])
+            try:
+                doc_name, file = r.table.document.retrieve(report.document)
+                if hasattr(file, "close"):
+                    file.close()
+            except:
+                doc_name = report.document
+            rheader = DIV(TABLE(
+                            TR(
+                                TH(Tstr("Location") + ": "), location,
+                                TH(Tstr("Date") + ": "), report.date
+                              ),
+                            TR(
+                                TH(Tstr("Organisations") + ": "), orgs,
+                                TH(Tstr("Document") + ": "), A(doc_name, _href=doc_url)
+                              )
+                            ),
+                          rheader_tabs)
 
-def shn_freport_rheader(r, tabs=[]):
+            return rheader
+                          
+        elif r.name == "freport":
 
-    if r.representation == "html":
-        rheader_tabs = shn_rheader_tabs(r, tabs)
+            report = r.record
+            location = report.location_id
+            if location:
+                location = shn_gis_location_represent(location)
+            doc_url = URL(r=request, f="download", args=[report.document])
+            try:
+                doc_name, file = r.table.document.retrieve(report.document)
+                if hasattr(file, "close"):
+                    file.close()
+            except:
+                doc_name = report.document
+            rheader = DIV(TABLE(
+                            TR(
+                                TH(Tstr("Location") + ": "), location,
+                                TH(Tstr("Date") + ": "), report.datetime
+                              ),
+                            TR(
+                                TH(Tstr("Document") + ": "), A(doc_name, _href=doc_url)
+                              )
+                            ),
+                          rheader_tabs)
 
-        report = r.record
-        rheader = DIV(TABLE(
-                        TR(
-                            TH(T("Time: ")), report.time,
-                            TH(T("Document: ")), report.document),
-                        ),
-                    rheader_tabs)
+            return rheader
 
-        return rheader
-    else:
-        return None
+        elif r.name == "school_district":
+
+            report = r.record
+            doc_url = URL(r=request, f="download", args=[report.document])
+            try:
+                doc_name, file = r.table.document.retrieve(report.document)
+                if hasattr(file, "close"):
+                    file.close()
+            except:
+                doc_name = report.document
+
+            rheader = DIV(TABLE(
+                            TR(
+                                TH(Tstr("Date") + ": "), report.date
+                              ),
+                            TR(
+                                TH(Tstr("Document") + ": "), A(doc_name, _href=doc_url)
+                              )
+                            ),
+                          rheader_tabs)
+
+            return rheader
+        else:
+            return None

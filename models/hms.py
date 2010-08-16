@@ -880,7 +880,7 @@ if deployment_settings.has_module(module):
                 hospital_id,
                 Field("subject"),
                 Field("message", "text"),
-                Field("timestamp", "datetime"),
+                Field("timestmp", "datetime"),  # 'timestamp' is a reserved word in Postgres
                 Field("type", "integer",
                     requires = IS_NULL_OR(IS_IN_SET(hms_hrequest_type_opts)),
                     represent = lambda type: hms_hrequest_type_opts.get(type, T("not specified")),
@@ -908,7 +908,7 @@ if deployment_settings.has_module(module):
                 migrate=migrate)
 
     #label the fields for the view
-    table.timestamp.label = T("Date & Time")
+    table.timestmp.label = T("Date & Time")
 
     #Hide fields from user:
     table.actionable.writable = table.actionable.readable = False
@@ -959,7 +959,7 @@ if deployment_settings.has_module(module):
 
     s3xrc.model.configure(table,
                           list_fields=["id",
-                                       "timestamp",
+                                       "timestmp",
                                        "hospital_id",
                                        "city",
                                        "type",
@@ -1096,7 +1096,7 @@ if deployment_settings.has_module(module):
                         records.append(TR(
                             row.completion_status,
                             row.message,
-                            row.timestamp,
+                            row.timestmp,
                             row.hospital_id and hospital_id.hospital_id.represent(row.hospital_id) or "unknown",
                             ))
                     items=DIV(TABLE(THEAD(TR(

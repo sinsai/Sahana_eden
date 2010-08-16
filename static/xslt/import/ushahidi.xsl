@@ -2,40 +2,51 @@
 <xsl:stylesheet
             xmlns:xsl="http://www.w3.org/1999/XSL/Transform" version="1.0">
 
-    <!-- Sahana Eden XSLT Import Template
+    <!-- **********************************************************************
+        Sahana Eden XSLT Import Template
 
         Transformation of
-            Ushahidi Incidents
+            Ushahidi Incidents (http://wiki.ushahidi.com/doku.php?id=ushahidi_api)
         into
-            Sahana Eden Tickets
-    -->
+            Sahana Eden Incident Reports
+    *********************************************************************** -->
 
     <xsl:output method="xml"/>
 
+    <xsl:variable name="import_domain">
+        <xsl:value-of select="/response/payload/domain/text()"/>
+    </xsl:variable>
+
+    <!-- ****************************************************************** -->
     <xsl:template match="/">
         <xsl:apply-templates select="./response/payload"/>
     </xsl:template>
 
     <xsl:template match="response/payload">
-        <xsl:apply-templates select="./incidents"/>
+        <s3xrc>
+            <xsl:attribute name="domain">
+                <xsl:value-of select="$import_domain"/>
+            </xsl:attribute>
+            <xsl:apply-templates select="./incidents"/>
+        </s3xrc>
     </xsl:template>
 
+    <!-- ****************************************************************** -->
     <xsl:template match="incidents">
-        <s3xrc>
             <xsl:for-each select="//incident" >
 
                 <!-- create location 1st so that it can be linked to ticket -->
                 <xsl:apply-templates select="./location"/>
 
-                <resource name="ticket_log">
+                <resource name="irs_ireport">
 
                     <xsl:attribute name="uuid">
-                        <!-- Should be replaced by domain when Ushahidi API supports this -->
-                        <xsl:text>ushahidi/</xsl:text>
+                        <xsl:value-of select="$import_domain"/>
+                        <xsl:text>/</xsl:text>
                         <xsl:value-of select="id"/>
                     </xsl:attribute>
-            
-                    <data field="subject">
+
+                    <data field="name">
                         <xsl:value-of select="title"/>
                     </data>
 
@@ -44,15 +55,14 @@
                     </data>
 
                     <data field="source">
-                        <!-- Should be replaced by domain when Ushahidi API supports this -->
-                        <xsl:text>ushahidi</xsl:text>
+                        <xsl:value-of select="$import_domain"/>
                     </data>
 
                     <data field="source_id">
                         <xsl:value-of select="id"/>
                     </data>
 
-                    <data field="source_time">
+                    <data field="datetime">
                         <xsl:value-of select="date"/>
                     </data>
                     <!--
@@ -70,7 +80,8 @@
 
                     <reference field="location_id" resource="gis_location">
                         <xsl:attribute name="uuid">
-                            <xsl:text>ushahidi/</xsl:text>
+                            <xsl:value-of select="$import_domain"/>
+                            <xsl:text>/</xsl:text>
                             <xsl:value-of select="location/id"/>
                         </xsl:attribute>
                     </reference>
@@ -91,15 +102,15 @@
                 -->
 
             </xsl:for-each>
-        </s3xrc>
     </xsl:template>
 
+    <!-- ****************************************************************** -->
     <xsl:template match="location">
         <resource name="gis_location">
 
             <xsl:attribute name="uuid">
-                <!-- Should be replaced by domain when Ushahidi API supports this -->
-                <xsl:text>ushahidi/</xsl:text>
+                <xsl:value-of select="$import_domain"/>
+                <xsl:text>/</xsl:text>
                 <xsl:value-of select="id"/>
             </xsl:attribute>
 
@@ -120,9 +131,10 @@
         </resource>
     </xsl:template>
 
+    <!-- ****************************************************************** -->
     <xsl:template match="categories">
         <xsl:for-each select="//category">
-            <resource name="ticket_log">
+            <resource name="irs_ireport">
                 <!-- id -->
                 <data field="name">
                     <xsl:value-of select="title"/>
@@ -130,4 +142,5 @@
             </resource>
         </xsl:for-each>
     </xsl:template>
+
 </xsl:stylesheet>

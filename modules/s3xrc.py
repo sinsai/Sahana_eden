@@ -936,13 +936,15 @@ class S3Resource(object):
 
         tablename = r.component and r.component.tablename or r.tablename
 
-        xml_formats = self.__manager.xml_export_formats
-        json_formats = self.__manager.json_export_formats
+        xml_export_formats = self.__manager.xml_export_formats
+        json_export_formats = self.__manager.json_export_formats
+        xml_import_formats = self.__manager.xml_import_formats
+        json_import_formats = self.__manager.json_import_formats
 
         if method is None or method in ("read", "display"):
             authorised = permit("read", tablename)
-            if r.representation in xml_formats or \
-               r.representation in json_formats:
+            if r.representation in xml_export_formats or \
+               r.representation in json_export_formats:
                 method = "export_tree"
             elif r.component:
                 if r.multiple and not r.component_id:
@@ -967,8 +969,8 @@ class S3Resource(object):
         elif method in ("create", "update"):
             authorised = permit(method, tablename)
             # TODO: Add user confirmation here:
-            if r.representation in xml_formats or \
-               r.representation in json_formats:
+            if r.representation in xml_import_formats or \
+               r.representation in json_import_formats:
                 method = "import_tree"
 
         elif method == "delete":
@@ -2572,7 +2574,11 @@ class S3ResourceController(object):
             return imports
 
         table = self.db[resource]
-        record = self.xml.record(table, element, files=files, validate=validate)
+        original = self.original(table, element)
+        record = self.xml.record(table, element,
+                                 original=original,
+                                 files=files,
+                                 validate=validate)
 
         mtime = element.get(self.xml.MTIME, None)
         if mtime:
@@ -2922,6 +2928,70 @@ class S3ResourceController(object):
 
     # Resource functions ======================================================
 
+    def original(self, table, record):
+
+        """ Find the original record for a possible duplicate:
+
+            - if the record contains a UUID, then only that UUID is used
+              to match the record with an existing DB record
+
+            - otherwise, if the record contains some values for unique fields,
+              all of them must match the same existing DB record
+
+        """
+
+        # Get primary keys
+        pkeys = [f for f in table.fields if table[f].unique]
+        pvalues = Storage()
+
+        # Get the values from record
+        if isinstance(record, etree._Element):
+            for f in pkeys:
+                v = None
+                if f == self.xml.UID or f in self.xml.ATTRIBUTES_TO_FIELDS:
+                    v = record.get(f, None)
+                else:
+                    xexpr = "%s[@%s='%s']" % (self.xml.TAG.data, self.xml.ATTRIBUTE.field, f)
+                    child = record.xpath(xexpr)
+                    if child:
+                        child = child[0]
+                        v = child.get(self.xml.ATTRIBUTE.value, child.text)
+                if v:
+                    value = self.xml.xml_decode(v)
+                    pvalues[f] = value
+
+        elif isinstance(record, dict):
+            for f in pkeys:
+                v = record.get(f, None)
+                if v:
+                    pvalues[f] = v
+        else:
+            raise TypeError
+
+        # Build match query
+        if self.xml.UID in pvalues.keys():
+            uid = pvalues[self.xml.UID]
+            if self.xml.domain_mapping:
+                uid = self.xml.import_uid(uid)
+            query = (table[self.xml.UID] == uid)
+        else:
+            query = None
+            for f in pvalues.keys():
+                _query = (table[f] == pvalues[f])
+                if query is not None:
+                    query = query | _query
+                else:
+                    query = _query
+
+        if query:
+            original = self.db(query).select(table.ALL)
+            if len(original) == 1:
+                return original[0]
+
+        return None
+
+
+    # -------------------------------------------------------------------------
     def export_tree(self, resource,
                     skip=[],
                     audit=None,
@@ -3245,6 +3315,7 @@ class S3ResourceController(object):
                                                     vmap=vmap,
                                                     lookahead=True)
 
+                        cvector = None
                         if cvectors:
                             cvector = cvectors.pop()
                         if cvectors:
@@ -3436,12 +3507,11 @@ class S3Vector(object):
         if not self.id:
             self.id = 0
             self.method = permission = self.METHOD.CREATE
-            if self.uid and self.UID in self.table:
-                query = (self.table[self.UID] == self.uid)
-                orig = self.db(query).select(self.table.id, limitby=(0, 1))
-                if orig:
-                    self.id = orig.first().id
-                    self.method = permission = self.METHOD.UPDATE
+            orig = self.__manager.original(self.table, self.record)
+            if orig:
+                self.id = orig.id
+                self.uid = orig.get(self.UID, None)
+                self.method = permission = self.METHOD.UPDATE
         else:
             self.method = permission = self.METHOD.UPDATE
             if not self.db(self.table.id == id).count():
@@ -4391,7 +4461,7 @@ class S3XML(object):
 
 
     # -------------------------------------------------------------------------
-    def record(self, table, element, files=[], validate=None, skip=[]):
+    def record(self, table, element, original=None, files=[], validate=None, skip=[]):
 
         """ Creates a Storage() record from an element and validates it
 
@@ -4404,7 +4474,6 @@ class S3XML(object):
 
         valid = True
         record = Storage()
-        original = None
 
         if self.UID in table.fields and self.UID not in skip:
             uid = element.get(self.UID, None)
@@ -4412,12 +4481,6 @@ class S3XML(object):
                 if self.domain_mapping:
                     uid = self.import_uid(uid)
                 record[self.UID] = uid
-                original = self.db(table[self.UID] == uid).select(table.ALL,
-                                                              limitby=(0,1))
-                if original:
-                    original = original[0]
-                else:
-                    original = None
 
         for f in self.ATTRIBUTES_TO_FIELDS:
             if f in self.IGNORE_FIELDS or f in skip:
@@ -4445,8 +4508,7 @@ class S3XML(object):
                     continue
 
                 field_type = str(table[f].type)
-                if field_type in ("id", "blob", "password") or \
-                   field_type.startswith("reference"):
+                if field_type in ("id", "blob", "password"):
                     continue
                 elif field_type == "upload":
                     # Handling of uploads goes here

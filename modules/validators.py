@@ -116,7 +116,7 @@ class IS_ONE_OF_EMPTY(Validator):
         names of the fields to be used as option labels, or a function or lambda
         to create an option label from the respective record (which has to return
         a string, of course)
-        
+
         No 'options' method as designed to be called next to an Autocomplete field so don't download a large dropdown unnecessarily.
     """
 
@@ -172,7 +172,7 @@ class IS_ONE_OF_EMPTY(Validator):
         self.zero = zero
         self.sort = sort
         self._and = _and
-        
+
         self.filterby = filterby
         self.filter_opts = filter_opts
 
@@ -181,11 +181,11 @@ class IS_ONE_OF_EMPTY(Validator):
             self._and.record_id = id
 
     def build_set(self):
-    
+
         if self.ktable in self.dbset._db:
-        
+
             _table = self.dbset._db[self.ktable]
-            
+
             if self.dbset._db._dbname != "gql":
                 orderby = self.orderby or ", ".join(self.fields)
                 groupby = self.groupby
@@ -235,7 +235,7 @@ class IS_ONE_OF_EMPTY(Validator):
 
     #def options(self):
     #   "Removed as we don't want any options downloaded unnecessarily"
-    
+
     def __call__(self, value):
 
         try:
@@ -249,22 +249,28 @@ class IS_ONE_OF_EMPTY(Validator):
             if self.multiple:
                 if isinstance(value, list):
                     values = value
-                elif value:            
+                elif isinstance(value, basestring) and \
+                     value[0] == "|" and value[-1] == "|":
+                    values = value[1:-1].split("|")
+                elif value:
                     values = [value]
                 else:
                     values = []
 
-                for v in values:
-                    query = (_table[self.kfield] == v)
-                    if deleted_q != False:
-                        query = deleted_q & query
-                    if filter_opts_q != False:
-                        query = filter_opts_q & query
-
-                    if self.dbset(query).count() < 1:
+                if self.theset:
+                    if not [x for x in values if not x in self.theset]:
+                        return ("|%s|" % "|".join(values), None)
+                    else:
                         return (value, self.error_message)
-
-                if not [x for x in values if not x in self.theset]:
+                else:
+                    for v in values:
+                        query = (_table[self.kfield] == v)
+                        if deleted_q != False:
+                            query = deleted_q & query
+                        if filter_opts_q != False:
+                            query = filter_opts_q & query
+                        if self.dbset(query).count() < 1:
+                            return (value, self.error_message)
                     return ("|%s|" % "|".join(values), None)
 
             elif self.theset:
@@ -273,7 +279,6 @@ class IS_ONE_OF_EMPTY(Validator):
                         return self._and(value)
                     else:
                         return (value, None)
-
             else:
                 values = [value]
                 for v in values:

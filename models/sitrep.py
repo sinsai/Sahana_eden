@@ -1,9 +1,10 @@
 # -*- coding: utf-8 -*-
 
-""" Situation Reporting Module - Model
+""" Assessments Module - Model
 
     @author: Fran Boon
     @see: http://eden.sahanafoundation.org/wiki/Pakistan
+    @ToDo: Rename as 'assessment' (Deprioritised due to Data Migration issues being distracting for us currently)
 """
 
 module = "sitrep"
@@ -16,6 +17,90 @@ if deployment_settings.has_module(module):
                             Field("audit_read", "boolean"),
                             Field("audit_write", "boolean"),
                             migrate=migrate)
+
+    # Rapid Assessments
+    # See: http://www.ecbproject.org/page/48
+    # Main Resource contains Section 1
+    resource = "rassessment"
+    tablename = "%s_%s" % (module, resource)
+    table = db.define_table(tablename,
+                            timestamp, uuidstamp, authorstamp, deletion_status,
+                            Field("name"),
+                            location_id,
+                            person_id,
+                            organisation_id,
+                            document,
+                            comments,
+                            migrate=migrate)
+
+    table.name.requires = IS_NOT_EMPTY()
+    table.name.comment = SPAN("*", _class="req")
+
+    # CRUD strings
+    ADD_ASSESSMENT = T("Add Assessment")
+    LIST_ASSESSMENTS = T("List Assessments")
+    s3.crud_strings[tablename] = Storage(
+        title_create = ADD_ASSESSMENT,
+        title_display = T("Assessment Details"),
+        title_list = LIST_ASSESSMENTS,
+        title_update = T("Edit Assessment"),
+        title_search = T("Search Assessments"),
+        subtitle_create = T("Add New Assessment"),
+        subtitle_list = T("Assessments"),
+        label_list_button = LIST_ASSESSMENTS,
+        label_create_button = ADD_ASSESSMENT,
+        msg_record_created = T("Assessment added"),
+        msg_record_modified = T("Assessment updated"),
+        msg_record_deleted = T("Assessment deleted"),
+        msg_list_empty = T("No Assessments currently registered"))
+
+    assessment_id = db.Table(None, "assessment_id",
+                        Field("assessment_id", table,
+                              requires = IS_NULL_OR(IS_ONE_OF(db, "sitrep_rassessment.id", "%(name)s")),
+                              represent = lambda id: (id and [db(db.sitrep_rassessment.id == id).select(db.sitrep_rassessment.name, limitby=(0, 1)).first().name] or ["None"])[0],
+                              label = T("Rapid Assessment"),
+                              comment = A(ADD_ASSESSMENT, _class="colorbox", _href=URL(r=request, c="sitrep", f="rassessment", args="create", vars=dict(format="popup")), _target="top", _title=ADD_ASSESSMENT),
+                              ondelete = "RESTRICT"))
+
+
+    # Section 2
+    resource = "rassessment_section2"
+    tablename = "%s_%s" % (module, resource)
+    table = db.define_table(tablename,
+                            timestamp, uuidstamp, authorstamp, deletion_status,
+                            Field("name"),
+                            location_id,
+                            person_id,
+                            document,
+                            comments,
+                            migrate=migrate)
+
+    table.name.requires = IS_NOT_EMPTY()
+    table.name.comment = SPAN("*", _class="req")
+
+    # CRUD strings
+    ADD_SECTION = T("Add Section")
+    LIST_SECTIONS = T("List Sections")
+    s3.crud_strings[tablename] = Storage(
+        title_create = ADD_SECTION,
+        title_display = T("Section Details"),
+        title_list = LIST_SECTIONS,
+        title_update = T("Edit Section"),
+        title_search = T("Search Sections"),
+        subtitle_create = T("Add New Section"),
+        subtitle_list = T("Sections"),
+        label_list_button = LIST_SECTIONS,
+        label_create_button = ADD_SECTION,
+        msg_record_created = T("Section added"),
+        msg_record_modified = T("Section updated"),
+        msg_record_deleted = T("Section deleted"),
+        msg_list_empty = T("No Sections currently registered"))
+
+    s3xrc.model.add_component(module, resource,
+                              multiple = True,
+                              joinby = dict(sitrep_rassessment="assessment_id"),
+                              deletable = True,
+                              editable = True)
 
     # Rivers
     resource = "river"
@@ -154,6 +239,7 @@ if deployment_settings.has_module(module):
                             organisation_id,
                             Field("date", "date"),
                             Field("households", "integer"),
+                            Field("population", "integer"),
                             Field("houses_destroyed", "integer"),
                             Field("houses_damaged", "integer"),
                             Field("crop_losses", "integer"),
@@ -162,13 +248,23 @@ if deployment_settings.has_module(module):
                             comments,
                             migrate=migrate)
 
+    table.households.label = T("Total Households")
+    table.households.requires = IS_INT_IN_RANGE(0,99999999)
+    table.households.default = 0
+    table.population.label = T("Population")
+    table.population.requires = IS_INT_IN_RANGE(0,99999999)
+    table.population.default = 0
+
+    table.houses_destroyed.requires = IS_INT_IN_RANGE(0,99999999)
+    table.houses_destroyed.default = 0
+    table.houses_damaged.requires = IS_INT_IN_RANGE(0,99999999)
+    table.houses_damaged.default = 0
+
     table.crop_losses.requires = IS_NULL_OR(IS_INT_IN_RANGE(0, 100))
 
-    table.households.label = T("Total Households")
-
     # CRUD strings
-    ADD_ASSESSMENT = T("Add Assessment")
-    LIST_ASSESSMENTS = T("List Assessments")
+    #ADD_ASSESSMENT = T("Add Assessment")
+    #LIST_ASSESSMENTS = T("List Assessments")
     s3.crud_strings[tablename] = Storage(
         title_create = ADD_ASSESSMENT,
         title_display = T("Assessment Details"),
@@ -186,6 +282,7 @@ if deployment_settings.has_module(module):
 
     # -----------------------------------------------------------------------------
     # School Districts
+    # @ToDo Move to CR
     resource = "school_district"
     tablename = "%s_%s" % (module, resource)
     table = db.define_table(tablename,
@@ -373,14 +470,15 @@ if deployment_settings.has_module(module):
 
 
     # -----------------------------------------------------------------------------
-    def shn_sitrep_report(r, **attr):
+    def shn_sitrep_summary(r, **attr):
 
         """ Aggregate reports """
 
         if r.name == "assessment":
             if r.representation == "html":
-                # Assessment HTML/jqplot reporting here
                 return dict()
+            elif r.representation == "xls":
+                return None
             else:
                 # Other formats?
                 raise HTTP(501, body=BADFORMAT)
@@ -396,12 +494,12 @@ if deployment_settings.has_module(module):
 
 
     s3xrc.model.set_method(module, "assessment",
-                           method="report",
-                           action=shn_sitrep_report )
+                           method="summary",
+                           action=shn_sitrep_summary)
 
     s3xrc.model.set_method(module, "school_district",
-                           method="report",
-                           action=shn_sitrep_report )
+                           method="summary",
+                           action=shn_sitrep_summary)
 
 
     # -----------------------------------------------------------------------------

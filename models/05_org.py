@@ -12,16 +12,16 @@ module = "org"
 resource = "setting"
 tablename = "%s_%s" % (module, resource)
 table = db.define_table(tablename,
-                Field("audit_read", "boolean"),
-                Field("audit_write", "boolean"),
-                migrate=migrate)
+                        Field("audit_read", "boolean"),
+                        Field("audit_write", "boolean"),
+                        migrate=migrate)
 
 # -----------------------------------------------------------------------------
 # Sectors (to be renamed as Clusters)
 #
 resource = "sector"
 tablename = "%s_%s" % (module, resource)
-table = db.define_table(tablename, timestamp, uuidstamp, deletion_status,
+table = db.define_table(tablename, timestamp, uuidstamp, authorstamp, deletion_status,
                 Field("name", length=128, notnull=True, unique=True),
                 migrate=migrate)
 
@@ -71,22 +71,22 @@ org_organisation_type_opts = {
 
 resource = "organisation"
 tablename = module + "_" + resource
-table = db.define_table(tablename, timestamp, uuidstamp, deletion_status,
-                pe_id,
-                #Field("privacy", "integer", default=0),
-                #Field("archived", "boolean", default=False),
-                Field("name", length=128, notnull=True, unique=True),
-                Field("acronym", length=8),
-                Field("type", "integer"),
-                sector_id,
-                #Field("registration", label=T("Registration")),    # Registration Number
-                Field("country", "string", length=2),
-                Field("website"),
-                Field("twitter"),   # deprecated by pe_contact component
-                Field("donation_phone"),
-                comments,
-                source_id,
-                migrate=migrate)
+table = db.define_table(tablename, timestamp, uuidstamp, authorstamp, deletion_status,
+                        pe_id,
+                        #Field("privacy", "integer", default=0),
+                        #Field("archived", "boolean", default=False),
+                        Field("name", length=128, notnull=True, unique=True),
+                        Field("acronym", length=8),
+                        Field("type", "integer"),
+                        sector_id,
+                        #Field("registration", label=T("Registration")),    # Registration Number
+                        Field("country", "string", length=2),
+                        Field("website"),
+                        Field("twitter"),   # deprecated by pe_contact component
+                        Field("donation_phone"),
+                        comments,
+                        source_id,
+                        migrate=migrate)
 
 # Field settings
 table.uuid.requires = IS_NOT_IN_DB(db, "%s.uuid" % tablename)
@@ -190,27 +190,27 @@ org_office_type_opts = {
 
 resource = "office"
 tablename = module + "_" + resource
-table = db.define_table(tablename, timestamp, uuidstamp, deletion_status,
-                pe_id,
-                Field("name", notnull=True),
-                organisation_id,
-                Field("type", "integer"),
-                location_id,
-                Field("parent", "reference org_office"),   # This form of hierarchy may not work on all Databases
-                Field("address", "text"),
-                Field("postcode"),
-                Field("phone1"),
-                Field("phone2"),
-                Field("email"),
-                Field("fax"),
-                Field("national_staff", "integer"),
-                Field("international_staff", "integer"),
-                Field("number_of_vehicles", "integer"),
-                Field("vehicle_types"),
-                Field("equipment"),
-                source_id,
-                comments,
-                migrate=migrate)
+table = db.define_table(tablename, timestamp, uuidstamp, authorstamp, deletion_status,
+                        pe_id,
+                        Field("name", notnull=True),
+                        organisation_id,
+                        Field("type", "integer"),
+                        location_id,
+                        Field("parent", "reference org_office"),   # This form of hierarchy may not work on all Databases
+                        Field("address", "text"),
+                        Field("postcode"),
+                        Field("phone1"),
+                        Field("phone2"),
+                        Field("email"),
+                        Field("fax"),
+                        Field("national_staff", "integer"),
+                        Field("international_staff", "integer"),
+                        Field("number_of_vehicles", "integer"),
+                        Field("vehicle_types"),
+                        Field("equipment"),
+                        source_id,
+                        comments,
+                        migrate=migrate)
 
 # Field settings
 table.uuid.requires = IS_NOT_IN_DB(db, "%s.uuid" % tablename)
@@ -322,25 +322,25 @@ org_project_status_opts = {
     }
 resource = "project"
 tablename = module + "_" + resource
-table = db.define_table(tablename, timestamp, deletion_status,
-                Field("code"),
-                Field("name"),
-                organisation_id,
-                location_id,
-                sector_id,
-                Field('status', 'integer',
-                        requires = IS_IN_SET(org_project_status_opts, zero=None),
-                        # default = 99,
-                        label = T('Project Status'),
-                        represent = lambda opt: org_project_status_opts.get(opt, UNKNOWN_OPT)),
-                Field("description", "text"),
-                Field("beneficiaries", "integer"),
-                Field("start_date", "date"),
-                Field("end_date", "date"),
-                Field("funded", "boolean"),
-                donor_id,
-                Field("budgeted_cost", "double"),
-                migrate=migrate)
+table = db.define_table(tablename, timestamp, uuidstamp, authorstamp, deletion_status,
+                        Field("code"),
+                        Field("name"),
+                        organisation_id,
+                        location_id,
+                        sector_id,
+                        Field('status', 'integer',
+                                requires = IS_IN_SET(org_project_status_opts, zero=None),
+                                # default = 99,
+                                label = T('Project Status'),
+                                represent = lambda opt: org_project_status_opts.get(opt, UNKNOWN_OPT)),
+                        Field("description", "text"),
+                        Field("beneficiaries", "integer"),
+                        Field("start_date", "date"),
+                        Field("end_date", "date"),
+                        Field("funded", "boolean"),
+                        donor_id,
+                        Field("budgeted_cost", "double"),
+                        migrate=migrate)
 
 # Field settings
 table.code.requires = [IS_NOT_EMPTY(error_message=T("Please fill this!")),
@@ -415,18 +415,18 @@ s3xrc.model.configure(table,
 #
 resource = "staff"
 tablename = module + "_" + resource
-table = db.define_table(tablename, timestamp, deletion_status,
-                person_id,
-                organisation_id,
-                office_id,
-                project_id,
-                Field("title"),
-                Field("manager_id", db.pr_person),
-                Field("focal_point", "boolean"),
-                #Field("slots", "integer", default=1),
-                #Field("payrate", "double", default=0.0), # Wait for Bugeting integration
-                comments,
-                migrate=migrate)
+table = db.define_table(tablename, timestamp, uuidstamp, authorstamp, deletion_status,
+                        person_id,
+                        organisation_id,
+                        office_id,
+                        project_id,
+                        Field("title"),
+                        Field("manager_id", db.pr_person),
+                        Field("focal_point", "boolean"),
+                        #Field("slots", "integer", default=1),
+                        #Field("payrate", "double", default=0.0), # Wait for Bugeting integration
+                        comments,
+                        migrate=migrate)
 
 # Field settings
 # Over-ride the default IS_NULL_OR as Staff doesn't make sense without an associated Organisation
@@ -445,7 +445,7 @@ table.manager_id.label = T("Manager")
 table.manager_id.comment = DIV( _class="tooltip", _title=Tstr("Manager") + "|" + Tstr("The person's manager within this Office/Project."))
 table.focal_point.comment = DIV( _class="tooltip", _title=Tstr("Focal Point") + "|" + Tstr("The contact person for this organization."))
 # CRUD strings
-ADD_STAFF = T("Add Staff")
+ADD_STAFF = Tstr("Add Staff")
 LIST_STAFF = T("List Staff")
 s3.crud_strings[tablename] = Storage(
     title_create = ADD_STAFF,
@@ -488,6 +488,17 @@ def shn_orgs_to_person(person_id):
             for s in staff:
                 orgs.append(s.organisation_id)
     return orgs
+
+# Reusable field
+staff_id = db.Table(None, "staff_id",
+                        FieldS3("staff_id", db.org_staff, sortby="name",
+                        requires = IS_NULL_OR(IS_ONE_OF(db, "org_staff.id", "%(code)s")),
+                        represent = lambda id: (id and [shn_person_represent(db.org_staff[id].person_id)] or ["None"])[0],
+                        comment = DIV(A(ADD_STAFF, _class="colorbox", _href=URL(r=request, c="org", f="staff", args="create", vars=dict(format="popup")), _target="top", _title=ADD_STAFF),
+                                  DIV( _class="tooltip", _title=ADD_STAFF + "|" + Tstr("Add new staff."))),
+                        label = "Staff",
+                        ondelete = "RESTRICT"
+                        ))
 
 # Staff as component of Orgs, Offices & Projects
 s3xrc.model.add_component(module, resource,
@@ -590,23 +601,23 @@ org_task_priority_opts = {
 
 resource = "task"
 tablename = module + "_" + resource
-table = db.define_table(tablename, timestamp, uuidstamp, deletion_status,
-                project_id,
-                office_id,
-                Field("priority", "integer",
-                    requires = IS_IN_SET(org_task_priority_opts, zero=None),
-                    # default = 4,
-                    label = T("Priority"),
-                    represent = lambda opt: org_task_priority_opts.get(opt, UNKNOWN_OPT)),
-                Field("subject", length=80),
-                Field("description", "text"),
-                person_id,
-                Field("status", "integer",
-                    requires = IS_IN_SET(org_task_status_opts, zero=None),
-                    # default = 1,
-                    label = T("Status"),
-                    represent = lambda opt: org_task_status_opts.get(opt, UNKNOWN_OPT)),
-                migrate=migrate)
+table = db.define_table(tablename, timestamp, uuidstamp, authorstamp, deletion_status,
+                        project_id,
+                        office_id,
+                        Field("priority", "integer",
+                            requires = IS_IN_SET(org_task_priority_opts, zero=None),
+                            # default = 4,
+                            label = T("Priority"),
+                            represent = lambda opt: org_task_priority_opts.get(opt, UNKNOWN_OPT)),
+                        Field("subject", length=80),
+                        Field("description", "text"),
+                        person_id,
+                        Field("status", "integer",
+                            requires = IS_IN_SET(org_task_status_opts, zero=None),
+                            # default = 1,
+                            label = T("Status"),
+                            represent = lambda opt: org_task_status_opts.get(opt, UNKNOWN_OPT)),
+                        migrate=migrate)
 
 # Task Resource called from multiple controllers
 # - so we define strings in the model

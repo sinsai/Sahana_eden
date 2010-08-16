@@ -112,32 +112,44 @@ def questions():
     return output
 
 def table():
-    if not "series_id" in request.vars or not "template_id" in request.vars:
-        response.error = "You must provide both a template id and series id to proceed."
-        return dict() # empty dict!         
+    if not "series_id" in request.vars:
+        response.error = "You must provide both a series id to proceed."
+        return dict() # empty dict!
 
     # store the necessary information -- we're safe at this point.
-    template_id = request.vars.template_id
     series_id = request.vars.series_id
 
-    # query for the template to get the table name
-    template = db(db.survey_template.id == template_id).select().first()
-    if not template:
-        response.error = T("A survey template id %s does not exist. Please create one.") % (template_id)
-        return dict()
 
     # first solely check the series exists.
     series = db(db.survey_series.id == series_id).select().first()
     if not series:
         response.error = T("A survey series with id %s does not exist. Please go back and create one.") % (series_id)
         return dict()
-    else:
-        # everything is good at this point!
-        question_opts = get_options_for_questions(template_id)
-        table = get_table_for_template(template_id)
-        resource = "template_%s" % (template.id)
-        table.uuid.requires = IS_NOT_IN_DB(db,"%s.uuid" % template.table_name)        
-        return shn_rest_controller("survey",resource)
+    # query for the template to get the table name
+    template = db(db.survey_template.id == series.survey_template_id).select().first()
+
+
+    # everything is good at this point!    
+    table = get_table_for_template(template.id)
+    resource = "template_%s" % (template.id)
+    table.uuid.requires = IS_NOT_IN_DB(db, "%s.uuid" % template.table_name)
+
+     # CRUD Strings
+    s3.crud_strings[tablename] = Storage(
+        title_create = T("Add Survey Answer"),
+        title_display = T("Survey Answer Details"),
+        title_list = T("List Survey Answers"),
+        title_update = T("Edit Survey Answer"),
+        subtitle_create = T("Add New Survey Answer"),
+        subtitle_list = T("Survey Answer"),
+        label_list_button = T("List Survey Answers"),
+        label_create_button = T("Add Survey Answer"),
+        msg_record_created = T("Survey Answer added"),
+        msg_record_modified = T("Survey Answer updated"),
+        msg_record_deleted = T("Survey Answer deleted"),
+        msg_list_empty = T("No Survey Answers currently registered"))
+    return shn_rest_controller("survey", resource)
+
 def series():
     """ RESTlike CRUD controller """
     resource = "series"
@@ -217,10 +229,10 @@ def question():
     table.name.label = T("Survey Question Display Name")
     table.name.comment = SPAN("*", _class="req")
     table.description.label = T("Description")
-    table.tf_ta_columns.label = T("Number of Columns")
-    table.ta_rows.label = T("Number of Rows")
-    table.aggregation_type.writable = False
-    table.aggregation_type.readable = False
+#    table.tf_ta_columns.label = T("Number of Columns")
+#    table.ta_rows.label = T("Number of Rows")
+#    table.aggregation_type.writable = False
+#    table.aggregation_type.readable = False
 
     question_types = {
 #        1:T("Multiple Choice (Only One Answer)"),
@@ -330,85 +342,67 @@ def get_table_for_template(template_id):
 
     if template: # avoid blow ups!
 
-        # now let's check if a table exists.
-        if template.table_name in db.tables:
-            tbl = eval("db.%s" % (template.table_name))
+        fields = [Field("series_id", db.survey_series, writable=False, readable=False)
+                  ] # A list of Fields representing the questions
 
-        else:
-            fields = [Field("series_id",db.survey_series,writable=False,readable=False)] # A list of Fields representing the questions
-            questions = db((db.survey_template_link.survey_template_id == template_id) & \
-            (db.survey_question.id == db.survey_template_link.survey_question_id)).select(db.survey_question.ALL)            
+        questions = db((db.survey_template_link.survey_template_id == template_id) & \
+       (db.survey_question.id == db.survey_template_link.survey_question_id)).select(db.survey_question.ALL)
 
-            # for each question, depending on its type create a Field
-            for question in questions:
-                question_type = question.question_type
+        # for each question, depending on its type create a Field
+        for question in questions:
+            question_type = question.question_type
 
-                if question_type == 6: # Single TF -- simple for now -- will introduce more types later.
-                    fields.append(Field("question_%s" % (question.id),label=question.name))
+            if question_type == 6: # Single TF -- simple for now -- will introduce more types later.
+                fields.append(Field("question_%s" % (question.id), label=question.name))
 
-                elif question_type  == 9:
-                    fields.append(Field("question_%s" % (question.id), "text", label=question.name))
 
-                elif question_type == 10:
-                    fields.append(Field("question_%s" % (question.id),"integer",label=question.name))
+            elif question_type  == 9:
+                fields.append(Field("question_%s" % (question.id), "text", label=question.name))
 
-                elif question_type == 11:
-                    fields.append(Field("question_%s" % (question.id), "datetime",label=question.name))
+            elif question_type == 10:
+                fields.append(Field("question_%s" % (question.id), "integer", label=question.name))
 
-            tbl = db.define_table("survey_template_%s" % (template_id),uuidstamp,deletion_status,authorstamp,
-                                  *fields,migrate=True)
-            # now add the table name to the template record so we can reference it later.
-            db(db.survey_template.id == template_id).update(table_name="survey_template_%s" % (template.id))
+            elif question_type == 11:
+                fields.append(Field("question_%s" % (question.id), "datetime", label=question.name))
+
+        tbl = db.define_table("survey_template_%s" % (template_id), uuidstamp, deletion_status, authorstamp,
+                              *fields, migrate=True)
+        # now add the table name to the template record so we can reference it later.
+        db(db.survey_template.id == template_id).update(table_name="survey_template_%s" % (template.id))
+        db.commit()
+
+        # set up onaccept for this table.
+        def _onaccept(form):
+            db(tbl.id == form.vars.id).update(series_id=request.vars.series_id)
             db.commit()
 
-            # set up onaccept for this table.
-            def _onaccept(form):
-                db(tbl.id == form.vars.id).update(series_id=request.vars.series_id)
-                db.commit()
-            s3xrc.model.configure(tbl,
-                      onaccept=lambda form: _onaccept(form))
+        s3xrc.model.configure(tbl,
+                              onaccept=lambda form: _onaccept(form))
         # finally we return the newly created or existing table.
         return tbl
 
-def get_options_for_questions(template_id):
-        questions = db((db.survey_template_link.survey_template_id == template_id) & \
-        (db.survey_question.id == db.survey_template_link.survey_question_id)).select(db.survey_question.ALL)
-        opt_map = {}
-        for question in questions:
-            question_type = question.question_type
-            if question_type == 6: # Single TF -- simple for now -- will introduce more types later.
-                opt_map[question.id] = [{"tf_ta_column":question.tf_ta_columns, \
-                                         "allow_comments":question.allow_comments,\
-                                         "comment_display_label":question.comment_display_label,\
-                                         "required":question.required}]
-
-            elif question_type  == 9:
-                opt_map[question.id] = {"tf_ta_column":question.tf_ta_columns, \
-                                         "ta_rows":question.ta_rows,
-                                         "allow_comments":question.allow_comments,\
-                                         "comment_display_label":question.comment_display_label,\
-                                         "required":question.required}
-            elif question_type == 10:
-                opt_map[question.id] = {"tf_ta_column":question.tf_ta_columns, \
-                                        "allow_comments":question.allow_comments,\
-                                        "comment_display_label":question.comment_display_label,\
-                                        "required":question.required}
-
-            elif question_type == 11:
-                opt_map[question.id] = {"tf_ta_column":question.tf_ta_columns, \
-                                        "allow_comments":question.allow_comments,\
-                                        "comment_display_label":question.comment_display_label,\
-                                        "required":question.required}
-            elif question_type == 14:
-                opt_map[question.id] = {"allow_comments":question.allow_comments,\
-                                         "comment_display_label":question.comment_display_label,\
-                                         "required":question.required}
-            elif question_type == 15:
-                opt_map[question.id] = {"allow_comments":question.allow_comments,\
-                                         "comment_display_label":question.comment_display_label,\
-                                         "required":question.required}
-            elif question_type == 16:
-                opt_map[question.id] = {"allow_comments":question.allow_comments,\
-                                         "comment_display_label":question.comment_display_label,\
-                                         "required":question.required}
-        return opt_map
+#def get_options_for_questions(template_id):
+#        questions = db((db.survey_template_link.survey_template_id == template_id) & \
+#        (db.survey_question.id == db.survey_template_link.survey_question_id)).select(db.survey_question.ALL)
+#        opt_map = {}
+#        for question in questions:
+#            question_type = question.question_type
+#            if question_type == 6: # Single TF -- simple for now -- will introduce more types later.
+#                opt_map[question.id] = {"allow_comments":question.allow_comments,\
+#                                         "comment_display_label":question.comment_display_label,\
+#                                         "required":question.required}
+#
+#            elif question_type  == 9:
+#                opt_map[question.id] = { "allow_comments":question.allow_comments,\
+#                                         "comment_display_label":question.comment_display_label,\
+#                                         "required":question.required}
+#            elif question_type == 10:
+#                opt_map[question.id] = {"allow_comments":question.allow_comments,\
+#                                        "comment_display_label":question.comment_display_label,\
+#                                        "required":question.required}
+#
+#            elif question_type == 11:
+#                opt_map[question.id] = {"allow_comments":question.allow_comments,\
+#                                        "comment_display_label":question.comment_display_label,\
+#                                        "required":question.required}
+#        return opt_map

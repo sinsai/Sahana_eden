@@ -383,7 +383,7 @@ shn_person_id_comment = shn_person_comment(
 
 person_id = db.Table(None, "person_id",
                      FieldS3("person_id", db.pr_person,
-                             sortby=["first_name", "middle_name", "last_name"],
+                             sortby = ["first_name", "middle_name", "last_name"],
                              requires = IS_NULL_OR(IS_ONE_OF(db, "pr_person.id",
                                                              shn_pr_person_represent)),
                              represent = lambda id: (id and \

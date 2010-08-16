@@ -1106,12 +1106,12 @@ class QueryS3(Query):
     """
     If Server Side Pagination is on, the proper CAST is needed to match the string-typed id to lookup table id
     """
-    def __init__(
-        self,
-        left,
-        op=None,
-        right=None,
-        ):
+    def __init__(self,
+                 left,
+                 op=None,
+                 right=None,
+                ):
+
         if op <> "join_via":
             Query.__init__(self, left, op, right)
         else:
@@ -1150,13 +1150,33 @@ class FieldS3(Field):
         compute=None,
         sortby=None,
         ):
-        self.sortby=sortby
-        Field.__init__(self,fieldname,type,length,default,required,requires,
-            ondelete,notnull,unique,uploadfield,widget,label,comment,writable,
-            readable,update,authorize,autodelete,represent,uploadfolder,compute)
-    def join_via(self,value):
+
+        self.sortby = sortby
+        Field.__init__(self,
+                       fieldname,
+                       type,
+                       length,
+                       default,
+                       required,
+                       requires,
+                       ondelete,
+                       notnull,
+                       unique,
+                       uploadfield,
+                       widget,
+                       label,
+                       comment,
+                       writable,
+                       readable,
+                       update,
+                       authorize,
+                       autodelete,
+                       represent,
+                       uploadfolder,
+                       compute)
+
+    def join_via(self, value):
         if self.type.find("reference") == 0:
             return Query(self, "=", value)
         else:
             return QueryS3(self, "join_via", value)
-

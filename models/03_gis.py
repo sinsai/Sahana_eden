@@ -476,6 +476,47 @@ location_id = db.Table(None, "location_id",
                                        _title=Tstr("Location") + "|" + Tstr("The Location of this Site, which can be general (for Reporting) or precise (for displaying on a Map)."))),
                        ondelete = "RESTRICT"))
 
+# -----------------------------------------------------------------------------
+def get_location_id (field_name = 'location_id', 
+                     label = T('Location'),
+                     filterby = None,
+                     filter_opts = None,
+                     editable = True):
+    """
+    @author Michael Howden
+    
+    Function for creating a custom an organisation field with a customizible label
+    
+    TODO - still more fucntionality from this fucntion to port from ADPC Branch
+    
+    """
+    
+    requires = IS_NULL_OR(IS_ONE_OF(db, "gis_location.id", repr_select, sort=True))
+    
+    comment = DIV(A(ADD_LOCATION,
+                    _class="colorbox",
+                    _href=URL(r=request, c="gis", f="location", args="create", vars=dict(format="popup")),
+                    _target="top",
+                    _title=ADD_LOCATION,
+                    ),
+                   DIV( _class = "tooltip",
+                        _title = Tstr("Location") + "|" + \
+                                 Tstr("The Location of this Site, which can be general (for Reporting) or precise (for displaying on a Map)."),
+                       )
+                  )
+    
+    return db.Table(None, 
+                    field_name,
+                    FieldS3(field_name, 
+                            db.gis_location, sortby='name',
+                            requires = requires,
+                            represent = shn_gis_location_represent,
+                            label = label,
+                            comment = comment,
+                            ondelete = 'RESTRICT'
+                            )
+                    )
+# -----------------------------------------------------------------------------
 # Locations as component of Locations ('Parent')
 s3xrc.model.add_component(module, resource,
                           multiple=False,

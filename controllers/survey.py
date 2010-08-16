@@ -74,8 +74,7 @@ def questions():
     """
 
     table = db["survey_questions"]    
-    record = request.args(0)
-    print record
+    record = request.args(0)    
     if not record:
         questions_query = (db.survey_template_link.survey_questions_id == db.survey_questions.id) & \
         (db.survey_question.id == db.survey_template_link.survey_question_id) & \
@@ -112,10 +111,13 @@ def questions():
     return output
 
 def table():
-    # store the necessary information
-    method = request.args(0)
-    template_id = request.args(1)
-    series_id = request.args(2)
+    if not "series_id" in request.vars or not "template_id" in request.vars:
+        response.error = "You must provide both a template id and series id to proceed."
+        return dict() # empty dict!         
+
+    # store the necessary information -- we're safe at this point.
+    template_id = request.vars.template_id
+    series_id = request.vars.series_id
 
     # query for the template to get the table name
     template = db(db.survey_template.id == template_id).select().first()
@@ -132,8 +134,9 @@ def table():
         # everything is good at this point!
         question_opts = get_options_for_questions(template_id)
         table = get_table_for_template(template_id)
+        resource = template.table_name
         table.uuid.requires = IS_NOT_IN_DB(db,"%s.uuid" % template.table_name)
-        return shn_rest_controller("survey",table,method=   "create")
+        return shn_rest_controller("survey",resource)
 def series():
     """ RESTlike CRUD controller """
     resource = "series"
@@ -361,8 +364,8 @@ def get_table_for_template(template_id):
                 elif question_type == 16:
                     field.append(person_id)
 
-            tbl = db.define_table(uuidstamp,deletion_status,authorstamp,
-                                  "survey_template_%s" % (template_id),fields)
+            tbl = db.define_table("survey_template_%s" % (template_id),uuidstamp,deletion_status,authorstamp,
+                                  *fields)
 
             # now add the table name to the template record so we can reference it later.
             db(db.survey_template.id == template_id).update(table_name="survey_template_%s" % (template.id))

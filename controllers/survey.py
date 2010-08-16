@@ -72,23 +72,21 @@ def questions():
 
        -  User adds questions via the drop down or clicks "Add Question" to add a new one.
     """
-    table = db["survey_questions"]    
+    table = db["survey_questions"]
     record = request.args(0)
     template = db(db.survey_template.id == session.rcvars.survey_template).select().first()
     if not record:
-        questions_query = (db.survey_template_link.survey_questions_id == db.survey_questions.id) & \
-        (db.survey_question.id == db.survey_template_link.survey_question_id) & \
-        (template.id == db.survey_template_link.survey_template_id)
+        questions_query = (db.survey_template_link.survey_questions_id == db.survey_questions.id) & (template.id == db.survey_template_link.survey_template_id)
         record = db(questions_query).select(db.survey_questions.id).first()
         if record:
-           redirect(URL(r=request,f="questions",args=[record.id]))                    
+           redirect(URL(r=request,f="questions",args=[record.id]))
     questions_form = SQLFORM(table,record,deletable=True,keepvalues=True)
     all_questions = db().select(db.survey_question.ALL)
     output = dict(all_questions=all_questions)
     # Let's avoid blowing up -- this loads questions
     try:
-        questions_id = request.args(0)
-        contained_questions = get_contained_questions(questions_id)
+        query = (template.id == db.survey_template_link.survey_template_id)
+        contained_questions = db(query).select(db.survey_question.id)
         if len(contained_questions) > 0:
             output.update(contained_questions=contained_questions)
         else:
@@ -96,23 +94,17 @@ def questions():
     except:
         output.update(contained_questions=[])
         pass # this means we didn't pass an id, e.g., making a new section!
-    if questions_form.accepts(request.vars,session,keepvalues=True):        
+    if questions_form.accepts(request.vars,session,keepvalues=True):
         questions = request.post_vars.questions
-        if not questions:
-            db(db.survey_template_link.survey_questions_id == questions_id).delete()
-            output.update(contained_questions=get_contained_questions(questions_id))
         if questions:
             for question in questions:
-               if not has_dupe_questions(questions_form.vars.id,question):
-                    db.survey_template_link.insert(survey_template_id=session.rcvars.survey_template,survey_questions_id=questions_form.vars.id,
+               if not has_dupe_questions(template.id,question):
+                   db.survey_template_link.insert(survey_template_id=session.rcvars.survey_template,survey_questions_id=questions_form.vars.id,
                                               survey_question_id=question)
-            output(contained_questions=prune_questions(questions_id,questions,contained_questions))
-            output.update(contained_questions=get_contained_questions(questions_id))
     elif questions_form.errors:
         response.flash= T("Please correct all errors.")
     output.update(form=questions_form)
     return output
-
 def table():
     if not "series_id" in request.vars:
         response.error = "You must provide both a series id to proceed."
@@ -330,11 +322,12 @@ def transform_buttons(output,save = None, prev = None, next = None, finish = Non
             add_buttons(form,save,prev,next,finish,cancel)
     return output
 
-def has_dupe_questions(questions_id,question_id):
-    question_query = (db.survey_template_link.survey_questions_id == questions_id) \
+def has_dupe_questions(template_id,question_id):
+    question_query = (db.survey_template_link.survey_template_id == template_id) \
     & (question_id == db.survey_template_link.survey_question_id)
     questions = db(question_query).select(db.survey_question.ALL)
     if len(questions) > 1:
+        
         return True
     else:
         return False

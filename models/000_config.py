@@ -111,8 +111,8 @@ deployment_settings.modules = Storage(
             module_type = 10
         ),
     sitrep = Storage(
-            name_nice = Tstr("Situation Reports"),
-            description = Tstr("Assessments & Flood Reports"),
+            name_nice = Tstr("Assessments"),
+            description = Tstr("Assessments are structured reports done by Professional Organisations - data includes Flood Re.ports, WFP Assessments & Rapid Assessment Tool"),
             module_type = 10
         ),
     pr = Storage(

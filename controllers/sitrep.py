@@ -1,9 +1,10 @@
 # -*- coding: utf-8 -*-
 
-""" Situation Reporting Module - Controllers
+""" Assessments Module - Controllers
 
     @author: Fran Boon
     @see: http://eden.sahanafoundation.org/wiki/Pakistan
+    @ToDo: Rename as 'assessment' (Deprioritised due to Data Migration issues being distracting for us currently)
 
 """
 
@@ -20,7 +21,7 @@ response.menu_options = [
         [T("Add"), False, URL(r=request, f="freport", args="create")],
         #[T("Search"), False, URL(r=request, f="freport", args="search")]
     ]],
-    [T("Assessments"), False, URL(r=request, f="assessment"),[
+    [T("WFP Assessments"), False, URL(r=request, f="assessment"),[
         [T("List"), False, URL(r=request, f="assessment")],
         [T("Add"), False, URL(r=request, f="assessment", args="create")],
         #[T("Search"), False, URL(r=request, f="assessment", args="search")]
@@ -30,6 +31,11 @@ response.menu_options = [
         [T("Add"), False, URL(r=request, f="school_district", args="create")],
         #[T("Search"), False, URL(r=request, f="school_district", args="search")]
     ]],
+    #[T("Rapid Assessments"), False, URL(r=request, f="rassessment"),[
+    #    [T("List"), False, URL(r=request, f="rassessment")],
+    #    [T("Add"), False, URL(r=request, f="rassessment", args="create")],
+        #[T("Search"), False, URL(r=request, f="rassessment", args="search")]
+    #]],
     #[T("Map"), False, URL(r=request, f="maps")],
 ]
 
@@ -43,14 +49,39 @@ def index():
 
 def maps():
 
-    """ Show a Map of all Flood Reports """
+    """ Show a Map of all Assessments """
 
-    reports = db(db.gis_location.id == db.sitrep_freport.location_id).select()
-    popup_url = URL(r=request, f="freport", args="read.popup?freport.location_id=")
-    map = gis.show_map(feature_queries = [{"name":Tstr("Flood Reports"), "query":reports, "active":True, "popup_url": popup_url}], window=True)
+    freports = db(db.gis_location.id == db.sitrep_freport.location_id).select()
+    freport_popup_url = URL(r=request, f="freport", args="read.popup?freport.location_id=")
+    map = gis.show_map(feature_queries = [{"name":Tstr("Flood Reports"), "query":freports, "active":True, "popup_url": freport_popup_url}], window=True)
 
     return dict(map=map)
 
+
+def rassessment():
+
+    """ 
+        Rapid Assessments, RESTful controller 
+        http://www.ecbproject.org/page/48
+    """
+
+    resource = request.function
+    tablename = "%s_%s" % (module, resource)
+    table = db[tablename]
+
+    # Villages only
+    table.location_id.requires = IS_NULL_OR(IS_ONE_OF(db(db.gis_location.level == "L4"), "gis_location.id", repr_select, sort=True))
+
+    response.s3.pagination = True
+
+    # Post-processor
+    def user_postp(jr, output):
+        shn_action_buttons(jr, deletable=False)
+        return output
+    response.s3.postp = user_postp
+
+    output = shn_rest_controller(module, resource)
+    return output
 
 def river():
 
@@ -117,7 +148,10 @@ def assessment():
 
 def school_district():
 
-    """ REST Controller """
+    """
+        REST Controller
+        @ToDo: Move to CR
+    """
 
     resource = request.function
     tablename = "%s_%s" % (module, resource)
@@ -165,7 +199,31 @@ def shn_sitrep_rheader(r, tabs=[]):
     if r.representation == "html":
         rheader_tabs = shn_rheader_tabs(r, tabs)
 
-        if r.name == "freport":
+        if r.name == "rassessment":
+
+            report = r.record
+            location = report.location_id
+            if location:
+                location = shn_gis_location_represent(location)
+            doc_url = URL(r=request, f="download", args=[report.document])
+            try:
+                doc_name, file = r.table.document.retrieve(report.document)
+                if hasattr(file, "close"):
+                    file.close()
+            except:
+                doc_name = report.document
+            rheader = DIV(TABLE(
+                            TR(
+                                TH(T("Location: ")), location,
+                                TH(T("Date: ")), report.datetime
+                              ),
+                            TR(
+                                TH(T("Document: ")), A(doc_name, _href=doc_url)
+                              )
+                            ),
+                          rheader_tabs)
+                          
+        elif r.name == "freport":
 
             report = r.record
             location = report.location_id

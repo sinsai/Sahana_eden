@@ -396,11 +396,11 @@ if deployment_settings.has_module(module):
     s3.crud_strings[tablename] = Storage(
         title_create = T('Add Skill Type'),
         title_display = T('Skill Type Details'),
-        title_list = T('Skill Type'),
+        title_list = T('Skill Types'),
         title_update = T('Edit Skill Type'),
-        title_search = T('Search Skill Type'),
+        title_search = T('Search Skill Types'),
         subtitle_create = T('Add New Skill Type'),
-        subtitle_list = T('Skill Type'),
+        subtitle_list = T('Skill Types'),
         label_list_button = T('List Skill Types'),
         label_create_button = T('Add Skill Types'),
         label_delete_button = T('Delete Skill Type'),
@@ -408,22 +408,6 @@ if deployment_settings.has_module(module):
         msg_record_modified = T('Skill Type updated'),
         msg_record_deleted = T('Skill Type deleted'),
         msg_list_empty = T('No Skill Types currently set'))
-
-    field_settings = S3CheckboxesWidget(db = db, 
-                                        lookup_table_name = "vol_skill_types", 
-                                        lookup_field_name = "name",
-                                        multiple = True,
-                                        num_column=3
-                                        )
-
-    # Reusable field
-    skill_ids = db.Table(None, 'skill_ids',
-                         FieldS3('skill_ids',
-                         requires = field_settings.requires,
-                         widget = field_settings.widget,
-                         represent = field_settings.represent,
-                         label = T("skills"),
-                         ondelete = "RESTRICT"))
 
     # Representation function
     def vol_skill_types_represent(id):
@@ -444,30 +428,6 @@ if deployment_settings.has_module(module):
     #   A volunteer's skills (component of pr)
     #
 
-    def multiselect_widget(f,v):
-	import uuid
-	d_id = "multiselect-" + str(uuid.uuid4())[:8]
-	wrapper = DIV(_id=d_id)
-	inp = SQLFORM.widgets.options.widget(f,v)
-	inp['_multiple'] = 'multiple'
-	inp['_style'] = 'min-width: %spx;' % (len(f.name) * 20 + 50)
-	if v:
-	    if not isinstance(v,list): v = str(v).split('|')
-	    opts = inp.elements('option')
-	    for op in opts:
-	        if op['_value'] in v:
-	            op['_selected'] = 'selected'            
-	scr = SCRIPT('jQuery("#%s select").multiSelect({'\
-	             'noneSelected:"Select %ss"});' % (d_id,f.name))
-	wrapper.append(inp)
-	wrapper.append(scr)
-	if request.vars.get(inp['_id']+'[]',None):
-	    var = request.vars[inp['_id']+'[]']
-	    if not isinstance(var,list): var = [var]
-	    request.vars[f.name] = '|'.join(var)
-	    del request.vars[inp['_id']+'[]']
-	return wrapper
-
     resource = 'skill'
     tablename = module + '_' + resource
     table = db.define_table(tablename, timestamp, uuidstamp, deletion_status,
@@ -476,9 +436,8 @@ if deployment_settings.has_module(module):
         Field('status',requires=IS_IN_SET(['approved','unapproved','denied']),label=T('status'), notnull=True, default='unapproved'),             
                     migrate=migrate)  
    
-    db.vol_skill.skill_types_id.widget = multiselect_widget
-    db.vol_skill.skill_types_id.requires = IS_ONE_OF(db, 'vol_skill_types.id', vol_skill_types_represent, multiple=True)
-    #db.vol_skill.skill_types_id.represent = vol_skill_types_represent
+    db.vol_skill.skill_types_id.requires = IS_ONE_OF(db, 'vol_skill_types.id', vol_skill_types_represent)
+    db.vol_skill.skill_types_id.represent = vol_skill_types_represent
 
     s3xrc.model.add_component(module, resource,
         multiple=True,
@@ -499,10 +458,10 @@ if deployment_settings.has_module(module):
         title_display = T('Skill Details'),
         title_list = SKILL,
         title_update = T('Edit Skill'),
-        title_search = T('Search Skill'),
+        title_search = T('Search Skills'),
         subtitle_create = T('Add New Skill'),
         subtitle_list = SKILL,
-        label_list_button = T('List Skill'),
+        label_list_button = T('List Skills'),
         label_create_button = ADD_SKILL,
         msg_record_created = T('Skill added'),
         msg_record_modified = T('Skill updated'),

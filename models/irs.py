@@ -285,6 +285,7 @@ if deployment_settings.has_module(module):
 
     # Assessments
     # This is a follow-up assessment of an Incident
+    # Deprecated by Assessments module?
     resource = "iassessment"
     tablename = "%s_%s" % (module, resource)
     table = db.define_table(tablename,
@@ -343,11 +344,12 @@ if deployment_settings.has_module(module):
             "modified_by"
         ])
 
-    s3xrc.model.add_component(module, resource,
-                              multiple = True,
-                              joinby = dict(irs_incident="incident_id"),
-                              deletable = True,
-                              editable = True)
+    # Disabling until we figure out how to link to Assessments module
+    #s3xrc.model.add_component(module, resource,
+    #                          multiple = True,
+    #                          joinby = dict(irs_incident="incident_id"),
+    #                          deletable = True,
+    #                          editable = True)
 
     # -----------------------------------------------------------------------------
     irs_image_type_opts = {

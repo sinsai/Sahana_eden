@@ -17,7 +17,7 @@ response.menu_options = [
         [T("List"), False, URL(r=request, f="template")],
         [T("Add"), False, URL(r=request, f="template", args="create")]
     ]],
-    [T("Survey Series"), False, URL(r=request, f="template"),[
+    [T("Survey Series"), False, URL(r=request, f="series"),[
         [T("List"), False, URL(r=request, f="series")],
         [T("Add"), False, URL(r=request, f="series", args="create")]
     ]]]
@@ -119,7 +119,6 @@ def table():
     # store the necessary information -- we're safe at this point.
     series_id = request.vars.series_id
 
-
     # first solely check the series exists.
     series = db(db.survey_series.id == series_id).select().first()
     if not series:
@@ -135,7 +134,7 @@ def table():
     table.uuid.requires = IS_NOT_IN_DB(db, "%s.uuid" % template.table_name)
 
      # CRUD Strings
-    s3.crud_strings[tablename] = Storage(
+    s3.crud_strings[template.table_name] = Storage(
         title_create = T("Add Survey Answer"),
         title_display = T("Survey Answer Details"),
         title_list = T("List Survey Answers"),
@@ -148,7 +147,10 @@ def table():
         msg_record_modified = T("Survey Answer updated"),
         msg_record_deleted = T("Survey Answer deleted"),
         msg_list_empty = T("No Survey Answers currently registered"))
-    return shn_rest_controller("survey", resource)
+    output = shn_rest_controller("survey", resource)
+    def _postp(jr,output):
+      return output
+    return output
 
 def series():
     """ RESTlike CRUD controller """
@@ -186,6 +188,12 @@ def series():
         msg_record_deleted = T("Survey Series deleted"),
         msg_list_empty = T("No Survey Series currently registered"))
     output = shn_rest_controller(module, resource,listadd=False)
+    def _postp(jr,output):
+      shn_action_buttons(jr,output)
+      response.s3.actions.append(
+              dict(label=str("View Responses"), _class="action-btn", url=str(URL(r=request, args = args))))
+      return output
+    response.s3.postp = _postp
 
     return transform_buttons(output,finish=True,cancel=True)
 
@@ -380,7 +388,6 @@ def get_table_for_template(template_id):
                               onaccept=lambda form: _onaccept(form))
         # finally we return the newly created or existing table.
         return tbl
-
 #def get_options_for_questions(template_id):
 #        questions = db((db.survey_template_link.survey_template_id == template_id) & \
 #        (db.survey_question.id == db.survey_template_link.survey_question_id)).select(db.survey_question.ALL)

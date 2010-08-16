@@ -384,7 +384,12 @@ gis_location_hierarchy = {
 }
 gis_location_languages = {
     1:T("English"),
-    2:T("Hindi"),
+    2:T("Urdu"),
+    3:T("Punjabi"),
+    4:T("Pashto"),
+    5:T("Sindhi"),
+    6:T("Seraiki"),
+    7:T("Balochi"),
     #3:T("Local Language"),
 }
 gis_location_language_default = 1

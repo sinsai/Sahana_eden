@@ -129,7 +129,21 @@ s3.crud_strings[tablename] = Storage(
     msg_list_empty = T("No Organizations currently registered"))
 
 # Reusable field
+def shn_organisation_represent(id):
+    row = db(db.org_organisation.id == id).select(db.org_organisation.name, 
+                                                  db.org_organisation.acronym, 
+                                                  limitby = [0,1]).first()
+    if row:
+        organisation_represent = row.name 
+        if row.acronym:
+            organisation_represent = organisation_represent + " (" + row.acronym + ")"
+    else:
+        organisation_represent = "-"
+    
+    return organisation_represent
+
 organisation_popup_url = URL(r=request, c="org", f="organisation", args="create", vars=dict(format="popup"))
+
 shn_organisation_comment = DIV(A(ADD_ORGANIZATION,
                            _class="colorbox",
                            _href=organisation_popup_url,
@@ -140,7 +154,7 @@ shn_organisation_comment = DIV(A(ADD_ORGANIZATION,
 organisation_id = db.Table(None, "organisation_id",
                            FieldS3("organisation_id", db.org_organisation, sortby="name",
                            requires = IS_NULL_OR(IS_ONE_OF(db, "org_organisation.id", "%(name)s")),
-                           represent = lambda id: (id and [db(db.org_organisation.id == id).select(db.org_organisation.name, limitby=(0, 1)).first().name] or ["None"])[0],
+                           represent = shn_organisation_represent,
                            label = T("Organization"),
                            comment = shn_organisation_comment,
                            ondelete = "RESTRICT"

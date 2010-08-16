@@ -74,7 +74,7 @@ def user():
         # Can redirect the user to another page on first login for workflow (set in 00_settings.py)
         # Note the timestamp of last login through the browser
         if auth.is_logged_in():
-            db(db.auth_user.id == auth.user.id).update(timestamp = request.utcnow)
+            db(db.auth_user.id == auth.user.id).update(timestmp = request.utcnow)
 
     _table_user = auth.settings.table_user
     if request.args and request.args(0) == "profile":

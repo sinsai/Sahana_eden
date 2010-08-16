@@ -1,7 +1,9 @@
 # -*- coding: utf-8 -*-
 
-"""
-    Incident Reporting System - Model
+""" Incident Reporting System - Model
+
+    @author: Sahana Taiwan Team
+
 """
 
 module = "irs"
@@ -141,17 +143,19 @@ if deployment_settings.has_module(module):
     # This is the current status of an Incident
     resource = "incident"
     tablename = "%s_%s" % (module, resource)
-    table = db.define_table(tablename, timestamp, uuidstamp, authorstamp, deletion_status,
-            Field("name"),
-            Field("category", "integer"),
-            Field("contact"),
-            location_id,
-            Field("time", "datetime"),
-            Field("persons_affected", "integer"),
-            Field("persons_injured", "integer"),
-            Field("persons_deceased", "integer"), 
-            comments, 
-            )
+    table = db.define_table(tablename,
+                            timestamp, uuidstamp, authorstamp, deletion_status,
+                            Field("name"),
+                            Field("category", "integer"),
+                            Field("contact"),
+                            location_id,
+                            Field("datetime", "datetime"),
+                            Field("persons_affected", "integer"),
+                            Field("persons_injured", "integer"),
+                            Field("persons_deceased", "integer"),
+                            comments,
+                            migrate=migrate)
+
     table.name.requires = IS_NOT_EMPTY()
     table.category.requires = IS_NULL_OR(IS_IN_SET(irs_incident_type_opts))
     table.category.represent = lambda opt: irs_incident_type_opts.get(opt, opt)
@@ -173,7 +177,7 @@ if deployment_settings.has_module(module):
         msg_record_modified = T("Incident updated"),
         msg_record_deleted = T("Incident deleted"),
         msg_list_empty = T("No Incidents currently registered"))
-        
+
     incident_id = db.Table(None, "incident_id",
                            Field("incident_id", table,
                                  requires = IS_NULL_OR(IS_ONE_OF(db, "irs_incident.id", "%(id)s")),
@@ -184,28 +188,34 @@ if deployment_settings.has_module(module):
                         list_fields = [
                             "id",
                             "category",
-                            "time",
+                            "datetime",
                             "location_id"
                         ])
     # -----------------------------------------------------------------------------
     # Reports
     # This is a report of an Incident
     # A single incident may generate many reports
-    resource = "report"
+    resource = "ireport"
     tablename = "%s_%s" % (module, resource)
-    table = db.define_table(tablename, timestamp, uuidstamp, authorstamp, deletion_status,
-            incident_id,
-            Field("name"),
-            Field("category", "integer"),
-            person_id,
-            Field("contact"),
-            location_id,
-            Field("time", "datetime"),
-            Field("persons_affected", "integer"),
-            Field("persons_injured", "integer"),
-            Field("persons_deceased", "integer"), 
-            comments, 
-            )
+    table = db.define_table(tablename,
+                            timestamp, uuidstamp, authorstamp, deletion_status,
+                            incident_id,
+                            Field("name"),
+                            Field("message", "text"),
+                            Field("category", "integer"),
+                            person_id,
+                            Field("contact"),
+                            Field("datetime", "datetime"),
+                            location_id,
+                            Field("persons_affected", "integer"),
+                            Field("persons_injured", "integer"),
+                            Field("persons_deceased", "integer"),
+                            Field("source"),
+                            Field("source_id"),
+                            Field("verified", "boolean"),
+                            comments,
+                            migrate=migrate)
+
     table.name.requires = IS_NOT_EMPTY()
     table.category.requires = IS_NULL_OR(IS_IN_SET(irs_incident_type_opts))
     table.category.represent = lambda opt: irs_incident_type_opts.get(opt, opt)
@@ -213,29 +223,36 @@ if deployment_settings.has_module(module):
 
     table.name.label = T("Short Description")
     table.name.comment = SPAN("*", _class="req")
+    table.message.label = T("Message")
+    table.category.label = T("Category")
     table.person_id.label = T("Reporter Name")
+    table.contact.label = T("Contact Details")
+    table.datetime.label = T("Date/Time")
     table.persons_affected.label = T("Number of People Affected")
     table.persons_injured.label = T("Number of People Injured")
     table.persons_deceased.label = T("Number of People Deceased")
+    table.source.label = T("Source")
+    table.source_id.label = T("Source ID")
+    table.verified.label = T("Verified?")
 
     # CRUD strings
-    ADD_REPORT = T("Add Report")
-    LIST_REPORTS = T("List Reports")
+    ADD_INC_REPORT = T("Add Incident Report")
+    LIST_INC_REPORTS = T("List Incident Reports")
     s3.crud_strings[tablename] = Storage(
-        title_create = ADD_REPORT,
-        title_display = T("Report Details"),
-        title_list = LIST_REPORTS,
-        title_update = T("Edit Report"),
-        title_search = T("Search Reports"),
-        subtitle_create = T("Add New Report"),
-        subtitle_list = T("Reports"),
-        label_list_button = LIST_REPORTS,
-        label_create_button = ADD_REPORT,
-        msg_record_created = T("Report added"),
-        msg_record_modified = T("Report updated"),
-        msg_record_deleted = T("Report deleted"),
-        msg_list_empty = T("No Reports currently registered"))
-        
+        title_create = ADD_INC_REPORT,
+        title_display = T("Incident Report Details"),
+        title_list = LIST_INC_REPORTS,
+        title_update = T("Edit Incident Report"),
+        title_search = T("Search Incident Reports"),
+        subtitle_create = T("Add New Incident Report"),
+        subtitle_list = T("Incident Reports"),
+        label_list_button = LIST_INC_REPORTS,
+        label_create_button = ADD_INC_REPORT,
+        msg_record_created = T("Incident Report added"),
+        msg_record_modified = T("Incident Report updated"),
+        msg_record_deleted = T("Incident Report deleted"),
+        msg_list_empty = T("No Incident Reports currently registered"))
+
     s3xrc.model.add_component(module, resource,
                               multiple = True,
                               joinby = dict(irs_incident="incident_id"),
@@ -268,27 +285,28 @@ if deployment_settings.has_module(module):
 
     # Assessments
     # This is a follow-up assessment of an Incident
-    resource = "assessment"
+    # Deprecated by Assessments module?
+    resource = "iassessment"
     tablename = "%s_%s" % (module, resource)
     table = db.define_table(tablename,
                             timestamp, uuidstamp, authorstamp, deletion_status,
                             incident_id,
                             Field("datetime", "datetime"),
                             Field("itype", "integer",
-                                requires = IS_IN_SET(irs_assessment_type_opts, zero=None),
-                                default = 1,
-                                label = T("Report Type"),
-                                represent = lambda opt: irs_assessment_type_opts.get(opt, UNKNOWN_OPT)),
+                                  requires = IS_IN_SET(irs_assessment_type_opts, zero=None),
+                                  default = 1,
+                                  label = T("Report Type"),
+                                  represent = lambda opt: irs_assessment_type_opts.get(opt, UNKNOWN_OPT)),
                             Field("event_type", "integer",
-                                requires = IS_IN_SET(irs_event_type_opts, zero=None),
-                                default = 1,
-                                label = T("Event type"),
-                                represent = lambda opt: irs_event_type_opts.get(opt, UNKNOWN_OPT)),
+                                  requires = IS_IN_SET(irs_event_type_opts, zero=None),
+                                  default = 1,
+                                  label = T("Event type"),
+                                  represent = lambda opt: irs_event_type_opts.get(opt, UNKNOWN_OPT)),
                             Field("cause_type", "integer",
-                                requires = IS_IN_SET(irs_cause_type_opts, zero=None),
-                                default = 1,
-                                label = T("Type of cause"),
-                                represent = lambda opt: irs_cause_type_opts.get(opt, UNKNOWN_OPT)),
+                                  requires = IS_IN_SET(irs_cause_type_opts, zero=None),
+                                  default = 1,
+                                  label = T("Type of cause"),
+                                  represent = lambda opt: irs_cause_type_opts.get(opt, UNKNOWN_OPT)),
                             Field("report", "text"),
                             Field("persons_affected", "integer"),
                             Field("persons_injured", "integer"),
@@ -317,7 +335,7 @@ if deployment_settings.has_module(module):
         msg_record_modified = T("Assessment updated"),
         msg_record_deleted = T("Assessment deleted"),
         msg_list_empty = T("No Assessments currently registered"))
-        
+
     s3xrc.model.configure(table,
         list_fields = [
             "id",
@@ -326,11 +344,12 @@ if deployment_settings.has_module(module):
             "modified_by"
         ])
 
-    s3xrc.model.add_component(module, resource,
-                              multiple = True,
-                              joinby = dict(irs_incident="incident_id"),
-                              deletable = True,
-                              editable = True)
+    # Disabling until we figure out how to link to Assessments module
+    #s3xrc.model.add_component(module, resource,
+    #                          multiple = True,
+    #                          joinby = dict(irs_incident="incident_id"),
+    #                          deletable = True,
+    #                          editable = True)
 
     # -----------------------------------------------------------------------------
     irs_image_type_opts = {
@@ -340,18 +359,18 @@ if deployment_settings.has_module(module):
         99:T("other")
     }
 
-    resource = "image"
+    resource = "iimage"
     tablename = "%s_%s" % (module, resource)
     table = db.define_table(tablename,
                             timestamp, uuidstamp, authorstamp, deletion_status,
-                            Field("report_id", db.irs_report),
+                            Field("report_id", db.irs_ireport),
                             incident_id,
-                            Field("assessment_id", db.irs_assessment),
+                            Field("assessment_id", db.irs_iassessment),
                             Field("type", "integer",
-                                requires = IS_IN_SET(irs_image_type_opts, zero=None),
-                                default = 1,
-                                label = T("Image Type"),
-                                represent = lambda opt: irs_image_type_opts.get(opt, UNKNOWN_OPT)),
+                                  requires = IS_IN_SET(irs_image_type_opts, zero=None),
+                                  default = 1,
+                                  label = T("Image Type"),
+                                  represent = lambda opt: irs_image_type_opts.get(opt, UNKNOWN_OPT)),
                             Field("image", "upload", autodelete=True),
                             #Field("url"),
                             Field("description"),
@@ -375,10 +394,12 @@ if deployment_settings.has_module(module):
         msg_record_modified = T("Image updated"),
         msg_record_deleted = T("Image deleted"),
         msg_list_empty = T("No Images currently registered"))
-        
+
     s3xrc.model.add_component(module, resource,
                               multiple = True,
-                              joinby = dict(irs_incident="incident_id", irs_report="report_id", irs_assessment="assessment_id"),
+                              joinby = dict(irs_incident="incident_id",
+                                            irs_ireport="report_id",
+                                            irs_iassessment="assessment_id"),
                               deletable = True,
                               editable = True)
 
@@ -397,10 +418,10 @@ if deployment_settings.has_module(module):
                             incident_id,
                             Field("datetime", "datetime"),
                             Field("itype", "integer",
-                                requires = IS_IN_SET(irs_response_type_opts, zero=None),
-                                default = 1,
-                                label = T("Type"),
-                                represent = lambda opt: irs_response_type_opts.get(opt, UNKNOWN_OPT)),
+                                  requires = IS_IN_SET(irs_response_type_opts, zero=None),
+                                  default = 1,
+                                  label = T("Type"),
+                                  represent = lambda opt: irs_response_type_opts.get(opt, UNKNOWN_OPT)),
                             Field("report", "text"),
                             migrate=migrate)
 
@@ -421,11 +442,79 @@ if deployment_settings.has_module(module):
         msg_record_modified = T("Response updated"),
         msg_record_deleted = T("Response deleted"),
         msg_list_empty = T("No Responses currently registered"))
-        
+
     s3xrc.model.add_component(module, resource,
                               multiple = True,
                               joinby = dict(irs_incident="incident_id"),
                               deletable = True,
                               editable = True)
+
+    # -----------------------------------------------------------------------------
+    @auth.shn_requires_membership(1) # must be Administrator
+    def shn_irs_ushahidi_import(r, **attr):
+
+        if r.representation == "html" and \
+           r.name == "ireport" and not r.component and not r.id:
+
+            url = r.request.get_vars.get("url", "http://")
+
+            title = T("Incident Reports")
+            subtitle = T("Import from Ushahidi Instance")
+
+            form = FORM(TABLE(TR(
+                        TH("%s: " % T("URL of the Ushahidi instance")),
+                        INPUT(_type="text", _name="url", _size="40", _value=url,
+                              requires=[IS_URL(), IS_NOT_EMPTY()]),
+                        TD(DIV(SPAN("*", _class="req", _style="padding-right: 5px;")))),
+                        TR("", INPUT(_type="submit", _value="Import"))))
+
+            label_list_btn = shn_get_crud_string(r.tablename, "title_list")
+            list_btn = A(label_list_btn,
+                         _href=r.other(method="", vars=None),
+                         _class="action-btn")
+
+            output = dict(title=title, form=form, subtitle=subtitle, list_btn=list_btn)
+
+            if form.accepts(request.vars, session):
+
+                import_count = [0]
+                def sync(vector, import_count = import_count):
+                    if vector.tablename == "irs_ireport":
+                        import_count[0] += 1
+                s3xrc.sync_resolve = sync
+
+                ireports = r.resource
+                ushahidi = form.vars.url
+
+                template = os.path.join(request.folder, "static", "xslt", "import", "ushahidi.xsl")
+
+                if os.path.exists(template) and ushahidi:
+                    try:
+                        success = ireports.import_xml(ushahidi, template=template)
+                    except:
+                        import sys
+                        e = sys.exc_info()[1]
+                        response.error = e
+                    else:
+                        if success:
+                            count = import_count[0]
+                            if count:
+                                response.flash = "%s %s" % (import_count[0], T("reports successfully imported."))
+                            else:
+                                response.flash = T("No reports available.")
+                        else:
+                            response.error = s3xrc.error
+
+
+            response.view = "create.html"
+            return output
+
+        else:
+            raise HTTP(501, BADMETHOD)
+
+    s3xrc.model.set_method(module, "ireport",
+                           method="ushahidi",
+                           action=shn_irs_ushahidi_import)
+
 
     # -----------------------------------------------------------------------------

@@ -55,7 +55,7 @@ if deployment_settings.has_module(module):
     tablename = "%s_%s" % (module, resource)
     table = db.define_table(tablename, timestamp, uuidstamp, deletion_status,
         Field("message", "text"),
-        Field("timestamp", "datetime"),
+        Field("timestmp", "datetime"),  # 'timestamp' is a reserved word in Postgres
         location_id,
         Field("type", "integer"),
         Field("priority", "integer"),
@@ -74,7 +74,7 @@ if deployment_settings.has_module(module):
     db.rms_req.pledge_status.writable = False
 
     # Label the fields for the view
-    table.timestamp.label = T("Date & Time")
+    table.timestmp.label = T("Date & Time")
 
     # Hide fields from user:
     table.source_type.readable = table.source_type.writable = False
@@ -92,8 +92,8 @@ if deployment_settings.has_module(module):
     table.message.requires = IS_NOT_EMPTY()
     table.message.comment = SPAN("*", _class="req")
 
-    table.timestamp.requires = IS_NOT_EMPTY()
-    table.timestamp.comment = SPAN("*", _class="req")
+    table.timestmp.requires = IS_NOT_EMPTY()
+    table.timestmp.comment = SPAN("*", _class="req")
 
     table.priority.requires = IS_NULL_OR(IS_IN_SET(rms_priority_opts))
     table.priority.represent = lambda id: (
@@ -254,7 +254,7 @@ if deployment_settings.has_module(module):
                         records.append(TR(
                             row.completion_status,
                             row.message,
-                            row.timestamp,
+                            row.timestmp,
                             row.location_id and shn_gis_location_represent(row.location_id) or "unknown",
                             ))
                     items=DIV(TABLE(THEAD(TR(

@@ -2,11 +2,11 @@
 {{include "gis/catalogue_toolbar.html"}}
 
 {{=H2(title)}}
-{{=P(description)}}
+{{=P(XML(description))}}
 
 <p>&nbsp;</p>
 {{=H3(T("Contents"))}}
-<div id="table-container">
+<div id='table-container'>
 {{try:}}
  {{=items}}
 {{except:}}

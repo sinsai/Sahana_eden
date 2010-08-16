@@ -76,7 +76,7 @@ tablename = "%s_%s" % (module, resource)
 table = db.define_table(tablename,
                 Field("partner_uuid", length=36),           # uuid of remote system we synced with
                 Field("partner_name"),                      # descriptive name of remote system we synced with
-                Field("timestamp", "datetime"),             # the date and time when sync was performed
+                Field("timestmp", "datetime"),              # the date and time when sync was performed
                 Field("sync_resources", "text"),            # comma-separated list of resources synced
                 Field("sync_errors", "text"),               # sync errors encountered
                 Field("sync_mode"),                         # whether this was an "online" sync (standard sync mode) or "offline" sync (USB/File based)

@@ -1,8 +1,9 @@
 {{extend "layout.html"}}
 {{include "gis/catalogue_toolbar.html"}}
 {{=H2(title)}}
-{{=P(description)}}
-{{=P(A(T("Edit Description"), _href=URL(r=request, f="feature_group", args=(feature_group, "update"))))}}
+{{=P(XML(description))}}
+{{=P(A(T("Edit Description"), _href=URL(r=request, f="feature_group", args=(feature_group, "update"))), _class="action-button")}}
+<p>&nbsp;</p>
 {{try:}}
  {{=H3(subtitle)}}
 {{except:}}
@@ -22,7 +23,7 @@
 {{pass}}
 <div class='form-container'>
 {{try:}}
- {{=form1}}
+ {{=form}}
 {{except:}}
 {{pass}}
 {{try:}}
@@ -31,43 +32,3 @@
 {{pass}}
 </div>
 {{include 'key.html'}}
-<script type="text/javascript">//<![CDATA[
-$(function() {
-    // Set the Crud dropdowns to the current Feature Group
-    var options = '<option value="' + {{=feature_group}} + '"></option>';
-    $("#gis_feature_class_to_feature_group_feature_group").html(options);
-    $("#gis_feature_to_feature_group_feature_group").html(options);
-    // Hide the dropdowns
-    $("#gis_feature_class_to_feature_group_feature_group__row").hide();
-    $("#gis_feature_to_feature_group_feature_group__row").hide();
-    
-    // Hide the Features form
-    $("form:last").hide();
-    
-    // When the Type changes:
-	$("input[name='fg1']:radio").change(function() {
-		// What is the new type?
-        type=$("input[name='fg1']:radio:checked").val();
-        if (type=="Feature") {
-            // Hide the Feature Classes form
-            $("form:eq(1)").hide();
-            // Set the radio to 'Feature'
-            $("input[name='fg2']:nth(1)").attr("checked","checked");
-            // Show the Features form
-            $("form:last").show();
-        }
-    })
-	$("input[name='fg2']:radio").change(function() {
-		// What is the new type?
-        type=$("input[name='fg2']:radio:checked").val();
-        if (type=="FeatureClass") {
-            // Hide the Items form
-            $("form:last").hide();
-            // Set the radio to 'Feature Class'
-            $("input[name='fg1']:nth(0)").attr("checked","checked");
-            // Show the Feature Classes form
-            $("form:eq(1)").show();
-        }
-	})
-});
-//]]></script>

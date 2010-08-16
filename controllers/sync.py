@@ -5,6 +5,8 @@
 """
 
 module = "admin"
+module_name = T("Synchronization")
+
 log_table = "sync_log"
 conflict_table = "sync_conflict"
 sync_peer = None
@@ -23,8 +25,6 @@ def call():
 # S3 framework functions
 def index():
     "Module's Home Page"
-    
-    module_name = "Synchronisation"
     
     return dict(module_name=module_name)
 
@@ -84,7 +84,6 @@ def now():
 
     import urllib, urlparse
 
-    module_name = "Synchronisation"
     final_status = ""
     sync_start = False
 
@@ -248,8 +247,8 @@ def now():
             state.job_resources_pending = ", ".join(map(str, job_res_pending))
             state.job_sync_errors += sync_errors
             vals = {"job_resources_done": state.job_resources_done, "job_resources_pending": state.job_resources_pending, "job_sync_errors": state.job_sync_errors}
-            db(db.sync_now.id==sync_now_id).update(**vals)
-            state = db(db.sync_now.id==sync_now_id).select(db.sync_now.ALL)[0]
+            db(db.sync_now.id == sync_now_id).update(**vals)
+            state = db(db.sync_now.id == sync_now_id).select(db.sync_now.ALL)[0]
 
             # check if all resources are synced for the current job, i.e. is it done?
             if not state.job_resources_pending:
@@ -258,7 +257,7 @@ def now():
                 log_table_id = db[log_table].insert(
                     partner_uuid = sync_job_partner[0],
                     partner_name = sync_job_partner[1],
-                    timestamp = datetime.datetime.utcnow(),
+                    timestmp = datetime.datetime.utcnow(),
                     sync_resources = state.job_resources_done,
                     sync_errors = state.job_sync_errors,
                     sync_mode = "online",
@@ -273,15 +272,15 @@ def now():
                     sync_jobs_list.remove(sync_jobs_list[0])
                     state.sync_jobs = ", ".join(map(str, sync_jobs_list))
                     vals = {"sync_jobs": state.sync_jobs}
-                    db(db.sync_now.id==sync_now_id).update(**vals)
-                    state = db(db.sync_now.id==sync_now_id).select(db.sync_now.ALL)[0]
+                    db(db.sync_now.id == sync_now_id).update(**vals)
+                    state = db(db.sync_now.id == sync_now_id).select(db.sync_now.ALL)[0]
                 # update last_sync_on
                 vals = {"last_sync_on": datetime.datetime.utcnow()}
-                db(db.sync_partner.id==peer.id).update(**vals)
+                db(db.sync_partner.id == peer.id).update(**vals)
 
             if not state.sync_jobs:
                 # remove sync now session state
-                db(db.sync_now.id==sync_now_id).delete()
+                db(db.sync_now.id == sync_now_id).delete()
                 # we're done
                 final_status += "Sync completed successfully. Logs generated: " + str(A(T("Click here to open log"),_href=URL(r=request, c="sync", f="history"))) + "<br /><br />\n"
     
@@ -332,7 +331,7 @@ def sync():
                 log_table_id = db[log_table].insert(
                     partner_uuid = sync_peer.uuid,
                     partner_name = sync_peer.name,
-                    timestamp = datetime.datetime.utcnow(),
+                    timestmp = datetime.datetime.utcnow(),
                     sync_resources = sync_resources,
                     sync_errors = sync_errors,
                     sync_mode = "online",
@@ -590,9 +589,9 @@ def history():
     "Shows history of database synchronisations"
     title = T("Synchronisation History")
     if len(request.args) > 0:
-        logs = db(db[log_table].id==int(request.args[0])).select(db[log_table].ALL, orderby=db[log_table].timestamp)
+        logs = db(db[log_table].id == int(request.args[0])).select(db[log_table].ALL, orderby=db[log_table].timestmp)
     else:
-        logs = db().select(db[log_table].ALL, orderby=db[log_table].timestamp)
+        logs = db().select(db[log_table].ALL, orderby=db[log_table].timestmp)
     return dict(title=title, logs=logs)
 
 @auth.shn_requires_membership(1)
@@ -613,7 +612,7 @@ def conflict():
     skip_fields = ["uuid", "id"]
     field_errors = dict()
 
-    conflicts = db(db[conflict_table].resolved==False).select(db[conflict_table].ALL, orderby=db[conflict_table].logged_on)
+    conflicts = db(db[conflict_table].resolved == False).select(db[conflict_table].ALL, orderby=db[conflict_table].logged_on)
     for idx in xrange(0, len(conflicts)):
         if not conflicts[idx].resource_table in db.tables:
             del conflicts[idx]
@@ -633,7 +632,7 @@ def conflict():
     remote_modified_by = None
     if conflict:
         remote_record = cPickle.loads(conflict.remote_record)
-        local_record = db(db[conflict.resource_table].uuid==conflict.uuid).select().first()
+        local_record = db(db[conflict.resource_table].uuid == conflict.uuid).select().first()
         if conflict.remote_modified_by:
             remote_modified_by = get_modified_by(conflict.remote_modified_by)
         if "modified_by" in local_record:
@@ -658,11 +657,11 @@ def conflict():
                             field_errors[field] = field_error
                         # update only if no errors
                         if len(field_errors) == 0:
-                            db(db[conflict.resource_table].uuid==conflict.uuid).update(**vals)
+                            db(db[conflict.resource_table].uuid == conflict.uuid).update(**vals)
                             # undelete record
                             if "deleted" in db[conflict.resource_table].fields:
                                 vals = {"deleted": False}
-                                db(db[conflict.resource_table].uuid==conflict.uuid).update(**vals)
+                                db(db[conflict.resource_table].uuid == conflict.uuid).update(**vals)
             else:
                 # insert record
                 new_rec = dict()
@@ -683,7 +682,7 @@ def conflict():
             if len(field_errors) == 0:
                 conflict.update_record(resolved = True)
             # next conflict
-            conflicts = db(db[conflict_table].resolved==False).select(db[conflict_table].ALL, orderby=db[conflict_table].logged_on)
+            conflicts = db(db[conflict_table].resolved == False).select(db[conflict_table].ALL, orderby=db[conflict_table].logged_on)
             for idx in xrange(0, len(conflicts)):
                 if not conflicts[idx].resource_table in db.tables:
                     del conflicts[idx]
@@ -698,7 +697,7 @@ def conflict():
             local_record = None
             if conflict:
                 remote_record = cPickle.loads(conflict.remote_record)
-                local_record = db(db[conflict.resource_table].uuid==conflict.uuid).select().first()
+                local_record = db(db[conflict.resource_table].uuid == conflict.uuid).select().first()
                 if conflict.remote_modified_by:
                     remote_modified_by = get_modified_by(conflict.remote_modified_by)
                 if "modified_by" in local_record:

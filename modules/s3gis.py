@@ -524,8 +524,8 @@ class GIS(object):
             @param projection: EPSG code for the Projection to use (if not provided then the default setting from the Map Service Catalogue is used)
             @param feature_queries: Feature Queries to overlay onto the map & their options (List of Dicts):
                 [{
-                 name   : "Query",      # A string: the label for the layer
-                 query  : query,        # A gluon.sql.Rows of gis_locations
+                 name   : "MyLabel",    # A string: the label for the layer
+                 query  : query,        # A gluon.sql.Rows of gis_locations, which can be from a simple query or a Join. VirtualFields can be added for 'marker' or 'shape' (with optional 'color' & 'size')
                  active : False,        # Is the feed displayed upon load or needs ticking to load afterwards?
                  popup_url : None,      # The URL which will be used to fill the pop-up. it will be appended by the Location ID.
                  marker : None          # The marker_id for the icon used to display the feature (over-riding the normal process).
@@ -676,6 +676,7 @@ class GIS(object):
             html.append(SCRIPT(_type="text/javascript", _src=URL(r=request, c="static", f="scripts/ext/adapter/jquery/ext-jquery-adapter-debug.js")))
             html.append(SCRIPT(_type="text/javascript", _src=URL(r=request, c="static", f="scripts/ext/ext-all-debug.js")))
             html.append(SCRIPT(_type="text/javascript", _src=URL(r=request, c="static", f="scripts/gis/openlayers/lib/OpenLayers.js")))
+            html.append(SCRIPT(_type="text/javascript", _src=URL(r=request, c="static", f="scripts/gis/OpenStreetMap.js")))
             html.append(SCRIPT(_type="text/javascript", _src=URL(r=request, c="static", f="scripts/gis/MP.js")))
             html.append(SCRIPT(_type="text/javascript", _src=URL(r=request, c="static", f="scripts/gis/usng2.js")))
             html.append(SCRIPT(_type="text/javascript", _src=URL(r=request, c="static", f="scripts/gis/RemoveFeature.js")))
@@ -686,6 +687,7 @@ class GIS(object):
             html.append(SCRIPT(_type="text/javascript", _src=URL(r=request, c="static", f="scripts/ext/adapter/jquery/ext-jquery-adapter.js")))
             html.append(SCRIPT(_type="text/javascript", _src=URL(r=request, c="static", f="scripts/ext/ext-all.js")))
             html.append(SCRIPT(_type="text/javascript", _src=URL(r=request, c="static", f="scripts/gis/OpenLayers.js")))
+            html.append(SCRIPT(_type="text/javascript", _src=URL(r=request, c="static", f="scripts/gis/OpenStreetMap.js")))
             html.append(SCRIPT(_type="text/javascript", _src=URL(r=request, c="static", f="scripts/gis/RemoveFeature.js")))
             html.append(SCRIPT(_type="text/javascript", _src=URL(r=request, c="static", f="scripts/gis/GeoExt.js")))
 
@@ -1449,12 +1451,18 @@ OpenLayers.Util.extend( selectPdfControl, {
         """
                 if openstreetmap.Mapnik:
                     layers_openstreetmap += """
-        var mapnik = new OpenLayers.Layer.OSM('""" + openstreetmap.Mapnik + """');
+        var mapnik = new OpenLayers.Layer.OSM.Mapnik('""" + openstreetmap.Mapnik + """', {
+            displayOutsideMaxExtent: true,
+            wrapDateLine: true
+        });
         map.addLayer(mapnik);
                     """
                 if openstreetmap.Osmarender:
                     layers_openstreetmap += """
-        var osmarender = new OpenLayers.Layer.OSM('""" + openstreetmap.Osmarender + """', 'http://tah.openstreetmap.org/Tiles/tile/${z}/${x}/${y}.png');
+        var osmarender = new OpenLayers.Layer.OSM.Osmarender('""" + openstreetmap.Osmarender + """', {
+            displayOutsideMaxExtent: true,
+            wrapDateLine: true
+        });
         map.addLayer(osmarender);
                     """
                 if openstreetmap.Aerial:
@@ -1698,34 +1706,76 @@ OpenLayers.Util.extend( selectPdfControl, {
         layers_features = ""
         if feature_groups or feature_queries:
 
+            cluster_style = """
+        // Style Rule For Clusters
+        var style_cluster = new OpenLayers.Style({
+            pointRadius: '${radius}',
+            fillColor: '#8087ff',
+            fillOpacity: 0.5,
+            strokeColor: '#2b2f76',
+            strokeWidth: 2,
+            strokeOpacity: 1
+        }, {
+            context: {
+                radius: function(feature) {
+                    // Size For Unclustered Point
+                    var pix = 6;
+                    // Size For Clustered Point
+                    if(feature.cluster) {
+                        pix = Math.min(feature.attributes.count, 7) + 4;
+                    }
+                    return pix;
+                }
+            }
+        });
+        // Define StyleMap, Using 'style_cluster' rule for 'default' styling intent
+        var featureClusterStyleMap = new OpenLayers.StyleMap({
+                                          'default': style_cluster,
+                                          'select': {
+                                              fillColor: '#ffdc33',
+                                              strokeColor: '#ff9933'
+                                          }
+        });
+        """
+
             layers_features += """
         var featureLayers = new Array();
         var features = [];
         var parser = new OpenLayers.Format.WKT();
         var geom, featureVec;
 
-        function addFeature(feature_id, name, feature_class, geom, iconURL) {
+        function addFeature(feature_id, name, feature_class, geom, styleMarker) {
             geom = geom.transform(proj4326, projection_current);
-            // Set icon dims
-            icon_img.src = iconURL;
-            width = icon_img.width;
-            height = icon_img.height;
-            if(width > max_w){
-                height = ((max_w / width) * height);
-                width = max_w;
-            }
-            if(height > max_h){
-                width = ((max_h / height) * width);
-                height = max_h;
-            }
             // Needs to be uniquely instantiated
             var style_marker = OpenLayers.Util.extend({}, OpenLayers.Feature.Vector.style['default']);
-            style_marker.graphicOpacity = 1;
-            style_marker.graphicWidth = width;
-            style_marker.graphicHeight = height;
-            style_marker.graphicXOffset = -(width / 2);
-            style_marker.graphicYOffset = -height;
-            style_marker.externalGraphic = iconURL;
+            if ('' == styleMarker.iconURL) {
+                style_marker.graphicName = styleMarker.graphicName;
+                style_marker.pointRadius = styleMarker.pointRadius;
+                style_marker.fillColor = styleMarker.fillColor;
+                style_marker.fillOpacity = 0.4;
+                style_marker.strokeColor = styleMarker.fillColor;
+                style_marker.strokeWidth = 2;
+                style_marker.strokeOpacity = 1;
+            } else {
+                // Set icon dims
+                icon_img.src = styleMarker.iconURL;
+                width = icon_img.width;
+                height = icon_img.height;
+                if(width > max_w){
+                    height = ((max_w / width) * height);
+                    width = max_w;
+                }
+                if(height > max_h){
+                    width = ((max_h / height) * width);
+                    height = max_h;
+                }
+                style_marker.graphicOpacity = 1;
+                style_marker.graphicWidth = width;
+                style_marker.graphicHeight = height;
+                style_marker.graphicXOffset = -(width / 2);
+                style_marker.graphicYOffset = -height;
+                style_marker.externalGraphic = styleMarker.iconURL;
+            }
             // Create Feature Vector
             var featureVec = new OpenLayers.Feature.Vector(geom, null, style_marker);
             featureVec.fid = feature_id;
@@ -1766,36 +1816,7 @@ OpenLayers.Util.extend( selectPdfControl, {
                     visibility = "featureLayer" + name_safe + ".setVisibility(false);"
                 layers_features += """
         features = [];
-        // Style Rule For Clusters
-        var style_cluster = new OpenLayers.Style({
-            pointRadius: "${radius}",
-            fillColor: "#8087ff",
-            fillOpacity: 1,
-            strokeColor: "#2b2f76",
-            strokeWidth: 2,
-            strokeOpacity: 1
-        }, {
-            context: {
-                radius: function(feature) {
-                    // Size For Unclustered Point
-                    var pix = 6;
-                    // Size For Clustered Point
-                    if(feature.cluster) {
-                        pix = Math.min(feature.attributes.count, 7) + 4;
-                    }
-                    return pix;
-                }
-            }
-        });
-        // Define StyleMap, Using 'style_cluster' rule for 'default' styling intent
-        var featureClusterStyleMap = new OpenLayers.StyleMap({
-                                          "default": style_cluster,
-                                          "select": {
-                                              fillColor: "#ffdc33",
-                                              strokeColor: "#ff9933"
-                                          }
-        });
-
+        """ + cluster_style + """
         var featureLayer""" + name_safe + """ = new OpenLayers.Layer.Vector(
             '""" + name + """',
             {
@@ -1863,15 +1884,44 @@ OpenLayers.Util.extend( selectPdfControl, {
                     except (AttributeError, KeyError):
                         # Query is a simple select
                         feature = _feature
-                    if "marker" in layer:
-                        _marker = db(db.gis_marker.id == layer["marker"]).select(db.gis_marker.image, limitby=(0, 1), cache=cache).first()
-                        if _marker:
-                            marker = _marker.image
-                        else:
-                            marker = self.get_marker(feature.id)
-                    else:
-                        marker = self.get_marker(feature.id)
-                    marker_url = URL(r=request, c="default", f="download", args=[marker])
+                    try:
+                        # Has a per-feature Vector Shape been provided through VirtualFields?
+                        graphicName = feature.shape
+                        if graphicName not in ["circle", "square", "star", "x", "cross", "triangle"]:
+                            # Default to Circle
+                            graphicName = "circle"
+                        try:
+                            pointRadius = feature.size
+                            if not pointRadius:
+                                pointRadius = 6
+                        except (AttributeError, KeyError):
+                            pointRadius = 6
+                        try:
+                            fillColor = feature.color
+                            if not fillColor:
+                                fillColor = "orange"
+                        except (AttributeError, KeyError):
+                            fillColor = "orange"
+                        marker_url = ""
+                    except (AttributeError, KeyError):
+                        # Use a Marker not a Vector Shape
+                        try:
+                            # Has a per-feature marker been provided through VirtualFields?
+                            _marker = feature.marker
+                            if _marker:
+                                marker = _marker.image
+                            else:
+                                marker = self.get_marker(feature.id)
+                        except (AttributeError, KeyError):
+                            if "marker" in layer:
+                                _marker = db(db.gis_marker.id == layer["marker"]).select(db.gis_marker.image, limitby=(0, 1), cache=cache).first()
+                                if _marker:
+                                    marker = _marker.image
+                                else:
+                                    marker = self.get_marker(feature.id)
+                            else:
+                                marker = self.get_marker(feature.id)
+                        marker_url = URL(r=request, c="default", f="download", args=[marker])
                     # Deal with null Feature Classes
                     if feature.get("feature_class_id"):
                         fc = "'" + str(feature.feature_class_id) + "'"
@@ -1887,10 +1937,20 @@ OpenLayers.Util.extend( selectPdfControl, {
                     # Deal with apostrophes in Feature Names
                     fname = re.sub("'", "\\'", feature.name)
                     
+                    if marker_url:
+                        layers_features += """
+        styleMarker.iconURL = '""" + marker_url + """';
+        """
+                    else:
+                        layers_features += """
+        styleMarker.iconURL = '';
+        styleMarker.graphicName = '""" + graphicName + """';
+        styleMarker.pointRadius = """ + str(pointRadius) + """;
+        styleMarker.fillColor = '""" + fillColor + """';
+        """
                     layers_features += """
         geom = parser.read('""" + wkt + """').geometry;
-        iconURL = '""" + marker_url + """';
-        featureVec = addFeature('""" + str(feature.id) + """', '""" + fname + """', """ + fc + """, geom, iconURL)
+        featureVec = addFeature('""" + str(feature.id) + """', '""" + fname + """', """ + fc + """, geom, styleMarker)
         features.push(featureVec);
         """
                 # Append to Features layer
@@ -1917,36 +1977,7 @@ OpenLayers.Util.extend( selectPdfControl, {
                     visibility = "featureLayer" + name_safe + ".setVisibility(false);"
                 layers_features += """
         features = [];
-        // Style Rule For Clusters
-        var style_cluster = new OpenLayers.Style({
-            pointRadius: "${radius}",
-            fillColor: "#8087ff",
-            fillOpacity: 1,
-            strokeColor: "#2b2f76",
-            strokeWidth: 2,
-            strokeOpacity: 1
-        }, {
-            context: {
-                radius: function(feature) {
-                    // Size For Unclustered Point
-                    var pix = 6;
-                    // Size For Clustered Point
-                    if(feature.cluster) {
-                        pix = Math.min(feature.attributes.count, 7) + 4;
-                    }
-                    return pix;
-                }
-            }
-        });
-        // Define StyleMap, Using 'style_cluster' rule for 'default' styling intent
-        var featureClusterStyleMap = new OpenLayers.StyleMap({
-                                          "default": style_cluster,
-                                          "select": {
-                                              fillColor: "#ffdc33",
-                                              strokeColor: "#ff9933"
-                                          }
-        });
-
+        """ + cluster_style + """
         var featureLayer""" + name_safe + """ = new OpenLayers.Layer.Vector(
             '""" + name + """',
             {
@@ -2463,6 +2494,7 @@ OpenLayers.Util.extend( selectPdfControl, {
         var max_h = 35;
         var width, height;
         var icon_img = new Image();
+        var styleMarker = new Object();
         var iconURL;
 
         // Features

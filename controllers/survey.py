@@ -149,9 +149,7 @@ def table():
         msg_record_modified = T("Survey Answer updated"),
         msg_record_deleted = T("Survey Answer deleted"),
         msg_list_empty = T("No Survey Answers currently registered"))
-    output = shn_rest_controller("survey", resource)
-    def _postp(jr,output):
-      return output
+    output = shn_rest_controller("survey", resource)   
     return output
 
 def series():
@@ -353,12 +351,14 @@ def prune_questions(questions_id, questions,all_questions):
             db(question_query).delete()
             db.commit()
     return questions
+
 def get_contained_questions(questions_id):
     question_query = (db.survey_template_link.survey_questions_id == questions_id) & \
         (db.survey_question.id == db.survey_template_link.survey_question_id) & \
         (db.survey_template.id == db.survey_template_link.survey_template_id)
     contained_questions = db(question_query).select(db.survey_question.ALL)
     return contained_questions
+
 def get_table_for_template(template_id):
     """ Returns the table for the given template and if it doesn't exist -- creates and returns that"""
 
@@ -435,34 +435,6 @@ def shn_action_buttons(jr, deletable=True):
         ]
 
     return
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 #def get_options_for_questions(template_id):
 #        questions = db((db.survey_template_link.survey_template_id == template_id) & \
 #        (db.survey_question.id == db.survey_template_link.survey_question_id)).select(db.survey_question.ALL)

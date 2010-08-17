@@ -1167,15 +1167,16 @@ def feature_group_contents():
         session.error = T("Need to specify a feature group!")
         redirect(URL(r=request, f="feature_group"))
     feature_group = request.args(0)
-    tables = [db.gis_feature_class_to_feature_group, db.gis_location_to_feature_group]
-    authorised = shn_has_permission("update", tables[0]) and shn_has_permission("update", tables[1])
+    table = db.gis_feature_class_to_feature_group
+    authorised = shn_has_permission("update", table)
 
-    title = db.gis_feature_group[feature_group].name
-    feature_group_description = db.gis_feature_group[feature_group].description
+    title = str(T("Feature Group")) + ": " + str(db.gis_feature_group[feature_group].name)
+    subtitle = T("Contents")
+    feature_group_description = str(B(T("Description"))) + ": " + str(db.gis_feature_group[feature_group].description)
     # Start building the Return with the common items
     output = dict(title=title, description=feature_group_description)
     # Audit
-    shn_audit_read(operation="list", resource="feature_group_contents", record=feature_group, representation="html")
+    #shn_audit_read(operation="list", resource="feature_group_contents", record=feature_group, representation="html")
     item_list = []
     even = True
     if authorised:
@@ -1184,7 +1185,7 @@ def feature_group_contents():
         # Display a List_Create page with checkboxes to remove items
 
         # Feature Classes
-        query = (tables[0].feature_group_id == feature_group) & (tables[0].deleted == False)
+        query = (table.feature_group_id == feature_group) & (table.deleted == False)
         sqlrows = db(query).select()
         for row in sqlrows:
             if even:
@@ -1200,49 +1201,23 @@ def feature_group_contents():
             checkbox = INPUT(_type="checkbox", _value="on", _name="feature_class_" + str(id), _class="remove_item")
             item_list.append(TR(TD(id_link), TD(name, _align="left"), TD(description, _align="left"), TD(checkbox, _align="center"), _class=theclass, _align="right"))
 
-        # Features
-        query = (tables[1].feature_group_id == feature_group) & (tables[1].deleted == False)
-        sqlrows = db(query).select()
-        for row in sqlrows:
-            if even:
-                theclass = "even"
-                even = False
-            else:
-                theclass = "odd"
-                even = True
-            id = row.location_id
-            name = db.gis_location[id].name
-            # Metadata is M->1 to Features
-            metadata = db(db.doc_metadata.location_id == id & db.doc_metadata.deleted == False).select()
-            if metadata:
-                # We just read the description of the 1st one
-                description = metadata[0].description
-            else:
-                description = ""
-            id_link = A(id, _href=URL(r=request, f="location", args=[id, "read"]))
-            checkbox = INPUT(_type="checkbox", _value="on", _name="feature_" + str(id), _class="remove_item")
-            item_list.append(TR(TD(id_link), TD(name, _align="left"), TD(description, _align="left"), TD(checkbox, _align="center"), _class=theclass, _align="right"))
-
         table_header = THEAD(TR(TH("ID"), TH("Name"), TH(T("Description")), TH(T("Remove"))))
         table_footer = TFOOT(TR(TD(INPUT(_id="submit_button", _type="submit", _value=T("Update")))), _colspan=3, _align="right")
         items = DIV(FORM(TABLE(table_header, TBODY(item_list), table_footer, _id="table-container"), _name="custom", _method="post", _enctype="multipart/form-data", _action=URL(r=request, f="feature_group_update_items", args=[feature_group])))
-        subtitle = T("Contents")
 
         crud.messages.submit_button=T("Add")
         # Check for duplicates before Item is added to DB
         crud.settings.create_onvalidation = lambda form: feature_group_dupes(form)
         crud.messages.record_created = T("Feature Group Updated")
-        form1 = crud.create(tables[0], next=URL(r=request, args=[feature_group]))
-        form1[0][0].append(TR(TD(T("Type:")), TD(LABEL(T("Feature Class"), INPUT(_type="radio", _name="fg1", _value="FeatureClass", value="FeatureClass")), LABEL(T("Feature"), INPUT(_type="radio", _name="fg1", _value="Feature", value="FeatureClass")))))
-        form2 = crud.create(tables[1], next=URL(r=request, args=[feature_group]))
-        form2[0][0].append(TR(TD(T("Type:")), TD(LABEL(T("Feature Class"), INPUT(_type="radio", _name="fg2", _value="FeatureClass", value="Feature")), LABEL(T("Feature"), INPUT(_type="radio", _name="fg2", _value="Feature", value="Feature")))))
-        addtitle = T("Add to Feature Group")
+        form = crud.create(table, next=URL(r=request, args=[feature_group]))
+        #form[0][0].append(TR(TD(T("Type:")), TD(LABEL(T("Feature Class"), INPUT(_type="radio", _name="fg1", _value="FeatureClass", value="FeatureClass")), LABEL(T("Feature"), INPUT(_type="radio", _name="fg1", _value="Feature", value="FeatureClass")))))
+        addtitle = T("Add Feature Class to Feature Group")
         response.view = "%s/feature_group_contents_list_create.html" % module
-        output.update(dict(subtitle=subtitle, items=items, addtitle=addtitle, form1=form1, form2=form2, feature_group=feature_group))
+        output.update(dict(subtitle=subtitle, items=items, addtitle=addtitle, form=form, feature_group=feature_group))
     else:
         # Display a simple List page
         # Feature Classes
-        query = (tables[0].feature_group_id == feature_group) & (tables[0].deleted == False)
+        query = (table.feature_group_id == feature_group) & (table.deleted == False)
         sqlrows = db(query).select()
         for row in sqlrows:
             if even:
@@ -1257,28 +1232,6 @@ def feature_group_contents():
             id_link = A(id, _href=URL(r=request, f="feature_class", args=[id, "read"]))
             item_list.append(TR(TD(id_link), TD(name, _align="left"), TD(description, _align="left"), _class=theclass, _align="right"))
 
-        # Features
-        query = (tables[1].feature_group_id == feature_group) & (tables[1].deleted == False)
-        sqlrows = db(query).select()
-        for row in sqlrows:
-            if even:
-                theclass = "even"
-                even = False
-            else:
-                theclass = "odd"
-                even = True
-            id = row.location_id
-            name = db.gis_location[id].name
-            # Metadata is M->1 to Features
-            metadata = db(db.doc_metadata.location_id == id & db.doc_metadata.deleted == False).select()
-            if metadata:
-                # We just read the description of the 1st one
-                description = metadata[0].description
-            else:
-                description = ""
-            id_link = A(id, _href=URL(r=request, f="location", args=[id, "read"]))
-            item_list.append(TR(TD(id_link), TD(name, _align="left"), TD(description, _align="left"), _class=theclass, _align="right"))
-
         table_header = THEAD(TR(TH("ID"), TH("Name"), TH(T("Description"))))
         items = DIV(TABLE(table_header, TBODY(item_list), _id="table-container"))
 
@@ -1288,16 +1241,12 @@ def feature_group_contents():
     return output
 
 def feature_group_dupes(form):
-    "Checks for duplicate Feature/FeatureClass before adding to DB"
+    "Checks for duplicate FeatureClass before adding to DB"
     feature_group = form.vars.feature_group
     if "feature_class_id" in form.vars:
         feature_class_id = form.vars.feature_class_id
         table = db.gis_feature_class_to_feature_group
         query = (table.feature_group == feature_group) & (table.feature_class_id == feature_class_id)
-    elif "location_id" in form.vars:
-        location_id = form.vars.location_id
-        table = db.gis_location_to_feature_group
-        query = (table.feature_group == feature_group) & (table.location_id == location_id)
     else:
         # Something went wrong!
         return
@@ -1314,19 +1263,14 @@ def feature_group_update_items():
         session.error = T("Need to specify a feature group!")
         redirect(URL(r=request, f="feature_group"))
     feature_group = request.args(0)
-    tables = [db.gis_feature_class_to_feature_group, db.gis_location_to_feature_group]
-    authorised = shn_has_permission("update", tables[0]) and shn_has_permission("update", tables[1])
+    table = db.gis_feature_class_to_feature_group
+    authorised = shn_has_permission("update", table)
     if authorised:
         for var in request.vars:
             if "feature_class_id" in var:
                 # Delete
                 feature_class_id = var[14:]
-                query = (tables[0].feature_group == feature_group) & (tables[0].feature_class_id == feature_class_id)
-                db(query).delete()
-            elif "location_id" in var:
-                # Delete
-                location_id = var[8:]
-                query = (tables[1].feature_group == feature_group) & (tables[1].location_id == location_id)
+                query = (table.feature_group == feature_group) & (table.feature_class_id == feature_class_id)
                 db(query).delete()
         # Audit
         shn_audit_update_m2m(resource="feature_group_contents", record=feature_group, representation="html")

@@ -46,7 +46,7 @@ def shn_menu():
             team_name = shn_pr_group_represent(group_id)
             menu_teams = [
                 ["%s %s" % (T("Team:"), team_name), False, URL(r=request, f="group", args=[group_id, "read"]),[
-                    [T("Map Team"), False, URL(r=request, f="view_team_map", args=[group_id])],
+                    [T("View On Map"), False, URL(r=request, f="view_team_map", args=[group_id])],
                     [T("Send Mail"), False, URL(r=request, f="compose_group", vars={"group_id":group_id})],
                 ]],
             ]
@@ -73,7 +73,7 @@ def shn_menu():
                     [T("Volunteer Data"), False, URL(r=request, f="person", args=[person_id, "volunteer"], vars={"vol_tabs":"volunteer"})],
                     # The default tab is pr_person, which is fine here.
                     [T("Person Data"), False, URL(r=request, f="person", args=[person_id], vars={"vol_tabs":"person"})],
-                    [T("View Map"), False, URL(r=request, f="view_map", args=[person_id])],
+                    [T("View On Map"), False, URL(r=request, f="view_map", args=[person_id])],
                     [T("Send Mail"), False, URL(r=request, f="compose_person", vars={"person_id":person_id})],
                 ]],
             ]
@@ -246,7 +246,7 @@ def view_map():
     presence_query = (db.pr_person.id == person_id) & (db.pr_presence.pe_id == db.pr_person.pe_id) & (db.gis_location.id == db.pr_presence.location_id)
 
     # Need sql.Rows object for show_map, so don't extract individual row.
-    location = db(presence_query).select(db.gis_location.ALL, orderby=~db.pr_presence.time, limitby=(0, 1))
+    location = db(presence_query).select(db.gis_location.ALL, orderby=~db.pr_presence.datetime, limitby=(0, 1))
 
     if not location:
         address_query = (db.pr_person.id == person_id) & (db.pr_address.pe_id == db.pr_person.pe_id) & (db.gis_location.id == db.pr_address.location_id)
@@ -390,7 +390,7 @@ def view_team_map():
     member_person_ids = [ x.person_id for x in members ] #list of members
 
     #Presence Data of the members with Presence Logs
-    presence_rows = db(db.pr_person.id.belongs(member_person_ids) & (db.pr_presence.pe_id == db.pr_person.pe_id) & (db.gis_location.id ==  db.pr_presence.location_id)).select(db.gis_location.ALL, db.pr_person.id, orderby=~db.pr_presence.time)
+    presence_rows = db(db.pr_person.id.belongs(member_person_ids) & (db.pr_presence.pe_id == db.pr_person.pe_id) & (db.gis_location.id ==  db.pr_presence.location_id)).select(db.gis_location.ALL, db.pr_person.id, orderby=~db.pr_presence.datetime)
     #Get Latest Presence Data
     person_location_sort = presence_rows.sort(lambda row:row.pr_person.id)
     previous_person_id = None

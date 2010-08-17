@@ -381,7 +381,7 @@ if deployment_settings.has_module(module):
     resource = "skill_types"
     tablename = module + "_" + resource
     table = db.define_table(tablename, timestamp, uuidstamp, deletion_status,
-            Field("name",  length=128,notnull=True),                      
+            Field("name",  length=128,notnull=True),
             Field("category", "string", length=50),
             Field("description"),
             migrate=migrate)
@@ -440,14 +440,14 @@ if deployment_settings.has_module(module):
     tablename = module + "_" + resource
     table = db.define_table(
         tablename, timestamp, uuidstamp, deletion_status,
-        person_id, skill_types_id,   
+        person_id, skill_types_id,
         Field("status",
               requires=IS_IN_SET(["approved","unapproved","denied"]),
               label=T("Status"),
               notnull=True,
               default="unapproved"),
-        migrate=migrate)  
-   
+        migrate=migrate)
+
     s3xrc.model.add_component(module, resource,
         multiple=True,
         joinby=dict(pr_person="person_id"),
@@ -478,27 +478,27 @@ if deployment_settings.has_module(module):
         msg_record_deleted = T("Skill deleted"),
         msg_list_empty = T("No skills currently set"))
 
-# shn_pr_group_represent -----------------------------------------------------
-#
-def teamname(record):
-    """
-        Returns the Team Name
-    """
+    # shn_pr_group_represent -------------------------------------------------
+    #
+    def teamname(record):
+        """
+            Returns the Team Name
+        """
 
-    tname = ""
-    if record and record.name:
-        tname = "%s " % record.name.strip()
-    return tname
+        tname = ""
+        if record and record.name:
+            tname = "%s " % record.name.strip()
+        return tname
 
-def shn_pr_group_represent(id):
+    def shn_pr_group_represent(id):
 
-    def _represent(id):
-        table = db.pr_group
-        group = db(table.id == id).select(table.name)
-        if group:
-            return teamname(group[0])
-        else:
-            return None
+        def _represent(id):
+            table = db.pr_group
+            group = db(table.id == id).select(table.name)
+            if group:
+                return teamname(group[0])
+            else:
+                return None
 
-    name = cache.ram("pr_group_%s" % id, lambda: _represent(id))
-    return name
+        name = cache.ram("pr_group_%s" % id, lambda: _represent(id))
+        return name

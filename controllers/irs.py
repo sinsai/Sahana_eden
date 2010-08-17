@@ -25,11 +25,11 @@ response.menu_options = [
         [T("Add"), False, URL(r=request, f="incident", args="create")],
         #[T("Search"), False, URL(r=request, f="incident", args="search")]
     ]],
-    [T("Assessments"), False, URL(r=request, f="iassessment"),[
-        [T("List"), False, URL(r=request, f="iassessment")],
-        [T("Add"), False, URL(r=request, f="iassessment", args="create")],
+    #[T("Assessments"), False, URL(r=request, f="iassessment"),[
+    #    [T("List"), False, URL(r=request, f="iassessment")],
+    #    [T("Add"), False, URL(r=request, f="iassessment", args="create")],
         #[T("Search"), False, URL(r=request, f="iassessment", args="search")]
-    ]],
+    #]],
     [T("Map"), False, URL(r=request, f="maps")],
 ]
 
@@ -70,6 +70,9 @@ def incident():
     """ Incidents, RESTful controller """
 
     resource = request.function
+    tablename = "%s_%s" % (module, resource)
+    table = db[tablename]
+
     response.s3.pagination = True
 
     db.irs_iimage.assessment_id.readable = \
@@ -93,7 +96,7 @@ def incident():
                                             tabs = [(T("Incident Details"), None),
                                                     (T("Reports"), "ireport"),
                                                     (T("Images"), "iimage"),
-                                                    (T("Assessments"), "iassessment"),
+                                                    #(T("Assessments"), "iassessment"),
                                                     (T("Response"), "iresponse")]),
                                             sticky=True)
 
@@ -106,7 +109,16 @@ def ireport():
     """ Incident Reports, RESTful controller """
 
     resource = request.function
+    tablename = "%s_%s" % (module, resource)
+    table = db[tablename]
+
     response.s3.pagination = True
+
+    person = session.auth.user.id if auth.is_logged_in() else None
+    if person:
+        person_uuid = db(db.auth_user.id == person).select(db.auth_user.person_uuid, limitby=(0, 1)).first().person_uuid
+        person = db(db.pr_person.uuid == person_uuid).select(db.pr_person.id, limitby=(0, 1)).first().id
+    table.person_id.default = person
 
     db.irs_iimage.assessment_id.readable = \
     db.irs_iimage.assessment_id.writable = False

@@ -219,8 +219,8 @@ if deployment_settings.has_module(module):
     table.name.requires = IS_NOT_EMPTY()
     table.category.requires = IS_NULL_OR(IS_IN_SET(irs_incident_type_opts))
     table.category.represent = lambda opt: irs_incident_type_opts.get(opt, opt)
-    table.person_id.default = session.auth.user.id if auth.is_logged_in() else None
-
+    table.message.represent = lambda message: len(message) > 48 and "%s..." % message[:44] or message
+    
     table.name.label = T("Short Description")
     table.name.comment = SPAN("*", _class="req")
     table.message.label = T("Message")
@@ -285,6 +285,7 @@ if deployment_settings.has_module(module):
 
     # Assessments
     # This is a follow-up assessment of an Incident
+    # Deprecated by Assessments module?
     resource = "iassessment"
     tablename = "%s_%s" % (module, resource)
     table = db.define_table(tablename,
@@ -343,11 +344,12 @@ if deployment_settings.has_module(module):
             "modified_by"
         ])
 
-    s3xrc.model.add_component(module, resource,
-                              multiple = True,
-                              joinby = dict(irs_incident="incident_id"),
-                              deletable = True,
-                              editable = True)
+    # Disabling until we figure out how to link to Assessments module
+    #s3xrc.model.add_component(module, resource,
+    #                          multiple = True,
+    #                          joinby = dict(irs_incident="incident_id"),
+    #                          deletable = True,
+    #                          editable = True)
 
     # -----------------------------------------------------------------------------
     irs_image_type_opts = {

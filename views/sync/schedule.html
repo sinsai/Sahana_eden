@@ -52,7 +52,7 @@ else:
 <table class="display" width="100%" cellpadding="2" cellspacing="0"><thead><tr><th><input id="chkAll" name="chkAll" type="checkbox" onclick="chkAllClick()" /></th><th>Sync Partner UUID</th><th>Data Source</th><th>Schedule</th><th>Description</th><th>Last Run</th><th>Enabled?</th><th></th></tr></thead>
  <tbody>
 {{
-import simplejson
+import gluon.contrib.simplejson as json
 
 tr_class = "even"
 job_ids = []
@@ -65,7 +65,7 @@ for job in jobs:
 	pass
 	
 	job_cmd = dict()
-	job_cmd = simplejson.loads(job.job_command)
+	job_cmd = json.loads(job.job_command)
 	job_partner_uuid = job_cmd["partner_uuid"]
 
     job_chkbox_sel = ""

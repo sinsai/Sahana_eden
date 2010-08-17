@@ -193,6 +193,7 @@ def shn_irs_rheader(r, tabs=[]):
             location = report.location_id
             if location:
                 location = shn_gis_location_represent(location)
+            create_request = DIV(P(), A(T("Create Request"), _class="action-btn colorbox", _href=URL(r=request, c="rms", f="req", args="create", vars={"format":"popup", "caller":"irs_ireport"}), _title=T("Add Request")), P())
             rheader = DIV(TABLE(
                             TR(
                                 TH(T("Short Description: ")), report.name,
@@ -201,7 +202,8 @@ def shn_irs_rheader(r, tabs=[]):
                                 TH(T("Contacts: ")), report.contact,
                                 TH(T("Location: ")), location)
                             ),
-                        rheader_tabs)
+                          create_request,
+                          rheader_tabs)
 
         elif r.name == "incident":
             incident = r.record

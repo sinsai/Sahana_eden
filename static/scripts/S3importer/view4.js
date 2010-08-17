@@ -140,6 +140,7 @@ function view4(importsheet)
 			handler:
 				function(){
 						columnmap.hide();
+						columnmap.destroy();
 						view3(importsheet);
 					}
 		},

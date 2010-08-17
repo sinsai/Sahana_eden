@@ -16,12 +16,24 @@ function view3(importsheet)
 				xtype : 'checkboxgroup',
 				id : 'selected_resources',
 				fieldLabel : 'Select a module from the list on the left',
-				anchor : '100%',
-				columns : 3,
+				//anchor : '100%',
+				autoDestroy : true,
+				columns : 1,
 				width : 800,
 				items : [{boxLabel : 'Then select as many resources as you wish'}]
 			}
-			]
+			],
+		autoScroll : true,
+		listeners: {
+			afterrender : function()
+					{
+						if( this.getWidth() != 800)
+						{
+							this.setWidth(800);
+							this.setTitle('Select module and then resource');
+						}
+					}
+			}
 		});
     var module_select = {
 		xtype : 'multiselect',
@@ -38,9 +50,9 @@ function view3(importsheet)
                 }
             }],
 		listeners:{
-			'change' : function()
+			change : function()
 				 {
-					 resource_select.removeAll();
+					 resource_select.removeAll(true);
 					 var mod = msForm.getForm().findField('module_selected').getValue();
 					 var modname = modules[mod];
 					 //console.log(resources);
@@ -119,6 +131,7 @@ function view3(importsheet)
                 text: 'Back',
                 handler: function(){
                         msForm.hide();
+			resource_select.destroy();
                         view1(importsheet); 
                         }
                },
@@ -194,11 +207,9 @@ function view3(importsheet)
 								console.log("And all the fields are ");
 								console.log(importsheet.fields);
 								console.log(nested_resources_structure);
-								view4(importsheet);}
-							
-
-							
-	
+								resource_select.destroy();
+								view4(importsheet);
+							}
 							for( var i = 0 ; i < reference_fields.length ; i++)
 							{
 							        var res = reference_fields[i][1];
@@ -234,6 +245,7 @@ function view3(importsheet)
 								console.log("And all the fields are ");
 								console.log(importsheet.fields);
 								console.log(nested_resources_structure);
+								resource_select.destroy();
 								view4(importsheet);}
 							}
 							});
@@ -246,9 +258,9 @@ function view3(importsheet)
 								console.log("And all the fields are ");
 								console.log(importsheet.fields);
 								console.log(nested_resources_structure);
-								view4(importsheet);}
-							
-
+								resource_select.destroy();
+								view4(importsheet);
+							}
 							}
 							
 						}

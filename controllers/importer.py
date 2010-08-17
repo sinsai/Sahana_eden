@@ -105,7 +105,7 @@ def import_spreadsheet():
     new_word = ""
     cntr = 1
     for i in range(0,len(word)):
-   	if word[i] == "\"":
+        if word[i] == "\"":
            cntr = cntr + 1
       	   cntr = cntr % 2
         if cntr == 0:

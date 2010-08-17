@@ -150,6 +150,12 @@ def import_spreadsheet():
 		    wrong_dict[field]  = record[field]['@value']
 	if 'Data Import Error' not in wrong_dict.values():
 	    invalid_rows.append(wrong_dict)
+    temp = []
+    for k in invalid_rows:
+        for l in k.values():
+	    if "*_error_*" in l:
+	        temp.append(k)
+    invalid_rows = temp 
     '''f.write("\n\nInvalid rows " + repr(invalid_rows))
     session.import_success = len(invalid_rows) 
     incorrect_rows = []

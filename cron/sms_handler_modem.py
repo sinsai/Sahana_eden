@@ -56,9 +56,11 @@ class ModemThread( threading.Thread ):
                 if message is not None:
                     cleanup = True
                     # for debug purposes
-                    print "Got message: " + message.text
+                    #print "Got message: " + message.text
                     # Temp: SMS AutoResponder on by default
-                    self.modem.send_sms(message.sender,"This is to be replaced with the autorespond message")
+                    #self.modem.send_sms(message.sender,"This is to be replaced with the autorespond message")
+                    self.receive_msg(message=message.text,fromaddress=message.sender,pr_message_method = 2) 
+                    # ^ dependent on the pr_message_method
                 if cleanup:
                     for i in range(boxsize): # For cleaning up read messages.
                         try:

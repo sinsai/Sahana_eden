@@ -115,6 +115,7 @@ if deployment_settings.has_module(module):
         Field("actioned", "boolean", default = False),
         Field("actioned_comments", "text"),
         Field("priority", "integer", default = 1),
+        Field("inbound", "boolean", default = False),
         migrate=migrate)
 
     table.uuid.requires = IS_NOT_IN_DB(db, "%s.uuid" % tablename)
@@ -163,6 +164,20 @@ if deployment_settings.has_module(module):
         1:T("E-Mail"),
         2:T("Mobile Phone"),
     }
+
+
+    # Channel - For inbound messages this tells which channel the message came in from.
+    resource = "channel"
+    tablename = "%s_%s" % (module, resource)
+    table = db.define_table(tablename, timestamp, uuidstamp, deletion_status,
+                            message_id,
+                            Field("pr_message_method", "integer",
+                                    requires = IS_IN_SET(msg_contact_method_opts, zero=None),
+                                    default = 1),
+                            Field("log"),
+                            migrate=migrate)
+
+
     # Outbox - needs to be separate to Log since a single message sent needs different outbox entries for each recipient
     resource = "outbox"
     tablename = "%s_%s" % (module, resource)

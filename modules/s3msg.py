@@ -274,3 +274,35 @@ class Msg(object):
             self.process_outbox(contact_method, option)
 
         return
+
+    def receive_msg(self,
+                      subject="",
+                      message="",
+                      sender="",
+                      fromaddress="",
+                      system_generated = False,
+                      inbound = True,
+                      pr_message_method = 1,
+                      ):
+        """ Function to call to drop messages into msg_log """
+
+        db = self.db
+
+        try:
+            message_log_id = db.msg_log.insert(inbound = inbound,
+                                               subject = subject,
+                                               message = message,
+                                               sender  = sender,
+                                               fromaddress = fromaddress,
+                                               )
+        except:
+            return False
+            #2) This is not transaction safe - power failure in the middle will cause no message in the outbox
+        try:
+            db.msg_channel.insert(message_id = message_log_id,
+                                    pr_message_method = pr_message_method)
+        except:
+            return False
+        # Explicitly commit DB operations when running from Cron
+        db.commit()
+        return True

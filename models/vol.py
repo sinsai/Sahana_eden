@@ -290,9 +290,9 @@ if deployment_settings.has_module(module):
         if attr is None:
             attr = {}
 
-        if not shn_has_permission('read', db.org_project):
+        if not shn_has_permission("read", db.org_project):
             session.error = UNAUTHORISED
-            redirect(URL(r=request, c='default', f='user', args='login', vars={'_next':URL(r=request, args='search_location', vars=request.vars)}))
+            redirect(URL(r=request, c="default", f="user", args="login", vars={"_next":URL(r=request, args="search_location", vars=request.vars)}))
 
         if xrequest.representation=="html":
             # Check for redirection
@@ -302,19 +302,19 @@ if deployment_settings.has_module(module):
                 next = str.lower(URL(r=request, c="org", f="project", args="[id]"))
 
             # Custom view
-            response.view = '%s/project_search.html' % xrequest.prefix
+            response.view = "%s/project_search.html" % xrequest.prefix
 
             # Title and subtitle
-            title = T('Search for a Project')
-            subtitle = T('Matching Records')
+            title = T("Search for a Project")
+            subtitle = T("Matching Records")
 
             # Select form:
-            l_opts = [OPTION(_value='')]
+            l_opts = [OPTION(_value="")]
             l_opts += [OPTION(location.name, _value=location.id)
                     for location in db(db.gis_location.deleted == False).select(db.gis_location.ALL, cache=(cache.ram, 3600))]
             form = FORM(TABLE(
-                    TR(T('Location: '),
-                    SELECT(_name="location", *l_opts, **dict(name="location", requires=IS_NULL_OR(IS_IN_DB(db, 'gis_location.id'))))),
+                    TR(T("Location: "),
+                    SELECT(_name="location", *l_opts, **dict(name="location", requires=IS_NULL_OR(IS_IN_DB(db, "gis_location.id"))))),
                     TR("", INPUT(_type="submit", _value="Search"))
                     ))
 
@@ -350,7 +350,7 @@ if deployment_settings.has_module(module):
                         TH("End date"),
                         TH("Description"),
                         TH("Status"))),
-                        TBODY(records), _id='list', _class="display"))
+                        TBODY(records), _id="list", _class="display"))
                 else:
                         items = T("None")
 
@@ -359,7 +359,7 @@ if deployment_settings.has_module(module):
             except:
                 label_create_button = s3.crud_strings.label_create_button
 
-            add_btn = A(label_create_button, _href=URL(r=request, c="org", f="project", args="create"), _class='action-btn')
+            add_btn = A(label_create_button, _href=URL(r=request, c="org", f="project", args="create"), _class="action-btn")
 
             output.update(dict(items=items, add_btn=add_btn))
 
@@ -378,36 +378,36 @@ if deployment_settings.has_module(module):
     #   Customize to add more client defined Skill
     #
 
-    resource = 'skill_types'
-    tablename = module + '_' + resource
+    resource = "skill_types"
+    tablename = module + "_" + resource
     table = db.define_table(tablename, timestamp, uuidstamp, deletion_status,
-            Field('name',  length=128,notnull=True),                      
-            Field('category', 'string', length=50),
-            Field('description'),
+            Field("name",  length=128,notnull=True),                      
+            Field("category", "string", length=50),
+            Field("description"),
             migrate=migrate)
 
     # Field settings
-    table.uuid.requires = IS_NOT_IN_DB(db, '%s.uuid' % tablename)
-    table.name.requires = [IS_NOT_EMPTY(), IS_NOT_IN_DB(db, '%s.name' % tablename)]
-    table.name.label = T('Name')
+    table.uuid.requires = IS_NOT_IN_DB(db, "%s.uuid" % tablename)
+    table.name.requires = [IS_NOT_EMPTY(), IS_NOT_IN_DB(db, "%s.name" % tablename)]
+    table.name.label = T("Name")
     table.name.comment = SPAN("*", _class="req")
 
     # CRUD strings
     s3.crud_strings[tablename] = Storage(
-        title_create = T('Add Skill Type'),
-        title_display = T('Skill Type Details'),
-        title_list = T('Skill Types'),
-        title_update = T('Edit Skill Type'),
-        title_search = T('Search Skill Types'),
-        subtitle_create = T('Add New Skill Type'),
-        subtitle_list = T('Skill Types'),
-        label_list_button = T('List Skill Types'),
-        label_create_button = T('Add Skill Types'),
-        label_delete_button = T('Delete Skill Type'),
-        msg_record_created = T('Skill Type added'),
-        msg_record_modified = T('Skill Type updated'),
-        msg_record_deleted = T('Skill Type deleted'),
-        msg_list_empty = T('No Skill Types currently set'))
+        title_create = T("Add Skill Type"),
+        title_display = T("Skill Type Details"),
+        title_list = T("Skill Types"),
+        title_update = T("Edit Skill Type"),
+        title_search = T("Search Skill Types"),
+        subtitle_create = T("Add New Skill Type"),
+        subtitle_list = T("Skill Types"),
+        label_list_button = T("List Skill Types"),
+        label_create_button = T("Add Skill Types"),
+        label_delete_button = T("Delete Skill Type"),
+        msg_record_created = T("Skill Type added"),
+        msg_record_modified = T("Skill Type updated"),
+        msg_record_deleted = T("Skill Type deleted"),
+        msg_list_empty = T("No Skill Types currently set"))
 
     # Representation function
     def vol_skill_types_represent(id):
@@ -436,43 +436,47 @@ if deployment_settings.has_module(module):
     #   A volunteer's skills (component of pr)
     #
 
-    resource = 'skill'
-    tablename = module + '_' + resource
-    table = db.define_table(tablename, timestamp, uuidstamp, deletion_status,
-                person_id,
-        skill_types_id,   
-        Field('status',requires=IS_IN_SET(['approved','unapproved','denied']),label=T('Status'), notnull=True, default='unapproved'),             
-                    migrate=migrate)  
+    resource = "skill"
+    tablename = module + "_" + resource
+    table = db.define_table(
+        tablename, timestamp, uuidstamp, deletion_status,
+        person_id, skill_types_id,   
+        Field("status",
+              requires=IS_IN_SET(["approved","unapproved","denied"]),
+              label=T("Status"),
+              notnull=True,
+              default="unapproved"),
+        migrate=migrate)  
    
     s3xrc.model.add_component(module, resource,
         multiple=True,
-        joinby=dict(pr_person='person_id'),
+        joinby=dict(pr_person="person_id"),
         deletable=True,
         editable=True)
 
     s3xrc.model.configure(table,
-                          list_fields=['id',
-                                       'skill_types_id',
-                                       'status'])
+                          list_fields=["id",
+                                       "skill_types_id",
+                                       "status"])
 
     # CRUD Strings
-    ADD_SKILL = T('Add Skill')
-    SKILL = T('Skill')
+    ADD_SKILL = T("Add Skill")
+    SKILL = T("Skill")
     s3.crud_strings[tablename] = Storage(
         title_create = ADD_SKILL,
-        title_display = T('Skill Details'),
+        title_display = T("Skill Details"),
         title_list = SKILL,
-        title_update = T('Edit Skill'),
-        title_search = T('Search Skills'),
-        subtitle_create = T('Add New Skill'),
+        title_update = T("Edit Skill"),
+        title_search = T("Search Skills"),
+        subtitle_create = T("Add New Skill"),
         subtitle_list = SKILL,
-        label_list_button = T('List Skills'),
+        label_list_button = T("List Skills"),
         label_create_button = ADD_SKILL,
-        label_delete_button = T('Delete Skill'),
-        msg_record_created = T('Skill added'),
-        msg_record_modified = T('Skill updated'),
-        msg_record_deleted = T('Skill deleted'),
-        msg_list_empty = T('No skills currently set'))
+        label_delete_button = T("Delete Skill"),
+        msg_record_created = T("Skill added"),
+        msg_record_modified = T("Skill updated"),
+        msg_record_deleted = T("Skill deleted"),
+        msg_list_empty = T("No skills currently set"))
 
 # shn_pr_group_represent -----------------------------------------------------
 #

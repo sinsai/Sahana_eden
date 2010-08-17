@@ -105,6 +105,11 @@ deployment_settings.modules = Storage(
             description = Tstr("Manage volunteers by capturing their skills, availability and allocation"),
             module_type = 5
         ),
+    inventory = Storage(
+            name_nice = Tstr("Inventory Management"),
+            description = Tstr("Relief Items stored in Inventories in different locations"),
+            module_type = 10
+        ),
     msg = Storage(
             name_nice = Tstr("Messaging"),
             description = Tstr("Sends & Receives Alerts via Email & SMS"),

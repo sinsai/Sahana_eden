@@ -219,8 +219,8 @@ if deployment_settings.has_module(module):
     table.name.requires = IS_NOT_EMPTY()
     table.category.requires = IS_NULL_OR(IS_IN_SET(irs_incident_type_opts))
     table.category.represent = lambda opt: irs_incident_type_opts.get(opt, opt)
-    table.person_id.default = session.auth.user.id if auth.is_logged_in() else None
-
+    table.message.represent = lambda message: shn_abbreviate(message)
+    
     table.name.label = T("Short Description")
     table.name.comment = SPAN("*", _class="req")
     table.message.label = T("Message")

@@ -129,7 +129,21 @@ s3.crud_strings[tablename] = Storage(
     msg_list_empty = T("No Organizations currently registered"))
 
 # Reusable field
+def shn_organisation_represent(id):
+    row = db(db.org_organisation.id == id).select(db.org_organisation.name, 
+                                                  db.org_organisation.acronym, 
+                                                  limitby = [0,1]).first()
+    if row:
+        organisation_represent = row.name 
+        if row.acronym:
+            organisation_represent = organisation_represent + " (" + row.acronym + ")"
+    else:
+        organisation_represent = "-"
+    
+    return organisation_represent
+
 organisation_popup_url = URL(r=request, c="org", f="organisation", args="create", vars=dict(format="popup"))
+
 shn_organisation_comment = DIV(A(ADD_ORGANIZATION,
                            _class="colorbox",
                            _href=organisation_popup_url,
@@ -139,8 +153,8 @@ shn_organisation_comment = DIV(A(ADD_ORGANIZATION,
                                  _title=ADD_ORGANIZATION + "|" + Tstr("The Organization this record is associated with."))))
 organisation_id = db.Table(None, "organisation_id",
                            FieldS3("organisation_id", db.org_organisation, sortby="name",
-                           requires = IS_NULL_OR(IS_ONE_OF(db, "org_organisation.id", "%(name)s")),
-                           represent = lambda id: (id and [db(db.org_organisation.id == id).select(db.org_organisation.name, limitby=(0, 1)).first().name] or ["None"])[0],
+                           requires = IS_NULL_OR(IS_ONE_OF(db, "org_organisation.id", shn_organisation_represent)),
+                           represent = shn_organisation_represent,
                            label = T("Organization"),
                            comment = shn_organisation_comment,
                            ondelete = "RESTRICT"
@@ -457,7 +471,7 @@ def represent_focal_point(is_focal_point):
 
 def shn_org_staff_represent(staff_id):
     person = db((db.org_staff.id == staff_id) &
-                (db.pr_person.id == db.org_staff.person_id)).select(db.pr_person.ALL)
+                (db.pr_person.id == db.org_staff.person_id)).select(db.pr_person.first_name, db.pr_person.middle_name, db.pr_person.last_name)
     if person:
         return vita.fullname(person[0])
     else:
@@ -478,11 +492,11 @@ def shn_orgs_to_person(person_id):
 # Reusable field
 staff_id = db.Table(None, "staff_id",
                         FieldS3("staff_id", db.org_staff, sortby="name",
-                        requires = IS_NULL_OR(IS_ONE_OF(db, "org_staff.id", "%(code)s")),
-                        represent = lambda id: (id and [shn_person_represent(db.org_staff[id].person_id)] or ["None"])[0],
+                        requires = IS_NULL_OR(IS_ONE_OF(db, "org_staff.id", shn_org_staff_represent)),
+                        represent = lambda id: shn_org_staff_represent(id),
                         comment = DIV(A(ADD_STAFF, _class="colorbox", _href=URL(r=request, c="org", f="staff", args="create", vars=dict(format="popup")), _target="top", _title=ADD_STAFF),
                                   DIV( _class="tooltip", _title=ADD_STAFF + "|" + Tstr("Add new staff."))),
-                        label = "Staff",
+                        label = T("Staff"),
                         ondelete = "RESTRICT"
                         ))
 

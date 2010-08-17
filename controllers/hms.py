@@ -236,7 +236,7 @@ def hpledge():
     
     pledges = db(db.hms_hpledge.status == 3).select()
     for pledge in pledges:
-        db(db.hms_hrequest.id == pledge.hrequest_id).update(status = 6)
+        db(db.hms_hrequest.id == pledge.hms_hrequest_id).update(status = 6)
 
     db.commit()
 

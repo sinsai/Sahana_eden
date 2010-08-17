@@ -11,6 +11,7 @@ log_table = "sync_log"
 conflict_table = "sync_conflict"
 sync_peer = None
 sync_policy = None
+import_export_format = "json"
 
 # Options Menu (available in all Functions' Views)
 # - can Insert/Delete items from default menus within a function, if required.
@@ -222,10 +223,10 @@ def now():
                     resource_remote_pull_url = peer.instance_url
                     if resource_remote_pull_url.endswith("/")==False:
                         resource_remote_pull_url += "/"
-                    resource_remote_pull_url += "sync/sync.xml/" + _module + "/" + _resource + last_sync_on_str
-                    resource_remote_push_url = peer_instance_url[2] + "sync/sync.xml/push/" + _module + "/" + _resource + "?sync_partner_uuid=" + str(settings.uuid)
-                    resource_local_pull_url = "/" + request.application + "/sync/sync.xml/" + _module + "/" + _resource + last_sync_on_str
-                    resource_local_push_url = "/" + request.application + "/sync/sync.xml/create/" + _module + "/" + _resource
+                    resource_remote_pull_url += "sync/sync." + import_export_format + "/" + _module + "/" + _resource + last_sync_on_str
+                    resource_remote_push_url = peer_instance_url[2] + "sync/sync." + import_export_format + "/push/" + _module + "/" + _resource + "?sync_partner_uuid=" + str(settings.uuid)
+                    resource_local_pull_url = "/" + request.application + "/sync/sync." + import_export_format + "/" + _module + "/" + _resource + last_sync_on_str
+                    resource_local_push_url = "/" + request.application + "/sync/sync." + import_export_format + "/create/" + _module + "/" + _resource
                     final_status += "......processing " + resource_remote_pull_url + "<br />\n"
                     if sync_mode in [1, 3]:
                         # Sync -> Pull
@@ -264,7 +265,7 @@ def now():
             else:
                 # Custom sync
                 _request_params = urllib.urlencode({"sync_partner_uuid": str(peer.uuid), "fetchurl": job_cmd["custom_command"]})
-                resource_local_push_url = "/" + request.application + "/sync/sync.xml/create/sync/log"
+                resource_local_push_url = "/" + request.application + "/sync/sync." + import_export_format + "/create/sync/log"
                 try:
                     _response = fetcher.fetch("PUT", request.env.http_host, resource_local_push_url, _request_params, cookie)
                 except Error, e:
@@ -859,10 +860,10 @@ def schedule_process_job(job_id):
             resource_remote_pull_url = peer.instance_url
             if resource_remote_pull_url.endswith("/")==False:
                 resource_remote_pull_url += "/"
-            resource_remote_pull_url += "sync/sync.xml/" + _module + "/" + _resource + last_sync_on_str
-            resource_remote_push_url = peer_instance_url[2] + "sync/sync.xml/push/" + _module + "/" + _resource + "?sync_partner_uuid=" + str(settings.uuid)
-            resource_local_pull_url = "/" + request.application + "/sync/sync.xml/" + _module + "/" + _resource + last_sync_on_str
-            resource_local_push_url = "/" + request.application + "/sync/sync.xml/create/" + _module + "/" + _resource
+            resource_remote_pull_url += "sync/sync." + import_export_format + "/" + _module + "/" + _resource + last_sync_on_str
+            resource_remote_push_url = peer_instance_url[2] + "sync/sync." + import_export_format + "/push/" + _module + "/" + _resource + "?sync_partner_uuid=" + str(settings.uuid)
+            resource_local_pull_url = "/" + request.application + "/sync/sync." + import_export_format + "/" + _module + "/" + _resource + last_sync_on_str
+            resource_local_push_url = "/" + request.application + "/sync/sync." + import_export_format + "/create/" + _module + "/" + _resource
             if sync_mode in [1, 3]:
                 # Sync -> Pull
                 _request_params = urllib.urlencode({"sync_partner_uuid": str(peer.uuid), "fetchurl": resource_remote_pull_url})
@@ -878,7 +879,7 @@ def schedule_process_job(job_id):
                     request.vars["sync_partner_uuid"] = str(peer.uuid)
                     request.vars["fetchurl"] = resource_remote_pull_url
                     request.args = ["push", _module, _resource]
-                    request.extension = "xml"
+                    request.extension = import_export_format
                     request.env.request_method = "PUT"
                     session.auth = Storage()
                     session.auth["user"] = None
@@ -926,7 +927,7 @@ def schedule_process_job(job_id):
             request.vars["sync_partner_uuid"] = str(peer.uuid)
             request.vars["fetchurl"] = job_cmd["custom_command"]
             request.args = ["create", "sync", "log"]
-            request.extension = "xml"
+            request.extension = import_export_format
             _response = sync()
         except Error, e:
             error_str = str(e)

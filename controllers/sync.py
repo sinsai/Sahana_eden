@@ -103,7 +103,7 @@ def now():
         peers = db().select(db.sync_partner.ALL)
         
         # retrieve all scheduled jobs set to run manually
-        jobs = db(db.sync_schedule.period=="m").select(db.sync_schedule.ALL)
+        jobs = db(db.sync_schedule.period=="m" and db.sync_schedule.enabled==True).select(db.sync_schedule.ALL)
 
         # retrieve settings
         settings = db().select(db.sync_setting.ALL)[0]
@@ -133,14 +133,13 @@ def now():
             res_list = tables
             first_job = None
             job_cmd = None
+            res_list = []
             if jobs:
                 first_job = jobs[0]
             if first_job:
                 if first_job.job_type == 1:
                     job_cmd = json.loads(first_job.job_command)
                     res_list = job_cmd["resources"]
-                else:
-                    res_list = []
             # begin new sync now session
             sync_jobs_enabled_list = []
             for job in jobs:
@@ -162,6 +161,7 @@ def now():
         # unlock session
         +133
         session._unlock(response)
+        session.s3.roles.append(1)
 
         # get job from queue
         sync_jobs_list = state.sync_jobs.split(", ")
@@ -196,6 +196,8 @@ def now():
                 sync_mode = int(job_cmd["mode"])
             sync_resources = []
             sync_errors = ""
+            # Keep Session for local URLs
+            cookie = str(response.session_id_name) + "=" + str(response.session_id)
             if sync_job.job_type == 1:
                 # Sahana Eden sync
                 if (not last_sync_on is None) and complete_sync == False:
@@ -220,13 +222,11 @@ def now():
                     resource_remote_pull_url = peer.instance_url
                     if resource_remote_pull_url.endswith("/")==False:
                         resource_remote_pull_url += "/"
-                    resource_remote_pull_url += "sync/sync.json/" + _module + "/" + _resource + last_sync_on_str
-                    resource_remote_push_url = peer_instance_url[2] + "sync/sync.json/push/" + _module + "/" + _resource + "?sync_partner_uuid=" + str(settings.uuid)
-                    resource_local_pull_url = "/" + request.application + "/sync/sync.json/" + _module + "/" + _resource + last_sync_on_str
-                    resource_local_push_url = "/" + request.application + "/sync/sync.json/create/" + _module + "/" + _resource
+                    resource_remote_pull_url += "sync/sync.xml/" + _module + "/" + _resource + last_sync_on_str
+                    resource_remote_push_url = peer_instance_url[2] + "sync/sync.xml/push/" + _module + "/" + _resource + "?sync_partner_uuid=" + str(settings.uuid)
+                    resource_local_pull_url = "/" + request.application + "/sync/sync.xml/" + _module + "/" + _resource + last_sync_on_str
+                    resource_local_push_url = "/" + request.application + "/sync/sync.xml/create/" + _module + "/" + _resource
                     final_status += "......processing " + resource_remote_pull_url + "<br />\n"
-                    # Keep Session for local URLs
-                    cookie = str(response.session_id_name) + "=" + str(response.session_id)
                     if sync_mode in [1, 3]:
                         # Sync -> Pull
                         _request_params = urllib.urlencode({"sync_partner_uuid": str(peer.uuid), "fetchurl": resource_remote_pull_url})
@@ -264,15 +264,15 @@ def now():
             else:
                 # Custom sync
                 _request_params = urllib.urlencode({"sync_partner_uuid": str(peer.uuid), "fetchurl": job_cmd["custom_command"]})
-                resource_local_push_url = "/" + request.application + "/sync/sync.json/create/sync/log"
+                resource_local_push_url = "/" + request.application + "/sync/sync.xml/create/sync/log"
                 try:
                     _response = fetcher.fetch("PUT", request.env.http_host, resource_local_push_url, _request_params, cookie)
                 except Error, e:
                     error_str = str(e)
-                    sync_errors +=  "Error while syncing job " + job.id + ": \n" + error_str + "\n\n"
+                    sync_errors +=  "Error while syncing job " + str(sync_job.id) + ": \n" + error_str + "\n\n"
                     final_status += error_str + "<br /><br />\n"
                 else:
-                    final_status += ".........processed http://" + str(request.env.http_host) + resource_local_push_url + " (Custom Pull Sync)<br />\n"
+                    final_status += ".........processed (Custom Pull Sync)<br />\n"
 
             # update sync now state
             if state.job_resources_done:
@@ -281,8 +281,9 @@ def now():
             job_res_pending = state.job_resources_pending.split(", ")
             if "" in job_res_pending:
                 job_res_pending.remove("")
-            for _module, _resource in job_res_list:
-                job_res_pending.remove(_module + "||" + _resource)
+            if sync_job.job_type == 1:
+                for _module, _resource in job_res_list:
+                    job_res_pending.remove(_module + "||" + _resource)
             state.job_resources_pending = ", ".join(map(str, job_res_pending))
             state.job_sync_errors += sync_errors
             vals = {"job_resources_done": state.job_resources_done, "job_resources_pending": state.job_resources_pending, "job_sync_errors": state.job_sync_errors}
@@ -290,7 +291,7 @@ def now():
             state = db(db.sync_now.id==sync_now_id).select(db.sync_now.ALL)[0]
 
             # check if all resources are synced for the current job, i.e. is it done?
-            if not state.job_resources_pending:
+            if (not state.job_resources_pending) or sync_job.job_type == 2:
                 # job completed, check if there are any more jobs, if not, then sync now completed
                 # log sync job
                 if sync_mode == 1:
@@ -315,7 +316,17 @@ def now():
                 if len(sync_jobs_list) > 0:
                     sync_jobs_list.remove(sync_jobs_list[0])
                     state.sync_jobs = ", ".join(map(str, sync_jobs_list))
-                    vals = {"sync_jobs": state.sync_jobs}
+                    state.job_resources_done = ""
+                    state.job_resources_pending = ""
+                    if len(sync_jobs_list) > 0:
+                        next_job_sel = db(db.sync_schedule.id==int(state.sync_jobs[0])).select(db.sync_schedule.ALL)
+                        if next_job_sel:
+                            next_job = next_job_sel[0]
+                            if next_job.job_type == 1:
+                                next_job_cmd = json.loads(next_job.job_command)
+                                state.job_resources_pending = ", ".join(map(str, next_job_cmd["resources"]))
+                    state.job_sync_errors = ""
+                    vals = {"sync_jobs": state.sync_jobs, "job_resources_done": state.job_resources_done, "job_resources_pending": state.job_resources_pending}
                     db(db.sync_now.id==sync_now_id).update(**vals)
                     state = db(db.sync_now.id==sync_now_id).select(db.sync_now.ALL)[0]
                 # update last_sync_on
@@ -595,7 +606,6 @@ def partner():
                 runonce_datetime = None,
                 job_type = 1,
                 job_command = json.dumps(sch_cmd),
-                running = False,
                 last_run = None,
                 enabled = True,
                 created_on = datetime.datetime.now(),
@@ -637,6 +647,7 @@ def schedule():
     title = T("Syncronisation Schedules")
 
     jobs = None
+    confirmation_msg = None
     if "create" in request.args:
         response.view = "sync/schedule_create.html"
 
@@ -702,31 +713,46 @@ def schedule():
                 runonce_datetime = sch_runonce_datetime,
                 job_type = sch_job_type,
                 job_command = json.dumps(sch_cmd),
-                running = False,
                 last_run = None,
                 enabled = sch_enabled,
                 created_on = datetime.datetime.now(),
                 modified_on = datetime.datetime.now()
             )
+            
+            confirmation_msg = "New Scheduled job created"
+            response.view = "sync/schedule.html"
     else:
-        jobs = db().select(db.sync_schedule.ALL)
+        if "form_action" in request.vars and "selected_jobs" in request.vars:
+            sel_jobs = request.vars["selected_jobs"]
+            if request.vars["form_action"] == "enable":
+                for s_job_id in sel_jobs:
+                    vals = {"enabled": True}
+                    db(db.sync_schedule.id==int(s_job_id)).update(**vals)
+            elif request.vars["form_action"] == "disable":
+                for s_job_id in sel_jobs:
+                    vals = {"enabled": False}
+                    db(db.sync_schedule.id==int(s_job_id)).update(**vals)
+            elif request.vars["form_action"] == "delete":
+                for s_job_id in sel_jobs:
+                    db(db.sync_schedule.id==int(s_job_id)).delete()
 
-    return dict(title=title, jobs=jobs)
+    jobs = db().select(db.sync_schedule.ALL)
+
+    return dict(title=title, jobs=jobs, confirmation_msg=confirmation_msg)
 
 def schedule_cron():
-    import sys
     # only accept requests from local machine
-    if not request.client == "127.0.0.1":
+    if not request.env.remote_addr == "127.0.0.1":
         return
 
     while True:
         try:
             # look at each job and run if it it's scheduled time
-            jobs = db().select(db.sync_schedule.ALL)
+            jobs = db(db.sync_schedule.enabled==True).select(db.sync_schedule.ALL)
             for job in jobs:
                 last_run = job.last_run
                 if not last_run:
-                    last_run = job.created_on
+                    last_run = job.created_on - datetime.timedelta(days=2)
                 try:
                     if job.period == "h":
                         if datetime.datetime.now() >= (last_run + datetime.timedelta(hours=job.hours)):
@@ -753,23 +779,26 @@ def schedule_cron():
                         if job.runonce_datetime and last_run < job.runonce_datetime and datetime.datetime.now() >= job.runonce_datetime:
                             schedule_process_job(job.id)
                             db.commit()
-                except:
+                except Error, e:
                     # log scheduler error
                     try:
                         log_file = open("applications/" + request.application + "/cron/scheduler_errors.txt", "a")
-                        lof_file.write(str(datetime.datetime.now()) + " - error while running job " + str(job.id) + ":\n" + str(sys.exc_info()) + "\n\n")
+                        log_file.write(str(datetime.datetime.now()) + " - error while running job " + str(job.id) + ":\n" + str(e) + "\n\n")
                         log_file.close()
                     except:
                         print "error while appending scheduler error log file!"
             db.commit()
-        except:
+        except Error, e:
             # log scheduler error
             try:
                 log_file = open("applications/" + request.application + "/cron/scheduler_errors.txt", "a")
-                lof_file.write(str(datetime.datetime.now()) + " - error while running job " + str(job.id) + ":\n" + str(sys.exc_info()) + "\n\n")
+                log_file.write(str(datetime.datetime.now()) + " - error while running job " + str(job.id) + ":\n" + str(e) + "\n\n")
                 log_file.close()
             except:
                 print "error while appending scheduler error log file!"
+
+        # pause for 15 seconds
+        time.sleep(15)
 
     return
 
@@ -777,10 +806,6 @@ def schedule_process_job(job_id):
     import gluon.contrib.simplejson as json
     import urllib, urlparse
     global sync_policy
-
-    job_id = 0
-    if len(request.args) > 0:
-        job_id = int(request.args[0])
 
     job_sel = db(db.sync_schedule.id==job_id).select(db.sync_schedule.ALL)
     if not job_sel:
@@ -813,16 +838,18 @@ def schedule_process_job(job_id):
         sync_mode = int(job_cmd["mode"])
     sync_resources = []
     sync_errors = ""
-    # unlock session
-    +133
-    session._unlock(response)
+    # Keep Session for local URLs
+    cookie = str(response.session_id_name) + "=" + str(response.session_id)
     if job.job_type == 1:
         # Sync Eden sync
         if (not last_sync_on is None) and complete_sync == False:
             last_sync_on_str = "?msince=" + last_sync_on.strftime("%Y-%m-%dT%H:%M:%SZ")
         else:
             last_sync_on_str = ""
-
+        
+        log_file = open("applications/" + request.application + "/cron/scheduler_log.txt", "a")
+        log_file.write(str(datetime.datetime.now()) + " - running job " + str(job.id) + "\n")
+        log_file.close()
         for res_item in job_cmd["resources"]:
             _module, _resource = res_item.split("||")
             _resource_name = _module + "_" + _resource
@@ -832,12 +859,10 @@ def schedule_process_job(job_id):
             resource_remote_pull_url = peer.instance_url
             if resource_remote_pull_url.endswith("/")==False:
                 resource_remote_pull_url += "/"
-            resource_remote_pull_url += "sync/sync.json/" + _module + "/" + _resource + last_sync_on_str
-            resource_remote_push_url = peer_instance_url[2] + "sync/sync.json/push/" + _module + "/" + _resource + "?sync_partner_uuid=" + str(settings.uuid)
-            resource_local_pull_url = "/" + request.application + "/sync/sync.json/" + _module + "/" + _resource + last_sync_on_str
-            resource_local_push_url = "/" + request.application + "/sync/sync.json/create/" + _module + "/" + _resource
-            # Keep Session for local URLs
-            cookie = str(response.session_id_name) + "=" + str(response.session_id)
+            resource_remote_pull_url += "sync/sync.xml/" + _module + "/" + _resource + last_sync_on_str
+            resource_remote_push_url = peer_instance_url[2] + "sync/sync.xml/push/" + _module + "/" + _resource + "?sync_partner_uuid=" + str(settings.uuid)
+            resource_local_pull_url = "/" + request.application + "/sync/sync.xml/" + _module + "/" + _resource + last_sync_on_str
+            resource_local_push_url = "/" + request.application + "/sync/sync.xml/create/" + _module + "/" + _resource
             if sync_mode in [1, 3]:
                 # Sync -> Pull
                 _request_params = urllib.urlencode({"sync_partner_uuid": str(peer.uuid), "fetchurl": resource_remote_pull_url})
@@ -846,13 +871,18 @@ def schedule_process_job(job_id):
                 _request_post_vars_copy = request.post_vars
                 _request_args_copy = request.args
                 _request_extension_copy = request.extension
+                _request_env_request_method_copy = request.env.request_method
                 try:
                     #_response = fetcher.fetch("PUT", request.env.http_host, resource_local_push_url, _request_params, cookie)
                     request.vars = Storage()
                     request.vars["sync_partner_uuid"] = str(peer.uuid)
                     request.vars["fetchurl"] = resource_remote_pull_url
                     request.args = ["push", _module, _resource]
-                    request.extension = "json"
+                    request.extension = "xml"
+                    request.env.request_method = "PUT"
+                    session.auth = Storage()
+                    session.auth["user"] = None
+                    session.s3.roles.append(1)
                     _response = sync()
                 except Error, e:
                     if not _resource_name + " (error)" in sync_resources and not _resource_name in sync_resources:
@@ -868,6 +898,7 @@ def schedule_process_job(job_id):
                 request.post_vars = _request_post_vars_copy
                 request.vars = _request_vars_copy
                 request.extension = _request_extension_copy
+                request.env.request_method = _request_env_request_method_copy
             if sync_mode in [2, 3]:
                 # Sync -> Push
                 try:
@@ -895,12 +926,12 @@ def schedule_process_job(job_id):
             request.vars["sync_partner_uuid"] = str(peer.uuid)
             request.vars["fetchurl"] = job_cmd["custom_command"]
             request.args = ["create", "sync", "log"]
-            request.extension = "json"
+            request.extension = "xml"
             _response = sync()
         except Error, e:
             error_str = str(e)
-            sync_errors =  "Error while syncing job " + job.id + ": \n" + error_str + "\n\n"
-            print "Error while syncing job " + job.id + ": \n" + error_str + "\n\n"
+            sync_errors =  "Error while syncing job " + str(job.id) + ": \n" + error_str + "\n\n"
+            print sync_errors
         request.args = _request_args_copy
         request.get_vars = _request_get_vars_copy
         request.post_vars = _request_post_vars_copy
@@ -916,7 +947,7 @@ def schedule_process_job(job_id):
 
     # log sync job
     log_table_id = db[log_table].insert(
-        partner_uuid = sync_job_partner,
+        partner_uuid = peer.uuid,
         timestmp = datetime.datetime.utcnow(),
         sync_resources = ", ".join(map(str, sync_resources)),
         sync_errors = sync_errors,
@@ -924,6 +955,12 @@ def schedule_process_job(job_id):
         sync_method = sync_method,
         complete_sync = complete_sync
     )
+    
+    # update last_sync_on
+    vals = {"last_sync_on": datetime.datetime.utcnow()}
+    db(db.sync_partner.id==peer.id).update(**vals)
+    vals = {"last_run": datetime.datetime.utcnow()}
+    db(db.sync_schedule.id==job_id).update(**vals)
 
     return
 

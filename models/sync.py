@@ -131,8 +131,7 @@ table = db.define_table(tablename, timestamp,
                                                             # (partial sync only retrieves data modified after the last sync, complete sync fetches all),
                                                             # whether this sync would be a two-way (both push and pull) or one-way (push or pull),
                                                             # and sync policy (default policy is taken from the sync partner's record)
-                Field("running", "boolean"),                # indicates whether this job is currently executing or not
                 Field("last_run", "datetime"),              # the date and time of last scheduled run
                 Field("enabled", "boolean",                 # whether this schedule is enabled or not. Useful in cases when you want to temporarily
-                    notnull=True, default=True),            # disable a schedule
+                    default=True),                          # disable a schedule
                 migrate=migrate)

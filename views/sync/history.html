@@ -29,7 +29,7 @@ for log in logs:
  <tr class='{{=tr_class}}'>
  <td valign='top'>{{=A(T(str(log.id)),_href=URL(r=request, c="appadmin", f="update/db/sync_log", args = log.id))}}</td>
  <td valign='top'>{{=peer.name}}</td>
- <td valign='top'>{{=log.timstamp.strftime("%x %H:%M")}}</td>
+ <td valign='top'>{{=log.timestmp.strftime("%x %H:%M")}}</td>
  <td valign='top'>{{=log.sync_resources}}</td>
  <td valign='top'>{{=log.sync_errors}}</td>
  <td valign='top'>{{=log.sync_mode}}</td>

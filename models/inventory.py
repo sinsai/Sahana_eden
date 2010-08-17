@@ -38,15 +38,24 @@ if deployment_settings.has_module(module):
                                   length=320),
                             migrate=migrate)
 
-    table.location_id.comment = SPAN("*", _class="req")
+    table.location_id.requires = IS_ONE_OF(db, "gis_location.id", repr_select, sort=True)
+    table.location_id.comment.append(SPAN("*", _class="req"))
 
     s3.crud_strings[tablename] = shn_crud_strings("Inventory Location")
 
     # -----------------------------------------------------------------------------
+    def inventory_location_represent(id):
+        if id:
+            location = db(db.inventory_location.id == id).select(db.inventory_location.location_id, limitby=(0, 1)).first().location_id
+            return shn_gis_location_represent(location)
+        else:
+            return None
+    
     def get_inventory_location_id (field_name = "inventory_location_id", 
                                    label = T("Inventory Location"),
                                    ):
-        requires = IS_NULL_OR(IS_ONE_OF(db, "inventory_location.id", sort=True))
+                                   
+        requires = IS_NULL_OR(IS_ONE_OF(db, "inventory_location.id", inventory_location_represent, sort=True))
         
         represent = lambda id: shn_gis_location_represent( 
                                    shn_get_db_field_value(db = db,
@@ -62,7 +71,7 @@ if deployment_settings.has_module(module):
                                     c="inventory", 
                                     f="location", 
                                     args="create", 
-                                    vars=dict(format="popup")
+                                    vars=dict(format="popup", child=field_name)
                                     ),
                           _target="top",
                           _title="Add Inventory Location",

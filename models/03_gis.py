@@ -487,12 +487,18 @@ def get_location_id (field_name = "location_id",
     
     Function for creating a location field with a customisable field_name/label
     
-    @ToDo -more functionality from this function to port from ADPC Branch
+    @ToDo: more functionality from this function to port from ADPC Branch
     """
     
     requires = location_id.location_id.requires
     
     comment = location_id.location_id.comment
+    comment[0].attributes['_href'] = URL(r=request, 
+                                         c="gis", 
+                                         f="location", 
+                                         args="create", 
+                                         vars=dict(format="popup", child=field_name)
+                                        )
     
     return db.Table(None, 
                     field_name,

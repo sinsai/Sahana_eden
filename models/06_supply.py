@@ -44,13 +44,12 @@ if deployment_settings.has_module("inventory"):
     def get_item_category_id (field_name = "item_category_id", 
                               label = T("Category"),
                               ):
-        repr_select = lambda l: len(l.name) > 48 and "%s..." % l.name[:44] or l.name
-        requires = IS_NULL_OR(IS_ONE_OF(db, "supply_item_category.id", repr_select, sort=True))
+        requires = IS_NULL_OR(IS_ONE_OF(db, "supply_item_category.id", "%(name)s", sort=True))
         
-        represent = lambda id:shn_get_db_field_value(db = db,
-                                                     table = "supply_item_category", 
-                                                     field = "name", 
-                                                     look_up = id)    
+        represent = lambda id: shn_get_db_field_value(db = db,
+                                                      table = "supply_item_category", 
+                                                      field = "name", 
+                                                      look_up = id)    
 
         return db.Table(None, 
                         field_name,

@@ -4,6 +4,8 @@
     Volunteer Management System
 """
 
+from gluon.sql import Rows
+
 module = request.controller
 
 if module not in deployment_settings.modules:
@@ -33,7 +35,7 @@ def shn_menu():
     menu_teams = [
         [T("Teams"), False, URL(r=request, f="group"),[
             [T("List"), False, URL(r=request, f="group")],
-            [T("Add"), False, URL(r=request, f="group", args="create", vars={"_next":URL(r=request, args=request.args, vars=request.vars)})],
+            [T("Add"), False, URL(r=request, f="group", args="create")],
         ]]
     ]
     menu.extend(menu_teams)
@@ -43,14 +45,17 @@ def shn_menu():
         if selection:
             team_name = shn_pr_group_represent(group_id)
             menu_teams = [
-                ["%s %s" % (T("Team:"), team_name), False, URL(r=request, f="group", args=[group_id, "read"])],
+                ["%s %s" % (T("Team:"), team_name), False, URL(r=request, f="group", args=[group_id, "read"]),[
+                    [T("View On Map"), False, URL(r=request, f="view_team_map", args=[group_id])],
+                    [T("Send Mail"), False, URL(r=request, f="compose_group", vars={"group_id":group_id})],
+                ]],
             ]
             menu.extend(menu_teams)
 
     menu_persons = [
-        [T("Persons"), False, URL(r=request, f="person", args=["search_simple"], vars={"_next":URL(r=request, f="person", args=["[id]", "volunteer"], vars={"vol_tabs":"volunteer"})}),[
-            [T("List"), False, URL(r=request, f="person", vars={"_next":URL(r=request, f="person", args=["[id]", "volunteer"], vars={"vol_tabs":"volunteer"})})],
-            [T("Add"), False, URL(r=request, f="person", args="create", vars={"_next":URL(r=request, f="person", args=["[id]", "volunteer"], vars={"vol_tabs":"volunteer"})})],
+        [T("Persons"), False, URL(r=request, f="person", args=["search_simple"]),[
+            [T("List"), False, URL(r=request, f="person")],
+            [T("Add"), False, URL(r=request, f="person", args="create")],
         ]]
     ]
     menu.extend(menu_persons)
@@ -68,7 +73,8 @@ def shn_menu():
                     [T("Volunteer Data"), False, URL(r=request, f="person", args=[person_id, "volunteer"], vars={"vol_tabs":"volunteer"})],
                     # The default tab is pr_person, which is fine here.
                     [T("Person Data"), False, URL(r=request, f="person", args=[person_id], vars={"vol_tabs":"person"})],
-                    [T("View Map"), False, URL(r=request, f="view_map", args=[person_id])],
+                    [T("View On Map"), False, URL(r=request, f="view_map", args=[person_id])],
+                    [T("Send Mail"), False, URL(r=request, f="compose_person", vars={"person_id":person_id})],
                 ]],
             ]
             menu.extend(menu_person)
@@ -78,7 +84,7 @@ def shn_menu():
     menu.extend(menu_skills)
     if auth.user is not None:
         menu_user = [
-            [T("My Tasks"), False, URL(r=request, f="task", args="")]
+            [T("My Tasks"), False, URL(r=request, f="task", args="")],
         ]
         menu.extend(menu_user)
     response.menu_options = menu
@@ -237,13 +243,13 @@ def view_map():
 
     person_id = request.args(0)
 
-    presence_query = (db.pr_person.id == person_id) and (db.pr_presence.pe_id == db.pr_person.pe_id) and (db.gis_location.id == db.pr_presence.location_id)
+    presence_query = (db.pr_person.id == person_id) & (db.pr_presence.pe_id == db.pr_person.pe_id) & (db.gis_location.id == db.pr_presence.location_id)
 
     # Need sql.Rows object for show_map, so don't extract individual row.
-    location = db(presence_query).select(db.gis_location.ALL, orderby=~db.pr_presence.time, limitby=(0, 1))
+    location = db(presence_query).select(db.gis_location.ALL, orderby=~db.pr_presence.datetime, limitby=(0, 1))
 
     if not location:
-        address_query = (db.pr_person.id == person_id) and (db.pr_address.pe_id == db.pr_person.pe_id) and (db.gis_location.id == db.pr_address.location_id)
+        address_query = (db.pr_person.id == person_id) & (db.pr_address.pe_id == db.pr_person.pe_id) & (db.gis_location.id == db.pr_address.location_id)
         # TODO: If there are multiple addresses, which should we choose?
         # For now, take whichever address is supplied first.
         location = db(address_query).select(db.gis_location.ALL, limitby=(0, 1))
@@ -368,6 +374,86 @@ def group():
 def skill():
     "Select skills a volunteer has."
     return shn_rest_controller(module, "skill")
+
+
+# -----------------------------------------------------------------------------
+def view_team_map():
+    """
+    Map Location of Volunteer in a Team.
+    Use most recent presence if available, else any address that's available.
+    """
+
+    group_id = request.args(0)
+
+    members_query = (db.pr_group_membership.group_id == group_id)
+    members = db(members_query).select(db.pr_group_membership.person_id) #members of a team aka group
+    member_person_ids = [ x.person_id for x in members ] #list of members
+
+    #Presence Data of the members with Presence Logs
+    presence_rows = db(db.pr_person.id.belongs(member_person_ids) & (db.pr_presence.pe_id == db.pr_person.pe_id) & (db.gis_location.id ==  db.pr_presence.location_id)).select(db.gis_location.ALL, db.pr_person.id, orderby=~db.pr_presence.datetime)
+    #Get Latest Presence Data
+    person_location_sort = presence_rows.sort(lambda row:row.pr_person.id)
+    previous_person_id = None
+    locations_list = []
+    for row in person_location_sort:
+        if row.pr_person.id != previous_person_id:
+            locations_list.append(row["gis_location"])
+            member_person_ids.remove(row.pr_person.id)
+            previous_person_id = row.pr_person.id
+
+    #Address of those members without Presence data
+    address = db(db.pr_person.id.belongs(member_person_ids) & (db.pr_address.pe_id == db.pr_person.pe_id) & (db.gis_location.id ==  db.pr_address.location_id)).select(db.gis_location.ALL)
+
+    locations_list.extend(address)
+
+    if locations_list:
+
+        bounds = gis.get_bounds(features=locations_list)
+
+        volunteer = {"feature_group" : "People"}
+        html = gis.show_map(
+            feature_queries = [{"name" : "Volunteer", "query" : locations_list, "active" : True, "marker" : db(db.gis_marker.name == "volunteer").select().first().id}],
+            feature_groups = [volunteer],
+            wms_browser = {"name" : "Risk Maps", "url" : "http://preview.grid.unep.ch:8080/geoserver/ows?service=WMS&request=GetCapabilities"},
+            catalogue_overlays = True,
+            catalogue_toolbar = True,
+            toolbar = True,
+            search = True,
+            bbox = bounds,
+            window = True,
+        )
+        return dict(map=html)
+
+    # TODO: What is an appropriate response if no location is available?
+    return None
+
+
+# -----------------------------------------------------------------------------
+def compose_person():
+    "Send message to volunteer"  
+
+    person_pe_id_query = (db.pr_person.id == request.vars.person_id)
+    pe_id_row = db(person_pe_id_query).select(db.pr_person.pe_id).first()
+    request.vars.pe_id = pe_id_row["pe_id"]
+    
+    return shn_msg_compose( redirect_module=module, 
+                            redirect_function="compose_person", 
+                            redirect_vars={"person_id":request.vars.person_id}, 
+                            title_name="Send a message to a volunteer" )
+
+
+# -----------------------------------------------------------------------------
+def compose_group():
+    "Send message to members of a team"  
+
+    group_pe_id_query = (db.pr_group.id == request.vars.group_id)
+    pe_id_row = db(group_pe_id_query).select(db.pr_group.pe_id).first()
+    request.vars.pe_id = pe_id_row["pe_id"]
+
+    return shn_msg_compose( redirect_module=module, 
+                            redirect_function="compose_group", 
+                            redirect_vars={"group_id":request.vars.group_id}, 
+                            title_name="Send a message to a team of volunteers" )
 
 
 # -----------------------------------------------------------------------------

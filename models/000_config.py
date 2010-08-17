@@ -109,7 +109,7 @@ deployment_settings.modules = Storage(
             name_nice = Tstr("Inventory Management"),
             description = Tstr("Relief Items stored in Inventories in different locations"),
             module_type = 10
-        ),          
+        ),
     msg = Storage(
             name_nice = Tstr("Messaging"),
             description = Tstr("Sends & Receives Alerts via Email & SMS"),
@@ -169,7 +169,7 @@ deployment_settings.modules = Storage(
             name_nice = Tstr("Ticketing Module"),
             description = Tstr("Master Message Log to process incoming reports & requests"),
             module_type = 10
-        ),      
+        ),
     #lms = Storage(
     #        name_nice = Tstr("Logistics Management System"),
     #        description = Tstr("An intake system, a warehouse management system, commodity tracking, supply chain management, procurement and other asset and resource management capabilities."),

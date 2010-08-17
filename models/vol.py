@@ -448,27 +448,27 @@ if deployment_settings.has_module(module):
     #
 
     def multiselect_widget(f, v):
-	import uuid
-	d_id = "multiselect-" + str(uuid.uuid4())[:8]
-	wrapper = DIV(_id=d_id)
-	inp = SQLFORM.widgets.options.widget(f, v)
-	inp["_multiple"] = "multiple"
-	inp["_style"] = "min-width: %spx;" % (len(f.name) * 20 + 50)
-	if v:
-	    if not isinstance(v,list): v = str(v).split("|")
-	    opts = inp.elements("option")
-	    for op in opts:
-	        if op["_value"] in v:
-	            op["_selected"] = "selected"
-	scr = SCRIPT('jQuery("#%s select").multiSelect({'\
-	             'noneSelected:"Select %ss"});' % (d_id, f.name))
-	wrapper.append(inp)
-	wrapper.append(scr)
-	if request.vars.get(inp["_id"] + "[]", None):
-	    var = request.vars[inp["_id"] + "[]"]
-	    if not isinstance(var,list): var = [var]
-	    request.vars[f.name] = "|".join(var)
-	    del request.vars[inp["_id"] + "[]"]
+        import uuid
+        d_id = "multiselect-" + str(uuid.uuid4())[:8]
+        wrapper = DIV(_id=d_id)
+        inp = SQLFORM.widgets.options.widget(f, v)
+        inp["_multiple"] = "multiple"
+        inp["_style"] = "min-width: %spx;" % (len(f.name) * 20 + 50)
+        if v:
+            if not isinstance(v,list): v = str(v).split("|")
+            opts = inp.elements("option")
+            for op in opts:
+                if op["_value"] in v:
+                    op["_selected"] = "selected"
+        scr = SCRIPT('jQuery("#%s select").multiSelect({'\
+                     'noneSelected:"Select %ss"});' % (d_id, f.name))
+        wrapper.append(inp)
+        wrapper.append(scr)
+        if request.vars.get(inp["_id"] + "[]", None):
+            var = request.vars[inp["_id"] + "[]"]
+            if not isinstance(var,list): var = [var]
+            request.vars[f.name] = "|".join(var)
+            del request.vars[inp["_id"] + "[]"]
 	return wrapper
 
     resource = "skill"

@@ -424,6 +424,11 @@ class S3MultiSelectWidget(FormWidget):
             if not input_widget:
                 if link_table[column_field].type.startswith("reference"):
                     input_widget = OptionsWidget.widget
+                elif OptionsWidget.has_options(link_table[column_field]):
+                    if not link_table[column_field].requires.multiple:
+                        input_widget = OptionsWidget.widget
+                    else:
+                        input_widget = MultipleOptionsWidget.widget
                 else:
                     input_widget = SQLFORM.widgets[link_table[column_field].type].widget
             input_element = input_widget(link_table[column_field],

@@ -384,7 +384,12 @@ gis_location_hierarchy = {
 }
 gis_location_languages = {
     1:T("English"),
-    2:T("Hindi"),
+    2:T("Urdu"),
+    3:T("Punjabi"),
+    4:T("Pashto"),
+    5:T("Sindhi"),
+    6:T("Seraiki"),
+    7:T("Balochi"),
     #3:T("Local Language"),
 }
 gis_location_language_default = 1
@@ -471,6 +476,42 @@ location_id = db.Table(None, "location_id",
                                        _title=Tstr("Location") + "|" + Tstr("The Location of this Site, which can be general (for Reporting) or precise (for displaying on a Map)."))),
                        ondelete = "RESTRICT"))
 
+# -----------------------------------------------------------------------------
+def get_location_id (field_name = "location_id", 
+                     label = T("Location"),
+                     filterby = None,
+                     filter_opts = None,
+                     editable = True):
+    """
+    @author Michael Howden
+    
+    Function for creating a location field with a customisable field_name/label
+    
+    @ToDo: more functionality from this function to port from ADPC Branch
+    """
+    
+    requires = location_id.location_id.requires
+    
+    comment = location_id.location_id.comment
+    comment[0].attributes['_href'] = URL(r=request, 
+                                         c="gis", 
+                                         f="location", 
+                                         args="create", 
+                                         vars=dict(format="popup", child=field_name)
+                                        )
+    
+    return db.Table(None, 
+                    field_name,
+                    FieldS3(field_name, 
+                            db.gis_location, sortby="name",
+                            requires = requires,
+                            represent = shn_gis_location_represent,
+                            label = label,
+                            comment = comment,
+                            ondelete = "RESTRICT"
+                            )
+                    )
+# -----------------------------------------------------------------------------
 # Locations as component of Locations ('Parent')
 s3xrc.model.add_component(module, resource,
                           multiple=False,
@@ -504,9 +545,10 @@ name_dummy_element = S3MultiSelectWidget(db = db,
                                          link_field_name = "location_id")
 table = db.gis_location
 table.name_dummy.widget = name_dummy_element.widget
-#table.name_dummy.represent = name_dummy_element.represent
+table.name_dummy.represent = name_dummy_element.represent
 def gis_location_onaccept(form):
     if session.rcvars and hasattr(name_dummy_element, "onaccept"):
+        # HTML UI, not XML import
         name_dummy_element.onaccept(db, session.rcvars.gis_location, request)
     else:
         location_id = form.vars.id

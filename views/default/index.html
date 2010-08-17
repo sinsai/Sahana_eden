@@ -59,14 +59,24 @@
 </div>
 <script type="text/javascript">//<![CDATA[
 $(document).ready(function() {
+    // Change register/login links to avoid page reload, back make back button work.
+    $("#register-btn").attr('href','#register');
+    $("#login-btn").attr('href','#login');
+    
     // Redirect Register Button to unhide
     $("#register-btn").click(function() {
         // Unhide register form
         $("#register_form").removeClass("hide");
         // Hide login form
         $("#login_form").addClass("hide");
-        // Don't go to default location
-        return false;
+    });
+    
+    // Redirect Login Button to unhide
+    $("#login-btn").click(function() {
+        // Hide register form
+        $("#register_form").addClass("hide");
+        // Unhide login form
+        $("#login_form").removeClass("hide");
     });
 });
 //]]></script>

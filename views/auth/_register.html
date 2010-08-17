@@ -53,3 +53,9 @@ $(document).ready(function() {
     });
 });
 </script>
+
+{{if self_registration:}}
+  <p>
+    <a id="login-btn" class="action-btn" href="{{=URL(r=request, f="user", args="login")}}">{{=T("Login")}}</a>
+  </p>
+{{pass}}

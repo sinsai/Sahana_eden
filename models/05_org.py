@@ -496,7 +496,7 @@ staff_id = db.Table(None, "staff_id",
                         represent = lambda id: shn_org_staff_represent(id),
                         comment = DIV(A(ADD_STAFF, _class="colorbox", _href=URL(r=request, c="org", f="staff", args="create", vars=dict(format="popup")), _target="top", _title=ADD_STAFF),
                                   DIV( _class="tooltip", _title=ADD_STAFF + "|" + Tstr("Add new staff."))),
-                        label = "Staff",
+                        label = T("Staff"),
                         ondelete = "RESTRICT"
                         ))
 

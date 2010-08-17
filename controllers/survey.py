@@ -361,13 +361,11 @@ def get_table_for_template(template_id):
     tbl = None
 
     if template: # avoid blow ups!
-
         fields = [Field("series_id", db.survey_series, writable=False, readable=False)
                   ] # A list of Fields representing the questions
 
         questions = db((db.survey_template_link.survey_template_id == template_id) & \
        (db.survey_question.id == db.survey_template_link.survey_question_id)).select(db.survey_question.ALL)
-
         # for each question, depending on its type create a Field
         for question in questions:
             question_type = question.question_type
@@ -386,7 +384,7 @@ def get_table_for_template(template_id):
                 fields.append(Field("question_%s" % (question.id), "date", label=question.name))
 
         tbl = db.define_table("survey_template_%s" % (template_id), uuidstamp, deletion_status, authorstamp,
-                              *fields, migrate=True)
+                              *fields)         
         # now add the table name to the template record so we can reference it later.
         db(db.survey_template.id == template_id).update(table_name="survey_template_%s" % (template.id))
         db.commit()

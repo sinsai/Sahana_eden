@@ -54,29 +54,11 @@ except ImportError:
 
 from lxml import etree
 
-# Error messages
-S3XRC_BAD_RESOURCE = "Invalid Resource"
-S3XRC_PARSE_ERROR = "XML Parse Error"
-S3XRC_TRANSFORMATION_ERROR = "XSLT Transformation Error"
-S3XRC_BAD_SOURCE = "Invalid XML Source"
-S3XRC_NO_MATCH = "No matching element found in the data source"
-S3XRC_VALIDATION_ERROR = "Validation Error"
-S3XRC_DATA_IMPORT_ERROR = "Data Import Error"
-S3XRC_NOT_PERMITTED = "Operation Not Permitted"
-S3XRC_NOT_IMPLEMENTED = "Not Implemented"
-
 
 # *****************************************************************************
 class S3Resource(object):
 
     """ API for resources """
-
-    # Error messages
-    BADRECORD = "Record not found"
-    BADMETHOD = "Invalid method"
-    BADFORMAT = "Invalid data format"
-    BADREQUEST = "Invalid request"
-    BADTEMPLATE = "XSLT Template not found"
 
     # -------------------------------------------------------------------------
     def __init__(self, manager, prefix, name,
@@ -108,6 +90,8 @@ class S3Resource(object):
 
         assert manager is not None, "Undefined Resource Manager"
         self.__manager = manager
+
+        self.ERROR = self.__manager.ERROR
 
         if debug is None:
             self.__debug = self.__manager.debug
@@ -837,7 +821,7 @@ class S3Resource(object):
                         redirect(URL(r=r.request, f=self.name, args="search_simple",
                                     vars={"_next": r.same()}))
                     else:
-                        r.session.error = self.BADRECORD
+                        r.session.error = self.ERROR.BAD_RECORD
                         redirect(URL(r=r.request, c=self.prefix, f=self.name))
 
         # Pre-process
@@ -859,11 +843,11 @@ class S3Resource(object):
                             return output
                         else:
                             status = pre.get("status", 400)
-                            message = pre.get("message", self.BADREQUEST)
+                            message = pre.get("message", self.ERROR.BAD_REQUEST)
                             raise HTTP(status, message)
             elif not pre:
                 self.__dbg("pre-process returned an error - aborting")
-                raise HTTP(400, body=self.BADREQUEST)
+                raise HTTP(400, body=self.ERROR.BAD_REQUEST)
 
         # Default view
         if r.representation <> "html":
@@ -887,7 +871,7 @@ class S3Resource(object):
             elif r.http == "DELETE":
                 handler = self.__delete(r)
             else:
-                raise HTTP(501, body=self.BADMETHOD)
+                raise HTTP(501, body=self.ERROR.BAD_METHOD)
             if handler is not None:
                 self.__dbg("method handler found - executing request")
                 output = handler(r, **attr)
@@ -961,7 +945,7 @@ class S3Resource(object):
                         r.id = self.get_id()
                         r.uid = self.get_uid()
                     else:
-                        raise HTTP(404, BADRECORD)
+                        raise HTTP(404, self.ERROR.BAD_RECORD)
                     method = "read"
                 else:
                     method = "list"
@@ -1003,7 +987,7 @@ class S3Resource(object):
             return None
 
         else:
-            raise HTTP(501, body=self.BADMETHOD)
+            raise HTTP(501, body=self.ERROR.BAD_METHOD)
 
         if not authorised:
             r.unauthorised()
@@ -1038,7 +1022,7 @@ class S3Resource(object):
         elif r.representation == "json":
             return self.options_json(component=r.component_name, fields=fields)
         else:
-            raise HTTP(501, body=self.BADFORMAT)
+            raise HTTP(501, body=self.ERROR.BAD_FORMAT)
 
 
     # -------------------------------------------------------------------------
@@ -1055,7 +1039,7 @@ class S3Resource(object):
         elif r.representation == "json":
             return self.fields_json(component=r.component_name)
         else:
-            raise HTTP(501, body=self.BADFORMAT)
+            raise HTTP(501, body=self.ERROR.BAD_FORMAT)
 
 
     # -------------------------------------------------------------------------
@@ -1094,7 +1078,7 @@ class S3Resource(object):
                                     template_name)
 
             if not os.path.exists(template):
-                raise HTTP(501, body="%s: %s" % (self.BADTEMPLATE, template))
+                raise HTTP(501, body="%s: %s" % (self.ERROR.BAD_TEMPLATE, template))
 
         start = r.request.vars.get("start", None)
         if start is not None:
@@ -1180,7 +1164,7 @@ class S3Resource(object):
             else:
                 return self.get_handler("import_tree")
         else:
-            raise HTTP(501, body=self.BADFORMAT)
+            raise HTTP(501, body=self.ERROR.BAD_FORMAT)
 
 
     # -------------------------------------------------------------------------
@@ -1260,7 +1244,7 @@ class S3Resource(object):
                                     template_name)
 
             if not os.path.exists(template):
-                raise HTTP(501, body="%s: %s" % (self.BADTEMPLATE, template))
+                raise HTTP(501, body="%s: %s" % (self.ERROR.BAD_TEMPLATE, template))
 
             tree = xml.transform(tree, template,
                                  domain=self.__manager.domain,
@@ -1344,7 +1328,7 @@ class S3Resource(object):
                 r.next = r.there()
             return self.get_handler("delete")
         else:
-            raise HTTP(501, body=self.BADMETHOD)
+            raise HTTP(501, body=self.ERROR.BAD_METHOD)
 
 
     # XML/JSON functions ======================================================
@@ -2389,6 +2373,24 @@ class S3ResourceController(object):
     ROWSPERPAGE = 10
     MAX_DEPTH = 10
 
+    # Error messages
+    ERROR = Storage(
+        BAD_RECORD = "Record not found",
+        BAD_METHOD = "Invalid method",
+        BAD_FORMAT = "Invalid data format",
+        BAD_REQUEST = "Invalid request",
+        BAD_TEMPLATE = "XSLT Template not found",
+        BAD_RESOURCE = "Invalid Resource",
+        PARSE_ERROR = "XML Parse Error",
+        TRANSFORMATION_ERROR = "XSLT Transformation Error",
+        BAD_SOURCE = "Invalid XML Source",
+        NO_MATCH = "No matching element found in the data source",
+        VALIDATION_ERROR = "Validation Error",
+        DATA_IMPORT_ERROR = "Data Import Error",
+        NOT_PERMITTED = "Operation Not Permitted",
+        NOT_IMPLEMENTED = "Not Implemented"
+    )
+
     # -------------------------------------------------------------------------
     def __init__(self, db,
                  domain=None,
@@ -2415,14 +2417,10 @@ class S3ResourceController(object):
         """
 
         assert db is not None, "Database must not be None."
+
+        # Settings
         self.db = db
-
         self.cache = cache
-        self.auth = auth
-        self.audit = audit
-        self.debug = debug
-
-        self.error = None
 
         self.domain = domain
         self.base_url = base_url
@@ -2431,13 +2429,31 @@ class S3ResourceController(object):
         if rpp:
             self.ROWSPERPAGE = rpp
 
+        self.show_ids = False
+
+        # Errors and Debug messages
+        self.error = None
+        self.debug = debug
+
+        # Toolkits
+        self.auth = auth    # Auth
+        self.gis = gis      # GIS
+
         self.model = S3ResourceModel(self.db)
-        self.xml = S3XML(self.db, domain=domain, base_url=base_url, gis=gis, cache=cache)
+        self.xml = S3XML(self.db,
+                         domain=domain,
+                         base_url=base_url,
+                         gis=self.gis,
+                         cache=cache)
 
-        self.sync_resolve = None
-        self.sync_log = None
-        self.messages = None
+        # Hooks
+        self.audit = audit              # Audit
+        self.messages = None            # Messages Finder
+        self.tree_resolve = None        # Tree Resolver
+        self.sync_resolve = None        # Sync Resolver
+        self.sync_log = None            # Sync Logger
 
+        # Import/Export formats
         attr = Storage(attr)
 
         self.xml_import_formats = attr.get("xml_import_formats", ["xml"])
@@ -2448,6 +2464,7 @@ class S3ResourceController(object):
         self.json_export_formats = attr.get("json_export_formats",
                                             dict(json="text/x-json"))
 
+        # Method Handlers
         self.__handler = Storage()
 
 
@@ -2462,6 +2479,8 @@ class S3ResourceController(object):
 
     # -------------------------------------------------------------------------
     def invoke_hook(self, hook, *args, **vars):
+
+        """ Invoke a hook or a list of hooks """
 
         name = vars.pop("name", None)
 
@@ -2525,6 +2544,9 @@ class S3ResourceController(object):
                         f not in self.xml.IGNORE_FIELDS,
                         table.fields)
 
+        if self.show_ids and "id" not in fields:
+            fields.insert(0, "id")
+
         rfields = filter(lambda f:
                          str(table[f].type).startswith("reference") and
                          f not in self.xml.FIELDS_TO_ATTRIBUTES,
@@ -2587,7 +2609,7 @@ class S3ResourceController(object):
                 mtime = None
 
         if not record:
-            self.error = S3XRC_VALIDATION_ERROR
+            self.error = self.ERROR.VALIDATION_ERROR
             return None
 
         if lookahead:
@@ -3057,7 +3079,7 @@ class S3ResourceController(object):
                                        url=resource_url,
                                        download_url=self.download_url,
                                        marker=marker)
-            self.xml.add_references(element, rmap)
+            self.xml.add_references(element, rmap, show_ids=self.show_ids)
             self.xml.gis_encode(rmap,
                                 download_url=self.download_url,
                                 marker=marker)
@@ -3102,7 +3124,7 @@ class S3ResourceController(object):
                                                 url=resource_url,
                                                 download_url=self.download_url,
                                                 marker=marker)
-                    self.xml.add_references(celement, rmap)
+                    self.xml.add_references(celement, rmap, show_ids=self.show_ids)
                     self.xml.gis_encode(rmap,
                                         download_url=self.download_url,
                                         marker=marker)
@@ -3163,7 +3185,7 @@ class S3ResourceController(object):
                                                url=resource_url,
                                                download_url=self.download_url,
                                                marker=marker)
-                    self.xml.add_references(element, rmap)
+                    self.xml.add_references(element, rmap, show_ids=self.show_ids)
                     self.xml.gis_encode(rmap,
                                         download_url=self.download_url,
                                         marker=marker)
@@ -3203,6 +3225,11 @@ class S3ResourceController(object):
 
         self.error = None
 
+        if self.tree_resolve:
+            if not isinstance(tree, etree._ElementTree):
+                tree = etree.ElementTree(tree)
+            self.invoke_hook(self.tree_resolve, tree)
+
         permit = self.auth.shn_has_permission
         audit = self.audit
 
@@ -3214,6 +3241,7 @@ class S3ResourceController(object):
             return True
 
         # if a record ID is given, import only matching elements
+        # TODO: match all possible fields (see original())
         if id and self.xml.UID in table:
             if not isinstance(id, (tuple, list)):
                 query = (table.id == id)
@@ -3231,13 +3259,13 @@ class S3ResourceController(object):
                 if element_uid in uids:
                     matches.append(element)
             if not matches:
-                self.error = S3XRC_NO_MATCH
+                self.error = self.ERROR.NO_MATCH
                 return False
             else:
                 elements = matches
 
         if push_limit is not None and len(elements) > push_limit:
-            self.error = S3XRC_NOT_PERMITTED
+            self.error = self.ERROR.NOT_PERMITTED
             return False
 
         # Import all matching elements
@@ -3341,9 +3369,9 @@ class S3ResourceController(object):
                 success = vector.commit()
                 if not success:
                     if not vector.permitted:
-                        self.error = S3XRC_NOT_PERMITTED
+                        self.error = self.ERROR.NOT_PERMITTED
                     else:
-                        self.error = S3XRC_DATA_IMPORT_ERROR
+                        self.error = self.ERROR.DATA_IMPORT_ERROR
                     if vector.element:
                         vector.element.set(self.xml.ATTRIBUTE.error, self.error)
                     if ignore_errors:
@@ -3773,6 +3801,7 @@ class S3XML(object):
     IGNORE_FIELDS = ["deleted", "id"]
 
     FIELDS_TO_ATTRIBUTES = [
+            "id",
             "created_on",
             "modified_on",
             "created_by",
@@ -4155,12 +4184,13 @@ class S3XML(object):
 
 
     # -------------------------------------------------------------------------
-    def add_references(self, element, rmap):
+    def add_references(self, element, rmap, show_ids=False):
 
         """ Adds <reference> elements to a <resource>
 
             @param element: the <resource> element
             @param rmap: the reference map for the corresponding record
+            @param show_ids: insert the record ID as attribute in references
 
         """
 
@@ -4169,6 +4199,8 @@ class S3XML(object):
             reference = etree.SubElement(element, self.TAG.reference)
             reference.set(self.ATTRIBUTE.field, r.field)
             reference.set(self.ATTRIBUTE.resource, r.table)
+            if show_ids:
+                reference.set(self.ATTRIBUTE.id, self.xml_encode(str(r.id)))
             if r.uid:
                 reference.set(self.UID, r.uid )
                 reference.text = r.text

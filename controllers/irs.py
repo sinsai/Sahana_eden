@@ -70,6 +70,9 @@ def incident():
     """ Incidents, RESTful controller """
 
     resource = request.function
+    tablename = "%s_%s" % (module, resource)
+    table = db[tablename]
+
     response.s3.pagination = True
 
     db.irs_iimage.assessment_id.readable = \
@@ -106,7 +109,16 @@ def ireport():
     """ Incident Reports, RESTful controller """
 
     resource = request.function
+    tablename = "%s_%s" % (module, resource)
+    table = db[tablename]
+
     response.s3.pagination = True
+
+    person = session.auth.user.id if auth.is_logged_in() else None
+    if person:
+        person_uuid = db(db.auth_user.id == person).select(db.auth_user.person_uuid, limitby=(0, 1)).first().person_uuid
+        person = db(db.pr_person.uuid == person_uuid).select(db.pr_person.id, limitby=(0, 1)).first().id
+    table.person_id.default = person
 
     db.irs_iimage.assessment_id.readable = \
     db.irs_iimage.assessment_id.writable = False

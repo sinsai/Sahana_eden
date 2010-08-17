@@ -19,9 +19,6 @@ if deployment_settings.has_module(module):
                     migrate=migrate)
 
     # -------------------------------------------------------------------------
-    # Person components which are specifically volunteer data:
-    shn_vol_volunteer_data = ("volunteer", "group_membership", "skill")
-    # -------------------------------------------------------------------------
     # pr_volunteer (Component of pr_person)
     #   describes a person's availability as a volunteer
 
@@ -399,11 +396,11 @@ if deployment_settings.has_module(module):
     s3.crud_strings[tablename] = Storage(
         title_create = T("Add Skill Type"),
         title_display = T("Skill Type Details"),
-        title_list = T("Skill Type"),
+        title_list = T("Skill Types"),
         title_update = T("Edit Skill Type"),
-        title_search = T("Search Skill Type"),
+        title_search = T("Search Skill Types"),
         subtitle_create = T("Add New Skill Type"),
-        subtitle_list = T("Skill Type"),
+        subtitle_list = T("Skill Types"),
         label_list_button = T("List Skill Types"),
         label_create_button = T("Add Skill Types"),
         label_delete_button = T("Delete Skill Type"),
@@ -411,22 +408,6 @@ if deployment_settings.has_module(module):
         msg_record_modified = T("Skill Type updated"),
         msg_record_deleted = T("Skill Type deleted"),
         msg_list_empty = T("No Skill Types currently set"))
-
-    field_settings = S3CheckboxesWidget(db = db,
-                                        lookup_table_name = "vol_skill_types",
-                                        lookup_field_name = "name",
-                                        multiple = True,
-                                        num_column=3
-                                        )
-
-    # Reusable field
-    skill_ids = db.Table(None, "skill_ids",
-                         FieldS3("skill_ids",
-                         requires = field_settings.requires,
-                         widget = field_settings.widget,
-                         represent = field_settings.represent,
-                         label = T("skills"),
-                         ondelete = "RESTRICT"))
 
     # Representation function
     def vol_skill_types_represent(id):
@@ -441,47 +422,31 @@ if deployment_settings.has_module(module):
         else:
             return None
 
+    skill_types_id = db.Table(None, "skill_types_id",
+                              FieldS3("skill_types_id", db.vol_skill_types,
+                                      sortby = ["category", "name"],
+                                      requires = IS_ONE_OF(db, "vol_skill_types.id", vol_skill_types_represent),
+                                      represent = vol_skill_types_represent,
+                                      label = T("Skill"),
+                                      ondelete = "RESTRICT"))
+
 
     # -------------------------------------------------------------------------
     # vol_skill
     #   A volunteer's skills (component of pr)
     #
 
-    def multiselect_widget(f, v):
-        import uuid
-        d_id = "multiselect-" + str(uuid.uuid4())[:8]
-        wrapper = DIV(_id=d_id)
-        inp = SQLFORM.widgets.options.widget(f, v)
-        inp["_multiple"] = "multiple"
-        inp["_style"] = "min-width: %spx;" % (len(f.name) * 20 + 50)
-        if v:
-            if not isinstance(v,list): v = str(v).split("|")
-            opts = inp.elements("option")
-            for op in opts:
-                if op["_value"] in v:
-                    op["_selected"] = "selected"
-        scr = SCRIPT('jQuery("#%s select").multiSelect({'\
-                     'noneSelected:"Select %ss"});' % (d_id, f.name))
-        wrapper.append(inp)
-        wrapper.append(scr)
-        if request.vars.get(inp["_id"] + "[]", None):
-            var = request.vars[inp["_id"] + "[]"]
-            if not isinstance(var,list): var = [var]
-            request.vars[f.name] = "|".join(var)
-            del request.vars[inp["_id"] + "[]"]
-	return wrapper
-
     resource = "skill"
     tablename = module + "_" + resource
-    table = db.define_table(tablename, timestamp, uuidstamp, deletion_status,
-                person_id,
-        Field("skill_types_id"),
-        Field("status", requires=IS_IN_SET(["approved", "unapproved", "denied"]), label=T("status"), notnull=True, default="unapproved"),
-                    migrate=migrate)
-
-    db.vol_skill.skill_types_id.widget = multiselect_widget
-    db.vol_skill.skill_types_id.requires = IS_ONE_OF(db, "vol_skill_types.id", vol_skill_types_represent, multiple=True)
-    #db.vol_skill.skill_types_id.represent = vol_skill_types_represent
+    table = db.define_table(
+        tablename, timestamp, uuidstamp, deletion_status,
+        person_id, skill_types_id,
+        Field("status",
+              requires=IS_IN_SET(["approved","unapproved","denied"]),
+              label=T("Status"),
+              notnull=True,
+              default="unapproved"),
+        migrate=migrate)
 
     s3xrc.model.add_component(module, resource,
         multiple=True,
@@ -502,17 +467,18 @@ if deployment_settings.has_module(module):
         title_display = T("Skill Details"),
         title_list = SKILL,
         title_update = T("Edit Skill"),
-        title_search = T("Search Skill"),
+        title_search = T("Search Skills"),
         subtitle_create = T("Add New Skill"),
         subtitle_list = SKILL,
-        label_list_button = T("List Skill"),
+        label_list_button = T("List Skills"),
         label_create_button = ADD_SKILL,
+        label_delete_button = T("Delete Skill"),
         msg_record_created = T("Skill added"),
         msg_record_modified = T("Skill updated"),
         msg_record_deleted = T("Skill deleted"),
         msg_list_empty = T("No skills currently set"))
 
-    # shn_pr_group_represent -----------------------------------------------------
+    # shn_pr_group_represent -------------------------------------------------
     #
     def teamname(record):
         """
@@ -536,77 +502,3 @@ if deployment_settings.has_module(module):
 
         name = cache.ram("pr_group_%s" % id, lambda: _represent(id))
         return name
-
-    # -----------------------------------------------------------------------------
-    def shn_vol_view_map(jr, **attr):
-        """
-        Map Location of Volunteer.
-        Use most recent presence if available, else any address that's available.
-        """
-
-        response.view = "vol/view_map.html"
-        rheader = shn_vol_rheader(jr)
-
-        output = dict(title=T("Volunteer location"), rheader=rheader)
-
-        if jr.id:
-            person_id = jr.id
-
-            presence_query = (db.pr_person.id == person_id) & \
-                             (db.pr_presence.pe_id == db.pr_person.pe_id) & \
-                             (db.gis_location.id == db.pr_presence.location_id)
-
-            # Need sql.Rows object for show_map, so don't extract individual row.
-            location = db(presence_query).select(db.gis_location.ALL,
-                                                orderby=~db.pr_presence.time,
-                                                limitby=(0, 1))
-
-            if not location:
-                address_query = (db.pr_person.id == person_id) & \
-                                (db.pr_address.pe_id == db.pr_person.pe_id) & \
-                                (db.gis_location.id == db.pr_address.location_id)
-
-                # TODO: If there are multiple addresses, which should we choose?
-                # For now, take whichever address is supplied first.
-                location = db(address_query).select(db.gis_location.ALL, limitby=(0, 1))
-
-            if location:
-                # Center and zoom the map.
-                location_row = location.first()  # location is a sql.Rows
-                lat = location_row.lat
-                lon = location_row.lon
-                bounds = gis.get_bounds(features=location)
-
-                marker = db(db.gis_marker.name == "volunteer").select().first()
-                if marker:
-                    marker = marker.id
-                else:
-                    marker = None
-
-                volunteer = {"feature_group" : "People"}
-                html = gis.show_map(
-                    feature_queries = [{"name" : "Volunteer",
-                                        "query" : location,
-                                        "active" : True,
-                                        "marker" : marker}],
-                    feature_groups = [volunteer],
-                    catalogue_overlays = True,
-                    catalogue_toolbar = False,
-                    toolbar = True,
-                    search = True,
-                    lat = lat,
-                    lon = lon,
-                    bbox = bounds,
-                    window = True,
-                )
-                output.update(map=html)
-
-            else:
-                # TODO: What is an appropriate response if no location is available?
-                html = T("No location known of this person.")
-                output.update(map=html)
-
-        return output
-
-    s3xrc.model.set_method("pr", "person", method="view_map", action=shn_vol_view_map)
-

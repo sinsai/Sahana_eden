@@ -353,60 +353,8 @@ def setting():
     return shn_rest_controller(module, resource, deletable=False, listadd=False)
 
 def compose():
-    """ Form to Compose a Message """
-    resource1 = "log"
-    tablename1 = module + "_" + resource1
-    table1 = db[tablename1]
-    resource2 = "outbox"
-    tablename2 = module + "_" + resource2
-    table2 = db[tablename2]
 
-    if auth.is_logged_in() or auth.basic():
-        pass
-    else:
-        redirect(URL(r=request, c="default", f="user", args="login",
-            vars={"_next":URL(r=request, c="msg", f="compose")}))
-
-    # Model options
-    table1.sender.writable = table1.sender.readable = False
-    table1.fromaddress.writable = table1.fromaddress.readable = False
-    table1.pe_id.writable = table1.pe_id.readable = False
-    table1.verified.writable = table1.verified.readable = False
-    table1.verified_comments.writable = table1.verified_comments.readable = False
-    table1.actioned.writable = table1.actioned.readable = False
-    table1.actionable.writable = table1.actionable.readable = False
-    table1.actioned_comments.writable = table1.actioned_comments.readable = False
-    
-    table1.subject.label = T("Subject")
-    table1.message.label = T("Message")
-    table1.priority.label = T("Priority")
-    
-    table2.pe_id.writable = table2.pe_id.readable = True
-    table2.pe_id.label = T("Recipients")
-
-    def compose_onvalidation(form):
-        """ Set the sender and use msg.send_by_pe_id to route the message """
-        if not request.vars.pe_id:
-            session.error = T("Please enter the recipient")
-            redirect(URL(r=request,c="msg", f="compose"))
-        sender_pe_id = db(db.pr_person.uuid == auth.user.person_uuid).select(db.pr_person.pe_id, limitby=(0, 1)).first().pe_id
-        if msg.send_by_pe_id(request.vars.pe_id,
-                             request.vars.subject,
-                             request.vars.message,
-                             sender_pe_id,
-                             request.vars.pr_message_method):
-            session.flash = T("Message sent to outbox")
-            redirect(URL(r=request, c="msg", f="compose"))
-        else:
-            session.error = T("Error in message")
-            redirect(URL(r=request,c="msg", f="compose"))
-
-
-    logform = crud.create(table1,
-                          onvalidation = compose_onvalidation)
-    outboxform = crud.create(table2)
-    
-    return dict(logform = logform, outboxform = outboxform, title = T("Send Message"))
+    return shn_msg_compose()
 
 def outbox():
     "View the contents of the Outbox"

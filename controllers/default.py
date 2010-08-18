@@ -49,7 +49,7 @@ def index():
         admin_tel = settings.admin_tel
         self_registration = settings.self_registration
     else:
-        # Empty database and prepopulate is false.
+        # db empty and prepopulate is false
         admin_name = T("Sahana Administrator"),
         admin_email = "support@Not Set",
         admin_tel = T("Not Set"),

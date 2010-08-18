@@ -2652,7 +2652,7 @@ OpenLayers.Util.extend( selectPdfControl, {
             nodeType: 'gx_baselayercontainer',
             layerStore: mapPanel.layers,
             leaf: false,
-            expanded: true
+            expanded: false
         };
 
         var layerTreeFeaturesExternal = {

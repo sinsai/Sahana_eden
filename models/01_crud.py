@@ -352,6 +352,62 @@ def import_csv(file, table=None):
 #
 # import_url ------------------------------------------------------------------
 #
+def import_url2(r):
+
+    xml = s3xrc.xml
+
+    resource = r.resource
+    table = resource.table
+
+    if r.record and xml.UID in table.fields:
+        r.request.vars.update({xml.UID:r.record[xml.UID]})
+
+    element = etree.Element(xml.TAG.resource)
+    element.set(xml.ATTRIBUTE.name, resource.tablename)
+    for var in r.request.vars:
+        if var.find(".") != -1:
+            continue
+        elif var in table.fields:
+            field = table[var]
+            value = xml.xml_encode(str(r.request.vars[var]))
+            if var in xml.FIELDS_TO_ATTRIBUTES:
+                element.set(var, value)
+            else:
+                data = etree.Element(xml.TAG.data)
+                data.set(xml.ATTRIBUTE.field, var)
+                if field.type == "upload":
+                    data.set(xml.ATTRIBUTE.filename, value)
+                else:
+                    data.text = value
+                element.append(data)
+
+    tree = xml.tree([element], domain=s3xrc.domain)
+
+    result = Storage(committed=False)
+    s3xrc.sync_resolve = lambda vector, result=result: result.update(vector=vector)
+    try:
+        success = resource.import_xml(tree)
+    except SyntaxError:
+        pass
+
+    if result.vector:
+        result = result.vector
+
+    if success and result.committed:
+        id = result.id
+        method = result.method
+        if method == result.METHOD.create:
+            item = xml.json_message(True, 201, "Created as " + str(r.other(method=None, record_id=id)))
+        else:
+            item = xml.json_message(True, 200, "Record updated")
+    else:
+        item = xml.json_message(False, 403, "Could not create/update record: %s" %
+                                s3xrc.error or xml.error,
+                                tree=xml.tree2json(tree))
+
+    return dict(item=item)
+
+
 def import_url(r, table, method):
 
     """
@@ -1356,7 +1412,8 @@ def shn_create(r, **attr):
                     caller=request.vars.caller)
 
     elif representation == "url":
-        return import_url(r, table, method="create")
+        #return import_url(r, table, method="create")
+        return import_url2(r)
 
     elif representation == "csv":
         # Read in POST
@@ -1549,7 +1606,8 @@ def shn_update(r, **attr):
         return dict(item=form)
 
     elif r.representation == "url":
-        return import_url(r, table, method="update")
+        #return import_url(r, table, method="update")
+        return import_url2(r)
 
     else:
         session.error = BADFORMAT

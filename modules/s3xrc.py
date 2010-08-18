@@ -4732,6 +4732,8 @@ class S3XML(object):
                             value = field.store(file, filename)
                         else:
                             continue
+                    elif filename is not None:
+                        value = ""
                 else:
                     value = child.get(self.ATTRIBUTE.value, None)
                     value = self.xml_decode(value)

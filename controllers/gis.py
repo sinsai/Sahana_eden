@@ -1530,7 +1530,7 @@ def map_viewing_client():
 
     # Read which overlays to enable
     feature_groups = []
-    _feature_groups = db(db.gis_feature_group.enabled == True & db.gis_feature_group.deleted == False).select()
+    _feature_groups = db((db.gis_feature_group.enabled == True) & (db.gis_feature_group.deleted == False)).select()
     for feature_group in _feature_groups:
         feature_groups.append(
             {

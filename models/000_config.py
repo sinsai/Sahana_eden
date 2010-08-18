@@ -115,9 +115,14 @@ deployment_settings.modules = Storage(
             description = Tstr("Sends & Receives Alerts via Email & SMS"),
             module_type = 10
         ),
+    flood = Storage(
+            name_nice = Tstr("Flood Alerts"),
+            description = Tstr("Flood Alerts show water levels in various parts of the country"),
+            module_type = 10
+        ),
     sitrep = Storage(
             name_nice = Tstr("Assessments"),
-            description = Tstr("Assessments are structured reports done by Professional Organisations - data includes Flood Re.ports, WFP Assessments & Rapid Assessment Tool"),
+            description = Tstr("Assessments are structured reports done by Professional Organisations - data includes WFP Assessments (Rapid Assessment Tool to come)"),
             module_type = 10
         ),
     pr = Storage(

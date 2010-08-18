@@ -16,12 +16,7 @@ if module not in deployment_settings.modules:
 
 # Options Menu (available in all Functions' Views)
 response.menu_options = [
-    [T("Flood Reports"), False, URL(r=request, f="freport"),[
-        [T("List"), False, URL(r=request, f="freport")],
-        [T("Add"), False, URL(r=request, f="freport", args="create")],
-        #[T("Search"), False, URL(r=request, f="freport", args="search")]
-    ]],
-    [T("WFP Assessments"), False, URL(r=request, f="assessment"),[
+    [T("Assessments"), False, URL(r=request, f="assessment"),[
         [T("List"), False, URL(r=request, f="assessment")],
         [T("Add"), False, URL(r=request, f="assessment", args="create")],
         #[T("Search"), False, URL(r=request, f="assessment", args="search")]
@@ -94,46 +89,6 @@ def rassessment():
                                                     (T("Protection"), "section9") ]),
                                                     sticky=True)
     return output
-
-def river():
-
-    """ Rivers, RESTful controller """
-
-    resource = request.function
-
-    response.s3.pagination = True
-
-    # Post-processor
-    def user_postp(jr, output):
-        shn_action_buttons(jr, deletable=False)
-        return output
-    response.s3.postp = user_postp
-
-    output = shn_rest_controller(module, resource)
-    return output
-
-
-def freport():
-
-    """ Flood Reports, RESTful controller """
-
-    resource = request.function
-    response.s3.pagination = True
-
-    # Post-processor
-    def postp(jr, output):
-        shn_action_buttons(jr, deletable=False)
-        return output
-    response.s3.postp = postp
-
-    output = shn_rest_controller(module, resource,
-                                 rheader=lambda r: \
-                                         shn_sitrep_rheader(r,
-                                            tabs = [(T("Basic Details"), None),
-                                                    (T("Locations"), "freport_location")  ]),
-                                                    sticky=True)
-    return output
-
 
 def assessment():
 
@@ -254,32 +209,6 @@ def shn_sitrep_rheader(r, tabs=[]):
 
             return rheader
                           
-        elif r.name == "freport":
-
-            report = r.record
-            location = report.location_id
-            if location:
-                location = shn_gis_location_represent(location)
-            doc_url = URL(r=request, f="download", args=[report.document])
-            try:
-                doc_name, file = r.table.document.retrieve(report.document)
-                if hasattr(file, "close"):
-                    file.close()
-            except:
-                doc_name = report.document
-            rheader = DIV(TABLE(
-                            TR(
-                                TH(Tstr("Location") + ": "), location,
-                                TH(Tstr("Date") + ": "), report.datetime
-                              ),
-                            TR(
-                                TH(Tstr("Document") + ": "), A(doc_name, _href=doc_url)
-                              )
-                            ),
-                          rheader_tabs)
-
-            return rheader
-
         elif r.name == "school_district":
 
             report = r.record

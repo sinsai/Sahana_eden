@@ -94,20 +94,17 @@ def now():
         sync_start = True
 
     # retrieve sync now state
-    states = db().select(db.sync_now.ALL)
-    state = None
-    if states:
-        state = states[0]
+    state = db().select(db.sync_now.ALL, limitby=(0, 1)).first()
 
     if sync_start:
         # retrieve sync partners from DB
         peers = db().select(db.sync_partner.ALL)
         
         # retrieve all scheduled jobs set to run manually
-        jobs = db(db.sync_schedule.period=="m" and db.sync_schedule.enabled==True).select(db.sync_schedule.ALL)
+        jobs = db(db.sync_schedule.period == "m" and db.sync_schedule.enabled == True).select(db.sync_schedule.ALL)
 
         # retrieve settings
-        settings = db().select(db.sync_setting.ALL)[0]
+        settings = db().select(db.sync_setting.ALL, limitby=(0, 1)).first()
 
         # url fetcher
         fetcher = FetchURL()
@@ -124,11 +121,11 @@ def now():
         for _module in modules:
             for _table in db_tables:
                 if _table.startswith(_module + "_"):
-                    tables.append(_module + "||" + _table[len(_module)+1:])
+                    tables.append(_module + "||" + _table[len(_module) + 1:])
 
         if len(jobs) < 1:
             final_status = "There are no scheduled jobs. Please schedule a sync operation (set to run manually).<br /><br /><a href=\"" + URL(r=request, c="sync", f="schedule") + "\">Click here</a> to go to Sync Schedules page.<br /><br />\n"
-            return dict(module_name=module_name, sync_status=final_status, sync_start=False)
+            return dict(module_name=module_name, sync_status=final_status, sync_start=False, sync_state=state)
 
         if not state:
             res_list = tables
@@ -148,38 +145,32 @@ def now():
                     sync_jobs_enabled_list.append(str(job.id))
             sync_now_id = db["sync_now"].insert(
                 sync_jobs = ", ".join(map(str, sync_jobs_enabled_list)),
-                started_on = datetime.datetime.utcnow(),
+                started_on = request.utcnow,
                 job_resources_done = "",
                 job_resources_pending = ", ".join(map(str, res_list)),
                 job_sync_errors = ""
             )
-            state = db(db.sync_now.id==sync_now_id).select(db.sync_now.ALL)[0]
+            state = db(db.sync_now.id == sync_now_id).select(db.sync_now.ALL, limitby=(0, 1)).first()
             final_status += "Sync Now started:<br /><br /><br />\n"
         else:
             sync_now_id = state.id
             final_status += "Sync Now resumed (originally started on " + state.started_on.strftime("%x %H:%M:%S")+ "):<br /><br /><br />\n"
 
         # unlock session
-        +133
         session._unlock(response)
+        # become super-user
         session.s3.roles.append(1)
 
         # get job from queue
         sync_jobs_list = state.sync_jobs.split(", ")
         if "" in sync_jobs_list:
             sync_jobs_list.remove("")
-        sync_job = None
-        sync_job_sel = db(db.sync_schedule.id==int(sync_jobs_list[0])).select(db.sync_schedule.ALL)
-        if sync_job_sel:
-            sync_job = sync_job_sel[0]
+        sync_job = db(db.sync_schedule.id == int(sync_jobs_list[0])).select(db.sync_schedule.ALL, limitby=(0, 1)).first()
         job_cmd = None
         if sync_job:
             job_cmd = json.loads(sync_job.job_command)
         sync_job_partner = job_cmd["partner_uuid"]
-        peer = None
-        peers_sel = db(db.sync_partner.uuid==sync_job_partner).select()
-        if peers_sel:
-            peer = peers_sel[0]
+        peer = db(db.sync_partner.uuid == sync_job_partner).select(limitby=(0, 1)).first()
 
         # Whether a push was successful
         push_success = False
@@ -218,10 +209,10 @@ def now():
 #                    if not (_module == "budget" and _resource == "item"):
 #                        continue
                     peer_instance_url = list(urlparse.urlparse(peer.instance_url))
-                    if peer_instance_url[2].endswith("/")==False:
+                    if peer_instance_url[2].endswith("/") == False:
                         peer_instance_url[2] += "/"
                     resource_remote_pull_url = peer.instance_url
-                    if resource_remote_pull_url.endswith("/")==False:
+                    if resource_remote_pull_url.endswith("/") == False:
                         resource_remote_pull_url += "/"
                     resource_remote_pull_url += "sync/sync." + import_export_format + "/" + _module + "/" + _resource + last_sync_on_str
                     resource_remote_push_url = peer_instance_url[2] + "sync/sync." + import_export_format + "/push/" + _module + "/" + _resource + "?sync_partner_uuid=" + str(settings.uuid)
@@ -288,8 +279,8 @@ def now():
             state.job_resources_pending = ", ".join(map(str, job_res_pending))
             state.job_sync_errors += sync_errors
             vals = {"job_resources_done": state.job_resources_done, "job_resources_pending": state.job_resources_pending, "job_sync_errors": state.job_sync_errors}
-            db(db.sync_now.id==sync_now_id).update(**vals)
-            state = db(db.sync_now.id==sync_now_id).select(db.sync_now.ALL)[0]
+            db(db.sync_now.id == sync_now_id).update(**vals)
+            state = db(db.sync_now.id == sync_now_id).select(db.sync_now.ALL, limitby=(0, 1)).first()
 
             # check if all resources are synced for the current job, i.e. is it done?
             if (not state.job_resources_pending) or sync_job.job_type == 2:
@@ -320,7 +311,7 @@ def now():
                     state.job_resources_done = ""
                     state.job_resources_pending = ""
                     if len(sync_jobs_list) > 0:
-                        next_job_sel = db(db.sync_schedule.id==int(state.sync_jobs[0])).select(db.sync_schedule.ALL)
+                        next_job_sel = db(db.sync_schedule.id == int(state.sync_jobs[0])).select(db.sync_schedule.ALL)
                         if next_job_sel:
                             next_job = next_job_sel[0]
                             if next_job.job_type == 1:
@@ -328,17 +319,17 @@ def now():
                                 state.job_resources_pending = ", ".join(map(str, next_job_cmd["resources"]))
                     state.job_sync_errors = ""
                     vals = {"sync_jobs": state.sync_jobs, "job_resources_done": state.job_resources_done, "job_resources_pending": state.job_resources_pending}
-                    db(db.sync_now.id==sync_now_id).update(**vals)
-                    state = db(db.sync_now.id==sync_now_id).select(db.sync_now.ALL)[0]
+                    db(db.sync_now.id == sync_now_id).update(**vals)
+                    state = db(db.sync_now.id == sync_now_id).select(db.sync_now.ALL, limitby=(0, 1)).first()
                 # update last_sync_on
                 vals = {"last_sync_on": datetime.datetime.utcnow()}
-                db(db.sync_partner.id==peer.id).update(**vals)
+                db(db.sync_partner.id == peer.id).update(**vals)
                 vals = {"last_run": datetime.datetime.utcnow()}
-                db(db.sync_schedule.id==sync_job.id).update(**vals)
+                db(db.sync_schedule.id == sync_job.id).update(**vals)
 
             if not state.sync_jobs:
                 # remove sync now session state
-                db(db.sync_now.id==sync_now_id).delete()
+                db(db.sync_now.id == sync_now_id).delete()
                 # we're done
                 final_status += "Sync completed successfully. Logs generated: " + str(A(T("Click here to open log"),_href=URL(r=request, c="sync", f="history"))) + "<br /><br />\n"
     

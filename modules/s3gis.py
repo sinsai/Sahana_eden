@@ -797,6 +797,43 @@ OpenLayers.Util.extend( selectPdfControl, {
 
         # Toolbar
         if toolbar:
+            if auth.is_logged_in():
+                # Provide a way to save the viewport
+                save_button = """
+        var saveButton = new Ext.Toolbar.Button({
+            // ToDo: Make work!
+            iconCls: 'save',
+            tooltip: '""" + str(T("Save: Default Lat, Lon & Zoom for the Viewport")) + """',
+            handler: function() {
+                // Read current settings from map
+                var lonlat = map.getCenter();
+                var zoom_current = map.getZoom();
+                // Convert back to LonLat for saving
+                lonlat.transform(map.getProjectionObject(), proj4326);
+                // Use AJAX to send back
+                var url = '""" + URL(r=request, c="gis", f="config", args=["1.url", "update"]) + """';
+                Ext.Ajax.request({
+                    url: url,
+                    method: 'GET',
+                    params: {
+                        uuid: '""" + config.uuid + """',
+                        lat: lonlat.lat,
+                        lon: lonlat.lon,
+                        zoom: zoom_current
+                    }
+                });
+            }
+        });
+        """
+                save_button2 = """
+        toolbar.addSeparator();
+        // Save Viewport
+        toolbar.addButton(saveButton);
+        """
+            else:
+                save_button = ""
+                save_button2 = ""
+
             toolbar = """
         toolbar = mapPanel.getTopToolbar();
         
@@ -1028,22 +1065,7 @@ OpenLayers.Util.extend( selectPdfControl, {
             handler: nav.next.trigger
         });
 
-        var saveButton = new Ext.Toolbar.Button({
-            // ToDo: Make work!
-            iconCls: 'save',
-            tooltip: '""" + str(T("Save: Default Lat, Lon & Zoom for the Viewport")) + """',
-            handler: function saveViewport(map) {
-                // Read current settings from map
-                var lonlat = map.getCenter();
-                var zoom_current = map.getZoom();
-                // Convert back to LonLat for saving
-                //var proj4326 = new OpenLayers.Projection('EPSG:4326');
-                lonlat.transform(map.getProjectionObject(), proj4326);
-                //alert('""" + str(T("Latitude")) + """': ' + lat);
-                // Use AJAX to send back
-                var url = '""" + URL(r=request, c="gis", f="config", args=["1.json", "update"]) + """';
-            }
-        });
+        """ + save_button + """
 
         // Add to Map & Toolbar
         toolbar.add(zoomfull);
@@ -1072,10 +1094,7 @@ OpenLayers.Util.extend( selectPdfControl, {
         nav.activate();
         toolbar.addButton(navPreviousButton);
         toolbar.addButton(navNextButton);
-        toolbar.addSeparator();
-        // Save Viewport
-        toolbar.addButton(saveButton);
-        """
+        """ + save_button2
             toolbar2 = "Ext.QuickTips.init();"
         else:
             toolbar = ""
@@ -2652,7 +2671,7 @@ OpenLayers.Util.extend( selectPdfControl, {
             nodeType: 'gx_baselayercontainer',
             layerStore: mapPanel.layers,
             leaf: false,
-            expanded: true
+            expanded: false
         };
 
         var layerTreeFeaturesExternal = {

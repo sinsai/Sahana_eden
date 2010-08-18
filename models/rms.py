@@ -57,6 +57,7 @@ if deployment_settings.has_module(module):
         Field("message", "text"),
         Field("timestmp", "datetime"),  # 'timestamp' is a reserved word in Postgres
         location_id,
+        shelter_id,
         Field("type", "integer"),
         Field("priority", "integer"),
         Field("source_type", "integer"),

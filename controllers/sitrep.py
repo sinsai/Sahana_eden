@@ -83,15 +83,15 @@ def rassessment():
     output = shn_rest_controller(module, resource,
                                  rheader=lambda r: \
                                          shn_sitrep_rheader(r,
-                                            tabs = [(T("Section 1"), None),
-                                                    (T("Section 2"), "section2"),
-                                                    (T("Section 3"), "section3"),
-                                                    (T("Section 4"), "section4"),
-                                                    (T("Section 5"), "section5"),
-                                                    (T("Section 6"), "section6"),
-                                                    (T("Section 7"), "section7"),
-                                                    (T("Section 8"), "section8"),
-                                                    (T("Section 9"), "section9") ]),
+                                            tabs = [(T("Identification"), None),
+                                                    (T("Demographic"), "section2"),
+                                                    (T("Shelter & Essential NFIs"), "section3"),
+                                                    (T("WatSan"), "section4"),
+                                                    (T("Health"), "section5"),
+                                                    (T("Nutrition"), "section6"),
+                                                    (T("Livelihood"), "section7"),
+                                                    (T("Education"), "section8"),
+                                                    (T("Protection"), "section9") ]),
                                                     sticky=True)
     return output
 

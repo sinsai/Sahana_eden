@@ -1233,7 +1233,6 @@ class S3Resource(object):
             item = xml.json_message(False, 400, xml.error)
             raise HTTP(400, body=item)
 
-
         # XSLT Transformation
         if not r.representation in ("xml", "json"):
             template_name = "%s.%s" % (r.representation,
@@ -1595,21 +1594,192 @@ class S3Resource(object):
 
 
     # -------------------------------------------------------------------------
-    def push_xml(self):
+    def __push_tree(self, url,
+                    converter=None,
+                    template=None,
+                    xsltmode=None,
+                    content_type=None,
+                    username=None,
+                    password=None,
+                    proxy=None,
+                    start=None,
+                    limit=None,
+                    marker=None,
+                    msince=None,
+                    show_urls=True,
+                    dereference=True):
 
-        """ Push this resource as XML to a target URL """
+        """ Push (=POST) the current resource to a target URL """
 
-        # Not implemented yet
-        raise NotImplementedError
+        if not converter:
+            raise SyntaxError
+
+        xml = self.__manager.xml
+        response = None
+
+        tree = self.__export_tree(start=start,
+                                  limit=limit,
+                                  marker=marker,
+                                  msince=msince,
+                                  show_urls=show_urls,
+                                  dereference=dereference)
+
+        if tree:
+            if template:
+                tfmt = "%Y-%m-%d %H:%M:%S"
+                args = dict(domain=self.__manager.domain,
+                            base_url=self.__manager.base_url,
+                            prefix=self.prefix,
+                            name=self.name,
+                            utcnow=datetime.datetime.utcnow().strftime(tfmt))
+
+                if xsltmode:
+                    args.update(mode=xsltmode)
+
+                tree = xml.transform(tree, template, **args)
+            data = converter(tree)
+
+            url_split = url.split("://", 1)
+            if len(url_split) == 2:
+                protocol, path = url_split
+                if username and password:
+                    url = "%s://%s:%s@%s" % (protocol, username, password, path)
+            else:
+                protocol, path = http, None
+            import urllib2
+            req = urllib2.Request(url=url, data=data)
+            if content_type:
+                req.add_header('Content-Type', content_type)
+            handlers = []
+            if proxy:
+                proxy_handler = urllib2.ProxyHandler({protocol:proxy})
+                handlers.append(proxy_handler)
+            if username and password:
+                passwd_manager = urllib2.HTTPPasswordMgrWithDefaultRealm()
+                passwd_manager.add_password(realm=None,
+                                            uri=url,
+                                            user=username,
+                                            passwd=password)
+                auth_handler = urllib2.HTTPBasicAuthHandler(passwd_manager)
+                handlers.append(auth_handler)
+            if handlers:
+                opener = urllib2.build_opener(*handlers)
+                urllib2.install_opener(opener)
+            try:
+                f = urllib2.urlopen(req)
+            except urllib2.HTTPError, e:
+                response = e.read()
+            else:
+                response = f.read()
+
+        return response
 
 
     # -------------------------------------------------------------------------
-    def push_json(self):
+    def push_xml(self, url,
+                 template=None,
+                 xsltmode=None,
+                 username=None,
+                 password=None,
+                 proxy=None,
+                 start=None,
+                 limit=None,
+                 marker=None,
+                 msince=None,
+                 show_urls=True,
+                 dereference=True):
 
-        """ Push this resource as JSON to a target URL """
+        """ Push (=POST) this resource as XML to a target URL
 
-        # Not implemented yet
-        raise NotImplementedError
+            @param url: the URL to push to
+            @param template: path to the XSLT stylesheet to use
+            @param xsltmode: XSLT stylesheet "mode" parameter
+            @param username: username for HTTP basic auth (optional)
+            @param password: password for HTTP basic auth (optional)
+            @param proxy: proxy server to use (optional)
+            @param start: start record (for pagination)
+            @param limit: maximum number of records to send (for pagination)
+            @param marker: path to the default marker for GIS features
+            @param msince: export only records modified after that datetime (ISO-format)
+            @param show_urls: show URLs in resource elements
+            @param dereference: export referenced objects in the tree
+
+            @returns: the response from the peer as string
+
+        """
+
+        xml = self.__manager.xml
+
+        converter = lambda tree: xml.tostring(tree)
+        content_type = "application/xml"
+
+        return self.__push_tree(url,
+                                converter=converter,
+                                template=template,
+                                xsltmode=xsltmode,
+                                content_type=content_type,
+                                username=username,
+                                password=password,
+                                proxy=proxy,
+                                start=start,
+                                limit=limit,
+                                marker=marker,
+                                msince=msince,
+                                show_urls=show_urls,
+                                dereference=dereference)
+
+    # -------------------------------------------------------------------------
+    def push_json(self, url,
+                  template=None,
+                  xsltmode=None,
+                  username=None,
+                  password=None,
+                  proxy=None,
+                  start=None,
+                  limit=None,
+                  marker=None,
+                  msince=None,
+                  show_urls=True,
+                  dereference=True):
+
+        """ Push (=POST) this resource as JSON to a target URL
+
+            @param url: the URL to push to
+            @param template: path to the XSLT stylesheet to use
+            @param xsltmode: XSLT stylesheet "mode" parameter
+            @param username: username for HTTP basic auth (optional)
+            @param password: password for HTTP basic auth (optional)
+            @param proxy: proxy server to use (optional)
+            @param start: start record (for pagination)
+            @param limit: maximum number of records to send (for pagination)
+            @param marker: path to the default marker for GIS features
+            @param msince: export only records modified after that datetime (ISO-format)
+            @param show_urls: show URLs in resource elements
+            @param dereference: export referenced objects in the tree
+
+            @returns: the response from the peer as string
+
+        """
+
+        xml = self.__manager.xml
+
+        converter = lambda tree: xml.tree2json(tree)
+        content_type = "text/x-json"
+
+        return self.__push_tree(url,
+                                converter=converter,
+                                template=template,
+                                xsltmode=xsltmode,
+                                content_type=content_type,
+                                username=username,
+                                password=password,
+                                proxy=proxy,
+                                start=start,
+                                limit=limit,
+                                marker=marker,
+                                msince=msince,
+                                show_urls=show_urls,
+                                dereference=dereference)
 
 
     # -------------------------------------------------------------------------

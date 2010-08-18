@@ -11,7 +11,7 @@ sync_policy_opts = {
     1:T("Keep Local"),
     2:T("Replace with Remote"),
     3:T("Newer Timestamp"),
-    4:T("Role-based"),
+#    4:T("Role-based"),
     5:T("Choose Manually")
 }
 
@@ -75,7 +75,6 @@ resource = "log"
 tablename = "%s_%s" % (module, resource)
 table = db.define_table(tablename,
                 Field("partner_uuid", length=36),           # uuid of remote system we synced with
-                Field("partner_name"),                      # descriptive name of remote system we synced with
                 Field("timestmp", "datetime"),              # the date and time when sync was performed
                 Field("sync_resources", "text"),            # comma-separated list of resources synced
                 Field("sync_errors", "text"),               # sync errors encountered
@@ -111,31 +110,28 @@ sync_schedule_job_type_opts = {
 # Scheduled sync jobs
 resource = "schedule"
 tablename = "%s_%s" % (module, resource)
-table = db.define_table(tablename,
+table = db.define_table(tablename, timestamp,
                 Field("comments", length=128),              # brief comments about the scheduled job
                 Field("period",                             # schedule interval period, either hourly, "h", daily, "d", weekly, "w" or one-time, "o"
                     length=10,
                     notnull=True,
-                    default="d",
+                    default="h",
                     requires = IS_IN_SET(sync_schedule_period_opts) ),
                 Field("hours", "integer", default=4),       # specifies the number of hours when hourly period is specified in 'period' field
-                Field("days_of_week", length=30),           # comma-separated list of the day(s) of the week when job runs on weekly basis.
-                                                            # A day in a week is represented as a number having value between 1 (Monday) and 7 (Sunday)
+                Field("days_of_week", length=40),           # comma-separated list of the day(s) of the week when job runs on weekly basis.
+                                                            # A day in a week is represented as a number ranging from 1 to 7 (1 = Sunday, 7 = Saturday)
                 Field("time_of_day", "time"),               # the time (at day_of_week) when job runs on a weekly or daily basis
                 Field("runonce_datetime", "datetime"),      # the date and time when job runs just once
                 Field("job_type", "integer", default=1,     # This specifies the type of job: 1 - SahanaEden <=> SahanaEden sync,
                     requires = IS_IN_SET(sync_schedule_job_type_opts) ),
                                                             # 2 - SahanaEden <= Other sync (could be SahanaAgasti, Ushahidi, etc.)
                 Field("job_command", "text", notnull=True), # sync command to execute when this job runs. This command is encoded as a JSON formatted object.
-                                                            # It contains the UUID of the sync partner (if present, 0 otherwise),
-                                                            # the instance URL (would be root location for Eden instance and full URL for other instance
-                                                            # types such as Agasti, Ushahidi or possibly spreadsheet source), the list of modules along
+                                                            # It contains the UUID of the sync partner, the list of modules along
                                                             # with resources within them to sync, whether this would be a complete or partial sync
                                                             # (partial sync only retrieves data modified after the last sync, complete sync fetches all),
                                                             # whether this sync would be a two-way (both push and pull) or one-way (push or pull),
-                                                            # and sync policy (default policy is taken from the sync partner's record
-                Field("running", "boolean"),                # indicates whether this job is currently executing or not
+                                                            # and sync policy (default policy is taken from the sync partner's record)
                 Field("last_run", "datetime"),              # the date and time of last scheduled run
                 Field("enabled", "boolean",                 # whether this schedule is enabled or not. Useful in cases when you want to temporarily
-                    notnull=True, default=True),            # disable a schedule
+                    default=True),                          # disable a schedule
                 migrate=migrate)

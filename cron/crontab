@@ -1,8 +1,10 @@
 # Crontab - scheduled tasks
-# Import data into database
+# Import data into database at startup (not used)
 #@reboot root *applications/eden/cron/1st_run.py
-# AutoSync daemon running ZeroConf should be launched at startup (deprecated)
-#@reboot root **applications/eden/cron/daemonX.py
+# Collect Inbound SMS
+#@reboot root *applications/eden/cron/sms_handler_modem.py
+# Synchronisation
+#@reboot root *sync/schedule_cron
 # Send outgoing emails every 5 minutes
 #*/5   *       *       *       *       root *msg/process_email_via_api
 # Send outgoing SMS every 5 minutes

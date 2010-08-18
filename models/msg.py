@@ -115,6 +115,7 @@ if deployment_settings.has_module(module):
         Field("actioned", "boolean", default = False),
         Field("actioned_comments", "text"),
         Field("priority", "integer", default = 1),
+        Field("inbound", "boolean", default = False),
         migrate=migrate)
 
     table.uuid.requires = IS_NOT_IN_DB(db, "%s.uuid" % tablename)
@@ -163,6 +164,20 @@ if deployment_settings.has_module(module):
         1:T("E-Mail"),
         2:T("Mobile Phone"),
     }
+
+
+    # Channel - For inbound messages this tells which channel the message came in from.
+    resource = "channel"
+    tablename = "%s_%s" % (module, resource)
+    table = db.define_table(tablename, timestamp, uuidstamp, deletion_status,
+                            message_id,
+                            Field("pr_message_method", "integer",
+                                    requires = IS_IN_SET(msg_contact_method_opts, zero=None),
+                                    default = 1),
+                            Field("log"),
+                            migrate=migrate)
+
+
     # Outbox - needs to be separate to Log since a single message sent needs different outbox entries for each recipient
     resource = "outbox"
     tablename = "%s_%s" % (module, resource)
@@ -270,3 +285,69 @@ if deployment_settings.has_module(module):
                     Field("url", requires=IS_NULL_OR(IS_URL())),
                     migrate=migrate)
     table.uuid.requires = IS_NOT_IN_DB(db, "%s.uuid" % tablename)
+
+def shn_msg_compose( redirect_module = "msg", 
+                     redirect_function = "compose", 
+                     redirect_vars = None,
+                     title_name = "Send Message" ):
+    """ 
+        Form to Compose a Message 
+
+        @param redirect_module: Redirect to the specified module's url after login.
+        @param redirect_function: Redirect to the specified function
+        @param redirect_vars:  Dict with vars to include in redirects
+        @param title_name: Title of the page
+    """
+
+    resource1 = "log"
+    tablename1 = "msg" + "_" + resource1
+    table1 = db[tablename1]
+    resource2 = "outbox"
+    tablename2 = "msg" + "_" + resource2
+    table2 = db[tablename2]
+
+    if auth.is_logged_in() or auth.basic():
+        pass
+    else:
+        redirect(URL(r=request, c="default", f="user", args="login",
+            vars={"_next":URL(r=request, c=redirect_module, f=redirect_function, vars=redirect_vars)}))
+
+    # Model options
+    table1.sender.writable = table1.sender.readable = False
+    table1.fromaddress.writable = table1.fromaddress.readable = False
+    table1.pe_id.writable = table1.pe_id.readable = False
+    table1.verified.writable = table1.verified.readable = False
+    table1.verified_comments.writable = table1.verified_comments.readable = False
+    table1.actioned.writable = table1.actioned.readable = False
+    table1.actionable.writable = table1.actionable.readable = False
+    table1.actioned_comments.writable = table1.actioned_comments.readable = False
+    
+    table1.subject.label = T("Subject")
+    table1.message.label = T("Message")
+    table1.priority.label = T("Priority")
+    
+    table2.pe_id.writable = table2.pe_id.readable = True
+    table2.pe_id.label = T("Recipients")
+
+    def compose_onvalidation(form):
+        """ Set the sender and use msg.send_by_pe_id to route the message """
+        if not request.vars.pe_id:
+            session.error = T("Please enter the recipient")
+            redirect(URL(r=request,c=redirect_module, f=redirect_function, vars=redirect_vars))
+        sender_pe_id = db(db.pr_person.uuid == auth.user.person_uuid).select(db.pr_person.pe_id, limitby=(0, 1)).first().pe_id
+        if msg.send_by_pe_id(request.vars.pe_id,
+                             request.vars.subject,
+                             request.vars.message,
+                             sender_pe_id,
+                             request.vars.pr_message_method):
+            session.flash = T("Message sent to outbox")
+            redirect(URL(r=request, c=redirect_module, f=redirect_function, vars=redirect_vars))
+        else:
+            session.error = T("Error in message")
+            redirect(URL(r=request,c=redirect_module, f=redirect_function, vars=redirect_vars))
+
+    logform = crud.create(table1,
+                          onvalidation = compose_onvalidation)
+    outboxform = crud.create(table2)
+    
+    return dict(logform = logform, outboxform = outboxform, title = T(title_name))

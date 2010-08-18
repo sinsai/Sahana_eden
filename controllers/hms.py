@@ -236,7 +236,7 @@ def hpledge():
     
     pledges = db(db.hms_hpledge.status == 3).select()
     for pledge in pledges:
-        db(db.hms_hrequest.id == pledge.hrequest_id).update(status = 6)
+        db(db.hms_hrequest.id == pledge.hms_hrequest_id).update(status = 6)
 
     db.commit()
 
@@ -329,7 +329,7 @@ def shn_hms_hrequest_rheader(jr):
                             ),
                         TR(
                             TH(T("Time of Request: ")),
-                            aid_request.timestamp,
+                            aid_request.timestmp,
                             TH(T("Priority: ")),
                             hms_hrequest_priority_opts.get(aid_request.priority, "unknown"),
                             TH(T("Status: ")),

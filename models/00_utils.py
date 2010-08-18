@@ -567,6 +567,18 @@ def shn_rheader_tabs(jr, tabs=[]):
 
     return rheader_tabs
 
+def shn_abbreviate(word, size=48):
+
+    """ Abbreviate a string. For use as a .represent """
+    
+    if word:
+        if (len(word) > size):
+            word = "%s..." % word[:size - 4]
+        else:
+            return word
+    else:
+        return word
+    
 def shn_action_buttons(jr, deletable=True):
 
     """ Provide the usual Action Buttons for Column views. Designed to be called from a postp """

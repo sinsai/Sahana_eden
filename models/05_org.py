@@ -50,7 +50,9 @@ sector_id = db.Table(None, "sector_id",
                            label = T("Sector"),
                            comment = DIV(A(ADD_SECTOR, _class="colorbox", _href=URL(r=request, c="org", f="sector", args="create", vars=dict(format="popup")), _target="top", _title=ADD_SECTOR),
                                      DIV( _class="tooltip", _title=Tstr("Add Sector") + "|" + Tstr("The Sector(s) this organization works in. Multiple values can be selected by holding down the 'Control' key."))),
-                           ondelete = "RESTRICT"
+                           ondelete = "RESTRICT",
+                           # Doesn't re-populate on edit (FF 3.6.8)
+                           #widget = SQLFORM.widgets.checkboxes.widget
                           ))
 
 # -----------------------------------------------------------------------------

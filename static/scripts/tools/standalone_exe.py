@@ -59,7 +59,7 @@ setup(
         ],
   options={'py2exe': {
     'packages': 
-contributed_modules + ['lxml', 'serial', 'reportlab', 'geraldo', 'xlwt', 'shapely', 'PIL'],
+contributed_modules + ['lxml', 'serial', 'reportlab', 'geraldo', 'xlwt', 'shapely', 'PIL', 'pytz'],
     'includes': base_modules,
     }},
   )

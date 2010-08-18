@@ -797,6 +797,43 @@ OpenLayers.Util.extend( selectPdfControl, {
 
         # Toolbar
         if toolbar:
+            if auth.is_logged_in():
+                # Provide a way to save the viewport
+                save_button = """
+        var saveButton = new Ext.Toolbar.Button({
+            // ToDo: Make work!
+            iconCls: 'save',
+            tooltip: '""" + str(T("Save: Default Lat, Lon & Zoom for the Viewport")) + """',
+            handler: function() {
+                // Read current settings from map
+                var lonlat = map.getCenter();
+                var zoom_current = map.getZoom();
+                // Convert back to LonLat for saving
+                lonlat.transform(map.getProjectionObject(), proj4326);
+                // Use AJAX to send back
+                var url = '""" + URL(r=request, c="gis", f="config", args=["1.url", "update"]) + """';
+                Ext.Ajax.request({
+                    url: url,
+                    method: 'GET',
+                    params: {
+                        uuid: '""" + config.uuid + """',
+                        lat: lonlat.lat,
+                        lon: lonlat.lon,
+                        zoom: zoom_current
+                    }
+                });
+            }
+        });
+        """
+                save_button2 = """
+        toolbar.addSeparator();
+        // Save Viewport
+        toolbar.addButton(saveButton);
+        """
+            else:
+                save_button = ""
+                save_button2 = ""
+
             toolbar = """
         toolbar = mapPanel.getTopToolbar();
         
@@ -1028,22 +1065,7 @@ OpenLayers.Util.extend( selectPdfControl, {
             handler: nav.next.trigger
         });
 
-        var saveButton = new Ext.Toolbar.Button({
-            // ToDo: Make work!
-            iconCls: 'save',
-            tooltip: '""" + str(T("Save: Default Lat, Lon & Zoom for the Viewport")) + """',
-            handler: function saveViewport(map) {
-                // Read current settings from map
-                var lonlat = map.getCenter();
-                var zoom_current = map.getZoom();
-                // Convert back to LonLat for saving
-                //var proj4326 = new OpenLayers.Projection('EPSG:4326');
-                lonlat.transform(map.getProjectionObject(), proj4326);
-                //alert('""" + str(T("Latitude")) + """': ' + lat);
-                // Use AJAX to send back
-                var url = '""" + URL(r=request, c="gis", f="config", args=["1.json", "update"]) + """';
-            }
-        });
+        """ + save_button + """
 
         // Add to Map & Toolbar
         toolbar.add(zoomfull);
@@ -1072,10 +1094,7 @@ OpenLayers.Util.extend( selectPdfControl, {
         nav.activate();
         toolbar.addButton(navPreviousButton);
         toolbar.addButton(navNextButton);
-        toolbar.addSeparator();
-        // Save Viewport
-        toolbar.addButton(saveButton);
-        """
+        """ + save_button2
             toolbar2 = "Ext.QuickTips.init();"
         else:
             toolbar = ""
@@ -1796,6 +1815,7 @@ OpenLayers.Util.extend( selectPdfControl, {
                 );
         }
         """
+            # Feature Queries
             for layer in feature_queries:
                 # Features passed as Query
                 if "name" in layer:
@@ -1885,7 +1905,7 @@ OpenLayers.Util.extend( selectPdfControl, {
                         # Query is a simple select
                         feature = _feature
                     try:
-                        # Has a per-feature Vector Shape been provided through VirtualFields?
+                        # Has a per-feature Vector Shape been added to the query?
                         graphicName = feature.shape
                         if graphicName not in ["circle", "square", "star", "x", "cross", "triangle"]:
                             # Default to Circle
@@ -1906,7 +1926,7 @@ OpenLayers.Util.extend( selectPdfControl, {
                     except (AttributeError, KeyError):
                         # Use a Marker not a Vector Shape
                         try:
-                            # Has a per-feature marker been provided through VirtualFields?
+                            # Has a per-feature marker been added to the query?
                             _marker = feature.marker
                             if _marker:
                                 marker = _marker.image
@@ -1962,12 +1982,12 @@ OpenLayers.Util.extend( selectPdfControl, {
             for layer in feature_groups:
                 name = layer["feature_group"]
                 if "popup_url" in layer:
-                    popup_url = urllib.unquote(layer["popup_url"])
+                    _popup_url = urllib.unquote(layer["popup_url"])
                 # We'd like to do something like this:
                 #elif feature_class is office:
-                #    popup_url = urllib.unquote(URL(r=request, c="or", f="office"))
+                #    _popup_url = urllib.unquote(URL(r=request, c="or", f="office"))
                 else:
-                    popup_url = urllib.unquote(URL(r=request, c="gis", f="location", args=["read.popup?location.id="]))
+                    _popup_url = urllib.unquote(URL(r=request, c="gis", f="location", args=["read.popup?location.uid="]))
 
                 # Generate HTML snippet
                 name_safe = re.sub("\W", "_", name)
@@ -2032,7 +2052,7 @@ OpenLayers.Util.extend( selectPdfControl, {
                 map.addPopup(popup);
                 // call AJAX to get the contentHTML
                 var uuid = feature.fid;
-                loadDetails('""" + popup_url + """' + '?location.uid=' + uuid, id, popup);
+                loadDetails('""" + _popup_url + """' + uuid, id, popup);
             }
         }
         """
@@ -2068,8 +2088,8 @@ OpenLayers.Util.extend( selectPdfControl, {
                     
                     layers_features += """
         geom = parser.read('""" + wkt + """').geometry;
-        iconURL = '""" + marker_url + """';
-        featureVec = addFeature('""" + feature.gis_location.uuid + """', '""" + fname + """', """ + fc + """, geom, iconURL)
+        styleMarker.iconURL = '""" + marker_url + """';
+        featureVec = addFeature('""" + feature.gis_location.uuid + """', '""" + fname + """', """ + fc + """, geom, styleMarker)
         features.push(featureVec);
         """
                 # Append to Features layer
@@ -2652,7 +2672,7 @@ OpenLayers.Util.extend( selectPdfControl, {
             nodeType: 'gx_baselayercontainer',
             layerStore: mapPanel.layers,
             leaf: false,
-            expanded: true
+            expanded: false
         };
 
         var layerTreeFeaturesExternal = {

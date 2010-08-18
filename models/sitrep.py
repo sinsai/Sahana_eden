@@ -1,10 +1,10 @@
 # -*- coding: utf-8 -*-
 
-""" Assessments Module - Model
+"""
+    Flood Alerts Module - Model
 
     @author: Fran Boon
     @see: http://eden.sahanafoundation.org/wiki/Pakistan
-    @ToDo: Rename as 'assessment' (Deprioritised due to Data Migration issues being distracting for us currently)
 """
 
 module = "sitrep"
@@ -55,7 +55,8 @@ if deployment_settings.has_module(module):
         7:T("No access at all"),
         99:T("Other")
     }
-    # Main Resource contains Section 1
+    # Main Resource
+    # contains Section 1: Identification Information
     resource = "rassessment"
     tablename = "%s_%s" % (module, resource)
     table = db.define_table(tablename,
@@ -132,7 +133,7 @@ if deployment_settings.has_module(module):
                 organisation2 = shn_organisation_represent(staff2.organisation_id)
             else:
                 organisation2 = ""
-            rassessment_represent = location + organisation + ", " + organisation2 + date
+            rassessment_represent = location + organisation + ", " + organisation2 + " " + date
         else:
             rassessment_represent = "-"
 
@@ -147,15 +148,113 @@ if deployment_settings.has_module(module):
                                    ondelete = "RESTRICT"))
 
 
-    # Section 2
+    # Section 2: Demographic
     resource = "section2"
     tablename = "%s_%s" % (module, resource)
     table = db.define_table(tablename,
                             timestamp, uuidstamp, authorstamp, deletion_status,
                             assessment_id,
+                            Field("population_affected", "integer"),
+                            Field("households_affected", "integer"),
+                            Field("population_total", "integer"),
+                            Field("households_total", "integer"),
+                            Field("male_05", "double"),
+                            Field("male_612", "double"),
+                            Field("male_1317", "double"),
+                            Field("male_1825", "double"),
+                            Field("male_2660", "double"),
+                            Field("male_61", "double"),
+                            Field("female_05", "double"),
+                            Field("female_612", "double"),
+                            Field("female_1317", "double"),
+                            Field("female_1825", "double"),
+                            Field("female_2660", "double"),
+                            Field("female_61", "double"),
+                            Field("female_61", "double"),
+                            Field("dead_women", "integer"),
+                            Field("dead_men", "integer"),
+                            Field("dead_girl", "integer"),
+                            Field("dead_boy", "integer"),
+                            Field("missing_women", "integer"),
+                            Field("missing_men", "integer"),
+                            Field("missing_girl", "integer"),
+                            Field("missing_boy", "integer"),
+                            Field("injured_women", "integer"),
+                            Field("injured_men", "integer"),
+                            Field("injured_girl", "integer"),
+                            Field("injured_boy", "integer"),
+                            Field("household_head_elderly", "integer"),
+                            Field("household_head_female", "integer"),
+                            Field("household_head_child", "integer"),
+                            Field("disabled_physical", "integer"),
+                            Field("disabled_mental", "integer"),
+                            Field("pregnant", "integer"),
+                            Field("lactating", "integer"),
+                            Field("minorities", "integer"),
                             comments,
                             migrate=migrate)
 
+    table.population_affected.label = T("Estimated # of people who are affected by the emergency")
+    table.population_affected.comment = T("people")
+    table.households_affected.label = T("Estimated # of households who are affected by the emergency")
+    table.households_affected.comment = T("HH")
+    table.population_total.label = T("Total population of site visited")
+    table.population_total.comment = T("people")
+    table.households_total.label = T("Total # of households of site visited")
+    table.households_total.comment = T("HH")
+    table.male_05.label = T("Number/Percentage of affected population that is Male & Aged 0-5")
+    table.male_612.label = T("Number/Percentage of affected population that is Male & Aged 6-12")
+    table.male_1317.label = T("Number/Percentage of affected population that is Male & Aged 13-17")
+    table.male_1825.label = T("Number/Percentage of affected population that is Male & Aged 18-25")
+    table.male_2660.label = T("Number/Percentage of affected population that is Male & Aged 26-60")
+    table.male_61.label = T("Number/Percentage of affected population that is Male & Aged 61+")
+    table.female_05.label = T("Number/Percentage of affected population that is Female & Aged 0-5")
+    table.female_612.label = T("Number/Percentage of affected population that is Female & Aged 6-12")
+    table.female_1317.label = T("Number/Percentage of affected population that is Female & Aged 13-17")
+    table.female_1825.label = T("Number/Percentage of affected population that is Female & Aged 18-25")
+    table.female_2660.label = T("Number/Percentage of affected population that is Female & Aged 26-60")
+    table.female_61.label = T("Number/Percentage of affected population that is Female & Aged 61+")
+    table.dead_women.label = T("How many Women (18 yrs+) are Dead due to the crisis")
+    table.dead_women.comment = T("people")
+    table.dead_men.label = T("How many Men (18 yrs+) are Dead due to the crisis")
+    table.dead_men.comment = T("people")
+    table.dead_girl.label = T("How many Girls (0-17 yrs) are Dead due to the crisis")
+    table.dead_girl.comment = T("people")
+    table.dead_boy.label = T("How many Boys (0-17 yrs) are Dead due to the crisis")
+    table.dead_boy.comment = T("people")
+    table.missing_women.label = T("How many Women (18 yrs+) are Missing due to the crisis")
+    table.missing_women.comment = T("people")
+    table.missing_men.label = T("How many Men (18 yrs+) are Missing due to the crisis")
+    table.missing_men.comment = T("people")
+    table.missing_girl.label = T("How many Girls (0-17 yrs) are Missing due to the crisis")
+    table.missing_girl.comment = T("people")
+    table.missing_boy.label = T("How many Boys (0-17 yrs) are Missing due to the crisis")
+    table.missing_boy.comment = T("people")
+    table.injured_women.label = T("How many Women (18 yrs+) are Injured due to the crisis")
+    table.injured_women.comment = T("people")
+    table.injured_men.label = T("How many Men (18 yrs+) are Injured due to the crisis")
+    table.injured_men.comment = T("people")
+    table.injured_girl.label = T("How many Girls (0-17 yrs) are Injured due to the crisis")
+    table.injured_girl.comment = T("people")
+    table.injured_boy.label = T("How many Boys (0-17 yrs) are Injured due to the crisis")
+    table.injured_boy.comment = T("people")
+    table.household_head_elderly.label = T("Elderly person headed HH (>60 yrs)")
+    table.household_head_elderly.comment = T("HH")
+    table.household_head_female.label = T("Female headed HH")
+    table.household_head_female.comment = T("HH")
+    table.household_head_child.label = T("Child headed HH (<18 yrs)")
+    table.household_head_child.comment = T("HH")
+    table.disabled_physical.label = T("Person with disability (physical)")
+    table.disabled_physical.comment = T("people")
+    table.disabled_mental.label = T("Person with disability (mental)")
+    table.disabled_mental.comment = T("people")
+    table.pregnant.label = T("Pregnant women")
+    table.pregnant.comment = T("people")
+    table.lactating.label = T("Lactating women")
+    table.lactating.comment = T("people")
+    table.minorities.label = T("Migrants or ethnic minorities")
+    table.minorities.comment = T("people")
+                            
     # CRUD strings
     ADD_SECTION = T("Add Section")
     LIST_SECTIONS = T("List Sections")
@@ -163,13 +262,13 @@ if deployment_settings.has_module(module):
         title_create = ADD_SECTION,
         title_display = T("Section Details"),
         title_list = LIST_SECTIONS,
-        title_update = T("Edit Section"),
+        title_update = "",
         title_search = T("Search Sections"),
-        subtitle_create = T("Add New Section"),
+        subtitle_create = "",
         subtitle_list = T("Sections"),
         label_list_button = LIST_SECTIONS,
         label_create_button = ADD_SECTION,
-        msg_record_created = T("Section added"),
+        msg_record_created = T("Section updated"),
         msg_record_modified = T("Section updated"),
         msg_record_deleted = T("Section deleted"),
         msg_list_empty = T("No Sections currently registered"))
@@ -177,10 +276,10 @@ if deployment_settings.has_module(module):
     s3xrc.model.add_component(module, resource,
                               multiple = False,
                               joinby = dict(sitrep_rassessment="assessment_id"),
-                              deletable = True,
+                              deletable = False,
                               editable = True)
 
-    # Section 3
+    # Section 3: Shelter & Essential NFIs
     resource = "section3"
     tablename = "%s_%s" % (module, resource)
     table = db.define_table(tablename,
@@ -194,13 +293,13 @@ if deployment_settings.has_module(module):
         title_create = ADD_SECTION,
         title_display = T("Section Details"),
         title_list = LIST_SECTIONS,
-        title_update = T("Edit Section"),
+        title_update = "",
         title_search = T("Search Sections"),
-        subtitle_create = T("Add New Section"),
+        subtitle_create = "",
         subtitle_list = T("Sections"),
         label_list_button = LIST_SECTIONS,
         label_create_button = ADD_SECTION,
-        msg_record_created = T("Section added"),
+        msg_record_created = T("Section updated"),
         msg_record_modified = T("Section updated"),
         msg_record_deleted = T("Section deleted"),
         msg_list_empty = T("No Sections currently registered"))
@@ -208,7 +307,7 @@ if deployment_settings.has_module(module):
     s3xrc.model.add_component(module, resource,
                               multiple = False,
                               joinby = dict(sitrep_rassessment="assessment_id"),
-                              deletable = True,
+                              deletable = False,
                               editable = True)
 
     # Section 4
@@ -225,13 +324,13 @@ if deployment_settings.has_module(module):
         title_create = ADD_SECTION,
         title_display = T("Section Details"),
         title_list = LIST_SECTIONS,
-        title_update = T("Edit Section"),
+        title_update = "",
         title_search = T("Search Sections"),
-        subtitle_create = T("Add New Section"),
+        subtitle_create = "",
         subtitle_list = T("Sections"),
         label_list_button = LIST_SECTIONS,
         label_create_button = ADD_SECTION,
-        msg_record_created = T("Section added"),
+        msg_record_created = T("Section updated"),
         msg_record_modified = T("Section updated"),
         msg_record_deleted = T("Section deleted"),
         msg_list_empty = T("No Sections currently registered"))
@@ -239,7 +338,7 @@ if deployment_settings.has_module(module):
     s3xrc.model.add_component(module, resource,
                               multiple = False,
                               joinby = dict(sitrep_rassessment="assessment_id"),
-                              deletable = True,
+                              deletable = False,
                               editable = True)
 
     # Section 5
@@ -256,13 +355,13 @@ if deployment_settings.has_module(module):
         title_create = ADD_SECTION,
         title_display = T("Section Details"),
         title_list = LIST_SECTIONS,
-        title_update = T("Edit Section"),
+        title_update = "",
         title_search = T("Search Sections"),
-        subtitle_create = T("Add New Section"),
+        subtitle_create = "",
         subtitle_list = T("Sections"),
         label_list_button = LIST_SECTIONS,
         label_create_button = ADD_SECTION,
-        msg_record_created = T("Section added"),
+        msg_record_created = T("Section updated"),
         msg_record_modified = T("Section updated"),
         msg_record_deleted = T("Section deleted"),
         msg_list_empty = T("No Sections currently registered"))
@@ -270,7 +369,7 @@ if deployment_settings.has_module(module):
     s3xrc.model.add_component(module, resource,
                               multiple = False,
                               joinby = dict(sitrep_rassessment="assessment_id"),
-                              deletable = True,
+                              deletable = False,
                               editable = True)
     
     # Section 6
@@ -287,13 +386,13 @@ if deployment_settings.has_module(module):
         title_create = ADD_SECTION,
         title_display = T("Section Details"),
         title_list = LIST_SECTIONS,
-        title_update = T("Edit Section"),
+        title_update = "",
         title_search = T("Search Sections"),
-        subtitle_create = T("Add New Section"),
+        subtitle_create = "",
         subtitle_list = T("Sections"),
         label_list_button = LIST_SECTIONS,
         label_create_button = ADD_SECTION,
-        msg_record_created = T("Section added"),
+        msg_record_created = T("Section updated"),
         msg_record_modified = T("Section updated"),
         msg_record_deleted = T("Section deleted"),
         msg_list_empty = T("No Sections currently registered"))
@@ -301,7 +400,7 @@ if deployment_settings.has_module(module):
     s3xrc.model.add_component(module, resource,
                               multiple = False,
                               joinby = dict(sitrep_rassessment="assessment_id"),
-                              deletable = True,
+                              deletable = False,
                               editable = True)
 
     # Section 7
@@ -318,13 +417,13 @@ if deployment_settings.has_module(module):
         title_create = ADD_SECTION,
         title_display = T("Section Details"),
         title_list = LIST_SECTIONS,
-        title_update = T("Edit Section"),
+        title_update = "",
         title_search = T("Search Sections"),
-        subtitle_create = T("Add New Section"),
+        subtitle_create = "",
         subtitle_list = T("Sections"),
         label_list_button = LIST_SECTIONS,
         label_create_button = ADD_SECTION,
-        msg_record_created = T("Section added"),
+        msg_record_created = T("Section updated"),
         msg_record_modified = T("Section updated"),
         msg_record_deleted = T("Section deleted"),
         msg_list_empty = T("No Sections currently registered"))
@@ -332,7 +431,7 @@ if deployment_settings.has_module(module):
     s3xrc.model.add_component(module, resource,
                               multiple = False,
                               joinby = dict(sitrep_rassessment="assessment_id"),
-                              deletable = True,
+                              deletable = False,
                               editable = True)
     
     # Section 8
@@ -349,13 +448,13 @@ if deployment_settings.has_module(module):
         title_create = ADD_SECTION,
         title_display = T("Section Details"),
         title_list = LIST_SECTIONS,
-        title_update = T("Edit Section"),
+        title_update = "",
         title_search = T("Search Sections"),
-        subtitle_create = T("Add New Section"),
+        subtitle_create = "",
         subtitle_list = T("Sections"),
         label_list_button = LIST_SECTIONS,
         label_create_button = ADD_SECTION,
-        msg_record_created = T("Section added"),
+        msg_record_created = T("Section updated"),
         msg_record_modified = T("Section updated"),
         msg_record_deleted = T("Section deleted"),
         msg_list_empty = T("No Sections currently registered"))
@@ -363,7 +462,7 @@ if deployment_settings.has_module(module):
     s3xrc.model.add_component(module, resource,
                               multiple = False,
                               joinby = dict(sitrep_rassessment="assessment_id"),
-                              deletable = True,
+                              deletable = False,
                               editable = True)
     
     # Section 9
@@ -380,13 +479,13 @@ if deployment_settings.has_module(module):
         title_create = ADD_SECTION,
         title_display = T("Section Details"),
         title_list = LIST_SECTIONS,
-        title_update = T("Edit Section"),
+        title_update = "",
         title_search = T("Search Sections"),
-        subtitle_create = T("Add New Section"),
+        subtitle_create = "",
         subtitle_list = T("Sections"),
         label_list_button = LIST_SECTIONS,
         label_create_button = ADD_SECTION,
-        msg_record_created = T("Section added"),
+        msg_record_created = T("Section updated"),
         msg_record_modified = T("Section updated"),
         msg_record_deleted = T("Section deleted"),
         msg_list_empty = T("No Sections currently registered"))
@@ -394,135 +493,7 @@ if deployment_settings.has_module(module):
     s3xrc.model.add_component(module, resource,
                               multiple = False,
                               joinby = dict(sitrep_rassessment="assessment_id"),
-                              deletable = True,
-                              editable = True)
-
-    # -----------------------------------------------------------------------------
-    # Rivers
-    resource = "river"
-    tablename = "%s_%s" % (module, resource)
-    table = db.define_table(tablename,
-                            timestamp, uuidstamp, authorstamp, deletion_status,
-                            Field("name"),
-                            comments,
-                            migrate=migrate)
-
-    table.name.requires = IS_NOT_EMPTY()
-    table.name.comment = SPAN("*", _class="req")
-
-    # CRUD strings
-    ADD_RIVER = T("Add River")
-    LIST_RIVERS = T("List Rivers")
-    s3.crud_strings[tablename] = Storage(
-        title_create = ADD_RIVER,
-        title_display = T("River Details"),
-        title_list = LIST_RIVERS,
-        title_update = T("Edit River"),
-        title_search = T("Search Rivers"),
-        subtitle_create = T("Add New River"),
-        subtitle_list = T("Rivers"),
-        label_list_button = LIST_RIVERS,
-        label_create_button = ADD_RIVER,
-        msg_record_created = T("River added"),
-        msg_record_modified = T("River updated"),
-        msg_record_deleted = T("River deleted"),
-        msg_list_empty = T("No Rivers currently registered"))
-
-    river_id = db.Table(None, "river_id",
-                        Field("river_id", table,
-                              requires = IS_NULL_OR(IS_ONE_OF(db, "sitrep_river.id", "%(name)s")),
-                              represent = lambda id: (id and [db(db.sitrep_river.id == id).select(db.sitrep_river.name, limitby=(0, 1)).first().name] or ["None"])[0],
-                              label = T("River"),
-                              comment = A(ADD_RIVER, _class="colorbox", _href=URL(r=request, c="sitrep", f="river", args="create", vars=dict(format="popup")), _target="top", _title=ADD_RIVER),
-                              ondelete = "RESTRICT"))
-
-    # -----------------------------------------------------------------------------
-    # Flood Reports
-    resource = "freport"
-    tablename = "%s_%s" % (module, resource)
-    table = db.define_table(tablename,
-                            timestamp, uuidstamp, authorstamp, deletion_status,
-                            location_id,
-                            Field("datetime", "datetime"),
-                            document,
-                            comments,
-                            migrate=migrate)
-
-    table.document.represent = lambda document, table=table: A(table.document.retrieve(document)[0], _href=URL(r=request, f="download", args=[document]))
-    table.datetime.label = T("Date/Time")
-
-    # CRUD strings
-    ADD_FLOOD_REPORT = T("Add Flood Report")
-    LIST_FLOOD_REPORTS = T("List Flood Reports")
-    s3.crud_strings[tablename] = Storage(
-        title_create = ADD_FLOOD_REPORT,
-        title_display = T("Flood Report Details"),
-        title_list = LIST_FLOOD_REPORTS,
-        title_update = T("Edit Flood Report"),
-        title_search = T("Search Flood Reports"),
-        subtitle_create = T("Add New Flood Report"),
-        subtitle_list = T("Flood Reports"),
-        label_list_button = LIST_FLOOD_REPORTS,
-        label_create_button = ADD_FLOOD_REPORT,
-        msg_record_created = T("Flood Report added"),
-        msg_record_modified = T("Flood Report updated"),
-        msg_record_deleted = T("Flood Report deleted"),
-        msg_list_empty = T("No Flood Reports currently registered"))
-
-    freport_id = db.Table(None, "freport_id",
-                          Field("freport_id", table,
-                                requires = IS_NULL_OR(IS_ONE_OF(db, "sitrep_freport.id", "%(datetime)s")),
-                                represent = lambda id: (id and [db(db.sitrep_freport.id == id).select(db.sitrep_freport.datetime, limitby=(0, 1)).first().datetime] or ["None"])[0],
-                                label = T("Flood Report"),
-                                ondelete = "RESTRICT"))
-
-    # -----------------------------------------------------------------------------
-    # Locations
-    freport_flowstatus_opts = {
-        1:T("Normal"),
-        2:T("High"),
-        3:T("Very High"),
-        4:T("Low")
-    }
-    resource = "freport_location"
-    tablename = "%s_%s" % (module, resource)
-    table = db.define_table(tablename,
-                            timestamp, uuidstamp, authorstamp, deletion_status,
-                            freport_id,
-                            river_id,
-                            location_id,
-                            Field("discharge", "integer"),
-                            Field("flowstatus", "integer"),
-                            comments,
-                            migrate=migrate)
-
-    table.discharge.label = T("Discharge (cusecs)")
-    table.flowstatus.label = T("Flow Status")
-    table.flowstatus.requires = IS_NULL_OR(IS_IN_SET(freport_flowstatus_opts))
-    table.flowstatus.represent = lambda opt: freport_flowstatus_opts.get(opt, opt)
-
-    # CRUD strings
-    ADD_LOCATION = T("Add Location")
-    LIST_LOCATIONS = T("List Locations")
-    s3.crud_strings[tablename] = Storage(
-        title_create = ADD_LOCATION,
-        title_display = T("Location Details"),
-        title_list = LIST_LOCATIONS,
-        title_update = T("Edit Location"),
-        title_search = T("Search Locations"),
-        subtitle_create = T("Add New Location"),
-        subtitle_list = T("Locations"),
-        label_list_button = LIST_LOCATIONS,
-        label_create_button = ADD_LOCATION,
-        msg_record_created = T("Location added"),
-        msg_record_modified = T("Location updated"),
-        msg_record_deleted = T("Location deleted"),
-        msg_list_empty = T("No Locations currently registered"))
-
-    s3xrc.model.add_component(module, resource,
-                              multiple = True,
-                              joinby = dict(sitrep_freport="freport_id"),
-                              deletable = True,
+                              deletable = False,
                               editable = True)
 
     # -----------------------------------------------------------------------------

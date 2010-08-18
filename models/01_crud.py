@@ -377,7 +377,7 @@ def import_url(r, table, method):
             continue
         elif var == "uuid":
             uuid = request.vars[var]
-        elif table[var].type == "upload":
+        elif "var" in table and table[var].type == "upload":
             # Handle file uploads (copied from gluon/sqlhtml.py)
             field = table[var]
             fieldname = var
@@ -390,7 +390,7 @@ def import_url(r, table, method):
                 else:
                     #record[fieldname] = self.record[fieldname]
                     pass
-            elif hasattr(f,"file"):
+            elif hasattr(f, "file"):
                 (source_file, original_filename) = (f.file, f.filename)
             elif isinstance(f, (str, unicode)):
                 ### do not know why this happens, it should not
@@ -398,7 +398,7 @@ def import_url(r, table, method):
                     (cStringIO.StringIO(f), "file.txt")
             newfilename = field.store(source_file, original_filename)
             request.vars["%s_newfilename" % fieldname] = record[fieldname] = newfilename
-            if field.uploadfield and not field.uploadfield==True:
+            if field.uploadfield and not field.uploadfield == True:
                 record[field.uploadfield] = source_file.read()
         else:
             record[var] = request.vars[var]
@@ -408,11 +408,11 @@ def import_url(r, table, method):
     if method == "update":
         if uuid:
             try:
-                original = db(table.uuid == uuid).select(table.ALL).first()
+                original = db(table.uuid == uuid).select(table.ALL, limitby=(0, 1)).first()
             except:
                 raise HTTP(404, body=s3xrc.xml.json_message(False, 404, "Record not found!"))
         else:
-            # You will never come to that point without having specified a
+            # You will never come to this point without having specified a
             # record ID in the request. Nevertheless, we require a UUID to
             # identify the record
             raise HTTP(400, body=s3xrc.xml.json_message(False, 400, "UUID required!"))
@@ -1175,8 +1175,8 @@ def shn_list(r, **attr):
             output.update(form=form, addtitle=addtitle)
 
         else:
-            # List only with create button below
-            if listadd:
+            # List only
+            if authorised:
                 label_create_button = shn_get_crud_string(tablename, "label_create_button")
                 add_btn = A(label_create_button, _href=href_add, _class="action-btn")
             else:

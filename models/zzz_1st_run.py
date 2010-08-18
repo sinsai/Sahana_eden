@@ -867,6 +867,18 @@ if empty:
         auth.add_group("HMSViewer", description = "HMSViewer - permission to access HMS")
         # Ticketing
         auth.add_group("TicketAdmin", description = "TicketAdmin - full access to Ticketing")
+
+    # Supply / Inventory
+    tablename = "supply_item_category"
+    table = db[tablename]
+    if not db(table.id > 0).count():
+        shn_import_table("supply_item_category")
+    tablename = "supply_item"
+    table = db[tablename]
+    if not db(table.id > 0).count():
+        shn_import_table("supply_item")
+
+
     # Security Defaults for all tables (if using 'full' security policy)
     if session.s3.security_policy != 1:
         table = auth.settings.table_permission_name

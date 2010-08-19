@@ -141,7 +141,8 @@ def table():
         msg_record_modified = T("Survey Answer updated"),
         msg_record_deleted = T("Survey Answer deleted"),
         msg_list_empty = T("No Survey Answers currently registered"))
-    output = shn_rest_controller("survey", resource,listadd=False)   
+    response.s3.filter = (table.series_id == series_id) 
+    output = shn_rest_controller("survey", resource,listadd=False)
     return output
 
 def series():

@@ -69,20 +69,25 @@ def define_map(window=False, toolbar=False):
 
     # Custom Feature Layers
     locations = db(db.gis_location.id == db.irs_ireport.location_id).select()
+    # Default Red
+    #marker = db(db.gis_marker.name == "marker_red").select(db.gis_marker.id, limitby=(0, 1)).first().id
     popup_url = URL(r=request, c="irs", f="ireport", args="read.popup?ireport.location_id=")
     incidents = {"name":Tstr("Incident Reports"), "query":locations, "active":True, "popup_url": popup_url}
     
     locations = db(db.gis_location.id == db.cr_shelter.location_id).select()
+    marker = db(db.gis_marker.name == "shelter").select(db.gis_marker.id, limitby=(0, 1)).first().id
     popup_url = URL(r=request, c="cr", f="shelter", args="read.popup?shelter.location_id=")
-    shelters = {"name":Tstr("Shelters"), "query":locations, "active":True, "popup_url": popup_url}
+    shelters = {"name":Tstr("Shelters"), "query":locations, "active":True, "marker":marker, "popup_url": popup_url}
     
     locations = db(db.gis_location.id == db.sitrep_assessment.location_id).select()
+    marker = db(db.gis_marker.name == "marker_green").select(db.gis_marker.id, limitby=(0, 1)).first().id
     popup_url = URL(r=request, c="sitrep", f="assessment", args="read.popup?assessment.location_id=")
-    assessments = {"name":Tstr("Assessments"), "query":locations, "active":True, "popup_url": popup_url}
+    assessments = {"name":Tstr("Assessments"), "query":locations, "active":True, "marker":marker, "popup_url": popup_url}
     
     locations = db(db.gis_location.id == db.rms_req.location_id).select()
+    marker = db(db.gis_marker.name == "marker_yellow").select(db.gis_marker.id, limitby=(0, 1)).first().id
     popup_url = URL(r=request, c="rms", f="req", args="read.popup?assessment.location_id=")
-    requests = {"name":Tstr("Requests"), "query":locations, "active":True, "popup_url": popup_url}
+    requests = {"name":Tstr("Requests"), "query":locations, "active":True, "marker":marker, "popup_url": popup_url}
     
     feature_queries = [incidents, shelters, assessments, requests]
     

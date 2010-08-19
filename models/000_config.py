@@ -24,7 +24,7 @@ deployment_settings.database.pool_size = 30
 
 # Authentication settings
 # This setting should be changed _before_ registering the 1st user
-deployment_settings.auth.hmac_key = "akeytochange"
+deployment_settings.auth.hmac_key = "ausland"
 # These settings should be changed _after_ the 1st (admin) user is
 # registered in order to secure the deployment
 deployment_settings.auth.registration_requires_verification = False

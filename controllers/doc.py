@@ -54,28 +54,24 @@ def shn_document_rheader(jr, tabs=[]):
 def document():
     "RESTful CRUD controller"
     resource = request.function
-    table = module + "_" + resource
+    tablename = "%s_%s" % (module, resource)
+    table = db[tablename]
 
     # Model options
     # used in multiple controllers, so in the model
-
-    # CRUD Strings
-    LIST_DOCUMENTS = T("List Reference Documents")
-    s3.crud_strings[table] = Storage(
-        title_create = ADD_DOCUMENT,
-        title_display = T("Reference Document Details"),
-        title_list = LIST_DOCUMENTS,
-        title_update = T("Edit Reference Document"),
-        title_search = T("Search Reference Documents"),
-        subtitle_create = T("Add New Reference Document"),
-        subtitle_list = T("Reference Document"),
-        label_list_button = LIST_DOCUMENTS,
-        label_create_button = ADD_DOCUMENT,
-        label_delete_button = T("Delete Reference Document"),
-        msg_record_created = T("Reference Document added"),
-        msg_record_modified = T("Reference Document updated"),
-        msg_record_deleted = T("Reference Document deleted"),
-        msg_list_empty = T("No References Documents currently defined"))
+    
+    #Disable legacy fields in components, unless updating, so the data can be manually transferred to new fields
+    if "update" not in request.args:
+        db.sitrep_assessment.source.readable = db.sitrep_assessment.source.writable = False   
+        db.sitrep_school_district.document.readable = db.sitrep_school_district.document.writable = False 
+        db.irs_ireport.source.readable = db.irs_ireport.source.writable = False        
+        db.irs_ireport.source_id.readable = db.irs_ireport.source_id.writable = False  
+        db.flood_freport.document.readable = db.flood_freport.document.writable = False   
+   
+    def postp(jr, output):                          
+        shn_action_buttons(jr)
+        return output
+    response.s3.postp = postp
     
     rheader = lambda jr: shn_document_rheader(jr,
                                           tabs = [(T("Edit Details"), None),
@@ -93,28 +89,16 @@ def document():
 def image():
     "RESTful CRUD controller"
     resource = request.function
-    table = module + "_" + resource
-
+    tablename = "%s_%s" % (module, resource)
+    table = db[tablename]
+    
     # Model options
     # used in multiple controllers, so in the model
-
-    # CRUD Strings
-    LIST_IMAGES = T("List Images")
-    s3.crud_strings[table] = Storage(
-        title_create = ADD_IMAGE,
-        title_display = T("Image Details"),
-        title_list = LIST_IMAGES,
-        title_update = T("Edit Image"),
-        title_search = T("Search Images"),
-        subtitle_create = T("Add New Image"),
-        subtitle_list = T("Image"),
-        label_list_button = LIST_IMAGES,
-        label_create_button = ADD_IMAGE,
-        label_delete_button = T("Delete Image"),
-        msg_record_created = T("Image added"),
-        msg_record_modified = T("Image updated"),
-        msg_record_deleted = T("Image deleted"),
-        msg_list_empty = T("No Images currently defined"))
+    
+    def postp(jr, output):                          
+        shn_action_buttons(jr)
+        return output
+    response.s3.postp = postp    
 
     return shn_rest_controller(module, resource)
 #==============================================================================

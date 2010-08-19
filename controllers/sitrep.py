@@ -102,6 +102,10 @@ def assessment():
     table.location_id.requires = IS_NULL_OR(IS_ONE_OF(db(db.gis_location.level == "L4"), "gis_location.id", repr_select, sort=True))
 
     response.s3.pagination = True
+    
+    #Disable legacy fields, unless updating, so the data can be manually transferred to new fields
+    if "update" not in request.args:
+        table.source.readable = table.source.writable = False
 
     # Post-processor
     def user_postp(jr, output):
@@ -134,6 +138,10 @@ def school_district():
                                      DIV( _class="tooltip",
                                        _title=Tstr("District") + "|" + Tstr("The District for this Report."))),
     response.s3.pagination = True
+    
+    #Disable legacy fields, unless updating, so the data can be manually transferred to new fields
+    if "update" not in request.args:
+        table.document.readable = table.document.writable = False    
 
     # Post-processor
     def user_postp(jr, output):

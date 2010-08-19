@@ -44,10 +44,10 @@ table.file.represent = lambda file, table=table: shn_file_represent(file, table)
 table.url.label = T("URL")
 table.url.represent = lambda url: url and A(url,_href=url) or "-"
 
-table.url.requires = [IS_NULL_OR(IS_URL()),IS_NOT_IN_DB(db, "%s.url" % tablename)]
+table.url.requires = [IS_NULL_OR(IS_URL()),IS_NULL_OR(IS_NOT_IN_DB(db, "%s.url" % tablename))]
 
 table.entered.comment = DIV( _class="tooltip", 
-                             _title="Entered" + "|" + Tstr("Check if data from this Reference Document has been entered into Sahana")
+                             _title="Entered" + "|" + Tstr("Has data from this Reference Document been entered into Sahana?")
                              )
 # -----------------------------------------------------------------------------
 def document_represent(id):
@@ -73,12 +73,32 @@ document_comment = DIV( A( ADD_DOCUMENT,
                            _title=ADD_DOCUMENT
                            ),
                         DIV( _class="tooltip", 
-                             _title=ADD_DOCUMENT + "|" + Tstr("Add a Reference Document such as a file, URL or contact person to verify this data. If you do not enter a Reference Document, your email will be displayed instead."),
+                             _title=ADD_DOCUMENT + "|" + \
+                             Tstr("Add a Reference Document such as a file, URL or contact person to verify this data."),
+                             #Tstr("Add a Reference Document such as a file, URL or contact person to verify this data. If you do not enter a Reference Document, your email will be displayed instead."),
                              ),
                         #SPAN( I( T("If you do not enter a Reference Document, your email will be displayed to allow this data to be verified.") ),
                         #     _style = "color:red"
                         #     )
                         )
+
+# CRUD Strings
+LIST_DOCUMENTS = T("List Reference Documents")
+s3.crud_strings[tablename] = Storage(
+    title_create = ADD_DOCUMENT,
+    title_display = T("Reference Document Details"),
+    title_list = LIST_DOCUMENTS,
+    title_update = T("Edit Reference Document"),
+    title_search = T("Search Reference Documents"),
+    subtitle_create = T("Add New Reference Document"),
+    subtitle_list = T("Reference Document"),
+    label_list_button = LIST_DOCUMENTS,
+    label_create_button = ADD_DOCUMENT,
+    label_delete_button = T("Delete Reference Document"),
+    msg_record_created = T("Reference Document added"),
+    msg_record_modified = T("Reference Document updated"),
+    msg_record_deleted = T("Reference Document deleted"),
+    msg_list_empty = T("No References Documents currently defined"))
 
 document_id = db.Table(None, 
                        "document_id",
@@ -123,6 +143,23 @@ image_id = db.Table(None, "image_id",
                           DIV( _class="tooltip", _title=ADD_IMAGE + "|" + Tstr("Add an image, such as a Photo."))),
                 ondelete = "RESTRICT"
                 ))
+# CRUD Strings
+LIST_IMAGES = T("List Images")
+s3.crud_strings[tablename] = Storage(
+    title_create = ADD_IMAGE,
+    title_display = T("Image Details"),
+    title_list = LIST_IMAGES,
+    title_update = T("Edit Image"),
+    title_search = T("Search Images"),
+    subtitle_create = T("Add New Image"),
+    subtitle_list = T("Image"),
+    label_list_button = LIST_IMAGES,
+    label_create_button = ADD_IMAGE,
+    label_delete_button = T("Delete Image"),
+    msg_record_created = T("Image added"),
+    msg_record_modified = T("Image updated"),
+    msg_record_deleted = T("Image deleted"),
+    msg_list_empty = T("No Images currently defined"))
 #==============================================================================
 # END - Following code is not utilised
 resource = "metadata"

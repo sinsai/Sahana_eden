@@ -170,7 +170,6 @@ if deployment_settings.has_module(module):
                             Field("female_1825", "double"),
                             Field("female_2660", "double"),
                             Field("female_61", "double"),
-                            Field("female_61", "double"),
                             Field("dead_women", "integer"),
                             Field("dead_men", "integer"),
                             Field("dead_girl", "integer"),

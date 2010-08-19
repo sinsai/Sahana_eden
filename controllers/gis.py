@@ -17,7 +17,7 @@ response.menu_options = [
         [T("List"), False, URL(r=request, f="location")],
         [T("Add"), False, URL(r=request, f="location", args="create")],
     ]],
-    [T("Map"), False, URL(r=request, f="map_viewing_client")],
+    [T("Fullscreen Map"), False, URL(r=request, f="map_viewing_client")],
     # Currently broken
     #[T("Bulk Uploader"), False, URL(r=request, c="doc", f="bulk_upload")]
 ]
@@ -30,18 +30,29 @@ def download():
 # S3 framework functions
 def index():
     """ Module's Home Page """
+
     module_name = deployment_settings.modules[module].name_nice
     
     # Include an embedded Overview Map on the index page
     window = False
+    toolbar = False
+    
+    map = define_map(window=window, toolbar=toolbar)
 
-    # ToDo: Make these configurable
+    return dict(module_name=module_name, map=map)
+
+def define_map(window=False, toolbar=False):
+    """
+        Define the main Situation Map
+        This can then be called from both the Index page (embedded) & the Map_Viewing_Client (fullscreen)
+    """
+    
+    # @ToDo: Make these configurable
     #config = gis.get_config()
     if 1 in session.s3.roles or shn_has_role("MapAdmin"):
         catalogue_toolbar = True
     else:
         catalogue_toolbar = False
-    toolbar = False
     search = True
     catalogue_overlays = True
 
@@ -56,10 +67,29 @@ def index():
             }
         )
 
-    map = gis.show_map(window=window, catalogue_toolbar=catalogue_toolbar, toolbar=toolbar, search=search, catalogue_overlays=catalogue_overlays, feature_groups=feature_groups)
+    # Custom Feature Layers
+    locations = db(db.gis_location.id == db.irs_ireport.location_id).select()
+    popup_url = URL(r=request, c="irs", f="ireport", args="read.popup?ireport.location_id=")
+    incidents = {"name":Tstr("Incident Reports"), "query":locations, "active":True, "popup_url": popup_url}
+    
+    locations = db(db.gis_location.id == db.cr_shelter.location_id).select()
+    popup_url = URL(r=request, c="cr", f="shelter", args="read.popup?shelter.location_id=")
+    shelters = {"name":Tstr("Shelters"), "query":locations, "active":True, "popup_url": popup_url}
+    
+    locations = db(db.gis_location.id == db.sitrep_assessment.location_id).select()
+    popup_url = URL(r=request, c="sitrep", f="assessment", args="read.popup?assessment.location_id=")
+    assessments = {"name":Tstr("Assessments"), "query":locations, "active":True, "popup_url": popup_url}
+    
+    locations = db(db.gis_location.id == db.rms_req.location_id).select()
+    popup_url = URL(r=request, c="rms", f="req", args="read.popup?assessment.location_id=")
+    requests = {"name":Tstr("Requests"), "query":locations, "active":True, "popup_url": popup_url}
+    
+    feature_queries = [incidents, shelters, assessments, requests]
+    
+    map = gis.show_map(window=window, catalogue_toolbar=catalogue_toolbar, toolbar=toolbar, search=search, catalogue_overlays=catalogue_overlays, feature_groups=feature_groups, feature_queries=feature_queries)
 
-    return dict(module_name=module_name, map=map)
-
+    return map
+    
 def test():
     "Test Mapping API"
 
@@ -1207,6 +1237,7 @@ def layer_xyz():
     return output
 
 # Feature Groups
+#@auth.shn_requires_membership("MapAdmin")
 def feature_group_contents():
     "Many to Many CRUD Controller"
     if len(request.args) == 0:
@@ -1558,8 +1589,8 @@ def map_service_catalogue():
 
 def map_viewing_client():
     """
-    Map Viewing Client.
-    UI for a user to view the overall Maps with associated Features
+        Map Viewing Client.
+        UI for a user to view the overall Maps with associated Features
     """
 
     # Read configuration settings
@@ -1569,27 +1600,10 @@ def map_viewing_client():
     else:
         window = False
 
-    if 1 in session.s3.roles or shn_has_role("MapAdmin"):
-        catalogue_toolbar = True
-    else:
-        catalogue_toolbar = False
-    # ToDo: Make these configurable
+    # @ToDo Make Configurable
     toolbar = True
-    search = True
-    catalogue_overlays = True
-
-    # Read which overlays to enable
-    feature_groups = []
-    _feature_groups = db((db.gis_feature_group.enabled == True) & (db.gis_feature_group.deleted == False)).select()
-    for feature_group in _feature_groups:
-        feature_groups.append(
-            {
-                "feature_group" : feature_group.name,
-                "active" : feature_group.visible
-            }
-        )
-
-    map = gis.show_map(window=window, catalogue_toolbar=catalogue_toolbar, toolbar=toolbar, search=search, catalogue_overlays=catalogue_overlays, feature_groups=feature_groups)
+    
+    map = define_map(window=window, toolbar=toolbar)
 
     return dict(map=map)
 

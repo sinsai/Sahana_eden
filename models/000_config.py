@@ -14,12 +14,12 @@ s3cfg = local_import("s3cfg")
 deployment_settings = s3cfg.S3Config()
 
 # Database settings
-deployment_settings.database.db_type = "sqlite"
+deployment_settings.database.db_type = "mysql"
 deployment_settings.database.host = "localhost"
 deployment_settings.database.port = "" # use default
-deployment_settings.database.database = "sahana"
-deployment_settings.database.username = "sahana"
-deployment_settings.database.password = "password"
+deployment_settings.database.database = "pakistan"
+deployment_settings.database.username = "root"
+deployment_settings.database.password = "1234"
 deployment_settings.database.pool_size = 30
 
 # Authentication settings

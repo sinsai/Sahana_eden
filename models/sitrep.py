@@ -513,6 +513,9 @@ if deployment_settings.has_module(module):
                             Field("date", "date"),
                             Field("households", "integer"),
                             Field("population", "integer"),
+                            Field("persons_affected", "integer"),
+                            Field("persons_injured", "integer"),
+                            Field("persons_deceased", "integer"),                            
                             Field("houses_destroyed", "integer"),
                             Field("houses_damaged", "integer"),
                             Field("crop_losses", "integer"),
@@ -529,7 +532,13 @@ if deployment_settings.has_module(module):
     table.population.label = T("Population")
     table.population.requires = IS_INT_IN_RANGE(0,99999999)
     table.population.default = 0
-
+    
+    table.persons_affected.label = T("# of People Affected")
+    table.persons_injured.label = T("# of People Injured")
+    table.persons_deceased.label = T("# of People Deceased")    
+    table.houses_destroyed.label = T("# of Houses Destroyed") 
+    table.houses_damaged.label = T("# of Houses Damaged") 
+    
     table.houses_destroyed.requires = IS_INT_IN_RANGE(0,99999999)
     table.houses_destroyed.default = 0
     table.houses_damaged.requires = IS_INT_IN_RANGE(0,99999999)

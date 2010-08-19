@@ -605,33 +605,6 @@ def shn_gis_location_represent(id):
             represent = None
     return represent
 
-# Landmarks
-# Used to store items which should be placed on the map, but which we don't maintain other details on
-# i.e. not Hospitals, Offices, Warehouses
-gis_landmark_type_opts = {
-    1:T("Airport"),
-    2:T("Bridge"),
-    3:T("Church"),
-    4:T("Port"),
-    5:T("School"),
-    99:T("other"),
-    }
-resource = "landmark"
-tablename = "%s_%s" % (module, resource)
-table = db.define_table(tablename, timestamp, uuidstamp, authorstamp, deletion_status,
-                Field("name", length=128, notnull=True, unique=True),
-                Field("category"),
-                location_id,
-                comments,
-                migrate=migrate)
-table.uuid.requires = IS_NOT_IN_DB(db, "%s.uuid" % tablename)
-table.name.requires = [IS_NOT_EMPTY(), IS_NOT_IN_DB(db, "%s.name" % tablename)]
-table.name.label = T("Name")
-table.category.requires = IS_IN_SET(gis_landmark_type_opts)
-table.category.represent = lambda opt: gis_landmark_type_opts.get(opt, UNKNOWN_OPT)
-table.category.label = T("Category")
-
-
 # Feature Layers
 # Used to select a set of Features for either Display or Export
 # (replaces feature_group)

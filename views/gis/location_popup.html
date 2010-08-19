@@ -16,47 +16,54 @@
     }
     $(function() {
         $("#gis_location_gis_feature_type__row").hide();
-    {{if "pr_presence" in request.vars.caller:}}
-            // If a Person location then set defaults from main form & offer HTML5 GeoLocation
-            var location_name = self.parent.$('#pr_presence_pe_id__row > td.w2p_fw').html();
-            if (location_name) {
-                $("#gis_location_name").val(location_name);
-                $("#gis_location_name__row").hide();
-            }
-            
-            if (navigator.geolocation) {
-                // HTML5 geolocation is available :)
-                navigator.geolocation.getCurrentPosition(getCurrentPosition);
-            } else {
-                // geolocation is not available...IE sucks! ;)
-            }
-    {{elif "org_office" in request.vars.caller:}}
-            // If an Office location then populate defaults for the fields & Hide unnecessary rows
-            var location_name = self.parent.$('#org_office_name').val();
-            if (location_name) {
-                $("#gis_location_name").val(location_name);
-                $("#gis_location_name__row").hide();
-            }
-    {{elif "org_project" in request.vars.caller:}}
-            // If a Project location then populate defaults for the fields & Hide unnecessary rows
-            var location_name = self.parent.$('#org_project_name').val();
+    {{if "cr_shelter" in request.vars.caller:}}
+            // Populate Name & Hide
+            var location_name = self.parent.$('#cr_shelter_name').val();
             if (location_name) {
                 $("#gis_location_name").val(location_name);
                 $("#gis_location_name__row").hide();
             }
     {{elif "hms_hospital" in request.vars.caller:}}
-            // If coming from the HMS then populate defaults for the fields & Hide unnecessary rows
+            // Populate Name & Hide
             var location_name = self.parent.$('#hms_hospital_name').val();
             if (location_name) {
                 $("#gis_location_name").val(location_name);
                 $("#gis_location_name__row").hide();
             }
     {{elif "irs_ireport" in request.vars.caller:}}
-            // If coming from the IR then populate defaults for the fields & Hide unnecessary rows
-            var location_name = self.parent.$('#ir_report_name').val();
+            // Populate Name & Hide
+            var location_name = self.parent.$('#ir_ireport_name').val();
             if (location_name) {
                 $("#gis_location_name").val(location_name);
                 $("#gis_location_name__row").hide();
+            }
+    {{elif "org_office" in request.vars.caller:}}
+            // Populate Name & Hide
+            var location_name = self.parent.$('#org_office_name').val();
+            if (location_name) {
+                $("#gis_location_name").val(location_name);
+                $("#gis_location_name__row").hide();
+            }
+    {{elif "org_project" in request.vars.caller:}}
+            // Populate Name & Hide
+            var location_name = self.parent.$('#org_project_name').val();
+            if (location_name) {
+                $("#gis_location_name").val(location_name);
+                $("#gis_location_name__row").hide();
+            }
+    {{elif "pr_presence" in request.vars.caller:}}
+            // Populate Name & Hide
+            var location_name = self.parent.$('#pr_presence_pe_id__row > td.w2p_fw').html();
+            if (location_name) {
+                $("#gis_location_name").val(location_name);
+                $("#gis_location_name__row").hide();
+            }
+            // Offer HTML5 geolocation
+            if (navigator.geolocation) {
+                // HTML5 geolocation is available :)
+                navigator.geolocation.getCurrentPosition(getCurrentPosition);
+            } else {
+                // geolocation is not available...IE sucks! ;)
             }
     {{else:}}
     {{pass}}

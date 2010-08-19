@@ -11,7 +11,7 @@ if module not in deployment_settings.modules:
     redirect(URL(r=request, c="default", f="index"))
 
 # Only people with the DVI role should be able to access this module
-#if shn_has_role("DVI"):
+#if 1 in session.s3.roles or shn_has_role("DVI"):
 #    pass
 #else:
 #    session.error = T("Not Authorised!")

@@ -600,12 +600,20 @@ class AuthS3(Auth):
         db = self.db
         session = self.session
 
+        # Administrators have all roles
+        if 1 in session.s3.roles:
+            return True
+        
         try:
             role = int(role)
         except:
             #role = deployment_settings.auth.roles[role]
-            role = db(db.auth_group.role == role).select(db.auth_group.id, limitby=(0, 1)).first().id
-
+            try:
+                role = db(db.auth_group.role == role).select(db.auth_group.id, limitby=(0, 1)).first().id
+            except:
+                # Role doesn't exist in the Database
+                return False
+                
         if role in session.s3.roles:
             return True
         else:
@@ -737,6 +745,7 @@ class AuthS3(Auth):
             Extends Web2Py's requires_membership() to add new functionality:
                 * Custom Flash style
                 * Uses shn_has_role()
+                * Administrators (id=1) are deemed to have all roles
         """
 
         def decorator(action):
@@ -746,13 +755,16 @@ class AuthS3(Auth):
                     request = self.environment.request
                     next = URL(r=request, args=request.args, vars=request.get_vars)
                     redirect(self.settings.login_url + "?_next=" + urllib.quote(next))
-                if not self.shn_has_role(role):
-                    self.environment.session.error = \
-                        self.messages.access_denied
+
+                if not self.shn_has_role(role) and not self.shn_has_role(1):
+                    self.environment.session.error = self.messages.access_denied
                     next = self.settings.on_failed_authorization
                     redirect(next)
+
                 return action(*a, **b)
+
             f.__doc__ = action.__doc__
+
             return f
 
         return decorator

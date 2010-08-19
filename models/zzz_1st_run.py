@@ -335,13 +335,21 @@ if empty:
         # We want to start at ID 1
         table.truncate()
         table.insert(
-            name = "marker",
-            image = "gis_marker.image.marker.png"
+            name = "marker_red",
+            image = "gis_marker.image.marker_red.png"
         )
-        #table.insert(
-        #    name = "marker_r1",
-        #    image = "marker_r1.png"
-        #)
+        table.insert(
+            name = "marker_yellow",
+            image = "gis_marker.image.marker_yellow.png"
+        )
+        table.insert(
+            name = "marker_amber",
+            image = "gis_marker.image.marker_amber.png"
+        )
+        table.insert(
+            name = "marker_green",
+            image = "gis_marker.image.marker_green.png"
+        )
         table.insert(
             name = "person",
             image = "gis_marker.image.Civil_Disturbance_Theme.png"
@@ -464,8 +472,8 @@ if empty:
             # Doesn't work on Postgres!
             projection_id = 1,
             marker_id = 1,
-            map_height = 400,
-            map_width = 640
+            map_height = 600,
+            map_width = 800
         )
 
     tablename = "gis_feature_class"

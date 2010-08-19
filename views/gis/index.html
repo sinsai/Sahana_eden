@@ -8,7 +8,7 @@
     {{if 1 in session.s3.roles or shn_has_role("MapAdmin"):}}
         {{=OL(LI(SPAN(A(T("View Fullscreen Map"), _href=URL(r=request, c="gis", f="map_viewing_client")),_style="font-weight:bold;"), _style="margin-top:1em;"), LI(SPAN(A(T("Edit Map Services"), _href=URL(r=request, c="gis", f="map_service_catalogue")),_style="font-weight:bold;"), P(T("Allows authorized users to control which layers are available to the situation map.")), _style="margin-top:1em;"), _style="list-style-type: none;")}} 
     {{else:}}
-        {{=OL(LI(SPAN(A(T("View Fullscreen Map"), _href=URL(r=request, c="gis", f="map_viewing_client")),_style="font-weight:bold;"), P(T("Use this link to review the situation.")), _style="margin-top:1em;"), _style="list-style-type: none;")}} 
+        {{=OL(LI(SPAN(A(T("View Fullscreen Map"), _href=URL(r=request, c="gis", f="map_viewing_client")),_style="font-weight:bold;"), _style="margin-top:1em;"), _style="list-style-type: none;")}} 
     {{pass}}
     </div>
 

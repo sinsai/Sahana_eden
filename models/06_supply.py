@@ -74,6 +74,7 @@ if deployment_settings.has_module("inventory"):
                             deletion_status,                        
                             get_item_category_id(),
                             Field("name", length=128, notnull=True, unique=True),
+                            Field("comment"),
                             migrate=migrate)
 
     table.name.comment = SPAN("*", _class="req")

@@ -1730,6 +1730,7 @@ OpenLayers.Util.extend( selectPdfControl, {
             cluster_style = """
         // Style Rule For Clusters
         var style_cluster = new OpenLayers.Style({
+            label: "${label}",
             pointRadius: '${radius}',
             fillColor: '#8087ff',
             fillOpacity: 0.5,
@@ -1746,6 +1747,15 @@ OpenLayers.Util.extend( selectPdfControl, {
                         pix = Math.min(feature.attributes.count, 7) + 4;
                     }
                     return pix;
+                },
+                label: function(feature) {
+                    // Label For Unclustered Point or Cluster of just 2
+                    var label = "";
+                    // Size For Clustered Point
+                    if(feature.cluster && feature.attributes.count > 2) {
+                        label = feature.attributes.count;
+                    }
+                    return label;
                 }
             }
         });
@@ -2579,7 +2589,7 @@ OpenLayers.Util.extend( selectPdfControl, {
                         feature.geometry.getBounds().getCenterLonLat(),
                         new OpenLayers.Size(80, 12),
                         feature.attributes.title,
-                        true
+                        false
                 );
             } else {
                 // KML
@@ -2587,15 +2597,14 @@ OpenLayers.Util.extend( selectPdfControl, {
                         feature.geometry.getBounds().getCenterLonLat(),
                         new OpenLayers.Size(80, 12),
                         feature.attributes.name,
-                        true
+                        false
                 );
             }
             // should be moved to CSS
             tooltipPopup.contentDiv.style.backgroundColor='ffffcb';
-            tooltipPopup.closeDiv.style.backgroundColor='ffffcb';
             tooltipPopup.contentDiv.style.overflow='hidden';
             tooltipPopup.contentDiv.style.padding='3px';
-            tooltipPopup.contentDiv.style.margin='0';
+            tooltipPopup.contentDiv.style.margin='10px';
             tooltipPopup.closeOnMove = true;
             tooltipPopup.autoSize = true;
             feature.popup = tooltipPopup;

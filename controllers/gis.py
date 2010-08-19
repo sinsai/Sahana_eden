@@ -13,6 +13,10 @@ module = request.controller
 # Options Menu (available in all Functions' Views)
 response.menu_options = [
     [T("Service Catalogue"), False, URL(r=request, f="map_service_catalogue")],
+    [T("Landmarks"), False, URL(r=request, f="landmark"), [
+        [T("List"), False, URL(r=request, f="landmark")],
+        [T("Add"), False, URL(r=request, f="landmark", args="create")],
+    ]],
     [T("Locations"), False, URL(r=request, f="location"), [
         [T("List"), False, URL(r=request, f="location")],
         [T("Add"), False, URL(r=request, f="location", args="create")],
@@ -513,18 +517,37 @@ def location():
         else:
             fc = None
             # When called from a Popup, populate defaults & hide unnecessary rows
-            if "pr_presence" in caller:
-                fc = db(db.gis_feature_class.name == "Person").select(db.gis_feature_class.id, limitby=(0, 1)).first()
-            elif "org_project" in caller:
-                fc = db(db.gis_feature_class.name == "Project").select(db.gis_feature_class.id, limitby=(0, 1)).first()
-            elif "org_office" in caller:
-                fc = db(db.gis_feature_class.name == "Office").select(db.gis_feature_class.id, limitby=(0, 1)).first()
+            if "cr_shelter" in caller:
+                fc = db(db.gis_feature_class.name == "Shelter").select(db.gis_feature_class.id, limitby=(0, 1)).first()
+                table.level.readable = table.level.writable = False
+                table.url.readable = table.url.writable = False
+            elif "gis_landmark" in caller:
+                table.feature_class_id.readable = table.feature_class_id.writable = False
+                table.level.readable = table.level.writable = False
+                table.url.readable = table.url.writable = False
             elif "hms_hospital" in caller:
                 fc = db(db.gis_feature_class.name == "Hospital").select(db.gis_feature_class.id, limitby=(0, 1)).first()
-            elif "cr_shelter" in caller:
-                fc = db(db.gis_feature_class.name == "Shelter").select(db.gis_feature_class.id, limitby=(0, 1)).first()
+                table.level.readable = table.level.writable = False
+                table.url.readable = table.url.writable = False
             elif "irs_ireport" in caller:
                 fc = db(db.gis_feature_class.name == "Incident").select(db.gis_feature_class.id, limitby=(0, 1)).first()
+                table.level.readable = table.level.writable = False
+                table.url.readable = table.url.writable = False
+            elif "org_office" in caller:
+                fc = db(db.gis_feature_class.name == "Office").select(db.gis_feature_class.id, limitby=(0, 1)).first()
+                table.level.readable = table.level.writable = False
+                table.url.readable = table.url.writable = False
+            elif "org_project" in caller:
+                fc = db(db.gis_feature_class.name == "Project").select(db.gis_feature_class.id, limitby=(0, 1)).first()
+            elif "pr_presence" in caller:
+                fc = db(db.gis_feature_class.name == "Person").select(db.gis_feature_class.id, limitby=(0, 1)).first()
+                table.level.readable = table.level.writable = False
+                table.url.readable = table.url.writable = False
+            elif "assessment_location" in caller:
+                table.level.default = "L4"
+                table.feature_class_id.readable = table.feature_class_id.writable = False
+                table.marker_id.readable = table.marker_id.writable = False
+                table.addr_street.readable = table.addr_street.writable = False
             elif "school_district" in caller:
                 table.level.default = "L2"
                 table.feature_class_id.readable = table.feature_class_id.writable = False
@@ -540,12 +563,7 @@ def location():
                 table.feature_class_id.readable = table.feature_class_id.writable = False
                 table.marker_id.readable = table.marker_id.writable = False
                 table.addr_street.readable = table.addr_street.writable = False
-            elif "assessment_location" in caller:
-                table.level.default = "L4"
-                table.feature_class_id.readable = table.feature_class_id.writable = False
-                table.marker_id.readable = table.marker_id.writable = False
-                table.addr_street.readable = table.addr_street.writable = False
-
+            
             try:
                 table.feature_class_id.default = fc.id
                 table.feature_class_id.readable = table.feature_class_id.writable = False

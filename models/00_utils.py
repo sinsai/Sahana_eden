@@ -63,12 +63,15 @@ s3_settings = shn_sessions()
 #
 shn_languages = {
     "en": T("English"),
-    "fr": T("French")
+    "fr": T("French"),
+    "es": T("Spanish"),
+    "zh-tw": T("Chinese")
 }
 auth.settings.table_user.language.requires = IS_IN_SET(shn_languages, zero=None)
 
 # -----------------------------------------------------------------------------
 # List of Nations (ISO-3166-1 Country Codes)
+# @ToDo Add Telephone codes (need to convert to Storage())
 #
 shn_list_of_nations = {
     "AF": "Afghanistan",

@@ -1175,8 +1175,8 @@ def shn_list(r, **attr):
             output.update(form=form, addtitle=addtitle)
 
         else:
-            # List only with create button below
-            if listadd:
+            # List only
+            if authorised:
                 label_create_button = shn_get_crud_string(tablename, "label_create_button")
                 add_btn = A(label_create_button, _href=href_add, _class="action-btn")
             else:

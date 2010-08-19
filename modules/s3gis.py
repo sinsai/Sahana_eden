@@ -1815,6 +1815,7 @@ OpenLayers.Util.extend( selectPdfControl, {
                 );
         }
         """
+            # Feature Queries
             for layer in feature_queries:
                 # Features passed as Query
                 if "name" in layer:
@@ -1904,7 +1905,7 @@ OpenLayers.Util.extend( selectPdfControl, {
                         # Query is a simple select
                         feature = _feature
                     try:
-                        # Has a per-feature Vector Shape been provided through VirtualFields?
+                        # Has a per-feature Vector Shape been added to the query?
                         graphicName = feature.shape
                         if graphicName not in ["circle", "square", "star", "x", "cross", "triangle"]:
                             # Default to Circle
@@ -1925,7 +1926,7 @@ OpenLayers.Util.extend( selectPdfControl, {
                     except (AttributeError, KeyError):
                         # Use a Marker not a Vector Shape
                         try:
-                            # Has a per-feature marker been provided through VirtualFields?
+                            # Has a per-feature marker been added to the query?
                             _marker = feature.marker
                             if _marker:
                                 marker = _marker.image
@@ -1981,12 +1982,12 @@ OpenLayers.Util.extend( selectPdfControl, {
             for layer in feature_groups:
                 name = layer["feature_group"]
                 if "popup_url" in layer:
-                    popup_url = urllib.unquote(layer["popup_url"])
+                    _popup_url = urllib.unquote(layer["popup_url"])
                 # We'd like to do something like this:
                 #elif feature_class is office:
-                #    popup_url = urllib.unquote(URL(r=request, c="or", f="office"))
+                #    _popup_url = urllib.unquote(URL(r=request, c="or", f="office"))
                 else:
-                    popup_url = urllib.unquote(URL(r=request, c="gis", f="location", args=["read.popup?location.id="]))
+                    _popup_url = urllib.unquote(URL(r=request, c="gis", f="location", args=["read.popup?location.uid="]))
 
                 # Generate HTML snippet
                 name_safe = re.sub("\W", "_", name)
@@ -2051,7 +2052,7 @@ OpenLayers.Util.extend( selectPdfControl, {
                 map.addPopup(popup);
                 // call AJAX to get the contentHTML
                 var uuid = feature.fid;
-                loadDetails('""" + popup_url + """' + '?location.uid=' + uuid, id, popup);
+                loadDetails('""" + _popup_url + """' + uuid, id, popup);
             }
         }
         """
@@ -2087,8 +2088,8 @@ OpenLayers.Util.extend( selectPdfControl, {
                     
                     layers_features += """
         geom = parser.read('""" + wkt + """').geometry;
-        iconURL = '""" + marker_url + """';
-        featureVec = addFeature('""" + feature.gis_location.uuid + """', '""" + fname + """', """ + fc + """, geom, iconURL)
+        styleMarker.iconURL = '""" + marker_url + """';
+        featureVec = addFeature('""" + feature.gis_location.uuid + """', '""" + fname + """', """ + fc + """, geom, styleMarker)
         features.push(featureVec);
         """
                 # Append to Features layer

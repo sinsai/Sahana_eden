@@ -38,8 +38,6 @@ if deployment_settings.has_module("inventory"):
 
     s3.crud_strings[tablename] = shn_crud_strings("Item Category", "Item Categories")
 
-    shn_import_table("supply_item_category")
-
     # -----------------------------------------------------------------------------
     def get_item_category_id (field_name = "item_category_id", 
                               label = T("Category"),
@@ -81,8 +79,6 @@ if deployment_settings.has_module("inventory"):
     table.name.comment = SPAN("*", _class="req")
 
     s3.crud_strings[tablename] = shn_crud_strings("Relief Item")
-
-    shn_import_table("supply_item")
 
     # -----------------------------------------------------------------------------
     def get_item_id ( field_name = "item_id", 

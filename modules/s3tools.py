@@ -86,7 +86,7 @@ class AuthS3(Auth):
         self.settings.username_field = False
         self.settings.lock_keys = True
         self.messages.lock_keys = False
-        self.messages.email_sent = 'Verification Email sent - please check your email to validate'
+        self.messages.email_sent = 'Verification Email sent - please check your email to validate. If you do not receive this email please check you junk email or spam filters' 
         self.messages.email_verified = 'Email verified - you can now login'
         self.messages.registration_disabled = "Registration Disabled!"
         self.messages.lock_keys = True

@@ -51,7 +51,8 @@ def item():
     
     rheader = lambda jr: shn_item_rheader(jr,
                                           tabs = [(T("Edit Details"), None),
-                                                  (T("Inventories with Items"), "location_item"),                                                                                                    
+                                                  (T("Inventories with Item"), "location_item"),  
+                                                  (T("Requests for Item"), "req_item"),                                                                                                  
                                                  ]
                                          )    
     

@@ -42,15 +42,13 @@ def req(): #aid requests
         response.s3.pagination = True
         
     if request.args(0) == "create" or request.args(0) == "update": 
-        db.rms_req.pledge_status.readable = False
-    
-    
+        db.rms_req.pledge_status.readable = False  
 
     def req_postp(jr, output):
         if jr.representation in ("html", "popup"):
             if not jr.component:
                 response.s3.actions = [
-                    dict(label=str(T("Edit")), _class="action-btn", url=str(URL(r=request, args=["update", "[id]"]))),
+                    dict(label=str(T("Open")), _class="action-btn", url=str(URL(r=request, args=["[id]"]))),
                     dict(label=str(T("Pledge")), _class="action-btn", url=str(URL(r=request, args=["[id]", "pledge"])))
                 ]
             elif jr.component_name == "pledge":
@@ -63,7 +61,8 @@ def req(): #aid requests
     output = shn_rest_controller(module, resource,
                                  editable=True,
                                  listadd=False,
-                                 rheader=shn_rms_rheader)
+                                 rheader=shn_rms_rheader,
+                                 sticky=True)
                                  # call rheader to act as parent header for parent/child forms (layout defined below)
 
     return output
@@ -115,21 +114,27 @@ def shn_rms_rheader(jr):
                     location_represent = shn_gis_location_represent(location.id)
                 except:
                     location_represent = None
-
-                rheader = TABLE(TR(TH(T("Message: ")),
-                                TD(aid_request.message, _colspan=3)),
-                                TR(TH(T("Priority: ")),
-                                aid_request.priority,
-                                TH(T("Source Type: ")),
-                                rms_req_source_type.get(aid_request.source_type, T("unknown"))),
-                                TR(TH(T("Time of Request: ")),
-                                aid_request.timestmp,
-                                TH(T("Verified: ")),
-                                aid_request.verified),
-                                TR(TH(T("Location: ")),
-                                location_represent,
-                                TH(T("Actionable: ")),
-                                aid_request.actionable))
+                rheader_tabs = shn_rheader_tabs( jr, 
+                                                 [(T("Edit Details"), None),
+                                                  (T("Items"), "ritem"),                                                                                                        
+                                                  ]
+                                                 )
+                rheader = DIV(TABLE(TR(TH(T("Message: ")),
+                                    TD(aid_request.message, _colspan=3)),
+                                    TR(TH(T("Priority: ")),
+                                    aid_request.priority,
+                                    TH(T("Source Type: ")),
+                                    rms_req_source_type.get(aid_request.source_type, T("unknown"))),
+                                    TR(TH(T("Time of Request: ")),
+                                    aid_request.timestmp,
+                                    TH(T("Verified: ")),
+                                    aid_request.verified),
+                                    TR(TH(T("Location: ")),
+                                    location_represent,
+                                    TH(T("Actionable: ")),
+                                    aid_request.actionable)),
+                                    rheader_tabs
+                                    )
 
                 return rheader
 

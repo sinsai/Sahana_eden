@@ -133,7 +133,7 @@ if deployment_settings.has_module(module):
     request_id = db.Table(None, "req_id",
                 FieldS3("req_id", db.rms_req, sortby="message",
                     requires = IS_NULL_OR(IS_ONE_OF(db, "rms_req.id", "%(message)s")),
-                    represent = lambda id: (id and [db(db.rms_req.id == id).select(limitby=(0, 1)).first().updated] or ["None"])[0],
+                    represent = lambda id: (id and [db(db.rms_req.id == id).select(limitby=(0, 1)).first().message] or ["None"])[0],
                     label = T("Aid Request"),
                     comment = DIV(A(ADD_AID_REQUEST, _class="colorbox", _href=URL(r=request, c="rms", f="req", args="create", vars=dict(format="popup")), _target="top", _title=ADD_AID_REQUEST), DIV( _class="tooltip", _title=Tstr("Add Request") + "|" + Tstr("The Request this record is associated with."))),
                     ondelete = "RESTRICT"
@@ -291,6 +291,31 @@ if deployment_settings.has_module(module):
 
     # Plug into REST controller
     s3xrc.model.set_method(module, resource, method="search_simple", action=shn_rms_req_search_simple )
+    
+    #==============================================================================
+    # Request Item
+    #
+    resource = "ritem"
+    tablename = "%s_%s" % (module, resource)
+    table = db.define_table(tablename, 
+                            timestamp, 
+                            uuidstamp, 
+                            authorstamp, 
+                            deletion_status,
+                            request_id,
+                            get_item_id(),
+                            Field("quantity", "double"),
+                            comments,
+                            migrate=migrate)
+
+    s3.crud_strings[tablename] = shn_crud_strings("Request Item")
+
+    # Items as component of Locations
+    s3xrc.model.add_component(module, resource,
+                              multiple=True,
+                              joinby=dict(rms_req="request_id", supply_item="item_id"),
+                              deletable=True,
+                              editable=True)    
 
     # ------------------
     # Create pledge table

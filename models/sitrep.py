@@ -536,8 +536,8 @@ if deployment_settings.has_module(module):
     table.persons_affected.label = T("# of People Affected")
     table.persons_injured.label = T("# of People Injured")
     table.persons_deceased.label = T("# of People Deceased")    
-    table.houses_destroyed = T("# of Houses Destroyed") 
-    table.houses_damaged = T("# of Houses Damaged") 
+    table.houses_destroyed.label = T("# of Houses Destroyed") 
+    table.houses_damaged.label = T("# of Houses Damaged") 
     
     table.houses_destroyed.requires = IS_INT_IN_RANGE(0,99999999)
     table.houses_destroyed.default = 0

@@ -600,6 +600,10 @@ class AuthS3(Auth):
         db = self.db
         session = self.session
 
+        # Administrators have all roles
+        if 1 in session.s3.roles:
+            return True
+        
         try:
             role = int(role)
         except:

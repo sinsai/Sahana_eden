@@ -553,7 +553,7 @@ def location():
         return output
     response.s3.postp = user_postp
 
-    output = shn_rest_controller(module, resource)
+    output = shn_rest_controller(module, resource, listadd=False)
 
     if isinstance(output, dict):
         output.update(gis_location_hierarchy=gis_location_hierarchy)

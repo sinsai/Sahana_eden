@@ -65,6 +65,7 @@ if deployment_settings.has_module(module):
                             timestamp, uuidstamp, authorstamp, deletion_status,
                             location_id,
                             Field("datetime", "datetime"),
+                            document_id,
                             document,
                             comments,
                             migrate=migrate)

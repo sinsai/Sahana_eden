@@ -65,6 +65,7 @@ if deployment_settings.has_module(module):
                             timestamp, uuidstamp, authorstamp, deletion_status,
                             location_id,
                             Field("datetime", "datetime"),
+                            document_id,
                             document,
                             comments,
                             migrate=migrate)
@@ -96,6 +97,13 @@ if deployment_settings.has_module(module):
                                 represent = lambda id: (id and [db(db.flood_freport.id == id).select(db.flood_freport.datetime, limitby=(0, 1)).first().datetime] or ["None"])[0],
                                 label = T("Flood Report"),
                                 ondelete = "RESTRICT"))
+    
+    #freport as component of doc_documents
+    s3xrc.model.add_component(module, resource,
+                          multiple = True,
+                          joinby = dict( doc_document = "document_id" ),
+                          deletable = True,
+                          editable = True)
 
     # -----------------------------------------------------------------------------
     # Locations

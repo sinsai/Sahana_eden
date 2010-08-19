@@ -110,6 +110,7 @@ if deployment_settings.has_module(module):
                     Field("dwellings", "integer"),
                     Field("persons_per_dwelling", "integer"),
                     Field("area"),
+                    document_id,
                     comments,
                     migrate=migrate)
     table.uuid.requires = IS_NOT_IN_DB(db, "%s.uuid" % tablename)
@@ -158,6 +159,9 @@ if deployment_settings.has_module(module):
     # Shelters as component of Services, Types & Locations
     s3xrc.model.add_component(module, resource,
                               multiple=True,
-                              joinby=dict(cr_shelter_type="shelter_type_id", cr_shelter_service="shelter_service_id", gis_location="location_id"),
+                              joinby=dict(cr_shelter_type="shelter_type_id", 
+                                          cr_shelter_service="shelter_service_id", 
+                                          gis_location="location_id",
+                                          doc_document = "document_id"),
                               deletable=True,
                               editable=True)

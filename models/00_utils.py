@@ -502,6 +502,7 @@ def shn_represent_file(file_name,
 
     @description:
         Represents a file (stored in a table) as the filename with a link to that file
+        THIS FUNCTION IS REDUNDANT AND CAN PROBABLY BE REPLACED BY shn_file_represent in models/06_doc.py
     """
     import base64
     url_file = crud.settings.download_url + "/" + file_name

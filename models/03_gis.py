@@ -557,7 +557,7 @@ def gis_location_onaccept(form):
     gis.update_location_tree()
 
 s3xrc.model.configure(table,
-                      #onvalidation=lambda form: gis.wkt_centroid(form),
+                      onvalidation=lambda form: gis.wkt_centroid(form),
                       onaccept=gis_location_onaccept)
 
 # -----------------------------------------------------------------------------

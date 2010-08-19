@@ -68,6 +68,7 @@ if deployment_settings.has_module(module):
         Field("actioned", "boolean"),
         Field("actioned_details"),
         Field("pledge_status", "string"),
+        document_id,
         migrate=migrate)
 
     #table.id.represent = lambda id: shn_req_aid_represent(id) 

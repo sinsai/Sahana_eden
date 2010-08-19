@@ -4,6 +4,7 @@
     Document Library - Controllers
 
     @author: Fran Boon
+    @author: Michael Howden
 """
 
 module = request.controller
@@ -13,12 +14,12 @@ if module not in deployment_settings.modules:
     redirect(URL(r=request, c="default", f="index"))
 
 # Options Menu (available in all Functions' Views)
-response.menu_options = [
-    [T("Images"), False, URL(r=request, f="image")],
-    [T("Metadata"), False, URL(r=request, f="metadata")],
-    [T("Bulk Uploader"), False, URL(r=request, f="bulk_upload")]
-]
+response.menu_options = [ [T("Reference Documents"), False, URL(r=request, f="document")],
+                          [T("Images"), False, URL(r=request, f="image")],
+                          #[T("Bulk Uploader"), False, URL(r=request, f="bulk_upload")]
+                        ]
 
+#==============================================================================
 # Web2Py Tools functions
 def download():
     "Download a file."
@@ -31,6 +32,80 @@ def index():
     module_name = deployment_settings.modules[module].name_nice
 
     return dict(module_name=module_name)
+
+#==============================================================================
+def shn_document_rheader(jr, tabs=[]):
+    if jr.representation == "html":
+        rheader_tabs = shn_rheader_tabs(jr, tabs)
+        doc_document = jr.record
+        table = db.doc_document
+        rheader = DIV(B(Tstr("Name") + ": "),doc_document.name,
+                      TABLE(TR(
+                               TH(Tstr("File") + ": "), table.file.represent( doc_document.file ),
+                               TH(Tstr("URL") + ": "), table.url.represent( doc_document.url ),
+                               ),
+                            TR(
+                               TH(Tstr("Organisation") + ": "), table.organisation_id.represent( doc_document.organisation_id ),
+                               TH(Tstr("Person") + ": "), table.person_id.represent( doc_document.organisation_id ),
+                               ),
+                           ),
+                      rheader_tabs
+                      )
+        return rheader
+    return None
+
+def document():
+    "RESTful CRUD controller"
+    resource = request.function
+    tablename = "%s_%s" % (module, resource)
+    table = db[tablename]
+
+    # Model options
+    # used in multiple controllers, so in the model
+    
+    #Disable legacy fields in components, unless updating, so the data can be manually transferred to new fields
+    if "update" not in request.args:
+        db.sitrep_assessment.source.readable = db.sitrep_assessment.source.writable = False   
+        db.sitrep_school_district.document.readable = db.sitrep_school_district.document.writable = False 
+        db.irs_ireport.source.readable = db.irs_ireport.source.writable = False        
+        db.irs_ireport.source_id.readable = db.irs_ireport.source_id.writable = False  
+        db.flood_freport.document.readable = db.flood_freport.document.writable = False   
+   
+    def postp(jr, output):                          
+        shn_action_buttons(jr)
+        return output
+    response.s3.postp = postp
+    
+    rheader = lambda jr: shn_document_rheader(jr,
+                                          tabs = [(T("Edit Details"), None),
+                                                  (T("Assessment"), "assessment"),    
+                                                  (T("Incident Report"), "ireport"),  
+                                                  (T("Inventory"), "location"),  
+                                                  (T("Shelter"), "shelter"),      
+                                                  (T("Flood Report"), "freport"),                                                                                                 
+                                                 ]
+                                          )
+    
+
+    return shn_rest_controller(module, resource, rheader=rheader, sticky=True)
+#==============================================================================
+def image():
+    "RESTful CRUD controller"
+    resource = request.function
+    tablename = "%s_%s" % (module, resource)
+    table = db[tablename]
+    
+    # Model options
+    # used in multiple controllers, so in the model
+    
+    def postp(jr, output):                          
+        shn_action_buttons(jr)
+        return output
+    response.s3.postp = postp    
+
+    return shn_rest_controller(module, resource)
+#==============================================================================
+# END - Following code is not utilised
 
 def metadata():
     "RESTful CRUD controller"
@@ -66,35 +141,7 @@ def metadata():
         msg_list_empty = T("No Metadata currently defined"))
 
     return shn_rest_controller(module, resource)
-
-def image():
-    "RESTful CRUD controller"
-    resource = request.function
-    table = module + "_" + resource
-
-    # Model options
-    # used in multiple controllers, so in the model
-
-    # CRUD Strings
-    LIST_IMAGES = T("List Images")
-    s3.crud_strings[table] = Storage(
-        title_create = ADD_IMAGE,
-        title_display = T("Image Details"),
-        title_list = LIST_IMAGES,
-        title_update = T("Edit Image"),
-        title_search = T("Search Images"),
-        subtitle_create = T("Add New Image"),
-        subtitle_list = T("Image"),
-        label_list_button = LIST_IMAGES,
-        label_create_button = ADD_IMAGE,
-        label_delete_button = T("Delete Image"),
-        msg_record_created = T("Image added"),
-        msg_record_modified = T("Image updated"),
-        msg_record_deleted = T("Image deleted"),
-        msg_list_empty = T("No Image currently defined"))
-
-    return shn_rest_controller(module, resource)
-
+#==============================================================================
 def bulk_upload():
     """
     Custom view to allow bulk uploading of photos which are made into GIS Features.

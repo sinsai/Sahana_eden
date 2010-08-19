@@ -54,28 +54,28 @@ from gluon.sqlhtml import SQLFORM
 from gluon.tools import Auth
 from gluon.tools import Crud
 
-DEFAULT = lambda:None
+DEFAULT = lambda: None
 table_field = re.compile("[\w_]+\.[\w_]+")
 
 class AuthS3(Auth):
     """
-    Extended version of Auth from gluon/tools.py
-    - override:
-        login()
-        register()
-        requires_membership()
-    - add
-        shn_has_role()
-        shn_has_permission()
-        shn_accessible_query()
-        shn_register() callback
-        shn_link_to_person()
-    - language
+        Extended version of Auth from gluon/tools.py
+        - override:
+            login()
+            register()
+            requires_membership()
+        - add
+            shn_has_role()
+            shn_has_permission()
+            shn_accessible_query()
+            shn_register() callback
+            shn_link_to_person()
+        - language
     """
 
     def __init__(self, environment, deployment_settings, db=None):
 
-        "Initialise parent class & make any necessary modifications"
+        """ Initialise parent class & make any necessary modifications """
 
         Auth.__init__(self, environment, db)
 
@@ -291,13 +291,12 @@ class AuthS3(Auth):
         log=DEFAULT,
         ):
         """
-        Overrides Web2Py's login() to use custom flash styles & utcnow
+            Overrides Web2Py's login() to use custom flash styles & utcnow
 
-        returns a login form
+            returns a login form
 
-        .. method:: Auth.login([next=DEFAULT [, onvalidation=DEFAULT
-            [, onaccept=DEFAULT [, log=DEFAULT]]]])
-
+            .. method:: Auth.login([next=DEFAULT [, onvalidation=DEFAULT
+                [, onaccept=DEFAULT [, log=DEFAULT]]]])
         """
 
         table_user = self.settings.table_user
@@ -455,8 +454,13 @@ class AuthS3(Auth):
         # S3: Don't allow registration if disabled
         db = self.db
         settings = db(db.s3_setting.id > 0).select(db.s3_setting.utc_offset, limitby=(0, 1)).first()
-        self_registration = (settings and session.s3.self_registration) or 1
-        utc_offset = settings.utc_offset
+        if settings:
+            self_registration = session.s3.self_registration
+            utc_offset = settings.utc_offset
+        else:
+            # db empty and prepopulate is false
+            self_registration = True
+            utc_offset = self.deployment_settings.get_L10n_utc_offset()
         if not self_registration:
             session.error = self.messages.registration_disabled
             redirect(URL(r=request, args=["login"]))
@@ -569,36 +573,10 @@ class AuthS3(Auth):
             redirect(next)
         return form
 
-    #def requires_membership(self, role):
-        #"""
-        #Decorator that prevents access to action if not logged in or
-        #if user logged in is not a member of group_id.
-        #If role is provided instead of group_id then the group_id is calculated.
-
-        #Overrides Web2Py's requires_membership() to add new functionality:
-            #* Custom Flash style
-        #"""
-
-        #def decorator(action):
-            #group_id = self.id_group(role)
-
-            #def f(*a, **b):
-                #if not self.basic() and not self.is_logged_in():
-                    #request = self.environment.request
-                    #next = URL(r=request, args=request.args, vars=request.get_vars)
-                    #redirect(self.settings.login_url + "?_next=" + urllib.quote(next))
-                #if not self.has_membership(group_id):
-                    #self.environment.session.flash = \
-                        #self.messages.access_denied
-                    #next = self.settings.on_failed_authorization
-                    #redirect(next)
-                #return action(*a, **b)
-            #f.__doc__ = action.__doc__
-            #return f
-
-        #return decorator
-
     def shn_logged_in(self):
+        """
+            Check whether the user is currently logged-in
+        """
 
         session = self.session
         if not self.is_logged_in():
@@ -614,8 +592,8 @@ class AuthS3(Auth):
 
     def shn_has_role(self, role):
         """
-        Check whether the currently logged-in user has a role
-        @param role can be integer or a name
+            Check whether the currently logged-in user has a role
+            @param role can be integer or a name
         """
 
         #deployment_settings = self.deployment_settings
@@ -626,8 +604,12 @@ class AuthS3(Auth):
             role = int(role)
         except:
             #role = deployment_settings.auth.roles[role]
-            role = db(db.auth_group.role == role).select(db.auth_group.id, limitby=(0, 1)).first().id
-
+            try:
+                role = db(db.auth_group.role == role).select(db.auth_group.id, limitby=(0, 1)).first().id
+            except:
+                # Role doesn't exist in the Database
+                return False
+                
         if role in session.s3.roles:
             return True
         else:
@@ -637,9 +619,9 @@ class AuthS3(Auth):
     def shn_has_permission(self, name, table_name, record_id = 0):
 
         """
-        S3 framework function to define whether a user can access a record in manner "name"
-        Designed to be called from the RESTlike controller
-        @note: This is planned to be rewritten: http://eden.sahanafoundation.org/wiki/BluePrintAuthorization
+            S3 framework function to define whether a user can access a record in manner "name"
+            Designed to be called from the RESTlike controller
+            @note: This is planned to be rewritten: http://eden.sahanafoundation.org/wiki/BluePrintAuthorization
         """
 
         session = self.session
@@ -667,14 +649,11 @@ class AuthS3(Auth):
 
         return authorised
 
-    #
-    # shn_accessible_query --------------------------------------------------------
-    #
     def shn_accessible_query(self, name, table):
 
         """
-        Returns a query with all accessible records for the current logged in user
-        @note: This method does not work on GAE because uses JOIN and IN
+            Returns a query with all accessible records for the current logged in user
+            @note: This method does not work on GAE because uses JOIN and IN
         """
 
         db = self.db
@@ -707,11 +686,11 @@ class AuthS3(Auth):
 
     def shn_register(self, form):
         """
-        S3 framework function
-        Designed to be used as an onaccept callback for register()
-        Whenever someone registers, it:
-            * adds them to the 'Authenticated' role
-            * adds their name to the Person Registry
+            S3 framework function
+            Designed to be used as an onaccept callback for register()
+            Whenever someone registers, it:
+                * adds them to the 'Authenticated' role
+                * adds their name to the Person Registry
         """
 
         # Add to 'Authenticated' role
@@ -722,15 +701,47 @@ class AuthS3(Auth):
         self.shn_link_to_person(user=form.vars)
 
 
+    def shn_has_membership(self, group_id=None, user_id=None, role=None):
+        """
+            Checks if user is member of group_id or role
+
+            Extends Web2Py's requires_membership() to add new functionality:
+                * Custom Flash style
+                * Uses shn_has_role()
+        """
+
+        group_id = group_id or self.id_group(role)
+        try:
+            group_id = int(group_id)
+        except:
+            group_id = self.id_group(group_id) # interpret group_id as a role
+        
+        if self.shn_has_role(group_id):
+            r = True
+        else:
+            r = False
+        
+        log = self.messages.has_membership_log
+        if log:
+            if not user_id and self.user:
+                user_id = self.user.id
+            self.log_event(log % dict(user_id=user_id,
+                                      group_id=group_id, check=r))
+        return r
+
+    # Override original method
+    has_membership = shn_has_membership
+
     def shn_requires_membership(self, role):
         """
-        Decorator that prevents access to action if not logged in or
-        if user logged in is not a member of group_id.
-        If role is provided instead of group_id then the group_id is calculated.
+            Decorator that prevents access to action if not logged in or
+            if user logged in is not a member of group_id.
+            If role is provided instead of group_id then the group_id is calculated.
 
-        Extends Web2Py's requires_membership() to add new functionality:
-            * Custom Flash style
-            * Uses shn_has_role()
+            Extends Web2Py's requires_membership() to add new functionality:
+                * Custom Flash style
+                * Uses shn_has_role()
+                * Administrators (id=1) are deemed to have all roles
         """
 
         def decorator(action):
@@ -740,13 +751,16 @@ class AuthS3(Auth):
                     request = self.environment.request
                     next = URL(r=request, args=request.args, vars=request.get_vars)
                     redirect(self.settings.login_url + "?_next=" + urllib.quote(next))
-                if not self.shn_has_role(role):
-                    self.environment.session.flash = \
-                        self.messages.access_denied
+
+                if not self.shn_has_role(role) and not self.shn_has_role(1):
+                    self.environment.session.error = self.messages.access_denied
                     next = self.settings.on_failed_authorization
                     redirect(next)
+
                 return action(*a, **b)
+
             f.__doc__ = action.__doc__
+
             return f
 
         return decorator
@@ -807,7 +821,7 @@ class AuthS3(Auth):
                         continue
 
                 pe_id = etable.insert(pe_type="pr_person")
-                db(etable.id==pe_id).update(pe_id=pe_id)
+                db(etable.id == pe_id).update(pe_id=pe_id)
                 if pe_id:
                     new_id = ptable.insert(
                         pe_id = pe_id,
@@ -837,12 +851,12 @@ class AuthS3(Auth):
 
 class CrudS3(Crud):
     """
-    Extended version of Crud from gluon/tools.py
-    - select() uses SQLTABLE2 (to allow different linkto construction)
+        Extended version of Crud from gluon/tools.py
+        - select() uses SQLTABLE2 (to allow different linkto construction)
     """
 
     def __init__(self, environment, db=None):
-        "Initialise parent class & make any necessary modifications"
+        """ Initialise parent class & make any necessary modifications """
         Crud.__init__(self, environment, db)
 
     def select(
@@ -1040,21 +1054,21 @@ class SQLTABLE2(TABLE):
 # A tags have classes
 class MENU2(DIV):
     """
-    Used to build modules menu
-    Each list has 3 options: Name, Right & Link
-    (NB In Web2Py's MENU, the 2nd option is 'Active')
-    Right=True means that menu item floats right
+        Used to build modules menu
+        Each list has 3 options: Name, Right & Link
+        (NB In Web2Py's MENU, the 2nd option is 'Active')
+        Right=True means that menu item floats right
 
-    Optional arguments
-      _class: defaults to 'S3menuInner'
-      ul_main_class: defaults to 'S3menuUL'
-      ul_sub_class: defaults to 'S3menuSub'
-      li_class: defaults to 'S3menuLI'
-      a_class: defaults to 'S3menuA'
+        Optional arguments
+          _class: defaults to 'S3menuInner'
+          ul_main_class: defaults to 'S3menuUL'
+          ul_sub_class: defaults to 'S3menuSub'
+          li_class: defaults to 'S3menuLI'
+          a_class: defaults to 'S3menuA'
 
-    Example:
-        menu = MENU2([["name", False, URL(...), [submenu]], ...])
-        {{=menu}}
+        Example:
+            menu = MENU2([["name", False, URL(...), [submenu]], ...])
+            {{=menu}}
     """
 
     tag = "div"
@@ -1152,6 +1166,7 @@ class FieldS3(Field):
         ):
 
         self.sortby = sortby
+
         Field.__init__(self,
                        fieldname,
                        type,

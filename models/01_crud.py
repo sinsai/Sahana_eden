@@ -352,6 +352,90 @@ def import_csv(file, table=None):
 #
 # import_url ------------------------------------------------------------------
 #
+def import_url2(r):
+
+    """ Import data from URL query
+
+        Restriction: can only update single records (no mass-update)
+
+    """
+
+    xml = s3xrc.xml
+
+    prefix, name, table, tablename = r.target()
+
+    record = r.record
+    resource = r.resource
+
+    # Handle components
+    if record and r.component:
+        component = resource.components[r.component_name]
+        resource = component.resource
+        resource.load()
+        if len(resource) == 1:
+            record = resource.records()[0]
+        else:
+            record = None
+        r.request.vars.update({component.fkey:r.record[component.pkey]})
+    elif not record and r.component:
+        item = xml.json_message(False, 400, "Invalid Request!")
+        return dict(item=item)
+
+    # Check for update
+    if record and xml.UID in table.fields:
+        r.request.vars.update({xml.UID:record[xml.UID]})
+
+    # Build tree
+    element = etree.Element(xml.TAG.resource)
+    element.set(xml.ATTRIBUTE.name, resource.tablename)
+    for var in r.request.vars:
+        if var.find(".") != -1:
+            continue
+        elif var in table.fields:
+            field = table[var]
+            value = xml.xml_encode(str(r.request.vars[var]).decode("utf-8"))
+            if var in xml.FIELDS_TO_ATTRIBUTES:
+                element.set(var, value)
+            else:
+                data = etree.Element(xml.TAG.data)
+                data.set(xml.ATTRIBUTE.field, var)
+                if field.type == "upload":
+                    data.set(xml.ATTRIBUTE.filename, value)
+                else:
+                    data.text = value
+                element.append(data)
+    tree = xml.tree([element], domain=s3xrc.domain)
+
+    # Import data
+    result = Storage(committed=False)
+    s3xrc.sync_resolve = lambda vector, result=result: result.update(vector=vector)
+    try:
+        success = resource.import_xml(tree)
+    except SyntaxError:
+        pass
+
+    # Check result
+    if result.vector:
+        result = result.vector
+
+    # Build response
+    if success and result.committed:
+        id = result.id
+        method = result.method
+        if method == result.METHOD.CREATE:
+            item = xml.json_message(True, 201, "Created as %s?%s.id=%s" %
+                                    (str(r.there(representation="html", vars=dict())),
+                                     result.name, result.id))
+        else:
+            item = xml.json_message(True, 200, "Record updated")
+    else:
+        item = xml.json_message(False, 403, "Could not create/update record: %s" %
+                                s3xrc.error or xml.error,
+                                tree=xml.tree2json(tree))
+
+    return dict(item=item)
+
+
 def import_url(r, table, method):
 
     """
@@ -421,7 +505,7 @@ def import_url(r, table, method):
     for var in record:
         if var in table.fields:
             value = record[var]
-            (value, error) = s3xrc.xml.validate(table, original, var, value)
+            (value, error) = s3xrc.validate(table, original, var, value)
         else:
             # Shall we just ignore non-existent fields?
             # del record[var]
@@ -1175,8 +1259,8 @@ def shn_list(r, **attr):
             output.update(form=form, addtitle=addtitle)
 
         else:
-            # List only with create button below
-            if listadd:
+            # List only
+            if authorised:
                 label_create_button = shn_get_crud_string(tablename, "label_create_button")
                 add_btn = A(label_create_button, _href=href_add, _class="action-btn")
             else:
@@ -1356,7 +1440,8 @@ def shn_create(r, **attr):
                     caller=request.vars.caller)
 
     elif representation == "url":
-        return import_url(r, table, method="create")
+        #return import_url(r, table, method="create")
+        return import_url2(r)
 
     elif representation == "csv":
         # Read in POST
@@ -1549,7 +1634,8 @@ def shn_update(r, **attr):
         return dict(item=form)
 
     elif r.representation == "url":
-        return import_url(r, table, method="update")
+        #return import_url(r, table, method="update")
+        return import_url2(r)
 
     else:
         session.error = BADFORMAT

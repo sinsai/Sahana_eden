@@ -29,9 +29,36 @@ def download():
 
 # S3 framework functions
 def index():
-    "Module's Home Page"
+    """ Module's Home Page """
     module_name = deployment_settings.modules[module].name_nice
-    return dict(module_name=module_name)
+    
+    # Include an embedded Overview Map on the index page
+    window = False
+
+    # ToDo: Make these configurable
+    #config = gis.get_config()
+    if 1 in session.s3.roles or shn_has_role("MapAdmin"):
+        catalogue_toolbar = True
+    else:
+        catalogue_toolbar = False
+    toolbar = False
+    search = True
+    catalogue_overlays = True
+
+    # Read which overlays to enable
+    feature_groups = []
+    _feature_groups = db((db.gis_feature_group.enabled == True) & (db.gis_feature_group.deleted == False)).select()
+    for feature_group in _feature_groups:
+        feature_groups.append(
+            {
+                "feature_group" : feature_group.name,
+                "active" : feature_group.visible
+            }
+        )
+
+    map = gis.show_map(window=window, catalogue_toolbar=catalogue_toolbar, toolbar=toolbar, search=search, catalogue_overlays=catalogue_overlays, feature_groups=feature_groups)
+
+    return dict(module_name=module_name, map=map)
 
 def test():
     "Test Mapping API"
@@ -74,6 +101,7 @@ def test2():
     "Test new OpenLayers functionality in a RAD environment"
     return dict()
 
+#@auth.shn_requires_membership("MapAdmin")
 def apikey():
     "RESTful CRUD controller"
     resource = request.function
@@ -146,6 +174,7 @@ def config():
 
     return output
 
+#@auth.shn_requires_membership("MapAdmin")
 def feature_class():
     "RESTful CRUD controller"
     resource = request.function
@@ -187,6 +216,7 @@ def feature_class():
 
     return output
 
+#@auth.shn_requires_membership("MapAdmin")
 def feature_group():
     "RESTful CRUD controller"
     resource = request.function
@@ -229,6 +259,7 @@ def feature_group():
 
     return output
 
+#@auth.shn_requires_membership("MapAdmin")
 def feature_class_to_feature_group():
     "RESTful CRUD controller"
     resource = request.function
@@ -251,6 +282,7 @@ def feature_class_to_feature_group():
 
     return output
 
+#@auth.shn_requires_membership("MapAdmin")
 def feature_layer():
     "RESTful CRUD controller"
     resource = request.function
@@ -517,6 +549,7 @@ def location():
 
     return output
 
+#@auth.shn_requires_membership("MapAdmin")
 def marker():
     "RESTful CRUD controller"
     resource = request.function
@@ -557,6 +590,7 @@ def marker():
 
     return output
 
+#@auth.shn_requires_membership("MapAdmin")
 def projection():
     "RESTful CRUD controller"
     resource = request.function
@@ -601,6 +635,7 @@ def projection():
 
     return output
 
+#@auth.shn_requires_membership("MapAdmin")
 def track():
     "RESTful CRUD controller"
     resource = request.function
@@ -640,6 +675,7 @@ EDIT_TYPE_LAYER_FMT = "Edit %s Layer"
 LIST_TYPE_LAYERS_FMT = "List %s Layers"
 NO_TYPE_LAYERS_FMT = "No %s Layers currently defined"
 
+#@auth.shn_requires_membership("MapAdmin")
 def layer_openstreetmap():
     "RESTful CRUD controller"
     resource = request.function
@@ -681,6 +717,7 @@ def layer_openstreetmap():
 
     return output
 
+#@auth.shn_requires_membership("MapAdmin")
 def layer_google():
     "RESTful CRUD controller"
     resource = request.function
@@ -722,6 +759,7 @@ def layer_google():
 
     return output
 
+#@auth.shn_requires_membership("MapAdmin")
 def layer_yahoo():
     "RESTful CRUD controller"
     resource = request.function
@@ -763,6 +801,7 @@ def layer_yahoo():
 
     return output
 
+#@auth.shn_requires_membership("MapAdmin")
 def layer_mgrs():
     "RESTful CRUD controller"
     resource = request.function
@@ -804,6 +843,7 @@ def layer_mgrs():
 
     return output
 
+#@auth.shn_requires_membership("MapAdmin")
 def layer_bing():
     "RESTful CRUD controller"
     resource = request.function
@@ -845,6 +885,7 @@ def layer_bing():
 
     return output
 
+#@auth.shn_requires_membership("MapAdmin")
 def layer_georss():
     "RESTful CRUD controller"
     resource = request.function
@@ -890,6 +931,7 @@ def layer_georss():
 
     return output
 
+#@auth.shn_requires_membership("MapAdmin")
 def layer_gpx():
     "RESTful CRUD controller"
     resource = request.function
@@ -934,6 +976,7 @@ def layer_gpx():
 
     return output
 
+#@auth.shn_requires_membership("MapAdmin")
 def layer_kml():
     "RESTful CRUD controller"
     resource = request.function
@@ -979,6 +1022,7 @@ def layer_kml():
 
     return output
 
+#@auth.shn_requires_membership("MapAdmin")
 def layer_tms():
     "RESTful CRUD controller"
     resource = request.function
@@ -1025,6 +1069,7 @@ def layer_tms():
 
     return output
 
+#@auth.shn_requires_membership("MapAdmin")
 def layer_wms():
     "RESTful CRUD controller"
     resource = request.function
@@ -1115,6 +1160,7 @@ def layer_js():
 
     return output
 
+#@auth.shn_requires_membership("MapAdmin")
 def layer_xyz():
     "RESTful CRUD controller"
     resource = request.function
@@ -1437,6 +1483,7 @@ def layers_enable():
         session.error = T("Not authorised!")
     redirect(URL(r=request, f="map_service_catalogue"))
 
+#@auth.shn_requires_membership("MapAdmin")
 def map_service_catalogue():
     """
     Map Service Catalogue.
@@ -1522,8 +1569,11 @@ def map_viewing_client():
     else:
         window = False
 
+    if 1 in session.s3.roles or shn_has_role("MapAdmin"):
+        catalogue_toolbar = True
+    else:
+        catalogue_toolbar = False
     # ToDo: Make these configurable
-    catalogue_toolbar = True
     toolbar = True
     search = True
     catalogue_overlays = True

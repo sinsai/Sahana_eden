@@ -163,7 +163,7 @@ def shn_pentity_onaccept(form, table=None):
         pentity = db.pr_pentity
         uid = record.uuid
 
-        pe = db(pentity.uuid == uid).select(pentity.id, limitby=(0,1)).first()
+        pe = db(pentity.uuid == uid).select(pentity.id, limitby=(0, 1)).first()
         if pe:
             values = dict(pe_id = pe.id)
             if "pe_label" in record:
@@ -327,6 +327,7 @@ table.date_of_birth.requires = IS_NULL_OR(IS_DATE_IN_RANGE(
                                error_message="%s " % T("Enter a date before") + "%(max)s!"))
 
 table.first_name.requires = IS_NOT_EMPTY()
+table.first_name.requires.error_message = T("Please enter a First Name")
 
 table.pe_label.comment = DIV(DIV(_class="tooltip",
     _title=Tstr("ID Label") + "|" + Tstr("Number or Label on the identification tag this person is wearing (if any).")))

@@ -5,7 +5,7 @@
 """
 
 # Language Menu (available in all screens)
-s3.menu_lang = [ T("Language"), True, #,
+s3.menu_lang = [ T("Language"), True, "#",
         [
             [T("English"), False, URL(r=request, vars={"_language":"en"})],
             [T("Chinese"), False, URL(r=request, vars={"_language":"zh-tw"})],

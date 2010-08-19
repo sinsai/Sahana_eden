@@ -126,7 +126,7 @@ def table():
     table = get_table_for_template(template.id)
     resource = "template_%s" % (template.id)
     table.uuid.requires = IS_NOT_IN_DB(db, "%s.uuid" % template.table_name)
-
+    table.id.represent =  lambda id: A(id,_href=URL(r=request,f="table",args=[id,"update"], vars={"series_id":request.vars.series_id}))        
      # CRUD Strings
     s3.crud_strings[template.table_name] = Storage(
         title_create = T("Add Survey Answer"),
@@ -361,7 +361,7 @@ def get_table_for_template(template_id):
     tbl = None
 
     if template: # avoid blow ups!
-        fields = [Field("series_id", db.survey_series, writable=False, readable=False)
+        fields = [Field("series_id", db.survey_series, writable=False, readable=False)                  
                   ] # A list of Fields representing the questions
 
         questions = db((db.survey_template_link.survey_template_id == template_id) & \

@@ -846,19 +846,23 @@ if empty:
     # User Roles (uses native Web2Py Auth Groups)
     table = auth.settings.table_group_name
     if not db(db[table].id > 0).count():
+        # The 1st 4 permissions are hard-coded for performance reasons
         # This must stay as id=1
         auth.add_group("Administrator", description = "System Administrator - can access & make changes to any data")
         # This must stay as id=2
         auth.add_group("Authenticated", description = "Authenticated - all logged-in users")
         # This must stay as id=3
         auth.add_group("Creator", description = "Creator - dummy role which isn't meant to have users added to it. Used to restrict records to just those created by the user")
-        if session.s3.security_policy != 1:
-            auth.add_group("Editor", description = "Editor - can access & make changes to any unprotected data")
+        # Optional roles for delegating access
+        # This must stay as id=4
+        auth.add_group("Editor", description = "Editor - can access & make changes to any unprotected data")
+        auth.add_group("UserAdmin", description = "UserAdmin - allowed to manage the membership of the Editor role")
         #auth.add_group("Restricted", description = "Restricted - is given a simplified full-screen view so as to minimise the possibility of errors")
+        # GIS
+        auth.add_group("MapAdmin", description = "MapAdmin - allowed access to edit the MapService Catalogue")
+        auth.add_group("AdvancedJS", description = "AdvancedJS - allowed access to edit the Advanced JS layers")
         # DVI
         auth.add_group("DVI", description = "DVI - allowed access to the DVI module")
-        # GIS
-        auth.add_group("AdvancedJS", description = "AdvancedJS - allowed access to edit the Advanced JS layers")
         # HMS
         auth.add_group("HMSAdmin", description = "HMSAdmin - full access to HMS")
         auth.add_group("HMSOfficer", description = "HMSOfficer - permission to edit requests and pledges")

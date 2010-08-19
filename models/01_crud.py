@@ -20,7 +20,7 @@ XSLT_IMPORT_TEMPLATES = "static/xslt/import" #: Path to XSLT templates for data 
 XSLT_EXPORT_TEMPLATES = "static/xslt/export" #: Path to XSLT templates for data export
 
 # XSLT available formats
-shn_xml_import_formats = ["xml", "lmx", "osm", "pfif", "ushahidi", "odk"] #: Supported XML import formats
+shn_xml_import_formats = ["xml", "lmx", "osm", "pfif", "ushahidi", "odk", "agasti"] #: Supported XML import formats
 shn_xml_export_formats = dict(
     xml = "application/xml",
     gpx = "application/xml",

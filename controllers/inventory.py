@@ -28,13 +28,6 @@ def shn_location_rheader(jr, tabs=[]):
         return rheader
     return None
 
-def index():
-
-    """ Custom View """
-
-    module_name = deployment_settings.modules[module].name_nice
-    return dict(module_name=module_name)
-
 def location():
     "RESTful CRUD controller"
     resource = request.function
@@ -53,6 +46,14 @@ def location():
                                               )
     
     return shn_rest_controller(module, resource, rheader=rheader, sticky=True)
+
+def index():
+
+    """ Default to the inventory_location list view """
+    request.function = "location"
+    return location()
+    #module_name = deployment_settings.modules[module].name_nice
+    #return dict(module_name=module_name)
 
 #==============================================================================
 def location_item():

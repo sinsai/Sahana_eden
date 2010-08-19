@@ -23,13 +23,6 @@
                 $("#gis_location_name").val(location_name);
                 $("#gis_location_name__row").hide();
             }
-    {{elif "gis_landmark" in request.vars.caller:}}
-            // Populate Name & Hide
-            var location_name = self.parent.$('#gis_landmark_name').val();
-            if (location_name) {
-                $("#gis_location_name").val(location_name);
-                $("#gis_location_name__row").hide();
-            }
     {{elif "hms_hospital" in request.vars.caller:}}
             // Populate Name & Hide
             var location_name = self.parent.$('#hms_hospital_name').val();

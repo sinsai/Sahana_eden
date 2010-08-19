@@ -13,10 +13,6 @@ module = request.controller
 # Options Menu (available in all Functions' Views)
 response.menu_options = [
     [T("Service Catalogue"), False, URL(r=request, f="map_service_catalogue")],
-    [T("Landmarks"), False, URL(r=request, f="landmark"), [
-        [T("List"), False, URL(r=request, f="landmark")],
-        [T("Add"), False, URL(r=request, f="landmark", args="create")],
-    ]],
     [T("Locations"), False, URL(r=request, f="location"), [
         [T("List"), False, URL(r=request, f="location")],
         [T("Add"), False, URL(r=request, f="location", args="create")],
@@ -365,7 +361,7 @@ def feature_layer():
     return output
 
 def feature_layer_query(form):
-    "OnValidation callback to build the simple Query from helpers"
+    """ OnValidation callback to build the simple Query from helpers """
 
     if "advanced" in form.vars:
         # We should use the query field as-is
@@ -390,47 +386,8 @@ def feature_layer_query(form):
 
     return
 
-def landmark():
-    "RESTful CRUD controller"
-    resource = request.function
-    tablename = module + "_" + resource
-    table = db[tablename]
-
-    # Model options
-    table.name.comment = SPAN("*", _class="req")
-    table.category.comment = SPAN("*", _class="req")
-
-    # CRUD Strings
-    ADD_LANDMARK = T("Add Landmark")
-    LIST_LANDMARKS = T("List Landmarks")
-    s3.crud_strings[tablename] = Storage(
-        title_create = ADD_LANDMARK,
-        title_display = T("Landmark Details"),
-        title_list = T("Landmarks"),
-        title_update = T("Edit Landmark"),
-        title_search = T("Search Landmarks"),
-        subtitle_create = T("Add New Landmark"),
-        subtitle_list = LIST_LANDMARKS,
-        label_list_button = LIST_LANDMARKS,
-        label_create_button = ADD_LANDMARK,
-        label_delete_button = T("Delete Landmark"),
-        msg_record_created = T("Landmark added"),
-        msg_record_modified = T("Landmark updated"),
-        msg_record_deleted = T("Landmark deleted"),
-        msg_list_empty = T("No Landmarks currently defined"))
-
-    # Post-processor
-    def user_postp(jr, output):
-        shn_action_buttons(jr)
-        return output
-    response.s3.postp = user_postp
-
-    output = shn_rest_controller(module, resource)
-
-    return output
-
 def location():
-    "RESTful CRUD controller"
+    """ RESTful CRUD controller for Locations """
     resource = request.function
     tablename = module + "_" + resource
     table = db[tablename]
@@ -519,10 +476,6 @@ def location():
             # When called from a Popup, populate defaults & hide unnecessary rows
             if "cr_shelter" in caller:
                 fc = db(db.gis_feature_class.name == "Shelter").select(db.gis_feature_class.id, limitby=(0, 1)).first()
-                table.level.readable = table.level.writable = False
-                table.url.readable = table.url.writable = False
-            elif "gis_landmark" in caller:
-                table.feature_class_id.readable = table.feature_class_id.writable = False
                 table.level.readable = table.level.writable = False
                 table.url.readable = table.url.writable = False
             elif "hms_hospital" in caller:

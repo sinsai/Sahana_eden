@@ -156,8 +156,8 @@ deployment_settings.modules = Storage(
             module_type = 10
         ),
     doc = Storage(
-            name_nice = Tstr("Document Library"),
-            description = Tstr("A library of digital resources, such as Photos, signed contracts and Office documents."),
+            name_nice = Tstr("Documents and Images"),
+            description = Tstr("A library of digital resources, such as photos, documents and reports"),
             module_type = 10
         ),
     irs = Storage(

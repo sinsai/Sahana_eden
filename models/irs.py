@@ -212,6 +212,7 @@ if deployment_settings.has_module(module):
                             Field("persons_deceased", "integer"),
                             Field("source"),
                             Field("source_id"),
+                            document_id,
                             Field("verified", "boolean"),
                             comments,
                             migrate=migrate)
@@ -253,12 +254,7 @@ if deployment_settings.has_module(module):
         msg_record_deleted = T("Incident Report deleted"),
         msg_list_empty = T("No Incident Reports currently registered"))
 
-    s3xrc.model.add_component(module, resource,
-                              multiple = True,
-                              joinby = dict(irs_incident="incident_id"),
-                              deletable = True,
-                              editable = True)
-
+    
     # -----------------------------------------------------------------------------
     irs_assessment_type_opts = {
         1:T("initial assessment"),

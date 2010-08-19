@@ -68,6 +68,7 @@ if deployment_settings.has_module(module):
                             Field("interviewee", "integer"),
                             Field("accessibility", "integer"),
                             comments,
+                            document_id,
                             document,
                             migrate=migrate)
 
@@ -145,7 +146,13 @@ if deployment_settings.has_module(module):
                                    label = T("Rapid Assessment"),
                                    comment = A(ADD_ASSESSMENT, _class="colorbox", _href=URL(r=request, c="sitrep", f="rassessment", args="create", vars=dict(format="popup")), _target="top", _title=ADD_ASSESSMENT),
                                    ondelete = "RESTRICT"))
-
+    
+    # rassessment as component of doc_documents
+    s3xrc.model.add_component(module, resource,
+                              multiple=True,
+                              joinby=dict(doc_document="document_id"),
+                              deletable=True,
+                              editable=True)
 
     # Section 2
     resource = "section2"
@@ -414,6 +421,7 @@ if deployment_settings.has_module(module):
                             Field("water_level", "boolean"),
                             Field("crops_affectees", "double"),
                             Field("source"),
+                            document_id,
                             comments,
                             migrate=migrate)
 
@@ -451,6 +459,13 @@ if deployment_settings.has_module(module):
         msg_record_modified = T("Assessment updated"),
         msg_record_deleted = T("Assessment deleted"),
         msg_list_empty = T("No Assessments currently registered"))
+    
+    # assessment as component of doc_documents
+    s3xrc.model.add_component(module, resource,
+                              multiple=True,
+                              joinby=dict(doc_document="document_id"),
+                              deletable=True,
+                              editable=True)    
 
     # -----------------------------------------------------------------------------
     # School Districts
@@ -463,6 +478,7 @@ if deployment_settings.has_module(module):
                             location_id,
                             Field("reported_by"),
                             Field("date", "date"),
+                            document_id,
                             document,
                             comments,
                             migrate=migrate)
@@ -497,6 +513,13 @@ if deployment_settings.has_module(module):
                                   label = T("School District"),
                                   ondelete = "RESTRICT"))
 
+    # school_district as component of doc_documents
+    s3xrc.model.add_component(module, resource,
+                              multiple=True,
+                              joinby=dict(doc_document="document_id"),
+                              deletable=True,
+                              editable=True)
+    
     # -----------------------------------------------------------------------------
     # School Reports
     resource = "school_report"

@@ -13,17 +13,16 @@ if module not in deployment_settings.modules:
     redirect(URL(r=request, c="default", f="index"))
 
 # Options Menu (available in all Functions' Views)
-response.menu_options = [
-    [T("Images"), False, URL(r=request, f="image")],
-    [T("Metadata"), False, URL(r=request, f="metadata")],
-    [T("Bulk Uploader"), False, URL(r=request, f="bulk_upload")]
-]
+response.menu_options = [ [T("Reference Documents"), False, URL(r=request, f="document")],
+                          [T("Images"), False, URL(r=request, f="image")],
+                        ]
 
+#==============================================================================
 # Web2Py Tools functions
 def download():
     "Download a file."
     return response.download(request, db)
-
+#==============================================================================
 # S3 framework functions
 def index():
     "Module's Home Page"
@@ -31,6 +30,95 @@ def index():
     module_name = deployment_settings.modules[module].name_nice
 
     return dict(module_name=module_name)
+#==============================================================================
+def shn_document_rheader(jr, tabs=[]):
+    if jr.representation == "html":
+        rheader_tabs = shn_rheader_tabs(jr, tabs)
+        doc_document = jr.record
+        table = db.doc_document
+        rheader = DIV(B(Tstr("Name") + ": "),doc_document.name,
+                      TABLE(TR(
+                               TH(Tstr("File") + ": "), table.file.represent( doc_document.file ),
+                               TH(Tstr("URL") + ": "), table.url.represent( doc_document.url ),
+                               ),
+                            TR(
+                               TH(Tstr("Organisation") + ": "), table.organisation_id.represent( doc_document.organisation_id ),
+                               TH(Tstr("Person") + ": "), table.person_id.represent( doc_document.organisation_id ),
+                               ),
+                           ),
+                      rheader_tabs
+                      )
+        return rheader
+    return None
+
+def document():
+    "RESTful CRUD controller"
+    resource = request.function
+    table = module + "_" + resource
+
+    # Model options
+    # used in multiple controllers, so in the model
+
+    # CRUD Strings
+    LIST_DOCUMENTS = T("List Reference Documents")
+    s3.crud_strings[table] = Storage(
+        title_create = ADD_DOCUMENT,
+        title_display = T("Reference Document Details"),
+        title_list = LIST_DOCUMENTS,
+        title_update = T("Edit Reference Document"),
+        title_search = T("Search Reference Documents"),
+        subtitle_create = T("Add New Reference Document"),
+        subtitle_list = T("Reference Document"),
+        label_list_button = LIST_DOCUMENTS,
+        label_create_button = ADD_DOCUMENT,
+        label_delete_button = T("Delete Reference Document"),
+        msg_record_created = T("Reference Document added"),
+        msg_record_modified = T("Reference Document updated"),
+        msg_record_deleted = T("Reference Document deleted"),
+        msg_list_empty = T("No References Documents currently defined"))
+    
+    rheader = lambda jr: shn_document_rheader(jr,
+                                          tabs = [(T("Edit Details"), None),
+                                                  (T("Assessment"), "assessment"),    
+                                                  (T("Incident Report"), "ireport"),  
+                                                  (T("Inventory"), "location"),  
+                                                  (T("Shelter"), "shelter"),      
+                                                  (T("Flood Report"), "freport"),                                                                                                 
+                                                 ]
+                                          )
+    
+
+    return shn_rest_controller(module, resource, rheader=rheader, sticky=True)
+#==============================================================================
+def image():
+    "RESTful CRUD controller"
+    resource = request.function
+    table = module + "_" + resource
+
+    # Model options
+    # used in multiple controllers, so in the model
+
+    # CRUD Strings
+    LIST_IMAGES = T("List Images")
+    s3.crud_strings[table] = Storage(
+        title_create = ADD_IMAGE,
+        title_display = T("Image Details"),
+        title_list = LIST_IMAGES,
+        title_update = T("Edit Image"),
+        title_search = T("Search Images"),
+        subtitle_create = T("Add New Image"),
+        subtitle_list = T("Image"),
+        label_list_button = LIST_IMAGES,
+        label_create_button = ADD_IMAGE,
+        label_delete_button = T("Delete Image"),
+        msg_record_created = T("Image added"),
+        msg_record_modified = T("Image updated"),
+        msg_record_deleted = T("Image deleted"),
+        msg_list_empty = T("No Images currently defined"))
+
+    return shn_rest_controller(module, resource)
+#==============================================================================
+# END - Following code is not utilised
 
 def metadata():
     "RESTful CRUD controller"
@@ -66,35 +154,7 @@ def metadata():
         msg_list_empty = T("No Metadata currently defined"))
 
     return shn_rest_controller(module, resource)
-
-def image():
-    "RESTful CRUD controller"
-    resource = request.function
-    table = module + "_" + resource
-
-    # Model options
-    # used in multiple controllers, so in the model
-
-    # CRUD Strings
-    LIST_IMAGES = T("List Images")
-    s3.crud_strings[table] = Storage(
-        title_create = ADD_IMAGE,
-        title_display = T("Image Details"),
-        title_list = LIST_IMAGES,
-        title_update = T("Edit Image"),
-        title_search = T("Search Images"),
-        subtitle_create = T("Add New Image"),
-        subtitle_list = T("Image"),
-        label_list_button = LIST_IMAGES,
-        label_create_button = ADD_IMAGE,
-        label_delete_button = T("Delete Image"),
-        msg_record_created = T("Image added"),
-        msg_record_modified = T("Image updated"),
-        msg_record_deleted = T("Image deleted"),
-        msg_list_empty = T("No Image currently defined"))
-
-    return shn_rest_controller(module, resource)
-
+#==============================================================================
 def bulk_upload():
     """
     Custom view to allow bulk uploading of photos which are made into GIS Features.

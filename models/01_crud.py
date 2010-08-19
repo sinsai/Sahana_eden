@@ -477,7 +477,7 @@ def import_url(r, table, method):
     for var in record:
         if var in table.fields:
             value = record[var]
-            (value, error) = s3xrc.xml.validate(table, original, var, value)
+            (value, error) = s3xrc.validate(table, original, var, value)
         else:
             # Shall we just ignore non-existent fields?
             # del record[var]

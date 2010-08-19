@@ -797,11 +797,13 @@ OpenLayers.Util.extend( selectPdfControl, {
 
         # Toolbar
         if toolbar:
+            #if 1 in session.s3.roles or shn_has_role("MapAdmin"):
             if auth.is_logged_in():
                 # Provide a way to save the viewport
+                # @ToDo Extend to personalised Map Views
+                # @ToDo Extend to choice of Base Layer & Enabled status of Overlays
                 save_button = """
         var saveButton = new Ext.Toolbar.Button({
-            // ToDo: Make work!
             iconCls: 'save',
             tooltip: '""" + str(T("Save: Default Lat, Lon & Zoom for the Viewport")) + """',
             handler: function() {

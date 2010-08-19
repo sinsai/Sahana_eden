@@ -143,7 +143,12 @@ def table():
         msg_list_empty = T("No Survey Answers currently registered"))
     response.s3.filter = (table.series_id == series_id)
     output = shn_rest_controller("survey", resource,listadd=False)
-    output.update(add_btn="")
+    authorised = shn_has_permission("create", table)
+    if authorised:
+        output.update(add_btn=A(Tstr("Add Survey Answer"), _href=URL(r=request,f="table",vars={"series_id":request.vars.series_id}),
+                            _class="action-btn"))
+    else:
+        output.update(add_btn="")
     return output
 
 def series():

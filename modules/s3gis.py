@@ -797,11 +797,13 @@ OpenLayers.Util.extend( selectPdfControl, {
 
         # Toolbar
         if toolbar:
+            #if 1 in session.s3.roles or shn_has_role("MapAdmin"):
             if auth.is_logged_in():
                 # Provide a way to save the viewport
+                # @ToDo Extend to personalised Map Views
+                # @ToDo Extend to choice of Base Layer & Enabled status of Overlays
                 save_button = """
         var saveButton = new Ext.Toolbar.Button({
-            // ToDo: Make work!
             iconCls: 'save',
             tooltip: '""" + str(T("Save: Default Lat, Lon & Zoom for the Viewport")) + """',
             handler: function() {
@@ -1728,6 +1730,7 @@ OpenLayers.Util.extend( selectPdfControl, {
             cluster_style = """
         // Style Rule For Clusters
         var style_cluster = new OpenLayers.Style({
+            label: "${label}",
             pointRadius: '${radius}',
             fillColor: '#8087ff',
             fillOpacity: 0.5,
@@ -1744,6 +1747,15 @@ OpenLayers.Util.extend( selectPdfControl, {
                         pix = Math.min(feature.attributes.count, 7) + 4;
                     }
                     return pix;
+                },
+                label: function(feature) {
+                    // Label For Unclustered Point or Cluster of just 2
+                    var label = "";
+                    // Size For Clustered Point
+                    if(feature.cluster && feature.attributes.count > 2) {
+                        label = feature.attributes.count;
+                    }
+                    return label;
                 }
             }
         });
@@ -1815,6 +1827,7 @@ OpenLayers.Util.extend( selectPdfControl, {
                 );
         }
         """
+            # Feature Queries
             for layer in feature_queries:
                 # Features passed as Query
                 if "name" in layer:
@@ -1904,7 +1917,7 @@ OpenLayers.Util.extend( selectPdfControl, {
                         # Query is a simple select
                         feature = _feature
                     try:
-                        # Has a per-feature Vector Shape been provided through VirtualFields?
+                        # Has a per-feature Vector Shape been added to the query?
                         graphicName = feature.shape
                         if graphicName not in ["circle", "square", "star", "x", "cross", "triangle"]:
                             # Default to Circle
@@ -1925,7 +1938,7 @@ OpenLayers.Util.extend( selectPdfControl, {
                     except (AttributeError, KeyError):
                         # Use a Marker not a Vector Shape
                         try:
-                            # Has a per-feature marker been provided through VirtualFields?
+                            # Has a per-feature marker been added to the query?
                             _marker = feature.marker
                             if _marker:
                                 marker = _marker.image
@@ -1981,12 +1994,12 @@ OpenLayers.Util.extend( selectPdfControl, {
             for layer in feature_groups:
                 name = layer["feature_group"]
                 if "popup_url" in layer:
-                    popup_url = urllib.unquote(layer["popup_url"])
+                    _popup_url = urllib.unquote(layer["popup_url"])
                 # We'd like to do something like this:
                 #elif feature_class is office:
-                #    popup_url = urllib.unquote(URL(r=request, c="or", f="office"))
+                #    _popup_url = urllib.unquote(URL(r=request, c="or", f="office"))
                 else:
-                    popup_url = urllib.unquote(URL(r=request, c="gis", f="location", args=["read.popup?location.id="]))
+                    _popup_url = urllib.unquote(URL(r=request, c="gis", f="location", args=["read.popup?location.uid="]))
 
                 # Generate HTML snippet
                 name_safe = re.sub("\W", "_", name)
@@ -2051,7 +2064,7 @@ OpenLayers.Util.extend( selectPdfControl, {
                 map.addPopup(popup);
                 // call AJAX to get the contentHTML
                 var uuid = feature.fid;
-                loadDetails('""" + popup_url + """' + '?location.uid=' + uuid, id, popup);
+                loadDetails('""" + _popup_url + """' + uuid, id, popup);
             }
         }
         """
@@ -2087,8 +2100,8 @@ OpenLayers.Util.extend( selectPdfControl, {
                     
                     layers_features += """
         geom = parser.read('""" + wkt + """').geometry;
-        iconURL = '""" + marker_url + """';
-        featureVec = addFeature('""" + feature.gis_location.uuid + """', '""" + fname + """', """ + fc + """, geom, iconURL)
+        styleMarker.iconURL = '""" + marker_url + """';
+        featureVec = addFeature('""" + feature.gis_location.uuid + """', '""" + fname + """', """ + fc + """, geom, styleMarker)
         features.push(featureVec);
         """
                 # Append to Features layer
@@ -2576,7 +2589,7 @@ OpenLayers.Util.extend( selectPdfControl, {
                         feature.geometry.getBounds().getCenterLonLat(),
                         new OpenLayers.Size(80, 12),
                         feature.attributes.title,
-                        true
+                        false
                 );
             } else {
                 // KML
@@ -2584,15 +2597,14 @@ OpenLayers.Util.extend( selectPdfControl, {
                         feature.geometry.getBounds().getCenterLonLat(),
                         new OpenLayers.Size(80, 12),
                         feature.attributes.name,
-                        true
+                        false
                 );
             }
             // should be moved to CSS
             tooltipPopup.contentDiv.style.backgroundColor='ffffcb';
-            tooltipPopup.closeDiv.style.backgroundColor='ffffcb';
             tooltipPopup.contentDiv.style.overflow='hidden';
             tooltipPopup.contentDiv.style.padding='3px';
-            tooltipPopup.contentDiv.style.margin='0';
+            tooltipPopup.contentDiv.style.margin='10px';
             tooltipPopup.closeOnMove = true;
             tooltipPopup.autoSize = true;
             feature.popup = tooltipPopup;

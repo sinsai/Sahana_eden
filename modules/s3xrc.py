@@ -115,7 +115,7 @@ class S3Resource(object):
 
         self.__bind(storage)
 
-        self.components = None
+        self.components = Storage()
         self.parent = parent
 
         if self.parent is None:
@@ -659,7 +659,7 @@ class S3Resource(object):
 
         for i in xrange(len(self.__set)):
             row = self.__set[i]
-            if row.id == key:
+            if str(row.id) == str(key):
                 return row
 
         raise IndexError
@@ -1853,6 +1853,7 @@ class S3Request(object):
         self.id = None
         self.component_name = None
         self.component_id = None
+        self.record = None
         self.method = None
 
         # Parse the request
@@ -3837,7 +3838,8 @@ class S3Vector(object):
 
                     if len(self.record):
                         self.record.update({self.MCI:self.mci})
-                        self.record.update(deleted=False) # Undelete re-imported records!
+                        if "deleted" in self.table.fields:
+                            self.record.update(deleted=False) # Undelete re-imported records!
                         try:
                             success = self.db(self.table.id == self.id).update(**dict(self.record))
                         except: # TODO: propagate error to XML importer
@@ -4732,6 +4734,8 @@ class S3XML(object):
                             value = field.store(file, filename)
                         else:
                             continue
+                    elif filename is not None:
+                        value = ""
                 else:
                     value = child.get(self.ATTRIBUTE.value, None)
                     value = self.xml_decode(value)

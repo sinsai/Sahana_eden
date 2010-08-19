@@ -82,7 +82,8 @@ def document():
                                                   (T("Incident Report"), "ireport"),  
                                                   (T("Inventory"), "location"),  
                                                   (T("Shelter"), "shelter"),      
-                                                  (T("Flood Report"), "freport"),                                                                                                 
+                                                  (T("Flood Report"), "freport"),    
+                                                  (T("Request"), "req"),                                                                                               
                                                  ]
                                           )
     

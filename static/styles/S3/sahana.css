@@ -387,6 +387,25 @@ div#table-container tr.even td { border: 1px solid #ccc;
                                  text-align: center;}
 div#table-container tr.odd td { border: 1px solid #ccc;
                                 text-align: center; }
+                                
+/* Data Table Styling */
+/* Bring in line with export formats */
+#table-container {margin-top: -1px}
+
+#list_length,
+#list_filter,
+#list_processing { float: left;
+				   margin-bottom:4px;}
+				   
+#list_filter { text-align: left;
+			    margin-left: 50px; }
+				   
+#list {clear: both}
+
+#list_info {float: left;
+			margin-top: 4px;}
+			
+#list_paginate {margin: 4px 0px 4px 0px;}	                         
 
 /* Display view */
 div.item-container { width: 100%;

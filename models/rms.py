@@ -139,6 +139,12 @@ if deployment_settings.has_module(module):
                     ondelete = "RESTRICT"
                     ))
 
+    # rms_req as component of doc_documents
+    s3xrc.model.add_component(module, resource,
+                              multiple=True,
+                              joinby=dict(doc_document="document_id"),
+                              deletable=True,
+                              editable=True)
 
     # shn_rms_get_req --------------------------------------------------------
     # copied from pr.py

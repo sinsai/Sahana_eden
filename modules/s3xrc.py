@@ -3838,7 +3838,8 @@ class S3Vector(object):
 
                     if len(self.record):
                         self.record.update({self.MCI:self.mci})
-                        self.record.update(deleted=False) # Undelete re-imported records!
+                        if "deleted" in self.table.fields:
+                            self.record.update(deleted=False) # Undelete re-imported records!
                         try:
                             success = self.db(self.table.id == self.id).update(**dict(self.record))
                         except: # TODO: propagate error to XML importer

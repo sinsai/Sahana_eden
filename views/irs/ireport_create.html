@@ -4,19 +4,19 @@
 $(function() {
     // Person AutoComplete
     // Hide the real Input Field
-    $('#cr_shelter_person_id').hide();
+    $('#irs_ireport_person_id').hide();
     // Add a dummy field
-    $('#cr_shelter_person_id').after("<input id='dummy_cr_shelter_person_id' class='ac_input' size=50 />");
-    {{dummy_input = "dummy_cr_shelter_person_id"}}
+    $('#irs_ireport_person_id').after("<input id='dummy_irs_ireport_person_id' class='ac_input' size=50 />");
+    {{dummy_input = "dummy_irs_ireport_person_id"}}
     {{include "pr/person_autocomplete.js"}}
     // Populate the real Input when the Dummy is selected
-    $('#dummy_cr_shelter_person_id').result(function(event, data, formatted) {
+    $('#dummy_irs_ireport_person_id').result(function(event, data, formatted) {
         var newvalue = data.id;
-        $('#cr_shelter_person_id').val(newvalue);
+        $('#irs_ireport_person_id').val(newvalue);
     });
     
     // Location AutoComplete
-    {{location_id = "cr_shelter_location_id"}}
+    {{location_id = "irs_ireport_location_id"}}
     {{include "gis/location_autocomplete.js"}}
 });
 //]]></script>

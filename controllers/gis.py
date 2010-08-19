@@ -555,9 +555,6 @@ def location():
 
     output = shn_rest_controller(module, resource, listadd=False)
 
-    if isinstance(output, dict):
-        output.update(gis_location_hierarchy=gis_location_hierarchy)
-
     return output
 
 #@auth.shn_requires_membership("MapAdmin")

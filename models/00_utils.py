@@ -6,14 +6,14 @@
 
 def shn_sessions():
     """
-    Extend session to support:
-        Multiple flash classes
-        Settings
-            Debug mode
-            Security mode
-            Restricted mode
-            Theme
-            Audit modes
+        Extend session to support:
+            Multiple flash classes
+            Settings
+                Debug mode
+                Security mode
+                Restricted mode
+                Theme
+                Audit modes
     """
     response.error = session.error
     response.confirmation = session.confirmation
@@ -27,7 +27,9 @@ def shn_sessions():
         session.s3 = Storage()
     # Use response for one-off variables which are visible in views without explicit passing
     response.s3 = Storage()
+    response.s3.country = deployment_settings.get_L10n_country()
     response.s3.formats = Storage()
+    response.s3.gis = Storage()
 
     roles = []
     if auth.is_logged_in():
@@ -54,6 +56,7 @@ def shn_sessions():
         or (controller_settings and controller_settings.audit_read)
     session.s3.audit_write = (settings and settings.audit_write) \
         or (controller_settings and controller_settings.audit_write)
+
     return settings
 
 s3_settings = shn_sessions()
@@ -372,7 +375,6 @@ def myname(user_id):
     user = db.auth_user[user_id]
     return user.first_name if user else "None"
 
-
 def shn_last_update(table, record_id):
 
     if table and record_id:
@@ -585,7 +587,10 @@ def shn_abbreviate(word, size=48):
     
 def shn_action_buttons(jr, deletable=True):
 
-    """ Provide the usual Action Buttons for Column views. Designed to be called from a postp """
+    """
+        Provide the usual Action Buttons for Column views.
+        Designed to be called from a postp
+    """
 
     if jr.component:
         args = [jr.component_name, "[id]"]

@@ -100,7 +100,7 @@ s3.crud_strings[tablename] = Storage(
     msg_record_created = T("Document added"),
     msg_record_modified = T("Document updated"),
     msg_record_deleted = T("Document deleted"),
-    msg_list_empty = T("No Documents currently defined"))
+    msg_list_empty = T("No Documents found"))
 
 document_id = db.Table(None, 
                        "document_id",
@@ -127,14 +127,18 @@ table = db.define_table(tablename, timestamp, uuidstamp, authorstamp, deletion_s
                         Field("date", "date"),
                         comments,                
                         migrate=migrate)
+
 table.name.requires = [IS_NOT_EMPTY(), IS_NOT_IN_DB(db, "%s.name" % tablename)]
 #table.name.label = T("Name")
 table.name.comment = SPAN("*", _class="req")
+table.url.label = "URL"
+table.person_id.label = T("Person")
 
 # upload folder needs to be visible to the download() function as well as the upload
 table.image.uploadfolder = os.path.join(request.folder, "uploads/images")
 IMAGE_EXTENSIONS = ["png", "PNG", "jpg", "JPG", "jpeg", "JPEG", "gif", "GIF", "tif", "TIF", "tiff", "TIFF", "bmp", "BMP", "raw", "RAW"]
 table.image.requires = IS_IMAGE(extensions=(IMAGE_EXTENSIONS))
+
 ADD_IMAGE = Tstr("Add Image")
 image_id = db.Table(None, "image_id",
             Field("image_id", db.doc_image,
@@ -145,6 +149,7 @@ image_id = db.Table(None, "image_id",
                           DIV( _class="tooltip", _title=ADD_IMAGE + "|" + Tstr("Add an image, such as a Photo."))),
                 ondelete = "RESTRICT"
                 ))
+
 # CRUD Strings
 LIST_IMAGES = T("List Images")
 s3.crud_strings[tablename] = Storage(
@@ -161,7 +166,7 @@ s3.crud_strings[tablename] = Storage(
     msg_record_created = T("Image added"),
     msg_record_modified = T("Image updated"),
     msg_record_deleted = T("Image deleted"),
-    msg_list_empty = T("No Images currently defined"))
+    msg_list_empty = T("No Images found"))
 
 #==============================================================================
 # END - Following code is not utilised

@@ -66,6 +66,8 @@ class S3Config(Storage):
         return self.mail.get("approver", "useradmin@your.org")
 
     # L10N Settings
+    def get_L10n_country(self):
+        return self.L10n.get("country", "")
     def get_L10n_utc_offset(self):
         return self.L10n.get("utc_offset", "UTC +0000")
 

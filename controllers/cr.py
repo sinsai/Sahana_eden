@@ -42,7 +42,7 @@ def shelter_type():
         return output
     response.s3.postp = user_postp
 
-    output = shn_rest_controller(module, resource,
+    output = shn_rest_controller(module, resource, listadd=False,
                                  rheader=lambda r: \
                                          shn_shelter_rheader(r,
                                             tabs = [(T("Basic Details"), None),
@@ -63,7 +63,7 @@ def shelter_service():
         return output
     response.s3.postp = user_postp
 
-    output = shn_rest_controller(module, resource,
+    output = shn_rest_controller(module, resource, listadd=False,
                                  rheader=lambda r: \
                                          shn_shelter_rheader(r,
                                             tabs = [(T("Basic Details"), None),
@@ -107,7 +107,8 @@ def shelter():
         return output
     response.s3.postp = user_postp
 
-    output = shn_rest_controller(module, resource)
+    output = shn_rest_controller(module, resource, listadd=False)
+
     return output
 
 # -----------------------------------------------------------------------------

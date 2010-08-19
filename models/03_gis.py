@@ -382,6 +382,8 @@ gis_location_hierarchy = {
     "L3":T("Town"),
     "L4":T("Village")
 }
+# Expose this to Views for AutoCompletes
+response.s3.gis.location_hierarchy = gis_location_hierarchy
 gis_location_languages = {
     1:T("English"),
     2:T("Urdu"),
@@ -473,6 +475,10 @@ location_id = db.Table(None, "location_id",
                                      DIV( _class="tooltip",
                                        _title=Tstr("Location") + "|" + Tstr("The Location of this Site, which can be general (for Reporting) or precise (for displaying on a Map)."))),
                        ondelete = "RESTRICT"))
+
+# Expose the default country to Views for Autocompletes
+if response.s3.country:
+    response.s3.gis.country = db(db.gis_location.code == response.s3.country).select(db.gis_location.id, limitby=(0, 1)).first().id
 
 # -----------------------------------------------------------------------------
 def get_location_id (field_name = "location_id", 

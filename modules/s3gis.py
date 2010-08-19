@@ -2780,6 +2780,10 @@ OpenLayers.Util.extend( selectPdfControl, {
             A nice description of the algorithm is provided here: http://www.jennessent.com/arcgis/shapes_poster.htm
         """
 
+        if not "gis_feature_type" in form.vars:
+            # Default to point
+            form.vars.gis_feature_type = "1"
+
         if form.vars.gis_feature_type == "1":
             # Point
             if form.vars.lon == None and form.vars.lat == None:

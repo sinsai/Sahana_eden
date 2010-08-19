@@ -51,6 +51,7 @@ def index():
 
     """ Default to the inventory_location list view """
     request.function = "location"
+    request.agrs = []
     return location()
     #module_name = deployment_settings.modules[module].name_nice
     #return dict(module_name=module_name)

@@ -20,7 +20,7 @@ def shn_location_rheader(jr, tabs=[]):
         inventory_location = jr.record
         rheader = DIV(TABLE(TR(
                                TH(Tstr("Location") + ": "), shn_gis_location_represent(inventory_location.location_id),
-                               TH(Tstr("Description") + ": "), inventory_location.description,
+                               TH(Tstr("Description") + ": "), inventory_location.comments,
                                ),
                            ),
                       rheader_tabs

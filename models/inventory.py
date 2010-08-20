@@ -34,10 +34,8 @@ if deployment_settings.has_module(module):
                             deletion_status,
                             location_id,
                             #get_location_id(),
-                            Field("description", 
-                                  "text",
-                                  length=320),
                             document_id,
+                            comments,
                             migrate=migrate)
 
     #THESE CHANGE THE VALUE OF location_id EVERYWHERE!!!

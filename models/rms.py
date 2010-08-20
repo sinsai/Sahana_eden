@@ -71,8 +71,6 @@ if deployment_settings.has_module(module):
         document_id,
         migrate=migrate)
 
-    #table.id.represent = lambda id: shn_req_aid_represent(id) 
-    
     db.rms_req.pledge_status.writable = False
 
     # Label the fields for the view
@@ -102,7 +100,7 @@ if deployment_settings.has_module(module):
         [id and
             DIV(IMG(_src="/%s/static/img/priority/priority_%d.gif" % (request.application,id,), _height=12)) or
             DIV(IMG(_src="/%s/static/img/priority/priority_4.gif" % request.application), _height=12)
-        ][0].xml())
+        ][0])
     table.priority.label = T("Priority Level")
 
     table.type.requires = IS_NULL_OR(IS_IN_SET(rms_type_opts))
@@ -309,8 +307,6 @@ if deployment_settings.has_module(module):
         person_id,
         comments,
         migrate=migrate)
-
-    #table.id.represent = lambda id: shn_req_pledge_represent(id)
 
     # hide unnecessary fields
     table.req_id.readable = table.req_id.writable = False

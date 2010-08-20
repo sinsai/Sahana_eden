@@ -29,7 +29,9 @@ def download():
 
 # S3 framework functions
 def index():
-    """ Module's Home Page """
+    """
+       Module's Home Page
+    """
 
     module_name = deployment_settings.modules[module].name_nice
     
@@ -68,35 +70,54 @@ def define_map(window=False, toolbar=False):
         )
 
     # Custom Feature Layers
+    # Incidents
     locations = db(db.gis_location.id == db.irs_ireport.location_id).select()
     # Default Red
     #marker = db(db.gis_marker.name == "marker_red").select(db.gis_marker.id, limitby=(0, 1)).first().id
     popup_url = URL(r=request, c="irs", f="ireport", args="read.popup?ireport.location_id=")
     incidents = {"name":Tstr("Incident Reports"), "query":locations, "active":True, "popup_url": popup_url}
     
+    # Shelters
     locations = db(db.gis_location.id == db.cr_shelter.location_id).select()
     marker = db(db.gis_marker.name == "shelter").select(db.gis_marker.id, limitby=(0, 1)).first().id
     popup_url = URL(r=request, c="cr", f="shelter", args="read.popup?shelter.location_id=")
     shelters = {"name":Tstr("Shelters"), "query":locations, "active":True, "marker":marker, "popup_url": popup_url}
     
+    # Assessments
     locations = db(db.gis_location.id == db.sitrep_assessment.location_id).select()
     marker = db(db.gis_marker.name == "marker_green").select(db.gis_marker.id, limitby=(0, 1)).first().id
     popup_url = URL(r=request, c="sitrep", f="assessment", args="read.popup?assessment.location_id=")
     assessments = {"name":Tstr("Assessments"), "query":locations, "active":True, "marker":marker, "popup_url": popup_url}
     
+    # Requests
     locations = db(db.gis_location.id == db.rms_req.location_id).select()
     marker = db(db.gis_marker.name == "marker_yellow").select(db.gis_marker.id, limitby=(0, 1)).first().id
-    popup_url = URL(r=request, c="rms", f="req", args="read.popup?assessment.location_id=")
+    popup_url = URL(r=request, c="rms", f="req", args="read.popup?req.location_id=")
     requests = {"name":Tstr("Requests"), "query":locations, "active":True, "marker":marker, "popup_url": popup_url}
     
-    feature_queries = [incidents, shelters, assessments, requests]
+    feature_queries = [
+                       incidents,
+                       shelters,
+                       assessments,
+                       requests,
+                       ]
     
-    map = gis.show_map(window=window, catalogue_toolbar=catalogue_toolbar, toolbar=toolbar, search=search, catalogue_overlays=catalogue_overlays, feature_groups=feature_groups, feature_queries=feature_queries)
+    map = gis.show_map(
+                       window=window,
+                       catalogue_toolbar=catalogue_toolbar,
+                       toolbar=toolbar,
+                       search=search,
+                       catalogue_overlays=catalogue_overlays,
+                       feature_groups=feature_groups,
+                       feature_queries=feature_queries
+                      )
 
     return map
     
 def test():
-    "Test Mapping API"
+    """
+       Test Mapping API
+    """
 
     # Will use default popup_url
     hospitals = {"feature_group" : "Hospitals"}
@@ -110,6 +131,7 @@ def test():
 
     html = gis.show_map(
                 add_feature = True,
+                collapsed = True,
                 #feature_groups = [offices, hospitals],
                 #feature_queries = [{"name" : "Towns", "query" : query, "active" : True}],
                 #wms_browser = {"name" : "OpenGeo Demo WMS", "url" : "http://demo.opengeo.org/geoserver/ows?service=WMS&request=GetCapabilities"},
@@ -134,12 +156,12 @@ def test():
     return dict(map=html)
 
 def test2():
-    "Test new OpenLayers functionality in a RAD environment"
+    " Test new OpenLayers functionality in a RAD environment "
     return dict()
 
 #@auth.shn_requires_membership("MapAdmin")
 def apikey():
-    "RESTful CRUD controller"
+    """ RESTful CRUD controller """
     resource = request.function
     tablename = module + "_" + resource
     table = db[tablename]
@@ -181,7 +203,7 @@ def apikey():
     return output
 
 def config():
-    "RESTful CRUD controller"
+    """ RESTful CRUD controller """
     resource = request.function
     tablename = module + "_" + resource
     table = db[tablename]
@@ -212,7 +234,7 @@ def config():
 
 #@auth.shn_requires_membership("MapAdmin")
 def feature_class():
-    "RESTful CRUD controller"
+    """ RESTful CRUD controller """
     resource = request.function
     tablename = module + "_" + resource
     table = db[tablename]
@@ -254,7 +276,7 @@ def feature_class():
 
 #@auth.shn_requires_membership("MapAdmin")
 def feature_group():
-    "RESTful CRUD controller"
+    """ RESTful CRUD controller """
     resource = request.function
     tablename = module + "_" + resource
     table = db[tablename]
@@ -297,7 +319,7 @@ def feature_group():
 
 #@auth.shn_requires_membership("MapAdmin")
 def feature_class_to_feature_group():
-    "RESTful CRUD controller"
+    """ RESTful CRUD controller """
     resource = request.function
     table = module + "_" + resource
 
@@ -320,7 +342,7 @@ def feature_class_to_feature_group():
 
 #@auth.shn_requires_membership("MapAdmin")
 def feature_layer():
-    "RESTful CRUD controller"
+    """ RESTful CRUD controller """
     resource = request.function
     tablename = module + "_" + resource
     table = db[tablename]
@@ -396,6 +418,9 @@ def location():
     if not shn_has_role("MapAdmin"):
         table.code.writable = False
         table.level.writable = False
+        if "create" in request.args:
+            table.code.readable = False
+            table.level.readable = False
         table.gis_feature_type.writable = table.gis_feature_type.readable = False
         table.wkt.writable = table.wkt.readable = False
     else:
@@ -546,6 +571,10 @@ def location():
     if filters:
         response.s3.filter = reduce(__and__, filters)
 
+    # Add Map to allow locations to be specified this way
+    _map = gis.show_map(add_feature = True,
+                        collapsed = True)
+
     response.s3.pagination = True
 
     # Post-processor
@@ -555,12 +584,14 @@ def location():
     response.s3.postp = user_postp
 
     output = shn_rest_controller(module, resource, listadd=False)
-
+    if isinstance(output, dict):
+        output.update(map=_map)
+    
     return output
 
 #@auth.shn_requires_membership("MapAdmin")
 def marker():
-    "RESTful CRUD controller"
+    """ RESTful CRUD controller """
     resource = request.function
     tablename = module + "_" + resource
     table = db[tablename]
@@ -601,7 +632,7 @@ def marker():
 
 @auth.shn_requires_membership("MapAdmin")
 def projection():
-    "RESTful CRUD controller"
+    """ RESTful CRUD controller """
     resource = request.function
     tablename = module + "_" + resource
     table = db[tablename]
@@ -646,7 +677,7 @@ def projection():
 
 #@auth.shn_requires_membership("MapAdmin")
 def track():
-    "RESTful CRUD controller"
+    """ RESTful CRUD controller """
     resource = request.function
     table = module + "_" + resource
 
@@ -686,7 +717,7 @@ NO_TYPE_LAYERS_FMT = "No %s Layers currently defined"
 
 #@auth.shn_requires_membership("MapAdmin")
 def layer_openstreetmap():
-    "RESTful CRUD controller"
+    """ RESTful CRUD controller """
     resource = request.function
     table = module + "_" + resource
 
@@ -728,7 +759,7 @@ def layer_openstreetmap():
 
 #@auth.shn_requires_membership("MapAdmin")
 def layer_google():
-    "RESTful CRUD controller"
+    """ RESTful CRUD controller """
     resource = request.function
     table = module + "_" + resource
 
@@ -770,7 +801,7 @@ def layer_google():
 
 #@auth.shn_requires_membership("MapAdmin")
 def layer_yahoo():
-    "RESTful CRUD controller"
+    """ RESTful CRUD controller """
     resource = request.function
     table = module + "_" + resource
 
@@ -812,7 +843,7 @@ def layer_yahoo():
 
 #@auth.shn_requires_membership("MapAdmin")
 def layer_mgrs():
-    "RESTful CRUD controller"
+    """ RESTful CRUD controller """
     resource = request.function
     table = module + "_" + resource
 
@@ -854,7 +885,7 @@ def layer_mgrs():
 
 #@auth.shn_requires_membership("MapAdmin")
 def layer_bing():
-    "RESTful CRUD controller"
+    """ RESTful CRUD controller """
     resource = request.function
     table = module + "_" + resource
 
@@ -896,7 +927,7 @@ def layer_bing():
 
 #@auth.shn_requires_membership("MapAdmin")
 def layer_georss():
-    "RESTful CRUD controller"
+    """ RESTful CRUD controller """
     resource = request.function
     tablename = module + "_" + resource
     table = db[tablename]
@@ -942,7 +973,7 @@ def layer_georss():
 
 #@auth.shn_requires_membership("MapAdmin")
 def layer_gpx():
-    "RESTful CRUD controller"
+    """ RESTful CRUD controller """
     resource = request.function
     table = module + "_" + resource
 
@@ -987,7 +1018,7 @@ def layer_gpx():
 
 #@auth.shn_requires_membership("MapAdmin")
 def layer_kml():
-    "RESTful CRUD controller"
+    """ RESTful CRUD controller """
     resource = request.function
     tablename = module + "_" + resource
     table = db[tablename]
@@ -1033,7 +1064,7 @@ def layer_kml():
 
 #@auth.shn_requires_membership("MapAdmin")
 def layer_tms():
-    "RESTful CRUD controller"
+    """ RESTful CRUD controller """
     resource = request.function
     tablename = module + "_" + resource
     table = db[tablename]
@@ -1080,7 +1111,7 @@ def layer_tms():
 
 #@auth.shn_requires_membership("MapAdmin")
 def layer_wms():
-    "RESTful CRUD controller"
+    """ RESTful CRUD controller """
     resource = request.function
     tablename = module + "_" + resource
     table = db[tablename]
@@ -1127,7 +1158,7 @@ def layer_wms():
 
 @auth.shn_requires_membership("MapAdmin")
 def layer_js():
-    "RESTful CRUD controller"
+    """ RESTful CRUD controller """
     resource = request.function
     table = module + "_" + resource
 
@@ -1171,7 +1202,7 @@ def layer_js():
 
 #@auth.shn_requires_membership("MapAdmin")
 def layer_xyz():
-    "RESTful CRUD controller"
+    """ RESTful CRUD controller """
     resource = request.function
     tablename = module + "_" + resource
     table = db[tablename]

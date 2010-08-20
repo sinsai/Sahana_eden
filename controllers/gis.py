@@ -109,25 +109,26 @@ def test():
     query = db((db.gis_feature_class.name == "Town") & (db.gis_location.feature_class_id == db.gis_feature_class.id)).select()
 
     html = gis.show_map(
-                feature_groups = [offices, hospitals],
-                feature_queries = [{"name" : "Towns", "query" : query, "active" : True}],
-                wms_browser = {"name" : "OpenGeo Demo WMS", "url" : "http://demo.opengeo.org/geoserver/ows?service=WMS&request=GetCapabilities"},
-                #wms_browser = {"name" : "Risk Maps", "url" : "http://preview.grid.unep.ch:8080/geoserver/ows?service=WMS&request=GetCapabilities"},
-                #wms_browser = {"name" : "Risk Maps", "url" : "http://www.pdc.org/wms/wmservlet/PDC_Active_Hazards?request=getcapabilities&service=WMS&version=1.1.1"},
-                catalogue_overlays = True,
-                catalogue_toolbar = True,
-                legend = True, # Stops Feature Layers from Printing
-                toolbar = True,
-                search = True,
-                print_tool = {
-                        #"url" : "http://localhost:8080/geoserver/pdf/",                    # Local GeoServer
-                        "url" : "http://localhost:8080/print-servlet-1.2-SNAPSHOT/pdf/",    # Local Windows Tomcat
-                        #"url" : "http://host.domain:8180/print-servlet-1.2-SNAPSHOT/pdf/", # Linux Tomcat
-                        "mapTitle" : "Title",
-                        "subTitle" : "SubTitle"
-                    },
-                #mgrs = {"name" : "MGRS Atlas PDFs", "url" : "http://www.sharedgeo.org/datasets/shared/maps/usng/pdf.map?VERSION=1.0.0&SERVICE=WFS&request=GetFeature&typename=wfs_all_maps"},
-                window = True,
+                add_feature = True,
+                #feature_groups = [offices, hospitals],
+                #feature_queries = [{"name" : "Towns", "query" : query, "active" : True}],
+                #wms_browser = {"name" : "OpenGeo Demo WMS", "url" : "http://demo.opengeo.org/geoserver/ows?service=WMS&request=GetCapabilities"},
+                ##wms_browser = {"name" : "Risk Maps", "url" : "http://preview.grid.unep.ch:8080/geoserver/ows?service=WMS&request=GetCapabilities"},
+                ##wms_browser = {"name" : "Risk Maps", "url" : "http://www.pdc.org/wms/wmservlet/PDC_Active_Hazards?request=getcapabilities&service=WMS&version=1.1.1"},
+                #catalogue_overlays = True,
+                #catalogue_toolbar = True,
+                #legend = True, # Stops Feature Layers from Printing
+                #toolbar = True,
+                #search = True,
+                #print_tool = {
+                #        #"url" : "http://localhost:8080/geoserver/pdf/",                    # Local GeoServer
+                #        "url" : "http://localhost:8080/print-servlet-1.2-SNAPSHOT/pdf/",    # Local Windows Tomcat
+                #        #"url" : "http://host.domain:8180/print-servlet-1.2-SNAPSHOT/pdf/", # Linux Tomcat
+                #        "mapTitle" : "Title",
+                #        "subTitle" : "SubTitle"
+                #    },
+                ##mgrs = {"name" : "MGRS Atlas PDFs", "url" : "http://www.sharedgeo.org/datasets/shared/maps/usng/pdf.map?VERSION=1.0.0&SERVICE=WFS&request=GetFeature&typename=wfs_all_maps"},
+                #window = True,
                 )
 
     return dict(map=html)

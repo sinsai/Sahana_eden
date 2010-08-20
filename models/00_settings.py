@@ -113,10 +113,6 @@ auth.settings.login_onaccept = shn_auth_on_login
 #    auth.settings.register_next = URL(r=request, c="default", f="user",
 #            args="login_next")
 
-# Extra startup roles for Admin:
-auth.settings.admin_startup_roles = [
-    #"AdvancedJS",
-]
 auth.settings.lock_keys = True
 
 ######

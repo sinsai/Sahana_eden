@@ -598,7 +598,7 @@ def marker():
 
     return output
 
-#@auth.shn_requires_membership("MapAdmin")
+@auth.shn_requires_membership("MapAdmin")
 def projection():
     "RESTful CRUD controller"
     resource = request.function
@@ -1124,7 +1124,7 @@ def layer_wms():
 
     return output
 
-#@auth.shn_requires_membership("AdvancedJS")
+@auth.shn_requires_membership("MapAdmin")
 def layer_js():
     "RESTful CRUD controller"
     resource = request.function
@@ -1182,7 +1182,7 @@ def layer_xyz():
     type = "XYZ"
     LAYERS = T(TYPE_LAYERS_FMT % type)
     ADD_NEW_LAYER = T(ADD_NEW_TYPE_LAYER_FMT % type)
-    EDIT_LAYER = T(EDIT_LAYER_FMT % type)
+    EDIT_LAYER = T(EDIT_TYPE_LAYER_FMT % type)
     LIST_LAYERS = T(LIST_TYPE_LAYERS_FMT % type)
     NO_LAYERS = T(NO_TYPE_LAYERS_FMT % type)
     s3.crud_strings[tablename] = Storage(

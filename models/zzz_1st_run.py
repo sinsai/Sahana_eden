@@ -868,7 +868,6 @@ if empty:
         #auth.add_group("Restricted", description = "Restricted - is given a simplified full-screen view so as to minimise the possibility of errors")
         # GIS
         auth.add_group("MapAdmin", description = "MapAdmin - allowed access to edit the MapService Catalogue")
-        auth.add_group("AdvancedJS", description = "AdvancedJS - allowed access to edit the Advanced JS layers")
         # DVI
         auth.add_group("DVI", description = "DVI - allowed access to the DVI module")
         # HMS

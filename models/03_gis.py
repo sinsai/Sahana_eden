@@ -377,7 +377,7 @@ gis_source_opts = {
     }
 gis_location_hierarchy = {
     "L0":T("Country"),
-    "L1":T("Region"),
+    "L1":T("Province"),
     "L2":T("District"),
     "L3":T("Town"),
     "L4":T("Village")
@@ -477,11 +477,21 @@ location_id = db.Table(None, "location_id",
                        ondelete = "RESTRICT"))
 
 # Expose the default countries to Views for Autocompletes
-response.s3.gis.countries = Storage()
+_gis = response.s3.gis
+_gis.countries = Storage()
+_countries = []
+_gis.provinces = Storage()
 if response.s3.countries:
-    countries = db(db.gis_location.code.belongs(response.s3.countries)).select(db.gis_location.id, db.gis_location.code, db.gis_location.name, limitby=(0, len(response.s3.countries)))
+    countries = db(table.code.belongs(response.s3.countries)).select(table.id, table.code, table.name, limitby=(0, len(response.s3.countries)))
     for country in countries:
-        response.s3.gis.countries[country.code] = Storage(name=country.name, id=country.id)
+        _id = country.id
+        _gis.countries[country.code] = Storage(name=country.name, id=_id)
+        _countries.append(_id)
+        _gis.provinces[_id] = Storage()
+    provinces = db((table.level == "L1") & (table.parent.belongs(_countries))).select(table.parent, table.id, table.name)
+    for province in provinces:
+        _gis.provinces[province.parent][province.id] = Storage()
+        _gis.provinces[province.parent][province.id].name = province.name
 
 # -----------------------------------------------------------------------------
 def get_location_id (field_name = "location_id", 

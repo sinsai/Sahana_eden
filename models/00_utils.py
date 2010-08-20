@@ -597,16 +597,16 @@ def shn_action_buttons(jr, deletable=True):
     else:
         args = ["[id]"]
 
-    if auth.is_logged_in():
+    if shn_has_permission("update", jr.table):
         # Provide the ability to delete records in bulk
-        if deletable:
+        if deletable and shn_has_permission("delete", jr.table):
             response.s3.actions = [
-                dict(label=str(UPDATE), _class="action-btn", url=str(URL(r=request, args = args + ["update"]))),
+                dict(label=str(UPDATE), _class="action-btn", url=str(URL(r=request, args = args))),
                 dict(label=str(DELETE), _class="action-btn", url=str(URL(r=request, args = args + ["delete"])))
             ]
         else:
             response.s3.actions = [
-                dict(label=str(UPDATE), _class="action-btn", url=str(URL(r=request, args = args + ["update"])))
+                dict(label=str(UPDATE), _class="action-btn", url=str(URL(r=request, args = args)))
             ]
     else:
         response.s3.actions = [

@@ -125,6 +125,11 @@ deployment_settings.modules = Storage(
             description = Tstr("Assessments are structured reports done by Professional Organisations - data includes WFP Assessments (Rapid Assessment Tool to come)"),
             module_type = 10
         ),
+    rat = Storage(
+            name_nice = Tstr("Rapid Assessments"),
+            description = Tstr("Assessments are structured reports done by Professional Organisations"),
+            module_type = 10
+        ),
     pr = Storage(
             name_nice = Tstr("Person Registry"),
             description = Tstr("Central point to record details on People"),

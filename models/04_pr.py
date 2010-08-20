@@ -135,6 +135,7 @@ table.pe_id.requires = IS_ONE_OF(db, "pr_pentity.id",
                                     filter_opts=("pr_person", "pr_group"))
 
 table.value.requires = IS_NOT_EMPTY()
+table.value.comment = SPAN("*", _class="req")
 table.priority.requires = IS_IN_SET(range(1,10), zero=None)
 
 pe_contact_id = db.Table(None, "pe_contact_id",

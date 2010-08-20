@@ -1,0 +1,24 @@
+#rat_section2_male_05__row td,
+#rat_section2_female_05__row td,
+#rat_section2_dead_women__row td,
+#rat_section2_missing_women__row td,
+#rat_section2_injured_women__row td,
+#rat_section2_household_head_elderly__row td,
+#rat_section2_disabled_physical__row td,
+#rat_section2_comments__row td {
+    padding-top: 2em;
+}
+
+#rat_section4_swater_source_type__row td,
+#rat_section4_dwater_source_type__row td,
+#rat_section4_water_walking_distance__row td,
+#rat_section4_close_industry__row td,
+#rat_section4_comments__row td {
+    padding-top: 2em;
+}
+
+#rat_section9_children_separated__row td,
+#rat_section9_comments__row td {
+    padding-top: 2em;
+}
+

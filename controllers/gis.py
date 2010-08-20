@@ -92,7 +92,7 @@ def define_map(window=False, toolbar=False):
     # Requests
     locations = db(db.gis_location.id == db.rms_req.location_id).select()
     marker = db(db.gis_marker.name == "marker_yellow").select(db.gis_marker.id, limitby=(0, 1)).first().id
-    popup_url = URL(r=request, c="rms", f="req", args="read.popup?assessment.location_id=")
+    popup_url = URL(r=request, c="rms", f="req", args="read.popup?req.location_id=")
     requests = {"name":Tstr("Requests"), "query":locations, "active":True, "marker":marker, "popup_url": popup_url}
     
     feature_queries = [
@@ -571,6 +571,7 @@ def location():
     if filters:
         response.s3.filter = reduce(__and__, filters)
 
+    # Add Map to allow locations to be specified this way
     _map = gis.show_map(add_feature = True,
                         collapsed = True)
 

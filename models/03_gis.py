@@ -559,6 +559,7 @@ table = db.gis_location
 table.name_dummy.widget = name_dummy_element.widget
 table.name_dummy.represent = name_dummy_element.represent
 def gis_location_onaccept(form):
+    """ On Accept for GIS Locations (after DB I/O) """
     if session.rcvars and hasattr(name_dummy_element, "onaccept"):
         # HTML UI, not XML import
         name_dummy_element.onaccept(db, session.rcvars.gis_location, request)
@@ -575,8 +576,13 @@ def gis_location_onaccept(form):
     # Include the normal onaccept
     gis.update_location_tree()
 
+def gis_location_onvalidation(form):
+    """ On Validation for GIS Locations (before DB I/O) """
+    # Calculate the Centroid for Polygons
+    gis.wkt_centroid(form)
+
 s3xrc.model.configure(table,
-                      onvalidation=lambda form: gis.wkt_centroid(form),
+                      onvalidation=gis_location_onvalidation,
                       onaccept=gis_location_onaccept)
 
 # -----------------------------------------------------------------------------

@@ -377,11 +377,13 @@ gis_source_opts = {
     }
 gis_location_hierarchy = {
     "L0":T("Country"),
-    "L1":T("Region"),
+    "L1":T("Province"),
     "L2":T("District"),
     "L3":T("Town"),
     "L4":T("Village")
 }
+# Expose this to Views for AutoCompletes
+response.s3.gis.location_hierarchy = gis_location_hierarchy
 gis_location_languages = {
     1:T("English"),
     2:T("Urdu"),
@@ -400,7 +402,6 @@ table = db.define_table(tablename, timestamp, uuidstamp, deletion_status,
                 Field("name_l10n"),             # Local Names are stored in this field
                 Field("name_dummy"),            # Dummy field to provide Widget
                 Field("code"),
-                Field("description"),
                 feature_class_id,       # Will be removed
                 marker_id,              # Will be removed
                 Field("level", length=2),
@@ -424,12 +425,12 @@ table = db.define_table(tablename, timestamp, uuidstamp, deletion_status,
                 Field("ce", "integer", writable=False, readable=False), # Circular 'Error' around Lat/Lon (in m). Needed for CoT.
                 Field("le", "integer", writable=False, readable=False), # Linear 'Error' for the Elevation (in m). Needed for CoT.
                 Field("source", "integer"),
+                comments,
                 migrate=migrate)
 
 table.uuid.requires = IS_NOT_IN_DB(db, "%s.uuid" % table)
 table.name.requires = IS_NOT_EMPTY()    # Placenames don't have to be unique
 table.name.label = T("Primary Name")
-table.name.comment = SPAN("*", _class="req")
 # We never access name_l10n directly
 table.name_l10n.readable = False
 table.name_l10n.writable = False
@@ -449,7 +450,6 @@ table.url.requires = IS_NULL_OR(IS_URL())
 table.source.requires = IS_NULL_OR(IS_IN_SET(gis_source_opts))
 table.level.label = T("Level")
 table.code.label = T("Code")
-table.description.label = T("Description")
 table.parent.label = T("Parent")
 table.addr_street.label = T("Street Address")
 table.gis_feature_type.label = T("Feature Type")
@@ -475,6 +475,23 @@ location_id = db.Table(None, "location_id",
                                      DIV( _class="tooltip",
                                        _title=Tstr("Location") + "|" + Tstr("The Location of this Site, which can be general (for Reporting) or precise (for displaying on a Map)."))),
                        ondelete = "RESTRICT"))
+
+# Expose the default countries to Views for Autocompletes
+_gis = response.s3.gis
+_gis.countries = Storage()
+_countries = []
+_gis.provinces = Storage()
+if response.s3.countries:
+    countries = db(table.code.belongs(response.s3.countries)).select(table.id, table.code, table.name, limitby=(0, len(response.s3.countries)))
+    for country in countries:
+        _id = country.id
+        _gis.countries[country.code] = Storage(name=country.name, id=_id)
+        _countries.append(_id)
+        _gis.provinces[_id] = Storage()
+    provinces = db((table.level == "L1") & (table.parent.belongs(_countries))).select(table.parent, table.id, table.name)
+    for province in provinces:
+        _gis.provinces[province.parent][province.id] = Storage()
+        _gis.provinces[province.parent][province.id].name = province.name
 
 # -----------------------------------------------------------------------------
 def get_location_id (field_name = "location_id", 
@@ -519,11 +536,6 @@ s3xrc.model.add_component(module, resource,
                           deletable=True,
                           editable=True)
 
-s3xrc.model.configure(table,
-                      onvalidation=lambda form: gis.wkt_centroid(form),
-                      onaccept=gis.update_location_tree() # Note that this is replaced below by the MultiSelect widget
-                      )
-
 resource = "location_name"
 tablename = module + "_" + resource
 table = db.define_table(tablename, timestamp, uuidstamp, deletion_status,
@@ -547,6 +559,7 @@ table = db.gis_location
 table.name_dummy.widget = name_dummy_element.widget
 table.name_dummy.represent = name_dummy_element.represent
 def gis_location_onaccept(form):
+    """ On Accept for GIS Locations (after DB I/O) """
     if session.rcvars and hasattr(name_dummy_element, "onaccept"):
         # HTML UI, not XML import
         name_dummy_element.onaccept(db, session.rcvars.gis_location, request)
@@ -562,7 +575,15 @@ def gis_location_onaccept(form):
             db(table.id==location_id).update(name_dummy=name_dummy)
     # Include the normal onaccept
     gis.update_location_tree()
-s3xrc.model.configure(table, onaccept=gis_location_onaccept)
+
+def gis_location_onvalidation(form):
+    """ On Validation for GIS Locations (before DB I/O) """
+    # Calculate the Centroid for Polygons
+    gis.wkt_centroid(form)
+
+s3xrc.model.configure(table,
+                      onvalidation=gis_location_onvalidation,
+                      onaccept=gis_location_onaccept)
 
 # -----------------------------------------------------------------------------
 #
@@ -604,33 +625,6 @@ def shn_gis_location_represent(id):
         except:
             represent = None
     return represent
-
-# Landmarks
-# Used to store items which should be placed on the map, but which we don't maintain other details on
-# i.e. not Hospitals, Offices, Warehouses
-gis_landmark_type_opts = {
-    1:T("Airport"),
-    2:T("Bridge"),
-    3:T("Church"),
-    4:T("Port"),
-    5:T("School"),
-    99:T("other"),
-    }
-resource = "landmark"
-tablename = "%s_%s" % (module, resource)
-table = db.define_table(tablename, timestamp, uuidstamp, authorstamp, deletion_status,
-                Field("name", length=128, notnull=True, unique=True),
-                Field("category"),
-                location_id,
-                comments,
-                migrate=migrate)
-table.uuid.requires = IS_NOT_IN_DB(db, "%s.uuid" % tablename)
-table.name.requires = [IS_NOT_EMPTY(), IS_NOT_IN_DB(db, "%s.name" % tablename)]
-table.name.label = T("Name")
-table.category.requires = IS_IN_SET(gis_landmark_type_opts)
-table.category.represent = lambda opt: gis_landmark_type_opts.get(opt, UNKNOWN_OPT)
-table.category.label = T("Category")
-
 
 # Feature Layers
 # Used to select a set of Features for either Display or Export

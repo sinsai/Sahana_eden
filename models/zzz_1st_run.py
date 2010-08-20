@@ -335,13 +335,21 @@ if empty:
         # We want to start at ID 1
         table.truncate()
         table.insert(
-            name = "marker",
-            image = "gis_marker.image.marker.png"
+            name = "marker_red",
+            image = "gis_marker.image.marker_red.png"
         )
-        #table.insert(
-        #    name = "marker_r1",
-        #    image = "marker_r1.png"
-        #)
+        table.insert(
+            name = "marker_yellow",
+            image = "gis_marker.image.marker_yellow.png"
+        )
+        table.insert(
+            name = "marker_amber",
+            image = "gis_marker.image.marker_amber.png"
+        )
+        table.insert(
+            name = "marker_green",
+            image = "gis_marker.image.marker_green.png"
+        )
         table.insert(
             name = "person",
             image = "gis_marker.image.Civil_Disturbance_Theme.png"
@@ -464,8 +472,8 @@ if empty:
             # Doesn't work on Postgres!
             projection_id = 1,
             marker_id = 1,
-            map_height = 400,
-            map_width = 640
+            map_height = 600,
+            map_width = 800
         )
 
     tablename = "gis_feature_class"
@@ -484,7 +492,7 @@ if empty:
         )
         table.insert(
             uuid = "www.sahanafoundation.org/GIS-FEATURE-CLASS-L1",
-            name = "Region",
+            name = "Province",
         )
         table.insert(
             uuid = "www.sahanafoundation.org/GIS-FEATURE-CLASS-L2",
@@ -494,6 +502,11 @@ if empty:
             uuid = "www.sahanafoundation.org/GIS-FEATURE-CLASS-L3",
             name = "Town",
             gps_marker = "City (Medium)",
+        )
+        table.insert(
+            uuid = "www.sahanafoundation.org/GIS-FEATURE-CLASS-L4",
+            name = "Village",
+            gps_marker = "City (Small)",
         )
         table.insert(
             uuid = "www.sahanafoundation.org/GIS-FEATURE-CLASS-AIRPORT",
@@ -846,19 +859,22 @@ if empty:
     # User Roles (uses native Web2Py Auth Groups)
     table = auth.settings.table_group_name
     if not db(db[table].id > 0).count():
+        # The 1st 4 permissions are hard-coded for performance reasons
         # This must stay as id=1
         auth.add_group("Administrator", description = "System Administrator - can access & make changes to any data")
         # This must stay as id=2
         auth.add_group("Authenticated", description = "Authenticated - all logged-in users")
         # This must stay as id=3
         auth.add_group("Creator", description = "Creator - dummy role which isn't meant to have users added to it. Used to restrict records to just those created by the user")
-        if session.s3.security_policy != 1:
-            auth.add_group("Editor", description = "Editor - can access & make changes to any unprotected data")
+        # Optional roles for delegating access
+        # This must stay as id=4
+        auth.add_group("Editor", description = "Editor - can access & make changes to any unprotected data")
+        auth.add_group("UserAdmin", description = "UserAdmin - allowed to manage the membership of the Editor role")
         #auth.add_group("Restricted", description = "Restricted - is given a simplified full-screen view so as to minimise the possibility of errors")
+        # GIS
+        auth.add_group("MapAdmin", description = "MapAdmin - allowed access to edit the MapService Catalogue")
         # DVI
         auth.add_group("DVI", description = "DVI - allowed access to the DVI module")
-        # GIS
-        auth.add_group("AdvancedJS", description = "AdvancedJS - allowed access to edit the Advanced JS layers")
         # HMS
         auth.add_group("HMSAdmin", description = "HMSAdmin - full access to HMS")
         auth.add_group("HMSOfficer", description = "HMSOfficer - permission to edit requests and pledges")

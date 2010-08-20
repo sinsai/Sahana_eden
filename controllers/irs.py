@@ -20,19 +20,23 @@ response.menu_options = [
         #[T("Ushahidi"), False, URL(r=request, f="ireport", args="ushahidi")],
         #[T("Search"), False, URL(r=request, f="ireport", args="search")]
     ]],
-    [T("Confirmed Incidents"), False, URL(r=request, f="incident"),[
-        [T("List"), False, URL(r=request, f="incident")],
-        [T("Add"), False, URL(r=request, f="incident", args="create")],
-        #[T("Search"), False, URL(r=request, f="incident", args="search")]
-    ]],
     #[T("Assessments"), False, URL(r=request, f="iassessment"),[
     #    [T("List"), False, URL(r=request, f="iassessment")],
     #    [T("Add"), False, URL(r=request, f="iassessment", args="create")],
         #[T("Search"), False, URL(r=request, f="iassessment", args="search")]
     #]],
-    [T("Map"), False, URL(r=request, f="maps")],
+    #[T("Map"), False, URL(r=request, f="maps")],
 ]
 
+if shn_has_role("Editor"):
+    response.menu_options.append(
+        [T("Confirmed Incidents"), False, URL(r=request, f="incident"),[
+            [T("List"), False, URL(r=request, f="incident")],
+            [T("Add"), False, URL(r=request, f="incident", args="create")],
+            #[T("Search"), False, URL(r=request, f="incident", args="search")]
+        ]]
+    )
+    
 
 # -----------------------------------------------------------------------------
 def index():
@@ -48,18 +52,12 @@ def maps():
 
     """ Show a Map of all Incident Reports """
 
-    class MyVirtualFields:
-        def shape(self):
-            return "star"
-        def color(self):
-            return "green"
-        def size(self):
-            return 18
-
-    #db.gis_location.virtualfields.append(MyVirtualFields())
     reports = db(db.gis_location.id == db.irs_ireport.location_id).select()
     popup_url = URL(r=request, f="ireport", args="read.popup?ireport.location_id=")
-    map = gis.show_map(feature_queries = [{"name":Tstr("Incident Reports"), "query":reports, "active":True, "popup_url": popup_url}], window=True)
+    incidents = {"name":Tstr("Incident Reports"), "query":reports, "active":True, "popup_url": popup_url}
+    feature_queries = [incidents]
+    
+    map = gis.show_map(feature_queries=feature_queries, window=True)
 
     return dict(map=map)
 
@@ -90,7 +88,7 @@ def incident():
         return output
     response.s3.postp = user_postp
 
-    output = shn_rest_controller(module, resource,
+    output = shn_rest_controller(module, resource, listadd=False,
                                  rheader=lambda r: \
                                          shn_irs_rheader(r,
                                             tabs = [(T("Incident Details"), None),
@@ -114,6 +112,9 @@ def ireport():
 
     response.s3.pagination = True
 
+    if not shn_has_role("Editor"):
+        table.incident_id.readable = table.incident_id.writable = False
+    
     person = session.auth.user.id if auth.is_logged_in() else None
     if person:
         person_uuid = db(db.auth_user.id == person).select(db.auth_user.person_uuid, limitby=(0, 1)).first().person_uuid
@@ -125,6 +126,11 @@ def ireport():
 
     db.irs_iimage.report_id.readable = \
     db.irs_iimage.report_id.writable = False
+    
+    # Disable legacy fields, unless updating, so the data can be manually transferred to new fields
+    if "update" not in request.args:
+        table.source.readable = table.source.writable = False        
+        table.source_id.readable = table.source_id.writable = False   
 
     def prep(r):
         if r.method == "ushahidi":
@@ -138,7 +144,7 @@ def ireport():
         return output
     response.s3.postp = user_postp
 
-    output = shn_rest_controller(module, resource,
+    output = shn_rest_controller(module, resource, listadd=False,
                                  rheader=lambda r: \
                                          shn_irs_rheader(r,
                                             tabs = [(T("Report Details"), None),

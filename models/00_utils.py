@@ -6,14 +6,14 @@
 
 def shn_sessions():
     """
-    Extend session to support:
-        Multiple flash classes
-        Settings
-            Debug mode
-            Security mode
-            Restricted mode
-            Theme
-            Audit modes
+        Extend session to support:
+            Multiple flash classes
+            Settings
+                Debug mode
+                Security mode
+                Restricted mode
+                Theme
+                Audit modes
     """
     response.error = session.error
     response.confirmation = session.confirmation
@@ -27,7 +27,9 @@ def shn_sessions():
         session.s3 = Storage()
     # Use response for one-off variables which are visible in views without explicit passing
     response.s3 = Storage()
+    response.s3.countries = deployment_settings.get_L10n_countries()
     response.s3.formats = Storage()
+    response.s3.gis = Storage()
 
     roles = []
     if auth.is_logged_in():
@@ -54,6 +56,7 @@ def shn_sessions():
         or (controller_settings and controller_settings.audit_read)
     session.s3.audit_write = (settings and settings.audit_write) \
         or (controller_settings and controller_settings.audit_write)
+
     return settings
 
 s3_settings = shn_sessions()
@@ -63,12 +66,15 @@ s3_settings = shn_sessions()
 #
 shn_languages = {
     "en": T("English"),
-    "fr": T("French")
+    "fr": T("French"),
+    "es": T("Spanish"),
+    "zh-tw": T("Chinese")
 }
 auth.settings.table_user.language.requires = IS_IN_SET(shn_languages, zero=None)
 
 # -----------------------------------------------------------------------------
 # List of Nations (ISO-3166-1 Country Codes)
+# @ToDo Add Telephone codes (need to convert to Storage())
 #
 shn_list_of_nations = {
     "AF": "Afghanistan",
@@ -369,7 +375,6 @@ def myname(user_id):
     user = db.auth_user[user_id]
     return user.first_name if user else "None"
 
-
 def shn_last_update(table, record_id):
 
     if table and record_id:
@@ -502,6 +507,7 @@ def shn_represent_file(file_name,
 
     @description:
         Represents a file (stored in a table) as the filename with a link to that file
+        THIS FUNCTION IS REDUNDANT AND CAN PROBABLY BE REPLACED BY shn_file_represent in models/06_doc.py
     """
     import base64
     url_file = crud.settings.download_url + "/" + file_name
@@ -581,23 +587,26 @@ def shn_abbreviate(word, size=48):
     
 def shn_action_buttons(jr, deletable=True):
 
-    """ Provide the usual Action Buttons for Column views. Designed to be called from a postp """
+    """
+        Provide the usual Action Buttons for Column views.
+        Designed to be called from a postp
+    """
 
     if jr.component:
         args = [jr.component_name, "[id]"]
     else:
         args = ["[id]"]
 
-    if auth.is_logged_in():
+    if shn_has_permission("update", jr.table):
         # Provide the ability to delete records in bulk
-        if deletable:
+        if deletable and shn_has_permission("delete", jr.table):
             response.s3.actions = [
-                dict(label=str(UPDATE), _class="action-btn", url=str(URL(r=request, args = args + ["update"]))),
+                dict(label=str(UPDATE), _class="action-btn", url=str(URL(r=request, args = args))),
                 dict(label=str(DELETE), _class="action-btn", url=str(URL(r=request, args = args + ["delete"])))
             ]
         else:
             response.s3.actions = [
-                dict(label=str(UPDATE), _class="action-btn", url=str(URL(r=request, args = args + ["update"]))),                
+                dict(label=str(UPDATE), _class="action-btn", url=str(URL(r=request, args = args)))
             ]
     else:
         response.s3.actions = [

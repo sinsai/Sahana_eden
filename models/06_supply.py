@@ -32,6 +32,7 @@ if deployment_settings.has_module("inventory"):
                             authorstamp, 
                             deletion_status,
                             Field("name", length=128, notnull=True, unique=True),
+                            comments,
                             migrate=migrate)
 
     table.name.comment = SPAN("*", _class="req")
@@ -74,6 +75,7 @@ if deployment_settings.has_module("inventory"):
                             deletion_status,                        
                             get_item_category_id(),
                             Field("name", length=128, notnull=True, unique=True),
+                            comments,
                             migrate=migrate)
 
     table.name.comment = SPAN("*", _class="req")

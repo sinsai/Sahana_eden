@@ -115,7 +115,7 @@ class S3Resource(object):
 
         self.__bind(storage)
 
-        self.components = None
+        self.components = Storage()
         self.parent = parent
 
         if self.parent is None:
@@ -659,7 +659,7 @@ class S3Resource(object):
 
         for i in xrange(len(self.__set)):
             row = self.__set[i]
-            if row.id == key:
+            if str(row.id) == str(key):
                 return row
 
         raise IndexError
@@ -1853,6 +1853,7 @@ class S3Request(object):
         self.id = None
         self.component_name = None
         self.component_id = None
+        self.record = None
         self.method = None
 
         # Parse the request
@@ -3661,23 +3662,23 @@ class S3Vector(object):
         """
 
         self.__manager = manager
-        self.db=self.__manager.db
-        self.prefix=prefix
-        self.name=name
+        self.db = self.__manager.db
+        self.prefix = prefix
+        self.name = name
 
         self.tablename = "%s_%s" % (self.prefix, self.name)
         self.table = self.db[self.tablename]
 
-        self.element=element
-        self.record=record
-        self.id=id
+        self.element = element
+        self.record = record
+        self.id = id
 
         if mtime:
             self.mtime = mtime
         else:
             self.mtime = datetime.datetime.utcnow()
 
-        self.rmap=rmap
+        self.rmap = rmap
 
         self.components = []
         self.references = []
@@ -3689,15 +3690,15 @@ class S3Vector(object):
         self.resolution = self.RESOLUTION.OTHER
         self.default_resolution = self.RESOLUTION.THIS
 
-        self.onvalidation=onvalidation
-        self.onaccept=onaccept
-        self.audit=audit
-        self.sync=sync
-        self.log=log
+        self.onvalidation = onvalidation
+        self.onaccept = onaccept
+        self.audit = audit
+        self.sync = sync
+        self.log = log
 
-        self.accepted=True
-        self.permitted=True
-        self.committed=False
+        self.accepted = True
+        self.permitted = True
+        self.committed = False
 
         self.uid = self.record.get(self.UID, None)
         self.mci = self.record.get(self.MCI, 2)
@@ -3718,12 +3719,12 @@ class S3Vector(object):
 
         # Do allow import to tables with these prefixes:
         if self.prefix in ("auth", "admin", "s3"):
-            self.permitted=False
+            self.permitted = False
 
         # ...or check permission explicitly:
         elif permit and not \
            permit(permission, self.tablename, record_id=self.id):
-            self.permitted=False
+            self.permitted = False
 
         # Once the vector has been created, update the entry in the directory
         if self.uid and \
@@ -3837,7 +3838,8 @@ class S3Vector(object):
 
                     if len(self.record):
                         self.record.update({self.MCI:self.mci})
-                        self.record.update(deleted=False) # Undelete re-imported records!
+                        if "deleted" in self.table.fields:
+                            self.record.update(deleted=False) # Undelete re-imported records!
                         try:
                             success = self.db(self.table.id == self.id).update(**dict(self.record))
                         except: # TODO: propagate error to XML importer
@@ -4732,6 +4734,8 @@ class S3XML(object):
                             value = field.store(file, filename)
                         else:
                             continue
+                    elif filename is not None:
+                        value = ""
                 else:
                     value = child.get(self.ATTRIBUTE.value, None)
                     value = self.xml_decode(value)

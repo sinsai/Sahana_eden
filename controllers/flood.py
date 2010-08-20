@@ -63,10 +63,17 @@ def river():
 def freport():
 
     """ Flood Reports, RESTful controller """
+    resource = request.function
+    tablename = "%s_%s" % (module, resource)
+    table = db[tablename]
 
     resource = request.function
     response.s3.pagination = True
 
+    # Disable legacy fields, unless updating, so the data can be manually transferred to new fields
+    if "update" not in request.args:
+        table.document.readable = table.document.writable = False    
+        
     # Post-processor
     def postp(jr, output):
         shn_action_buttons(jr, deletable=False)

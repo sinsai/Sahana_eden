@@ -101,7 +101,6 @@ if deployment_settings.has_module(module):
     table = db.define_table(tablename, timestamp, uuidstamp, deletion_status,
                     Field("name", notnull=True),
                     shelter_type_id,
-                    Field("description"),
                     location_id,
                     shelter_service_id,
                     person_id,
@@ -110,13 +109,13 @@ if deployment_settings.has_module(module):
                     Field("dwellings", "integer"),
                     Field("persons_per_dwelling", "integer"),
                     Field("area"),
+                    document_id,
                     comments,
                     migrate=migrate)
     table.uuid.requires = IS_NOT_IN_DB(db, "%s.uuid" % tablename)
     table.name.requires = IS_NOT_EMPTY()   # Shelters don't have to have unique names
     table.name.label = T("Shelter Name")
     table.name.comment = SPAN("*", _class="req")
-    table.description.label = T("Description")
     table.person_id.label = T("Contact Person")
     table.address.label = T("Address")
     table.capacity.requires = IS_NULL_OR(IS_INT_IN_RANGE(0, 999999))
@@ -158,6 +157,9 @@ if deployment_settings.has_module(module):
     # Shelters as component of Services, Types & Locations
     s3xrc.model.add_component(module, resource,
                               multiple=True,
-                              joinby=dict(cr_shelter_type="shelter_type_id", cr_shelter_service="shelter_service_id", gis_location="location_id"),
+                              joinby=dict(cr_shelter_type="shelter_type_id", 
+                                          cr_shelter_service="shelter_service_id", 
+                                          gis_location="location_id",
+                                          doc_document = "document_id"),
                               deletable=True,
                               editable=True)

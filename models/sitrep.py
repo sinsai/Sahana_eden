@@ -69,6 +69,7 @@ if deployment_settings.has_module(module):
                             Field("interviewee", "integer"),
                             Field("accessibility", "integer"),
                             comments,
+                            document_id,
                             document,
                             migrate=migrate)
 
@@ -146,7 +147,13 @@ if deployment_settings.has_module(module):
                                    label = T("Rapid Assessment"),
                                    comment = A(ADD_ASSESSMENT, _class="colorbox", _href=URL(r=request, c="sitrep", f="rassessment", args="create", vars=dict(format="popup")), _target="top", _title=ADD_ASSESSMENT),
                                    ondelete = "RESTRICT"))
-
+    
+    # rassessment as component of doc_documents
+    s3xrc.model.add_component(module, resource,
+                              multiple=True,
+                              joinby=dict(doc_document="document_id"),
+                              deletable=True,
+                              editable=True)
 
     # Section 2: Demographic
     resource = "section2"
@@ -169,7 +176,6 @@ if deployment_settings.has_module(module):
                             Field("female_1317", "double"),
                             Field("female_1825", "double"),
                             Field("female_2660", "double"),
-                            Field("female_61", "double"),
                             Field("female_61", "double"),
                             Field("dead_women", "integer"),
                             Field("dead_men", "integer"),
@@ -507,12 +513,16 @@ if deployment_settings.has_module(module):
                             Field("date", "date"),
                             Field("households", "integer"),
                             Field("population", "integer"),
+                            Field("persons_affected", "integer"),
+                            Field("persons_injured", "integer"),
+                            Field("persons_deceased", "integer"),                            
                             Field("houses_destroyed", "integer"),
                             Field("houses_damaged", "integer"),
                             Field("crop_losses", "integer"),
                             Field("water_level", "boolean"),
                             Field("crops_affectees", "double"),
                             Field("source"),
+                            document_id,
                             comments,
                             migrate=migrate)
 
@@ -522,7 +532,13 @@ if deployment_settings.has_module(module):
     table.population.label = T("Population")
     table.population.requires = IS_INT_IN_RANGE(0,99999999)
     table.population.default = 0
-
+    
+    table.persons_affected.label = T("# of People Affected")
+    table.persons_injured.label = T("# of People Injured")
+    table.persons_deceased.label = T("# of People Deceased")    
+    table.houses_destroyed.label = T("# of Houses Destroyed") 
+    table.houses_damaged.label = T("# of Houses Damaged") 
+    
     table.houses_destroyed.requires = IS_INT_IN_RANGE(0,99999999)
     table.houses_destroyed.default = 0
     table.houses_damaged.requires = IS_INT_IN_RANGE(0,99999999)
@@ -550,6 +566,13 @@ if deployment_settings.has_module(module):
         msg_record_modified = T("Assessment updated"),
         msg_record_deleted = T("Assessment deleted"),
         msg_list_empty = T("No Assessments currently registered"))
+    
+    # assessment as component of doc_documents
+    s3xrc.model.add_component(module, resource,
+                              multiple=True,
+                              joinby=dict(doc_document="document_id"),
+                              deletable=True,
+                              editable=True)    
 
     # -----------------------------------------------------------------------------
     # School Districts
@@ -562,11 +585,12 @@ if deployment_settings.has_module(module):
                             location_id,
                             Field("reported_by"),
                             Field("date", "date"),
+                            document_id,
                             document,
                             comments,
                             migrate=migrate)
 
-    table.document.represent = lambda document, table=table: A(table.document.retrieve(document)[0], _href=URL(r=request, f="download", args=[document]))
+    table.document.represent = lambda document, table=table: (document and [A(table.document.retrieve(document)[0], _href=URL(r=request, f="download", args=[document]))] or ["None"])[0]
     table.name.label = T("Title")
     table.location_id.label = T("District")
     table.reported_by.label = T("Reported By")
@@ -596,6 +620,13 @@ if deployment_settings.has_module(module):
                                   label = T("School District"),
                                   ondelete = "RESTRICT"))
 
+    # school_district as component of doc_documents
+    s3xrc.model.add_component(module, resource,
+                              multiple=True,
+                              joinby=dict(doc_document="document_id"),
+                              deletable=True,
+                              editable=True)
+    
     # -----------------------------------------------------------------------------
     # School Reports
     resource = "school_report"

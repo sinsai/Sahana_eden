@@ -86,7 +86,7 @@ class AuthS3(Auth):
         self.settings.username_field = False
         self.settings.lock_keys = True
         self.messages.lock_keys = False
-        self.messages.email_sent = 'Verification Email sent - please check your email to validate'
+        self.messages.email_sent = 'Verification Email sent - please check your email to validate. If you do not receive this email please check you junk email or spam filters' 
         self.messages.email_verified = 'Email verified - you can now login'
         self.messages.registration_disabled = "Registration Disabled!"
         self.messages.lock_keys = True
@@ -600,36 +600,67 @@ class AuthS3(Auth):
         db = self.db
         session = self.session
 
+        # Administrators have all roles
+        if 1 in session.s3.roles:
+            return True
+        
         try:
             role = int(role)
         except:
             #role = deployment_settings.auth.roles[role]
-            role = db(db.auth_group.role == role).select(db.auth_group.id, limitby=(0, 1)).first().id
-
+            try:
+                role = db(db.auth_group.role == role).select(db.auth_group.id, limitby=(0, 1)).first().id
+            except:
+                # Role doesn't exist in the Database
+                return False
+                
         if role in session.s3.roles:
             return True
         else:
             return False
 
 
-    def shn_has_permission(self, name, table_name, record_id = 0):
+    def shn_has_permission(self, method, tablename, record_id = 0):
 
         """
-            S3 framework function to define whether a user can access a record in manner "name"
+            S3 framework function to define whether a user can access a record in manner "method"
             Designed to be called from the RESTlike controller
             @note: This is planned to be rewritten: http://eden.sahanafoundation.org/wiki/BluePrintAuthorization
         """
 
+        db = self.db
         session = self.session
 
         if session.s3.security_policy == 1:
             # Simple policy
             # Anonymous users can Read.
-            if name == "read":
+            if method == "read":
                 authorised = True
             else:
                 # Authentication required for Create/Update/Delete.
                 authorised = self.shn_logged_in()
+
+        elif session.s3.security_policy == 2:
+            # Editor policy
+            # Anonymous users can Read.
+            if method == "read":
+                authorised = True
+            elif method == "create":
+                # Authentication required for Create.
+                authorised = self.shn_logged_in()
+            elif record_id == 0 and method == "update":
+                # Authenticated users can update at least some records
+                authorised = self.shn_logged_in()
+            else:
+                # Editor role required for Update/Delete.
+                authorised = self.shn_has_role("Editor")
+                table = db[tablename]
+                if not authorised and self.user and "created_by" in table:
+                    # Creator of Record is allowed to Edit
+                    record = db(table.id == record_id).select(table.created_by, limitby=(0, 1)).first()
+                    if record and self.user.id == record.created_by:
+                        authorised = True
+
         else:
             # Full policy
             if shn_logged_in():
@@ -638,18 +669,18 @@ class AuthS3(Auth):
                     authorised = True
                 else:
                     # Require records in auth_permission to specify access (default Web2Py-style)
-                    authorised = self.has_permission(name, table_name, record_id)
+                    authorised = self.has_permission(method, tablename, record_id)
             else:
                 # No access for anonymous
                 authorised = False
 
         return authorised
 
-    def shn_accessible_query(self, name, table):
+    def shn_accessible_query(self, method, table):
 
         """
             Returns a query with all accessible records for the current logged in user
-            @note: This method does not work on GAE because uses JOIN and IN
+            @note: This method does not work on GAE because it uses JOIN and IN
         """
 
         db = self.db
@@ -660,6 +691,10 @@ class AuthS3(Auth):
         if session.s3.security_policy == 1:
             # simple
             return table.id > 0
+        # If using the "editor" security policy then show all records
+        elif session.s3.security_policy == 2:
+            # editor
+            return table.id > 0
         # Administrators can see all data
         if self.shn_has_role(1):
             return table.id > 0
@@ -668,7 +703,7 @@ class AuthS3(Auth):
             user_id = self.user.id
         except:
             user_id = 0
-        if self.has_permission(name, table, 0, user_id):
+        if self.has_permission(method, table, 0, user_id):
             return table.id > 0
         # Filter Records to show only those to which the user has access
         session.warning = T("Only showing accessible records!")
@@ -676,7 +711,7 @@ class AuthS3(Auth):
         permission = self.settings.table_permission
         return table.id.belongs(db(membership.user_id == user_id)\
                            (membership.group_id == permission.group_id)\
-                           (permission.name == name)\
+                           (permission.name == method)\
                            (permission.table_name == table)\
                            ._select(permission.record_id))
 
@@ -737,6 +772,7 @@ class AuthS3(Auth):
             Extends Web2Py's requires_membership() to add new functionality:
                 * Custom Flash style
                 * Uses shn_has_role()
+                * Administrators (id=1) are deemed to have all roles
         """
 
         def decorator(action):
@@ -746,13 +782,16 @@ class AuthS3(Auth):
                     request = self.environment.request
                     next = URL(r=request, args=request.args, vars=request.get_vars)
                     redirect(self.settings.login_url + "?_next=" + urllib.quote(next))
-                if not self.shn_has_role(role):
-                    self.environment.session.error = \
-                        self.messages.access_denied
+
+                if not self.shn_has_role(role) and not self.shn_has_role(1):
+                    self.environment.session.error = self.messages.access_denied
                     next = self.settings.on_failed_authorization
                     redirect(next)
+
                 return action(*a, **b)
+
             f.__doc__ = action.__doc__
+
             return f
 
         return decorator

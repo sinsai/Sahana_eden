@@ -212,6 +212,7 @@ if deployment_settings.has_module(module):
                             Field("persons_deceased", "integer"),
                             Field("source"),
                             Field("source_id"),
+                            document_id,
                             Field("verified", "boolean"),
                             comments,
                             migrate=migrate)
@@ -228,9 +229,9 @@ if deployment_settings.has_module(module):
     table.person_id.label = T("Reporter Name")
     table.contact.label = T("Contact Details")
     table.datetime.label = T("Date/Time")
-    table.persons_affected.label = T("Number of People Affected")
-    table.persons_injured.label = T("Number of People Injured")
-    table.persons_deceased.label = T("Number of People Deceased")
+    table.persons_affected.label = T("# of People Affected")
+    table.persons_injured.label = T("# of People Injured")
+    table.persons_deceased.label = T("# of People Deceased")
     table.source.label = T("Source")
     table.source_id.label = T("Source ID")
     table.verified.label = T("Verified?")
@@ -252,13 +253,16 @@ if deployment_settings.has_module(module):
         msg_record_modified = T("Incident Report updated"),
         msg_record_deleted = T("Incident Report deleted"),
         msg_list_empty = T("No Incident Reports currently registered"))
-
+    
+    
+    # irs_ireport as component of doc_documents
     s3xrc.model.add_component(module, resource,
-                              multiple = True,
-                              joinby = dict(irs_incident="incident_id"),
-                              deletable = True,
-                              editable = True)
+                              multiple=True,
+                              joinby=dict(doc_document="document_id"),
+                              deletable=True,
+                              editable=True)    
 
+    
     # -----------------------------------------------------------------------------
     irs_assessment_type_opts = {
         1:T("initial assessment"),

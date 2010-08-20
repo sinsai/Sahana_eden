@@ -28,6 +28,7 @@ auth.settings.register_onaccept = lambda form: auth.shn_register(form)
 
 _table_user = auth.settings.table_user
 _table_user.first_name.comment = SPAN("*", _class="req")
+_table_user.last_name.comment = SPAN("*", _class="req")
 _table_user.email.comment = SPAN("*", _class="req")
 _table_user.password.comment = SPAN("*", _class="req")
 _table_user.language.label = T("Language")

@@ -48,7 +48,6 @@ deployment_settings.base.migrate = True
 # to create the db structure, then exit and re-import the data.
 deployment_settings.base.prepopulate = True
 
-
 # Email settings
 # Outbound server
 deployment_settings.mail.server = "127.0.0.1:25"
@@ -60,8 +59,9 @@ deployment_settings.mail.sender = "sahana@your.org"
 # Address to which mails get sent to approve new users
 deployment_settings.mail.approver = "useradmin@your.org"
 
-
 # L10n settings
+# Uncomment this if the deployment is just in a few countries
+#deployment_settings.L10n.countries = ["PK"]
 # Default timezone for users
 deployment_settings.L10n.utc_offset = "UTC +0000"
 
@@ -156,8 +156,8 @@ deployment_settings.modules = Storage(
             module_type = 10
         ),
     doc = Storage(
-            name_nice = Tstr("Document Library"),
-            description = Tstr("A library of digital resources, such as Photos, signed contracts and Office documents."),
+            name_nice = Tstr("Documents and Photos"),
+            description = Tstr("A library of digital resources, such as photos, documents and reports"),
             module_type = 10
         ),
     irs = Storage(

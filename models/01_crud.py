@@ -1838,7 +1838,6 @@ def shn_search(r, **attr):
                     else:
                         query = query & (_table.level == level) & \
                                         (_field.like("%" + value + "%"))
-                        return str(query)
 
                 elif exclude:
 

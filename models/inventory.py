@@ -32,14 +32,15 @@ if deployment_settings.has_module(module):
                             uuidstamp, 
                             authorstamp, 
                             deletion_status,
-                            get_location_id(),
-                            Field("description", 
-                                  "text",
-                                  length=320),
+                            location_id,
+                            #get_location_id(),
+                            document_id,
+                            comments,
                             migrate=migrate)
 
-    table.location_id.requires = IS_ONE_OF(db, "gis_location.id", repr_select, sort=True)
-    table.location_id.comment.append(SPAN("*", _class="req"))
+    #THESE CHANGE THE VALUE OF location_id EVERYWHERE!!!
+    #table.location_id.requires = IS_ONE_OF(db, "gis_location.id", repr_select, sort=True)
+    #table.location_id.comment.append(SPAN("*", _class="req"))
 
     s3.crud_strings[tablename] = shn_crud_strings("Inventory Location")
 
@@ -92,6 +93,13 @@ if deployment_settings.has_module(module):
                                 ondelete = "RESTRICT"
                                 )
                         )
+        
+    # inventory_location as component of doc_documents
+    s3xrc.model.add_component(module, resource,
+                              multiple=True,
+                              joinby=dict(doc_document="document_id"),
+                              deletable=True,
+                              editable=True)
 
     #==============================================================================
     # Inventory Item
@@ -119,7 +127,7 @@ if deployment_settings.has_module(module):
                               editable=True)
 
 
-    inventory_menu = [[T("Inventories"), False, URL(r=request, 
+    inventory_menu = [[T("Inventory Stores"), False, URL(r=request, 
                                                     c = "inventory",
                                                     f = "location"),
                        None],

@@ -126,6 +126,11 @@ def ireport():
 
     db.irs_iimage.report_id.readable = \
     db.irs_iimage.report_id.writable = False
+    
+    # Disable legacy fields, unless updating, so the data can be manually transferred to new fields
+    if "update" not in request.args:
+        table.source.readable = table.source.writable = False        
+        table.source_id.readable = table.source_id.writable = False   
 
     def prep(r):
         if r.method == "ushahidi":

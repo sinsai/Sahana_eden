@@ -109,25 +109,26 @@ def test():
     query = db((db.gis_feature_class.name == "Town") & (db.gis_location.feature_class_id == db.gis_feature_class.id)).select()
 
     html = gis.show_map(
-                feature_groups = [offices, hospitals],
-                feature_queries = [{"name" : "Towns", "query" : query, "active" : True}],
-                wms_browser = {"name" : "OpenGeo Demo WMS", "url" : "http://demo.opengeo.org/geoserver/ows?service=WMS&request=GetCapabilities"},
-                #wms_browser = {"name" : "Risk Maps", "url" : "http://preview.grid.unep.ch:8080/geoserver/ows?service=WMS&request=GetCapabilities"},
-                #wms_browser = {"name" : "Risk Maps", "url" : "http://www.pdc.org/wms/wmservlet/PDC_Active_Hazards?request=getcapabilities&service=WMS&version=1.1.1"},
-                catalogue_overlays = True,
-                catalogue_toolbar = True,
-                legend = True, # Stops Feature Layers from Printing
-                toolbar = True,
-                search = True,
-                print_tool = {
-                        #"url" : "http://localhost:8080/geoserver/pdf/",                    # Local GeoServer
-                        "url" : "http://localhost:8080/print-servlet-1.2-SNAPSHOT/pdf/",    # Local Windows Tomcat
-                        #"url" : "http://host.domain:8180/print-servlet-1.2-SNAPSHOT/pdf/", # Linux Tomcat
-                        "mapTitle" : "Title",
-                        "subTitle" : "SubTitle"
-                    },
-                #mgrs = {"name" : "MGRS Atlas PDFs", "url" : "http://www.sharedgeo.org/datasets/shared/maps/usng/pdf.map?VERSION=1.0.0&SERVICE=WFS&request=GetFeature&typename=wfs_all_maps"},
-                window = True,
+                add_feature = True,
+                #feature_groups = [offices, hospitals],
+                #feature_queries = [{"name" : "Towns", "query" : query, "active" : True}],
+                #wms_browser = {"name" : "OpenGeo Demo WMS", "url" : "http://demo.opengeo.org/geoserver/ows?service=WMS&request=GetCapabilities"},
+                ##wms_browser = {"name" : "Risk Maps", "url" : "http://preview.grid.unep.ch:8080/geoserver/ows?service=WMS&request=GetCapabilities"},
+                ##wms_browser = {"name" : "Risk Maps", "url" : "http://www.pdc.org/wms/wmservlet/PDC_Active_Hazards?request=getcapabilities&service=WMS&version=1.1.1"},
+                #catalogue_overlays = True,
+                #catalogue_toolbar = True,
+                #legend = True, # Stops Feature Layers from Printing
+                #toolbar = True,
+                #search = True,
+                #print_tool = {
+                #        #"url" : "http://localhost:8080/geoserver/pdf/",                    # Local GeoServer
+                #        "url" : "http://localhost:8080/print-servlet-1.2-SNAPSHOT/pdf/",    # Local Windows Tomcat
+                #        #"url" : "http://host.domain:8180/print-servlet-1.2-SNAPSHOT/pdf/", # Linux Tomcat
+                #        "mapTitle" : "Title",
+                #        "subTitle" : "SubTitle"
+                #    },
+                ##mgrs = {"name" : "MGRS Atlas PDFs", "url" : "http://www.sharedgeo.org/datasets/shared/maps/usng/pdf.map?VERSION=1.0.0&SERVICE=WFS&request=GetFeature&typename=wfs_all_maps"},
+                #window = True,
                 )
 
     return dict(map=html)
@@ -392,10 +393,15 @@ def location():
     tablename = module + "_" + resource
     table = db[tablename]
 
-    # Model options
-    table.level.comment = DIV( _class="tooltip", _title=Tstr("Level") + "|" + Tstr("Is the location is a geographic area, then state at what level here."))
-    table.code.comment = DIV( _class="tooltip", _title=Tstr("Code") + "|" + Tstr("For a country this would be the ISO2 code, for a Town, it would be the Airport Locode."))
-    table.parent.comment = DIV(A(ADD_LOCATION,
+    if not shn_has_role("MapAdmin"):
+        table.code.writable = False
+        table.level.writable = False
+        table.gis_feature_type.writable = table.gis_feature_type.readable = False
+        table.wkt.writable = table.wkt.readable = False
+    else:
+        table.code.comment = DIV( _class="tooltip", _title=Tstr("Code") + "|" + Tstr("For a country this would be the ISO2 code, for a Town, it would be the Airport Locode."))
+        table.level.comment = DIV( _class="tooltip", _title=Tstr("Level") + "|" + Tstr("If the location is a geographic area, then state at what level here."))
+        table.parent.comment = DIV(A(ADD_LOCATION,
                                        _class="colorbox",
                                        _href=URL(r=request, c="gis", f="location", args="create", vars=dict(format="popup", child="parent")),
                                        _target="top",
@@ -403,11 +409,13 @@ def location():
                                      DIV(
                                        _class="tooltip",
                                        _title=Tstr("Parent") + "|" + Tstr("The Area which this Site is located within."))),
+        table.wkt.comment = DIV(SPAN("*", _class="req"), DIV( _class="tooltip", _title="WKT" + "|" + Tstr("The <a href='http://en.wikipedia.org/wiki/Well-known_text' target=_blank>Well-Known Text</a> representation of the Polygon/Line.")))
 
+    # Model options which are only required in interactive HTML views
+    table.name.comment = SPAN("*", _class="req")
     CONVERSION_TOOL = T("Conversion Tool")
     table.lat.comment = DIV(A(CONVERSION_TOOL, _style="cursor:pointer;", _title=CONVERSION_TOOL, _id="btnConvert"), DIV( _class="tooltip", _title=T("Latitude|Latitude is North-South (Up-Down). Latitude is zero on the equator and positive in the northern hemisphere and negative in the southern hemisphere. This needs to be added in Decimal Degrees. Use the popup to convert from either GPS coordinates or Degrees/Minutes/Seconds.")))
     table.lon.comment = DIV( _class="tooltip", _title=Tstr("Longitude") + "|" + Tstr("Longitude is West - East (sideways). Longitude is zero on the prime meridian (Greenwich Mean Time) and is positive to the east, across Europe and Asia.  Longitude is negative to the west, across the Atlantic and the Americas.  This needs to be added in Decimal Degrees. Use the popup to convert from either GPS coordinates or Degrees/Minutes/Seconds."))
-    table.wkt.comment = DIV(SPAN("*", _class="req"), DIV( _class="tooltip", _title="WKT" + "|" + Tstr("The <a href='http://en.wikipedia.org/wiki/Well-known_text' target=_blank>Well-Known Text</a> representation of the Polygon/Line.")))
     table.osm_id.comment = DIV( _class="tooltip", _title="OSM ID" + "|" + Tstr("The <a href='http://openstreetmap.org' target=_blank>OpenStreetMap</a> ID. If you don't know the ID, you can just say 'Yes' if it has been added to OSM."))
 
     # CRUD Strings
@@ -525,11 +533,9 @@ def location():
             except:
                 pass
 
-            table.description.readable = table.description.writable = False
             #table.level.readable = table.level.writable = False
             table.code.readable = table.code.writable = False
-            # Fails to submit if hidden server-side
-            #table.gis_feature_type.readable = table.gis_feature_type.writable = False
+            table.gis_feature_type.readable = table.gis_feature_type.writable = False
             table.wkt.readable = table.wkt.writable = False
             table.osm_id.readable = table.osm_id.writable = False
             table.source.readable = table.source.writable = False
@@ -548,10 +554,7 @@ def location():
         return output
     response.s3.postp = user_postp
 
-    output = shn_rest_controller(module, resource)
-
-    if isinstance(output, dict):
-        output.update(gis_location_hierarchy=gis_location_hierarchy)
+    output = shn_rest_controller(module, resource, listadd=False)
 
     return output
 
@@ -596,7 +599,7 @@ def marker():
 
     return output
 
-#@auth.shn_requires_membership("MapAdmin")
+@auth.shn_requires_membership("MapAdmin")
 def projection():
     "RESTful CRUD controller"
     resource = request.function
@@ -1122,7 +1125,7 @@ def layer_wms():
 
     return output
 
-#@auth.shn_requires_membership("AdvancedJS")
+@auth.shn_requires_membership("MapAdmin")
 def layer_js():
     "RESTful CRUD controller"
     resource = request.function
@@ -1180,7 +1183,7 @@ def layer_xyz():
     type = "XYZ"
     LAYERS = T(TYPE_LAYERS_FMT % type)
     ADD_NEW_LAYER = T(ADD_NEW_TYPE_LAYER_FMT % type)
-    EDIT_LAYER = T(EDIT_LAYER_FMT % type)
+    EDIT_LAYER = T(EDIT_TYPE_LAYER_FMT % type)
     LIST_LAYERS = T(LIST_TYPE_LAYERS_FMT % type)
     NO_LAYERS = T(NO_TYPE_LAYERS_FMT % type)
     s3.crud_strings[tablename] = Storage(

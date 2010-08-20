@@ -65,8 +65,8 @@ if deployment_settings.has_module(module):
                             location_id,
                             staff_id,
                             Field("staff2_id", db.org_staff, ondelete = "RESTRICT"),
-                            Field("interview_location", "integer"),
-                            Field("interviewee", "integer"),
+                            Field("interview_location"),
+                            Field("interviewee"),
                             Field("accessibility", "integer"),
                             comments,
                             document,
@@ -284,8 +284,42 @@ if deployment_settings.has_module(module):
     table = db.define_table(tablename,
                             timestamp, uuidstamp, authorstamp, deletion_status,
                             assessment_id,
+                            Field("houses_tot", "integer"),
+                            Field("houses_unh", "integer"),
+                            Field("houses_dam", "integer"),
+                            #Field("salvage_material"),
+                            Field("nfi_water_con", "boolean"),
+                            Field("nfi_water_sto", "boolean"),
+                            #Field("nfi_water_container_types"),
+                            Field("nfi_cooking", "boolean"),
+                            Field("nfi_sanitation", "boolean"),
+                            Field("nfi_sanitation_women", "boolean"),
+                            Field("nfi_bedding", "boolean"),
+                            Field("nfi_clothing", "boolean"),
+                            Field("nfi_ass_available", "boolean"),
+                            Field("nfi_ass_hygiene", "boolean"),
+                            #Field("nfi_assist_hygiene_source"),
+                            Field("nfi_ass_hhkits", "boolean"),
+                            #Field("nfi_ass_hhkits_source"),
+                            Field("nfi_ass_dwelling", "boolean"),
+                            #Field("nfi_ass_dwelling_source"),
                             comments,
                             migrate=migrate)
+
+    table.houses_tot.label = T("Total number of houses in the area")
+    table.houses_inh.label = T("How many houses are uninhabitable")
+    table.houses_dam.label = T("How many houses suffered damage but remain usable")
+
+    table.nfi_water_con = T("Do HH have min. 2 containers (10-20 litres each) to hold water")
+    table_nfi_water_sto = T("Do HH have household water storage containers")
+
+    table.nfi_cooking = T("Do HH have appropriate equipment/materials to cook their food")
+    table.nfi_sanitation = T("Do people have reliable access to sufficient sanitation/hygiene items")
+    table.nfi_sanitation_women = T("Do women and girls have easy access to sanitary materials")
+    table.nfi_bedding = T("Do HH have bedding materials available")
+    table.nfi_clothing = T("Do people have at least 2 full sets of clothing")
+
+    table.nfi_ass_available = T("Have they received or expecting to receive any shelter/NFI assistance in the coming days")
 
     # CRUD strings
     s3.crud_strings[tablename] = Storage(

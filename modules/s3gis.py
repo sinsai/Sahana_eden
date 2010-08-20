@@ -801,8 +801,8 @@ OpenLayers.Util.extend( selectPdfControl, {
         if add_feature:
             draw_feature = """
         // Controls for Draft Features
-        // - interferes with Feature Layers!
-        //var selectControl = new OpenLayers.Control.SelectFeature(featuresLayer, {
+        // - interferes with popupControl which is active on allLayers
+        //var selectControl = new OpenLayers.Control.SelectFeature(draftLayer, {
         //    onSelect: onFeatureSelect,
         //    onUnselect: onFeatureUnselect,
         //    multiple: false,
@@ -810,20 +810,50 @@ OpenLayers.Util.extend( selectPdfControl, {
         //    isDefault: true
         //});
 
-        //var removeControl = new OpenLayers.Control.RemoveFeature(featuresLayer,
-        //    {onDone: function(feature) {console.log(feature)}
+        //var removeControl = new OpenLayers.Control.RemoveFeature(draftLayer, {
+        //    onDone: function(feature) {
+        //        console.log(feature)
+        //    }
+        //});
+
+        //var selectButton = new GeoExt.Action({
+            //control: selectControl,
+        //    map: map,
+        //    iconCls: 'searchclick',
+            // button options
+        //    tooltip: '""" + str(T("Query Feature")) + """',
+        //    toggleGroup: 'controls',
+        //    enableToggle: true
         //});
 
         var pointButton = new GeoExt.Action({
-            control: new OpenLayers.Control.DrawFeature(featuresLayer, OpenLayers.Handler.Point),
+            control: new OpenLayers.Control.DrawFeature(draftLayer, OpenLayers.Handler.Point, {
+                // custom Callback
+                'featureAdded': function(feature){
+                    // Remove previous point
+                    if (lastDraftFeature){
+                        lastDraftFeature.destroy();
+                    }
+                    // updateFormFields
+                    centerPoint = feature.geometry.getBounds().getCenterLonLat();
+                    centerPoint.transform(projection_current, proj4326);
+                    $('#gis_location_lon').val(centerPoint.lon);
+                    $('#gis_location_lat').val(centerPoint.lat);
+                    // Prepare in case user selects a new point
+                    lastDraftFeature = feature;
+                }
+            }),
             map: map,
             iconCls: 'drawpoint-off',
             tooltip: '""" + str(T("Add Point")) + """',
-            toggleGroup: 'controls'
+            toggleGroup: 'controls',
+            allowDepress: true,
+            enableToggle: true,
+            pressed: true
         });
         
         //var lineButton = new GeoExt.Action({
-        //    control: new OpenLayers.Control.DrawFeature(featuresLayer, OpenLayers.Handler.Path),
+        //    control: new OpenLayers.Control.DrawFeature(draftLayer, OpenLayers.Handler.Path),
         //    map: map,
         //    iconCls: 'drawline-off',
         //    tooltip: '""" + str(T("Add Line")) + """',
@@ -831,7 +861,7 @@ OpenLayers.Util.extend( selectPdfControl, {
         //});
 
         //var polygonButton = new GeoExt.Action({
-        //    control: new OpenLayers.Control.DrawFeature(featuresLayer, OpenLayers.Handler.Polygon),
+        //    control: new OpenLayers.Control.DrawFeature(draftLayer, OpenLayers.Handler.Polygon),
         //    map: map,
         //    iconCls: 'drawpolygon-off',
         //    tooltip: '""" + str(T("Add Polygon")) + """',
@@ -839,7 +869,7 @@ OpenLayers.Util.extend( selectPdfControl, {
         //});
 
         //var dragButton = new GeoExt.Action({
-        //    control: new OpenLayers.Control.DragFeature(featuresLayer),
+        //    control: new OpenLayers.Control.DragFeature(draftLayer),
         //    map: map,
         //    iconCls: 'movefeature',
         //    tooltip: '""" + str(T("Move Feature: Drag feature to desired location")) + """',
@@ -847,7 +877,7 @@ OpenLayers.Util.extend( selectPdfControl, {
         //});
 
         //var resizeButton = new GeoExt.Action({
-        //    control: new OpenLayers.Control.ModifyFeature(featuresLayer, { mode: OpenLayers.Control.ModifyFeature.RESIZE }),
+        //    control: new OpenLayers.Control.ModifyFeature(draftLayer, { mode: OpenLayers.Control.ModifyFeature.RESIZE }),
         //    map: map,
         //    iconCls: 'resizefeature',
         //    tooltip: '""" + str(T("Resize Feature: Select the feature you wish to resize & then Drag the associated dot to your desired size")) + """',
@@ -855,7 +885,7 @@ OpenLayers.Util.extend( selectPdfControl, {
         //});
 
         //var rotateButton = new GeoExt.Action({
-        //    control: new OpenLayers.Control.ModifyFeature(featuresLayer, { mode: OpenLayers.Control.ModifyFeature.ROTATE }),
+        //    control: new OpenLayers.Control.ModifyFeature(draftLayer, { mode: OpenLayers.Control.ModifyFeature.ROTATE }),
         //    map: map,
         //    iconCls: 'rotatefeature',
         //    tooltip: '""" + str(T("Rotate Feature: Select the feature you wish to rotate & then Drag the associated dot to rotate to your desired location")) + """',
@@ -863,7 +893,7 @@ OpenLayers.Util.extend( selectPdfControl, {
         //});
 
         //var modifyButton = new GeoExt.Action({
-        //    control: new OpenLayers.Control.ModifyFeature(featuresLayer),
+        //    control: new OpenLayers.Control.ModifyFeature(draftLayer),
         //    map: map,
         //    iconCls: 'modifyfeature',
         //    tooltip: '""" + str(T("Modify Feature: Select the feature you wish to deform & then Drag one of the dots to deform the feature in your chosen manner")) + """',
@@ -889,7 +919,7 @@ OpenLayers.Util.extend( selectPdfControl, {
         //toolbar.add(rotateButton);
         //toolbar.add(modifyButton);
         //toolbar.add(removeButton);
-        //toolbar.addSeparator();
+        toolbar.addSeparator();
         """
         else:
             draw_feature = ""
@@ -897,7 +927,7 @@ OpenLayers.Util.extend( selectPdfControl, {
 
         # Toolbar
         if toolbar or add_feature:
-            #if 1 in session.s3.roles or shn_has_role("MapAdmin"):
+            #if 1 in session.s3.roles or auth.shn_has_role("MapAdmin"):
             if auth.is_logged_in():
                 # Provide a way to save the viewport
                 # @ToDo Extend to personalised Map Views
@@ -936,6 +966,11 @@ OpenLayers.Util.extend( selectPdfControl, {
                 save_button = ""
                 save_button2 = ""
 
+            if add_feature:
+                pan_depress = "false"
+            else:
+                pan_depress = "true"
+            
             toolbar = """
         toolbar = mapPanel.getTopToolbar();
         
@@ -1037,8 +1072,8 @@ OpenLayers.Util.extend( selectPdfControl, {
             // button options
             tooltip: '""" + str(T("Pan Map: keep the left mouse button pressed and drag the map")) + """',
             toggleGroup: 'controls',
-            allowDepress: false,
-            pressed: true
+            allowDepress: true,
+            pressed: """ + pan_depress + """
         });
 
         // 1st of these 2 to get activated cannot be deselected!
@@ -1066,16 +1101,6 @@ OpenLayers.Util.extend( selectPdfControl, {
 
         """ + mgrs2 + """
 
-        var selectButton = new GeoExt.Action({
-            //control: selectControl,
-            map: map,
-            iconCls: 'searchclick',
-            // button options
-            tooltip: '""" + str(T("Query Feature")) + """',
-            toggleGroup: 'controls',
-            enableToggle: true
-        });
-
         """ + draw_feature + """
 
         var navPreviousButton = new Ext.Toolbar.Button({
@@ -1093,6 +1118,7 @@ OpenLayers.Util.extend( selectPdfControl, {
         """ + save_button + """
 
         // Add to Map & Toolbar
+        toolbar.add(zoomfull);
         toolbar.add(zoomfull);
         toolbar.add(zoomout);
         toolbar.add(zoomin);
@@ -1743,7 +1769,7 @@ OpenLayers.Util.extend( selectPdfControl, {
             cluster_style = """
         // Style Rule For Clusters
         var style_cluster = new OpenLayers.Style({
-            label: "${label}",
+            label: '${label}',
             pointRadius: '${radius}',
             fillColor: '#8087ff',
             fillOpacity: 0.5,
@@ -1845,37 +1871,37 @@ OpenLayers.Util.extend( selectPdfControl, {
             # This is currently used just to select the Lat/Lon for a Location, so no Features pre-loaded
             if add_feature:
                 layers_features += """
-            features = [];
+            //features = [];
         """ + cluster_style + """
-        featuresLayer = new OpenLayers.Layer.Vector(
-            '""" + str(T("Draft Features")) + """',
-            {
-                strategies: [ """ + strategy_cluster + """ ],
-                styleMap: featureClusterStyleMap
-            }
+        draftLayer = new OpenLayers.Layer.Vector(
+            '""" + str(T("Draft Features")) + """', {}
+            //{
+            //    strategies: [ """ + strategy_cluster + """ ],
+            //    styleMap: featureClusterStyleMap
+            //}
         );
-        featuresLayer.setVisibility(true);
-        map.addLayer(featuresLayer);
-        featuresLayer.events.on({
-            "featureselected": onFeatureSelect,
-            "featureunselected": onFeatureUnselect
-        });
-        featureLayers.push(featuresLayer);
+        draftLayer.setVisibility(true);
+        map.addLayer(draftLayer);
+        //draftLayer.events.on({
+        //    "featureselected": onFeatureSelect,
+        //    "featureunselected": onFeatureUnselect
+        //});
+        // Don't include here as we don't want the highlightControl & currently gain nothing else from it
+        //featureLayers.push(draftLayer);
 
         // We don't currently do anything here
-        function onFeatureSelect(event) {
+        //function onFeatureSelect(event) {
             // unselect any previous selections
-            tooltipUnselect(event);
-            var feature = event.feature;
-            if(feature.cluster) {
+        //    tooltipUnselect(event);
+        //    var feature = event.feature;
+        //    var id = 'draftLayerPopup';
+        //    if(feature.cluster) {
                 // Cluster
-                var id = 'featuresLayerPopup';
-                var centerPoint = feature.geometry.getBounds().getCenterLonLat();
-            } else {
+        //        centerPoint = feature.geometry.getBounds().getCenterLonLat();
+        //    } else {
                 // Single Feature
-                var id = 'featuresLayerPopup';
-            }
-        }
+        //    }
+        //}
         """
             
             # Feature Queries
@@ -1919,10 +1945,10 @@ OpenLayers.Util.extend( selectPdfControl, {
             // unselect any previous selections
             tooltipUnselect(event);
             var feature = event.feature;
+            var id = 'featureLayer""" + name_safe + """Popup';
+            centerPoint = feature.geometry.getBounds().getCenterLonLat();
             if(feature.cluster) {
                 // Cluster
-                var id = 'featureLayer""" + name_safe + """Popup';
-                var centerPoint = feature.geometry.getBounds().getCenterLonLat();
                 var name, uuid, url;
                 var html = 'There are multiple records at this location:<ul>';
                 var popupurl = '""" + _popup_url + """';
@@ -1947,10 +1973,9 @@ OpenLayers.Util.extend( selectPdfControl, {
                 map.addPopup(popup);
             } else {
                 // Single Feature
-                var id = 'featureLayer""" + name_safe + """Popup';
                 var popup = new OpenLayers.Popup.FramedCloud(
                     id,
-                    feature.geometry.getBounds().getCenterLonLat(),
+                    centerPoint,
                     new OpenLayers.Size(200, 200),
                     "Loading...<img src='""" + str(URL(r=request, c="static", f="img")) + """/ajax-loader.gif' border=0>",
                     null,
@@ -2087,10 +2112,10 @@ OpenLayers.Util.extend( selectPdfControl, {
             // unselect any previous selections
             tooltipUnselect(event);
             var feature = event.feature;
+            var id = 'featureLayer""" + name_safe + """Popup';
+            centerPoint = feature.geometry.getBounds().getCenterLonLat();
             if(feature.cluster) {
                 // Cluster
-                var id = 'featureLayer""" + name_safe + """Popup';
-                var centerPoint = feature.geometry.getBounds().getCenterLonLat();
                 var name, uuid, url;
                 var html = 'There are multiple records at this location:<ul>';
                 var popupurl = '""" + _popup_url + """';
@@ -2115,10 +2140,9 @@ OpenLayers.Util.extend( selectPdfControl, {
                 map.addPopup(popup);
             } else {
                 // Single Feature
-                var id = 'featureLayer""" + name_safe + """Popup';
                 var popup = new OpenLayers.Popup.FramedCloud(
                     id,
-                    feature.geometry.getBounds().getCenterLonLat(),
+                    centerPoint,
                     new OpenLayers.Size(200, 200),
                     "Loading...<img src='""" + str(URL(r=request, c="static", f="img")) + """/ajax-loader.gif' border=0>",
                     null,
@@ -2548,7 +2572,8 @@ OpenLayers.Util.extend( selectPdfControl, {
 
         html.append(SCRIPT("""
     var map, mapPanel, legendPanel, toolbar;
-    var featuresLayer, currentFeature, popupControl, highlightControl;
+    var lastDraftFeature, draftLayer;
+    var centerPoint, currentFeature, popupControl, highlightControl;
     var wmsBrowser;
     var printProvider;
     var allLayers = new Array();

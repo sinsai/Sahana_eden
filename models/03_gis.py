@@ -476,9 +476,12 @@ location_id = db.Table(None, "location_id",
                                        _title=Tstr("Location") + "|" + Tstr("The Location of this Site, which can be general (for Reporting) or precise (for displaying on a Map)."))),
                        ondelete = "RESTRICT"))
 
-# Expose the default country to Views for Autocompletes
-if response.s3.country:
-    response.s3.gis.country = db(db.gis_location.code == response.s3.country).select(db.gis_location.id, limitby=(0, 1)).first().id
+# Expose the default countries to Views for Autocompletes
+response.s3.gis.countries = Storage()
+if response.s3.countries:
+    countries = db(db.gis_location.code.belongs(response.s3.countries)).select(db.gis_location.id, db.gis_location.code, db.gis_location.name, limitby=(0, len(response.s3.countries)))
+    for country in countries:
+        response.s3.gis.countries[country.code] = Storage(name=country.name, id=country.id)
 
 # -----------------------------------------------------------------------------
 def get_location_id (field_name = "location_id", 

@@ -27,7 +27,7 @@ def shn_sessions():
         session.s3 = Storage()
     # Use response for one-off variables which are visible in views without explicit passing
     response.s3 = Storage()
-    response.s3.country = deployment_settings.get_L10n_country()
+    response.s3.countries = deployment_settings.get_L10n_countries()
     response.s3.formats = Storage()
     response.s3.gis = Storage()
 

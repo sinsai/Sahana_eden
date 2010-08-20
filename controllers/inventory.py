@@ -38,13 +38,13 @@ def location():
         shn_action_buttons(jr)
         return output
     response.s3.postp = postp
-    
+
     rheader = lambda jr: shn_location_rheader(jr,
                                               tabs = [(T("Edit Details"), None),
                                                       (T("Items"), "location_item"),                                                                                                        
                                                      ]
                                               )
-    
+
     return shn_rest_controller(module, resource, rheader=rheader, sticky=True)
 
 def index():

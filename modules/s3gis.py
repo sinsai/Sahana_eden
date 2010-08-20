@@ -1826,6 +1826,7 @@ OpenLayers.Util.extend( selectPdfControl, {
                     'html'
                 );
         }
+
         """
             # Feature Queries
             for layer in feature_queries:
@@ -1870,25 +1871,46 @@ OpenLayers.Util.extend( selectPdfControl, {
             var feature = event.feature;
             if(feature.cluster) {
                 // Cluster
+                var centerPoint = feature.geometry.getBounds().getCenterLonLat();
                 // Create Empty Array to Contain Feature Names
-                var clusterFeaturesArray = [];
+                //var clusterFeaturesArray = [];
                 // Add Each Feature To Array
-                for (var i = 0; i < feature.cluster.length; i++)
-                {
-                    var clusterFeaturesArrayName = feature.cluster[i].attributes.name;
-                    var clusterFeaturesArrayType = feature.cluster[i].attributes.feature_class;
-                    var clusterFeaturesArrayX = feature.cluster[i].geometry.x;
-                    var clusterFeaturesArrayY = feature.cluster[i].geometry.y;
-                    var clusterFeaturesArrayID = feature.cluster[i].fid;
-
-                    // ToDo: Refine
-                    var clusterFeaturesArrayEntry = "<li>" + clusterFeaturesArrayName + "</li>";
-
-                    clusterFeaturesArray.push(clusterFeaturesArrayEntry);
-                };
+                //for (var i = 0; i < feature.cluster.length; i++) {
+                //    var clusterFeaturesArrayName = feature.cluster[i].attributes.name;
+                //    var clusterFeaturesArrayType = feature.cluster[i].attributes.feature_class;
+                //    var clusterFeaturesArrayX = feature.cluster[i].geometry.x;
+                //    var clusterFeaturesArrayY = feature.cluster[i].geometry.y;
+                //    var clusterFeaturesArrayID = feature.cluster[i].fid;
+                    //ToDo: Refine
+                //    var clusterFeaturesArrayEntry = "<li>" + clusterFeaturesArrayName + "</li>";
+                //    clusterFeaturesArray.push(clusterFeaturesArrayEntry);
+                //};
+                var name, uuid, url;
+                var html = 'There are multiple records at this location:<ul>';
+                var popupurl = '""" + _popup_url + """';
+                for (var i = 0; i < feature.cluster.length; i++) {
+                    name = feature.cluster[i].attributes.name;
+                    uuid = feature.cluster[i].fid;
+                    url = "javascript:loadDetails('" + popupurl + uuid + "'," + id + ")";
+                    //html += "<li><a href='" + url + "'>" + name + "</a></li>";
+                    html += "<li>" + name + "</li>";
+                }
+                html += '</ul>';
+                html += "<a href='javascript:zoomToSelectedFeature(" + centerPoint.lon + "," + centerPoint.lat + ", 3)'>Zoom in</a>";
+                var id = 'featureLayer""" + name_safe + """Popup';
+                var popup = new OpenLayers.Popup.FramedCloud(
+                    id,
+                    centerPoint,
+                    new OpenLayers.Size(200, 200),
+                    html,
+                    null,
+                    true,
+                    onPopupClose
+                );
+                feature.popup = popup;
+                map.addPopup(popup);
             } else {
                 // Single Feature
-                var selectedFeature = feature;
                 var id = 'featureLayer""" + name_safe + """Popup';
                 var popup = new OpenLayers.Popup.FramedCloud(
                     id,
@@ -2502,6 +2524,21 @@ OpenLayers.Util.extend( selectPdfControl, {
         numZoomLevels: """ + str(numZoomLevels) + """
     };
 
+    // Zoom to Selected Feature from within Popup
+    function zoomToSelectedFeature(lon, lat, zoomfactor) {
+        var lonlat = new OpenLayers.LonLat(lon, lat);
+        // Get Current Zoom
+        currZoom = map.getZoom();
+        // New Zoom
+        newZoom = currZoom + zoomfactor;
+        // Center and Zoom
+        map.setCenter(lonlat, newZoom);
+        // Remove Popups
+        for (var i=0; i<map.popups.length; ++i)	{
+            map.removePopup(map.popups[i]);
+        }
+    }
+    
     function addLayers(map) {
         // Base Layers
         // OSM

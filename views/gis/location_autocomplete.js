@@ -5,13 +5,31 @@
 
     // Add Autocomplete dummy rows
     var widget, row;
+    
+  {{if len(response.s3.gis.countries) == 1:}}
     widget = "<input id='gis_location_l0' style='display: none;'/><input id='dummy_l0' class='ac_input' size=50 />";
     row = "<tr id='gis_location_l0__row'><td><label>{{=response.s3.gis.location_hierarchy["L0"]}}: </label></td><td>" + widget + '</td><td></td></tr>';
     $('#{{=location_id}}__row').before(row);
-  {{if response.s3.country:}}
     // Country is hardcoded
+    $('#gis_location_l0').val({{=response.s3.gis.countries[response.s3.countries[0]].id}});
+    // Hide
     $('#gis_location_l0__row').hide();
+  {{elif len(response.s3.gis.countries) > 1:}}
+    // Country is limited, so dropdown
+    widget = "<input id='gis_location_l0' style='display: none;'/><select id='dummy_l0'>";
+    {{for country in response.s3.gis.countries:}}
+    widget += "<option value='{{=response.s3.gis.countries[country].id}}'>{{=response.s3.gis.countries[country].name}}</option>";
+    {{pass}}
+    widget += '</select>';
+    row = "<tr id='gis_location_l0__row'><td><label>{{=response.s3.gis.location_hierarchy["L0"]}}: </label></td><td>" + widget + '</td><td></td></tr>';
+    $('#{{=location_id}}__row').before(row);
+    // Set initial value
+    $('#gis_location_l0').val({{=response.s3.gis.countries[response.s3.countries[0]].id}});
   {{else:}}
+    // Country is autocomplete
+    widget = "<input id='gis_location_l0' style='display: none;'/><input id='dummy_l0' class='ac_input' size=50 />";
+    row = "<tr id='gis_location_l0__row'><td><label>{{=response.s3.gis.location_hierarchy["L0"]}}: </label></td><td>" + widget + '</td><td></td></tr>';
+    $('#{{=location_id}}__row').before(row);
   {{pass}}
     widget = "<input id='gis_location_l1' style='display: none;'/><input id='dummy_l1' class='ac_input' size=50 />";
     row = '<tr><td><label>{{=response.s3.gis.location_hierarchy["L1"]}}: </label></td><td>' + widget + '</td><td></td></tr>';
@@ -26,8 +44,14 @@
     row = '<tr><td><label>{{=response.s3.gis.location_hierarchy["L4"]}}: </label></td><td>' + widget + '</td><td></td></tr>';
     $('#{{=location_id}}__row').before(row);
     
-  {{if response.s3.country:}}
-    $('#gis_location_l0').val({{=response.s3.gis.country}});
+  {{if len(response.s3.gis.countries) == 1:}}
+  {{elif len(response.s3.gis.countries) > 1:}}
+    // L0
+    // Populate the real Input when the Dummy is selected
+    $('#dummy_l0').result(function(event, data, formatted) {
+        var newvalue = data.id;
+        $('#gis_location_l0').val(newvalue);
+    });
   {{else:}}
     // L0
     // Autocomplete-enable the Dummy Input

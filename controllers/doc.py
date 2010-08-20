@@ -15,7 +15,7 @@ if module not in deployment_settings.modules:
 
 # Options Menu (available in all Functions' Views)
 response.menu_options = [ [T("Reference Documents"), False, URL(r=request, f="document")],
-                          [T("Images"), False, URL(r=request, f="image")],
+                          [T("Photos"), False, URL(r=request, f="image")],
                           #[T("Bulk Uploader"), False, URL(r=request, f="bulk_upload")]
                         ]
 

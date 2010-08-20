@@ -156,7 +156,7 @@ deployment_settings.modules = Storage(
             module_type = 10
         ),
     doc = Storage(
-            name_nice = Tstr("Documents and Images"),
+            name_nice = Tstr("Documents and Photos"),
             description = Tstr("A library of digital resources, such as photos, documents and reports"),
             module_type = 10
         ),

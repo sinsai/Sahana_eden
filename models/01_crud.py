@@ -1317,6 +1317,15 @@ def shn_create(r, **attr):
 
     if representation == "html":
 
+        # Copy from a previous record?
+        original_id = r.request.get_vars.get("from_record", None)
+        original = None
+        if original_id:
+            del r.request.get_vars["from_record"] # forget it
+            copy_fields = [f for f in table if f.readable and f.writable]
+            if shn_has_permission("read", table, original_id):
+                original = db(table.id==original_id).select(*copy_fields, limitby=(0,1)).first()
+
         # Default components
         output = dict(module=prefix, resource=name, main=main, extra=extra)
 
@@ -1374,10 +1383,20 @@ def shn_create(r, **attr):
 
         # Get the form
         message = shn_get_crud_string(tablename, "msg_record_created")
-        form = crud.create(table,
-                           message=message,
-                           onvalidation=onvalidation,
-                           onaccept=_onaccept)
+        if original:
+            original.id = None
+            form = crud.update(table,
+                               original,
+                               message=message,
+                               next=crud.settings.create_next,
+                               deletable=False,
+                               onvalidation=onvalidation,
+                               onaccept=_onaccept)
+        else:
+            form = crud.create(table,
+                               message=message,
+                               onvalidation=onvalidation,
+                               onaccept=_onaccept)
 
         # Cancel button?
         #form[0].append(TR(TD(), TD(INPUT(_type="reset", _value="Reset form"))))

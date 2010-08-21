@@ -16,6 +16,7 @@ $(document).ready(function(){
             if(caller == '') return attr;
         }
         // Avoid Duplicate callers
+        var url_out = attr;
         if (attr.indexOf('&caller=') == -1){
             url_out = attr + '&caller=' + caller;
         }

@@ -19,6 +19,17 @@
     padding-top: 1.5em;
 }
 
+#rat_section5_health_services_post_disaster__row td,
+#rat_section5_health_services_available_types__row td,
+#rat_section5_health_problems_adults__row td,
+#rat_section5_chronical_illness_cases__row td,
+#rat_section5_malnutrition_present_pre_disaster__row td,
+#rat_section5_breast_milk_substitutes_pre_disaster__row td,
+#rat_section5_u5_diarrhea__row td,
+#rat_section5_comments__row td {
+    padding-top: 1.5em;
+}
+
 #rat_section9_children_separated__row td,
 #rat_section9_comments__row td {
     padding-top: 2em;

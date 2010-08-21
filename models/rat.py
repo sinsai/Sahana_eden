@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-""" Joint Initial Rapid Assessment Tool - Model
+""" Rapid Assessment Tool - Model
 
     @author: Fran Boon
     @author: Dominic König
@@ -44,6 +44,17 @@ if deployment_settings.has_module(module):
         msg_list_empty = T("No Sections currently registered"))
 
     # -------------------------------------------------------------------------
+    # Common options
+    rat_walking_time_opts = {
+        1: T("0-15 minutes"),
+        2: T("15-30 minutes"),
+        3: T("30-60 minutes"),
+        4: T("over one hour"),
+        99: NOT_APPLICABLE
+    }
+
+    # -------------------------------------------------------------------------
+    # Helper functions
     def shn_rat_represent_multiple(set, opt):
 
         """ Represent a IS_IN_SET with multiple=True as
@@ -72,9 +83,21 @@ if deployment_settings.has_module(module):
         return vals
 
 
-    # ECB Joint Initial Rapid Assessment Tool *********************************
+    def shn_rat_label_and_tooltip(field, label, tooltip, multiple=False):
 
-    # Section 1 - Identification Information ----------------------------------
+        """ Add label and tooltip to a field """
+
+        field.label = T(label)
+        if multiple:
+            field.comment = DIV("(%s)" % T("Select all that apply"),
+                                DIV(_class="tooltip",
+                                    _title="%s|%s" % (T(label), T(tooltip))))
+        else:
+            field.comment = DIV(DIV(_class="tooltip",
+                                    _title="%s|%s" % (T(label), T(tooltip))))
+
+
+    # Rapid Assessment Tool ***************************************************
 
     rat_interview_location_opts = {
         1:T("Village"),
@@ -447,14 +470,6 @@ if deployment_settings.has_module(module):
         99: NOT_APPLICABLE
     }
 
-    rat_water_walking_distance_opts = {
-        1: T("0-15 minutes"),
-        2: T("15-30 minutes"),
-        3: T("30-60 minutes"),
-        4: T("over one hour"),
-        99: NOT_APPLICABLE
-    }
-
     rat_water_coll_person_opts = {
         1: T("Child"),
         2: T("Adult male"),
@@ -505,7 +520,7 @@ if deployment_settings.has_module(module):
 
                             # Walking distance to water resources
                             Field("water_coll_time", "integer",
-                                  requires = IS_EMPTY_OR(IS_IN_SET(rat_water_walking_distance_opts, zero=None))),
+                                  requires = IS_EMPTY_OR(IS_IN_SET(rat_walking_time_opts, zero=None))),
                             Field("water_coll_safe", "boolean"),
                             Field("water_coll_safety_problems"),
                             Field("water_coll_person", "integer",
@@ -541,73 +556,64 @@ if deployment_settings.has_module(module):
     table.water_source_pre_disaster_type.label = T("Type of water source before the disaster")
     table.water_source_pre_disaster_description.label = T("Description of water source before the disaster")
 
-    table.dwater_source_type.label = T("Current type of source for drinking water")
-    table.dwater_source_type.comment = DIV(DIV(_class="tooltip", _title=
-        Tstr("Current type of source for drinking water") + "|" + \
-        Tstr("What is your major source of drinking water?")))
+    shn_rat_label_and_tooltip(table.dwater_source_type,
+        "Current type of source for drinking water",
+        "What is your major source of drinking water?")
     table.dwater_source_description.label = T("Description of drinking water source")
-    table.dwater_reserve.label = T("How long will this water resource last?")
-    table.dwater_reserve.comment = DIV(DIV(_class="tooltip", _title=
-        Tstr("How long will this water resource last?") + "|" + \
-        Tstr("Specify the minimum sustainability in weeks or days.")))
+    shn_rat_label_and_tooltip(table.dwater_reserve,
+        "How long will this water resource last?",
+        "Specify the minimum sustainability in weeks or days.")
 
-    table.swater_source_type.label = T("Current type of source for sanitary water")
-    table.swater_source_type.comment = DIV(DIV(_class="tooltip", _title=
-        Tstr("Current type of source for sanitary water") + "|" + \
-        Tstr("What is your major source of clean water for daily use (ex: washing, cooking, bathing)?")))
+    shn_rat_label_and_tooltip(table.swater_source_type,
+        "Current type of source for sanitary water",
+        "What is your major source of clean water for daily use (ex: washing, cooking, bathing)?")
     table.swater_source_description.label = T("Description of sanitary water source")
-    table.swater_reserve.label = T("How long will this water resource last?")
-    table.swater_reserve.comment = DIV(DIV(_class="tooltip", _title=
-        Tstr("How long will this water resource last?") + "|" + \
-        Tstr("Specify the minimum sustainability in weeks or days.")))
+    shn_rat_label_and_tooltip(table.swater_reserve,
+        "How long will this water resource last?",
+        "Specify the minimum sustainability in weeks or days.")
 
-    table.water_coll_time.label = T("Time needed to collect water")
-    table.water_coll_time.comment = DIV(DIV(_class="tooltip", _title=
-        Tstr("Time needed to collect water") + "|" + \
-        Tstr("How long does it take you to reach the available water resources? Specify the time required to go there and back, including queuing time, by foot.")))
+    shn_rat_label_and_tooltip(table.water_coll_time,
+        "Time needed to collect water",
+        "How long does it take you to reach the available water resources? Specify the time required to go there and back, including queuing time, by foot.")
     table.water_coll_safe.label = T("Is it safe to collect water?")
     table.water_coll_safe.default = True
     table.water_coll_safety_problems.label = T("If no, specify why")
     table.water_coll_person.label = T("Who usually collects water for the family?")
 
-    table.defec_place_type.label = T("Type of place for defecation")
+    shn_rat_label_and_tooltip(table.defec_place_type,
+        "Type of place for defecation",
+        "Where do the majority of people defecate?",
+        multiple=True)
     table.defec_place_type.requires = IS_EMPTY_OR(IS_IN_SET(rat_defec_place_types, zero=None, multiple=True))
-    table.defec_place_type.comment =  DIV("(" + Tstr("Select all that apply") + ")", DIV(_class="tooltip", _title=
-        Tstr("Type of place for defecation") + "|" + \
-        Tstr("Where do the majority of people defecate?")))
     table.defec_place_description.label = T("Description of defecation area")
     table.defec_place_distance.label = T("Distance between defecation area and water source")
     table.defec_place_distance.comment = T("meters")
     table.defec_place_animals.label = T("Defecation area for animals")
 
-    table.close_industry.label = T("Industry close to village/camp")
-    table.close_industry.comment = DIV(DIV(_class="tooltip", _title=
-        Tstr("Industry close to village/camp") + "|" + \
-        Tstr("Is there any industrial or agro-chemical production close to the affected area/village?")))
+    shn_rat_label_and_tooltip(table.close_industry,
+        "Industry close to village/camp",
+        "Is there any industrial or agro-chemical production close to the affected area/village?")
 
-    table.waste_disposal.label = T("Place for solid waste disposal")
-    table.waste_disposal.comment = DIV(DIV(_class="tooltip", _title=
-        Tstr("Place for solid waste disposal") + "|" + \
-        Tstr("Where is solid waste disposed in the village/camp?")))
+    shn_rat_label_and_tooltip(table.waste_disposal,
+        "Place for solid waste disposal",
+        "Where is solid waste disposed in the village/camp?")
 
-    table.latrines_number.label = T("Number of latrines")
+    shn_rat_label_and_tooltip(table.latrines_number,
+        "Number of latrines",
+        "How many latrines are available in the village/IDP centre/Camp?")
     table.latrines_number.requires = IS_EMPTY_OR(IS_INT_IN_RANGE(0, 999999))
-    table.latrines_number.comment = DIV(DIV(_class="tooltip", _title=
-        Tstr("Number of latrines") + "|" + \
-        Tstr("How many latrines are available in the village/IDP centre/Camp?")))
-    table.latrines_type.label = T("Type of latrines")
-    table.latrines_type.comment = DIV(DIV(_class="tooltip", _title=
-        Tstr("Type of latrines") + "|" + \
-        Tstr("What type of latrines are available in the village/IDP centre/Camp?")))
-    table.latrines_separation.label = T("Separate latrines for women and men")
-    table.latrines_separation.default = False
-    table.latrines_separation.comment = DIV(DIV(_class="tooltip", _title=
-        Tstr("Separate latrines for women and men") + "|" + \
-        Tstr("Are there separate latrines for women and men available?")))
-    table.latrines_distance.label = T("Distance between shelter and latrines")
-    table.latrines_distance.comment = DIV(T("meters"), DIV(_class="tooltip", _title=
-        Tstr("Distance between shelter and latrines") + "|" + \
-        Tstr("Distance between latrines and temporary shelter in meters")))
+
+    shn_rat_label_and_tooltip(table.latrines_type,
+        "Type of latrines",
+        "What type of latrines are available in the village/IDP centre/Camp?")
+
+    shn_rat_label_and_tooltip(table.latrines_separation,
+        "Separate latrines for women and men",
+        "Are there separate latrines for women and men available?")
+
+    shn_rat_label_and_tooltip(table.latrines_distance,
+        "Distance between shelter and latrines",
+        "Distance between latrines and temporary shelter in meters")
 
     # CRUD strings
     s3.crud_strings[tablename] = rat_section_crud_strings
@@ -620,16 +626,182 @@ if deployment_settings.has_module(module):
 
     # Section 5 - Health ------------------------------------------------------
 
+    rat_health_services_types = {
+        1: T("Community Health Center"),
+        2: T("Hospital")
+    }
+
+    rat_health_problems_opts = {
+        1: T("Respiratory Infections"),
+        2: T("Diarrhea"),
+        3: T("Dehydration"),
+        4: T("Other (specify)")
+    }
+
+    rat_infant_nutrition_alternative_opts = {
+        1: T("Porridge"),
+        2: T("Banana"),
+        3: T("Instant Porridge"),
+        4: T("Air tajin"),
+        5: T("Other (specify)")
+    }
+
     resource = "section5"
     tablename = "%s_%s" % (module, resource)
     table = db.define_table(tablename,
                             timestamp, uuidstamp, authorstamp, deletion_status,
                             assessment_id,
+                            # Section 5.1
+                            Field("health_services_pre_disaster", "boolean"),
+                            Field("medical_supplies_pre_disaster", "boolean"),
+
+                            Field("health_services_post_disaster", "boolean"),
+                            Field("medical_supplies_post_disaster", "boolean"),
+                            Field("medical_supplies_reserve", "integer"),
+
+                            Field("health_services_available_types"),
+                            Field("staff_number_doctors", "integer"),
+                            Field("staff_number_nurses", "integer"),
+                            Field("staff_number_midwives", "integer"),
+                            Field("health_service_walking_time", "integer"),
+                            # Section 5.2
+                            Field("health_problems_adults"),
+                            Field("health_problems_adults_other"),
+                            Field("health_problems_children"),
+                            Field("health_problems_children_other"),
+
+                            Field("chronical_illness_cases", "boolean"),
+                            Field("chronical_illness_children", "boolean"),
+                            Field("chronical_illness_elderly", "boolean"),
+                            Field("chronical_care_sufficient", "boolean"),
+                            Field("malnutrition_present_pre_disaster", "boolean"),
+                            Field("mmd_present_pre_disaster", "boolean"),
+                            Field("breast_milk_substitutes_pre_disaster", "boolean"),
+                            Field("breast_milk_substitutes_post_disaster", "boolean"),
+                            Field("infant_nutrition_alternative"),
+                            Field("infant_nutrition_alternative_other"),
+                            Field("u5_diarrhea", "boolean"),
+                            Field("u5_diarrhea_rate_48h", "integer"),
                             comments,
                             migrate=migrate)
 
     table.assessment_id.readable = False
     table.assessment_id.writable = False
+
+    shn_rat_label_and_tooltip(table.health_services_pre_disaster,
+        "Health services functioning prior to disaster",
+        "Were there health services functioning for the community prior to the disaster?")
+
+    shn_rat_label_and_tooltip(table.medical_supplies_pre_disaster,
+        "Basic medical supplies available prior to disaster",
+        "Were basic medical supplies available for health services prior to the disaster?")
+
+    shn_rat_label_and_tooltip(table.health_services_post_disaster,
+        "Health services functioning since disaster",
+        "Are there health services functioning for the community since the disaster?")
+
+    shn_rat_label_and_tooltip(table.medical_supplies_post_disaster,
+        "Basic medical supplies available since disaster",
+        "Are basic medical supplies available for health services since the disaster?")
+
+    table.medical_supplies_reserve.label = T("How many days will the supplies last?")
+
+    shn_rat_label_and_tooltip(table.health_services_available_types,
+        "Types of health services available",
+        "What types of health services are still functioning in the affected area?",
+        multiple=True)
+    table.health_services_available_types.requires = IS_EMPTY_OR(IS_IN_SET(rat_health_services_types,
+                                                                           zero=None, multiple=True))
+    table.health_services_available_types.represent = lambda opt: \
+        shn_rat_represent_multiple(rat_health_service_types, opt)
+
+    shn_rat_label_and_tooltip(table.staff_number_doctors,
+        "Number of doctors actively working",
+        "How many doctors in the health centers are still actively working?")
+    table.staff_number_doctors.requires = IS_EMPTY_OR(IS_INT_IN_RANGE(0, 999999))
+
+    shn_rat_label_and_tooltip(table.staff_number_nurses,
+        "Number of nurses actively working",
+        "How many nurses in the health centers are still actively working?")
+    table.staff_number_nurses.requires = IS_EMPTY_OR(IS_INT_IN_RANGE(0, 999999))
+
+    shn_rat_label_and_tooltip(table.staff_number_midwives,
+        "Number of midwives actively working",
+        "How many midwives in the health centers are still actively working?")
+    table.staff_number_midwives.requires = IS_EMPTY_OR(IS_INT_IN_RANGE(0, 999999))
+
+    shn_rat_label_and_tooltip(table.health_service_walking_time,
+        "Walking time to the health service",
+        "How long does it take you to walk to the health service?")
+    table.health_service_walking_time.requires = IS_EMPTY_OR(IS_IN_SET(rat_walking_time_opts, zero=None))
+
+    shn_rat_label_and_tooltip(table.health_problems_adults,
+        "Current type of health problems, adults",
+        "What types of health problems do people currently have?",
+        multiple=True)
+    table.health_problems_adults.requires = IS_EMPTY_OR(IS_IN_SET(rat_health_problems_opts, zero=None, multiple=True))
+    table.health_problems_adults.represent = lambda opt, set=rat_health_problems_opts: \
+                                             shn_rat_represent_multiple(set, opt)
+    table.health_problems_adults_other.label = T("Other current health problems, adults")
+
+    shn_rat_label_and_tooltip(table.health_problems_children,
+        "Current type of health problems, children",
+        "What types of health problems do children currently have?",
+        multiple=True)
+    table.health_problems_children.requires = IS_EMPTY_OR(IS_IN_SET(rat_health_problems_opts, zero=None, multiple=True))
+    table.health_problems_children.represent = lambda opt, set=rat_health_problems_opts: \
+                                               shn_rat_represent_multiple(set, opt)
+    table.health_problems_children_other.label = T("Other current health problems, children")
+
+    shn_rat_label_and_tooltip(table.chronical_illness_cases,
+        "People with chronical illnesses",
+        "Are there people with chronical illnesses in your community?")
+
+    shn_rat_label_and_tooltip(table.chronical_illness_children,
+        "Children with chronical illnesses",
+        "Are there children with chronical illnesses in your community?")
+
+    shn_rat_label_and_tooltip(table.chronical_illness_elderly,
+        "Older people with chronical illnesses",
+        "Are there older people with chronical illnesses in your community?")
+
+    shn_rat_label_and_tooltip(table.chronical_care_sufficient,
+        "Sufficient care/assistance for chronically ill",
+        "Are the chronically ill receiving sufficient care and assistance?")
+
+    shn_rat_label_and_tooltip(table.malnutrition_present_pre_disaster,
+        "Malnutrition present prior to disaster",
+        "Were there cases of malnutrition in this area prior to the disaster?")
+
+    shn_rat_label_and_tooltip(table.mmd_present_pre_disaster,
+        "Micronutrient malnutrition prior to disaster",
+        "Were there reports or evidence of outbreaks of any micronutrient malnutrition disorders before the emergency?")
+
+    shn_rat_label_and_tooltip(table.breast_milk_substitutes_pre_disaster,
+        "Breast milk substitutes used prior to disaster",
+        "Were breast milk substitutes used prior to the disaster?")
+    shn_rat_label_and_tooltip(table.breast_milk_substitutes_post_disaster,
+        "Breast milk substitutes in use since disaster",
+        "Are breast milk substitutes being used here since the disaster?")
+
+    shn_rat_label_and_tooltip(table.infant_nutrition_alternative,
+        "Alternative infant nutrition in use",
+        "Babies who are not being breastfed, what are they being fed on?",
+        multiple=True)
+    table.infant_nutrition_alternative.requires = \
+        IS_EMPTY_OR(IS_IN_SET(rat_infant_nutrition_alternative_opts, zero=None, multiple=True))
+    table.infant_nutrition_alternative.represent = lambda opt, set=rat_infant_nutrition_alternative_opts: \
+        shn_rat_represent_multiple(set, opt)
+
+    table.infant_nutrition_alternative_other.label = T("Other alternative infant nutrition in use")
+
+    shn_rat_label_and_tooltip(table.u5_diarrhea,
+        "Diarrhea among children under 5",
+        "Are there cases of diarrhea among children under the age of 5?")
+
+    shn_rat_label_and_tooltip(table.u5_diarrhea_rate_48h,
+        "Approx. number of cases/48h",
+        "Approximately how many children under 5 with diarrhea in the past 48 hours?"),
 
     # CRUD strings
     s3.crud_strings[tablename] = rat_section_crud_strings
@@ -642,18 +814,49 @@ if deployment_settings.has_module(module):
 
     # Section 6 - Nutrition/Food Security -------------------------------------
 
+    rat_main_dish_types = {
+        1: T("Rice"),
+        2: T("Noodles"),
+        3: T("Biscuits"),
+        4: T("Corn"),
+        5: T("Wheat"),
+        6: T("Cassava"),
+        7: T("Cooking Oil")
+    }
+
+    rat_side_dish_types = {
+        1: T("Salted Fish"),
+        2: T("Canned Fish"),
+        3: T("Chicken"),
+        4: T("Eggs"),
+        5: T("Other (specify)")
+    }
+
+    rat_food_stock_reserve_opts = {
+        1: T("1-3 days"),
+        2: T("4-7 days"),
+        3: T("8-14 days")
+    }
+
     resource = "section6"
     tablename = "%s_%s" % (module, resource)
     table = db.define_table(tablename,
                             timestamp, uuidstamp, authorstamp, deletion_status,
                             assessment_id,
                             # food stocks (main dishes)
+                            Field("food_stocks_main_dishes"),
                             # food stocks (side dishes)
+                            Field("food_stocks_side_dishes"),
+                            Field("food_stocks_other_side_dishes"),
                             # food stocks - lasting
+                            Field("food_stocks_reserve", "integer",
+                                  requires = IS_EMPTY_OR(IS_IN_SET(rat_food_stock_reserve_opts, zero=None))),
                             # food stocks - obtaining
                             # food stocks - disruption
                             # food stocks - assistance availability
+                            Field("food_assistance_available", "boolean"),
                             # food stocks - assistence sources
+                            #Field("food_assistance_sources"),
                             comments,
                             migrate=migrate)
 

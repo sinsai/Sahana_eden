@@ -37,7 +37,10 @@
 """
 
 __name__ = "S3XRC"
-__all__ = ["S3Resource", "S3Request", "S3ResourceController"]
+__all__ = ["S3Resource",
+           "S3Request",
+           "S3MethodHandler",
+           "S3ResourceController"]
 
 import os, sys, cgi, uuid, datetime, time, urllib, StringIO
 import gluon.contrib.simplejson as json
@@ -2160,6 +2163,36 @@ class S3Request(object):
                     self.name,
                     self.table,
                     self.tablename)
+
+
+# *****************************************************************************
+class S3MethodHandler(object):
+
+    """ Abstract class for REST method handlers """
+
+    # -------------------------------------------------------------------------
+    def __init__(self):
+
+        """ Constructor """
+
+        pass
+
+
+    # -------------------------------------------------------------------------
+    def __call__(self, r, **attr):
+
+        """ Caller, invoked by the REST interface """
+
+        return self.response(r, **attr)
+
+
+    # -------------------------------------------------------------------------
+    def response(self, r, **attr):
+
+        """ Responder, to be implemented by subclasses """
+
+        output = dict()
+        return output
 
 
 # *****************************************************************************

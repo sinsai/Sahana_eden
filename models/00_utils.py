@@ -380,7 +380,7 @@ def shn_abbreviate(word, size=48):
     """
         Abbreviate a string. For use as a .represent
     """
-    
+
     if word:
         if (len(word) > size):
             word = "%s..." % word[:size - 4]
@@ -388,7 +388,7 @@ def shn_abbreviate(word, size=48):
             return word
     else:
         return word
-    
+
 def shn_action_buttons(jr, deletable=True):
 
     """
@@ -583,41 +583,68 @@ def shn_represent_file(file_name,
     return A(filename, _href = url_file)
 
 
-def shn_rheader_tabs(jr, tabs=[]):
-    """
-        Constructs a DIV of component links for a S3RESTRequest
+def shn_rheader_tabs(r, tabs=[], paging=False):
+
+    """ Constructs a DIV of component links for a S3RESTRequest
+
+        @param tabs: the tabs as list of tuples (title, component_name, vars), where vars is optional
+        @param paging: add paging buttons previous/next to the tabs
     """
 
     rheader_tabs = []
-    for (title, component) in tabs:
+    #for (title, component) in tabs:
+
+    tablist = []
+    previous = next = None
+
+    for i in xrange(len(tabs)):
+        title, component = tabs[i][:2]
+        if len(tabs[i]) > 2:
+            _vars = tabs[i][2]
+        else:
+            _vars = r.request.vars
+
         if component and component.find("/") > 0:
             function, component = component.split("/", 1)
             if not component:
                 component = None
         else:
-            function = jr.request.function
-        _class = "rheader_tab_other"
-        if component:
-            if jr.component and jr.component.name == component or \
-               jr.custom_action and jr.method == component:
-                _class = "rheader_tab_here"
-            args = [jr.id, component]
-            _href = URL(r=request, f=function, args=args, vars=jr.request.vars)
-        else:
-            if not jr.component:
-                _class = "rheader_tab_here"
-            args = [jr.id]
-            # If caller supplied _next, don't change it.  If not, provide
-            # one that propagates the caller's vars.
-            vars = Storage(jr.request.vars)
-            if not vars.get("_next", None):
-                vars.update(_next=URL(r=request, f=function, args=args, vars=jr.request.vars))
-            _href = URL(r=request, f=function, args=args, vars=vars)
+            function = r.request.function
 
-        tab = SPAN(A(title, _href=_href), _class=_class)
-        rheader_tabs.append(tab)
+        tab = Storage(title=title, _class = "rheader_tab_other")
+        if i > 0 and tablist[i-1]._class == "rheader_tab_here":
+            next = tab
+
+        if component:
+            if r.component and r.component.name == component or \
+               r.custom_action and r.method == component:
+                tab.update(_class = "rheader_tab_here")
+                previous = i and tablist[i-1] or None
+            args = [r.id, component]
+            tab.update(_href=URL(r=request, f=function, args=args, vars=_vars))
+        else:
+            if not r.component:
+                tab.update(_class = "rheader_tab_here")
+                previous = i and tablist[i-1] or None
+            args = [r.id]
+            vars = Storage(_vars)
+            if not vars.get("_next", None):
+                vars.update(_next=URL(r=request, f=function, args=args, vars=_vars))
+            tab.update(_href=URL(r=request, f=function, args=args, vars=vars))
+
+        tablist.append(tab)
+        rheader_tabs.append(SPAN(A(tab.title, _href=tab._href), _class=tab._class))
 
     if rheader_tabs:
+        if paging:
+            if next:
+                rheader_tabs.insert(0, SPAN(A(">", _href=next._href), _class="rheader_next_active"))
+            else:
+                rheader_tabs.insert(0, SPAN(">", _class="rheader_next_inactive"))
+            if previous:
+                rheader_tabs.insert(0, SPAN(A("<", _href=previous._href), _class="rheader_prev_active"))
+            else:
+                rheader_tabs.insert(0, SPAN("<", _class="rheader_prev_inactive"))
         rheader_tabs = DIV(rheader_tabs, _id="rheader_tabs")
     else:
         rheader_tabs = ""

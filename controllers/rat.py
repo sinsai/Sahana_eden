@@ -101,7 +101,7 @@ def shn_rat_rheader(r, tabs=[]):
     """ Resource Headers """
 
     if r.representation == "html":
-        rheader_tabs = shn_rheader_tabs(r, tabs)
+        rheader_tabs = shn_rheader_tabs(r, tabs, paging=True)
 
         if r.name == "assessment":
 

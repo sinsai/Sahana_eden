@@ -70,30 +70,53 @@ def define_map(window=False, toolbar=False):
         )
 
     # Custom Feature Layers
+    def gis_add_feature_layer(module, resource, label, marker=None):
+        # Hide deleted Resources
+        query = (db.gis_location.deleted == False)
+            
+        # Hide Resources recorded to Country Locations on the map?
+        if not deployment_settings.get_gis_display_l0():
+            query = query & (db.gis_location.level != "L0")
+            
+        query = query & (db.gis_location.id == db["%s_%s" % (module, resource)].location_id)
+        locations = db(query).select(db.gis_location.id, db.gis_location.uuid, db.gis_location.name, db.gis_location.wkt, db.gis_location.lat, db.gis_location.lon)
+        popup_url = URL(r=request, c=module, f=resource, args="read.popup?%s.location_id=" % resource)
+        if marker:
+            marker = db(db.gis_marker.name == marker).select(db.gis_marker.id, limitby=(0, 1)).first().id
+            layer = {"name":label, "query":locations, "active":True, "marker":marker, "popup_url": popup_url}
+        else:
+            layer = {"name":label, "query":locations, "active":True, "popup_url": popup_url}
+
+        return layer
+    
     # Incidents
-    locations = db(db.gis_location.id == db.irs_ireport.location_id).select()
-    # Default Red
-    #marker = db(db.gis_marker.name == "marker_red").select(db.gis_marker.id, limitby=(0, 1)).first().id
-    popup_url = URL(r=request, c="irs", f="ireport", args="read.popup?ireport.location_id=")
-    incidents = {"name":Tstr("Incident Reports"), "query":locations, "active":True, "popup_url": popup_url}
+    module = "irs"
+    resource = "ireport"
+    label = Tstr("Incident Reports")
+    # Default
+    #marker = "marker_red"
+    incidents = gis_add_feature_layer(module, resource, label)
     
     # Shelters
-    locations = db(db.gis_location.id == db.cr_shelter.location_id).select()
-    marker = db(db.gis_marker.name == "shelter").select(db.gis_marker.id, limitby=(0, 1)).first().id
-    popup_url = URL(r=request, c="cr", f="shelter", args="read.popup?shelter.location_id=")
-    shelters = {"name":Tstr("Shelters"), "query":locations, "active":True, "marker":marker, "popup_url": popup_url}
+    module = "cr"
+    resource = "shelter"
+    label = Tstr("Shelters")
+    marker = "shelter"
+    shelters = gis_add_feature_layer(module, resource, label, marker)
     
     # Assessments
-    locations = db(db.gis_location.id == db.sitrep_assessment.location_id).select()
-    marker = db(db.gis_marker.name == "marker_green").select(db.gis_marker.id, limitby=(0, 1)).first().id
-    popup_url = URL(r=request, c="sitrep", f="assessment", args="read.popup?assessment.location_id=")
-    assessments = {"name":Tstr("Assessments"), "query":locations, "active":True, "marker":marker, "popup_url": popup_url}
+    module = "sitrep"
+    resource = "assessment"
+    label = Tstr("Assessments")
+    marker = "marker_green"
+    assessments = gis_add_feature_layer(module, resource, label, marker)
     
     # Requests
-    locations = db(db.gis_location.id == db.rms_req.location_id).select()
-    marker = db(db.gis_marker.name == "marker_yellow").select(db.gis_marker.id, limitby=(0, 1)).first().id
-    popup_url = URL(r=request, c="rms", f="req", args="read.popup?req.location_id=")
-    requests = {"name":Tstr("Requests"), "query":locations, "active":True, "marker":marker, "popup_url": popup_url}
+    module = "rms"
+    resource = "req"
+    label = Tstr("Requests")
+    marker = "marker_yellow"
+    requests = gis_add_feature_layer(module, resource, label, marker)
     
     feature_queries = [
                        incidents,

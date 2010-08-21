@@ -65,6 +65,12 @@ deployment_settings.mail.approver = "useradmin@your.org"
 # Default timezone for users
 deployment_settings.L10n.utc_offset = "UTC +0000"
 
+# GIS (Map) settings
+# Display Resources recorded to Admin-Level Locations on the map
+deployment_settings.gis.display_L0 = False
+# Currently unused
+#deployment_settings.gis.display_L1 = True
+
 # Comment/uncomment modules here to disable/enable them
 # Modules menu is defined in 01_menu.py
 from gluon.storage import Storage

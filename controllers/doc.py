@@ -77,7 +77,7 @@ def document():
     response.s3.postp = postp
     
     rheader = lambda jr: shn_document_rheader(jr,
-                                          tabs = [(T("Edit Details"), None),
+                                          tabs = [(T("Details"), None),
                                                   (T("Assessment"), "assessment"),    
                                                   (T("Incident Report"), "ireport"),  
                                                   (T("Inventory"), "location"),  

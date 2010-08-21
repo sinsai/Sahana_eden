@@ -229,7 +229,8 @@ tablename = "%s_%s" % (module, resource)
 table = db.define_table(tablename, timestamp, uuidstamp,
             Field("name"),
             Field("description"),
-            Field("url"))
+            Field("url"),
+            migrate=migrate)
 table.uuid.requires = IS_NOT_IN_DB(db, "%s.uuid" % tablename)
 table.name.requires = [IS_NOT_EMPTY(), IS_NOT_IN_DB(db, "%s.name" % tablename)]
 table.name.label = T("Source of Information")

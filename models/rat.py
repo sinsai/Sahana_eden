@@ -134,7 +134,7 @@ if deployment_settings.has_module(module):
                             document,
                             migrate=migrate)
 
-    table.date.requires = [IS_DATE(), IS_NOT_EMPTY]
+    table.date.requires = [IS_DATE(), IS_NOT_EMPTY()]
 
     table.staff2_id.requires = IS_NULL_OR(IS_ONE_OF(db, "org_staff.id", shn_org_staff_represent))
     table.staff2_id.represent = lambda id: shn_org_staff_represent(id)

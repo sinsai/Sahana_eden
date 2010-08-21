@@ -651,7 +651,6 @@ if deployment_settings.has_module(module):
     table = db.define_table(tablename,
                             timestamp, uuidstamp, authorstamp, deletion_status,
                             assessment_id,
-                            # Section 5.1
                             Field("health_services_pre_disaster", "boolean"),
                             Field("medical_supplies_pre_disaster", "boolean"),
 
@@ -664,7 +663,7 @@ if deployment_settings.has_module(module):
                             Field("staff_number_nurses", "integer"),
                             Field("staff_number_midwives", "integer"),
                             Field("health_service_walking_time", "integer"),
-                            # Section 5.2
+
                             Field("health_problems_adults"),
                             Field("health_problems_adults_other"),
                             Field("health_problems_children"),
@@ -674,12 +673,15 @@ if deployment_settings.has_module(module):
                             Field("chronical_illness_children", "boolean"),
                             Field("chronical_illness_elderly", "boolean"),
                             Field("chronical_care_sufficient", "boolean"),
+
                             Field("malnutrition_present_pre_disaster", "boolean"),
                             Field("mmd_present_pre_disaster", "boolean"),
+
                             Field("breast_milk_substitutes_pre_disaster", "boolean"),
                             Field("breast_milk_substitutes_post_disaster", "boolean"),
                             Field("infant_nutrition_alternative"),
                             Field("infant_nutrition_alternative_other"),
+
                             Field("u5_diarrhea", "boolean"),
                             Field("u5_diarrhea_rate_48h", "integer"),
                             comments,

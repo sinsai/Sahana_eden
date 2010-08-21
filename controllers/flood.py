@@ -69,6 +69,9 @@ def freport():
 
     resource = request.function
     
+    # Don't send the locations list to client (pulled by AJAX instead)
+    table.location_id.requires = IS_NULL_OR(IS_ONE_OF_EMPTY(db, "gis_location.id"))
+
     # Disable legacy fields, unless updating, so the data can be manually transferred to new fields
     #if "update" not in request.args:
     #    table.document.readable = table.document.writable = False    

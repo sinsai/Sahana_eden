@@ -2,10 +2,13 @@
     $('#{{=location_id}}').hide();
     // Add a dummy field
     $('#{{=location_id}}').after("<input id='dummy_{{=location_id}}' class='ac_input' size=50 />");
-
+    
+    // Add Section delimiter
+    row = "<tr id='gis_location_start__row'><td><label>{{=B(T("Location"))}}</label></td><td></td><td></td></tr>";
+    $('#{{=location_id}}__row').before(row);
+    
     // Add Autocomplete dummy rows
     var widget, row;
-    
     // L0
   {{_gis = response.s3.gis}}
   {{if len(_gis.countries) == 1:}}
@@ -210,7 +213,12 @@
             return row.name;
 		}
     });
-    
+    // Populate the real Input when the Dummy is selected
+    $('#dummy_l4').result(function(event, data, formatted) {
+        var newvalue = data.id;
+        $('#gis_location_l4').val(newvalue);
+    });
+
     // Location
     // Autocomplete-enable the Dummy Input
     $('#dummy_{{=location_id}}').autocomplete('{{=URL(r=request, c="gis", f="location", args="search.json", vars={"filter":"~", "field":"name"})}}', {
@@ -240,4 +248,42 @@
     $('#dummy_{{=location_id}}').result(function(event, data, formatted) {
         var newvalue = data.id;
         $('#{{=location_id}}').val(newvalue);
+    });
+
+    // If the 'Add Location' button is pressed then we need to pass the parent location
+    // 1st change the class so that the normal handler is removed
+    // NB This assumes that IS_ONE_OF_EMPTY() has been used so we have a simple input, not a big select
+    $('input.reference.gis_location').parent().next().children().children('a.colorbox').removeClass('colorbox').addClass('location_add');
+    $('a.location_add').click(function(){
+        $(this).attr('href', function(index, attr) {
+            // Try L4
+            var parent_ = $('#gis_location_l4').val();
+            if (parent_ == ''){
+                // Try L3
+                parent_ = $('#gis_location_l3').val();
+                if (parent_ == ''){
+                    // Try L2
+                    parent_ = $('#gis_location_l2').val();
+                    if (parent_ == ''){
+                        // Try L1
+                        parent_ = $('#gis_location_l1').val();
+                        if (parent_ == ''){
+                            // Try L0
+                            parent_ = $('#gis_location_l0').val();
+                        }
+                    }
+                }
+            }
+            // Avoid Duplicate _parent
+            // @ToDo remove old _parent & add new one
+            var url_out = attr;
+            if (parent_ != ''){
+                if (attr.indexOf('&parent_=') == -1){
+                    url_out = attr + '&parent_=' + parent_;
+                }
+            }
+            return url_out;
+        });
+        $.fn.colorbox({iframe:true, width:'99%', height:'99%', href:this.href, title:this.title});
+        return false;
     });

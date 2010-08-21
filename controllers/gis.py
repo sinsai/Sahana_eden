@@ -3,7 +3,7 @@
 """
     GIS Controllers
 
-    @author: Fran Boon
+    @author: Fran Boon <fran@aidiq.com>
 """
 
 from operator import __and__
@@ -147,50 +147,235 @@ def define_map(window=False, toolbar=False):
 
     return map
     
-def test():
-    """
-       Test Mapping API
-    """
+def location():
 
-    # Will use default popup_url
-    hospitals = {"feature_group" : "Hospitals"}
+    """ RESTful CRUD controller for Locations """
 
-    if auth.is_logged_in():
-        offices = {"feature_group" : "Offices", "popup_url" : URL(r=request, c="gis", f="location", args="update.popup")}
-    else:
-        offices = {"feature_group" : "Offices", "popup_url" : URL(r=request, c="gis", f="location", args="read.popup")}
+    resource = request.function
+    tablename = module + "_" + resource
+    table = db[tablename]
 
-    query = db((db.gis_feature_class.name == "Town") & (db.gis_location.feature_class_id == db.gis_feature_class.id)).select()
+    # Allow prep to pass vars back to the controller
+    vars = {}
+    
+    # Pre-processor
+    def prep(r, vars):
 
-    html = gis.show_map(
-                add_feature = True,
-                collapsed = True,
-                #feature_groups = [offices, hospitals],
-                #feature_queries = [{"name" : "Towns", "query" : query, "active" : True}],
-                #wms_browser = {"name" : "OpenGeo Demo WMS", "url" : "http://demo.opengeo.org/geoserver/ows?service=WMS&request=GetCapabilities"},
-                ##wms_browser = {"name" : "Risk Maps", "url" : "http://preview.grid.unep.ch:8080/geoserver/ows?service=WMS&request=GetCapabilities"},
-                ##wms_browser = {"name" : "Risk Maps", "url" : "http://www.pdc.org/wms/wmservlet/PDC_Active_Hazards?request=getcapabilities&service=WMS&version=1.1.1"},
-                #catalogue_overlays = True,
-                #catalogue_toolbar = True,
-                #legend = True, # Stops Feature Layers from Printing
-                #toolbar = True,
-                #search = True,
-                #print_tool = {
-                #        #"url" : "http://localhost:8080/geoserver/pdf/",                    # Local GeoServer
-                #        "url" : "http://localhost:8080/print-servlet-1.2-SNAPSHOT/pdf/",    # Local Windows Tomcat
-                #        #"url" : "http://host.domain:8180/print-servlet-1.2-SNAPSHOT/pdf/", # Linux Tomcat
-                #        "mapTitle" : "Title",
-                #        "subTitle" : "SubTitle"
-                #    },
-                ##mgrs = {"name" : "MGRS Atlas PDFs", "url" : "http://www.sharedgeo.org/datasets/shared/maps/usng/pdf.map?VERSION=1.0.0&SERVICE=WFS&request=GetFeature&typename=wfs_all_maps"},
-                #window = True,
-                )
+        # Restrict access to top-level locations (& all Polygons) to just MapAdmins
+        if not shn_has_role("MapAdmin"):
+            table.code.writable = False
+            table.level.writable = False
+            if r.method == "create":
+                table.code.readable = False
+                table.level.readable = False
+            table.gis_feature_type.writable = table.gis_feature_type.readable = False
+            table.wkt.writable = table.wkt.readable = False
+        else:
+            table.code.comment = DIV( _class="tooltip", _title=Tstr("Code") + "|" + Tstr("For a country this would be the ISO2 code, for a Town, it would be the Airport Locode."))
+            table.level.comment = DIV( _class="tooltip", _title=Tstr("Level") + "|" + Tstr("If the location is a geographic area, then state at what level here."))
+            table.parent.comment = DIV(A(ADD_LOCATION,
+                                           _class="colorbox",
+                                           _href=URL(r=request, c="gis", f="location", args="create", vars=dict(format="popup", child="parent")),
+                                           _target="top",
+                                           _title=ADD_LOCATION),
+                                         DIV(
+                                           _class="tooltip",
+                                           _title=Tstr("Parent") + "|" + Tstr("The Area which this Site is located within."))),
+            table.wkt.comment = DIV(SPAN("*", _class="req"), DIV( _class="tooltip", _title="WKT" + "|" + Tstr("The <a href='http://en.wikipedia.org/wiki/Well-known_text' target=_blank>Well-Known Text</a> representation of the Polygon/Line.")))
 
-    return dict(map=html)
+        if r.http == "GET" and r.representation in ("html", "popup"):
+            # Options which are only required in interactive HTML views
+            table.name.comment = SPAN("*", _class="req")
+            CONVERSION_TOOL = T("Conversion Tool")
+            table.lat.comment = DIV(A(CONVERSION_TOOL, _style="cursor:pointer;", _title=CONVERSION_TOOL, _id="btnConvert"), DIV( _class="tooltip", _title=T("Latitude|Latitude is North-South (Up-Down). Latitude is zero on the equator and positive in the northern hemisphere and negative in the southern hemisphere. This needs to be added in Decimal Degrees. Use the popup to convert from either GPS coordinates or Degrees/Minutes/Seconds.")))
+            table.lon.comment = DIV( _class="tooltip", _title=Tstr("Longitude") + "|" + Tstr("Longitude is West - East (sideways). Longitude is zero on the prime meridian (Greenwich Mean Time) and is positive to the east, across Europe and Asia.  Longitude is negative to the west, across the Atlantic and the Americas.  This needs to be added in Decimal Degrees. Use the popup to convert from either GPS coordinates or Degrees/Minutes/Seconds."))
+            table.osm_id.comment = DIV( _class="tooltip", _title="OSM ID" + "|" + Tstr("The <a href='http://openstreetmap.org' target=_blank>OpenStreetMap</a> ID. If you don't know the ID, you can just say 'Yes' if it has been added to OSM."))
 
-def test2():
-    " Test new OpenLayers functionality in a RAD environment "
-    return dict()
+            # CRUD Strings
+            LIST_LOCATIONS = T("List Locations")
+            s3.crud_strings[tablename] = Storage(
+                title_create = ADD_LOCATION,
+                title_display = T("Location Details"),
+                title_list = T("Locations"),
+                title_update = T("Edit Location"),
+                title_search = T("Search Locations"),
+                subtitle_create = T("Add New Location"),
+                subtitle_list = LIST_LOCATIONS,
+                label_list_button = LIST_LOCATIONS,
+                label_create_button = ADD_LOCATION,
+                label_delete_button = T("Delete Location"),
+                msg_record_created = T("Location added"),
+                msg_record_modified = T("Location updated"),
+                msg_record_deleted = T("Location deleted"),
+                msg_list_empty = T("No Locations currently available"))
+
+            if r.method in (None, "list") and r.record == None:
+                # List
+                pass
+            elif r.method == "delete":
+                pass
+            else:
+                # Add Map to allow locations to be found this way
+                config = gis.get_config()
+                lat = config.lat
+                lon = config.lon
+                zoom = config.zoom
+                feature_queries = []
+
+                if r.method == "create":
+                    add_feature = True
+                    add_feature_active = True
+                else:
+                    if r.method == "update":
+                        add_feature = True
+                        add_feature_active = False
+                    else:
+                        # Read
+                        add_feature = False
+                        add_feature_active = False
+                    
+                    # Lat/Lon come from record
+                    lat = r.record.lat
+                    lon = r.record.lon
+                    # Same as a single zoom on a cluster
+                    zoom = zoom + 2
+                    
+                _map = gis.show_map(lat = lat,
+                                    lon = lon,
+                                    zoom = zoom,
+                                    feature_queries = feature_queries,
+                                    add_feature = add_feature,
+                                    add_feature_active = add_feature_active,
+                                    toolbar = True,
+                                    collapsed = True)
+
+                # Pass the map back to the main controller
+                vars.update(_map=_map)
+        return True
+    response.s3.prep = lambda r, vars=vars: prep(r, vars)
+    
+    # Options
+    _vars = request.vars
+    filters = []
+    fclass = _vars.get("feature_class", None)
+    if fclass:
+        filters.append((db.gis_location.feature_class_id == db.gis_feature_class.id) &
+                              (db.gis_feature_class.name.like(fclass)))
+
+    fgroup = _vars.get("fgroup", None)
+    if fgroup:
+        # Filter to those Features which are in Feature Groups through their Feature Class
+        filters.append((db.gis_location.feature_class_id == db.gis_feature_class_to_feature_group.feature_class_id) &
+           (db.gis_feature_class_to_feature_group.feature_group_id == db.gis_feature_group.id) &
+           (db.gis_feature_group.name.like(fgroup)))
+        # We no longer support direct Features in Feature Groups (we can't easily OR this filter with previous one)
+        #filters.append((db.gis_location.id == db.gis_location_to_feature_group.location_id) &
+        #    (db.gis_location_to_feature_group.feature_group_id == db.gis_feature_group.id) & (db.gis_feature_group.name.like(fgroup)))
+
+    parent = _vars.get("parent_", None)
+    # Don't use 'parent' as the var name as otherwise it conflicts with the form's var of the same name & hence this will be triggered during form submission
+    if parent:
+        # Can't do this using a JOIN in DAL syntax
+        # .belongs() not GAE-compatible!
+        filters.append((db.gis_location.parent.belongs(db(db.gis_location.name.like(parent)).select(db.gis_location.id))))
+        # ToDo: Make this recursive - want ancestor not just direct parent!
+
+    # ToDo
+    # bbox = _vars.get("bbox", None):
+
+    if filters:
+        response.s3.filter = reduce(__and__, filters)
+
+    caller = _vars.get("caller", None)
+    if caller:
+        # We've been called as a Popup
+        if "gis_location_parent" in caller:
+            # Populate defaults & hide unnecessary rows
+            table.code.readable = table.code.writable = False
+            table.feature_class_id.readable = table.feature_class_id.writable = False
+            # Use default Marker for Class
+            table.marker_id.readable = table.marker_id.writable = False
+            table.wkt.readable = table.wkt.writable = False
+            table.addr_street.readable = table.addr_street.writable = False
+            table.osm_id.readable = table.osm_id.writable = False
+            table.source.readable = table.source.writable = False
+        else:
+            parent = _vars.get("parent_", None)
+            # Don't use 'parent' as the var name as otherwise it conflicts with the form's var of the same name & hence this will be triggered during form submission
+            if parent:
+                table.parent.default = parent
+            
+            fc = None
+            # Populate defaults & hide unnecessary rows
+            if "cr_shelter" in caller:
+                fc = db(db.gis_feature_class.name == "Shelter").select(db.gis_feature_class.id, limitby=(0, 1)).first()
+                table.level.readable = table.level.writable = False
+                table.url.readable = table.url.writable = False
+            elif "hms_hospital" in caller:
+                fc = db(db.gis_feature_class.name == "Hospital").select(db.gis_feature_class.id, limitby=(0, 1)).first()
+                table.level.readable = table.level.writable = False
+                table.url.readable = table.url.writable = False
+            elif "irs_ireport" in caller:
+                fc = db(db.gis_feature_class.name == "Incident").select(db.gis_feature_class.id, limitby=(0, 1)).first()
+                table.level.readable = table.level.writable = False
+                table.url.readable = table.url.writable = False
+            elif "org_office" in caller:
+                fc = db(db.gis_feature_class.name == "Office").select(db.gis_feature_class.id, limitby=(0, 1)).first()
+                table.level.readable = table.level.writable = False
+                table.url.readable = table.url.writable = False
+            elif "org_project" in caller:
+                fc = db(db.gis_feature_class.name == "Project").select(db.gis_feature_class.id, limitby=(0, 1)).first()
+            elif "pr_presence" in caller:
+                fc = db(db.gis_feature_class.name == "Person").select(db.gis_feature_class.id, limitby=(0, 1)).first()
+                table.level.readable = table.level.writable = False
+                table.url.readable = table.url.writable = False
+            elif "assessment_location" in caller:
+                table.level.default = "L4"
+                table.feature_class_id.readable = table.feature_class_id.writable = False
+                table.marker_id.readable = table.marker_id.writable = False
+                table.addr_street.readable = table.addr_street.writable = False
+            elif "school_district" in caller:
+                table.level.default = "L2"
+                table.feature_class_id.readable = table.feature_class_id.writable = False
+                table.marker_id.readable = table.marker_id.writable = False
+                table.addr_street.readable = table.addr_street.writable = False
+            elif "school_report_location" in caller:
+                table.level.default = "L2"
+                table.feature_class_id.readable = table.feature_class_id.writable = False
+                table.marker_id.readable = table.marker_id.writable = False
+                table.addr_street.readable = table.addr_street.writable = False
+            elif "school_report_union" in caller:
+                table.level.default = "L3"
+                table.feature_class_id.readable = table.feature_class_id.writable = False
+                table.marker_id.readable = table.marker_id.writable = False
+                table.addr_street.readable = table.addr_street.writable = False
+            
+            try:
+                # If we have a pre-assigned Feature Class
+                table.feature_class_id.default = fc.id
+                table.feature_class_id.readable = table.feature_class_id.writable = False
+                # Use default Marker for Class
+                table.marker_id.readable = table.marker_id.writable = False
+            except:
+                pass
+
+            table.osm_id.readable = table.osm_id.writable = False
+            table.source.readable = table.source.writable = False
+
+    # Post-processor
+    def user_postp(jr, output):
+        shn_action_buttons(jr)
+        return output
+    response.s3.postp = user_postp
+
+    response.s3.pagination = True
+    output = shn_rest_controller(module, resource, listadd=False)
+
+    _map = vars.get("_map", None)
+    if _map and isinstance(output, dict):
+        output.update(_map=_map)
+
+    return output
 
 #@auth.shn_requires_membership("MapAdmin")
 def apikey():
@@ -441,231 +626,6 @@ def feature_layer_query(form):
         session.error = T("Need to specify a Resource!")
 
     return
-
-def location():
-
-    """ RESTful CRUD controller for Locations """
-
-    resource = request.function
-    tablename = module + "_" + resource
-    table = db[tablename]
-
-    # Allow prep to pass vars back to the controller
-    vars = {}
-    
-    # Pre-processor
-    def prep(r, vars):
-
-        # Restrict access to top-level locations (& all Polygons) to just MapAdmins
-        if not shn_has_role("MapAdmin"):
-            table.code.writable = False
-            table.level.writable = False
-            if r.method == "create":
-                table.code.readable = False
-                table.level.readable = False
-            table.gis_feature_type.writable = table.gis_feature_type.readable = False
-            table.wkt.writable = table.wkt.readable = False
-        else:
-            table.code.comment = DIV( _class="tooltip", _title=Tstr("Code") + "|" + Tstr("For a country this would be the ISO2 code, for a Town, it would be the Airport Locode."))
-            table.level.comment = DIV( _class="tooltip", _title=Tstr("Level") + "|" + Tstr("If the location is a geographic area, then state at what level here."))
-            table.parent.comment = DIV(A(ADD_LOCATION,
-                                           _class="colorbox",
-                                           _href=URL(r=request, c="gis", f="location", args="create", vars=dict(format="popup", child="parent")),
-                                           _target="top",
-                                           _title=ADD_LOCATION),
-                                         DIV(
-                                           _class="tooltip",
-                                           _title=Tstr("Parent") + "|" + Tstr("The Area which this Site is located within."))),
-            table.wkt.comment = DIV(SPAN("*", _class="req"), DIV( _class="tooltip", _title="WKT" + "|" + Tstr("The <a href='http://en.wikipedia.org/wiki/Well-known_text' target=_blank>Well-Known Text</a> representation of the Polygon/Line.")))
-
-        if r.http == "GET" and r.representation == "html":
-            # Options which are only required in interactive HTML views
-            table.name.comment = SPAN("*", _class="req")
-            CONVERSION_TOOL = T("Conversion Tool")
-            table.lat.comment = DIV(A(CONVERSION_TOOL, _style="cursor:pointer;", _title=CONVERSION_TOOL, _id="btnConvert"), DIV( _class="tooltip", _title=T("Latitude|Latitude is North-South (Up-Down). Latitude is zero on the equator and positive in the northern hemisphere and negative in the southern hemisphere. This needs to be added in Decimal Degrees. Use the popup to convert from either GPS coordinates or Degrees/Minutes/Seconds.")))
-            table.lon.comment = DIV( _class="tooltip", _title=Tstr("Longitude") + "|" + Tstr("Longitude is West - East (sideways). Longitude is zero on the prime meridian (Greenwich Mean Time) and is positive to the east, across Europe and Asia.  Longitude is negative to the west, across the Atlantic and the Americas.  This needs to be added in Decimal Degrees. Use the popup to convert from either GPS coordinates or Degrees/Minutes/Seconds."))
-            table.osm_id.comment = DIV( _class="tooltip", _title="OSM ID" + "|" + Tstr("The <a href='http://openstreetmap.org' target=_blank>OpenStreetMap</a> ID. If you don't know the ID, you can just say 'Yes' if it has been added to OSM."))
-
-            # CRUD Strings
-            LIST_LOCATIONS = T("List Locations")
-            s3.crud_strings[tablename] = Storage(
-                title_create = ADD_LOCATION,
-                title_display = T("Location Details"),
-                title_list = T("Locations"),
-                title_update = T("Edit Location"),
-                title_search = T("Search Locations"),
-                subtitle_create = T("Add New Location"),
-                subtitle_list = LIST_LOCATIONS,
-                label_list_button = LIST_LOCATIONS,
-                label_create_button = ADD_LOCATION,
-                label_delete_button = T("Delete Location"),
-                msg_record_created = T("Location added"),
-                msg_record_modified = T("Location updated"),
-                msg_record_deleted = T("Location deleted"),
-                msg_list_empty = T("No Locations currently available"))
-
-            if r.method in (None, "list") and r.record == None:
-                # List
-                pass
-            elif r.method == "delete":
-                pass
-            else:
-                # Add Map to allow locations to be found this way
-                config = gis.get_config()
-                lat = config.lat
-                lon = config.lon
-                zoom = config.zoom
-                feature_queries = []
-
-                if r.method == "create":
-                    add_feature = True
-                    add_feature_active = True
-                else:
-                    if r.method == "update":
-                        add_feature = True
-                        add_feature_active = False
-                    else:
-                        # Read
-                        add_feature = False
-                        add_feature_active = False
-                    
-                    # Lat/Lon come from record
-                    lat = r.record.lat
-                    lon = r.record.lon
-                    # Same as a single zoom on a cluster
-                    zoom = zoom + 2
-                    
-                _map = gis.show_map(lat = lat,
-                                    lon = lon,
-                                    zoom = zoom,
-                                    feature_queries = feature_queries,
-                                    add_feature = add_feature,
-                                    add_feature_active = add_feature_active,
-                                    toolbar = True,
-                                    collapsed = True)
-
-                # Pass the map back to the main controller
-                vars.update(_map=_map)
-        return True
-    response.s3.prep = lambda r, vars=vars: prep(r, vars)
-    
-    # Options
-    _vars = request.vars
-    filters = []
-    fclass = _vars.get("feature_class", None)
-    if fclass:
-        filters.append((db.gis_location.feature_class_id == db.gis_feature_class.id) &
-                              (db.gis_feature_class.name.like(fclass)))
-
-    fgroup = _vars.get("fgroup", None)
-    if fgroup:
-        # Filter to those Features which are in Feature Groups through their Feature Class
-        filters.append((db.gis_location.feature_class_id == db.gis_feature_class_to_feature_group.feature_class_id) &
-           (db.gis_feature_class_to_feature_group.feature_group_id == db.gis_feature_group.id) &
-           (db.gis_feature_group.name.like(fgroup)))
-        # We no longer support direct Features in Feature Groups (we can't easily OR this filter with previous one)
-        #filters.append((db.gis_location.id == db.gis_location_to_feature_group.location_id) &
-        #    (db.gis_location_to_feature_group.feature_group_id == db.gis_feature_group.id) & (db.gis_feature_group.name.like(fgroup)))
-
-    parent = _vars.get("parent_", None)
-    # Don't use 'parent' as the var as otherwise this will be triggered during form submission
-    if parent:
-        # Can't do this using a JOIN in DAL syntax
-        # .belongs() not GAE-compatible!
-        filters.append((db.gis_location.parent.belongs(db(db.gis_location.name.like(parent)).select(db.gis_location.id))))
-        # ToDo: Make this recursive - want ancestor not just direct parent!
-
-    caller = _vars.get("caller", None)
-    if caller:
-        # We've been called as a Popup
-        if "gis_location_parent" in caller:
-            # Populate defaults & hide unnecessary rows
-            table.description.readable = table.description.writable = False
-            table.code.readable = table.code.writable = False
-            table.feature_class_id.readable = table.feature_class_id.writable = False
-            # Use default Marker for Class
-            table.marker_id.readable = table.marker_id.writable = False
-            table.wkt.readable = table.wkt.writable = False
-            table.addr_street.readable = table.addr_street.writable = False
-            table.osm_id.readable = table.osm_id.writable = False
-            table.source.readable = table.source.writable = False
-        else:
-            fc = None
-            # Populate defaults & hide unnecessary rows
-            if "cr_shelter" in caller:
-                fc = db(db.gis_feature_class.name == "Shelter").select(db.gis_feature_class.id, limitby=(0, 1)).first()
-                table.level.readable = table.level.writable = False
-                table.url.readable = table.url.writable = False
-            elif "hms_hospital" in caller:
-                fc = db(db.gis_feature_class.name == "Hospital").select(db.gis_feature_class.id, limitby=(0, 1)).first()
-                table.level.readable = table.level.writable = False
-                table.url.readable = table.url.writable = False
-            elif "irs_ireport" in caller:
-                fc = db(db.gis_feature_class.name == "Incident").select(db.gis_feature_class.id, limitby=(0, 1)).first()
-                table.level.readable = table.level.writable = False
-                table.url.readable = table.url.writable = False
-            elif "org_office" in caller:
-                fc = db(db.gis_feature_class.name == "Office").select(db.gis_feature_class.id, limitby=(0, 1)).first()
-                table.level.readable = table.level.writable = False
-                table.url.readable = table.url.writable = False
-            elif "org_project" in caller:
-                fc = db(db.gis_feature_class.name == "Project").select(db.gis_feature_class.id, limitby=(0, 1)).first()
-            elif "pr_presence" in caller:
-                fc = db(db.gis_feature_class.name == "Person").select(db.gis_feature_class.id, limitby=(0, 1)).first()
-                table.level.readable = table.level.writable = False
-                table.url.readable = table.url.writable = False
-            elif "assessment_location" in caller:
-                table.level.default = "L4"
-                table.feature_class_id.readable = table.feature_class_id.writable = False
-                table.marker_id.readable = table.marker_id.writable = False
-                table.addr_street.readable = table.addr_street.writable = False
-            elif "school_district" in caller:
-                table.level.default = "L2"
-                table.feature_class_id.readable = table.feature_class_id.writable = False
-                table.marker_id.readable = table.marker_id.writable = False
-                table.addr_street.readable = table.addr_street.writable = False
-            elif "school_report_location" in caller:
-                table.level.default = "L2"
-                table.feature_class_id.readable = table.feature_class_id.writable = False
-                table.marker_id.readable = table.marker_id.writable = False
-                table.addr_street.readable = table.addr_street.writable = False
-            elif "school_report_union" in caller:
-                table.level.default = "L3"
-                table.feature_class_id.readable = table.feature_class_id.writable = False
-                table.marker_id.readable = table.marker_id.writable = False
-                table.addr_street.readable = table.addr_street.writable = False
-            
-            try:
-                table.feature_class_id.default = fc.id
-                table.feature_class_id.readable = table.feature_class_id.writable = False
-                # Use default Marker for Class
-                table.marker_id.readable = table.marker_id.writable = False
-            except:
-                pass
-
-            table.osm_id.readable = table.osm_id.writable = False
-            table.source.readable = table.source.writable = False
-
-    # ToDo
-    # bbox = _vars.get("bbox", None):
-
-    if filters:
-        response.s3.filter = reduce(__and__, filters)
-
-    # Post-processor
-    def user_postp(jr, output):
-        shn_action_buttons(jr)
-        return output
-    response.s3.postp = user_postp
-
-    response.s3.pagination = True
-    output = shn_rest_controller(module, resource, listadd=False)
-
-    _map = vars.get("_map", None)
-    if _map and isinstance(output, dict):
-        output.update(_map=_map)
-
-    return output
 
 #@auth.shn_requires_membership("MapAdmin")
 def marker():
@@ -1790,3 +1750,50 @@ def proxy():
         msg += "Content-Type: text/plain\n\n"
         msg += "Some unexpected error occurred. Error text was: %s" % str(E)
         return msg
+
+# Tests - not Production
+def test():
+    """
+       Test Mapping API
+    """
+
+    # Will use default popup_url
+    hospitals = {"feature_group" : "Hospitals"}
+
+    if auth.is_logged_in():
+        offices = {"feature_group" : "Offices", "popup_url" : URL(r=request, c="gis", f="location", args="update.popup")}
+    else:
+        offices = {"feature_group" : "Offices", "popup_url" : URL(r=request, c="gis", f="location", args="read.popup")}
+
+    query = db((db.gis_feature_class.name == "Town") & (db.gis_location.feature_class_id == db.gis_feature_class.id)).select()
+
+    html = gis.show_map(
+                add_feature = True,
+                collapsed = True,
+                #feature_groups = [offices, hospitals],
+                #feature_queries = [{"name" : "Towns", "query" : query, "active" : True}],
+                #wms_browser = {"name" : "OpenGeo Demo WMS", "url" : "http://demo.opengeo.org/geoserver/ows?service=WMS&request=GetCapabilities"},
+                ##wms_browser = {"name" : "Risk Maps", "url" : "http://preview.grid.unep.ch:8080/geoserver/ows?service=WMS&request=GetCapabilities"},
+                ##wms_browser = {"name" : "Risk Maps", "url" : "http://www.pdc.org/wms/wmservlet/PDC_Active_Hazards?request=getcapabilities&service=WMS&version=1.1.1"},
+                #catalogue_overlays = True,
+                #catalogue_toolbar = True,
+                #legend = True, # Stops Feature Layers from Printing
+                #toolbar = True,
+                #search = True,
+                #print_tool = {
+                #        #"url" : "http://localhost:8080/geoserver/pdf/",                    # Local GeoServer
+                #        "url" : "http://localhost:8080/print-servlet-1.2-SNAPSHOT/pdf/",    # Local Windows Tomcat
+                #        #"url" : "http://host.domain:8180/print-servlet-1.2-SNAPSHOT/pdf/", # Linux Tomcat
+                #        "mapTitle" : "Title",
+                #        "subTitle" : "SubTitle"
+                #    },
+                ##mgrs = {"name" : "MGRS Atlas PDFs", "url" : "http://www.sharedgeo.org/datasets/shared/maps/usng/pdf.map?VERSION=1.0.0&SERVICE=WFS&request=GetFeature&typename=wfs_all_maps"},
+                #window = True,
+                )
+
+    return dict(map=html)
+
+def test2():
+    " Test new OpenLayers functionality in a RAD environment "
+    return dict()
+

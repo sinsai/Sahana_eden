@@ -628,6 +628,7 @@ class GIS(object):
             html.append(LINK( _rel="stylesheet", _type="text/css", _href=URL(r=request, c="static", f="styles/gis/gis.css"), _media="screen", _charset="utf-8") )
         else:
             html.append(LINK( _rel="stylesheet", _type="text/css", _href=URL(r=request, c="static", f="scripts/ext/resources/css/ext-all.min.css"), _media="screen", _charset="utf-8") )
+            html.append(LINK( _rel="stylesheet", _type="text/css", _href=URL(r=request, c="static", f="scripts/ext/resources/css/xtheme-gray.css"), _media="screen", _charset="utf-8") )
             html.append(LINK( _rel="stylesheet", _type="text/css", _href=URL(r=request, c="static", f="styles/gis/gis.min.css"), _media="screen", _charset="utf-8") )
 
         ######

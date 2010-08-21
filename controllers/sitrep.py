@@ -59,6 +59,9 @@ def assessment():
     # Villages only
     table.location_id.requires = IS_NULL_OR(IS_ONE_OF(db(db.gis_location.level == "L4"), "gis_location.id", repr_select, sort=True))
 
+    # Don't send the locations list to client (pulled by AJAX instead)
+    table.location_id.requires = IS_NULL_OR(IS_ONE_OF_EMPTY(db, "gis_location.id"))
+
     # Pre-processor
     def prep(r):
         if r.method == "update":

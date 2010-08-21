@@ -15,25 +15,6 @@ $(document).ready(function() {
     $('.confirmation').hide().slideDown('slow')
     $('.confirmation').click(function() { $(this).fadeOut('slow'); return false; });
     $('input.date').datepicker({ changeMonth: true, changeYear: true, dateFormat: 'yy-mm-dd', isRTL: false });
-    $('a.colorbox').click(function(){
-        // Function to Add a Resource from within a form
-        $(this).attr('href', function() {
-            // Add the caller to the URL vars so that the popup knows which field to refresh/set
-            var url_in = $(this).attr('href');
-            var caller = '';
-            try {
-                caller = $(this).parents('tr').attr('id').replace(/__row/, '');
-            } catch(e) {
-                if(caller == "") return url_in;  
-            }
-            var url_out = url_in;
-            if (url_out.indexOf('&caller=') == -1){
-                url_out = url_out + '&caller=' + caller;
-            }
-            return url_out;
-        });
-        return false;
-    });
     // IE6 non anchor hover hack
     $('.hoverable').hover(
         function() { $(this).addClass('hovered'); },

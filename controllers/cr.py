@@ -35,6 +35,11 @@ def shelter_type():
     """ RESTful CRUD controller """
 
     resource = request.function
+    tablename = module + "_" + resource
+    table = db[tablename]
+
+    # Don't send the locations list to client (pulled by AJAX instead)
+    table.location_id.requires = IS_NULL_OR(IS_ONE_OF_EMPTY(db, "gis_location.id"))
 
     # Post-processor
     def user_postp(jr, output):
@@ -98,8 +103,11 @@ def shelter():
     """
 
     resource = request.function
+    tablename = module + "_" + resource
+    table = db[tablename]
 
-    response.s3.pagination = True
+    # Don't send the locations list to client (pulled by AJAX instead)
+    table.location_id.requires = IS_NULL_OR(IS_ONE_OF_EMPTY(db, "gis_location.id"))
 
     # Post-processor
     def user_postp(jr, output):
@@ -107,6 +115,7 @@ def shelter():
         return output
     response.s3.postp = user_postp
 
+    response.s3.pagination = True
     output = shn_rest_controller(module, resource, listadd=False)
 
     return output

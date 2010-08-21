@@ -71,7 +71,7 @@ admin_menu_options = [
     [T("User Management"), False, URL(r=request, c="admin", f="user"), [
         [T("Users"), False, URL(r=request, c="admin", f="user")],
         [T("Roles"), False, URL(r=request, c="admin", f="group")],
-        #[T("Membership"), False, URL(r=request, c="admin", f="membership")]
+        [T("Membership"), False, URL(r=request, c="admin", f="membership")]
     ]],
     [T("Database"), False, "#", [
         [T("Import"), False, URL(r=request, c="admin", f="import_data")],

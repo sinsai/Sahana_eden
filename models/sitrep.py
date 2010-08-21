@@ -27,6 +27,7 @@ if deployment_settings.has_module(module):
     tablename = "%s_%s" % (module, resource)
     table = db.define_table(tablename,
                             timestamp, uuidstamp, authorstamp, deletion_status,
+                            Field("title"),
                             location_id,
                             organisation_id,
                             Field("date", "date"),
@@ -40,7 +41,7 @@ if deployment_settings.has_module(module):
                             Field("crop_losses", "integer"),
                             Field("water_level", "boolean"),
                             Field("crops_affectees", "double"),
-                            Field("source"),
+                            Field("source"), # Legacy field: will be removed
                             document_id,
                             comments,
                             migrate=migrate)
@@ -106,7 +107,7 @@ if deployment_settings.has_module(module):
                             Field("reported_by"),
                             Field("date", "date"),
                             document_id,
-                            document,
+                            document, # Legacy field: will be removed
                             comments,
                             migrate=migrate)
 

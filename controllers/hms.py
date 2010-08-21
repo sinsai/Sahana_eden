@@ -136,8 +136,6 @@ def hospital():
         msg_record_deleted = T("Hospital information deleted"),
         msg_list_empty = T("No Hospitals currently registered"))  
     
-    response.s3.pagination = True
-
     #s3xrc.sync_resolve = shn_hospital_resolver
 
     def hospital_postp(jr, output):
@@ -153,6 +151,7 @@ def hospital():
         return output
     response.s3.postp = hospital_postp
 
+    response.s3.pagination = True
     output = shn_rest_controller(module , resource,
         rheader = lambda jr: shn_hms_hospital_rheader(jr,
                   tabs=[
@@ -206,8 +205,6 @@ def hrequest():
         if person:
             db.hms_hpledge.person_id.default = person[0].id
 
-    response.s3.pagination = True
-
     def hrequest_postp(jr, output):
         if jr.representation in ("html", "popup") and not jr.component:
             response.s3.actions = [
@@ -217,6 +214,7 @@ def hrequest():
     response.s3.postp = hrequest_postp
 
 
+    response.s3.pagination = True
     output = shn_rest_controller(module , resource,
                                  listadd=False,
                                  deletable=False,
@@ -246,7 +244,6 @@ def hpledge():
             db.hms_hpledge.person_id.default = person[0].id
 
     response.s3.pagination = True
-
     output = shn_rest_controller(module, resource, editable = True, listadd=False)
 
     shn_menu()

@@ -365,44 +365,66 @@ def shn_as_local_time(value):
         dt = value
         return dt.strftime(str(format))+" +0000"
 
-# Make URLs clickable
-shn_url_represent = lambda url: (url and [A(url, _href=url, _target="blank")] or [""])[0]
-
 # Phone number requires
 shn_phone_requires = IS_NULL_OR(IS_MATCH('\+?\s*[\s\-\.\(\)\d]+(?:(?: x| ext)\s?\d{1,5})?$'))
+
+# Make URLs clickable
+shn_url_represent = lambda url: (url and [A(url, _href=url, _target="blank")] or [""])[0]
 
 def myname(user_id):
     user = db.auth_user[user_id]
     return user.first_name if user else "None"
 
-def shn_last_update(table, record_id):
+def shn_abbreviate(word, size=48):
 
-    if table and record_id:
-        record = table[record_id]
-        if record:
-            mod_on_str  = T(" on ")
-            mod_by_str  = T(" by ")
+    """
+        Abbreviate a string. For use as a .represent
+    """
+    
+    if word:
+        if (len(word) > size):
+            word = "%s..." % word[:size - 4]
+        else:
+            return word
+    else:
+        return word
+    
+def shn_action_buttons(jr, deletable=True):
 
-            modified_on = ""
-            if "modified_on" in table.fields:
-                modified_on = "%s%s" % (mod_on_str, shn_as_local_time(record.modified_on))
+    """
+        Provide the usual Action Buttons for Column views.
+        Designed to be called from a postp
+    """
 
-            modified_by = ""
-            if "modified_by" in table.fields:
-                user = auth.settings.table_user[record.modified_by]
-                if user:
-                    person = db(db.pr_person.uuid == user.person_uuid).select(limitby=(0, 1)).first()
-                    if person:
-                        modified_by = "%s%s" % (mod_by_str, vita.fullname(person))
+    if jr.component:
+        args = [jr.component_name, "[id]"]
+    else:
+        args = ["[id]"]
 
-            if len(modified_on) or len(modified_by):
-                last_update = "%s%s%s" % (T("Record last updated"), modified_on, modified_by)
-                return last_update
-    return None
+    if shn_has_permission("update", jr.table):
+        # Provide the ability to delete records in bulk
+        if deletable and shn_has_permission("delete", jr.table):
+            response.s3.actions = [
+                dict(label=str(UPDATE), _class="action-btn", url=str(URL(r=request, args = args + ["update"]))),
+                dict(label=str(DELETE), _class="action-btn", url=str(URL(r=request, args = args + ["delete"])))
+            ]
+        else:
+            response.s3.actions = [
+                dict(label=str(UPDATE), _class="action-btn", url=str(URL(r=request, args = args + ["update"])))
+            ]
+    else:
+        response.s3.actions = [
+            dict(label=str(READ), _class="action-btn", url=str(URL(r=request, args = args)))
+        ]
+
+    return
 
 def shn_compose_message(data, template):
-    " Compose an SMS Message from an XSLT "
-    from lxml import etree
+
+    """
+        Compose an SMS Message from an XSLT
+    """
+
     if data:
         root = etree.Element("message")
         for k in data.keys():
@@ -426,20 +448,20 @@ def shn_compose_message(data, template):
 def shn_crud_strings(table_name,
                      table_name_plural = None):
     """
-    @author: Michael Howden (michael@aidiq.com)
+        @author: Michael Howden (michael@aidiq.com)
 
-    @description:
-        Creates the strings for the title of/in the various CRUD Forms.
+        @description:
+            Creates the strings for the title of/in the various CRUD Forms.
 
-    @arguments:
-        table_name - string - The User's name for the resource in the table - eg. "Person"
-        table_name_plural - string - The User's name for the plural of the resource in the table - eg. "People"
+        @arguments:
+            table_name - string - The User's name for the resource in the table - eg. "Person"
+            table_name_plural - string - The User's name for the plural of the resource in the table - eg. "People"
 
-    @returns:
-        class "gluon.storage.Storage" (Web2Py)
+        @returns:
+            class "gluon.storage.Storage" (Web2Py)
 
-    @example
-        s3.crud_strings[<table_name>] = shn_crud_strings(<table_name>, <table_name_plural>)
+        @example
+            s3.crud_strings[<table_name>] = shn_crud_strings(<table_name>, <table_name_plural>)
     """
 
     if not table_name_plural:
@@ -469,26 +491,28 @@ def shn_crud_strings(table_name,
 
 
 def shn_get_crud_string(tablename, name):
-
-    """ Get the CRUD strings for a table """
+    """
+        Get the CRUD strings for a table
+    """
 
     crud_strings = s3.crud_strings.get(tablename, s3.crud_strings)
     not_found = s3.crud_strings.get(name, None)
+
     return crud_strings.get(name, not_found)
 
 
 def shn_import_table(table_name,
                      import_if_not_empty = False):
     """
-    @author: Michael Howden (michael@aidiq.com)
+        @author: Michael Howden (michael@aidiq.com)
 
-    @description:
-        If a table is empty, it will import values into that table from:
-        /private/import/tables/<table>.csv.
+        @description:
+            If a table is empty, it will import values into that table from:
+            /private/import/tables/<table>.csv.
 
-    @arguments:
-        table_name - string - The name of the table
-        import_if_not_empty - bool
+        @arguments:
+            table_name - string - The name of the table
+            import_if_not_empty - bool
     """
 
     table = db[table_name]
@@ -499,15 +523,41 @@ def shn_import_table(table_name,
         table.import_from_csv_file(open(import_file,"r"))
 
 
+def shn_last_update(table, record_id):
+
+    if table and record_id:
+        record = table[record_id]
+        if record:
+            mod_on_str  = T(" on ")
+            mod_by_str  = T(" by ")
+
+            modified_on = ""
+            if "modified_on" in table.fields:
+                modified_on = "%s%s" % (mod_on_str, shn_as_local_time(record.modified_on))
+
+            modified_by = ""
+            if "modified_by" in table.fields:
+                user = auth.settings.table_user[record.modified_by]
+                if user:
+                    person = db(db.pr_person.uuid == user.person_uuid).select(limitby=(0, 1)).first()
+                    if person:
+                        modified_by = "%s%s" % (mod_by_str, vita.fullname(person))
+
+            if len(modified_on) or len(modified_by):
+                last_update = "%s%s%s" % (T("Record last updated"), modified_on, modified_by)
+                return last_update
+    return None
+
+
 def shn_represent_file(file_name,
                        table,
                        field = "file"):
     """
-    @author: Michael Howden (michael@aidiq.com)
+        @author: Michael Howden (michael@aidiq.com)
 
-    @description:
-        Represents a file (stored in a table) as the filename with a link to that file
-        THIS FUNCTION IS REDUNDANT AND CAN PROBABLY BE REPLACED BY shn_file_represent in models/06_doc.py
+        @description:
+            Represents a file (stored in a table) as the filename with a link to that file
+            THIS FUNCTION IS REDUNDANT AND CAN PROBABLY BE REPLACED BY shn_file_represent in models/06_doc.py
     """
     import base64
     url_file = crud.settings.download_url + "/" + file_name
@@ -534,8 +584,9 @@ def shn_represent_file(file_name,
 
 
 def shn_rheader_tabs(jr, tabs=[]):
-
-    """ Constructs a DIV of component links for a S3RESTRequest """
+    """
+        Constructs a DIV of component links for a S3RESTRequest
+    """
 
     rheader_tabs = []
     for (title, component) in tabs:
@@ -572,45 +623,3 @@ def shn_rheader_tabs(jr, tabs=[]):
         rheader_tabs = ""
 
     return rheader_tabs
-
-def shn_abbreviate(word, size=48):
-
-    """ Abbreviate a string. For use as a .represent """
-    
-    if word:
-        if (len(word) > size):
-            word = "%s..." % word[:size - 4]
-        else:
-            return word
-    else:
-        return word
-    
-def shn_action_buttons(jr, deletable=True):
-
-    """
-        Provide the usual Action Buttons for Column views.
-        Designed to be called from a postp
-    """
-
-    if jr.component:
-        args = [jr.component_name, "[id]"]
-    else:
-        args = ["[id]"]
-
-    if shn_has_permission("update", jr.table):
-        # Provide the ability to delete records in bulk
-        if deletable and shn_has_permission("delete", jr.table):
-            response.s3.actions = [
-                dict(label=str(UPDATE), _class="action-btn", url=str(URL(r=request, args = args))),
-                dict(label=str(DELETE), _class="action-btn", url=str(URL(r=request, args = args + ["delete"])))
-            ]
-        else:
-            response.s3.actions = [
-                dict(label=str(UPDATE), _class="action-btn", url=str(URL(r=request, args = args)))
-            ]
-    else:
-        response.s3.actions = [
-            dict(label=str(READ), _class="action-btn", url=str(URL(r=request, args = args)))
-        ]
-
-    return

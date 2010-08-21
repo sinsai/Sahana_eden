@@ -68,8 +68,7 @@ def freport():
     table = db[tablename]
 
     resource = request.function
-    response.s3.pagination = True
-
+    
     # Disable legacy fields, unless updating, so the data can be manually transferred to new fields
     if "update" not in request.args:
         table.document.readable = table.document.writable = False    
@@ -80,12 +79,11 @@ def freport():
         return output
     response.s3.postp = postp
 
-    output = shn_rest_controller(module, resource,
-                                 rheader=lambda r: \
-                                         shn_flood_rheader(r,
-                                            tabs = [(T("Basic Details"), None),
-                                                    (T("Locations"), "freport_location")  ]),
-                                                    sticky=True)
+    rheader = lambda r: shn_flood_rheader(r, tabs = [(T("Basic Details"), None),
+                                                     (T("Locations"), "freport_location")
+                                                    ])
+    response.s3.pagination = True
+    output = shn_rest_controller(module, resource, rheader=rheader, sticky=True)
     return output
 
 # -----------------------------------------------------------------------------

@@ -217,8 +217,8 @@ if deployment_settings.has_module(module):
                             Field("persons_affected", "integer"),
                             Field("persons_injured", "integer"),
                             Field("persons_deceased", "integer"),
-                            Field("source"),
-                            Field("source_id"),
+                            Field("source"),    # Legacy field: will be removed
+                            Field("source_id"), # Legacy field: will be removed
                             document_id,
                             Field("verified", "boolean"),
                             comments,
@@ -236,6 +236,7 @@ if deployment_settings.has_module(module):
     table.message.represent = lambda message: shn_abbreviate(message)
 
     table.person_id.label = T("Reporter Name")
+    table.person_id.comment = T("At/Visited Location (not virtual)")
 
     table.contact.label = T("Contact Details")
 

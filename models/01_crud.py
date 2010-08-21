@@ -972,10 +972,12 @@ def shn_read(r, **attr):
             output.update(form=item, main=main, extra=extra, caller=caller)
 
         # Add edit and delete buttons as appropriate
-        if href_edit and editable and r.method <> "update":
+        authorised = shn_has_permission("update", table, record_id)
+        if authorised and href_edit and editable and r.method <> "update":
             edit = A(T("Edit"), _href=href_edit, _class="action-btn")
             output.update(edit=edit)
-        if href_delete and deletable:
+        authorised = shn_has_permission("delete", table)
+        if authorised and href_delete and deletable:
             delete = A(T("Delete"), _href=href_delete, _id="delete-btn", _class="action-btn")
             output.update(delete=delete)
 

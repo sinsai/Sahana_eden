@@ -70,8 +70,6 @@ def person():
 
     response.s3.prep = person_prep
 
-    response.s3.pagination = True
-
     s3xrc.model.configure(db.pr_group_membership,
                           list_fields=["id",
                                        "group_id",
@@ -103,6 +101,7 @@ def person():
     if len(request.args) == 0:
         response.s3.filter = (db.pr_person.missing == True)
 
+    response.s3.pagination = True
     output = shn_rest_controller("pr", resource,
                 main="first_name",
                 extra="last_name",

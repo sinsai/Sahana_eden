@@ -1,8 +1,10 @@
 {{extend "layout.html"}}
 {{include "_create.html"}}
 <p>&nbsp;</p>
+{{=T("You can click on the map below to select the Lat/Lon fields:")}}
+<p>&nbsp;</p>
 {{try:}}
-{{=XML(map)}}
+{{=XML(_map)}}
 {{except:}}
 {{pass}}
 <script type="text/javascript">//<![CDATA[

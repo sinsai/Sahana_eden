@@ -71,8 +71,6 @@ def incident():
     tablename = "%s_%s" % (module, resource)
     table = db[tablename]
 
-    response.s3.pagination = True
-
     db.irs_iimage.assessment_id.readable = \
     db.irs_iimage.assessment_id.writable = False
 
@@ -88,18 +86,16 @@ def incident():
         return output
     response.s3.postp = user_postp
 
-    output = shn_rest_controller(module, resource, listadd=False,
-                                 rheader=lambda r: \
-                                         shn_irs_rheader(r,
-                                            tabs = [(T("Incident Details"), None),
-                                                    (T("Reports"), "ireport"),
-                                                    (T("Images"), "iimage"),
-                                                    #(T("Assessments"), "iassessment"),
-                                                    (T("Response"), "iresponse")]),
-                                            sticky=True)
+    rheader = lambda r: shn_irs_rheader(r, tabs = [(T("Incident Details"), None),
+                                                   (T("Reports"), "ireport"),
+                                                   (T("Images"), "iimage"),
+                                                   #(T("Assessments"), "iassessment"),
+                                                   (T("Response"), "iresponse")
+                                                  ])
 
+    response.s3.pagination = True
+    output = shn_rest_controller(module, resource, listadd=False, rheader=rheader, sticky=True)
     return output
-
 
 # -----------------------------------------------------------------------------
 def ireport():
@@ -110,7 +106,16 @@ def ireport():
     tablename = "%s_%s" % (module, resource)
     table = db[tablename]
 
-    response.s3.pagination = True
+    # Pre-processor
+    def prep(r):
+        if r.method == "ushahidi":
+            auth.settings.on_failed_authorization = r.other(method="", vars=None)
+        elif r.method == "update":
+            # Disable legacy fields, unless updating, so the data can be manually transferred to new fields
+            table.source.readable = table.source.writable = False        
+            table.source_id.readable = table.source_id.writable = False         
+        return True
+    response.s3.prep = prep
 
     if not shn_has_role("Editor"):
         table.incident_id.readable = table.incident_id.writable = False
@@ -126,17 +131,6 @@ def ireport():
 
     db.irs_iimage.report_id.readable = \
     db.irs_iimage.report_id.writable = False
-    
-    # Disable legacy fields, unless updating, so the data can be manually transferred to new fields
-    if "update" not in request.args:
-        table.source.readable = table.source.writable = False        
-        table.source_id.readable = table.source_id.writable = False   
-
-    def prep(r):
-        if r.method == "ushahidi":
-            auth.settings.on_failed_authorization = r.other(method="", vars=None)
-        return True
-    response.s3.prep = prep
 
     # Post-processor
     def user_postp(jr, output):
@@ -144,22 +138,21 @@ def ireport():
         return output
     response.s3.postp = user_postp
 
-    output = shn_rest_controller(module, resource, listadd=False,
-                                 rheader=lambda r: \
-                                         shn_irs_rheader(r,
-                                            tabs = [(T("Report Details"), None),
-                                                    (T("Images"), "iimage")  ]),
-                                            sticky=True)
+    rheader = lambda r: shn_irs_rheader(r, tabs = [(T("Report Details"), None),
+                                                   (T("Images"), "iimage")
+                                                  ])
+
+    response.s3.pagination = True
+    output = shn_rest_controller(module, resource, listadd=False, rheader=rheader, sticky=True)
     return output
 
-
 # -----------------------------------------------------------------------------
+# Currently unused - Assessment module (in 'sitrep' currently) is used instead
 def iassessment():
 
     """ Incident Assessment, RESTful controller """
 
     resource = request.function
-    response.s3.pagination = True
 
     db.irs_iimage.assessment_id.readable = \
     db.irs_iimage.assessment_id.writable = False
@@ -173,13 +166,12 @@ def iassessment():
         return output
     response.s3.postp = user_postp
 
-    output = shn_rest_controller(module, resource,
-                                 rheader=lambda r: \
-                                         shn_irs_rheader(r,
-                                            tabs = [(T("Assessment Details"), None),
-                                                    (T("Images"), "iimage")  ]),
-                                            sticky=True)
+    rheader = lambda r: shn_irs_rheader(r, tabs = [(T("Assessment Details"), None),
+                                                   (T("Images"), "iimage")
+                                                  ])
 
+    response.s3.pagination = True
+    output = shn_rest_controller(module, resource, rheader=rheader, sticky=True)
     return output
 
 

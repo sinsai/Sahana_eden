@@ -410,57 +410,110 @@ def feature_layer_query(form):
     return
 
 def location():
+
     """ RESTful CRUD controller for Locations """
+
     resource = request.function
     tablename = module + "_" + resource
     table = db[tablename]
 
-    if not shn_has_role("MapAdmin"):
-        table.code.writable = False
-        table.level.writable = False
-        if "create" in request.args:
-            table.code.readable = False
-            table.level.readable = False
-        table.gis_feature_type.writable = table.gis_feature_type.readable = False
-        table.wkt.writable = table.wkt.readable = False
-    else:
-        table.code.comment = DIV( _class="tooltip", _title=Tstr("Code") + "|" + Tstr("For a country this would be the ISO2 code, for a Town, it would be the Airport Locode."))
-        table.level.comment = DIV( _class="tooltip", _title=Tstr("Level") + "|" + Tstr("If the location is a geographic area, then state at what level here."))
-        table.parent.comment = DIV(A(ADD_LOCATION,
-                                       _class="colorbox",
-                                       _href=URL(r=request, c="gis", f="location", args="create", vars=dict(format="popup", child="parent")),
-                                       _target="top",
-                                       _title=ADD_LOCATION),
-                                     DIV(
-                                       _class="tooltip",
-                                       _title=Tstr("Parent") + "|" + Tstr("The Area which this Site is located within."))),
-        table.wkt.comment = DIV(SPAN("*", _class="req"), DIV( _class="tooltip", _title="WKT" + "|" + Tstr("The <a href='http://en.wikipedia.org/wiki/Well-known_text' target=_blank>Well-Known Text</a> representation of the Polygon/Line.")))
+    # Allow prep to pass vars back to the controller
+    vars = {}
+    
+    # Pre-processor
+    def prep(r, vars):
 
-    # Model options which are only required in interactive HTML views
-    table.name.comment = SPAN("*", _class="req")
-    CONVERSION_TOOL = T("Conversion Tool")
-    table.lat.comment = DIV(A(CONVERSION_TOOL, _style="cursor:pointer;", _title=CONVERSION_TOOL, _id="btnConvert"), DIV( _class="tooltip", _title=T("Latitude|Latitude is North-South (Up-Down). Latitude is zero on the equator and positive in the northern hemisphere and negative in the southern hemisphere. This needs to be added in Decimal Degrees. Use the popup to convert from either GPS coordinates or Degrees/Minutes/Seconds.")))
-    table.lon.comment = DIV( _class="tooltip", _title=Tstr("Longitude") + "|" + Tstr("Longitude is West - East (sideways). Longitude is zero on the prime meridian (Greenwich Mean Time) and is positive to the east, across Europe and Asia.  Longitude is negative to the west, across the Atlantic and the Americas.  This needs to be added in Decimal Degrees. Use the popup to convert from either GPS coordinates or Degrees/Minutes/Seconds."))
-    table.osm_id.comment = DIV( _class="tooltip", _title="OSM ID" + "|" + Tstr("The <a href='http://openstreetmap.org' target=_blank>OpenStreetMap</a> ID. If you don't know the ID, you can just say 'Yes' if it has been added to OSM."))
+        # Restrict access to top-level locations (& all Polygons) to just MapAdmins
+        if not shn_has_role("MapAdmin"):
+            table.code.writable = False
+            table.level.writable = False
+            if r.method == "create":
+                table.code.readable = False
+                table.level.readable = False
+            table.gis_feature_type.writable = table.gis_feature_type.readable = False
+            table.wkt.writable = table.wkt.readable = False
+        else:
+            table.code.comment = DIV( _class="tooltip", _title=Tstr("Code") + "|" + Tstr("For a country this would be the ISO2 code, for a Town, it would be the Airport Locode."))
+            table.level.comment = DIV( _class="tooltip", _title=Tstr("Level") + "|" + Tstr("If the location is a geographic area, then state at what level here."))
+            table.parent.comment = DIV(A(ADD_LOCATION,
+                                           _class="colorbox",
+                                           _href=URL(r=request, c="gis", f="location", args="create", vars=dict(format="popup", child="parent")),
+                                           _target="top",
+                                           _title=ADD_LOCATION),
+                                         DIV(
+                                           _class="tooltip",
+                                           _title=Tstr("Parent") + "|" + Tstr("The Area which this Site is located within."))),
+            table.wkt.comment = DIV(SPAN("*", _class="req"), DIV( _class="tooltip", _title="WKT" + "|" + Tstr("The <a href='http://en.wikipedia.org/wiki/Well-known_text' target=_blank>Well-Known Text</a> representation of the Polygon/Line.")))
 
-    # CRUD Strings
-    LIST_LOCATIONS = T("List Locations")
-    s3.crud_strings[tablename] = Storage(
-        title_create = ADD_LOCATION,
-        title_display = T("Location Details"),
-        title_list = T("Locations"),
-        title_update = T("Edit Location"),
-        title_search = T("Search Locations"),
-        subtitle_create = T("Add New Location"),
-        subtitle_list = LIST_LOCATIONS,
-        label_list_button = LIST_LOCATIONS,
-        label_create_button = ADD_LOCATION,
-        label_delete_button = T("Delete Location"),
-        msg_record_created = T("Location added"),
-        msg_record_modified = T("Location updated"),
-        msg_record_deleted = T("Location deleted"),
-        msg_list_empty = T("No Locations currently available"))
+        if r.http == "GET" and r.representation == "html":
+            # Options which are only required in interactive HTML views
+            table.name.comment = SPAN("*", _class="req")
+            CONVERSION_TOOL = T("Conversion Tool")
+            table.lat.comment = DIV(A(CONVERSION_TOOL, _style="cursor:pointer;", _title=CONVERSION_TOOL, _id="btnConvert"), DIV( _class="tooltip", _title=T("Latitude|Latitude is North-South (Up-Down). Latitude is zero on the equator and positive in the northern hemisphere and negative in the southern hemisphere. This needs to be added in Decimal Degrees. Use the popup to convert from either GPS coordinates or Degrees/Minutes/Seconds.")))
+            table.lon.comment = DIV( _class="tooltip", _title=Tstr("Longitude") + "|" + Tstr("Longitude is West - East (sideways). Longitude is zero on the prime meridian (Greenwich Mean Time) and is positive to the east, across Europe and Asia.  Longitude is negative to the west, across the Atlantic and the Americas.  This needs to be added in Decimal Degrees. Use the popup to convert from either GPS coordinates or Degrees/Minutes/Seconds."))
+            table.osm_id.comment = DIV( _class="tooltip", _title="OSM ID" + "|" + Tstr("The <a href='http://openstreetmap.org' target=_blank>OpenStreetMap</a> ID. If you don't know the ID, you can just say 'Yes' if it has been added to OSM."))
 
+            # CRUD Strings
+            LIST_LOCATIONS = T("List Locations")
+            s3.crud_strings[tablename] = Storage(
+                title_create = ADD_LOCATION,
+                title_display = T("Location Details"),
+                title_list = T("Locations"),
+                title_update = T("Edit Location"),
+                title_search = T("Search Locations"),
+                subtitle_create = T("Add New Location"),
+                subtitle_list = LIST_LOCATIONS,
+                label_list_button = LIST_LOCATIONS,
+                label_create_button = ADD_LOCATION,
+                label_delete_button = T("Delete Location"),
+                msg_record_created = T("Location added"),
+                msg_record_modified = T("Location updated"),
+                msg_record_deleted = T("Location deleted"),
+                msg_list_empty = T("No Locations currently available"))
+
+            if r.method in (None, "list") and r.record == None:
+                # List
+                pass
+            elif r.method == "delete":
+                pass
+            else:
+                # Add Map to allow locations to be found this way
+                config = gis.get_config()
+                lat = config.lat
+                lon = config.lon
+                zoom = config.zoom
+
+                if r.method == "create":
+                    add_feature = True
+                    add_feature_active = True
+                else:
+                    if r.method == "update":
+                        add_feature = True
+                        add_feature_active = False
+                    else:
+                        # Read
+                        add_feature = False
+                        add_feature_active = False
+                    
+                    # Lat/Lon come from record
+                    lat = r.record.lat
+                    lon = r.record.lon
+                    # Same as a single zoom on a cluster
+                    zoom = zoom + 2
+                    
+                _map = gis.show_map(lat = lat,
+                                    lon = lon,
+                                    zoom = zoom,
+                                    add_feature = add_feature,
+                                    add_feature_active = add_feature_active,
+                                    toolbar = True,
+                                    collapsed = True)
+
+                # Pass the map back to the main controller
+                vars.update(_map=_map)
+        return True
+    response.s3.prep = lambda r, vars=vars: prep(r, vars)
+    
     # Options
     _vars = request.vars
     filters = []
@@ -489,24 +542,21 @@ def location():
 
     caller = _vars.get("caller", None)
     if caller:
+        # We've been called as a Popup
         if "gis_location_parent" in caller:
-            # If a Parent location then populate defaults for the fields & Hide unnecessary rows
+            # Populate defaults & hide unnecessary rows
             table.description.readable = table.description.writable = False
-            #table.level.readable = table.level.writable = False
             table.code.readable = table.code.writable = False
             table.feature_class_id.readable = table.feature_class_id.writable = False
             # Use default Marker for Class
             table.marker_id.readable = table.marker_id.writable = False
-            #table.gis_feature_type.readable = table.gis_feature_type.writable = False
-            #table.gis_feature_type.default =
             table.wkt.readable = table.wkt.writable = False
             table.addr_street.readable = table.addr_street.writable = False
             table.osm_id.readable = table.osm_id.writable = False
             table.source.readable = table.source.writable = False
-
         else:
             fc = None
-            # When called from a Popup, populate defaults & hide unnecessary rows
+            # Populate defaults & hide unnecessary rows
             if "cr_shelter" in caller:
                 fc = db(db.gis_feature_class.name == "Shelter").select(db.gis_feature_class.id, limitby=(0, 1)).first()
                 table.level.readable = table.level.writable = False
@@ -558,24 +608,14 @@ def location():
             except:
                 pass
 
-            #table.level.readable = table.level.writable = False
-            table.code.readable = table.code.writable = False
-            table.gis_feature_type.readable = table.gis_feature_type.writable = False
-            table.wkt.readable = table.wkt.writable = False
             table.osm_id.readable = table.osm_id.writable = False
             table.source.readable = table.source.writable = False
 
     # ToDo
-    # if "bbox" in request.vars:
+    # bbox = _vars.get("bbox", None):
 
     if filters:
         response.s3.filter = reduce(__and__, filters)
-
-    # Add Map to allow locations to be specified this way
-    _map = gis.show_map(add_feature = True,
-                        collapsed = True)
-
-    response.s3.pagination = True
 
     # Post-processor
     def user_postp(jr, output):
@@ -583,10 +623,13 @@ def location():
         return output
     response.s3.postp = user_postp
 
+    response.s3.pagination = True
     output = shn_rest_controller(module, resource, listadd=False)
-    if isinstance(output, dict):
-        output.update(map=_map)
-    
+
+    _map = vars.get("_map", None)
+    if _map and isinstance(output, dict):
+        output.update(_map=_map)
+
     return output
 
 #@auth.shn_requires_membership("MapAdmin")
@@ -1393,13 +1436,17 @@ def display_feature():
     lon = feature.lon
 
     # Calculate an appropriate BBox
-    bounds = gis.get_bounds(features=query)
+    #bounds = gis.get_bounds(features=query)
+    
+    # Default zoom +2 (same as a single zoom on a cluster)
+    zoom = gis.get_config().zoom + 2
 
     map = gis.show_map(
         feature_queries = [{"name" : "Feature", "query" : query, "active" : True}],
         lat = lat,
         lon = lon,
-        bbox = bounds,
+        #bbox = bounds,
+        zoom = zoom,
         window = True,
         collapsed = True
     )

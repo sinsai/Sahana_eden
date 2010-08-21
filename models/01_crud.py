@@ -1389,6 +1389,7 @@ def shn_create(r, **attr):
                                original,
                                message=message,
                                next=crud.settings.create_next,
+                               deletable=False,
                                onvalidation=onvalidation,
                                onaccept=_onaccept)
         else:

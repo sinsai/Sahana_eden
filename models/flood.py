@@ -66,7 +66,7 @@ if deployment_settings.has_module(module):
                             location_id,
                             Field("datetime", "datetime"),
                             document_id,
-                            document,
+                            #document,  # Deprecated
                             comments,
                             migrate=migrate)
 

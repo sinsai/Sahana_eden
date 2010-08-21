@@ -505,6 +505,7 @@ def location():
                 lat = config.lat
                 lon = config.lon
                 zoom = config.zoom
+                feature_queries = []
 
                 if r.method == "create":
                     add_feature = True
@@ -527,6 +528,7 @@ def location():
                 _map = gis.show_map(lat = lat,
                                     lon = lon,
                                     zoom = zoom,
+                                    feature_queries = feature_queries,
                                     add_feature = add_feature,
                                     add_feature_active = add_feature_active,
                                     toolbar = True,

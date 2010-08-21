@@ -70,8 +70,8 @@ def freport():
     resource = request.function
     
     # Disable legacy fields, unless updating, so the data can be manually transferred to new fields
-    if "update" not in request.args:
-        table.document.readable = table.document.writable = False    
+    #if "update" not in request.args:
+    #    table.document.readable = table.document.writable = False    
         
     # Post-processor
     def postp(jr, output):
@@ -108,13 +108,17 @@ def shn_flood_rheader(r, tabs=[]):
             location = report.location_id
             if location:
                 location = shn_gis_location_represent(location)
-            doc_url = URL(r=request, f="download", args=[report.document])
-            try:
-                doc_name, file = r.table.document.retrieve(report.document)
-                if hasattr(file, "close"):
-                    file.close()
-            except:
-                doc_name = report.document
+            doc_name = doc_url = None
+            document = db(db.doc_document.id == report.document_id).select(db.doc_document.name, db.doc_document.file, limitby=(0, 1)).first()
+            if document:
+                doc_name = document.name
+                doc_url = URL(r=request, f="download", args=[document.file])
+                #try:
+                #    doc_name, file = r.table.document.retrieve(document)
+                #    if hasattr(file, "close"):
+                #        file.close()
+                #except:
+                #    doc_name = document.name
             rheader = DIV(TABLE(
                             TR(
                                 TH(Tstr("Location") + ": "), location,

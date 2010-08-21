@@ -1315,7 +1315,7 @@ def shn_create(r, **attr):
     extra = _attr.get("extra", None)
     create_next = _attr.get("create_next")
 
-    if representation == "html":
+    if representation in ("popup", "html"):
 
         # Copy from a previous record?
         original_id = r.request.get_vars.get("from_record", None)
@@ -1420,7 +1420,11 @@ def shn_create(r, **attr):
             output.update(list_btn=list_btn)
 
         # Custom view
-        shn_custom_view(r, "create.html")
+        if representation == "popup":
+            shn_custom_view(r, "popup.html")
+            output.update(caller=r.request.vars.caller)
+        else:
+            shn_custom_view(r, "create.html")
 
         return output
 
@@ -1440,25 +1444,25 @@ def shn_create(r, **attr):
         response.view = "plain.html"
         return dict(item=form)
 
-    elif representation == "popup":
-        if onaccept:
-            _onaccept = lambda form: \
-                        s3xrc.audit("create", prefix, name, form=form,
-                                    representation=representation) and \
-                        onaccept(form)
-        else:
-            _onaccept = lambda form: \
-                        s3xrc.audit("create", prefix, name, form=form,
-                                    representation=representation)
+    #elif representation == "popup":
+        #if onaccept:
+            #_onaccept = lambda form: \
+                        #s3xrc.audit("create", prefix, name, form=form,
+                                    #representation=representation) and \
+                        #onaccept(form)
+        #else:
+            #_onaccept = lambda form: \
+                        #s3xrc.audit("create", prefix, name, form=form,
+                                    #representation=representation)
 
-        form = crud.create(table,
-                           onvalidation=onvalidation, onaccept=_onaccept)
-        shn_custom_view(r, "popup.html")
-        return dict(form=form,
-                    module=module,
-                    resource=resource,
-                    main=main,
-                    caller=request.vars.caller)
+        #form = crud.create(table,
+                           #onvalidation=onvalidation, onaccept=_onaccept)
+        #shn_custom_view(r, "popup.html")
+        #return dict(form=form,
+                    #module=module,
+                    #resource=resource,
+                    #main=main,
+                    #caller=request.vars.caller)
 
     elif representation == "url":
         #return import_url(r, table, method="create")

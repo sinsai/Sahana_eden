@@ -1319,13 +1319,12 @@ def shn_create(r, **attr):
 
         # Copy from a previous record?
         original_id = r.request.get_vars.get("from_record", None)
+        original = None
         if original_id:
             del r.request.get_vars["from_record"] # forget it
             copy_fields = [f for f in table if f.readable and f.writable]
             if shn_has_permission("read", table, original_id):
                 original = db(table.id==original_id).select(*copy_fields, limitby=(0,1)).first()
-            else:
-                original = None
 
         # Default components
         output = dict(module=prefix, resource=name, main=main, extra=extra)

@@ -70,7 +70,11 @@ def define_map(window=False, toolbar=False):
         )
 
     # Custom Feature Layers
-    def gis_add_feature_layer(module, resource, label, marker=None):
+    def gis_add_feature_layer(module, resource, layername, popup_label, marker=None):
+        """
+            @param: layername: Used as the label in the LayerSwitcher
+            @param: popup_label: Used in Cluster Popups to differentiate between types
+        """
         # Hide deleted Resources
         query = (db.gis_location.deleted == False)
             
@@ -80,43 +84,49 @@ def define_map(window=False, toolbar=False):
             
         query = query & (db.gis_location.id == db["%s_%s" % (module, resource)].location_id)
         locations = db(query).select(db.gis_location.id, db.gis_location.uuid, db.gis_location.name, db.gis_location.wkt, db.gis_location.lat, db.gis_location.lon)
+        for i in range(0, len(locations)):
+            locations[i].popup_label = locations[i].name + "-" + popup_label
         popup_url = URL(r=request, c=module, f=resource, args="read.popup?%s.location_id=" % resource)
         if marker:
             marker = db(db.gis_marker.name == marker).select(db.gis_marker.id, limitby=(0, 1)).first().id
-            layer = {"name":label, "query":locations, "active":True, "marker":marker, "popup_url": popup_url}
+            layer = {"name":layername, "query":locations, "active":True, "marker":marker, "popup_url": popup_url}
         else:
-            layer = {"name":label, "query":locations, "active":True, "popup_url": popup_url}
+            layer = {"name":layername, "query":locations, "active":True, "popup_url": popup_url}
 
         return layer
     
     # Incidents
     module = "irs"
     resource = "ireport"
-    label = Tstr("Incident Reports")
+    layername = Tstr("Incident Reports")
+    popup_label = Tstr("Incident")
     # Default
     #marker = "marker_red"
-    incidents = gis_add_feature_layer(module, resource, label)
+    incidents = gis_add_feature_layer(module, resource, layername, popup_label)
     
     # Shelters
     module = "cr"
     resource = "shelter"
-    label = Tstr("Shelters")
+    layername = Tstr("Shelters")
+    popup_label = Tstr("Shelter")
     marker = "shelter"
-    shelters = gis_add_feature_layer(module, resource, label, marker)
+    shelters = gis_add_feature_layer(module, resource, layername, popup_label, marker)
     
     # Assessments
     module = "sitrep"
     resource = "assessment"
-    label = Tstr("Assessments")
+    layername = Tstr("Assessments")
+    popup_label = Tstr("Assessment")
     marker = "marker_green"
-    assessments = gis_add_feature_layer(module, resource, label, marker)
+    assessments = gis_add_feature_layer(module, resource, layername, popup_label, marker)
     
     # Requests
     module = "rms"
     resource = "req"
-    label = Tstr("Requests")
+    layername = Tstr("Requests")
+    popup_label = Tstr("Request")
     marker = "marker_yellow"
-    requests = gis_add_feature_layer(module, resource, label, marker)
+    requests = gis_add_feature_layer(module, resource, layername, popup_label, marker)
     
     feature_queries = [
                        incidents,

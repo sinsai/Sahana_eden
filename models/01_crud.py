@@ -1318,7 +1318,8 @@ def shn_create(r, **attr):
     if representation == "html":
 
         # Copy from a previous record?
-        original_id = r.request.vars.get("from_record", None)
+        original_id = r.request.get_vars.get("from_record", None)
+        del r.request.get_vars["from_record"] # forget it
         if original_id:
             copy_fields = [f for f in table if f.readable and f.writable]
             if shn_has_permission("read", table, original_id):

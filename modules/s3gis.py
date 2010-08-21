@@ -529,11 +529,10 @@ class GIS(object):
             @param feature_queries: Feature Queries to overlay onto the map & their options (List of Dicts):
                 [{
                  name   : "MyLabel",    # A string: the label for the layer
-                 query  : query,        # A gluon.sql.Rows of gis_locations, which can be from a simple query or a Join. Extra fields can be added for 'marker' or 'shape' (with optional 'color' & 'size')
+                 query  : query,        # A gluon.sql.Rows of gis_locations, which can be from a simple query or a Join. Extra fields can be added for 'marker' or 'shape' (with optional 'color' & 'size') & 'popup_label'
                  active : False,        # Is the feed displayed upon load or needs ticking to load afterwards?
                  popup_url : None,      # The URL which will be used to fill the pop-up. it will be appended by the Location ID.
                  marker : None          # The marker_id for the icon used to display the feature (over-riding the normal process).
-                                        # [Plan: Can be a lambda to vary icon (size/colour) based on attribute levels.]
                 }]
             @param feature_groups: Feature Groups to overlay onto the map & their options (List of Dicts):
                 [{
@@ -543,7 +542,6 @@ class GIS(object):
                  active : False,        # Is the feed displayed upon load or needs ticking to load afterwards?
                  popup_url : None,      # The URL which will be used to fill the pop-up. it will be appended by the Location ID.
                  marker : None          # The marker_id for the icon used to display the feature (over-riding the normal process).
-                                        # [Plan: Can be a lambda to vary icon (size/colour) based on attribute levels.]
                 }]
             @param wms_browser: WMS Server's GetCapabilities & options (dict)
                 {
@@ -630,6 +628,7 @@ class GIS(object):
             html.append(LINK( _rel="stylesheet", _type="text/css", _href=URL(r=request, c="static", f="styles/gis/gis.css"), _media="screen", _charset="utf-8") )
         else:
             html.append(LINK( _rel="stylesheet", _type="text/css", _href=URL(r=request, c="static", f="scripts/ext/resources/css/ext-all.min.css"), _media="screen", _charset="utf-8") )
+            html.append(LINK( _rel="stylesheet", _type="text/css", _href=URL(r=request, c="static", f="scripts/ext/resources/css/xtheme-gray.css"), _media="screen", _charset="utf-8") )
             html.append(LINK( _rel="stylesheet", _type="text/css", _href=URL(r=request, c="static", f="styles/gis/gis.min.css"), _media="screen", _charset="utf-8") )
 
         ######
@@ -2043,6 +2042,11 @@ OpenLayers.Util.extend( selectPdfControl, {
                             else:
                                 marker = self.get_marker(feature.id)
                         marker_url = URL(r=request, c="default", f="download", args=[marker])
+                    try:
+                        # Has a per-feature Vector Shape been added to the query?
+                        popup_label = feature.popup_label
+                    except (AttributeError, KeyError):
+                        popup_label = feature.name
                     # Deal with null Feature Classes
                     if feature.get("feature_class_id"):
                         fc = "'" + str(feature.feature_class_id) + "'"
@@ -2056,7 +2060,7 @@ OpenLayers.Util.extend( selectPdfControl, {
                     else:
                         wkt = self.latlon_to_wkt(feature.lat, feature.lon)
                     # Deal with apostrophes in Feature Names
-                    fname = re.sub("'", "\\'", feature.name)
+                    fname = re.sub("'", "\\'", popup_label)
                     
                     if marker_url:
                         layers_features += """
@@ -2167,36 +2171,36 @@ OpenLayers.Util.extend( selectPdfControl, {
                 if "parent" in layer:
                     parent_id = db(db.gis_location.name == layer["parent"]).select(db.gis_location.id, limitby=(0, 1)).first().id
                     query = query & (db.gis_location.parent == parent_id)
-                features = db(query).select()
+                features = db(query).select(db.gis_location.id, db.gis_location.uuid, db.gis_location.name, db.gis_location.feature_class_id, db.gis_location.wkt, db.gis_location.lat, db.gis_location.lon)
                 for feature in features:
                     if "marker" in layer:
                         _marker = db(db.gis_marker.id == layer["marker"]).select(db.gis_marker.image, limitby=(0, 1), cache=cache).first()
                         if _marker:
                             marker = _marker.image
                         else:
-                            marker = self.get_marker(feature.gis_location.id)
+                            marker = self.get_marker(feature.id)
                     else:
-                        marker = self.get_marker(feature.gis_location.id)
+                        marker = self.get_marker(feature.id)
                     marker_url = URL(r=request, c="default", f="download", args=[marker])
                     # Deal with null Feature Classes
-                    if feature.gis_location.feature_class_id:
-                        fc = "'" + str(feature.gis_location.feature_class_id) + "'"
+                    if feature.feature_class_id:
+                        fc = "'" + str(feature.feature_class_id) + "'"
                     else:
                         fc = "null"
                     # Deal with manually-imported Features which are missing WKT
-                    if feature.gis_location.wkt:
-                        wkt = feature.gis_location.wkt
-                    elif (feature.gis_location.lat == None) or (feature.gis_location.lon == None):
+                    if feature.wkt:
+                        wkt = feature.wkt
+                    elif (feature.lat == None) or (feature.lon == None):
                         continue
                     else:
-                        wkt = self.latlon_to_wkt(feature.gis_location.lat, feature.gis_location.lon)
+                        wkt = self.latlon_to_wkt(feature.lat, feature.lon)
                     # Deal with apostrophes in Feature Names
-                    fname = re.sub("'", "\\'", feature.gis_location.name)
+                    fname = re.sub("'", "\\'", feature.name)
                     
                     layers_features += """
         geom = parser.read('""" + wkt + """').geometry;
         styleMarker.iconURL = '""" + marker_url + """';
-        featureVec = addFeature('""" + feature.gis_location.uuid + """', '""" + fname + """', """ + fc + """, geom, styleMarker)
+        featureVec = addFeature('""" + feature.uuid + """', '""" + fname + """', """ + fc + """, geom, styleMarker)
         features.push(featureVec);
         """
                 # Append to Features layer

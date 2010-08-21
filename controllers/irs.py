@@ -106,6 +106,9 @@ def ireport():
     tablename = "%s_%s" % (module, resource)
     table = db[tablename]
 
+    # Don't send the locations list to client (pulled by AJAX instead)
+    table.location_id.requires = IS_NULL_OR(IS_ONE_OF_EMPTY(db, "gis_location.id"))
+
     # Pre-processor
     def prep(r):
         if r.method == "ushahidi":

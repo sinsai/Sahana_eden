@@ -69,7 +69,7 @@ def document():
         db.sitrep_school_district.document.readable = db.sitrep_school_district.document.writable = False 
         db.irs_ireport.source.readable = db.irs_ireport.source.writable = False        
         db.irs_ireport.source_id.readable = db.irs_ireport.source_id.writable = False  
-        db.flood_freport.document.readable = db.flood_freport.document.writable = False   
+        #db.flood_freport.document.readable = db.flood_freport.document.writable = False   
    
     def postp(jr, output):                          
         shn_action_buttons(jr)

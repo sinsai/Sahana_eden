@@ -9,6 +9,7 @@ class S3Config(Storage):
         self.auth = Storage()
         self.base = Storage()
         self.database = Storage()
+        self.gis = Storage()
         self.mail = Storage()
         self.L10n = Storage()
 
@@ -64,6 +65,12 @@ class S3Config(Storage):
         return self.mail.get("sender", "sahana@your.org")
     def get_mail_approver(self):
         return self.mail.get("approver", "useradmin@your.org")
+
+    # GIS (Map) Settings
+    def get_gis_display_l0(self):
+        return self.gis.get("display_L0", False)
+    def get_gis_display_l1(self):
+        return self.gis.get("display_L1", True)
 
     # L10N Settings
     def get_L10n_countries(self):

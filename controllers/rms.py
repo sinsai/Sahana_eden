@@ -26,26 +26,23 @@ def index():
 
     return dict(module_name=module_name, a=1)
 
+def req():
+    """ RESTful CRUD controller """
 
-def req(): #aid requests
-    "RESTful CRUD controller"
-
-    resource = request.function # pulls from table of combined aid request feeds (sms, tweets, manual)
+    resource = request.function
+    tablename = module + "_" + resource
+    table = db[tablename]
 
     # Filter out non-actionable SMS requests:
-#    response.s3.filter = (db.rms_req.actionable == True) | (db.rms_req.source_type != 2) # disabled b/c Ushahidi no longer updating actionaable fielde
+    #response.s3.filter = (db.rms_req.actionable == True) | (db.rms_req.source_type != 2) # disabled b/c Ushahidi no longer updating actionaable fielde
 
-    if request.args(0) and request.args(0) == "search_simple":
-        pass
-    else:
-        # Uncomment to enable Server-side pagination:
-        response.s3.pagination = True
-        
+    # Don't send the locations list to client (pulled by AJAX instead)
+    table.location_id.requires = IS_NULL_OR(IS_ONE_OF_EMPTY(db, "gis_location.id"))
+
     if request.args(0) == "create" or request.args(0) == "update": 
         db.rms_req.pledge_status.readable = False
-    
-    
 
+    # Post-processor
     def req_postp(jr, output):
         if jr.representation in ("html", "popup"):
             if not jr.component:
@@ -60,6 +57,7 @@ def req(): #aid requests
         return output
     response.s3.postp = req_postp
 
+    response.s3.pagination = True
     output = shn_rest_controller(module, resource,
                                  editable=True,
                                  listadd=False,
@@ -69,22 +67,15 @@ def req(): #aid requests
     return output
 
 
-def pledge(): #pledges from agencies
-    "RESTful CRUD controller"
+def pledge():
+    """ RESTful CRUD controller """
 
     resource = request.function
 
-    # Uncomment to enable Server-side pagination:
-    #response.s3.pagination = True  #commented due to display problems
-    
-    
- 
-
     #pledges = db(db.rms_pledge.status == 3).select() # changes the request status to completed when pledge delivered
-                                                     # this is necessary to close the loop
+                                                      # this is necessary to close the loop
     #for pledge in pledges:
     #    req = db(db.rms_req.id == pledge.req_id).update(completion_status = True)
-
     #db.commit()
 
     def pledge_postp(jr, output):
@@ -136,6 +127,7 @@ def shn_rms_rheader(jr):
     return None
 
 
+# Unused: Was done for Haiti
 def sms_complete(): #contributes to RSS feed for closing the loop with Ushahidi
 
     def t(record):
@@ -153,7 +145,7 @@ def sms_complete(): #contributes to RSS feed for closing the loop with Ushahidi
     response.s3.filter = (db.rms_req.completion_status == True) & (db.rms_req.source_type == 2)
     return shn_rest_controller(module, "req", editable=False, listadd=False, rss=rss)
 
-
+# Unused: Was done for Haiti
 def tweet_complete(): #contributes to RSS feed for closing the loop with TtT
 
     def t(record):

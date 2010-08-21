@@ -445,71 +445,72 @@ def location():
                                            _title=Tstr("Parent") + "|" + Tstr("The Area which this Site is located within."))),
             table.wkt.comment = DIV(SPAN("*", _class="req"), DIV( _class="tooltip", _title="WKT" + "|" + Tstr("The <a href='http://en.wikipedia.org/wiki/Well-known_text' target=_blank>Well-Known Text</a> representation of the Polygon/Line.")))
 
-        # Model options which are only required in interactive HTML views
-        table.name.comment = SPAN("*", _class="req")
-        CONVERSION_TOOL = T("Conversion Tool")
-        table.lat.comment = DIV(A(CONVERSION_TOOL, _style="cursor:pointer;", _title=CONVERSION_TOOL, _id="btnConvert"), DIV( _class="tooltip", _title=T("Latitude|Latitude is North-South (Up-Down). Latitude is zero on the equator and positive in the northern hemisphere and negative in the southern hemisphere. This needs to be added in Decimal Degrees. Use the popup to convert from either GPS coordinates or Degrees/Minutes/Seconds.")))
-        table.lon.comment = DIV( _class="tooltip", _title=Tstr("Longitude") + "|" + Tstr("Longitude is West - East (sideways). Longitude is zero on the prime meridian (Greenwich Mean Time) and is positive to the east, across Europe and Asia.  Longitude is negative to the west, across the Atlantic and the Americas.  This needs to be added in Decimal Degrees. Use the popup to convert from either GPS coordinates or Degrees/Minutes/Seconds."))
-        table.osm_id.comment = DIV( _class="tooltip", _title="OSM ID" + "|" + Tstr("The <a href='http://openstreetmap.org' target=_blank>OpenStreetMap</a> ID. If you don't know the ID, you can just say 'Yes' if it has been added to OSM."))
+        if r.http == "GET" and r.representation == "html":
+            # Options which are only required in interactive HTML views
+            table.name.comment = SPAN("*", _class="req")
+            CONVERSION_TOOL = T("Conversion Tool")
+            table.lat.comment = DIV(A(CONVERSION_TOOL, _style="cursor:pointer;", _title=CONVERSION_TOOL, _id="btnConvert"), DIV( _class="tooltip", _title=T("Latitude|Latitude is North-South (Up-Down). Latitude is zero on the equator and positive in the northern hemisphere and negative in the southern hemisphere. This needs to be added in Decimal Degrees. Use the popup to convert from either GPS coordinates or Degrees/Minutes/Seconds.")))
+            table.lon.comment = DIV( _class="tooltip", _title=Tstr("Longitude") + "|" + Tstr("Longitude is West - East (sideways). Longitude is zero on the prime meridian (Greenwich Mean Time) and is positive to the east, across Europe and Asia.  Longitude is negative to the west, across the Atlantic and the Americas.  This needs to be added in Decimal Degrees. Use the popup to convert from either GPS coordinates or Degrees/Minutes/Seconds."))
+            table.osm_id.comment = DIV( _class="tooltip", _title="OSM ID" + "|" + Tstr("The <a href='http://openstreetmap.org' target=_blank>OpenStreetMap</a> ID. If you don't know the ID, you can just say 'Yes' if it has been added to OSM."))
 
-        # CRUD Strings
-        LIST_LOCATIONS = T("List Locations")
-        s3.crud_strings[tablename] = Storage(
-            title_create = ADD_LOCATION,
-            title_display = T("Location Details"),
-            title_list = T("Locations"),
-            title_update = T("Edit Location"),
-            title_search = T("Search Locations"),
-            subtitle_create = T("Add New Location"),
-            subtitle_list = LIST_LOCATIONS,
-            label_list_button = LIST_LOCATIONS,
-            label_create_button = ADD_LOCATION,
-            label_delete_button = T("Delete Location"),
-            msg_record_created = T("Location added"),
-            msg_record_modified = T("Location updated"),
-            msg_record_deleted = T("Location deleted"),
-            msg_list_empty = T("No Locations currently available"))
+            # CRUD Strings
+            LIST_LOCATIONS = T("List Locations")
+            s3.crud_strings[tablename] = Storage(
+                title_create = ADD_LOCATION,
+                title_display = T("Location Details"),
+                title_list = T("Locations"),
+                title_update = T("Edit Location"),
+                title_search = T("Search Locations"),
+                subtitle_create = T("Add New Location"),
+                subtitle_list = LIST_LOCATIONS,
+                label_list_button = LIST_LOCATIONS,
+                label_create_button = ADD_LOCATION,
+                label_delete_button = T("Delete Location"),
+                msg_record_created = T("Location added"),
+                msg_record_modified = T("Location updated"),
+                msg_record_deleted = T("Location deleted"),
+                msg_list_empty = T("No Locations currently available"))
 
-        if not r.method and r.record == None:
-            # List
-            pass
-        elif r.method == "delete":
-            pass
-        else:
-            # Add Map to allow locations to be found this way
-            config = gis.get_config()
-            lat = config.lat
-            lon = config.lon
-            zoom = config.zoom
-
-            if r.method == "create":
-                add_feature = True
-                add_feature_active = True
+            if r.method in (None, "list") and r.record == None:
+                # List
+                pass
+            elif r.method == "delete":
+                pass
             else:
-                if r.method == "update":
-                    add_feature = True
-                    add_feature_active = False
-                else:
-                    # Read
-                    add_feature = False
-                    add_feature_active = False
-                
-                # Lat/Lon come from record
-                lat = r.record.lat
-                lon = r.record.lon
-                # Same as a single zoom on a cluster
-                zoom = zoom + 2
-                
-            _map = gis.show_map(lat = lat,
-                                lon = lon,
-                                zoom = zoom,
-                                add_feature = add_feature,
-                                add_feature_active = add_feature_active,
-                                toolbar = True,
-                                collapsed = True)
+                # Add Map to allow locations to be found this way
+                config = gis.get_config()
+                lat = config.lat
+                lon = config.lon
+                zoom = config.zoom
 
-            # Pass the map back to the main controller
-            vars.update(_map=_map)
+                if r.method == "create":
+                    add_feature = True
+                    add_feature_active = True
+                else:
+                    if r.method == "update":
+                        add_feature = True
+                        add_feature_active = False
+                    else:
+                        # Read
+                        add_feature = False
+                        add_feature_active = False
+                    
+                    # Lat/Lon come from record
+                    lat = r.record.lat
+                    lon = r.record.lon
+                    # Same as a single zoom on a cluster
+                    zoom = zoom + 2
+                    
+                _map = gis.show_map(lat = lat,
+                                    lon = lon,
+                                    zoom = zoom,
+                                    add_feature = add_feature,
+                                    add_feature_active = add_feature_active,
+                                    toolbar = True,
+                                    collapsed = True)
+
+                # Pass the map back to the main controller
+                vars.update(_map=_map)
         return True
     response.s3.prep = lambda r, vars=vars: prep(r, vars)
     

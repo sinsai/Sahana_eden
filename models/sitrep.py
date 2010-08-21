@@ -27,6 +27,7 @@ if deployment_settings.has_module(module):
     tablename = "%s_%s" % (module, resource)
     table = db.define_table(tablename,
                             timestamp, uuidstamp, authorstamp, deletion_status,
+                            Field("title"),
                             location_id,
                             organisation_id,
                             Field("date", "date"),

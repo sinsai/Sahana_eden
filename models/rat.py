@@ -158,6 +158,8 @@ if deployment_settings.has_module(module):
                             migrate=migrate)
 
     table.date.requires = [IS_DATE(), IS_NOT_EMPTY()]
+    table.date.comment = SPAN("*", _class="req")
+    table.date.default = datetime.datetime.today()
 
     table.staff2_id.requires = IS_NULL_OR(IS_ONE_OF(db, "org_staff.id", shn_org_staff_represent))
     table.staff2_id.represent = lambda id: shn_org_staff_represent(id)

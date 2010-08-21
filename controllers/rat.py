@@ -59,6 +59,16 @@ def assessment():
                                                       "gis_location.id",
                                                       repr_select, sort=True))
 
+    if auth.is_logged_in():
+        person = db.pr_person
+        user = db.auth_user
+        staff = db.org_staff
+        logged_in_person = db(person.uuid==session.auth.user.person_uuid).select(person.id, limitby=(0,1)).first()
+        if logged_in_person:
+            staff_id = db(staff.person_id==logged_in_person.id).select(staff.id, limitby=(0,1)).first()
+            if staff_id:
+                table.staff_id.default = staff_id.id
+
     response.s3.pagination = True
 
     # Post-processor

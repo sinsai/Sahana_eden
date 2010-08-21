@@ -663,8 +663,7 @@ if deployment_settings.has_module(module):
                             Field("staff_number_doctors", "integer"),
                             Field("staff_number_nurses", "integer"),
                             Field("staff_number_midwives", "integer"),
-                            Field("health_service_walking_time", "integer",
-                                  requires = IS_EMPTY_OR(IS_IN_SET(rat_walking_time_opts, zero=None))),
+                            Field("health_service_walking_time", "integer"),
                             # Section 5.2
                             Field("health_problems_adults"),
                             Field("health_problems_adults_other"),
@@ -679,7 +678,7 @@ if deployment_settings.has_module(module):
                             Field("mmd_present_pre_disaster", "boolean"),
                             Field("breast_milk_substitutes_pre_disaster", "boolean"),
                             Field("breast_milk_substitutes_post_disaster", "boolean"),
-                            Field("infant_nutrition_alternative", "boolean"),
+                            Field("infant_nutrition_alternative"),
                             Field("infant_nutrition_alternative_other"),
                             Field("u5_diarrhea", "boolean"),
                             Field("u5_diarrhea_rate_48h", "integer"),
@@ -734,6 +733,7 @@ if deployment_settings.has_module(module):
     shn_rat_label_and_tooltip(table.health_service_walking_time,
         "Walking time to the health service",
         "How long does it take you to walk to the health service?")
+    table.health_service_walking_time.requires = IS_EMPTY_OR(IS_IN_SET(rat_walking_time_opts, zero=None))
 
     shn_rat_label_and_tooltip(table.health_problems_adults,
         "Current type of health problems, adults",
@@ -777,13 +777,31 @@ if deployment_settings.has_module(module):
         "Micronutrient malnutrition prior to disaster",
         "Were there reports or evidence of outbreaks of any micronutrient malnutrition disorders before the emergency?")
 
-                            #Field("breast_milk_substitutes_pre_disaster", "boolean"),
-                            #Field("breast_milk_substitutes_post_disaster", "boolean"),
+    shn_rat_label_and_tooltip(table.breast_milk_substitutes_pre_disaster,
+        "Breast milk substitutes used prior to disaster",
+        "Were breast milk substitutes used prior to the disaster?")
+    shn_rat_label_and_tooltip(table.breast_milk_substitutes_post_disaster,
+        "Breast milk substitutes in use since disaster",
+        "Are breast milk substitutes being used here since the disaster?")
 
-                            #Field("infant_nutrition_alternative", "boolean"),
-                            #Field("infant_nutrition_alternative_other"),
-                            #Field("u5_diarrhea", "boolean"),
-                            #Field("u5_diarrhea_rate_48h", "integer"),
+    shn_rat_label_and_tooltip(table.infant_nutrition_alternative,
+        "Alternative infant nutrition in use",
+        "Babies who are not being breastfed, what are they being fed on?",
+        multiple=True)
+    table.infant_nutrition_alternative.requires = \
+        IS_EMPTY_OR(IS_IN_SET(rat_infant_nutrition_alternative_opts, zero=None, multiple=True))
+    table.infant_nutrition_alternative.represent = lambda opt, set=rat_infant_nutrition_alternative_opts: \
+        shn_rat_represent_multiple(set, opt)
+
+    table.infant_nutrition_alternative_other.label = T("Other alternative infant nutrition in use")
+
+    shn_rat_label_and_tooltip(table.u5_diarrhea,
+        "Diarrhea among children under 5",
+        "Are there cases of diarrhea among children under the age of 5?")
+
+    shn_rat_label_and_tooltip(table.u5_diarrhea_rate_48h,
+        "Approx. number of cases/48h",
+        "Approximately how many children under 5 with diarrhea in the past 48 hours?"),
 
     # CRUD strings
     s3.crud_strings[tablename] = rat_section_crud_strings

@@ -145,7 +145,7 @@ def table():
     output = shn_rest_controller("survey", resource,listadd=False)
     authorised = shn_has_permission("create", table)
     if authorised:
-        output.update(add_btn=A(Tstr("Add Survey Answer"), _href=URL(r=request,f="table",vars={"series_id":request.vars.series_id}),
+        output.update(add_btn=A(Tstr("Add Survey Answer"), _href=URL(r=request,f="table", args=["create"], vars={"series_id":request.vars.series_id}),
                             _class="action-btn"))
     else:
         output.update(add_btn="")
@@ -391,7 +391,7 @@ def get_table_for_template(template_id):
                 fields.append(Field("question_%s" % (question.id), "date", label=question.name))
 
         tbl = db.define_table("survey_template_%s" % (template_id), uuidstamp, deletion_status, authorstamp,
-                              *fields)         
+                              *fields, migrate=True)         
         # now add the table name to the template record so we can reference it later.
         db(db.survey_template.id == template_id).update(table_name="survey_template_%s" % (template.id))
         db.commit()

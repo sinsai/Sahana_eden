@@ -3289,19 +3289,19 @@ class S3ResourceController(object):
                     else:
                         resource_url = None
 
-                    rmap = self.xml.rmap(ctable, crecord, _rfields)
+                    crmap = self.xml.rmap(ctable, crecord, _rfields)
                     celement = self.xml.element(ctable, crecord,
                                                 fields=_dfields,
                                                 url=resource_url,
                                                 download_url=self.download_url,
                                                 marker=marker)
-                    self.xml.add_references(celement, rmap, show_ids=self.show_ids)
+                    self.xml.add_references(celement, crmap, show_ids=self.show_ids)
                     self.xml.gis_encode(rmap,
                                         download_url=self.download_url,
                                         marker=marker)
 
                     element.append(celement)
-                    reference_map.extend(rmap)
+                    reference_map.extend(crmap)
 
                     if export_map.get(c.tablename, None):
                         export_map[c.tablename].append(crecord.id)

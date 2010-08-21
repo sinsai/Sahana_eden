@@ -191,7 +191,7 @@ if deployment_settings.has_module(module):
 
         if row:
             date = row.date and str(row.date) or ""
-            location = row.location_id and shn_location_represent(row.location_id) or ""
+            location = row.location_id and shn_gis_location_represent(row.location_id) or ""
 
             table = db.org_staff
             org = ("", "")
@@ -204,7 +204,7 @@ if deployment_settings.has_module(module):
                     if staff:
                         org[i] = shn_organisation_represent(staff.organisation_id)
 
-            assessment_represent = "%s %s, %s %s" % (location, org[0], org[1], date)
+            assessment_represent = XML("<div>%s %s, %s %s</div>" % (location, org[0], org[1], date))
 
         else:
             assessment_represent = "-"

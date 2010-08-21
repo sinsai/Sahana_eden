@@ -25,6 +25,24 @@ if deployment_settings.has_module(module):
     # Constants
     NOT_APPLICABLE = T("N/A")
 
+    # Section CRUD strings
+    ADD_SECTION = T("Add Section")
+    LIST_SECTIONS = T("List Sections")
+    rat_section_crud_strings = Storage(
+        title_create = ADD_SECTION,
+        title_display = T("Section Details"),
+        title_list = LIST_SECTIONS,
+        title_update = "",
+        title_search = T("Search Sections"),
+        subtitle_create = "",
+        subtitle_list = T("Sections"),
+        label_list_button = LIST_SECTIONS,
+        label_create_button = ADD_SECTION,
+        msg_record_created = T("Section updated"),
+        msg_record_modified = T("Section updated"),
+        msg_record_deleted = T("Section deleted"),
+        msg_list_empty = T("No Sections currently registered"))
+
     # -------------------------------------------------------------------------
     def shn_rat_represent_multiple(set, opt):
 
@@ -116,7 +134,7 @@ if deployment_settings.has_module(module):
                             document,
                             migrate=migrate)
 
-    table.date.requires = IS_NULL_OR(IS_DATE())
+    table.date.requires = [IS_DATE(), IS_NOT_EMPTY]
 
     table.staff2_id.requires = IS_NULL_OR(IS_ONE_OF(db, "org_staff.id", shn_org_staff_represent))
     table.staff2_id.represent = lambda id: shn_org_staff_represent(id)
@@ -332,22 +350,7 @@ if deployment_settings.has_module(module):
     table.minorities.comment = T("people")
 
     # CRUD strings
-    ADD_SECTION = T("Add Section")
-    LIST_SECTIONS = T("List Sections")
-    s3.crud_strings[tablename] = Storage(
-        title_create = ADD_SECTION,
-        title_display = T("Section Details"),
-        title_list = LIST_SECTIONS,
-        title_update = "",
-        title_search = T("Search Sections"),
-        subtitle_create = "",
-        subtitle_list = T("Sections"),
-        label_list_button = LIST_SECTIONS,
-        label_create_button = ADD_SECTION,
-        msg_record_created = T("Section updated"),
-        msg_record_modified = T("Section updated"),
-        msg_record_deleted = T("Section deleted"),
-        msg_list_empty = T("No Sections currently registered"))
+    s3.crud_strings[tablename] = rat_section_crud_strings
 
     s3xrc.model.add_component(module, resource,
                               multiple = False,
@@ -424,20 +427,7 @@ if deployment_settings.has_module(module):
     table.nfi_ass_available.label = T("Have they received or expecting to receive any shelter/NFI assistance in the coming days")
 
     # CRUD strings
-    s3.crud_strings[tablename] = Storage(
-        title_create = ADD_SECTION,
-        title_display = T("Section Details"),
-        title_list = LIST_SECTIONS,
-        title_update = "",
-        title_search = T("Search Sections"),
-        subtitle_create = "",
-        subtitle_list = T("Sections"),
-        label_list_button = LIST_SECTIONS,
-        label_create_button = ADD_SECTION,
-        msg_record_created = T("Section updated"),
-        msg_record_modified = T("Section updated"),
-        msg_record_deleted = T("Section deleted"),
-        msg_list_empty = T("No Sections currently registered"))
+    s3.crud_strings[tablename] = rat_section_crud_strings
 
     s3xrc.model.add_component(module, resource,
                               multiple = False,
@@ -465,16 +455,23 @@ if deployment_settings.has_module(module):
         99: NOT_APPLICABLE
     }
 
-    rat_defec_place_opts = {
+    rat_water_coll_person_opts = {
+        1: T("Child"),
+        2: T("Adult male"),
+        3: T("Adult female"),
+        4: T("Older person (>60 yrs)"),
+        99: NOT_APPLICABLE
+    }
+
+    rat_defec_place_types = {
         1: T("open defecation"),
         2: T("pit"),
         3: T("latrines"),
         4: T("river"),
-        5: T("other"),
-        99: NOT_APPLICABLE
+        5: T("other")
     }
 
-    rat_defec_place_animal_opts = {
+    rat_defec_place_animals_opts = {
         1: T("enclosed area"),
         2: T("within human habitat"),
         99: NOT_APPLICABLE
@@ -491,44 +488,37 @@ if deployment_settings.has_module(module):
     table = db.define_table(tablename,
                             timestamp, uuidstamp, authorstamp, deletion_status,
                             assessment_id,
-
                             # Water source before the disaster
                             Field("water_source_pre_disaster_type", "integer",
-                                  requires = IS_IN_SET(rat_water_source_types)),
+                                  requires = IS_EMPTY_OR(IS_IN_SET(rat_water_source_types, zero=None))),
                             Field("water_source_pre_disaster_description"),
-
                             # Current source of drinking water
                             Field("dwater_source_type", "integer",
-                                  requires = IS_IN_SET(rat_water_source_types)),
+                                  requires = IS_EMPTY_OR(IS_IN_SET(rat_water_source_types, zero=None))),
                             Field("dwater_source_description"),
                             Field("dwater_reserve"),
-
                             # Current source of sanitary water
                             Field("swater_source_type", "integer",
-                                  requires = IS_IN_SET(rat_water_source_types)),
+                                  requires = IS_EMPTY_OR(IS_IN_SET(rat_water_source_types, zero=None))),
                             Field("swater_source_description"),
                             Field("swater_reserve"),
 
                             # Walking distance to water resources
-                            Field("water_walking_distance", "integer",
-                                  requires = IS_IN_SET(rat_water_walking_distance_opts)),
-
+                            Field("water_coll_time", "integer",
+                                  requires = IS_EMPTY_OR(IS_IN_SET(rat_water_walking_distance_opts, zero=None))),
                             Field("water_coll_safe", "boolean"),
-                            Field("water_coll_security_problems"),
-
-                            # Person to collect water
-                            Field("water_coll_person"),
+                            Field("water_coll_safety_problems"),
+                            Field("water_coll_person", "integer",
+                                  requires = IS_EMPTY_OR(IS_IN_SET(rat_water_coll_person_opts, zero=None))),
 
                             # Defecation places
-                            Field("defec_place", "integer",
-                                  requires = IS_IN_SET(rat_defec_place_opts)),
-                            Field("defec_place_descr"),
-
-                            # Distance between defecation areas and water sources
+                            Field("defec_place_type"),
+                            Field("defec_place_description"),
                             Field("defec_place_distance", "integer"),
 
                             # Animal defecation places
-                            Field("defec_place_animals", "integer"),
+                            Field("defec_place_animals", "integer",
+                                  requires = IS_EMPTY_OR(IS_IN_SET(rat_defec_place_animals_opts, zero = None))),
 
                             # Agro-chemical/Industry production close to area
                             Field("close_industry", "boolean"),
@@ -536,15 +526,12 @@ if deployment_settings.has_module(module):
                             # Place for disposal of solid waste
                             Field("waste_disposal"),
 
-                            # Number of available latrines
+                            # Latrines
                             Field("latrines_number", "integer"),
-
-                            # Type of latrines
                             Field("latrines_type", "integer",
-                                  requires = IS_IN_SET(rat_latrine_types)),
-                            # Separate latrines for men/women
+                                  requires = IS_EMPTY_OR(IS_IN_SET(rat_latrine_types, zero=None))),
                             Field("latrines_separation", "boolean"),
-                            # Distance between latrines and temporary shelter
+                            Field("latrines_distance", "integer"),
                             comments,
                             migrate=migrate)
 
@@ -574,9 +561,24 @@ if deployment_settings.has_module(module):
         Tstr("How long will this water resource last?") + "|" + \
         Tstr("Specify the minimum sustainability in weeks or days.")))
 
+    table.water_coll_time.label = T("Time needed to collect water")
+    table.water_coll_time.comment = DIV(DIV(_class="tooltip", _title=
+        Tstr("Time needed to collect water") + "|" + \
+        Tstr("How long does it take you to reach the available water resources? Specify the time required to go there and back, including queuing time, by foot.")))
     table.water_coll_safe.label = T("Is it safe to collect water?")
     table.water_coll_safe.default = True
-    table.water_coll_security_problems.label = T("If no, specify why")
+    table.water_coll_safety_problems.label = T("If no, specify why")
+    table.water_coll_person.label = T("Who usually collects water for the family?")
+
+    table.defec_place_type.label = T("Type of place for defecation")
+    table.defec_place_type.requires = IS_EMPTY_OR(IS_IN_SET(rat_defec_place_types, zero=None, multiple=True))
+    table.defec_place_type.comment =  DIV("(" + Tstr("Select all that apply") + ")", DIV(_class="tooltip", _title=
+        Tstr("Type of place for defecation") + "|" + \
+        Tstr("Where do the majority of people defecate?")))
+    table.defec_place_description.label = T("Description of defecation area")
+    table.defec_place_distance.label = T("Distance between defecation area and water source")
+    table.defec_place_distance.comment = T("meters")
+    table.defec_place_animals.label = T("Defecation area for animals")
 
     table.close_industry.label = T("Industry close to village/camp")
     table.close_industry.comment = DIV(DIV(_class="tooltip", _title=
@@ -588,27 +590,27 @@ if deployment_settings.has_module(module):
         Tstr("Place for solid waste disposal") + "|" + \
         Tstr("Where is solid waste disposed in the village/camp?")))
 
-    table.latrines_number.label = T("Number of latrines available at village/IDP centre/camp")
+    table.latrines_number.label = T("Number of latrines")
     table.latrines_number.requires = IS_EMPTY_OR(IS_INT_IN_RANGE(0, 999999))
-    table.latrines_type.label = T("Type of latrines available at village/IDP centre/camp")
-    table.latrines_separation.label = T("Separate latrines available for women and men")
+    table.latrines_number.comment = DIV(DIV(_class="tooltip", _title=
+        Tstr("Number of latrines") + "|" + \
+        Tstr("How many latrines are available in the village/IDP centre/Camp?")))
+    table.latrines_type.label = T("Type of latrines")
+    table.latrines_type.comment = DIV(DIV(_class="tooltip", _title=
+        Tstr("Type of latrines") + "|" + \
+        Tstr("What type of latrines are available in the village/IDP centre/Camp?")))
+    table.latrines_separation.label = T("Separate latrines for women and men")
     table.latrines_separation.default = False
+    table.latrines_separation.comment = DIV(DIV(_class="tooltip", _title=
+        Tstr("Separate latrines for women and men") + "|" + \
+        Tstr("Are there separate latrines for women and men available?")))
+    table.latrines_distance.label = T("Distance between shelter and latrines")
+    table.latrines_distance.comment = DIV(T("meters"), DIV(_class="tooltip", _title=
+        Tstr("Distance between shelter and latrines") + "|" + \
+        Tstr("Distance between latrines and temporary shelter in meters")))
 
     # CRUD strings
-    s3.crud_strings[tablename] = Storage(
-        title_create = ADD_SECTION,
-        title_display = T("Section Details"),
-        title_list = LIST_SECTIONS,
-        title_update = "",
-        title_search = T("Search Sections"),
-        subtitle_create = "",
-        subtitle_list = T("Sections"),
-        label_list_button = LIST_SECTIONS,
-        label_create_button = ADD_SECTION,
-        msg_record_created = T("Section updated"),
-        msg_record_modified = T("Section updated"),
-        msg_record_deleted = T("Section deleted"),
-        msg_list_empty = T("No Sections currently registered"))
+    s3.crud_strings[tablename] = rat_section_crud_strings
 
     s3xrc.model.add_component(module, resource,
                               multiple = False,
@@ -630,20 +632,7 @@ if deployment_settings.has_module(module):
     table.assessment_id.writable = False
 
     # CRUD strings
-    s3.crud_strings[tablename] = Storage(
-        title_create = ADD_SECTION,
-        title_display = T("Section Details"),
-        title_list = LIST_SECTIONS,
-        title_update = "",
-        title_search = T("Search Sections"),
-        subtitle_create = "",
-        subtitle_list = T("Sections"),
-        label_list_button = LIST_SECTIONS,
-        label_create_button = ADD_SECTION,
-        msg_record_created = T("Section updated"),
-        msg_record_modified = T("Section updated"),
-        msg_record_deleted = T("Section deleted"),
-        msg_list_empty = T("No Sections currently registered"))
+    s3.crud_strings[tablename] = rat_section_crud_strings
 
     s3xrc.model.add_component(module, resource,
                               multiple = False,
@@ -672,20 +661,7 @@ if deployment_settings.has_module(module):
     table.assessment_id.writable = False
 
     # CRUD strings
-    s3.crud_strings[tablename] = Storage(
-        title_create = ADD_SECTION,
-        title_display = T("Section Details"),
-        title_list = LIST_SECTIONS,
-        title_update = "",
-        title_search = T("Search Sections"),
-        subtitle_create = "",
-        subtitle_list = T("Sections"),
-        label_list_button = LIST_SECTIONS,
-        label_create_button = ADD_SECTION,
-        msg_record_created = T("Section updated"),
-        msg_record_modified = T("Section updated"),
-        msg_record_deleted = T("Section deleted"),
-        msg_list_empty = T("No Sections currently registered"))
+    s3.crud_strings[tablename] = rat_section_crud_strings
 
     s3xrc.model.add_component(module, resource,
                               multiple = False,
@@ -713,20 +689,7 @@ if deployment_settings.has_module(module):
     table.assessment_id.writable = False
 
     # CRUD strings
-    s3.crud_strings[tablename] = Storage(
-        title_create = ADD_SECTION,
-        title_display = T("Section Details"),
-        title_list = LIST_SECTIONS,
-        title_update = "",
-        title_search = T("Search Sections"),
-        subtitle_create = "",
-        subtitle_list = T("Sections"),
-        label_list_button = LIST_SECTIONS,
-        label_create_button = ADD_SECTION,
-        msg_record_created = T("Section updated"),
-        msg_record_modified = T("Section updated"),
-        msg_record_deleted = T("Section deleted"),
-        msg_list_empty = T("No Sections currently registered"))
+    s3.crud_strings[tablename] = rat_section_crud_strings
 
     s3xrc.model.add_component(module, resource,
                               multiple = False,
@@ -784,20 +747,7 @@ if deployment_settings.has_module(module):
     table.schools_damaged.comment = T("schools")
 
     # CRUD strings
-    s3.crud_strings[tablename] = Storage(
-        title_create = ADD_SECTION,
-        title_display = T("Section Details"),
-        title_list = LIST_SECTIONS,
-        title_update = "",
-        title_search = T("Search Sections"),
-        subtitle_create = "",
-        subtitle_list = T("Sections"),
-        label_list_button = LIST_SECTIONS,
-        label_create_button = ADD_SECTION,
-        msg_record_created = T("Section updated"),
-        msg_record_modified = T("Section updated"),
-        msg_record_deleted = T("Section deleted"),
-        msg_list_empty = T("No Sections currently registered"))
+    s3.crud_strings[tablename] = rat_section_crud_strings
 
     s3xrc.model.add_component(module, resource,
                               multiple = False,
@@ -873,20 +823,7 @@ if deployment_settings.has_module(module):
     table.children_with_older_caregivers.label = T("Older people as primary caregivers of children")
 
     # CRUD strings
-    s3.crud_strings[tablename] = Storage(
-        title_create = ADD_SECTION,
-        title_display = T("Section Details"),
-        title_list = LIST_SECTIONS,
-        title_update = "",
-        title_search = T("Search Sections"),
-        subtitle_create = "",
-        subtitle_list = T("Sections"),
-        label_list_button = LIST_SECTIONS,
-        label_create_button = ADD_SECTION,
-        msg_record_created = T("Section updated"),
-        msg_record_modified = T("Section updated"),
-        msg_record_deleted = T("Section deleted"),
-        msg_list_empty = T("No Sections currently registered"))
+    s3.crud_strings[tablename] = rat_section_crud_strings
 
     s3xrc.model.add_component(module, resource,
                               multiple = False,

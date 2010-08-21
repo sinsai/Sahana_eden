@@ -11,10 +11,12 @@
 
 #rat_section4_swater_source_type__row td,
 #rat_section4_dwater_source_type__row td,
-#rat_section4_water_walking_distance__row td,
+#rat_section4_water_coll_time__row td,
+#rat_section4_defec_place_type__row td,
 #rat_section4_close_industry__row td,
+#rat_section4_latrines_number__row td,
 #rat_section4_comments__row td {
-    padding-top: 2em;
+    padding-top: 1.5em;
 }
 
 #rat_section9_children_separated__row td,

@@ -32,7 +32,7 @@ table = db.define_table(tablename,
                 Field("failure_reason", "string", writable=False),
                 timestamp,
                 authorstamp,
-                )
+                migrate=migrate)
 table.status.requires = IS_IN_SET(["new", "failed", "processing", "completed"])
 modules_list = []
 for module in deployment_settings.modules:
@@ -66,8 +66,8 @@ table = db.define_table(tablename,
                 Field("status", "string",
                       represent=display_status_select),
                 Field("data", "blob", writable=False,
-                      represent=display_dict_pickle_as_str)
-                )
+                      represent=display_dict_pickle_as_str),
+                migrate=migrate)
 table.import_job.requires = IS_IN_DB(db, "admin_import_job.id", "%(description)")
 table.status.requires = IS_IN_SET(["ignore", "import", "imported"])
 

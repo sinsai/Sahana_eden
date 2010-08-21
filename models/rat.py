@@ -154,10 +154,12 @@ if deployment_settings.has_module(module):
                             Field("accessibility", "integer"),
                             comments,
                             document_id,
-                            document,
+                            #document,
                             migrate=migrate)
 
     table.date.requires = [IS_DATE(), IS_NOT_EMPTY()]
+    table.date.comment = SPAN("*", _class="req")
+    table.date.default = datetime.datetime.today()
 
     table.staff2_id.requires = IS_NULL_OR(IS_ONE_OF(db, "org_staff.id", shn_org_staff_represent))
     table.staff2_id.represent = lambda id: shn_org_staff_represent(id)
@@ -223,7 +225,7 @@ if deployment_settings.has_module(module):
                 i += 1
                 if staff_id:
                     staff = db(table.id == staff_id).select(table.organisation_id,
-                                                            limitby=(0,1)).first()
+                                                            limitby=(0, 1)).first()
                     if staff:
                         org[i] = shn_organisation_represent(staff.organisation_id)
 

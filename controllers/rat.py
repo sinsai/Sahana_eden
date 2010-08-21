@@ -59,7 +59,12 @@ def assessment():
                                                       "gis_location.id",
                                                       repr_select, sort=True))
 
-    response.s3.pagination = True
+    if auth.is_logged_in():
+        staff_id = db((db.pr_person.uuid == session.auth.user.person_uuid) & \
+                      (db.org_staff.person_id == db.pr_person.id)).select(
+                       db.org_staff.id, limitby=(0, 1)).first()
+        if staff_id:
+            table.staff_id.default = staff_id.id
 
     # Post-processor
     def user_postp(jr, output):
@@ -67,6 +72,7 @@ def assessment():
         return output
     response.s3.postp = user_postp
 
+    response.s3.pagination = True
     output = shn_rest_controller(module, resource,
                                  rheader=lambda r: \
                                          shn_rat_rheader(r,
@@ -125,13 +131,11 @@ def shn_rat_rheader(r, tabs=[]):
                 orgs = organisation + ", " + organisation2
             else:
                 orgs = organisation
-            doc_url = URL(r=request, f="download", args=[report.document])
-            try:
-                doc_name, file = r.table.document.retrieve(report.document)
-                if hasattr(file, "close"):
-                    file.close()
-            except:
-                doc_name = report.document
+            doc_name = doc_url = None
+            document = db(db.doc_document.id == report.document_id).select(db.doc_document.name, db.doc_document.file, limitby=(0, 1)).first()
+            if document:
+                doc_name = document.name
+                doc_url = URL(r=request, f="download", args=[document.file])
             rheader = DIV(TABLE(
                             TR(
                                 TH(Tstr("Location") + ": "), location,

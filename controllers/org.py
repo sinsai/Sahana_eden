@@ -52,7 +52,7 @@ def index():
     return dict(module_name=module_name)
 
 def sector():
-    "RESTful CRUD controller"
+    """ RESTful CRUD controller """
     resource = request.function
     tablename = "%s_%s" % (module, resource)
     table = db[tablename]
@@ -77,7 +77,7 @@ def sector():
     return shn_rest_controller(module, resource, listadd=False)
 
 def organisation():
-    "RESTful CRUD controller"
+    """ RESTful CRUD controller """
 
     resource = request.function
 
@@ -94,9 +94,7 @@ def organisation():
         return output
     response.s3.postp = org_postp
     
-    # ServerSidePagination
     response.s3.pagination = True
-    
     output = shn_rest_controller(module, resource,
                                  listadd=False,
                                  rheader=lambda jr: shn_org_rheader(jr,
@@ -115,7 +113,7 @@ def organisation():
     return output
 
 def office():
-    "RESTful CRUD controller"
+    """ RESTful CRUD controller """
     resource = request.function
     tablename = "%s_%s" % (module, resource)
     table = db[tablename]
@@ -123,23 +121,27 @@ def office():
     if isinstance(request.vars.organisation_id, list):
         request.vars.organisation_id = request.vars.organisation_id[0]
 
+    # Pre-processor
+    def prep(jr):
+        # No point in downloading large dropdowns which we hide, so provide a smaller represent
+        # the update forms are not ready. when they will - uncomment this and comment the next one
+        #if jr.method in ("create", "update"):
+        if jr.method == "create":
+            table.organisation_id.requires = IS_NULL_OR(IS_ONE_OF_EMPTY(db, "org_organisation.id"))
+            if request.vars.organisation_id and request.vars.organisation_id != "None":
+                session.s3.organisation_id = request.vars.organisation_id
+                # Organisation name should be displayed on the form if organisation_id is pre-selected
+                session.s3.organisation_name = db(db.org_organisation.id == int(session.s3.organisation_id)).select(db.org_organisation.name).first().name
+        return True
+    response.s3.prep = prep
+    
+    # Post-processor
     def org_postp(jr, output):
         shn_action_buttons(jr)
         return output
     response.s3.postp = org_postp
     
-    # ServerSidePagination
     response.s3.pagination = True
-
-    # the update forms are not ready. when they will - uncomment this and comment the next one
-    #if request.args(0) in ("create", "update"):
-    if request.args(0) == "create":
-        table.organisation_id.requires = IS_NULL_OR(IS_ONE_OF_EMPTY(db, "org_organisation.id"))
-        if request.vars.organisation_id and request.vars.organisation_id != "None":
-            session.s3.organisation_id = request.vars.organisation_id
-            # Organisation name should be displayed on the form if organisation_id is pre-selected
-            session.s3.organisation_name = db(db.org_organisation.id == int(session.s3.organisation_id)).select(db.org_organisation.name).first().name
-    
     output = shn_rest_controller(module, resource, listadd=False,
                                  rheader=lambda jr: shn_org_rheader(jr,
                                                                        tabs = [(T("Basic Details"), None),
@@ -154,47 +156,48 @@ def office():
 
 
 def staff():
-    "RESTful CRUD controller"
+    """ RESTful CRUD controller """
     resource = request.function
     tablename = "%s_%s" % (module, resource)
     table = db[tablename]
     
+    # Pre-processor
+    def prep(jr):
+        # No point in downloading large dropdowns which we hide, so provide a smaller represent
+        # the update forms are not ready. when they will - uncomment this and comment the next one
+        #if jr.method in ("create", "update"):
+        if jr.method == "create":
+            # person_id mandatory for a staff!
+            table.person_id.requires = IS_ONE_OF_EMPTY(db, "pr_person.id")
+            table.organisation_id.requires = IS_NULL_OR(IS_ONE_OF_EMPTY(db, "org_organisation.id"))
+            table.office_id.requires = IS_NULL_OR(IS_ONE_OF_EMPTY(db, "org_office.id"))
+        return True
+    response.s3.prep = prep
+
+    # Post-processor
     def org_postp(jr, output):
         shn_action_buttons(jr)
         return output
     response.s3.postp = org_postp
     
-    # ServerSidePagination
     response.s3.pagination = True
-
-    # No point in downloading large dropdowns which we hide, so provide a smaller represent
-
-    # the update forms are not ready. when they will - uncomment this and comment the next one
-    #if request.args(0) in ("create", "update"):
-    if request.args(0) == "create":
-        # person_id mandatory for a staff!
-        table.person_id.requires = IS_ONE_OF_EMPTY(db, "pr_person.id")
-        table.organisation_id.requires = IS_NULL_OR(IS_ONE_OF_EMPTY(db, "org_organisation.id"))
-        table.office_id.requires = IS_NULL_OR(IS_ONE_OF_EMPTY(db, "org_office.id"))
-
     output = shn_rest_controller(module, resource, listadd=False)
     
     return output
 
 def donor():
-    "RESTful CRUD controller"
+    """ RESTful CRUD controller """
     resource = request.function
     tablename = "%s_%s" % (module, resource)
     table = db[tablename]
     
+    # Post-processor
     def org_postp(jr, output):
         shn_action_buttons(jr)
         return output
     response.s3.postp = org_postp
     
-    # ServerSidePagination
     response.s3.pagination = True
-
     output = shn_rest_controller(module, resource, listadd=False)
     
     return output
@@ -219,22 +222,21 @@ s3.crud_strings[tablename] = Storage(
     msg_list_empty = T("No Donors currently registered"))
 
 def project():
-    "RESTful CRUD controller"
+    """ RESTful CRUD controller """
     resource = request.function
     tablename = "%s_%s" % (module, resource)
     table = db[tablename]
-    
+
+    db.org_staff.person_id.comment[1] = DIV(DIV(_class="tooltip",
+                              _title=Tstr("Person") + "|" + Tstr("Select the person assigned to this role for this project.")))
+
+    # Post-processor
     def org_postp(jr, output):
         shn_action_buttons(jr)
         return output
     response.s3.postp = org_postp
     
-    # ServerSidePagination
     response.s3.pagination = True
-
-    db.org_staff.person_id.comment[1] = DIV(DIV(_class="tooltip",
-                              _title=Tstr("Person") + "|" + Tstr("Select the person assigned to this role for this project.")))
-    
     output = shn_rest_controller(module, resource,
                                  listadd=False,
                                  main="code",
@@ -252,19 +254,18 @@ def project():
     return output
 
 def task():
-    "RESTful CRUD controller"
+    """ RESTful CRUD controller """
     resource = request.function
     tablename = "%s_%s" % (module, resource)
     table = db[tablename]
     
+    # Post-processor
     def org_postp(jr, output):
         shn_action_buttons(jr)
         return output
     response.s3.postp = org_postp
     
-    # ServerSidePagination
     response.s3.pagination = True
-
     output = shn_rest_controller(module, resource,
                                  listadd=False
                                 )

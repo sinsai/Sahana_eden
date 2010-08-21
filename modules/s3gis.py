@@ -490,6 +490,7 @@ class GIS(object):
                   zoom = None,
                   projection = None,
                   add_feature = False,
+                  add_feature_active = False,
                   feature_queries = [],
                   feature_groups = [],
                   wms_browser = {},
@@ -524,6 +525,7 @@ class GIS(object):
             @param zoom: default Zoom level of viewport (if not provided then the default setting from the Map Service Catalogue is used)
             @param projection: EPSG code for the Projection to use (if not provided then the default setting from the Map Service Catalogue is used)
             @param add_feature: Whether to include a DrawFeature control to allow adding a marker to the map
+            @param add_feature_active: Whether the DrawFeature control should be active by default
             @param feature_queries: Feature Queries to overlay onto the map & their options (List of Dicts):
                 [{
                  name   : "MyLabel",    # A string: the label for the layer
@@ -799,6 +801,10 @@ OpenLayers.Util.extend( selectPdfControl, {
 
         # Draw Feature Control
         if add_feature:
+            if add_feature_active:
+                draw_depress = "true"
+            else:
+                draw_depress = "false"
             draw_feature = """
         // Controls for Draft Features
         // - interferes with popupControl which is active on allLayers
@@ -849,7 +855,7 @@ OpenLayers.Util.extend( selectPdfControl, {
             toggleGroup: 'controls',
             allowDepress: true,
             enableToggle: true,
-            pressed: true
+            pressed: """ + draw_depress + """
         });
         
         //var lineButton = new GeoExt.Action({

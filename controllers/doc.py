@@ -55,7 +55,7 @@ def shn_document_rheader(jr, tabs=[]):
     return None
 
 def document():
-    "RESTful CRUD controller"
+    """ RESTful CRUD controller """
     resource = request.function
     tablename = "%s_%s" % (module, resource)
     table = db[tablename]
@@ -88,10 +88,13 @@ def document():
                                           )
     
 
-    return shn_rest_controller(module, resource, rheader=rheader, sticky=True)
+    response.s3.pagination = True
+    output = shn_rest_controller(module, resource, rheader=rheader, sticky=True)
+
+    return output
 #==============================================================================
 def image():
-    "RESTful CRUD controller"
+    """ RESTful CRUD controller """
     resource = request.function
     tablename = "%s_%s" % (module, resource)
     table = db[tablename]
@@ -104,12 +107,15 @@ def image():
         return output
     response.s3.postp = postp    
 
-    return shn_rest_controller(module, resource)
+    response.s3.pagination = True
+    output = shn_rest_controller(module, resource)
+    
+    return output
 #==============================================================================
 # END - Following code is not utilised
 
 def metadata():
-    "RESTful CRUD controller"
+    """ RESTful CRUD controller """
     resource = request.function
     tablename = module + "_" + resource
     table = db[tablename]

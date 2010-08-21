@@ -217,8 +217,8 @@ if deployment_settings.has_module(module):
                             Field("persons_affected", "integer"),
                             Field("persons_injured", "integer"),
                             Field("persons_deceased", "integer"),
-                            Field("source"),
-                            Field("source_id"),
+                            Field("source"),    # Legacy field: will be removed
+                            Field("source_id"), # Legacy field: will be removed
                             document_id,
                             Field("verified", "boolean"),
                             comments,

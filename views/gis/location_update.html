@@ -5,6 +5,11 @@
     <a href="{{=URL(r=request, args=jr.id)}}.osm" title="{{=T("Export in OSM format")}}"><img src="/{{=request.application}}/static/img/osm_icon.png"/></a>
 </div>
 {{include "_update.html"}}
+<p>&nbsp;</p>
+{{try:}}
+{{=XML(_map)}}
+{{except:}}
+{{pass}}
 <script type="text/javascript">//<![CDATA[
 $(function() {
     {{include "gis/feature_crud.js"}}

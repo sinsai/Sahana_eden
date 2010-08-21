@@ -59,11 +59,13 @@ def assessment():
     # Villages only
     table.location_id.requires = IS_NULL_OR(IS_ONE_OF(db(db.gis_location.level == "L4"), "gis_location.id", repr_select, sort=True))
 
-    response.s3.pagination = True
-
-    # Disable legacy fields, unless updating, so the data can be manually transferred to new fields
-    if "update" not in request.args:
-        table.source.readable = table.source.writable = False
+    # Pre-processor
+    def prep(r):
+        if r.method == "update":
+            # Disable legacy fields, unless updating, so the data can be manually transferred to new fields
+            table.source.readable = table.source.writable = False        
+        return True
+    response.s3.prep = prep
 
     # Post-processor
     def user_postp(jr, output):
@@ -71,6 +73,7 @@ def assessment():
         return output
     response.s3.postp = user_postp
 
+    response.s3.pagination = True
     output = shn_rest_controller(module, resource)
     return output
 
@@ -95,11 +98,14 @@ def school_district():
                                        _title=ADD_LOCATION),
                                      DIV( _class="tooltip",
                                        _title=Tstr("District") + "|" + Tstr("The District for this Report."))),
-    response.s3.pagination = True
 
-    # Disable legacy fields, unless updating, so the data can be manually transferred to new fields
-    if "update" not in request.args:
-        table.document.readable = table.document.writable = False
+    # Pre-processor
+    def prep(r):
+        if r.method == "update":
+            # Disable legacy fields, unless updating, so the data can be manually transferred to new fields
+            table.document.readable = table.document.writable = False        
+        return True
+    response.s3.prep = prep
 
     # Post-processor
     def user_postp(jr, output):
@@ -107,14 +113,13 @@ def school_district():
         return output
     response.s3.postp = user_postp
 
-    output = shn_rest_controller(module, resource,
-                                 rheader=lambda r: \
-                                         shn_sitrep_rheader(r,
-                                            tabs = [(T("Basic Details"), None),
-                                                    (T("School Reports"), "school_report")]),
-                                                    sticky=True)
-    return output
+    rheader = lambda r: shn_sitrep_rheader(r, tabs = [(T("Basic Details"), None),
+                                                      (T("School Reports"), "school_report")
+                                                     ])
 
+    response.s3.pagination = True
+    output = shn_rest_controller(module, resource, rheader=rheader, sticky=True)
+    return output
 
 # -----------------------------------------------------------------------------
 def download():

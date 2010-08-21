@@ -2,7 +2,7 @@
 {{include "_popup.html"}}
 <p>&nbsp;</p>
 {{try:}}
-{{=XML(map)}}
+{{=XML(_map)}}
 {{except:}}
 {{pass}}
 {{if "caller" in request.vars:}}

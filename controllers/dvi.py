@@ -63,8 +63,6 @@ def recreq():
 
     resource = request.function
 
-    response.s3.pagination = True
-
     def recreq_postp(jr, output):
         if jr.representation in ("html", "popup"):
             label = UPDATE
@@ -75,6 +73,7 @@ def recreq():
         return output
     response.s3.postp = recreq_postp
 
+    response.s3.pagination = True
     output = shn_rest_controller(module, resource, listadd=False)
 
     shn_menu()
@@ -85,8 +84,6 @@ def body():
     """ RESTful CRUD controller """
 
     resource = request.function
-
-    response.s3.pagination = True
 
     def body_postp(jr, output):
         if jr.representation in ("html", "popup"):
@@ -101,6 +98,7 @@ def body():
         return output
     response.s3.postp = body_postp
 
+    response.s3.pagination = True
     output = shn_rest_controller(module, resource,
                                  main="pe_label",
                                  extra="gender",

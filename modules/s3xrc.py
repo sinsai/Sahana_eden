@@ -893,7 +893,7 @@ class S3Resource(object):
             output.update(jr=r)
 
         # Redirection (makes no sense in GET)
-        if r.next is not None and r.http != "GET":
+        if r.next is not None and r.http != "GET" or r.method == "delete":
             if isinstance(output, dict):
                 form = output.get("form", None)
                 if form and form.errors:

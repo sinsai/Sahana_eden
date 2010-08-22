@@ -257,7 +257,7 @@ class GIS(object):
         return dict(min_lon=min_lon, min_lat=min_lat, max_lon=max_lon, max_lat=max_lat)
 
     def get_children(self, parent_id):
-        "Return a list of all GIS Features which are children of the requested parent"
+        " Return a list of all GIS Features which are children of the requested parent "
 
         db = self.db
 
@@ -1916,6 +1916,10 @@ OpenLayers.Util.extend( selectPdfControl, {
                     name = layer["name"]
                 else:
                     name = "Query" + str(int(random.random()*1000))
+
+                if "marker" in layer:
+                    markerLayer = db(db.gis_marker.id == layer["marker"]).select(db.gis_marker.image, limitby=(0, 1), cache=cache).first()
+
                 if "popup_url" in layer:
                     _popup_url = urllib.unquote(layer["popup_url"])
                 else:
@@ -2033,20 +2037,18 @@ OpenLayers.Util.extend( selectPdfControl, {
                             else:
                                 marker = self.get_marker(feature.id)
                         except (AttributeError, KeyError):
-                            if "marker" in layer:
-                                _marker = db(db.gis_marker.id == layer["marker"]).select(db.gis_marker.image, limitby=(0, 1), cache=cache).first()
-                                if _marker:
-                                    marker = _marker.image
-                                else:
-                                    marker = self.get_marker(feature.id)
+                            if markerLayer:
+                                # Marker specified at the layer level
+                                marker = markerLayer.image
                             else:
                                 marker = self.get_marker(feature.id)
                         marker_url = URL(r=request, c="default", f="download", args=[marker])
                     try:
-                        # Has a per-feature Vector Shape been added to the query?
+                        # Has a per-feature popup_label been added to the query?
                         popup_label = feature.popup_label
                     except (AttributeError, KeyError):
                         popup_label = feature.name
+
                     # Deal with null Feature Classes
                     if feature.get("feature_class_id"):
                         fc = "'" + str(feature.feature_class_id) + "'"

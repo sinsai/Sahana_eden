@@ -963,6 +963,9 @@ class S3Resource(object):
                r.representation in json_import_formats:
                 method = "import_tree"
 
+        elif method == "copy":
+            authorised = permit("create", tablename)
+
         elif method == "delete":
             return self.__delete(r)
 

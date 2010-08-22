@@ -5,7 +5,7 @@ from gluon.storage import Storage
 
 class S3Config(Storage):
 
-    def __init__(self):
+    def __init__(self, T):
         self.auth = Storage()
         self.base = Storage()
         self.database = Storage()
@@ -13,6 +13,7 @@ class S3Config(Storage):
         self.mail = Storage()
         self.L10n = Storage()
         self.security = Storage()
+        self.T = T
 
     # Auth settings
     def get_auth_hmac_key(self):
@@ -58,6 +59,16 @@ class S3Config(Storage):
             return db_string
 
     # GIS (Map) Settings
+    def get_gis_locations_hierarchy(self):
+        T = self.T
+        gis_location_hierarchy = {
+            "L0":T("Country"),
+            "L1":T("Province"),
+            "L2":T("District"),
+            "L3":T("Town"),
+            "L4":T("Village")
+        }
+        return self.gis.get("locations_hierarchy", gis_location_hierarchy)
     def get_gis_display_l0(self):
         return self.gis.get("display_L0", False)
     def get_gis_display_l1(self):

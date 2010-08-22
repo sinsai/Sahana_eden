@@ -1799,6 +1799,12 @@ def shn_delete(r, **attr):
     return output
 
 #
+# shn_copy ------------------------------------------------------------------
+#
+def shn_copy(r, **attr):
+    redirect(URL(r=request, args="create", vars={"from_record":r.id}))
+
+#
 # shn_search ------------------------------------------------------------------
 #
 def shn_search(r, **attr):
@@ -2030,6 +2036,7 @@ def shn_rest_controller(module, resource, **attr):
     s3xrc.set_handler("update", shn_update)
     s3xrc.set_handler("delete", shn_delete)
     s3xrc.set_handler("search", shn_search)
+    s3xrc.set_handler("copy", shn_copy)
 
     res, req = s3xrc.parse_request(module, resource, session, request, response)
     output = res.execute_request(req, **attr)

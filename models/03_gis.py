@@ -375,13 +375,7 @@ gis_source_opts = {
     2:T("Imagery"),
     3:T("Wikipedia"),
     }
-gis_location_hierarchy = {
-    "L0":T("Country"),
-    "L1":T("Province"),
-    "L2":T("District"),
-    "L3":T("Town"),
-    "L4":T("Village")
-}
+gis_location_hierarchy = deployment_settings.get_gis_locations_hierarchy()
 # Expose this to Views for AutoCompletes
 response.s3.gis.location_hierarchy = gis_location_hierarchy
 gis_location_languages = {

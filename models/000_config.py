@@ -77,6 +77,13 @@ deployment_settings.gis.locations_hierarchy = {
     "L3":T("Town"),
     "L4":T("Village")
 }
+# Do we have a spatial DB available? (currently unused)
+deployment_settings.gis.spatialdb = False
+# GeoServer (currently unused)
+deployment_settings.gis.geoserver_url = "http://localhost/geoserver"
+deployment_settings.gis.geoserver_username = "admin"
+deployment_settings.gis.geoserver_password = "password"
+
 
 # Security Policy settings
 # Lock-down access to Map Editing

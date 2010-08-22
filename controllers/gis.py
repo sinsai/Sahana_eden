@@ -472,18 +472,24 @@ def config():
     tablename = module + "_" + resource
     table = db[tablename]
 
-    # Model options
-    # In Model so that they're visible to person() as component
-    # CRUD Strings (over-ride)
-    s3.crud_strings[tablename].title_display = T("Defaults")
-    s3.crud_strings[tablename].title_update = T("Edit Defaults")
-    s3.crud_strings[tablename].msg_record_modified = T("Defaults updated")
-
-
-    output = shn_rest_controller(module, resource, deletable=False, listadd=False)
+    # Pre-processor
+    def prep(r):
+        if r.representation in ("html", "popup"):
+            # Model options
+            # In Model so that they're visible to person() as component
+            # CRUD Strings (over-ride)
+            s3.crud_strings[tablename].title_display = T("Defaults")
+            s3.crud_strings[tablename].title_update = T("Edit Defaults")
+            s3.crud_strings[tablename].msg_record_modified = T("Defaults updated")
+        if deployment_settings.get_security_map() and r.id == 1 and r.method in ["create", "update"] and not shn_has_role("MapAdmin"):
+            unauthorised()
+        return True
+    response.s3.prep = prep
 
     if not "gis" in response.view:
         response.view = "gis/" + response.view
+
+    output = shn_rest_controller(module, resource, deletable=False, listadd=False)
 
     output["list_btn"] = ""
 

@@ -1344,8 +1344,10 @@ def shn_create(r, **attr):
                 if original:
                     missing_fields = Storage()
                     for f in table.fields:
-                        if f not in original:
+                        if f not in original and \
+                           table[f].readable and table[f].writable:
                             missing_fields[f] = table[f].default
+                    print missing_fields
                     original.update(missing_fields)
 
         # Default components

@@ -899,6 +899,7 @@ class S3Resource(object):
                 if form and form.errors:
                     return output
             self.__dbg("redirecting to %s" % str(r.next))
+            r.session.flash = r.response.flash
             redirect(r.next)
 
         return output

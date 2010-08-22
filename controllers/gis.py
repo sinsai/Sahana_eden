@@ -164,7 +164,7 @@ def location():
     def prep(r, vars):
 
         # Restrict access to top-level locations (& all Polygons) to just MapAdmins
-        if not deployment_settings.get_security_map() or shn_has_role("MapAdmin"):
+        if deployment_settings.get_security_map() and not shn_has_role("MapAdmin"):
             table.code.writable = False
             table.level.writable = False
             if r.method == "create":

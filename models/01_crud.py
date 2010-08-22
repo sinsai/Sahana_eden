@@ -1347,7 +1347,7 @@ def shn_create(r, **attr):
                         if f not in original and \
                            table[f].readable and table[f].writable:
                             missing_fields[f] = table[f].default
-                    print missing_fields
+                    #print missing_fields
                     original.update(missing_fields)
 
         # Default components

@@ -2241,13 +2241,13 @@ OpenLayers.Util.extend( selectPdfControl, {
             if (undefined == feature.attributes.description) {
                 var popup = new OpenLayers.Popup.FramedCloud('georsspopup',
                 centerPoint,
-                new OpenLayers.Size(200,200),
+                new OpenLayers.Size(200, 200),
                 '<h2>' + feature.attributes.title + '</h2>',
                 null, true, onPopupClose);
             } else {
                 var popup = new OpenLayers.Popup.FramedCloud('georsspopup',
                 centerPoint,
-                new OpenLayers.Size(200,200),
+                new OpenLayers.Size(200, 200),
                 '<h2>' + feature.attributes.title + '</h2>' + feature.attributes.description,
                 null, true, onPopupClose);
             };
@@ -2432,7 +2432,7 @@ OpenLayers.Util.extend( selectPdfControl, {
             """ + visibility + """
             map.addLayer(gpxLayer""" + name_safe + """);
             gpxLayers.push(gpxLayer""" + name_safe + """);
-            gpxLayer""" + name_safe + """.events.on({ "featureselected": onGpxFeatureSelect, "featureunselected": onFeatureUnselect });
+            gpxLayer""" + name_safe + """.events.on({ 'featureselected': onGpxFeatureSelect, 'featureunselected': onFeatureUnselect });
             """
                 layers_gpx += """
         allLayers = allLayers.concat(gpxLayers);
@@ -2454,34 +2454,43 @@ OpenLayers.Util.extend( selectPdfControl, {
             var feature = event.feature;
             centerPoint = feature.geometry.getBounds().getCenterLonLat();
             var selectedFeature = feature;
-            var type = typeof feature.attributes.name;
+            var title = feature.layer.title;
+            var _attributes = feature.attributes;
+            var type = typeof _attributes[title];
             if ('object' == type) {
-                var popup = new OpenLayers.Popup.FramedCloud("kmlpopup",
-                    centerPoint,
-                    new OpenLayers.Size(200,200),
-                    "<h2>" + "</h2>",
-                    null, true, onPopupClose
-                );
-            } else if (undefined == feature.attributes.description) {
-                var popup = new OpenLayers.Popup.FramedCloud("kmlpopup",
-                    centerPoint,
-                    new OpenLayers.Size(200,200),
-                    "<h2>" + feature.attributes.name + "</h2>",
-                    null, true, onPopupClose
-                );
+                _title = _attributes[title].value;
             } else {
-                var content = "<h2>" + feature.attributes.name + "</h2>" + feature.attributes.description;
-                // Protect the description against JavaScript attacks
-                if (content.search("<script") != -1) {
-                    content = "Content contained Javascript! Escaped content below.<br />" + content.replace(/</g, "<");
+                _title = _attributes[title];
+            }
+            var body = feature.layer.body.split(' ');
+            var content = '';
+            for (var i = 0; i < body.length; i++) {
+                type = typeof _attributes[body[i]];
+                if ('object' == type) {
+                    // Geocommons style
+                    var displayName = _attributes[body[i]].displayName;
+                    if (displayName == '') {
+                        displayName = body[i];
+                    }
+                    var value = _attributes[body[i]].value;
+                    var row = '<b>' + displayName + '</b>: ' + value + '<br />';
+                } else {
+                    var row = _attributes[body[i]] + '<br />';
                 }
-                var popup = new OpenLayers.Popup.FramedCloud("kmlpopup",
-                    centerPoint,
-                    new OpenLayers.Size(200,200),
-                    content,
-                    null, true, onPopupClose
-                );
-            };
+                content += row;
+            }
+            // Protect the content against JavaScript attacks
+            if (content.search('<script') != -1) {
+                content = 'Content contained Javascript! Escaped content below.<br />' + content.replace(/</g, '<');
+            }
+            var contents = '<h2>' + _title + '</h2>' + content;
+            
+            var popup = new OpenLayers.Popup.FramedCloud('kmlpopup',
+                centerPoint,
+                new OpenLayers.Size(200, 200),
+                contents,
+                null, true, onPopupClose
+            );
             feature.popup = popup;
             popup.feature = feature;
             map.addPopup(popup);
@@ -2491,6 +2500,8 @@ OpenLayers.Util.extend( selectPdfControl, {
                     name = layer["name"]
                     url = layer["url"]
                     visible = layer["visible"]
+                    title = layer["title"] or "name"
+                    body = layer["body"] or "description"
                     projection_str = "projection: proj4326,"
                     if cacheable:
                         # Download file
@@ -2542,10 +2553,11 @@ OpenLayers.Util.extend( selectPdfControl, {
 
                     # Generate HTML snippet
                     name_safe = re.sub("\W", "_", name)
+                    layer_name = "kmlLayer" + name_safe
                     if visible:
-                        visibility = "kmlLayer" + name_safe + ".setVisibility(true);"
+                        visibility = layer_name + ".setVisibility(true);"
                     else:
-                        visibility = "kmlLayer" + name_safe + ".setVisibility(false);"
+                        visibility = layer_name + ".setVisibility(false);"
                     layers_kml += """
             iconURL = '""" + marker_url + """';
             icon_img.src = iconURL;
@@ -2580,6 +2592,8 @@ OpenLayers.Util.extend( selectPdfControl, {
                 }
             );
             """ + visibility + """
+            kmlLayer""" + name_safe + """.title = '""" + title + """';
+            kmlLayer""" + name_safe + """.body = '""" + body + """';
             map.addLayer(kmlLayer""" + name_safe + """);
             kmlLayers.push(kmlLayer""" + name_safe + """);
             kmlLayer""" + name_safe + """.events.on({ "featureselected": onKmlFeatureSelect, "featureunselected": onFeatureUnselect });
@@ -2757,7 +2771,7 @@ OpenLayers.Util.extend( selectPdfControl, {
                 tooltipPopup.contentDiv.style.margin='10px';
                 tooltipPopup.closeOnMove = true;
                 tooltipPopup.autoSize = true;
-                tooltipPopup.opacity = 0.5;
+                tooltipPopup.opacity = 0.6;
                 feature.popup = tooltipPopup;
                 map.addPopup(tooltipPopup);
             }

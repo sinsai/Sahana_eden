@@ -11,7 +11,7 @@ def Tstr(text):
     return str(T(text))
 
 s3cfg = local_import("s3cfg")
-deployment_settings = s3cfg.S3Config()
+deployment_settings = s3cfg.S3Config(T)
 
 # Database settings
 deployment_settings.database.db_type = "sqlite"
@@ -70,6 +70,13 @@ deployment_settings.L10n.utc_offset = "UTC +0000"
 deployment_settings.gis.display_L0 = False
 # Currently unused
 #deployment_settings.gis.display_L1 = True
+deployment_settings.gis.locations_hierarchy = {
+    "L0":T("Country"),
+    "L1":T("Province"),
+    "L2":T("District"),
+    "L3":T("Town"),
+    "L4":T("Village")
+}
 
 # Security Policy settings
 # Lock-down access to Map Editing

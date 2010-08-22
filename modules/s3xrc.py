@@ -892,13 +892,12 @@ class S3Resource(object):
         if output is not None and isinstance(output, dict):
             output.update(jr=r)
 
-        # Redirection
-        if r.next is not None:
-            if r.http == "POST":
-                if isinstance(output, dict):
-                    form = output.get("form", None)
-                    if form and form.errors:
-                        return output
+        # Redirection (makes no sense in GET)
+        if r.next is not None and r.http != "GET":
+            if isinstance(output, dict):
+                form = output.get("form", None)
+                if form and form.errors:
+                    return output
             self.__dbg("redirecting to %s" % str(r.next))
             redirect(r.next)
 
@@ -2041,10 +2040,13 @@ class S3Request(object):
             del vars["format"]
 
         args = []
+        read = False
 
         component_id = self.component_id
         if id is None:
             id = self.id
+        else:
+            read = True
 
         if not representation:
             representation = self.representation
@@ -2052,10 +2054,11 @@ class S3Request(object):
             method = self.method
         elif method=="":
             method = None
-            if self.component:
-                component_id = None
-            else:
-                id = None
+            if not read:
+                if self.component:
+                    component_id = None
+                else:
+                    id = None
         else:
             if id is None:
                 id = self.id

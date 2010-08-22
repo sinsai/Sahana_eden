@@ -2580,7 +2580,7 @@ OpenLayers.Util.extend( selectPdfControl, {
             style_marker.graphicYOffset = -height;
             style_marker.externalGraphic = iconURL;
             var kmlLayer""" + name_safe + """ = new OpenLayers.Layer.Vector(
-                '""" + name_safe + """',
+                '""" + name + """',
                 {
                     """ + projection_str + """
                     strategies: [ """ + strategy_fixed + ", " + strategy_cluster + """ ],
@@ -2743,23 +2743,41 @@ OpenLayers.Util.extend( selectPdfControl, {
             }
             lastFeature = feature;
             centerPoint = feature.geometry.getBounds().getCenterLonLat();
-            if (undefined == feature.attributes.name && undefined == feature.attributes.title) {
-                // We don't have a suitable title, so don't display a tooltip
-                tooltipPopup = null;
-            } else if (undefined == feature.attributes.name) {
+            _attributes = feature.attributes;
+            if (undefined == _attributes.name && undefined == _attributes.title) {
+                // KML Layer
+                var title = feature.layer.title;
+                if (undefined == title) {
+                    // We don't have a suitable title, so don't display a tooltip
+                    tooltipPopup = null;
+                } else {
+                    var type = typeof _attributes[title];
+                    if ('object' == type) {
+                        _title = _attributes[title].value;
+                    } else {
+                        _title = _attributes[title];
+                    }
+                    tooltipPopup = new OpenLayers.Popup("activetooltip",
+                        centerPoint,
+                        new OpenLayers.Size(80, 12),
+                        _title,
+                        false
+                    );
+                }
+            } else if (undefined == _attributes.title) {
+                // Features
+                tooltipPopup = new OpenLayers.Popup("activetooltip",
+                        centerPoint,
+                        new OpenLayers.Size(80, 12),
+                        _attributes.name,
+                        false
+                );
+            } else {
                 // GeoRSS
                 tooltipPopup = new OpenLayers.Popup("activetooltip",
                         centerPoint,
                         new OpenLayers.Size(80, 12),
-                        feature.attributes.title,
-                        false
-                );
-            } else {
-                // KML or Features
-                tooltipPopup = new OpenLayers.Popup("activetooltip",
-                        centerPoint,
-                        new OpenLayers.Size(80, 12),
-                        feature.attributes.name,
+                        _attributes.title,
                         false
                 );
             }

@@ -393,7 +393,7 @@ def shn_abbreviate(word, size=48):
     else:
         return word
 
-def shn_action_buttons(jr, deletable=True):
+def shn_action_buttons(jr, deletable=True, copyable=False):
 
     """
         Provide the usual Action Buttons for Column views.
@@ -407,15 +407,17 @@ def shn_action_buttons(jr, deletable=True):
 
     if shn_has_permission("update", jr.table):
         # Provide the ability to delete records in bulk
+        response.s3.actions = [
+            dict(label=str(UPDATE), _class="action-btn", url=str(URL(r=request, args = args + ["update"]))),
+        ]
         if deletable and shn_has_permission("delete", jr.table):
-            response.s3.actions = [
-                dict(label=str(UPDATE), _class="action-btn", url=str(URL(r=request, args = args + ["update"]))),
+            response.s3.actions.append(
                 dict(label=str(DELETE), _class="action-btn", url=str(URL(r=request, args = args + ["delete"])))
-            ]
-        else:
-            response.s3.actions = [
-                dict(label=str(UPDATE), _class="action-btn", url=str(URL(r=request, args = args + ["update"])))
-            ]
+            )
+        if copyable:
+            response.s3.actions.append(
+                dict(label=str(COPY), _class="action-btn", url=str(URL(r=request, args = args + ["copy"])))
+            )
     else:
         response.s3.actions = [
             dict(label=str(READ), _class="action-btn", url=str(URL(r=request, args = args)))

@@ -139,7 +139,7 @@ def ireport():
 
     # Post-processor
     def user_postp(jr, output):
-        shn_action_buttons(jr, deletable=False)
+        shn_action_buttons(jr, deletable=False, copyable=True)
         return output
     response.s3.postp = user_postp
 

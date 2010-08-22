@@ -1165,7 +1165,7 @@ def layer_kml():
 
     # Post-processor
     def user_postp(jr, output):
-        shn_action_buttons(jr)
+        shn_action_buttons(jr, copyable=True)
         return output
     response.s3.postp = user_postp
 

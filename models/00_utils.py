@@ -586,6 +586,38 @@ def shn_represent_file(file_name,
 
     return A(filename, _href = url_file)
 
+def shn_reference_field():
+
+    return
+
+def shn_insert_subheadings(form, tablename, subheadings):
+
+    """ Insert subheadings into forms """
+
+    if subheadings:
+        if tablename in subheadings:
+            subheadings = subheadings.get(tablename)
+        form_rows = iter(form[0])
+        tr = form_rows.next()
+        i = 0
+        while tr:
+            tr_id = tr.attributes.get("_id", None)
+            if tr_id.startswith(tablename) and tr_id[-5:] == "__row":
+                tr_id = tr_id[len(tablename)+1:-5]
+                if tr_id in subheadings:
+                    form[0].insert(i, TR(TD(subheadings[tr_id], _colspan=3, _class="subheading"),
+                                         _class = "subheading",
+                                         _id = "%s_%s__subheading" % (tablename, tr_id)))
+                    tr.attributes.update(_class="after_subheading")
+                    tr = form_rows.next()
+                    i += 1
+            try:
+                tr = form_rows.next()
+            except StopIteration:
+                break
+            else:
+                i += 1
+
 
 def shn_rheader_tabs(r, tabs=[], paging=False):
 

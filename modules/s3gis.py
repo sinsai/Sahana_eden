@@ -2044,7 +2044,7 @@ OpenLayers.Util.extend( selectPdfControl, {
                                 marker = markerLayer.image
                             else:
                                 marker = self.get_marker(feature.id)
-                        # Using the download handler causes Markers to show-up small in Safari/Chrome & FF/IE initially (refresh ok)
+                        # Faster to bypass the download handler
                         #marker_url = URL(r=request, c="default", f="download", args=[marker])
                         marker_url = URL(r=request, c="static", f="img", args=["markers", marker])
                     try:

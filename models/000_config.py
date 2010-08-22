@@ -55,7 +55,7 @@ deployment_settings.mail.server = "127.0.0.1:25"
 #deployment_settings.mail.server = "smtp.gmail.com:587"
 #deployment_settings.mail.login = "username:password"
 # From Address
-deployment_settings.mail.sender = "sahana@your.org"
+deployment_settings.mail.sender = "'Sahana' <sahana@your.org>"
 # Address to which mails get sent to approve new users
 deployment_settings.mail.approver = "useradmin@your.org"
 

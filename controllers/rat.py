@@ -76,6 +76,15 @@ def assessment():
         return output
     response.s3.postp = postp
 
+    # Subheadings in forms:
+    subheadings = {
+        "rat_section5" : {
+            "health_services_pre_disaster": "Health services status",
+            "health_problems_adults": "Current health problems",
+            "malnutrition_present_pre_disaster": "Nutrition problems"
+        }
+    }
+
     crud.settings.create_next = None # Do not redirect from CRUD
     response.s3.pagination = True
     output = shn_rest_controller(module, resource,
@@ -91,7 +100,8 @@ def assessment():
                                                     (T("Education"), "section8"),
                                                     (T("Protection"), "section9") ]),
                                  listadd=False,
-                                 sticky=True)
+                                 sticky=True,
+                                 subheadings=subheadings)
 
     response.extra_styles = ["S3/rat.css"]
     return output

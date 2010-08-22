@@ -379,6 +379,13 @@ div.form-container div.controlset input { display: inline;
 div.form-container div.controlset div { margin-left: 15em; }
 div.form-container div.buttonrow { margin-left: 180px; }
 
+/* Subheadings */
+td.subheading { padding-top: 10px;
+                padding-bottom: 5px;
+                border-bottom: thin solid #bbb;
+                font-weight: bold; }
+tr.after_subheading td { padding-top: 10px; }
+
 /* Tabular data view */
 div#table-container { width: 100%;
                       overflow: auto; }

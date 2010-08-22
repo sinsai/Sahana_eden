@@ -1347,7 +1347,6 @@ def shn_create(r, **attr):
                         if f not in original and \
                            table[f].readable and table[f].writable:
                             missing_fields[f] = table[f].default
-                    print missing_fields
                     original.update(missing_fields)
 
         # Default components
@@ -1422,6 +1421,10 @@ def shn_create(r, **attr):
                                message=message,
                                onvalidation=onvalidation,
                                onaccept=_onaccept)
+
+        subheadings = attr.get("subheadings", None)
+        if subheadings:
+            shn_insert_subheadings(form, tablename, subheadings)
 
         # Cancel button?
         #form[0].append(TR(TD(), TD(INPUT(_type="reset", _value="Reset form"))))
@@ -1642,6 +1645,10 @@ def shn_update(r, **attr):
                             onvalidation=onvalidation,
                             onaccept=_onaccept,
                             deletable=False) # TODO: add extra delete button to form
+
+        subheadings = attr.get("subheadings", None)
+        if subheadings:
+            shn_insert_subheadings(form, tablename, subheadings)
 
         # Cancel button?
         #form[0].append(TR(TD(), TD(INPUT(_type="reset", _value="Reset form"))))

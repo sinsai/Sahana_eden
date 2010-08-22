@@ -2881,6 +2881,7 @@ OpenLayers.Util.extend( selectPdfControl, {
                         border: true,
                         width: 250,
                         collapsible: true,
+                        collapseMode: 'mini',
                         collapsed: """ + collapsed + """,
                         split: true,
                         items: [

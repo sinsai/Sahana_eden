@@ -102,9 +102,9 @@ def define_map(window=False, toolbar=False):
     resource = "ireport"
     layername = Tstr("Incident Reports")
     popup_label = Tstr("Incident")
-    # Default
-    #marker = "marker_red"
-    incidents = gis_add_feature_layer(module, resource, layername, popup_label)
+    # Default (but still better to define here as otherwise each feature needs to check it's feature_class)
+    marker = "marker_red"
+    incidents = gis_add_feature_layer(module, resource, layername, popup_label, marker)
     
     # Shelters
     module = "cr"

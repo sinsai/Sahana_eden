@@ -1919,6 +1919,8 @@ OpenLayers.Util.extend( selectPdfControl, {
 
                 if "marker" in layer:
                     markerLayer = db(db.gis_marker.id == layer["marker"]).select(db.gis_marker.image, limitby=(0, 1), cache=cache).first()
+                else:
+                    markerLayer = ""
 
                 if "popup_url" in layer:
                     _popup_url = urllib.unquote(layer["popup_url"])

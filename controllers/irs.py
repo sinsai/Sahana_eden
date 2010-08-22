@@ -142,7 +142,7 @@ def ireport():
         if jr.representation == "html" and jr.method == "create":
             record_id = s3xrc.get_session(session, "irs", "ireport")
             jr.next = URL(r=request, c=module, f=resource, args="create", vars={"from_record":record_id})
-            session.flash = T("Incident Report added")
+            session.flash = T("Added incident report")
         return output
     response.s3.postp = user_postp
 

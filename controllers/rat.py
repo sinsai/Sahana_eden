@@ -78,6 +78,20 @@ def assessment():
 
     # Subheadings in forms:
     subheadings = {
+        "rat_section3" : {
+            "houses_total": "Access to Shelter",
+            "water_containers_available": "Water storage containers in households",
+            "cooking_equipment_available": "Other non-food items",
+            "nfi_assistance_available": "Shelter/NFI Assistance",
+            "comments": "Comments"
+        },
+        "rat_section4" : {
+            "water_source_pre_disaster_type": "Water supply",
+            "water_coll_time": "Water collection",
+            "defec_place_type": "Places for defecation",
+            "close_industry": "Environment",
+            "latrines_number": "Latrines"
+        },
         "rat_section5" : {
             "health_services_pre_disaster": "Health services status",
             "health_problems_adults": "Current health problems",

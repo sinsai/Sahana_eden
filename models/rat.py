@@ -397,6 +397,13 @@ if deployment_settings.has_module(module):
         99: NOT_APPLICABLE
     }
 
+    rat_water_container_types = {
+        1: T("Jerry can"),
+        2: T("Bucket"),
+        3: T("Water gallon"),
+        4: T("Other (specify)")
+    }
+
     resource = "section3"
     tablename = "%s_%s" % (module, resource)
     table = db.define_table(tablename,
@@ -406,21 +413,26 @@ if deployment_settings.has_module(module):
                             Field("houses_destroyed", "integer"),
                             Field("houses_damaged", "integer"),
                             Field("houses_salvmat"),
-                            Field("nfi_water_con", "boolean"),
-                            Field("nfi_water_sto", "boolean"),
-                            #Field("nfi_water_container_types"),
-                            Field("nfi_cooking", "boolean"),
-                            Field("nfi_sanitation", "boolean"),
-                            Field("nfi_sanitation_women", "boolean"),
-                            Field("nfi_bedding", "boolean"),
-                            Field("nfi_clothing", "boolean"),
-                            Field("nfi_ass_available", "boolean"),
-                            Field("nfi_ass_hygiene", "boolean"),
-                            #Field("nfi_assist_hygiene_source"),
-                            Field("nfi_ass_hhkits", "boolean"),
-                            #Field("nfi_ass_hhkits_source"),
-                            Field("nfi_ass_dwelling", "boolean"),
-                            #Field("nfi_ass_dwelling_source"),
+
+                            Field("water_containers_available", "boolean"),
+                            Field("water_containers_sufficient", "boolean"),
+                            Field("water_containers_types"),
+                            Field("water_containers_types_other"),
+
+                            Field("cooking_equipment_available", "boolean"),
+                            Field("sanitation_items_available", "boolean"),
+                            Field("sanitation_items_available_women", "boolean"),
+
+                            Field("bedding_materials_available", "boolean"),
+                            Field("clothing_sets_available", "boolean"),
+
+                            Field("nfi_assistance_available", "boolean"),
+                            Field("kits_hygiene_received", "boolean"),
+                            Field("kits_hygiene_source"),
+                            Field("kits_household_received", "boolean"),
+                            Field("kits_household_source"),
+                            Field("kits_dwelling_received", "boolean"),
+                            Field("kits_dwelling_source"),
                             comments,
                             migrate=migrate)
 
@@ -429,27 +441,63 @@ if deployment_settings.has_module(module):
 
     table.houses_total.label = T("Total number of houses in the area")
     table.houses_total.requires = IS_EMPTY_OR(IS_INT_IN_RANGE(0,99999999))
-    table.houses_total.comment = T("unit")
-    table.houses_destroyed.label = T("How many houses are uninhabitable")
+    shn_rat_label_and_tooltip(table.houses_destroyed,
+        "Number of houses destroyed/uninhabitable",
+        "How many houses are uninhabitable (uninhabitable = foundation and structure destroyed)?")
     table.houses_destroyed.requires = IS_EMPTY_OR(IS_INT_IN_RANGE(0,99999999))
-    table.houses_destroyed.comment = T("unit")
-    table.houses_damaged.label = T("How many houses are damaged but remain usable")
-    table.houses_damaged.requires = IS_EMPTY_OR(IS_INT_IN_RANGE(0,99999999))
-    table.houses_damaged.comment = T("unit")
-
-    table.houses_salvmat.label = T("What type of salvage material can be used from destroyed houses")
+    shn_rat_label_and_tooltip(table.houses_damaged,
+        "Number of houses damaged, but usable",
+        "How many houses suffered damage but remain usable (usable = windows broken, cracks in walls, roof slightly damaged)?")
+    table.houses_destroyed.requires = IS_EMPTY_OR(IS_INT_IN_RANGE(0,99999999))
+    shn_rat_label_and_tooltip(table.houses_salvmat,
+        "Salvage material usable from destroyed houses",
+        "What type of salvage material can be used from destroyed houses?",
+        multiple=True)
     table.houses_salvmat.requires = IS_NULL_OR(IS_IN_SET(rat_houses_salvmat_types, multiple=True, zero=None))
+    table.houses_salvmat.represent = lambda opt, set=rat_houses_salvmat_types: \
+        shn_rat_represent_multiple(set, opt)
 
-    table.nfi_water_con.label = T("Do HH have min. 2 containers (10-20 litres each) to hold water")
-    table.nfi_water_sto.label = T("Do HH have household water storage containers")
+    shn_rat_label_and_tooltip(table.water_containers_available,
+        "Water storage containers available for HH",
+        "Do households have household water storage containers?")
+    shn_rat_label_and_tooltip(table.water_containers_sufficient,
+        "Water storage containers sufficient per HH",
+        "Do households each have at least 2 containers (10-20 litres each) to hold water?")
+    shn_rat_label_and_tooltip(table.water_containers_types,
+        "Types of water storage containers available",
+        "What types of household water storage containers are available?",
+        multiple=True)
+    table.water_containers_types.requires = IS_EMPTY_OR(IS_IN_SET(rat_water_container_types, zero=None, multiple=True))
+    table.water_containers_types.represents = lambda opt, set=rat_water_container_types: \
+                                              shn_rat_represent_multiple(set, opt)
+    table.water_containers_types_other.label = T("Other types of water storage containers")
 
-    table.nfi_cooking.label = T("Do HH have appropriate equipment/materials to cook their food")
-    table.nfi_sanitation.label = T("Do people have reliable access to sufficient sanitation/hygiene items")
-    table.nfi_sanitation_women.label = T("Do women and girls have easy access to sanitary materials")
-    table.nfi_bedding.label = T("Do HH have bedding materials available")
-    table.nfi_clothing.label = T("Do people have at least 2 full sets of clothing")
+    shn_rat_label_and_tooltip(table.cooking_equipment_available,
+        "Appropriate cooking equipment/materials in HH",
+        "Do households have appropriate equipment and materials to cook their food (stove, pots, dished plates, and a mug/drinking vessel, etc)?")
+    shn_rat_label_and_tooltip(table.sanitation_items_available,
+        "Reliable access to sanitation/hygiene items",
+        "Do people have reliable access to sufficient sanitation/hygiene items (bathing soap, laundry soap, shampoo, toothpaste and toothbrush)?")
+    shn_rat_label_and_tooltip(table.sanitation_items_available_women,
+        "Easy access to sanitation items for women/girls",
+        "Do women and girls have easy access to sanitary materials?")
+    shn_rat_label_and_tooltip(table.bedding_materials_available,
+        "Bedding materials available",
+        "Do households have bedding materials available (tarps, plastic mats, blankets)?")
+    shn_rat_label_and_tooltip(table.clothing_sets_available,
+        "Appropriate clothing available",
+        "Do people have at least 2 full sets of clothing (shirts, pants/sarong, underwear)?")
 
-    table.nfi_ass_available.label = T("Have they received or expecting to receive any shelter/NFI assistance in the coming days")
+    shn_rat_label_and_tooltip(table.nfi_assistance_available,
+        "Shelter/NFI assistance received/expected",
+        "Have households received any shelter/NFI assistance or is assistance expected in the coming days?")
+
+    table.kits_hygiene_received.label = T("Hygiene kits received")
+    table.kits_hygiene_source.label = T("Hygiene kits, source")
+    table.kits_household_received.label = T("Household kits received")
+    table.kits_household_source.label = T("Household kits, source")
+    table.kits_dwelling_received.label = T("Family tarpaulins received")
+    table.kits_dwelling_source.label = T("Family tarpaulins, source")
 
     # CRUD strings
     s3.crud_strings[tablename] = rat_section_crud_strings
@@ -505,48 +553,26 @@ if deployment_settings.has_module(module):
     table = db.define_table(tablename,
                             timestamp, uuidstamp, authorstamp, deletion_status,
                             assessment_id,
-                            # Water source before the disaster
-                            Field("water_source_pre_disaster_type", "integer",
-                                  requires = IS_EMPTY_OR(IS_IN_SET(rat_water_source_types, zero=None))),
+                            Field("water_source_pre_disaster_type", "integer"),
                             Field("water_source_pre_disaster_description"),
-                            # Current source of drinking water
-                            Field("dwater_source_type", "integer",
-                                  requires = IS_EMPTY_OR(IS_IN_SET(rat_water_source_types, zero=None))),
+                            Field("dwater_source_type", "integer"),
                             Field("dwater_source_description"),
                             Field("dwater_reserve"),
-                            # Current source of sanitary water
-                            Field("swater_source_type", "integer",
-                                  requires = IS_EMPTY_OR(IS_IN_SET(rat_water_source_types, zero=None))),
+                            Field("swater_source_type", "integer"),
                             Field("swater_source_description"),
                             Field("swater_reserve"),
-
-                            # Walking distance to water resources
-                            Field("water_coll_time", "integer",
-                                  requires = IS_EMPTY_OR(IS_IN_SET(rat_walking_time_opts, zero=None))),
+                            Field("water_coll_time", "integer"),
                             Field("water_coll_safe", "boolean"),
                             Field("water_coll_safety_problems"),
-                            Field("water_coll_person", "integer",
-                                  requires = IS_EMPTY_OR(IS_IN_SET(rat_water_coll_person_opts, zero=None))),
-
-                            # Defecation places
+                            Field("water_coll_person", "integer"),
                             Field("defec_place_type"),
                             Field("defec_place_description"),
                             Field("defec_place_distance", "integer"),
-
-                            # Animal defecation places
-                            Field("defec_place_animals", "integer",
-                                  requires = IS_EMPTY_OR(IS_IN_SET(rat_defec_place_animals_opts, zero = None))),
-
-                            # Agro-chemical/Industry production close to area
+                            Field("defec_place_animals", "integer"),
                             Field("close_industry", "boolean"),
-
-                            # Place for disposal of solid waste
                             Field("waste_disposal"),
-
-                            # Latrines
                             Field("latrines_number", "integer"),
-                            Field("latrines_type", "integer",
-                                  requires = IS_EMPTY_OR(IS_IN_SET(rat_latrine_types, zero=None))),
+                            Field("latrines_type", "integer"),
                             Field("latrines_separation", "boolean"),
                             Field("latrines_distance", "integer"),
                             comments,
@@ -556,12 +582,15 @@ if deployment_settings.has_module(module):
     table.assessment_id.writable = False
 
     table.water_source_pre_disaster_type.label = T("Type of water source before the disaster")
+    table.water_source_pre_disaster_type.requires = IS_EMPTY_OR(IS_IN_SET(rat_water_source_types, zero=None))
     table.water_source_pre_disaster_description.label = T("Description of water source before the disaster")
 
     shn_rat_label_and_tooltip(table.dwater_source_type,
         "Current type of source for drinking water",
         "What is your major source of drinking water?")
+    table.dwater_source_type.requires = IS_EMPTY_OR(IS_IN_SET(rat_water_source_types, zero=None))
     table.dwater_source_description.label = T("Description of drinking water source")
+
     shn_rat_label_and_tooltip(table.dwater_reserve,
         "How long will this water resource last?",
         "Specify the minimum sustainability in weeks or days.")
@@ -569,6 +598,7 @@ if deployment_settings.has_module(module):
     shn_rat_label_and_tooltip(table.swater_source_type,
         "Current type of source for sanitary water",
         "What is your major source of clean water for daily use (ex: washing, cooking, bathing)?")
+    table.swater_source_type.requires = IS_EMPTY_OR(IS_IN_SET(rat_water_source_types, zero=None))
     table.swater_source_description.label = T("Description of sanitary water source")
     shn_rat_label_and_tooltip(table.swater_reserve,
         "How long will this water resource last?",
@@ -577,10 +607,12 @@ if deployment_settings.has_module(module):
     shn_rat_label_and_tooltip(table.water_coll_time,
         "Time needed to collect water",
         "How long does it take you to reach the available water resources? Specify the time required to go there and back, including queuing time, by foot.")
+    table.water_coll_time.requires = IS_EMPTY_OR(IS_IN_SET(rat_walking_time_opts, zero=None))
     table.water_coll_safe.label = T("Is it safe to collect water?")
     table.water_coll_safe.default = True
     table.water_coll_safety_problems.label = T("If no, specify why")
     table.water_coll_person.label = T("Who usually collects water for the family?")
+    table.water_coll_person.requires = IS_EMPTY_OR(IS_IN_SET(rat_water_coll_person_opts, zero=None))
 
     shn_rat_label_and_tooltip(table.defec_place_type,
         "Type of place for defecation",
@@ -591,6 +623,7 @@ if deployment_settings.has_module(module):
     table.defec_place_distance.label = T("Distance between defecation area and water source")
     table.defec_place_distance.comment = T("meters")
     table.defec_place_animals.label = T("Defecation area for animals")
+    table.defec_place_animals.requires = IS_EMPTY_OR(IS_IN_SET(rat_defec_place_animals_opts, zero = None))
 
     shn_rat_label_and_tooltip(table.close_industry,
         "Industry close to village/camp",
@@ -608,6 +641,7 @@ if deployment_settings.has_module(module):
     shn_rat_label_and_tooltip(table.latrines_type,
         "Type of latrines",
         "What type of latrines are available in the village/IDP centre/Camp?")
+    table.latrines_type.requires = IS_EMPTY_OR(IS_IN_SET(rat_latrine_types, zero=None))
 
     shn_rat_label_and_tooltip(table.latrines_separation,
         "Separate latrines for women and men",
@@ -655,35 +689,28 @@ if deployment_settings.has_module(module):
                             assessment_id,
                             Field("health_services_pre_disaster", "boolean"),
                             Field("medical_supplies_pre_disaster", "boolean"),
-
                             Field("health_services_post_disaster", "boolean"),
                             Field("medical_supplies_post_disaster", "boolean"),
                             Field("medical_supplies_reserve", "integer"),
-
                             Field("health_services_available_types"),
                             Field("staff_number_doctors", "integer"),
                             Field("staff_number_nurses", "integer"),
                             Field("staff_number_midwives", "integer"),
                             Field("health_service_walking_time", "integer"),
-
                             Field("health_problems_adults"),
                             Field("health_problems_adults_other"),
                             Field("health_problems_children"),
                             Field("health_problems_children_other"),
-
                             Field("chronical_illness_cases", "boolean"),
                             Field("chronical_illness_children", "boolean"),
                             Field("chronical_illness_elderly", "boolean"),
                             Field("chronical_care_sufficient", "boolean"),
-
                             Field("malnutrition_present_pre_disaster", "boolean"),
                             Field("mmd_present_pre_disaster", "boolean"),
-
                             Field("breast_milk_substitutes_pre_disaster", "boolean"),
                             Field("breast_milk_substitutes_post_disaster", "boolean"),
                             Field("infant_nutrition_alternative"),
                             Field("infant_nutrition_alternative_other"),
-
                             Field("u5_diarrhea", "boolean"),
                             Field("u5_diarrhea_rate_48h", "integer"),
                             comments,

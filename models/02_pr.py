@@ -389,6 +389,7 @@ person_id = db.Table(None, "person_id",
                                                              shn_pr_person_represent)),
                              represent = lambda id: (id and \
                                          [shn_pr_person_represent(id)] or ["None"])[0],
+                             label = T("Person"),
                              comment = shn_person_id_comment,
                              ondelete = "RESTRICT"))
 

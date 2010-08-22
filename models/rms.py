@@ -56,6 +56,7 @@ if deployment_settings.has_module(module):
     table = db.define_table(tablename, timestamp, uuidstamp, deletion_status,
         Field("message", "text"),
         Field("timestmp", "datetime"),  # 'timestamp' is a reserved word in Postgres
+        person_id,
         location_id,
         shelter_id,
         Field("type", "integer"),
@@ -75,6 +76,7 @@ if deployment_settings.has_module(module):
 
     # Label the fields for the view
     table.timestmp.label = T("Date & Time")
+    table.person_id.label = T("Requestor")
 
     # Hide fields from user:
     table.source_type.readable = table.source_type.writable = False

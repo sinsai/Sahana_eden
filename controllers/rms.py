@@ -33,14 +33,27 @@ def req():
     tablename = module + "_" + resource
     table = db[tablename]
 
-    # Filter out non-actionable SMS requests:
-    #response.s3.filter = (db.rms_req.actionable == True) | (db.rms_req.source_type != 2) # disabled b/c Ushahidi no longer updating actionaable fielde
-
     # Don't send the locations list to client (pulled by AJAX instead)
     table.location_id.requires = IS_NULL_OR(IS_ONE_OF_EMPTY(db, "gis_location.id"))
 
-    if request.args(0) == "create" or request.args(0) == "update": 
-        db.rms_req.pledge_status.readable = False
+    # Pre-processor
+    def prep(r):
+        if r.representation in ("html", "popup"):
+            if r.method == "create":
+                table.timestmp.default = request.utcnow
+                person = session.auth.user.id if auth.is_logged_in() else None
+                if person:
+                    person_uuid = db(db.auth_user.id == person).select(db.auth_user.person_uuid, limitby=(0, 1)).first().person_uuid
+                    person = db(db.pr_person.uuid == person_uuid).select(db.pr_person.id, limitby=(0, 1)).first().id
+                table.person_id.default = person
+                db.rms_req.pledge_status.readable = False
+            elif r.method == "update":
+                db.rms_req.pledge_status.readable = False
+        return True
+    response.s3.prep = prep
+
+    # Filter out non-actionable SMS requests:
+    #response.s3.filter = (db.rms_req.actionable == True) | (db.rms_req.source_type != 2) # disabled b/c Ushahidi no longer updating actionaable fielde
 
     # Post-processor
     def req_postp(jr, output):

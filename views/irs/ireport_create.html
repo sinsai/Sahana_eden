@@ -3,24 +3,28 @@
 <script type="text/javascript">//<![CDATA[
 $(function() {
     // Person AutoComplete
+    {{real_input = request.controller + "_" + request.function + "_person_id"}}
+    {{dummy_input = "dummy_" + real_input}}
     // Hide the real Input Field
-    $('#irs_ireport_person_id').hide();
+    $('#{{=real_input}}').hide();
     // Add a dummy field
-    $('#irs_ireport_person_id').after("<input id='dummy_irs_ireport_person_id' class='ac_input' size=50 />");
-    {{dummy_input = "dummy_irs_ireport_person_id"}}
+    $('#{{=real_input}}').after("<input id='{{=dummy_input}}' class='ac_input' size=50 />");
     {{include "pr/person_autocomplete.js"}}
-    // Populate the real Input when the Dummy is selected
-    $('#dummy_irs_ireport_person_id').result(function(event, data, formatted) {
+    // Populate the Dummy Input from the real one
+    var oldvalue = $('#{{=real_input}} > option[selected="selected"]').html();
+    $('#{{=dummy_input}}').val(oldvalue);
+    // Re-populate the real Input when the Dummy is selected
+    $('#{{=dummy_input}}').result(function(event, data, formatted) {
         var newvalue = data.id;
-        $('#irs_ireport_person_id').val(newvalue);
+        $('#{{=real_input}}').val(newvalue);
     });
     
     // Location AutoComplete
-    {{location_id = "irs_ireport_location_id"}}
+    {{location_id = request.controller + "_" + request.function + "_location_id"}}
     {{include "gis/location_autocomplete.js"}}
     
     // Reference AutoComplete
-    {{entity_id = "irs_ireport_document_id"}}
+    {{entity_id = request.controller + "_" + request.function + "_document_id"}}
     {{urlpath_c = "doc"}}
     {{urlpath_f = "document"}}
     {{urlvar_field = "name"}}

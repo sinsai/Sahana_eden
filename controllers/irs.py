@@ -117,18 +117,20 @@ def ireport():
             # Disable legacy fields, unless updating, so the data can be manually transferred to new fields
             table.source.readable = table.source.writable = False        
             table.source_id.readable = table.source_id.writable = False         
+        elif r.representation in ("html", "popup") and r.method == "create":
+            table.datetime.default = request.utcnow
+            person = session.auth.user.id if auth.is_logged_in() else None
+            if person:
+                person_uuid = db(db.auth_user.id == person).select(db.auth_user.person_uuid, limitby=(0, 1)).first().person_uuid
+                person = db(db.pr_person.uuid == person_uuid).select(db.pr_person.id, limitby=(0, 1)).first().id
+            table.person_id.default = person
+
         return True
     response.s3.prep = prep
 
     if not shn_has_role("Editor"):
         table.incident_id.readable = table.incident_id.writable = False
     
-    person = session.auth.user.id if auth.is_logged_in() else None
-    if person:
-        person_uuid = db(db.auth_user.id == person).select(db.auth_user.person_uuid, limitby=(0, 1)).first().person_uuid
-        person = db(db.pr_person.uuid == person_uuid).select(db.pr_person.id, limitby=(0, 1)).first().id
-    table.person_id.default = person
-
     db.irs_iimage.assessment_id.readable = \
     db.irs_iimage.assessment_id.writable = False
 

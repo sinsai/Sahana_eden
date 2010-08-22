@@ -55,7 +55,7 @@ deployment_settings.mail.server = "127.0.0.1:25"
 #deployment_settings.mail.server = "smtp.gmail.com:587"
 #deployment_settings.mail.login = "username:password"
 # From Address
-deployment_settings.mail.sender = "sahana@your.org"
+deployment_settings.mail.sender = "'Sahana' <sahana@your.org>"
 # Address to which mails get sent to approve new users
 deployment_settings.mail.approver = "useradmin@your.org"
 
@@ -70,6 +70,12 @@ deployment_settings.L10n.utc_offset = "UTC +0000"
 deployment_settings.gis.display_L0 = False
 # Currently unused
 #deployment_settings.gis.display_L1 = True
+
+# Security Policy settings
+# Lock-down access to Map Editing
+#deployment_settings.security.map = True
+# Currently unused
+#deployment_settings.security.policy = 2 # Editor
 
 # Comment/uncomment modules here to disable/enable them
 # Modules menu is defined in 01_menu.py

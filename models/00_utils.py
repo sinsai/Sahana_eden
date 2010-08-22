@@ -597,7 +597,6 @@ def shn_insert_subheadings(form, tablename, subheadings):
     if subheadings:
         if tablename in subheadings:
             subheadings = subheadings.get(tablename)
-        print subheadings
         form_rows = iter(form[0])
         tr = form_rows.next()
         i = 0

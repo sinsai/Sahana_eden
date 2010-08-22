@@ -1318,13 +1318,37 @@ def shn_create(r, **attr):
     if representation in ("html", "popup"):
 
         # Copy from a previous record?
-        original_id = r.request.get_vars.get("from_record", None)
+        from_record = r.request.get_vars.get("from_record", None)
+        from_fields = r.request.get_vars.get("from_fields", None)
         original = None
-        if original_id:
+        if from_record:
             del r.request.get_vars["from_record"] # forget it
-            copy_fields = [f for f in table if f.readable and f.writable]
-            if shn_has_permission("read", table, original_id):
-                original = db(table.id == original_id).select(limitby=(0, 1), *copy_fields).first()
+            if from_record.find(".") != -1:
+                source_name, from_record = from_record.split(".", 1)
+                source = db.get(source_name, None)
+            else:
+                source = table
+            if from_fields:
+                del r.request.get_vars["from_fields"] # forget it
+                from_fields = from_fields.split(",")
+            else:
+                from_fields = [f for f in table.fields if f in source.fields and f!="id"]
+            if source and from_record:
+                copy_fields = [source[f] for f in from_fields if
+                                    f in source.fields and
+                                    f in table.fields and
+                                    table[f].type == source[f].type and
+                                    table[f].readable and table[f].writable]
+                if shn_has_permission("read", source, from_record):
+                    original = db(source.id == from_record).select(limitby=(0, 1), *copy_fields).first()
+                if original:
+                    missing_fields = Storage()
+                    for f in table.fields:
+                        if f not in original and \
+                           table[f].readable and table[f].writable:
+                            missing_fields[f] = table[f].default
+                    print missing_fields
+                    original.update(missing_fields)
 
         # Default components
         output = dict(module=prefix, resource=name, main=main, extra=extra)

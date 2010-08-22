@@ -2237,15 +2237,16 @@ OpenLayers.Util.extend( selectPdfControl, {
             tooltipUnselect(event);
             var feature = event.feature;
             var selectedFeature = feature;
+            centerPoint = feature.geometry.getBounds().getCenterLonLat();
             if (undefined == feature.attributes.description) {
                 var popup = new OpenLayers.Popup.FramedCloud('georsspopup',
-                feature.geometry.getBounds().getCenterLonLat(),
+                centerPoint,
                 new OpenLayers.Size(200,200),
                 '<h2>' + feature.attributes.title + '</h2>',
                 null, true, onPopupClose);
             } else {
                 var popup = new OpenLayers.Popup.FramedCloud('georsspopup',
-                feature.geometry.getBounds().getCenterLonLat(),
+                centerPoint,
                 new OpenLayers.Size(200,200),
                 '<h2>' + feature.attributes.title + '</h2>' + feature.attributes.description,
                 null, true, onPopupClose);
@@ -2280,7 +2281,9 @@ OpenLayers.Util.extend( selectPdfControl, {
                             warning = "URLError"
                         except urllib2.HTTPError:
                             warning = "HTTPError"
-                        filename = "gis_cache.file." + name.replace(" ", "_") + ".rss"
+                        _name = name.replace(" ", "_")
+                        _name = _name.replace(",", "_")
+                        filename = "gis_cache.file." + _name + ".rss"
                         filepath = os.path.join(cachepath, filename)
                         f = open(filepath, "w")
                         # Handle errors
@@ -2449,18 +2452,19 @@ OpenLayers.Util.extend( selectPdfControl, {
             // unselect any previous selections
             tooltipUnselect(event);
             var feature = event.feature;
+            centerPoint = feature.geometry.getBounds().getCenterLonLat();
             var selectedFeature = feature;
             var type = typeof feature.attributes.name;
             if ('object' == type) {
                 var popup = new OpenLayers.Popup.FramedCloud("kmlpopup",
-                    feature.geometry.getBounds().getCenterLonLat(),
+                    centerPoint,
                     new OpenLayers.Size(200,200),
                     "<h2>" + "</h2>",
                     null, true, onPopupClose
                 );
             } else if (undefined == feature.attributes.description) {
                 var popup = new OpenLayers.Popup.FramedCloud("kmlpopup",
-                    feature.geometry.getBounds().getCenterLonLat(),
+                    centerPoint,
                     new OpenLayers.Size(200,200),
                     "<h2>" + feature.attributes.name + "</h2>",
                     null, true, onPopupClose
@@ -2472,7 +2476,7 @@ OpenLayers.Util.extend( selectPdfControl, {
                     content = "Content contained Javascript! Escaped content below.<br />" + content.replace(/</g, "<");
                 }
                 var popup = new OpenLayers.Popup.FramedCloud("kmlpopup",
-                    feature.geometry.getBounds().getCenterLonLat(),
+                    centerPoint,
                     new OpenLayers.Size(200,200),
                     content,
                     null, true, onPopupClose
@@ -2491,7 +2495,9 @@ OpenLayers.Util.extend( selectPdfControl, {
                     if cacheable:
                         # Download file
                         file, warning = self.download_kml(url, public_url)
-                        filename = "gis_cache.file." + name.replace(" ", "_") + ".kml"
+                        _name = name.replace(" ", "_")
+                        _name = _name.replace(",", "_")
+                        filename = "gis_cache.file." + _name + ".kml"
                         filepath = os.path.join(cachepath, filename)
                         f = open(filepath, "w")
                         # Handle errors
@@ -2722,32 +2728,39 @@ OpenLayers.Util.extend( selectPdfControl, {
                 }
             }
             lastFeature = feature;
-            if (undefined == feature.attributes.name) {
+            centerPoint = feature.geometry.getBounds().getCenterLonLat();
+            if (undefined == feature.attributes.name && undefined == feature.attributes.title) {
+                // We don't have a suitable title, so don't display a tooltip
+                tooltipPopup = null;
+            } else if (undefined == feature.attributes.name) {
                 // GeoRSS
                 tooltipPopup = new OpenLayers.Popup("activetooltip",
-                        feature.geometry.getBounds().getCenterLonLat(),
+                        centerPoint,
                         new OpenLayers.Size(80, 12),
                         feature.attributes.title,
                         false
                 );
             } else {
-                // KML
+                // KML or Features
                 tooltipPopup = new OpenLayers.Popup("activetooltip",
-                        feature.geometry.getBounds().getCenterLonLat(),
+                        centerPoint,
                         new OpenLayers.Size(80, 12),
                         feature.attributes.name,
                         false
                 );
             }
-            // should be moved to CSS
-            tooltipPopup.contentDiv.style.backgroundColor='ffffcb';
-            tooltipPopup.contentDiv.style.overflow='hidden';
-            tooltipPopup.contentDiv.style.padding='3px';
-            tooltipPopup.contentDiv.style.margin='10px';
-            tooltipPopup.closeOnMove = true;
-            tooltipPopup.autoSize = true;
-            feature.popup = tooltipPopup;
-            map.addPopup(tooltipPopup);
+            if (tooltipPopup != null) {
+                // should be moved to CSS
+                tooltipPopup.contentDiv.style.backgroundColor='ffffcb';
+                tooltipPopup.contentDiv.style.overflow='hidden';
+                tooltipPopup.contentDiv.style.padding='3px';
+                tooltipPopup.contentDiv.style.margin='10px';
+                tooltipPopup.closeOnMove = true;
+                tooltipPopup.autoSize = true;
+                tooltipPopup.opacity = 0.5;
+                feature.popup = tooltipPopup;
+                map.addPopup(tooltipPopup);
+            }
         }
     }
     function tooltipUnselect(event){

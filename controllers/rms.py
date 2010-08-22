@@ -14,8 +14,11 @@ if module not in deployment_settings.modules:
 response.menu_options = [
     [T("Home"), False, URL(r=request, f="index")],
     [T("Request Aid"), False, URL(r=request, f="req", args="create")],
-    [T("View Requests & Pledge Aid"), False, URL(r=request, f="req")],
-    [T("View & Edit Pledges"),False, URL(r=request, f="pledge")]
+    [T("Pledge Aid"), False, URL(r=request, f="req")],
+    [T("Pledges"),False, URL(r=request, f="pledge"), [
+        [T("List"), False, URL(r=request, f="pledge")],
+        [T("Add"), False, URL(r=request, f="pledge", args="create")],
+    ]]
 ]
 
 # S3 framework functions
@@ -46,9 +49,9 @@ def req():
                     person_uuid = db(db.auth_user.id == person).select(db.auth_user.person_uuid, limitby=(0, 1)).first().person_uuid
                     person = db(db.pr_person.uuid == person_uuid).select(db.pr_person.id, limitby=(0, 1)).first().id
                 table.person_id.default = person
-                db.rms_req.pledge_status.readable = False
+                table.pledge_status.readable = False
             elif r.method == "update":
-                db.rms_req.pledge_status.readable = False
+                table.pledge_status.readable = False
         return True
     response.s3.prep = prep
 
@@ -84,9 +87,28 @@ def pledge():
     """ RESTful CRUD controller """
 
     resource = request.function
+    tablename = module + "_" + resource
+    table = db[tablename]
 
-    #pledges = db(db.rms_pledge.status == 3).select() # changes the request status to completed when pledge delivered
-                                                      # this is necessary to close the loop
+    # Pre-processor
+    def prep(r):
+        if r.representation in ("html", "popup"):
+            if r.method == "create":
+                # auto fill posted_on field and make it readonly
+                table.submitted_on.default = request.now
+                table.submitted_on.writable = False
+
+                person = session.auth.user.id if auth.is_logged_in() else None
+                if person:
+                    person_uuid = db(db.auth_user.id == person).select(db.auth_user.person_uuid, limitby=(0, 1)).first().person_uuid
+                    person = db(db.pr_person.uuid == person_uuid).select(db.pr_person.id, limitby=(0, 1)).first().id
+                table.person_id.default = person
+        return True
+    response.s3.prep = prep
+
+    # Change the request status to completed when pledge delivered
+    # (this is necessary to close the loop)
+    #pledges = db(db.rms_pledge.status == 3).select() 
     #for pledge in pledges:
     #    req = db(db.rms_req.id == pledge.req_id).update(completion_status = True)
     #db.commit()

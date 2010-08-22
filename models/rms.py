@@ -54,13 +54,14 @@ if deployment_settings.has_module(module):
     resource = "req"
     tablename = "%s_%s" % (module, resource)
     table = db.define_table(tablename, timestamp, uuidstamp, deletion_status,
-        Field("message", "text"),
-        Field("timestmp", "datetime"),  # 'timestamp' is a reserved word in Postgres
         person_id,
-        location_id,
         shelter_id,
+        organisation_id,
         Field("type", "integer"),
         Field("priority", "integer"),
+        Field("message", "text"),
+        Field("timestmp", "datetime"),  # 'timestamp' is a reserved word in Postgres
+        location_id,
         Field("source_type", "integer"),
         Field("source_id", "integer"),
         Field("verified", "boolean"),
@@ -74,9 +75,17 @@ if deployment_settings.has_module(module):
 
     db.rms_req.pledge_status.writable = False
 
-    # Label the fields for the view
-    table.timestmp.label = T("Date & Time")
+    # Make Person Mandatory
+    table.person_id.requires = IS_ONE_OF(db, "pr_person.id", shn_pr_person_represent)
     table.person_id.label = T("Requestor")
+    table.person_id.comment = SPAN("*", _class="req")
+
+    table.timestmp.requires = IS_DATETIME()
+    table.timestmp.comment = SPAN("*", _class="req")
+    table.timestmp.label = T("Date & Time")
+
+    table.message.requires = IS_NOT_EMPTY()
+    table.message.comment = SPAN("*", _class="req")
 
     # Hide fields from user:
     table.source_type.readable = table.source_type.writable = False
@@ -91,12 +100,6 @@ if deployment_settings.has_module(module):
     table.actionable.default = 1
     table.source_type.default = 1
 
-    table.message.requires = IS_NOT_EMPTY()
-    table.message.comment = SPAN("*", _class="req")
-
-    table.timestmp.requires = IS_NOT_EMPTY()
-    table.timestmp.comment = SPAN("*", _class="req")
-
     table.priority.requires = IS_NULL_OR(IS_IN_SET(rms_priority_opts))
     table.priority.represent = lambda id: (
         [id and
@@ -105,9 +108,10 @@ if deployment_settings.has_module(module):
         ][0])
     table.priority.label = T("Priority Level")
 
-    table.type.requires = IS_NULL_OR(IS_IN_SET(rms_type_opts))
+    table.type.requires = IS_IN_SET(rms_type_opts)
     table.type.represent = lambda type: type and rms_type_opts[type]
     table.type.label = T("Request Type")
+    table.type.comment = SPAN("*", _class="req")
 
     table.source_type.requires = IS_NULL_OR(IS_IN_SET(rms_req_source_type))
     table.source_type.represent = lambda stype: stype and rms_req_source_type[stype]
@@ -115,7 +119,8 @@ if deployment_settings.has_module(module):
 
     ADD_AID_REQUEST = T("Add Aid Request")
 
-    s3.crud_strings[tablename] = Storage(title_create        = ADD_AID_REQUEST,
+    s3.crud_strings[tablename] = Storage(
+                                    title_create        = ADD_AID_REQUEST,
                                     title_display       = "Aid Request Details",
                                     title_list          = "List Aid Requests",
                                     title_update        = "Edit Aid Request",
@@ -127,9 +132,10 @@ if deployment_settings.has_module(module):
                                     msg_record_created  = "Aid request added",
                                     msg_record_modified = "Aid request updated",
                                     msg_record_deleted  = "Aid request deleted",
-                                    msg_list_empty      = "No aid requests currently available")
+                                    msg_list_empty      = "No aid requests currently available"
+                                    )
 
-    #Reusable field for other tables
+    # Reusable field for other tables
     request_id = db.Table(None, "req_id",
                 FieldS3("req_id", db.rms_req, sortby="message",
                     requires = IS_NULL_OR(IS_ONE_OF(db, "rms_req.id", "%(message)s")),
@@ -315,10 +321,6 @@ if deployment_settings.has_module(module):
 
     # set pledge default
     table.status.default = 1
-
-    # auto fill posted_on field and make it readonly
-    table.submitted_on.default = request.now
-    table.submitted_on.writable = False
 
     table.status.requires = IS_IN_SET(rms_status_opts, zero=None)
     table.status.represent = lambda status: status and rms_status_opts[status]

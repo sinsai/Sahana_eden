@@ -138,6 +138,11 @@ def ireport():
     # Post-processor
     def user_postp(jr, output):
         shn_action_buttons(jr, deletable=False)
+        # Redirect to read/edit view rather than list view
+        if jr.representation == "html" and jr.method == "create":
+            record_id = s3xrc.get_session(session, "irs", "ireport")
+            jr.next = URL(r=request, c=module, f=resource, args="create", vars={"from_record":record_id})
+            session.flash = T("Incident Report added")
         return output
     response.s3.postp = user_postp
 

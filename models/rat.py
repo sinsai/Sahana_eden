@@ -154,7 +154,7 @@ if deployment_settings.has_module(module):
                             Field("accessibility", "integer"),
                             comments,
                             document_id,
-                            document,
+                            #document,
                             migrate=migrate)
 
     table.date.requires = [IS_DATE(), IS_NOT_EMPTY()]
@@ -225,7 +225,7 @@ if deployment_settings.has_module(module):
                 i += 1
                 if staff_id:
                     staff = db(table.id == staff_id).select(table.organisation_id,
-                                                            limitby=(0,1)).first()
+                                                            limitby=(0, 1)).first()
                     if staff:
                         org[i] = shn_organisation_represent(staff.organisation_id)
 

@@ -378,6 +378,43 @@ def location():
     return output
 
 #@auth.shn_requires_membership("MapAdmin")
+def location_duplicates():
+
+    """ Handle De-duplication of Locations """
+
+    def delete_location(old, new):
+        # Find all tables which link to the Locations table
+        tables = []
+        for table in db.tables:
+            if 'location_id' in db[table]:
+                tables.append(table)
+
+        for table in tables:
+            query = db[table].location_id == old
+            db(query).update(location_id=new)
+        db(db.gis_location.id == old).delete()
+
+    def open_btn(field):
+        return A(T("Open in New Tab"), _id=field, _href=URL(r=request, f="location"), _class="action-btn", _target="_blank")
+
+    form = SQLFORM.factory(
+                           Field("old", db.gis_location, requires=IS_ONE_OF(db, "gis_location.id", "%(name)s"), label = B(T("Old")), comment=open_btn("btn_old")),
+                           Field("new", db.gis_location, requires=IS_ONE_OF(db, "gis_location.id", "%(name)s"), label = B(T("New")), comment=open_btn("btn_new")),
+                          )
+    
+    if form.accepts(request.vars, session):
+        _vars = form.vars
+        # Take Action
+        delete_location(_vars.old, _vars.new)
+        
+        response.confirmation = T("Location De-duplicated")
+
+    elif form.errors:
+        response.error = T("Need to select 2 Locations")
+
+    return dict(form=form)
+    
+#@auth.shn_requires_membership("MapAdmin")
 def apikey():
     """ RESTful CRUD controller """
     resource = request.function

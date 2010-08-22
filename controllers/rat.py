@@ -67,11 +67,16 @@ def assessment():
             table.staff_id.default = staff_id.id
 
     # Post-processor
-    def user_postp(jr, output):
-        shn_action_buttons(jr, deletable=False)
+    def postp(r, output):
+        shn_action_buttons(r, deletable=False)
+        # Redirect to read/edit view rather than list view
+        if r.representation == "html" and r.method == "create":
+            r.next = r.other(method="",
+                             record_id=s3xrc.get_session(session, "rat", "assessment"))
         return output
-    response.s3.postp = user_postp
+    response.s3.postp = postp
 
+    crud.settings.create_next = None # Do not redirect from CRUD
     response.s3.pagination = True
     output = shn_rest_controller(module, resource,
                                  rheader=lambda r: \

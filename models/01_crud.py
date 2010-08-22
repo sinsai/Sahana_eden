@@ -1357,10 +1357,11 @@ def shn_create(r, **attr):
             # Neutralize callbacks
             crud.settings.create_onvalidation = None
             crud.settings.create_onaccept = None
-            crud.settings.create_next = create_next or r.there()
+            crud.settings.create_next = None
+            r.next = create_next or r.there()
         else:
-            if not crud.settings.create_next:
-                crud.settings.create_next = r.there()
+            r.next = crud.settings.create_next or r.there()
+            crud.settings.create_next = None
             if not onvalidation:
                 onvalidation = crud.settings.create_onvalidation
             if not onaccept:

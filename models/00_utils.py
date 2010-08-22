@@ -375,6 +375,10 @@ def myname(user_id):
     user = db.auth_user[user_id]
     return user.first_name if user else "None"
 
+def unauthorised():
+    session.error = T("Not Authorised!")
+    redirect(URL(r=request, c="default", f="user", args="login"))
+
 def shn_abbreviate(word, size=48):
 
     """

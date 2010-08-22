@@ -12,7 +12,6 @@ module = request.controller
 
 # Options Menu (available in all Functions' Views)
 response.menu_options = [
-    [T("Service Catalogue"), False, URL(r=request, f="map_service_catalogue")],
     [T("Locations"), False, URL(r=request, f="location"), [
         [T("List"), False, URL(r=request, f="location")],
         [T("Add"), False, URL(r=request, f="location", args="create")],
@@ -21,7 +20,10 @@ response.menu_options = [
     # Currently broken
     #[T("Bulk Uploader"), False, URL(r=request, c="doc", f="bulk_upload")]
 ]
-
+if not deployment_settings.get_security_map() or shn_has_role("MapAdmin"):
+    response.menu_options.append([T("Service Catalogue"), False, URL(r=request, f="map_service_catalogue")])
+    response.menu_options.append([T("De-duplicator"), False, URL(r=request, f="location_duplicates")])
+ 
 # Web2Py Tools functions
 def download():
     "Download a file."
@@ -51,7 +53,7 @@ def define_map(window=False, toolbar=False):
     
     # @ToDo: Make these configurable
     #config = gis.get_config()
-    if 1 in session.s3.roles or shn_has_role("MapAdmin"):
+    if not deployment_settings.get_security_map() or shn_has_role("MapAdmin"):
         catalogue_toolbar = True
     else:
         catalogue_toolbar = False
@@ -162,7 +164,7 @@ def location():
     def prep(r, vars):
 
         # Restrict access to top-level locations (& all Polygons) to just MapAdmins
-        if not shn_has_role("MapAdmin"):
+        if not deployment_settings.get_security_map() or shn_has_role("MapAdmin"):
             table.code.writable = False
             table.level.writable = False
             if r.method == "create":
@@ -377,22 +379,24 @@ def location():
 
     return output
 
-#@auth.shn_requires_membership("MapAdmin")
 def location_duplicates():
 
     """ Handle De-duplication of Locations """
+
+    if deployment_settings.get_security_map() and not shn_has_role("MapAdmin"):
+        unauthorised()
 
     def delete_location(old, new):
         # Find all tables which link to the Locations table
         tables = []
         for table in db.tables:
-            if 'location_id' in db[table]:
+            if "location_id" in db[table]:
                 tables.append(table)
 
         for table in tables:
             query = db[table].location_id == old
             db(query).update(location_id=new)
-        db(db.gis_location.id == old).delete()
+        db(db.gis_location.id == old).update(deleted=True)
 
     def open_btn(field):
         return A(T("Open in New Tab"), _id=field, _href=URL(r=request, f="location"), _class="action-btn", _target="_blank")
@@ -404,19 +408,24 @@ def location_duplicates():
     
     if form.accepts(request.vars, session):
         _vars = form.vars
-        # Take Action
-        delete_location(_vars.old, _vars.new)
         
-        response.confirmation = T("Location De-duplicated")
+        if not _vars.old == _vars.new:
+            # Take Action
+            delete_location(_vars.old, _vars.new)
+            response.confirmation = T("Location De-duplicated")
+        else:
+            response.error = T("Locations should be different!")
 
     elif form.errors:
         response.error = T("Need to select 2 Locations")
 
     return dict(form=form)
     
-#@auth.shn_requires_membership("MapAdmin")
 def apikey():
     """ RESTful CRUD controller """
+    if deployment_settings.get_security_map() and not shn_has_role("MapAdmin"):
+        unauthorised()
+
     resource = request.function
     tablename = module + "_" + resource
     table = db[tablename]
@@ -487,9 +496,11 @@ def config():
 
     return output
 
-#@auth.shn_requires_membership("MapAdmin")
 def feature_class():
     """ RESTful CRUD controller """
+    if deployment_settings.get_security_map() and not shn_has_role("MapAdmin"):
+        unauthorised()
+
     resource = request.function
     tablename = module + "_" + resource
     table = db[tablename]
@@ -529,9 +540,11 @@ def feature_class():
 
     return output
 
-#@auth.shn_requires_membership("MapAdmin")
 def feature_group():
     """ RESTful CRUD controller """
+    if deployment_settings.get_security_map() and not shn_has_role("MapAdmin"):
+        unauthorised()
+
     resource = request.function
     tablename = module + "_" + resource
     table = db[tablename]
@@ -572,9 +585,11 @@ def feature_group():
 
     return output
 
-#@auth.shn_requires_membership("MapAdmin")
 def feature_class_to_feature_group():
     """ RESTful CRUD controller """
+    if deployment_settings.get_security_map() and not shn_has_role("MapAdmin"):
+        unauthorised()
+
     resource = request.function
     table = module + "_" + resource
 
@@ -595,9 +610,11 @@ def feature_class_to_feature_group():
 
     return output
 
-#@auth.shn_requires_membership("MapAdmin")
 def feature_layer():
     """ RESTful CRUD controller """
+    if deployment_settings.get_security_map() and not shn_has_role("MapAdmin"):
+        unauthorised()
+
     resource = request.function
     tablename = module + "_" + resource
     table = db[tablename]
@@ -664,9 +681,11 @@ def feature_layer_query(form):
 
     return
 
-#@auth.shn_requires_membership("MapAdmin")
 def marker():
     """ RESTful CRUD controller """
+    if deployment_settings.get_security_map() and not shn_has_role("MapAdmin"):
+        unauthorised()
+
     resource = request.function
     tablename = module + "_" + resource
     table = db[tablename]
@@ -705,9 +724,11 @@ def marker():
 
     return output
 
-@auth.shn_requires_membership("MapAdmin")
 def projection():
     """ RESTful CRUD controller """
+    if deployment_settings.get_security_map() and not shn_has_role("MapAdmin"):
+        unauthorised()
+
     resource = request.function
     tablename = module + "_" + resource
     table = db[tablename]
@@ -750,9 +771,11 @@ def projection():
 
     return output
 
-#@auth.shn_requires_membership("MapAdmin")
 def track():
     """ RESTful CRUD controller """
+    if deployment_settings.get_security_map() and not shn_has_role("MapAdmin"):
+        unauthorised()
+
     resource = request.function
     table = module + "_" + resource
 
@@ -790,9 +813,11 @@ EDIT_TYPE_LAYER_FMT = "Edit %s Layer"
 LIST_TYPE_LAYERS_FMT = "List %s Layers"
 NO_TYPE_LAYERS_FMT = "No %s Layers currently defined"
 
-#@auth.shn_requires_membership("MapAdmin")
 def layer_openstreetmap():
     """ RESTful CRUD controller """
+    if deployment_settings.get_security_map() and not shn_has_role("MapAdmin"):
+        unauthorised()
+
     resource = request.function
     table = module + "_" + resource
 
@@ -832,9 +857,11 @@ def layer_openstreetmap():
 
     return output
 
-#@auth.shn_requires_membership("MapAdmin")
 def layer_google():
     """ RESTful CRUD controller """
+    if deployment_settings.get_security_map() and not shn_has_role("MapAdmin"):
+        unauthorised()
+
     resource = request.function
     table = module + "_" + resource
 
@@ -874,9 +901,11 @@ def layer_google():
 
     return output
 
-#@auth.shn_requires_membership("MapAdmin")
 def layer_yahoo():
     """ RESTful CRUD controller """
+    if deployment_settings.get_security_map() and not shn_has_role("MapAdmin"):
+        unauthorised()
+
     resource = request.function
     table = module + "_" + resource
 
@@ -916,9 +945,11 @@ def layer_yahoo():
 
     return output
 
-#@auth.shn_requires_membership("MapAdmin")
 def layer_mgrs():
     """ RESTful CRUD controller """
+    if deployment_settings.get_security_map() and not shn_has_role("MapAdmin"):
+        unauthorised()
+
     resource = request.function
     table = module + "_" + resource
 
@@ -958,9 +989,11 @@ def layer_mgrs():
 
     return output
 
-#@auth.shn_requires_membership("MapAdmin")
 def layer_bing():
     """ RESTful CRUD controller """
+    if deployment_settings.get_security_map() and not shn_has_role("MapAdmin"):
+        unauthorised()
+
     resource = request.function
     table = module + "_" + resource
 
@@ -1000,9 +1033,11 @@ def layer_bing():
 
     return output
 
-#@auth.shn_requires_membership("MapAdmin")
 def layer_georss():
     """ RESTful CRUD controller """
+    if deployment_settings.get_security_map() and not shn_has_role("MapAdmin"):
+        unauthorised()
+
     resource = request.function
     tablename = module + "_" + resource
     table = db[tablename]
@@ -1046,9 +1081,11 @@ def layer_georss():
 
     return output
 
-#@auth.shn_requires_membership("MapAdmin")
 def layer_gpx():
     """ RESTful CRUD controller """
+    if deployment_settings.get_security_map() and not shn_has_role("MapAdmin"):
+        unauthorised()
+
     resource = request.function
     table = module + "_" + resource
 
@@ -1091,9 +1128,11 @@ def layer_gpx():
 
     return output
 
-#@auth.shn_requires_membership("MapAdmin")
 def layer_kml():
     """ RESTful CRUD controller """
+    if deployment_settings.get_security_map() and not shn_has_role("MapAdmin"):
+        unauthorised()
+
     resource = request.function
     tablename = module + "_" + resource
     table = db[tablename]
@@ -1137,9 +1176,11 @@ def layer_kml():
 
     return output
 
-#@auth.shn_requires_membership("MapAdmin")
 def layer_tms():
     """ RESTful CRUD controller """
+    if deployment_settings.get_security_map() and not shn_has_role("MapAdmin"):
+        unauthorised()
+
     resource = request.function
     tablename = module + "_" + resource
     table = db[tablename]
@@ -1184,9 +1225,11 @@ def layer_tms():
 
     return output
 
-#@auth.shn_requires_membership("MapAdmin")
 def layer_wms():
     """ RESTful CRUD controller """
+    if deployment_settings.get_security_map() and not shn_has_role("MapAdmin"):
+        unauthorised()
+
     resource = request.function
     tablename = module + "_" + resource
     table = db[tablename]
@@ -1275,9 +1318,11 @@ def layer_js():
 
     return output
 
-#@auth.shn_requires_membership("MapAdmin")
 def layer_xyz():
     """ RESTful CRUD controller """
+    if deployment_settings.get_security_map() and not shn_has_role("MapAdmin"):
+        unauthorised()
+
     resource = request.function
     tablename = module + "_" + resource
     table = db[tablename]
@@ -1322,9 +1367,11 @@ def layer_xyz():
     return output
 
 # Feature Groups
-#@auth.shn_requires_membership("MapAdmin")
 def feature_group_contents():
-    "Many to Many CRUD Controller"
+    """ Many to Many CRUD Controller """
+    if deployment_settings.get_security_map() and not shn_has_role("MapAdmin"):
+        unauthorised()
+
     if len(request.args) == 0:
         session.error = T("Need to specify a feature group!")
         redirect(URL(r=request, f="feature_group"))
@@ -1403,7 +1450,7 @@ def feature_group_contents():
     return output
 
 def feature_group_dupes(form):
-    "Checks for duplicate FeatureClass before adding to DB"
+    """ Checks for duplicate FeatureClass before adding to DB """
     feature_group = form.vars.feature_group
     if "feature_class_id" in form.vars:
         feature_class_id = form.vars.feature_class_id
@@ -1420,7 +1467,7 @@ def feature_group_dupes(form):
         return
 
 def feature_group_update_items():
-    "Update a Feature Group's items (Feature Classes & Features)"
+    """ Update a Feature Group's items (Feature Classes & Features) """
     if len(request.args) == 0:
         session.error = T("Need to specify a feature group!")
         redirect(URL(r=request, f="feature_group"))
@@ -1447,9 +1494,9 @@ def convert_gps():
 
 def display_feature():
     """
-    Cut-down version of the Map Viewing Client.
-    Used by shn_gis_location_represent() to show just this feature on the map.
-    Called by the viewMap() JavaScript
+        Cut-down version of the Map Viewing Client.
+        Used by shn_gis_location_represent() to show just this feature on the map.
+        Called by the viewMap() JavaScript
     """
 
     # The Feature
@@ -1487,11 +1534,11 @@ def display_feature():
 
 def display_features():
     """
-    Cut-down version of the Map Viewing Client.
-    Used as a link from the RHeader.
-        URL generated server-side
-    Shows all locations matching a query.
-    ToDo: Most recent location is marked using a bigger Marker.
+        Cut-down version of the Map Viewing Client.
+        Used as a link from the RHeader.
+            URL generated server-side
+        Shows all locations matching a query.
+        ToDo: Most recent location is marked using a bigger Marker.
     """
 
     # Parse the URL, check for implicit resources, extract the primary record
@@ -1561,7 +1608,7 @@ def geolocate():
 
 def layers_enable():
     """
-    Enable/Disable Layers
+        Enable/Disable Layers
     """
 
     # Hack: We control all perms from this 1 table
@@ -1603,12 +1650,13 @@ def layers_enable():
         session.error = T("Not authorised!")
     redirect(URL(r=request, f="map_service_catalogue"))
 
-#@auth.shn_requires_membership("MapAdmin")
 def map_service_catalogue():
     """
-    Map Service Catalogue.
-    Allows selection of which Layers are active.
+        Map Service Catalogue.
+        Allows selection of which Layers are active.
     """
+    if deployment_settings.get_security_map() and not shn_has_role("MapAdmin"):
+        unauthorised()
 
     subtitle = T("List Layers")
     # Start building the Return with the common items

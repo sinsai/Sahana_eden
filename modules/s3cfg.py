@@ -12,6 +12,7 @@ class S3Config(Storage):
         self.gis = Storage()
         self.mail = Storage()
         self.L10n = Storage()
+        self.security = Storage()
 
     # Auth settings
     def get_auth_hmac_key(self):
@@ -56,16 +57,6 @@ class S3Config(Storage):
         else:
             return db_string
 
-    # Mail settings
-    def get_mail_server(self):
-        return self.mail.get("server", "127.0.0.1:25")
-    def get_mail_server_login(self):
-        return self.mail.get("login", False)
-    def get_mail_sender(self):
-        return self.mail.get("sender", "sahana@your.org")
-    def get_mail_approver(self):
-        return self.mail.get("approver", "useradmin@your.org")
-
     # GIS (Map) Settings
     def get_gis_display_l0(self):
         return self.gis.get("display_L0", False)
@@ -77,6 +68,22 @@ class S3Config(Storage):
         return self.L10n.get("countries", "")
     def get_L10n_utc_offset(self):
         return self.L10n.get("utc_offset", "UTC +0000")
+
+    # Mail settings
+    def get_mail_server(self):
+        return self.mail.get("server", "127.0.0.1:25")
+    def get_mail_server_login(self):
+        return self.mail.get("login", False)
+    def get_mail_sender(self):
+        return self.mail.get("sender", "sahana@your.org")
+    def get_mail_approver(self):
+        return self.mail.get("approver", "useradmin@your.org")
+
+    # Security Settings
+    def get_security_policy(self):
+        return self.security.get("policy", 1)
+    def get_security_map(self):
+        return self.security.get("map", False)
 
     # Active modules list
     def has_module(self, module_name):

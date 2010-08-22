@@ -1424,6 +1424,7 @@ def shn_create(r, **attr):
         if representation == "popup":
             shn_custom_view(r, "popup.html")
             output.update(caller=r.request.vars.caller)
+            r.next = None
         else:
             shn_custom_view(r, "create.html")
 

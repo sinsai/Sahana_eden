@@ -56,6 +56,7 @@ if deployment_settings.has_module(module):
     table = db.define_table(tablename, timestamp, uuidstamp, deletion_status,
         person_id,
         shelter_id,
+        organisation_id,
         Field("type", "integer"),
         Field("priority", "integer"),
         Field("message", "text"),

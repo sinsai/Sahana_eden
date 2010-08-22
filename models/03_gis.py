@@ -807,7 +807,9 @@ for layertype in gis_layer_types:
         t = db.Table(db, table,
             gis_layer,
             Field("visible", "boolean", default=False, label=T("On by default?")),
-            Field("url", label=T("Location"), requires = IS_NOT_EMPTY()))
+            Field("url", label=T("Location"), requires=IS_NOT_EMPTY()),
+            Field("title", label=T("Title"), default="name", comment=T("The attribute within the KML which is used for the title of popups.")),
+            Field("body", label=T("Body"), default="description", comment=T("The attribute(s) within the KML which are used for the body of popups. (Use a space between attributes)")))
         table = db.define_table(tablename, t, migrate=migrate)
     elif layertype == "js":
         t = db.Table(db, table,

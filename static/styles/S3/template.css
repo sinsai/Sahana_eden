@@ -390,10 +390,10 @@ tr.after_subheading td { padding-top: 10px; }
 div#table-container { width: 100%;
                       overflow: auto; }
 div#table-container th { border: 1px solid #ccc; }
-div#table-container tr.even td { border: 1px solid #ccc;
-                                 text-align: center;}
-div#table-container tr.odd td { border: 1px solid #ccc;
-                                text-align: center; }
+div#table-container tr.even td { border: 1px solid #ccc; }
+                               /*  text-align: center;} */
+div#table-container tr.odd td { border: 1px solid #ccc; }
+                              /*  text-align: center; } */
 
 /* Data Table Styling */
 /* Bring in line with export formats */

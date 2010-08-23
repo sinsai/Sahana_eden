@@ -13,7 +13,8 @@ module = request.controller
 # Options Menu (available in all Functions' Views)
 response.menu_options = [
     [T("Locations"), False, URL(r=request, f="location"), [
-        [T("List"), False, URL(r=request, f="location")],
+        #[T("List"), False, URL(r=request, f="location")],
+        [T("Search"), False, URL(r=request, f="location", args="search_simple")],
         [T("Add"), False, URL(r=request, f="location", args="create")],
     ]],
     [T("Fullscreen Map"), False, URL(r=request, f="map_viewing_client")],
@@ -97,6 +98,8 @@ def define_map(window=False, toolbar=False):
 
         return layer
     
+    # @ToDo: Move these layer definitions into the DB, removing Feature Groups
+    # Feature Classes to be removed from Locations, although we still want the symbology mappings
     # Incidents
     module = "irs"
     resource = "ireport"
@@ -163,7 +166,7 @@ def location():
     # Pre-processor
     def prep(r, vars):
 
-        # Restrict access to top-level locations (& all Polygons) to just MapAdmins
+        # Restrict access to top-level locations (& all Polygons currently) to just MapAdmins
         if deployment_settings.get_security_map() and not shn_has_role("MapAdmin"):
             table.code.writable = False
             table.level.writable = False
@@ -214,7 +217,7 @@ def location():
             if r.method in (None, "list") and r.record == None:
                 # List
                 pass
-            elif r.method == "delete":
+            elif r.method in ("delete", "search_simple"):
                 pass
             else:
                 # Add Map to allow locations to be found this way

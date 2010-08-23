@@ -579,6 +579,80 @@ s3xrc.model.configure(table,
                       onvalidation=gis_location_onvalidation,
                       onaccept=gis_location_onaccept)
 
+def shn_gis_location_search_simple(r, **attr):
+
+    """ Simple search form for locations """
+
+    resource = r.resource
+    table = resource.table
+
+    r.id = None
+
+    # Check permission
+    if not shn_has_permission("read", table):
+        r.unauthorised()
+
+    if r.representation == "html":
+
+        # Check for redirection
+        next = r.request.vars.get("_next", None)
+        if not next:
+            next = URL(r=request, f="location", args="[id]")
+
+        # Select form
+        form = FORM(TABLE(
+                TR(Tstr("Name" + ": "),
+                   INPUT(_type="text", _name="label", _size="40"),
+                   DIV(DIV(_class="tooltip",
+                           _title=Tstr("Name") + "|" + Tstr("To search for a location, enter the name. You may use % as wildcard. Press 'Search' without input to list all locations.")))),
+                TR("", INPUT(_type="submit", _value="Search"))))
+
+        output = dict(form=form, vars=form.vars)
+
+        # Accept action
+        items = None
+        if form.accepts(request.vars, session):
+
+            if form.vars.label == "":
+                form.vars.label = "%"
+
+            # Search
+            results = s3xrc.search_simple(table,
+                        fields = ["name",
+                                  # @ToDo: http://eden.sahanafoundation.org/wiki/S3XRC_Roadmap#Version2.1
+                                  #"name_l10n"
+                                  ],
+                        label = form.vars.label)
+
+            # Get the results
+            if results:
+                resource.build_query(id=results)
+                report = shn_list(r, listadd=False)
+            else:
+                report = dict(items=T("No matching records found."))
+
+            output.update(dict(report))
+
+        # Title and subtitle
+        title = T("Search for a Location")
+        subtitle = T("Matching Records")
+
+        # Add-button
+        label_create_button = shn_get_crud_string("gis_location", "label_create_button")
+        add_btn = A(label_create_button, _class="action-btn",
+                    _href=URL(r=request, f="location", args="create"))
+
+        output.update(title=title, subtitle=subtitle, add_btn=add_btn)
+        response.view = "search_simple.html"
+        return output
+
+    else:
+        session.error = BADFORMAT
+        redirect(URL(r=request))
+
+# Plug into REST controller
+s3xrc.model.set_method(module, "location", method="search_simple", action=shn_gis_location_search_simple )
+
 # -----------------------------------------------------------------------------
 #
 def shn_gis_location_represent(id):

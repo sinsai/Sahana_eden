@@ -885,7 +885,7 @@ if deployment_settings.has_module(module):
                             Field("food_stocks_reserve", "integer"),
                             Field("food_sources"),
                             Field("food_sources_other"),
-                            Field("food_sources_disruption"),
+                            Field("food_sources_disruption", "boolean"),
                             Field("food_sources_disruption_details"),
                             Field("food_assistance_available", "boolean"),
                             Field("food_assistance_details", "text"),

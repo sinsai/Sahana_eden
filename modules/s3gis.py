@@ -502,6 +502,7 @@ class GIS(object):
                   print_tool = {},
                   mgrs = {},
                   window = False,
+                  window_hide = False,
                   collapsed = False,
                   public_url = "http://127.0.0.1:8000"
                 ):
@@ -565,6 +566,7 @@ class GIS(object):
                 url: string             # URL of PDF server
                 }
             @param window: Have viewport pop out of page into a resizable window
+            @param window_hide: Have the window hidden by default, ready to appear (e.g. on clicking a button)
             @param collapsed: Start the Tools panel (West region) collapsed
             @param public_url: pass from model (not yet defined when Module instantiated
         """
@@ -621,14 +623,11 @@ class GIS(object):
         # CSS
         #####
         if session.s3.debug:
-            html.append(LINK( _rel="stylesheet", _type="text/css", _href=URL(r=request, c="static", f="scripts/ext/resources/css/ext-all.css"), _media="screen", _charset="utf-8") )
             html.append(LINK( _rel="stylesheet", _type="text/css", _href=URL(r=request, c="static", f="styles/gis/ie6-style.css"), _media="screen", _charset="utf-8") )
             html.append(LINK( _rel="stylesheet", _type="text/css", _href=URL(r=request, c="static", f="styles/gis/google.css"), _media="screen", _charset="utf-8") )
             html.append(LINK( _rel="stylesheet", _type="text/css", _href=URL(r=request, c="static", f="styles/gis/geoext-all-debug.css"), _media="screen", _charset="utf-8") )
             html.append(LINK( _rel="stylesheet", _type="text/css", _href=URL(r=request, c="static", f="styles/gis/gis.css"), _media="screen", _charset="utf-8") )
         else:
-            html.append(LINK( _rel="stylesheet", _type="text/css", _href=URL(r=request, c="static", f="scripts/ext/resources/css/ext-all.min.css"), _media="screen", _charset="utf-8") )
-            html.append(LINK( _rel="stylesheet", _type="text/css", _href=URL(r=request, c="static", f="scripts/ext/resources/css/xtheme-gray.css"), _media="screen", _charset="utf-8") )
             html.append(LINK( _rel="stylesheet", _type="text/css", _href=URL(r=request, c="static", f="styles/gis/gis.min.css"), _media="screen", _charset="utf-8") )
 
         ######
@@ -676,8 +675,6 @@ class GIS(object):
         # Scripts
         #########
         if session.s3.debug:
-            html.append(SCRIPT(_type="text/javascript", _src=URL(r=request, c="static", f="scripts/ext/adapter/jquery/ext-jquery-adapter-debug.js")))
-            html.append(SCRIPT(_type="text/javascript", _src=URL(r=request, c="static", f="scripts/ext/ext-all-debug.js")))
             html.append(SCRIPT(_type="text/javascript", _src=URL(r=request, c="static", f="scripts/gis/openlayers/lib/OpenLayers.js")))
             html.append(SCRIPT(_type="text/javascript", _src=URL(r=request, c="static", f="scripts/gis/OpenStreetMap.js")))
             html.append(SCRIPT(_type="text/javascript", _src=URL(r=request, c="static", f="scripts/gis/MP.js")))
@@ -687,8 +684,6 @@ class GIS(object):
             html.append(SCRIPT(_type="text/javascript", _src=URL(r=request, c="static", f="scripts/gis/geoext/lib/GeoExt.js")))
             html.append(SCRIPT(_type="text/javascript", _src=URL(r=request, c="static", f="scripts/gis/geoext/ux/GeoNamesSearchCombo.js")))
         else:
-            html.append(SCRIPT(_type="text/javascript", _src=URL(r=request, c="static", f="scripts/ext/adapter/jquery/ext-jquery-adapter.js")))
-            html.append(SCRIPT(_type="text/javascript", _src=URL(r=request, c="static", f="scripts/ext/ext-all.js")))
             html.append(SCRIPT(_type="text/javascript", _src=URL(r=request, c="static", f="scripts/gis/OpenLayers.js")))
             html.append(SCRIPT(_type="text/javascript", _src=URL(r=request, c="static", f="scripts/gis/OpenStreetMap.js")))
             html.append(SCRIPT(_type="text/javascript", _src=URL(r=request, c="static", f="scripts/gis/RemoveFeature.js")))
@@ -1422,9 +1417,20 @@ OpenLayers.Util.extend( selectPdfControl, {
         strategy_cluster = """new OpenLayers.Strategy.Cluster({distance: """ + str(cluster_distance) + """, threshold: """ + str(cluster_threshold) + """})"""
 
         # Layout
-        if window:
+        if window and window_hide:
             layout = """
-        var win = new Ext.Window({
+        win = new Ext.Window({
+            collapsible: true,
+            constrain: true,
+            closeAction: 'hide',
+            """
+            layout2 = """
+        //win.show();
+        //win.maximize();
+        """
+        elif window:
+            layout = """
+        win = new Ext.Window({
             collapsible: true,
             constrain: true,
             """
@@ -2607,7 +2613,7 @@ OpenLayers.Util.extend( selectPdfControl, {
         #############
 
         html.append(SCRIPT("""
-    var map, mapPanel, legendPanel, toolbar;
+    var map, mapPanel, legendPanel, toolbar, win;
     var lastDraftFeature, draftLayer;
     var centerPoint, currentFeature, popupControl, highlightControl;
     var wmsBrowser;

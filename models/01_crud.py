@@ -1352,6 +1352,16 @@ def shn_create(r, **attr):
         # Default components
         output = dict(module=prefix, resource=name, main=main, extra=extra)
 
+        if response.s3.gis.map_selector:
+            # Include a map
+            _map = gis.show_map(add_feature = True,
+                                add_feature_active = True,
+                                toolbar = True,
+                                collapsed = True,
+                                window = True,
+                                window_hide = True)
+            output.update(_map=_map)
+        
         # Title, subtitle and resource header
         if r.component:
             title = shn_get_crud_string(r.tablename, "title_display")
@@ -1828,7 +1838,7 @@ def shn_search(r, **attr):
     if response.s3.filter:
         query = response.s3.filter & query
 
-    if r.representation == "html":
+    if r.representation in ("html", "popup"):
 
         shn_represent(r.table, r.prefix, r.name, deletable, main, extra)
         search = t2.search(r.table, query=query)
@@ -1862,24 +1872,18 @@ def shn_search(r, **attr):
                 field3 = str.lower(_vars.field3)
             else:
                 field3 = None
-            if "level" in _vars:
-                level = str.upper(_vars.level)
-            else:
-                level = None
+            #if "level" in _vars:
+            #    level = str.upper(_vars.level)
+            #else:
+            #    level = None
             if "parent" in _vars and _vars.parent:
                 parent = int(_vars.parent)
             else:
                 parent = None
-            if "exclude" in _vars:
-                import urllib
-                exclude = urllib.unquote(_vars.exclude)
-            else:
-                exclude = None
 
             filter = _vars.filter
             if filter == "~":
                 if field2 and field3:
-
                     # pr_person name search
                     if " " in value:
                         value1, value2 = value.split(" ", 1)
@@ -1891,23 +1895,16 @@ def shn_search(r, **attr):
                                         (_table[field2].like("%" + value + "%")) | \
                                         (_table[field3].like("%" + value + "%")))
 
-                elif level:
-
+                #elif level:
                     # gis_location hierarchical search
-                    if parent:
-                        query = query & (_table.parent == parent) & \
-                                        (_table.level == level) & \
-                                        (_field.like("%" + value + "%"))
+                #    if parent:
+                #        query = query & (_table.parent == parent) & \
+                #                        (_table.level == level) & \
+                #                        (_field.like("%" + value + "%"))
 
-                    else:
-                        query = query & (_table.level == level) & \
-                                        (_field.like("%" + value + "%"))
-
-                elif exclude:
-
-                    # gis_location without Admin Areas (old: assumes 'Lx:' in name)
-                    query = query & ~(_field.like(exclude)) & \
-                                    (_field.like("%" + value + "%"))
+                #    else:
+                #        query = query & (_table.level == level) & \
+                #                        (_field.like("%" + value + "%"))
 
                 else:
                     # Normal single-field
@@ -1921,6 +1918,10 @@ def shn_search(r, **attr):
 
             elif filter == "=":
                 query = query & (_field == value)
+                if parent:
+                    # e.g. gis_location hierarchical search
+                    query = query & (_table.parent == parent)
+
                 item = db(query).select().json()
 
             elif filter == "<":

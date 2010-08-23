@@ -1,289 +1,336 @@
-﻿    // Hide the real Input field
-    $('#{{=location_id}}').hide();
-    // Add a dummy field
-    $('#{{=location_id}}').after("<input id='dummy_{{=location_id}}' class='ac_input' size=50 />");
+﻿{{_gis = response.s3.gis}}
+<script type="text/javascript">//<![CDATA[
+$(function() {
+    var row, label, widget, comment, country_id, parent, url;
+    var l1, l2, l3, l4, l5;
+
+    if (undefined == location_id){
+        // If the calling view hasn't provided a value then use the default
+        var location_id = '{{=request.controller + "_" + request.function + "_location_id"}}';
+    }
+    var location_id_row = '#' + location_id + '__row';
+
+    // Hide the real Input row
+    $(location_id_row).hide();
     
-    // Add Section delimiter
-    row = "<tr id='gis_location_start__row'><td><label>{{=B(T("Location"))}}</label></td><td></td><td></td></tr>";
-    $('#{{=location_id}}__row').before(row);
-    
-    // Add Autocomplete dummy rows
-    var widget, row;
-    // L0
-  {{_gis = response.s3.gis}}
+    // Section delimiter
+    widget = '------------------------------------------------------------------------------------------------------------------------'
+    row = "<tr id='gis_location_start__row'><td colspan='3' align='left'>" + widget + '</td></tr>';
+    $(location_id_row).before(row);
+
+    // Section header
+    label = '{{=B(T("Location"))}}';
+    row = "<tr id='gis_location_header__row'><td><label>" + label + '</label></td><td></td><td></td></tr>';
+    $(location_id_row).before(row);
+
+    // Help section
+    label = '{{=T("There are several ways which you can use to select the Location.")}}'
+    row = "<tr id='gis_location_start__row'><td colspan='2'><label>" + label + '</label></td><td></td></tr>';
+    $(location_id_row).before(row);
+    label = '{{=T("Choose from one of the following options")}}:'
+    row = "<tr id='gis_location_start__row'><td colspan='2'><label>" + label + '</label></td><td></td></tr>';
+    $(location_id_row).before(row);
+
+  {{if _gis.map_selector:}}
+    // Map-based selector
+    label = '{{=T("Click on a Map")}}:';
+    widget = "<a id='openMap' href='#'>{{=T("Open Map")}}</a>";
+    row = "<tr id='gis_location_start__row'><td><label>" + label + '</label></td><td>' + widget + '</td><td></td></tr>';
+    $(location_id_row).before(row);
+    var mapButton = Ext.get('openMap');
+    mapButton.on('click', function(){
+        win.show(this);
+    });
+  {{else:}}
+  {{pass}}
+  
+  {{level = "0"}}
+  {{try:}}
+  {{label = _gis.location_hierarchy["L" + level]}}
+    // L{{=level}}
+    label = '{{=label}}:';
   {{if len(_gis.countries) == 1:}}
     // Country is hardcoded
-    {{country_id = _gis.countries[response.s3.countries[0]].id}}
-    widget = "<input id='gis_location_l0' style='display: none;'/><input id='dummy_l0' class='ac_input' size=50 />";
-    row = "<tr id='gis_location_l0__row'><td><label>{{=_gis.location_hierarchy["L0"]}}: </label></td><td>" + widget + '</td><td></td></tr>';
-    $('#{{=location_id}}__row').before(row);
-    $('#gis_location_l0').val({{=country_id}});
+    country_id = {{=_gis.countries[response.s3.countries[0]].id}};
+    widget = "<input id='gis_location_l{{=level}}' />";
+    row = "<tr id='gis_location_l{{=level}}__row'><td><label>" + label + '</label></td><td>' + widget + '</td><td></td></tr>';
+    $(location_id_row).before(row);
+    $('#gis_location_l{{=level}}').val(country_id);
     // Hide
-    $('#gis_location_l0__row').hide();
-  {{elif len(_gis.countries) > 1:}}
-    // Country is limited, so dropdown
-    widget = "<input id='gis_location_l0' style='display: none;'/><select id='dummy_l0'>";
-    {{for country in _gis.countries:}}
-    widget += "<option value='{{=_gis.countries[country].id}}'>{{=_gis.countries[country].name}}</option>";
-    {{pass}}
-    widget += '</select>';
-    row = "<tr id='gis_location_l0__row'><td><label>{{=_gis.location_hierarchy["L0"]}}: </label></td><td>" + widget + '</td><td></td></tr>';
-    $('#{{=location_id}}__row').before(row);
-    // Set initial value
-    $('#gis_location_l0').val({{=_gis.countries[response.s3.countries[0]].id}});
-    // Populate the real Input when the Dummy is selected
-    $('#dummy_l0').result(function(event, data, formatted) {
-        var newvalue = data.id;
-        $('#gis_location_l0').val(newvalue);
-    });
+    $('#gis_location_l{{=level}}__row').hide();
+    // Show the next level of hierarchy
+    s3_gis_locations_l{{=int(level) + 1}}(country_id);
   {{else:}}
-    // Country is autocomplete
-    widget = "<input id='gis_location_l0' style='display: none;'/><input id='dummy_l0' class='ac_input' size=50 />";
-    row = "<tr id='gis_location_l0__row'><td><label>{{=_gis.location_hierarchy["L0"]}}: </label></td><td>" + widget + '</td><td></td></tr>';
-    $('#{{=location_id}}__row').before(row);
-    // Autocomplete-enable the Dummy Input
-    $('#dummy_l0').autocomplete('{{=URL(r=request, c="gis", f="location", args="search.json", vars={"filter":"~", "field":"name"})}}', {
-        extraParams: {
-            level: 'L0'
-        },
-        // Don't cache
-        cacheLength: 1,
-        minChars: 2,
-		//mustMatch: true,
-		matchContains: true,
-        dataType: 'json',
-        parse: function(data) {
-            var rows = new Array();
-            for(var i=0; i<data.length; i++){
-                rows[i] = { data:data[i], value:data[i].id, result:data[i].name };
-            }
-            return rows;
-        },
-        formatItem: function(row, i, n) {
-            return row.name;
-		}
-    });
-    // Populate the real Input when the Dummy is selected
-    $('#dummy_l0').result(function(event, data, formatted) {
-        var newvalue = data.id;
-        $('#gis_location_l0').val(newvalue);
-    });
-  {{pass}}
-
-    // L1
-  {{if len(_gis.countries) == 1:}}
     // Dropdown
-    widget = "<select id='gis_location_l1'>";
-    {{provinces = _gis.provinces[country_id]}}
-    {{for province in provinces:}}
-    widget += "<option value='{{=province}}'>{{=provinces[province].name}}</option>";
-    {{pass}}
-    widget += '</select>';
-    row = "<tr id='gis_location_l1__row'><td><label>{{=_gis.location_hierarchy["L1"]}}: </label></td><td>" + widget + '</td><td></td></tr>';
-    $('#{{=location_id}}__row').before(row);
-  {{else:}}
-    // Autocomplete
-    widget = "<input id='gis_location_l1' style='display: none;'/><input id='dummy_l1' class='ac_input' size=50 />";
-    row = '<tr><td><label>{{=_gis.location_hierarchy["L1"]}}: </label></td><td>' + widget + '</td><td></td></tr>';
-    $('#{{=location_id}}__row').before(row);
-    // Autocomplete-enable the Dummy Input
-    $('#dummy_l1').autocomplete('{{=URL(r=request, c="gis", f="location", args="search.json", vars={"filter":"~", "field":"name"})}}', {
-        extraParams: {
-            level: 'L1',
-            // Read 'parent' field dynamically
-            parent: function() { return $('#gis_location_l0').val(); }
-        },
-        // Don't cache
-        cacheLength: 1,
-        minChars: 2,
-		//mustMatch: true,
-		matchContains: true,
-        dataType: 'json',
-        parse: function(data) {
-            var rows = new Array();
-            for(var i=0; i<data.length; i++){
-                rows[i] = { data:data[i], value:data[i].id, result:data[i].name };
+    widget = "<select id='gis_location_l{{=level}}'></select>";
+    row = "<tr id='gis_location_l{{=level}}__row'><td><label>" + label + '</label></td><td>' + widget + '</td><td></td></tr>';
+    $(location_id_row).before(row);
+
+    // Load locations
+    url = '{{=URL(r=request, c="gis", f="location", args="search.json", vars={"filter":"=", "field":"level", "value":"L" + level})}}';
+    load_locations = function(data, status){
+	    var options = '';
+	    var v = '';
+	    if (data.length == 0) {
+            options += '<option value="">' + '{{=T("No locations registered at this level")}}</options>';
+        } else {
+            options += '<option value="" selected>' + '{{=T("Select a location")}}' + '...</option>';
+            for (var i = 0; i < data.length; i++){
+                v = data[i].id;
+                options += '<option value="' +  data[i].id + '">' + data[i].name + '</option>';
             }
-            return rows;
-        },
-        formatItem: function(row, i, n) {
-            return row.name;
-		}
-    });
-    // Populate the real Input when the Dummy is selected
-    $('#dummy_l1').result(function(event, data, formatted) {
-        var newvalue = data.id;
-        $('#gis_location_l1').val(newvalue);
+	    }
+	    $('#gis_location_l{{=level}}').html(options); 
+	};	
+    $.getJSONS3(url, load_locations, '{{=T("locations")}}');
+
+    // When dropdown is selected
+    $('#gis_location_l{{=level}}').change(function() {
+        // Show the next level of hierarchy
+        s3_gis_locations_l{{=int(level) + 1}}();
     });
   {{pass}}
+  {{except:}}
+  {{pass}}
+
+  {{level = "1"}}
+    var s3_gis_locations_l{{=level}} = function(){
+  {{try:}}
+  {{label = _gis.location_hierarchy["L" + level]}}
+   // L{{=level}}
+    label = '{{=label}}:';
+    // Dropdown
+    if (null == l{{=level}}) {
+        widget = "<select id='gis_location_l{{=level}}'></select>";
+        row = "<tr id='gis_location_l{{=level}}__row'><td><label>" + label + '</label></td><td>' + widget + '</td><td></td></tr>';
+        $('#gis_location_lat__row').before(row);
+        l{{=level}} = true;
+    }
+    // Load locations
+    parent = $('#gis_location_l{{=int(level) - 1}}').val();
+    url = '{{=URL(r=request, c="gis", f="location", args="search.json", vars={"filter":"=", "field":"level", "value":"L" + level})}}&parent=' + parent;
+    load_locations = function(data, status){
+	    var options=''
+	    var v = ''
+	    if (data.length == 0) {
+            options += '<option value="">' + '{{=T("No locations registered at this level")}}</options>';
+        } else {
+            options += '<option value="" selected>' + '{{=T("Select a location")}}' + '...</option>';
+            for (var i = 0; i < data.length; i++){
+                v = data[i].id;
+                options += '<option value="' +  data[i].id + '">' + data[i].name + '</option>';
+            }
+	    }
+	    $('#gis_location_l{{=level}}').html(options); 
+	};	
+    $.getJSONS3(url, load_locations, '{{=T("locations")}}');
     
-    // L2
-    widget = "<input id='gis_location_l2' style='display: none;'/><input id='dummy_l2' class='ac_input' size=50 />";
-    row = '<tr><td><label>{{=_gis.location_hierarchy["L2"]}}: </label></td><td>' + widget + '</td><td></td></tr>';
-    $('#{{=location_id}}__row').before(row);
-    // Autocomplete-enable the Dummy Input
-    $('#dummy_l2').autocomplete('{{=URL(r=request, c="gis", f="location", args="search.json", vars={"filter":"~", "field":"name"})}}', {
-        extraParams: {
-            level: 'L2',
-            // Read 'parent' field dynamically
-            parent: function() { return $('#gis_location_l1').val(); }
-        },
-        // Don't cache
-        cacheLength: 1,
-        minChars: 2,
-		//mustMatch: true,
-		matchContains: true,
-        dataType: 'json',
-        parse: function(data) {
-            var rows = new Array();
-            for(var i=0; i<data.length; i++){
-                rows[i] = { data:data[i], value:data[i].id, result:data[i].name };
-            }
-            return rows;
-        },
-        formatItem: function(row, i, n) {
-            return row.name;
-		}
+    // When dropdown is selected
+    $('#gis_location_l{{=level}}').change(function() {
+        // Show the next level of hierarchy
+        s3_gis_locations_l{{=int(level) + 1}}();
     });
-    // Populate the real Input when the Dummy is selected
-    $('#dummy_l2').result(function(event, data, formatted) {
-        var newvalue = data.id;
-        $('#gis_location_l2').val(newvalue);
-    });
+  {{except:}}
+  {{pass}}
+    }
 
-    // L3
-    widget = "<input id='gis_location_l3' style='display: none;'/><input id='dummy_l3' class='ac_input' size=50 />";
-    row = '<tr><td><label>{{=_gis.location_hierarchy["L3"]}}: </label></td><td>' + widget + '</td><td></td></tr>';
-    $('#{{=location_id}}__row').before(row);
-    // Autocomplete-enable the Dummy Input
-    $('#dummy_l3').autocomplete('{{=URL(r=request, c="gis", f="location", args="search.json", vars={"filter":"~", "field":"name"})}}', {
-        extraParams: {
-            level: 'L3',
-            // Read 'parent' field dynamically
-            parent: function() { return $('#gis_location_l2').val(); }
-        },
-        // Don't cache
-        cacheLength: 1,
-        minChars: 2,
-		//mustMatch: true,
-		matchContains: true,
-        dataType: 'json',
-        parse: function(data) {
-            var rows = new Array();
-            for(var i=0; i<data.length; i++){
-                rows[i] = { data:data[i], value:data[i].id, result:data[i].name };
+  {{level = "2"}}
+    var s3_gis_locations_l{{=level}} = function(){
+  {{try:}}
+  {{label = _gis.location_hierarchy["L" + level]}}
+   // L{{=level}}
+    label = '{{=label}}:';
+    // Dropdown
+    if (null == l{{=level}}) {
+        widget = "<select id='gis_location_l{{=level}}'></select>";
+        row = "<tr id='gis_location_l{{=level}}__row'><td><label>" + label + '</label></td><td>' + widget + '</td><td></td></tr>';
+        $('#gis_location_lat__row').before(row);
+        l{{=level}} = true;
+    }
+    // Load locations
+    parent = $('#gis_location_l{{=int(level) - 1}}').val();
+    url = '{{=URL(r=request, c="gis", f="location", args="search.json", vars={"filter":"=", "field":"level", "value":"L" + level})}}&parent=' + parent;
+    load_locations = function(data, status){
+	    var options=''
+	    var v = ''
+	    if (data.length == 0) {
+            options += '<option value="">' + '{{=T("No locations registered at this level")}}</options>';
+        } else {
+            options += '<option value="" selected>' + '{{=T("Select a location")}}' + '...</option>';
+            for (var i = 0; i < data.length; i++){
+                v = data[i].id;
+                options += '<option value="' +  data[i].id + '">' + data[i].name + '</option>';
             }
-            return rows;
-        },
-        formatItem: function(row, i, n) {
-            return row.name;
-		}
+	    }
+	    $('#gis_location_l{{=level}}').html(options); 
+	};	
+    $.getJSONS3(url, load_locations, '{{=T("locations")}}');
+    
+    // When dropdown is selected
+    $('#gis_location_l{{=level}}').change(function() {
+        // Show the next level of hierarchy
+        s3_gis_locations_l{{=int(level) + 1}}();
     });
-    // Populate the real Input when the Dummy is selected
-    $('#dummy_l3').result(function(event, data, formatted) {
-        var newvalue = data.id;
-        $('#gis_location_l3').val(newvalue);
-    });
+  {{except:}}
+  {{pass}}
+    }
 
-    // L4
-    widget = "<input id='gis_location_l4' style='display: none;'/><input id='dummy_l4' class='ac_input' size=50 />";
-    row = '<tr><td><label>{{=_gis.location_hierarchy["L4"]}}: </label></td><td>' + widget + '</td><td></td></tr>';
-    $('#{{=location_id}}__row').before(row);
-    // Autocomplete-enable the Dummy Input
-    $('#dummy_l4').autocomplete('{{=URL(r=request, c="gis", f="location", args="search.json", vars={"filter":"~", "field":"name"})}}', {
-        extraParams: {
-            level: 'L4',
-            // Read 'parent' field dynamically
-            parent: function() { return $('#gis_location_l3').val(); }
-        },
-        // Don't cache
-        cacheLength: 1,
-        minChars: 2,
-		//mustMatch: true,
-		matchContains: true,
-        dataType: 'json',
-        parse: function(data) {
-            var rows = new Array();
-            for(var i=0; i<data.length; i++){
-                rows[i] = { data:data[i], value:data[i].id, result:data[i].name };
+  {{level = "3"}}
+    var s3_gis_locations_l{{=level}} = function(){
+  {{try:}}
+  {{label = _gis.location_hierarchy["L" + level]}}
+   // L{{=level}}
+    label = '{{=label}}:';
+    // Dropdown
+    if (null == l{{=level}}) {
+        widget = "<select id='gis_location_l{{=level}}'></select>";
+        row = "<tr id='gis_location_l{{=level}}__row'><td><label>" + label + '</label></td><td>' + widget + '</td><td></td></tr>';
+        $('#gis_location_lat__row').before(row);
+        l{{=level}} = true;
+    }
+    // Load locations
+    parent = $('#gis_location_l{{=int(level) - 1}}').val();
+    url = '{{=URL(r=request, c="gis", f="location", args="search.json", vars={"filter":"=", "field":"level", "value":"L" + level})}}&parent=' + parent;
+    load_locations = function(data, status){
+	    var options=''
+	    var v = ''
+	    if (data.length == 0) {
+            options += '<option value="">' + '{{=T("No locations registered at this level")}}</options>';
+        } else {
+            options += '<option value="" selected>' + '{{=T("Select a location")}}' + '...</option>';
+            for (var i = 0; i < data.length; i++){
+                v = data[i].id;
+                options += '<option value="' +  data[i].id + '">' + data[i].name + '</option>';
             }
-            return rows;
-        },
-        formatItem: function(row, i, n) {
-            return row.name;
-		}
+	    }
+	    $('#gis_location_l{{=level}}').html(options); 
+	};	
+    $.getJSONS3(url, load_locations, '{{=T("locations")}}');
+    
+    // When dropdown is selected
+    $('#gis_location_l{{=level}}').change(function() {
+        // Show the next level of hierarchy
+        s3_gis_locations_l{{=int(level) + 1}}();
     });
-    // Populate the real Input when the Dummy is selected
-    $('#dummy_l4').result(function(event, data, formatted) {
-        var newvalue = data.id;
-        $('#gis_location_l4').val(newvalue);
-    });
+  {{except:}}
+  {{pass}}
+    }
 
-    // Location
-    // Autocomplete-enable the Dummy Input
-    $('#dummy_{{=location_id}}').autocomplete('{{=URL(r=request, c="gis", f="location", args="search.json", vars={"filter":"~", "field":"name"})}}', {
-        extraParams: {
-            // Read 'parent' field dynamically
-            // Allow Location to search freely as we don't want to restrict to a specific level
-            //parent: function() { return $('#gis_location_l4').val(); }
-        },
-        // Don't cache
-        cacheLength: 1,
-        minChars: 2,
-		//mustMatch: true,
-		matchContains: true,
-        dataType: 'json',
-        parse: function(data) {
-            var rows = new Array();
-            for(var i=0; i<data.length; i++){
-                rows[i] = { data:data[i], value:data[i].id, result:data[i].name };
+  {{level = "4"}}
+    var s3_gis_locations_l{{=level}} = function(){
+  {{try:}}
+  {{label = _gis.location_hierarchy["L" + level]}}
+   // L{{=level}}
+    label = '{{=label}}:';
+    // Dropdown
+    if (null == l{{=level}}) {
+        widget = "<select id='gis_location_l{{=level}}'></select>";
+        row = "<tr id='gis_location_l{{=level}}__row'><td><label>" + label + '</label></td><td>' + widget + '</td><td></td></tr>';
+        $('#gis_location_lat__row').before(row);
+        l{{=level}} = true;
+    }
+    // Load locations
+    parent = $('#gis_location_l{{=int(level) - 1}}').val();
+    url = '{{=URL(r=request, c="gis", f="location", args="search.json", vars={"filter":"=", "field":"level", "value":"L" + level})}}&parent=' + parent;
+    load_locations = function(data, status){
+	    var options=''
+	    var v = ''
+	    if (data.length == 0) {
+            options += '<option value="">' + '{{=T("No locations registered at this level")}}</options>';
+        } else {
+            options += '<option value="" selected>' + '{{=T("Select a location")}}' + '...</option>';
+            for (var i = 0; i < data.length; i++){
+                v = data[i].id;
+                options += '<option value="' +  data[i].id + '">' + data[i].name + '</option>';
             }
-            return rows;
-        },
-        formatItem: function(row, i, n) {
-            return row.name;
-		}
+	    }
+	    $('#gis_location_l{{=level}}').html(options); 
+	};	
+    $.getJSONS3(url, load_locations, '{{=T("locations")}}');
+    
+    // When dropdown is selected
+    $('#gis_location_l{{=level}}').change(function() {
+        // Show the next level of hierarchy
+        s3_gis_locations_l{{=int(level) + 1}}();
     });
-    // Populate the real Input when the Dummy is selected
-    $('#dummy_{{=location_id}}').result(function(event, data, formatted) {
-        var newvalue = data.id;
-        $('#{{=location_id}}').val(newvalue);
-    });
+  {{except:}}
+  {{pass}}
+    }
 
-    // If the 'Add Location' button is pressed then we need to pass the parent location
-    // 1st change the class so that the normal handler is removed
-    // NB This assumes that IS_ONE_OF_EMPTY() has been used so we have a simple input, not a big select
-    $('input.reference.gis_location').parent().next().children().children('a.colorbox').removeClass('colorbox').addClass('location_add');
-    $('a.location_add').click(function(){
-        $(this).attr('href', function(index, attr) {
-            // Try L4
-            var parent_ = $('#gis_location_l4').val();
-            if (parent_ == ''){
-                // Try L3
-                parent_ = $('#gis_location_l3').val();
-                if (parent_ == ''){
-                    // Try L2
-                    parent_ = $('#gis_location_l2').val();
-                    if (parent_ == ''){
-                        // Try L1
-                        parent_ = $('#gis_location_l1').val();
-                        if (parent_ == ''){
-                            // Try L0
-                            parent_ = $('#gis_location_l0').val();
-                        }
-                    }
-                }
+  {{level = "5"}}
+    var s3_gis_locations_l{{=level}} = function(){
+  {{try:}}
+  {{label = _gis.location_hierarchy["L" + level]}}
+    // L{{=level}}
+    label = '{{=label}}:';
+    // Dropdown
+    if (null == l{{=level}}) {
+        widget = "<select id='gis_location_l{{=level}}'></select>";
+        row = "<tr id='gis_location_l{{=level}}__row'><td><label>" + label + '</label></td><td>' + widget + '</td><td></td></tr>';
+        $('#gis_location_lat__row').before(row);
+        l{{=level}} = true;
+    }
+    // Load locations
+    parent = $('#gis_location_l{{=int(level) - 1}}').val();
+    url = '{{=URL(r=request, c="gis", f="location", args="search.json", vars={"filter":"=", "field":"level", "value":"L" + level})}}&parent=' + parent;
+    load_locations = function(data, status){
+	    var options=''
+	    var v = ''
+	    if (data.length == 0) {
+            options += '<option value="">' + '{{=T("No locations registered at this level")}}</options>';
+        } else {
+            options += '<option value="" selected>' + '{{=T("Select a location")}}' + '...</option>';
+            for (var i = 0; i < data.length; i++){
+                v = data[i].id;
+                options += '<option value="' +  data[i].id + '">' + data[i].name + '</option>';
             }
-            // Avoid Duplicate _parent
-            // @ToDo remove old _parent & add new one
-            var url_out = attr;
-            if (parent_ != ''){
-                if (attr.indexOf('&parent_=') == -1){
-                    url_out = attr + '&parent_=' + parent_;
-                }
-            }
-            return url_out;
-        });
-        $.fn.colorbox({iframe:true, width:'99%', height:'99%', href:this.href, title:this.title});
-        return false;
+	    }
+	    $('#gis_location_l{{=level}}').html(options); 
+	};	
+    $.getJSONS3(url, load_locations, '{{=T("locations")}}');
+    
+    // When dropdown is selected
+    $('#gis_location_l{{=level}}').change(function() {
+        // Show the next level of hierarchy
+        s3_gis_locations_l{{=int(level) + 1}}();
     });
+  {{except:}}
+  {{pass}}
+    }
+
+    // Lat/Lon entry
+    label = '{{=db.gis_location.lat.label}}:';
+    widget = "<input id='gis_location_lat' />";
+    comment = '{{=db.gis_location.lat.comment}}';
+    row = "<tr id='gis_location_lat__row'><td><label>" + label + '</label></td><td>' + widget + '</td><td>' + comment + '</td></tr>';
+    $(location_id_row).before(row);
+    // Apply the tooltip which was missed 1st time round
+    // Need to make it not re-apply to existing ones
+    //$('.tooltip').cluetip({activation: 'click', sticky: true, closePosition: 'title',closeText: '<img src="/{{=request.application}}/static/img/cross2.png" alt="close" />',splitTitle: '|'});
+    
+    label = '{{=db.gis_location.lon.label}}:';
+    widget = "<input id='gis_location_lon' />";
+    comment = '{{=db.gis_location.lon.comment}}';
+    row = "<tr id='gis_location_lon__row'><td><label>" + label + '</label></td><td>' + widget + '</td><td>' + comment + '</td></tr>';
+    $(location_id_row).before(row);
+    
+    // Submit button
+    widget = "<a href='#' class='action-btn'>Add New</a>";
+    row = "<tr id='gis_location_submit__row'><td><label></label></td><td>" + widget + '</td><td></td></tr>';
+    $(location_id_row).before(row);
+    
+    // Section delimiter
+    widget = '------------------------------------------------------------------------------------------------------------------------'
+    row = "<tr id='gis_location_end__row'><td colspan='3' align='left'>" + widget + '</td></tr>';
+    $(location_id_row).after(row);
+
+});
+//]]></script>
+
+{{try:}}
+{{=XML(_map)}}
+{{except:}}
+{{pass}}
+
+{{include "gis/convert_gps.html"}}
+   

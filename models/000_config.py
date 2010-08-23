@@ -7,7 +7,10 @@
 """
 
 def Tstr(text):
-    """Convenience function for non web2py modules"""
+    """
+       Convenience function for non-Web2Py modules
+       (latest web2py no longer needs this)
+    """
     return str(T(text))
 
 s3cfg = local_import("s3cfg")
@@ -66,6 +69,8 @@ deployment_settings.mail.approver = "useradmin@your.org"
 deployment_settings.L10n.utc_offset = "UTC +0000"
 
 # GIS (Map) settings
+# Provide a tool to select locations via a map on all forms with location_id
+deployment_settings.gis.map_selector = True
 # Display Resources recorded to Admin-Level Locations on the map
 deployment_settings.gis.display_L0 = False
 # Currently unused

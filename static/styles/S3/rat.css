@@ -35,6 +35,17 @@
     padding-top: 1.5em;
 }
 
+#rat_section6_food_sources_disruption__row td,
+#rat_section6_comments__row td {
+    padding-top: 1.5em;
+}
+
+#rat_section7_main_expenses__row td,
+#rat_section7_other_assistance_needed__row td,
+#rat_section7_comments__row td {
+    padding-top: 1.5em;
+}
+
 #rat_section9_children_separated__row td,
 #rat_section9_comments__row td {
     padding-top: 2em;

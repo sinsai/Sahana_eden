@@ -132,16 +132,16 @@ s3.crud_strings[tablename] = Storage(
 
 # Reusable field
 def shn_organisation_represent(id):
-    row = db(db.org_organisation.id == id).select(db.org_organisation.name, 
-                                                  db.org_organisation.acronym, 
+    row = db(db.org_organisation.id == id).select(db.org_organisation.name,
+                                                  db.org_organisation.acronym,
                                                   limitby = [0,1]).first()
     if row:
-        organisation_represent = row.name 
+        organisation_represent = row.name
         if row.acronym:
             organisation_represent = organisation_represent + " (" + row.acronym + ")"
     else:
         organisation_represent = "-"
-    
+
     return organisation_represent
 
 organisation_popup_url = URL(r=request, c="org", f="organisation", args="create", vars=dict(format="popup"))
@@ -624,6 +624,18 @@ table = db.define_table(tablename, timestamp, uuidstamp, authorstamp, deletion_s
 # Task Resource called from multiple controllers
 # - so we define strings in the model
 table.person_id.label = T("Assigned to")
+
+
+def shn_org_task_onvalidation(form):
+
+    """ Task form validation """
+
+    if str(form.vars.status) == "2" and not form.vars.person_id:
+        form.errors.person_id = T("Select a person in charge for status 'assigned'")
+
+    return False
+
+
 # CRUD Strings
 ADD_TASK = T("Add Task")
 LIST_TASKS = T("List Tasks")
@@ -651,6 +663,7 @@ s3xrc.model.add_component(module, resource,
     main="subject", extra="description")
 
 s3xrc.model.configure(table,
+                      onvalidation = lambda form: shn_org_task_onvalidation(form),
                       list_fields=["id",
                                    "project_id",
                                    "office_id",

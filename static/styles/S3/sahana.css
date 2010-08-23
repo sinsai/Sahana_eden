@@ -542,6 +542,9 @@ div#rheader_tabs span.rheader_tab_other a { color: #bbb;
                                             text-decoration: None; }
 div#rheader_tabs span.rheader_tab_here a { color: #006699;
                                             text-decoration: None; }
+                                            
+/* Used to diplay the list-add with the list-add-btn */
+#list-add {display:none}                                            
 
 /* Ext button (e.g. on Bulk Upload form */
 #show-dialog-btn { border:1px solid #efefef;

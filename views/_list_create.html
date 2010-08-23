@@ -1,3 +1,15 @@
+<script type="text/javascript">//<![CDATA[
+jQuery(document).ready(function(){
+$("#show-add-btn").click(function() {
+  $("#list-add").slideDown('slow', function() {
+    // Animation complete. 
+  });
+    $("#show-add-btn").slideUp('slow', function() {
+      //Animation complete.
+    });     
+});
+});
+//]]></script>
 {{try:}}
  {{=H2(title)}}
 {{except:}}
@@ -9,6 +21,8 @@
  {{pass}}
 </div>
 <div id='map'></div>
+{{=showaddbtn}}
+<div id = "list-add">
 {{try:}}
  {{=H3(addtitle)}}
 {{except:}}
@@ -20,6 +34,7 @@
 {{pass}}
 </div>
 {{include "key.html"}}
+</div>
 <p>&nbsp;</p>
 {{try:}}
  {{=H3(subtitle)}}

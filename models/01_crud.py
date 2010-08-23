@@ -1259,9 +1259,14 @@ def shn_list(r, **attr):
                 table[r.fkey].comment = _comment
 
             addtitle = shn_get_crud_string(tablename, "subtitle_create")
+            
+            label_create_button = shn_get_crud_string(tablename, "label_create_button")
+            showaddbtn = A(label_create_button, 
+                           _id = "show-add-btn",
+                           _class="action-btn")
 
             shn_custom_view(r, "list_create.html")
-            output.update(form=form, addtitle=addtitle)
+            output.update(form=form, addtitle=addtitle, showaddbtn=showaddbtn)
 
         else:
             # List only

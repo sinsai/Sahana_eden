@@ -64,7 +64,13 @@ if deployment_settings.has_module(module):
     table.persons_injured.requires = IS_NULL_OR( IS_INT_IN_RANGE(0,99999999) )
     table.persons_deceased.requires = IS_NULL_OR( IS_INT_IN_RANGE(0,99999999) )
     table.houses_destroyed.requires = IS_NULL_OR( IS_INT_IN_RANGE(0,99999999) )
-    table.houses_damaged.requires = IS_NULL_OR( IS_INT_IN_RANGE(0,99999999) )  
+    table.houses_damaged.requires = IS_NULL_OR( IS_INT_IN_RANGE(0,99999999) ) 
+    
+    table.persons_affected.comment = T("Numbers Only")
+    table.persons_injured.comment = T("Numbers Only")
+    table.persons_deceased.comment = T("Numbers Only")
+    table.houses_destroyed.comment = T("Numbers Only")
+    table.houses_damaged.comment = T("Numbers Only")  
 
     #table.houses_destroyed.requires = IS_NULL_OR( IS_INT_IN_RANGE(0,99999999) )
     #table.houses_destroyed.default = 0

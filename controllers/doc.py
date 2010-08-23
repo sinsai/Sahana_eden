@@ -14,7 +14,7 @@ if module not in deployment_settings.modules:
     redirect(URL(r=request, c="default", f="index"))
 
 # Options Menu (available in all Functions' Views)
-response.menu_options = [ [T("Reference Documents"), False, URL(r=request, f="document")],
+response.menu_options = [ [T("Documents"), False, URL(r=request, f="document")],
                           [T("Photos"), False, URL(r=request, f="image")],
                           #[T("Bulk Uploader"), False, URL(r=request, f="bulk_upload")]
                         ]

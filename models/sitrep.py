@@ -47,23 +47,29 @@ if deployment_settings.has_module(module):
                             migrate=migrate)
 
     table.households.label = T("Total Households")
-    table.households.requires = IS_INT_IN_RANGE(0,99999999)
-    table.households.default = 0
+    table.households.requires = IS_NULL_OR( IS_INT_IN_RANGE(0,99999999) )
+    #table.households.default = 0
 
     table.population.label = T("Population")
-    table.population.requires = IS_INT_IN_RANGE(0,99999999)
-    table.population.default = 0
+    table.population.requires = IS_NULL_OR( IS_INT_IN_RANGE(0,99999999) )
+    #table.population.default = 0
 
     table.persons_affected.label = T("# of People Affected")
     table.persons_injured.label = T("# of People Injured")
     table.persons_deceased.label = T("# of People Deceased")
     table.houses_destroyed.label = T("# of Houses Destroyed")
     table.houses_damaged.label = T("# of Houses Damaged")
+    
+    table.persons_affected.requires = IS_NULL_OR( IS_INT_IN_RANGE(0,99999999) )
+    table.persons_injured.requires = IS_NULL_OR( IS_INT_IN_RANGE(0,99999999) )
+    table.persons_deceased.requires = IS_NULL_OR( IS_INT_IN_RANGE(0,99999999) )
+    table.houses_destroyed.requires = IS_NULL_OR( IS_INT_IN_RANGE(0,99999999) )
+    table.houses_damaged.requires = IS_NULL_OR( IS_INT_IN_RANGE(0,99999999) )  
 
-    table.houses_destroyed.requires = IS_INT_IN_RANGE(0,99999999)
-    table.houses_destroyed.default = 0
-    table.houses_damaged.requires = IS_INT_IN_RANGE(0,99999999)
-    table.houses_damaged.default = 0
+    #table.houses_destroyed.requires = IS_NULL_OR( IS_INT_IN_RANGE(0,99999999) )
+    #table.houses_destroyed.default = 0
+    #table.houses_damaged.requires = IS_NULL_OR( IS_INT_IN_RANGE(0,99999999) )
+    #table.houses_damaged.default = 0
 
     table.crop_losses.requires = IS_NULL_OR(IS_INT_IN_RANGE(0, 100))
 

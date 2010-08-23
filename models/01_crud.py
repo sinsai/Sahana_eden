@@ -94,8 +94,8 @@ def shn_field_represent(field, row, col):
             represent = row[col]            
             if col == "comments":
                 ur = unicode(represent, "utf8")
-                if len(ur) > truncate:
-                    representr = ur[:truncate - 3].encode("utf8") + "..."
+                if len(ur) > 48:
+                    representr = ur[:48 - 3].encode("utf8") + "..."
     return represent
 
 def shn_field_represent_sspage(field, row, col, linkto=None):

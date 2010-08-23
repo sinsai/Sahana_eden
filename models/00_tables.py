@@ -257,7 +257,7 @@ s3.crud_strings[tablename] = Storage(
 source_id = db.Table(None, "source_id",
             FieldS3("source_id", db.s3_source, sortby="name",
                 requires = IS_NULL_OR(IS_ONE_OF(db, "s3_source.id", "%(name)s")),
-                represent = lambda id: (id and [db(db.s3_source.id == id).select(db.s3_source.name, limitby=(0, 1)).first().name] or ["None"])[0],
+                represent = lambda id: (id and [db(db.s3_source.id == id).select(db.s3_source.name, limitby=(0, 1)).first().name] or [NONE])[0],
                 label = T("Source of Information"),
                 comment = DIV(A(ADD_SOURCE, _class="colorbox", _href=URL(r=request, c="default", f="source", args="create", vars=dict(format="popup")), _target="top", _title=ADD_SOURCE), DIV( _class="tooltip", _title=str(T("Add Source")) + "|" + str(T("The Source this information came from.")))),
                 ondelete = "RESTRICT"

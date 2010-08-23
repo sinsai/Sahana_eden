@@ -111,7 +111,7 @@ if deployment_settings.has_module(module):
                             comments,
                             migrate=migrate)
 
-    table.document.represent = lambda document, table=table: (document and [A(table.document.retrieve(document)[0], _href=URL(r=request, f="download", args=[document]))] or ["None"])[0]
+    table.document.represent = lambda document, table=table: (document and [A(table.document.retrieve(document)[0], _href=URL(r=request, f="download", args=[document]))] or [NONE])[0]
     table.name.label = T("Title")
     table.location_id.label = T("District")
     table.reported_by.label = T("Reported By")
@@ -137,7 +137,7 @@ if deployment_settings.has_module(module):
     school_district_id = db.Table(None, "school_district_id",
                                   Field("school_district_id", table,
                                   requires = IS_NULL_OR(IS_ONE_OF(db, "sitrep_school_district.id", "%(name)s")),
-                                  represent = lambda id: (id and [db(db.sitrep_school_district.id == id).select(db.sitrep_school_district.name, limitby=(0, 1)).first().name] or ["None"])[0],
+                                  represent = lambda id: (id and [db(db.sitrep_school_district.id == id).select(db.sitrep_school_district.name, limitby=(0, 1)).first().name] or [NONE])[0],
                                   label = T("School District"),
                                   ondelete = "RESTRICT"))
 

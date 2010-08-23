@@ -38,11 +38,11 @@ def shn_file_represent( file, table):
         return A(table.file.retrieve(file)[0], 
                  _href=URL(r=request, f="download", args=[file]))
     else:
-        return "-"
+        return NONE
     
 table.file.represent = lambda file, table=table: shn_file_represent(file, table)
 table.url.label = T("URL")
-table.url.represent = lambda url: url and A(url,_href=url) or "-"
+table.url.represent = lambda url: url and A(url,_href=url) or NONE
 
 table.url.requires = [IS_NULL_OR(IS_URL()),IS_NULL_OR(IS_NOT_IN_DB(db, "%s.url" % tablename))]
 
@@ -54,7 +54,7 @@ table.entered.comment = DIV( _class="tooltip",
 # -----------------------------------------------------------------------------
 def document_represent(id):
     if not id:
-        return "-"
+        return NONE
     represent = shn_get_db_field_value(db = db,
                                        table = "doc_document", 
                                        field = "name", 
@@ -191,7 +191,7 @@ ADD_METADATA = Tstr("Add Metadata")
 metadata_id = db.Table(None, "metadata_id",
             Field("metadata_id", db.doc_metadata,
                 requires = IS_NULL_OR(IS_ONE_OF(db, "doc_metadata.id", "%(id)s")),
-                represent = lambda id: (id and [db(db.doc_metadata.id==id).select()[0].name] or ["None"])[0],
+                represent = lambda id: (id and [db(db.doc_metadata.id==id).select()[0].name] or [NONE])[0],
                 label = T("Metadata"),
                 comment = DIV(A(ADD_METADATA, _class="colorbox", _href=URL(r=request, c="doc", f="metadata", args="create", vars=dict(format="popup")), _target="top", _title=ADD_METADATA),
                           DIV( _class="tooltip", _title=ADD_METADATA + "|" + "Add some metadata for the file, such as Soure, Sensitivity, Event Time.")),

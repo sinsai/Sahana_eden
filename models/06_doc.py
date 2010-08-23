@@ -46,7 +46,8 @@ table.url.represent = lambda url: url and A(url,_href=url) or NONE
 
 table.url.requires = [IS_NULL_OR(IS_URL()),IS_NULL_OR(IS_NOT_IN_DB(db, "%s.url" % tablename))]
 
-table.person_id.label = T("Person")
+table.person_id.label = T("Author")
+table.person_id.comment = shn_person_comment(T("Author"), T("The Author of this Document (optional)"))
 
 table.entered.comment = DIV( _class="tooltip", 
                              _title="Entered" + "|" + Tstr("Has data from this Reference Document been entered into Sahana?")

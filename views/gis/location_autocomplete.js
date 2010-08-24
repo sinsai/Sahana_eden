@@ -1,4 +1,9 @@
 ﻿{{_gis = response.s3.gis}}
+{{try:}}
+{{level = oldlocation.level}}
+{{parent = oldlocation.parent}}
+{{except:}}
+{{pass}}
 <script type="text/javascript">//<![CDATA[
 $(function() {
     var row, label, widget, comment, country_id, parent, url;
@@ -300,7 +305,12 @@ $(function() {
 
     // Lat/Lon entry
     label = '{{=db.gis_location.lat.label}}:';
+  {{try:}}
+  {{lat = oldlocation.lat}}
+    widget = "<input id='gis_location_lat' value='{{=lat}}' />";
+  {{except:}}
     widget = "<input id='gis_location_lat' />";
+  {{pass}} 
     comment = '{{=db.gis_location.lat.comment}}';
     row = "<tr id='gis_location_lat__row'><td><label>" + label + '</label></td><td>' + widget + '</td><td>' + comment + '</td></tr>';
     $(location_id_row).before(row);
@@ -309,15 +319,85 @@ $(function() {
     //$('.tooltip').cluetip({activation: 'click', sticky: true, closePosition: 'title',closeText: '<img src="/{{=request.application}}/static/img/cross2.png" alt="close" />',splitTitle: '|'});
     
     label = '{{=db.gis_location.lon.label}}:';
+  {{try:}}
+  {{lon = oldlocation.lon}}
+    widget = "<input id='gis_location_lon' value='{{=lon}}' />";
+  {{except:}}
     widget = "<input id='gis_location_lon' />";
+  {{pass}} 
     comment = '{{=db.gis_location.lon.comment}}';
     row = "<tr id='gis_location_lon__row'><td><label>" + label + '</label></td><td>' + widget + '</td><td>' + comment + '</td></tr>';
     $(location_id_row).before(row);
     
     // Submit button
-    widget = "<a href='#' class='action-btn'>Add New</a>";
+  {{try:}}
+  {{oldlocation = oldlocation.id}}
+    var buttonLabel = '{{=T("Update")}}';
+  {{except:}}
+    var buttonLabel = '{{=T("Add New")}}';
+  {{pass}}
+    widget = "<a href='#' id='gis_location_submit_button' class='action-btn'>" + buttonLabel + '</a>';
     row = "<tr id='gis_location_submit__row'><td><label></label></td><td>" + widget + '</td><td></td></tr>';
     $(location_id_row).before(row);
+    $('#gis_location_submit_button').click(function(){
+        // Read the values
+        var lat = $('#gis_location_lon').val();
+        var lon = $('#gis_location_lon').val();
+        if ('' == lat || '' == lon) {
+            // Don't save a location if we have no Lat/Lon
+            // ToDo: Allow saving a Street Address with no Lat/Lon?
+            return false;
+        }
+        var name = $('{{=request.controller + "_" + request.function + "_name"}}').val();
+        if (undefined == name || '' == name) {
+            name = '{{=request.controller + "_" + request.function}}' + Math.floor(Math.random()*1001);
+        }
+        parent = $('#gis_location_l5').val();
+        if (undefined == parent || '' == parent){
+            parent = $('#gis_location_l4').val();
+            if (undefined == parent || '' == parent){
+                parent = $('#gis_location_l3').val();
+                if (undefined == parent || '' == parent){
+                    parent = $('#gis_location_l2').val();
+                    if (undefined == parent || '' == parent){
+                        parent = $('#gis_location_l1').val();
+                        if (undefined == parent || '' == parent){
+                            parent = $('#gis_location_l0').val();
+                        }
+                    }
+                }
+            }
+        }
+        
+        // Submit the record
+      {{try:}}
+      {{oldlocation = oldlocation.id}}
+        url = '{{=URL(r=request, c="gis", f="location", args=["create.url"])}}';
+      {{except:}}
+        url = '{{=URL(r=request, c="gis", f="location", args=["update.url"])}}';
+      {{pass}}
+        url = url + '?name=' + name + '&lat=' + lat + '&lon=' + lon;
+      {{try:}}
+      {{oldlocation = oldlocation.id}}
+        url = url + '&uid=' + {{oldlocation.uuid}};
+      {{except:}}
+      {{pass}}
+        if (undefined == parent || '' == parent){
+            // Skip the parent
+        } else {
+            url = url + '&parent=' + parent;
+        }
+        $.getJSON(url, function(data) {
+            // Report Success/Failure
+            showStatus(data.message);
+            if (data.status == 'success') {
+                // Hide the button to prevent duplicate records being added
+                // ToDo: Unhide if any of the selectors are changed again
+                $('#gis_location_submit__row').hide();
+            }
+            
+        });
+    });
     
     // Section delimiter
     widget = '------------------------------------------------------------------------------------------------------------------------'

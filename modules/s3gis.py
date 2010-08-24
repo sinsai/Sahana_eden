@@ -83,12 +83,13 @@ GEOM_TYPES = {
 class GIS(object):
     """ GIS functions """
 
-    def __init__(self, environment, db, auth=None, cache=None):
+    def __init__(self, environment, deployment_settings, db, auth=None, cache=None):
         self.environment = Storage(environment)
         self.request = self.environment.request
         self.response = self.environment.response
         self.session = self.environment.session
         self.T = self.environment.T
+        self.deployment_settings = deployment_settings
         assert db is not None, "Database must not be None."
         self.db = db
         self.cache = cache and (cache.ram, 60) or None
@@ -314,6 +315,39 @@ class GIS(object):
         else:
             return None
 
+    def get_feature_layer(self, module, resource, layername, popup_label, marker=None, filter=None):
+        """
+            Return a Feature Layer suitable to display on a map
+            @param: layername: Used as the label in the LayerSwitcher
+            @param: popup_label: Used in Cluster Popups to differentiate between types
+        """
+        db = self.db
+        deployment_settings = self.deployment_settings
+        request = self.request
+        
+        # Hide deleted Resources
+        query = (db.gis_location.deleted == False)
+            
+        if filter:
+            query = query & (db[filter.tablename].id == filter.id)
+        
+        # Hide Resources recorded to Country Locations on the map?
+        if not deployment_settings.get_gis_display_l0():
+            query = query & (db.gis_location.level != "L0")
+            
+        query = query & (db.gis_location.id == db["%s_%s" % (module, resource)].location_id)
+        locations = db(query).select(db.gis_location.id, db.gis_location.uuid, db.gis_location.name, db.gis_location.wkt, db.gis_location.lat, db.gis_location.lon)
+        for i in range(0, len(locations)):
+            locations[i].popup_label = locations[i].name + "-" + popup_label
+        popup_url = URL(r=request, c=module, f=resource, args="read.popup?%s.location_id=" % resource)
+        if marker:
+            marker = db(db.gis_marker.name == marker).select(db.gis_marker.id, limitby=(0, 1)).first().id
+            layer = {"name":layername, "query":locations, "active":True, "marker":marker, "popup_url": popup_url}
+        else:
+            layer = {"name":layername, "query":locations, "active":True, "popup_url": popup_url}
+
+        return layer
+    
     def get_features_in_radius(self, lat, lon, radius):
         """
             Returns Features within a Radius (in km) of a LatLon Location

@@ -50,7 +50,7 @@ if deployment_settings.has_module(module):
         2: T("15-30 minutes"),
         3: T("30-60 minutes"),
         4: T("over one hour"),
-        99: NOT_APPLICABLE
+        999: NOT_APPLICABLE
     }
 
     # -------------------------------------------------------------------------
@@ -394,14 +394,14 @@ if deployment_settings.has_module(module):
         5: T("Door frame"),
         6: T("Window frame"),
         7: T("Roof tile"),
-        99: NOT_APPLICABLE
+        999: NOT_APPLICABLE
     }
 
     rat_water_container_types = {
         1: T("Jerry can"),
         2: T("Bucket"),
         3: T("Water gallon"),
-        4: T("Other (specify)")
+        99: T("Other (specify)")
     }
 
     resource = "section3"
@@ -413,19 +413,15 @@ if deployment_settings.has_module(module):
                             Field("houses_destroyed", "integer"),
                             Field("houses_damaged", "integer"),
                             Field("houses_salvmat"),
-
                             Field("water_containers_available", "boolean"),
                             Field("water_containers_sufficient", "boolean"),
                             Field("water_containers_types"),
                             Field("water_containers_types_other"),
-
                             Field("cooking_equipment_available", "boolean"),
                             Field("sanitation_items_available", "boolean"),
                             Field("sanitation_items_available_women", "boolean"),
-
                             Field("bedding_materials_available", "boolean"),
                             Field("clothing_sets_available", "boolean"),
-
                             Field("nfi_assistance_available", "boolean"),
                             Field("kits_hygiene_received", "boolean"),
                             Field("kits_hygiene_source"),
@@ -516,8 +512,8 @@ if deployment_settings.has_module(module):
         3: T("Spring"),
         4: T("River"),
         5: T("Other Faucet/Piped Water"),
-        6: T("Other (describe)"),
-        99: NOT_APPLICABLE
+        99: T("Other (describe)"),
+        999: NOT_APPLICABLE
     }
 
     rat_water_coll_person_opts = {
@@ -525,7 +521,7 @@ if deployment_settings.has_module(module):
         2: T("Adult male"),
         3: T("Adult female"),
         4: T("Older person (>60 yrs)"),
-        99: NOT_APPLICABLE
+        999: NOT_APPLICABLE
     }
 
     rat_defec_place_types = {
@@ -533,19 +529,19 @@ if deployment_settings.has_module(module):
         2: T("pit"),
         3: T("latrines"),
         4: T("river"),
-        5: T("other")
+        99: T("other")
     }
 
     rat_defec_place_animals_opts = {
         1: T("enclosed area"),
         2: T("within human habitat"),
-        99: NOT_APPLICABLE
+        999: NOT_APPLICABLE
     }
 
     rat_latrine_types = {
         1: T("flush latrine with septic tank"),
         2: T("pit latrine"),
-        99: NOT_APPLICABLE
+        999: NOT_APPLICABLE
     }
 
     resource = "section4"
@@ -671,7 +667,7 @@ if deployment_settings.has_module(module):
         1: T("Respiratory Infections"),
         2: T("Diarrhea"),
         3: T("Dehydration"),
-        4: T("Other (specify)")
+        99: T("Other (specify)")
     }
 
     rat_infant_nutrition_alternative_opts = {
@@ -679,7 +675,7 @@ if deployment_settings.has_module(module):
         2: T("Banana"),
         3: T("Instant Porridge"),
         4: T("Air tajin"),
-        5: T("Other (specify)")
+        99: T("Other (specify)")
     }
 
     resource = "section5"
@@ -860,7 +856,7 @@ if deployment_settings.has_module(module):
         2: T("Canned Fish"),
         3: T("Chicken"),
         4: T("Eggs"),
-        5: T("Other (specify)")
+        99: T("Other (specify)")
     }
 
     rat_food_stock_reserve_opts = {
@@ -869,30 +865,73 @@ if deployment_settings.has_module(module):
         3: T("8-14 days")
     }
 
+    rat_food_source_types = {
+        1: "Local market",
+        2: "Field cultivation",
+        3: "Food stall",
+        4: "Animal husbandry",
+        5: "Raising poultry",
+        99: "Other (specify)"
+    }
+
     resource = "section6"
     tablename = "%s_%s" % (module, resource)
     table = db.define_table(tablename,
                             timestamp, uuidstamp, authorstamp, deletion_status,
                             assessment_id,
-                            # food stocks (main dishes)
                             Field("food_stocks_main_dishes"),
-                            # food stocks (side dishes)
                             Field("food_stocks_side_dishes"),
                             Field("food_stocks_other_side_dishes"),
-                            # food stocks - lasting
-                            Field("food_stocks_reserve", "integer",
-                                  requires = IS_EMPTY_OR(IS_IN_SET(rat_food_stock_reserve_opts, zero=None))),
-                            # food stocks - obtaining
-                            # food stocks - disruption
-                            # food stocks - assistance availability
+                            Field("food_stocks_reserve", "integer"),
+                            Field("food_sources"),
+                            Field("food_sources_other"),
+                            Field("food_sources_disruption", "boolean"),
+                            Field("food_sources_disruption_details"),
                             Field("food_assistance_available", "boolean"),
-                            # food stocks - assistence sources
-                            #Field("food_assistance_sources"),
+                            Field("food_assistance_details", "text"),
                             comments,
                             migrate=migrate)
 
     table.assessment_id.readable = False
     table.assessment_id.writable = False
+
+    shn_rat_label_and_tooltip(table.food_stocks_main_dishes,
+        "Existing food stocks, main dishes",
+        "What food stocks exist? (main dishes)",
+        multiple=True)
+    table.food_stocks_main_dishes.requires = IS_EMPTY_OR(IS_IN_SET(rat_main_dish_types, zero=None, multiple=True))
+    table.food_stocks_main_dishes.represent = lambda opt, set=rat_main_dish_types: \
+                                              shn_rat_represent_multiple(set, opt)
+    shn_rat_label_and_tooltip(table.food_stocks_side_dishes,
+        "Existing food stocks, side dishes",
+        "What food stocks exist? (side dishes)",
+        multiple=True)
+    table.food_stocks_side_dishes.requires = IS_EMPTY_OR(IS_IN_SET(rat_side_dish_types, zero=None, multiple=True))
+    table.food_stocks_side_dishes.represent = lambda opt, set=rat_side_dish_types: \
+                                              shn_rat_represent_multiple(set, opt)
+    table.food_stocks_other_side_dishes.label = T("Other side dishes in stock")
+    table.food_stocks_reserve.label = T("How long will the food last?")
+    table.food_stocks_reserve.requires = IS_EMPTY_OR(IS_IN_SET(rat_food_stock_reserve_opts, zero=None))
+
+    shn_rat_label_and_tooltip(table.food_sources,
+        "Usual food sources in the area",
+        "What are the people's normal ways to obtain food in this area?",
+        multiple=True)
+    table.food_sources.requires = IS_EMPTY_OR(IS_IN_SET(rat_food_source_types, zero=None, multiple=True))
+    table.food_sources.represent = lambda opt, set=rat_food_source_types: \
+                                   shn_rat_represent_multiple(set, opt)
+    table.food_sources_other.label = T("Other ways to obtain food")
+
+    shn_rat_label_and_tooltip(table.food_sources_disruption,
+        "Normal food sources disrupted",
+        "Have normal food sources been disrupted?")
+    table.food_sources_disruption_details.label = T("If yes, which and how")
+
+    shn_rat_label_and_tooltip(table.food_assistance_available,
+        "Food assistance available/expected",
+        "Have the people received or are you expecting any medical or food assistance in the coming days?")
+
+    table.food_assistance_details.label = T("If yes, specify what and by whom")
 
     # CRUD strings
     s3.crud_strings[tablename] = rat_section_crud_strings

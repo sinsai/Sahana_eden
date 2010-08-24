@@ -96,6 +96,11 @@ def assessment():
             "health_services_pre_disaster": "Health services status",
             "health_problems_adults": "Current health problems",
             "malnutrition_present_pre_disaster": "Nutrition problems"
+        },
+        "rat_section6" : {
+            "food_stocks_main_dishes": "Existing food stocks",
+            "food_sources" : "Food sources",
+            "food_assistance_available": "Food assistance"
         }
     }
 

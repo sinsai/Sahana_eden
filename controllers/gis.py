@@ -118,6 +118,7 @@ def define_map(window=False, toolbar=False):
     map = gis.show_map(
                        window=window,
                        catalogue_toolbar=catalogue_toolbar,
+                       #wms_browser = {"name" : "Pacific Disaster Center", "url" : "http://agsprod.pdc.org/arcgis/Pakistan/PAKISTAN_FLOOD/MapServer/WMSServer?request=GetCapabilities&service=WMS"},
                        toolbar=toolbar,
                        search=search,
                        catalogue_overlays=catalogue_overlays,

@@ -930,9 +930,10 @@ def shn_read(r, **attr):
         record_id = r.id
 
     # ToDo: Comment this out as we don't want to redirect to update form upon read
-    authorised = shn_has_permission("update", table, record_id)
-    if authorised and representation == "html" and editable:
-       return shn_update(r, **attr)
+    if not r.method:
+        authorised = shn_has_permission("update", table, record_id)
+        if authorised and representation == "html" and editable:
+            return shn_update(r, **attr)
 
     # Check for read permission
     authorised = shn_has_permission("read", table, record_id)

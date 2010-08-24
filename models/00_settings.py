@@ -8,6 +8,7 @@
 
 BREADCRUMB = ">> "
 UNKNOWN_OPT = T("Unknown")
+NONE = "-"
 READ = T("Open")
 #READ = T("Details")
 UPDATE = T("Open")

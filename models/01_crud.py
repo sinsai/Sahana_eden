@@ -89,10 +89,13 @@ def shn_field_represent(field, row, col):
         represent = str(field.represent(row[col]))
     except:
         if row[col] is None:
-            represent = "None"
+            represent = NONE
         else:
-            represent = row[col]
-
+            represent = row[col]            
+            if col == "comments":
+                ur = unicode(represent, "utf8")
+                if len(ur) > 48:
+                    represent = ur[:48 - 3].encode("utf8") + "..."
     return represent
 
 def shn_field_represent_sspage(field, row, col, linkto=None):
@@ -1256,9 +1259,14 @@ def shn_list(r, **attr):
                 table[r.fkey].comment = _comment
 
             addtitle = shn_get_crud_string(tablename, "subtitle_create")
+            
+            label_create_button = shn_get_crud_string(tablename, "label_create_button")
+            showaddbtn = A(label_create_button, 
+                           _id = "show-add-btn",
+                           _class="action-btn")
 
             shn_custom_view(r, "list_create.html")
-            output.update(form=form, addtitle=addtitle)
+            output.update(form=form, addtitle=addtitle, showaddbtn=showaddbtn)
 
         else:
             # List only

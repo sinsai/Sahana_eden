@@ -390,10 +390,10 @@ tr.after_subheading td { padding-top: 10px; }
 div#table-container { width: 100%;
                       overflow: auto; }
 div#table-container th { border: 1px solid #ccc; }
-div#table-container tr.even td { border: 1px solid #ccc;
-                                 text-align: center;}
-div#table-container tr.odd td { border: 1px solid #ccc;
-                                text-align: center; }
+div#table-container tr.even td { border: 1px solid #ccc; }
+                               /*  text-align: center;} */
+div#table-container tr.odd td { border: 1px solid #ccc; }
+                              /*  text-align: center; } */
 
 /* Data Table Styling */
 /* Bring in line with export formats */
@@ -542,6 +542,9 @@ div#rheader_tabs span.rheader_tab_other a { color: #bbb;
                                             text-decoration: None; }
 div#rheader_tabs span.rheader_tab_here a { color: #col_txt;
                                             text-decoration: None; }
+                                            
+/* Used to diplay the list-add with the list-add-btn */
+#list-add {display:none}                                            
 
 /* Ext button (e.g. on Bulk Upload form */
 #show-dialog-btn { border:1px solid #efefef;

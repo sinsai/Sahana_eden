@@ -9,9 +9,11 @@ from gluon.sqlhtml import *
 
 
 try:
-	from xlrd import *
+    from xlrd import *
 except ImportError:
-	print >> sys.stderr, "WARNING: %s: XLRD not installed" % __name__
+    pass
+    # Don't print with WSGI
+    #print >> sys.stderr, "WARNING: %s: XLRD not installed" % __name__
 
 import os
 

@@ -46,6 +46,8 @@ table.url.represent = lambda url: url and A(url,_href=url) or "-"
 
 table.url.requires = [IS_NULL_OR(IS_URL()),IS_NULL_OR(IS_NOT_IN_DB(db, "%s.url" % tablename))]
 
+table.person_id.label = T("Person")
+
 table.entered.comment = DIV( _class="tooltip", 
                              _title="Entered" + "|" + Tstr("Has data from this Reference Document been entered into Sahana?")
                              )
@@ -83,22 +85,22 @@ document_comment = DIV( A( ADD_DOCUMENT,
                         )
 
 # CRUD Strings
-LIST_DOCUMENTS = T("List Reference Documents")
+LIST_DOCUMENTS = T("List Documents")
 s3.crud_strings[tablename] = Storage(
     title_create = ADD_DOCUMENT,
-    title_display = T("Reference Document Details"),
+    title_display = T("Document Details"),
     title_list = LIST_DOCUMENTS,
-    title_update = T("Edit Reference Document"),
-    title_search = T("Search Reference Documents"),
-    subtitle_create = T("Add New Reference Document"),
-    subtitle_list = T("Reference Document"),
+    title_update = T("Edit Document"),
+    title_search = T("Search Documents"),
+    subtitle_create = T("Add New Document"),
+    subtitle_list = T("Document"),
     label_list_button = LIST_DOCUMENTS,
     label_create_button = ADD_DOCUMENT,
-    label_delete_button = T("Delete Reference Document"),
-    msg_record_created = T("Reference Document added"),
-    msg_record_modified = T("Reference Document updated"),
-    msg_record_deleted = T("Reference Document deleted"),
-    msg_list_empty = T("No References Documents currently defined"))
+    label_delete_button = T("Delete Document"),
+    msg_record_created = T("Document added"),
+    msg_record_modified = T("Document updated"),
+    msg_record_deleted = T("Document deleted"),
+    msg_list_empty = T("No Documents found"))
 
 document_id = db.Table(None, 
                        "document_id",
@@ -125,14 +127,18 @@ table = db.define_table(tablename, timestamp, uuidstamp, authorstamp, deletion_s
                         Field("date", "date"),
                         comments,                
                         migrate=migrate)
+
 table.name.requires = [IS_NOT_EMPTY(), IS_NOT_IN_DB(db, "%s.name" % tablename)]
 #table.name.label = T("Name")
 table.name.comment = SPAN("*", _class="req")
+table.url.label = "URL"
+table.person_id.label = T("Person")
 
 # upload folder needs to be visible to the download() function as well as the upload
 table.image.uploadfolder = os.path.join(request.folder, "uploads/images")
 IMAGE_EXTENSIONS = ["png", "PNG", "jpg", "JPG", "jpeg", "JPEG", "gif", "GIF", "tif", "TIF", "tiff", "TIFF", "bmp", "BMP", "raw", "RAW"]
 table.image.requires = IS_IMAGE(extensions=(IMAGE_EXTENSIONS))
+
 ADD_IMAGE = Tstr("Add Image")
 image_id = db.Table(None, "image_id",
             Field("image_id", db.doc_image,
@@ -143,6 +149,7 @@ image_id = db.Table(None, "image_id",
                           DIV( _class="tooltip", _title=ADD_IMAGE + "|" + Tstr("Add an image, such as a Photo."))),
                 ondelete = "RESTRICT"
                 ))
+
 # CRUD Strings
 LIST_IMAGES = T("List Images")
 s3.crud_strings[tablename] = Storage(
@@ -159,7 +166,8 @@ s3.crud_strings[tablename] = Storage(
     msg_record_created = T("Image added"),
     msg_record_modified = T("Image updated"),
     msg_record_deleted = T("Image deleted"),
-    msg_list_empty = T("No Images currently defined"))
+    msg_list_empty = T("No Images found"))
+
 #==============================================================================
 # END - Following code is not utilised
 resource = "metadata"

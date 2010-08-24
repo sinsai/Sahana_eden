@@ -382,6 +382,8 @@ gis_location_hierarchy = {
     "L3":T("Town"),
     "L4":T("Village")
 }
+# Expose this to Views for AutoCompletes
+response.s3.gis.location_hierarchy = gis_location_hierarchy
 gis_location_languages = {
     1:T("English"),
     2:T("Urdu"),
@@ -400,7 +402,6 @@ table = db.define_table(tablename, timestamp, uuidstamp, deletion_status,
                 Field("name_l10n"),             # Local Names are stored in this field
                 Field("name_dummy"),            # Dummy field to provide Widget
                 Field("code"),
-                Field("description"),
                 feature_class_id,       # Will be removed
                 marker_id,              # Will be removed
                 Field("level", length=2),
@@ -424,12 +425,12 @@ table = db.define_table(tablename, timestamp, uuidstamp, deletion_status,
                 Field("ce", "integer", writable=False, readable=False), # Circular 'Error' around Lat/Lon (in m). Needed for CoT.
                 Field("le", "integer", writable=False, readable=False), # Linear 'Error' for the Elevation (in m). Needed for CoT.
                 Field("source", "integer"),
+                comments,
                 migrate=migrate)
 
 table.uuid.requires = IS_NOT_IN_DB(db, "%s.uuid" % table)
 table.name.requires = IS_NOT_EMPTY()    # Placenames don't have to be unique
 table.name.label = T("Primary Name")
-table.name.comment = SPAN("*", _class="req")
 # We never access name_l10n directly
 table.name_l10n.readable = False
 table.name_l10n.writable = False
@@ -449,7 +450,6 @@ table.url.requires = IS_NULL_OR(IS_URL())
 table.source.requires = IS_NULL_OR(IS_IN_SET(gis_source_opts))
 table.level.label = T("Level")
 table.code.label = T("Code")
-table.description.label = T("Description")
 table.parent.label = T("Parent")
 table.addr_street.label = T("Street Address")
 table.gis_feature_type.label = T("Feature Type")
@@ -475,6 +475,13 @@ location_id = db.Table(None, "location_id",
                                      DIV( _class="tooltip",
                                        _title=Tstr("Location") + "|" + Tstr("The Location of this Site, which can be general (for Reporting) or precise (for displaying on a Map)."))),
                        ondelete = "RESTRICT"))
+
+# Expose the default countries to Views for Autocompletes
+response.s3.gis.countries = Storage()
+if response.s3.countries:
+    countries = db(db.gis_location.code.belongs(response.s3.countries)).select(db.gis_location.id, db.gis_location.code, db.gis_location.name, limitby=(0, len(response.s3.countries)))
+    for country in countries:
+        response.s3.gis.countries[country.code] = Storage(name=country.name, id=country.id)
 
 # -----------------------------------------------------------------------------
 def get_location_id (field_name = "location_id", 
@@ -519,11 +526,6 @@ s3xrc.model.add_component(module, resource,
                           deletable=True,
                           editable=True)
 
-s3xrc.model.configure(table,
-                      onvalidation=lambda form: gis.wkt_centroid(form),
-                      onaccept=gis.update_location_tree() # Note that this is replaced below by the MultiSelect widget
-                      )
-
 resource = "location_name"
 tablename = module + "_" + resource
 table = db.define_table(tablename, timestamp, uuidstamp, deletion_status,
@@ -562,7 +564,10 @@ def gis_location_onaccept(form):
             db(table.id==location_id).update(name_dummy=name_dummy)
     # Include the normal onaccept
     gis.update_location_tree()
-s3xrc.model.configure(table, onaccept=gis_location_onaccept)
+
+s3xrc.model.configure(table,
+                      onvalidation=lambda form: gis.wkt_centroid(form),
+                      onaccept=gis_location_onaccept)
 
 # -----------------------------------------------------------------------------
 #

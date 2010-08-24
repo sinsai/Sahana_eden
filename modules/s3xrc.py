@@ -3662,23 +3662,23 @@ class S3Vector(object):
         """
 
         self.__manager = manager
-        self.db=self.__manager.db
-        self.prefix=prefix
-        self.name=name
+        self.db = self.__manager.db
+        self.prefix = prefix
+        self.name = name
 
         self.tablename = "%s_%s" % (self.prefix, self.name)
         self.table = self.db[self.tablename]
 
-        self.element=element
-        self.record=record
-        self.id=id
+        self.element = element
+        self.record = record
+        self.id = id
 
         if mtime:
             self.mtime = mtime
         else:
             self.mtime = datetime.datetime.utcnow()
 
-        self.rmap=rmap
+        self.rmap = rmap
 
         self.components = []
         self.references = []
@@ -3690,15 +3690,15 @@ class S3Vector(object):
         self.resolution = self.RESOLUTION.OTHER
         self.default_resolution = self.RESOLUTION.THIS
 
-        self.onvalidation=onvalidation
-        self.onaccept=onaccept
-        self.audit=audit
-        self.sync=sync
-        self.log=log
+        self.onvalidation = onvalidation
+        self.onaccept = onaccept
+        self.audit = audit
+        self.sync = sync
+        self.log = log
 
-        self.accepted=True
-        self.permitted=True
-        self.committed=False
+        self.accepted = True
+        self.permitted = True
+        self.committed = False
 
         self.uid = self.record.get(self.UID, None)
         self.mci = self.record.get(self.MCI, 2)
@@ -3719,12 +3719,12 @@ class S3Vector(object):
 
         # Do allow import to tables with these prefixes:
         if self.prefix in ("auth", "admin", "s3"):
-            self.permitted=False
+            self.permitted = False
 
         # ...or check permission explicitly:
         elif permit and not \
            permit(permission, self.tablename, record_id=self.id):
-            self.permitted=False
+            self.permitted = False
 
         # Once the vector has been created, update the entry in the directory
         if self.uid and \

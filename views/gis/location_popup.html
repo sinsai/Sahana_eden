@@ -11,52 +11,51 @@
         //var le = position.coords.altitudeAccuracy;
         //position.coords.heading;
         //position.coords.speed;
-        $("#gis_location_lat").val(lat);
-        $("#gis_location_lon").val(lon);
+        $('#gis_location_lat').val(lat);
+        $('#gis_location_lon').val(lon);
     }
     $(function() {
-        $("#gis_location_gis_feature_type__row").hide();
     {{if "cr_shelter" in request.vars.caller:}}
             // Populate Name & Hide
             var location_name = self.parent.$('#cr_shelter_name').val();
             if (location_name) {
-                $("#gis_location_name").val(location_name);
-                $("#gis_location_name__row").hide();
+                $('#gis_location_name').val(location_name);
+                $('#gis_location_name__row').hide();
             }
     {{elif "hms_hospital" in request.vars.caller:}}
             // Populate Name & Hide
             var location_name = self.parent.$('#hms_hospital_name').val();
             if (location_name) {
-                $("#gis_location_name").val(location_name);
-                $("#gis_location_name__row").hide();
+                $('#gis_location_name').val(location_name);
+                $('#gis_location_name__row').hide();
             }
     {{elif "irs_ireport" in request.vars.caller:}}
             // Populate Name & Hide
             var location_name = self.parent.$('#ir_ireport_name').val();
             if (location_name) {
-                $("#gis_location_name").val(location_name);
-                $("#gis_location_name__row").hide();
+                $('#gis_location_name').val(location_name);
+                $('#gis_location_name__row').hide();
             }
     {{elif "org_office" in request.vars.caller:}}
             // Populate Name & Hide
             var location_name = self.parent.$('#org_office_name').val();
             if (location_name) {
-                $("#gis_location_name").val(location_name);
-                $("#gis_location_name__row").hide();
+                $('#gis_location_name').val(location_name);
+                $('#gis_location_name__row').hide();
             }
     {{elif "org_project" in request.vars.caller:}}
             // Populate Name & Hide
             var location_name = self.parent.$('#org_project_name').val();
             if (location_name) {
-                $("#gis_location_name").val(location_name);
-                $("#gis_location_name__row").hide();
+                $('#gis_location_name').val(location_name);
+                $('#gis_location_name__row').hide();
             }
     {{elif "pr_presence" in request.vars.caller:}}
             // Populate Name & Hide
             var location_name = self.parent.$('#pr_presence_pe_id__row > td.w2p_fw').html();
             if (location_name) {
-                $("#gis_location_name").val(location_name);
-                $("#gis_location_name__row").hide();
+                $('#gis_location_name').val(location_name);
+                $('#gis_location_name__row').hide();
             }
             // Offer HTML5 geolocation
             if (navigator.geolocation) {
@@ -69,8 +68,18 @@
     {{pass}}
 
             // Provide tiered Location AutoCompletes
+            // Hide the real Input Field
+            //$('#gis_location_parent').hide();
+            // Add a dummy field
+            //$('#gis_location_parent').after("<input id='dummy_gis_location_parent' class='ac_input' size=50 />");
+            {{dummy_input = "dummy_gis_location_parent"}}
             //{include "gis/location_autocomplete.js"}
-            //}
+            // Populate the real Input when the Dummy is selected
+            //$('#dummy_l3').result(function(event, data, formatted) {
+                //var newvalue = data.id;
+                //$('#gis_location_l3').val(newvalue);
+                //$('#gis_location_parent__row').val(newvalue);    
+            //});
     });
     //]]></script>
 {{elif jr.method != "read":}}

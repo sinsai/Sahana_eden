@@ -1,5 +1,5 @@
 ﻿    // Autocomplete-enable the Dummy Input
-    $("#{{=dummy_input}}").autocomplete('{{=URL(r=request, c='pr', f='person', args='search.json', vars={'filter':'~', 'field':'first_name', 'field2':'middle_name', 'field3':'last_name'})}}', {
+    $('#{{=dummy_input}}').autocomplete('{{=URL(r=request, c="pr", f="person", args="search.json", vars={"filter":"~", "field":"first_name", "field2":"middle_name", "field3":"last_name"})}}', {
         minChars: 2,
 		//mustMatch: true,
 		matchContains: true,

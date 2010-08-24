@@ -101,7 +101,6 @@ if deployment_settings.has_module(module):
     table = db.define_table(tablename, timestamp, uuidstamp, deletion_status,
                     Field("name", notnull=True),
                     shelter_type_id,
-                    Field("description"),
                     location_id,
                     shelter_service_id,
                     person_id,
@@ -117,7 +116,6 @@ if deployment_settings.has_module(module):
     table.name.requires = IS_NOT_EMPTY()   # Shelters don't have to have unique names
     table.name.label = T("Shelter Name")
     table.name.comment = SPAN("*", _class="req")
-    table.description.label = T("Description")
     table.person_id.label = T("Contact Person")
     table.address.label = T("Address")
     table.capacity.requires = IS_NULL_OR(IS_INT_IN_RANGE(0, 999999))

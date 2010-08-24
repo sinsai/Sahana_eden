@@ -183,7 +183,8 @@ table.operation.requires = IS_IN_SET(["create", "read", "update", "delete", "lis
 # Settings - systemwide
 s3_setting_security_policy_opts = {
     1:T("simple"),
-    2:T("full")
+    2:T("editor"),
+    3:T("full")
     }
 resource = "setting"
 tablename = "%s_%s" % (module, resource)

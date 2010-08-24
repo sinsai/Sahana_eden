@@ -20,7 +20,7 @@ def shn_location_rheader(jr, tabs=[]):
         inventory_location = jr.record
         rheader = DIV(TABLE(TR(
                                TH(Tstr("Location") + ": "), shn_gis_location_represent(inventory_location.location_id),
-                               TH(Tstr("Description") + ": "), inventory_location.description,
+                               TH(Tstr("Description") + ": "), inventory_location.comments,
                                ),
                            ),
                       rheader_tabs
@@ -38,27 +38,30 @@ def location():
         shn_action_buttons(jr)
         return output
     response.s3.postp = postp
-    
+
     rheader = lambda jr: shn_location_rheader(jr,
                                               tabs = [(T("Edit Details"), None),
                                                       (T("Items"), "location_item"),                                                                                                        
                                                      ]
                                               )
-    
+
     return shn_rest_controller(module, resource, rheader=rheader, sticky=True)
 
 def index():
 
     """ Default to the inventory_location list view """
+
     request.function = "location"
-    request.agrs = []
+    request.args = []
     return location()
     #module_name = deployment_settings.modules[module].name_nice
     #return dict(module_name=module_name)
 
 #==============================================================================
 def location_item():
-    "RESTful CRUD controller"
+
+    """ RESTful CRUD controller """
+
     resource = request.function
     tablename = "%s_%s" % (module, resource)
     table = db[tablename]

@@ -14,12 +14,12 @@ s3cfg = local_import("s3cfg")
 deployment_settings = s3cfg.S3Config()
 
 # Database settings
-deployment_settings.database.db_type = "mysql"
+deployment_settings.database.db_type = "sqlite"
 deployment_settings.database.host = "localhost"
 deployment_settings.database.port = "" # use default
-deployment_settings.database.database = "pakistan"
-deployment_settings.database.username = "root"
-deployment_settings.database.password = "1234"
+deployment_settings.database.database = "sahana"
+deployment_settings.database.username = "sahana"
+deployment_settings.database.password = "password"
 deployment_settings.database.pool_size = 30
 
 # Authentication settings
@@ -48,7 +48,6 @@ deployment_settings.base.migrate = True
 # to create the db structure, then exit and re-import the data.
 deployment_settings.base.prepopulate = True
 
-
 # Email settings
 # Outbound server
 deployment_settings.mail.server = "127.0.0.1:25"
@@ -60,8 +59,9 @@ deployment_settings.mail.sender = "sahana@your.org"
 # Address to which mails get sent to approve new users
 deployment_settings.mail.approver = "useradmin@your.org"
 
-
 # L10n settings
+# Uncomment this if the deployment is just in a few countries
+#deployment_settings.L10n.countries = ["PK"]
 # Default timezone for users
 deployment_settings.L10n.utc_offset = "UTC +0000"
 

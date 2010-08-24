@@ -103,7 +103,7 @@ def assessment():
 
     response.s3.pagination = True
     
-    #Disable legacy fields, unless updating, so the data can be manually transferred to new fields
+    # Disable legacy fields, unless updating, so the data can be manually transferred to new fields
     if "update" not in request.args:
         table.source.readable = table.source.writable = False
 
@@ -139,7 +139,7 @@ def school_district():
                                        _title=Tstr("District") + "|" + Tstr("The District for this Report."))),
     response.s3.pagination = True
     
-    #Disable legacy fields, unless updating, so the data can be manually transferred to new fields
+    # Disable legacy fields, unless updating, so the data can be manually transferred to new fields
     if "update" not in request.args:
         table.document.readable = table.document.writable = False    
 

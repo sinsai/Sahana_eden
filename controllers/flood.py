@@ -70,7 +70,7 @@ def freport():
     resource = request.function
     response.s3.pagination = True
 
-    #Disable legacy fields, unless updating, so the data can be manually transferred to new fields
+    # Disable legacy fields, unless updating, so the data can be manually transferred to new fields
     if "update" not in request.args:
         table.document.readable = table.document.writable = False    
         

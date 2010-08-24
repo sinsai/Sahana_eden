@@ -318,7 +318,7 @@ def org_sub_list(tablename, org_id):
     if authorised:
         linkto = table_linkto_update[tablename]
     else:
-        linkto = table_linkto[tablenname]
+        linkto = table_linkto[tablename]
 
     query = (table.organisation_id == org_id)
 

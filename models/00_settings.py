@@ -8,13 +8,14 @@
 
 BREADCRUMB = ">> "
 UNKNOWN_OPT = T("Unknown")
-READ = T("Details")
+READ = T("Open")
+#READ = T("Details")
 UPDATE = T("Open")
 #UPDATE = T("Edit")
 #UPDATE = T("Update")
 DELETE = T("Delete")
 
-# Default strings are in English
+# Default strings are in US English
 T.current_languages = ["en", "en-us"]
 # Check if user has selected a specific language
 if request.vars._language:
@@ -48,7 +49,6 @@ auth.define_tables()
 
 if deployment_settings.get_auth_openid():
     # Requires http://pypi.python.org/pypi/python-openid/
-    # Requires https://code.launchpad.net/~keitheis/web2py/openid
     try:
         from gluon.contrib.login_methods.openid_auth import OpenIDAuth
         openid_login_form = OpenIDAuth(auth)
@@ -76,9 +76,9 @@ auth.messages.registration_pending = T("Email address verified, however registra
 if deployment_settings.get_auth_registration_requires_approval():
     auth.settings.verify_email_onaccept = lambda form: \
         auth.settings.mailer.send(to=deployment_settings.get_mail_approver(),
-                              subject=T("Sahana Login Approval Pending"),
-                              message=Tstr("Your action is required. Please approve user %s asap: " % form.email) +
-                              deployment_settings.get_base_public_url() + "/" + request.application + "/admin/user")
+                                  subject=T("Sahana Login Approval Pending"),
+                                  message=Tstr("Your action is required. Please approve user %s asap: " % form.email) +
+                                  deployment_settings.get_base_public_url() + "/" + request.application + "/admin/user")
 
 # Allow use of LDAP accounts for login
 # NB Currently this means that change password should be disabled:

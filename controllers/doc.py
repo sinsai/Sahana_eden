@@ -4,6 +4,7 @@
     Document Library - Controllers
 
     @author: Fran Boon
+    @author: Michael Howden
 """
 
 module = request.controller
@@ -15,6 +16,7 @@ if module not in deployment_settings.modules:
 # Options Menu (available in all Functions' Views)
 response.menu_options = [ [T("Reference Documents"), False, URL(r=request, f="document")],
                           [T("Images"), False, URL(r=request, f="image")],
+                          #[T("Bulk Uploader"), False, URL(r=request, f="bulk_upload")]
                         ]
 
 #==============================================================================
@@ -22,7 +24,7 @@ response.menu_options = [ [T("Reference Documents"), False, URL(r=request, f="do
 def download():
     "Download a file."
     return response.download(request, db)
-#==============================================================================
+
 # S3 framework functions
 def index():
     "Module's Home Page"
@@ -30,6 +32,7 @@ def index():
     module_name = deployment_settings.modules[module].name_nice
 
     return dict(module_name=module_name)
+
 #==============================================================================
 def shn_document_rheader(jr, tabs=[]):
     if jr.representation == "html":

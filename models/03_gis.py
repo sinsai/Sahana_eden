@@ -8,6 +8,10 @@ module = "gis"
 
 MARKER = Tstr("Marker")
 
+# Expose settings to views
+_gis = response.s3.gis
+_gis.map_selector = deployment_settings.get_gis_map_selector()
+
 # Settings
 resource = "setting"
 tablename = "%s_%s" % (module, resource)
@@ -86,7 +90,7 @@ table = db.define_table(tablename, timestamp, uuidstamp,
 symbology_id = db.Table(None, "symbology_id",
             FieldS3("symbology_id", db.gis_symbology, sortby="name",
                 requires = IS_NULL_OR(IS_ONE_OF(db, "gis_symbology.id", "%(name)s")),
-                represent = lambda id: (id and [db(db.gis_symbology.id == id).select(db.gis_symbology.name, limitby=(0, 1)).first().name] or ["None"])[0],
+                represent = lambda id: (id and [db(db.gis_symbology.id == id).select(db.gis_symbology.name, limitby=(0, 1)).first().name] or [NONE])[0],
                 label = T("Symbology"),
                 comment = "",
                 ondelete = "RESTRICT"
@@ -346,7 +350,7 @@ ADD_FEATURE_CLASS = T("Add Feature Class")
 feature_class_id = db.Table(None, "feature_class_id",
             FieldS3("feature_class_id", db.gis_feature_class, sortby="name",
                 requires = IS_NULL_OR(IS_ONE_OF(db, "gis_feature_class.id", "%(name)s")),
-                represent = lambda id: (id and [db(db.gis_feature_class.id == id).select(db.gis_feature_class.name, limitby=(0, 1)).first().name] or ["None"])[0],
+                represent = lambda id: (id and [db(db.gis_feature_class.id == id).select(db.gis_feature_class.name, limitby=(0, 1)).first().name] or [NONE])[0],
                 label = T("Feature Class"),
                 comment = DIV(A(ADD_FEATURE_CLASS, _class="colorbox", _href=URL(r=request, c="gis", f="feature_class", args="create", vars=dict(format="popup")), _target="top", _title=ADD_FEATURE_CLASS),
                           DIV( _class="tooltip", _title=Tstr("Feature Class") + "|" + Tstr("Defines the marker used for display & the attributes visible in the popup."))),
@@ -432,7 +436,7 @@ table.name_dummy.label = T("Local Names")
 table.name_dummy.comment = DIV(_class="tooltip", _title=Tstr("Local Names") + "|" + Tstr("Names can be added in multiple languages"))
 table.level.requires = IS_NULL_OR(IS_IN_SET(gis_location_hierarchy))
 table.parent.requires = IS_NULL_OR(IS_ONE_OF(db, "gis_location.id", "%(name)s"))
-table.parent.represent = lambda id: (id and [db(db.gis_location.id == id).select(db.gis_location.name, limitby=(0, 1)).first().name] or ["None"])[0]
+table.parent.represent = lambda id: (id and [db(db.gis_location.id == id).select(db.gis_location.name, limitby=(0, 1)).first().name] or [NONE])[0]
 table.gis_feature_type.requires = IS_IN_SET(gis_feature_type_opts, zero=None)
 table.gis_feature_type.represent = lambda opt: gis_feature_type_opts.get(opt, UNKNOWN_OPT)
 # WKT validation is done in the onvalidation callback
@@ -452,7 +456,11 @@ table.lon.label = T("Longitude")
 table.wkt.label = T("Well-Known Text")
 table.url.label = "URL"
 table.osm_id.label = "OpenStreetMap"
-
+# We want these visible from forms which reference the Location
+CONVERSION_TOOL = T("Conversion Tool")
+table.lat.comment = DIV( _class="tooltip", _id="gis_location_lat_tooltip", _title=Tstr("Latitude & Longitude") + "|" + Tstr("You can click on the map below to select the Lat/Lon fields. Longitude is West - East (sideways). Latitude is North-South (Up-Down). Latitude is zero on the equator and positive in the northern hemisphere and negative in the southern hemisphere. Longitude is zero on the prime meridian (Greenwich Mean Time) and is positive to the east, across Europe and Asia.  Longitude is negative to the west, across the Atlantic and the Americas.  This needs to be added in Decimal Degrees."))
+table.lon.comment = A(CONVERSION_TOOL, _style="cursor:pointer;", _title=T("You can use the Conversion Tool to convert from either GPS coordinates or Degrees/Minutes/Seconds."), _id="btnConvert")
+            
 # Reusable field to include in other table definitions
 ADD_LOCATION = T("Add Location")
 repr_select = lambda l: len(l.name) > 48 and "%s..." % l.name[:44] or l.name
@@ -471,7 +479,6 @@ location_id = db.Table(None, "location_id",
                        ondelete = "RESTRICT"))
 
 # Expose the default countries to Views for Autocompletes
-_gis = response.s3.gis
 _gis.countries = Storage()
 _countries = []
 _gis.provinces = Storage()
@@ -481,11 +488,6 @@ if response.s3.countries:
         _id = country.id
         _gis.countries[country.code] = Storage(name=country.name, id=_id)
         _countries.append(_id)
-        _gis.provinces[_id] = Storage()
-    provinces = db((table.level == "L1") & (table.parent.belongs(_countries))).select(table.parent, table.id, table.name)
-    for province in provinces:
-        _gis.provinces[province.parent][province.id] = Storage()
-        _gis.provinces[province.parent][province.id].name = province.name
 
 # -----------------------------------------------------------------------------
 def get_location_id (field_name = "location_id", 
@@ -579,6 +581,80 @@ s3xrc.model.configure(table,
                       onvalidation=gis_location_onvalidation,
                       onaccept=gis_location_onaccept)
 
+def shn_gis_location_search_simple(r, **attr):
+
+    """ Simple search form for locations """
+
+    resource = r.resource
+    table = resource.table
+
+    r.id = None
+
+    # Check permission
+    if not shn_has_permission("read", table):
+        r.unauthorised()
+
+    if r.representation == "html":
+
+        # Check for redirection
+        next = r.request.vars.get("_next", None)
+        if not next:
+            next = URL(r=request, f="location", args="[id]")
+
+        # Select form
+        form = FORM(TABLE(
+                TR(Tstr("Name" + ": "),
+                   INPUT(_type="text", _name="label", _size="40"),
+                   DIV(DIV(_class="tooltip",
+                           _title=Tstr("Name") + "|" + Tstr("To search for a location, enter the name. You may use % as wildcard. Press 'Search' without input to list all locations.")))),
+                TR("", INPUT(_type="submit", _value="Search"))))
+
+        output = dict(form=form, vars=form.vars)
+
+        # Accept action
+        items = None
+        if form.accepts(request.vars, session):
+
+            if form.vars.label == "":
+                form.vars.label = "%"
+
+            # Search
+            results = s3xrc.search_simple(table,
+                        fields = ["name",
+                                  # @ToDo: http://eden.sahanafoundation.org/wiki/S3XRC_Roadmap#Version2.1
+                                  #"name_l10n"
+                                  ],
+                        label = form.vars.label)
+
+            # Get the results
+            if results:
+                resource.build_query(id=results)
+                report = shn_list(r, listadd=False)
+            else:
+                report = dict(items=T("No matching records found."))
+
+            output.update(dict(report))
+
+        # Title and subtitle
+        title = T("Search for a Location")
+        subtitle = T("Matching Records")
+
+        # Add-button
+        label_create_button = shn_get_crud_string("gis_location", "label_create_button")
+        add_btn = A(label_create_button, _class="action-btn",
+                    _href=URL(r=request, f="location", args="create"))
+
+        output.update(title=title, subtitle=subtitle, add_btn=add_btn)
+        response.view = "search_simple.html"
+        return output
+
+    else:
+        session.error = BADFORMAT
+        redirect(URL(r=request))
+
+# Plug into REST controller
+s3xrc.model.set_method(module, "location", method="search_simple", action=shn_gis_location_search_simple )
+
 # -----------------------------------------------------------------------------
 #
 def shn_gis_location_represent(id):
@@ -617,7 +693,7 @@ def shn_gis_location_represent(id):
             # "Invalid" => data consistency wrong
             represent = location.id
         except:
-            represent = None
+            represent = NONE
     return represent
 
 # Feature Layers
@@ -666,7 +742,7 @@ ADD_FEATURE_GROUP = T("Add Feature Group")
 feature_group_id = db.Table(None, "feature_group_id",
             FieldS3("feature_group_id", db.gis_feature_group, sortby="name",
                 requires = IS_NULL_OR(IS_ONE_OF(db, "gis_feature_group.id", "%(name)s")),
-                represent = lambda id: (id and [db(db.gis_feature_group.id == id).select(db.gis_feature_group.name, limitby=(0, 1)).first().name] or ["None"])[0],
+                represent = lambda id: (id and [db(db.gis_feature_group.id == id).select(db.gis_feature_group.name, limitby=(0, 1)).first().name] or [NONE])[0],
                 label = T("Feature Group"),
                 comment = DIV(A(ADD_FEATURE_GROUP, _class="colorbox", _href=URL(r=request, c="gis", f="feature_group", args="create", vars=dict(format="popup")), _target="top", _title=ADD_FEATURE_GROUP),
                           DIV( _class="tooltip", _title=Tstr("Feature Group") + "|" + Tstr("A collection of Feature Classes which can be displayed together on a map or exported together."))),
@@ -744,7 +820,7 @@ s3.crud_strings[tablename] = Storage(
 track_id = db.Table(None, "track_id",
             FieldS3("track_id", db.gis_track, sortby="name",
                 requires = IS_NULL_OR(IS_ONE_OF(db, "gis_track.id", "%(name)s")),
-                represent = lambda id: (id and [db(db.gis_track.id == id).select(db.gis_track.name, limitby=(0, 1)).first().name] or ["None"])[0],
+                represent = lambda id: (id and [db(db.gis_track.id == id).select(db.gis_track.name, limitby=(0, 1)).first().name] or [NONE])[0],
                 label = T("Track"),
                 comment = DIV(A(ADD_TRACK, _class="colorbox", _href=URL(r=request, c="gis", f="track", args="create", vars=dict(format="popup")), _target="top", _title=ADD_TRACK),
                           DIV( _class="tooltip", _title=Tstr("GPX Track") + "|" + Tstr("A file downloaded from a GPS containing a series of geographic points in XML format."))),

@@ -159,7 +159,7 @@ _ajaxS3_rtr_ = {{=T('retry')}};
 //  to remove bar, use
 //  hideStatus()
 //
-function StatusBar(sel,options)
+function StatusBar(sel, options)
 {
     var _I = this;
     var _sb = null;

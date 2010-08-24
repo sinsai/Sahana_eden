@@ -18,10 +18,6 @@ $(function() {
         var newvalue = data.id;
         $('#{{=real_input}}').val(newvalue);
     });
-    
-    // Location AutoComplete
-    {{location_id = request.controller + "_" + request.function + "_location_id"}}
-    {{include "gis/location_autocomplete.js"}}
-
 });
 //]]></script>
+{{include "gis/location_autocomplete.js"}}

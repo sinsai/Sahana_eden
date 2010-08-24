@@ -236,7 +236,8 @@ if deployment_settings.has_module(module):
     table.message.represent = lambda message: shn_abbreviate(message)
 
     table.person_id.label = T("Reporter Name")
-    table.person_id.comment = T("At/Visited Location (not virtual)")
+    table.person_id.comment = (T("At/Visited Location (not virtual)"),
+                               shn_person_comment(T("Reporter Name"), T("The person at the location who is reporting this incident (optional)")))
 
     table.contact.label = T("Contact Details")
 

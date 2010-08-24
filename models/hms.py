@@ -753,7 +753,7 @@ if deployment_settings.has_module(module):
             if request.vars._next:
                 next = str.lower(request.vars._next)
             else:
-                next = str.lower(URL(r=request, f="hospital", args="[id]"))
+                next = URL(r=request, f="hospital", args="[id]")
 
             # Select form
             form = FORM(TABLE(

@@ -69,11 +69,21 @@ class S3Config(Storage):
             "L4":T("Village")
         }
         return self.gis.get("locations_hierarchy", gis_location_hierarchy)
+    def get_gis_map_selector(self):
+        return self.gis.get("map_selector", True)
     def get_gis_display_l0(self):
         return self.gis.get("display_L0", False)
     def get_gis_display_l1(self):
         return self.gis.get("display_L1", True)
-
+    def get_gis_geoserver_url(self):
+        return self.gis.get("geoserver_url", "http://localhost/geoserver")
+    def get_gis__username(self):
+        return self.gis.get("geoserver_username", "admin")
+    def get_gis_geoserver_password(self):
+        return self.gis.get("geoserver_password", "password")
+    def get_gis_spatialdb(self):
+        return self.gis.get("spatialdb", False)
+    
     # L10N Settings
     def get_L10n_countries(self):
         return self.L10n.get("countries", "")

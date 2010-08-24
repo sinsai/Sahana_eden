@@ -1,3 +1,11 @@
+<script type="text/javascript">//<![CDATA[
+jQuery(document).ready(function(){
+$("#show-add-btn").click(function() {
+  $("#list-add").show() 
+  $("#show-add-btn").hide()
+});
+});
+//]]></script>
 {{try:}}
  {{=H2(title)}}
 {{except:}}
@@ -9,8 +17,15 @@
  {{pass}}
 </div>
 <div id='map'></div>
+ {{if not request.vars:}}
+ {{try:}}
 {{=showaddbtn}}
-<div id='list-add'>
+{{except:}}
+ {{pass}}
+ <div id='list-add'>
+ {{else:}}
+ <div id>
+ {{pass}}
 {{try:}}
  {{=H3(addtitle)}}
 {{except:}}
@@ -40,12 +55,3 @@
 <p>&nbsp;</p>
 {{include "colorbox.html"}}
 {{include "dataTables.html"}}
-<script type="text/javascript">//<![CDATA[
-jQuery(document).ready(function(){
-    // Show the Add Form if the button is clicked
-    $('#show-add-btn').click(function() {
-        $('#list-add').show();
-        $('#show-add-btn').hide()
-    });
-});
-//]]></script>

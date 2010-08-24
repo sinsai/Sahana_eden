@@ -373,7 +373,7 @@ shn_url_represent = lambda url: (url and [A(url, _href=url, _target="blank")] or
 
 def myname(user_id):
     user = db.auth_user[user_id]
-    return user.first_name if user else "None"
+    return user.first_name if user else NONE
 
 def unauthorised():
     session.error = T("Not Authorised!")

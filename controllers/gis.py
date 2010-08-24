@@ -73,31 +73,6 @@ def define_map(window=False, toolbar=False):
         )
 
     # Custom Feature Layers
-    def gis_add_feature_layer(module, resource, layername, popup_label, marker=None):
-        """
-            @param: layername: Used as the label in the LayerSwitcher
-            @param: popup_label: Used in Cluster Popups to differentiate between types
-        """
-        # Hide deleted Resources
-        query = (db.gis_location.deleted == False)
-            
-        # Hide Resources recorded to Country Locations on the map?
-        if not deployment_settings.get_gis_display_l0():
-            query = query & (db.gis_location.level != "L0")
-            
-        query = query & (db.gis_location.id == db["%s_%s" % (module, resource)].location_id)
-        locations = db(query).select(db.gis_location.id, db.gis_location.uuid, db.gis_location.name, db.gis_location.wkt, db.gis_location.lat, db.gis_location.lon)
-        for i in range(0, len(locations)):
-            locations[i].popup_label = locations[i].name + "-" + popup_label
-        popup_url = URL(r=request, c=module, f=resource, args="read.popup?%s.location_id=" % resource)
-        if marker:
-            marker = db(db.gis_marker.name == marker).select(db.gis_marker.id, limitby=(0, 1)).first().id
-            layer = {"name":layername, "query":locations, "active":True, "marker":marker, "popup_url": popup_url}
-        else:
-            layer = {"name":layername, "query":locations, "active":True, "popup_url": popup_url}
-
-        return layer
-    
     # @ToDo: Move these layer definitions into the DB, removing Feature Groups
     # Feature Classes to be removed from Locations, although we still want the symbology mappings
     # Incidents
@@ -107,7 +82,7 @@ def define_map(window=False, toolbar=False):
     popup_label = Tstr("Incident")
     # Default (but still better to define here as otherwise each feature needs to check it's feature_class)
     marker = "marker_red"
-    incidents = gis_add_feature_layer(module, resource, layername, popup_label, marker)
+    incidents = gis.get_feature_layer(module, resource, layername, popup_label, marker)
     
     # Shelters
     module = "cr"
@@ -115,7 +90,7 @@ def define_map(window=False, toolbar=False):
     layername = Tstr("Shelters")
     popup_label = Tstr("Shelter")
     marker = "shelter"
-    shelters = gis_add_feature_layer(module, resource, layername, popup_label, marker)
+    shelters = gis.get_feature_layer(module, resource, layername, popup_label, marker)
     
     # Assessments
     module = "sitrep"
@@ -123,7 +98,7 @@ def define_map(window=False, toolbar=False):
     layername = Tstr("Assessments")
     popup_label = Tstr("Assessment")
     marker = "marker_green"
-    assessments = gis_add_feature_layer(module, resource, layername, popup_label, marker)
+    assessments = gis.get_feature_layer(module, resource, layername, popup_label, marker)
     
     # Requests
     module = "rms"
@@ -131,7 +106,7 @@ def define_map(window=False, toolbar=False):
     layername = Tstr("Requests")
     popup_label = Tstr("Request")
     marker = "marker_yellow"
-    requests = gis_add_feature_layer(module, resource, layername, popup_label, marker)
+    requests = gis.get_feature_layer(module, resource, layername, popup_label, marker)
     
     feature_queries = [
                        incidents,
@@ -143,6 +118,7 @@ def define_map(window=False, toolbar=False):
     map = gis.show_map(
                        window=window,
                        catalogue_toolbar=catalogue_toolbar,
+                       #wms_browser = {"name" : "Pacific Disaster Center", "url" : "http://agsprod.pdc.org/arcgis/Pakistan/PAKISTAN_FLOOD/MapServer/WMSServer?request=GetCapabilities&service=WMS"},
                        toolbar=toolbar,
                        search=search,
                        catalogue_overlays=catalogue_overlays,
@@ -191,9 +167,6 @@ def location():
         if r.http == "GET" and r.representation in ("html", "popup"):
             # Options which are only required in interactive HTML views
             table.name.comment = SPAN("*", _class="req")
-            CONVERSION_TOOL = T("Conversion Tool")
-            table.lat.comment = DIV( _class="tooltip", _title=Tstr("Latitude & Longitude") + "|" + Tstr("You can click on the map below to select the Lat/Lon fields. Longitude is West - East (sideways). Latitude is North-South (Up-Down). Latitude is zero on the equator and positive in the northern hemisphere and negative in the southern hemisphere. Longitude is zero on the prime meridian (Greenwich Mean Time) and is positive to the east, across Europe and Asia.  Longitude is negative to the west, across the Atlantic and the Americas.  This needs to be added in Decimal Degrees."))
-            table.lon.comment = A(CONVERSION_TOOL, _style="cursor:pointer;", _title=T("You can use the Conversion Tool to convert from either GPS coordinates or Degrees/Minutes/Seconds."), _id="btnConvert")
             table.osm_id.comment = DIV( _class="tooltip", _title="OSM ID" + "|" + Tstr("The <a href='http://openstreetmap.org' target=_blank>OpenStreetMap</a> ID. If you don't know the ID, you can just say 'Yes' if it has been added to OSM."))
 
             # CRUD Strings
@@ -239,9 +212,10 @@ def location():
                         add_feature = False
                         add_feature_active = False
                     
-                    # Lat/Lon come from record
-                    lat = r.record.lat
-                    lon = r.record.lon
+                    location = db(db.gis_location.id == r.id).select(db.gis_location.lat, db.gis_location.lon, limitby=(0, 1)).first()
+                    if location and location.lat is not None and location.lon is not None:
+                        lat = location.lat
+                        lon = location.lon
                     # Same as a single zoom on a cluster
                     zoom = zoom + 2
                     

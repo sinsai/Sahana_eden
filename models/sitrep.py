@@ -47,23 +47,35 @@ if deployment_settings.has_module(module):
                             migrate=migrate)
 
     table.households.label = T("Total Households")
-    table.households.requires = IS_INT_IN_RANGE(0,99999999)
-    table.households.default = 0
+    table.households.requires = IS_NULL_OR( IS_INT_IN_RANGE(0,99999999) )
+    #table.households.default = 0
 
     table.population.label = T("Population")
-    table.population.requires = IS_INT_IN_RANGE(0,99999999)
-    table.population.default = 0
+    table.population.requires = IS_NULL_OR( IS_INT_IN_RANGE(0,99999999) )
+    #table.population.default = 0
 
     table.persons_affected.label = T("# of People Affected")
     table.persons_injured.label = T("# of People Injured")
     table.persons_deceased.label = T("# of People Deceased")
     table.houses_destroyed.label = T("# of Houses Destroyed")
     table.houses_damaged.label = T("# of Houses Damaged")
+    
+    table.persons_affected.requires = IS_NULL_OR( IS_INT_IN_RANGE(0,99999999) )
+    table.persons_injured.requires = IS_NULL_OR( IS_INT_IN_RANGE(0,99999999) )
+    table.persons_deceased.requires = IS_NULL_OR( IS_INT_IN_RANGE(0,99999999) )
+    table.houses_destroyed.requires = IS_NULL_OR( IS_INT_IN_RANGE(0,99999999) )
+    table.houses_damaged.requires = IS_NULL_OR( IS_INT_IN_RANGE(0,99999999) ) 
+    
+    table.persons_affected.comment = T("Numbers Only")
+    table.persons_injured.comment = T("Numbers Only")
+    table.persons_deceased.comment = T("Numbers Only")
+    table.houses_destroyed.comment = T("Numbers Only")
+    table.houses_damaged.comment = T("Numbers Only")  
 
-    table.houses_destroyed.requires = IS_INT_IN_RANGE(0,99999999)
-    table.houses_destroyed.default = 0
-    table.houses_damaged.requires = IS_INT_IN_RANGE(0,99999999)
-    table.houses_damaged.default = 0
+    #table.houses_destroyed.requires = IS_NULL_OR( IS_INT_IN_RANGE(0,99999999) )
+    #table.houses_destroyed.default = 0
+    #table.houses_damaged.requires = IS_NULL_OR( IS_INT_IN_RANGE(0,99999999) )
+    #table.houses_damaged.default = 0
 
     table.crop_losses.requires = IS_NULL_OR(IS_INT_IN_RANGE(0, 100))
 
@@ -111,7 +123,7 @@ if deployment_settings.has_module(module):
                             comments,
                             migrate=migrate)
 
-    table.document.represent = lambda document, table=table: (document and [A(table.document.retrieve(document)[0], _href=URL(r=request, f="download", args=[document]))] or ["None"])[0]
+    table.document.represent = lambda document, table=table: (document and [A(table.document.retrieve(document)[0], _href=URL(r=request, f="download", args=[document]))] or [NONE])[0]
     table.name.label = T("Title")
     table.location_id.label = T("District")
     table.reported_by.label = T("Reported By")
@@ -137,7 +149,7 @@ if deployment_settings.has_module(module):
     school_district_id = db.Table(None, "school_district_id",
                                   Field("school_district_id", table,
                                   requires = IS_NULL_OR(IS_ONE_OF(db, "sitrep_school_district.id", "%(name)s")),
-                                  represent = lambda id: (id and [db(db.sitrep_school_district.id == id).select(db.sitrep_school_district.name, limitby=(0, 1)).first().name] or ["None"])[0],
+                                  represent = lambda id: (id and [db(db.sitrep_school_district.id == id).select(db.sitrep_school_district.name, limitby=(0, 1)).first().name] or [NONE])[0],
                                   label = T("School District"),
                                   ondelete = "RESTRICT"))
 

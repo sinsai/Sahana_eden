@@ -90,12 +90,26 @@ def assessment():
             "water_coll_time": "Water collection",
             "defec_place_type": "Places for defecation",
             "close_industry": "Environment",
-            "latrines_number": "Latrines"
+            "latrines_number": "Latrines",
+            "comments": "Comments"
         },
         "rat_section5" : {
             "health_services_pre_disaster": "Health services status",
             "health_problems_adults": "Current health problems",
-            "malnutrition_present_pre_disaster": "Nutrition problems"
+            "malnutrition_present_pre_disaster": "Nutrition problems",
+            "comments": "Comments"
+        },
+        "rat_section6" : {
+            "food_stocks_main_dishes": "Existing food stocks",
+            "food_sources" : "Food sources",
+            "food_assistance_available": "Food assistance",
+            "comments": "Comments"
+        },
+        "rat_section7" : {
+            "income_sources_pre_disaster": "Sources of income / Major expenses",
+            "business_damaged" : "Access to cash",
+            "rank_reconstruction_assistance": "Current community priorities",
+            "comments": "Comments"
         }
     }
 

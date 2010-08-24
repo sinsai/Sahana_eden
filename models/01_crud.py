@@ -64,6 +64,7 @@ s3xrc = _s3xrc.S3ResourceController(db,
                                 request.application),
             cache=cache,
             auth=auth,
+	    modules = deployment_settings.modules,   #Own code
             gis=gis,
             rpp=ROWSPERPAGE,
             xml_import_formats = shn_xml_import_formats,
@@ -89,10 +90,13 @@ def shn_field_represent(field, row, col):
         represent = str(field.represent(row[col]))
     except:
         if row[col] is None:
-            represent = "None"
+            represent = NONE
         else:
             represent = row[col]
-
+            if col == "comments":
+                ur = unicode(represent, "utf8")
+                if len(ur) > 48:
+                    represent = ur[:48 - 3].encode("utf8") + "..."
     return represent
 
 def shn_field_represent_sspage(field, row, col, linkto=None):
@@ -926,10 +930,11 @@ def shn_read(r, **attr):
     else:
         record_id = r.id
 
-    # ToDo: Comment this out
-    authorised = shn_has_permission("update", table, record_id)
-    if authorised and representation == "html" and editable:
-        return shn_update(r, **attr)
+    # ToDo: Comment this out as we don't want to redirect to update form upon read
+    if not r.method:
+        authorised = shn_has_permission("update", table, record_id)
+        if authorised and representation == "html" and editable:
+            return shn_update(r, **attr)
 
     # Check for read permission
     authorised = shn_has_permission("read", table, record_id)
@@ -1257,8 +1262,13 @@ def shn_list(r, **attr):
 
             addtitle = shn_get_crud_string(tablename, "subtitle_create")
 
+            label_create_button = shn_get_crud_string(tablename, "label_create_button")
+            showaddbtn = A(label_create_button,
+                           _id = "show-add-btn",
+                           _class="action-btn")
+
             shn_custom_view(r, "list_create.html")
-            output.update(form=form, addtitle=addtitle)
+            output.update(form=form, addtitle=addtitle, showaddbtn=showaddbtn)
 
         else:
             # List only
@@ -1351,6 +1361,16 @@ def shn_create(r, **attr):
 
         # Default components
         output = dict(module=prefix, resource=name, main=main, extra=extra)
+
+        if "location_id" in db[tablename].fields and response.s3.gis.map_selector:
+            # Include a map
+            _map = gis.show_map(add_feature = True,
+                                add_feature_active = True,
+                                toolbar = True,
+                                collapsed = True,
+                                window = True,
+                                window_hide = True)
+            output.update(_map=_map)
 
         # Title, subtitle and resource header
         if r.component:
@@ -1670,6 +1690,47 @@ def shn_update(r, **attr):
             list_btn = A(label_list_button, _href=r.there(), _class="action-btn")
             output.update(list_btn=list_btn)
 
+        if "location_id" in db[tablename].fields and response.s3.gis.map_selector:
+            # Include a map
+            config = gis.get_config()
+            zoom = config.zoom
+            location = db((db[tablename].id == r.id) & (db.gis_location.id == db[tablename].location_id)).select(db.gis_location.id, db.gis_location.uuid, db.gis_location.lat, db.gis_location.lon, db.gis_location.level, db.gis_location.parent, limitby=(0, 1)).first()
+            if location and location.lat is not None and location.lon is not None:
+                lat = location.lat
+                lon = location.lon
+            else:
+                lat = config.lat
+                lon = config.lon
+            module, resource = tablename.split("_")
+            layername = Tstr("Location")
+            popup_label = ""
+            filter = Storage(tablename = tablename,
+                             id = r.id
+                            )
+            layer = gis.get_feature_layer(module, resource, layername, popup_label, filter=filter)
+            feature_queries = [layer]
+            _map = gis.show_map(lat = lat,
+                                lon = lon,
+                                # Same as a single zoom on a cluster
+                                zoom = zoom + 2,
+                                feature_queries = feature_queries,
+                                add_feature = True,
+                                add_feature_active = False,
+                                toolbar = True,
+                                collapsed = True,
+                                window = True,
+                                window_hide = True)
+            output.update(_map=_map)
+            if location and location.id:
+                _location = Storage(id = location.id,
+                                    uuid = location.uuid,
+                                    lat = location.lat,
+                                    lon = location.lon,
+                                    level = location.lon,
+                                    parent = location.parent
+                                    )
+                output.update(oldlocation=_location)
+
         return output
 
     elif representation == "plain":
@@ -1828,7 +1889,7 @@ def shn_search(r, **attr):
     if response.s3.filter:
         query = response.s3.filter & query
 
-    if r.representation == "html":
+    if r.representation in ("html", "popup"):
 
         shn_represent(r.table, r.prefix, r.name, deletable, main, extra)
         search = t2.search(r.table, query=query)
@@ -1862,24 +1923,18 @@ def shn_search(r, **attr):
                 field3 = str.lower(_vars.field3)
             else:
                 field3 = None
-            if "level" in _vars:
-                level = str.upper(_vars.level)
-            else:
-                level = None
+            #if "level" in _vars:
+            #    level = str.upper(_vars.level)
+            #else:
+            #    level = None
             if "parent" in _vars and _vars.parent:
                 parent = int(_vars.parent)
             else:
                 parent = None
-            if "exclude" in _vars:
-                import urllib
-                exclude = urllib.unquote(_vars.exclude)
-            else:
-                exclude = None
 
             filter = _vars.filter
             if filter == "~":
                 if field2 and field3:
-
                     # pr_person name search
                     if " " in value:
                         value1, value2 = value.split(" ", 1)
@@ -1891,23 +1946,16 @@ def shn_search(r, **attr):
                                         (_table[field2].like("%" + value + "%")) | \
                                         (_table[field3].like("%" + value + "%")))
 
-                elif level:
-
+                #elif level:
                     # gis_location hierarchical search
-                    if parent:
-                        query = query & (_table.parent == parent) & \
-                                        (_table.level == level) & \
-                                        (_field.like("%" + value + "%"))
+                #    if parent:
+                #        query = query & (_table.parent == parent) & \
+                #                        (_table.level == level) & \
+                #                        (_field.like("%" + value + "%"))
 
-                    else:
-                        query = query & (_table.level == level) & \
-                                        (_field.like("%" + value + "%"))
-
-                elif exclude:
-
-                    # gis_location without Admin Areas (old: assumes 'Lx:' in name)
-                    query = query & ~(_field.like(exclude)) & \
-                                    (_field.like("%" + value + "%"))
+                #    else:
+                #        query = query & (_table.level == level) & \
+                #                        (_field.like("%" + value + "%"))
 
                 else:
                     # Normal single-field
@@ -1921,6 +1969,10 @@ def shn_search(r, **attr):
 
             elif filter == "=":
                 query = query & (_field == value)
+                if parent:
+                    # e.g. gis_location hierarchical search
+                    query = query & (_table.parent == parent)
+
                 item = db(query).select().json()
 
             elif filter == "<":

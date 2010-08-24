@@ -9,6 +9,8 @@
  {{pass}}
 </div>
 <div id='map'></div>
+{{=showaddbtn}}
+<div id='list-add'>
 {{try:}}
  {{=H3(addtitle)}}
 {{except:}}
@@ -20,6 +22,7 @@
 {{pass}}
 </div>
 {{include "key.html"}}
+</div>
 <p>&nbsp;</p>
 {{try:}}
  {{=H3(subtitle)}}
@@ -37,3 +40,12 @@
 <p>&nbsp;</p>
 {{include "colorbox.html"}}
 {{include "dataTables.html"}}
+<script type="text/javascript">//<![CDATA[
+jQuery(document).ready(function(){
+    // Show the Add Form if the button is clicked
+    $('#show-add-btn').click(function() {
+        $('#list-add').show();
+        $('#show-add-btn').hide()
+    });
+});
+//]]></script>

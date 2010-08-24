@@ -38,9 +38,6 @@ def shelter_type():
     tablename = module + "_" + resource
     table = db[tablename]
 
-    # Don't send the locations list to client (pulled by AJAX instead)
-    table.location_id.requires = IS_NULL_OR(IS_ONE_OF_EMPTY(db, "gis_location.id"))
-
     # Post-processor
     def user_postp(jr, output):
         shn_action_buttons(jr, deletable=False)

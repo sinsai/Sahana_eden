@@ -944,22 +944,116 @@ if deployment_settings.has_module(module):
 
     # Section 7 - Livelihood --------------------------------------------------
 
+    rat_income_source_opts = {
+        1: T("Agriculture"),
+        2: T("Fishing"),
+        3: T("Poultry"),
+        4: T("Casual Labor"),
+        5: T("Small Trade"),
+        6: T("Other")
+    }
+
+    rat_expense_types = {
+        1: T("Education"),
+        2: T("Health"),
+        3: T("Food"),
+        4: T("Hygiene"),
+        5: T("Shelter"),
+        6: T("Clothing"),
+        7: T("Funeral"),
+        8: T("Alcohol"),
+        99: T("Other (specify)")
+    }
+
+    rat_cash_source_opts = {
+        1: T("Family/friends"),
+        2: T("Government"),
+        3: T("Bank/micro finance"),
+        4: T("Humanitarian NGO"),
+        99: T("Other (specify)")
+    }
+
+    rat_ranking_opts = xrange(1,7)
+
     resource = "section7"
     tablename = "%s_%s" % (module, resource)
     table = db.define_table(tablename,
                             timestamp, uuidstamp, authorstamp, deletion_status,
                             assessment_id,
-                            # main income sources
-                            # main income use
-                            # main income sources before disaster
-                            # cash access - yes/no
-                            # cash access - where
-                            # community priorities / ranking
+                            Field("income_sources_pre_disaster"),
+                            Field("income_sources_post_disaster"),
+                            Field("main_expenses"),
+                            Field("main_expenses_other"),
+
+                            Field("business_damaged", "boolean"),
+                            Field("business_cash_available", "boolean"),
+                            Field("business_cash_source"),
+
+                            Field("rank_reconstruction_assistance", "integer"),
+                            Field("rank_farmland_fishing_assistance", "integer"),
+                            Field("rank_poultry_restocking", "integer"),
+                            Field("rank_health_care_assistance", "integer"),
+                            Field("rank_transportation_assistance", "integer"),
+                            Field("other_assistance_needed"),
+                            Field("rank_other_assistance", "integer"),
+
                             comments,
                             migrate=migrate)
 
     table.assessment_id.readable = False
     table.assessment_id.writable = False
+
+    shn_rat_label_and_tooltip(table.income_sources_pre_disaster,
+        "Main income sources before disaster",
+        "What were your main sources of income before the disaster?",
+        multiple=True)
+    table.income_sources_pre_disaster.requires = IS_EMPTY_OR(IS_IN_SET(rat_income_source_opts, zero=None, multiple=True))
+    table.income_sources_pre_disaster.represent =  lambda opt, set=rat_income_source_opts: \
+                                                   shn_rat_represent_multiple(set, opt)
+    shn_rat_label_and_tooltip(table.income_sources_post_disaster,
+        "Current main income sources",
+        "What are your main sources of income now?",
+        multiple=True)
+    table.income_sources_post_disaster.requires = IS_EMPTY_OR(IS_IN_SET(rat_income_source_opts, zero=None, multiple=True))
+    table.income_sources_post_disaster.represent = lambda opt, set=rat_income_source_opts: \
+                                                   shn_rat_represent_multiple(set, opt)
+    shn_rat_label_and_tooltip(table.main_expenses,
+        "Current major expenses",
+        "What do you spend most of your income on now?",
+        multiple=True)
+    table.main_expenses.requires = IS_EMPTY_OR(IS_IN_SET(rat_expense_types, zero=None, multiple=True))
+    table.main_expenses.represent = lambda opt, set=rat_expense_types: \
+                                    shn_rat_represent_multiple(set, opt)
+    table.main_expenses_other.label = T("Other major expenses")
+
+    shn_rat_label_and_tooltip(table.business_damaged,
+        "Business damaged",
+        "Has your business been damaged in the course of the disaster?")
+    shn_rat_label_and_tooltip(table.business_cash_available,
+        "Cash available to restart business",
+        "Do you have access to cash to restart your business?")
+    shn_rat_label_and_tooltip(table.business_cash_source,
+        "Main cash source",
+        "What are your main sources of cash to restart your business?")
+    table.business_cash_source.requires = IS_EMPTY_OR(IS_IN_SET(rat_cash_source_opts, zero=None, multiple=True))
+    table.business_cash_source.represent = lambda opt, set=rat_cash_source_opts: \
+                                           shn_rat_represent_multiple(set, opt)
+
+    shn_rat_label_and_tooltip(table.rank_reconstruction_assistance,
+        "Immediate reconstruction assistance, Rank",
+        "Assistance for immediate repair/reconstruction of houses")
+    table.rank_reconstruction_assistance.requires = IS_EMPTY_OR(IS_IN_SET(rat_ranking_opts, zero=None))
+    table.rank_farmland_fishing_assistance.label = T("Farmland/fishing material assistance, Rank")
+    table.rank_farmland_fishing_assistance.requires = IS_EMPTY_OR(IS_IN_SET(rat_ranking_opts, zero=None))
+    table.rank_poultry_restocking.label = T("Poultry restocking, Rank")
+    table.rank_poultry_restocking.requires = IS_EMPTY_OR(IS_IN_SET(rat_ranking_opts, zero=None))
+    table.rank_health_care_assistance.label = T("Health care assistance, Rank")
+    table.rank_health_care_assistance.requires = IS_EMPTY_OR(IS_IN_SET(rat_ranking_opts, zero=None))
+    table.rank_transportation_assistance.label = T("Transportation assistance, Rank")
+    table.rank_transportation_assistance.requires = IS_EMPTY_OR(IS_IN_SET(rat_ranking_opts, zero=None))
+    table.other_assistance_needed.label = T("Other assistance needed")
+    table.rank_other_assistance.label = T("Other assistance, Rank")
+    table.rank_other_assistance.requires = IS_EMPTY_OR(IS_IN_SET(rat_ranking_opts, zero=None))
 
     # CRUD strings
     s3.crud_strings[tablename] = rat_section_crud_strings

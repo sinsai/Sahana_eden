@@ -91,7 +91,7 @@ def shn_field_represent(field, row, col):
         if row[col] is None:
             represent = NONE
         else:
-            represent = row[col]            
+            represent = row[col]
             if col == "comments":
                 ur = unicode(represent, "utf8")
                 if len(ur) > 48:
@@ -930,9 +930,10 @@ def shn_read(r, **attr):
         record_id = r.id
 
     # ToDo: Comment this out as we don't want to redirect to update form upon read
-    #authorised = shn_has_permission("update", table, record_id)
-    #if authorised and representation == "html" and editable:
-    #    return shn_update(r, **attr)
+    if not r.method:
+        authorised = shn_has_permission("update", table, record_id)
+        if authorised and representation == "html" and editable:
+            return shn_update(r, **attr)
 
     # Check for read permission
     authorised = shn_has_permission("read", table, record_id)
@@ -1259,9 +1260,9 @@ def shn_list(r, **attr):
                 table[r.fkey].comment = _comment
 
             addtitle = shn_get_crud_string(tablename, "subtitle_create")
-            
+
             label_create_button = shn_get_crud_string(tablename, "label_create_button")
-            showaddbtn = A(label_create_button, 
+            showaddbtn = A(label_create_button,
                            _id = "show-add-btn",
                            _class="action-btn")
 
@@ -1369,7 +1370,7 @@ def shn_create(r, **attr):
                                 window = True,
                                 window_hide = True)
             output.update(_map=_map)
-        
+
         # Title, subtitle and resource header
         if r.component:
             title = shn_get_crud_string(r.tablename, "title_display")
@@ -1719,7 +1720,7 @@ def shn_update(r, **attr):
                                 window = True,
                                 window_hide = True)
             output.update(_map=_map)
-            if location.id:
+            if location and location.id:
                 _location = Storage(id = location.id,
                                     uuid = location.uuid,
                                     lat = location.lat,
@@ -1728,7 +1729,7 @@ def shn_update(r, **attr):
                                     parent = location.parent
                                     )
                 output.update(oldlocation=_location)
-        
+
         return output
 
     elif representation == "plain":

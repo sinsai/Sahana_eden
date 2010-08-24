@@ -157,6 +157,13 @@ if deployment_settings.has_module(module):
                             migrate=migrate)
 
     table.name.requires = IS_NOT_EMPTY()
+    table.name.comment = SPAN("*", _class="req")
+
+    table.datetime.label = T("Date/Time")
+    table.datetime.requires = [IS_NOT_EMPTY(),
+                               IS_UTC_DATETIME(utc_offset=shn_user_utc_offset(), allow_future=False)]
+    table.datetime.comment = SPAN("*", _class="req")
+
     table.category.requires = IS_NULL_OR(IS_IN_SET(irs_incident_type_opts))
     table.category.represent = lambda opt: irs_incident_type_opts.get(opt, opt)
 
@@ -210,30 +217,42 @@ if deployment_settings.has_module(module):
                             Field("persons_affected", "integer"),
                             Field("persons_injured", "integer"),
                             Field("persons_deceased", "integer"),
-                            Field("source"),
-                            Field("source_id"),
+                            Field("source"),    # Legacy field: will be removed
+                            Field("source_id"), # Legacy field: will be removed
                             document_id,
                             Field("verified", "boolean"),
                             comments,
                             migrate=migrate)
 
-    table.name.requires = IS_NOT_EMPTY()
+    table.category.label = T("Category")
     table.category.requires = IS_NULL_OR(IS_IN_SET(irs_incident_type_opts))
     table.category.represent = lambda opt: irs_incident_type_opts.get(opt, opt)
-    table.message.represent = lambda message: shn_abbreviate(message)
-    
+
     table.name.label = T("Short Description")
+    table.name.requires = IS_NOT_EMPTY()
     table.name.comment = SPAN("*", _class="req")
+
     table.message.label = T("Message")
-    table.category.label = T("Category")
+    table.message.represent = lambda message: shn_abbreviate(message)
+
     table.person_id.label = T("Reporter Name")
+    table.person_id.comment = (T("At/Visited Location (not virtual)"),
+                               shn_person_comment(T("Reporter Name"), T("The person at the location who is reporting this incident (optional)")))
+
     table.contact.label = T("Contact Details")
+
     table.datetime.label = T("Date/Time")
+    table.datetime.requires = [IS_NOT_EMPTY(),
+                               IS_UTC_DATETIME(utc_offset=shn_user_utc_offset(), allow_future=False)]
+    table.datetime.comment = SPAN("*", _class="req")
+
     table.persons_affected.label = T("# of People Affected")
     table.persons_injured.label = T("# of People Injured")
     table.persons_deceased.label = T("# of People Deceased")
+
     table.source.label = T("Source")
     table.source_id.label = T("Source ID")
+
     table.verified.label = T("Verified?")
 
     # CRUD strings
@@ -253,16 +272,16 @@ if deployment_settings.has_module(module):
         msg_record_modified = T("Incident Report updated"),
         msg_record_deleted = T("Incident Report deleted"),
         msg_list_empty = T("No Incident Reports currently registered"))
-    
-    
+
+
     # irs_ireport as component of doc_documents
     s3xrc.model.add_component(module, resource,
                               multiple=True,
                               joinby=dict(doc_document="document_id"),
                               deletable=True,
-                              editable=True)    
+                              editable=True)
 
-    
+
     # -----------------------------------------------------------------------------
     irs_assessment_type_opts = {
         1:T("initial assessment"),

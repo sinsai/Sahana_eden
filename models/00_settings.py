@@ -8,12 +8,14 @@
 
 BREADCRUMB = ">> "
 UNKNOWN_OPT = T("Unknown")
+NONE = "-"
 READ = T("Open")
 #READ = T("Details")
 UPDATE = T("Open")
 #UPDATE = T("Edit")
 #UPDATE = T("Update")
 DELETE = T("Delete")
+COPY = T("Copy")
 
 # Default strings are in US English
 T.current_languages = ["en", "en-us"]

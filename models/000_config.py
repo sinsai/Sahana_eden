@@ -7,11 +7,14 @@
 """
 
 def Tstr(text):
-    """Convenience function for non web2py modules"""
+    """
+       Convenience function for non-Web2Py modules
+       (latest web2py no longer needs this)
+    """
     return str(T(text))
 
 s3cfg = local_import("s3cfg")
-deployment_settings = s3cfg.S3Config()
+deployment_settings = s3cfg.S3Config(T)
 
 # Database settings
 deployment_settings.database.db_type = "sqlite"
@@ -55,7 +58,7 @@ deployment_settings.mail.server = "127.0.0.1:25"
 #deployment_settings.mail.server = "smtp.gmail.com:587"
 #deployment_settings.mail.login = "username:password"
 # From Address
-deployment_settings.mail.sender = "sahana@your.org"
+deployment_settings.mail.sender = "'Sahana' <sahana@your.org>"
 # Address to which mails get sent to approve new users
 deployment_settings.mail.approver = "useradmin@your.org"
 
@@ -64,6 +67,34 @@ deployment_settings.mail.approver = "useradmin@your.org"
 #deployment_settings.L10n.countries = ["PK"]
 # Default timezone for users
 deployment_settings.L10n.utc_offset = "UTC +0000"
+
+# GIS (Map) settings
+# Provide a tool to select locations via a map on all forms with location_id
+deployment_settings.gis.map_selector = True
+# Display Resources recorded to Admin-Level Locations on the map
+deployment_settings.gis.display_L0 = False
+# Currently unused
+#deployment_settings.gis.display_L1 = True
+deployment_settings.gis.locations_hierarchy = {
+    "L0":T("Country"),
+    "L1":T("Province"),
+    "L2":T("District"),
+    "L3":T("Town"),
+    "L4":T("Village")
+}
+# Do we have a spatial DB available? (currently unused)
+deployment_settings.gis.spatialdb = False
+# GeoServer (currently unused)
+deployment_settings.gis.geoserver_url = "http://localhost/geoserver"
+deployment_settings.gis.geoserver_username = "admin"
+deployment_settings.gis.geoserver_password = "password"
+
+
+# Security Policy settings
+# Lock-down access to Map Editing
+#deployment_settings.security.map = True
+# Currently unused
+#deployment_settings.security.policy = 2 # Editor
 
 # Comment/uncomment modules here to disable/enable them
 # Modules menu is defined in 01_menu.py
@@ -125,6 +156,11 @@ deployment_settings.modules = Storage(
             description = Tstr("Assessments are structured reports done by Professional Organisations - data includes WFP Assessments (Rapid Assessment Tool to come)"),
             module_type = 10
         ),
+    rat = Storage(
+            name_nice = Tstr("Rapid Assessments"),
+            description = Tstr("Assessments are structured reports done by Professional Organisations"),
+            module_type = 10
+        ),
     pr = Storage(
             name_nice = Tstr("Person Registry"),
             description = Tstr("Central point to record details on People"),
@@ -175,11 +211,6 @@ deployment_settings.modules = Storage(
             description = Tstr("Master Message Log to process incoming reports & requests"),
             module_type = 10
         ),
-    survey = Storage(
-            name_nice = "Survey Module",
-            description = "A tool to create, manage, and complete surveys to assess damage following a natural disaster.",
-            module_type = 10
-        )
     #lms = Storage(
     #        name_nice = Tstr("Logistics Management System"),
     #        description = Tstr("An intake system, a warehouse management system, commodity tracking, supply chain management, procurement and other asset and resource management capabilities."),

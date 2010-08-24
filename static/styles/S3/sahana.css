@@ -379,33 +379,45 @@ div.form-container div.controlset input { display: inline;
 div.form-container div.controlset div { margin-left: 15em; }
 div.form-container div.buttonrow { margin-left: 180px; }
 
+/* Subheadings */
+td.subheading { padding-top: 10px;
+                padding-bottom: 5px;
+                border-bottom: thin solid #bbb;
+                font-weight: bold; }
+tr.after_subheading td { padding-top: 10px; }
+
 /* Tabular data view */
 div#table-container { width: 100%;
                       overflow: auto; }
 div#table-container th { border: 1px solid #ccc; }
-div#table-container tr.even td { border: 1px solid #ccc;
-                                 text-align: center;}
-div#table-container tr.odd td { border: 1px solid #ccc;
-                                text-align: center; }
-                                
+div#table-container tr.even td { border: 1px solid #ccc; }
+                               /*  text-align: center;} */
+div#table-container tr.odd td { border: 1px solid #ccc; }
+                              /*  text-align: center; } */
+
 /* Data Table Styling */
 /* Bring in line with export formats */
 #table-container {margin-top: -1px}
 
-#list_length,
-#list_filter,
-#list_processing { float: left;
-				   margin-bottom:4px;}
-				   
-#list_filter { text-align: left;
-			    margin-left: 50px; }
-				   
 #list {clear: both}
 
-#list_info {float: left;
-			margin-top: 4px;}
-			
-#list_paginate {margin: 4px 0px 4px 0px;}	                         
+#list_filter { text-align: left;
+               float: left;
+               margin-left: 50px;
+               margin-bottom:4px; }
+
+#list_info { float: left;
+			 margin-top: 4px;}
+
+#list_length { float: left;
+			   margin-bottom:4px;}
+
+#list_paginate {margin: 4px 0px 4px 0px;}
+
+/*
+#list_processing { float: left;
+				   margin-bottom:4px;}
+*/
 
 /* Display view */
 div.item-container { width: 100%;
@@ -515,12 +527,24 @@ div#rheader_tabs span { padding: 1px 3px 3px 3px;
 
 div#rheader_tabs span.rheader_tab_other { border: 1px solid #bbb; border-bottom: 0; }
 div#rheader_tabs span.rheader_tab_here { border: 2px solid #6699cc; border-bottom: 0; }
+div#rheader_tabs span.rheader_prev_active { border: 1px solid #6699cc; color: #006699; border-bottom: 0; }
+div#rheader_tabs span.rheader_next_active { border: 1px solid #6699cc; color: #006699; border-bottom: 0; }
+div#rheader_tabs span.rheader_prev_inactive { border: 1px solid #bbb; color: #bbb; border-bottom: 0; }
+div#rheader_tabs span.rheader_next_inactive { border: 1px solid #bbb; color: #bbb; border-bottom: 0; }
+
+div#rheader_tabs span.rheader_prev_active a,
+div#rheader_tabs span.rheader_next_active a { color: #006699; text-decoration: None; }
+
+div#rheader_tabs span.rheader_prev_inactive a,
+div#rheader_tabs span.rheader_next_inactive a { color: #bbb; text-decoration: None; }
 
 div#rheader_tabs span.rheader_tab_other a { color: #bbb;
                                             text-decoration: None; }
-
 div#rheader_tabs span.rheader_tab_here a { color: #006699;
                                             text-decoration: None; }
+                                            
+/* Used to diplay the list-add with the list-add-btn */
+#list-add {display:none}                                            
 
 /* Ext button (e.g. on Bulk Upload form */
 #show-dialog-btn { border:1px solid #efefef;

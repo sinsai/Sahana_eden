@@ -11,8 +11,8 @@ $(function() {
 $(document).ready(function() {
     // validate signup form on keyup and submit
     //HACK
-    var validator = $("#regform").validate({
-        errorClass: "req",
+    var validator = $('#regform').validate({
+        errorClass: 'req',
         rules: {
             first_name: {
                 required: true
@@ -20,28 +20,28 @@ $(document).ready(function() {
             email: {
                 required: true,
                 email: true
-                //remote: "emailsurl"  // TODO
+                //remote: 'emailsurl'  // TODO
             },
             password: {
                 required: true
             },
             password_two: {
                 required: true,
-                equalTo: ".password:last"
+                equalTo: '.password:last'
             }
         },
         messages: {
-            firstname: "  {{=T("Enter your firstname")}}",
+            firstname: '  {{=T("Enter your firstname")}}',
             password: {
-                required: "  {{=T("Provide a password")}}"
+                required: '  {{=T("Provide a password")}}'
             },
             password_two: {
-                required: "  {{=T("Repeat your password")}}",
-                equalTo: "  {{=T("Enter the same password as above")}}"
+                required: '  {{=T("Repeat your password")}}',
+                equalTo: '  {{=T("Enter the same password as above")}}'
             },
             email: {
-                required: "  {{=T("Please enter a valid email address")}}",
-                minlength: "  {{=T("Please enter a valid email address")}}"
+                required: '  {{=T("Please enter a valid email address")}}',
+                minlength: '  {{=T("Please enter a valid email address")}}'
             }
         },
          errorPlacement: function(error, element) {
@@ -56,6 +56,6 @@ $(document).ready(function() {
 
 {{if self_registration:}}
   <p>
-    <a id="login-btn" class="action-btn" href="{{=URL(r=request, f="user", args="login")}}">{{=T("Login")}}</a>
+    <a id='login-btn' class='action-btn' href='{{=URL(r=request, f="user", args="login")}}'>{{=T("Login")}}</a>
   </p>
 {{pass}}

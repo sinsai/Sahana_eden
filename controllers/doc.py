@@ -14,7 +14,7 @@ if module not in deployment_settings.modules:
     redirect(URL(r=request, c="default", f="index"))
 
 # Options Menu (available in all Functions' Views)
-response.menu_options = [ [T("Reference Documents"), False, URL(r=request, f="document")],
+response.menu_options = [ [T("Documents"), False, URL(r=request, f="document")],
                           [T("Photos"), False, URL(r=request, f="image")],
                           #[T("Bulk Uploader"), False, URL(r=request, f="bulk_upload")]
                         ]
@@ -34,9 +34,57 @@ def index():
     return dict(module_name=module_name)
 
 #==============================================================================
-def shn_document_rheader(jr, tabs=[]):
+# Used to display the number of Components in the tabs
+def shn_document_tabs(jr):
+    
+    tab_opts = [{"tablename": "sitrep_assessment",
+                 "resource": "assessment",
+                 "one_title": T("1 Assessment"),
+                 "num_title": " Assessments",
+                 },
+                 {"tablename": "irs_ireport",
+                 "resource": "ireport",
+                 "one_title": "1 Incident Report",
+                 "num_title": " Incident Reports",
+                 },
+                 {"tablename": "inventory_location",
+                 "resource": "location",
+                 "one_title": "1 Inventory Store",
+                 "num_title": " Inventory Stores",
+                 },
+                 {"tablename": "cr_shelter",
+                 "resource": "shelter",
+                 "one_title": "1 Shelter",
+                 "num_title": " Shelters",
+                 },
+                 {"tablename": "flood_freport",
+                 "resource": "freport",
+                 "one_title": "1 Flood Report",
+                 "num_title": " Flood Reports",
+                 },
+                 {"tablename": "rms_req",
+                 "resource": "req",
+                 "one_title": "1 Request",
+                 "num_title": " Requests",
+                 },
+                ] 
+    tabs = [(T("Details"), None)]
+    for tab_opt in tab_opts:
+        tablename = tab_opt["tablename"]
+        tab_count = db( (db[tablename].deleted == False) & (db[tablename].document_id == jr.id) ).count()
+        if tab_count == 0:
+            label = shn_get_crud_string(tablename, "title_create")
+        elif tab_count == 1:
+            label = tab_opt["one_title"]
+        else:
+            label = T(str(tab_count) + tab_opt["num_title"] )
+        tabs.append( (label, tab_opt["resource"] ) )
+        
+    return tabs
+    
+def shn_document_rheader(jr):
     if jr.representation == "html":
-        rheader_tabs = shn_rheader_tabs(jr, tabs)
+        rheader_tabs = shn_rheader_tabs(jr, shn_document_tabs(jr))
         doc_document = jr.record
         table = db.doc_document
         rheader = DIV(B(Tstr("Name") + ": "),doc_document.name,
@@ -52,10 +100,10 @@ def shn_document_rheader(jr, tabs=[]):
                       rheader_tabs
                       )
         return rheader
-    return None
+    return None  
 
 def document():
-    "RESTful CRUD controller"
+    """ RESTful CRUD controller """
     resource = request.function
     tablename = "%s_%s" % (module, resource)
     table = db[tablename]
@@ -69,29 +117,22 @@ def document():
         db.sitrep_school_district.document.readable = db.sitrep_school_district.document.writable = False 
         db.irs_ireport.source.readable = db.irs_ireport.source.writable = False        
         db.irs_ireport.source_id.readable = db.irs_ireport.source_id.writable = False  
-        db.flood_freport.document.readable = db.flood_freport.document.writable = False   
+        #db.flood_freport.document.readable = db.flood_freport.document.writable = False   
    
     def postp(jr, output):                          
         shn_action_buttons(jr)
         return output
     response.s3.postp = postp
     
-    rheader = lambda jr: shn_document_rheader(jr,
-                                          tabs = [(T("Edit Details"), None),
-                                                  (T("Assessment"), "assessment"),    
-                                                  (T("Incident Report"), "ireport"),  
-                                                  (T("Inventory"), "location"),  
-                                                  (T("Shelter"), "shelter"),      
-                                                  (T("Flood Report"), "freport"),    
-                                                  (T("Request"), "req"),                                                                                               
-                                                 ]
-                                          )
-    
+    rheader = lambda jr: shn_document_rheader(jr)
 
-    return shn_rest_controller(module, resource, rheader=rheader, sticky=True)
+    response.s3.pagination = True
+    output = shn_rest_controller(module, resource, rheader=rheader, sticky=True)
+
+    return output
 #==============================================================================
 def image():
-    "RESTful CRUD controller"
+    """ RESTful CRUD controller """
     resource = request.function
     tablename = "%s_%s" % (module, resource)
     table = db[tablename]
@@ -104,12 +145,15 @@ def image():
         return output
     response.s3.postp = postp    
 
-    return shn_rest_controller(module, resource)
+    response.s3.pagination = True
+    output = shn_rest_controller(module, resource)
+    
+    return output
 #==============================================================================
 # END - Following code is not utilised
 
 def metadata():
-    "RESTful CRUD controller"
+    """ RESTful CRUD controller """
     resource = request.function
     tablename = module + "_" + resource
     table = db[tablename]

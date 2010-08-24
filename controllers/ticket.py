@@ -20,7 +20,7 @@ response.menu_options = [
 
 # S3 framework functions
 def index():
-    "Module's Home Page"
+    """ Module's Home Page """
 
     module_name = deployment_settings.modules[module].name_nice
 
@@ -89,9 +89,5 @@ def log():
         msg_record_deleted = T("Ticket deleted"),
         msg_list_empty = T("No Tickets currently registered"))
 
-    # Server-side Pagination
     response.s3.pagination = True
-
-    return shn_rest_controller(module, resource,
-        listadd=False,
-)
+    return shn_rest_controller(module, resource, listadd=False)

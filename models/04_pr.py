@@ -135,6 +135,7 @@ table.pe_id.requires = IS_ONE_OF(db, "pr_pentity.id",
                                     filter_opts=("pr_person", "pr_group"))
 
 table.value.requires = IS_NOT_EMPTY()
+table.value.comment = SPAN("*", _class="req")
 table.priority.requires = IS_IN_SET(range(1,10), zero=None)
 
 pe_contact_id = db.Table(None, "pe_contact_id",
@@ -215,15 +216,19 @@ table.image.represent = lambda image: image and \
               _href=URL(r=request, c="default", f="download", args=image))) or \
         T("No Image")
 
+
 def shn_pr_image_onvalidation(form):
+
+    """ Image form validation """
 
     image = form.vars.image
     url = form.vars.url
-    if image is None and not url:
+    if not hasattr(image, "file") and not url:
         form.errors.image = \
         form.errors.url = T("Either file upload or image URL required.")
 
     return False
+
 
 s3xrc.model.add_component(module, resource,
                           multiple=True,

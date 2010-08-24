@@ -66,11 +66,11 @@ if deployment_settings.has_module(module):
                             location_id,
                             Field("datetime", "datetime"),
                             document_id,
-                            document,
+                            #document,  # Deprecated
                             comments,
                             migrate=migrate)
 
-    table.document.represent = lambda document, table=table: A(table.document.retrieve(document)[0], _href=URL(r=request, f="download", args=[document]))
+    #table.document.represent = lambda document, table=table: A(table.document.retrieve(document)[0], _href=URL(r=request, f="download", args=[document]))
     table.datetime.label = T("Date/Time")
 
     # CRUD strings

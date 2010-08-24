@@ -11,11 +11,8 @@ if module not in deployment_settings.modules:
     redirect(URL(r=request, c="default", f="index"))
 
 # Only people with the DVI role should be able to access this module
-#if 1 in session.s3.roles or shn_has_role("DVI"):
-#    pass
-#else:
-#    session.error = T("Not Authorised!")
-#    redirect(URL(r=request, c="default", f="user", args="login"))
+#if not shn_has_role("DVI"):
+#    unauthorised()
 
 # Options Menu (available in all Functions" Views)
 def shn_menu():
@@ -63,8 +60,6 @@ def recreq():
 
     resource = request.function
 
-    response.s3.pagination = True
-
     def recreq_postp(jr, output):
         if jr.representation in ("html", "popup"):
             label = UPDATE
@@ -75,6 +70,7 @@ def recreq():
         return output
     response.s3.postp = recreq_postp
 
+    response.s3.pagination = True
     output = shn_rest_controller(module, resource, listadd=False)
 
     shn_menu()
@@ -85,8 +81,6 @@ def body():
     """ RESTful CRUD controller """
 
     resource = request.function
-
-    response.s3.pagination = True
 
     def body_postp(jr, output):
         if jr.representation in ("html", "popup"):
@@ -101,6 +95,7 @@ def body():
         return output
     response.s3.postp = body_postp
 
+    response.s3.pagination = True
     output = shn_rest_controller(module, resource,
                                  main="pe_label",
                                  extra="gender",

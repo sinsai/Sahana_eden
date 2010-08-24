@@ -1,0 +1,42 @@
+#rat_section2_male_05__row td,
+#rat_section2_female_05__row td,
+#rat_section2_dead_women__row td,
+#rat_section2_missing_women__row td,
+#rat_section2_injured_women__row td,
+#rat_section2_household_head_elderly__row td,
+#rat_section2_disabled_physical__row td,
+#rat_section2_comments__row td {
+    padding-top: 2em;
+}
+
+#rat_section3_kits_hygiene_received__row td,
+#rat_section3_kits_household_received__row td,
+#rat_section3_kits_dwelling_received__row td,
+#rat_section3_comments__row td {
+    padding-top: 1.5em;
+}
+
+#rat_section4_swater_source_type__row td,
+#rat_section4_dwater_source_type__row td,
+#rat_section4_water_coll_time__row td,
+#rat_section4_defec_place_type__row td,
+#rat_section4_close_industry__row td,
+#rat_section4_latrines_number__row td,
+#rat_section4_comments__row td {
+    padding-top: 1.5em;
+}
+
+#rat_section5_health_services_post_disaster__row td,
+#rat_section5_health_services_available_types__row td,
+#rat_section5_chronical_illness_cases__row td,
+#rat_section5_breast_milk_substitutes_pre_disaster__row td,
+#rat_section5_u5_diarrhea__row td,
+#rat_section5_comments__row td {
+    padding-top: 1.5em;
+}
+
+#rat_section9_children_separated__row td,
+#rat_section9_comments__row td {
+    padding-top: 2em;
+}
+

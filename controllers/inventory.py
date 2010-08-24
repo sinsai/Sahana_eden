@@ -40,7 +40,7 @@ def location():
     response.s3.postp = postp
 
     rheader = lambda jr: shn_location_rheader(jr,
-                                              tabs = [(T("Edit Details"), None),
+                                              tabs = [(T("Details"), None),
                                                       (T("Items"), "location_item"),                                                                                                        
                                                      ]
                                               )

@@ -83,12 +83,13 @@ GEOM_TYPES = {
 class GIS(object):
     """ GIS functions """
 
-    def __init__(self, environment, db, auth=None, cache=None):
+    def __init__(self, environment, deployment_settings, db, auth=None, cache=None):
         self.environment = Storage(environment)
         self.request = self.environment.request
         self.response = self.environment.response
         self.session = self.environment.session
         self.T = self.environment.T
+        self.deployment_settings = deployment_settings
         assert db is not None, "Database must not be None."
         self.db = db
         self.cache = cache and (cache.ram, 60) or None
@@ -257,7 +258,7 @@ class GIS(object):
         return dict(min_lon=min_lon, min_lat=min_lat, max_lon=max_lon, max_lat=max_lat)
 
     def get_children(self, parent_id):
-        "Return a list of all GIS Features which are children of the requested parent"
+        " Return a list of all GIS Features which are children of the requested parent "
 
         db = self.db
 
@@ -314,6 +315,39 @@ class GIS(object):
         else:
             return None
 
+    def get_feature_layer(self, module, resource, layername, popup_label, marker=None, filter=None):
+        """
+            Return a Feature Layer suitable to display on a map
+            @param: layername: Used as the label in the LayerSwitcher
+            @param: popup_label: Used in Cluster Popups to differentiate between types
+        """
+        db = self.db
+        deployment_settings = self.deployment_settings
+        request = self.request
+        
+        # Hide deleted Resources
+        query = (db.gis_location.deleted == False)
+            
+        if filter:
+            query = query & (db[filter.tablename].id == filter.id)
+        
+        # Hide Resources recorded to Country Locations on the map?
+        if not deployment_settings.get_gis_display_l0():
+            query = query & (db.gis_location.level != "L0")
+            
+        query = query & (db.gis_location.id == db["%s_%s" % (module, resource)].location_id)
+        locations = db(query).select(db.gis_location.id, db.gis_location.uuid, db.gis_location.name, db.gis_location.wkt, db.gis_location.lat, db.gis_location.lon)
+        for i in range(0, len(locations)):
+            locations[i].popup_label = locations[i].name + "-" + popup_label
+        popup_url = URL(r=request, c=module, f=resource, args="read.popup?%s.location_id=" % resource)
+        if marker:
+            marker = db(db.gis_marker.name == marker).select(db.gis_marker.id, limitby=(0, 1)).first().id
+            layer = {"name":layername, "query":locations, "active":True, "marker":marker, "popup_url": popup_url}
+        else:
+            layer = {"name":layername, "query":locations, "active":True, "popup_url": popup_url}
+
+        return layer
+    
     def get_features_in_radius(self, lat, lon, radius):
         """
             Returns Features within a Radius (in km) of a LatLon Location
@@ -490,6 +524,7 @@ class GIS(object):
                   zoom = None,
                   projection = None,
                   add_feature = False,
+                  add_feature_active = False,
                   feature_queries = [],
                   feature_groups = [],
                   wms_browser = {},
@@ -501,6 +536,7 @@ class GIS(object):
                   print_tool = {},
                   mgrs = {},
                   window = False,
+                  window_hide = False,
                   collapsed = False,
                   public_url = "http://127.0.0.1:8000"
                 ):
@@ -524,14 +560,14 @@ class GIS(object):
             @param zoom: default Zoom level of viewport (if not provided then the default setting from the Map Service Catalogue is used)
             @param projection: EPSG code for the Projection to use (if not provided then the default setting from the Map Service Catalogue is used)
             @param add_feature: Whether to include a DrawFeature control to allow adding a marker to the map
+            @param add_feature_active: Whether the DrawFeature control should be active by default
             @param feature_queries: Feature Queries to overlay onto the map & their options (List of Dicts):
                 [{
                  name   : "MyLabel",    # A string: the label for the layer
-                 query  : query,        # A gluon.sql.Rows of gis_locations, which can be from a simple query or a Join. Extra fields can be added for 'marker' or 'shape' (with optional 'color' & 'size')
+                 query  : query,        # A gluon.sql.Rows of gis_locations, which can be from a simple query or a Join. Extra fields can be added for 'marker' or 'shape' (with optional 'color' & 'size') & 'popup_label'
                  active : False,        # Is the feed displayed upon load or needs ticking to load afterwards?
                  popup_url : None,      # The URL which will be used to fill the pop-up. it will be appended by the Location ID.
                  marker : None          # The marker_id for the icon used to display the feature (over-riding the normal process).
-                                        # [Plan: Can be a lambda to vary icon (size/colour) based on attribute levels.]
                 }]
             @param feature_groups: Feature Groups to overlay onto the map & their options (List of Dicts):
                 [{
@@ -541,7 +577,6 @@ class GIS(object):
                  active : False,        # Is the feed displayed upon load or needs ticking to load afterwards?
                  popup_url : None,      # The URL which will be used to fill the pop-up. it will be appended by the Location ID.
                  marker : None          # The marker_id for the icon used to display the feature (over-riding the normal process).
-                                        # [Plan: Can be a lambda to vary icon (size/colour) based on attribute levels.]
                 }]
             @param wms_browser: WMS Server's GetCapabilities & options (dict)
                 {
@@ -565,6 +600,7 @@ class GIS(object):
                 url: string             # URL of PDF server
                 }
             @param window: Have viewport pop out of page into a resizable window
+            @param window_hide: Have the window hidden by default, ready to appear (e.g. on clicking a button)
             @param collapsed: Start the Tools panel (West region) collapsed
             @param public_url: pass from model (not yet defined when Module instantiated
         """
@@ -621,13 +657,11 @@ class GIS(object):
         # CSS
         #####
         if session.s3.debug:
-            html.append(LINK( _rel="stylesheet", _type="text/css", _href=URL(r=request, c="static", f="scripts/ext/resources/css/ext-all.css"), _media="screen", _charset="utf-8") )
             html.append(LINK( _rel="stylesheet", _type="text/css", _href=URL(r=request, c="static", f="styles/gis/ie6-style.css"), _media="screen", _charset="utf-8") )
             html.append(LINK( _rel="stylesheet", _type="text/css", _href=URL(r=request, c="static", f="styles/gis/google.css"), _media="screen", _charset="utf-8") )
             html.append(LINK( _rel="stylesheet", _type="text/css", _href=URL(r=request, c="static", f="styles/gis/geoext-all-debug.css"), _media="screen", _charset="utf-8") )
             html.append(LINK( _rel="stylesheet", _type="text/css", _href=URL(r=request, c="static", f="styles/gis/gis.css"), _media="screen", _charset="utf-8") )
         else:
-            html.append(LINK( _rel="stylesheet", _type="text/css", _href=URL(r=request, c="static", f="scripts/ext/resources/css/ext-all.min.css"), _media="screen", _charset="utf-8") )
             html.append(LINK( _rel="stylesheet", _type="text/css", _href=URL(r=request, c="static", f="styles/gis/gis.min.css"), _media="screen", _charset="utf-8") )
 
         ######
@@ -675,8 +709,6 @@ class GIS(object):
         # Scripts
         #########
         if session.s3.debug:
-            html.append(SCRIPT(_type="text/javascript", _src=URL(r=request, c="static", f="scripts/ext/adapter/jquery/ext-jquery-adapter-debug.js")))
-            html.append(SCRIPT(_type="text/javascript", _src=URL(r=request, c="static", f="scripts/ext/ext-all-debug.js")))
             html.append(SCRIPT(_type="text/javascript", _src=URL(r=request, c="static", f="scripts/gis/openlayers/lib/OpenLayers.js")))
             html.append(SCRIPT(_type="text/javascript", _src=URL(r=request, c="static", f="scripts/gis/OpenStreetMap.js")))
             html.append(SCRIPT(_type="text/javascript", _src=URL(r=request, c="static", f="scripts/gis/MP.js")))
@@ -686,8 +718,6 @@ class GIS(object):
             html.append(SCRIPT(_type="text/javascript", _src=URL(r=request, c="static", f="scripts/gis/geoext/lib/GeoExt.js")))
             html.append(SCRIPT(_type="text/javascript", _src=URL(r=request, c="static", f="scripts/gis/geoext/ux/GeoNamesSearchCombo.js")))
         else:
-            html.append(SCRIPT(_type="text/javascript", _src=URL(r=request, c="static", f="scripts/ext/adapter/jquery/ext-jquery-adapter.js")))
-            html.append(SCRIPT(_type="text/javascript", _src=URL(r=request, c="static", f="scripts/ext/ext-all.js")))
             html.append(SCRIPT(_type="text/javascript", _src=URL(r=request, c="static", f="scripts/gis/OpenLayers.js")))
             html.append(SCRIPT(_type="text/javascript", _src=URL(r=request, c="static", f="scripts/gis/OpenStreetMap.js")))
             html.append(SCRIPT(_type="text/javascript", _src=URL(r=request, c="static", f="scripts/gis/RemoveFeature.js")))
@@ -799,6 +829,10 @@ OpenLayers.Util.extend( selectPdfControl, {
 
         # Draw Feature Control
         if add_feature:
+            if add_feature_active:
+                draw_depress = "true"
+            else:
+                draw_depress = "false"
             draw_feature = """
         // Controls for Draft Features
         // - interferes with popupControl which is active on allLayers
@@ -849,7 +883,7 @@ OpenLayers.Util.extend( selectPdfControl, {
             toggleGroup: 'controls',
             allowDepress: true,
             enableToggle: true,
-            pressed: true
+            pressed: """ + draw_depress + """
         });
         
         //var lineButton = new GeoExt.Action({
@@ -1417,9 +1451,20 @@ OpenLayers.Util.extend( selectPdfControl, {
         strategy_cluster = """new OpenLayers.Strategy.Cluster({distance: """ + str(cluster_distance) + """, threshold: """ + str(cluster_threshold) + """})"""
 
         # Layout
-        if window:
+        if window and window_hide:
             layout = """
-        var win = new Ext.Window({
+        win = new Ext.Window({
+            collapsible: true,
+            constrain: true,
+            closeAction: 'hide',
+            """
+            layout2 = """
+        //win.show();
+        //win.maximize();
+        """
+        elif window:
+            layout = """
+        win = new Ext.Window({
             collapsible: true,
             constrain: true,
             """
@@ -1911,6 +1956,12 @@ OpenLayers.Util.extend( selectPdfControl, {
                     name = layer["name"]
                 else:
                     name = "Query" + str(int(random.random()*1000))
+
+                if "marker" in layer:
+                    markerLayer = db(db.gis_marker.id == layer["marker"]).select(db.gis_marker.image, limitby=(0, 1), cache=cache).first()
+                else:
+                    markerLayer = ""
+
                 if "popup_url" in layer:
                     _popup_url = urllib.unquote(layer["popup_url"])
                 else:
@@ -1959,7 +2010,7 @@ OpenLayers.Util.extend( selectPdfControl, {
                     html += "<li><a href='javascript:loadClusterPopup(" + "\\"" + url + "\\", \\"" + id + "\\"" + ")'>" + name + "</a></li>";
                 }
                 html += '</ul>';
-                html += "<a href='javascript:zoomToSelectedFeature(" + centerPoint.lon + "," + centerPoint.lat + ", 3)'>Zoom in</a>";
+                html += "<div align='center'><a href='javascript:zoomToSelectedFeature(" + centerPoint.lon + "," + centerPoint.lat + ", 3)'>Zoom in</a></div>";
                 var popup = new OpenLayers.Popup.FramedCloud(
                     id,
                     centerPoint,
@@ -2028,15 +2079,20 @@ OpenLayers.Util.extend( selectPdfControl, {
                             else:
                                 marker = self.get_marker(feature.id)
                         except (AttributeError, KeyError):
-                            if "marker" in layer:
-                                _marker = db(db.gis_marker.id == layer["marker"]).select(db.gis_marker.image, limitby=(0, 1), cache=cache).first()
-                                if _marker:
-                                    marker = _marker.image
-                                else:
-                                    marker = self.get_marker(feature.id)
+                            if markerLayer:
+                                # Marker specified at the layer level
+                                marker = markerLayer.image
                             else:
                                 marker = self.get_marker(feature.id)
-                        marker_url = URL(r=request, c="default", f="download", args=[marker])
+                        # Faster to bypass the download handler
+                        #marker_url = URL(r=request, c="default", f="download", args=[marker])
+                        marker_url = URL(r=request, c="static", f="img", args=["markers", marker])
+                    try:
+                        # Has a per-feature popup_label been added to the query?
+                        popup_label = feature.popup_label
+                    except (AttributeError, KeyError):
+                        popup_label = feature.name
+
                     # Deal with null Feature Classes
                     if feature.get("feature_class_id"):
                         fc = "'" + str(feature.feature_class_id) + "'"
@@ -2050,7 +2106,7 @@ OpenLayers.Util.extend( selectPdfControl, {
                     else:
                         wkt = self.latlon_to_wkt(feature.lat, feature.lon)
                     # Deal with apostrophes in Feature Names
-                    fname = re.sub("'", "\\'", feature.name)
+                    fname = re.sub("'", "\\'", popup_label)
                     
                     if marker_url:
                         layers_features += """
@@ -2161,36 +2217,36 @@ OpenLayers.Util.extend( selectPdfControl, {
                 if "parent" in layer:
                     parent_id = db(db.gis_location.name == layer["parent"]).select(db.gis_location.id, limitby=(0, 1)).first().id
                     query = query & (db.gis_location.parent == parent_id)
-                features = db(query).select()
+                features = db(query).select(db.gis_location.id, db.gis_location.uuid, db.gis_location.name, db.gis_location.feature_class_id, db.gis_location.wkt, db.gis_location.lat, db.gis_location.lon)
                 for feature in features:
                     if "marker" in layer:
                         _marker = db(db.gis_marker.id == layer["marker"]).select(db.gis_marker.image, limitby=(0, 1), cache=cache).first()
                         if _marker:
                             marker = _marker.image
                         else:
-                            marker = self.get_marker(feature.gis_location.id)
+                            marker = self.get_marker(feature.id)
                     else:
-                        marker = self.get_marker(feature.gis_location.id)
-                    marker_url = URL(r=request, c="default", f="download", args=[marker])
+                        marker = self.get_marker(feature.id)
+                    marker_url = URL(r=request, c="static", f="img", args=["markers", marker])
                     # Deal with null Feature Classes
-                    if feature.gis_location.feature_class_id:
-                        fc = "'" + str(feature.gis_location.feature_class_id) + "'"
+                    if feature.feature_class_id:
+                        fc = "'" + str(feature.feature_class_id) + "'"
                     else:
                         fc = "null"
                     # Deal with manually-imported Features which are missing WKT
-                    if feature.gis_location.wkt:
-                        wkt = feature.gis_location.wkt
-                    elif (feature.gis_location.lat == None) or (feature.gis_location.lon == None):
+                    if feature.wkt:
+                        wkt = feature.wkt
+                    elif (feature.lat == None) or (feature.lon == None):
                         continue
                     else:
-                        wkt = self.latlon_to_wkt(feature.gis_location.lat, feature.gis_location.lon)
+                        wkt = self.latlon_to_wkt(feature.lat, feature.lon)
                     # Deal with apostrophes in Feature Names
-                    fname = re.sub("'", "\\'", feature.gis_location.name)
+                    fname = re.sub("'", "\\'", feature.name)
                     
                     layers_features += """
         geom = parser.read('""" + wkt + """').geometry;
         styleMarker.iconURL = '""" + marker_url + """';
-        featureVec = addFeature('""" + feature.gis_location.uuid + """', '""" + fname + """', """ + fc + """, geom, styleMarker)
+        featureVec = addFeature('""" + feature.uuid + """', '""" + fname + """', """ + fc + """, geom, styleMarker)
         features.push(featureVec);
         """
                 # Append to Features layer
@@ -2221,16 +2277,17 @@ OpenLayers.Util.extend( selectPdfControl, {
             tooltipUnselect(event);
             var feature = event.feature;
             var selectedFeature = feature;
+            centerPoint = feature.geometry.getBounds().getCenterLonLat();
             if (undefined == feature.attributes.description) {
                 var popup = new OpenLayers.Popup.FramedCloud('georsspopup',
-                feature.geometry.getBounds().getCenterLonLat(),
-                new OpenLayers.Size(200,200),
+                centerPoint,
+                new OpenLayers.Size(200, 200),
                 '<h2>' + feature.attributes.title + '</h2>',
                 null, true, onPopupClose);
             } else {
                 var popup = new OpenLayers.Popup.FramedCloud('georsspopup',
-                feature.geometry.getBounds().getCenterLonLat(),
-                new OpenLayers.Size(200,200),
+                centerPoint,
+                new OpenLayers.Size(200, 200),
                 '<h2>' + feature.attributes.title + '</h2>' + feature.attributes.description,
                 null, true, onPopupClose);
             };
@@ -2253,7 +2310,7 @@ OpenLayers.Util.extend( selectPdfControl, {
                         marker = db(db.gis_marker.id == marker_id).select(db.gis_marker.image, limitby=(0, 1)).first().image
                     else:
                         marker = db(db.gis_marker.id == marker_default).select(db.gis_marker.image, limitby=(0, 1)).first().image
-                    marker_url = URL(r=request, c="default", f="download", args=marker)
+                    marker_url = URL(r=request, c="static", f="img", args=["markers", marker])
 
                     if cacheable:
                         # Download file
@@ -2264,7 +2321,9 @@ OpenLayers.Util.extend( selectPdfControl, {
                             warning = "URLError"
                         except urllib2.HTTPError:
                             warning = "HTTPError"
-                        filename = "gis_cache.file." + name.replace(" ", "_") + ".rss"
+                        _name = name.replace(" ", "_")
+                        _name = _name.replace(",", "_")
+                        filename = "gis_cache.file." + _name + ".rss"
                         filepath = os.path.join(cachepath, filename)
                         f = open(filepath, "w")
                         # Handle errors
@@ -2369,7 +2428,7 @@ OpenLayers.Util.extend( selectPdfControl, {
                         marker = db(db.gis_marker.id == marker_id).select(db.gis_marker.image, limitby=(0, 1)).first().image
                     else:
                         marker = db(db.gis_marker.id == marker_default).select(db.gis_marker.image, limitby=(0, 1)).first().image
-                    marker_url = URL(r=request, c="default", f="download", args=marker)
+                    marker_url = URL(r=request, c="static", f="img", args=["markers", marker])
 
                     # Generate HTML snippet
                     name_safe = re.sub("\W", "_", name)
@@ -2413,7 +2472,7 @@ OpenLayers.Util.extend( selectPdfControl, {
             """ + visibility + """
             map.addLayer(gpxLayer""" + name_safe + """);
             gpxLayers.push(gpxLayer""" + name_safe + """);
-            gpxLayer""" + name_safe + """.events.on({ "featureselected": onGpxFeatureSelect, "featureunselected": onFeatureUnselect });
+            gpxLayer""" + name_safe + """.events.on({ 'featureselected': onGpxFeatureSelect, 'featureunselected': onFeatureUnselect });
             """
                 layers_gpx += """
         allLayers = allLayers.concat(gpxLayers);
@@ -2433,35 +2492,45 @@ OpenLayers.Util.extend( selectPdfControl, {
             // unselect any previous selections
             tooltipUnselect(event);
             var feature = event.feature;
+            centerPoint = feature.geometry.getBounds().getCenterLonLat();
             var selectedFeature = feature;
-            var type = typeof feature.attributes.name;
+            var title = feature.layer.title;
+            var _attributes = feature.attributes;
+            var type = typeof _attributes[title];
             if ('object' == type) {
-                var popup = new OpenLayers.Popup.FramedCloud("kmlpopup",
-                    feature.geometry.getBounds().getCenterLonLat(),
-                    new OpenLayers.Size(200,200),
-                    "<h2>" + "</h2>",
-                    null, true, onPopupClose
-                );
-            } else if (undefined == feature.attributes.description) {
-                var popup = new OpenLayers.Popup.FramedCloud("kmlpopup",
-                    feature.geometry.getBounds().getCenterLonLat(),
-                    new OpenLayers.Size(200,200),
-                    "<h2>" + feature.attributes.name + "</h2>",
-                    null, true, onPopupClose
-                );
+                _title = _attributes[title].value;
             } else {
-                var content = "<h2>" + feature.attributes.name + "</h2>" + feature.attributes.description;
-                // Protect the description against JavaScript attacks
-                if (content.search("<script") != -1) {
-                    content = "Content contained Javascript! Escaped content below.<br />" + content.replace(/</g, "<");
+                _title = _attributes[title];
+            }
+            var body = feature.layer.body.split(' ');
+            var content = '';
+            for (var i = 0; i < body.length; i++) {
+                type = typeof _attributes[body[i]];
+                if ('object' == type) {
+                    // Geocommons style
+                    var displayName = _attributes[body[i]].displayName;
+                    if (displayName == '') {
+                        displayName = body[i];
+                    }
+                    var value = _attributes[body[i]].value;
+                    var row = '<b>' + displayName + '</b>: ' + value + '<br />';
+                } else {
+                    var row = _attributes[body[i]] + '<br />';
                 }
-                var popup = new OpenLayers.Popup.FramedCloud("kmlpopup",
-                    feature.geometry.getBounds().getCenterLonLat(),
-                    new OpenLayers.Size(200,200),
-                    content,
-                    null, true, onPopupClose
-                );
-            };
+                content += row;
+            }
+            // Protect the content against JavaScript attacks
+            if (content.search('<script') != -1) {
+                content = 'Content contained Javascript! Escaped content below.<br />' + content.replace(/</g, '<');
+            }
+            var contents = '<h2>' + _title + '</h2>' + content;
+            
+            var popup = new OpenLayers.Popup.FramedCloud('kmlpopup',
+                centerPoint,
+                new OpenLayers.Size(200, 200),
+                contents,
+                null, true, onPopupClose
+            );
             feature.popup = popup;
             popup.feature = feature;
             map.addPopup(popup);
@@ -2471,11 +2540,15 @@ OpenLayers.Util.extend( selectPdfControl, {
                     name = layer["name"]
                     url = layer["url"]
                     visible = layer["visible"]
+                    title = layer["title"] or "name"
+                    body = layer["body"] or "description"
                     projection_str = "projection: proj4326,"
                     if cacheable:
                         # Download file
                         file, warning = self.download_kml(url, public_url)
-                        filename = "gis_cache.file." + name.replace(" ", "_") + ".kml"
+                        _name = name.replace(" ", "_")
+                        _name = _name.replace(",", "_")
+                        filename = "gis_cache.file." + _name + ".kml"
                         filepath = os.path.join(cachepath, filename)
                         f = open(filepath, "w")
                         # Handle errors
@@ -2520,10 +2593,11 @@ OpenLayers.Util.extend( selectPdfControl, {
 
                     # Generate HTML snippet
                     name_safe = re.sub("\W", "_", name)
+                    layer_name = "kmlLayer" + name_safe
                     if visible:
-                        visibility = "kmlLayer" + name_safe + ".setVisibility(true);"
+                        visibility = layer_name + ".setVisibility(true);"
                     else:
-                        visibility = "kmlLayer" + name_safe + ".setVisibility(false);"
+                        visibility = layer_name + ".setVisibility(false);"
                     layers_kml += """
             iconURL = '""" + marker_url + """';
             icon_img.src = iconURL;
@@ -2546,7 +2620,7 @@ OpenLayers.Util.extend( selectPdfControl, {
             style_marker.graphicYOffset = -height;
             style_marker.externalGraphic = iconURL;
             var kmlLayer""" + name_safe + """ = new OpenLayers.Layer.Vector(
-                '""" + name_safe + """',
+                '""" + name + """',
                 {
                     """ + projection_str + """
                     strategies: [ """ + strategy_fixed + ", " + strategy_cluster + """ ],
@@ -2558,6 +2632,8 @@ OpenLayers.Util.extend( selectPdfControl, {
                 }
             );
             """ + visibility + """
+            kmlLayer""" + name_safe + """.title = '""" + title + """';
+            kmlLayer""" + name_safe + """.body = '""" + body + """';
             map.addLayer(kmlLayer""" + name_safe + """);
             kmlLayers.push(kmlLayer""" + name_safe + """);
             kmlLayer""" + name_safe + """.events.on({ "featureselected": onKmlFeatureSelect, "featureunselected": onFeatureUnselect });
@@ -2571,7 +2647,7 @@ OpenLayers.Util.extend( selectPdfControl, {
         #############
 
         html.append(SCRIPT("""
-    var map, mapPanel, legendPanel, toolbar;
+    var map, mapPanel, legendPanel, toolbar, win;
     var lastDraftFeature, draftLayer;
     var centerPoint, currentFeature, popupControl, highlightControl;
     var wmsBrowser;
@@ -2706,32 +2782,57 @@ OpenLayers.Util.extend( selectPdfControl, {
                 }
             }
             lastFeature = feature;
-            if (undefined == feature.attributes.name) {
-                // GeoRSS
-                tooltipPopup = new OpenLayers.Popup("activetooltip",
-                        feature.geometry.getBounds().getCenterLonLat(),
+            centerPoint = feature.geometry.getBounds().getCenterLonLat();
+            _attributes = feature.attributes;
+            if (undefined == _attributes.name && undefined == _attributes.title) {
+                // KML Layer
+                var title = feature.layer.title;
+                if (undefined == title) {
+                    // We don't have a suitable title, so don't display a tooltip
+                    tooltipPopup = null;
+                } else {
+                    var type = typeof _attributes[title];
+                    if ('object' == type) {
+                        _title = _attributes[title].value;
+                    } else {
+                        _title = _attributes[title];
+                    }
+                    tooltipPopup = new OpenLayers.Popup("activetooltip",
+                        centerPoint,
                         new OpenLayers.Size(80, 12),
-                        feature.attributes.title,
+                        _title,
+                        false
+                    );
+                }
+            } else if (undefined == _attributes.title) {
+                // Features
+                tooltipPopup = new OpenLayers.Popup("activetooltip",
+                        centerPoint,
+                        new OpenLayers.Size(80, 12),
+                        _attributes.name,
                         false
                 );
             } else {
-                // KML
+                // GeoRSS
                 tooltipPopup = new OpenLayers.Popup("activetooltip",
-                        feature.geometry.getBounds().getCenterLonLat(),
+                        centerPoint,
                         new OpenLayers.Size(80, 12),
-                        feature.attributes.name,
+                        _attributes.title,
                         false
                 );
             }
-            // should be moved to CSS
-            tooltipPopup.contentDiv.style.backgroundColor='ffffcb';
-            tooltipPopup.contentDiv.style.overflow='hidden';
-            tooltipPopup.contentDiv.style.padding='3px';
-            tooltipPopup.contentDiv.style.margin='10px';
-            tooltipPopup.closeOnMove = true;
-            tooltipPopup.autoSize = true;
-            feature.popup = tooltipPopup;
-            map.addPopup(tooltipPopup);
+            if (tooltipPopup != null) {
+                // should be moved to CSS
+                tooltipPopup.contentDiv.style.backgroundColor='ffffcb';
+                tooltipPopup.contentDiv.style.overflow='hidden';
+                tooltipPopup.contentDiv.style.padding='3px';
+                tooltipPopup.contentDiv.style.margin='10px';
+                tooltipPopup.closeOnMove = true;
+                tooltipPopup.autoSize = true;
+                tooltipPopup.opacity = 0.6;
+                feature.popup = tooltipPopup;
+                map.addPopup(tooltipPopup);
+            }
         }
     }
     function tooltipUnselect(event){
@@ -2865,6 +2966,7 @@ OpenLayers.Util.extend( selectPdfControl, {
                         border: true,
                         width: 250,
                         collapsible: true,
+                        collapseMode: 'mini',
                         collapsed: """ + collapsed + """,
                         split: true,
                         items: [

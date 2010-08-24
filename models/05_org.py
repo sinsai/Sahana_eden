@@ -34,7 +34,7 @@ table.name.comment = SPAN("*", _class="req")
 # Functions
 def shn_sector_represent(sector_ids):
     if not sector_ids:
-        return "None"
+        return NONE
     elif "|" in str(sector_ids):
         sectors = [db(db.org_sector.id == id).select(db.org_sector.name, limitby=(0, 1)).first().name for id in sector_ids.split("|") if id]
         return ", ".join(sectors)
@@ -132,16 +132,16 @@ s3.crud_strings[tablename] = Storage(
 
 # Reusable field
 def shn_organisation_represent(id):
-    row = db(db.org_organisation.id == id).select(db.org_organisation.name, 
-                                                  db.org_organisation.acronym, 
+    row = db(db.org_organisation.id == id).select(db.org_organisation.name,
+                                                  db.org_organisation.acronym,
                                                   limitby = [0,1]).first()
     if row:
-        organisation_represent = row.name 
+        organisation_represent = row.name
         if row.acronym:
             organisation_represent = organisation_represent + " (" + row.acronym + ")"
     else:
         organisation_represent = "-"
-    
+
     return organisation_represent
 
 organisation_popup_url = URL(r=request, c="org", f="organisation", args="create", vars=dict(format="popup"))
@@ -221,7 +221,7 @@ table.name.requires = [IS_NOT_EMPTY(), IS_NOT_IN_DB(db, "%s.name" % tablename)]
 table.type.requires = IS_NULL_OR(IS_IN_SET(org_office_type_opts))
 table.type.represent = lambda opt: org_office_type_opts.get(opt, UNKNOWN_OPT)
 table.parent.requires = IS_NULL_OR(IS_ONE_OF(db, "org_office.id", "%(name)s"))
-table.parent.represent = lambda id: (id and [db(db.org_office.id == id).select(db.org_office.name, limitby=(0, 1)).first().name] or ["None"])[0]
+table.parent.represent = lambda id: (id and [db(db.org_office.id == id).select(db.org_office.name, limitby=(0, 1)).first().name] or [NONE])[0]
 table.phone1.requires = shn_phone_requires
 table.phone2.requires = shn_phone_requires
 table.fax.requires = shn_phone_requires
@@ -267,7 +267,7 @@ s3.crud_strings[tablename] = Storage(
 office_id = db.Table(None, "office_id",
             FieldS3("office_id", db.org_office, sortby="default/indexname",
                 requires = IS_NULL_OR(IS_ONE_OF(db, "org_office.id", "%(name)s")),
-                represent = lambda id: (id and [db(db.org_office.id == id).select(db.org_office.name, limitby=(0, 1)).first().name] or ["None"])[0],
+                represent = lambda id: (id and [db(db.org_office.id == id).select(db.org_office.name, limitby=(0, 1)).first().name] or [NONE])[0],
                 label = T("Office"),
                 comment = DIV(A(ADD_OFFICE, _class="colorbox", _href=URL(r=request, c="org", f="office", args="create", vars=dict(format="popup")), _target="top", _title=ADD_OFFICE),
                           DIV( _class="tooltip", _title=ADD_OFFICE + "|" + Tstr("The Office this record is associated with."))),
@@ -295,7 +295,7 @@ s3xrc.model.configure(table,
 # Donors are a type of Organisation
 def shn_donor_represent(donor_ids):
     if not donor_ids:
-        return "None"
+        return NONE
     elif "|" in str(donor_ids):
         donors = [db(db.org_organisation.id == id).select(db.org_organisation.name, limitby=(0, 1)).first().name for id in donor_ids.split("|") if id]
         return ", ".join(donors)
@@ -384,7 +384,7 @@ s3.crud_strings[tablename] = Storage(
 project_id = db.Table(None, "project_id",
                         FieldS3("project_id", db.org_project, sortby="name",
                         requires = IS_NULL_OR(IS_ONE_OF(db, "org_project.id", "%(code)s")),
-                        represent = lambda id: (id and [db.org_project[id].code] or ["None"])[0],
+                        represent = lambda id: (id and [db.org_project[id].code] or [NONE])[0],
                         comment = DIV(A(ADD_PROJECT, _class="colorbox", _href=URL(r=request, c="org", f="project", args="create", vars=dict(format="popup")), _target="top", _title=ADD_PROJECT),
                                   DIV( _class="tooltip", _title=ADD_PROJECT + "|" + Tstr("Add new project."))),
                         label = "Project",
@@ -434,7 +434,7 @@ table = db.define_table(tablename, timestamp, uuidstamp, authorstamp, deletion_s
 # Over-ride the default IS_NULL_OR as Staff doesn't make sense without an associated Organisation
 table.organisation_id.requires = IS_ONE_OF(db, "org_organisation.id", "%(name)s")
 table.manager_id.requires = IS_NULL_OR(IS_ONE_OF(db, "pr_person.id", shn_pr_person_represent))
-table.manager_id.represent = lambda id: (id and [shn_pr_person_represent(id)] or ["None"])[0]
+table.manager_id.represent = lambda id: (id and [shn_pr_person_represent(id)] or [NONE])[0]
 
 # Staff Resource called from multiple controllers
 # - so we define strings in the model
@@ -573,7 +573,7 @@ s3xrc.model.configure(table,
 #org_position_id = db.Table(None, "org_position_id",
 #                        FieldS3("org_position_id", db.org_position, sortby="title",
 #                        requires = IS_NULL_OR(IS_ONE_OF(db, "org_position.id", "%(title)s")),
-#                        represent = lambda id: lambda id: (id and [db.org_position[id].title] or ["None"])[0],
+#                        represent = lambda id: lambda id: (id and [db.org_position[id].title] or [NONE])[0],
 #                        comment = DIV(A(ADD_POSITION, _class="colorbox", _href=URL(r=request, c="org", f="project", args="create", vars=dict(format="popup")), _target="top", _title=ADD_POSITION),
 #                                  DIV( _class="tooltip", _title=ADD_POSITION + "|" + Tstr("Add new position."))),
 #                        ondelete = "RESTRICT"
@@ -624,6 +624,18 @@ table = db.define_table(tablename, timestamp, uuidstamp, authorstamp, deletion_s
 # Task Resource called from multiple controllers
 # - so we define strings in the model
 table.person_id.label = T("Assigned to")
+
+
+def shn_org_task_onvalidation(form):
+
+    """ Task form validation """
+
+    if str(form.vars.status) == "2" and not form.vars.person_id:
+        form.errors.person_id = T("Select a person in charge for status 'assigned'")
+
+    return False
+
+
 # CRUD Strings
 ADD_TASK = T("Add Task")
 LIST_TASKS = T("List Tasks")
@@ -651,6 +663,7 @@ s3xrc.model.add_component(module, resource,
     main="subject", extra="description")
 
 s3xrc.model.configure(table,
+                      onvalidation = lambda form: shn_org_task_onvalidation(form),
                       list_fields=["id",
                                    "project_id",
                                    "office_id",
@@ -717,9 +730,9 @@ def shn_project_search_location(xrequest, **attr):
                     href = next.replace("%5bid%5d", "%s" % result.id)
                     records.append(TR(
                         A(result.name, _href=href),
-                        result.start_date or "None",
-                        result.end_date or "None",
-                        result.description or "None",
+                        result.start_date or NONE,
+                        result.end_date or NONE,
+                        result.description or NONE,
                         result.status and org_project_status_opts[result.status] or "unknown",
                         ))
                 items=DIV(TABLE(THEAD(TR(
@@ -735,7 +748,7 @@ def shn_project_search_location(xrequest, **attr):
                     TH("Budgeted Cost"))),
                     TBODY(records), _id="list", _class="display"))
             else:
-                    items = T("None")
+                    items = T(NONE)
 
         try:
             label_create_button = s3.crud_strings["org_project"].label_create_button

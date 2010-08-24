@@ -2,15 +2,12 @@
 {{include "_update.html"}}
 <script type="text/javascript">//<![CDATA[
 $(function() {
-    // Location AutoComplete
-    {{location_id = "sitrep_assessment_location_id"}}
-    {{include "gis/location_autocomplete.js"}}
-    
     // Reference AutoComplete
-    {{entity_id = "sitrep_assessment_document_id"}}
+    {{entity_id = request.controller + "_" + request.function + "_document_id"}}
     {{urlpath_c = "doc"}}
     {{urlpath_f = "document"}}
     {{urlvar_field = "name"}}
     {{include "auto_input.js"}}
 });
 //]]></script>
+{{include "gis/location_autocomplete.js"}}

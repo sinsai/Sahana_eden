@@ -3,7 +3,7 @@
 """
     GIS Controllers
 
-    @author: Fran Boon
+    @author: Fran Boon <fran@aidiq.com>
 """
 
 from operator import __and__
@@ -12,15 +12,18 @@ module = request.controller
 
 # Options Menu (available in all Functions' Views)
 response.menu_options = [
-    [T("Service Catalogue"), False, URL(r=request, f="map_service_catalogue")],
     [T("Locations"), False, URL(r=request, f="location"), [
-        [T("List"), False, URL(r=request, f="location")],
+        #[T("List"), False, URL(r=request, f="location")],
+        [T("Search"), False, URL(r=request, f="location", args="search_simple")],
         [T("Add"), False, URL(r=request, f="location", args="create")],
     ]],
     [T("Fullscreen Map"), False, URL(r=request, f="map_viewing_client")],
     # Currently broken
     #[T("Bulk Uploader"), False, URL(r=request, c="doc", f="bulk_upload")]
 ]
+if not deployment_settings.get_security_map() or shn_has_role("MapAdmin"):
+    response.menu_options.append([T("Service Catalogue"), False, URL(r=request, f="map_service_catalogue")])
+    response.menu_options.append([T("De-duplicator"), False, URL(r=request, f="location_duplicates")])
 
 # Web2Py Tools functions
 def download():
@@ -34,11 +37,11 @@ def index():
     """
 
     module_name = deployment_settings.modules[module].name_nice
-    
+
     # Include an embedded Overview Map on the index page
     window = False
     toolbar = False
-    
+
     map = define_map(window=window, toolbar=toolbar)
 
     return dict(module_name=module_name, map=map)
@@ -48,10 +51,10 @@ def define_map(window=False, toolbar=False):
         Define the main Situation Map
         This can then be called from both the Index page (embedded) & the Map_Viewing_Client (fullscreen)
     """
-    
+
     # @ToDo: Make these configurable
     #config = gis.get_config()
-    if 1 in session.s3.roles or shn_has_role("MapAdmin"):
+    if not deployment_settings.get_security_map() or shn_has_role("MapAdmin"):
         catalogue_toolbar = True
     else:
         catalogue_toolbar = False
@@ -70,41 +73,52 @@ def define_map(window=False, toolbar=False):
         )
 
     # Custom Feature Layers
+    # @ToDo: Move these layer definitions into the DB, removing Feature Groups
+    # Feature Classes to be removed from Locations, although we still want the symbology mappings
     # Incidents
-    locations = db(db.gis_location.id == db.irs_ireport.location_id).select()
-    # Default Red
-    #marker = db(db.gis_marker.name == "marker_red").select(db.gis_marker.id, limitby=(0, 1)).first().id
-    popup_url = URL(r=request, c="irs", f="ireport", args="read.popup?ireport.location_id=")
-    incidents = {"name":Tstr("Incident Reports"), "query":locations, "active":True, "popup_url": popup_url}
-    
+    module = "irs"
+    resource = "ireport"
+    layername = Tstr("Incident Reports")
+    popup_label = Tstr("Incident")
+    # Default (but still better to define here as otherwise each feature needs to check it's feature_class)
+    marker = "marker_red"
+    incidents = gis.get_feature_layer(module, resource, layername, popup_label, marker)
+
     # Shelters
-    locations = db(db.gis_location.id == db.cr_shelter.location_id).select()
-    marker = db(db.gis_marker.name == "shelter").select(db.gis_marker.id, limitby=(0, 1)).first().id
-    popup_url = URL(r=request, c="cr", f="shelter", args="read.popup?shelter.location_id=")
-    shelters = {"name":Tstr("Shelters"), "query":locations, "active":True, "marker":marker, "popup_url": popup_url}
-    
+    module = "cr"
+    resource = "shelter"
+    layername = Tstr("Shelters")
+    popup_label = Tstr("Shelter")
+    marker = "shelter"
+    shelters = gis.get_feature_layer(module, resource, layername, popup_label, marker)
+
     # Assessments
-    locations = db(db.gis_location.id == db.sitrep_assessment.location_id).select()
-    marker = db(db.gis_marker.name == "marker_green").select(db.gis_marker.id, limitby=(0, 1)).first().id
-    popup_url = URL(r=request, c="sitrep", f="assessment", args="read.popup?assessment.location_id=")
-    assessments = {"name":Tstr("Assessments"), "query":locations, "active":True, "marker":marker, "popup_url": popup_url}
-    
+    module = "sitrep"
+    resource = "assessment"
+    layername = Tstr("Assessments")
+    popup_label = Tstr("Assessment")
+    marker = "marker_green"
+    assessments = gis.get_feature_layer(module, resource, layername, popup_label, marker)
+
     # Requests
-    locations = db(db.gis_location.id == db.rms_req.location_id).select()
-    marker = db(db.gis_marker.name == "marker_yellow").select(db.gis_marker.id, limitby=(0, 1)).first().id
-    popup_url = URL(r=request, c="rms", f="req", args="read.popup?req.location_id=")
-    requests = {"name":Tstr("Requests"), "query":locations, "active":True, "marker":marker, "popup_url": popup_url}
-    
+    module = "rms"
+    resource = "req"
+    layername = Tstr("Requests")
+    popup_label = Tstr("Request")
+    marker = "marker_yellow"
+    requests = gis.get_feature_layer(module, resource, layername, popup_label, marker)
+
     feature_queries = [
                        incidents,
                        shelters,
                        assessments,
                        requests,
                        ]
-    
+
     map = gis.show_map(
                        window=window,
                        catalogue_toolbar=catalogue_toolbar,
+                       #wms_browser = {"name" : "Pacific Disaster Center", "url" : "http://agsprod.pdc.org/arcgis/Pakistan/PAKISTAN_FLOOD/MapServer/WMSServer?request=GetCapabilities&service=WMS"},
                        toolbar=toolbar,
                        search=search,
                        catalogue_overlays=catalogue_overlays,
@@ -113,55 +127,282 @@ def define_map(window=False, toolbar=False):
                       )
 
     return map
-    
-def test():
-    """
-       Test Mapping API
-    """
 
-    # Will use default popup_url
-    hospitals = {"feature_group" : "Hospitals"}
+def location():
 
-    if auth.is_logged_in():
-        offices = {"feature_group" : "Offices", "popup_url" : URL(r=request, c="gis", f="location", args="update.popup")}
-    else:
-        offices = {"feature_group" : "Offices", "popup_url" : URL(r=request, c="gis", f="location", args="read.popup")}
+    """ RESTful CRUD controller for Locations """
 
-    query = db((db.gis_feature_class.name == "Town") & (db.gis_location.feature_class_id == db.gis_feature_class.id)).select()
+    resource = request.function
+    tablename = module + "_" + resource
+    table = db[tablename]
 
-    html = gis.show_map(
-                add_feature = True,
-                collapsed = True,
-                #feature_groups = [offices, hospitals],
-                #feature_queries = [{"name" : "Towns", "query" : query, "active" : True}],
-                #wms_browser = {"name" : "OpenGeo Demo WMS", "url" : "http://demo.opengeo.org/geoserver/ows?service=WMS&request=GetCapabilities"},
-                ##wms_browser = {"name" : "Risk Maps", "url" : "http://preview.grid.unep.ch:8080/geoserver/ows?service=WMS&request=GetCapabilities"},
-                ##wms_browser = {"name" : "Risk Maps", "url" : "http://www.pdc.org/wms/wmservlet/PDC_Active_Hazards?request=getcapabilities&service=WMS&version=1.1.1"},
-                #catalogue_overlays = True,
-                #catalogue_toolbar = True,
-                #legend = True, # Stops Feature Layers from Printing
-                #toolbar = True,
-                #search = True,
-                #print_tool = {
-                #        #"url" : "http://localhost:8080/geoserver/pdf/",                    # Local GeoServer
-                #        "url" : "http://localhost:8080/print-servlet-1.2-SNAPSHOT/pdf/",    # Local Windows Tomcat
-                #        #"url" : "http://host.domain:8180/print-servlet-1.2-SNAPSHOT/pdf/", # Linux Tomcat
-                #        "mapTitle" : "Title",
-                #        "subTitle" : "SubTitle"
-                #    },
-                ##mgrs = {"name" : "MGRS Atlas PDFs", "url" : "http://www.sharedgeo.org/datasets/shared/maps/usng/pdf.map?VERSION=1.0.0&SERVICE=WFS&request=GetFeature&typename=wfs_all_maps"},
-                #window = True,
-                )
+    # Allow prep to pass vars back to the controller
+    vars = {}
 
-    return dict(map=html)
+    # Pre-processor
+    def prep(r, vars):
 
-def test2():
-    " Test new OpenLayers functionality in a RAD environment "
-    return dict()
+        # Restrict access to top-level locations (& all Polygons currently) to just MapAdmins
+        if deployment_settings.get_security_map() and not shn_has_role("MapAdmin"):
+            table.code.writable = False
+            table.level.writable = False
+            if r.method == "create":
+                table.code.readable = False
+                table.level.readable = False
+            table.gis_feature_type.writable = table.gis_feature_type.readable = False
+            table.wkt.writable = table.wkt.readable = False
+        else:
+            table.code.comment = DIV( _class="tooltip", _title=Tstr("Code") + "|" + Tstr("For a country this would be the ISO2 code, for a Town, it would be the Airport Locode."))
+            table.level.comment = DIV( _class="tooltip", _title=Tstr("Level") + "|" + Tstr("If the location is a geographic area, then state at what level here."))
+            table.parent.comment = DIV(A(ADD_LOCATION,
+                                           _class="colorbox",
+                                           _href=URL(r=request, c="gis", f="location", args="create", vars=dict(format="popup", child="parent")),
+                                           _target="top",
+                                           _title=ADD_LOCATION),
+                                         DIV(
+                                           _class="tooltip",
+                                           _title=Tstr("Parent") + "|" + Tstr("The Area which this Site is located within."))),
+            table.wkt.comment = DIV(SPAN("*", _class="req"), DIV( _class="tooltip", _title="WKT" + "|" + Tstr("The <a href='http://en.wikipedia.org/wiki/Well-known_text' target=_blank>Well-Known Text</a> representation of the Polygon/Line.")))
 
-#@auth.shn_requires_membership("MapAdmin")
+        if r.http == "GET" and r.representation in ("html", "popup"):
+            # Options which are only required in interactive HTML views
+            table.name.comment = SPAN("*", _class="req")
+            table.osm_id.comment = DIV( _class="tooltip", _title="OSM ID" + "|" + Tstr("The <a href='http://openstreetmap.org' target=_blank>OpenStreetMap</a> ID. If you don't know the ID, you can just say 'Yes' if it has been added to OSM."))
+
+            # CRUD Strings
+            LIST_LOCATIONS = T("List Locations")
+            s3.crud_strings[tablename] = Storage(
+                title_create = ADD_LOCATION,
+                title_display = T("Location Details"),
+                title_list = T("Locations"),
+                title_update = T("Edit Location"),
+                title_search = T("Search Locations"),
+                subtitle_create = T("Add New Location"),
+                subtitle_list = LIST_LOCATIONS,
+                label_list_button = LIST_LOCATIONS,
+                label_create_button = ADD_LOCATION,
+                label_delete_button = T("Delete Location"),
+                msg_record_created = T("Location added"),
+                msg_record_modified = T("Location updated"),
+                msg_record_deleted = T("Location deleted"),
+                msg_list_empty = T("No Locations currently available"))
+
+            if r.method in (None, "list") and r.record == None:
+                # List
+                pass
+            elif r.method in ("delete", "search_simple"):
+                pass
+            else:
+                # Add Map to allow locations to be found this way
+                config = gis.get_config()
+                lat = config.lat
+                lon = config.lon
+                zoom = config.zoom
+                feature_queries = []
+
+                if r.method == "create":
+                    add_feature = True
+                    add_feature_active = True
+                else:
+                    if r.method == "update":
+                        add_feature = True
+                        add_feature_active = False
+                    else:
+                        # Read
+                        add_feature = False
+                        add_feature_active = False
+
+                    location = db(db.gis_location.id == r.id).select(db.gis_location.lat, db.gis_location.lon, limitby=(0, 1)).first()
+                    if location and location.lat is not None and location.lon is not None:
+                        lat = location.lat
+                        lon = location.lon
+                    # Same as a single zoom on a cluster
+                    zoom = zoom + 2
+
+                _map = gis.show_map(lat = lat,
+                                    lon = lon,
+                                    zoom = zoom,
+                                    feature_queries = feature_queries,
+                                    add_feature = add_feature,
+                                    add_feature_active = add_feature_active,
+                                    toolbar = True,
+                                    collapsed = True)
+
+                # Pass the map back to the main controller
+                vars.update(_map=_map)
+        return True
+    response.s3.prep = lambda r, vars=vars: prep(r, vars)
+
+    # Options
+    _vars = request.vars
+    filters = []
+    fclass = _vars.get("feature_class", None)
+    if fclass:
+        filters.append((db.gis_location.feature_class_id == db.gis_feature_class.id) &
+                              (db.gis_feature_class.name.like(fclass)))
+
+    fgroup = _vars.get("fgroup", None)
+    if fgroup:
+        # Filter to those Features which are in Feature Groups through their Feature Class
+        filters.append((db.gis_location.feature_class_id == db.gis_feature_class_to_feature_group.feature_class_id) &
+           (db.gis_feature_class_to_feature_group.feature_group_id == db.gis_feature_group.id) &
+           (db.gis_feature_group.name.like(fgroup)))
+        # We no longer support direct Features in Feature Groups (we can't easily OR this filter with previous one)
+        #filters.append((db.gis_location.id == db.gis_location_to_feature_group.location_id) &
+        #    (db.gis_location_to_feature_group.feature_group_id == db.gis_feature_group.id) & (db.gis_feature_group.name.like(fgroup)))
+
+    parent = _vars.get("parent_", None)
+    # Don't use 'parent' as the var name as otherwise it conflicts with the form's var of the same name & hence this will be triggered during form submission
+    if parent:
+        # Can't do this using a JOIN in DAL syntax
+        # .belongs() not GAE-compatible!
+        filters.append((db.gis_location.parent.belongs(db(db.gis_location.name.like(parent)).select(db.gis_location.id))))
+        # ToDo: Make this recursive - want ancestor not just direct parent!
+
+    # ToDo
+    # bbox = _vars.get("bbox", None):
+
+    if filters:
+        response.s3.filter = reduce(__and__, filters)
+
+    caller = _vars.get("caller", None)
+    if caller:
+        # We've been called as a Popup
+        if "gis_location_parent" in caller:
+            # Populate defaults & hide unnecessary rows
+            table.code.readable = table.code.writable = False
+            table.feature_class_id.readable = table.feature_class_id.writable = False
+            # Use default Marker for Class
+            table.marker_id.readable = table.marker_id.writable = False
+            table.wkt.readable = table.wkt.writable = False
+            table.addr_street.readable = table.addr_street.writable = False
+            table.osm_id.readable = table.osm_id.writable = False
+            table.source.readable = table.source.writable = False
+        else:
+            parent = _vars.get("parent_", None)
+            # Don't use 'parent' as the var name as otherwise it conflicts with the form's var of the same name & hence this will be triggered during form submission
+            if parent:
+                table.parent.default = parent
+
+            fc = None
+            # Populate defaults & hide unnecessary rows
+            if "cr_shelter" in caller:
+                fc = db(db.gis_feature_class.name == "Shelter").select(db.gis_feature_class.id, limitby=(0, 1)).first()
+                table.level.readable = table.level.writable = False
+                table.url.readable = table.url.writable = False
+            elif "hms_hospital" in caller:
+                fc = db(db.gis_feature_class.name == "Hospital").select(db.gis_feature_class.id, limitby=(0, 1)).first()
+                table.level.readable = table.level.writable = False
+                table.url.readable = table.url.writable = False
+            elif "irs_ireport" in caller:
+                fc = db(db.gis_feature_class.name == "Incident").select(db.gis_feature_class.id, limitby=(0, 1)).first()
+                table.level.readable = table.level.writable = False
+                table.url.readable = table.url.writable = False
+            elif "org_office" in caller:
+                fc = db(db.gis_feature_class.name == "Office").select(db.gis_feature_class.id, limitby=(0, 1)).first()
+                table.level.readable = table.level.writable = False
+                table.url.readable = table.url.writable = False
+            elif "org_project" in caller:
+                fc = db(db.gis_feature_class.name == "Project").select(db.gis_feature_class.id, limitby=(0, 1)).first()
+            elif "pr_presence" in caller:
+                fc = db(db.gis_feature_class.name == "Person").select(db.gis_feature_class.id, limitby=(0, 1)).first()
+                table.level.readable = table.level.writable = False
+                table.url.readable = table.url.writable = False
+            elif "assessment_location" in caller:
+                table.level.default = "L4"
+                table.feature_class_id.readable = table.feature_class_id.writable = False
+                table.marker_id.readable = table.marker_id.writable = False
+                table.addr_street.readable = table.addr_street.writable = False
+            elif "school_district" in caller:
+                table.level.default = "L2"
+                table.feature_class_id.readable = table.feature_class_id.writable = False
+                table.marker_id.readable = table.marker_id.writable = False
+                table.addr_street.readable = table.addr_street.writable = False
+            elif "school_report_location" in caller:
+                table.level.default = "L2"
+                table.feature_class_id.readable = table.feature_class_id.writable = False
+                table.marker_id.readable = table.marker_id.writable = False
+                table.addr_street.readable = table.addr_street.writable = False
+            elif "school_report_union" in caller:
+                table.level.default = "L3"
+                table.feature_class_id.readable = table.feature_class_id.writable = False
+                table.marker_id.readable = table.marker_id.writable = False
+                table.addr_street.readable = table.addr_street.writable = False
+
+            try:
+                # If we have a pre-assigned Feature Class
+                table.feature_class_id.default = fc.id
+                table.feature_class_id.readable = table.feature_class_id.writable = False
+                # Use default Marker for Class
+                table.marker_id.readable = table.marker_id.writable = False
+            except:
+                pass
+
+            table.osm_id.readable = table.osm_id.writable = False
+            table.source.readable = table.source.writable = False
+
+    # Post-processor
+    def user_postp(jr, output):
+        shn_action_buttons(jr)
+        return output
+    response.s3.postp = user_postp
+
+    response.s3.pagination = True
+    output = shn_rest_controller(module, resource, listadd=False)
+
+    _map = vars.get("_map", None)
+    if _map and isinstance(output, dict):
+        output.update(_map=_map)
+
+    return output
+
+def location_duplicates():
+
+    """ Handle De-duplication of Locations """
+
+    if deployment_settings.get_security_map() and not shn_has_role("MapAdmin"):
+        unauthorised()
+
+    def delete_location(old, new):
+        # Find all tables which link to the Locations table
+        tables = []
+        for table in db.tables:
+            if "location_id" in db[table]:
+                tables.append(table)
+
+        for table in tables:
+            query = db[table].location_id == old
+            db(query).update(location_id=new)
+        db(db.gis_location.id == old).update(deleted=True)
+
+    def open_btn(field):
+        return A(T("Open in New Tab"), _id=field, _href=URL(r=request, f="location"), _class="action-btn", _target="_blank")
+
+    form = SQLFORM.factory(
+                           Field("old", db.gis_location, requires=IS_ONE_OF(db, "gis_location.id", "%(name)s"), label = B(T("Old")), comment=open_btn("btn_old")),
+                           Field("new", db.gis_location, requires=IS_ONE_OF(db, "gis_location.id", "%(name)s"), label = B(T("New")), comment=open_btn("btn_new")),
+                          )
+
+    if form.accepts(request.vars, session):
+        _vars = form.vars
+
+        if not _vars.old == _vars.new:
+            # Take Action
+            delete_location(_vars.old, _vars.new)
+            response.confirmation = T("Location De-duplicated")
+        else:
+            response.error = T("Locations should be different!")
+
+    elif form.errors:
+        response.error = T("Need to select 2 Locations")
+
+    return dict(form=form)
+
 def apikey():
     """ RESTful CRUD controller """
+    if deployment_settings.get_security_map() and not shn_has_role("MapAdmin"):
+        unauthorised()
+
     resource = request.function
     tablename = module + "_" + resource
     table = db[tablename]
@@ -208,18 +449,24 @@ def config():
     tablename = module + "_" + resource
     table = db[tablename]
 
-    # Model options
-    # In Model so that they're visible to person() as component
-    # CRUD Strings (over-ride)
-    s3.crud_strings[tablename].title_display = T("Defaults")
-    s3.crud_strings[tablename].title_update = T("Edit Defaults")
-    s3.crud_strings[tablename].msg_record_modified = T("Defaults updated")
-
-
-    output = shn_rest_controller(module, resource, deletable=False, listadd=False)
+    # Pre-processor
+    def prep(r):
+        if r.representation in ("html", "popup"):
+            # Model options
+            # In Model so that they're visible to person() as component
+            # CRUD Strings (over-ride)
+            s3.crud_strings[tablename].title_display = T("Defaults")
+            s3.crud_strings[tablename].title_update = T("Edit Defaults")
+            s3.crud_strings[tablename].msg_record_modified = T("Defaults updated")
+        if deployment_settings.get_security_map() and r.id == 1 and r.method in ["create", "update"] and not shn_has_role("MapAdmin"):
+            unauthorised()
+        return True
+    response.s3.prep = prep
 
     if not "gis" in response.view:
         response.view = "gis/" + response.view
+
+    output = shn_rest_controller(module, resource, deletable=False, listadd=False)
 
     output["list_btn"] = ""
 
@@ -232,9 +479,11 @@ def config():
 
     return output
 
-#@auth.shn_requires_membership("MapAdmin")
 def feature_class():
     """ RESTful CRUD controller """
+    if deployment_settings.get_security_map() and not shn_has_role("MapAdmin"):
+        unauthorised()
+
     resource = request.function
     tablename = module + "_" + resource
     table = db[tablename]
@@ -274,9 +523,11 @@ def feature_class():
 
     return output
 
-#@auth.shn_requires_membership("MapAdmin")
 def feature_group():
     """ RESTful CRUD controller """
+    if deployment_settings.get_security_map() and not shn_has_role("MapAdmin"):
+        unauthorised()
+
     resource = request.function
     tablename = module + "_" + resource
     table = db[tablename]
@@ -317,9 +568,11 @@ def feature_group():
 
     return output
 
-#@auth.shn_requires_membership("MapAdmin")
 def feature_class_to_feature_group():
     """ RESTful CRUD controller """
+    if deployment_settings.get_security_map() and not shn_has_role("MapAdmin"):
+        unauthorised()
+
     resource = request.function
     table = module + "_" + resource
 
@@ -340,9 +593,11 @@ def feature_class_to_feature_group():
 
     return output
 
-#@auth.shn_requires_membership("MapAdmin")
 def feature_layer():
     """ RESTful CRUD controller """
+    if deployment_settings.get_security_map() and not shn_has_role("MapAdmin"):
+        unauthorised()
+
     resource = request.function
     tablename = module + "_" + resource
     table = db[tablename]
@@ -409,189 +664,11 @@ def feature_layer_query(form):
 
     return
 
-def location():
-    """ RESTful CRUD controller for Locations """
-    resource = request.function
-    tablename = module + "_" + resource
-    table = db[tablename]
-
-    if not shn_has_role("MapAdmin"):
-        table.code.writable = False
-        table.level.writable = False
-        if "create" in request.args:
-            table.code.readable = False
-            table.level.readable = False
-        table.gis_feature_type.writable = table.gis_feature_type.readable = False
-        table.wkt.writable = table.wkt.readable = False
-    else:
-        table.code.comment = DIV( _class="tooltip", _title=Tstr("Code") + "|" + Tstr("For a country this would be the ISO2 code, for a Town, it would be the Airport Locode."))
-        table.level.comment = DIV( _class="tooltip", _title=Tstr("Level") + "|" + Tstr("If the location is a geographic area, then state at what level here."))
-        table.parent.comment = DIV(A(ADD_LOCATION,
-                                       _class="colorbox",
-                                       _href=URL(r=request, c="gis", f="location", args="create", vars=dict(format="popup", child="parent")),
-                                       _target="top",
-                                       _title=ADD_LOCATION),
-                                     DIV(
-                                       _class="tooltip",
-                                       _title=Tstr("Parent") + "|" + Tstr("The Area which this Site is located within."))),
-        table.wkt.comment = DIV(SPAN("*", _class="req"), DIV( _class="tooltip", _title="WKT" + "|" + Tstr("The <a href='http://en.wikipedia.org/wiki/Well-known_text' target=_blank>Well-Known Text</a> representation of the Polygon/Line.")))
-
-    # Model options which are only required in interactive HTML views
-    table.name.comment = SPAN("*", _class="req")
-    CONVERSION_TOOL = T("Conversion Tool")
-    table.lat.comment = DIV(A(CONVERSION_TOOL, _style="cursor:pointer;", _title=CONVERSION_TOOL, _id="btnConvert"), DIV( _class="tooltip", _title=T("Latitude|Latitude is North-South (Up-Down). Latitude is zero on the equator and positive in the northern hemisphere and negative in the southern hemisphere. This needs to be added in Decimal Degrees. Use the popup to convert from either GPS coordinates or Degrees/Minutes/Seconds.")))
-    table.lon.comment = DIV( _class="tooltip", _title=Tstr("Longitude") + "|" + Tstr("Longitude is West - East (sideways). Longitude is zero on the prime meridian (Greenwich Mean Time) and is positive to the east, across Europe and Asia.  Longitude is negative to the west, across the Atlantic and the Americas.  This needs to be added in Decimal Degrees. Use the popup to convert from either GPS coordinates or Degrees/Minutes/Seconds."))
-    table.osm_id.comment = DIV( _class="tooltip", _title="OSM ID" + "|" + Tstr("The <a href='http://openstreetmap.org' target=_blank>OpenStreetMap</a> ID. If you don't know the ID, you can just say 'Yes' if it has been added to OSM."))
-
-    # CRUD Strings
-    LIST_LOCATIONS = T("List Locations")
-    s3.crud_strings[tablename] = Storage(
-        title_create = ADD_LOCATION,
-        title_display = T("Location Details"),
-        title_list = T("Locations"),
-        title_update = T("Edit Location"),
-        title_search = T("Search Locations"),
-        subtitle_create = T("Add New Location"),
-        subtitle_list = LIST_LOCATIONS,
-        label_list_button = LIST_LOCATIONS,
-        label_create_button = ADD_LOCATION,
-        label_delete_button = T("Delete Location"),
-        msg_record_created = T("Location added"),
-        msg_record_modified = T("Location updated"),
-        msg_record_deleted = T("Location deleted"),
-        msg_list_empty = T("No Locations currently available"))
-
-    # Options
-    _vars = request.vars
-    filters = []
-    fclass = _vars.get("feature_class", None)
-    if fclass:
-        filters.append((db.gis_location.feature_class_id == db.gis_feature_class.id) &
-                              (db.gis_feature_class.name.like(fclass)))
-
-    fgroup = _vars.get("fgroup", None)
-    if fgroup:
-        # Filter to those Features which are in Feature Groups through their Feature Class
-        filters.append((db.gis_location.feature_class_id == db.gis_feature_class_to_feature_group.feature_class_id) &
-           (db.gis_feature_class_to_feature_group.feature_group_id == db.gis_feature_group.id) &
-           (db.gis_feature_group.name.like(fgroup)))
-        # We no longer support direct Features in Feature Groups (we can't easily OR this filter with previous one)
-        #filters.append((db.gis_location.id == db.gis_location_to_feature_group.location_id) &
-        #    (db.gis_location_to_feature_group.feature_group_id == db.gis_feature_group.id) & (db.gis_feature_group.name.like(fgroup)))
-
-    parent = _vars.get("parent_", None)
-    # Don't use 'parent' as the var as otherwise this will be triggered during form submission
-    if parent:
-        # Can't do this using a JOIN in DAL syntax
-        # .belongs() not GAE-compatible!
-        filters.append((db.gis_location.parent.belongs(db(db.gis_location.name.like(parent)).select(db.gis_location.id))))
-        # ToDo: Make this recursive - want ancestor not just direct parent!
-
-    caller = _vars.get("caller", None)
-    if caller:
-        if "gis_location_parent" in caller:
-            # If a Parent location then populate defaults for the fields & Hide unnecessary rows
-            table.description.readable = table.description.writable = False
-            #table.level.readable = table.level.writable = False
-            table.code.readable = table.code.writable = False
-            table.feature_class_id.readable = table.feature_class_id.writable = False
-            # Use default Marker for Class
-            table.marker_id.readable = table.marker_id.writable = False
-            #table.gis_feature_type.readable = table.gis_feature_type.writable = False
-            #table.gis_feature_type.default =
-            table.wkt.readable = table.wkt.writable = False
-            table.addr_street.readable = table.addr_street.writable = False
-            table.osm_id.readable = table.osm_id.writable = False
-            table.source.readable = table.source.writable = False
-
-        else:
-            fc = None
-            # When called from a Popup, populate defaults & hide unnecessary rows
-            if "cr_shelter" in caller:
-                fc = db(db.gis_feature_class.name == "Shelter").select(db.gis_feature_class.id, limitby=(0, 1)).first()
-                table.level.readable = table.level.writable = False
-                table.url.readable = table.url.writable = False
-            elif "hms_hospital" in caller:
-                fc = db(db.gis_feature_class.name == "Hospital").select(db.gis_feature_class.id, limitby=(0, 1)).first()
-                table.level.readable = table.level.writable = False
-                table.url.readable = table.url.writable = False
-            elif "irs_ireport" in caller:
-                fc = db(db.gis_feature_class.name == "Incident").select(db.gis_feature_class.id, limitby=(0, 1)).first()
-                table.level.readable = table.level.writable = False
-                table.url.readable = table.url.writable = False
-            elif "org_office" in caller:
-                fc = db(db.gis_feature_class.name == "Office").select(db.gis_feature_class.id, limitby=(0, 1)).first()
-                table.level.readable = table.level.writable = False
-                table.url.readable = table.url.writable = False
-            elif "org_project" in caller:
-                fc = db(db.gis_feature_class.name == "Project").select(db.gis_feature_class.id, limitby=(0, 1)).first()
-            elif "pr_presence" in caller:
-                fc = db(db.gis_feature_class.name == "Person").select(db.gis_feature_class.id, limitby=(0, 1)).first()
-                table.level.readable = table.level.writable = False
-                table.url.readable = table.url.writable = False
-            elif "assessment_location" in caller:
-                table.level.default = "L4"
-                table.feature_class_id.readable = table.feature_class_id.writable = False
-                table.marker_id.readable = table.marker_id.writable = False
-                table.addr_street.readable = table.addr_street.writable = False
-            elif "school_district" in caller:
-                table.level.default = "L2"
-                table.feature_class_id.readable = table.feature_class_id.writable = False
-                table.marker_id.readable = table.marker_id.writable = False
-                table.addr_street.readable = table.addr_street.writable = False
-            elif "school_report_location" in caller:
-                table.level.default = "L2"
-                table.feature_class_id.readable = table.feature_class_id.writable = False
-                table.marker_id.readable = table.marker_id.writable = False
-                table.addr_street.readable = table.addr_street.writable = False
-            elif "school_report_union" in caller:
-                table.level.default = "L3"
-                table.feature_class_id.readable = table.feature_class_id.writable = False
-                table.marker_id.readable = table.marker_id.writable = False
-                table.addr_street.readable = table.addr_street.writable = False
-            
-            try:
-                table.feature_class_id.default = fc.id
-                table.feature_class_id.readable = table.feature_class_id.writable = False
-                # Use default Marker for Class
-                table.marker_id.readable = table.marker_id.writable = False
-            except:
-                pass
-
-            #table.level.readable = table.level.writable = False
-            table.code.readable = table.code.writable = False
-            table.gis_feature_type.readable = table.gis_feature_type.writable = False
-            table.wkt.readable = table.wkt.writable = False
-            table.osm_id.readable = table.osm_id.writable = False
-            table.source.readable = table.source.writable = False
-
-    # ToDo
-    # if "bbox" in request.vars:
-
-    if filters:
-        response.s3.filter = reduce(__and__, filters)
-
-    # Add Map to allow locations to be specified this way
-    _map = gis.show_map(add_feature = True,
-                        collapsed = True)
-
-    response.s3.pagination = True
-
-    # Post-processor
-    def user_postp(jr, output):
-        shn_action_buttons(jr)
-        return output
-    response.s3.postp = user_postp
-
-    output = shn_rest_controller(module, resource, listadd=False)
-    if isinstance(output, dict):
-        output.update(map=_map)
-    
-    return output
-
-#@auth.shn_requires_membership("MapAdmin")
 def marker():
     """ RESTful CRUD controller """
+    if deployment_settings.get_security_map() and not shn_has_role("MapAdmin"):
+        unauthorised()
+
     resource = request.function
     tablename = module + "_" + resource
     table = db[tablename]
@@ -630,9 +707,11 @@ def marker():
 
     return output
 
-@auth.shn_requires_membership("MapAdmin")
 def projection():
     """ RESTful CRUD controller """
+    if deployment_settings.get_security_map() and not shn_has_role("MapAdmin"):
+        unauthorised()
+
     resource = request.function
     tablename = module + "_" + resource
     table = db[tablename]
@@ -675,9 +754,11 @@ def projection():
 
     return output
 
-#@auth.shn_requires_membership("MapAdmin")
 def track():
     """ RESTful CRUD controller """
+    if deployment_settings.get_security_map() and not shn_has_role("MapAdmin"):
+        unauthorised()
+
     resource = request.function
     table = module + "_" + resource
 
@@ -715,9 +796,11 @@ EDIT_TYPE_LAYER_FMT = "Edit %s Layer"
 LIST_TYPE_LAYERS_FMT = "List %s Layers"
 NO_TYPE_LAYERS_FMT = "No %s Layers currently defined"
 
-#@auth.shn_requires_membership("MapAdmin")
 def layer_openstreetmap():
     """ RESTful CRUD controller """
+    if deployment_settings.get_security_map() and not shn_has_role("MapAdmin"):
+        unauthorised()
+
     resource = request.function
     table = module + "_" + resource
 
@@ -757,9 +840,11 @@ def layer_openstreetmap():
 
     return output
 
-#@auth.shn_requires_membership("MapAdmin")
 def layer_google():
     """ RESTful CRUD controller """
+    if deployment_settings.get_security_map() and not shn_has_role("MapAdmin"):
+        unauthorised()
+
     resource = request.function
     table = module + "_" + resource
 
@@ -799,9 +884,11 @@ def layer_google():
 
     return output
 
-#@auth.shn_requires_membership("MapAdmin")
 def layer_yahoo():
     """ RESTful CRUD controller """
+    if deployment_settings.get_security_map() and not shn_has_role("MapAdmin"):
+        unauthorised()
+
     resource = request.function
     table = module + "_" + resource
 
@@ -841,9 +928,11 @@ def layer_yahoo():
 
     return output
 
-#@auth.shn_requires_membership("MapAdmin")
 def layer_mgrs():
     """ RESTful CRUD controller """
+    if deployment_settings.get_security_map() and not shn_has_role("MapAdmin"):
+        unauthorised()
+
     resource = request.function
     table = module + "_" + resource
 
@@ -883,9 +972,11 @@ def layer_mgrs():
 
     return output
 
-#@auth.shn_requires_membership("MapAdmin")
 def layer_bing():
     """ RESTful CRUD controller """
+    if deployment_settings.get_security_map() and not shn_has_role("MapAdmin"):
+        unauthorised()
+
     resource = request.function
     table = module + "_" + resource
 
@@ -925,9 +1016,11 @@ def layer_bing():
 
     return output
 
-#@auth.shn_requires_membership("MapAdmin")
 def layer_georss():
     """ RESTful CRUD controller """
+    if deployment_settings.get_security_map() and not shn_has_role("MapAdmin"):
+        unauthorised()
+
     resource = request.function
     tablename = module + "_" + resource
     table = db[tablename]
@@ -971,9 +1064,11 @@ def layer_georss():
 
     return output
 
-#@auth.shn_requires_membership("MapAdmin")
 def layer_gpx():
     """ RESTful CRUD controller """
+    if deployment_settings.get_security_map() and not shn_has_role("MapAdmin"):
+        unauthorised()
+
     resource = request.function
     table = module + "_" + resource
 
@@ -1016,9 +1111,11 @@ def layer_gpx():
 
     return output
 
-#@auth.shn_requires_membership("MapAdmin")
 def layer_kml():
     """ RESTful CRUD controller """
+    if deployment_settings.get_security_map() and not shn_has_role("MapAdmin"):
+        unauthorised()
+
     resource = request.function
     tablename = module + "_" + resource
     table = db[tablename]
@@ -1051,7 +1148,7 @@ def layer_kml():
 
     # Post-processor
     def user_postp(jr, output):
-        shn_action_buttons(jr)
+        shn_action_buttons(jr, copyable=True)
         return output
     response.s3.postp = user_postp
 
@@ -1062,9 +1159,11 @@ def layer_kml():
 
     return output
 
-#@auth.shn_requires_membership("MapAdmin")
 def layer_tms():
     """ RESTful CRUD controller """
+    if deployment_settings.get_security_map() and not shn_has_role("MapAdmin"):
+        unauthorised()
+
     resource = request.function
     tablename = module + "_" + resource
     table = db[tablename]
@@ -1109,9 +1208,11 @@ def layer_tms():
 
     return output
 
-#@auth.shn_requires_membership("MapAdmin")
 def layer_wms():
     """ RESTful CRUD controller """
+    if deployment_settings.get_security_map() and not shn_has_role("MapAdmin"):
+        unauthorised()
+
     resource = request.function
     tablename = module + "_" + resource
     table = db[tablename]
@@ -1200,9 +1301,11 @@ def layer_js():
 
     return output
 
-#@auth.shn_requires_membership("MapAdmin")
 def layer_xyz():
     """ RESTful CRUD controller """
+    if deployment_settings.get_security_map() and not shn_has_role("MapAdmin"):
+        unauthorised()
+
     resource = request.function
     tablename = module + "_" + resource
     table = db[tablename]
@@ -1247,9 +1350,11 @@ def layer_xyz():
     return output
 
 # Feature Groups
-#@auth.shn_requires_membership("MapAdmin")
 def feature_group_contents():
-    "Many to Many CRUD Controller"
+    """ Many to Many CRUD Controller """
+    if deployment_settings.get_security_map() and not shn_has_role("MapAdmin"):
+        unauthorised()
+
     if len(request.args) == 0:
         session.error = T("Need to specify a feature group!")
         redirect(URL(r=request, f="feature_group"))
@@ -1328,7 +1433,7 @@ def feature_group_contents():
     return output
 
 def feature_group_dupes(form):
-    "Checks for duplicate FeatureClass before adding to DB"
+    """ Checks for duplicate FeatureClass before adding to DB """
     feature_group = form.vars.feature_group
     if "feature_class_id" in form.vars:
         feature_class_id = form.vars.feature_class_id
@@ -1345,7 +1450,7 @@ def feature_group_dupes(form):
         return
 
 def feature_group_update_items():
-    "Update a Feature Group's items (Feature Classes & Features)"
+    """ Update a Feature Group's items (Feature Classes & Features) """
     if len(request.args) == 0:
         session.error = T("Need to specify a feature group!")
         redirect(URL(r=request, f="feature_group"))
@@ -1372,9 +1477,9 @@ def convert_gps():
 
 def display_feature():
     """
-    Cut-down version of the Map Viewing Client.
-    Used by shn_gis_location_represent() to show just this feature on the map.
-    Called by the viewMap() JavaScript
+        Cut-down version of the Map Viewing Client.
+        Used by shn_gis_location_represent() to show just this feature on the map.
+        Called by the viewMap() JavaScript
     """
 
     # The Feature
@@ -1393,13 +1498,17 @@ def display_feature():
     lon = feature.lon
 
     # Calculate an appropriate BBox
-    bounds = gis.get_bounds(features=query)
+    #bounds = gis.get_bounds(features=query)
+
+    # Default zoom +2 (same as a single zoom on a cluster)
+    zoom = gis.get_config().zoom + 2
 
     map = gis.show_map(
         feature_queries = [{"name" : "Feature", "query" : query, "active" : True}],
         lat = lat,
         lon = lon,
-        bbox = bounds,
+        #bbox = bounds,
+        zoom = zoom,
         window = True,
         collapsed = True
     )
@@ -1408,11 +1517,11 @@ def display_feature():
 
 def display_features():
     """
-    Cut-down version of the Map Viewing Client.
-    Used as a link from the RHeader.
-        URL generated server-side
-    Shows all locations matching a query.
-    ToDo: Most recent location is marked using a bigger Marker.
+        Cut-down version of the Map Viewing Client.
+        Used as a link from the RHeader.
+            URL generated server-side
+        Shows all locations matching a query.
+        ToDo: Most recent location is marked using a bigger Marker.
     """
 
     # Parse the URL, check for implicit resources, extract the primary record
@@ -1482,7 +1591,7 @@ def geolocate():
 
 def layers_enable():
     """
-    Enable/Disable Layers
+        Enable/Disable Layers
     """
 
     # Hack: We control all perms from this 1 table
@@ -1524,12 +1633,13 @@ def layers_enable():
         session.error = T("Not authorised!")
     redirect(URL(r=request, f="map_service_catalogue"))
 
-#@auth.shn_requires_membership("MapAdmin")
 def map_service_catalogue():
     """
-    Map Service Catalogue.
-    Allows selection of which Layers are active.
+        Map Service Catalogue.
+        Allows selection of which Layers are active.
     """
+    if deployment_settings.get_security_map() and not shn_has_role("MapAdmin"):
+        unauthorised()
 
     subtitle = T("List Layers")
     # Start building the Return with the common items
@@ -1612,7 +1722,7 @@ def map_viewing_client():
 
     # @ToDo Make Configurable
     toolbar = True
-    
+
     map = define_map(window=window, toolbar=toolbar)
 
     return dict(map=map)
@@ -1708,3 +1818,50 @@ def proxy():
         msg += "Content-Type: text/plain\n\n"
         msg += "Some unexpected error occurred. Error text was: %s" % str(E)
         return msg
+
+# Tests - not Production
+def test():
+    """
+       Test Mapping API
+    """
+
+    # Will use default popup_url
+    hospitals = {"feature_group" : "Hospitals"}
+
+    if auth.is_logged_in():
+        offices = {"feature_group" : "Offices", "popup_url" : URL(r=request, c="gis", f="location", args="update.popup")}
+    else:
+        offices = {"feature_group" : "Offices", "popup_url" : URL(r=request, c="gis", f="location", args="read.popup")}
+
+    query = db((db.gis_feature_class.name == "Town") & (db.gis_location.feature_class_id == db.gis_feature_class.id)).select()
+
+    html = gis.show_map(
+                add_feature = True,
+                collapsed = True,
+                #feature_groups = [offices, hospitals],
+                #feature_queries = [{"name" : "Towns", "query" : query, "active" : True}],
+                #wms_browser = {"name" : "OpenGeo Demo WMS", "url" : "http://demo.opengeo.org/geoserver/ows?service=WMS&request=GetCapabilities"},
+                ##wms_browser = {"name" : "Risk Maps", "url" : "http://preview.grid.unep.ch:8080/geoserver/ows?service=WMS&request=GetCapabilities"},
+                ##wms_browser = {"name" : "Risk Maps", "url" : "http://www.pdc.org/wms/wmservlet/PDC_Active_Hazards?request=getcapabilities&service=WMS&version=1.1.1"},
+                #catalogue_overlays = True,
+                #catalogue_toolbar = True,
+                #legend = True, # Stops Feature Layers from Printing
+                #toolbar = True,
+                #search = True,
+                #print_tool = {
+                #        #"url" : "http://localhost:8080/geoserver/pdf/",                    # Local GeoServer
+                #        "url" : "http://localhost:8080/print-servlet-1.2-SNAPSHOT/pdf/",    # Local Windows Tomcat
+                #        #"url" : "http://host.domain:8180/print-servlet-1.2-SNAPSHOT/pdf/", # Linux Tomcat
+                #        "mapTitle" : "Title",
+                #        "subTitle" : "SubTitle"
+                #    },
+                ##mgrs = {"name" : "MGRS Atlas PDFs", "url" : "http://www.sharedgeo.org/datasets/shared/maps/usng/pdf.map?VERSION=1.0.0&SERVICE=WFS&request=GetFeature&typename=wfs_all_maps"},
+                #window = True,
+                )
+
+    return dict(map=html)
+
+def test2():
+    " Test new OpenLayers functionality in a RAD environment "
+    return dict()
+

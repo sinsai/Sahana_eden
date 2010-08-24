@@ -126,7 +126,7 @@ pe_label = db.Table(None, "pe_label",
 pe_id = db.Table(None, "pe_id",
                  Field("pe_id", db.pr_pentity,
                        requires = IS_NULL_OR(IS_ONE_OF(db, "pr_pentity.id", shn_pentity_represent)),
-                       represent = lambda id: (id and [shn_pentity_represent(id)] or ["None"])[0],
+                       represent = lambda id: (id and [shn_pentity_represent(id)] or [NONE])[0],
                        readable = False,
                        writable = False,
                        ondelete = "RESTRICT"))
@@ -163,7 +163,7 @@ def shn_pentity_onaccept(form, table=None):
         pentity = db.pr_pentity
         uid = record.uuid
 
-        pe = db(pentity.uuid == uid).select(pentity.id, limitby=(0, 1)).first()
+        pe = db(pentity.uuid == uid).select(pentity.id, limitby=(0,1)).first()
         if pe:
             values = dict(pe_id = pe.id)
             if "pe_label" in record:
@@ -388,7 +388,8 @@ person_id = db.Table(None, "person_id",
                              requires = IS_NULL_OR(IS_ONE_OF(db, "pr_person.id",
                                                              shn_pr_person_represent)),
                              represent = lambda id: (id and \
-                                         [shn_pr_person_represent(id)] or ["None"])[0],
+                                         [shn_pr_person_represent(id)] or [NONE])[0],
+                             label = T("Person"),
                              comment = shn_person_id_comment,
                              ondelete = "RESTRICT"))
 
@@ -482,7 +483,7 @@ group_id = db.Table(None, "group_id",
                                         filterby="system",
                                         filter_opts=(False,))),
                             represent = lambda id: (id and \
-                                        [db(db.pr_group.id == id).select(db.pr_group.name, limitby=(0, 1)).first().name] or ["None"])[0],
+                                        [db(db.pr_group.id == id).select(db.pr_group.name, limitby=(0, 1)).first().name] or [NONE])[0],
                             ondelete = "RESTRICT"))
 
 group_id.group_id.comment = \
@@ -599,7 +600,7 @@ def shn_pr_person_search_simple(r, **attr):
 
         # Select form
         form = FORM(TABLE(
-                TR(T("Name and/or ID Label: "),
+                TR(Tstr("Name and/or ID Label" + ": "),
                    INPUT(_type="text", _name="label", _size="40"),
                    DIV(DIV(_class="tooltip",
                            _title=Tstr("Name and/or ID Label") + "|" + Tstr("To search for a person, enter any of the first, middle or last names and/or the ID label of a person, separated by spaces. You may use % as wildcard. Press 'Search' without input to list all persons.")))),
@@ -641,7 +642,7 @@ def shn_pr_person_search_simple(r, **attr):
                     _href=URL(r=request, f="person", args="create"))
 
         output.update(title=title, subtitle=subtitle, add_btn=add_btn)
-        response.view = "%s/person_search.html" % resource.prefix
+        response.view = "search_simple.html"
         return output
 
     else:

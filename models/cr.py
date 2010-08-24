@@ -149,7 +149,7 @@ if deployment_settings.has_module(module):
                                 requires = IS_NULL_OR(IS_ONE_OF(db, "cr_shelter.id", "%(name)s")),
                                 represent = lambda id: (id and [db.cr_shelter[id].name] or ["None"])[0],
                                 ondelete = "RESTRICT",
-                                comment = DIV(A(ADD_SHELTER, _class="colorbox", _href=URL(r=request, c="cr", f="shelte", args="create", vars=dict(format="popup")), _target="top", _title=ADD_SHELTER),
+                                comment = DIV(A(ADD_SHELTER, _class="colorbox", _href=URL(r=request, c="cr", f="shelter", args="create", vars=dict(format="popup")), _target="top", _title=ADD_SHELTER),
                                           DIV( _class="tooltip", _title=Tstr("Shelter") + "|" + Tstr("The Shelter this Request is from (optional)."))),
                                 label = T("Shelter")
                                )

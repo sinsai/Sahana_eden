@@ -117,8 +117,6 @@ def person():
 
     response.s3.prep = person_prep
 
-    response.s3.pagination = True
-
     s3xrc.model.configure(db.pr_group_membership,
                           list_fields=["id",
                                        "group_id",
@@ -138,6 +136,7 @@ def person():
         return output
     response.s3.postp = person_postp
 
+    response.s3.pagination = True
     output = shn_rest_controller(module, resource,
                                  listadd = False,
                                  main="first_name",
@@ -166,8 +165,7 @@ def group():
     resource = request.function
 
     response.s3.filter = (db.pr_group.system == False) # do not show system groups
-    response.s3.pagination = True
-
+    
     s3xrc.model.configure(db.pr_group_membership,
                           list_fields=["id",
                                        "person_id",
@@ -187,6 +185,7 @@ def group():
         return output
     response.s3.postp = group_postp
 
+    response.s3.pagination = True
     output = shn_rest_controller(module, resource,
                 main="name",
                 extra="description",

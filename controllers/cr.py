@@ -3,6 +3,9 @@
 """
     Shelter Registry - Controllers
 """
+# @ToDo Search shelters by type, services, location, available space
+# @ToDo Shelter reports -- occupancy, needs -- per time
+# @ToDo Associate persons with shelters (via presence loc == shelter loc?)
 
 module = request.controller
 
@@ -12,12 +15,16 @@ if module not in deployment_settings.modules:
 
 # Options Menu (available in all Functions' Views)
 response.menu_options = [
-    [T("Add Shelter"), False, URL(r=request, f="shelter", args="create")],
-    [T("List Shelters"), False, URL(r=request, f="shelter"), [
-        [T("Services"), False, URL(r=request, f="shelter_service")],
-        [T("Types"), False, URL(r=request, f="shelter_type")],
+    [T("Shelters"), False, URL(r=request, f="shelter"), [
+        [T("List"), False, URL(r=request, f="shelter")],
+        [T("Add"), False, URL(r=request, f="shelter", args="create")],
+        # @ToDo Search by type, services, location, available space
+        #[T("Search"), False, URL(r=request, f="shelter", args="search")],
     ]],
-    #[T("Search Shelters"), False, URL(r=request, f="shelter", args="search")]
+    [T("Shelter Types and Services"), False, URL(r=request, f="#"), [
+        [T("List / Add Services"), False, URL(r=request, f="shelter_service")],
+        [T("List / Add Types"), False, URL(r=request, f="shelter_type")],
+    ]],
 ]
 
 # S3 framework functions
@@ -32,49 +39,37 @@ def index():
 # -----------------------------------------------------------------------------
 def shelter_type():
 
-    """ RESTful CRUD controller """
+    """
+    List / add shelter types (e.g. NGO-operated, Government evacuation center,
+    School, Hospital -- see Agasti opt_camp_type.)
+    """
 
     resource = request.function
-    tablename = module + "_" + resource
-    table = db[tablename]
 
-    # Don't send the locations list to client (pulled by AJAX instead)
-    table.location_id.requires = IS_NULL_OR(IS_ONE_OF_EMPTY(db, "gis_location.id"))
-
-    # Post-processor
+    # Don't provide delete button in list view
     def user_postp(jr, output):
         shn_action_buttons(jr, deletable=False)
         return output
     response.s3.postp = user_postp
 
-    output = shn_rest_controller(module, resource, listadd=False,
-                                 rheader=lambda r: \
-                                         shn_shelter_rheader(r,
-                                            tabs = [(T("Basic Details"), None),
-                                                    (T("Shelters"), "shelter")]),
-                                                    sticky=True)
-    return output
+    return shn_rest_controller(module, resource, sticky=True)
 
 # -----------------------------------------------------------------------------
 def shelter_service():
 
-    """ RESTful CRUD controller """
+    """
+    List / add shelter services (e.g. medical, housing, food,...)
+    """
 
     resource = request.function
 
-    # Post-processor
+    # Don't provide delete button in list view
     def user_postp(jr, output):
         shn_action_buttons(jr, deletable=False)
         return output
     response.s3.postp = user_postp
 
-    output = shn_rest_controller(module, resource, listadd=False,
-                                 rheader=lambda r: \
-                                         shn_shelter_rheader(r,
-                                            tabs = [(T("Basic Details"), None),
-                                                    (T("Shelters"), "shelter")]),
-                                                    sticky=True)
-    return output
+    return shn_rest_controller(module, resource, sticky=True)
 
 # -----------------------------------------------------------------------------
 def shelter():
@@ -115,12 +110,40 @@ def shelter():
         return output
     response.s3.postp = user_postp
 
+    crud.settings.create_onvalidation = shelter_onvalidation
+    crud.settings.update_onvalidation = shelter_onvalidation
+
     response.s3.pagination = True
     output = shn_rest_controller(module, resource, listadd=False)
 
     return output
 
+def shelter_onvalidation(form):
+    """
+    The school- and hospital-specific fields are guarded by checkboxes in
+    the form.  If the "is_school" or "is_hospital" checkbox was checked,
+    we use the corresponding field values, else we discard them.  Presence
+    of a non-empty value for school_code or hospital_id is what determines
+    whether the shelter is a school or hospital.
+
+    We don't just clear the fields in the form if the user unchecks the
+    checkbox because they might do that accidentally, and it would not be
+    nice to make them re-enter the info.
+    """
+
+    # Note the checkbox inputs that guard the optional data are inserted in
+    # the view and are not database fields, so are not in form.vars, only in
+    # request.vars.
+    if not "is_school" in request.vars:
+        form.vars.school_code = None
+        form.vars.school_pf = None
+
+    if not "is_hospital" in request.vars:
+        form.vars.hospital_id = None
+
+
 # -----------------------------------------------------------------------------
+# ToDo  No longer in use.  If we don't find a use soon, can remove this.
 def shn_shelter_rheader(r, tabs=[]):
 
     """ Resource Headers """
@@ -141,10 +164,15 @@ def shn_shelter_rheader(r, tabs=[]):
     else:
         return None
 
-
-    
-    
 # -----------------------------------------------------------------------------
+# This code provides urls of the form:
+# http://.../eden/cr/call/<service>/rpc/<method>/<id>
+# e.g.:
+# http://.../eden/cr/call/jsonrpc/rpc/list/2
+# It is not currently in use but left in as an example, and because it may
+# be used in future for interoperating with or transferring data from Agasti
+# which uses xml-rpc.  See:
+# http://www.web2py.com/examples/default/tools#services
 # http://groups.google.com/group/web2py/browse_thread/thread/53086d5f89ac3ae2
 def call():
     "Call an XMLRPC, JSONRPC or RSS service"

@@ -15,8 +15,8 @@ if deployment_settings.has_module(module):
                     Field("audit_write", "boolean"),
                     migrate=migrate)
 
-    # -----------------------------------------------------------------------------
-    # Shelters
+    # -------------------------------------------------------------------------
+    # Shelter types
     resource = "shelter_type"
     tablename = module + "_" + resource
     table = db.define_table(tablename, timestamp, uuidstamp, deletion_status,
@@ -51,7 +51,7 @@ if deployment_settings.has_module(module):
                                     )
                               )
 
-    # -----------------------------------------------------------------------------
+    # -------------------------------------------------------------------------
     resource = "shelter_service"
     tablename = module + "_" + resource
     table = db.define_table(tablename, timestamp, uuidstamp, deletion_status,
@@ -95,21 +95,39 @@ if deployment_settings.has_module(module):
                                          )
                                  )
 
-    # -----------------------------------------------------------------------------
+    # -------------------------------------------------------------------------
     resource = "shelter"
     tablename = module + "_" + resource
     table = db.define_table(tablename, timestamp, uuidstamp, deletion_status,
                     Field("name", notnull=True),
                     shelter_type_id,
-                    location_id,
                     shelter_service_id,
+                    location_id,
+                    Field("phone"),
                     person_id,
                     Field("address", "text"),
                     Field("capacity", "integer"),
                     Field("dwellings", "integer"),
                     Field("persons_per_dwelling", "integer"),
                     Field("area"),
+                    # @ToDo document_id field will be obsolete after docs are
+                    # moved to shelter reports.
                     document_id,
+                    # @Temporary School-specific fields -- school code, PF,
+                    # (and, if not in location, schoold district and union
+                    # council) are for Pakistan flood response.  It is simpler
+                    # to keep this info in the shelter table and hide it if
+                    # the shelter is not a school.
+                    #Field("school_district", db.gis_location,
+                    #      requires = IS_NULL_OR(IS_ONE_OF(db(db.gis_location.level == "L2"), "gis_location.id", repr_select, sort=True)),
+                    Field("school_code", "integer"),
+                    #Field("union_council", db.gis_location,
+                    #      requires = IS_NULL_OR(IS_ONE_OF(db(db.gis_location.level.belongs(("L3", "L4")), "gis_location.id", repr_select, sort=True)),
+                    Field("school_pf", "integer"),
+                    # If the shelter is a hospital, connect it to its hospital
+                    # record.  Although this could be a relationship, with a
+                    # separate table, it is only a single field.
+                    hospital_id,
                     comments,
                     migrate=migrate)
     table.uuid.requires = IS_NOT_IN_DB(db, "%s.uuid" % tablename)
@@ -119,12 +137,16 @@ if deployment_settings.has_module(module):
     table.person_id.label = T("Contact Person")
     table.address.label = T("Address")
     table.capacity.requires = IS_NULL_OR(IS_INT_IN_RANGE(0, 999999))
-    table.capacity.label = T("Capacity")
+    table.capacity.label = T("Capacity (Max Persons)")
     table.dwellings.requires = IS_NULL_OR(IS_INT_IN_RANGE(0, 99999))
     table.dwellings.label = T("Dwellings")
     table.persons_per_dwelling.requires = IS_NULL_OR(IS_INT_IN_RANGE(0, 999))
-    table.persons_per_dwelling.label = T("Persons per Dwelling")
+    table.persons_per_dwelling.label = T("Max Persons per Dwelling")
     table.area.label = T("Area")
+    table.school_code.label = T("School Code")
+    table.school_pf.label = T("PF Number")
+    table.phone.label = T("Phone")
+    table.phone.requires = shn_phone_requires
 
     ADD_SHELTER = T("Add Shelter")
     LIST_SHELTERS = T("List Shelters")
@@ -154,7 +176,8 @@ if deployment_settings.has_module(module):
                                 label = T("Shelter")
                                )
                          )
-    # Shelters as component of Services, Types & Locations
+    # Add Shelters as component of Services, Types & Locations as a simple way
+    # to get reports showing shelters per type, etc.
     s3xrc.model.add_component(module, resource,
                               multiple=True,
                               joinby=dict(cr_shelter_type="shelter_type_id", 

@@ -458,7 +458,7 @@ table.url.label = "URL"
 table.osm_id.label = "OpenStreetMap"
 # We want these visible from forms which reference the Location
 CONVERSION_TOOL = T("Conversion Tool")
-table.lat.comment = DIV( _class="tooltip", _title=Tstr("Latitude & Longitude") + "|" + Tstr("You can click on the map below to select the Lat/Lon fields. Longitude is West - East (sideways). Latitude is North-South (Up-Down). Latitude is zero on the equator and positive in the northern hemisphere and negative in the southern hemisphere. Longitude is zero on the prime meridian (Greenwich Mean Time) and is positive to the east, across Europe and Asia.  Longitude is negative to the west, across the Atlantic and the Americas.  This needs to be added in Decimal Degrees."))
+table.lat.comment = DIV( _class="tooltip", _id="gis_location_lat_tooltip", _title=Tstr("Latitude & Longitude") + "|" + Tstr("You can click on the map below to select the Lat/Lon fields. Longitude is West - East (sideways). Latitude is North-South (Up-Down). Latitude is zero on the equator and positive in the northern hemisphere and negative in the southern hemisphere. Longitude is zero on the prime meridian (Greenwich Mean Time) and is positive to the east, across Europe and Asia.  Longitude is negative to the west, across the Atlantic and the Americas.  This needs to be added in Decimal Degrees."))
 table.lon.comment = A(CONVERSION_TOOL, _style="cursor:pointer;", _title=T("You can use the Conversion Tool to convert from either GPS coordinates or Degrees/Minutes/Seconds."), _id="btnConvert")
             
 # Reusable field to include in other table definitions

@@ -116,6 +116,7 @@ if deployment_settings.has_module("project"):
             field.requires = IS_NULL_OR( IS_INT_IN_RANGE(0,99999999) )
     
     table.bnf_type.requires = IS_NULL_OR(IS_IN_SET(opt_bnf_type))
+    table.bnf_type.represent = lambda opt: opt_bnf_type.get(opt, NONE)
     
     # CRUD Strings
     ADD_ACTIVITY = T("Add Activity")

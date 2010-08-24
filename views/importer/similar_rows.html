@@ -11,18 +11,16 @@
 	var similar_rows = {{=XML(session.similar_rows)}};
 	var number_column = {{=XML(session.import_columns)}};
 	var map = {{=XML(session.import_map)}};
-	console.log(map);
 	var resource = "{{=session.import_resource}}";
 	var url = "{{=request.env.http_host}}";
 	var application = "{{=request.application}}";
-	console.log({{=XML(session.similar_rows)}});
 	if(similar_rows)
 	{
 		k = similar_rows;
 		similar(k);
 	}
 	else
-		no_similar();
+		window.location = "http://" + url + "/" + application + "/importer";
 </script>		
 
 <h1>This is the importer/similar_rows.html template</h1>

@@ -46,14 +46,7 @@ else
 	var data={};
 	number_column = fields.length;
 	data['rows'] = invalid_rows;
-
-	console.log(data);
-	//console.log(data['rows'][0]["$k_organisation_id --&gt; $_org_organisation --&gt; name"]);
 	store.loadData(data);
-	store.each(function(record)
-		{
-			console.log(record.get(fields[1]));
-		});
 	var action = new Ext.ux.grid.RowActions({
 			 header:'Click to delete',
 			 autoWidth: false,
@@ -88,12 +81,10 @@ else
 		temp = {};
 		temp.header = map[i][1];//fields[i];
 	        temp.dataIndex = fields[i];
-		console.log(temp.dataIndex);
 		temp.editor = new Ext.form.TextField();
 		temp.renderer = error_color;
 		column_model.push(temp);
 	}
-	console.log(column_model);
 	column_model.push(action);
 	column_model = new Ext.grid.ColumnModel(column_model);
 	var re_import_grid = new Ext.grid.EditorGridPanel({
@@ -144,7 +135,6 @@ else
 				        
 					send.re_import = 'True';	
 					send.map = map;
-					console.log(send.map);
 					send.columns = number_column;
 					send.resource = resource;
 					var time= new Date();
@@ -155,17 +145,12 @@ else
 						url : posturl,
 						method : 'POST',
 						jsonData : send,
-						success : function(r,o){
-							lm.hide();
-							Ext.Msg.Alert("","Import successful "+location.href);
-							window.location = 'http://' + url + '/' + application + '/importer/similar_rows';
-							},
-						failure : function(r,o){
-							lm.hide();
-							Ext.Msg.alert("","Import failed "+r.responseText);
-							}
-						});
-					//console.log(send);
+						callback : function(options,success,response)
+							   {
+							        lm.hide();
+								window.location = 'http://' + url + "/" + application + "/importer/similar_rows";
+						            }	
+    		});
 					lm.hide();
 				}
 				}]

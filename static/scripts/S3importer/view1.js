@@ -93,7 +93,7 @@ function view1(importsheet){
     var row_model=Ext.data.Record.create(columnlist);
     //Configuring the grid
     var grid=new Ext.grid.EditorGridPanel({
-       title: '<div align="center"><u>Edit</u> \u2794 Select table \u2794 Map columns to fields<p>Edit the spreadsheet, make sure a row with column titles exists</p></div>',
+       title: '<div align="center"><u>Edit</u> \u2794 Select module and resource \u2794 Map columns to fields<p>Edit the spreadsheet, make sure a row with column titles is selected</p></div>',
        renderTo: 'spreadsheet',
        loadMask: true,
        viewConfig:

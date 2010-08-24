@@ -14,7 +14,8 @@ response.menu_options = [
 
 importer=local_import("importer")
 
-def index(): 
+def index():
+    redirect( URL(r=request, c="importer",f="spreadsheet/create"))
     return dict(module_name=module_name)
 
 @auth.requires_membership('Administrator')

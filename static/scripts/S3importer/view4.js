@@ -26,22 +26,7 @@ function alertmessage4()
 
 function view4(importsheet)
 {
-    /*var render_mask = new Ext.LoadMask(Ext.get('spreadsheet'),{msg : 'Rendering...'});
-    render_mask.enable();
-    render_mask.show(); 
-    */
     var num_resources = importsheet.final_resources.length;
-    /*var i=0;
-    var resource = eval('('+importsheet.resource_fields+')');
-    field_store = [];
-    for(k in resource.field)
-    {
-	    //console.log(resource.field[k]['@name']);
-	    if(resource.field[k]['@writable'] == "True" && resource.field[k]['@name'] != "id")
-		    field_store.push(resource.field[k]['@name']);
-    }
-    console.log('Resource');
-    console.log(field_store);*/
     var store = importsheet.fields;
     Ext.QuickTips.init();
     var i=0;
@@ -70,53 +55,11 @@ function view4(importsheet)
 	    resource_combo[i]= new Ext.form.ComboBox(resource_combo[i]);
 	    i++;
     }
-    /*i = 0;
-    var fields_combo = new Array(importsheet.columns);
-    while( i < importsheet.columns)
-    {
-	    fields_combo[i] = {};
-	    fields_combo[i].fieldLabel = 'Field '+(i+1);
-	    fields_combo[i].name = colnames[i]+'_field';
-	    fields_combo[i].id = colnames[i]+'_field';
-	    fields_combo[i].store = ['Select resources'];
-	    fields_combo[i].allowBlank = false;
-	    fields_combo[i].blankText = 'You must select a field';
-	    fields_combo[i].emptyText = 'Select field';
-	    fields_combo[i].triggerAction = 'all';
-	    fields_combo[i].typeAhead = true;
-	    fields_combo[i] = new Ext.form.ComboBox(fields_combo[i]);
-	    resource_combo.push(fields_combo[i]);
-	    i++;
-    }
-    i = 0;
-    console.log('Adding listener');
-    while(i < importsheet.columns)
-    {
-	    resource_combo[i].on({ 'select' : {
-			    			fn : function(combo,record,index)
-			    		   	{
-							var name = combo.getId().replace('_resource','_field');
-							console.log("in listener "+name);
-							Ext.getCmp(name).clearInvalid();
-							Ext.getCmp(name).clearValue();
-							Ext.getCmp(name).getStore().removeAll(true);
-							Ext.getCmp(name).getStore().loadData(field_store[combo.getValue()]);
-						}
-					    }
-					});
-	    i++;
-    }*/
     var modules = new Ext.form.FieldSet({
 		items : resource_combo,
 		labelWidth : 350,
 		autoHeight : true,
 		width :650 });
-    /*var fields = new Ext.form.FieldSet({
-		width : 700,
-		//height : 5000,
-		autoHeight : true,
-		items :	fields_combo});
-    */
     var container = { xtype : 'container',
 	    	      layout : 'hbox',
 		      height : 600,
@@ -174,7 +117,6 @@ function view4(importsheet)
 							break;
 						}
 						map_from_ss_to_field.push([i,resource_combo[i].getName().replace('_resource',''),resource_combo[i].getValue()]);
-						//send.json[resource_combo[i].getValue()] = {};
 						i++;
 					}
 				        importsheet.resource = importsheet.final_resources;	
@@ -188,10 +130,6 @@ function view4(importsheet)
 					}
 					importsheet.header_row_labels=headrow;
 					i=0;
-					/*var jsonObj=[];
-					for (var i=0;i<store.getCount().i++) {
-						jsonObj.push(store.getAt(i).data);
-					}*/
 					var header_row=0;
 					//find location of header row
 					while(i < importsheet.rows){
@@ -209,17 +147,9 @@ function view4(importsheet)
 				 	 send.spreadsheet = importsheet.data;
 					 send.resource = importsheet.final_resources;
 					 send.map = importsheet.map;
-					 console.log(send.map);
 					 send.header_row = importsheet.header_row_index;
 					 send.rows=importsheet.rows;
 					 send.columns=importsheet.columns;
-					 console.log(send);
-					 /*var temp=importsheet.table.split("_");
-					 var prefix=temp[0];
-					 var name=temp[1];
-					 var str="$_";
-					 str+=prefix+"_"+name;
-					 send.resource=str;*/
 					 var time=new Date();
 				         var modifydate=''+(time.getUTCFullYear()+"-"+time.getUTCMonth()+"-"+time.getUTCDate()+" "+time.getUTCHours()+":"+time.getUTCMinutes()+":"+time.getUTCSeconds());
 	
@@ -232,7 +162,7 @@ function view4(importsheet)
 						callback : function(options,success,response)
 							   {
 							        lm.hide();
-								//window.location = 'http://' + url + "/" + application + "/importer/re_import";
+								window.location = 'http://' + url + "/" + application + "/importer/re_import";
 						            }	
     		});
 		}}],

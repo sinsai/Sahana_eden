@@ -10,7 +10,6 @@ function similar(similar_rows)
 {
 	Ext.onReady(function()
 	{
-		Ext.Msg.alert("","Similar" + similar_rows);
 		var column_model = new Array();
 	fields = [];
 	for(i = 0 ;i < map.length; i++)
@@ -30,7 +29,6 @@ function similar(similar_rows)
 	var data = {};
 	data['rows'] = similar_rows;
 	store.loadData(similar_rows);
-	console.log(store);
 	number_column = fields.length;
 	/*store.each(function(record)
 		{
@@ -70,12 +68,10 @@ function similar(similar_rows)
 		temp = {};
 		temp.header = map[i][1];//fields[i];
 	        temp.dataIndex = fields[i];
-		console.log(temp.dataIndex);
 		temp.editor = new Ext.form.TextField();
 		//temp.renderer = error_color;
 		column_model.push(temp);
 	}
-	console.log(column_model);
 	column_model.push(action);
 	column_model = new Ext.grid.ColumnModel(column_model);
 	var similar_rows_grid = new Ext.grid.EditorGridPanel({
@@ -126,7 +122,6 @@ function similar(similar_rows)
 				        
 					send.similar_rows = 'True';	
 					send.map = map;
-					console.log(send.map);
 					send.columns = number_column;
 					send.resource = resource;
 					var time= new Date();
@@ -137,14 +132,12 @@ function similar(similar_rows)
 						url : posturl,
 						method : 'POST',
 						jsonData : send,
-						success : function(r,o){
-							lm.hide();
-							Ext.Msg.Alert("","Import successful "+location.href);},
-						failure : function(r,o){
-							lm.hide();
-							Ext.Msg.alert("","Import failed "+r.responseText);
-							}
-						});
+						callback : function(options,success,response)
+							   {
+							        lm.hide();
+								window.location = 'http://' + url + "/" + application + "/importer/re_import";
+						            }	
+    		});
 					//console.log(send);
 					lm.hide();
 				}

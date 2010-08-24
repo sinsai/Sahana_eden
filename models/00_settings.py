@@ -8,12 +8,14 @@
 
 BREADCRUMB = ">> "
 UNKNOWN_OPT = T("Unknown")
+NONE = "-"
 READ = T("Open")
 #READ = T("Details")
 UPDATE = T("Open")
 #UPDATE = T("Edit")
 #UPDATE = T("Update")
 DELETE = T("Delete")
+COPY = T("Copy")
 
 # Default strings are in US English
 T.current_languages = ["en", "en-us"]
@@ -113,10 +115,6 @@ auth.settings.login_onaccept = shn_auth_on_login
 #    auth.settings.register_next = URL(r=request, c="default", f="user",
 #            args="login_next")
 
-# Extra startup roles for Admin:
-auth.settings.admin_startup_roles = [
-    #"AdvancedJS",
-]
 auth.settings.lock_keys = True
 
 ######

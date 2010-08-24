@@ -84,7 +84,7 @@ exec("from applications.%s.modules.widgets import *" % request.application)
 
 # GIS Module
 s3gis = local_import("s3gis")
-gis = s3gis.GIS(globals(), db, auth, cache=cache)
+gis = s3gis.GIS(globals(), deployment_settings, db, auth, cache=cache)
 
 # VITA
 s3vita = local_import("s3vita")

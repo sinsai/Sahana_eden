@@ -492,7 +492,7 @@ if empty:
         )
         table.insert(
             uuid = "www.sahanafoundation.org/GIS-FEATURE-CLASS-L1",
-            name = "Region",
+            name = "Province",
         )
         table.insert(
             uuid = "www.sahanafoundation.org/GIS-FEATURE-CLASS-L2",
@@ -502,6 +502,11 @@ if empty:
             uuid = "www.sahanafoundation.org/GIS-FEATURE-CLASS-L3",
             name = "Town",
             gps_marker = "City (Medium)",
+        )
+        table.insert(
+            uuid = "www.sahanafoundation.org/GIS-FEATURE-CLASS-L4",
+            name = "Village",
+            gps_marker = "City (Small)",
         )
         table.insert(
             uuid = "www.sahanafoundation.org/GIS-FEATURE-CLASS-AIRPORT",

@@ -57,7 +57,7 @@ def hospital():
     resource = request.function
     tablename = "%s_%s" % (module, resource)
     table = db[tablename]
-    
+
     table.gov_uuid.label = T("Government UID")
     table.name.label = T("Name")
     table.name.comment = SPAN("*", _class="req")
@@ -134,9 +134,7 @@ def hospital():
         msg_record_created = T("Hospital information added"),
         msg_record_modified = T("Hospital information updated"),
         msg_record_deleted = T("Hospital information deleted"),
-        msg_list_empty = T("No Hospitals currently registered"))  
-    
-    response.s3.pagination = True
+        msg_list_empty = T("No Hospitals currently registered"))
 
     #s3xrc.sync_resolve = shn_hospital_resolver
 
@@ -153,6 +151,7 @@ def hospital():
         return output
     response.s3.postp = hospital_postp
 
+    response.s3.pagination = True
     output = shn_rest_controller(module , resource,
         rheader = lambda jr: shn_hms_hospital_rheader(jr,
                   tabs=[
@@ -200,13 +199,11 @@ def hrequest():
     """ Hospital Requests Controller """
 
     resource = request.function
-    
+
     if auth.user is not None:
         person = db(db.pr_person.uuid == auth.user.person_uuid).select(db.pr_person.id)
         if person:
             db.hms_hpledge.person_id.default = person[0].id
-
-    response.s3.pagination = True
 
     def hrequest_postp(jr, output):
         if jr.representation in ("html", "popup") and not jr.component:
@@ -217,12 +214,11 @@ def hrequest():
     response.s3.postp = hrequest_postp
 
 
+    response.s3.pagination = True
     output = shn_rest_controller(module , resource,
                                  listadd=False,
                                  deletable=False,
-                                 rheader=shn_hms_hrequest_rheader,
-                                 rss=dict(title="%(subject)s",
-                                          description="%(message)s"))
+                                 rheader=shn_hms_hrequest_rheader)
 
     shn_menu()
     return output
@@ -233,7 +229,7 @@ def hpledge():
     """ Pledges Controller """
 
     resource = request.function
-    
+
     pledges = db(db.hms_hpledge.status == 3).select()
     for pledge in pledges:
         db(db.hms_hrequest.id == pledge.hms_hrequest_id).update(status = 6)
@@ -246,7 +242,6 @@ def hpledge():
             db.hms_hpledge.person_id.default = person[0].id
 
     response.s3.pagination = True
-
     output = shn_rest_controller(module, resource, editable = True, listadd=False)
 
     shn_menu()

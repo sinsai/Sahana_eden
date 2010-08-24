@@ -26,11 +26,6 @@ response.menu_options = [
         [T("Add"), False, URL(r=request, f="school_district", args="create")],
         #[T("Search"), False, URL(r=request, f="school_district", args="search")]
     ]],
-    #[T("Rapid Assessments"), False, URL(r=request, f="rassessment"),[
-    #    [T("List"), False, URL(r=request, f="rassessment")],
-    #    [T("Add"), False, URL(r=request, f="rassessment", args="create")],
-        #[T("Search"), False, URL(r=request, f="rassessment", args="search")]
-    #]],
     #[T("Map"), False, URL(r=request, f="maps")],
 ]
 
@@ -53,43 +48,6 @@ def maps():
     return dict(map=map)
 
 
-def rassessment():
-
-    """ 
-        Rapid Assessments, RESTful controller 
-        http://www.ecbproject.org/page/48
-    """
-
-    resource = request.function
-    tablename = "%s_%s" % (module, resource)
-    table = db[tablename]
-
-    # Villages only
-    table.location_id.requires = IS_NULL_OR(IS_ONE_OF(db(db.gis_location.level == "L4"), "gis_location.id", repr_select, sort=True))
-
-    response.s3.pagination = True
-
-    # Post-processor
-    def user_postp(jr, output):
-        shn_action_buttons(jr, deletable=False)
-        return output
-    response.s3.postp = user_postp
-
-    output = shn_rest_controller(module, resource,
-                                 rheader=lambda r: \
-                                         shn_sitrep_rheader(r,
-                                            tabs = [(T("Identification"), None),
-                                                    (T("Demographic"), "section2"),
-                                                    (T("Shelter & Essential NFIs"), "section3"),
-                                                    (T("WatSan"), "section4"),
-                                                    (T("Health"), "section5"),
-                                                    (T("Nutrition"), "section6"),
-                                                    (T("Livelihood"), "section7"),
-                                                    (T("Education"), "section8"),
-                                                    (T("Protection"), "section9") ]),
-                                                    sticky=True)
-    return output
-
 def assessment():
 
     """ Assessments, RESTful controller """
@@ -101,11 +59,16 @@ def assessment():
     # Villages only
     table.location_id.requires = IS_NULL_OR(IS_ONE_OF(db(db.gis_location.level == "L4"), "gis_location.id", repr_select, sort=True))
 
-    response.s3.pagination = True
-    
-    # Disable legacy fields, unless updating, so the data can be manually transferred to new fields
-    if "update" not in request.args:
-        table.source.readable = table.source.writable = False
+    # Don't send the locations list to client (pulled by AJAX instead)
+    table.location_id.requires = IS_NULL_OR(IS_ONE_OF_EMPTY(db, "gis_location.id"))
+
+    # Pre-processor
+    def prep(r):
+        if r.method == "update":
+            # Disable legacy fields, unless updating, so the data can be manually transferred to new fields
+            table.source.readable = table.source.writable = False        
+        return True
+    response.s3.prep = prep
 
     # Post-processor
     def user_postp(jr, output):
@@ -113,6 +76,7 @@ def assessment():
         return output
     response.s3.postp = user_postp
 
+    response.s3.pagination = True
     output = shn_rest_controller(module, resource)
     return output
 
@@ -137,11 +101,14 @@ def school_district():
                                        _title=ADD_LOCATION),
                                      DIV( _class="tooltip",
                                        _title=Tstr("District") + "|" + Tstr("The District for this Report."))),
-    response.s3.pagination = True
-    
-    # Disable legacy fields, unless updating, so the data can be manually transferred to new fields
-    if "update" not in request.args:
-        table.document.readable = table.document.writable = False    
+
+    # Pre-processor
+    def prep(r):
+        if r.method == "update":
+            # Disable legacy fields, unless updating, so the data can be manually transferred to new fields
+            table.document.readable = table.document.writable = False        
+        return True
+    response.s3.prep = prep
 
     # Post-processor
     def user_postp(jr, output):
@@ -149,14 +116,13 @@ def school_district():
         return output
     response.s3.postp = user_postp
 
-    output = shn_rest_controller(module, resource,
-                                 rheader=lambda r: \
-                                         shn_sitrep_rheader(r,
-                                            tabs = [(T("Basic Details"), None),
-                                                    (T("School Reports"), "school_report")]),
-                                                    sticky=True)
-    return output
+    rheader = lambda r: shn_sitrep_rheader(r, tabs = [(T("Basic Details"), None),
+                                                      (T("School Reports"), "school_report")
+                                                     ])
 
+    response.s3.pagination = True
+    output = shn_rest_controller(module, resource, rheader=rheader, sticky=True)
+    return output
 
 # -----------------------------------------------------------------------------
 def download():
@@ -174,50 +140,7 @@ def shn_sitrep_rheader(r, tabs=[]):
     if r.representation == "html":
         rheader_tabs = shn_rheader_tabs(r, tabs)
 
-        if r.name == "rassessment":
-
-            report = r.record
-            location = report.location_id
-            if location:
-                location = shn_gis_location_represent(location)
-            staff = report.staff_id
-            if staff:
-                organisation_id = db(db.org_staff.id == staff).select(db.org_staff.organisation_id).first().organisation_id
-                organisation = shn_organisation_represent(organisation_id)
-            else:
-                organisation = None
-            staff = report.staff2_id
-            if staff:
-                organisation_id = db(db.org_staff.id == staff).select(db.org_staff.organisation_id).first().organisation_id
-                organisation2 = shn_organisation_represent(organisation_id)
-            else:
-                organisation2 = None
-            if organisation2:
-                orgs = organisation + ", " + organisation2
-            else:
-                orgs = organisation
-            doc_url = URL(r=request, f="download", args=[report.document])
-            try:
-                doc_name, file = r.table.document.retrieve(report.document)
-                if hasattr(file, "close"):
-                    file.close()
-            except:
-                doc_name = report.document
-            rheader = DIV(TABLE(
-                            TR(
-                                TH(Tstr("Location") + ": "), location,
-                                TH(Tstr("Date") + ": "), report.date
-                              ),
-                            TR(
-                                TH(Tstr("Organisations") + ": "), orgs,
-                                TH(Tstr("Document") + ": "), A(doc_name, _href=doc_url)
-                              )
-                            ),
-                          rheader_tabs)
-
-            return rheader
-                          
-        elif r.name == "school_district":
+        if r.name == "school_district":
 
             report = r.record
             doc_url = URL(r=request, f="download", args=[report.document])

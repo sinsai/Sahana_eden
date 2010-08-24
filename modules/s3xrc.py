@@ -37,7 +37,10 @@
 """
 
 __name__ = "S3XRC"
-__all__ = ["S3Resource", "S3Request", "S3ResourceController"]
+__all__ = ["S3Resource",
+           "S3Request",
+           "S3MethodHandler",
+           "S3ResourceController"]
 
 import os, sys, cgi, uuid, datetime, time, urllib, StringIO
 import gluon.contrib.simplejson as json
@@ -889,14 +892,17 @@ class S3Resource(object):
         if output is not None and isinstance(output, dict):
             output.update(jr=r)
 
-        # Redirection
-        if r.next is not None:
-            if r.http == "POST":
-                if isinstance(output, dict):
-                    form = output.get("form", None)
-                    if form and form.errors:
-                        return output
+        # Redirection (makes no sense in GET)
+        if r.next is not None and r.http != "GET" or r.method == "delete":
+            if isinstance(output, dict):
+                form = output.get("form", None)
+                if form and form.errors:
+                    return output
             self.__dbg("redirecting to %s" % str(r.next))
+            r.session.flash = r.response.flash
+            r.session.confirmation = r.response.confirmation
+            r.session.error = r.response.error
+            r.session.warning = r.response.warning
             redirect(r.next)
 
         return output
@@ -956,6 +962,9 @@ class S3Resource(object):
             if r.representation in xml_import_formats or \
                r.representation in json_import_formats:
                 method = "import_tree"
+
+        elif method == "copy":
+            authorised = permit("create", tablename)
 
         elif method == "delete":
             return self.__delete(r)
@@ -2038,10 +2047,13 @@ class S3Request(object):
             del vars["format"]
 
         args = []
+        read = False
 
         component_id = self.component_id
         if id is None:
             id = self.id
+        else:
+            read = True
 
         if not representation:
             representation = self.representation
@@ -2049,10 +2061,11 @@ class S3Request(object):
             method = self.method
         elif method=="":
             method = None
-            if self.component:
-                component_id = None
-            else:
-                id = None
+            if not read:
+                if self.component:
+                    component_id = None
+                else:
+                    id = None
         else:
             if id is None:
                 id = self.id
@@ -2160,6 +2173,36 @@ class S3Request(object):
                     self.name,
                     self.table,
                     self.tablename)
+
+
+# *****************************************************************************
+class S3MethodHandler(object):
+
+    """ Abstract class for REST method handlers """
+
+    # -------------------------------------------------------------------------
+    def __init__(self):
+
+        """ Constructor """
+
+        pass
+
+
+    # -------------------------------------------------------------------------
+    def __call__(self, r, **attr):
+
+        """ Caller, invoked by the REST interface """
+
+        return self.response(r, **attr)
+
+
+    # -------------------------------------------------------------------------
+    def response(self, r, **attr):
+
+        """ Responder, to be implemented by subclasses """
+
+        output = dict()
+        return output
 
 
 # *****************************************************************************
@@ -3289,19 +3332,19 @@ class S3ResourceController(object):
                     else:
                         resource_url = None
 
-                    rmap = self.xml.rmap(ctable, crecord, _rfields)
+                    crmap = self.xml.rmap(ctable, crecord, _rfields)
                     celement = self.xml.element(ctable, crecord,
                                                 fields=_dfields,
                                                 url=resource_url,
                                                 download_url=self.download_url,
                                                 marker=marker)
-                    self.xml.add_references(celement, rmap, show_ids=self.show_ids)
+                    self.xml.add_references(celement, crmap, show_ids=self.show_ids)
                     self.xml.gis_encode(rmap,
                                         download_url=self.download_url,
                                         marker=marker)
 
                     element.append(celement)
-                    reference_map.extend(rmap)
+                    reference_map.extend(crmap)
 
                     if export_map.get(c.tablename, None):
                         export_map[c.tablename].append(crecord.id)

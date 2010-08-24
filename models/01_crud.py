@@ -20,7 +20,7 @@ XSLT_IMPORT_TEMPLATES = "static/xslt/import" #: Path to XSLT templates for data 
 XSLT_EXPORT_TEMPLATES = "static/xslt/export" #: Path to XSLT templates for data export
 
 # XSLT available formats
-shn_xml_import_formats = ["xml", "lmx", "osm", "pfif", "ushahidi", "odk"] #: Supported XML import formats
+shn_xml_import_formats = ["xml", "lmx", "osm", "pfif", "ushahidi", "odk", "agasti"] #: Supported XML import formats
 shn_xml_export_formats = dict(
     xml = "application/xml",
     gpx = "application/xml",
@@ -64,6 +64,7 @@ s3xrc = _s3xrc.S3ResourceController(db,
                                 request.application),
             cache=cache,
             auth=auth,
+	    modules = deployment_settings.modules,   #Own code
             gis=gis,
             rpp=ROWSPERPAGE,
             xml_import_formats = shn_xml_import_formats,
@@ -89,10 +90,13 @@ def shn_field_represent(field, row, col):
         represent = str(field.represent(row[col]))
     except:
         if row[col] is None:
-            represent = "None"
+            represent = NONE
         else:
             represent = row[col]
-
+            if col == "comments":
+                ur = unicode(represent, "utf8")
+                if len(ur) > 48:
+                    represent = ur[:48 - 3].encode("utf8") + "..."
     return represent
 
 def shn_field_represent_sspage(field, row, col, linkto=None):
@@ -926,10 +930,11 @@ def shn_read(r, **attr):
     else:
         record_id = r.id
 
-    # ToDo: Comment this out
-    authorised = shn_has_permission("update", table, record_id)
-    if authorised and representation == "html" and editable:
-        return shn_update(r, **attr)
+    # ToDo: Comment this out as we don't want to redirect to update form upon read
+    if not r.method:
+        authorised = shn_has_permission("update", table, record_id)
+        if authorised and representation == "html" and editable:
+            return shn_update(r, **attr)
 
     # Check for read permission
     authorised = shn_has_permission("read", table, record_id)
@@ -972,10 +977,12 @@ def shn_read(r, **attr):
             output.update(form=item, main=main, extra=extra, caller=caller)
 
         # Add edit and delete buttons as appropriate
-        if href_edit and editable and r.method <> "update":
+        authorised = shn_has_permission("update", table, record_id)
+        if authorised and href_edit and editable and r.method <> "update":
             edit = A(T("Edit"), _href=href_edit, _class="action-btn")
             output.update(edit=edit)
-        if href_delete and deletable:
+        authorised = shn_has_permission("delete", table)
+        if authorised and href_delete and deletable:
             delete = A(T("Delete"), _href=href_delete, _id="delete-btn", _class="action-btn")
             output.update(delete=delete)
 
@@ -1255,8 +1262,13 @@ def shn_list(r, **attr):
 
             addtitle = shn_get_crud_string(tablename, "subtitle_create")
 
+            label_create_button = shn_get_crud_string(tablename, "label_create_button")
+            showaddbtn = A(label_create_button,
+                           _id = "show-add-btn",
+                           _class="action-btn")
+
             shn_custom_view(r, "list_create.html")
-            output.update(form=form, addtitle=addtitle)
+            output.update(form=form, addtitle=addtitle, showaddbtn=showaddbtn)
 
         else:
             # List only
@@ -1313,10 +1325,52 @@ def shn_create(r, **attr):
     extra = _attr.get("extra", None)
     create_next = _attr.get("create_next")
 
-    if representation == "html":
+    if representation in ("html", "popup"):
+
+        # Copy from a previous record?
+        from_record = r.request.get_vars.get("from_record", None)
+        from_fields = r.request.get_vars.get("from_fields", None)
+        original = None
+        if from_record:
+            del r.request.get_vars["from_record"] # forget it
+            if from_record.find(".") != -1:
+                source_name, from_record = from_record.split(".", 1)
+                source = db.get(source_name, None)
+            else:
+                source = table
+            if from_fields:
+                del r.request.get_vars["from_fields"] # forget it
+                from_fields = from_fields.split(",")
+            else:
+                from_fields = [f for f in table.fields if f in source.fields and f!="id"]
+            if source and from_record:
+                copy_fields = [source[f] for f in from_fields if
+                                    f in source.fields and
+                                    f in table.fields and
+                                    table[f].type == source[f].type and
+                                    table[f].readable and table[f].writable]
+                if shn_has_permission("read", source, from_record):
+                    original = db(source.id == from_record).select(limitby=(0, 1), *copy_fields).first()
+                if original:
+                    missing_fields = Storage()
+                    for f in table.fields:
+                        if f not in original and \
+                           table[f].readable and table[f].writable:
+                            missing_fields[f] = table[f].default
+                    original.update(missing_fields)
 
         # Default components
         output = dict(module=prefix, resource=name, main=main, extra=extra)
+
+        if "location_id" in db[tablename].fields and response.s3.gis.map_selector:
+            # Include a map
+            _map = gis.show_map(add_feature = True,
+                                add_feature_active = True,
+                                toolbar = True,
+                                collapsed = True,
+                                window = True,
+                                window_hide = True)
+            output.update(_map=_map)
 
         # Title, subtitle and resource header
         if r.component:
@@ -1346,10 +1400,11 @@ def shn_create(r, **attr):
             # Neutralize callbacks
             crud.settings.create_onvalidation = None
             crud.settings.create_onaccept = None
-            crud.settings.create_next = create_next or r.there()
+            crud.settings.create_next = None
+            r.next = create_next or r.there()
         else:
-            if not crud.settings.create_next:
-                crud.settings.create_next = r.there()
+            r.next = crud.settings.create_next or r.there()
+            crud.settings.create_next = None
             if not onvalidation:
                 onvalidation = crud.settings.create_onvalidation
             if not onaccept:
@@ -1372,10 +1427,24 @@ def shn_create(r, **attr):
 
         # Get the form
         message = shn_get_crud_string(tablename, "msg_record_created")
-        form = crud.create(table,
-                           message=message,
-                           onvalidation=onvalidation,
-                           onaccept=_onaccept)
+        if original:
+            original.id = None
+            form = crud.update(table,
+                               original,
+                               message=message,
+                               next=crud.settings.create_next,
+                               deletable=False,
+                               onvalidation=onvalidation,
+                               onaccept=_onaccept)
+        else:
+            form = crud.create(table,
+                               message=message,
+                               onvalidation=onvalidation,
+                               onaccept=_onaccept)
+
+        subheadings = attr.get("subheadings", None)
+        if subheadings:
+            shn_insert_subheadings(form, tablename, subheadings)
 
         # Cancel button?
         #form[0].append(TR(TD(), TD(INPUT(_type="reset", _value="Reset form"))))
@@ -1399,7 +1468,12 @@ def shn_create(r, **attr):
             output.update(list_btn=list_btn)
 
         # Custom view
-        shn_custom_view(r, "create.html")
+        if representation == "popup":
+            shn_custom_view(r, "popup.html")
+            output.update(caller=r.request.vars.caller)
+            r.next = None
+        else:
+            shn_custom_view(r, "create.html")
 
         return output
 
@@ -1419,25 +1493,25 @@ def shn_create(r, **attr):
         response.view = "plain.html"
         return dict(item=form)
 
-    elif representation == "popup":
-        if onaccept:
-            _onaccept = lambda form: \
-                        s3xrc.audit("create", prefix, name, form=form,
-                                    representation=representation) and \
-                        onaccept(form)
-        else:
-            _onaccept = lambda form: \
-                        s3xrc.audit("create", prefix, name, form=form,
-                                    representation=representation)
+    #elif representation == "popup":
+        #if onaccept:
+            #_onaccept = lambda form: \
+                        #s3xrc.audit("create", prefix, name, form=form,
+                                    #representation=representation) and \
+                        #onaccept(form)
+        #else:
+            #_onaccept = lambda form: \
+                        #s3xrc.audit("create", prefix, name, form=form,
+                                    #representation=representation)
 
-        form = crud.create(table,
-                           onvalidation=onvalidation, onaccept=_onaccept)
-        shn_custom_view(r, "popup.html")
-        return dict(form=form,
-                    module=module,
-                    resource=resource,
-                    main=main,
-                    caller=request.vars.caller)
+        #form = crud.create(table,
+                           #onvalidation=onvalidation, onaccept=_onaccept)
+        #shn_custom_view(r, "popup.html")
+        #return dict(form=form,
+                    #module=module,
+                    #resource=resource,
+                    #main=main,
+                    #caller=request.vars.caller)
 
     elif representation == "url":
         #return import_url(r, table, method="create")
@@ -1592,6 +1666,10 @@ def shn_update(r, **attr):
                             onaccept=_onaccept,
                             deletable=False) # TODO: add extra delete button to form
 
+        subheadings = attr.get("subheadings", None)
+        if subheadings:
+            shn_insert_subheadings(form, tablename, subheadings)
+
         # Cancel button?
         #form[0].append(TR(TD(), TD(INPUT(_type="reset", _value="Reset form"))))
         if response.s3.cancel:
@@ -1611,6 +1689,47 @@ def shn_update(r, **attr):
             label_list_button = shn_get_crud_string(tablename, "label_list_button")
             list_btn = A(label_list_button, _href=r.there(), _class="action-btn")
             output.update(list_btn=list_btn)
+
+        if "location_id" in db[tablename].fields and response.s3.gis.map_selector:
+            # Include a map
+            config = gis.get_config()
+            zoom = config.zoom
+            location = db((db[tablename].id == r.id) & (db.gis_location.id == db[tablename].location_id)).select(db.gis_location.id, db.gis_location.uuid, db.gis_location.lat, db.gis_location.lon, db.gis_location.level, db.gis_location.parent, limitby=(0, 1)).first()
+            if location and location.lat is not None and location.lon is not None:
+                lat = location.lat
+                lon = location.lon
+            else:
+                lat = config.lat
+                lon = config.lon
+            module, resource = tablename.split("_")
+            layername = Tstr("Location")
+            popup_label = ""
+            filter = Storage(tablename = tablename,
+                             id = r.id
+                            )
+            layer = gis.get_feature_layer(module, resource, layername, popup_label, filter=filter)
+            feature_queries = [layer]
+            _map = gis.show_map(lat = lat,
+                                lon = lon,
+                                # Same as a single zoom on a cluster
+                                zoom = zoom + 2,
+                                feature_queries = feature_queries,
+                                add_feature = True,
+                                add_feature_active = False,
+                                toolbar = True,
+                                collapsed = True,
+                                window = True,
+                                window_hide = True)
+            output.update(_map=_map)
+            if location and location.id:
+                _location = Storage(id = location.id,
+                                    uuid = location.uuid,
+                                    lat = location.lat,
+                                    lon = location.lon,
+                                    level = location.lon,
+                                    parent = location.parent
+                                    )
+                output.update(oldlocation=_location)
 
         return output
 
@@ -1741,6 +1860,12 @@ def shn_delete(r, **attr):
     return output
 
 #
+# shn_copy ------------------------------------------------------------------
+#
+def shn_copy(r, **attr):
+    redirect(URL(r=request, args="create", vars={"from_record":r.id}))
+
+#
 # shn_search ------------------------------------------------------------------
 #
 def shn_search(r, **attr):
@@ -1764,7 +1889,7 @@ def shn_search(r, **attr):
     if response.s3.filter:
         query = response.s3.filter & query
 
-    if r.representation == "html":
+    if r.representation in ("html", "popup"):
 
         shn_represent(r.table, r.prefix, r.name, deletable, main, extra)
         search = t2.search(r.table, query=query)
@@ -1798,24 +1923,18 @@ def shn_search(r, **attr):
                 field3 = str.lower(_vars.field3)
             else:
                 field3 = None
-            if "level" in _vars:
-                level = str.upper(_vars.level)
-            else:
-                level = None
+            #if "level" in _vars:
+            #    level = str.upper(_vars.level)
+            #else:
+            #    level = None
             if "parent" in _vars and _vars.parent:
                 parent = int(_vars.parent)
             else:
                 parent = None
-            if "exclude" in _vars:
-                import urllib
-                exclude = urllib.unquote(_vars.exclude)
-            else:
-                exclude = None
 
             filter = _vars.filter
             if filter == "~":
                 if field2 and field3:
-
                     # pr_person name search
                     if " " in value:
                         value1, value2 = value.split(" ", 1)
@@ -1827,23 +1946,16 @@ def shn_search(r, **attr):
                                         (_table[field2].like("%" + value + "%")) | \
                                         (_table[field3].like("%" + value + "%")))
 
-                elif level:
-
+                #elif level:
                     # gis_location hierarchical search
-                    if parent:
-                        query = query & (_table.parent == parent) & \
-                                        (_table.level == level) & \
-                                        (_field.like("%" + value + "%"))
+                #    if parent:
+                #        query = query & (_table.parent == parent) & \
+                #                        (_table.level == level) & \
+                #                        (_field.like("%" + value + "%"))
 
-                    else:
-                        query = query & (_table.level == level) & \
-                                        (_field.like("%" + value + "%"))
-
-                elif exclude:
-
-                    # gis_location without Admin Areas (old: assumes 'Lx:' in name)
-                    query = query & ~(_field.like(exclude)) & \
-                                    (_field.like("%" + value + "%"))
+                #    else:
+                #        query = query & (_table.level == level) & \
+                #                        (_field.like("%" + value + "%"))
 
                 else:
                     # Normal single-field
@@ -1857,6 +1969,10 @@ def shn_search(r, **attr):
 
             elif filter == "=":
                 query = query & (_field == value)
+                if parent:
+                    # e.g. gis_location hierarchical search
+                    query = query & (_table.parent == parent)
+
                 item = db(query).select().json()
 
             elif filter == "<":
@@ -1972,6 +2088,7 @@ def shn_rest_controller(module, resource, **attr):
     s3xrc.set_handler("update", shn_update)
     s3xrc.set_handler("delete", shn_delete)
     s3xrc.set_handler("search", shn_search)
+    s3xrc.set_handler("copy", shn_copy)
 
     res, req = s3xrc.parse_request(module, resource, session, request, response)
     output = res.execute_request(req, **attr)

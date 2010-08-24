@@ -38,15 +38,18 @@ def shn_file_represent( file, table):
         return A(table.file.retrieve(file)[0], 
                  _href=URL(r=request, f="download", args=[file]))
     else:
-        return "-"
+        return NONE
     
 table.file.represent = lambda file, table=table: shn_file_represent(file, table)
 table.url.label = T("URL")
-table.url.represent = lambda url: url and A(url,_href=url) or "-"
+table.url.represent = lambda url: url and A(url,_href=url) or NONE
 
 table.url.requires = [IS_NULL_OR(IS_URL()),IS_NULL_OR(IS_NOT_IN_DB(db, "%s.url" % tablename))]
 
-table.person_id.label = T("Person")
+table.person_id.label = T("Author")
+table.person_id.comment = shn_person_comment(T("Author"), T("The Author of this Document (optional)"))
+
+table.location_id.readable = table.location_id.writable = False 
 
 table.entered.comment = DIV( _class="tooltip", 
                              _title="Entered" + "|" + Tstr("Has data from this Reference Document been entered into Sahana?")
@@ -54,7 +57,7 @@ table.entered.comment = DIV( _class="tooltip",
 # -----------------------------------------------------------------------------
 def document_represent(id):
     if not id:
-        return "-"
+        return NONE
     represent = shn_get_db_field_value(db = db,
                                        table = "doc_document", 
                                        field = "name", 
@@ -139,34 +142,34 @@ table.image.uploadfolder = os.path.join(request.folder, "uploads/images")
 IMAGE_EXTENSIONS = ["png", "PNG", "jpg", "JPG", "jpeg", "JPEG", "gif", "GIF", "tif", "TIF", "tiff", "TIFF", "bmp", "BMP", "raw", "RAW"]
 table.image.requires = IS_IMAGE(extensions=(IMAGE_EXTENSIONS))
 
-ADD_IMAGE = Tstr("Add Image")
+ADD_IMAGE = Tstr("Add Photo")
 image_id = db.Table(None, "image_id",
             Field("image_id", db.doc_image,
                 requires = IS_NULL_OR(IS_ONE_OF(db, "doc_image.id", "%(name)s")),
                 represent = lambda id: (id and [DIV(A(IMG(_src=URL(r=request, c="default", f="download", args=db(db.doc_image.id == id).select(db.doc_image.image, limitby=(0, 1)).first().image), _height=40), _class="zoom", _href="#zoom-media_image-%s" % id), DIV(IMG(_src=URL(r=request, c="default", f="download", args=db(db.doc_image.id == id).select(db.doc_image.image, limitby=(0, 1)).first().image),_width=600), _id="zoom-media_image-%s" % id, _class="hidden"))] or [""])[0],
                 label = T("Image"),
                 comment = DIV(A(ADD_IMAGE, _class="colorbox", _href=URL(r=request, c="doc", f="image", args="create", vars=dict(format="popup")), _target="top", _title=ADD_IMAGE),
-                          DIV( _class="tooltip", _title=ADD_IMAGE + "|" + Tstr("Add an image, such as a Photo."))),
+                          DIV( _class="tooltip", _title=ADD_IMAGE + "|" + Tstr("Add an Photo."))),
                 ondelete = "RESTRICT"
                 ))
 
 # CRUD Strings
-LIST_IMAGES = T("List Images")
+LIST_IMAGES = T("List Photos")
 s3.crud_strings[tablename] = Storage(
     title_create = ADD_IMAGE,
-    title_display = T("Image Details"),
+    title_display = T("Photo Details"),
     title_list = LIST_IMAGES,
-    title_update = T("Edit Image"),
-    title_search = T("Search Images"),
-    subtitle_create = T("Add New Image"),
-    subtitle_list = T("Image"),
+    title_update = T("Edit Photo"),
+    title_search = T("Search Photos"),
+    subtitle_create = T("Add New Photo"),
+    subtitle_list = T("Photo"),
     label_list_button = LIST_IMAGES,
     label_create_button = ADD_IMAGE,
-    label_delete_button = T("Delete Image"),
-    msg_record_created = T("Image added"),
-    msg_record_modified = T("Image updated"),
-    msg_record_deleted = T("Image deleted"),
-    msg_list_empty = T("No Images found"))
+    label_delete_button = T("Delete Photo"),
+    msg_record_created = T("Photo added"),
+    msg_record_modified = T("Photo updated"),
+    msg_record_deleted = T("Photo deleted"),
+    msg_list_empty = T("No Photos found"))
 
 #==============================================================================
 # END - Following code is not utilised
@@ -191,7 +194,7 @@ ADD_METADATA = Tstr("Add Metadata")
 metadata_id = db.Table(None, "metadata_id",
             Field("metadata_id", db.doc_metadata,
                 requires = IS_NULL_OR(IS_ONE_OF(db, "doc_metadata.id", "%(id)s")),
-                represent = lambda id: (id and [db(db.doc_metadata.id==id).select()[0].name] or ["None"])[0],
+                represent = lambda id: (id and [db(db.doc_metadata.id==id).select()[0].name] or [NONE])[0],
                 label = T("Metadata"),
                 comment = DIV(A(ADD_METADATA, _class="colorbox", _href=URL(r=request, c="doc", f="metadata", args="create", vars=dict(format="popup")), _target="top", _title=ADD_METADATA),
                           DIV( _class="tooltip", _title=ADD_METADATA + "|" + "Add some metadata for the file, such as Soure, Sensitivity, Event Time.")),

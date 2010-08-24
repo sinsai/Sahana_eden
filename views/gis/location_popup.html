@@ -1,5 +1,12 @@
 {{extend "layout_popup.html"}}
 {{include "_popup.html"}}
+<p>&nbsp;</p>
+{{=T("You can click on the map below to select the Lat/Lon fields:")}}
+<p>&nbsp;</p>
+{{try:}}
+{{=XML(_map)}}
+{{except:}}
+{{pass}}
 {{if "caller" in request.vars:}}
     <script type="text/javascript">//<![CDATA[
     function getCurrentPosition(position){

@@ -1,9 +1,3 @@
 {{extend "layout.html"}}
 {{include "_create.html"}}
-<script type="text/javascript">//<![CDATA[
-$(function() {
-    // Location AutoComplete
-    {{location_id = "inventory_location_location_id"}}
-    {{include "gis/location_autocomplete.js"}}
-});
-//]]></script>
+{{include "gis/location_autocomplete.js"}}

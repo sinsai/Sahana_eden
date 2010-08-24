@@ -14,34 +14,7 @@ if module not in deployment_settings.modules:
     redirect(URL(r=request, c="default", f="index"))
 
 # Options Menu (available in all Functions" Views)
-response.menu_options = [
-    #[T("Dashboard"), False, URL(r=request, f="dashboard")],
-    [T("Organizations"), False, URL(r=request, f="organisation"),[
-        [T("List"), False, URL(r=request, f="organisation")],
-        [T("Add"), False, URL(r=request, f="organisation", args="create")],
-        #[T("Search"), False, URL(r=request, f="organisation", args="search")]
-    ]],
-    [T("Offices"), False, URL(r=request, f="office"),[
-        [T("List"), False, URL(r=request, f="office")],
-        [T("Add"), False, URL(r=request, f="office", args="create")],
-        #[T("Search"), False, URL(r=request, f="office", args="search")]
-    ]],
-    [T("Projects"), False, URL(r=request, f="project"),[
-        [T("List"), False, URL(r=request, f="project")],
-        [T("Add"), False, URL(r=request, f="project", args="create")],
-        #[T("Search"), False, URL(r=request, f="project", args="search")]
-    ]],
-    [T("Staff"), False, URL(r=request, f="staff"),[
-        [T("List"), False, URL(r=request, f="staff")],
-        [T("Add"), False, URL(r=request, f="staff", args="create")],
-        #[T("Search"), False, URL(r=request, f="staff", args="search")]
-    ]],
-    [T("Tasks"), False, URL(r=request, f="task"),[
-        [T("List"), False, URL(r=request, f="task")],
-        [T("Add"), False, URL(r=request, f="task", args="create")],
-        #[T("Search"), False, URL(r=request, f="task", args="search")]
-    ]],
-]
+response.menu_options = org_menu
 
 # S3 framework functions
 def index():

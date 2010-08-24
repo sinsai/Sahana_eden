@@ -136,7 +136,7 @@ if deployment_settings.has_module(module):
                                     )
 
     # Reusable field for other tables
-    request_id = db.Table(None, "req_id",
+    req_id = db.Table(None, "req_id",
                 FieldS3("req_id", db.rms_req, sortby="message",
                     requires = IS_NULL_OR(IS_ONE_OF(db, "rms_req.id", "%(message)s")),
                     represent = lambda id: (id and [db(db.rms_req.id == id).select(limitby=(0, 1)).first().message] or ["None"])[0],
@@ -144,6 +144,8 @@ if deployment_settings.has_module(module):
                     comment = DIV(A(ADD_AID_REQUEST, _class="colorbox", _href=URL(r=request, c="rms", f="req", args="create", vars=dict(format="popup")), _target="top", _title=ADD_AID_REQUEST), DIV( _class="tooltip", _title=Tstr("Add Request") + "|" + Tstr("The Request this record is associated with."))),
                     ondelete = "RESTRICT"
                     ))
+    
+    request_id = req_id #only for other models - this should be replaced!
 
     # rms_req as component of doc_documents
     s3xrc.model.add_component(module, resource,
@@ -308,7 +310,7 @@ if deployment_settings.has_module(module):
                             uuidstamp, 
                             authorstamp, 
                             deletion_status,
-                            request_id,
+                            req_id,
                             get_item_id(),
                             Field("quantity", "double"),
                             comments,
@@ -319,7 +321,7 @@ if deployment_settings.has_module(module):
     # Items as component of Locations
     s3xrc.model.add_component(module, resource,
                               multiple=True,
-                              joinby=dict(rms_req="request_id", supply_item="item_id"),
+                              joinby=dict(rms_req="req_id", supply_item="item_id"),
                               deletable=True,
                               editable=True)    
 
@@ -413,7 +415,7 @@ if deployment_settings.has_module(module):
     resource = "req_detail"
     tablename = "%s_%s" % (module, resource)
     table = db.define_table(tablename, timestamp, uuidstamp, deletion_status,
-        request_id,
+        req_id,
         Field("request_key", "string"),
         Field("value", "string"),
         migrate=migrate)
@@ -435,7 +437,7 @@ if deployment_settings.has_module(module):
     table.req_id.readable = table.req_id.writable = False
 
     # make all fields read only
-    #table.tweet_request_id.readable = table.tweet_request_id.writable = False
+    #table.tweet_req_id.readable = table.tweet_req_id.writable = False
     #table.request_key.writable = False
     #table.value.writable = False
 

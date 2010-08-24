@@ -64,6 +64,7 @@ def req():
             if not jr.component:
                 response.s3.actions = [
                     dict(label=str(T("Open")), _class="action-btn", url=str(URL(r=request, args=["update", "[id]"]))),
+                    dict(label=str(T("Items")), _class="action-btn", url=str(URL(r=request, args=["[id]", "ritem"]))),
                     dict(label=str(T("Pledge")), _class="action-btn", url=str(URL(r=request, args=["[id]", "pledge"])))
                 ]
             elif jr.component_name == "pledge":
@@ -145,11 +146,12 @@ def shn_rms_rheader(jr):
 
                 rheader_tabs = shn_rheader_tabs( jr, 
                                                  [(T("Edit Details"), None),
-                                                  (T("Items"), "ritem"),                                                                                                        
+                                                  (T("Items"), "ritem"),    
+                                                  (T("Pledge"), "pledge"),                                                                                                      
                                                   ]
                                                  )
 
-                rheader = TABLE(TR(TH(T("Message: ")),
+                rheader = DIV( TABLE(TR(TH(T("Message: ")),
                                 TD(aid_request.message, _colspan=3)),
                                 TR(TH(T("Priority: ")),
                                 aid_request.priority,
@@ -164,6 +166,7 @@ def shn_rms_rheader(jr):
                                 TH(T("Actionable: ")),
                                 aid_request.actionable)),
                                 rheader_tabs
+                                )
 
                 return rheader
 

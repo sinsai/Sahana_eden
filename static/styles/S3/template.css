@@ -6,6 +6,7 @@ Sahana - Default Theme - Stylesheet
 designer : Prabhath Sirisena - prabhath@vesess.com - http://nidahas.com
 updated : Priyanga Fonseka  - jo@opensource.lk
 updated for SahanaPy : Fran Boon  - francisboon@gmail.com
+updated : Po-Wen Chi  - pwchi@pwchi.info
 Some content used from: http://matthewjamestaylor.com/blog/perfect-full-page.htm
 
 Selectors are listed in their order of appearance in the html, where applicable.
@@ -518,15 +519,15 @@ div#rheader td { text-align: left;
 div#rheader_tabs { width: 100%;
                    padding: 10px 0px 2px 0px;
                    margin-bottom: 5px;
-                   border-bottom: 1px solid #bbb;
+                   border-bottom: none;
                    text-align: left; }
 
 div#rheader_tabs span { padding: 1px 3px 3px 3px;
                         -moz-border-radius: 3px 3px 0px 0px;
                         -webkit-border-radius: 3px 3px 0px 0px; }
 
-div#rheader_tabs span.rheader_tab_other { border: 1px solid #bbb; border-bottom: 0; }
-div#rheader_tabs span.rheader_tab_here { border: 2px solid #col_border_btn_out; border-bottom: 0; }
+div#rheader_tabs span.rheader_tab_other { border-width: 3px 0px 0px 5px; border-style: solid; border-color: #bbb; margin-right: 5px; }
+div#rheader_tabs span.rheader_tab_here { border-width: 3px 0px 1px 5px; border-style: solid; border-color: #col_border_btn_out; border-bottom: 0; margin-right: 5px; font-size: large; }
 div#rheader_tabs span.rheader_prev_active { border: 1px solid #col_border_btn_out; color: #col_txt; border-bottom: 0; }
 div#rheader_tabs span.rheader_next_active { border: 1px solid #col_border_btn_out; color: #col_txt; border-bottom: 0; }
 div#rheader_tabs span.rheader_prev_inactive { border: 1px solid #bbb; color: #bbb; border-bottom: 0; }
@@ -538,7 +539,7 @@ div#rheader_tabs span.rheader_next_active a { color: #col_txt; text-decoration: 
 div#rheader_tabs span.rheader_prev_inactive a,
 div#rheader_tabs span.rheader_next_inactive a { color: #bbb; text-decoration: None; }
 
-div#rheader_tabs span.rheader_tab_other a { color: #bbb;
+div#rheader_tabs span.rheader_tab_other a { color: #000000;
                                             text-decoration: None; }
 div#rheader_tabs span.rheader_tab_here a { color: #col_txt;
                                             text-decoration: None; }
@@ -588,7 +589,8 @@ div#rheader_tabs span.rheader_tab_here a { color: #col_txt;
 
 .action-btn { text-decoration: none;
                 color: #col_txt;
-                background-color: #col_txt_background;
+                b/*ackground-color: #col_txt_background;*/
+		background-color: #e5ecf9;
                 border-right: 1px solid #col_border_btn_out;
                 border-bottom: 1px solid #col_border_btn_out;
                 border-left: 1px solid #col_txt_border;

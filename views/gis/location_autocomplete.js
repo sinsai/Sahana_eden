@@ -93,6 +93,13 @@ $(function() {
 
     // When dropdown is selected
     $('#gis_location_l{{=level}}').change(function() {
+        if (('' == $('#gis_location_lat').val() || '' == $('#gis_location_lon').val()) && ('' == $('#gis_location_addr_street').val()) ) {
+            // Populate the real location_id field (unless a lat/lon/addr_street are present)
+            var new_id = $(this).val();
+            if ('' != new_id) {
+                $('#' + location_id).val(new_id);
+            }
+        }
         // Show the next level of hierarchy
         s3_gis_locations_l{{=int(level) + 1}}();
     });
@@ -137,6 +144,13 @@ $(function() {
     
     // When dropdown is selected
     $('#gis_location_l{{=level}}').change(function() {
+        if (('' == $('#gis_location_lat').val() || '' == $('#gis_location_lon').val()) && ('' == $('#gis_location_addr_street').val()) ) {
+            // Populate the real location_id field (unless a lat/lon/addr_street are present)
+            var new_id = $(this).val();
+            if ('' != new_id) {
+                $('#' + location_id).val(new_id);
+            }
+        }
         // Show the next level of hierarchy
         s3_gis_locations_l{{=int(level) + 1}}();
     });
@@ -178,6 +192,13 @@ $(function() {
     
     // When dropdown is selected
     $('#gis_location_l{{=level}}').change(function() {
+        if (('' == $('#gis_location_lat').val() || '' == $('#gis_location_lon').val()) && ('' == $('#gis_location_addr_street').val()) ) {
+            // Populate the real location_id field (unless a lat/lon/addr_street are present)
+            var new_id = $(this).val();
+            if ('' != new_id) {
+                $('#' + location_id).val(new_id);
+            }
+        }
         // Show the next level of hierarchy
         s3_gis_locations_l{{=int(level) + 1}}();
     });
@@ -219,6 +240,13 @@ $(function() {
     
     // When dropdown is selected
     $('#gis_location_l{{=level}}').change(function() {
+        if (('' == $('#gis_location_lat').val() || '' == $('#gis_location_lon').val()) && ('' == $('#gis_location_addr_street').val()) ) {
+            // Populate the real location_id field (unless a lat/lon/addr_street are present)
+            var new_id = $(this).val();
+            if ('' != new_id) {
+                $('#' + location_id).val(new_id);
+            }
+        }
         // Show the next level of hierarchy
         s3_gis_locations_l{{=int(level) + 1}}();
     });
@@ -260,6 +288,13 @@ $(function() {
     
     // When dropdown is selected
     $('#gis_location_l{{=level}}').change(function() {
+        if (('' == $('#gis_location_lat').val() || '' == $('#gis_location_lon').val()) && ('' == $('#gis_location_addr_street').val()) ) {
+            // Populate the real location_id field (unless a lat/lon/addr_street are present)
+            var new_id = $(this).val();
+            if ('' != new_id) {
+                $('#' + location_id).val(new_id);
+            }
+        }
         // Show the next level of hierarchy
         s3_gis_locations_l{{=int(level) + 1}}();
     });
@@ -301,6 +336,13 @@ $(function() {
     
     // When dropdown is selected
     $('#gis_location_l{{=level}}').change(function() {
+        if (('' == $('#gis_location_lat').val() || '' == $('#gis_location_lon').val()) && ('' == $('#gis_location_addr_street').val()) ) {
+            // Populate the real location_id field (unless a lat/lon/addr_street are present)
+            var new_id = $(this).val();
+            if ('' != new_id) {
+                $('#' + location_id).val(new_id);
+            }
+        }
         // Show the next level of hierarchy
         s3_gis_locations_l{{=int(level) + 1}}();
     });

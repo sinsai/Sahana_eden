@@ -168,7 +168,7 @@ if deployment_settings.has_module(module):
     # reusable field
     shelter_id = db.Table(None, "shelter_id",
                           Field("shelter_id", db.cr_shelter,
-                                requires = IS_NULL_OR(IS_ONE_OF(db, "cr_shelter.id", "%(name)s")),
+                                requires = IS_NULL_OR(IS_ONE_OF(db, "cr_shelter.id", "%(name)s", sort=True)),
                                 represent = lambda id: (id and [db.cr_shelter[id].name] or ["None"])[0],
                                 ondelete = "RESTRICT",
                                 comment = DIV(A(ADD_SHELTER, _class="colorbox", _href=URL(r=request, c="cr", f="shelter", args="create", vars=dict(format="popup")), _target="top", _title=ADD_SHELTER),

@@ -110,11 +110,11 @@ if deployment_settings.has_module(module):
                     Field("dwellings", "integer"),
                     Field("persons_per_dwelling", "integer"),
                     Field("area"),
-                    # @ToDo document_id field will be obsolete after docs are
-                    # moved to shelter reports.
+                    # @ToDo Check whether document_id field will be needed if
+                    # docs are associated with shelter reports.
                     document_id,
                     # @Temporary School-specific fields -- school code, PF,
-                    # (and, if not in location, schoold district and union
+                    # (and, if not in location, school district and union
                     # council) are for Pakistan flood response.  It is simpler
                     # to keep this info in the shelter table and hide it if
                     # the shelter is not a school.
@@ -185,4 +185,5 @@ if deployment_settings.has_module(module):
                                           gis_location="location_id",
                                           doc_document = "document_id"),
                               deletable=True,
-                              editable=True)
+                              editable=True,
+                              listadd=False)

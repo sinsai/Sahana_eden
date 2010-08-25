@@ -14,32 +14,43 @@ if module not in deployment_settings.modules:
     redirect(URL(r=request, c="default", f="index"))
 
 # Options Menu (available in all Functions' Views)
-response.menu_options = [
-    [T("Shelters"), False, URL(r=request, f="shelter"), [
-        [T("List"), False, URL(r=request, f="shelter")],
-        [T("Add"), False, URL(r=request, f="shelter", args="create")],
-        # @ToDo Search by type, services, location, available space
-        #[T("Search"), False, URL(r=request, f="shelter", args="search")],
-    ]],
-    [T("Shelter Types and Services"), False, URL(r=request, f="#"), [
-        [T("List / Add Services"), False, URL(r=request, f="shelter_service")],
-        [T("List / Add Types"), False, URL(r=request, f="shelter_type")],
-    ]],
-]
+def shn_menu():
+    menu = [
+        [T("Shelters"), False, URL(r=request, f="shelter"), [
+            [T("List"), False, URL(r=request, f="shelter")],
+            [T("Add"), False, URL(r=request, f="shelter", args="create")],
+            # @ToDo Search by type, services, location, available space
+            #[T("Search"), False, URL(r=request, f="shelter", args="search")],
+        ]],
+    ]
+    if not deployment_settings.get_security_map() or shn_has_role("Editor"):
+        menu_editor = [
+            [T("Shelter Types and Services"), False, URL(r=request, f="#"), [
+                [T("List / Add Services"), False, URL(r=request, f="shelter_service")],
+                [T("List / Add Types"), False, URL(r=request, f="shelter_type")],
+            ]],
+        ]
+        menu.extend(menu_editor)
+    response.menu_options = menu
+
+shn_menu()
 
 # S3 framework functions
+# -----------------------------------------------------------------------------
 def index():
 
     """ Module's Home Page """
     
     module_name = deployment_settings.modules[module].name_nice
     
+    shn_menu()
     return dict(module_name=module_name)
 
 # -----------------------------------------------------------------------------
 def shelter_type():
 
     """
+    RESTful CRUD controller
     List / add shelter types (e.g. NGO-operated, Government evacuation center,
     School, Hospital -- see Agasti opt_camp_type.)
     """
@@ -52,12 +63,20 @@ def shelter_type():
         return output
     response.s3.postp = user_postp
 
-    return shn_rest_controller(module, resource, sticky=True)
+    output = shn_rest_controller(module, resource, listadd=False,
+                                 rheader=lambda r: \
+                                         shn_shelter_rheader(r,
+                                            tabs = [(T("Basic Details"), None),
+                                                    (T("Shelters"), "shelter")]),
+                                 sticky=True)
+    shn_menu()
+    return output
 
 # -----------------------------------------------------------------------------
 def shelter_service():
 
     """
+    RESTful CRUD controller
     List / add shelter services (e.g. medical, housing, food,...)
     """
 
@@ -69,7 +88,14 @@ def shelter_service():
         return output
     response.s3.postp = user_postp
 
-    return shn_rest_controller(module, resource, sticky=True)
+    output = shn_rest_controller(module, resource, listadd=False,
+                                 rheader=lambda r: \
+                                         shn_shelter_rheader(r,
+                                            tabs = [(T("Basic Details"), None),
+                                                    (T("Shelters"), "shelter")]),
+                                 sticky=True)
+    shn_menu()
+    return output
 
 # -----------------------------------------------------------------------------
 def shelter():
@@ -104,21 +130,20 @@ def shelter():
     # Don't send the locations list to client (pulled by AJAX instead)
     table.location_id.requires = IS_NULL_OR(IS_ONE_OF_EMPTY(db, "gis_location.id"))
 
-    # Post-processor
+    response.s3.prep = shelter_prep
+
     def user_postp(jr, output):
         shn_action_buttons(jr, deletable=False)
         return output
     response.s3.postp = user_postp
 
-    crud.settings.create_onvalidation = shelter_onvalidation
-    crud.settings.update_onvalidation = shelter_onvalidation
-
     response.s3.pagination = True
     output = shn_rest_controller(module, resource, listadd=False)
 
+    shn_menu()
     return output
 
-def shelter_onvalidation(form):
+def shelter_prep(r):
     """
     The school- and hospital-specific fields are guarded by checkboxes in
     the form.  If the "is_school" or "is_hospital" checkbox was checked,
@@ -132,18 +157,23 @@ def shelter_onvalidation(form):
     """
 
     # Note the checkbox inputs that guard the optional data are inserted in
-    # the view and are not database fields, so are not in form.vars, only in
-    # request.vars.
-    if not "is_school" in request.vars:
-        form.vars.school_code = None
-        form.vars.school_pf = None
+    # the view and are not database fields, so are not in request.post_vars
+    # (or, after validation, in form.vars), only in request.vars.
+    # Likewise, these controls won't be present for, e.g., xml import, so
+    # restrict to html and popup.
 
-    if not "is_hospital" in request.vars:
-        form.vars.hospital_id = None
+    if r.representation in ("popup", "html") and r.http == "POST":
 
+        if not "is_school" in request.vars:
+            request.post_vars.school_code = None
+            request.post_vars.school_pf = None
+
+        if not "is_hospital" in request.vars:
+            request.post_vars.hospital_id = None
+
+    return True
 
 # -----------------------------------------------------------------------------
-# ToDo  No longer in use.  If we don't find a use soon, can remove this.
 def shn_shelter_rheader(r, tabs=[]):
 
     """ Resource Headers """

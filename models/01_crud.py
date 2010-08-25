@@ -1150,7 +1150,8 @@ def shn_list(r, **attr):
             if squery is not None:
                 query = squery & query
 
-        sEcho = int(vars.sEcho)
+        print vars.sEcho
+        sEcho = int(vars.sEcho or 0)
 
         totalrows = resource.count()
         if limit:

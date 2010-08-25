@@ -759,7 +759,7 @@ def shn_represent_extra(table, module, resource, deletable=True, extra=None):
 
     """ Display more than one extra field (separated by spaces)"""
 
-    authorised = shn_has_permission("delete", table)
+    authorised = shn_has_permission("delete", table._tablename)
     item_list = []
     if extra:
         extra_list = extra.split()
@@ -931,12 +931,12 @@ def shn_read(r, **attr):
 
     # ToDo: Comment this out as we don't want to redirect to update form upon read
     if not r.method:
-        authorised = shn_has_permission("update", table, record_id)
+        authorised = shn_has_permission("update", tablename, record_id)
         if authorised and representation == "html" and editable:
             return shn_update(r, **attr)
 
     # Check for read permission
-    authorised = shn_has_permission("read", table, record_id)
+    authorised = shn_has_permission("read", tablename, record_id)
     if not authorised:
         r.unauthorised()
 
@@ -976,11 +976,11 @@ def shn_read(r, **attr):
             output.update(form=item, main=main, extra=extra, caller=caller)
 
         # Add edit and delete buttons as appropriate
-        authorised = shn_has_permission("update", table, record_id)
+        authorised = shn_has_permission("update", tablename, record_id)
         if authorised and href_edit and editable and r.method <> "update":
             edit = A(T("Edit"), _href=href_edit, _class="action-btn")
             output.update(edit=edit)
-        authorised = shn_has_permission("delete", table)
+        authorised = shn_has_permission("delete", tablename)
         if authorised and href_delete and deletable:
             delete = A(T("Delete"), _href=href_delete, _id="delete-btn", _class="action-btn")
             output.update(delete=delete)
@@ -1023,7 +1023,7 @@ def shn_linkto(r, sticky=False):
 
     def shn_list_linkto(field, r=r, sticky=sticky):
         if r.component:
-            authorised = shn_has_permission("update", r.component.table)
+            authorised = shn_has_permission("update", r.component.tablename)
             if authorised:
                 return r.component.attr.linkto_update or \
                        URL(r=request, args=[r.id, r.component_name, field, "update"],
@@ -1033,7 +1033,7 @@ def shn_linkto(r, sticky=False):
                        URL(r=request, args=[r.id, r.component_name, field],
                            vars={"_next":URL(r=request, args=request.args, vars=request.vars)})
         else:
-            authorised = shn_has_permission("update", r.table)
+            authorised = shn_has_permission("update", r.tablename)
             if authorised:
                 if sticky:
                     # Render "sticky" update form (returns to itself)
@@ -1211,7 +1211,7 @@ def shn_list(r, **attr):
             items = shn_get_crud_string(tablename, "msg_list_empty")
         output.update(items=items)
 
-        authorised = shn_has_permission("create", table)
+        authorised = shn_has_permission("create", tablename)
         if authorised and listadd:
 
             # Block join field
@@ -1348,7 +1348,7 @@ def shn_create(r, **attr):
                                     f in table.fields and
                                     table[f].type == source[f].type and
                                     table[f].readable and table[f].writable]
-                if shn_has_permission("read", source, from_record):
+                if shn_has_permission("read", source._tablename, from_record):
                     original = db(source.id == from_record).select(limitby=(0, 1), *copy_fields).first()
                 if original:
                     missing_fields = Storage()
@@ -1578,7 +1578,7 @@ def shn_update(r, **attr):
         return shn_read(r, **attr)
 
     # Check authorisation
-    authorised = shn_has_permission("update", table, record_id)
+    authorised = shn_has_permission("update", tablename, record_id)
     if not authorised:
         r.unauthorised()
 
@@ -1807,7 +1807,7 @@ def shn_delete(r, **attr):
     # Delete all accessible records
     numrows = 0
     for row in rows:
-        if shn_has_permission("delete", table, row.id):
+        if shn_has_permission("delete", tablename, row.id):
             numrows += 1
             if s3xrc.get_session(session, prefix=prefix, name=name) == row.id:
                 s3xrc.clear_session(session, prefix=prefix, name=name)

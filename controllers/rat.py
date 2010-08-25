@@ -78,6 +78,14 @@ def assessment():
 
     # Subheadings in forms:
     subheadings = {
+        "rat_section2" : {
+            "population_total": "Population and number of households",
+            "dead_women": "Fatalities",
+            "injured_women": "Casualties",
+            "missing_women": "Missing Persons",
+            "household_head_elderly": "General information on demographics",
+            "comments": "Comments"
+        },
         "rat_section3" : {
             "houses_total": "Access to Shelter",
             "water_containers_available": "Water storage containers in households",
@@ -109,6 +117,14 @@ def assessment():
             "income_sources_pre_disaster": "Sources of income / Major expenses",
             "business_damaged" : "Access to cash",
             "rank_reconstruction_assistance": "Current community priorities",
+            "comments": "Comments"
+        },
+        "rat_section8" : {
+            "schools_total": "Access to education services",
+            "alternative_study_places_available": "Alternative places for studying",
+            "schools_open_pre_disaster": "School activities",
+            "children_0612_female": "School attendance",
+            "school_assistance_available": "School assistance",
             "comments": "Comments"
         }
     }

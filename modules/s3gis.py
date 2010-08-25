@@ -340,10 +340,10 @@ class GIS(object):
         for i in range(0, len(locations)):
             locations[i].popup_label = locations[i].name + "-" + popup_label
         popup_url = URL(r=request, c=module, f=resource, args="read.popup?%s.location_id=" % resource)
-        if marker:
+        try:
             marker = db(db.gis_marker.name == marker).select(db.gis_marker.id, limitby=(0, 1)).first().id
-            layer = {"name":layername, "query":locations, "active":True, "marker":marker, "popup_url": popup_url}
-        else:
+            layer = {"name":layername, "query":locations, "active":True, "marker":marker.id, "popup_url": popup_url}
+        except:
             layer = {"name":layername, "query":locations, "active":True, "popup_url": popup_url}
 
         return layer

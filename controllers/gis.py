@@ -92,14 +92,6 @@ def define_map(window=False, toolbar=False):
     marker = "shelter"
     shelters = gis.get_feature_layer(module, resource, layername, popup_label, marker)
     
-    # Assessments
-    module = "sitrep"
-    resource = "assessment"
-    layername = Tstr("Assessments")
-    popup_label = Tstr("Assessment")
-    marker = "marker_green"
-    assessments = gis.get_feature_layer(module, resource, layername, popup_label, marker)
-    
     # Requests
     module = "rms"
     resource = "req"
@@ -108,11 +100,28 @@ def define_map(window=False, toolbar=False):
     marker = "marker_yellow"
     requests = gis.get_feature_layer(module, resource, layername, popup_label, marker)
     
+    # Assessments
+    module = "sitrep"
+    resource = "assessment"
+    layername = Tstr("Assessments")
+    popup_label = Tstr("Assessment")
+    marker = "marker_green"
+    assessments = gis.get_feature_layer(module, resource, layername, popup_label, marker)
+    
+    # Activities
+    module = "project"
+    resource = "activity"
+    layername = Tstr("Activities")
+    popup_label = Tstr("Activity")
+    marker = "activity"
+    activities = gis.get_feature_layer(module, resource, layername, popup_label, marker)
+    
     feature_queries = [
                        incidents,
                        shelters,
-                       assessments,
                        requests,
+                       assessments,
+                       activities
                        ]
     
     map = gis.show_map(

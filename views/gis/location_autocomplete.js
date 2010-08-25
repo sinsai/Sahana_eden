@@ -343,7 +343,7 @@ $(function() {
     row = "<tr id='gis_location_lat__row'><td><label>" + label + '</label></td><td>' + widget + '</td><td>' + comment + '</td></tr>';
     $(location_id_row).before(row);
     // Apply the tooltip which was missed 1st time round
-    $('#gis_location_lat_tooltip').cluetip({activation: 'click', sticky: true, closePosition: 'title',closeText: '<img src="/{{=request.application}}/static/img/cross2.png" alt="close" />',splitTitle: '|'});
+    $('#gis_location_lat_tooltip').cluetip({activation: 'hover', sticky: false, closePosition: 'title',closeText: '<img src="/{{=request.application}}/static/img/cross2.png" alt="close" />',splitTitle: '|'});
     
     label = '{{=db.gis_location.lon.label}}:';
     widget = "<input id='gis_location_lon' value='" + old_lon + "' />";

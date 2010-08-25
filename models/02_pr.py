@@ -386,7 +386,7 @@ person_id = db.Table(None, "person_id",
                      FieldS3("person_id", db.pr_person,
                              sortby = ["first_name", "middle_name", "last_name"],
                              requires = IS_NULL_OR(IS_ONE_OF(db, "pr_person.id",
-                                                             shn_pr_person_represent)),
+                                                             shn_pr_person_represent, sort=True)),
                              represent = lambda id: (id and \
                                          [shn_pr_person_represent(id)] or [NONE])[0],
                              label = T("Person"),

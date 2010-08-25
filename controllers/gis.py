@@ -376,6 +376,10 @@ def location_duplicates():
         # Find all tables which link to the Locations table
         tables = []
         for table in db.tables:
+            # @ToDo: Catch all fields through
+            #for field in db[table].fields:
+            #    if type(field) == "reference gis_location":
+            #        tables[table] = field
             if "location_id" in db[table]:
                 tables.append(table)
 

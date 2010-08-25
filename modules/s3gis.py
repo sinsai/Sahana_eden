@@ -342,7 +342,7 @@ class GIS(object):
         popup_url = URL(r=request, c=module, f=resource, args="read.popup?%s.location_id=" % resource)
         try:
             marker = db(db.gis_marker.name == marker).select(db.gis_marker.id, limitby=(0, 1)).first().id
-            layer = {"name":layername, "query":locations, "active":True, "marker":marker.id, "popup_url": popup_url}
+            layer = {"name":layername, "query":locations, "active":True, "marker":marker, "popup_url": popup_url}
         except:
             layer = {"name":layername, "query":locations, "active":True, "popup_url": popup_url}
 

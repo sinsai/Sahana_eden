@@ -50,8 +50,9 @@ def item():
     response.s3.postp = postp
     
     rheader = lambda jr: shn_item_rheader(jr,
-                                          tabs = [(T("Details"), None),
-                                                  (T("Inventories with Items"), "location_item"),                                                                                                    
+                                          tabs = [(T("Edit Details"), None),
+                                                  (T("Inventories with Item"), "location_item"),  
+                                                  (T("Requests for Item"), "req_item"),                                                                                                  
                                                  ]
                                          )    
     

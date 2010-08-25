@@ -42,7 +42,7 @@ if deployment_settings.has_module(module):
     #table.location_id.requires = IS_ONE_OF(db, "gis_location.id", repr_select, sort=True)
     #table.location_id.comment.append(SPAN("*", _class="req"))
 
-    s3.crud_strings[tablename] = shn_crud_strings("Inventory Location")
+    s3.crud_strings[tablename] = shn_crud_strings("Inventory Store")
 
     # -----------------------------------------------------------------------------
     def inventory_location_represent(id):
@@ -53,7 +53,7 @@ if deployment_settings.has_module(module):
             return None
     
     def get_inventory_location_id (field_name = "inventory_location_id", 
-                                   label = T("Inventory Location"),
+                                   label = T("Inventory Store"),
                                    ):
                                    
         requires = IS_NULL_OR(IS_ONE_OF(db, "inventory_location.id", inventory_location_represent, sort=True))
@@ -66,7 +66,7 @@ if deployment_settings.has_module(module):
                                                           )
                                                           )
         
-        comment = DIV( A( "Add Inventory Location",
+        comment = DIV( A( "Add Inventory Store",
                           _class="colorbox",
                           _href=URL(r=request, 
                                     c="inventory", 
@@ -75,10 +75,10 @@ if deployment_settings.has_module(module):
                                     vars=dict(format="popup", child=field_name)
                                     ),
                           _target="top",
-                          _title="Add Inventory Location",
+                          _title="Add Inventory Store",
                           ),
                        DIV( _class="tooltip",
-                            _title=Tstr("Inventory Location") + "|" + Tstr("Add a New Inventory Location")
+                            _title=Tstr("Inventory Store") + "|" + Tstr("Add a New Inventory Store")
                             )
                        )
 

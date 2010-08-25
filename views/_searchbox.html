@@ -1,9 +1,9 @@
- <FORM id="searchform" method="get" enctype="multipart/form-data" action="{{=URL(r=request)}}">
-  <B>{{=T('Search')}}</B>: <INPUT size=30 id="searchbox" class="ac_input" type="text" autocomplete="off"/><input type="submit" id="search" value="{{=T('Details')}}"/>
+ <FORM id='searchform' method='get' enctype='multipart/form-data' action='{{=URL(r=request)}}'>
+  <B>{{=T("Search")}}</B>: <INPUT size=30 id='searchbox' class='ac_input' type='text' autocomplete='off'/><input type='button' id='search' value='{{=T("Details")}}'/>
  </FORM>
 <script type="text/javascript">//<![CDATA[
 $(function() {
-    $("#searchbox").autocomplete('{{=URL(r=request, args='search', vars={'format':'json', 'filter':'~', 'field':extra or main})}}', {
+    $('#searchbox').autocomplete('{{=URL(r=request, args="search", vars={"format":"json", "filter":"~", "field":extra or main})}}', {
         matchContains: true,
         dataType: 'json',
         parse: function(data) {
@@ -21,9 +21,9 @@ $(function() {
             {{pass}}
 		}
     });
-    $("input#search").click(function() {
+    $('input#search').click(function() {
         // Set the Action URL
-        $("form#searchform").attr("action","{{=URL(r=request)}}/"+$("input#searchbox").val());
+        $('form#searchform').attr('action','{{=URL(r=request)}}/'+$('input#searchbox').val());
         event.default();
         return false;
     })

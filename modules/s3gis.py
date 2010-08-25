@@ -336,7 +336,7 @@ class GIS(object):
             query = query & (db.gis_location.level != "L0")
             
         query = query & (db.gis_location.id == db["%s_%s" % (module, resource)].location_id)
-        locations = db(query).select(db.gis_location.id, db.gis_location.uuid, db.gis_location.name, db.gis_location.wkt, db.gis_location.lat, db.gis_location.lon)
+        locations = db(query).select(db.gis_location.id, db.gis_location.uuid, db.gis_location.parent, db.gis_location.name, db.gis_location.wkt, db.gis_location.lat, db.gis_location.lon)
         for i in range(0, len(locations)):
             locations[i].popup_label = locations[i].name + "-" + popup_label
         popup_url = URL(r=request, c=module, f=resource, args="read.popup?%s.location_id=" % resource)
@@ -389,12 +389,104 @@ class GIS(object):
 
         return features
 
+    def get_latlon(self, feature_id):
+    
+        """ Returns the Lat/Lon for a Feature (using recursion where necessary)
+
+            @param feature_id: the feature ID (int) or UUID (str)
+            
+        """
+        
+        db = self.db
+        table_feature = db.gis_location
+        
+        if isinstance(feature_id, int):
+            query = (table_feature.id == feature_id)
+        elif isinstance(feature_id, str):
+            query = (table_feature.uuid == feature_id)
+        
+        feature = db(query).select(table_feature.lat, table_feature.lon, table_feature.parent, limitby=(0, 1)).first()
+        
+        try:
+            lat = feature.lat
+            lon = feature.lon
+            if (lat is not None) and (lon is not None):
+                # Zero is allowed
+                return dict(lat=lat, lon=lon)
+            else:
+                # Try the Parent (e.g. L5)
+                parent_id = feature.parent
+                if parent_id:
+                    # @ToDo Recursion
+                    #latlon = self.get_latlon(parent_id)
+                    parent = db(table_feature.id == parent_id).select(table_feature.lat, table_feature.lon, table_feature.parent, limitby=(0, 1)).first()
+                    lat = parent.lat
+                    lon = parent.lon
+                    if (lat is not None) and (lon is not None):
+                        # Zero is allowed
+                        return dict(lat=lat, lon=lon)
+                    else:
+                        # Try the Parent (e.g. L4)
+                        parent_id = feature.parent
+                        if parent_id:
+                            parent = db(table_feature.id == parent_id).select(table_feature.lat, table_feature.lon, table_feature.parent, limitby=(0, 1)).first()
+                            lat = parent.lat
+                            lon = parent.lon
+                            if (lat is not None) and (lon is not None):
+                                # Zero is allowed
+                                return dict(lat=lat, lon=lon)
+                            else:
+                                # Try the Parent (e.g. L3)
+                                parent_id = feature.parent
+                                if parent_id:
+                                    parent = db(table_feature.id == parent_id).select(table_feature.lat, table_feature.lon, table_feature.parent, limitby=(0, 1)).first()
+                                    lat = parent.lat
+                                    lon = parent.lon
+                                    if (lat is not None) and (lon is not None):
+                                        # Zero is allowed
+                                        return dict(lat=lat, lon=lon)
+                                    else:
+                                        # Try the Parent (e.g. L2)
+                                        parent_id = feature.parent
+                                        if parent_id:
+                                            parent = db(table_feature.id == parent_id).select(table_feature.lat, table_feature.lon, table_feature.parent, limitby=(0, 1)).first()
+                                            lat = parent.lat
+                                            lon = parent.lon
+                                            if (lat is not None) and (lon is not None):
+                                                # Zero is allowed
+                                                return dict(lat=lat, lon=lon)
+                                            else:
+                                                # Try the Parent (e.g. L1)
+                                                parent_id = feature.parent
+                                                if parent_id:
+                                                    parent = db(table_feature.id == parent_id).select(table_feature.lat, table_feature.lon, table_feature.parent, limitby=(0, 1)).first()
+                                                    lat = parent.lat
+                                                    lon = parent.lon
+                                                    if (lat is not None) and (lon is not None):
+                                                        # Zero is allowed
+                                                        return dict(lat=lat, lon=lon)
+                                                    else:
+                                                        # Try the Parent (e.g. L0)
+                                                        parent_id = feature.parent
+                                                        if parent_id:
+                                                            parent = db(table_feature.id == parent_id).select(table_feature.lat, table_feature.lon, table_feature.parent, limitby=(0, 1)).first()
+                                                            lat = parent.lat
+                                                            lon = parent.lon
+                                                            if (lat is not None) and (lon is not None):
+                                                                # Zero is allowed
+                                                                return dict(lat=lat, lon=lon)
+        except:
+            # Invalid feature_id
+            pass
+        
+        return None
+
     def get_marker(self, feature_id):
 
         """ Returns the Marker URL for a Feature
 
             @param feature_id: the feature ID (int) or UUID (str)
-
+            @ ToDo Deprecate FeatureClass (normally provided by Feature Layer (i.e. Query)
         """
 
         cache = self.cache
@@ -526,7 +618,7 @@ class GIS(object):
                   add_feature = False,
                   add_feature_active = False,
                   feature_queries = [],
-                  feature_groups = [],
+                  feature_groups = [],      # These will be deprecated (replaced by queries predefined in the Database)
                   wms_browser = {},
                   catalogue_overlays = False,
                   catalogue_toolbar = False,
@@ -2061,6 +2153,46 @@ OpenLayers.Util.extend( selectPdfControl, {
                     except (AttributeError, KeyError):
                         # Query is a simple select
                         feature = _feature
+                    # Deal with manually-imported Features which are missing WKT
+                    if feature.get("wkt"):
+                        wkt = feature.wkt
+                    else:
+                        try:
+                            lat = feature.lat
+                            lon = feature.lon
+                            if (lat is None) or (lon is None):
+                                # Zero is allowed but not None
+                                if feature.get("parent"):
+                                    # Skip the current record if we can
+                                    latlon = self.get_latlon(feature.parent)
+                                elif feature.get("id"):
+                                    latlon = self.get_latlon(feature.id)
+                                else:
+                                    # nothing we can do!
+                                    continue
+                                if latlon:
+                                    lat = latlon["lat"]
+                                    lon = latlon["lon"]
+                                else:
+                                    # nothing we can do!
+                                    continue
+                        except:
+                            if feature.get("parent"):
+                                # Skip the current record if we can
+                                latlon = self.get_latlon(feature.parent)
+                            elif feature.get("id"):
+                                latlon = self.get_latlon(feature.id)
+                            else:
+                                # nothing we can do!
+                                continue
+                            if latlon:
+                                lat = latlon["lat"]
+                                lon = latlon["lon"]
+                            else:
+                                # nothing we can do!
+                                continue
+                        wkt = self.latlon_to_wkt(lat, lon)
+                            
                     try:
                         # Has a per-feature Vector Shape been added to the query?
                         graphicName = feature.shape
@@ -2105,17 +2237,11 @@ OpenLayers.Util.extend( selectPdfControl, {
                         popup_label = feature.name
 
                     # Deal with null Feature Classes
+                    # @ToDo: Remove FeatureClass
                     if feature.get("feature_class_id"):
                         fc = "'" + str(feature.feature_class_id) + "'"
                     else:
                         fc = "null"
-                    # Deal with manually-imported Features which are missing WKT
-                    if feature.get("wkt"):
-                        wkt = feature.wkt
-                    elif (feature.lat == None) or (feature.lon == None):
-                        continue
-                    else:
-                        wkt = self.latlon_to_wkt(feature.lat, feature.lon)
                     # Deal with apostrophes in Feature Names
                     fname = re.sub("'", "\\'", popup_label)
                     

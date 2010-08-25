@@ -152,6 +152,11 @@ deployment_settings.modules = Storage(
             description = Tstr("Relief Items stored in Inventories in different locations"),
             module_type = 10
         ),
+    project = Storage(
+            name_nice = Tstr("Project Management"),
+            description = Tstr("Project Activities"),
+            module_type = 10
+        ),        
     msg = Storage(
             name_nice = Tstr("Messaging"),
             description = Tstr("Sends & Receives Alerts via Email & SMS"),

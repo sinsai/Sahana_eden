@@ -153,6 +153,7 @@ shn_organisation_comment = DIV(A(ADD_ORGANIZATION,
                            _title=ADD_ORGANIZATION),
                          DIV(DIV(_class="tooltip",
                                  _title=ADD_ORGANIZATION + "|" + Tstr("The Organization this record is associated with."))))
+
 organisation_id = db.Table(None, "organisation_id",
                            FieldS3("organisation_id", db.org_organisation, sortby="name",
                            requires = IS_NULL_OR(IS_ONE_OF(db, "org_organisation.id", shn_organisation_represent)),
@@ -161,6 +162,31 @@ organisation_id = db.Table(None, "organisation_id",
                            comment = shn_organisation_comment,
                            ondelete = "RESTRICT"
                           ))
+
+def get_organisastion_id(name = "organisation_id",
+                         label = T("Organization"),
+                         add_label = ADD_ORGANIZATION,
+                         help_str = Tstr("The Organization this record is associated with."),
+                         ):
+    return db.Table(None, 
+                    name,
+                    FieldS3(name, db.org_organisation, sortby="name",
+                            requires = IS_NULL_OR(IS_ONE_OF(db, "org_organisation.id", shn_organisation_represent)),
+                            represent = shn_organisation_represent,
+                            label = label,
+                            comment = DIV(A(add_label,
+                                            _class="colorbox",
+                                            _href=organisation_popup_url,
+                                            _target="top",
+                                            _title=add_label),
+                                          DIV(DIV(_class="tooltip",
+                                                  _title=add_label + "|" + help_str
+                                                  )
+                                              )
+                                          ),
+                            ondelete = "RESTRICT"
+                            )
+                    )
 
 # Orgs as component of Clusters
 s3xrc.model.add_component(module, resource,
@@ -816,3 +842,32 @@ def shn_project_rheader(jr, tabs=[]):
     return None
 
 # -----------------------------------------------------------------------------
+
+org_menu = [
+    #[T("Dashboard"), False, URL(r=request, f="dashboard")],
+    [T("Organizations"), False, URL(r=request, c="org", f="organisation"),[
+        [T("List"), False, URL(r=request, c="org", f="organisation")],
+        [T("Add"), False, URL(r=request, c="org", f="organisation", args="create")],
+        #[T("Search"), False, URL(r=request, f="organisation", args="search")]
+    ]],
+    [T("Activities"), False, URL(r=request, c="project", f="activity"),[
+        [T("List"), False, URL(r=request, c="project", f="activity")],
+        [T("Add"), False, URL(r=request,  c="project", f="activity", args="create")],                                                                         
+        #[T("Search"), False, URL(r=request, f="project", args="search")]
+    ]],    
+    [T("Offices"), False, URL(r=request, c="org", f="office"),[
+        [T("List"), False, URL(r=request, c="org", f="office")],
+        [T("Add"), False, URL(r=request,  c="org",f="office", args="create")],
+        #[T("Search"), False, URL(r=request, f="office", args="search")]
+    ]],
+    [T("Staff"), False, URL(r=request,  c="org",f="staff"),[
+        [T("List"), False, URL(r=request,  c="org",f="staff")],
+        [T("Add"), False, URL(r=request,  c="org",f="staff", args="create")],
+        #[T("Search"), False, URL(r=request, f="staff", args="search")]
+    ]],
+    #[T("Tasks"), False, URL(r=request,  c="org",f="task"),[
+    #    [T("List"), False, URL(r=request,  c="org",f="task")],
+    #    [T("Add"), False, URL(r=request,  c="org",f="task", args="create")],
+        #[T("Search"), False, URL(r=request, f="task", args="search")]
+    #]],
+]

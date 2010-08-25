@@ -65,6 +65,8 @@ deployment_settings.mail.approver = "useradmin@your.org"
 # L10n settings
 # Uncomment this if the deployment is just in a few countries
 #deployment_settings.L10n.countries = ["PK"]
+# Unused: will be default language for GIS Locations
+#deployment_settings.L10n.language_default = "en"
 # Default timezone for users
 deployment_settings.L10n.utc_offset = "UTC +0000"
 
@@ -150,6 +152,11 @@ deployment_settings.modules = Storage(
             description = Tstr("Relief Items stored in Inventories in different locations"),
             module_type = 10
         ),
+    project = Storage(
+            name_nice = Tstr("Project Management"),
+            description = Tstr("Project Activities"),
+            module_type = 10
+        ),        
     msg = Storage(
             name_nice = Tstr("Messaging"),
             description = Tstr("Sends & Receives Alerts via Email & SMS"),
@@ -253,8 +260,8 @@ deployment_settings.modules = Storage(
     	     module_type = 10,
     ),
     survey = Storage(
-             name_nice = T("Survey Tool"),
-    	     description = T("Create, enter, and manage surveys."),
+    	     name_nice = "Survey Module",
+    	     description = "Create, enter, and manage surveys.",
     	     module_type = 10,
     )
     #lms = Storage(

@@ -5,8 +5,13 @@
   {{include "sahana_styles_debug.html"}}
   {{include "sahana_scripts_debug.html"}}
 {{else:}}
+  <link rel="stylesheet" type="text/css" href="/{{=request.application}}/static/scripts/ext/resources/css/ext-all.min.css" />
+  <link rel="stylesheet" type="text/css" href="/{{=request.application}}/static/scripts/ext/resources/css/xtheme-gray.css" />
   <link href="/{{=request.application}}/static/styles/S3/sahana.min.css" rel="stylesheet" type="text/css" media="screen" charset="utf-8" />
   {{include "sahana_scripts_min.html"}}
+{{pass}}
+{{if response.extra_styles:}}{{for sheet in response.extra_styles:}}
+  <link href="/{{=request.application}}/static/styles/{{=sheet}}" rel="stylesheet" type="text/css" media="screen" charset="utf-8" />
 {{pass}}
 {{include "colorbox.html"}}
 

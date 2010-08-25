@@ -63,7 +63,8 @@ def req():
         if jr.representation in ("html", "popup"):
             if not jr.component:
                 response.s3.actions = [
-                    dict(label=str(T("Edit")), _class="action-btn", url=str(URL(r=request, args=["update", "[id]"]))),
+                    dict(label=str(T("Open")), _class="action-btn", url=str(URL(r=request, args=["update", "[id]"]))),
+                    dict(label=str(T("Items")), _class="action-btn", url=str(URL(r=request, args=["[id]", "ritem"]))),
                     dict(label=str(T("Pledge")), _class="action-btn", url=str(URL(r=request, args=["[id]", "pledge"])))
                 ]
             elif jr.component_name == "pledge":
@@ -77,7 +78,8 @@ def req():
     output = shn_rest_controller(module, resource,
                                  editable=True,
                                  listadd=False,
-                                 rheader=shn_rms_rheader)
+                                 rheader=shn_rms_rheader,
+                                 sticky=True)
                                  # call rheader to act as parent header for parent/child forms (layout defined below)
 
     return output
@@ -142,7 +144,14 @@ def shn_rms_rheader(jr):
                 except:
                     location_represent = None
 
-                rheader = TABLE(TR(TH(T("Message: ")),
+                rheader_tabs = shn_rheader_tabs( jr, 
+                                                 [(T("Edit Details"), None),
+                                                  (T("Items"), "ritem"),    
+                                                  (T("Pledge"), "pledge"),                                                                                                      
+                                                  ]
+                                                 )
+
+                rheader = DIV( TABLE(TR(TH(T("Message: ")),
                                 TD(aid_request.message, _colspan=3)),
                                 TR(TH(T("Priority: ")),
                                 aid_request.priority,
@@ -155,7 +164,9 @@ def shn_rms_rheader(jr):
                                 TR(TH(T("Location: ")),
                                 location_represent,
                                 TH(T("Actionable: ")),
-                                aid_request.actionable))
+                                aid_request.actionable)),
+                                rheader_tabs
+                                )
 
                 return rheader
 

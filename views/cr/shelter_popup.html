@@ -18,6 +18,8 @@ $(function() {
         var newvalue = data.id;
         $('#{{=real_input}}').val(newvalue);
     });
+
+    {{include "cr/shelter_optional_data.js"}}
 });
 //]]></script>
 {{include "gis/location_autocomplete.js"}}

@@ -150,7 +150,7 @@ if deployment_settings.has_module(module):
     # rms_req as component of doc_documents
     s3xrc.model.add_component(module, resource,
                               multiple=True,
-                              joinby=dict(doc_document="document_id"),
+                              joinby=dict(doc_document="document_id", cr_shelter = "shelter_id"),
                               deletable=True,
                               editable=True)
 

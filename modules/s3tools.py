@@ -86,7 +86,7 @@ class AuthS3(Auth):
         self.settings.username_field = False
         self.settings.lock_keys = True
         self.messages.lock_keys = False
-        self.messages.email_sent = 'Verification Email sent - please check your email to validate. If you do not receive this email please check you junk email or spam filters' 
+        self.messages.email_sent = 'Verification Email sent - please check your email to validate. If you do not receive this email please check you junk email or spam filters'
         self.messages.email_verified = 'Email verified - you can now login'
         self.messages.registration_disabled = "Registration Disabled!"
         self.messages.lock_keys = True
@@ -603,7 +603,7 @@ class AuthS3(Auth):
         # Administrators have all roles
         if 1 in session.s3.roles:
             return True
-        
+
         try:
             role = int(role)
         except:
@@ -613,23 +613,28 @@ class AuthS3(Auth):
             except:
                 # Role doesn't exist in the Database
                 return False
-                
+
         if role in session.s3.roles:
             return True
         else:
             return False
 
 
-    def shn_has_permission(self, method, tablename, record_id = 0):
+    def shn_has_permission(self, method, table, record_id = 0):
 
         """
             S3 framework function to define whether a user can access a record in manner "method"
             Designed to be called from the RESTlike controller
             @note: This is planned to be rewritten: http://eden.sahanafoundation.org/wiki/BluePrintAuthorization
+
+            @param table: the table or tablename
         """
 
         db = self.db
         session = self.session
+
+        if hasattr(table, "_tablename"):
+            table = db[table]
 
         if session.s3.security_policy == 1:
             # Simple policy
@@ -654,7 +659,6 @@ class AuthS3(Auth):
             else:
                 # Editor role required for Update/Delete.
                 authorised = self.shn_has_role("Editor")
-                table = db[tablename]
                 if not authorised and self.user and "created_by" in table:
                     # Creator of Record is allowed to Edit
                     record = db(table.id == record_id).select(table.created_by, limitby=(0, 1)).first()
@@ -669,7 +673,7 @@ class AuthS3(Auth):
                     authorised = True
                 else:
                     # Require records in auth_permission to specify access (default Web2Py-style)
-                    authorised = self.has_permission(method, tablename, record_id)
+                    authorised = self.has_permission(method, table, record_id)
             else:
                 # No access for anonymous
                 authorised = False
@@ -746,12 +750,12 @@ class AuthS3(Auth):
             group_id = int(group_id)
         except:
             group_id = self.id_group(group_id) # interpret group_id as a role
-        
+
         if self.shn_has_role(group_id):
             r = True
         else:
             r = False
-        
+
         log = self.messages.has_membership_log
         if log:
             if not user_id and self.user:

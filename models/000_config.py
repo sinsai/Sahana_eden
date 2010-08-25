@@ -156,7 +156,7 @@ deployment_settings.modules = Storage(
             name_nice = Tstr("Project Management"),
             description = Tstr("Project Activities"),
             module_type = 10
-        ),        
+        ),
     msg = Storage(
             name_nice = Tstr("Messaging"),
             description = Tstr("Sends & Receives Alerts via Email & SMS"),

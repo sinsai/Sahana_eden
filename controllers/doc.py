@@ -36,7 +36,7 @@ def index():
 #==============================================================================
 # Used to display the number of Components in the tabs
 def shn_document_tabs(jr):
-    
+
     tab_opts = [{"tablename": "sitrep_assessment",
                  "resource": "assessment",
                  "one_title": T("1 Assessment"),
@@ -67,7 +67,7 @@ def shn_document_tabs(jr):
                  "one_title": "1 Request",
                  "num_title": " Requests",
                  },
-                ] 
+                ]
     tabs = [(T("Details"), None)]
     for tab_opt in tab_opts:
         tablename = tab_opt["tablename"]
@@ -79,9 +79,9 @@ def shn_document_tabs(jr):
         else:
             label = T(str(tab_count) + tab_opt["num_title"] )
         tabs.append( (label, tab_opt["resource"] ) )
-        
+
     return tabs
-    
+
 def shn_document_rheader(jr):
     if jr.representation == "html":
         rheader_tabs = shn_rheader_tabs(jr, shn_document_tabs(jr))
@@ -100,7 +100,7 @@ def shn_document_rheader(jr):
                       rheader_tabs
                       )
         return rheader
-    return None  
+    return None
 
 def document():
     """ RESTful CRUD controller """
@@ -110,35 +110,21 @@ def document():
 
     # Model options
     # used in multiple controllers, so in the model
-    
+
     #Disable legacy fields in components, unless updating, so the data can be manually transferred to new fields
     if "update" not in request.args:
-        db.sitrep_assessment.source.readable = db.sitrep_assessment.source.writable = False   
-        db.sitrep_school_district.document.readable = db.sitrep_school_district.document.writable = False 
-        db.irs_ireport.source.readable = db.irs_ireport.source.writable = False        
-        db.irs_ireport.source_id.readable = db.irs_ireport.source_id.writable = False  
-        #db.flood_freport.document.readable = db.flood_freport.document.writable = False   
-   
-    def postp(jr, output):                          
+        db.sitrep_assessment.source.readable = db.sitrep_assessment.source.writable = False
+        db.sitrep_school_district.document.readable = db.sitrep_school_district.document.writable = False
+        db.irs_ireport.source.readable = db.irs_ireport.source.writable = False
+        db.irs_ireport.source_id.readable = db.irs_ireport.source_id.writable = False
+        #db.flood_freport.document.readable = db.flood_freport.document.writable = False
+
+    def postp(jr, output):
         shn_action_buttons(jr)
         return output
     response.s3.postp = postp
-    
-<<<<<<< TREE
-    rheader = lambda jr: shn_document_rheader(jr,
-                                          tabs = [(T("Details"), None),
-                                                  (T("Assessment"), "assessment"),    
-                                                  (T("Incident Report"), "ireport"),  
-                                                  (T("Inventory"), "location"),  
-                                                  (T("Shelter"), "shelter"),      
-                                                  (T("Flood Report"), "freport"),    
-                                                  (T("Request"), "req"),                                                                                               
-                                                 ]
-                                          )
-    
-=======
+
     rheader = lambda jr: shn_document_rheader(jr)
->>>>>>> MERGE-SOURCE
 
     response.s3.pagination = True
     output = shn_rest_controller(module, resource, rheader=rheader, sticky=True)
@@ -150,18 +136,18 @@ def image():
     resource = request.function
     tablename = "%s_%s" % (module, resource)
     table = db[tablename]
-    
+
     # Model options
     # used in multiple controllers, so in the model
-    
-    def postp(jr, output):                          
+
+    def postp(jr, output):
         shn_action_buttons(jr)
         return output
-    response.s3.postp = postp    
+    response.s3.postp = postp
 
     response.s3.pagination = True
     output = shn_rest_controller(module, resource)
-    
+
     return output
 #==============================================================================
 # END - Following code is not utilised

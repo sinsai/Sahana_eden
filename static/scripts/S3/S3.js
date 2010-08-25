@@ -164,6 +164,7 @@ function StatusBar(sel, options)
     var _I = this;
     var _sb = null;
     // options
+    // ToDo allow options passed-in to over-ride defaults
     this.elementId = '_showstatus';
     this.prependMultiline = true;
     this.showCloseButton = false;

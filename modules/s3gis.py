@@ -828,9 +828,13 @@ OpenLayers.Util.extend( selectPdfControl, {
             legend2 = ""
 
         # Draw Feature Control
+        crosshair_on = "$('.olMapViewport').addClass('crosshair');"
+        crosshair_off = "$('.olMapViewport').removeClass('crosshair');"
+        crosshair = ""
         if add_feature:
             if add_feature_active:
                 draw_depress = "true"
+                crosshair = crosshair_on
             else:
                 draw_depress = "false"
             draw_feature = """
@@ -860,7 +864,7 @@ OpenLayers.Util.extend( selectPdfControl, {
         //    enableToggle: true
         //});
 
-        var pointButton = new GeoExt.Action({
+        pointButton = new GeoExt.Action({
             control: new OpenLayers.Control.DrawFeature(draftLayer, OpenLayers.Handler.Point, {
                 // custom Callback
                 'featureAdded': function(feature){
@@ -877,6 +881,13 @@ OpenLayers.Util.extend( selectPdfControl, {
                     lastDraftFeature = feature;
                 }
             }),
+            handler: function(){
+                if (pointButton.items[0].pressed) {
+                    """ + crosshair_on + """
+                } else {
+                    """ + crosshair_off + """
+                }
+            },
             map: map,
             iconCls: 'drawpoint-off',
             tooltip: '""" + str(T("Add Point")) + """',
@@ -2648,7 +2659,7 @@ OpenLayers.Util.extend( selectPdfControl, {
 
         html.append(SCRIPT("""
     var map, mapPanel, legendPanel, toolbar, win;
-    var lastDraftFeature, draftLayer;
+    var pointButton, lastDraftFeature, draftLayer;
     var centerPoint, currentFeature, popupControl, highlightControl;
     var wmsBrowser;
     var printProvider;

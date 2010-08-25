@@ -382,22 +382,11 @@ gis_source_opts = {
 gis_location_hierarchy = deployment_settings.get_gis_locations_hierarchy()
 # Expose this to Views for AutoCompletes
 response.s3.gis.location_hierarchy = gis_location_hierarchy
-gis_location_languages = {
-    1:T("English"),
-    2:T("Urdu"),
-    3:T("Punjabi"),
-    4:T("Pashto"),
-    5:T("Sindhi"),
-    6:T("Seraiki"),
-    7:T("Balochi"),
-    #3:T("Local Language"),
-}
-gis_location_language_default = 1
 resource = "location"
 tablename = "%s_%s" % (module, resource)
 table = db.define_table(tablename, timestamp, uuidstamp, deletion_status,
                 Field("name", notnull=True),    # Primary name
-                Field("name_l10n"),             # Local Names are stored in this field
+                #Field("name_l10n"),             # Local Names are stored in this field
                 Field("name_dummy"),            # Dummy field to provide Widget
                 Field("code"),
                 feature_class_id,       # Will be removed
@@ -430,8 +419,12 @@ table.uuid.requires = IS_NOT_IN_DB(db, "%s.uuid" % table)
 table.name.requires = IS_NOT_EMPTY()    # Placenames don't have to be unique
 table.name.label = T("Primary Name")
 # We never access name_l10n directly
-table.name_l10n.readable = False
-table.name_l10n.writable = False
+#table.name_l10n.readable = False
+#table.name_l10n.writable = False
+#table.name_l10n.label = T("Local Names")
+#table.name_l10n.comment = DIV(_class="tooltip", _title=Tstr("Local Names") + "|" + Tstr("Names can be added in multiple languages"))
+#table.name_l10n.requires = IS_NULL_OR(IS_ONE_OF(db, "gis_location_name.id", "%(name)s"))
+#table.name_l10n.represent = lambda id: (id and [db(db.gis_location_name.id == id).select(db.gis_location_name.name, limitby=(0, 1)).first().name] or [NONE])[0]
 table.name_dummy.label = T("Local Names")
 table.name_dummy.comment = DIV(_class="tooltip", _title=Tstr("Local Names") + "|" + Tstr("Names can be added in multiple languages"))
 table.level.requires = IS_NULL_OR(IS_IN_SET(gis_location_hierarchy))
@@ -532,19 +525,30 @@ s3xrc.model.add_component(module, resource,
                           deletable=True,
                           editable=True)
 
+# http://www.loc.gov/standards/iso639-2/php/code_list.php
+gis_location_languages = {
+    "en":T("English"),  #1
+    "ur":T("Urdu"),     #2
+    "pa":T("Punjabi"),  #3
+    "ps":T("Pashto"),   #4
+    "sd":T("Sindhi"),   #5
+    "seraiki":T("Seraiki"), #6
+    "balochi":T("Balochi"), #7
+}
 resource = "location_name"
 tablename = module + "_" + resource
 table = db.define_table(tablename, timestamp, uuidstamp, deletion_status,
                 location_id,
+                Field("language"),
                 Field("name_l10n"),
-                Field("language", "integer"),
                 migrate=migrate)
 table.uuid.requires = IS_NOT_IN_DB(db, '%s.uuid' % tablename)
-table.name_l10n.label = T("Name")
 table.language.requires = IS_IN_SET(gis_location_languages)
 table.language.represent = lambda opt: gis_location_languages.get(opt, UNKNOWN_OPT)
 table.language.label = T("Language")
+table.name_l10n.label = T("Name")
 
+# Names as component of Locations
 s3xrc.model.add_component(module, resource, joinby=dict(gis_location="location_id"), multiple=True)
 
 # Multiselect Widget

@@ -57,7 +57,7 @@ def assessment():
     table = db[tablename]
 
     # Villages only
-    table.location_id.requires = IS_NULL_OR(IS_ONE_OF(db(db.gis_location.level == "L4"), "gis_location.id", repr_select, sort=True))
+    table.location_id.requires = IS_NULL_OR(IS_ONE_OF(db(db.gis_location.level == "L5"), "gis_location.id", repr_select, sort=True))
 
     # Don't send the locations list to client (pulled by AJAX instead)
     table.location_id.requires = IS_NULL_OR(IS_ONE_OF_EMPTY(db, "gis_location.id"))

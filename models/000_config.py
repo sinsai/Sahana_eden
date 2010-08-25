@@ -65,6 +65,8 @@ deployment_settings.mail.approver = "useradmin@your.org"
 # L10n settings
 # Uncomment this if the deployment is just in a few countries
 #deployment_settings.L10n.countries = ["PK"]
+# Unused: will be default language for GIS Locations
+#deployment_settings.L10n.language_default = "en"
 # Default timezone for users
 deployment_settings.L10n.utc_offset = "UTC +0000"
 

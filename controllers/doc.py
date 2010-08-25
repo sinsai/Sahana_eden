@@ -124,7 +124,21 @@ def document():
         return output
     response.s3.postp = postp
     
+<<<<<<< TREE
+    rheader = lambda jr: shn_document_rheader(jr,
+                                          tabs = [(T("Details"), None),
+                                                  (T("Assessment"), "assessment"),    
+                                                  (T("Incident Report"), "ireport"),  
+                                                  (T("Inventory"), "location"),  
+                                                  (T("Shelter"), "shelter"),      
+                                                  (T("Flood Report"), "freport"),    
+                                                  (T("Request"), "req"),                                                                                               
+                                                 ]
+                                          )
+    
+=======
     rheader = lambda jr: shn_document_rheader(jr)
+>>>>>>> MERGE-SOURCE
 
     response.s3.pagination = True
     output = shn_rest_controller(module, resource, rheader=rheader, sticky=True)

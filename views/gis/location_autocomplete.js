@@ -52,12 +52,12 @@ $(function() {
   {{try:}}
   {{label = _gis.location_hierarchy["L" + level]}}
     // L{{=level}}
-    label = '{{=label}}:';
+    label = '{{=label}}';
   {{if len(_gis.countries) == 1:}}
     // Country is hardcoded
     country_id = {{=_gis.countries[response.s3.countries[0]].id}};
     widget = "<input id='gis_location_l{{=level}}' />";
-    row = "<tr id='gis_location_l{{=level}}__row'><td><label>" + label + '</label></td><td>' + widget + '</td><td></td></tr>';
+    row = "<tr id='gis_location_l{{=level}}__row'><td><label>" + label + ':' + '</label></td><td>' + widget + '</td><td></td></tr>';
     $(location_id_row).before(row);
     $('#gis_location_l{{=level}}').val(country_id);
     // Hide
@@ -67,8 +67,8 @@ $(function() {
   {{else:}}
     // Dropdown
     widget = "<select id='gis_location_l{{=level}}'></select>";
-    comment = "<div title='{{=label + "|" + Tstr("Select to see a list of subdivisions.")}}' id='gis_location_l{{=level}}_tooltip' class='tooltip'></div>";
-    row = "<tr id='gis_location_l{{=level}}__row'><td><label>" + label + '</label></td><td>' + widget + '</td><td>' + comment + '</td></tr>';
+    comment = "<div title='" + label + '|' + '{{=T("Select to see a list of subdivisions.")}}' + "}}' id='gis_location_l{{=level}}_tooltip' class='tooltip'></div>";
+    row = "<tr id='gis_location_l{{=level}}__row'><td><label>" + label + ':' + '</label></td><td>' + widget + '</td><td>' + comment + '</td></tr>';
     $(location_id_row).before(row);
     // Apply the tooltip which was missed 1st time round
     $('#gis_location_l{{=level}}_tooltip').cluetip({activation: 'hover', sticky: false, closePosition: 'title',closeText: '<img src="/{{=request.application}}/static/img/cross2.png" alt="close" />', splitTitle: '|'});
@@ -112,12 +112,12 @@ $(function() {
   {{try:}}
   {{label = _gis.location_hierarchy["L" + level]}}
     // L{{=level}}
-    label = '{{=label}}:';
+    label = '{{=label}}';
     // Dropdown
     if (null == l{{=level}}) {
         widget = "<select id='gis_location_l{{=level}}'></select>";
-        comment = "<div title='{{=label + "|" + Tstr("Select to see a list of subdivisions.")}}' id='gis_location_l{{=level}}_tooltip' class='tooltip'></div>";
-        row = "<tr id='gis_location_l{{=level}}__row'><td><label>" + label + '</label></td><td>' + widget + '</td><td>' + comment + '</td></tr>';
+        comment = "<div title='" + label + '|' + '{{=T("Select to see a list of subdivisions.")}}' + " id='gis_location_l{{=level}}_tooltip' class='tooltip'></div>";
+        row = "<tr id='gis_location_l{{=level}}__row'><td><label>" + label + ':' + '</label></td><td>' + widget + '</td><td>' + comment + '</td></tr>';
         $('#gis_location_addr_street__row').before(row);
         l{{=level}} = true;
         // Apply the tooltip which was missed 1st time round

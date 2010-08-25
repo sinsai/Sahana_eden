@@ -1486,8 +1486,8 @@ OpenLayers.Util.extend( selectPdfControl, {
         else:
             # Embedded
             layout = """
-    var panel = new Ext.Panel({
-        renderTo: "map_panel",
+        var panel = new Ext.Panel({
+            renderTo: "map_panel",
             """
             layout2 = ""
 
@@ -1501,27 +1501,27 @@ OpenLayers.Util.extend( selectPdfControl, {
         if bbox:
             # Calculate from Bounds
             center = """
-        var bottom_left = new OpenLayers.LonLat(""" + str(bbox["min_lon"]) + "," + str(bbox["min_lat"]) + """);
-        bottom_left.transform(proj4326, projection_current);
-        var left = bottom_left.lon;
-        var bottom = bottom_left.lat;
-        top_right = new OpenLayers.LonLat(""" + str(bbox["max_lon"]) + "," + str(bbox["max_lat"]) + """);
-        top_right.transform(proj4326, projection_current);
-        var right = top_right.lon;
-        var top = top_right.lat;
-        var bounds = OpenLayers.Bounds.fromArray([left, bottom, right, top]);
-        var center = bounds.getCenterLonLat();
-        """
+    var bottom_left = new OpenLayers.LonLat(""" + str(bbox["min_lon"]) + "," + str(bbox["min_lat"]) + """);
+    bottom_left.transform(proj4326, projection_current);
+    var left = bottom_left.lon;
+    var bottom = bottom_left.lat;
+    top_right = new OpenLayers.LonLat(""" + str(bbox["max_lon"]) + "," + str(bbox["max_lat"]) + """);
+    top_right.transform(proj4326, projection_current);
+    var right = top_right.lon;
+    var top = top_right.lat;
+    var bounds = OpenLayers.Bounds.fromArray([left, bottom, right, top]);
+    var center = bounds.getCenterLonLat();
+    """
             zoomToExtent = """
         map.zoomToExtent(bounds);
         """
         else:
             center = """
-        var lat = """ + str(lat) + """;
-        var lon = """ + str(lon) + """;
-        var center = new OpenLayers.LonLat(lon, lat);
-        center.transform(proj4326, projection_current);
-        """
+    var lat = """ + str(lat) + """;
+    var lon = """ + str(lon) + """;
+    var center = new OpenLayers.LonLat(lon, lat);
+    center.transform(proj4326, projection_current);
+    """
             zoomToExtent = ""
             
         ########

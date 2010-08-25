@@ -476,10 +476,10 @@ def config():
         return True
     response.s3.prep = prep
 
+    output = shn_rest_controller(module, resource, deletable=False, listadd=False)
+
     if not "gis" in response.view:
         response.view = "gis/" + response.view
-
-    output = shn_rest_controller(module, resource, deletable=False, listadd=False)
 
     output["list_btn"] = ""
 
@@ -713,6 +713,7 @@ def marker():
         return output
     response.s3.postp = user_postp
 
+    response.s3.pagination = True
     output = shn_rest_controller(module, resource)
 
     if not "gis" in response.view and response.view != "popup.html":

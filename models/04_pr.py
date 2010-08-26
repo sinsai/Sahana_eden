@@ -708,6 +708,9 @@ if deployment_settings.has_module("dvi") or \
     table.weight_kg.comment = DIV(DIV(_class="tooltip",
         _title=Tstr("Weight") + "|" + Tstr("The weight in kg.")))
 
+    table.pe_id.readable = False
+    table.pe_id.writable = False
+
     s3xrc.model.add_component(module, resource,
                               multiple=False,
                               joinby="pe_id",

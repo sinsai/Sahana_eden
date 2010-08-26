@@ -1,12 +1,13 @@
 # -*- coding: utf-8 -*-
 
-""" Joint Initial Rapid Assessment Tool - Controllers
+"""
+Rapid Assessment Tool - Controllers
 
-    @author: Fran Boon
-    @author: Dominic König
+@author: Fran Boon
+@author: Dominic König
 
-    @see: http://eden.sahanafoundation.org/wiki/Pakistan
-    @ToDo: Rename as 'assessment' (Deprioritised due to Data Migration issues being distracting for us currently)
+@see: http://eden.sahanafoundation.org/wiki/Pakistan
+@ToDo: Rename as 'assessment' (Deprioritised due to Data Migration issues being distracting for us currently)
 
 """
 
@@ -16,6 +17,7 @@ if module not in deployment_settings.modules:
     session.error = T("Module disabled!")
     redirect(URL(r=request, c="default", f="index"))
 
+# -----------------------------------------------------------------------------
 # Options Menu (available in all Functions' Views)
 response.menu_options = [
     [T("Assessments"), False, URL(r=request, f="assessment"),[
@@ -27,6 +29,8 @@ response.menu_options = [
     #[T("Map"), False, URL(r=request, f="maps")],
 ]
 
+
+# -----------------------------------------------------------------------------
 def index():
 
     """ Custom View """
@@ -35,6 +39,7 @@ def index():
     return dict(module_name=module_name)
 
 
+# -----------------------------------------------------------------------------
 def maps():
 
     """ Show a Map of all Assessments """
@@ -46,6 +51,7 @@ def maps():
     return dict(map=map)
 
 
+# -----------------------------------------------------------------------------
 def assessment():
 
     """ Rapid Assessments, RESTful controller """
@@ -59,22 +65,13 @@ def assessment():
                                                       "gis_location.id",
                                                       repr_select, sort=True))
 
+    # Pre-populate staff ID
     if auth.is_logged_in():
         staff_id = db((db.pr_person.uuid == session.auth.user.person_uuid) & \
                       (db.org_staff.person_id == db.pr_person.id)).select(
                        db.org_staff.id, limitby=(0, 1)).first()
         if staff_id:
             table.staff_id.default = staff_id.id
-
-    # Post-processor
-    def postp(r, output):
-        shn_action_buttons(r, deletable=False)
-        # Redirect to read/edit view rather than list view
-        if r.representation == "html" and r.method == "create":
-            r.next = r.other(method="",
-                             record_id=s3xrc.get_session(session, "rat", "assessment"))
-        return output
-    response.s3.postp = postp
 
     # Subheadings in forms:
     subheadings = {
@@ -129,7 +126,18 @@ def assessment():
         }
     }
 
+    # Post-processor
+    def postp(r, output):
+        shn_action_buttons(r, deletable=False)
+        # Redirect to read/edit view rather than list view
+        if r.representation == "html" and r.method == "create":
+            r.next = r.other(method="",
+                             record_id=s3xrc.get_session(session, "rat", "assessment"))
+        return output
+    response.s3.postp = postp
+
     crud.settings.create_next = None # Do not redirect from CRUD
+
     response.s3.pagination = True
     output = shn_rest_controller(module, resource,
                                  rheader=lambda r: \
@@ -211,3 +219,5 @@ def shn_rat_rheader(r, tabs=[]):
 
         else:
             return None
+
+# -----------------------------------------------------------------------------

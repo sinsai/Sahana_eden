@@ -215,7 +215,7 @@ if deployment_settings.has_module(module):
             location = row.location_id and shn_gis_location_represent(row.location_id) or ""
 
             table = db.org_staff
-            org = ("", "")
+            org = ["", ""]
             i = 0
             for staff_id in [row.staff_id, row.staff2_id]:
                 i += 1
@@ -575,12 +575,14 @@ if deployment_settings.has_module(module):
 
     table.water_source_pre_disaster_type.label = T("Type of water source before the disaster")
     table.water_source_pre_disaster_type.requires = IS_EMPTY_OR(IS_IN_SET(rat_water_source_types, zero=None))
+    table.water_source_pre_disaster_type.represent = lambda opt: rat_water_source_types.get(opt, UNKNOWN_OPT)
     table.water_source_pre_disaster_description.label = T("Description of water source before the disaster")
 
     shn_rat_label_and_tooltip(table.dwater_source_type,
         "Current type of source for drinking water",
         "What is your major source of drinking water?")
     table.dwater_source_type.requires = IS_EMPTY_OR(IS_IN_SET(rat_water_source_types, zero=None))
+    table.dwater_source_type.represent = lambda opt: rat_water_source_types.get(opt, UNKNOWN_OPT)
     table.dwater_source_description.label = T("Description of drinking water source")
 
     shn_rat_label_and_tooltip(table.dwater_reserve,
@@ -591,6 +593,7 @@ if deployment_settings.has_module(module):
         "Current type of source for sanitary water",
         "What is your major source of clean water for daily use (ex: washing, cooking, bathing)?")
     table.swater_source_type.requires = IS_EMPTY_OR(IS_IN_SET(rat_water_source_types, zero=None))
+    table.swater_source_type.represent = lambda opt: rat_water_source_types.get(opt, UNKNOWN_OPT)
     table.swater_source_description.label = T("Description of sanitary water source")
     shn_rat_label_and_tooltip(table.swater_reserve,
         "How long will this water resource last?",
@@ -600,22 +603,26 @@ if deployment_settings.has_module(module):
         "Time needed to collect water",
         "How long does it take you to reach the available water resources? Specify the time required to go there and back, including queuing time, by foot.")
     table.water_coll_time.requires = IS_EMPTY_OR(IS_IN_SET(rat_walking_time_opts, zero=None))
+    table.water_coll_time.represent = lambda opt: rat_walking_time_opts.get(opt, UNKNOWN_OPT)
     table.water_coll_safe.label = T("Is it safe to collect water?")
     table.water_coll_safe.default = True
     table.water_coll_safety_problems.label = T("If no, specify why")
     table.water_coll_person.label = T("Who usually collects water for the family?")
     table.water_coll_person.requires = IS_EMPTY_OR(IS_IN_SET(rat_water_coll_person_opts, zero=None))
+    table.water_coll_person.represent = lambda opt: rat_water_coll_person_opts.get(opt, UNKNOWN_OPT)
 
     shn_rat_label_and_tooltip(table.defec_place_type,
         "Type of place for defecation",
         "Where do the majority of people defecate?",
         multiple=True)
     table.defec_place_type.requires = IS_EMPTY_OR(IS_IN_SET(rat_defec_place_types, zero=None, multiple=True))
+    table.defec_place_type.represent = lambda opt: rat_defec_place_types.get(opt, UNKNOWN_OPT)
     table.defec_place_description.label = T("Description of defecation area")
     table.defec_place_distance.label = T("Distance between defecation area and water source")
     table.defec_place_distance.comment = T("meters")
     table.defec_place_animals.label = T("Defecation area for animals")
     table.defec_place_animals.requires = IS_EMPTY_OR(IS_IN_SET(rat_defec_place_animals_opts, zero = None))
+    table.defec_place_animals.represent = lambda opt: rat_defec_place_animals_opts.get(opt, UNKNOWN_OPT)
 
     shn_rat_label_and_tooltip(table.close_industry,
         "Industry close to village/camp",
@@ -634,6 +641,7 @@ if deployment_settings.has_module(module):
         "Type of latrines",
         "What type of latrines are available in the village/IDP centre/Camp?")
     table.latrines_type.requires = IS_EMPTY_OR(IS_IN_SET(rat_latrine_types, zero=None))
+    table.latrines_type.represent = lambda opt: rat_latrine_types.get(opt, UNKNOWN_OPT)
 
     shn_rat_label_and_tooltip(table.latrines_separation,
         "Separate latrines for women and men",
@@ -757,6 +765,7 @@ if deployment_settings.has_module(module):
         "Walking time to the health service",
         "How long does it take you to walk to the health service?")
     table.health_service_walking_time.requires = IS_EMPTY_OR(IS_IN_SET(rat_walking_time_opts, zero=None))
+    table.health_service_walking_time.represent = lambda opt: rat_walking_time_opts.get(opt, UNKNOWN_OPT)
 
     shn_rat_label_and_tooltip(table.health_problems_adults,
         "Current type of health problems, adults",
@@ -908,6 +917,7 @@ if deployment_settings.has_module(module):
     table.food_stocks_other_side_dishes.label = T("Other side dishes in stock")
     table.food_stocks_reserve.label = T("How long will the food last?")
     table.food_stocks_reserve.requires = IS_EMPTY_OR(IS_IN_SET(rat_food_stock_reserve_opts, zero=None))
+    table.food_stocks_reserve.represent = lambda opt: rat_food_stock_reserve_opts.get(opt, UNKNOWN_OPT)
 
     shn_rat_label_and_tooltip(table.food_sources,
         "Usual food sources in the area",

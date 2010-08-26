@@ -1586,7 +1586,7 @@ def shn_update(r, **attr):
             else:
                 lat = config.lat
                 lon = config.lon
-            module, resource = tablename.split("_")
+            module, resource = tablename.split("_", 1)
             layername = Tstr("Location")
             popup_label = ""
             filter = Storage(tablename = tablename,

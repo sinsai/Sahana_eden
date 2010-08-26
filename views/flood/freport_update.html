@@ -3,7 +3,7 @@
 <script type="text/javascript">//<![CDATA[
 $(function() {
     // Reference AutoComplete
-    {{entity_id = "flood_freport_document_id"}}
+    {{entity_id = request.controller + "_" + request.function + "_document_id"}}
     {{urlpath_c = "doc"}}
     {{urlpath_f = "document"}}
     {{urlvar_field = "name"}}

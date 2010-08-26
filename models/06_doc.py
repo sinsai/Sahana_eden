@@ -69,17 +69,18 @@ def document_represent(id):
                _href = URL(r=request, c="doc", f="document", args = [id])
                )
 
+DOCUMENT = T("Reference Document")
 ADD_DOCUMENT = Tstr("Add Reference Document")
 
 document_comment = DIV( A( ADD_DOCUMENT, 
                            _class="colorbox", 
                            _href=URL(r=request, c="doc", f="document", args="create", vars=dict(format="popup")), 
                            _target="top", 
-                           _title=ADD_DOCUMENT
+                           _title=Tstr("If you need to add a new document then you can click here to attach one."),
                            ),
                         DIV( _class="tooltip", 
-                             _title=ADD_DOCUMENT + "|" + \
-                             Tstr("Add a Reference Document such as a file, URL or contact person to verify this data."),
+                             _title=DOCUMENT + "|" + \
+                             Tstr("A Reference Document such as a file, URL or contact person to verify this data. You can type the 1st few characters of the document name to link to an existing document."),
                              #Tstr("Add a Reference Document such as a file, URL or contact person to verify this data. If you do not enter a Reference Document, your email will be displayed instead."),
                              ),
                         #SPAN( I( T("If you do not enter a Reference Document, your email will be displayed to allow this data to be verified.") ),
@@ -96,7 +97,7 @@ s3.crud_strings[tablename] = Storage(
     title_update = T("Edit Document"),
     title_search = T("Search Documents"),
     subtitle_create = T("Add New Document"),
-    subtitle_list = T("Document"),
+    subtitle_list = DOCUMENT,
     label_list_button = LIST_DOCUMENTS,
     label_create_button = ADD_DOCUMENT,
     label_delete_button = T("Delete Document"),
@@ -111,7 +112,7 @@ document_id = db.Table(None,
                              db.doc_document,
                              requires = IS_NULL_OR(IS_ONE_OF(db, "doc_document.id", document_represent)),
                              represent = document_represent,
-                             label = T("Reference Document"),
+                             label = DOCUMENT,
                              comment = document_comment,
                              ondelete = "RESTRICT",
                              )

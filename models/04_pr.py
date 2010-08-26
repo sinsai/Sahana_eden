@@ -608,12 +608,12 @@ if deployment_settings.has_module("dvi") or \
 
                             # Race and complexion
                             Field("race", "integer",
-                                  requires = IS_IN_SET(pr_race_opts),
+                                  requires = IS_EMPTY_OR(IS_IN_SET(pr_race_opts)),
                                   label = T("Race"),
                                   represent = lambda opt: \
                                               pr_race_opts.get(opt, UNKNOWN_OPT)),
                             Field("complexion", "integer",
-                                  requires = IS_IN_SET(pr_complexion_opts),
+                                  requires = IS_EMPTY_OR(IS_IN_SET(pr_complexion_opts)),
                                   label = T("Complexion"),
                                   represent = lambda opt: \
                                               pr_complexion_opts.get(opt, UNKNOWN_OPT)),
@@ -621,7 +621,7 @@ if deployment_settings.has_module("dvi") or \
 
                             # Height and weight
                             Field("height", "integer",
-                                  requires = IS_IN_SET(pr_height_opts),
+                                  requires = IS_EMPTY_OR(IS_IN_SET(pr_height_opts)),
                                   label = T("Height"),
                                   represent = lambda opt: \
                                               pr_height_opts.get(opt, UNKNOWN_OPT)),
@@ -629,7 +629,7 @@ if deployment_settings.has_module("dvi") or \
                                   requires = IS_NULL_OR(IS_INT_IN_RANGE(0, 300)),
                                   label = T("Height (cm)")),
                             Field("weight", "integer",
-                                  requires = IS_IN_SET(pr_weight_opts),
+                                  requires = IS_EMPTY_OR(IS_IN_SET(pr_weight_opts)),
                                   label = T("Weight"),
                                   represent = lambda opt: \
                                               pr_weight_opts.get(opt, UNKNOWN_OPT)),
@@ -639,34 +639,34 @@ if deployment_settings.has_module("dvi") or \
 
                             # Blood type, eye color
                             Field("blood_type", "integer",
-                                  requires = IS_IN_SET(pr_blood_type_opts),
+                                  requires = IS_EMPTY_OR(IS_IN_SET(pr_blood_type_opts)),
                                   label = T("Blood Type (AB0)"),
                                   represent = lambda opt: \
                                               pr_blood_type_opts.get(opt, UNKNOWN_OPT)),
                             Field("eye_color", "integer",
-                                  requires = IS_IN_SET(pr_eye_color_opts),
+                                  requires = IS_EMPTY_OR(IS_IN_SET(pr_eye_color_opts)),
                                   label = T("Eye Color"),
                                   represent = lambda opt: \
                                               pr_eye_color_opts.get(opt, UNKNOWN_OPT)),
 
                             # Hair of the head
                             Field("hair_color", "integer",
-                                  requires = IS_IN_SET(pr_hair_color_opts),
+                                  requires = IS_EMPTY_OR(IS_IN_SET(pr_hair_color_opts)),
                                   label = T("Hair Color"),
                                   represent = lambda opt: \
                                               pr_hair_color_opts.get(opt, UNKNOWN_OPT)),
                             Field("hair_style", "integer",
-                                  requires = IS_IN_SET(pr_hair_style_opts),
+                                  requires = IS_EMPTY_OR(IS_IN_SET(pr_hair_style_opts)),
                                   label = T("Hair Style"),
                                   represent = lambda opt: \
                                               pr_hair_style_opts.get(opt, UNKNOWN_OPT)),
                             Field("hair_length", "integer",
-                                  requires = IS_IN_SET(pr_hair_length_opts),
+                                  requires = IS_EMPTY_OR(IS_IN_SET(pr_hair_length_opts)),
                                   label = T("Hair Length"),
                                   represent = lambda opt: \
                                               pr_hair_length_opts.get(opt, UNKNOWN_OPT)),
                             Field("hair_baldness", "integer",
-                                  requires = IS_IN_SET(pr_hair_baldness_opts),
+                                  requires = IS_EMPTY_OR(IS_IN_SET(pr_hair_baldness_opts)),
                                   label = T("Baldness"),
                                   represent = lambda opt: \
                                               pr_hair_baldness_opts.get(opt, UNKNOWN_OPT)),
@@ -674,17 +674,17 @@ if deployment_settings.has_module("dvi") or \
 
                             # Facial hair
                             Field("facial_hair_type", "integer",
-                                  requires = IS_IN_SET(pr_facial_hair_type_opts),
+                                  requires = IS_EMPTY_OR(IS_IN_SET(pr_facial_hair_type_opts)),
                                   label = T("Facial hair, type"),
                                   represent = lambda opt: \
                                               pr_facial_hair_type_opts.get(opt, UNKNOWN_OPT)),
                             Field("facial_hair_color", "integer",
-                                  requires = IS_IN_SET(pr_hair_color_opts),
+                                  requires = IS_EMPTY_OR(IS_IN_SET(pr_hair_color_opts)),
                                   label = T("Facial hair, color"),
                                   represent = lambda opt: \
                                               pr_hair_color_opts.get(opt, UNKNOWN_OPT)),
                             Field("facial_hair_length", "integer",
-                                  requires = IS_IN_SET(pr_facial_hair_length_opts),
+                                  requires = IS_EMPTY_OR(IS_IN_SET(pr_facial_hair_length_opts)),
                                   label = T("Facial hear, length"),
                                   represent = lambda opt: \
                                               pr_facial_hair_length_opts.get(opt, UNKNOWN_OPT)),
@@ -707,6 +707,9 @@ if deployment_settings.has_module("dvi") or \
         _title=Tstr("Height") + "|" + Tstr("The body height (crown to heel) in cm.")))
     table.weight_kg.comment = DIV(DIV(_class="tooltip",
         _title=Tstr("Weight") + "|" + Tstr("The weight in kg.")))
+
+    table.pe_id.readable = False
+    table.pe_id.writable = False
 
     s3xrc.model.add_component(module, resource,
                               multiple=False,

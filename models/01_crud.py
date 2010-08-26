@@ -847,17 +847,42 @@ def shn_convert_orderby(table, request, fields=None):
 def shn_build_ssp_filter(table, request, fields=None):
 
     cols = fields or shn_get_columns(table)
-    context = "%" + request.vars.sSearch + "%"
-    context = context.lower()
     searchq = None
 
     # TODO: use FieldS3 (with representation_field)
     for i in xrange(0, int(request.vars.iColumns)):
-        if table[cols[i]].type in ["string","text"]:
-            if searchq is None:
-                searchq = table[cols[i]].lower().like(context)
+        field = table[cols[i]]
+        query = None
+        if str(field.type) == "integer":
+            context = str(request.vars.sSearch).lower()
+            requires = field.requires
+            if not isinstance(requires, (list, tuple)):
+                requires = [requires]
+            if requires:
+                r = requires[0]
+                options = []
+                if isinstance(r, (IS_NULL_OR, IS_EMPTY_OR)) and hasattr(r.other, "options"):
+                    options = r.other.options()
+                elif hasattr(r, "options"):
+                    options = r.options()
+                vlist = []
+                for (value, text) in options:
+                    if str(text).lower().find(context.lower()) != -1:
+                        vlist.append(value)
+                if vlist:
+                    query = field.belongs(vlist)
             else:
-                searchq = searchq | table[cols[i]].lower().like(context)
+                continue
+        elif str(field.type) in ("string", "text"):
+            context = "%" + request.vars.sSearch + "%"
+            context = context.lower()
+            query = table[cols[i]].lower().like(context)
+
+        if searchq is None and query:
+            searchq = query
+        elif query:
+            searchq = searchq | query
+
     return searchq
 
 # *****************************************************************************

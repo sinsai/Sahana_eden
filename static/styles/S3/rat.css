@@ -46,6 +46,18 @@
     padding-top: 1.5em;
 }
 
+#rat_section8_schools_public__row td,
+#rat_section8_schools_destroyed__row td,
+#rat_section8_teachers_active_pre_disaster__row td,
+#rat_section8_children_1318_female__row td,
+#rat_section8_school_attendance_barriers__row td,
+#rat_section8_school_assistance_tents_available__row td,
+#rat_section8_school_assistance_tents_available__row td,
+#rat_section8_school_assistance_other_available__row td,
+#rat_section8_comments__row td {
+    padding-top: 1.5em;
+}
+
 #rat_section9_children_separated__row td,
 #rat_section9_comments__row td {
     padding-top: 2em;

@@ -259,10 +259,10 @@ if deployment_settings.has_module(module):
     table = db.define_table(tablename,
                             timestamp, uuidstamp, authorstamp, deletion_status,
                             assessment_id,
-                            Field("population_affected", "integer"),
-                            Field("households_affected", "integer"),
                             Field("population_total", "integer"),
                             Field("households_total", "integer"),
+                            Field("population_affected", "integer"),
+                            Field("households_affected", "integer"),
                             Field("male_05", "double"),
                             Field("male_612", "double"),
                             Field("male_1317", "double"),
@@ -279,14 +279,14 @@ if deployment_settings.has_module(module):
                             Field("dead_men", "integer"),
                             Field("dead_girl", "integer"),
                             Field("dead_boy", "integer"),
-                            Field("missing_women", "integer"),
-                            Field("missing_men", "integer"),
-                            Field("missing_girl", "integer"),
-                            Field("missing_boy", "integer"),
                             Field("injured_women", "integer"),
                             Field("injured_men", "integer"),
                             Field("injured_girl", "integer"),
                             Field("injured_boy", "integer"),
+                            Field("missing_women", "integer"),
+                            Field("missing_men", "integer"),
+                            Field("missing_girl", "integer"),
+                            Field("missing_boy", "integer"),
                             Field("household_head_elderly", "integer"),
                             Field("household_head_female", "integer"),
                             Field("household_head_child", "integer"),
@@ -304,12 +304,12 @@ if deployment_settings.has_module(module):
     table.population_affected.label = T("Estimated # of people who are affected by the emergency")
     table.population_affected.comment = T("people")
     table.households_affected.label = T("Estimated # of households who are affected by the emergency")
-    table.households_affected.comment = T("HH")
+    table.households_affected.comment = T("households")
 
     table.population_total.label = T("Total population of site visited")
     table.population_total.comment = T("people")
     table.households_total.label = T("Total # of households of site visited")
-    table.households_total.comment = T("HH")
+    table.households_total.comment = T("households")
 
     table.male_05.label = T("Number/Percentage of affected population that is Male & Aged 0-5")
     table.male_612.label = T("Number/Percentage of affected population that is Male & Aged 6-12")
@@ -351,16 +351,16 @@ if deployment_settings.has_module(module):
     table.injured_boy.label = T("How many Boys (0-17 yrs) are Injured due to the crisis")
     table.injured_boy.comment = T("people")
 
-    table.household_head_elderly.label = T("Elderly person headed HH (>60 yrs)")
-    table.household_head_elderly.comment = T("HH")
-    table.household_head_female.label = T("Female headed HH")
-    table.household_head_female.comment = T("HH")
-    table.household_head_child.label = T("Child headed HH (<18 yrs)")
-    table.household_head_child.comment = T("HH")
+    table.household_head_elderly.label = T("Elderly person headed households (>60 yrs)")
+    table.household_head_elderly.comment = T("households")
+    table.household_head_female.label = T("Female headed households")
+    table.household_head_female.comment = T("households")
+    table.household_head_child.label = T("Child headed households (<18 yrs)")
+    table.household_head_child.comment = T("households")
 
-    table.disabled_physical.label = T("Person with disability (physical)")
+    table.disabled_physical.label = T("Persons with disability (physical)")
     table.disabled_physical.comment = T("people")
-    table.disabled_mental.label = T("Person with disability (mental)")
+    table.disabled_mental.label = T("Persons with disability (mental)")
     table.disabled_mental.comment = T("people")
     table.pregnant.label = T("Pregnant women")
     table.pregnant.comment = T("people")
@@ -1062,52 +1062,208 @@ if deployment_settings.has_module(module):
 
     # Section 8 - Education ---------------------------------------------------
 
+    rat_schools_salvmat_types = {
+        1: T("Wooden plank"),
+        2: T("Zinc roof"),
+        3: T("Bricks"),
+        4: T("Wooden poles"),
+        5: T("Door frame"),
+        6: T("Window frame"),
+        7: T("Roof tile"),
+        999: NOT_APPLICABLE
+    }
+
+    rat_alternative_study_places = {
+        1: T("Community Centre"),
+        2: T("Church"),
+        3: T("Mosque"),
+        4: T("Open area"),
+        5: T("Government building"),
+        6: T("Other (specify)"),
+        999: NOT_APPLICABLE
+    }
+
+    rat_school_attendance_barriers_opts = {
+        1: T("School used for other purpose"),
+        2: T("School destroyed"),
+        3: T("Lack of school uniform"),
+        4: T("Lack of transport to school"),
+        5: T("Children not enrolled in new school"),
+        6: T("School heavily damaged"),
+        7: T("Desire to remain with family"),
+        8: T("Lack of supplies at school"),
+        9: T("Displaced"),
+        10: T("Other (specify)"),
+        999: NOT_APPLICABLE
+    }
+
     resource = "section8"
     tablename = "%s_%s" % (module, resource)
     table = db.define_table(tablename,
                             timestamp, uuidstamp, authorstamp, deletion_status,
                             assessment_id,
-                            # Total number of schools in the affected area
                             Field("schools_total", "integer"),
-                            # Number of public schools
                             Field("schools_public", "integer"),
-                            # Number of private schools
                             Field("schools_private", "integer"),
-                            # Number of religious schools
                             Field("schools_religious", "integer"),
-                            # Number of schools uninhabitable/destroyed
+
                             Field("schools_destroyed", "integer"),
-                            # Number of schools damaged, but usable
                             Field("schools_damaged", "integer"),
-                            # Type of salvage material from destroyed schools
-                            # Alternative places for studying - available
-                            # Alternative places for studying - how many
-                            # Alternative places for studying - where
-                            # ...
+                            Field("schools_salvmat"),
+
+                            Field("alternative_study_places_available", "boolean"),
+                            Field("alternative_study_places_number", "integer"),
+                            Field("alternative_study_places"),
+                            Field("alternative_study_places_other"),
+
+                            Field("schools_open_pre_disaster", "integer"),
+                            Field("schools_open_post_disaster", "integer"),
+
+                            Field("teachers_active_pre_disaster", "integer"),
+                            Field("teachers_affected_by_disaster", "integer"),
+
+                            Field("children_0612_female", "integer"),
+                            Field("children_0612_male", "integer"),
+                            Field("children_0612_not_in_school_female", "integer"),
+                            Field("children_0612_not_in_school_male", "integer"),
+
+                            Field("children_1318_female", "integer"),
+                            Field("children_1318_male", "integer"),
+                            Field("children_1318_not_in_school_female", "integer"),
+                            Field("children_1318_not_in_school_male", "integer"),
+
+                            Field("school_attendance_barriers"),
+                            Field("school_attendance_barriers_other"),
+
+                            Field("school_assistance_available", "boolean"),
+                            Field("school_assistance_tents_available", "boolean"),
+                            Field("school_assistence_tents_source"),
+                            Field("school_assistance_materials_available", "boolean"),
+                            Field("school_assistance_materials_source"),
+                            Field("school_assistance_other_available", "boolean"),
+                            Field("school_assistance_other"),
+                            Field("school_assistance_other_source"),
+
                             comments,
                             migrate=migrate)
 
     table.assessment_id.readable = False
     table.assessment_id.writable = False
 
+    # @todo: onvalidation!
     table.schools_total.label = T("Total number of schools in affected area")
     table.schools_total.requires = IS_EMPTY_OR(IS_INT_IN_RANGE(0, 999999))
-    table.schools_total.comment = T("schools")
-
-    table.schools_public.label = T("Number of Public schools")
+    table.schools_public.label = T("Number of public schools")
     table.schools_public.requires = IS_EMPTY_OR(IS_INT_IN_RANGE(0, 999999))
-    table.schools_private.label = T("Number of Private schools")
+    table.schools_private.label = T("Number of private schools")
     table.schools_private.requires = IS_EMPTY_OR(IS_INT_IN_RANGE(0, 999999))
-    table.schools_religious.label = T("Number of Religious schools")
+    table.schools_religious.label = T("Number of religious schools")
     table.schools_religious.requires = IS_EMPTY_OR(IS_INT_IN_RANGE(0, 999999))
 
-    table.schools_destroyed.label = T("How many schools are uninhabitable/destroyed")
+    shn_rat_label_and_tooltip(table.schools_destroyed,
+        "Number of schools destroyed/uninhabitable",
+        "uninhabitable = foundation and structure destroyed")
     table.schools_destroyed.requires = IS_EMPTY_OR(IS_INT_IN_RANGE(0, 999999))
-    table.schools_destroyed.comment = T("schools")
-
-    table.schools_damaged.label = T("How many schools are damaged, but remain usable")
+    shn_rat_label_and_tooltip(table.schools_damaged,
+        "Number of schools damaged but usable",
+        "windows broken, cracks in walls, roof slightly damaged")
     table.schools_damaged.requires = IS_EMPTY_OR(IS_INT_IN_RANGE(0, 999999))
-    table.schools_damaged.comment = T("schools")
+    shn_rat_label_and_tooltip(table.schools_salvmat,
+        "Salvage material usable from destroyed schools",
+        "What type of salvage material can be used from destroyed schools?",
+        multiple=True)
+    table.schools_salvmat.requires = IS_EMPTY_OR(IS_IN_SET(rat_schools_salvmat_types, zero=None, multiple=True))
+    table.schools_salvmat.represent = lambda opt, set=rat_schools_salvmat_types: \
+                                      shn_rat_represent_multiple(set, opt)
+
+    shn_rat_label_and_tooltip(table.alternative_study_places_available,
+        "Alternative places for studying available",
+        "Are there alternative places for studying?")
+    table.alternative_study_places_number.label = T("Number of alternative places for studying")
+    table.alternative_study_places_number.requires = IS_EMPTY_OR(IS_INT_IN_RANGE(0, 999999))
+    shn_rat_label_and_tooltip(table.alternative_study_places,
+        "Alternative places for studying",
+        "Where are the alternative places for studying?",
+        multiple=True)
+    table.alternative_study_places.requires = IS_EMPTY_OR(IS_IN_SET(rat_alternative_study_places,
+                                                                    zero=None, multiple=True))
+    table.alternative_study_places.represent = lambda opt, set=rat_alternative_study_places: \
+                                               shn_rat_represent_multiple(set, opt)
+    table.alternative_study_places_other.label = T("Other alternative places for study")
+
+    shn_rat_label_and_tooltip(table.schools_open_pre_disaster,
+        "Number of schools open before disaster",
+        "How many primary/secondary schools were opening prior to the disaster?")
+    table.schools_open_pre_disaster.requires = IS_EMPTY_OR(IS_INT_IN_RANGE(0, 999999))
+    shn_rat_label_and_tooltip(table.schools_open_post_disaster,
+        "Number of schools open now",
+        "How many of the primary/secondary schools are now open and running a regular schedule of class?")
+    table.schools_open_post_disaster.requires = IS_EMPTY_OR(IS_INT_IN_RANGE(0, 999999))
+
+    shn_rat_label_and_tooltip(table.teachers_active_pre_disaster,
+        "Number of teachers before disaster",
+        "How many teachers worked in the schools prior to the disaster?")
+    table.teachers_active_pre_disaster.requires = IS_EMPTY_OR(IS_INT_IN_RANGE(0, 999999))
+    shn_rat_label_and_tooltip(table.teachers_affected_by_disaster,
+        "Number of teachers affected by disaster",
+        "How many teachers have been affected by the disaster (affected = unable to work)?")
+    table.teachers_affected_by_disaster.requires = IS_EMPTY_OR(IS_INT_IN_RANGE(0, 999999))
+
+    shn_rat_label_and_tooltip(table.children_0612_female,
+        "Girls 6-12 yrs in affected area",
+        "How many primary school age girls (6-12) are in the affected area?")
+    table.children_0612_female.requires = IS_EMPTY_OR(IS_INT_IN_RANGE(0, 999999))
+    shn_rat_label_and_tooltip(table.children_0612_male,
+        "Boys 6-12 yrs in affected area",
+        "How many primary school age boys (6-12) are in the affected area?")
+    table.children_0612_male.requires = IS_EMPTY_OR(IS_INT_IN_RANGE(0, 999999))
+    shn_rat_label_and_tooltip(table.children_0612_not_in_school_female,
+        "Girls 6-12 yrs not attending school",
+        "How many of the primary school age girls (6-12) in the area are not attending school?")
+    table.children_0612_not_in_school_female.requires = IS_EMPTY_OR(IS_INT_IN_RANGE(0, 999999))
+    shn_rat_label_and_tooltip(table.children_0612_not_in_school_male,
+        "Boys 6-12 yrs not attending school",
+        "How many of the primary school age boys (6-12) in the area are not attending school?")
+    table.children_0612_not_in_school_male.requires = IS_EMPTY_OR(IS_INT_IN_RANGE(0, 999999))
+
+    shn_rat_label_and_tooltip(table.children_1318_female,
+        "Girls 13-18 yrs in affected area",
+        "How many secondary school age girls (13-18) are in the affected area?")
+    table.children_1318_female.requires = IS_EMPTY_OR(IS_INT_IN_RANGE(0, 999999))
+    shn_rat_label_and_tooltip(table.children_1318_male,
+        "Boys 13-18 yrs in affected area",
+        "How many secondary school age boys (13-18) are in the affected area?")
+    table.children_1318_male.requires = IS_EMPTY_OR(IS_INT_IN_RANGE(0, 999999))
+    shn_rat_label_and_tooltip(table.children_1318_not_in_school_female,
+        "Girls 13-18 yrs not attending school",
+        "How many of the secondary school age girls (13-18) in the area are not attending school?")
+    table.children_1318_not_in_school_female.requires = IS_EMPTY_OR(IS_INT_IN_RANGE(0, 999999))
+    shn_rat_label_and_tooltip(table.children_1318_not_in_school_male,
+        "Boys 13-18 yrs not attending school",
+        "How many of the secondary school age boys (13-18) in the area are not attending school?")
+    table.children_1318_not_in_school_male.requires = IS_EMPTY_OR(IS_INT_IN_RANGE(0, 999999))
+
+    shn_rat_label_and_tooltip(table.school_attendance_barriers,
+        "Factors affecting school attendance",
+        "What are the factors affecting school attendance?",
+        multiple=True)
+    table.school_attendance_barriers.requires = IS_EMPTY_OR(IS_IN_SET(rat_school_attendance_barriers_opts,
+                                                                      zero=None, multiple=True))
+    table.school_attendance_barriers.represent = lambda opt, set=rat_school_attendance_barriers_opts: \
+                                                 shn_rat_represent_multiple(set, opt)
+    table.school_attendance_barriers_other.label = T("Other factors affecting school attendance")
+
+    shn_rat_label_and_tooltip(table.school_assistance_available,
+        "School assistance received/expected",
+        "Have schools received or are expecting to receive any assistance?")
+
+    table.school_assistance_tents_available.label = T("School tents received")
+    table.school_assistence_tents_source.label = T("School tents, source")
+    table.school_assistance_materials_available.label = T("Education materials received")
+    table.school_assistance_materials_source.label = T("Education materials, source")
+    table.school_assistance_other_available.label = T("Other school assistance received")
+    table.school_assistance_other.label = T("Other school assistance, details")
+    table.school_assistance_other_source.label = T("Other school assistance, source")
 
     # CRUD strings
     s3.crud_strings[tablename] = rat_section_crud_strings

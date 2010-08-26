@@ -317,6 +317,8 @@ if deployment_settings.has_module(module):
                             migrate=migrate)
 
     s3.crud_strings[tablename] = shn_crud_strings("Request Item")
+    s3.crud_strings[tablename].msg_list_empty = "No Items currently requested"
+    
 
     # Items as component of Locations
     s3xrc.model.add_component(module, resource,

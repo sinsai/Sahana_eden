@@ -74,7 +74,7 @@ deployment_settings.L10n.utc_offset = "UTC +0000"
 # Provide a tool to select locations via a map on all forms with location_id
 deployment_settings.gis.map_selector = True
 # Display Resources recorded to Admin-Level Locations on the map
-deployment_settings.gis.display_L0 = False
+deployment_settings.gis.display_L0 = False  # This doesn't work since !="L0" means no null too (SQL)
 # Currently unused
 #deployment_settings.gis.display_L1 = True
 deployment_settings.gis.locations_hierarchy = {

@@ -322,8 +322,9 @@ class GIS(object):
             query = query & (db[filter.tablename].id == filter.id)
         
         # Hide Resources recorded to Country Locations on the map?
-        if not deployment_settings.get_gis_display_l0():
-            query = query & (db.gis_location.level != "L0")
+        # This doesn't work since !="L0" means no null too (SQL)
+        #if not deployment_settings.get_gis_display_l0():
+        #    query = query & (db.gis_location.level != "L0")
             
         query = query & (db.gis_location.id == db["%s_%s" % (module, resource)].location_id)
         locations = db(query).select(db.gis_location.id, db.gis_location.uuid, db.gis_location.parent, db.gis_location.name, db.gis_location.wkt, db.gis_location.lat, db.gis_location.lon)

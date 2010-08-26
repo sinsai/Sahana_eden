@@ -1286,47 +1286,92 @@ if deployment_settings.has_module(module):
 
     # Section 9 - Protection --------------------------------------------------
 
-    rat_quantity_opts = {
+    rat_fuzzy_quantity_opts = {
         1: T("None"),
         2: T("Few"),
         3: T("Some"),
         4: T("Many")
     }
 
+    rat_quantity_opts = {
+        1: "1-10",
+        2: "11-50",
+        3: "51-100",
+        4: "100+"
+    }
+
+    rat_child_activity_opts = {
+        1: T("Playing"),
+        2: T("Domestic chores"),
+        3: T("School/studying"),
+        4: T("Doing nothing (no structured activity)"),
+        5: T("Working or other to provide money/food"),
+        99: T("Other (specify)")
+    }
+
+    rat_child_activity_post_disaster_opts = rat_child_activity_opts.copy()
+    rat_child_activity_post_disaster_opts.update({
+        6: T("Disaster clean-up/repairs")
+    })
+
     resource = "section9"
     tablename = "%s_%s" % (module, resource)
     table = db.define_table(tablename,
                             timestamp, uuidstamp, authorstamp, deletion_status,
                             assessment_id,
-                            # Are the areas that children, older people, and
-                            # people with disabilities live in, play in and
-                            # walk through on a daily basis physically safe?
-                            Field("sec_vuln_groups", "boolean"),
-                            # Has the safety and security of women and children
-                            # in your community changed since the emergency
-                            Field("sec_vuln_groups_affected", "boolean"),
-
+                            Field("vulnerable_groups_safe_env", "boolean"),
+                            Field("safety_children_women_affected", "boolean"),
                             Field("sec_incidents", "boolean"),
                             Field("sec_incidents_gbv", "boolean"),
 
                             Field("sec_current_needs"),
 
-                            Field("children_separated", "integer",
-                                  requires = IS_IN_SET(rat_quantity_opts, zero=None)),
+                            Field("children_separated", "integer"),
                             Field("children_separated_origin"),
-                            Field("children_missing", "integer",
-                                  requires = IS_IN_SET(rat_quantity_opts, zero=None)),
-                            Field("children_orphaned", "integer",
-                                  requires = IS_IN_SET(rat_quantity_opts, zero=None)),
-                            Field("children_evacuated", "integer",
-                                  requires = IS_IN_SET(rat_quantity_opts, zero=None)),
+                            Field("children_missing", "integer"),
+                            Field("children_orphaned", "integer"),
+                            Field("children_unattended", "integer"),
+                            Field("children_disappeared", "integer"),
+                            Field("children_evacuated", "integer"),
                             Field("children_evacuated_to"),
-                            Field("children_unattended", "integer",
-                                  requires = IS_IN_SET(rat_quantity_opts, zero=None)),
-                            Field("children_disappeared", "integer",
-                                  requires = IS_IN_SET(rat_quantity_opts, zero=None)),
-                            Field("children_with_older_caregivers", "integer",
-                                  requires = IS_IN_SET(rat_quantity_opts, zero=None)),
+                            Field("children_with_older_caregivers", "integer"),
+
+                            Field("children_in_disabled_homes", "boolean"),
+                            Field("children_in_orphanages", "boolean"),
+                            Field("children_in_boarding_schools", "boolean"),
+                            Field("children_in_juvenile_detention", "boolean"),
+                            Field("children_in_adult_prisons", "boolean"),
+                            Field("people_in_adult_prisons", "boolean"),
+                            Field("people_in_care_homes", "boolean"),
+                            Field("people_in_institutions_est_total", "integer"),
+                            Field("staff_in_institutions_present", "boolean"),
+                            Field("adequate_food_water_in_institutions", "boolean"),
+
+                            Field("child_activities_u12f_pre_disaster"),
+                            Field("child_activities_u12f_pre_disaster_other"),
+                            Field("child_activities_u12m_pre_disaster"),
+                            Field("child_activities_u12m_pre_disaster_other"),
+                            Field("child_activities_o12f_pre_disaster"),
+                            Field("child_activities_o12f_pre_disaster_other"),
+                            Field("child_activities_o12m_pre_disaster"),
+                            Field("child_activities_o12m_pre_disaster_other"),
+
+                            Field("child_activities_u12f_post_disaster"),
+                            Field("child_activities_u12f_post_disaster_other"),
+                            Field("child_activities_u12m_post_disaster"),
+                            Field("child_activities_u12m_post_disaster_other"),
+                            Field("child_activities_o12f_post_disaster"),
+                            Field("child_activities_o12f_post_disaster_other"),
+                            Field("child_activities_o12m_post_disaster"),
+                            Field("child_activities_o12m_post_disaster_other"),
+
+                            Field("coping_activities_elderly", "boolean"),
+                            Field("coping_activities_women", "boolean"),
+                            Field("coping_activities_disabled", "boolean"),
+                            Field("coping_activities_minorities", "boolean"),
+                            Field("coping_activities_adolescent", "boolean"),
+
+                            Field("current_general_needs", "text"),
 
                             comments,
                             migrate=migrate)
@@ -1334,22 +1379,192 @@ if deployment_settings.has_module(module):
     table.assessment_id.readable = False
     table.assessment_id.writable = False
 
-    #table.sec_area_safe.label = T("Children, elderly and disabled persons physically safe")
-    #table.sec_safety_affected.label = T("Safety of children and women affected by disaster")
+    shn_rat_label_and_tooltip(table.vulnerable_groups_safe_env,
+        "Safe environment for vulnerable groups",
+        "Are the areas that children, older people, and people with disabilities live in, play in and walk through on a daily basis physically safe?")
+    shn_rat_label_and_tooltip(table.safety_children_women_affected,
+        "Safety of children and women affected by disaster",
+        "Has the safety and security of women and children in your community changed since the emergency?")
+    shn_rat_label_and_tooltip(table.sec_incidents,
+        "Known incidents of violence since disaster",
+        "Do you know of any incidents of violence?")
+    shn_rat_label_and_tooltip(table.sec_incidents_gbv,
+        "Known incidents of violence against women/girls",
+        "Without mentioning any names or indicating anyone, do you know of any incidents of violence against women or girls occuring since the disaster?")
 
-    table.sec_incidents.label = T("Known incidents of violence")
-    table.sec_incidents_gbv.label = T("Known incidents of gender-based violence")
+    shn_rat_label_and_tooltip(table.sec_current_needs,
+        "Needs to reduce vulnerability to violence",
+        "What should be done to reduce women and children's vulnerability to violence?")
 
-    table.sec_current_needs.label = T("Current needs to improve safety for vulnerable groups")
+    shn_rat_label_and_tooltip(table.children_separated,
+        "Children separated from their parents/caregivers",
+        "Do you know of children separated from their parents or caregivers?")
+    table.children_separated.requires = IS_EMPTY_OR(IS_IN_SET(rat_fuzzy_quantity_opts, zero=None))
+    table.children_separated.represent = lambda opt: rat_fuzzy_quantity_opts.get(opt, UNKNOWN_OPT)
 
-    table.children_separated.label = T("Children separated from their parents/caregivers")
-    table.children_missing.label = T("Parents/Caregivers missing children")
-    table.children_orphaned.label = T("Children orphaned by the disaster")
-    table.children_evacuated.label = T("Children that have been sent to safe places")
-    table.children_evacuated_to.label = T("Places the children have been sent to")
-    table.children_unattended.label = T("Children living on their own (without adults)")
-    table.children_disappeared.label = T("Children who have disappeared since the disaster")
-    table.children_with_older_caregivers.label = T("Older people as primary caregivers of children")
+    shn_rat_label_and_tooltip(table.children_separated_origin,
+        "Origin of the separated children",
+        "Where are the separated children originally from?")
+
+    shn_rat_label_and_tooltip(table.children_missing,
+        "Parents/Caregivers missing children",
+        "Do you know of parents/caregivers missing children?")
+    table.children_missing.requires = IS_EMPTY_OR(IS_IN_SET(rat_fuzzy_quantity_opts, zero=None))
+    table.children_missing.represent = lambda opt: rat_fuzzy_quantity_opts.get(opt, UNKNOWN_OPT)
+
+    shn_rat_label_and_tooltip(table.children_orphaned,
+        "Children orphaned by the disaster",
+        "Do you know of children that have been orphaned by the disaster?")
+    table.children_orphaned.requires = IS_EMPTY_OR(IS_IN_SET(rat_fuzzy_quantity_opts, zero=None))
+    table.children_orphaned.represent = lambda opt: rat_fuzzy_quantity_opts.get(opt, UNKNOWN_OPT)
+
+    shn_rat_label_and_tooltip(table.children_evacuated,
+        "Children that have been sent to safe places",
+        "Do you know of children that have been sent to safe places?")
+    table.children_evacuated.requires = IS_EMPTY_OR(IS_IN_SET(rat_fuzzy_quantity_opts, zero=None))
+    table.children_evacuated.represent = lambda opt: rat_fuzzy_quantity_opts.get(opt, UNKNOWN_OPT)
+    shn_rat_label_and_tooltip(table.children_evacuated_to,
+        "Places the children have been sent to",
+        "Where have the children been sent?")
+
+    shn_rat_label_and_tooltip(table.children_unattended,
+        "Children living on their own (without adults)",
+        "Do you know of children living on their own (without adults)?")
+    table.children_unattended.requires = IS_EMPTY_OR(IS_IN_SET(rat_fuzzy_quantity_opts, zero=None))
+    table.children_unattended.represent = lambda opt: rat_fuzzy_quantity_opts.get(opt, UNKNOWN_OPT)
+
+    shn_rat_label_and_tooltip(table.children_disappeared,
+        "Children who have disappeared since the disaster",
+        "Do you know of children that have disappeared without explanation in the period since the disaster?")
+    table.children_disappeared.requires = IS_EMPTY_OR(IS_IN_SET(rat_fuzzy_quantity_opts, zero=None))
+    table.children_disappeared.represent = lambda opt: rat_fuzzy_quantity_opts.get(opt, UNKNOWN_OPT)
+
+    shn_rat_label_and_tooltip(table.children_with_older_caregivers,
+        "Older people as primary caregivers of children",
+        "Do you know of older people who are primary caregivers of children?")
+    table.children_with_older_caregivers.requires = IS_EMPTY_OR(IS_IN_SET(rat_fuzzy_quantity_opts, zero=None))
+    table.children_with_older_caregivers.represent = lambda opt: rat_fuzzy_quantity_opts.get(opt, UNKNOWN_OPT)
+
+    shn_rat_label_and_tooltip(table.children_in_disabled_homes,
+        "Children in homes for disabled children",
+        "Are there children living in homes for disabled children in this area?")
+    shn_rat_label_and_tooltip(table.children_in_orphanages,
+        "Children in orphanages",
+        "Are there children living in orphanages in this area?")
+    shn_rat_label_and_tooltip(table.children_in_boarding_schools,
+        "Children in boarding schools",
+        "Are there children living in boarding schools in this area?")
+    shn_rat_label_and_tooltip(table.children_in_juvenile_detention,
+        "Children in juvenile detention",
+        "Are there children living in juvenile detention in this area?")
+    shn_rat_label_and_tooltip(table.children_in_adult_prisons,
+        "Children in adult prisons",
+        "Are there children living in adult prisons in this area?")
+    shn_rat_label_and_tooltip(table.people_in_adult_prisons,
+        "Adults in prisons",
+        "Are there adults living in prisons in this area?")
+    shn_rat_label_and_tooltip(table.people_in_care_homes,
+        "Older people in care homes",
+        "Are there older people living in care homes in this area?")
+
+    shn_rat_label_and_tooltip(table.people_in_institutions_est_total,
+        "Estimated total number of people in institutions",
+        "What is the estimated total number of people in all of these institutions?")
+    table.people_in_institutions_est_total.requires = IS_EMPTY_OR(IS_IN_SET(rat_quantity_opts, zero=None))
+    table.people_in_institutions_est_total.represent = lambda opt: rat_quantity_opts.get(opt, UNKNOWN_OPT)
+
+    shn_rat_label_and_tooltip(table.staff_in_institutions_present,
+        "Staff present and caring for residents",
+        "Are there staff present and caring for the residents in these institutions?")
+    shn_rat_label_and_tooltip(table.adequate_food_water_in_institutions,
+        "Adequate food and water available",
+        "Is adequate food and water available for these institutions?")
+
+    shn_rat_label_and_tooltip(table.child_activities_u12f_pre_disaster,
+        "Activities of girls <12yrs before disaster",
+        "How did girls <12yrs spend most of their time prior to the disaster?")
+    table.child_activities_u12f_pre_disaster.requires = IS_EMPTY_OR(IS_IN_SET(rat_child_activity_opts,
+                                                        zero=None, multiple=True))
+    table.child_activities_u12f_pre_disaster.represent = lambda opt, set=rat_child_activity_opts: \
+                                                         shn_represent_multiple(set, opt)
+    table.child_activities_u12f_pre_disaster_other.label = T("Other activities of girls<12yrs before disaster")
+    shn_rat_label_and_tooltip(table.child_activities_u12m_pre_disaster,
+        "Activities of boys <12yrs before disaster",
+        "How did boys <12yrs spend most of their time prior to the disaster?")
+    table.child_activities_u12m_pre_disaster.requires = IS_EMPTY_OR(IS_IN_SET(rat_child_activity_opts,
+                                                        zero=None, multiple=True))
+    table.child_activities_u12m_pre_disaster.represent = lambda opt, set=rat_child_activity_opts: \
+                                                         shn_represent_multiple(set, opt)
+    table.child_activities_u12m_pre_disaster_other.label = T("Other activities of boys <12yrs before disaster")
+    shn_rat_label_and_tooltip(table.child_activities_o12f_pre_disaster,
+        "Activities of girls 13-17yrs before disaster",
+        "How did boys girls 13-17yrs spend most of their time prior to the disaster?")
+    table.child_activities_o12f_pre_disaster.requires = IS_EMPTY_OR(IS_IN_SET(rat_child_activity_opts,
+                                                        zero=None, multiple=True))
+    table.child_activities_o12f_pre_disaster.represent = lambda opt, set=rat_child_activity_opts: \
+                                                         shn_represent_multiple(set, opt)
+    table.child_activities_o12f_pre_disaster_other.label = T("Other activities of girls 13-17yrs before disaster")
+    shn_rat_label_and_tooltip(table.child_activities_o12m_pre_disaster,
+        "Activities of boys 13-17yrs before disaster",
+        "How did boys 13-17yrs spend most of their time prior to the disaster?")
+    table.child_activities_o12m_pre_disaster.requires = IS_EMPTY_OR(IS_IN_SET(rat_child_activity_opts,
+                                                        zero=None, multiple=True))
+    table.child_activities_o12m_pre_disaster.represent = lambda opt, set=rat_child_activity_opts: \
+                                                         shn_represent_multiple(set, opt)
+    table.child_activities_o12m_pre_disaster_other.label = T("Other activities of boys 13-17yrs before disaster")
+
+    shn_rat_label_and_tooltip(table.child_activities_u12f_post_disaster,
+        "Activities of girls <12yrs now",
+        "How do girls <12yrs spend most of their time now?")
+    table.child_activities_u12f_post_disaster.requires = IS_EMPTY_OR(IS_IN_SET(rat_child_activity_opts,
+                                                         zero=None, multiple=True))
+    table.child_activities_u12f_post_disaster.represent = lambda opt, set=rat_child_activity_opts: \
+                                                          shn_represent_multiple(set, opt)
+    table.child_activities_u12f_post_disaster_other.label = T("Other activities of girls<12yrs")
+    shn_rat_label_and_tooltip(table.child_activities_u12m_post_disaster,
+        "Activities of boys <12yrs now",
+        "How do boys <12yrs spend most of their time now?")
+    table.child_activities_u12m_post_disaster.requires = IS_EMPTY_OR(IS_IN_SET(rat_child_activity_opts,
+                                                         zero=None, multiple=True))
+    table.child_activities_u12m_post_disaster.represent = lambda opt, set=rat_child_activity_opts: \
+                                                          shn_represent_multiple(set, opt)
+    table.child_activities_u12m_post_disaster_other.label = T("Other activities of boys <12yrs")
+    shn_rat_label_and_tooltip(table.child_activities_o12f_post_disaster,
+        "Activities of girls 13-17yrs now",
+        "How do girls 13-17yrs spend most of their time now?")
+    table.child_activities_o12f_post_disaster.requires = IS_EMPTY_OR(IS_IN_SET(rat_child_activity_opts,
+                                                         zero=None, multiple=True))
+    table.child_activities_o12f_post_disaster.represent = lambda opt, set=rat_child_activity_opts: \
+                                                          shn_represent_multiple(set, opt)
+    table.child_activities_o12f_post_disaster_other.label = T("Other activities of girls 13-17yrs")
+    shn_rat_label_and_tooltip(table.child_activities_o12m_post_disaster,
+        "Activities of boys 13-17yrs now",
+        "How do boys 13-17yrs spend most of their time now?")
+    table.child_activities_o12m_post_disaster.requires = IS_EMPTY_OR(IS_IN_SET(rat_child_activity_opts,
+                                                         zero=None, multiple=True))
+    table.child_activities_o12m_post_disaster.represent = lambda opt, set=rat_child_activity_opts: \
+                                                          shn_represent_multiple(set, opt)
+    table.child_activities_o12m_post_disaster_other.label = T("Other activities of boys 13-17yrs")
+
+    shn_rat_label_and_tooltip(table.coping_activities_elderly,
+        "Older people participating in coping activities",
+        "Do older people in your community participate in activities that help them cope with the disaster? (ex. meetings, religious activities, volunteer in the community clean-up, etc)")
+    shn_rat_label_and_tooltip(table.coping_activities_women,
+        "Women participating in coping activities",
+        "Do women in your community participate in activities that help them cope with the disaster? (ex. meetings, religious activities, volunteer in the community clean-up, etc)")
+    shn_rat_label_and_tooltip(table.coping_activities_disabled,
+        "Disabled participating in coping activities",
+        "Do people with disabilities in your community participate in activities that help them cope with the disaster? (ex. meetings, religious activities, volunteer in the community clean-up, etc)")
+    shn_rat_label_and_tooltip(table.coping_activities_minorities,
+        "Minorities participating in coping activities",
+        "Do minority members in your community participate in activities that help them cope with the disaster? (ex. meetings, religious activities, volunteer in the community clean-up, etc)")
+    shn_rat_label_and_tooltip(table.coping_activities_adolescent,
+        "Adolescent participating in coping activities",
+        "Do adolescent and youth in your community participate in activities that help them cope with the disaster? (ex. meetings, religious activities, volunteer in the community clean-up, etc)")
+
+    shn_rat_label_and_tooltip(table.current_general_needs,
+        "Current greatest needs of vulnerable groups",
+        "In general, what are the greatest needs of older people, people with disabilities, children, youth and women in your community?")
 
     # CRUD strings
     s3.crud_strings[tablename] = rat_section_crud_strings

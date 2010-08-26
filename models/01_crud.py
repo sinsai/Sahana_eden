@@ -1058,7 +1058,6 @@ def shn_list(r, **attr):
                 query = squery & query
 
         sEcho = int(vars.sEcho or 0)
-
         totalrows = resource.count()
         if limit:
             rows = db(query).select(table.ALL,

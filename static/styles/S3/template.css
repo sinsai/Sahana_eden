@@ -527,12 +527,14 @@ div#rheader_tabs span { padding: 1px 3px 3px 3px;
                       -moz-border-radius: 3px 3px 0px 0px;
                       -webkit-border-radius: 3px 3px 0px 0px; }
 
+div#rheader_tabs span.rheader_tab_last,
 div#rheader_tabs span.rheader_tab_other { border-width: 2px 0px 0px 3px;
                                         border-style: solid;
                                         border-color: #bbb;
                                         padding-right: 3px;
                                         margin-right: 2px;
                                         border-bottom: 1px solid #bbb; }
+div#rheader_tabs span.rheader_tab_last { border-right: 1px solid #bbb; }
 div#rheader_tabs span.rheader_tab_here { border-width: 2px 1px 0px 3px;
                                        border-style: solid;
                                        border-color: #col_border_btn_out;
@@ -541,6 +543,7 @@ div#rheader_tabs span.rheader_tab_here { border-width: 2px 1px 0px 3px;
                                        padding-right: 3px;
                                        margin-right: 2px;
                                        font-weight: bold; }
+
 div#rheader_tabs span.rheader_prev_active { border: 1px solid #col_border_btn_out; color: #col_txt; border-bottom: 0; }
 div#rheader_tabs span.rheader_next_active { border: 1px solid #col_border_btn_out; color: #col_txt; border-bottom: 0; }
 div#rheader_tabs span.rheader_prev_inactive { border: 1px solid #bbb; color: #bbb; border-bottom: 0; }
@@ -552,6 +555,7 @@ div#rheader_tabs span.rheader_next_active a { color: #col_txt; text-decoration: 
 div#rheader_tabs span.rheader_prev_inactive a,
 div#rheader_tabs span.rheader_next_inactive a { color: #bbb; text-decoration: None; }
 
+div#rheader_tabs span.rheader_tab_last a,
 div#rheader_tabs span.rheader_tab_other a { color: #000000;
                                           text-decoration: None; }
 div#rheader_tabs span.rheader_tab_here a { color: #col_txt;

@@ -630,7 +630,6 @@ def shn_rheader_tabs(r, tabs=[], paging=False):
     """
 
     rheader_tabs = []
-    #for (title, component) in tabs:
 
     tablist = []
     previous = next = None
@@ -649,7 +648,10 @@ def shn_rheader_tabs(r, tabs=[], paging=False):
         else:
             function = r.request.function
 
-        tab = Storage(title=title, _class = "rheader_tab_other")
+        if i == len(tabs)-1:
+            tab = Storage(title=title, _class = "rheader_tab_last")
+        else:
+            tab = Storage(title=title, _class = "rheader_tab_other")
         if i > 0 and tablist[i-1]._class == "rheader_tab_here":
             next = tab
 

@@ -49,7 +49,7 @@ def location():
 
 def index():
 
-    """ Default to the inventory_location list view """
+    """ Default to the inventory_location list view - TODO does not work with paginate!!!"""
 
     request.function = "location"
     request.args = []

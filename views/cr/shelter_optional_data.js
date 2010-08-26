@@ -1,6 +1,6 @@
     // Add checkbox to hide/unhide optional school fields.
     $('#cr_shelter_school_code__row').before(
-        '{{=TR(TD(LABEL(T("Is this a school?"))),
+        '{{=TR(TD(LABEL(T("Is this a School?"))),
                TD(INPUT(_type="checkbox",
                         _name="is_school", _id="is_school")),
                TD())}}');
@@ -28,7 +28,7 @@
 
     // Add checkbox to hide/unhide optional hospital field.
     $('#cr_shelter_hospital_id__row').before(
-        '{{=TR(TD(LABEL(T("Is this a hospital?"))),
+        '{{=TR(TD(LABEL(T("Is this a Hospital?"))),
                TD(INPUT(_type="checkbox",
                         _name="is_hospital", _id="is_hospital")),
                TD())}}');

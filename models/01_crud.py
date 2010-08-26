@@ -1585,13 +1585,12 @@ def shn_update(r, **attr):
             else:
                 lat = config.lat
                 lon = config.lon
-            module, resource = tablename.split("_")
             layername = Tstr("Location")
             popup_label = ""
             filter = Storage(tablename = tablename,
                              id = r.id
                             )
-            layer = gis.get_feature_layer(module, resource, layername, popup_label, filter=filter)
+            layer = gis.get_feature_layer(prefix, name, layername, popup_label, filter=filter)
             feature_queries = [layer]
             _map = gis.show_map(lat = lat,
                                 lon = lon,

@@ -67,7 +67,7 @@ $(function() {
   {{else:}}
     // Dropdown
     widget = "<select id='gis_location_l{{=level}}'></select>";
-    comment = "<div title='" + label + '|' + '{{=T("Select to see a list of subdivisions.")}}' + "}}' id='gis_location_l{{=level}}_tooltip' class='tooltip'></div>";
+    comment = "<div title='" + label + '|' + '{{=T("Select to see a list of subdivisions.")}}' + "' id='gis_location_l{{=level}}_tooltip' class='tooltip'></div>";
     row = "<tr id='gis_location_l{{=level}}__row'><td><label>" + label + ':' + '</label></td><td>' + widget + '</td><td>' + comment + '</td></tr>';
     $(location_id_row).before(row);
     // Apply the tooltip which was missed 1st time round
@@ -352,7 +352,7 @@ $(function() {
 
     // Street Address
     label = '{{=db.gis_location.addr_street.label}}:';
-    widget = "<input id='gis_location_addr_street' size='50' />";
+    widget = "<textarea id='gis_location_addr_street' class='text' rows='5' cols='40' />";
     // ToDo: GeoCoder widget here
     comment = '';
     row = "<tr id='gis_location_addr_street__row'><td><label>" + label + '</label></td><td>' + widget + '</td><td>' + comment + '</td></tr>';

@@ -92,6 +92,14 @@ def define_map(window=False, toolbar=False):
     marker = "shelter"
     shelters = gis.get_feature_layer(module, resource, layername, popup_label, marker)
     
+    # Schools
+    module = "sitrep"
+    resource = "school_report"
+    layername = Tstr("Schools")
+    popup_label = Tstr("School")
+    marker = "school"
+    schools = gis.get_feature_layer(module, resource, layername, popup_label, marker)
+    
     # Requests
     module = "rms"
     resource = "req"
@@ -119,6 +127,7 @@ def define_map(window=False, toolbar=False):
     feature_queries = [
                        incidents,
                        shelters,
+                       schools,
                        requests,
                        assessments,
                        activities
@@ -1507,15 +1516,36 @@ def display_feature():
     query = db(db.gis_location.id == feature_id).select(limitby=(0, 1))
     feature = query.first()
 
-    # Centre on Feature
-    lat = feature.lat
-    lon = feature.lon
+    config = gis.get_config()
+    
+    try:
+        # Centre on Feature
+        lat = feature.lat
+        lon = feature.lon
+        if (lat is None) or (lon is None):
+            if feature.get("parent"):
+                # Skip the current record if we can
+                latlon = gis.get_latlon(feature.parent)
+            elif feature.get("id"):
+                latlon = gis.get_latlon(feature.id)
+            else:
+                # nothing we can do!
+                raise
+            if latlon:
+                lat = latlon["lat"]
+                lon = latlon["lon"]
+            else:
+                # nothing we can do!
+                raise
+    except:
+        lat = config.lat
+        lon = config.lon
 
     # Calculate an appropriate BBox
     #bounds = gis.get_bounds(features=query)
     
     # Default zoom +2 (same as a single zoom on a cluster)
-    zoom = gis.get_config().zoom + 2
+    zoom = config.zoom + 2
 
     map = gis.show_map(
         feature_queries = [{"name" : "Feature", "query" : query, "active" : True}],

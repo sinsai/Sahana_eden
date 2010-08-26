@@ -69,7 +69,7 @@ def document_represent(id):
                _href = URL(r=request, c="doc", f="document", args = [id])
                )
 
-DOCUMENT = T("Reference Document")
+DOCUMENT = Tstr("Reference Document")
 ADD_DOCUMENT = Tstr("Add Reference Document")
 
 document_comment = DIV( A( ADD_DOCUMENT, 

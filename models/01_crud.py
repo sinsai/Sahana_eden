@@ -945,7 +945,10 @@ def shn_read(r, **attr):
         if not len(resource):
             if not r.multiple:
                 r.component_id = None
-                redirect(r.other(method="create", representation=representation))
+                if shn_has_permission("create", tablename):
+                    redirect(r.other(method="create", representation=representation))
+                else:
+                    record_id = None
             else:
                 session.error = BADRECORD
                 redirect(r.there())
@@ -954,7 +957,7 @@ def shn_read(r, **attr):
     else:
         record_id = r.id
 
-    # ToDo: Comment this out as we don't want to redirect to update form upon read
+    # Redirect to update if user has permission unless URL method specified
     if not r.method:
         authorised = shn_has_permission("update", tablename, record_id)
         if authorised and representation == "html" and editable:

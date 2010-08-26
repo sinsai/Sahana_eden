@@ -594,7 +594,16 @@ def shn_reference_field():
 
 def shn_insert_subheadings(form, tablename, subheadings):
 
-    """ Insert subheadings into forms """
+    """
+    Insert subheadings into forms
+
+    @param form: the form
+    @param tablename: the tablename
+    @param subheadings: a dict of {"Headline": Fieldnames}, where Fieldname can
+                        be either a single field name or a list/tuple of
+                        field names belonging under that headline
+
+    """
 
     if subheadings:
         if tablename in subheadings:

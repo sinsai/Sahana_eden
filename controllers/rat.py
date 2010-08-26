@@ -25,7 +25,7 @@ response.menu_options = [
        [T("Add"), False, URL(r=request, f="assessment", args="create")],
        [T("Search"), False, URL(r=request, f="assessment", args="search")],
     ]],
-    [T("Summary"), False, URL(r=request, f="assessment", args="summary")],
+    #[T("Summary"), False, URL(r=request, f="assessment", args="summary")],
     #[T("Map"), False, URL(r=request, f="maps")],
 ]
 
@@ -122,6 +122,15 @@ def assessment():
             "School activities": "schools_open_pre_disaster",
             "School attendance": "children_0612_female",
             "School assistance": "school_assistance_available",
+            "Comments": "comments"
+        },
+        "rat_section9" : {
+            "Physical Safety": "vulnerable_groups_safe_env",
+            "Separated children, caregiving arrangements": "children_separated",
+            "Persons in institutions": "children_in_disabled_homes",
+            "Activities of children": "child_activities_u12f_pre_disaster",
+            "Coping Activities": "coping_activities_elderly",
+            "Current general needs": "current_general_needs",
             "Comments": "comments"
         }
     }

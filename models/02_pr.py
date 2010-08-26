@@ -610,7 +610,7 @@ def shn_pr_person_search_simple(r, **attr):
 
         # Accept action
         items = None
-        if form.accepts(request.vars, session):
+        if form.accepts(request.vars, session, keepvalues=True):
 
             if form.vars.label == "":
                 form.vars.label = "%"

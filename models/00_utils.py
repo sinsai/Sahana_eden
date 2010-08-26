@@ -615,7 +615,6 @@ def shn_insert_subheadings(form, tablename, subheadings):
                         fields = [fields]
                     if f in fields:
                         done.append(k)
-                        print done
                         form[0].insert(i, TR(TD(k, _colspan=3, _class="subheading"),
                                              _class = "subheading",
                                              _id = "%s_%s__subheading" % (tablename, f)))

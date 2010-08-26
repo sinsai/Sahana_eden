@@ -395,6 +395,9 @@ class GIS(object):
             query = (table_feature.id == feature_id)
         elif isinstance(feature_id, str):
             query = (table_feature.uuid == feature_id)
+        else:
+            # What else could feature_id be?
+            return None
         
         feature = db(query).select(table_feature.lat, table_feature.lon, table_feature.parent, limitby=(0, 1)).first()
         

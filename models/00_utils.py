@@ -61,7 +61,7 @@ def shn_sessions():
 
 s3_settings = shn_sessions()
 
-#
+# -----------------------------------------------------------------------------
 # List of supported languages
 #
 shn_languages = {
@@ -71,6 +71,7 @@ shn_languages = {
     "zh-tw": T("Chinese")
 }
 auth.settings.table_user.language.requires = IS_IN_SET(shn_languages, zero=None)
+
 
 # -----------------------------------------------------------------------------
 # List of Nations (ISO-3166-1 Country Codes)
@@ -326,8 +327,8 @@ shn_list_of_nations = {
     "XX": "Unknown"
 }
 
+# -----------------------------------------------------------------------------
 # User Time Zone Operations:
-
 from datetime import timedelta
 import time
 
@@ -365,20 +366,28 @@ def shn_as_local_time(value):
         dt = value
         return dt.strftime(str(format))+" +0000"
 
+# -----------------------------------------------------------------------------
 # Phone number requires
 shn_phone_requires = IS_NULL_OR(IS_MATCH('\+?\s*[\s\-\.\(\)\d]+(?:(?: x| ext)\s?\d{1,5})?$'))
 
+# -----------------------------------------------------------------------------
 # Make URLs clickable
 shn_url_represent = lambda url: (url and [A(url, _href=url, _target="blank")] or [""])[0]
 
+
+# -----------------------------------------------------------------------------
 def myname(user_id):
     user = db.auth_user[user_id]
     return user.first_name if user else NONE
 
+
+# -----------------------------------------------------------------------------
 def unauthorised():
     session.error = T("Not Authorised!")
     redirect(URL(r=request, c="default", f="user", args="login"))
 
+
+# -----------------------------------------------------------------------------
 def shn_abbreviate(word, size=48):
 
     """
@@ -393,6 +402,8 @@ def shn_abbreviate(word, size=48):
     else:
         return word
 
+
+# -----------------------------------------------------------------------------
 def shn_action_buttons(jr, deletable=True, copyable=False):
 
     """
@@ -425,6 +436,8 @@ def shn_action_buttons(jr, deletable=True, copyable=False):
 
     return
 
+
+# -----------------------------------------------------------------------------
 def shn_compose_message(data, template):
 
     """
@@ -451,6 +464,7 @@ def shn_compose_message(data, template):
             return s3xrc.xml.tostring(tree, pretty_print=True)
 
 
+# -----------------------------------------------------------------------------
 def shn_crud_strings(table_name,
                      table_name_plural = None):
     """
@@ -496,6 +510,7 @@ def shn_crud_strings(table_name,
     return table_strings
 
 
+# -----------------------------------------------------------------------------
 def shn_get_crud_string(tablename, name):
     """
         Get the CRUD strings for a table
@@ -507,6 +522,7 @@ def shn_get_crud_string(tablename, name):
     return crud_strings.get(name, not_found)
 
 
+# -----------------------------------------------------------------------------
 def shn_import_table(table_name,
                      import_if_not_empty = False):
     """
@@ -529,6 +545,7 @@ def shn_import_table(table_name,
         table.import_from_csv_file(open(import_file,"r"))
 
 
+# -----------------------------------------------------------------------------
 def shn_last_update(table, record_id):
 
     if table and record_id:
@@ -555,6 +572,7 @@ def shn_last_update(table, record_id):
     return None
 
 
+# -----------------------------------------------------------------------------
 def shn_represent_file(file_name,
                        table,
                        field = "file"):
@@ -588,10 +606,14 @@ def shn_represent_file(file_name,
 
     return A(filename, _href = url_file)
 
+
+# -----------------------------------------------------------------------------
 def shn_reference_field():
 
     return
 
+
+# -----------------------------------------------------------------------------
 def shn_insert_subheadings(form, tablename, subheadings):
 
     """
@@ -638,12 +660,15 @@ def shn_insert_subheadings(form, tablename, subheadings):
                 i += 1
 
 
+# -----------------------------------------------------------------------------
 def shn_rheader_tabs(r, tabs=[], paging=False):
 
-    """ Constructs a DIV of component links for a S3RESTRequest
+    """
+    Constructs a DIV of component links for a S3RESTRequest
 
-        @param tabs: the tabs as list of tuples (title, component_name, vars), where vars is optional
-        @param paging: add paging buttons previous/next to the tabs
+    @param tabs: the tabs as list of tuples (title, component_name, vars), where vars is optional
+    @param paging: add paging buttons previous/next to the tabs
+
     """
 
     rheader_tabs = []
@@ -707,3 +732,5 @@ def shn_rheader_tabs(r, tabs=[], paging=False):
         rheader_tabs = ""
 
     return rheader_tabs
+
+# -----------------------------------------------------------------------------

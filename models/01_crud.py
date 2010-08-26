@@ -355,7 +355,7 @@ def import_csv(file, table=None):
 #
 # import_url ------------------------------------------------------------------
 #
-def import_url2(r):
+def import_url(r):
 
     """ Import data from URL query
 
@@ -438,130 +438,6 @@ def import_url2(r):
 
     return dict(item=item)
 
-
-def import_url(r, table, method):
-
-    """
-        Import GET/URL vars into Database & respond in JSON,
-        supported methods: "create" & "update"
-    """
-
-    record = Storage()
-    uuid = None
-    original = None
-
-    module, resource, table, tablename = r.target()
-
-    onvalidation = s3xrc.model.get_config(table, "onvalidation")
-    onaccept = s3xrc.model.get_config(table, "onaccept")
-
-    response.headers["Content-Type"] = "text/x-json"
-
-    for var in request.vars:
-
-        # Skip the Representation
-        if var == "format":
-            continue
-        elif var == "uuid":
-            uuid = request.vars[var]
-        elif "var" in table and table[var].type == "upload":
-            # Handle file uploads (copied from gluon/sqlhtml.py)
-            field = table[var]
-            fieldname = var
-            f = request.vars[fieldname]
-            fd = fieldname + "__delete"
-            if f == "" or f == None:
-                #if request.vars.get(fd, False) or not self.record:
-                if request.vars.get(fd, False):
-                    record[fieldname] = ""
-                else:
-                    #record[fieldname] = self.record[fieldname]
-                    pass
-            elif hasattr(f, "file"):
-                (source_file, original_filename) = (f.file, f.filename)
-            elif isinstance(f, (str, unicode)):
-                ### do not know why this happens, it should not
-                (source_file, original_filename) = \
-                    (cStringIO.StringIO(f), "file.txt")
-            newfilename = field.store(source_file, original_filename)
-            request.vars["%s_newfilename" % fieldname] = record[fieldname] = newfilename
-            if field.uploadfield and not field.uploadfield == True:
-                record[field.uploadfield] = source_file.read()
-        else:
-            record[var] = request.vars[var]
-
-
-    # UUID is required for update
-    if method == "update":
-        if uuid:
-            try:
-                original = db(table.uuid == uuid).select(table.ALL, limitby=(0, 1)).first()
-            except:
-                raise HTTP(404, body=s3xrc.xml.json_message(False, 404, "Record not found!"))
-        else:
-            # You will never come to this point without having specified a
-            # record ID in the request. Nevertheless, we require a UUID to
-            # identify the record
-            raise HTTP(400, body=s3xrc.xml.json_message(False, 400, "UUID required!"))
-
-    # Validate record
-    for var in record:
-        if var in table.fields:
-            value = record[var]
-            (value, error) = s3xrc.validate(table, original, var, value)
-        else:
-            # Shall we just ignore non-existent fields?
-            # del record[var]
-            error = "Invalid field name."
-        if error:
-            raise HTTP(400, body=s3xrc.xml.json_message(False, 400, var + " invalid: " + error))
-        else:
-            record[var] = value
-
-    form = Storage()
-    form.method = method
-    form.vars = record
-
-    # Onvalidation callback
-    if onvalidation:
-        onvalidation(form)
-
-    # Create/update record
-    try:
-        if r.component:
-            record[r.fkey] = r.record[r.pkey]
-        if method == "create":
-            id = table.insert(**dict(record))
-            if id:
-                error = 201
-                item = s3xrc.xml.json_message(True, error, "Created as " + str(r.other(method=None, record_id=id)))
-                form.vars.id = id
-                if onaccept:
-                    onaccept(form)
-            else:
-                error = 403
-                item = s3xrc.xml.json_message(False, error, "Could not create record!")
-
-        elif method == "update":
-            result = db(table.uuid == uuid).update(**dict(record))
-            if result:
-                error = 200
-                item = s3xrc.xml.json_message(True, error, "Record updated.")
-                form.vars.id = original.id
-                if onaccept:
-                    onaccept(form)
-            else:
-                error = 403
-                item = s3xrc.xml.json_message(False, error, "Could not update record!")
-
-        else:
-            error = 501
-            item = s3xrc.xml.json_message(False, error, "Unsupported Method!")
-    except:
-        error = 400
-        item = s3xrc.xml.json_message(False, error, "Invalid request!")
-
-    raise HTTP(error, body=item)
 
 # *****************************************************************************
 # Audit
@@ -992,6 +868,9 @@ def shn_read(r, **attr):
         # Item
         if record_id:
             item = crud.read(table, record_id)
+            subheadings = attr.get("subheadings", None)
+            if subheadings:
+                shn_insert_subheadings(item, tablename, subheadings)
         else:
             item = shn_get_crud_string(tablename, "msg_list_empty")
 
@@ -1520,29 +1399,8 @@ def shn_create(r, **attr):
         response.view = "plain.html"
         return dict(item=form)
 
-    #elif representation == "popup":
-        #if onaccept:
-            #_onaccept = lambda form: \
-                        #s3xrc.audit("create", prefix, name, form=form,
-                                    #representation=representation) and \
-                        #onaccept(form)
-        #else:
-            #_onaccept = lambda form: \
-                        #s3xrc.audit("create", prefix, name, form=form,
-                                    #representation=representation)
-
-        #form = crud.create(table,
-                           #onvalidation=onvalidation, onaccept=_onaccept)
-        #shn_custom_view(r, "popup.html")
-        #return dict(form=form,
-                    #module=module,
-                    #resource=resource,
-                    #main=main,
-                    #caller=request.vars.caller)
-
     elif representation == "url":
-        #return import_url(r, table, method="create")
-        return import_url2(r)
+        return import_url(r)
 
     elif representation == "csv":
         # Read in POST
@@ -1780,8 +1638,7 @@ def shn_update(r, **attr):
         return dict(item=form)
 
     elif r.representation == "url":
-        #return import_url(r, table, method="update")
-        return import_url2(r)
+        return import_url(r)
 
     else:
         session.error = BADFORMAT

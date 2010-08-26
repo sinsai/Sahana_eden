@@ -729,40 +729,33 @@ if deployment_settings.has_module(module) or deployment_settings.has_module("cr"
     # -----------------------------------------------------------------------------
     # Hospital Search by Name
     #
-    def shn_hms_hospital_search_simple(xrequest, **attr):
+    def shn_hms_hospital_search_simple(r, **attr):
 
-        """ Find hospitals by their name """
+        """ Simple search form for hospitals """
 
-        if attr is None:
-            attr = {}
+        resource = r.resource
+        table = resource.table
 
-        onvalidation = attr.get("onvalidation", None)
-        onaccept = attr.get("onaccept", None)
+        r.id = None
 
-        table = db.hms_hospital
-
+        # Check permission
         if not shn_has_permission("read", table):
-            session.error = UNAUTHORISED
-            redirect(URL(r=request, c="default", f="user", args="login",
-                         vars={"_next":URL(r=request,
-                                           args="search_simple",
-                                           vars=request.vars)}))
+            r.unauthorised()
 
-        if xrequest.representation == "html":
+        if r.representation == "html":
+
             # Check for redirection
-            if request.vars._next:
-                next = str.lower(request.vars._next)
-            else:
+            next = r.request.vars.get("_next", None)
+            if not next:
                 next = URL(r=request, f="hospital", args="[id]")
 
             # Select form
             form = FORM(TABLE(
-                        TR(T("Name or ID: "),
-                           INPUT(_type="text", _name="label", _size="40"),
-                           DIV(DIV(_class="tooltip",
-                                   _title=Tstr("Name") + "|" + Tstr("To search for a hospital, enter any part of the name or ID. You may use % as wildcard. Press 'Search' without input to list all hospitals.")))),
-                        TR("",
-                           INPUT(_type="submit", _value="Search"))))
+                    TR(Tstr("Name and/or ID Label" + ": "),
+                    INPUT(_type="text", _name="label", _size="40"),
+                    DIV(DIV(_class="tooltip",
+                            _title=Tstr("Name") + "|" + Tstr("To search for a hospital, enter any part of the name or ID. You may use % as wildcard. Press 'Search' without input to list all hospitals.")))),
+                    TR("", INPUT(_type="submit", _value="Search"))))
 
             output = dict(form=form, vars=form.vars)
 
@@ -773,44 +766,31 @@ if deployment_settings.has_module(module) or deployment_settings.has_module("cr"
                 if form.vars.label == "":
                     form.vars.label = "%"
 
-                results = s3xrc.search_simple(db.hms_hospital,
-                    fields=["gov_uuid", "name", "aka1", "aka2"],
-                    label=form.vars.label,
-                    filterby=response.s3.filter)
+                # Search
+                results = s3xrc.search_simple(table,
+                            fields = ["gov_uuid", "name", "aka1", "aka2"],
+                            label = form.vars.label)
 
-                if results and len(results):
-                    query = table.id.belongs(results)
+                # Get the results
+                if results:
+                    resource.build_query(id=results)
+                    report = shn_list(r, listadd=False)
                 else:
-                    query = (table.id == 0)
+                    report = dict(items=T("No matching records found."))
 
-                # Add filter
-                if response.s3.filter:
-                    response.s3.filter = (response.s3.filter) & (query)
-                else:
-                    response.s3.filter = (query)
-
-                xrequest.id = None
-
-                # Get report from HTML exporter
-                report = shn_list(xrequest, listadd=False)
                 output.update(dict(report))
 
             # Title and subtitle
             title = T("Search for a Hospital")
             subtitle = T("Matching Records")
-            output.update(title=title, subtitle=subtitle)
 
-            # Custom view
-            response.view = "%s/hospital_search.html" % xrequest.prefix
+            # Add-button
+            label_create_button = shn_get_crud_string("hms_hospital", "label_create_button")
+            add_btn = A(label_create_button, _class="action-btn",
+                        _href=URL(r=request, f="hospital", args="create"))
 
-            try:
-                label_create_button = s3.crud_strings["hms_hospital"].label_create_button
-            except:
-                label_create_button = s3.crud_strings.label_create_button
-
-            add_btn = A(label_create_button, _href=URL(r=request, f="hospital", args="create"), _class="action-btn")
-
-            output.update(add_btn=add_btn)
+            output.update(title=title, subtitle=subtitle, add_btn=add_btn)
+            response.view = "search_simple.html"
             return output
 
         else:
@@ -818,9 +798,8 @@ if deployment_settings.has_module(module) or deployment_settings.has_module("cr"
             redirect(URL(r=request))
 
     # Plug into REST controller
-    s3xrc.model.set_method(module, "hospital",
-                           method="search_simple",
-                           action=shn_hms_hospital_search_simple)
+    s3xrc.model.set_method(module, "hospital", method="search_simple", action=shn_hms_hospital_search_simple )
+
 
     # -----------------------------------------------------------------------------
     # Hospital Requests for Support

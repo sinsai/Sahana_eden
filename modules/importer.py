@@ -12,8 +12,8 @@ try:
     from xlrd import *
 except ImportError:
     pass
-    # Don't print with WSGI
-    #print >> sys.stderr, "WARNING: %s: XLRD not installed" % __name__
+    # On server shows up in Apache error log
+    print >> sys.stderr, "WARNING: %s: XLRD not installed" % __name__
 
 import os
 

@@ -22,9 +22,6 @@ if deployment_settings.has_module(module):
                             migrate=migrate)
 
     # -------------------------------------------------------------------------
-    # Constants
-    NOT_APPLICABLE = T("N/A")
-
     # Section CRUD strings
     ADD_SECTION = T("Add Section")
     LIST_SECTIONS = T("List Sections")
@@ -57,7 +54,7 @@ if deployment_settings.has_module(module):
     # Helper functions
     def shn_rat_represent_multiple(set, opt):
 
-        """ Represent a IS_IN_SET with multiple=True as
+        """ Represent an IS_IN_SET with multiple=True as
             comma-separated list of options
 
             @param set: the options set as dict
@@ -154,7 +151,6 @@ if deployment_settings.has_module(module):
                             Field("accessibility", "integer"),
                             comments,
                             document_id,
-                            #document,
                             migrate=migrate)
 
     table.date.requires = [IS_DATE(), IS_NOT_EMPTY()]

@@ -371,6 +371,10 @@ if empty:
             image = "gis_marker.image.Emergency_Operations_Center_S1.png"
         )
         table.insert(
+            name = "activity",
+            image = "gis_marker.image.Emergency_Teams_S1.png"
+        )
+        table.insert(
             name = "hospital",
             image = "gis_marker.image.E_Med_Hospital_S1.png"
         )
@@ -632,6 +636,7 @@ if empty:
         table.insert(
             uuid = "www.sahanafoundation.org/GIS-FEATURE-GROUP-PROGRAMME",
             name = "Programmes",
+            enabled = False,
         )
         table.insert(
             uuid = "www.sahanafoundation.org/GIS-FEATURE-GROUP-HOSPITALS",
@@ -640,6 +645,7 @@ if empty:
         table.insert(
             uuid = "www.sahanafoundation.org/GIS-FEATURE-GROUP-INCIDENTS",
             name = "Incidents",
+            enabled = False,
         )
         table.insert(
             uuid = "www.sahanafoundation.org/GIS-FEATURE-GROUP-OFFICES",
@@ -648,10 +654,12 @@ if empty:
         table.insert(
             uuid = "www.sahanafoundation.org/GIS-FEATURE-GROUP-PEOPLE",
             name = "People",
+            enabled = False,
         )
         table.insert(
             uuid = "www.sahanafoundation.org/GIS-FEATURE-GROUP-PROJECTS",
             name = "Projects",
+            enabled = False,
         )
         table.insert(
             uuid = "www.sahanafoundation.org/GIS-FEATURE-GROUP-SMS-ALERTS",
@@ -661,6 +669,7 @@ if empty:
         table.insert(
             uuid = "www.sahanafoundation.org/GIS-FEATURE-GROUP-VEHICLES",
             name = "Vehicles",
+            enabled = False,
         )
     tablename = "gis_feature_class_to_feature_group"
     table = db[tablename]

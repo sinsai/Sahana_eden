@@ -623,10 +623,12 @@ if empty:
         table.insert(
             uuid = "www.sahanafoundation.org/GIS-FEATURE-GROUP-L4",
             name = "Towns",
+            enabled = False,
         )
         table.insert(
             uuid = "www.sahanafoundation.org/GIS-FEATURE-GROUP-TRANSPORT",
             name = "Transport",
+            enabled = False,
         )
         table.insert(
             uuid = "www.sahanafoundation.org/GIS-FEATURE-GROUP-INFRASTRUCTURE",
@@ -641,6 +643,7 @@ if empty:
         table.insert(
             uuid = "www.sahanafoundation.org/GIS-FEATURE-GROUP-HOSPITALS",
             name = "Hospitals",
+            enabled = False,
         )
         table.insert(
             uuid = "www.sahanafoundation.org/GIS-FEATURE-GROUP-INCIDENTS",
@@ -650,6 +653,7 @@ if empty:
         table.insert(
             uuid = "www.sahanafoundation.org/GIS-FEATURE-GROUP-OFFICES",
             name = "Offices",
+            enabled = False,
         )
         table.insert(
             uuid = "www.sahanafoundation.org/GIS-FEATURE-GROUP-PEOPLE",

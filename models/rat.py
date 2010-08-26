@@ -1482,7 +1482,8 @@ if deployment_settings.has_module(module):
 
     shn_rat_label_and_tooltip(table.child_activities_u12f_pre_disaster,
         "Activities of girls <12yrs before disaster",
-        "How did girls <12yrs spend most of their time prior to the disaster?")
+        "How did girls <12yrs spend most of their time prior to the disaster?",
+        multiple=True)
     table.child_activities_u12f_pre_disaster.requires = IS_EMPTY_OR(IS_IN_SET(rat_child_activity_opts,
                                                         zero=None, multiple=True))
     table.child_activities_u12f_pre_disaster.represent = lambda opt, set=rat_child_activity_opts: \
@@ -1490,7 +1491,8 @@ if deployment_settings.has_module(module):
     table.child_activities_u12f_pre_disaster_other.label = T("Other activities of girls<12yrs before disaster")
     shn_rat_label_and_tooltip(table.child_activities_u12m_pre_disaster,
         "Activities of boys <12yrs before disaster",
-        "How did boys <12yrs spend most of their time prior to the disaster?")
+        "How did boys <12yrs spend most of their time prior to the disaster?",
+        multiple=True)
     table.child_activities_u12m_pre_disaster.requires = IS_EMPTY_OR(IS_IN_SET(rat_child_activity_opts,
                                                         zero=None, multiple=True))
     table.child_activities_u12m_pre_disaster.represent = lambda opt, set=rat_child_activity_opts: \
@@ -1498,7 +1500,8 @@ if deployment_settings.has_module(module):
     table.child_activities_u12m_pre_disaster_other.label = T("Other activities of boys <12yrs before disaster")
     shn_rat_label_and_tooltip(table.child_activities_o12f_pre_disaster,
         "Activities of girls 13-17yrs before disaster",
-        "How did boys girls 13-17yrs spend most of their time prior to the disaster?")
+        "How did boys girls 13-17yrs spend most of their time prior to the disaster?",
+        multiple=True)
     table.child_activities_o12f_pre_disaster.requires = IS_EMPTY_OR(IS_IN_SET(rat_child_activity_opts,
                                                         zero=None, multiple=True))
     table.child_activities_o12f_pre_disaster.represent = lambda opt, set=rat_child_activity_opts: \
@@ -1506,7 +1509,8 @@ if deployment_settings.has_module(module):
     table.child_activities_o12f_pre_disaster_other.label = T("Other activities of girls 13-17yrs before disaster")
     shn_rat_label_and_tooltip(table.child_activities_o12m_pre_disaster,
         "Activities of boys 13-17yrs before disaster",
-        "How did boys 13-17yrs spend most of their time prior to the disaster?")
+        "How did boys 13-17yrs spend most of their time prior to the disaster?",
+        multiple=True)
     table.child_activities_o12m_pre_disaster.requires = IS_EMPTY_OR(IS_IN_SET(rat_child_activity_opts,
                                                         zero=None, multiple=True))
     table.child_activities_o12m_pre_disaster.represent = lambda opt, set=rat_child_activity_opts: \
@@ -1515,7 +1519,8 @@ if deployment_settings.has_module(module):
 
     shn_rat_label_and_tooltip(table.child_activities_u12f_post_disaster,
         "Activities of girls <12yrs now",
-        "How do girls <12yrs spend most of their time now?")
+        "How do girls <12yrs spend most of their time now?",
+        multiple=True)
     table.child_activities_u12f_post_disaster.requires = IS_EMPTY_OR(IS_IN_SET(rat_child_activity_opts,
                                                          zero=None, multiple=True))
     table.child_activities_u12f_post_disaster.represent = lambda opt, set=rat_child_activity_opts: \
@@ -1523,7 +1528,8 @@ if deployment_settings.has_module(module):
     table.child_activities_u12f_post_disaster_other.label = T("Other activities of girls<12yrs")
     shn_rat_label_and_tooltip(table.child_activities_u12m_post_disaster,
         "Activities of boys <12yrs now",
-        "How do boys <12yrs spend most of their time now?")
+        "How do boys <12yrs spend most of their time now?",
+        multiple=True)
     table.child_activities_u12m_post_disaster.requires = IS_EMPTY_OR(IS_IN_SET(rat_child_activity_opts,
                                                          zero=None, multiple=True))
     table.child_activities_u12m_post_disaster.represent = lambda opt, set=rat_child_activity_opts: \
@@ -1531,7 +1537,8 @@ if deployment_settings.has_module(module):
     table.child_activities_u12m_post_disaster_other.label = T("Other activities of boys <12yrs")
     shn_rat_label_and_tooltip(table.child_activities_o12f_post_disaster,
         "Activities of girls 13-17yrs now",
-        "How do girls 13-17yrs spend most of their time now?")
+        "How do girls 13-17yrs spend most of their time now?",
+        multiple=True)
     table.child_activities_o12f_post_disaster.requires = IS_EMPTY_OR(IS_IN_SET(rat_child_activity_opts,
                                                          zero=None, multiple=True))
     table.child_activities_o12f_post_disaster.represent = lambda opt, set=rat_child_activity_opts: \
@@ -1539,7 +1546,8 @@ if deployment_settings.has_module(module):
     table.child_activities_o12f_post_disaster_other.label = T("Other activities of girls 13-17yrs")
     shn_rat_label_and_tooltip(table.child_activities_o12m_post_disaster,
         "Activities of boys 13-17yrs now",
-        "How do boys 13-17yrs spend most of their time now?")
+        "How do boys 13-17yrs spend most of their time now?",
+        multiple=True)
     table.child_activities_o12m_post_disaster.requires = IS_EMPTY_OR(IS_IN_SET(rat_child_activity_opts,
                                                          zero=None, multiple=True))
     table.child_activities_o12m_post_disaster.represent = lambda opt, set=rat_child_activity_opts: \

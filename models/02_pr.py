@@ -153,9 +153,11 @@ def shn_pentity_onaccept(form, table=None):
     id = form.vars.id
 
     if "pe_label" in table.fields:
-        fields = (table.uuid, table.pe_label)
+        fields = [table.id, table.uuid, table.pe_label]
     else:
-        fields = (table.uuid,)
+        fields = [table.id, table.uuid]
+    if "missing" in table.fields:
+        fields.append(table.missing)
     record = db(table.id == id).select(limitby=(0,1), *fields).first()
 
     if record:
@@ -175,6 +177,12 @@ def shn_pentity_onaccept(form, table=None):
             pe_id = pentity.insert(uuid=uid, pe_label=pe_label, pe_type=pe_type)
             db(pentity.id == pe_id).update(pe_id=pe_id, deleted=False)
             db(table.id == id).update(pe_id=pe_id)
+
+        # If a person gets added in MPR, then redirect to missing report
+        if request.controller == "mpr" and \
+           table._tablename == "pr_person" and \
+           record.missing == True:
+            response.s3.mpr_next = URL(r=request, c="mpr", f="person", args=[record.id, "missing_report"])
 
         return True
 

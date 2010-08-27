@@ -40,9 +40,9 @@ shn_menu()
 def index():
 
     """ Module's Home Page """
-    
+
     module_name = deployment_settings.modules[module].name_nice
-    
+
     shn_menu()
     return dict(module_name=module_name)
 
@@ -141,13 +141,12 @@ def shelter():
     response.s3.pagination = True
 
     shelter_tabs = [(T("Basic Details"), None),
-                    # Currently crashes - duplicate resource name?
-                    #(T("Assessments"), "assessment"),
+                    (T("Assessments"), "assessment"),
                     (T("Requests"), "req"),
                    ]
-                   
+
     rheader = lambda r: shn_shelter_rheader(r, tabs=shelter_tabs)
-    
+
     output = shn_rest_controller(
         module, resource, listadd=False,
         rheader=rheader, sticky=True

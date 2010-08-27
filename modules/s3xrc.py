@@ -2360,12 +2360,14 @@ class S3ResourceModel(object):
             hook = self.components.get(name, Storage())
             if isinstance(joinby, dict):
                 for tablename in joinby.keys():
-                    hook[tablename] = ("id", joinby[tablename])
+                    hook[tablename] = Storage(
+                        _joinby = ("id", joinby[tablename]),
+                        _component = component)
             elif isinstance(joinby, str):
                 hook._joinby=joinby
+                hook._component=component
             else:
                 raise SyntaxError("Invalid join key(s)")
-            hook._component=component
             self.components[name] = hook
             return component
         else:
@@ -2388,12 +2390,14 @@ class S3ResourceModel(object):
 
         hook = self.components.get(component_name, None)
         if table and hook:
-            component = hook._component
-            keys = hook.get(tablename, None)
-            if keys:
-                return (component, keys[0], keys[1])
+            h = hook.get(tablename, None)
+            if h:
+                pkey, fkey = h._joinby
+                component = h._component
+                return (hook[tablename]._component, pkey, fkey)
             else:
                 nkey = hook._joinby
+                component = hook._component
                 if nkey and nkey in table.fields:
                     return (component, nkey, nkey)
 
@@ -2416,12 +2420,14 @@ class S3ResourceModel(object):
         components = []
         if table:
             for hook in self.components.values():
-                component = hook._component
-                keys = hook.get(tablename, None)
-                if keys:
-                    components.append((component, keys[0], keys[1]))
+                h = hook.get(tablename, None)
+                if h:
+                    pkey, fkey = h._joinby
+                    component = h._component
+                    components.append((hook[tablename]._component, pkey, fkey))
                 else:
                     nkey = hook._joinby
+                    component = hook._component
                     if nkey and nkey in table.fields:
                         components.append((component, nkey, nkey))
 

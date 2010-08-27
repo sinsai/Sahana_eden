@@ -1780,6 +1780,10 @@ OpenLayers.Util.extend( selectPdfControl, {
             name_safe = re.sub('\W', '_', name)
             url = layer.url
             try:
+                wms_version = "version: '" + layer.version + "',"
+            except:
+                wms_version = ""
+            try:
                 wms_map = "map: '" + layer.map + "',"
             except:
                 wms_map = ""
@@ -1788,11 +1792,6 @@ OpenLayers.Util.extend( selectPdfControl, {
                 format = "type: '" + layer.format + "',"
             except:
                 format = ""
-            wms_projection = db(db.gis_projection.id == layer.projection_id).select(db.gis_projection.epsg, limitby=(0, 1)).first().epsg
-            if wms_projection == 4326:
-                wms_projection = "projection: proj4326"
-            else:
-                wms_projection = "projection: new OpenLayers.Projection('EPSG:" + wms_projection + "')"
             if layer.transparent:
                 transparent = "transparent: true,"
             else:
@@ -1812,7 +1811,7 @@ OpenLayers.Util.extend( selectPdfControl, {
                layers: '""" + wms_layers + """',
                """ + format + """
                """ + transparent + """
-               """ + wms_projection + """
+               """ + wms_version + """
                },
                {
                """ + options + """

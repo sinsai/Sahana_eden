@@ -907,17 +907,22 @@ for layertype in gis_layer_types:
             gis_layer,
             Field("visible", "boolean", default=False, label=T("On by default?")),
             Field("url", label=T("Location"), requires = IS_NOT_EMPTY()),
+            Field("version", label=T("Version"), default="1.1.1", requires = IS_IN_SET(["1.1.1", "1.3.0"], zero=None)),
             Field("base", "boolean", default=True, label=T("Base Layer?")),
             Field("map", label=T("Map")),
             Field("layers", label=T("Layers"), requires = IS_NOT_EMPTY()),
-            Field("format", label=T("Format"), requires = IS_NULL_OR(IS_IN_SET(["image/jpeg", "image/png"]))),
+            Field("format", label=T("Format"), requires = IS_NULL_OR(IS_IN_SET(["image/jpeg", "image/png", "image/bmp", "image/tiff", "image/gif", "image/svg+xml"]))),
             Field("transparent", "boolean", default=False, label=T("Transparent?")),
-            projection_id)
+            #projection_id, # Client-side reprojection deprecated. Use MapProxy instead.
+            #Field("queryable", "boolean", default=False, label=T("Queryable?")),
+            #Field("legend_url", label=T("legend URL")),
+            #Field("legend_format", label=T("Legend Format"), requires = IS_NULL_OR(IS_IN_SET(["image/jpeg", "image/png", "image/bmp", "image/tiff", "image/gif", "image/svg+xml"]))),
+            )
         table = db.define_table(tablename, t, migrate=migrate)
         #table.url.requires = [IS_URL, IS_NOT_EMPTY()]
         # Default IS_NULL_OR() not appropriate here
-        table.projection_id.requires = IS_ONE_OF(db, "gis_projection.id", "%(name)s")
-        table.projection_id.default = 2
+        #table.projection_id.requires = IS_ONE_OF(db, "gis_projection.id", "%(name)s")
+        #table.projection_id.default = 2
     elif layertype == "xyz":
         t = db.Table(db, table,
             gis_layer,

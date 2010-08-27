@@ -499,7 +499,7 @@ if deployment_settings.has_module(module):
                         _href=URL(r=request, f="body", args="create"))
 
             output.update(title=title, subtitle=subtitle, add_btn=add_btn)
-            response.view = "%s/body_search.html" % resource.prefix
+            response.view = "search_simple.html"
             return output
 
         else:

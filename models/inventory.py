@@ -127,10 +127,10 @@ if deployment_settings.has_module(module):
                               editable=True)
 
 
-    inventory_menu = [[T("Inventory Stores"), False, URL(r=request, 
-                                                    c = "inventory",
-                                                    f = "location"),
-                       None],
+    inventory_menu = [[T("Inventory Stores"), False, URL(r=request, c = "inventory", f = "location"),
+                       None
+                       #[T("Add"), False, URL(r=request, c = "inventory", f = "location", args="create")],                       
+                       ],
                       [T("Relief Items"), False, URL(r=request, 
                                                      c = "supply",
                                                      f = "item"),

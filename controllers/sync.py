@@ -27,7 +27,7 @@ def call():
 # S3 framework functions
 def index():
     "Module's Home Page"
-    
+
     return dict(module_name=module_name)
 
 import urllib2
@@ -99,7 +99,7 @@ def now():
     if sync_start:
         # retrieve sync partners from DB
         peers = db().select(db.sync_partner.ALL)
-        
+
         # retrieve all scheduled jobs set to run manually
         jobs = db(db.sync_schedule.period == "m" and db.sync_schedule.enabled == True).select(db.sync_schedule.ALL)
 
@@ -332,7 +332,7 @@ def now():
                 db(db.sync_now.id == sync_now_id).delete()
                 # we're done
                 final_status += "Sync completed successfully. Logs generated: " + str(A(T("Click here to open log"),_href=URL(r=request, c="sync", f="history"))) + "<br /><br />\n"
-    
+
     return dict(module_name=module_name, sync_status=final_status, sync_start=sync_start, sync_state=state)
 
 def sync():
@@ -652,13 +652,13 @@ def schedule():
             if "comments" in request.vars:
                 sch_comments = request.vars["comments"]
             sch_source_type = "eden"
-            if "sync_data_source_type" in request.vars: 
+            if "sync_data_source_type" in request.vars:
                 sch_source_type = request.vars["sync_data_source_type"]
             sch_period = "h"
-            if "sync_schedule_period" in request.vars: 
+            if "sync_schedule_period" in request.vars:
                 sch_period = request.vars["sync_schedule_period"]
             sch_period_hours = 5
-            if "sync_schedule_period_hours" in request.vars: 
+            if "sync_schedule_period_hours" in request.vars:
                 sch_period_hours = request.vars["sync_schedule_period_hours"]
             sch_days_of_week = []
             if "sync_schedule_weekly_days" in request.vars and request.vars["sync_schedule_weekly_days"]:
@@ -710,7 +710,7 @@ def schedule():
                 created_on = datetime.datetime.now(),
                 modified_on = datetime.datetime.now()
             )
-            
+
             confirmation_msg = "New Scheduled job created"
             response.view = "sync/schedule.html"
     else:
@@ -838,7 +838,7 @@ def schedule_process_job(job_id):
             last_sync_on_str = "?msince=" + last_sync_on.strftime("%Y-%m-%dT%H:%M:%SZ")
         else:
             last_sync_on_str = ""
-        
+
         log_file = open("applications/" + request.application + "/cron/scheduler_log.txt", "a")
         log_file.write(str(datetime.datetime.now()) + " - running job " + str(job.id) + "\n")
         log_file.close()
@@ -947,7 +947,7 @@ def schedule_process_job(job_id):
         sync_method = sync_method,
         complete_sync = complete_sync
     )
-    
+
     # update last_sync_on
     vals = {"last_sync_on": datetime.datetime.utcnow()}
     db(db.sync_partner.id==peer.id).update(**vals)

@@ -2225,9 +2225,11 @@ class S3ResourceComponent(object):
         self.db = db
         self.prefix = prefix
         self.name = name
+
         self.tablename = "%s_%s" % (prefix, name)
-        assert self.tablename in self.db, "Table must exist in the database."
-        self.table = self.db[self.tablename]
+        self.table = self.db.get(self.tablename, None)
+        if not self.table:
+            raise SyntaxError("Table must exist in the database.")
 
         self.attr = Storage(attr)
         if not "multiple" in self.attr:
@@ -2265,32 +2267,6 @@ class S3ResourceComponent(object):
             return self.attr[name]
         else:
             return None
-
-
-    # -------------------------------------------------------------------------
-    def get_join_keys(self, prefix, name):
-
-        """ Reads the join keys of this component and a resource
-
-            @param prefix: prefix of the resource name (=module name)
-            @param name: name of the resource (=without prefix)
-
-        """
-
-        if "joinby" in self.attr:
-            joinby = self.attr.joinby
-            tablename = "%s_%s" % (prefix, name)
-            if tablename in self.db:
-                table = self.db[tablename]
-                if isinstance(joinby, str):
-                    if joinby in table and joinby in self.table:
-                        return (joinby, joinby)
-                elif isinstance(joinby, dict):
-                    if tablename in joinby and \
-                       joinby[tablename] in self.table:
-                        return ("id", joinby[tablename])
-
-        return (None, None)
 
 
 # *****************************************************************************
@@ -2378,11 +2354,22 @@ class S3ResourceModel(object):
 
         """
 
-        assert "joinby" in attr, "Join key(s) must be defined."
-
-        component = S3ResourceComponent(self.db, prefix, name, **attr)
-        self.components[name] = component
-        return component
+        joinby = attr.get("joinby", None)
+        if joinby:
+            component = S3ResourceComponent(self.db, prefix, name, **attr)
+            hook = self.components.get(name, Storage())
+            if isinstance(joinby, dict):
+                for tablename in joinby.keys():
+                    hook[tablename] = ("id", joinby[tablename])
+            elif isinstance(joinby, str):
+                hook._joinby=joinby
+            else:
+                raise SyntaxError("Invalid join key(s)")
+            hook._component=component
+            self.components[name] = hook
+            return component
+        else:
+            raise SyntaxError("Join key(s) must be defined.")
 
 
     # -------------------------------------------------------------------------
@@ -2396,12 +2383,19 @@ class S3ResourceModel(object):
 
         """
 
-        if component_name in self.components and \
-           not component_name == name:
-            component = self.components[component_name]
-            pkey, fkey = component.get_join_keys(prefix, name)
-            if pkey:
-                return (component, pkey, fkey)
+        tablename = "%s_%s" % (prefix, name)
+        table = self.db.get(tablename, None)
+
+        hook = self.components.get(component_name, None)
+        if table and hook:
+            component = hook._component
+            keys = hook.get(tablename, None)
+            if keys:
+                return (component, keys[0], keys[1])
+            else:
+                nkey = hook._joinby
+                if nkey and nkey in table.fields:
+                    return (component, nkey, nkey)
 
         return (None, None, None)
 
@@ -2416,14 +2410,22 @@ class S3ResourceModel(object):
 
         """
 
-        component_list = []
-        for component_name in self.components:
-            component, pkey, fkey = self.get_component(prefix, name,
-                                                       component_name)
-            if component:
-                component_list.append((component, pkey, fkey))
+        tablename = "%s_%s" % (prefix, name)
+        table = self.db.get(tablename, None)
 
-        return component_list
+        components = []
+        if table:
+            for hook in self.components.values():
+                component = hook._component
+                keys = hook.get(tablename, None)
+                if keys:
+                    components.append((component, keys[0], keys[1]))
+                else:
+                    nkey = hook._joinby
+                    if nkey and nkey in table.fields:
+                        components.append((component, nkey, nkey))
+
+        return components
 
 
     # -------------------------------------------------------------------------

@@ -24,7 +24,7 @@ response.menu_options = [
 if not deployment_settings.get_security_map() or shn_has_role("MapAdmin"):
     response.menu_options.append([T("Service Catalogue"), False, URL(r=request, f="map_service_catalogue")])
     response.menu_options.append([T("De-duplicator"), False, URL(r=request, f="location_duplicates")])
-
+ 
 # Web2Py Tools functions
 def download():
     "Download a file."
@@ -37,11 +37,11 @@ def index():
     """
 
     module_name = deployment_settings.modules[module].name_nice
-
+    
     # Include an embedded Overview Map on the index page
     window = False
     toolbar = False
-
+    
     map = define_map(window=window, toolbar=toolbar)
 
     return dict(module_name=module_name, map=map)
@@ -51,7 +51,7 @@ def define_map(window=False, toolbar=False):
         Define the main Situation Map
         This can then be called from both the Index page (embedded) & the Map_Viewing_Client (fullscreen)
     """
-
+    
     # @ToDo: Make these configurable
     #config = gis.get_config()
     if not deployment_settings.get_security_map() or shn_has_role("MapAdmin"):
@@ -83,7 +83,7 @@ def define_map(window=False, toolbar=False):
     # Default (but still better to define here as otherwise each feature needs to check it's feature_class)
     marker = "marker_red"
     incidents = gis.get_feature_layer(module, resource, layername, popup_label, marker)
-
+    
     # Shelters
     module = "cr"
     resource = "shelter"
@@ -91,7 +91,15 @@ def define_map(window=False, toolbar=False):
     popup_label = Tstr("Shelter")
     marker = "shelter"
     shelters = gis.get_feature_layer(module, resource, layername, popup_label, marker)
-
+    
+    # Schools
+    module = "sitrep"
+    resource = "school_report"
+    layername = Tstr("Schools")
+    popup_label = Tstr("School")
+    marker = "school"
+    schools = gis.get_feature_layer(module, resource, layername, popup_label, marker)
+    
     # Requests
     module = "rms"
     resource = "req"
@@ -99,7 +107,7 @@ def define_map(window=False, toolbar=False):
     popup_label = Tstr("Request")
     marker = "marker_yellow"
     requests = gis.get_feature_layer(module, resource, layername, popup_label, marker)
-
+    
     # Assessments
     module = "sitrep"
     resource = "assessment"
@@ -107,7 +115,7 @@ def define_map(window=False, toolbar=False):
     popup_label = Tstr("Assessment")
     marker = "marker_green"
     assessments = gis.get_feature_layer(module, resource, layername, popup_label, marker)
-
+    
     # Activities
     module = "project"
     resource = "activity"
@@ -115,15 +123,16 @@ def define_map(window=False, toolbar=False):
     popup_label = Tstr("Activity")
     marker = "activity"
     activities = gis.get_feature_layer(module, resource, layername, popup_label, marker)
-
+    
     feature_queries = [
                        incidents,
                        shelters,
+                       schools,
                        requests,
                        assessments,
                        activities
                        ]
-
+    
     map = gis.show_map(
                        window=window,
                        catalogue_toolbar=catalogue_toolbar,
@@ -136,7 +145,7 @@ def define_map(window=False, toolbar=False):
                       )
 
     return map
-
+    
 def location():
 
     """ RESTful CRUD controller for Locations """
@@ -147,7 +156,7 @@ def location():
 
     # Allow prep to pass vars back to the controller
     vars = {}
-
+    
     # Pre-processor
     def prep(r, vars):
 
@@ -220,14 +229,14 @@ def location():
                         # Read
                         add_feature = False
                         add_feature_active = False
-
+                    
                     location = db(db.gis_location.id == r.id).select(db.gis_location.lat, db.gis_location.lon, limitby=(0, 1)).first()
                     if location and location.lat is not None and location.lon is not None:
                         lat = location.lat
                         lon = location.lon
                     # Same as a single zoom on a cluster
                     zoom = zoom + 2
-
+                    
                 _map = gis.show_map(lat = lat,
                                     lon = lon,
                                     zoom = zoom,
@@ -241,7 +250,7 @@ def location():
                 vars.update(_map=_map)
         return True
     response.s3.prep = lambda r, vars=vars: prep(r, vars)
-
+    
     # Options
     _vars = request.vars
     filters = []
@@ -292,7 +301,7 @@ def location():
             # Don't use 'parent' as the var name as otherwise it conflicts with the form's var of the same name & hence this will be triggered during form submission
             if parent:
                 table.parent.default = parent
-
+            
             fc = None
             # Populate defaults & hide unnecessary rows
             if "cr_shelter" in caller:
@@ -337,7 +346,7 @@ def location():
                 table.feature_class_id.readable = table.feature_class_id.writable = False
                 table.marker_id.readable = table.marker_id.writable = False
                 table.addr_street.readable = table.addr_street.writable = False
-
+            
             try:
                 # If we have a pre-assigned Feature Class
                 table.feature_class_id.default = fc.id
@@ -395,10 +404,10 @@ def location_duplicates():
                            Field("old", db.gis_location, requires=IS_ONE_OF(db, "gis_location.id", "%(name)s"), label = B(T("Old")), comment=open_btn("btn_old")),
                            Field("new", db.gis_location, requires=IS_ONE_OF(db, "gis_location.id", "%(name)s"), label = B(T("New")), comment=open_btn("btn_new")),
                           )
-
+    
     if form.accepts(request.vars, session):
         _vars = form.vars
-
+        
         if not _vars.old == _vars.new:
             # Take Action
             delete_location(_vars.old, _vars.new)
@@ -410,7 +419,7 @@ def location_duplicates():
         response.error = T("Need to select 2 Locations")
 
     return dict(form=form)
-
+    
 def apikey():
     """ RESTful CRUD controller """
     if deployment_settings.get_security_map() and not shn_has_role("MapAdmin"):
@@ -1508,7 +1517,7 @@ def display_feature():
     feature = query.first()
 
     config = gis.get_config()
-
+    
     try:
         # Centre on Feature
         lat = feature.lat
@@ -1534,7 +1543,7 @@ def display_feature():
 
     # Calculate an appropriate BBox
     #bounds = gis.get_bounds(features=query)
-
+    
     # Default zoom +2 (same as a single zoom on a cluster)
     zoom = config.zoom + 2
 
@@ -1757,7 +1766,7 @@ def map_viewing_client():
 
     # @ToDo Make Configurable
     toolbar = True
-
+    
     map = define_map(window=window, toolbar=toolbar)
 
     return dict(map=map)

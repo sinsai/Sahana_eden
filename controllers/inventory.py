@@ -14,10 +14,10 @@ module = request.controller
 response.menu_options = inventory_menu
 
 #==============================================================================
-def shn_location_rheader(jr, tabs=[]):
-    if jr.representation == "html":
-        rheader_tabs = shn_rheader_tabs(jr, tabs)
-        inventory_location = jr.record
+def shn_location_rheader(r, tabs=[]):
+    if r.representation == "html":
+        rheader_tabs = shn_rheader_tabs(r, tabs)
+        inventory_location = r.record
         rheader = DIV(TABLE(TR(
                                TH(Tstr("Location") + ": "), shn_gis_location_represent(inventory_location.location_id),
                                TH(Tstr("Description") + ": "), inventory_location.comments,
@@ -39,7 +39,7 @@ def location():
         return output
     response.s3.postp = postp
 
-    rheader = lambda jr: shn_location_rheader(jr,
+    rheader = lambda r: shn_location_rheader(r,
                                               tabs = [(T("Details"), None),
                                                       (T("Items"), "location_item"),                                                                                                        
                                                      ]
@@ -49,7 +49,7 @@ def location():
 
 def index():
 
-    """ Default to the inventory_location list view """
+    """ Default to the inventory_location list view - TODO does not work with paginate!!!"""
 
     request.function = "location"
     request.args = []

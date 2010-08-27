@@ -355,7 +355,7 @@ def import_csv(file, table=None):
 #
 # import_url ------------------------------------------------------------------
 #
-def import_url2(r):
+def import_url(r):
 
     """ Import data from URL query
 
@@ -438,130 +438,6 @@ def import_url2(r):
 
     return dict(item=item)
 
-
-def import_url(r, table, method):
-
-    """
-        Import GET/URL vars into Database & respond in JSON,
-        supported methods: "create" & "update"
-    """
-
-    record = Storage()
-    uuid = None
-    original = None
-
-    module, resource, table, tablename = r.target()
-
-    onvalidation = s3xrc.model.get_config(table, "onvalidation")
-    onaccept = s3xrc.model.get_config(table, "onaccept")
-
-    response.headers["Content-Type"] = "text/x-json"
-
-    for var in request.vars:
-
-        # Skip the Representation
-        if var == "format":
-            continue
-        elif var == "uuid":
-            uuid = request.vars[var]
-        elif "var" in table and table[var].type == "upload":
-            # Handle file uploads (copied from gluon/sqlhtml.py)
-            field = table[var]
-            fieldname = var
-            f = request.vars[fieldname]
-            fd = fieldname + "__delete"
-            if f == "" or f == None:
-                #if request.vars.get(fd, False) or not self.record:
-                if request.vars.get(fd, False):
-                    record[fieldname] = ""
-                else:
-                    #record[fieldname] = self.record[fieldname]
-                    pass
-            elif hasattr(f, "file"):
-                (source_file, original_filename) = (f.file, f.filename)
-            elif isinstance(f, (str, unicode)):
-                ### do not know why this happens, it should not
-                (source_file, original_filename) = \
-                    (cStringIO.StringIO(f), "file.txt")
-            newfilename = field.store(source_file, original_filename)
-            request.vars["%s_newfilename" % fieldname] = record[fieldname] = newfilename
-            if field.uploadfield and not field.uploadfield == True:
-                record[field.uploadfield] = source_file.read()
-        else:
-            record[var] = request.vars[var]
-
-
-    # UUID is required for update
-    if method == "update":
-        if uuid:
-            try:
-                original = db(table.uuid == uuid).select(table.ALL, limitby=(0, 1)).first()
-            except:
-                raise HTTP(404, body=s3xrc.xml.json_message(False, 404, "Record not found!"))
-        else:
-            # You will never come to this point without having specified a
-            # record ID in the request. Nevertheless, we require a UUID to
-            # identify the record
-            raise HTTP(400, body=s3xrc.xml.json_message(False, 400, "UUID required!"))
-
-    # Validate record
-    for var in record:
-        if var in table.fields:
-            value = record[var]
-            (value, error) = s3xrc.validate(table, original, var, value)
-        else:
-            # Shall we just ignore non-existent fields?
-            # del record[var]
-            error = "Invalid field name."
-        if error:
-            raise HTTP(400, body=s3xrc.xml.json_message(False, 400, var + " invalid: " + error))
-        else:
-            record[var] = value
-
-    form = Storage()
-    form.method = method
-    form.vars = record
-
-    # Onvalidation callback
-    if onvalidation:
-        onvalidation(form)
-
-    # Create/update record
-    try:
-        if r.component:
-            record[r.fkey] = r.record[r.pkey]
-        if method == "create":
-            id = table.insert(**dict(record))
-            if id:
-                error = 201
-                item = s3xrc.xml.json_message(True, error, "Created as " + str(r.other(method=None, record_id=id)))
-                form.vars.id = id
-                if onaccept:
-                    onaccept(form)
-            else:
-                error = 403
-                item = s3xrc.xml.json_message(False, error, "Could not create record!")
-
-        elif method == "update":
-            result = db(table.uuid == uuid).update(**dict(record))
-            if result:
-                error = 200
-                item = s3xrc.xml.json_message(True, error, "Record updated.")
-                form.vars.id = original.id
-                if onaccept:
-                    onaccept(form)
-            else:
-                error = 403
-                item = s3xrc.xml.json_message(False, error, "Could not update record!")
-
-        else:
-            error = 501
-            item = s3xrc.xml.json_message(False, error, "Unsupported Method!")
-    except:
-        error = 400
-        item = s3xrc.xml.json_message(False, error, "Invalid request!")
-
-    raise HTTP(error, body=item)
 
 # *****************************************************************************
 # Audit
@@ -847,17 +723,42 @@ def shn_convert_orderby(table, request, fields=None):
 def shn_build_ssp_filter(table, request, fields=None):
 
     cols = fields or shn_get_columns(table)
-    context = "%" + request.vars.sSearch + "%"
-    context = context.lower()
     searchq = None
 
     # TODO: use FieldS3 (with representation_field)
     for i in xrange(0, int(request.vars.iColumns)):
-        if table[cols[i]].type in ["string","text"]:
-            if searchq is None:
-                searchq = table[cols[i]].lower().like(context)
+        field = table[cols[i]]
+        query = None
+        if str(field.type) == "integer":
+            context = str(request.vars.sSearch).lower()
+            requires = field.requires
+            if not isinstance(requires, (list, tuple)):
+                requires = [requires]
+            if requires:
+                r = requires[0]
+                options = []
+                if isinstance(r, (IS_NULL_OR, IS_EMPTY_OR)) and hasattr(r.other, "options"):
+                    options = r.other.options()
+                elif hasattr(r, "options"):
+                    options = r.options()
+                vlist = []
+                for (value, text) in options:
+                    if str(text).lower().find(context.lower()) != -1:
+                        vlist.append(value)
+                if vlist:
+                    query = field.belongs(vlist)
             else:
-                searchq = searchq | table[cols[i]].lower().like(context)
+                continue
+        elif str(field.type) in ("string", "text"):
+            context = "%" + request.vars.sSearch + "%"
+            context = context.lower()
+            query = table[cols[i]].lower().like(context)
+
+        if searchq is None and query:
+            searchq = query
+        elif query:
+            searchq = searchq | query
+
     return searchq
 
 # *****************************************************************************
@@ -920,7 +821,10 @@ def shn_read(r, **attr):
         if not len(resource):
             if not r.multiple:
                 r.component_id = None
-                redirect(r.other(method="create", representation=representation))
+                if shn_has_permission("create", tablename):
+                    redirect(r.other(method="create", representation=representation))
+                else:
+                    record_id = None
             else:
                 session.error = BADRECORD
                 redirect(r.there())
@@ -929,7 +833,7 @@ def shn_read(r, **attr):
     else:
         record_id = r.id
 
-    # ToDo: Comment this out as we don't want to redirect to update form upon read
+    # Redirect to update if user has permission unless URL method specified
     if not r.method:
         authorised = shn_has_permission("update", tablename, record_id)
         if authorised and representation == "html" and editable:
@@ -964,6 +868,9 @@ def shn_read(r, **attr):
         # Item
         if record_id:
             item = crud.read(table, record_id)
+            subheadings = attr.get("subheadings", None)
+            if subheadings:
+                shn_insert_subheadings(item, tablename, subheadings)
         else:
             item = shn_get_crud_string(tablename, "msg_list_empty")
 
@@ -1150,8 +1057,7 @@ def shn_list(r, **attr):
             if squery is not None:
                 query = squery & query
 
-        sEcho = int(vars.sEcho)
-
+        sEcho = int(vars.sEcho or 0)
         totalrows = resource.count()
         if limit:
             rows = db(query).select(table.ALL,
@@ -1492,29 +1398,8 @@ def shn_create(r, **attr):
         response.view = "plain.html"
         return dict(item=form)
 
-    #elif representation == "popup":
-        #if onaccept:
-            #_onaccept = lambda form: \
-                        #s3xrc.audit("create", prefix, name, form=form,
-                                    #representation=representation) and \
-                        #onaccept(form)
-        #else:
-            #_onaccept = lambda form: \
-                        #s3xrc.audit("create", prefix, name, form=form,
-                                    #representation=representation)
-
-        #form = crud.create(table,
-                           #onvalidation=onvalidation, onaccept=_onaccept)
-        #shn_custom_view(r, "popup.html")
-        #return dict(form=form,
-                    #module=module,
-                    #resource=resource,
-                    #main=main,
-                    #caller=request.vars.caller)
-
     elif representation == "url":
-        #return import_url(r, table, method="create")
-        return import_url2(r)
+        return import_url(r)
 
     elif representation == "csv":
         # Read in POST
@@ -1700,13 +1585,12 @@ def shn_update(r, **attr):
             else:
                 lat = config.lat
                 lon = config.lon
-            module, resource = tablename.split("_")
             layername = Tstr("Location")
             popup_label = ""
             filter = Storage(tablename = tablename,
                              id = r.id
                             )
-            layer = gis.get_feature_layer(module, resource, layername, popup_label, filter=filter)
+            layer = gis.get_feature_layer(prefix, name, layername, popup_label, filter=filter)
             feature_queries = [layer]
             _map = gis.show_map(lat = lat,
                                 lon = lon,
@@ -1752,8 +1636,7 @@ def shn_update(r, **attr):
         return dict(item=form)
 
     elif r.representation == "url":
-        #return import_url(r, table, method="update")
-        return import_url2(r)
+        return import_url(r)
 
     else:
         session.error = BADFORMAT

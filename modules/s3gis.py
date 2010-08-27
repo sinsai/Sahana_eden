@@ -99,6 +99,7 @@ class GIS(object):
         #self.messages.centroid_error = str(A("Shapely", _href="http://pypi.python.org/pypi/Shapely/", _target="_blank")) + " library not found, so can't find centroid!"
         self.messages.centroid_error = "Shapely library not functional, so can't find centroid! Install Geos & Shapely for Line/Polygon support"
         self.messages.unknown_type = "Unknown Type!"
+        self.messages.invalid_wkt_point = "Invalid WKT: Must be like POINT(3 4)!"
         self.messages.invalid_wkt_linestring = "Invalid WKT: Must be like LINESTRING(3 4,10 50,20 25)!"
         self.messages.invalid_wkt_polygon = "Invalid WKT: Must be like POLYGON((1 1,5 1,5 5,1 5,1 1),(2 2, 3 2, 3 3, 2 3,2 2))!"
         self.messages.lon_empty = "Invalid: Longitude can't be empty if Latitude specified!"
@@ -214,46 +215,35 @@ class GIS(object):
 
         return bearing
 
+    def _min_not_none(self, *args):
+        """
+            Utility function returns minimal argument that is not None.
+        """
+        return min(*(a for a in args if a is not None))
+
     def get_bounds(self, features=[]):
         """
             Calculate the Bounds of a list of Features
             e.g. to use in GPX export for correct zooming
-            @ToDo: Support Polygons
             @ToDo: Optimised Geospatial routines rather than this crude hack
         """
-        # If we have a list of features, then use this to build the bounds
-        if features:
-            min_lon = 180
-            min_lat = 90
-            max_lon = -180
-            max_lat = -90
-            for feature in features:
-                if feature.lon > max_lon:
-                    max_lon = feature.lon
-                if feature.lon < min_lon:
-                    min_lon = feature.lon
-                if feature.lat > max_lat:
-                    max_lat = feature.lat
-                if feature.lat < min_lat:
-                    min_lat = feature.lat
-            # Check that we're still within overall bounds
-            config = self.get_config()
-            if min_lon < config.min_lon:
-                min_lon = config.min_lon
-            if min_lat < config.min_lat:
-                min_lat = config.min_lat
-            if max_lon > config.max_lon:
-                max_lon = config.max_lon
-            if max_lat > config.max_lat:
-                max_lat = config.max_lat
+        min_lon = 180
+        min_lat = 90
+        max_lon = -180
+        max_lat = -90
+        min_not_none = self._min_not_none  # use this instead of min
+        for feature in features:
+            min_lon = min_not_none(feature.lon, feature.lon_min, min_lon)
+            min_lat = min_not_none(feature.lat, feature.lat_min, min_lat)
+            max_lon = max(feature.lon, feature.lon_max, max_lon)
+            max_lat = max(feature.lat, feature.lat_max, max_lat)
 
-        else:
-            # Read from config
-            config = self.get_config()
-            min_lon = config.min_lon
-            min_lat = config.min_lat
-            max_lon = config.max_lon
-            max_lat = config.max_lat
+        # Check that we're still within overall bounds
+        config = self.get_config()
+        min_lon = max(config.lon, min_lon)
+        min_lat = max(config.lat, min_lat)
+        max_lon = min_not_none(config.lon, max_lon)
+        max_lat = min_not_none(config.lat, max_lat)
 
         return dict(min_lon=min_lon, min_lat=min_lat, max_lon=max_lon, max_lat=max_lat)
 
@@ -333,7 +323,7 @@ class GIS(object):
         
         # Hide Resources recorded to Country Locations on the map?
         if not deployment_settings.get_gis_display_l0():
-            query = query & (db.gis_location.level != "L0")
+            query = query & ((db.gis_location.level != "L0") | (db.gis_location.level == None))
             
         query = query & (db.gis_location.id == db["%s_%s" % (module, resource)].location_id)
         locations = db(query).select(db.gis_location.id, db.gis_location.uuid, db.gis_location.parent, db.gis_location.name, db.gis_location.wkt, db.gis_location.lat, db.gis_location.lon)
@@ -404,6 +394,9 @@ class GIS(object):
             query = (table_feature.id == feature_id)
         elif isinstance(feature_id, str):
             query = (table_feature.uuid == feature_id)
+        else:
+            # What else could feature_id be?
+            return None
         
         feature = db(query).select(table_feature.lat, table_feature.lon, table_feature.parent, limitby=(0, 1)).first()
         
@@ -1787,6 +1780,10 @@ OpenLayers.Util.extend( selectPdfControl, {
             name_safe = re.sub('\W', '_', name)
             url = layer.url
             try:
+                wms_version = "version: '" + layer.version + "',"
+            except:
+                wms_version = ""
+            try:
                 wms_map = "map: '" + layer.map + "',"
             except:
                 wms_map = ""
@@ -1795,11 +1792,6 @@ OpenLayers.Util.extend( selectPdfControl, {
                 format = "type: '" + layer.format + "',"
             except:
                 format = ""
-            wms_projection = db(db.gis_projection.id == layer.projection_id).select(db.gis_projection.epsg, limitby=(0, 1)).first().epsg
-            if wms_projection == 4326:
-                wms_projection = "projection: proj4326"
-            else:
-                wms_projection = "projection: new OpenLayers.Projection('EPSG:" + wms_projection + "')"
             if layer.transparent:
                 transparent = "transparent: true,"
             else:
@@ -1819,7 +1811,7 @@ OpenLayers.Util.extend( selectPdfControl, {
                layers: '""" + wms_layers + """',
                """ + format + """
                """ + transparent + """
-               """ + wms_projection + """
+               """ + wms_version + """
                },
                {
                """ + options + """
@@ -3137,8 +3129,9 @@ OpenLayers.Util.extend( selectPdfControl, {
         """
             OnValidation callback:
             If a Point has LonLat defined: calculate the WKT.
-            If a Line/Polygon has WKT defined: validate the format & calculate the LonLat of the Centroid
-            Centroid calculation is done using Shapely, which wraps Geos.
+            If a Line/Polygon has WKT defined: validate the format, 
+                calculate the LonLat of the Centroid, and set bounds
+            Centroid and bounds calculation is done using Shapely, which wraps Geos.
             A nice description of the algorithm is provided here: http://www.jennessent.com/arcgis/shapes_poster.htm
         """
 
@@ -3159,71 +3152,119 @@ OpenLayers.Util.extend( selectPdfControl, {
                 return
             else:
                 form.vars.wkt = "POINT(%(lon)f %(lat)f)" % form.vars
+                form.vars.lon_min = form.vars.lon_max = form.vars.lon
+                form.vars.lat_min = form.vars.lat_max = form.vars.lat
                 return
 
-        elif form.vars.gis_feature_type == "2":
-            # Line
+        elif form.vars.gis_feature_type in ("2","3"):
+            # Parse WKT for LineString, Polygon
             try:
                 try:
-                    line = wkt_loads(form.vars.wkt)
+                    shape = wkt_loads(form.vars.wkt)
                 except:
-                    form.errors["wkt"] = self.messages.invalid_wkt_linestring
+                    form.errors["wkt"] = {
+                        "2": self.messages.invalid_wkt_linestring,
+                        "3": self.messages.invalid_wkt_polygon,
+                    }
                     return
-                centroid_point = line.centroid
-                form.vars.lon = centroid_point.wkt.split("(")[1].split(" ")[0]
-                form.vars.lat = centroid_point.wkt.split("(")[1].split(" ")[1][:1]
+                centroid_point = shape.centroid
+                form.vars.lon = centroid_point.x
+                form.vars.lat = centroid_point.y
+                bounds = shape.bounds
+                form.vars.lon_min = bounds[0]
+                form.vars.lat_min = bounds[1]
+                form.vars.lon_max = bounds[2]
+                form.vars.lat_max = bounds[3]
             except:
                 form.errors.gis_feature_type = self.messages.centroid_error
-        elif form.vars.gis_feature_type == "3":
-            # Polygon
-            try:
-                try:
-                    polygon = wkt_loads(form.vars.wkt)
-                except:
-                    form.errors["wkt"] = self.messages.invalid_wkt_polygon
-                    return
-                centroid_point = polygon.centroid
-                form.vars.lon = centroid_point.wkt.split("(")[1].split(" ")[0]
-                form.vars.lat = centroid_point.wkt.split("(")[1].split(" ")[1][:1]
-            except:
-                form.errors.gis_feature_type = self.messages.centroid_error
-
         else:
             form.errors.gis_feature_type = self.messages.unknown_type
 
         return
 
-    def bbox_intersects(self, lon_min, lat_min, lon_max, lat_max):
-
+    def query_features_by_bbox(self, lon_min, lat_min, lon_max, lat_max):
+        """Returns a query of all locations objects in the given bounding box"""
         db = self.db
         _location = db.gis_location
         query = (_location.lat_min <= lat_max) & (_location.lat_max >= lat_min) & (_location.lon_min <= lon_max) & (_location.lon_max >= lon_min)
         return query
 
-    def _intersects(self, shape):
+    def get_features_by_bbox(self, lon_min, lat_min, lon_max, lat_max):
         """
-            Returns Rows of locations whose shape intersects the given shape
+        Returns Rows of locations whose shape intersects the given bbox.
+        """
+        return self.db(self.query_features_by_bbox(lon_min, lat_min, lon_max, lat_max)).select()
+
+    def _get_features_by_shape(self, shape):
+        """
+        Returns Rows of locations whose shape intersects the given shape.
+        
+        Relies on shapely for wkt parsing and intersection.
         """
 
         db = self.db
-        query = self.bbox_intersects(*shape.bounds)
-        for loc in db(query).select():
-            location_shape = wkt_loads(loc.wkt)
-            if location_shape.intersects(shape):
-                yield loc
+        in_bbox = self.query_features_by_bbox(*shape.bounds)
+        has_wkt = (db.gis_location.wkt != None) & (db.gis_location.wkt != '')
 
-    def _intersects_latlon(self, lat, lon):
+        for loc in db(in_bbox & has_wkt).select():
+            try: 
+                location_shape = wkt_loads(loc.wkt)
+                if location_shape.intersects(shape):
+                    yield loc
+            except shapely.geos.ReadingError:
+                print >> sys.stderr, "Error reading wkt of location with id %d" % loc.id
+
+    def _get_features_by_latlon(self, lat, lon):
         """
-            Returns a generator of locations whose shape intersects the given LatLon
+        Returns a generator of locations whose shape intersects the given LatLon.
+        
+        Relies on shapely.
         """
 
         point = shapely.geometry.point.Point(lon, lat)
-        return self.intersects(point)
+        return self._get_features_by_shape(point)
+
+    def _get_features_by_feature(self, feature):
+        """
+        Returns all locations whose geometry intersects the given feature.
+        
+        Relies on shapely.
+        """
+        shape = wkt_loads(feature.wkt)
+        return self.get_features_by_shape(shape)
 
     if SHAPELY:
-        intersects = _intersects
-        intersects_latlon = _intersects_latlon
-
+        get_features_by_shape = _get_features_by_shape
+        get_features_by_latlon = _get_features_by_latlon
+        get_features_by_feature = _get_features_by_feature
+        
+    def set_all_bounds(self):
+        """
+        Sets bounds for all locations without them.
+        
+        If shapely is present, and a location has wkt, bounds of the geometry 
+        are used.  Otherwise, the (lat, lon) are used as bounds.
+        """
+        db = self.db
+        _location = db.gis_location
+        no_bounds = (_location.lon_min == None) & (_location.lat_min == None) & (_location.lon_max == None) & (_location.lat_max == None) & (_location.lat != None) & (_location.lon != None)
+        if SHAPELY:
+            wkt_no_bounds = no_bounds & (_location.wkt != None) & (_location.wkt != '')
+            for loc in db(wkt_no_bounds).select():
+                try :
+                    shape = wkt_loads(loc.wkt)
+                except:
+                    print >> sys.stderr, "Error reading wkt %s" % loc.wkt
+                    continue
+                bounds = shape.bounds
+                _location[loc.id] = dict(
+                    lon_min = bounds[0],
+                    lat_min = bounds[1],
+                    lon_max = bounds[2],
+                    lat_max = bounds[3],
+                )
+                    
+        db(no_bounds).update(lon_min=_location.lon, lat_min=_location.lat, lon_max=_location.lon, lat_max=_location.lat)
 
 class Geocoder(object):
     " Base class for all geocoders "

@@ -85,8 +85,8 @@ def person():
             linkto = shn_linkto(jr, sticky=True)("[id]")
             report = URL(r=request, f="person", args=("[id]", "missing_report"))
             response.s3.actions = [
-                dict(label=str(label), _class="action-btn", url=linkto),
-                dict(label=str(T("Report")), _class="action-btn", url=report)
+                dict(label=str(label), _class="action-btn", url=str(linkto)),
+                dict(label=str(T("Report")), _class="action-btn", url=str(report))
             ]
             # Redirect on create
             if jr.method == "create":

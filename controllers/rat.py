@@ -1,12 +1,13 @@
 # -*- coding: utf-8 -*-
 
-""" Joint Initial Rapid Assessment Tool - Controllers
+"""
+Rapid Assessment Tool - Controllers
 
-    @author: Fran Boon
-    @author: Dominic KÃ¶nig
+@author: Fran Boon
+@author: Dominic König
 
-    @see: http://eden.sahanafoundation.org/wiki/Pakistan
-    @ToDo: Rename as 'assessment' (Deprioritised due to Data Migration issues being distracting for us currently)
+@see: http://eden.sahanafoundation.org/wiki/Pakistan
+@ToDo: Rename as 'assessment' (Deprioritised due to Data Migration issues being distracting for us currently)
 
 """
 
@@ -16,6 +17,7 @@ if module not in deployment_settings.modules:
     session.error = T("Module disabled!")
     redirect(URL(r=request, c="default", f="index"))
 
+# -----------------------------------------------------------------------------
 # Options Menu (available in all Functions' Views)
 response.menu_options = [
     [T("Assessments"), False, URL(r=request, f="assessment"),[
@@ -23,10 +25,12 @@ response.menu_options = [
        [T("Add"), False, URL(r=request, f="assessment", args="create")],
        [T("Search"), False, URL(r=request, f="assessment", args="search")],
     ]],
-    [T("Summary"), False, URL(r=request, f="assessment", args="summary")],
+    #[T("Summary"), False, URL(r=request, f="assessment", args="summary")],
     #[T("Map"), False, URL(r=request, f="maps")],
 ]
 
+
+# -----------------------------------------------------------------------------
 def index():
 
     """ Custom View """
@@ -35,6 +39,7 @@ def index():
     return dict(module_name=module_name)
 
 
+# -----------------------------------------------------------------------------
 def maps():
 
     """ Show a Map of all Assessments """
@@ -46,6 +51,7 @@ def maps():
     return dict(map=map)
 
 
+# -----------------------------------------------------------------------------
 def assessment():
 
     """ Rapid Assessments, RESTful controller """
@@ -59,12 +65,75 @@ def assessment():
                                                       "gis_location.id",
                                                       repr_select, sort=True))
 
+    # Pre-populate staff ID
     if auth.is_logged_in():
         staff_id = db((db.pr_person.uuid == session.auth.user.person_uuid) & \
                       (db.org_staff.person_id == db.pr_person.id)).select(
                        db.org_staff.id, limitby=(0, 1)).first()
         if staff_id:
             table.staff_id.default = staff_id.id
+
+    # Subheadings in forms:
+    subheadings = {
+        "rat_section2" : {
+            "Population and number of households": "population_total",
+            "Fatalities": "dead_women",
+            "Casualties": "injured_women",
+            "Missing Persons": "missing_women",
+            "General information on demographics": "household_head_elderly",
+            "Comments": "comments"
+        },
+        "rat_section3" : {
+            "Access to Shelter": "houses_total",
+            "Water storage containers in households": "water_containers_available",
+            "Other non-food items": "cooking_equipment_available",
+            "Shelter/NFI Assistance": "nfi_assistance_available",
+            "Comments": "comments"
+        },
+        "rat_section4" : {
+            "Water supply": "water_source_pre_disaster_type",
+            "Water collection": "water_coll_time",
+            "Places for defecation": "defec_place_type",
+            "Environment": "close_industry",
+            "Latrines": "latrines_number",
+            "Comments": "comments"
+        },
+        "rat_section5" : {
+            "Health services status": "health_services_pre_disaster",
+            "Current health problems": "health_problems_adults",
+            "Nutrition problems": "malnutrition_present_pre_disaster",
+            "Comments": "comments"
+        },
+        "rat_section6" : {
+            "Existing food stocks": "food_stocks_main_dishes",
+            "food_sources" : "Food sources",
+            "Food assistance": "food_assistance_available",
+            "Comments": "comments"
+        },
+        "rat_section7" : {
+            "Sources of income / Major expenses": "income_sources_pre_disaster",
+            "business_damaged" : "Access to cash",
+            "Current community priorities": "rank_reconstruction_assistance",
+            "Comments": "comments"
+        },
+        "rat_section8" : {
+            "Access to education services": "schools_total",
+            "Alternative places for studying": "alternative_study_places_available",
+            "School activities": "schools_open_pre_disaster",
+            "School attendance": "children_0612_female",
+            "School assistance": "school_assistance_available",
+            "Comments": "comments"
+        },
+        "rat_section9" : {
+            "Physical Safety": "vulnerable_groups_safe_env",
+            "Separated children, caregiving arrangements": "children_separated",
+            "Persons in institutions": "children_in_disabled_homes",
+            "Activities of children": "child_activities_u12f_pre_disaster",
+            "Coping Activities": "coping_activities_elderly",
+            "Current general needs": "current_general_needs",
+            "Comments": "comments"
+        }
+    }
 
     # Post-processor
     def postp(r, output):
@@ -76,44 +145,8 @@ def assessment():
         return output
     response.s3.postp = postp
 
-    # Subheadings in forms:
-    subheadings = {
-        "rat_section3" : {
-            "houses_total": "Access to Shelter",
-            "water_containers_available": "Water storage containers in households",
-            "cooking_equipment_available": "Other non-food items",
-            "nfi_assistance_available": "Shelter/NFI Assistance",
-            "comments": "Comments"
-        },
-        "rat_section4" : {
-            "water_source_pre_disaster_type": "Water supply",
-            "water_coll_time": "Water collection",
-            "defec_place_type": "Places for defecation",
-            "close_industry": "Environment",
-            "latrines_number": "Latrines",
-            "comments": "Comments"
-        },
-        "rat_section5" : {
-            "health_services_pre_disaster": "Health services status",
-            "health_problems_adults": "Current health problems",
-            "malnutrition_present_pre_disaster": "Nutrition problems",
-            "comments": "Comments"
-        },
-        "rat_section6" : {
-            "food_stocks_main_dishes": "Existing food stocks",
-            "food_sources" : "Food sources",
-            "food_assistance_available": "Food assistance",
-            "comments": "Comments"
-        },
-        "rat_section7" : {
-            "income_sources_pre_disaster": "Sources of income / Major expenses",
-            "business_damaged" : "Access to cash",
-            "rank_reconstruction_assistance": "Current community priorities",
-            "comments": "Comments"
-        }
-    }
-
     crud.settings.create_next = None # Do not redirect from CRUD
+
     response.s3.pagination = True
     output = shn_rest_controller(module, resource,
                                  rheader=lambda r: \
@@ -195,3 +228,5 @@ def shn_rat_rheader(r, tabs=[]):
 
         else:
             return None
+
+# -----------------------------------------------------------------------------

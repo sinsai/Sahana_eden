@@ -87,7 +87,7 @@ def index():
                 label = UPDATE
             linkto = shn_linkto(jr, sticky=True)("[id]")
             response.s3.actions = [
-                dict(label=str(label), _class="action-btn", url=linkto)
+                dict(label=str(label), _class="action-btn", url=str(linkto))
             ]
         return output
     response.s3.postp = postp
@@ -131,7 +131,7 @@ def person():
                 label = UPDATE
             linkto = shn_linkto(jr, sticky=True)("[id]")
             response.s3.actions = [
-                dict(label=str(label), _class="action-btn", url=linkto)
+                dict(label=str(label), _class="action-btn", url=str(linkto))
             ]
         return output
     response.s3.postp = person_postp
@@ -165,7 +165,7 @@ def group():
     resource = request.function
 
     response.s3.filter = (db.pr_group.system == False) # do not show system groups
-    
+
     s3xrc.model.configure(db.pr_group_membership,
                           list_fields=["id",
                                        "person_id",

@@ -106,7 +106,7 @@
         if (deg == ''){
             deg = 0;
         } else if (deg > 180 || deg < -180){
-            alert('{{=T("Degrees should be greater than 0 and less than 180")}}.');
+            alert('{{=T("Degrees must be between -180 and 180")}}.');
             invalid = true;
         }
         if (min == ''){

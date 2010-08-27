@@ -65,7 +65,7 @@ def recreq():
             label = UPDATE
             linkto = shn_linkto(jr, sticky=True)("[id]")
             response.s3.actions = [
-                dict(label=str(label), _class="action-btn", url=linkto)
+                dict(label=str(label), _class="action-btn", url=str(linkto))
             ]
         return output
     response.s3.postp = recreq_postp

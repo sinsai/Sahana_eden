@@ -141,7 +141,8 @@ def shelter():
     response.s3.pagination = True
 
     shelter_tabs = [(T("Basic Details"), None),
-                    (T("Assessments"), "assessment"),
+                    # Currently crashes - duplicate resource name?
+                    #(T("Assessments"), "assessment"),
                     (T("Requests"), "req"),
                    ]
                    

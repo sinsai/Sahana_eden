@@ -88,9 +88,6 @@ def person():
                 dict(label=str(label), _class="action-btn", url=str(linkto)),
                 dict(label=str(T("Report")), _class="action-btn", url=str(report))
             ]
-            # Redirect on create
-            if jr.method == "create":
-                jr.next = response.s3.mpr_next
         return output
     response.s3.postp = person_postp
 

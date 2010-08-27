@@ -826,7 +826,7 @@ if empty:
                 name = "VMap0",
                 description = "A Free low-resolution Vector Map of the whole world",
                 url = "http://labs.metacarta.com/wms/vmap0",
-                projection_id = db(db.gis_projection.epsg == 4326).select(limitby=(0, 1)).first().id,
+                #projection_id = db(db.gis_projection.epsg == 4326).select(limitby=(0, 1)).first().id,
                 layers = "basic",
                 enabled = False
             )
@@ -834,7 +834,7 @@ if empty:
                 name = "Blue Marble",
                 description = "A composite of four months of MODIS observations with a spatial resolution (level of detail) of 1 square kilometer per pixel.",
                 url = "http://maps.opengeo.org/geowebcache/service/wms",
-                projection_id = db(db.gis_projection.epsg == 4326).select(limitby=(0, 1)).first().id,
+                #projection_id = db(db.gis_projection.epsg == 4326).select(limitby=(0, 1)).first().id,
                 layers = "bluemarble",
                 enabled = False
             )

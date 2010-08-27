@@ -105,24 +105,22 @@ if deployment_settings.has_module(module):
                     location_id,
                     Field("phone"),
                     person_id,
-                    Field("address", "text"),
+                    # Don't show this field -- it will be going away in favor of
+                    # location -- but preserve it for converting to a location.
+                    # @ToDo This address field is free format.  If we don't
+                    # want to try to parse it, could let users convert it to a
+                    # location by providing a special (temporary) update form.
+                    Field("address", "text", readable=False, writable=False),
                     Field("capacity", "integer"),
                     Field("dwellings", "integer"),
                     Field("persons_per_dwelling", "integer"),
                     Field("area"),
-                    # @ToDo Check whether document_id field will be needed if
-                    # docs are associated with shelter reports.
                     document_id,
-                    # @Temporary School-specific fields -- school code, PF,
-                    # (and, if not in location, school district and union
-                    # council) are for Pakistan flood response.  It is simpler
+                    # @Temporary School-specific fields -- school code, PF --
+                    # are for Pakistan flood response.  It is simpler
                     # to keep this info in the shelter table and hide it if
                     # the shelter is not a school.
-                    #Field("school_district", db.gis_location,
-                    #      requires = IS_NULL_OR(IS_ONE_OF(db(db.gis_location.level == "L2"), "gis_location.id", repr_select, sort=True)),
                     Field("school_code", "integer"),
-                    #Field("union_council", db.gis_location,
-                    #      requires = IS_NULL_OR(IS_ONE_OF(db(db.gis_location.level.belongs(("L3", "L4")), "gis_location.id", repr_select, sort=True)),
                     Field("school_pf", "integer"),
                     # If the shelter is a hospital, connect it to its hospital
                     # record.  Although this could be a relationship, with a
@@ -176,14 +174,14 @@ if deployment_settings.has_module(module):
                                 label = T("Shelter")
                                )
                          )
-    # Add Shelters as component of Services, Types & Locations as a simple way
+    # Add Shelters as component of Services, Types, Locations as a simple way
     # to get reports showing shelters per type, etc.
     s3xrc.model.add_component(module, resource,
                               multiple=True,
                               joinby=dict(cr_shelter_type="shelter_type_id", 
                                           cr_shelter_service="shelter_service_id", 
                                           gis_location="location_id",
-                                          doc_document = "document_id"),
+                                          doc_document="document_id"),
                               deletable=True,
                               editable=True,
                               listadd=False)

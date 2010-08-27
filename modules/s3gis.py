@@ -1954,7 +1954,7 @@ OpenLayers.Util.extend( selectPdfControl, {
         var parser = new OpenLayers.Format.WKT();
         var geom, featureVec;
 
-        function addFeature(feature_id, name, feature_class, geom, styleMarker) {
+        function addFeature(feature_id, name, feature_class, geom, styleMarker, image) {
             geom = geom.transform(proj4326, projection_current);
             // Needs to be uniquely instantiated
             var style_marker = OpenLayers.Util.extend({}, OpenLayers.Feature.Vector.style['default']);
@@ -1967,18 +1967,9 @@ OpenLayers.Util.extend( selectPdfControl, {
                 style_marker.strokeWidth = 2;
                 style_marker.strokeOpacity = 1;
             } else {
-                // Set icon dims
-                icon_img.src = styleMarker.iconURL;
-                width = icon_img.width;
-                height = icon_img.height;
-                if(width > max_w){
-                    height = ((max_w / width) * height);
-                    width = max_w;
-                }
-                if(height > max_h){
-                    width = ((max_h / height) * width);
-                    height = max_h;
-                }
+                // Set icon dims (set in onload)
+                width = image.width;
+                height = image.height;
                 style_marker.graphicOpacity = 1;
                 style_marker.graphicWidth = width;
                 style_marker.graphicHeight = height;
@@ -2222,6 +2213,7 @@ OpenLayers.Util.extend( selectPdfControl, {
                         # Faster to bypass the download handler
                         #marker_url = URL(r=request, c="default", f="download", args=[marker])
                         marker_url = URL(r=request, c="static", f="img", args=["markers", marker])
+                        
                     try:
                         # Has a per-feature popup_label been added to the query?
                         popup_label = feature.popup_label
@@ -2240,6 +2232,11 @@ OpenLayers.Util.extend( selectPdfControl, {
                     if marker_url:
                         layers_features += """
         styleMarker.iconURL = '""" + marker_url + """';
+        // Pre-cache this image
+        // Need unique names
+        var i = new Image();
+        i.onload = scaleImage;
+        i.src = styleMarker.iconURL;
         """
                     else:
                         layers_features += """
@@ -2250,7 +2247,7 @@ OpenLayers.Util.extend( selectPdfControl, {
         """
                     layers_features += """
         geom = parser.read('""" + wkt + """').geometry;
-        featureVec = addFeature('""" + str(feature.id) + """', '""" + fname + """', """ + fc + """, geom, styleMarker)
+        featureVec = addFeature('""" + str(feature.id) + """', '""" + fname + """', """ + fc + """, geom, styleMarker, i)
         features.push(featureVec);
         """
                 # Append to Features layer
@@ -2491,17 +2488,11 @@ OpenLayers.Util.extend( selectPdfControl, {
                         visibility = "georssLayer" + name_safe + ".setVisibility(false);"
                     layers_georss += """
             iconURL = '""" + marker_url + """';
-            icon_img.src = iconURL;
-            width = icon_img.width;
-            height = icon_img.height;
-            if(width > max_w){
-                height = ((max_w / width) * height);
-                width = max_w;
-            }
-            if(height > max_h){
-                width = ((max_h / height) * width);
-                height = max_h;
-            }
+            // Pre-cache this image
+            // Need unique names
+            var i = new Image();
+            i.onload = scaleImage;
+            i.src = iconURL;
             // Needs to be uniquely instantiated
             var style_marker = OpenLayers.Util.extend({}, OpenLayers.Feature.Vector.style['default']);
             style_marker.graphicOpacity = 1;
@@ -2567,17 +2558,11 @@ OpenLayers.Util.extend( selectPdfControl, {
                         visibility = "gpxLayer" + name_safe + ".setVisibility(false);"
                     layers_gpx += """
             iconURL = '""" + marker_url + """';
-            icon_img.src = iconURL;
-            width = icon_img.width;
-            height = icon_img.height;
-            if(width > max_w){
-                height = ((max_w / width) * height);
-                width = max_w;
-            }
-            if(height > max_h){
-                width = ((max_h / height) * width);
-                height = max_h;
-            }
+            // Pre-cache this image
+            // Need unique names
+            var i = new Image();
+            i.onload = scaleImage;
+            i.src = iconURL;
             // Needs to be uniquely instantiated
             var style_marker = OpenLayers.Util.extend({}, OpenLayers.Feature.Vector.style['default']);
             style_marker.graphicOpacity = 1;
@@ -2729,17 +2714,11 @@ OpenLayers.Util.extend( selectPdfControl, {
                         visibility = layer_name + ".setVisibility(false);"
                     layers_kml += """
             iconURL = '""" + marker_url + """';
-            icon_img.src = iconURL;
-            width = icon_img.width;
-            height = icon_img.height;
-            if(width > max_w){
-                height = ((max_w / width) * height);
-                width = max_w;
-            }
-            if(height > max_h){
-                width = ((max_h / height) * width);
-                height = max_h;
-            }
+            // Pre-cache this image
+            // Need unique names
+            var i = new Image();
+            i.onload = scaleImage;
+            i.src = iconURL;
             // Needs to be uniquely instantiated
             var style_marker = OpenLayers.Util.extend({}, OpenLayers.Feature.Vector.style['default']);
             style_marker.graphicOpacity = 1;
@@ -2851,12 +2830,19 @@ OpenLayers.Util.extend( selectPdfControl, {
 
         // Overlays
         var max_w = 25;
-        var max_h = 35;
-        var width, height;
-        var icon_img = new Image();
+        //var max_h = 35;
         var styleMarker = new Object();
         var iconURL;
 
+        var scaleImage = function(){
+                var scaleRatio = i.height/i.width;
+                var w = Math.min(i.width, 25);
+                w = Math.max(w, 25);
+                var h = w * scaleRatio;
+                i.height = h;
+                i.width = w;
+            }
+        
         // Features
         """ + layers_features + """
 

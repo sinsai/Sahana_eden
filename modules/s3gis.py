@@ -323,7 +323,7 @@ class GIS(object):
         
         # Hide Resources recorded to Country Locations on the map?
         if not deployment_settings.get_gis_display_l0():
-            query = query & (db.gis_location.level != "L0")
+            query = query & ((db.gis_location.level != "L0") | (db.gis_location.level == None))
             
         query = query & (db.gis_location.id == db["%s_%s" % (module, resource)].location_id)
         locations = db(query).select(db.gis_location.id, db.gis_location.uuid, db.gis_location.parent, db.gis_location.name, db.gis_location.wkt, db.gis_location.lat, db.gis_location.lon)
@@ -394,6 +394,9 @@ class GIS(object):
             query = (table_feature.id == feature_id)
         elif isinstance(feature_id, str):
             query = (table_feature.uuid == feature_id)
+        else:
+            # What else could feature_id be?
+            return None
         
         feature = db(query).select(table_feature.lat, table_feature.lon, table_feature.parent, limitby=(0, 1)).first()
         
@@ -1777,6 +1780,10 @@ OpenLayers.Util.extend( selectPdfControl, {
             name_safe = re.sub('\W', '_', name)
             url = layer.url
             try:
+                wms_version = "version: '" + layer.version + "',"
+            except:
+                wms_version = ""
+            try:
                 wms_map = "map: '" + layer.map + "',"
             except:
                 wms_map = ""
@@ -1785,11 +1792,6 @@ OpenLayers.Util.extend( selectPdfControl, {
                 format = "type: '" + layer.format + "',"
             except:
                 format = ""
-            wms_projection = db(db.gis_projection.id == layer.projection_id).select(db.gis_projection.epsg, limitby=(0, 1)).first().epsg
-            if wms_projection == 4326:
-                wms_projection = "projection: proj4326"
-            else:
-                wms_projection = "projection: new OpenLayers.Projection('EPSG:" + wms_projection + "')"
             if layer.transparent:
                 transparent = "transparent: true,"
             else:
@@ -1809,7 +1811,7 @@ OpenLayers.Util.extend( selectPdfControl, {
                layers: '""" + wms_layers + """',
                """ + format + """
                """ + transparent + """
-               """ + wms_projection + """
+               """ + wms_version + """
                },
                {
                """ + options + """

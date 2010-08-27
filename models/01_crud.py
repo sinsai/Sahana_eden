@@ -800,7 +800,7 @@ def shn_read(r, **attr):
 
     # Get the controller attributes
     rheader = attr.get("rheader", None)
-    sticky = attr.get("sticky", False)
+    sticky = attr.get("sticky", rheader is not None)
 
     # Get the table-specific attributes
     _attr = r.component and r.component.attr or attr
@@ -976,7 +976,7 @@ def shn_list(r, **attr):
 
     # Get controller attributes
     rheader = attr.get("rheader", None)
-    sticky = attr.get("sticky", False)
+    sticky = attr.get("sticky", rheader is not None)
 
     # Table-specific controller attributes
     _attr = r.component and r.component.attr or attr
@@ -1222,7 +1222,7 @@ def shn_create(r, **attr):
 
     # Controller attributes
     rheader = attr.get("rheader", None)
-    sticky = attr.get("sticky", False)
+    sticky = attr.get("sticky", rheader is not None)
 
     # Table-specific controller attributes
     _attr = r.component and r.component.attr or attr
@@ -1434,7 +1434,7 @@ def shn_update(r, **attr):
 
     # Get controller attributes
     rheader = attr.get("rheader", None)
-    sticky = attr.get("sticky", False)
+    sticky = attr.get("sticky", rheader is not None)
 
     # Table-specific controller attributes
     _attr = r.component and r.component.attr or attr

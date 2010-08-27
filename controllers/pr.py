@@ -142,17 +142,16 @@ def person():
                                  main="first_name",
                                  extra="last_name",
                                  rheader=lambda jr: shn_pr_rheader(jr,
-                                                                   tabs = [(T("Basic Details"), None),
-                                                                           (T("Images"), "image"),
-                                                                           (T("Identity"), "identity"),
-                                                                           (T("Address"), "address"),
-                                                                           (T("Contact Data"), "pe_contact"),
-                                                                           (T("Memberships"), "group_membership"),
-                                                                           (T("Presence Log"), "presence"),
-                                                                           (T("Subscriptions"), "pe_subscription"),
-                                                                           (T("Map Settings"), "config")
-                                                                           ]),
-                                                                   sticky=True)
+                                    tabs = [(T("Basic Details"), None),
+                                            (T("Images"), "image"),
+                                            (T("Identity"), "identity"),
+                                            (T("Address"), "address"),
+                                            (T("Contact Data"), "pe_contact"),
+                                            (T("Memberships"), "group_membership"),
+                                            (T("Presence Log"), "presence"),
+                                            (T("Subscriptions"), "pe_subscription"),
+                                            (T("Map Settings"), "config")
+                                            ]))
 
     shn_menu()
     return output
@@ -194,7 +193,6 @@ def group():
                             (T("Address"), "address"),
                             (T("Contact Data"), "pe_contact"),
                             (T("Members"), "group_membership")]),
-                sticky=True,
                 deletable=False)
 
     shn_menu()

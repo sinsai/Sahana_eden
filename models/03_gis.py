@@ -521,7 +521,7 @@ def get_location_id (field_name = "location_id",
 # Locations as component of Locations ('Parent')
 s3xrc.model.add_component(module, resource,
                           multiple=False,
-                          joinby=dict(gis_location="location_id"),
+                          joinby=dict(gis_location="parent"),
                           deletable=True,
                           editable=True)
 

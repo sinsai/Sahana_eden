@@ -106,16 +106,21 @@ def person():
 
     resource = request.function
 
-    def person_prep(jr):
-        if jr.component_name == "config":
+    def prep(r):
+        if r.component_name == "config":
             _config = db.gis_config
             defaults = db(_config.id == 1).select(limitby=(0, 1)).first()
             for key in defaults.keys():
                 if key not in ["id", "uuid", "mci", "update_record", "delete_record"]:
                     _config[key].default = defaults[key]
+        if r.representation == "popup":
+            # Hide "pe_label" and "missing" fields in person popups
+            r.table.pe_label.readable = False
+            r.table.pe_label.writable = False
+            r.table.missing.readable = False
+            r.table.missing.writable = False
         return True
-
-    response.s3.prep = person_prep
+    response.s3.prep = prep
 
     s3xrc.model.configure(db.pr_group_membership,
                           list_fields=["id",
@@ -123,25 +128,25 @@ def person():
                                        "group_head",
                                        "description"])
 
-    def person_postp(jr, output):
-        if jr.representation in ("html", "popup"):
-            if not jr.component:
+    def postp(r, output):
+        if r.representation in ("html", "popup"):
+            if not r.component:
                 label = READ
             else:
                 label = UPDATE
-            linkto = shn_linkto(jr, sticky=True)("[id]")
+            linkto = shn_linkto(r, sticky=True)("[id]")
             response.s3.actions = [
                 dict(label=str(label), _class="action-btn", url=str(linkto))
             ]
         return output
-    response.s3.postp = person_postp
+    response.s3.postp = postp
 
     response.s3.pagination = True
     output = shn_rest_controller(module, resource,
                                  listadd = False,
                                  main="first_name",
                                  extra="last_name",
-                                 rheader=lambda jr: shn_pr_rheader(jr,
+                                 rheader=lambda r: shn_pr_rheader(r,
                                     tabs = [(T("Basic Details"), None),
                                             (T("Images"), "image"),
                                             (T("Identity"), "identity"),

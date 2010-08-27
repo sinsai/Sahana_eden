@@ -125,6 +125,29 @@ def school_district():
     return output
 
 # -----------------------------------------------------------------------------
+def school_report():
+    
+    """
+        REST Controller
+        Needed for Map Popups
+        @ToDo: Move to CR
+    """
+
+    resource = request.function
+    tablename = "%s_%s" % (module, resource)
+    table = db[tablename]
+
+    # Post-processor
+    def user_postp(jr, output):
+        shn_action_buttons(jr, deletable=False)
+        return output
+    response.s3.postp = user_postp
+
+    response.s3.pagination = True
+    output = shn_rest_controller(module, resource)
+    return output
+
+# -----------------------------------------------------------------------------
 def download():
 
     """ Download a file """

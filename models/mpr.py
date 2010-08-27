@@ -53,9 +53,9 @@ if deployment_settings.has_module(module):
     table = db.define_table(tablename,
                             timestamp, uuidstamp, authorstamp, deletion_status,
                             person_id,
+                            Field("found", "boolean"),
                             Field("since", "datetime"),
                             Field("details", "text"),
-                            Field("found", "boolean"),
                             #Field("found_date", "datetime"),
                             location_id,
                             Field("location_details"),
@@ -81,7 +81,7 @@ if deployment_settings.has_module(module):
             _target="top",
             _title=ADD_LOCATION),
         DIV( _class="tooltip",
-            _title=Tstr("Last known location") + "|" + Tstr("The last known location of the missing person."))),
+            _title=Tstr("Last known location") + "|" + Tstr("The last known location of the missing person before disappearance."))),
     table.location_details.label = T("Location details")
 
     table.details.label = T("Details")

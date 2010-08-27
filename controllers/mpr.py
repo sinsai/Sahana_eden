@@ -94,6 +94,9 @@ def person():
     db.pr_person.missing.readable = False
     db.pr_person.missing.writable = False
 
+    db.mpr_missing_report.person_id.readable = False
+    db.mpr_missing_report.person_id.writable = False
+
     # Show only missing persons in list views
     if len(request.args) == 0:
         response.s3.filter = (db.pr_person.missing == True)

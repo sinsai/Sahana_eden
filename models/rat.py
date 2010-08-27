@@ -151,6 +151,7 @@ if deployment_settings.has_module(module):
                             Field("accessibility", "integer"),
                             comments,
                             document_id,
+                            shelter_id,
                             migrate=migrate)
 
     table.date.requires = [IS_DATE(), IS_NOT_EMPTY()]
@@ -244,10 +245,11 @@ if deployment_settings.has_module(module):
                                    ondelete = "RESTRICT"))
 
 
-    # Assessment as component of doc_documents
+    # Assessment as component of doc_document and cr_shelter.
     s3xrc.model.add_component(module, resource,
                               multiple=True,
-                              joinby=dict(doc_document="document_id"),
+                              joinby=dict(doc_document="document_id",
+                                          cr_shelter="shelter_id"),
                               deletable=True,
                               editable=True)
 

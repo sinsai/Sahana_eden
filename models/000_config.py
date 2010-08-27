@@ -17,12 +17,16 @@ s3cfg = local_import("s3cfg")
 deployment_settings = s3cfg.S3Config(T)
 
 # Database settings
-deployment_settings.database.db_type = "sqlite"
+#deployment_settings.database.db_type = "sqlite"
+deployment_settings.database.db_type = "mysql"
 deployment_settings.database.host = "localhost"
 deployment_settings.database.port = "" # use default
-deployment_settings.database.database = "sahana"
+#deployment_settings.database.database = "sahana"
+# Use same name as branch directory to avoid interference w/ other branches.
+deployment_settings.database.database = "eden"
 deployment_settings.database.username = "sahana"
-deployment_settings.database.password = "password"
+#deployment_settings.database.password = "password"
+deployment_settings.database.password = "xyzzy"
 deployment_settings.database.pool_size = 30
 
 # Authentication settings
@@ -50,6 +54,7 @@ deployment_settings.base.migrate = True
 #   python web2py.py -S eden -M
 # to create the db structure, then exit and re-import the data.
 deployment_settings.base.prepopulate = True
+#deployment_settings.base.prepopulate = False
 
 # Email settings
 # Outbound server

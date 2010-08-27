@@ -4,7 +4,7 @@
     Shelter Registry - Controllers
 """
 # @ToDo Search shelters by type, services, location, available space
-# @ToDo Shelter reports -- occupancy, needs -- per time
+# @ToDo Tie in assessments from RAT and requests from RMS.
 # @ToDo Associate persons with shelters (via presence loc == shelter loc?)
 
 module = request.controller
@@ -63,6 +63,7 @@ def shelter_type():
         return output
     response.s3.postp = user_postp
 
+    # @ToDo Shelters per type display is broken -- always returns none.
     output = shn_rest_controller(module, resource, listadd=False,
                                  rheader=lambda r: \
                                          shn_shelter_rheader(r,
@@ -138,7 +139,14 @@ def shelter():
     response.s3.postp = user_postp
 
     response.s3.pagination = True
-    output = shn_rest_controller(module, resource, listadd=False)
+
+    shelter_tabs = [(T("Basic Details"), None),
+                    (T("Assessments"), "assessment"),
+                    (T("Requests"), "req"),
+                   ]
+    output = shn_rest_controller(
+        module, resource, listadd=False,
+        rheader=lambda r: shn_shelter_rheader(r, tabs=shelter_tabs))
 
     shn_menu()
     return output

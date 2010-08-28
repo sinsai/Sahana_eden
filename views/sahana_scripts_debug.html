@@ -2,6 +2,9 @@
 
 <script type="text/javascript" src="/{{=request.application}}/static/scripts/S3/ba-debug.min.js"></script>
 <script type="text/javascript">//<![CDATA[
+// Global variable to store all of our variables inside
+var S3 = Object();
+S3.gis = Object();
 function s3_debug(message, value) {
         if (undefined == value) {
             debug.debug('s3_debug: ' + message);

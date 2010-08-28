@@ -3,12 +3,11 @@
 """
     Sahana Eden GIS Module
 
-    @version: 0.0.7
+    @version: 0.0.8
     @requires: U{B{I{shapely}} <http://trac.gispython.org/lab/wiki/Shapely>}
 
     @author: Fran Boon <francisboon@gmail.com>
     @author: Timothy Caro-Bruce <tcarobruce@gmail.com>
-    @author: Zubin Mithra <zubin.mithra@gmail.com>
     @copyright: (c) 2010 Sahana Software Foundation
     @license: MIT
 
@@ -80,6 +79,7 @@ GEOM_TYPES = {
     "multipolygon": 3,
 }
 
+# -----------------------------------------------------------------------------
 class GIS(object):
     """ GIS functions """
 
@@ -108,6 +108,7 @@ class GIS(object):
         self.messages["T"] = self.T
         self.messages.lock_keys = True
 
+    # -----------------------------------------------------------------------------
     def abbreviate_wkt(self, wkt, max_length=30):
         if not wkt:
             # Blank WKT field
@@ -117,13 +118,14 @@ class GIS(object):
         else:
             return wkt
 
+    # -----------------------------------------------------------------------------
     def download_kml(self, url, public_url):
         """
-        Download a KML file:
-            unzip it if-required
-            follow NetworkLinks recursively if-required
+            Download a KML file:
+                unzip it if-required
+                follow NetworkLinks recursively if-required
 
-        Returns a file object
+            Returns a file object
         """
 
         response = self.response
@@ -193,6 +195,7 @@ class GIS(object):
 
         return file, warning
 
+    # -----------------------------------------------------------------------------
     def get_api_key(self, layer="google"):
         " Acquire API key from the database "
 
@@ -200,6 +203,7 @@ class GIS(object):
         query = db.gis_apikey.name == layer
         return db(query).select(db.gis_apikey.apikey, limitby=(0, 1)).first().apikey
 
+    # -----------------------------------------------------------------------------
     def get_bearing(self, lat_start, lon_start, lat_end, lon_end):
         """
             Given a Start & End set of Coordinates, return a Bearing
@@ -215,12 +219,14 @@ class GIS(object):
 
         return bearing
 
+    # -----------------------------------------------------------------------------
     def _min_not_none(self, *args):
         """
             Utility function returns minimal argument that is not None.
         """
         return min(*(a for a in args if a is not None))
 
+    # -----------------------------------------------------------------------------
     def get_bounds(self, features=[]):
         """
             Calculate the Bounds of a list of Features
@@ -247,6 +253,7 @@ class GIS(object):
 
         return dict(min_lon=min_lon, min_lat=min_lat, max_lon=max_lon, max_lat=max_lat)
 
+    # -----------------------------------------------------------------------------
     def get_children(self, parent_id):
         " Return a list of all GIS Features which are children of the requested parent "
 
@@ -260,6 +267,7 @@ class GIS(object):
 
         return children
 
+    # -----------------------------------------------------------------------------
     def get_config(self):
         " Reads the current GIS Config from the DB "
 
@@ -292,6 +300,7 @@ class GIS(object):
         
         return output
 
+    # -----------------------------------------------------------------------------
     def get_feature_class_id_from_name(self, name):
         """
             Returns the Feature Class ID from it's name
@@ -305,6 +314,7 @@ class GIS(object):
         else:
             return None
 
+    # -----------------------------------------------------------------------------
     def get_feature_layer(self, module, resource, layername, popup_label, marker=None, filter=None):
         """
             Return a Feature Layer suitable to display on a map
@@ -338,6 +348,7 @@ class GIS(object):
 
         return layer
     
+    # -----------------------------------------------------------------------------
     def get_features_in_radius(self, lat, lon, radius):
         """
             Returns Features within a Radius (in km) of a LatLon Location
@@ -379,6 +390,7 @@ class GIS(object):
 
         return features
 
+    # -----------------------------------------------------------------------------
     def get_latlon(self, feature_id):
     
         """ Returns the Lat/Lon for a Feature (using recursion where necessary)
@@ -474,12 +486,13 @@ class GIS(object):
         
         return None
 
+    # -----------------------------------------------------------------------------
     def get_marker(self, feature_id):
 
         """ Returns the Marker URL for a Feature
 
             @param feature_id: the feature ID (int) or UUID (str)
-            @ ToDo Deprecate FeatureClass (normally provided by Feature Layer (i.e. Query)
+            @ToDo: Update for new FeatureClass/Symbology
         """
 
         cache = self.cache
@@ -487,8 +500,8 @@ class GIS(object):
         table_feature = db.gis_location
         table_marker = db.gis_marker
         _image = table_marker.image
-        table_fclass = db.gis_feature_class
-        table_symbology = db.gis_symbology_to_feature_class
+        #table_fclass = db.gis_feature_class
+        #table_symbology = db.gis_symbology_to_feature_class
 
         config = self.get_config()
         symbology = config.symbology_id
@@ -500,37 +513,37 @@ class GIS(object):
         elif isinstance(feature_id, str):
             query = (table_feature.uuid == feature_id)
 
-        feature = db(query).select(table_feature.marker_id,
-                                   table_feature.feature_class_id,
-                                   limitby=(0, 1)).first()
-        if feature:
-            feature_class =  feature.feature_class_id
-            marker_id =  feature.marker_id
+        #feature = db(query).select(table_feature.marker_id,
+        #                           table_feature.feature_class_id,
+        #                           limitby=(0, 1)).first()
+        #if feature:
+        #    feature_class =  feature.feature_class_id
+        #    marker_id =  feature.marker_id
 
             # 1st choice for a Marker is the Feature's
-            if marker_id:
-                query = (table_marker.id == marker_id)
-                marker = db(query).select(_image, limitby=(0, 1),
-                                          cache=cache)
-                if marker:
-                    return marker.first().image
+        #    if marker_id:
+        #        query = (table_marker.id == marker_id)
+        #        marker = db(query).select(_image, limitby=(0, 1),
+        #                                  cache=cache)
+        #        if marker:
+        #            return marker.first().image
 
             # 2nd choice for a Marker is the Symbology for the Feature Class
-            query = (table_symbology.feature_class_id == feature_class) & \
-                    (table_symbology.symbology_id == symbology) & \
-                    (table_marker.id == table_symbology.marker_id)
-            marker = db(query).select(_image, limitby=(0, 1),
-                                      cache=cache)
-            if marker:
-                return marker.first().image
+            #query = (table_symbology.feature_class_id == feature_class) & \
+            #        (table_symbology.symbology_id == symbology) & \
+            #        (table_marker.id == table_symbology.marker_id)
+            #marker = db(query).select(_image, limitby=(0, 1),
+            #                          cache=cache)
+            #if marker:
+            #    return marker.first().image
 
             # 3rd choice for a Marker is the Feature Class's
-            query = (table_fclass.id == feature_class) & \
-                    (table_marker.id == table_fclass.marker_id)
-            marker = db(query).select(_image, limitby=(0, 1),
-                                      cache=cache)
-            if marker:
-                return marker.first().image
+            #query = (table_fclass.id == feature_class) & \
+            #        (table_marker.id == table_fclass.marker_id)
+            #marker = db(query).select(_image, limitby=(0, 1),
+            #                          cache=cache)
+            #if marker:
+            #    return marker.first().image
 
         # 4th choice for a Marker is the default
         query = (table_marker.id == config.marker_id)
@@ -541,6 +554,7 @@ class GIS(object):
         else:
             return ""
 
+    # -----------------------------------------------------------------------------
     def latlon_to_wkt(self, lat, lon):
         """
             Convert a LatLon to a WKT string
@@ -551,6 +565,7 @@ class GIS(object):
         WKT = "POINT(%f %f)" % (lon, lat)
         return WKT
 
+    # -----------------------------------------------------------------------------
     def layer_subtypes(self, layer="openstreetmap"):
         """ Return a lit of the subtypes available for a Layer """
 
@@ -567,6 +582,7 @@ class GIS(object):
             return None
 
 
+    # -----------------------------------------------------------------------------
     def parse_location(self, wkt, lon=None, lat=None):
         """
             Parses a location from wkt, returning wkt, lat, lon, bounding box and type.
@@ -600,6 +616,172 @@ class GIS(object):
 
         return res
 
+    # -----------------------------------------------------------------------------
+    def update_location_tree(self):
+        """
+            Update the Tree for GIS Locations:
+            http://eden.sahanafoundation.org/wiki/HaitiGISToDo#HierarchicalTrees
+        """
+
+        db = self.db
+
+        # tbc
+
+        return
+
+    # -----------------------------------------------------------------------------
+    def wkt_centroid(self, form):
+        """
+            OnValidation callback:
+            If a Point has LonLat defined: calculate the WKT.
+            If a Line/Polygon has WKT defined: validate the format, 
+                calculate the LonLat of the Centroid, and set bounds
+            Centroid and bounds calculation is done using Shapely, which wraps Geos.
+            A nice description of the algorithm is provided here: http://www.jennessent.com/arcgis/shapes_poster.htm
+        """
+
+        if not "gis_feature_type" in form.vars:
+            # Default to point
+            form.vars.gis_feature_type = "1"
+
+        if form.vars.gis_feature_type == "1":
+            # Point
+            if form.vars.lon == None and form.vars.lat == None:
+                # No geo to create WKT from, so skip
+                return
+            elif form.vars.lat == None:
+                form.errors["lat"] = self.messages.lat_empty
+                return
+            elif form.vars.lon == None:
+                form.errors["lon"] = self.messages.lon_empty
+                return
+            else:
+                form.vars.wkt = "POINT(%(lon)f %(lat)f)" % form.vars
+                form.vars.lon_min = form.vars.lon_max = form.vars.lon
+                form.vars.lat_min = form.vars.lat_max = form.vars.lat
+                return
+
+        elif form.vars.gis_feature_type in ("2","3"):
+            # Parse WKT for LineString, Polygon
+            try:
+                try:
+                    shape = wkt_loads(form.vars.wkt)
+                except:
+                    form.errors["wkt"] = {
+                        "2": self.messages.invalid_wkt_linestring,
+                        "3": self.messages.invalid_wkt_polygon,
+                    }
+                    return
+                centroid_point = shape.centroid
+                form.vars.lon = centroid_point.x
+                form.vars.lat = centroid_point.y
+                bounds = shape.bounds
+                form.vars.lon_min = bounds[0]
+                form.vars.lat_min = bounds[1]
+                form.vars.lon_max = bounds[2]
+                form.vars.lat_max = bounds[3]
+            except:
+                form.errors.gis_feature_type = self.messages.centroid_error
+        else:
+            form.errors.gis_feature_type = self.messages.unknown_type
+
+        return
+
+    # -----------------------------------------------------------------------------
+    def query_features_by_bbox(self, lon_min, lat_min, lon_max, lat_max):
+        """
+            Returns a query of all locations objects in the given bounding box
+        """
+        db = self.db
+        _location = db.gis_location
+        query = (_location.lat_min <= lat_max) & (_location.lat_max >= lat_min) & (_location.lon_min <= lon_max) & (_location.lon_max >= lon_min)
+        return query
+
+    # -----------------------------------------------------------------------------
+    def get_features_by_bbox(self, lon_min, lat_min, lon_max, lat_max):
+        """
+            Returns Rows of locations whose shape intersects the given bbox.
+        """
+        db = self.db
+        return db(self.query_features_by_bbox(lon_min, lat_min, lon_max, lat_max)).select()
+
+    # -----------------------------------------------------------------------------
+    def _get_features_by_shape(self, shape):
+        """
+            Returns Rows of locations whose shape intersects the given shape.
+            
+            Relies on shapely for wkt parsing and intersection.
+        """
+
+        db = self.db
+        in_bbox = self.query_features_by_bbox(*shape.bounds)
+        has_wkt = (db.gis_location.wkt != None) & (db.gis_location.wkt != '')
+
+        for loc in db(in_bbox & has_wkt).select():
+            try: 
+                location_shape = wkt_loads(loc.wkt)
+                if location_shape.intersects(shape):
+                    yield loc
+            except shapely.geos.ReadingError:
+                print >> sys.stderr, "Error reading wkt of location with id %d" % loc.id
+
+    # -----------------------------------------------------------------------------
+    def _get_features_by_latlon(self, lat, lon):
+        """
+        Returns a generator of locations whose shape intersects the given LatLon.
+        
+        Relies on shapely.
+        """
+
+        point = shapely.geometry.point.Point(lon, lat)
+        return self._get_features_by_shape(point)
+
+    # -----------------------------------------------------------------------------
+    def _get_features_by_feature(self, feature):
+        """
+        Returns all locations whose geometry intersects the given feature.
+        
+        Relies on shapely.
+        """
+        shape = wkt_loads(feature.wkt)
+        return self.get_features_by_shape(shape)
+
+    # -----------------------------------------------------------------------------
+    if SHAPELY:
+        get_features_by_shape = _get_features_by_shape
+        get_features_by_latlon = _get_features_by_latlon
+        get_features_by_feature = _get_features_by_feature
+        
+    # -----------------------------------------------------------------------------
+    def set_all_bounds(self):
+        """
+        Sets bounds for all locations without them.
+        
+        If shapely is present, and a location has wkt, bounds of the geometry 
+        are used.  Otherwise, the (lat, lon) are used as bounds.
+        """
+        db = self.db
+        _location = db.gis_location
+        no_bounds = (_location.lon_min == None) & (_location.lat_min == None) & (_location.lon_max == None) & (_location.lat_max == None) & (_location.lat != None) & (_location.lon != None)
+        if SHAPELY:
+            wkt_no_bounds = no_bounds & (_location.wkt != None) & (_location.wkt != '')
+            for loc in db(wkt_no_bounds).select():
+                try :
+                    shape = wkt_loads(loc.wkt)
+                except:
+                    print >> sys.stderr, "Error reading wkt %s" % loc.wkt
+                    continue
+                bounds = shape.bounds
+                _location[loc.id] = dict(
+                    lon_min = bounds[0],
+                    lat_min = bounds[1],
+                    lon_max = bounds[2],
+                    lat_max = bounds[3],
+                )
+                    
+        db(no_bounds).update(lon_min=_location.lon, lat_min=_location.lat, lon_max=_location.lon, lat_max=_location.lat)
+
+    # -----------------------------------------------------------------------------
     def show_map( self,
                   height = None,
                   width = None,
@@ -2948,19 +3130,19 @@ OpenLayers.Util.extend( selectPdfControl, {
             height: """ + str(height) + """,
             width: """ + str(width) + """,
             layout: 'border',
-            items:  [{
-                        region: 'west',
-                        id: 'tools',
-                        title: '""" + str(T("Tools")) + """',
-                        border: true,
-                        width: 250,
-                        collapsible: true,
-                        collapseMode: 'mini',
-                        collapsed: """ + collapsed + """,
-                        split: true,
-                        items: [
-                            layerTree""" + layers_wms_browser2 + search2 + print_tool2 + legend2 + """
-                            ]
+            items: [{
+                    region: 'west',
+                    id: 'tools',
+                    title: '""" + str(T("Tools")) + """',
+                    border: true,
+                    width: 250,
+                    collapsible: true,
+                    collapseMode: 'mini',
+                    collapsed: """ + collapsed + """,
+                    split: true,
+                    items: [
+                        layerTree""" + layers_wms_browser2 + search2 + print_tool2 + legend2 + """
+                        ]
                     },
                     mapPanel
                     ]
@@ -2973,167 +3155,16 @@ OpenLayers.Util.extend( selectPdfControl, {
 
         return html.xml()
 
-    def update_location_tree(self):
-        """
-            Update the Tree for GIS Locations:
-            http://eden.sahanafoundation.org/wiki/HaitiGISToDo#HierarchicalTrees
-        """
-
-        db = self.db
-
-        # tbc
-
-        return
-
-    def wkt_centroid(self, form):
-        """
-            OnValidation callback:
-            If a Point has LonLat defined: calculate the WKT.
-            If a Line/Polygon has WKT defined: validate the format, 
-                calculate the LonLat of the Centroid, and set bounds
-            Centroid and bounds calculation is done using Shapely, which wraps Geos.
-            A nice description of the algorithm is provided here: http://www.jennessent.com/arcgis/shapes_poster.htm
-        """
-
-        if not "gis_feature_type" in form.vars:
-            # Default to point
-            form.vars.gis_feature_type = "1"
-
-        if form.vars.gis_feature_type == "1":
-            # Point
-            if form.vars.lon == None and form.vars.lat == None:
-                # No geo to create WKT from, so skip
-                return
-            elif form.vars.lat == None:
-                form.errors["lat"] = self.messages.lat_empty
-                return
-            elif form.vars.lon == None:
-                form.errors["lon"] = self.messages.lon_empty
-                return
-            else:
-                form.vars.wkt = "POINT(%(lon)f %(lat)f)" % form.vars
-                form.vars.lon_min = form.vars.lon_max = form.vars.lon
-                form.vars.lat_min = form.vars.lat_max = form.vars.lat
-                return
-
-        elif form.vars.gis_feature_type in ("2","3"):
-            # Parse WKT for LineString, Polygon
-            try:
-                try:
-                    shape = wkt_loads(form.vars.wkt)
-                except:
-                    form.errors["wkt"] = {
-                        "2": self.messages.invalid_wkt_linestring,
-                        "3": self.messages.invalid_wkt_polygon,
-                    }
-                    return
-                centroid_point = shape.centroid
-                form.vars.lon = centroid_point.x
-                form.vars.lat = centroid_point.y
-                bounds = shape.bounds
-                form.vars.lon_min = bounds[0]
-                form.vars.lat_min = bounds[1]
-                form.vars.lon_max = bounds[2]
-                form.vars.lat_max = bounds[3]
-            except:
-                form.errors.gis_feature_type = self.messages.centroid_error
-        else:
-            form.errors.gis_feature_type = self.messages.unknown_type
-
-        return
-
-    def query_features_by_bbox(self, lon_min, lat_min, lon_max, lat_max):
-        """Returns a query of all locations objects in the given bounding box"""
-        db = self.db
-        _location = db.gis_location
-        query = (_location.lat_min <= lat_max) & (_location.lat_max >= lat_min) & (_location.lon_min <= lon_max) & (_location.lon_max >= lon_min)
-        return query
-
-    def get_features_by_bbox(self, lon_min, lat_min, lon_max, lat_max):
-        """
-        Returns Rows of locations whose shape intersects the given bbox.
-        """
-        return self.db(self.query_features_by_bbox(lon_min, lat_min, lon_max, lat_max)).select()
-
-    def _get_features_by_shape(self, shape):
-        """
-        Returns Rows of locations whose shape intersects the given shape.
-        
-        Relies on shapely for wkt parsing and intersection.
-        """
-
-        db = self.db
-        in_bbox = self.query_features_by_bbox(*shape.bounds)
-        has_wkt = (db.gis_location.wkt != None) & (db.gis_location.wkt != '')
-
-        for loc in db(in_bbox & has_wkt).select():
-            try: 
-                location_shape = wkt_loads(loc.wkt)
-                if location_shape.intersects(shape):
-                    yield loc
-            except shapely.geos.ReadingError:
-                print >> sys.stderr, "Error reading wkt of location with id %d" % loc.id
-
-    def _get_features_by_latlon(self, lat, lon):
-        """
-        Returns a generator of locations whose shape intersects the given LatLon.
-        
-        Relies on shapely.
-        """
-
-        point = shapely.geometry.point.Point(lon, lat)
-        return self._get_features_by_shape(point)
-
-    def _get_features_by_feature(self, feature):
-        """
-        Returns all locations whose geometry intersects the given feature.
-        
-        Relies on shapely.
-        """
-        shape = wkt_loads(feature.wkt)
-        return self.get_features_by_shape(shape)
-
-    if SHAPELY:
-        get_features_by_shape = _get_features_by_shape
-        get_features_by_latlon = _get_features_by_latlon
-        get_features_by_feature = _get_features_by_feature
-        
-    def set_all_bounds(self):
-        """
-        Sets bounds for all locations without them.
-        
-        If shapely is present, and a location has wkt, bounds of the geometry 
-        are used.  Otherwise, the (lat, lon) are used as bounds.
-        """
-        db = self.db
-        _location = db.gis_location
-        no_bounds = (_location.lon_min == None) & (_location.lat_min == None) & (_location.lon_max == None) & (_location.lat_max == None) & (_location.lat != None) & (_location.lon != None)
-        if SHAPELY:
-            wkt_no_bounds = no_bounds & (_location.wkt != None) & (_location.wkt != '')
-            for loc in db(wkt_no_bounds).select():
-                try :
-                    shape = wkt_loads(loc.wkt)
-                except:
-                    print >> sys.stderr, "Error reading wkt %s" % loc.wkt
-                    continue
-                bounds = shape.bounds
-                _location[loc.id] = dict(
-                    lon_min = bounds[0],
-                    lat_min = bounds[1],
-                    lon_max = bounds[2],
-                    lat_max = bounds[3],
-                )
-                    
-        db(no_bounds).update(lon_min=_location.lon, lat_min=_location.lat, lon_max=_location.lon, lat_max=_location.lat)
-
+# -----------------------------------------------------------------------------
 class Geocoder(object):
-    " Base class for all geocoders "
+    " Base class for all Geocoders "
 
     def __init__(self, db):
         " Initializes the page content object "
         self.db = db
         self.api_key = self.get_api_key()
 
+# -----------------------------------------------------------------------------
 class GoogleGeocoder(Geocoder):
     " Google Geocoder module "
 
@@ -3155,6 +3186,7 @@ class GoogleGeocoder(Geocoder):
         page = fetch(url)
         return page
 
+# -----------------------------------------------------------------------------
 class YahooGeocoder(Geocoder):
     " Yahoo Geocoder module "
 

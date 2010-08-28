@@ -442,6 +442,18 @@ if empty:
             name = "volunteer",
             image = "gis_marker.image.Volunteer.png"
         )
+    tablename = "gis_symbology"
+    table = db[tablename]
+    if not db(table.id > 0).count():
+        table.insert(
+            name = "Australasia"
+        )
+        table.insert(
+            name = "Canada"
+        )
+        table.insert(
+            name = "US"
+        )
     tablename = "gis_projection"
     table = db[tablename]
     if not db(table.id > 0).count():
@@ -473,11 +485,12 @@ if empty:
             lat = "51.8",
             lon = "-1.3",
             zoom = 7,
-            # Doesn't work on Postgres!
+            # Doesn't work on Postgres! (db.commit() the previous step?)
             projection_id = 1,
             marker_id = 1,
             map_height = 600,
-            map_width = 800
+            map_width = 800,
+            symbology_id = db(db.gis_symbology.name == "US").select(limitby=(0, 1)).first().id,
         )
 
     tablename = "gis_feature_class"

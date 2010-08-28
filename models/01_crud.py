@@ -1578,7 +1578,7 @@ def shn_update(r, **attr):
             # Include a map
             config = gis.get_config()
             zoom = config.zoom
-            location = db((db[tablename].id == r.id) & (db.gis_location.id == db[tablename].location_id)).select(db.gis_location.id, db.gis_location.uuid, db.gis_location.lat, db.gis_location.lon, db.gis_location.level, db.gis_location.parent, limitby=(0, 1)).first()
+            location = db((db[tablename].id == r.id) & (db.gis_location.id == db[tablename].location_id)).select(db.gis_location.id, db.gis_location.uuid, db.gis_location.name, db.gis_location.lat, db.gis_location.lon, db.gis_location.level, db.gis_location.parent, limitby=(0, 1)).first()
             if location and location.lat is not None and location.lon is not None:
                 lat = location.lat
                 lon = location.lon
@@ -1607,6 +1607,7 @@ def shn_update(r, **attr):
             if location and location.id:
                 _location = Storage(id = location.id,
                                     uuid = location.uuid,
+                                    name = location.name,
                                     lat = location.lat,
                                     lon = location.lon,
                                     level = location.lon,
@@ -1805,10 +1806,6 @@ def shn_search(r, **attr):
                 field3 = str.lower(_vars.field3)
             else:
                 field3 = None
-            #if "level" in _vars:
-            #    level = str.upper(_vars.level)
-            #else:
-            #    level = None
             if "parent" in _vars and _vars.parent:
                 parent = int(_vars.parent)
             else:
@@ -1828,16 +1825,11 @@ def shn_search(r, **attr):
                                         (_table[field2].like("%" + value + "%")) | \
                                         (_table[field3].like("%" + value + "%")))
 
-                #elif level:
+                elif parent:
                     # gis_location hierarchical search
-                #    if parent:
-                #        query = query & (_table.parent == parent) & \
-                #                        (_table.level == level) & \
-                #                        (_field.like("%" + value + "%"))
-
-                #    else:
-                #        query = query & (_table.level == level) & \
-                #                        (_field.like("%" + value + "%"))
+                    # @ToDo Don't just return immediate parents! We want all descendants
+                    query = query & (_table.parent == parent) & \
+                                    (_field.like("%" + value + "%"))
 
                 else:
                     # Normal single-field

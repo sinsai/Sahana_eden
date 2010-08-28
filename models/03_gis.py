@@ -20,6 +20,7 @@ table = db.define_table(tablename,
                 Field("audit_write", "boolean"),
                 migrate=migrate)
 
+# -----------------------------------------------------------------------------
 # GIS Markers (Icons)
 resource = "marker"
 tablename = "%s_%s" % (module, resource)
@@ -49,6 +50,7 @@ marker_id = db.Table(None, "marker_id",
                 ondelete = "RESTRICT"
                 ))
 
+# -----------------------------------------------------------------------------
 # GIS Projections
 resource = "projection"
 tablename = "%s_%s" % (module, resource)
@@ -80,6 +82,7 @@ projection_id = db.Table(None, "projection_id",
                 ondelete = "RESTRICT"
                 ))
 
+# -----------------------------------------------------------------------------
 # GIS Symbology
 resource = "symbology"
 tablename = "%s_%s" % (module, resource)
@@ -96,6 +99,7 @@ symbology_id = db.Table(None, "symbology_id",
                 ondelete = "RESTRICT"
                 ))
 
+# -----------------------------------------------------------------------------
 # GIS Config
 gis_config_layout_opts = {
     1:T("window"),
@@ -195,6 +199,7 @@ s3xrc.model.configure(table,
                                      "projection_id",
                                      "map_height",
                                      "map_width"])
+# -----------------------------------------------------------------------------
 # GIS Feature Classes
 # These are used in groups (for display/export), for icons & for URLs to edit data
 #gis_resource_opts = {
@@ -357,16 +362,7 @@ feature_class_id = db.Table(None, "feature_class_id",
                 ondelete = "RESTRICT"
                 ))
 
-# Symbology to Feature Class to Marker
-resource = "symbology_to_feature_class"
-tablename = "%s_%s" % (module, resource)
-table = db.define_table(tablename, timestamp, uuidstamp, deletion_status,
-                Field("name", length=128, notnull=True, unique=True),
-                symbology_id,
-                feature_class_id,
-                marker_id,
-                migrate=migrate)
-
+# -----------------------------------------------------------------------------
 # GIS Locations
 gis_feature_type_opts = {
     1:T("Point"),
@@ -525,6 +521,8 @@ s3xrc.model.add_component(module, resource,
                           deletable=True,
                           editable=True)
 
+# -----------------------------------------------------------------------------
+# Local Names
 # http://www.loc.gov/standards/iso639-2/php/code_list.php
 gis_location_languages = {
     "en":T("English"),  #1
@@ -578,6 +576,7 @@ def gis_location_onaccept(form):
 
 def gis_location_onvalidation(form):
     """ On Validation for GIS Locations (before DB I/O) """
+    # ToDo: Check within Bounds of the Parent
     # Calculate the Centroid for Polygons
     gis.wkt_centroid(form)
 
@@ -585,6 +584,7 @@ s3xrc.model.configure(table,
                       onvalidation=gis_location_onvalidation,
                       onaccept=gis_location_onaccept)
 
+# -----------------------------------------------------------------------------
 def shn_gis_location_search_simple(r, **attr):
 
     """ Simple search form for locations """
@@ -659,8 +659,6 @@ def shn_gis_location_search_simple(r, **attr):
 # Plug into REST controller
 s3xrc.model.set_method(module, "location", method="search_simple", action=shn_gis_location_search_simple )
 
-# -----------------------------------------------------------------------------
-#
 def shn_gis_location_represent(id):
     try:
         location = db(db.gis_location.id == id).select(db.gis_location.name, db.gis_location.level, db.gis_location.lat, db.gis_location.lon, db.gis_location.id, limitby=(0, 1)).first()
@@ -700,6 +698,7 @@ def shn_gis_location_represent(id):
             represent = NONE
     return represent
 
+# -----------------------------------------------------------------------------
 # Feature Layers
 # Used to select a set of Features for either Display or Export
 # (replaces feature_group)
@@ -707,11 +706,18 @@ resource = "feature_layer"
 tablename = "%s_%s" % (module, resource)
 table = db.define_table(tablename, timestamp, uuidstamp, authorstamp, deletion_status,
                 Field("name", length=128, notnull=True, unique=True),
-                Field("resource"),              # Used to build a simple query
-                Field("filter_field"),          # Used to build a simple query
-                Field("filter_value"),          # Used to build a simple query
-                Field("query", notnull=True),
-                marker_id,                      # Optional Marker to over-ride the values from the Feature Classes
+                Field("module"),
+                Field("resource"),
+                Field("popup_label"),       # Replace with s3.crud_strings[tablename]
+                marker_id,                  # Optional Marker to over-ride the values from the Feature Classes
+                Field("enabled", "boolean", default=True, label=T("Available in Viewer?")),
+                Field("visible", "boolean", default=False, label=T("On by default?")),
+                # ToDo Expose the Graphic options
+                # ToDo Allow defining more complex queries
+                # e.g. L1 for Provinces, L2 for Districts, etc
+                #Field("filter_field"),     # Used to build a simple query
+                #Field("filter_value"),     # Used to build a simple query
+                #Field("query", notnull=True),
                 comments,
                 migrate=migrate)
 table.uuid.requires = IS_NOT_IN_DB(db, "%s.uuid" % tablename)
@@ -721,55 +727,11 @@ table.name.label = T("Name")
 table.resource.label = T("Resource")
 # In zzz_last.py
 #table.resource.requires = IS_IN_SET(db.tables)
-table.filter_field.label = T("Filter Field")
-table.filter_value.label = T("Filter Value")
-table.query.label = T("Query")
+#table.filter_field.label = T("Filter Field")
+#table.filter_value.label = T("Filter Value")
+#table.query.label = T("Query")
 
-# Feature Groups
-# Used to select a set of Feature Classes for either Display or Export
-# This is being deprecated by feature_layer
-#resource = "feature_group"
-#tablename = "%s_%s" % (module, resource)
-#table = db.define_table(tablename, timestamp, uuidstamp, authorstamp, deletion_status,
-#                Field("name", length=128, notnull=True, unique=True),
-#                Field("description"),
-#                Field("enabled", "boolean", default=True, label=T("Enabled?")),
-#                Field("visible", "boolean", default=False, label=T("On by default?")),
-#                migrate=migrate)
-#table.uuid.requires = IS_NOT_IN_DB(db, "%s.uuid" % tablename)
-##table.author.requires = IS_ONE_OF(db, "auth_user.id","%(id)s: %(first_name)s %(last_name)s")
-#table.name.requires = [IS_NOT_EMPTY(), IS_NOT_IN_DB(db, "%s.name" % tablename)]
-#table.name.label = T("Name")
-#table.description.label = T("Description")
-## Reusable field to include in other table definitions
-#ADD_FEATURE_GROUP = T("Add Feature Group")
-#feature_group_id = db.Table(None, "feature_group_id",
-#            FieldS3("feature_group_id", db.gis_feature_group, sortby="name",
-#                requires = IS_NULL_OR(IS_ONE_OF(db, "gis_feature_group.id", "%(name)s")),
-#                represent = lambda id: (id and [db(db.gis_feature_group.id == id).select(db.gis_feature_group.name, limitby=(0, 1)).first().name] or [NONE])[0],
-#                label = T("Feature Group"),
-#                comment = DIV(A(ADD_FEATURE_GROUP, _class="colorbox", _href=URL(r=request, c="gis", f="feature_group", args="create", vars=dict(format="popup")), _target="top", _title=ADD_FEATURE_GROUP),
-#                          DIV( _class="tooltip", _title=Tstr("Feature Group") + "|" + Tstr("A collection of Feature Classes which can be displayed together on a map or exported together."))),
-#                ondelete = "RESTRICT"
-#                ))
-
-# Many-to-Many tables
-# No longer supported
-#resource = "location_to_feature_group"
-#tablename = "%s_%s" % (module, resource)
-#table = db.define_table(tablename, timestamp, deletion_status,
-#                feature_group_id,
-#                location_id,
-#                migrate=migrate)
-
-# This is being deprecated by feature_layer
-#resource = "feature_class_to_feature_group"
-#tablename = "%s_%s" % (module, resource)
-#table = db.define_table(tablename, timestamp, deletion_status,
-#                feature_group_id,
-#                feature_class_id,
-#                migrate=migrate)
-
+# -----------------------------------------------------------------------------
 # GIS Keys - needed for commercial mapping services
 resource = "apikey" # Can't use 'key' as this has other meanings for dicts!
 tablename = "%s_%s" % (module, resource)
@@ -786,6 +748,7 @@ table.apikey.requires = IS_NOT_EMPTY()
 table.name.label = T("Service")
 table.apikey.label = T("Key")
 
+# -----------------------------------------------------------------------------
 # GPS Tracks (files in GPX format)
 resource = "track"
 tablename = "%s_%s" % (module, resource)
@@ -831,6 +794,7 @@ track_id = db.Table(None, "track_id",
                 ondelete = "RESTRICT"
                 ))
 
+# -----------------------------------------------------------------------------
 # GIS Layers
 #gis_layer_types = ["bing", "shapefile", "scan", "wfs"]
 gis_layer_types = ["openstreetmap", "georss", "google", "gpx", "js", "kml", "mgrs", "tms", "wms", "xyz", "yahoo"]
@@ -947,6 +911,7 @@ for layertype in gis_layer_types:
             Field("subtype", label=T("Sub-type"), requires = IS_IN_SET(gis_layer_bing_subtypes, zero=None)))
         table = db.define_table(tablename, t, migrate=migrate)
 
+# -----------------------------------------------------------------------------
 # GIS Cache
 # (Store downloaded KML & GeoRSS feeds)
 resource = "cache"
@@ -958,6 +923,7 @@ table = db.define_table(tablename, timestamp,
 # upload folder needs to be visible to the download() function as well as the upload
 table.file.uploadfolder = os.path.join(request.folder, "uploads/gis_cache")
 
+# -----------------------------------------------------------------------------
 # Below tables are not yet implemented
 
 # GIS Styles: SLD

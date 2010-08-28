@@ -25,6 +25,7 @@ if not deployment_settings.get_security_map() or shn_has_role("MapAdmin"):
     response.menu_options.append([T("Service Catalogue"), False, URL(r=request, f="map_service_catalogue")])
     response.menu_options.append([T("De-duplicator"), False, URL(r=request, f="location_duplicates")])
  
+# -----------------------------------------------------------------------------
 # Web2Py Tools functions
 def download():
     "Download a file."
@@ -46,6 +47,7 @@ def index():
 
     return dict(module_name=module_name, map=map)
 
+# -----------------------------------------------------------------------------
 def define_map(window=False, toolbar=False):
     """
         Define the main Situation Map
@@ -134,6 +136,7 @@ def define_map(window=False, toolbar=False):
 
     return map
     
+# -----------------------------------------------------------------------------
 def location():
 
     """ RESTful CRUD controller for Locations """
@@ -397,6 +400,126 @@ def location_duplicates():
 
     return dict(form=form)
     
+# -----------------------------------------------------------------------------
+def map_service_catalogue():
+    """
+        Map Service Catalogue.
+        Allows selection of which Layers are active.
+    """
+    if deployment_settings.get_security_map() and not shn_has_role("MapAdmin"):
+        unauthorised()
+
+    subtitle = T("List Layers")
+    # Start building the Return with the common items
+    output = dict(subtitle=subtitle)
+
+    # Hack: We control all perms from this 1 table
+    table = db.gis_layer_openstreetmap
+    authorised = shn_has_permission("update", table)
+    item_list = []
+    even = True
+    if authorised:
+        # List View with checkboxes to Enable/Disable layers
+        for type in gis_layer_types:
+            table = db["gis_layer_%s" % type]
+            query = table.id > 0
+            sqlrows = db(query).select()
+            for row in sqlrows:
+                if even:
+                    theclass = "even"
+                    even = False
+                else:
+                    theclass = "odd"
+                    even = True
+                if row.description:
+                    description = row.description
+                else:
+                    description = ""
+                label = type + "_" + str(row.id)
+                if row.enabled:
+                    enabled = INPUT(_type="checkbox", value=True, _name=label)
+                else:
+                    enabled = INPUT(_type="checkbox", _name=label)
+                item_list.append(TR(TD(row.name), TD(description), TD(enabled), _class=theclass))
+
+        table_header = THEAD(TR(TH("Layer"), TH("Description"), TH("Enabled?")))
+        table_footer = TFOOT(TR(TD(INPUT(_id="submit_button", _type="submit", _value=T("Update")), _colspan=3)), _align="right")
+        items = DIV(FORM(TABLE(table_header, TBODY(item_list), table_footer, _id="table-container"), _name="custom", _method="post", _enctype="multipart/form-data", _action=URL(r=request, f="layers_enable")))
+
+    else:
+        # Simple List View
+        for type in gis_layer_types:
+            table = db["gis_layer_%s" % type]
+            query = table.id > 0
+            sqlrows = db(query).select()
+            for row in sqlrows:
+                if even:
+                    theclass = "even"
+                    even = False
+                else:
+                    theclass = "odd"
+                    even = True
+                if row.description:
+                    description = row.description
+                else:
+                    description = ""
+                if row.enabled:
+                    enabled = INPUT(_type="checkbox", value="on", _disabled="disabled")
+                else:
+                    enabled = INPUT(_type="checkbox", _disabled="disabled")
+                item_list.append(TR(TD(row.name), TD(description), TD(enabled), _class=theclass))
+
+        table_header = THEAD(TR(TH("Layer"), TH("Description"), TH("Enabled?")))
+        items = DIV(TABLE(table_header, TBODY(item_list), _id="table-container"))
+
+    output.update(dict(items=items))
+    return output
+
+def layers_enable():
+    """
+        Enable/Disable Layers
+    """
+
+    # Hack: We control all perms from this 1 table
+    table = db.gis_layer_openstreetmap
+    authorised = shn_has_permission("update", table)
+    if authorised:
+        for type in gis_layer_types:
+            resource = "gis_layer_%s" % type
+            table = db[resource]
+            query = table.id > 0
+            sqlrows = db(query).select()
+            for row in sqlrows:
+                query_inner = (table.id == row.id)
+                var = "%s_%i" % (type, row.id)
+                # Read current state
+                if db(query_inner).select(table.enabled, limitby=(0, 1)).first().enabled:
+                    # Old state: Enabled
+                    if var in request.vars:
+                        # Do nothing
+                        pass
+                    else:
+                        # Disable
+                        db(query_inner).update(enabled=False)
+                        # Audit
+                        #shn_audit_update_m2m(resource=resource, record=row.id, representation="html")
+                        shn_audit_update_m2m(resource, row.id, "html")
+                else:
+                    # Old state: Disabled
+                    if var in request.vars:
+                        # Enable
+                        db(query_inner).update(enabled=True)
+                        # Audit
+                        shn_audit_update_m2m(resource, row.id, "html")
+                    else:
+                        # Do nothing
+                        pass
+        session.flash = T("Layers updated")
+    else:
+        session.error = T("Not authorised!")
+    redirect(URL(r=request, f="map_service_catalogue"))
+
+# -----------------------------------------------------------------------------
 def apikey():
     """ RESTful CRUD controller """
     if deployment_settings.get_security_map() and not shn_has_role("MapAdmin"):
@@ -1282,10 +1405,28 @@ def layer_xyz():
 
     return output
 
-def convert_gps():
-    " Provide a form which converts from GPS Coordinates to Decimal Coordinates "
-    return dict()
+# -----------------------------------------------------------------------------
+def map_viewing_client():
+    """
+        Map Viewing Client.
+        UI for a user to view the overall Maps with associated Features
+    """
 
+    # Read configuration settings
+    config = gis.get_config()
+    if config.opt_gis_layout == 1:
+        window = True
+    else:
+        window = False
+
+    # @ToDo Make Configurable
+    toolbar = True
+    
+    map = define_map(window=window, toolbar=toolbar)
+
+    return dict(map=map)
+
+# -----------------------------------------------------------------------------
 def display_feature():
     """
         Cut-down version of the Map Viewing Client.
@@ -1401,8 +1542,13 @@ def display_features():
 
     return dict(map=map)
 
+# -----------------------------------------------------------------------------
 def geolocate():
-    " Call a Geocoder service "
+
+    """
+        Call a Geocoder service
+    """
+    
     if "location" in request.vars:
         location = request.vars.location
     else:
@@ -1421,144 +1567,7 @@ def geolocate():
     if service == "yahoo":
         return s3gis.YahooGeocoder(location, db).get_xml()
 
-def layers_enable():
-    """
-        Enable/Disable Layers
-    """
-
-    # Hack: We control all perms from this 1 table
-    table = db.gis_layer_openstreetmap
-    authorised = shn_has_permission("update", table)
-    if authorised:
-        for type in gis_layer_types:
-            resource = "gis_layer_%s" % type
-            table = db[resource]
-            query = table.id > 0
-            sqlrows = db(query).select()
-            for row in sqlrows:
-                query_inner = (table.id == row.id)
-                var = "%s_%i" % (type, row.id)
-                # Read current state
-                if db(query_inner).select(table.enabled, limitby=(0, 1)).first().enabled:
-                    # Old state: Enabled
-                    if var in request.vars:
-                        # Do nothing
-                        pass
-                    else:
-                        # Disable
-                        db(query_inner).update(enabled=False)
-                        # Audit
-                        #shn_audit_update_m2m(resource=resource, record=row.id, representation="html")
-                        shn_audit_update_m2m(resource, row.id, "html")
-                else:
-                    # Old state: Disabled
-                    if var in request.vars:
-                        # Enable
-                        db(query_inner).update(enabled=True)
-                        # Audit
-                        shn_audit_update_m2m(resource, row.id, "html")
-                    else:
-                        # Do nothing
-                        pass
-        session.flash = T("Layers updated")
-    else:
-        session.error = T("Not authorised!")
-    redirect(URL(r=request, f="map_service_catalogue"))
-
-def map_service_catalogue():
-    """
-        Map Service Catalogue.
-        Allows selection of which Layers are active.
-    """
-    if deployment_settings.get_security_map() and not shn_has_role("MapAdmin"):
-        unauthorised()
-
-    subtitle = T("List Layers")
-    # Start building the Return with the common items
-    output = dict(subtitle=subtitle)
-
-    # Hack: We control all perms from this 1 table
-    table = db.gis_layer_openstreetmap
-    authorised = shn_has_permission("update", table)
-    item_list = []
-    even = True
-    if authorised:
-        # List View with checkboxes to Enable/Disable layers
-        for type in gis_layer_types:
-            table = db["gis_layer_%s" % type]
-            query = table.id > 0
-            sqlrows = db(query).select()
-            for row in sqlrows:
-                if even:
-                    theclass = "even"
-                    even = False
-                else:
-                    theclass = "odd"
-                    even = True
-                if row.description:
-                    description = row.description
-                else:
-                    description = ""
-                label = type + "_" + str(row.id)
-                if row.enabled:
-                    enabled = INPUT(_type="checkbox", value=True, _name=label)
-                else:
-                    enabled = INPUT(_type="checkbox", _name=label)
-                item_list.append(TR(TD(row.name), TD(description), TD(enabled), _class=theclass))
-
-        table_header = THEAD(TR(TH("Layer"), TH("Description"), TH("Enabled?")))
-        table_footer = TFOOT(TR(TD(INPUT(_id="submit_button", _type="submit", _value=T("Update")), _colspan=3)), _align="right")
-        items = DIV(FORM(TABLE(table_header, TBODY(item_list), table_footer, _id="table-container"), _name="custom", _method="post", _enctype="multipart/form-data", _action=URL(r=request, f="layers_enable")))
-
-    else:
-        # Simple List View
-        for type in gis_layer_types:
-            table = db["gis_layer_%s" % type]
-            query = table.id > 0
-            sqlrows = db(query).select()
-            for row in sqlrows:
-                if even:
-                    theclass = "even"
-                    even = False
-                else:
-                    theclass = "odd"
-                    even = True
-                if row.description:
-                    description = row.description
-                else:
-                    description = ""
-                if row.enabled:
-                    enabled = INPUT(_type="checkbox", value="on", _disabled="disabled")
-                else:
-                    enabled = INPUT(_type="checkbox", _disabled="disabled")
-                item_list.append(TR(TD(row.name), TD(description), TD(enabled), _class=theclass))
-
-        table_header = THEAD(TR(TH("Layer"), TH("Description"), TH("Enabled?")))
-        items = DIV(TABLE(table_header, TBODY(item_list), _id="table-container"))
-
-    output.update(dict(items=items))
-    return output
-
-def map_viewing_client():
-    """
-        Map Viewing Client.
-        UI for a user to view the overall Maps with associated Features
-    """
-
-    # Read configuration settings
-    config = gis.get_config()
-    if config.opt_gis_layout == 1:
-        window = True
-    else:
-        window = False
-
-    # @ToDo Make Configurable
-    toolbar = True
-    
-    map = define_map(window=window, toolbar=toolbar)
-
-    return dict(map=map)
-
+# -----------------------------------------------------------------------------
 def proxy():
     """
     Based on http://trac.openlayers.org/browser/trunk/openlayers/examples/proxy.cgi
@@ -1651,6 +1660,7 @@ def proxy():
         msg += "Some unexpected error occurred. Error text was: %s" % str(E)
         return msg
 
+# -----------------------------------------------------------------------------
 # Tests - not Production
 def test():
     """
@@ -1696,208 +1706,3 @@ def test():
 def test2():
     " Test new OpenLayers functionality in a RAD environment "
     return dict()
-
-#
-# Deprecated functions
-#
-
-def feature_group():
-    """
-        RESTful CRUD controller
-        Deprecated - replaced by Feature Layers
-    """
-    if deployment_settings.get_security_map() and not shn_has_role("MapAdmin"):
-        unauthorised()
-
-    resource = request.function
-    tablename = module + "_" + resource
-    table = db[tablename]
-
-    # Model options
-    table.name.comment = SPAN("*", _class="req")
-    #table.features.comment = DIV( _class="tooltip", _title=Tstr("Multi-Select") + "|" + Tstr("Click Features to select, Click again to Remove. Dark Green is selected."))
-    #table.feature_classes.comment = DIV( _class="tooltip", _title=Tstr("Multi-Select") + "|" + Tstr("Click Features to select, Click again to Remove. Dark Green is selected."))
-
-    # CRUD Strings
-    LIST_FEATURE_GROUPS = T("List Feature Groups")
-    s3.crud_strings[tablename] = Storage(
-        title_create = ADD_FEATURE_GROUP,
-        title_display = T("Feature Group Details"),
-        title_list = T("Feature Groups"),
-        title_update = T("Edit Feature Group"),
-        title_search = T("Search Feature Groups"),
-        subtitle_create = T("Add New Feature Group"),
-        subtitle_list = LIST_FEATURE_GROUPS,
-        label_list_button = LIST_FEATURE_GROUPS,
-        label_create_button = ADD_FEATURE_GROUP,
-        label_delete_button = T("Delete Feature Group"),
-        msg_record_created = T("Feature Group added"),
-        msg_record_modified = T("Feature Group updated"),
-        msg_record_deleted = T("Feature Group deleted"),
-        msg_list_empty = T("No Feature Groups currently defined"))
-
-    # Post-processor
-    def user_postp(jr, output):
-        shn_action_buttons(jr)
-        return output
-    response.s3.postp = user_postp
-
-    output = shn_rest_controller(module, resource)
-
-    if not "gis" in response.view:
-        response.view = "gis/" + response.view
-
-    return output
-
-def feature_class_to_feature_group():
-    """
-        RESTful CRUD controller
-        Deprecated - replaced by Feature Layer
-    """
-    if deployment_settings.get_security_map() and not shn_has_role("MapAdmin"):
-        unauthorised()
-
-    resource = request.function
-    table = module + "_" + resource
-
-    # Model options
-
-    # CRUD Strings
-
-    # Post-processor
-    def user_postp(jr, output):
-        shn_action_buttons(jr)
-        return output
-    response.s3.postp = user_postp
-
-    output = shn_rest_controller(module, resource)
-
-    if not "gis" in response.view:
-        response.view = "gis/" + response.view
-
-    return output
-
-def feature_group_contents():
-    """
-        Many to Many CRUD Controller
-        Deprecated
-    """
-    if deployment_settings.get_security_map() and not shn_has_role("MapAdmin"):
-        unauthorised()
-
-    if len(request.args) == 0:
-        session.error = T("Need to specify a feature group!")
-        redirect(URL(r=request, f="feature_group"))
-    feature_group = request.args(0)
-    table = db.gis_feature_class_to_feature_group
-    authorised = shn_has_permission("update", table)
-
-    title = str(T("Feature Group")) + ": " + str(db.gis_feature_group[feature_group].name)
-    subtitle = T("Contents")
-    feature_group_description = str(B(T("Description"))) + ": " + str(db.gis_feature_group[feature_group].description)
-    # Start building the Return with the common items
-    output = dict(title=title, description=feature_group_description)
-    # Audit
-    #shn_audit_read(operation="list", resource="feature_group_contents", record=feature_group, representation="html")
-    item_list = []
-    even = True
-    if authorised:
-        # Audit
-        crud.settings.create_onaccept = lambda form: shn_audit_create(form, module, "feature_group_contents", "html")
-        # Display a List_Create page with checkboxes to remove items
-
-        # Feature Classes
-        query = (table.feature_group_id == feature_group) & (table.deleted == False)
-        sqlrows = db(query).select()
-        for row in sqlrows:
-            if even:
-                theclass = "even"
-                even = False
-            else:
-                theclass = "odd"
-                even = True
-            id = row.feature_class_id
-            name = db.gis_feature_class[id].name
-            description = db.gis_feature_class[id].description
-            id_link = A(id, _href=URL(r=request, f="feature_class", args=[id, "read"]))
-            checkbox = INPUT(_type="checkbox", _value="on", _name="feature_class_" + str(id), _class="remove_item")
-            item_list.append(TR(TD(id_link), TD(name, _align="left"), TD(description, _align="left"), TD(checkbox, _align="center"), _class=theclass, _align="right"))
-
-        table_header = THEAD(TR(TH("ID"), TH("Name"), TH(T("Description")), TH(T("Remove"))))
-        table_footer = TFOOT(TR(TD(INPUT(_id="submit_button", _type="submit", _value=T("Update")))), _colspan=3, _align="right")
-        items = DIV(FORM(TABLE(table_header, TBODY(item_list), table_footer, _id="table-container"), _name="custom", _method="post", _enctype="multipart/form-data", _action=URL(r=request, f="feature_group_update_items", args=[feature_group])))
-
-        crud.messages.submit_button=T("Add")
-        # Check for duplicates before Item is added to DB
-        crud.settings.create_onvalidation = lambda form: feature_group_dupes(form)
-        crud.messages.record_created = T("Feature Group Updated")
-        form = crud.create(table, next=URL(r=request, args=[feature_group]))
-        #form[0][0].append(TR(TD(T("Type:")), TD(LABEL(T("Feature Class"), INPUT(_type="radio", _name="fg1", _value="FeatureClass", value="FeatureClass")), LABEL(T("Feature"), INPUT(_type="radio", _name="fg1", _value="Feature", value="FeatureClass")))))
-        addtitle = T("Add Feature Class to Feature Group")
-        response.view = "%s/feature_group_contents_list_create.html" % module
-        output.update(dict(subtitle=subtitle, items=items, addtitle=addtitle, form=form, feature_group=feature_group))
-    else:
-        # Display a simple List page
-        # Feature Classes
-        query = (table.feature_group_id == feature_group) & (table.deleted == False)
-        sqlrows = db(query).select()
-        for row in sqlrows:
-            if even:
-                theclass = "even"
-                even = False
-            else:
-                theclass = "odd"
-                even = True
-            id = row.feature_class_id
-            name = db.gis_feature_class[id].name
-            description = db.gis_feature_class[id].description
-            id_link = A(id, _href=URL(r=request, f="feature_class", args=[id, "read"]))
-            item_list.append(TR(TD(id_link), TD(name, _align="left"), TD(description, _align="left"), _class=theclass, _align="right"))
-
-        table_header = THEAD(TR(TH("ID"), TH("Name"), TH(T("Description"))))
-        items = DIV(TABLE(table_header, TBODY(item_list), _id="table-container"))
-
-        add_btn = A(T("Edit Contents"), _href=URL(r=request, c="default", f="user", args="login"), _class="action-btn")
-        response.view = "%s/feature_group_contents_list.html" % module
-        output.update(dict(items=items, add_btn=add_btn))
-    return output
-
-def feature_group_dupes(form):
-    """ Checks for duplicate FeatureClass before adding to DB """
-    feature_group = form.vars.feature_group
-    if "feature_class_id" in form.vars:
-        feature_class_id = form.vars.feature_class_id
-        table = db.gis_feature_class_to_feature_group
-        query = (table.feature_group == feature_group) & (table.feature_class_id == feature_class_id)
-    else:
-        # Something went wrong!
-        return
-    items = db(query).select()
-    if items:
-        session.error = T("Already in this Feature Group!")
-        redirect(URL(r=request, args=feature_group))
-    else:
-        return
-
-def feature_group_update_items():
-    """ Update a Feature Group's items (Feature Classes & Features) """
-    if len(request.args) == 0:
-        session.error = T("Need to specify a feature group!")
-        redirect(URL(r=request, f="feature_group"))
-    feature_group = request.args(0)
-    table = db.gis_feature_class_to_feature_group
-    authorised = shn_has_permission("update", table)
-    if authorised:
-        for var in request.vars:
-            if "feature_class_id" in var:
-                # Delete
-                feature_class_id = var[14:]
-                query = (table.feature_group == feature_group) & (table.feature_class_id == feature_class_id)
-                db(query).delete()
-        # Audit
-        shn_audit_update_m2m(resource="feature_group_contents", record=feature_group, representation="html")
-        session.flash = T("Feature Group updated")
-    else:
-        session.error = T("Not authorised!")
-    redirect(URL(r=request, f="feature_group_contents", args=[feature_group]))
-

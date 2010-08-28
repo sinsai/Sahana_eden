@@ -389,7 +389,7 @@ table = db.define_table(tablename, timestamp, uuidstamp, deletion_status,
                 #Field("name_l10n"),             # Local Names are stored in this field
                 Field("name_dummy"),            # Dummy field to provide Widget
                 Field("code"),
-                feature_class_id,       # Will be removed
+                #feature_class_id,      # Will be removed
                 marker_id,              # Will be removed
                 Field("level", length=2),
                 Field("parent", "reference gis_location", ondelete = "RESTRICT"),   # This form of hierarchy may not work on all Databases
@@ -728,30 +728,30 @@ table.query.label = T("Query")
 # Feature Groups
 # Used to select a set of Feature Classes for either Display or Export
 # This is being deprecated by feature_layer
-resource = "feature_group"
-tablename = "%s_%s" % (module, resource)
-table = db.define_table(tablename, timestamp, uuidstamp, authorstamp, deletion_status,
-                Field("name", length=128, notnull=True, unique=True),
-                Field("description"),
-                Field("enabled", "boolean", default=True, label=T("Enabled?")),
-                Field("visible", "boolean", default=False, label=T("On by default?")),
-                migrate=migrate)
-table.uuid.requires = IS_NOT_IN_DB(db, "%s.uuid" % tablename)
-#table.author.requires = IS_ONE_OF(db, "auth_user.id","%(id)s: %(first_name)s %(last_name)s")
-table.name.requires = [IS_NOT_EMPTY(), IS_NOT_IN_DB(db, "%s.name" % tablename)]
-table.name.label = T("Name")
-table.description.label = T("Description")
-# Reusable field to include in other table definitions
-ADD_FEATURE_GROUP = T("Add Feature Group")
-feature_group_id = db.Table(None, "feature_group_id",
-            FieldS3("feature_group_id", db.gis_feature_group, sortby="name",
-                requires = IS_NULL_OR(IS_ONE_OF(db, "gis_feature_group.id", "%(name)s")),
-                represent = lambda id: (id and [db(db.gis_feature_group.id == id).select(db.gis_feature_group.name, limitby=(0, 1)).first().name] or [NONE])[0],
-                label = T("Feature Group"),
-                comment = DIV(A(ADD_FEATURE_GROUP, _class="colorbox", _href=URL(r=request, c="gis", f="feature_group", args="create", vars=dict(format="popup")), _target="top", _title=ADD_FEATURE_GROUP),
-                          DIV( _class="tooltip", _title=Tstr("Feature Group") + "|" + Tstr("A collection of Feature Classes which can be displayed together on a map or exported together."))),
-                ondelete = "RESTRICT"
-                ))
+#resource = "feature_group"
+#tablename = "%s_%s" % (module, resource)
+#table = db.define_table(tablename, timestamp, uuidstamp, authorstamp, deletion_status,
+#                Field("name", length=128, notnull=True, unique=True),
+#                Field("description"),
+#                Field("enabled", "boolean", default=True, label=T("Enabled?")),
+#                Field("visible", "boolean", default=False, label=T("On by default?")),
+#                migrate=migrate)
+#table.uuid.requires = IS_NOT_IN_DB(db, "%s.uuid" % tablename)
+##table.author.requires = IS_ONE_OF(db, "auth_user.id","%(id)s: %(first_name)s %(last_name)s")
+#table.name.requires = [IS_NOT_EMPTY(), IS_NOT_IN_DB(db, "%s.name" % tablename)]
+#table.name.label = T("Name")
+#table.description.label = T("Description")
+## Reusable field to include in other table definitions
+#ADD_FEATURE_GROUP = T("Add Feature Group")
+#feature_group_id = db.Table(None, "feature_group_id",
+#            FieldS3("feature_group_id", db.gis_feature_group, sortby="name",
+#                requires = IS_NULL_OR(IS_ONE_OF(db, "gis_feature_group.id", "%(name)s")),
+#                represent = lambda id: (id and [db(db.gis_feature_group.id == id).select(db.gis_feature_group.name, limitby=(0, 1)).first().name] or [NONE])[0],
+#                label = T("Feature Group"),
+#                comment = DIV(A(ADD_FEATURE_GROUP, _class="colorbox", _href=URL(r=request, c="gis", f="feature_group", args="create", vars=dict(format="popup")), _target="top", _title=ADD_FEATURE_GROUP),
+#                          DIV( _class="tooltip", _title=Tstr("Feature Group") + "|" + Tstr("A collection of Feature Classes which can be displayed together on a map or exported together."))),
+#                ondelete = "RESTRICT"
+#                ))
 
 # Many-to-Many tables
 # No longer supported
@@ -763,12 +763,12 @@ feature_group_id = db.Table(None, "feature_group_id",
 #                migrate=migrate)
 
 # This is being deprecated by feature_layer
-resource = "feature_class_to_feature_group"
-tablename = "%s_%s" % (module, resource)
-table = db.define_table(tablename, timestamp, deletion_status,
-                feature_group_id,
-                feature_class_id,
-                migrate=migrate)
+#resource = "feature_class_to_feature_group"
+#tablename = "%s_%s" % (module, resource)
+#table = db.define_table(tablename, timestamp, deletion_status,
+#                feature_group_id,
+#                feature_class_id,
+#                migrate=migrate)
 
 # GIS Keys - needed for commercial mapping services
 resource = "apikey" # Can't use 'key' as this has other meanings for dicts!

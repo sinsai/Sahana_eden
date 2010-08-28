@@ -2,8 +2,12 @@
 
 <script type="text/javascript" src="/{{=request.application}}/static/scripts/S3/ba-debug.min.js"></script>
 <script type="text/javascript">//<![CDATA[
-function s3_debug(message) {
-        debug.debug('s3_debug: ' + message);
+function s3_debug(message, value) {
+        if (undefined == value) {
+            debug.debug('s3_debug: ' + message);
+        } else {
+            debug.debug('s3_debug: ' + message + ': ' + value);
+        }
     }
 //]]></script>
 

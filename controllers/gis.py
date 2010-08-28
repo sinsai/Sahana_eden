@@ -61,17 +61,6 @@ def define_map(window=False, toolbar=False):
     search = True
     catalogue_overlays = True
 
-    # Read which overlays to enable
-    feature_groups = []
-    _feature_groups = db((db.gis_feature_group.enabled == True) & (db.gis_feature_group.deleted == False)).select()
-    for feature_group in _feature_groups:
-        feature_groups.append(
-            {
-                "feature_group" : feature_group.name,
-                "active" : feature_group.visible
-            }
-        )
-
     # Custom Feature Layers
     # @ToDo: Move these layer definitions into the DB, removing Feature Groups
     # Feature Classes to be removed from Locations, although we still want the symbology mappings
@@ -140,7 +129,6 @@ def define_map(window=False, toolbar=False):
                        toolbar=toolbar,
                        search=search,
                        catalogue_overlays=catalogue_overlays,
-                       feature_groups=feature_groups,
                        feature_queries=feature_queries
                       )
 
@@ -254,20 +242,11 @@ def location():
     # Options
     _vars = request.vars
     filters = []
-    fclass = _vars.get("feature_class", None)
-    if fclass:
-        filters.append((db.gis_location.feature_class_id == db.gis_feature_class.id) &
-                              (db.gis_feature_class.name.like(fclass)))
-
-    fgroup = _vars.get("fgroup", None)
-    if fgroup:
-        # Filter to those Features which are in Feature Groups through their Feature Class
-        filters.append((db.gis_location.feature_class_id == db.gis_feature_class_to_feature_group.feature_class_id) &
-           (db.gis_feature_class_to_feature_group.feature_group_id == db.gis_feature_group.id) &
-           (db.gis_feature_group.name.like(fgroup)))
-        # We no longer support direct Features in Feature Groups (we can't easily OR this filter with previous one)
-        #filters.append((db.gis_location.id == db.gis_location_to_feature_group.location_id) &
-        #    (db.gis_location_to_feature_group.feature_group_id == db.gis_feature_group.id) & (db.gis_feature_group.name.like(fgroup)))
+    # Deprecate!
+    #fclass = _vars.get("feature_class", None)
+    #if fclass:
+    #    filters.append((db.gis_location.feature_class_id == db.gis_feature_class.id) &
+    #                          (db.gis_feature_class.name.like(fclass)))
 
     parent = _vars.get("parent_", None)
     # Don't use 'parent' as the var name as otherwise it conflicts with the form's var of the same name & hence this will be triggered during form submission
@@ -289,7 +268,7 @@ def location():
         if "gis_location_parent" in caller:
             # Populate defaults & hide unnecessary rows
             table.code.readable = table.code.writable = False
-            table.feature_class_id.readable = table.feature_class_id.writable = False
+            #table.feature_class_id.readable = table.feature_class_id.writable = False
             # Use default Marker for Class
             table.marker_id.readable = table.marker_id.writable = False
             table.wkt.readable = table.wkt.writable = False
@@ -302,59 +281,57 @@ def location():
             if parent:
                 table.parent.default = parent
             
-            fc = None
+            #fc = None
             # Populate defaults & hide unnecessary rows
             if "cr_shelter" in caller:
-                fc = db(db.gis_feature_class.name == "Shelter").select(db.gis_feature_class.id, limitby=(0, 1)).first()
+                #fc = db(db.gis_feature_class.name == "Shelter").select(db.gis_feature_class.id, limitby=(0, 1)).first()
                 table.level.readable = table.level.writable = False
                 table.url.readable = table.url.writable = False
             elif "hms_hospital" in caller:
-                fc = db(db.gis_feature_class.name == "Hospital").select(db.gis_feature_class.id, limitby=(0, 1)).first()
+                #fc = db(db.gis_feature_class.name == "Hospital").select(db.gis_feature_class.id, limitby=(0, 1)).first()
                 table.level.readable = table.level.writable = False
                 table.url.readable = table.url.writable = False
             elif "irs_ireport" in caller:
-                fc = db(db.gis_feature_class.name == "Incident").select(db.gis_feature_class.id, limitby=(0, 1)).first()
+                #fc = db(db.gis_feature_class.name == "Incident").select(db.gis_feature_class.id, limitby=(0, 1)).first()
                 table.level.readable = table.level.writable = False
                 table.url.readable = table.url.writable = False
             elif "org_office" in caller:
-                fc = db(db.gis_feature_class.name == "Office").select(db.gis_feature_class.id, limitby=(0, 1)).first()
+                #fc = db(db.gis_feature_class.name == "Office").select(db.gis_feature_class.id, limitby=(0, 1)).first()
                 table.level.readable = table.level.writable = False
                 table.url.readable = table.url.writable = False
-            elif "org_project" in caller:
-                fc = db(db.gis_feature_class.name == "Project").select(db.gis_feature_class.id, limitby=(0, 1)).first()
             elif "pr_presence" in caller:
-                fc = db(db.gis_feature_class.name == "Person").select(db.gis_feature_class.id, limitby=(0, 1)).first()
+                #fc = db(db.gis_feature_class.name == "Person").select(db.gis_feature_class.id, limitby=(0, 1)).first()
                 table.level.readable = table.level.writable = False
                 table.url.readable = table.url.writable = False
             elif "assessment_location" in caller:
                 table.level.default = "L4"
-                table.feature_class_id.readable = table.feature_class_id.writable = False
+                #table.feature_class_id.readable = table.feature_class_id.writable = False
                 table.marker_id.readable = table.marker_id.writable = False
                 table.addr_street.readable = table.addr_street.writable = False
             elif "school_district" in caller:
                 table.level.default = "L2"
-                table.feature_class_id.readable = table.feature_class_id.writable = False
+                #table.feature_class_id.readable = table.feature_class_id.writable = False
                 table.marker_id.readable = table.marker_id.writable = False
                 table.addr_street.readable = table.addr_street.writable = False
             elif "school_report_location" in caller:
                 table.level.default = "L2"
-                table.feature_class_id.readable = table.feature_class_id.writable = False
+                #table.feature_class_id.readable = table.feature_class_id.writable = False
                 table.marker_id.readable = table.marker_id.writable = False
                 table.addr_street.readable = table.addr_street.writable = False
             elif "school_report_union" in caller:
-                table.level.default = "L3"
-                table.feature_class_id.readable = table.feature_class_id.writable = False
+                table.level.default = "L4"
+                #table.feature_class_id.readable = table.feature_class_id.writable = False
                 table.marker_id.readable = table.marker_id.writable = False
                 table.addr_street.readable = table.addr_street.writable = False
             
-            try:
+            #try:
                 # If we have a pre-assigned Feature Class
-                table.feature_class_id.default = fc.id
-                table.feature_class_id.readable = table.feature_class_id.writable = False
+                #table.feature_class_id.default = fc.id
+                #table.feature_class_id.readable = table.feature_class_id.writable = False
                 # Use default Marker for Class
-                table.marker_id.readable = table.marker_id.writable = False
-            except:
-                pass
+                #table.marker_id.readable = table.marker_id.writable = False
+            #except:
+                #pass
 
             table.osm_id.readable = table.osm_id.writable = False
             table.source.readable = table.source.writable = False
@@ -502,7 +479,10 @@ def config():
     return output
 
 def feature_class():
-    """ RESTful CRUD controller """
+    """
+        RESTful CRUD controller
+        Deprecated? (How to link Symbology with Feature Queries?)
+    """
     if deployment_settings.get_security_map() and not shn_has_role("MapAdmin"):
         unauthorised()
 
@@ -541,76 +521,6 @@ def feature_class():
     output = shn_rest_controller(module, resource)
 
     if not "gis" in response.view and response.view != "popup.html":
-        response.view = "gis/" + response.view
-
-    return output
-
-def feature_group():
-    """ RESTful CRUD controller """
-    if deployment_settings.get_security_map() and not shn_has_role("MapAdmin"):
-        unauthorised()
-
-    resource = request.function
-    tablename = module + "_" + resource
-    table = db[tablename]
-
-    # Model options
-    table.name.comment = SPAN("*", _class="req")
-    #table.features.comment = DIV( _class="tooltip", _title=Tstr("Multi-Select") + "|" + Tstr("Click Features to select, Click again to Remove. Dark Green is selected."))
-    #table.feature_classes.comment = DIV( _class="tooltip", _title=Tstr("Multi-Select") + "|" + Tstr("Click Features to select, Click again to Remove. Dark Green is selected."))
-
-    # CRUD Strings
-    LIST_FEATURE_GROUPS = T("List Feature Groups")
-    s3.crud_strings[tablename] = Storage(
-        title_create = ADD_FEATURE_GROUP,
-        title_display = T("Feature Group Details"),
-        title_list = T("Feature Groups"),
-        title_update = T("Edit Feature Group"),
-        title_search = T("Search Feature Groups"),
-        subtitle_create = T("Add New Feature Group"),
-        subtitle_list = LIST_FEATURE_GROUPS,
-        label_list_button = LIST_FEATURE_GROUPS,
-        label_create_button = ADD_FEATURE_GROUP,
-        label_delete_button = T("Delete Feature Group"),
-        msg_record_created = T("Feature Group added"),
-        msg_record_modified = T("Feature Group updated"),
-        msg_record_deleted = T("Feature Group deleted"),
-        msg_list_empty = T("No Feature Groups currently defined"))
-
-    # Post-processor
-    def user_postp(jr, output):
-        shn_action_buttons(jr)
-        return output
-    response.s3.postp = user_postp
-
-    output = shn_rest_controller(module, resource)
-
-    if not "gis" in response.view:
-        response.view = "gis/" + response.view
-
-    return output
-
-def feature_class_to_feature_group():
-    """ RESTful CRUD controller """
-    if deployment_settings.get_security_map() and not shn_has_role("MapAdmin"):
-        unauthorised()
-
-    resource = request.function
-    table = module + "_" + resource
-
-    # Model options
-
-    # CRUD Strings
-
-    # Post-processor
-    def user_postp(jr, output):
-        shn_action_buttons(jr)
-        return output
-    response.s3.postp = user_postp
-
-    output = shn_rest_controller(module, resource)
-
-    if not "gis" in response.view:
         response.view = "gis/" + response.view
 
     return output
@@ -1372,128 +1282,6 @@ def layer_xyz():
 
     return output
 
-# Feature Groups
-def feature_group_contents():
-    """ Many to Many CRUD Controller """
-    if deployment_settings.get_security_map() and not shn_has_role("MapAdmin"):
-        unauthorised()
-
-    if len(request.args) == 0:
-        session.error = T("Need to specify a feature group!")
-        redirect(URL(r=request, f="feature_group"))
-    feature_group = request.args(0)
-    table = db.gis_feature_class_to_feature_group
-    authorised = shn_has_permission("update", table)
-
-    title = str(T("Feature Group")) + ": " + str(db.gis_feature_group[feature_group].name)
-    subtitle = T("Contents")
-    feature_group_description = str(B(T("Description"))) + ": " + str(db.gis_feature_group[feature_group].description)
-    # Start building the Return with the common items
-    output = dict(title=title, description=feature_group_description)
-    # Audit
-    #shn_audit_read(operation="list", resource="feature_group_contents", record=feature_group, representation="html")
-    item_list = []
-    even = True
-    if authorised:
-        # Audit
-        crud.settings.create_onaccept = lambda form: shn_audit_create(form, module, "feature_group_contents", "html")
-        # Display a List_Create page with checkboxes to remove items
-
-        # Feature Classes
-        query = (table.feature_group_id == feature_group) & (table.deleted == False)
-        sqlrows = db(query).select()
-        for row in sqlrows:
-            if even:
-                theclass = "even"
-                even = False
-            else:
-                theclass = "odd"
-                even = True
-            id = row.feature_class_id
-            name = db.gis_feature_class[id].name
-            description = db.gis_feature_class[id].description
-            id_link = A(id, _href=URL(r=request, f="feature_class", args=[id, "read"]))
-            checkbox = INPUT(_type="checkbox", _value="on", _name="feature_class_" + str(id), _class="remove_item")
-            item_list.append(TR(TD(id_link), TD(name, _align="left"), TD(description, _align="left"), TD(checkbox, _align="center"), _class=theclass, _align="right"))
-
-        table_header = THEAD(TR(TH("ID"), TH("Name"), TH(T("Description")), TH(T("Remove"))))
-        table_footer = TFOOT(TR(TD(INPUT(_id="submit_button", _type="submit", _value=T("Update")))), _colspan=3, _align="right")
-        items = DIV(FORM(TABLE(table_header, TBODY(item_list), table_footer, _id="table-container"), _name="custom", _method="post", _enctype="multipart/form-data", _action=URL(r=request, f="feature_group_update_items", args=[feature_group])))
-
-        crud.messages.submit_button=T("Add")
-        # Check for duplicates before Item is added to DB
-        crud.settings.create_onvalidation = lambda form: feature_group_dupes(form)
-        crud.messages.record_created = T("Feature Group Updated")
-        form = crud.create(table, next=URL(r=request, args=[feature_group]))
-        #form[0][0].append(TR(TD(T("Type:")), TD(LABEL(T("Feature Class"), INPUT(_type="radio", _name="fg1", _value="FeatureClass", value="FeatureClass")), LABEL(T("Feature"), INPUT(_type="radio", _name="fg1", _value="Feature", value="FeatureClass")))))
-        addtitle = T("Add Feature Class to Feature Group")
-        response.view = "%s/feature_group_contents_list_create.html" % module
-        output.update(dict(subtitle=subtitle, items=items, addtitle=addtitle, form=form, feature_group=feature_group))
-    else:
-        # Display a simple List page
-        # Feature Classes
-        query = (table.feature_group_id == feature_group) & (table.deleted == False)
-        sqlrows = db(query).select()
-        for row in sqlrows:
-            if even:
-                theclass = "even"
-                even = False
-            else:
-                theclass = "odd"
-                even = True
-            id = row.feature_class_id
-            name = db.gis_feature_class[id].name
-            description = db.gis_feature_class[id].description
-            id_link = A(id, _href=URL(r=request, f="feature_class", args=[id, "read"]))
-            item_list.append(TR(TD(id_link), TD(name, _align="left"), TD(description, _align="left"), _class=theclass, _align="right"))
-
-        table_header = THEAD(TR(TH("ID"), TH("Name"), TH(T("Description"))))
-        items = DIV(TABLE(table_header, TBODY(item_list), _id="table-container"))
-
-        add_btn = A(T("Edit Contents"), _href=URL(r=request, c="default", f="user", args="login"), _class="action-btn")
-        response.view = "%s/feature_group_contents_list.html" % module
-        output.update(dict(items=items, add_btn=add_btn))
-    return output
-
-def feature_group_dupes(form):
-    """ Checks for duplicate FeatureClass before adding to DB """
-    feature_group = form.vars.feature_group
-    if "feature_class_id" in form.vars:
-        feature_class_id = form.vars.feature_class_id
-        table = db.gis_feature_class_to_feature_group
-        query = (table.feature_group == feature_group) & (table.feature_class_id == feature_class_id)
-    else:
-        # Something went wrong!
-        return
-    items = db(query).select()
-    if items:
-        session.error = T("Already in this Feature Group!")
-        redirect(URL(r=request, args=feature_group))
-    else:
-        return
-
-def feature_group_update_items():
-    """ Update a Feature Group's items (Feature Classes & Features) """
-    if len(request.args) == 0:
-        session.error = T("Need to specify a feature group!")
-        redirect(URL(r=request, f="feature_group"))
-    feature_group = request.args(0)
-    table = db.gis_feature_class_to_feature_group
-    authorised = shn_has_permission("update", table)
-    if authorised:
-        for var in request.vars:
-            if "feature_class_id" in var:
-                # Delete
-                feature_class_id = var[14:]
-                query = (table.feature_group == feature_group) & (table.feature_class_id == feature_class_id)
-                db(query).delete()
-        # Audit
-        shn_audit_update_m2m(resource="feature_group_contents", record=feature_group, representation="html")
-        session.flash = T("Feature Group updated")
-    else:
-        session.error = T("Not authorised!")
-    redirect(URL(r=request, f="feature_group_contents", args=[feature_group]))
-
 def convert_gps():
     " Provide a form which converts from GPS Coordinates to Decimal Coordinates "
     return dict()
@@ -1908,4 +1696,208 @@ def test():
 def test2():
     " Test new OpenLayers functionality in a RAD environment "
     return dict()
+
+#
+# Deprecated functions
+#
+
+def feature_group():
+    """
+        RESTful CRUD controller
+        Deprecated - replaced by Feature Layers
+    """
+    if deployment_settings.get_security_map() and not shn_has_role("MapAdmin"):
+        unauthorised()
+
+    resource = request.function
+    tablename = module + "_" + resource
+    table = db[tablename]
+
+    # Model options
+    table.name.comment = SPAN("*", _class="req")
+    #table.features.comment = DIV( _class="tooltip", _title=Tstr("Multi-Select") + "|" + Tstr("Click Features to select, Click again to Remove. Dark Green is selected."))
+    #table.feature_classes.comment = DIV( _class="tooltip", _title=Tstr("Multi-Select") + "|" + Tstr("Click Features to select, Click again to Remove. Dark Green is selected."))
+
+    # CRUD Strings
+    LIST_FEATURE_GROUPS = T("List Feature Groups")
+    s3.crud_strings[tablename] = Storage(
+        title_create = ADD_FEATURE_GROUP,
+        title_display = T("Feature Group Details"),
+        title_list = T("Feature Groups"),
+        title_update = T("Edit Feature Group"),
+        title_search = T("Search Feature Groups"),
+        subtitle_create = T("Add New Feature Group"),
+        subtitle_list = LIST_FEATURE_GROUPS,
+        label_list_button = LIST_FEATURE_GROUPS,
+        label_create_button = ADD_FEATURE_GROUP,
+        label_delete_button = T("Delete Feature Group"),
+        msg_record_created = T("Feature Group added"),
+        msg_record_modified = T("Feature Group updated"),
+        msg_record_deleted = T("Feature Group deleted"),
+        msg_list_empty = T("No Feature Groups currently defined"))
+
+    # Post-processor
+    def user_postp(jr, output):
+        shn_action_buttons(jr)
+        return output
+    response.s3.postp = user_postp
+
+    output = shn_rest_controller(module, resource)
+
+    if not "gis" in response.view:
+        response.view = "gis/" + response.view
+
+    return output
+
+def feature_class_to_feature_group():
+    """
+        RESTful CRUD controller
+        Deprecated - replaced by Feature Layer
+    """
+    if deployment_settings.get_security_map() and not shn_has_role("MapAdmin"):
+        unauthorised()
+
+    resource = request.function
+    table = module + "_" + resource
+
+    # Model options
+
+    # CRUD Strings
+
+    # Post-processor
+    def user_postp(jr, output):
+        shn_action_buttons(jr)
+        return output
+    response.s3.postp = user_postp
+
+    output = shn_rest_controller(module, resource)
+
+    if not "gis" in response.view:
+        response.view = "gis/" + response.view
+
+    return output
+
+def feature_group_contents():
+    """
+        Many to Many CRUD Controller
+        Deprecated
+    """
+    if deployment_settings.get_security_map() and not shn_has_role("MapAdmin"):
+        unauthorised()
+
+    if len(request.args) == 0:
+        session.error = T("Need to specify a feature group!")
+        redirect(URL(r=request, f="feature_group"))
+    feature_group = request.args(0)
+    table = db.gis_feature_class_to_feature_group
+    authorised = shn_has_permission("update", table)
+
+    title = str(T("Feature Group")) + ": " + str(db.gis_feature_group[feature_group].name)
+    subtitle = T("Contents")
+    feature_group_description = str(B(T("Description"))) + ": " + str(db.gis_feature_group[feature_group].description)
+    # Start building the Return with the common items
+    output = dict(title=title, description=feature_group_description)
+    # Audit
+    #shn_audit_read(operation="list", resource="feature_group_contents", record=feature_group, representation="html")
+    item_list = []
+    even = True
+    if authorised:
+        # Audit
+        crud.settings.create_onaccept = lambda form: shn_audit_create(form, module, "feature_group_contents", "html")
+        # Display a List_Create page with checkboxes to remove items
+
+        # Feature Classes
+        query = (table.feature_group_id == feature_group) & (table.deleted == False)
+        sqlrows = db(query).select()
+        for row in sqlrows:
+            if even:
+                theclass = "even"
+                even = False
+            else:
+                theclass = "odd"
+                even = True
+            id = row.feature_class_id
+            name = db.gis_feature_class[id].name
+            description = db.gis_feature_class[id].description
+            id_link = A(id, _href=URL(r=request, f="feature_class", args=[id, "read"]))
+            checkbox = INPUT(_type="checkbox", _value="on", _name="feature_class_" + str(id), _class="remove_item")
+            item_list.append(TR(TD(id_link), TD(name, _align="left"), TD(description, _align="left"), TD(checkbox, _align="center"), _class=theclass, _align="right"))
+
+        table_header = THEAD(TR(TH("ID"), TH("Name"), TH(T("Description")), TH(T("Remove"))))
+        table_footer = TFOOT(TR(TD(INPUT(_id="submit_button", _type="submit", _value=T("Update")))), _colspan=3, _align="right")
+        items = DIV(FORM(TABLE(table_header, TBODY(item_list), table_footer, _id="table-container"), _name="custom", _method="post", _enctype="multipart/form-data", _action=URL(r=request, f="feature_group_update_items", args=[feature_group])))
+
+        crud.messages.submit_button=T("Add")
+        # Check for duplicates before Item is added to DB
+        crud.settings.create_onvalidation = lambda form: feature_group_dupes(form)
+        crud.messages.record_created = T("Feature Group Updated")
+        form = crud.create(table, next=URL(r=request, args=[feature_group]))
+        #form[0][0].append(TR(TD(T("Type:")), TD(LABEL(T("Feature Class"), INPUT(_type="radio", _name="fg1", _value="FeatureClass", value="FeatureClass")), LABEL(T("Feature"), INPUT(_type="radio", _name="fg1", _value="Feature", value="FeatureClass")))))
+        addtitle = T("Add Feature Class to Feature Group")
+        response.view = "%s/feature_group_contents_list_create.html" % module
+        output.update(dict(subtitle=subtitle, items=items, addtitle=addtitle, form=form, feature_group=feature_group))
+    else:
+        # Display a simple List page
+        # Feature Classes
+        query = (table.feature_group_id == feature_group) & (table.deleted == False)
+        sqlrows = db(query).select()
+        for row in sqlrows:
+            if even:
+                theclass = "even"
+                even = False
+            else:
+                theclass = "odd"
+                even = True
+            id = row.feature_class_id
+            name = db.gis_feature_class[id].name
+            description = db.gis_feature_class[id].description
+            id_link = A(id, _href=URL(r=request, f="feature_class", args=[id, "read"]))
+            item_list.append(TR(TD(id_link), TD(name, _align="left"), TD(description, _align="left"), _class=theclass, _align="right"))
+
+        table_header = THEAD(TR(TH("ID"), TH("Name"), TH(T("Description"))))
+        items = DIV(TABLE(table_header, TBODY(item_list), _id="table-container"))
+
+        add_btn = A(T("Edit Contents"), _href=URL(r=request, c="default", f="user", args="login"), _class="action-btn")
+        response.view = "%s/feature_group_contents_list.html" % module
+        output.update(dict(items=items, add_btn=add_btn))
+    return output
+
+def feature_group_dupes(form):
+    """ Checks for duplicate FeatureClass before adding to DB """
+    feature_group = form.vars.feature_group
+    if "feature_class_id" in form.vars:
+        feature_class_id = form.vars.feature_class_id
+        table = db.gis_feature_class_to_feature_group
+        query = (table.feature_group == feature_group) & (table.feature_class_id == feature_class_id)
+    else:
+        # Something went wrong!
+        return
+    items = db(query).select()
+    if items:
+        session.error = T("Already in this Feature Group!")
+        redirect(URL(r=request, args=feature_group))
+    else:
+        return
+
+def feature_group_update_items():
+    """ Update a Feature Group's items (Feature Classes & Features) """
+    if len(request.args) == 0:
+        session.error = T("Need to specify a feature group!")
+        redirect(URL(r=request, f="feature_group"))
+    feature_group = request.args(0)
+    table = db.gis_feature_class_to_feature_group
+    authorised = shn_has_permission("update", table)
+    if authorised:
+        for var in request.vars:
+            if "feature_class_id" in var:
+                # Delete
+                feature_class_id = var[14:]
+                query = (table.feature_group == feature_group) & (table.feature_class_id == feature_class_id)
+                db(query).delete()
+        # Audit
+        shn_audit_update_m2m(resource="feature_group_contents", record=feature_group, representation="html")
+        session.flash = T("Feature Group updated")
+    else:
+        session.error = T("Not authorised!")
+    redirect(URL(r=request, f="feature_group_contents", args=[feature_group]))
 

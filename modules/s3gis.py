@@ -329,7 +329,7 @@ class GIS(object):
         locations = db(query).select(db.gis_location.id, db.gis_location.uuid, db.gis_location.parent, db.gis_location.name, db.gis_location.wkt, db.gis_location.lat, db.gis_location.lon)
         for i in range(0, len(locations)):
             locations[i].popup_label = locations[i].name + "-" + popup_label
-        popup_url = URL(r=request, c=module, f=resource, args="read.popup?%s.location_id=" % resource)
+        popup_url = URL(r=request, c=module, f=resource, args="read.plain?%s.location_id=" % resource)
         try:
             marker = db(db.gis_marker.name == marker).select(db.gis_marker.id, limitby=(0, 1)).first().id
             layer = {"name":layername, "query":locations, "active":True, "marker":marker, "popup_url": popup_url}
@@ -611,7 +611,6 @@ class GIS(object):
                   add_feature = False,
                   add_feature_active = False,
                   feature_queries = [],
-                  feature_groups = [],      # These will be deprecated (replaced by queries predefined in the Database)
                   wms_browser = {},
                   catalogue_overlays = False,
                   catalogue_toolbar = False,
@@ -650,15 +649,6 @@ class GIS(object):
                 [{
                  name   : "MyLabel",    # A string: the label for the layer
                  query  : query,        # A gluon.sql.Rows of gis_locations, which can be from a simple query or a Join. Extra fields can be added for 'marker' or 'shape' (with optional 'color' & 'size') & 'popup_label'
-                 active : False,        # Is the feed displayed upon load or needs ticking to load afterwards?
-                 popup_url : None,      # The URL which will be used to fill the pop-up. it will be appended by the Location ID.
-                 marker : None          # The marker_id for the icon used to display the feature (over-riding the normal process).
-                }]
-            @param feature_groups: Feature Groups to overlay onto the map & their options (List of Dicts):
-                [{
-                 feature_group : db.gis_feature_group.name,
-                 parent : None,         # Only display features with this parent set. ToDo: search recursively to allow all descendants
-                 filter : None,         # A query to further limit which features from the feature group are loaded
                  active : False,        # Is the feed displayed upon load or needs ticking to load afterwards?
                  popup_url : None,      # The URL which will be used to fill the pop-up. it will be appended by the Location ID.
                  marker : None          # The marker_id for the icon used to display the feature (over-riding the normal process).
@@ -761,8 +751,8 @@ class GIS(object):
             catalogue_toolbar = DIV(
                 config_button,
                 SPAN( A(T("Layers"), _href=URL(r=request, c="gis", f="map_service_catalogue")), _class="rheader_tab_other" ),
-                SPAN( A(T("Feature Classes"), _href=URL(r=request, c="gis", f="feature_class")), _class="rheader_tab_other" ),
-                SPAN( A(T("Feature Groups"), _href=URL(r=request, c="gis", f="feature_group")), _class="rheader_tab_other" ),
+                #SPAN( A(T("Feature Layers"), _href=URL(r=request, c="gis", f="feature_layer")), _class="rheader_tab_other" ),
+                #SPAN( A(T("Feature Classes"), _href=URL(r=request, c="gis", f="feature_class")), _class="rheader_tab_other" ),
                 SPAN( A(T("Markers"), _href=URL(r=request, c="gis", f="marker")), _class="rheader_tab_other" ),
                 SPAN( A(T("Keys"), _href=URL(r=request, c="gis", f="apikey")), _class="rheader_tab_other" ),
                 SPAN( A(T("Projections"), _href=URL(r=request, c="gis", f="projection")), _class="rheader_tab_other" ),
@@ -1904,11 +1894,29 @@ OpenLayers.Util.extend( selectPdfControl, {
         # Features
         #
         layers_features = ""
-        if feature_groups or feature_queries or add_feature:
+        if feature_queries or add_feature:
 
             cluster_style = """
+        // Needs to be uniquely instantiated
+        var style_cluster = new OpenLayers.Style(style_cluster_style, style_cluster_options);
+        // Define StyleMap, Using 'style_cluster' rule for 'default' styling intent
+        var featureClusterStyleMap = new OpenLayers.StyleMap({
+                                          'default': style_cluster,
+                                          'select': {
+                                              fillColor: '#ffdc33',
+                                              strokeColor: '#ff9933'
+                                          }
+        });
+        """
+
+            layers_features += """
+        var featureLayers = new Array();
+        var features = [];
+        var parser = new OpenLayers.Format.WKT();
+        var geom, featureVec;
+
         // Style Rule For Clusters
-        var style_cluster = new OpenLayers.Style({
+        var style_cluster_style = {
             label: '${label}',
             pointRadius: '${radius}',
             fillColor: '#8087ff',
@@ -1916,7 +1924,8 @@ OpenLayers.Util.extend( selectPdfControl, {
             strokeColor: '#2b2f76',
             strokeWidth: 2,
             strokeOpacity: 1
-        }, {
+        };
+        var style_cluster_options = {
             context: {
                 radius: function(feature) {
                     // Size For Unclustered Point
@@ -1937,24 +1946,9 @@ OpenLayers.Util.extend( selectPdfControl, {
                     return label;
                 }
             }
-        });
-        // Define StyleMap, Using 'style_cluster' rule for 'default' styling intent
-        var featureClusterStyleMap = new OpenLayers.StyleMap({
-                                          'default': style_cluster,
-                                          'select': {
-                                              fillColor: '#ffdc33',
-                                              strokeColor: '#ff9933'
-                                          }
-        });
-        """
-
-            layers_features += """
-        var featureLayers = new Array();
-        var features = [];
-        var parser = new OpenLayers.Format.WKT();
-        var geom, featureVec;
-
-        function addFeature(feature_id, name, feature_class, geom, styleMarker, image) {
+        };
+        
+        function addFeature(feature_id, name, geom, styleMarker, image, popup_url) {
             geom = geom.transform(proj4326, projection_current);
             // Needs to be uniquely instantiated
             var style_marker = OpenLayers.Util.extend({}, OpenLayers.Feature.Vector.style['default']);
@@ -1980,9 +1974,59 @@ OpenLayers.Util.extend( selectPdfControl, {
             // Create Feature Vector
             var featureVec = new OpenLayers.Feature.Vector(geom, null, style_marker);
             featureVec.fid = feature_id;
+            // Store the popup_url in the feature so that onFeatureSelect can read it
+            featureVec.popup_url = popup_url;
             featureVec.attributes.name = name;
-            featureVec.attributes.feature_class = feature_class;
             return featureVec;
+        }
+
+        function onFeatureSelect(event) {
+            // unselect any previous selections
+            tooltipUnselect(event);
+            var feature = event.feature;
+            var id = 'featureLayerPopup';
+            var popup_url = feature.popup_url;
+            centerPoint = feature.geometry.getBounds().getCenterLonLat();
+            if(feature.cluster) {
+                // Cluster
+                var name, uuid, url;
+                var html = '""" + str(T("There are multiple records at this location")) + """:<ul>';
+                for (var i = 0; i < feature.cluster.length; i++) {
+                    name = feature.cluster[i].attributes.name;
+                    uuid = feature.cluster[i].fid;
+                    url = popup_url + uuid;
+                    html += "<li><a href='javascript:loadClusterPopup(" + "\\"" + url + "\\", \\"" + id + "\\"" + ")'>" + name + "</a></li>";
+                }
+                html += '</ul>';
+                html += "<div align='center'><a href='javascript:zoomToSelectedFeature(" + centerPoint.lon + "," + centerPoint.lat + ", 3)'>Zoom in</a></div>";
+                var popup = new OpenLayers.Popup.FramedCloud(
+                    id,
+                    centerPoint,
+                    new OpenLayers.Size(200, 200),
+                    html,
+                    null,
+                    true,
+                    onPopupClose
+                );
+                feature.popup = popup;
+                map.addPopup(popup);
+            } else {
+                // Single Feature
+                var popup = new OpenLayers.Popup.FramedCloud(
+                    id,
+                    centerPoint,
+                    new OpenLayers.Size(200, 200),
+                    "Loading...<img src='" + ajax_loader + "' border=0>",
+                    null,
+                    true,
+                    onPopupClose
+                );
+                feature.popup = popup;
+                map.addPopup(popup);
+                // call AJAX to get the contentHTML
+                var uuid = feature.fid;
+                loadDetails(popup_url + uuid, id, popup);
+            }
         }
 
         function loadDetails(url, id, popup) {
@@ -2051,7 +2095,6 @@ OpenLayers.Util.extend( selectPdfControl, {
                 if "popup_url" in layer:
                     _popup_url = urllib.unquote(layer["popup_url"])
                 else:
-                    #popup_url = urllib.unquote(URL(r=request, c=feature_class.module, f=feature_class.resource, args=["read.popup"]))
                     _popup_url = urllib.unquote(URL(r=request, c="gis", f="location", args=["read.popup?location.id="]))
 
                 # Generate HTML snippet
@@ -2062,6 +2105,7 @@ OpenLayers.Util.extend( selectPdfControl, {
                     visibility = "featureLayer" + name_safe + ".setVisibility(false);"
                 layers_features += """
         features = [];
+        var popup_url = '""" + _popup_url + """';
         """ + cluster_style + """
         var featureLayer""" + name_safe + """ = new OpenLayers.Layer.Vector(
             '""" + name + """',
@@ -2073,59 +2117,10 @@ OpenLayers.Util.extend( selectPdfControl, {
         """ + visibility + """
         map.addLayer(featureLayer""" + name_safe + """);
         featureLayer""" + name_safe + """.events.on({
-            "featureselected": onFeatureSelect""" + name_safe + """,
+            "featureselected": onFeatureSelect,
             "featureunselected": onFeatureUnselect
         });
         featureLayers.push(featureLayer""" + name_safe + """);
-
-        function onFeatureSelect""" + name_safe + """(event) {
-            // unselect any previous selections
-            tooltipUnselect(event);
-            var feature = event.feature;
-            var id = 'featureLayer""" + name_safe + """Popup';
-            centerPoint = feature.geometry.getBounds().getCenterLonLat();
-            if(feature.cluster) {
-                // Cluster
-                var name, uuid, url;
-                var html = 'There are multiple records at this location:<ul>';
-                var popupurl = '""" + _popup_url + """';
-                for (var i = 0; i < feature.cluster.length; i++) {
-                    name = feature.cluster[i].attributes.name;
-                    uuid = feature.cluster[i].fid;
-                    url = '""" + _popup_url + """' + uuid;
-                    html += "<li><a href='javascript:loadClusterPopup(" + "\\"" + url + "\\", \\"" + id + "\\"" + ")'>" + name + "</a></li>";
-                }
-                html += '</ul>';
-                html += "<div align='center'><a href='javascript:zoomToSelectedFeature(" + centerPoint.lon + "," + centerPoint.lat + ", 3)'>Zoom in</a></div>";
-                var popup = new OpenLayers.Popup.FramedCloud(
-                    id,
-                    centerPoint,
-                    new OpenLayers.Size(200, 200),
-                    html,
-                    null,
-                    true,
-                    onPopupClose
-                );
-                feature.popup = popup;
-                map.addPopup(popup);
-            } else {
-                // Single Feature
-                var popup = new OpenLayers.Popup.FramedCloud(
-                    id,
-                    centerPoint,
-                    new OpenLayers.Size(200, 200),
-                    "Loading...<img src='""" + str(URL(r=request, c="static", f="img")) + """/ajax-loader.gif' border=0>",
-                    null,
-                    true,
-                    onPopupClose
-                );
-                feature.popup = popup;
-                map.addPopup(popup);
-                // call AJAX to get the contentHTML
-                var uuid = feature.fid;
-                loadDetails('""" + _popup_url + """' + uuid, id, popup);
-            }
-        }
         """
                 features = layer["query"]
                 for _feature in features:
@@ -2220,12 +2215,6 @@ OpenLayers.Util.extend( selectPdfControl, {
                     except (AttributeError, KeyError):
                         popup_label = feature.name
 
-                    # Deal with null Feature Classes
-                    # @ToDo: Remove FeatureClass
-                    if feature.get("feature_class_id"):
-                        fc = "'" + str(feature.feature_class_id) + "'"
-                    else:
-                        fc = "null"
                     # Deal with apostrophes in Feature Names
                     fname = re.sub("'", "\\'", popup_label)
                     
@@ -2247,132 +2236,7 @@ OpenLayers.Util.extend( selectPdfControl, {
         """
                     layers_features += """
         geom = parser.read('""" + wkt + """').geometry;
-        featureVec = addFeature('""" + str(feature.id) + """', '""" + fname + """', """ + fc + """, geom, styleMarker, i)
-        features.push(featureVec);
-        """
-                # Append to Features layer
-                layers_features += """
-        featureLayer""" + name_safe + """.addFeatures(features);
-        """
-
-            # Feature Groups
-            for layer in feature_groups:
-                name = layer["feature_group"]
-                if "popup_url" in layer:
-                    _popup_url = urllib.unquote(layer["popup_url"])
-                # We'd like to do something like this:
-                #elif feature_class is office:
-                #    _popup_url = urllib.unquote(URL(r=request, c="or", f="office"))
-                else:
-                    _popup_url = urllib.unquote(URL(r=request, c="gis", f="location", args=["read.popup?location.uid="]))
-
-                # Generate HTML snippet
-                name_safe = re.sub("\W", "_", name)
-                if "active" in layer and layer["active"]:
-                    visibility = "featureLayer" + name_safe + ".setVisibility(true);"
-                else:
-                    visibility = "featureLayer" + name_safe + ".setVisibility(false);"
-                layers_features += """
-        features = [];
-        """ + cluster_style + """
-        var featureLayer""" + name_safe + """ = new OpenLayers.Layer.Vector(
-            '""" + name + """',
-            {
-                strategies: [ """ + strategy_cluster + """ ],
-                styleMap: featureClusterStyleMap
-            }
-        );
-        """ + visibility + """
-        map.addLayer(featureLayer""" + name_safe + """);
-        featureLayer""" + name_safe + """.events.on({
-            "featureselected": onFeatureSelect""" + name_safe + """,
-            "featureunselected": onFeatureUnselect
-        });
-        featureLayers.push(featureLayer""" + name_safe + """);
-
-        function onFeatureSelect""" + name_safe + """(event) {
-            // unselect any previous selections
-            tooltipUnselect(event);
-            var feature = event.feature;
-            var id = 'featureLayer""" + name_safe + """Popup';
-            centerPoint = feature.geometry.getBounds().getCenterLonLat();
-            if(feature.cluster) {
-                // Cluster
-                var name, uuid, url;
-                var html = 'There are multiple records at this location:<ul>';
-                var popupurl = '""" + _popup_url + """';
-                for (var i = 0; i < feature.cluster.length; i++) {
-                    name = feature.cluster[i].attributes.name;
-                    uuid = feature.cluster[i].fid;
-                    url = '""" + _popup_url + """' + uuid;
-                    html += "<li><a href='javascript:loadClusterPopup(" + "\\"" + url + "\\", \\"" + id + "\\"" + ")'>" + name + "</a></li>";
-                }
-                html += '</ul>';
-                html += "<a href='javascript:zoomToSelectedFeature(" + centerPoint.lon + "," + centerPoint.lat + ", 3)'>Zoom in</a>";
-                var popup = new OpenLayers.Popup.FramedCloud(
-                    id,
-                    centerPoint,
-                    new OpenLayers.Size(200, 200),
-                    html,
-                    null,
-                    true,
-                    onPopupClose
-                );
-                feature.popup = popup;
-                map.addPopup(popup);
-            } else {
-                // Single Feature
-                var popup = new OpenLayers.Popup.FramedCloud(
-                    id,
-                    centerPoint,
-                    new OpenLayers.Size(200, 200),
-                    "Loading...<img src='""" + str(URL(r=request, c="static", f="img")) + """/ajax-loader.gif' border=0>",
-                    null,
-                    true,
-                    onPopupClose
-                );
-                feature.popup = popup;
-                map.addPopup(popup);
-                // call AJAX to get the contentHTML
-                var uuid = feature.fid;
-                loadDetails('""" + _popup_url + """' + uuid, id, popup);
-            }
-        }
-        """
-                query = (db.gis_location.deleted == False) & (db.gis_feature_group.name == name) & (db.gis_feature_class_to_feature_group.feature_group_id == db.gis_feature_group.id) & (db.gis_location.feature_class_id == db.gis_feature_class_to_feature_group.feature_class_id)
-                if "parent" in layer:
-                    parent_id = db(db.gis_location.name == layer["parent"]).select(db.gis_location.id, limitby=(0, 1)).first().id
-                    query = query & (db.gis_location.parent == parent_id)
-                features = db(query).select(db.gis_location.id, db.gis_location.uuid, db.gis_location.name, db.gis_location.feature_class_id, db.gis_location.wkt, db.gis_location.lat, db.gis_location.lon)
-                for feature in features:
-                    if "marker" in layer:
-                        _marker = db(db.gis_marker.id == layer["marker"]).select(db.gis_marker.image, limitby=(0, 1), cache=cache).first()
-                        if _marker:
-                            marker = _marker.image
-                        else:
-                            marker = self.get_marker(feature.id)
-                    else:
-                        marker = self.get_marker(feature.id)
-                    marker_url = URL(r=request, c="static", f="img", args=["markers", marker])
-                    # Deal with null Feature Classes
-                    if feature.feature_class_id:
-                        fc = "'" + str(feature.feature_class_id) + "'"
-                    else:
-                        fc = "null"
-                    # Deal with manually-imported Features which are missing WKT
-                    if feature.wkt:
-                        wkt = feature.wkt
-                    elif (feature.lat == None) or (feature.lon == None):
-                        continue
-                    else:
-                        wkt = self.latlon_to_wkt(feature.lat, feature.lon)
-                    # Deal with apostrophes in Feature Names
-                    fname = re.sub("'", "\\'", feature.name)
-                    
-                    layers_features += """
-        geom = parser.read('""" + wkt + """').geometry;
-        styleMarker.iconURL = '""" + marker_url + """';
-        featureVec = addFeature('""" + feature.uuid + """', '""" + fname + """', """ + fc + """, geom, styleMarker)
+        featureVec = addFeature('""" + str(feature.id) + """', '""" + fname + """', geom, styleMarker, i, popup_url)
         features.push(featureVec);
         """
                 # Append to Features layer
@@ -2393,7 +2257,8 @@ OpenLayers.Util.extend( selectPdfControl, {
         layers_kml = ""
         if catalogue_overlays:
             # GeoRSS
-            georss_enabled = db(db.gis_layer_georss.enabled == True).select()
+            query = (db.gis_layer_georss.enabled == True) # No deletable field
+            georss_enabled = db(query).select(db.gis_layer_georss.name, db.gis_layer_georss.url, db.gis_layer_georss.visible, db.gis_layer_georss.projection_id, db.gis_layer_georss.marker_id)
             if georss_enabled:
                 layers_georss += """
         var georssLayers = new Array();
@@ -2487,37 +2352,37 @@ OpenLayers.Util.extend( selectPdfControl, {
                     else:
                         visibility = "georssLayer" + name_safe + ".setVisibility(false);"
                     layers_georss += """
-            iconURL = '""" + marker_url + """';
-            // Pre-cache this image
-            // Need unique names
-            var i = new Image();
-            i.onload = scaleImage;
-            i.src = iconURL;
-            // Needs to be uniquely instantiated
-            var style_marker = OpenLayers.Util.extend({}, OpenLayers.Feature.Vector.style['default']);
-            style_marker.graphicOpacity = 1;
-            style_marker.graphicWidth = width;
-            style_marker.graphicHeight = height;
-            style_marker.graphicXOffset = -(width / 2);
-            style_marker.graphicYOffset = -height;
-            style_marker.externalGraphic = iconURL;
-            var georssLayer""" + name_safe + """ = new OpenLayers.Layer.Vector(
-                '""" + name_safe + """',
-                {
-                    """ + projection_str + """
-                    strategies: [ """ + strategy_fixed + ", " + strategy_cluster + """ ],
-                    style: style_marker,
-                    protocol: new OpenLayers.Protocol.HTTP({
-                        url: '""" + url + """',
-                        format: format_georss
-                    })
-                }
-            );
-            """ + visibility + """
-            map.addLayer(georssLayer""" + name_safe + """);
-            georssLayers.push(georssLayer""" + name_safe + """);
-            georssLayer""" + name_safe + """.events.on({ "featureselected": onGeorssFeatureSelect, "featureunselected": onFeatureUnselect });
-            """
+        iconURL = '""" + marker_url + """';
+        // Pre-cache this image
+        // Need unique names
+        var i = new Image();
+        i.onload = scaleImage;
+        i.src = iconURL;
+        // Needs to be uniquely instantiated
+        var style_marker = OpenLayers.Util.extend({}, OpenLayers.Feature.Vector.style['default']);
+        style_marker.graphicOpacity = 1;
+        style_marker.graphicWidth = width;
+        style_marker.graphicHeight = height;
+        style_marker.graphicXOffset = -(width / 2);
+        style_marker.graphicYOffset = -height;
+        style_marker.externalGraphic = iconURL;
+        var georssLayer""" + name_safe + """ = new OpenLayers.Layer.Vector(
+            '""" + name_safe + """',
+            {
+                """ + projection_str + """
+                strategies: [ """ + strategy_fixed + ", " + strategy_cluster + """ ],
+                style: style_marker,
+                protocol: new OpenLayers.Protocol.HTTP({
+                    url: '""" + url + """',
+                    format: format_georss
+                })
+            }
+        );
+        """ + visibility + """
+        map.addLayer(georssLayer""" + name_safe + """);
+        georssLayers.push(georssLayer""" + name_safe + """);
+        georssLayer""" + name_safe + """.events.on({ "featureselected": onGeorssFeatureSelect, "featureunselected": onFeatureUnselect });
+        """
                 layers_georss += """
         allLayers = allLayers.concat(georssLayers);
         """
@@ -2557,37 +2422,37 @@ OpenLayers.Util.extend( selectPdfControl, {
                     else:
                         visibility = "gpxLayer" + name_safe + ".setVisibility(false);"
                     layers_gpx += """
-            iconURL = '""" + marker_url + """';
-            // Pre-cache this image
-            // Need unique names
-            var i = new Image();
-            i.onload = scaleImage;
-            i.src = iconURL;
-            // Needs to be uniquely instantiated
-            var style_marker = OpenLayers.Util.extend({}, OpenLayers.Feature.Vector.style['default']);
-            style_marker.graphicOpacity = 1;
-            style_marker.graphicWidth = width;
-            style_marker.graphicHeight = height;
-            style_marker.graphicXOffset = -(width / 2);
-            style_marker.graphicYOffset = -height;
-            style_marker.externalGraphic = iconURL;
-            var gpxLayer""" + name_safe + """ = new OpenLayers.Layer.Vector(
-                '""" + name_safe + """',
-                {
-                    projection: proj4326,
-                    strategies: [ """ + strategy_fixed + ", " + strategy_cluster + """ ],
-                    style: style_marker,
-                    protocol: new OpenLayers.Protocol.HTTP({
-                        url: '""" + url + """',
-                        format: format_gpx
-                    })
-                }
-            );
-            """ + visibility + """
-            map.addLayer(gpxLayer""" + name_safe + """);
-            gpxLayers.push(gpxLayer""" + name_safe + """);
-            gpxLayer""" + name_safe + """.events.on({ 'featureselected': onGpxFeatureSelect, 'featureunselected': onFeatureUnselect });
-            """
+        iconURL = '""" + marker_url + """';
+        // Pre-cache this image
+        // Need unique names
+        var i = new Image();
+        i.onload = scaleImage;
+        i.src = iconURL;
+        // Needs to be uniquely instantiated
+        var style_marker = OpenLayers.Util.extend({}, OpenLayers.Feature.Vector.style['default']);
+        style_marker.graphicOpacity = 1;
+        style_marker.graphicWidth = width;
+        style_marker.graphicHeight = height;
+        style_marker.graphicXOffset = -(width / 2);
+        style_marker.graphicYOffset = -height;
+        style_marker.externalGraphic = iconURL;
+        var gpxLayer""" + name_safe + """ = new OpenLayers.Layer.Vector(
+            '""" + name_safe + """',
+            {
+                projection: proj4326,
+                strategies: [ """ + strategy_fixed + ", " + strategy_cluster + """ ],
+                style: style_marker,
+                protocol: new OpenLayers.Protocol.HTTP({
+                    url: '""" + url + """',
+                    format: format_gpx
+                })
+            }
+        );
+        """ + visibility + """
+        map.addLayer(gpxLayer""" + name_safe + """);
+        gpxLayers.push(gpxLayer""" + name_safe + """);
+        gpxLayer""" + name_safe + """.events.on({ 'featureselected': onGpxFeatureSelect, 'featureunselected': onFeatureUnselect });
+        """
                 layers_gpx += """
         allLayers = allLayers.concat(gpxLayers);
         """
@@ -2713,39 +2578,39 @@ OpenLayers.Util.extend( selectPdfControl, {
                     else:
                         visibility = layer_name + ".setVisibility(false);"
                     layers_kml += """
-            iconURL = '""" + marker_url + """';
-            // Pre-cache this image
-            // Need unique names
-            var i = new Image();
-            i.onload = scaleImage;
-            i.src = iconURL;
-            // Needs to be uniquely instantiated
-            var style_marker = OpenLayers.Util.extend({}, OpenLayers.Feature.Vector.style['default']);
-            style_marker.graphicOpacity = 1;
-            style_marker.graphicWidth = width;
-            style_marker.graphicHeight = height;
-            style_marker.graphicXOffset = -(width / 2);
-            style_marker.graphicYOffset = -height;
-            style_marker.externalGraphic = iconURL;
-            var kmlLayer""" + name_safe + """ = new OpenLayers.Layer.Vector(
-                '""" + name + """',
-                {
-                    """ + projection_str + """
-                    strategies: [ """ + strategy_fixed + ", " + strategy_cluster + """ ],
-                    style: style_marker,
-                    protocol: new OpenLayers.Protocol.HTTP({
-                        url: '""" + url + """',
-                        format: format_kml
-                    })
-                }
-            );
-            """ + visibility + """
-            kmlLayer""" + name_safe + """.title = '""" + title + """';
-            kmlLayer""" + name_safe + """.body = '""" + body + """';
-            map.addLayer(kmlLayer""" + name_safe + """);
-            kmlLayers.push(kmlLayer""" + name_safe + """);
-            kmlLayer""" + name_safe + """.events.on({ "featureselected": onKmlFeatureSelect, "featureunselected": onFeatureUnselect });
-            """
+        iconURL = '""" + marker_url + """';
+        // Pre-cache this image
+        // Need unique names
+        var i = new Image();
+        i.onload = scaleImage;
+        i.src = iconURL;
+        // Needs to be uniquely instantiated
+        var style_marker = OpenLayers.Util.extend({}, OpenLayers.Feature.Vector.style['default']);
+        style_marker.graphicOpacity = 1;
+        style_marker.graphicWidth = width;
+        style_marker.graphicHeight = height;
+        style_marker.graphicXOffset = -(width / 2);
+        style_marker.graphicYOffset = -height;
+        style_marker.externalGraphic = iconURL;
+        var kmlLayer""" + name_safe + """ = new OpenLayers.Layer.Vector(
+            '""" + name + """',
+            {
+                """ + projection_str + """
+                strategies: [ """ + strategy_fixed + ", " + strategy_cluster + """ ],
+                style: style_marker,
+                protocol: new OpenLayers.Protocol.HTTP({
+                    url: '""" + url + """',
+                    format: format_kml
+                })
+            }
+        );
+        """ + visibility + """
+        kmlLayer""" + name_safe + """.title = '""" + title + """';
+        kmlLayer""" + name_safe + """.body = '""" + body + """';
+        map.addLayer(kmlLayer""" + name_safe + """);
+        kmlLayers.push(kmlLayer""" + name_safe + """);
+        kmlLayer""" + name_safe + """.events.on({ "featureselected": onKmlFeatureSelect, "featureunselected": onFeatureUnselect });
+        """
                 layers_kml += """
         allLayers = allLayers.concat(kmlLayers);
         """
@@ -2758,10 +2623,10 @@ OpenLayers.Util.extend( selectPdfControl, {
     var map, mapPanel, legendPanel, toolbar, win;
     var pointButton, lastDraftFeature, draftLayer;
     var centerPoint, currentFeature, popupControl, highlightControl;
-    var wmsBrowser;
-    var printProvider;
+    var wmsBrowser, printProvider;
     var allLayers = new Array();
     OpenLayers.ImgPath = '/""" + request.application + """/static/img/gis/openlayers/';
+    var ajax_loader = '""" + str(URL(r=request, c="static", f="img")) + """/ajax-loader.gif';
     // avoid pink tiles
     OpenLayers.IMAGE_RELOAD_ATTEMPTS = 3;
     OpenLayers.Util.onImageLoadErrorColor = "transparent";
@@ -2783,16 +2648,16 @@ OpenLayers.Util.extend( selectPdfControl, {
 
     // Replace Cluster Popup contents with selected Feature Popup
     function loadClusterPopup(url, id) {
-            //$.getS3(
-            $.get(
-                    url,
-                    function(data) {
-                        $('#' + id + '_contentDiv').html(data);
-                        map.popups[0].updateSize();
-                    },
-                    'html'
-                );
-        }
+        //$.getS3(
+        $.get(
+                url,
+                function(data) {
+                    $('#' + id + '_contentDiv').html(data);
+                    map.popups[0].updateSize();
+                },
+                'html'
+            );
+    }
 
     // Zoom to Selected Feature from within Popup
     function zoomToSelectedFeature(lon, lat, zoomfactor) {
@@ -2829,19 +2694,28 @@ OpenLayers.Util.extend( selectPdfControl, {
         """ + layers_js + """
 
         // Overlays
-        var max_w = 25;
-        //var max_h = 35;
+        var max_w = 30;
+        var max_h = 35;
         var styleMarker = new Object();
         var iconURL;
 
         var scaleImage = function(){
-                var scaleRatio = i.height/i.width;
-                var w = Math.min(i.width, 25);
-                w = Math.max(w, 25);
-                var h = w * scaleRatio;
-                i.height = h;
-                i.width = w;
-            }
+            //s3_debug('image', i.src);
+            //s3_debug('initial height', i.height);
+            //s3_debug('initial width', i.width);
+            var scaleRatio = i.height/i.width;
+            var w = Math.min(i.width, max_w);
+            var h = w * scaleRatio;
+            if (h > max_h) {
+                    h = max_h;
+                    scaleRatio = w/h;
+                    w = w * scaleRatio;
+                }
+            i.height = h;
+            i.width = w;
+            //s3_debug('post height', i.height);
+            //s3_debug('post width', i.width);
+        }
         
         // Features
         """ + layers_features + """

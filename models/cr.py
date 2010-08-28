@@ -99,6 +99,7 @@ if deployment_settings.has_module(module):
     resource = "shelter"
     tablename = module + "_" + resource
     table = db.define_table(tablename, timestamp, uuidstamp, deletion_status,
+                    site_id,
                     Field("name", notnull=True),
                     shelter_type_id,
                     shelter_service_id,
@@ -128,6 +129,7 @@ if deployment_settings.has_module(module):
                     hospital_id,
                     comments,
                     migrate=migrate)
+
     table.uuid.requires = IS_NOT_IN_DB(db, "%s.uuid" % tablename)
     table.name.requires = IS_NOT_EMPTY()   # Shelters don't have to have unique names
     table.name.label = T("Shelter Name")
@@ -174,6 +176,7 @@ if deployment_settings.has_module(module):
                                 label = T("Shelter")
                                )
                          )
+
     # Add Shelters as component of Services, Types, Locations as a simple way
     # to get reports showing shelters per type, etc.
     s3xrc.model.add_component(module, resource,
@@ -185,3 +188,12 @@ if deployment_settings.has_module(module):
                               deletable=True,
                               editable=True,
                               listadd=False)
+
+    s3xrc.model.configure(table,
+        onaccept=lambda form: shn_site_onaccept(form, table=db.cr_shelter),
+        delete_onaccept=lambda form: shn_site_ondelete(form),
+        list_fields=["id",
+                     "name",
+                     "shelter_type_id",
+                     "shelter_service_id",
+                     "location_id"])

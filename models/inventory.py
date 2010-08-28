@@ -35,6 +35,7 @@ if deployment_settings.has_module(module):
                             location_id,
                             #get_location_id(),
                             document_id,
+                            site_id,
                             comments,
                             migrate=migrate)
 
@@ -98,6 +99,16 @@ if deployment_settings.has_module(module):
     s3xrc.model.add_component(module, resource,
                               multiple=True,
                               joinby=dict(doc_document="document_id"),
+                              deletable=True,
+                              editable=True)
+    # Also a component of sites, but these are 1-1 and use a natural join.
+    # @ToDo Should these be editable and deletable?  Or should an
+    # inventory location be created when a site is created?
+    # @ToDo Is multiple assumed True or False?  It's not touched
+    # in add_component, so safest to set it explicitly.
+    s3xrc.model.add_component(module, resource,
+                              multiple=False,
+                              joinby="site_id",
                               deletable=True,
                               editable=True)
 

@@ -82,10 +82,10 @@ def shn_document_tabs(jr):
         
     return tabs
     
-def shn_document_rheader(jr):
-    if jr.representation == "html":
-        rheader_tabs = shn_rheader_tabs(jr, shn_document_tabs(jr))
-        doc_document = jr.record
+def shn_document_rheader(r):
+    if r.representation == "html":
+        rheader_tabs = shn_rheader_tabs(r, shn_document_tabs(r))
+        doc_document = r.record
         table = db.doc_document
         rheader = DIV(B(Tstr("Name") + ": "),doc_document.name,
                       TABLE(TR(
@@ -124,10 +124,11 @@ def document():
         return output
     response.s3.postp = postp
     
-    rheader = lambda jr: shn_document_rheader(jr)
+    rheader = lambda r: shn_document_rheader(r)
 
     response.s3.pagination = True
-    output = shn_rest_controller(module, resource, rheader=rheader, sticky=True)
+    output = shn_rest_controller(module, resource,
+                                 rheader=rheader)
 
     return output
 #==============================================================================

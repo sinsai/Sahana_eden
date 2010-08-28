@@ -84,9 +84,7 @@ def req():
     output = shn_rest_controller(module, resource,
                                  editable=True,
                                  #listadd=False,
-                                 rheader=shn_rms_rheader,
-                                 sticky=True)
-                                 # call rheader to act as parent header for parent/child forms (layout defined below)
+                                 rheader=shn_rms_rheader)
 
     return output
 
@@ -110,9 +108,7 @@ def ritem():
     
     return shn_rest_controller(module, 
                                resource, 
-                               #rheader=rheader, 
-                               #sticky=True
-                               )
+                               #rheader=rheader)
 
 def pledge():
     """ RESTful CRUD controller """

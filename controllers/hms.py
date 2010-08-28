@@ -151,23 +151,22 @@ def hospital():
         return output
     response.s3.postp = hospital_postp
 
+    rheader = lambda r: shn_hms_hospital_rheader(r,
+                                                 tabs=[(T("Status Report"), ""),
+                                                       (T("Bed Capacity"), "bed_capacity"),
+                                                       (T("Activity Report"), "hactivity"),
+                                                       (T("Requests"), "hrequest"),
+                                                       (T("Images"), "himage"),
+                                                       (T("Services"), "services"),
+                                                       (T("Contacts"), "hcontact")
+                                                      ])
+
     response.s3.pagination = True
-    output = shn_rest_controller(module , resource,
-        rheader = lambda jr: shn_hms_hospital_rheader(jr,
-                  tabs=[
-                        (T("Status Report"), ""),
-                        (T("Bed Capacity"), "bed_capacity"),
-                        (T("Activity Report"), "hactivity"),
-                        (T("Requests"), "hrequest"),
-                        (T("Images"), "himage"),
-                        (T("Services"), "services"),
-                        (T("Contacts"), "hcontact")]),
-        sticky=True,
-        rss=dict(
-            title="%(name)s",
-            description=shn_hms_hospital_rss
-        ),
-        listadd=False)
+    output = shn_rest_controller(module, resource,
+                                 rheader=rheader,
+                                 rss=dict(title="%(name)s",
+                                          description=shn_hms_hospital_rss),
+                                 listadd=False)
 
     shn_menu()
 

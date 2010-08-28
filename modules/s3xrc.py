@@ -4500,7 +4500,7 @@ class S3XML(object):
             ktable = db[r.table]
             LatLon = db(ktable.id == r.id).select(ktable[self.Lat],
                                                   ktable[self.Lon],
-                                                  ktable[self.FeatureClass],
+                                                  #ktable[self.FeatureClass],
                                                   limitby=(0, 1))
             if LatLon:
                 LatLon = LatLon.first()
@@ -4520,15 +4520,16 @@ class S3XML(object):
                     r.element.set(self.ATTRIBUTE.marker,
                                   self.xml_encode(marker_url))
                     # Lookup GPS Marker
+                    # @ToDo Fix for new FeatureClass
                     symbol = None
-                    if LatLon[self.FeatureClass]:
-                        fctbl = db.gis_feature_class
-                        query = (fctbl.id == str(LatLon[self.FeatureClass]))
-                        try:
-                            symbol = db(query).select(fctbl.gps_marker,
-                                        limitby=(0, 1)).first().gps_marker
-                        except:
-                            pass
+                    #if LatLon[self.FeatureClass]:
+                    #    fctbl = db.gis_feature_class
+                    #    query = (fctbl.id == str(LatLon[self.FeatureClass]))
+                    #    try:
+                    #        symbol = db(query).select(fctbl.gps_marker,
+                    #                    limitby=(0, 1)).first().gps_marker
+                    #    except:
+                    #        pass
                     if not symbol:
                         symbol = "White Dot"
                     r.element.set(self.ATTRIBUTE.sym,

@@ -447,7 +447,7 @@ table.url.label = "URL"
 table.osm_id.label = "OpenStreetMap"
 # We want these visible from forms which reference the Location
 CONVERSION_TOOL = T("Conversion Tool")
-table.lat.comment = DIV( _class="tooltip", _id="gis_location_lat_tooltip", _title=Tstr("Latitude & Longitude") + "|" + Tstr("You can click on the map below to select the Lat/Lon fields. Longitude is West - East (sideways). Latitude is North-South (Up-Down). Latitude is zero on the equator and positive in the northern hemisphere and negative in the southern hemisphere. Longitude is zero on the prime meridian (Greenwich Mean Time) and is positive to the east, across Europe and Asia.  Longitude is negative to the west, across the Atlantic and the Americas.  This needs to be added in Decimal Degrees."))
+table.lat.comment = DIV( _class="tooltip", _id="gis_location_lat_tooltip", _title=Tstr("Latitude & Longitude") + "|" + Tstr("You can click on the map to select the Lat/Lon fields. Longitude is West - East (sideways). Latitude is North-South (Up-Down). Latitude is zero on the equator and positive in the northern hemisphere and negative in the southern hemisphere. Longitude is zero on the prime meridian (Greenwich Mean Time) and is positive to the east, across Europe and Asia.  Longitude is negative to the west, across the Atlantic and the Americas.  This needs to be added in Decimal Degrees."))
 table.lon.comment = A(CONVERSION_TOOL, _style="cursor:pointer;", _title=T("You can use the Conversion Tool to convert from either GPS coordinates or Degrees/Minutes/Seconds."), _id="btnConvert")
             
 # Reusable field to include in other table definitions
@@ -585,7 +585,7 @@ s3xrc.model.configure(table,
                       onaccept=gis_location_onaccept)
 
 # -----------------------------------------------------------------------------
-def shn_gis_location_search_simple(r, **attr):
+def s3_gis_location_search_simple(r, **attr):
 
     """ Simple search form for locations """
 
@@ -653,13 +653,56 @@ def shn_gis_location_search_simple(r, **attr):
         return output
 
     else:
-        session.error = BADFORMAT
-        redirect(URL(r=request))
+        raise HTTP(501, body=s3xrc.ERROR.BAD_FORMAT)
 
 # Plug into REST controller
-s3xrc.model.set_method(module, "location", method="search_simple", action=shn_gis_location_search_simple )
+s3xrc.model.set_method(module, "location", method="search_simple", action=s3_gis_location_search_simple )
 
+# -----------------------------------------------------------------------------
+def s3_gis_location_parents(r, **attr):
+
+    """ Return a list of Parents for a Location """
+
+    resource = r.resource
+    table = resource.table
+
+    # Check permission
+    if not shn_has_permission("read", table):
+        r.unauthorised()
+
+    if r.representation == "html":
+
+        # @ToDo
+        output = dict()
+        #return output
+        raise HTTP(501, body=s3xrc.ERROR.BAD_FORMAT)
+
+    elif r.representation == "json":
+        
+        if r.id:
+            import gluon.contrib.simplejson as sj
+            # Get the parents for a Location
+            parents = gis.get_parents(r.id)
+            if parents:
+                _parents = {}
+                for parent in parents:
+                    _parents[parent.level] = parent.id
+                json = sj.dumps(_parents)
+                return json
+            else:
+                raise HTTP(404, body=s3xrc.ERROR.NO_MATCH)
+        else:
+            raise HTTP(404, body=s3xrc.ERROR.BAD_RECORD)
+
+    else:
+        raise HTTP(501, body=s3xrc.ERROR.BAD_FORMAT)
+
+# Plug into REST controller
+s3xrc.model.set_method(module, "location", method="parents", action=s3_gis_location_parents )
+
+# -----------------------------------------------------------------------------
 def shn_gis_location_represent(id):
+    """ Represent a Location """
     try:
         location = db(db.gis_location.id == id).select(db.gis_location.name, db.gis_location.level, db.gis_location.lat, db.gis_location.lon, db.gis_location.id, limitby=(0, 1)).first()
         if location.level in ["L0", "L1", "L2"]:

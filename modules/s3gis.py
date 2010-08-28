@@ -255,17 +255,45 @@ class GIS(object):
 
     # -----------------------------------------------------------------------------
     def get_children(self, parent_id):
-        " Return a list of all GIS Features which are children of the requested parent "
+        """
+            Return a list of all GIS Features which are children of the requested feature
+            @ ToDo Switch to modified preorder tree traversal:
+            http://eden.sahanafoundation.org/wiki/HaitiGISToDo#HierarchicalTrees
+        """
 
         db = self.db
+        _locations = db.gis_location
 
-        # Switch to modified preorder tree traversal:
-        # http://eden.sahanafoundation.org/wiki/HaitiGISToDo#HierarchicalTrees
-        children = db(db.gis_location.parent == parent_id).select()
+        deleted = (_locations.deleted == False)
+        query = deleted & (_locations.parent == parent_id)
+        children = db(query).select()
         for child in children:
             children = children & self.get_children(child.id)
 
         return children
+
+    # -----------------------------------------------------------------------------
+    def get_parents(self, feature_id):
+        """
+            Return a list of all GIS Features which are parents of the requested feature
+            @ ToDo Switch to modified preorder tree traversal:
+            http://eden.sahanafoundation.org/wiki/HaitiGISToDo#HierarchicalTrees
+        """
+
+        db = self.db
+        _locations = db.gis_location
+
+        deleted = (_locations.deleted == False)
+        query = deleted & (_locations.id == feature_id)
+        feature = db(query).select(_locations.parent, limitby=(0, 1)).first()
+        if feature and feature.parent:
+            parents = db(_locations.id == feature.parent).select(limitby=(0, 1))
+            _parents = self.get_parents(feature.parent)
+            if _parents:
+                parents = parents & _parents
+            return parents
+        else:
+            return None
 
     # -----------------------------------------------------------------------------
     def get_config(self):
@@ -396,7 +424,7 @@ class GIS(object):
         """ Returns the Lat/Lon for a Feature (using recursion where necessary)
 
             @param feature_id: the feature ID (int) or UUID (str)
-            
+            @ToDo Rewrite to use self.get_parents()
         """
         
         db = self.db
@@ -1012,7 +1040,6 @@ OpenLayers.Util.extend( selectPdfControl, {
             }
         }
         html += '</ul>';
-        //console.log(html);
         this.w = new Ext.Window({
             'html': html,
             width: 300,
@@ -1023,11 +1050,9 @@ OpenLayers.Util.extend( selectPdfControl, {
     },
     getPdf: function (bounds) {
         var ll = map.getLonLatFromPixel(new OpenLayers.Pixel(bounds.left, bounds.bottom)).transform(projection_current, proj4326);
-        //console.log(ll);
         var ur = map.getLonLatFromPixel(new OpenLayers.Pixel(bounds.right, bounds.top)).transform(projection_current, proj4326);
         var boundsgeog = new OpenLayers.Bounds(ll.lon, ll.lat, ur.lon, ur.lat);
         bbox = boundsgeog.toBBOX();
-        //console.log(bbox);
         OpenLayers.Request.GET({
             url: '""" + str(XML(mgrs["url"])) + """&bbox=' + bbox,
             callback: OpenLayers.Function.bind(this.response, this)
@@ -2120,7 +2145,7 @@ OpenLayers.Util.extend( selectPdfControl, {
                 },
                 label: function(feature) {
                     // Label For Unclustered Point or Cluster of just 2
-                    var label = "";
+                    var label = '';
                     // Size For Clustered Point
                     if(feature.cluster && feature.attributes.count > 2) {
                         label = feature.attributes.count;
@@ -2167,7 +2192,6 @@ OpenLayers.Util.extend( selectPdfControl, {
             tooltipUnselect(event);
             var feature = event.feature;
             var id = 'featureLayerPopup';
-            var popup_url = feature.popup_url;
             centerPoint = feature.geometry.getBounds().getCenterLonLat();
             if(feature.cluster) {
                 // Cluster
@@ -2176,7 +2200,7 @@ OpenLayers.Util.extend( selectPdfControl, {
                 for (var i = 0; i < feature.cluster.length; i++) {
                     name = feature.cluster[i].attributes.name;
                     uuid = feature.cluster[i].fid;
-                    url = popup_url + uuid;
+                    url = feature.cluster[i].popup_url + uuid;
                     html += "<li><a href='javascript:loadClusterPopup(" + "\\"" + url + "\\", \\"" + id + "\\"" + ")'>" + name + "</a></li>";
                 }
                 html += '</ul>';
@@ -2194,6 +2218,7 @@ OpenLayers.Util.extend( selectPdfControl, {
                 map.addPopup(popup);
             } else {
                 // Single Feature
+                var popup_url = feature.popup_url;
                 var popup = new OpenLayers.Popup.FramedCloud(
                     id,
                     centerPoint,

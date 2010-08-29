@@ -449,7 +449,7 @@ table.osm_id.label = "OpenStreetMap"
 CONVERSION_TOOL = T("Conversion Tool")
 table.lat.comment = DIV( _class="tooltip", _id="gis_location_lat_tooltip", _title=Tstr("Latitude & Longitude") + "|" + Tstr("You can click on the map to select the Lat/Lon fields. Longitude is West - East (sideways). Latitude is North-South (Up-Down). Latitude is zero on the equator and positive in the northern hemisphere and negative in the southern hemisphere. Longitude is zero on the prime meridian (Greenwich Mean Time) and is positive to the east, across Europe and Asia.  Longitude is negative to the west, across the Atlantic and the Americas.  This needs to be added in Decimal Degrees."))
 table.lon.comment = A(CONVERSION_TOOL, _style="cursor:pointer;", _title=T("You can use the Conversion Tool to convert from either GPS coordinates or Degrees/Minutes/Seconds."), _id="btnConvert")
-            
+
 # Reusable field to include in other table definitions
 ADD_LOCATION = T("Add Location")
 repr_select = lambda l: len(l.name) > 48 and "%s..." % l.name[:44] or l.name
@@ -479,32 +479,32 @@ if response.s3.countries:
         _countries.append(_id)
 
 # -----------------------------------------------------------------------------
-def get_location_id (field_name = "location_id", 
+def get_location_id (field_name = "location_id",
                      label = T("Location"),
                      filterby = None,
                      filter_opts = None,
                      editable = True):
     """
     @author Michael Howden
-    
+
     Function for creating a location field with a customisable field_name/label
-    
+
     @ToDo: more functionality from this function to port from ADPC Branch
     """
-    
+
     requires = location_id.location_id.requires
-    
+
     comment = location_id.location_id.comment
-    comment[0].attributes['_href'] = URL(r=request, 
-                                         c="gis", 
-                                         f="location", 
-                                         args="create", 
+    comment[0].attributes['_href'] = URL(r=request,
+                                         c="gis",
+                                         f="location",
+                                         args="create",
                                          vars=dict(format="popup", child=field_name)
                                         )
-    
-    return db.Table(None, 
+
+    return db.Table(None,
                     field_name,
-                    FieldS3(field_name, 
+                    FieldS3(field_name,
                             db.gis_location, sortby="name",
                             requires = requires,
                             represent = shn_gis_location_represent,
@@ -678,7 +678,7 @@ def s3_gis_location_parents(r, **attr):
         raise HTTP(501, body=s3xrc.ERROR.BAD_FORMAT)
 
     elif r.representation == "json":
-        
+
         if r.id:
             import gluon.contrib.simplejson as sj
             # Get the parents for a Location

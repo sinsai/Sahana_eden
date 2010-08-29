@@ -474,6 +474,9 @@ if empty:
             maxExtent = "-180,-90,180,90",
             maxResolution = 1.40625,
             units = "degrees"
+            # OSM use these:
+            #maxResolution = 156543.0339,
+            #units = "m"
         )
 
     tablename = "gis_config"

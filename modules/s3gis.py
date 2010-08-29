@@ -1821,20 +1821,17 @@ OpenLayers.Util.extend( selectPdfControl, {
         layers_yahoo = ""
         layers_bing = ""
 
-        # Only enable commercial base layers if using a sphericalMercator projection
-        if projection == 900913:
+        # OpenStreetMap
+        gis_layer_openstreetmap_subtypes = self.layer_subtypes("openstreetmap")
+        openstreetmap = Storage()
+        openstreetmap_enabled = db(db.gis_layer_openstreetmap.enabled == True).select()
+        for layer in openstreetmap_enabled:
+            for subtype in gis_layer_openstreetmap_subtypes:
+                if layer.subtype == subtype:
+                    openstreetmap["%s" % subtype] = layer.name
 
-            # OpenStreetMap
-            gis_layer_openstreetmap_subtypes = self.layer_subtypes("openstreetmap")
-            openstreetmap = Storage()
-            openstreetmap_enabled = db(db.gis_layer_openstreetmap.enabled == True).select()
-            for layer in openstreetmap_enabled:
-                for subtype in gis_layer_openstreetmap_subtypes:
-                    if layer.subtype == subtype:
-                        openstreetmap["%s" % subtype] = layer.name
-
-            if openstreetmap:
-                functions_openstreetmap = """
+        if openstreetmap:
+            functions_openstreetmap = """
         function osm_getTileURL(bounds) {
             var res = this.map.getResolution();
             var x = Math.round((bounds.left - this.maxExtent.left) / (res * this.tileSize.w));
@@ -1849,34 +1846,39 @@ OpenLayers.Util.extend( selectPdfControl, {
             }
         }
         """
-                if openstreetmap.Mapnik:
-                    layers_openstreetmap += """
+            if openstreetmap.Mapnik:
+                layers_openstreetmap += """
         var mapnik = new OpenLayers.Layer.OSM.Mapnik('""" + openstreetmap.Mapnik + """', {
+            layerCode: 'M',
             displayOutsideMaxExtent: true,
             wrapDateLine: true
         });
         map.addLayer(mapnik);
                     """
-                if openstreetmap.Osmarender:
-                    layers_openstreetmap += """
+            if openstreetmap.Osmarender:
+                layers_openstreetmap += """
         var osmarender = new OpenLayers.Layer.OSM.Osmarender('""" + openstreetmap.Osmarender + """', {
+            layerCode: 'O',
             displayOutsideMaxExtent: true,
             wrapDateLine: true
         });
         map.addLayer(osmarender);
                     """
-                if openstreetmap.Aerial:
-                    layers_openstreetmap += """
+            if openstreetmap.Aerial:
+                layers_openstreetmap += """
         var oam = new OpenLayers.Layer.TMS( '""" + openstreetmap.Aerial + """', 'http://tile.openaerialmap.org/tiles/1.0.0/openaerialmap-900913/', {type: 'png', getURL: osm_getTileURL } );
         map.addLayer(oam);
                     """
-                if openstreetmap.Taiwan:
-                    layers_openstreetmap += """
+            if openstreetmap.Taiwan:
+                layers_openstreetmap += """
         var osmtw = new OpenLayers.Layer.TMS( '""" + openstreetmap.Taiwan + """', 'http://tile.openstreetmap.tw/tiles/', {type: 'png', getURL: osm_getTileURL } );
         map.addLayer(osmtw);
                     """
-            else:
-                functions_openstreetmap = ""
+        else:
+            functions_openstreetmap = ""
+
+        # Only enable commercial base layers if using a sphericalMercator projection
+        if projection == 900913:
 
             # Google
             gis_layer_google_subtypes = self.layer_subtypes("google")

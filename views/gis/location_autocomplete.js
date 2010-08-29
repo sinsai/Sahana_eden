@@ -696,7 +696,7 @@ $(function() {
                 }
             });
         // Allow the Form's save to continue
-        return false;
+        return true;
     });
 });
 //]]></script>

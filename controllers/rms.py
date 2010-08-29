@@ -108,7 +108,8 @@ def ritem():
     
     return shn_rest_controller(module, 
                                resource, 
-                               #rheader=rheader)
+                               #rheader=rheader
+                               )
 
 def pledge():
     """ RESTful CRUD controller """

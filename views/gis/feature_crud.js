@@ -1,4 +1,6 @@
-﻿    feature_type=$('#gis_location_gis_feature_type').val();
+﻿<script type="text/javascript">//<![CDATA[
+$(function() {
+    feature_type=$('#gis_location_gis_feature_type').val();
     if (feature_type==1) {
         // Point
         // Hide the WKT input
@@ -57,3 +59,5 @@
             }
         }
     })
+});
+//]]></script>

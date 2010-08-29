@@ -89,10 +89,8 @@
             //});
     });
     //]]></script>
-{{elif jr.method != "read":}}
-    <script type="text/javascript">//<![CDATA[
-        {{include "gis/feature_crud.js"}}
-    });
-//]]></script>
+{{pass}}
+{if jr.method != "read":}}
+    {{include "gis/feature_crud.js"}}
 {{pass}}
 {{include "gis/convert_gps.html"}}

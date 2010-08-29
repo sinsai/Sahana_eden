@@ -58,6 +58,7 @@ def req():
                 table.pledge_status.readable = False
             elif r.method == "update":
                 table.pledge_status.readable = False
+            shn_action_buttons(r)
         return True
     response.s3.prep = prep
 

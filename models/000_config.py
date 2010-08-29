@@ -64,6 +64,7 @@ deployment_settings.mail.approver = "useradmin@your.org"
 
 # L10n settings
 # Uncomment this if the deployment is just in a few countries
+# (gets used in the Location Selector & in future the Messaging)
 #deployment_settings.L10n.countries = ["PK"]
 # Unused: will be default language for GIS Locations
 #deployment_settings.L10n.language_default = "en"

@@ -3,8 +3,8 @@
 """
     S3XRC Resource Framework
 
-    @version: 2.0
-    @see: U{B{I{S3XRC-2}} <http://eden.sahanafoundation.org/wiki/S3XRC-2>} on Eden wiki
+    @version: 2.1
+    @see: U{B{I{S3XRC-2}} <http://eden.sahanafoundation.org/wiki/S3XRC>} on Eden wiki
 
     @requires: U{B{I{lxml}} <http://codespeak.net/lxml>}
 
@@ -220,7 +220,8 @@ class S3Resource(object):
         if self.parent is None:
             components = self.__manager.model.get_components(self.prefix, self.name)
 
-            for (c, pkey, fkey) in components:
+            for i in xrange(len(components)):
+                c, pkey, fkey = components[i]
 
                 if select and c.name not in select:
                     continue
@@ -311,10 +312,7 @@ class S3Resource(object):
 
                     ne = id_queries.get("ne", [])
                     eq = id_queries.get("eq", [])
-
-                    for v in id:
-                        if v not in eq:
-                            eq.append(v)
+                    eq = eq + [v for v in id if v not in eq]
 
                     if ne and "ne" not in id_queries:
                         id_queries.ne = ne
@@ -333,10 +331,7 @@ class S3Resource(object):
 
                     ne = uid_queries.get("ne", [])
                     eq = uid_queries.get("eq", [])
-
-                    for v in uid:
-                        if v not in eq:
-                            eq.append(v)
+                    eq = eq + [v for v in uid if v not in eq]
 
                     if ne and "ne" not in uid_queries:
                         uid_queries.ne = ne
@@ -621,7 +616,7 @@ class S3Resource(object):
         self.__slice = False
 
         if self.components:
-            for c in self.components.keys():
+            for c in self.components:
                 self.components[c].resource.clear()
 
 
@@ -633,7 +628,7 @@ class S3Resource(object):
         self.__query = None
 
         if self.components:
-            for c in self.components.keys():
+            for c in self.components:
                 self.components[c].resource.clear_query()
 
 
@@ -700,7 +695,7 @@ class S3Resource(object):
                 master = key
             else:
                 master = self[key]
-            if component in self.components.keys():
+            if component in self.components:
                 c = self.components[component]
                 r = c.resource
                 pkey, fkey = c.pkey, c.fkey
@@ -1979,7 +1974,7 @@ class S3Request(object):
         components = [c[0].name for c in model.get_components(self.prefix, self.name)]
 
         if len(self.request.args) > 0:
-            for i in xrange(0, len(self.request.args)):
+            for i in xrange(len(self.request.args)):
                 arg = self.request.args[i]
                 if "." in arg:
                     arg, ext = arg.rsplit(".", 1)
@@ -2043,7 +2038,7 @@ class S3Request(object):
 
         if vars is None:
             vars = self.request.get_vars
-        if "format" in vars.keys():
+        if "format" in vars:
             del vars["format"]
 
         args = []
@@ -2318,7 +2313,7 @@ class S3ResourceModel(object):
 
         """
 
-        if table._tablename in self.config.keys():
+        if table._tablename in self.config:
             return self.config[table._tablename].get(key, None)
         else:
             return None
@@ -2335,10 +2330,10 @@ class S3ResourceModel(object):
         """
 
         if not keys:
-            if table._tablename in self.config.keys():
+            if table._tablename in self.config:
                 del self.config[table._tablename]
         else:
-            if table._tablename in self.config.keys():
+            if table._tablename in self.config:
                 for k in keys:
                     if k in self.config[table._tablename]:
                         del self.config[table._tablename][k]
@@ -2359,7 +2354,7 @@ class S3ResourceModel(object):
             component = S3ResourceComponent(self.db, prefix, name, **attr)
             hook = self.components.get(name, Storage())
             if isinstance(joinby, dict):
-                for tablename in joinby.keys():
+                for tablename in joinby:
                     hook[tablename] = Storage(
                         _joinby = ("id", joinby[tablename]),
                         _component = component)
@@ -2420,11 +2415,11 @@ class S3ResourceModel(object):
         components = []
         if table:
             for hook in self.components.values():
-                h = hook.get(tablename, None)
-                if h:
+                if tablename in hook:
+                    h = hook[tablename]
                     pkey, fkey = h._joinby
                     component = h._component
-                    components.append((hook[tablename]._component, pkey, fkey))
+                    components.append((component, pkey, fkey))
                 else:
                     nkey = hook._joinby
                     component = hook._component
@@ -3011,7 +3006,7 @@ class S3ResourceController(object):
                               debug=debug)
 
         # Set default handlers
-        for method in self.__handler.keys():
+        for method in self.__handler:
             resource.set_handler(method, self.__handler[method])
 
         return resource
@@ -3062,7 +3057,7 @@ class S3ResourceController(object):
         """ URL query parser """
 
         q = Storage()
-        for k in url_vars.keys():
+        for k in url_vars:
             if k.find(".") > 0:
                 rname, field = k.split(".", 1)
                 if rname == resource.name:
@@ -3213,14 +3208,14 @@ class S3ResourceController(object):
             raise TypeError
 
         # Build match query
-        if self.xml.UID in pvalues.keys():
+        if self.xml.UID in pvalues:
             uid = pvalues[self.xml.UID]
             if self.xml.domain_mapping:
                 uid = self.xml.import_uid(uid)
             query = (table[self.xml.UID] == uid)
         else:
             query = None
-            for f in pvalues.keys():
+            for f in pvalues:
                 _query = (table[f] == pvalues[f])
                 if query is not None:
                     query = query | _query
@@ -3230,7 +3225,7 @@ class S3ResourceController(object):
         if query:
             original = self.db(query).select(table.ALL)
             if len(original) == 1:
-                return original[0]
+                return original.first()
 
         return None
 
@@ -3376,7 +3371,7 @@ class S3ResourceController(object):
             load_map = self.__directory(None, reference_map, "table", "id", e=export_map)
             reference_map = []
 
-            for tablename in load_map.keys():
+            for tablename in load_map:
 
                 load_list = load_map[tablename]
                 prefix, name = tablename.split("_", 1)
@@ -3666,7 +3661,7 @@ class S3ResourceController(object):
                 wc = "%"
                 _l = "%s%s%s" % (wc, l, wc)
                 query = None
-                for tablename in search_fields.keys():
+                for tablename in search_fields:
                     hq = mq[tablename]
                     fq = None
                     fields = search_fields[tablename]
@@ -3907,7 +3902,7 @@ class S3Vector(object):
                             this_mci = this[self.MCI]
                         else:
                             this_mci = 0
-                        for f in self.record.keys():
+                        for f in self.record:
                             r = self.get_resolution(f)
                             if r == self.RESOLUTION.THIS:
                                 del self.record[f]
@@ -3943,11 +3938,11 @@ class S3Vector(object):
                 elif self.method == self.METHOD.CREATE:
                     # Create new record ---------------------------------------
 
-                    if self.UID in self.record.keys():
+                    if self.UID in self.record:
                         del self.record[self.UID]
-                    if self.MCI in self.record.keys():
+                    if self.MCI in self.record:
                         del self.record[self.MCI]
-                    for f in self.record.keys():
+                    for f in self.record:
                         r = self.get_resolution(f)
                         if r == self.RESOLUTION.MASTER and self.mci != 1:
                             del self.record[f]
@@ -4199,7 +4194,7 @@ class S3XML(object):
         self.error = None
 
         if args:
-            _args = [(k, "'%s'" % args[k]) for k in args.keys()]
+            _args = [(k, "'%s'" % args[k]) for k in args]
             _args = dict(_args)
         else:
             _args = None
@@ -4500,7 +4495,7 @@ class S3XML(object):
             ktable = db[r.table]
             LatLon = db(ktable.id == r.id).select(ktable[self.Lat],
                                                   ktable[self.Lon],
-                                                  ktable[self.FeatureClass],
+                                                  #ktable[self.FeatureClass],
                                                   limitby=(0, 1))
             if LatLon:
                 LatLon = LatLon.first()
@@ -4520,15 +4515,16 @@ class S3XML(object):
                     r.element.set(self.ATTRIBUTE.marker,
                                   self.xml_encode(marker_url))
                     # Lookup GPS Marker
+                    # @ToDo Fix for new FeatureClass
                     symbol = None
-                    if LatLon[self.FeatureClass]:
-                        fctbl = db.gis_feature_class
-                        query = (fctbl.id == str(LatLon[self.FeatureClass]))
-                        try:
-                            symbol = db(query).select(fctbl.gps_marker,
-                                        limitby=(0, 1)).first().gps_marker
-                        except:
-                            pass
+                    #if LatLon[self.FeatureClass]:
+                    #    fctbl = db.gis_feature_class
+                    #    query = (fctbl.id == str(LatLon[self.FeatureClass]))
+                    #    try:
+                    #        symbol = db(query).select(fctbl.gps_marker,
+                    #                    limitby=(0, 1)).first().gps_marker
+                    #    except:
+                    #        pass
                     if not symbol:
                         symbol = "White Dot"
                     r.element.set(self.ATTRIBUTE.sym,
@@ -4806,7 +4802,7 @@ class S3XML(object):
                 if field_type in ("id", "blob", "password"):
                     continue
                 elif field_type == "upload":
-                    # Handling of uploads goes here
+                    # Handling of uploads
                     download_url = child.get(self.ATTRIBUTE.url, None)
                     filename = child.get(self.ATTRIBUTE.filename, None)
                     file = None
@@ -5040,7 +5036,7 @@ class S3XML(object):
             if field:
                 element.set(self.ATTRIBUTE.field, field)
 
-        for k in obj.keys():
+        for k in obj:
             m = obj[k]
             if isinstance(m, dict):
                 child = self.__obj2element(k, m, native=native)

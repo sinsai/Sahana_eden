@@ -1,6 +1,0 @@
-{{extend "layout.html"}}
-{{include "gis/catalogue_toolbar.html"}}
-{{rheader="<p>" + str(T("Feature Groups are used to provide Layers on the Map & Feeds for export/view by other systems")) + ".</p><ul><li>" + str(T("They are collections of Feature Classes")) + "</li> <li>" + str(T("The default settings start with a Feature Group being created for each Feature Class")) + "</li></ul>"}}
-{{include "_list_create.html"}}
-<p>&nbsp;</p>
-<a class='action-btn' href="{{=URL(r=request, f="feature_class_to_feature_group")}}">{{=T("Feature Classes to Feature Groups")}}</a>

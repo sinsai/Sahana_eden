@@ -28,7 +28,7 @@ table = db.define_table(tablename,
 #
 # This is currently being added so people can discuss it, and to get
 # inventories quickly associated with shelters without adding shelter_id
-# to inventory_location, or attempting to join on location_id.  It is in
+# to inventory_store, or attempting to join on location_id.  It is in
 # org because that's relatively generic and has one of the site types.
 # You'll note that it is a slavish copy of pentity with the names changed.
 
@@ -36,7 +36,7 @@ org_site_types = Storage(
     cr_shelter = T("Shelter"),
     org_office = T("Office"),
     hms_hospital = T("Hospital"),
-    #inventory_warehouse = T("Warehouse"),
+    inventory_store = T("Warehouse"),
 )
 
 resource = "site"
@@ -103,14 +103,14 @@ def shn_site_onaccept(form, table=None):
     id = form.vars.id
 
     fields = [table.id, table.uuid]
-    record = db(table.id == id).select(limitby=(0,1), *fields).first()
+    record = db(table.id == id).select(limitby=(0, 1), *fields).first()
 
     if record:
 
         site_table = db.org_site
         uid = record.uuid
 
-        site = db(site_table.uuid == uid).select(site_table.id, limitby=(0,1)).first()
+        site = db(site_table.uuid == uid).select(site_table.id, limitby=(0, 1)).first()
         if site:
             values = dict(site_id = site.id)
             db(site_table.uuid == uid).update(**values)

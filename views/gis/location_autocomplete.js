@@ -520,7 +520,9 @@ $(function() {
             S3.gis.uuid = data.uuid;
             $('#gis_location_lat').val(data.lat);
             $('#gis_location_lon').val(data.lon);
-            $('#gis_location_addr_street').val(data.addr_street);
+            if (data.addr_street != 'None') {
+                $('#gis_location_addr_street').val(data.addr_street);
+            }
         });
     });
     
@@ -663,34 +665,38 @@ $(function() {
             url = url + '&parent=' + parent;
         }
         // Submit the Location record
-        $.getJSON(url, function(data) {
-            // Report Success/Failure (failing :/)
-            //showStatus(data.message);
+        $.ajax({
+                // Block the form's return until we've updated the record
+                async: false,
+                url: url,
+                dataType: 'json',
+                success: function(data) {
+                    // Report Success/Failure
+                    showStatus(data.message);
 
-            // Allow the Form's save to continue
-            return true;
+                    if (('' == S3.gis.uuid) && (data.status == 'success')) {
+                        // Parse the new location
+                        var new_id = data.message.split('=')[1];
+                        // Update the value of the real field
+                        $('#' + location_id).val(new_id);
+                        // Store the UUID for future updates
+                        //var url_read = '{{=URL(r=request, c="gis", f="location")}}' + '/' + new_id + '.json';
+                        //$.getJSON(url_read, function(data) {
+                        //    var domain = data['@domain'];
+                            // Set global variable for later pickup
+                        //    var uuid = data['$_gis_location'][0]['@uuid'];
+                        //    if (uuid.split('/')[0] == domain) {
+                        //        S3.gis.uuid = uuid.split('/')[1];
+                        //    } else {
+                        //        S3.gis.uuid = uuid;
+                        //    }
+                        //});
+                    }
 
-            //if (data.status == 'success') {
-            //    if ('' == S3.gis.uuid) {
-                    // Parse the new location
-            //        var new_id = data.message.split('=')[1];
-                    // Update the value of the real field
-            //        $('#' + location_id).val(new_id);
-                    // Store the UUID for future updates
-            //        var url_read = '{{=URL(r=request, c="gis", f="location")}}' + '/' + new_id + '.json';
-            //        $.getJSON(url_read, function(data) {
-            //            var domain = data['@domain'];
-                        // Set global variable for later pickup
-            //            var uuid = data['$_gis_location'][0]['@uuid'];
-            //            if (uuid.split('/')[0] == domain) {
-            //                S3.gis.uuid = uuid.split('/')[1];
-            //            } else {
-            //                S3.gis.uuid = uuid;
-            //            }
-            //        });
-            //    }
-            //}
-        });
+                }
+            });
+        // Allow the Form's save to continue
+        return false;
     });
 });
 //]]></script>

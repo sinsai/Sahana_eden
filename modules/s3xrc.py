@@ -2360,12 +2360,14 @@ class S3ResourceModel(object):
             hook = self.components.get(name, Storage())
             if isinstance(joinby, dict):
                 for tablename in joinby.keys():
-                    hook[tablename] = ("id", joinby[tablename])
+                    hook[tablename] = Storage(
+                        _joinby = ("id", joinby[tablename]),
+                        _component = component)
             elif isinstance(joinby, str):
                 hook._joinby=joinby
+                hook._component=component
             else:
                 raise SyntaxError("Invalid join key(s)")
-            hook._component=component
             self.components[name] = hook
             return component
         else:
@@ -2388,12 +2390,14 @@ class S3ResourceModel(object):
 
         hook = self.components.get(component_name, None)
         if table and hook:
-            component = hook._component
-            keys = hook.get(tablename, None)
-            if keys:
-                return (component, keys[0], keys[1])
+            h = hook.get(tablename, None)
+            if h:
+                pkey, fkey = h._joinby
+                component = h._component
+                return (hook[tablename]._component, pkey, fkey)
             else:
                 nkey = hook._joinby
+                component = hook._component
                 if nkey and nkey in table.fields:
                     return (component, nkey, nkey)
 
@@ -2416,12 +2420,14 @@ class S3ResourceModel(object):
         components = []
         if table:
             for hook in self.components.values():
-                component = hook._component
-                keys = hook.get(tablename, None)
-                if keys:
-                    components.append((component, keys[0], keys[1]))
+                h = hook.get(tablename, None)
+                if h:
+                    pkey, fkey = h._joinby
+                    component = h._component
+                    components.append((hook[tablename]._component, pkey, fkey))
                 else:
                     nkey = hook._joinby
+                    component = hook._component
                     if nkey and nkey in table.fields:
                         components.append((component, nkey, nkey))
 
@@ -3610,43 +3616,83 @@ class S3ResourceController(object):
 
         """
 
-        search_fields = []
-        if fields and isinstance(fields, (list,tuple)):
-            for f in fields:
-                if table.has_key(f):
-                    search_fields.append(f)
+        mq = Storage()
+        search_fields = Storage()
+
+        prefix, name = table._tablename.split("_", 1)
+
+        if fields and not isinstance(fields, (list, tuple)):
+            fields = [fields]
+        elif not fields:
+            raise SyntaxError("No search fields specified.")
+
+        for f in fields:
+            _table = None
+            component = None
+
+            if f.find(".") != -1:
+                cname, f = f.split(".", 1)
+                component, pkey, fkey = self.model.get_component(prefix, name, cname)
+                if component:
+                    _table = component.table
+                    tablename = component.tablename
+            else:
+                _table = table
+                tablename = table._tablename
+
+            if _table and tablename not in mq:
+                query = (self.auth.shn_accessible_query("read", _table))
+                if "deleted" in _table.fields:
+                    query = (query & (_table.deleted == "False"))
+                if component:
+                    join = (table[pkey] == _table[fkey])
+                    query = (query & join)
+                mq[_table._tablename] = query
+
+            if _table and f in _table.fields:
+                if _table._tablename not in search_fields:
+                    search_fields[tablename] = [_table[f]]
+                else:
+                    search_fields[tablename].append(_table[f])
+
         if not search_fields:
             return None
 
         if label and isinstance(label,str):
             labels = label.split()
             results = []
-            query = None
+
             for l in labels:
-                # add wildcards
                 wc = "%"
                 _l = "%s%s%s" % (wc, l, wc)
-                for f in search_fields:
-                    if query:
-                        query = (table[f].like(_l)) | query
+                query = None
+                for tablename in search_fields.keys():
+                    hq = mq[tablename]
+                    fq = None
+                    fields = search_fields[tablename]
+                    for f in fields:
+                        if fq:
+                            fq = (f.like(_l)) | fq
+                        else:
+                            fq = (f.like(_l))
+                    q = hq & fq
+                    if query is None:
+                        query = q
                     else:
-                        query = (table[f].like(_l))
-                # undeleted records only
-                query = (table.deleted == False) & (query)
-                # restrict to prior results (AND)
+                        query = query | q
+
                 if results:
                     query = (table.id.belongs(results)) & query
                 if filterby:
                     query = (filterby) & (query)
+
                 records = self.db(query).select(table.id)
-                # rebuild result list
                 results = [r.id for r in records]
-                # any results left?
                 if not results:
                     return None
+
             return results
         else:
-            # no label given or wrong parameter type
             return None
 
 
@@ -4454,7 +4500,7 @@ class S3XML(object):
             ktable = db[r.table]
             LatLon = db(ktable.id == r.id).select(ktable[self.Lat],
                                                   ktable[self.Lon],
-                                                  ktable[self.FeatureClass],
+                                                  #ktable[self.FeatureClass],
                                                   limitby=(0, 1))
             if LatLon:
                 LatLon = LatLon.first()
@@ -4474,15 +4520,16 @@ class S3XML(object):
                     r.element.set(self.ATTRIBUTE.marker,
                                   self.xml_encode(marker_url))
                     # Lookup GPS Marker
+                    # @ToDo Fix for new FeatureClass
                     symbol = None
-                    if LatLon[self.FeatureClass]:
-                        fctbl = db.gis_feature_class
-                        query = (fctbl.id == str(LatLon[self.FeatureClass]))
-                        try:
-                            symbol = db(query).select(fctbl.gps_marker,
-                                        limitby=(0, 1)).first().gps_marker
-                        except:
-                            pass
+                    #if LatLon[self.FeatureClass]:
+                    #    fctbl = db.gis_feature_class
+                    #    query = (fctbl.id == str(LatLon[self.FeatureClass]))
+                    #    try:
+                    #        symbol = db(query).select(fctbl.gps_marker,
+                    #                    limitby=(0, 1)).first().gps_marker
+                    #    except:
+                    #        pass
                     if not symbol:
                         symbol = "White Dot"
                     r.element.set(self.ATTRIBUTE.sym,

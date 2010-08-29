@@ -147,21 +147,20 @@ def assessment():
 
     crud.settings.create_next = None # Do not redirect from CRUD
 
+    rheader = lambda r: shn_rat_rheader(r,
+                                        tabs = [(T("Identification"), None),
+                                                (T("Demographic"), "section2"),
+                                                (T("Shelter & Essential NFIs"), "section3"),
+                                                (T("WatSan"), "section4"),
+                                                (T("Health"), "section5"),
+                                                (T("Nutrition"), "section6"),
+                                                (T("Livelihood"), "section7"),
+                                                (T("Education"), "section8"),
+                                                (T("Protection"), "section9") ])
     response.s3.pagination = True
     output = shn_rest_controller(module, resource,
-                                 rheader=lambda r: \
-                                         shn_rat_rheader(r,
-                                            tabs = [(T("Identification"), None),
-                                                    (T("Demographic"), "section2"),
-                                                    (T("Shelter & Essential NFIs"), "section3"),
-                                                    (T("WatSan"), "section4"),
-                                                    (T("Health"), "section5"),
-                                                    (T("Nutrition"), "section6"),
-                                                    (T("Livelihood"), "section7"),
-                                                    (T("Education"), "section8"),
-                                                    (T("Protection"), "section9") ]),
                                  listadd=False,
-                                 sticky=True,
+                                 rheader=rheader,
                                  subheadings=subheadings)
 
     response.extra_styles = ["S3/rat.css"]

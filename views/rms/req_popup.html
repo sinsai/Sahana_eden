@@ -1,7 +1,7 @@
 {{extend "layout_popup.html"}}
 {{include "_popup.html"}}
 {{if "caller" in request.vars:}}
-    <script type="text/javascript">//<![CDATA[
+<script type="text/javascript">//<![CDATA[
     $(function() {
     {{if "irs_ireport" in request.vars.caller:}}
             // If coming from an Incident then pre-populate fields

@@ -65,7 +65,10 @@ def person():
             for key in defaults.keys():
                 if key not in ["id", "uuid", "mci", "update_record", "delete_record"]:
                     _config[key].default = defaults[key]
-
+        if jr.http == "POST" and jr.method == "create" and not jr.component:
+            # Don't know why web2py always adds that,
+            # remove it here as we want to manually redirect
+            jr.request.post_vars.update(_next=None)
         return True
 
     response.s3.prep = person_prep
@@ -88,35 +91,44 @@ def person():
                 dict(label=str(label), _class="action-btn", url=str(linkto)),
                 dict(label=str(T("Report")), _class="action-btn", url=str(report))
             ]
-            # Redirect on create
-            if jr.method == "create":
+        if jr.http == "POST" and jr.method == "create" and not jr.component:
+            # If a new person gets added, redirect to mpr_next
+            if response.s3.mpr_next:
                 jr.next = response.s3.mpr_next
+                response.s3.mpr_next = None
         return output
     response.s3.postp = person_postp
 
     db.pr_person.missing.readable = False
     db.pr_person.missing.writable = False
+    db.pr_person.missing.default = True
+
+    db.mpr_missing_report.person_id.readable = False
+    db.mpr_missing_report.person_id.writable = False
 
     # Show only missing persons in list views
     if len(request.args) == 0:
         response.s3.filter = (db.pr_person.missing == True)
 
+    mpr_tabs = [
+                (T("Person Details"), None),
+                (T("Missing Report"), "missing_report"),
+                (T("Physical Description"), "physical_description"),
+                (T("Images"), "image"),
+                (T("Identity"), "identity"),
+                (T("Address"), "address"),
+                (T("Contact Data"), "pe_contact"),
+                (T("Presence Log"), "presence"),
+               ]
+    
+    rheader = lambda r: shn_pr_rheader(r, tabs=mpr_tabs)
+
     response.s3.pagination = True
     output = shn_rest_controller("pr", resource,
-                main="first_name",
-                extra="last_name",
-                listadd=False,
-                rheader=lambda jr: shn_pr_rheader(jr,
-                    tabs = [(T("Person Details"), None),
-                            (T("Missing Report"), "missing_report"),
-                            (T("Physical Description"), "physical_description"),
-                            (T("Images"), "image"),
-                            (T("Identity"), "identity"),
-                            (T("Address"), "address"),
-                            (T("Contact Data"), "pe_contact"),
-                            (T("Presence Log"), "presence"),
-                            ]),
-                sticky=True)
+                                 main="first_name",
+                                 extra="last_name",
+                                 listadd=False,
+                                 rheader=rheader)
 
     shn_menu()
     return output

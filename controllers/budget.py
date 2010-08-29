@@ -1127,16 +1127,15 @@ def project():
                                  listadd=False,
                                  main="code",
                                  rheader=lambda jr: shn_project_rheader(jr,
-                                                                    tabs = [(T("Basic Details"), None),
-                                                                            (T("Staff"), "staff"),
-                                                                            (T("Tasks"), "task"),
-                                                                            #(T("Donors"), "organisation"),
-                                                                            #(T("Sites"), "site"),          # Ticket 195
-                                                                           ]
-                                                                   ),
-                                 sticky=True
+                                            tabs = [(T("Basic Details"), None),
+                                                    (T("Staff"), "staff"),
+                                                    (T("Tasks"), "task"),
+                                                    #(T("Donors"), "organisation"),
+                                                    #(T("Sites"), "site"),          # Ticket 195
+                                                   ]
+                                            )
                                 )
-    
+
     return output
 
 

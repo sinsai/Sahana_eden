@@ -40,9 +40,9 @@ shn_menu()
 def index():
 
     """ Module's Home Page """
-    
+
     module_name = deployment_settings.modules[module].name_nice
-    
+
     shn_menu()
     return dict(module_name=module_name)
 
@@ -62,14 +62,16 @@ def shelter_type():
         shn_action_buttons(jr, deletable=False)
         return output
     response.s3.postp = user_postp
+    
+    rheader = lambda r: shn_shelter_rheader(r,
+                                            tabs = [(T("Basic Details"), None),
+                                                    (T("Shelters"), "shelter")
+                                                   ])
 
     # @ToDo Shelters per type display is broken -- always returns none.
-    output = shn_rest_controller(module, resource, listadd=False,
-                                 rheader=lambda r: \
-                                         shn_shelter_rheader(r,
-                                            tabs = [(T("Basic Details"), None),
-                                                    (T("Shelters"), "shelter")]),
-                                 sticky=True)
+    output = shn_rest_controller(module, resource,
+                                 listadd=False,
+                                 rheader=rheader)
     shn_menu()
     return output
 
@@ -89,12 +91,13 @@ def shelter_service():
         return output
     response.s3.postp = user_postp
 
-    output = shn_rest_controller(module, resource, listadd=False,
-                                 rheader=lambda r: \
-                                         shn_shelter_rheader(r,
+    rheader = lambda r: shn_shelter_rheader(r,
                                             tabs = [(T("Basic Details"), None),
-                                                    (T("Shelters"), "shelter")]),
-                                 sticky=True)
+                                                    (T("Shelters"), "shelter")])
+                                                    
+    output = shn_rest_controller(module, resource,
+                                 listadd=False,
+                                 rheader=rheader)
     shn_menu()
     return output
 
@@ -141,17 +144,15 @@ def shelter():
     response.s3.pagination = True
 
     shelter_tabs = [(T("Basic Details"), None),
-                    # Currently crashes - duplicate resource name?
-                    #(T("Assessments"), "assessment"),
+                    (T("Assessments"), "assessment"),
                     (T("Requests"), "req"),
                    ]
-                   
+
     rheader = lambda r: shn_shelter_rheader(r, tabs=shelter_tabs)
-    
-    output = shn_rest_controller(
-        module, resource, listadd=False,
-        rheader=rheader, sticky=True
-        )
+
+    output = shn_rest_controller(module, resource,
+                                 listadd=False,
+                                 rheader=rheader)
 
     shn_menu()
     return output

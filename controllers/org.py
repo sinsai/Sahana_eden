@@ -67,21 +67,20 @@ def organisation():
         return output
     response.s3.postp = org_postp
     
+    rheader = lambda r: shn_org_rheader(r,
+                                        tabs = [(T("Basic Details"), None),
+                                                (T("Offices"), "office"),
+                                                (T("Staff"), "staff"),
+                                                (T("Projects"), "project"),
+                                                (T("Tasks"), "task"),
+                                                #(T("Donors"), "organisation"),
+                                                #(T("Sites"), "site"),  # Ticket 195
+                                               ])
+
     response.s3.pagination = True
     output = shn_rest_controller(module, resource,
                                  listadd=False,
-                                 rheader=lambda jr: shn_org_rheader(jr,
-                                                                    tabs = [(T("Basic Details"), None),
-                                                                            (T("Offices"), "office"),
-                                                                            (T("Staff"), "staff"),
-                                                                            (T("Projects"), "project"),
-                                                                            (T("Tasks"), "task"),
-                                                                            #(T("Donors"), "organisation"),
-                                                                            #(T("Sites"), "site"),          # Ticket 195
-                                                                           ]
-                                                                   ),
-                                 sticky=True
-                                )
+                                 rheader=rheader)
 
     return output
 
@@ -114,16 +113,16 @@ def office():
         return output
     response.s3.postp = org_postp
     
+    rheader = lambda r: shn_org_rheader(r,
+                                        tabs = [(T("Basic Details"), None),
+                                                (T("Contact Data"), "pe_contact"),
+                                                (T("Staff"), "staff"),
+                                               ])
+
     response.s3.pagination = True
-    output = shn_rest_controller(module, resource, listadd=False,
-                                 rheader=lambda jr: shn_org_rheader(jr,
-                                                                       tabs = [(T("Basic Details"), None),
-                                                                               (T("Contact Data"), "pe_contact"),
-                                                                               (T("Staff"), "staff"),
-                                                                              ]
-                                                                      ),
-                                 sticky=True
-                                )
+    output = shn_rest_controller(module, resource,
+                                 listadd=False,
+                                 rheader=rheader)
 
     return output
 
@@ -209,19 +208,19 @@ def project():
         return output
     response.s3.postp = org_postp
     
+    rheader = lambda r: shn_project_rheader(r,
+                                            tabs = [(T("Basic Details"), None),
+                                                    (T("Staff"), "staff"),
+                                                    (T("Tasks"), "task"),
+                                                    #(T("Donors"), "organisation"),
+                                                    #(T("Sites"), "site"),  # Ticket 195
+                                                   ])
+                                           
     response.s3.pagination = True
     output = shn_rest_controller(module, resource,
                                  listadd=False,
                                  main="code",
-                                 rheader=lambda jr: shn_project_rheader(jr,
-                                                                    tabs = [(T("Basic Details"), None),
-                                                                            (T("Staff"), "staff"),
-                                                                            (T("Tasks"), "task"),
-                                                                            #(T("Donors"), "organisation"),
-                                                                            #(T("Sites"), "site"),          # Ticket 195
-                                                                           ]
-                                                                   ),
-                                 sticky=True
+                                 rheader=rheader
                                 )
     
     return output
@@ -394,19 +393,19 @@ def dashboard():
 
     return dict(organisation_id=org_id, organisation_select=organisation_select, org_details=org_details, office_list=office_list, staff_list=staff_list, project_list=project_list, but_add_org=but_add_org, but_edit_org=but_edit_org, but_add_office=but_add_office, but_add_staff=but_add_staff, but_add_project=but_add_project)
 
-def shn_org_rheader(jr, tabs=[]):
+def shn_org_rheader(r, tabs=[]):
     " Organisation Registry page headers "
 
-    if jr.representation == "html":
+    if r.representation == "html":
         
-        rheader_tabs = shn_rheader_tabs(jr, tabs)
+        rheader_tabs = shn_rheader_tabs(r, tabs)
         
-        if jr.name == "organisation":
+        if r.name == "organisation":
         
-            #_next = jr.here()
-            #_same = jr.same()
+            #_next = r.here()
+            #_same = r.same()
 
-            organisation = jr.record
+            organisation = r.record
 
             if organisation.sector_id:
                 sectors = re.split("\|", organisation.sector_id)[1:-1]
@@ -430,7 +429,7 @@ def shn_org_rheader(jr, tabs=[]):
                     ),
                 TR(
                     #TH(A(T("Edit Organization"),
-                    #    _href=URL(r=request, c="org", f="organisation", args=[jr.id, "update"], vars={"_next": _next})))
+                    #    _href=URL(r=request, c="org", f="organisation", args=[r.id, "update"], vars={"_next": _next})))
                     TH(T("Type: ")),
                     _type,
                     )
@@ -438,12 +437,12 @@ def shn_org_rheader(jr, tabs=[]):
 
             return rheader
 
-        elif jr.name == "office":
+        elif r.name == "office":
         
-            #_next = jr.here()
-            #_same = jr.same()
+            #_next = r.here()
+            #_same = r.same()
 
-            office = jr.record
+            office = r.record
             organisation = db(db.org_organisation.id == office.organisation_id).select(db.org_organisation.name, limitby=(0, 1)).first()
             if organisation:
                 org_name = organisation.name
@@ -465,7 +464,7 @@ def shn_org_rheader(jr, tabs=[]):
                         ),
                     TR(
                         #TH(A(T("Edit Office"),
-                        #    _href=URL(r=request, c="org", f="office", args=[jr.id, "update"], vars={"_next": _next})))
+                        #    _href=URL(r=request, c="org", f="office", args=[r.id, "update"], vars={"_next": _next})))
                         )
                 ), rheader_tabs)
 

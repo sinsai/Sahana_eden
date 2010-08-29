@@ -3,12 +3,11 @@
 """
     Sahana Eden GIS Module
 
-    @version: 0.0.7
+    @version: 0.0.8
     @requires: U{B{I{shapely}} <http://trac.gispython.org/lab/wiki/Shapely>}
 
     @author: Fran Boon <francisboon@gmail.com>
     @author: Timothy Caro-Bruce <tcarobruce@gmail.com>
-    @author: Zubin Mithra <zubin.mithra@gmail.com>
     @copyright: (c) 2010 Sahana Software Foundation
     @license: MIT
 
@@ -80,6 +79,7 @@ GEOM_TYPES = {
     "multipolygon": 3,
 }
 
+# -----------------------------------------------------------------------------
 class GIS(object):
     """ GIS functions """
 
@@ -108,6 +108,7 @@ class GIS(object):
         self.messages["T"] = self.T
         self.messages.lock_keys = True
 
+    # -----------------------------------------------------------------------------
     def abbreviate_wkt(self, wkt, max_length=30):
         if not wkt:
             # Blank WKT field
@@ -117,13 +118,14 @@ class GIS(object):
         else:
             return wkt
 
+    # -----------------------------------------------------------------------------
     def download_kml(self, url, public_url):
         """
-        Download a KML file:
-            unzip it if-required
-            follow NetworkLinks recursively if-required
+            Download a KML file:
+                unzip it if-required
+                follow NetworkLinks recursively if-required
 
-        Returns a file object
+            Returns a file object
         """
 
         response = self.response
@@ -193,6 +195,7 @@ class GIS(object):
 
         return file, warning
 
+    # -----------------------------------------------------------------------------
     def get_api_key(self, layer="google"):
         " Acquire API key from the database "
 
@@ -200,6 +203,7 @@ class GIS(object):
         query = db.gis_apikey.name == layer
         return db(query).select(db.gis_apikey.apikey, limitby=(0, 1)).first().apikey
 
+    # -----------------------------------------------------------------------------
     def get_bearing(self, lat_start, lon_start, lat_end, lon_end):
         """
             Given a Start & End set of Coordinates, return a Bearing
@@ -215,12 +219,14 @@ class GIS(object):
 
         return bearing
 
+    # -----------------------------------------------------------------------------
     def _min_not_none(self, *args):
         """
             Utility function returns minimal argument that is not None.
         """
         return min(*(a for a in args if a is not None))
 
+    # -----------------------------------------------------------------------------
     def get_bounds(self, features=[]):
         """
             Calculate the Bounds of a list of Features
@@ -247,19 +253,49 @@ class GIS(object):
 
         return dict(min_lon=min_lon, min_lat=min_lat, max_lon=max_lon, max_lat=max_lat)
 
+    # -----------------------------------------------------------------------------
     def get_children(self, parent_id):
-        " Return a list of all GIS Features which are children of the requested parent "
+        """
+            Return a list of all GIS Features which are children of the requested feature
+            @ ToDo Switch to modified preorder tree traversal:
+            http://eden.sahanafoundation.org/wiki/HaitiGISToDo#HierarchicalTrees
+        """
 
         db = self.db
+        _locations = db.gis_location
 
-        # Switch to modified preorder tree traversal:
-        # http://eden.sahanafoundation.org/wiki/HaitiGISToDo#HierarchicalTrees
-        children = db(db.gis_location.parent == parent_id).select()
+        deleted = (_locations.deleted == False)
+        query = deleted & (_locations.parent == parent_id)
+        children = db(query).select()
         for child in children:
             children = children & self.get_children(child.id)
 
         return children
 
+    # -----------------------------------------------------------------------------
+    def get_parents(self, feature_id):
+        """
+            Return a list of all GIS Features which are parents of the requested feature
+            @ ToDo Switch to modified preorder tree traversal:
+            http://eden.sahanafoundation.org/wiki/HaitiGISToDo#HierarchicalTrees
+        """
+
+        db = self.db
+        _locations = db.gis_location
+
+        deleted = (_locations.deleted == False)
+        query = deleted & (_locations.id == feature_id)
+        feature = db(query).select(_locations.parent, limitby=(0, 1)).first()
+        if feature and feature.parent:
+            parents = db(_locations.id == feature.parent).select(limitby=(0, 1))
+            _parents = self.get_parents(feature.parent)
+            if _parents:
+                parents = parents & _parents
+            return parents
+        else:
+            return None
+
+    # -----------------------------------------------------------------------------
     def get_config(self):
         " Reads the current GIS Config from the DB "
 
@@ -292,6 +328,7 @@ class GIS(object):
         
         return output
 
+    # -----------------------------------------------------------------------------
     def get_feature_class_id_from_name(self, name):
         """
             Returns the Feature Class ID from it's name
@@ -305,6 +342,7 @@ class GIS(object):
         else:
             return None
 
+    # -----------------------------------------------------------------------------
     def get_feature_layer(self, module, resource, layername, popup_label, marker=None, filter=None):
         """
             Return a Feature Layer suitable to display on a map
@@ -329,7 +367,7 @@ class GIS(object):
         locations = db(query).select(db.gis_location.id, db.gis_location.uuid, db.gis_location.parent, db.gis_location.name, db.gis_location.wkt, db.gis_location.lat, db.gis_location.lon)
         for i in range(0, len(locations)):
             locations[i].popup_label = locations[i].name + "-" + popup_label
-        popup_url = URL(r=request, c=module, f=resource, args="read.popup?%s.location_id=" % resource)
+        popup_url = URL(r=request, c=module, f=resource, args="read.plain?%s.location_id=" % resource)
         try:
             marker = db(db.gis_marker.name == marker).select(db.gis_marker.id, limitby=(0, 1)).first().id
             layer = {"name":layername, "query":locations, "active":True, "marker":marker, "popup_url": popup_url}
@@ -338,6 +376,7 @@ class GIS(object):
 
         return layer
     
+    # -----------------------------------------------------------------------------
     def get_features_in_radius(self, lat, lon, radius):
         """
             Returns Features within a Radius (in km) of a LatLon Location
@@ -379,12 +418,13 @@ class GIS(object):
 
         return features
 
+    # -----------------------------------------------------------------------------
     def get_latlon(self, feature_id):
     
         """ Returns the Lat/Lon for a Feature (using recursion where necessary)
 
             @param feature_id: the feature ID (int) or UUID (str)
-            
+            @ToDo Rewrite to use self.get_parents()
         """
         
         db = self.db
@@ -474,12 +514,13 @@ class GIS(object):
         
         return None
 
+    # -----------------------------------------------------------------------------
     def get_marker(self, feature_id):
 
         """ Returns the Marker URL for a Feature
 
             @param feature_id: the feature ID (int) or UUID (str)
-            @ ToDo Deprecate FeatureClass (normally provided by Feature Layer (i.e. Query)
+            @ToDo: Update for new FeatureClass/Symbology
         """
 
         cache = self.cache
@@ -487,8 +528,8 @@ class GIS(object):
         table_feature = db.gis_location
         table_marker = db.gis_marker
         _image = table_marker.image
-        table_fclass = db.gis_feature_class
-        table_symbology = db.gis_symbology_to_feature_class
+        #table_fclass = db.gis_feature_class
+        #table_symbology = db.gis_symbology_to_feature_class
 
         config = self.get_config()
         symbology = config.symbology_id
@@ -500,37 +541,37 @@ class GIS(object):
         elif isinstance(feature_id, str):
             query = (table_feature.uuid == feature_id)
 
-        feature = db(query).select(table_feature.marker_id,
-                                   table_feature.feature_class_id,
-                                   limitby=(0, 1)).first()
-        if feature:
-            feature_class =  feature.feature_class_id
-            marker_id =  feature.marker_id
+        #feature = db(query).select(table_feature.marker_id,
+        #                           table_feature.feature_class_id,
+        #                           limitby=(0, 1)).first()
+        #if feature:
+        #    feature_class =  feature.feature_class_id
+        #    marker_id =  feature.marker_id
 
             # 1st choice for a Marker is the Feature's
-            if marker_id:
-                query = (table_marker.id == marker_id)
-                marker = db(query).select(_image, limitby=(0, 1),
-                                          cache=cache)
-                if marker:
-                    return marker.first().image
+        #    if marker_id:
+        #        query = (table_marker.id == marker_id)
+        #        marker = db(query).select(_image, limitby=(0, 1),
+        #                                  cache=cache)
+        #        if marker:
+        #            return marker.first().image
 
             # 2nd choice for a Marker is the Symbology for the Feature Class
-            query = (table_symbology.feature_class_id == feature_class) & \
-                    (table_symbology.symbology_id == symbology) & \
-                    (table_marker.id == table_symbology.marker_id)
-            marker = db(query).select(_image, limitby=(0, 1),
-                                      cache=cache)
-            if marker:
-                return marker.first().image
+            #query = (table_symbology.feature_class_id == feature_class) & \
+            #        (table_symbology.symbology_id == symbology) & \
+            #        (table_marker.id == table_symbology.marker_id)
+            #marker = db(query).select(_image, limitby=(0, 1),
+            #                          cache=cache)
+            #if marker:
+            #    return marker.first().image
 
             # 3rd choice for a Marker is the Feature Class's
-            query = (table_fclass.id == feature_class) & \
-                    (table_marker.id == table_fclass.marker_id)
-            marker = db(query).select(_image, limitby=(0, 1),
-                                      cache=cache)
-            if marker:
-                return marker.first().image
+            #query = (table_fclass.id == feature_class) & \
+            #        (table_marker.id == table_fclass.marker_id)
+            #marker = db(query).select(_image, limitby=(0, 1),
+            #                          cache=cache)
+            #if marker:
+            #    return marker.first().image
 
         # 4th choice for a Marker is the default
         query = (table_marker.id == config.marker_id)
@@ -541,6 +582,7 @@ class GIS(object):
         else:
             return ""
 
+    # -----------------------------------------------------------------------------
     def latlon_to_wkt(self, lat, lon):
         """
             Convert a LatLon to a WKT string
@@ -551,6 +593,7 @@ class GIS(object):
         WKT = "POINT(%f %f)" % (lon, lat)
         return WKT
 
+    # -----------------------------------------------------------------------------
     def layer_subtypes(self, layer="openstreetmap"):
         """ Return a lit of the subtypes available for a Layer """
 
@@ -567,6 +610,7 @@ class GIS(object):
             return None
 
 
+    # -----------------------------------------------------------------------------
     def parse_location(self, wkt, lon=None, lat=None):
         """
             Parses a location from wkt, returning wkt, lat, lon, bounding box and type.
@@ -600,6 +644,172 @@ class GIS(object):
 
         return res
 
+    # -----------------------------------------------------------------------------
+    def update_location_tree(self):
+        """
+            Update the Tree for GIS Locations:
+            http://eden.sahanafoundation.org/wiki/HaitiGISToDo#HierarchicalTrees
+        """
+
+        db = self.db
+
+        # tbc
+
+        return
+
+    # -----------------------------------------------------------------------------
+    def wkt_centroid(self, form):
+        """
+            OnValidation callback:
+            If a Point has LonLat defined: calculate the WKT.
+            If a Line/Polygon has WKT defined: validate the format, 
+                calculate the LonLat of the Centroid, and set bounds
+            Centroid and bounds calculation is done using Shapely, which wraps Geos.
+            A nice description of the algorithm is provided here: http://www.jennessent.com/arcgis/shapes_poster.htm
+        """
+
+        if not "gis_feature_type" in form.vars:
+            # Default to point
+            form.vars.gis_feature_type = "1"
+
+        if form.vars.gis_feature_type == "1":
+            # Point
+            if form.vars.lon == None and form.vars.lat == None:
+                # No geo to create WKT from, so skip
+                return
+            elif form.vars.lat == None:
+                form.errors["lat"] = self.messages.lat_empty
+                return
+            elif form.vars.lon == None:
+                form.errors["lon"] = self.messages.lon_empty
+                return
+            else:
+                form.vars.wkt = "POINT(%(lon)f %(lat)f)" % form.vars
+                form.vars.lon_min = form.vars.lon_max = form.vars.lon
+                form.vars.lat_min = form.vars.lat_max = form.vars.lat
+                return
+
+        elif form.vars.gis_feature_type in ("2","3"):
+            # Parse WKT for LineString, Polygon
+            try:
+                try:
+                    shape = wkt_loads(form.vars.wkt)
+                except:
+                    form.errors["wkt"] = {
+                        "2": self.messages.invalid_wkt_linestring,
+                        "3": self.messages.invalid_wkt_polygon,
+                    }
+                    return
+                centroid_point = shape.centroid
+                form.vars.lon = centroid_point.x
+                form.vars.lat = centroid_point.y
+                bounds = shape.bounds
+                form.vars.lon_min = bounds[0]
+                form.vars.lat_min = bounds[1]
+                form.vars.lon_max = bounds[2]
+                form.vars.lat_max = bounds[3]
+            except:
+                form.errors.gis_feature_type = self.messages.centroid_error
+        else:
+            form.errors.gis_feature_type = self.messages.unknown_type
+
+        return
+
+    # -----------------------------------------------------------------------------
+    def query_features_by_bbox(self, lon_min, lat_min, lon_max, lat_max):
+        """
+            Returns a query of all locations objects in the given bounding box
+        """
+        db = self.db
+        _location = db.gis_location
+        query = (_location.lat_min <= lat_max) & (_location.lat_max >= lat_min) & (_location.lon_min <= lon_max) & (_location.lon_max >= lon_min)
+        return query
+
+    # -----------------------------------------------------------------------------
+    def get_features_by_bbox(self, lon_min, lat_min, lon_max, lat_max):
+        """
+            Returns Rows of locations whose shape intersects the given bbox.
+        """
+        db = self.db
+        return db(self.query_features_by_bbox(lon_min, lat_min, lon_max, lat_max)).select()
+
+    # -----------------------------------------------------------------------------
+    def _get_features_by_shape(self, shape):
+        """
+            Returns Rows of locations whose shape intersects the given shape.
+            
+            Relies on shapely for wkt parsing and intersection.
+        """
+
+        db = self.db
+        in_bbox = self.query_features_by_bbox(*shape.bounds)
+        has_wkt = (db.gis_location.wkt != None) & (db.gis_location.wkt != '')
+
+        for loc in db(in_bbox & has_wkt).select():
+            try: 
+                location_shape = wkt_loads(loc.wkt)
+                if location_shape.intersects(shape):
+                    yield loc
+            except shapely.geos.ReadingError:
+                print >> sys.stderr, "Error reading wkt of location with id %d" % loc.id
+
+    # -----------------------------------------------------------------------------
+    def _get_features_by_latlon(self, lat, lon):
+        """
+        Returns a generator of locations whose shape intersects the given LatLon.
+        
+        Relies on shapely.
+        """
+
+        point = shapely.geometry.point.Point(lon, lat)
+        return self._get_features_by_shape(point)
+
+    # -----------------------------------------------------------------------------
+    def _get_features_by_feature(self, feature):
+        """
+        Returns all locations whose geometry intersects the given feature.
+        
+        Relies on shapely.
+        """
+        shape = wkt_loads(feature.wkt)
+        return self.get_features_by_shape(shape)
+
+    # -----------------------------------------------------------------------------
+    if SHAPELY:
+        get_features_by_shape = _get_features_by_shape
+        get_features_by_latlon = _get_features_by_latlon
+        get_features_by_feature = _get_features_by_feature
+        
+    # -----------------------------------------------------------------------------
+    def set_all_bounds(self):
+        """
+        Sets bounds for all locations without them.
+        
+        If shapely is present, and a location has wkt, bounds of the geometry 
+        are used.  Otherwise, the (lat, lon) are used as bounds.
+        """
+        db = self.db
+        _location = db.gis_location
+        no_bounds = (_location.lon_min == None) & (_location.lat_min == None) & (_location.lon_max == None) & (_location.lat_max == None) & (_location.lat != None) & (_location.lon != None)
+        if SHAPELY:
+            wkt_no_bounds = no_bounds & (_location.wkt != None) & (_location.wkt != '')
+            for loc in db(wkt_no_bounds).select():
+                try :
+                    shape = wkt_loads(loc.wkt)
+                except:
+                    print >> sys.stderr, "Error reading wkt %s" % loc.wkt
+                    continue
+                bounds = shape.bounds
+                _location[loc.id] = dict(
+                    lon_min = bounds[0],
+                    lat_min = bounds[1],
+                    lon_max = bounds[2],
+                    lat_max = bounds[3],
+                )
+                    
+        db(no_bounds).update(lon_min=_location.lon, lat_min=_location.lat, lon_max=_location.lon, lat_max=_location.lat)
+
+    # -----------------------------------------------------------------------------
     def show_map( self,
                   height = None,
                   width = None,
@@ -611,7 +821,6 @@ class GIS(object):
                   add_feature = False,
                   add_feature_active = False,
                   feature_queries = [],
-                  feature_groups = [],      # These will be deprecated (replaced by queries predefined in the Database)
                   wms_browser = {},
                   catalogue_overlays = False,
                   catalogue_toolbar = False,
@@ -650,15 +859,6 @@ class GIS(object):
                 [{
                  name   : "MyLabel",    # A string: the label for the layer
                  query  : query,        # A gluon.sql.Rows of gis_locations, which can be from a simple query or a Join. Extra fields can be added for 'marker' or 'shape' (with optional 'color' & 'size') & 'popup_label'
-                 active : False,        # Is the feed displayed upon load or needs ticking to load afterwards?
-                 popup_url : None,      # The URL which will be used to fill the pop-up. it will be appended by the Location ID.
-                 marker : None          # The marker_id for the icon used to display the feature (over-riding the normal process).
-                }]
-            @param feature_groups: Feature Groups to overlay onto the map & their options (List of Dicts):
-                [{
-                 feature_group : db.gis_feature_group.name,
-                 parent : None,         # Only display features with this parent set. ToDo: search recursively to allow all descendants
-                 filter : None,         # A query to further limit which features from the feature group are loaded
                  active : False,        # Is the feed displayed upon load or needs ticking to load afterwards?
                  popup_url : None,      # The URL which will be used to fill the pop-up. it will be appended by the Location ID.
                  marker : None          # The marker_id for the icon used to display the feature (over-riding the normal process).
@@ -761,8 +961,8 @@ class GIS(object):
             catalogue_toolbar = DIV(
                 config_button,
                 SPAN( A(T("Layers"), _href=URL(r=request, c="gis", f="map_service_catalogue")), _class="rheader_tab_other" ),
-                SPAN( A(T("Feature Classes"), _href=URL(r=request, c="gis", f="feature_class")), _class="rheader_tab_other" ),
-                SPAN( A(T("Feature Groups"), _href=URL(r=request, c="gis", f="feature_group")), _class="rheader_tab_other" ),
+                #SPAN( A(T("Feature Layers"), _href=URL(r=request, c="gis", f="feature_layer")), _class="rheader_tab_other" ),
+                #SPAN( A(T("Feature Classes"), _href=URL(r=request, c="gis", f="feature_class")), _class="rheader_tab_other" ),
                 SPAN( A(T("Markers"), _href=URL(r=request, c="gis", f="marker")), _class="rheader_tab_other" ),
                 SPAN( A(T("Keys"), _href=URL(r=request, c="gis", f="apikey")), _class="rheader_tab_other" ),
                 SPAN( A(T("Projections"), _href=URL(r=request, c="gis", f="projection")), _class="rheader_tab_other" ),
@@ -840,7 +1040,6 @@ OpenLayers.Util.extend( selectPdfControl, {
             }
         }
         html += '</ul>';
-        //console.log(html);
         this.w = new Ext.Window({
             'html': html,
             width: 300,
@@ -851,11 +1050,9 @@ OpenLayers.Util.extend( selectPdfControl, {
     },
     getPdf: function (bounds) {
         var ll = map.getLonLatFromPixel(new OpenLayers.Pixel(bounds.left, bounds.bottom)).transform(projection_current, proj4326);
-        //console.log(ll);
         var ur = map.getLonLatFromPixel(new OpenLayers.Pixel(bounds.right, bounds.top)).transform(projection_current, proj4326);
         var boundsgeog = new OpenLayers.Bounds(ll.lon, ll.lat, ur.lon, ur.lat);
         bbox = boundsgeog.toBBOX();
-        //console.log(bbox);
         OpenLayers.Request.GET({
             url: '""" + str(XML(mgrs["url"])) + """&bbox=' + bbox,
             callback: OpenLayers.Function.bind(this.response, this)
@@ -1904,40 +2101,11 @@ OpenLayers.Util.extend( selectPdfControl, {
         # Features
         #
         layers_features = ""
-        if feature_groups or feature_queries or add_feature:
+        if feature_queries or add_feature:
 
             cluster_style = """
-        // Style Rule For Clusters
-        var style_cluster = new OpenLayers.Style({
-            label: '${label}',
-            pointRadius: '${radius}',
-            fillColor: '#8087ff',
-            fillOpacity: 0.5,
-            strokeColor: '#2b2f76',
-            strokeWidth: 2,
-            strokeOpacity: 1
-        }, {
-            context: {
-                radius: function(feature) {
-                    // Size For Unclustered Point
-                    var pix = 6;
-                    // Size For Clustered Point
-                    if(feature.cluster) {
-                        pix = Math.min(feature.attributes.count, 7) + 4;
-                    }
-                    return pix;
-                },
-                label: function(feature) {
-                    // Label For Unclustered Point or Cluster of just 2
-                    var label = "";
-                    // Size For Clustered Point
-                    if(feature.cluster && feature.attributes.count > 2) {
-                        label = feature.attributes.count;
-                    }
-                    return label;
-                }
-            }
-        });
+        // Needs to be uniquely instantiated
+        var style_cluster = new OpenLayers.Style(style_cluster_style, style_cluster_options);
         // Define StyleMap, Using 'style_cluster' rule for 'default' styling intent
         var featureClusterStyleMap = new OpenLayers.StyleMap({
                                           'default': style_cluster,
@@ -1954,7 +2122,40 @@ OpenLayers.Util.extend( selectPdfControl, {
         var parser = new OpenLayers.Format.WKT();
         var geom, featureVec;
 
-        function addFeature(feature_id, name, feature_class, geom, styleMarker) {
+        // Style Rule For Clusters
+        var style_cluster_style = {
+            label: '${label}',
+            pointRadius: '${radius}',
+            fillColor: '#8087ff',
+            fillOpacity: 0.5,
+            strokeColor: '#2b2f76',
+            strokeWidth: 2,
+            strokeOpacity: 1
+        };
+        var style_cluster_options = {
+            context: {
+                radius: function(feature) {
+                    // Size For Unclustered Point
+                    var pix = 6;
+                    // Size For Clustered Point
+                    if(feature.cluster) {
+                        pix = Math.min(feature.attributes.count, 7) + 4;
+                    }
+                    return pix;
+                },
+                label: function(feature) {
+                    // Label For Unclustered Point or Cluster of just 2
+                    var label = '';
+                    // Size For Clustered Point
+                    if(feature.cluster && feature.attributes.count > 2) {
+                        label = feature.attributes.count;
+                    }
+                    return label;
+                }
+            }
+        };
+        
+        function addFeature(feature_id, name, geom, styleMarker, image, popup_url) {
             geom = geom.transform(proj4326, projection_current);
             // Needs to be uniquely instantiated
             var style_marker = OpenLayers.Util.extend({}, OpenLayers.Feature.Vector.style['default']);
@@ -1967,18 +2168,9 @@ OpenLayers.Util.extend( selectPdfControl, {
                 style_marker.strokeWidth = 2;
                 style_marker.strokeOpacity = 1;
             } else {
-                // Set icon dims
-                icon_img.src = styleMarker.iconURL;
-                width = icon_img.width;
-                height = icon_img.height;
-                if(width > max_w){
-                    height = ((max_w / width) * height);
-                    width = max_w;
-                }
-                if(height > max_h){
-                    width = ((max_h / height) * width);
-                    height = max_h;
-                }
+                // Set icon dims (set in onload)
+                width = image.width;
+                height = image.height;
                 style_marker.graphicOpacity = 1;
                 style_marker.graphicWidth = width;
                 style_marker.graphicHeight = height;
@@ -1989,9 +2181,59 @@ OpenLayers.Util.extend( selectPdfControl, {
             // Create Feature Vector
             var featureVec = new OpenLayers.Feature.Vector(geom, null, style_marker);
             featureVec.fid = feature_id;
+            // Store the popup_url in the feature so that onFeatureSelect can read it
+            featureVec.popup_url = popup_url;
             featureVec.attributes.name = name;
-            featureVec.attributes.feature_class = feature_class;
             return featureVec;
+        }
+
+        function onFeatureSelect(event) {
+            // unselect any previous selections
+            tooltipUnselect(event);
+            var feature = event.feature;
+            var id = 'featureLayerPopup';
+            centerPoint = feature.geometry.getBounds().getCenterLonLat();
+            if(feature.cluster) {
+                // Cluster
+                var name, uuid, url;
+                var html = '""" + str(T("There are multiple records at this location")) + """:<ul>';
+                for (var i = 0; i < feature.cluster.length; i++) {
+                    name = feature.cluster[i].attributes.name;
+                    uuid = feature.cluster[i].fid;
+                    url = feature.cluster[i].popup_url + uuid;
+                    html += "<li><a href='javascript:loadClusterPopup(" + "\\"" + url + "\\", \\"" + id + "\\"" + ")'>" + name + "</a></li>";
+                }
+                html += '</ul>';
+                html += "<div align='center'><a href='javascript:zoomToSelectedFeature(" + centerPoint.lon + "," + centerPoint.lat + ", 3)'>Zoom in</a></div>";
+                var popup = new OpenLayers.Popup.FramedCloud(
+                    id,
+                    centerPoint,
+                    new OpenLayers.Size(200, 200),
+                    html,
+                    null,
+                    true,
+                    onPopupClose
+                );
+                feature.popup = popup;
+                map.addPopup(popup);
+            } else {
+                // Single Feature
+                var popup_url = feature.popup_url;
+                var popup = new OpenLayers.Popup.FramedCloud(
+                    id,
+                    centerPoint,
+                    new OpenLayers.Size(200, 200),
+                    "Loading...<img src='" + ajax_loader + "' border=0>",
+                    null,
+                    true,
+                    onPopupClose
+                );
+                feature.popup = popup;
+                map.addPopup(popup);
+                // call AJAX to get the contentHTML
+                var uuid = feature.fid;
+                loadDetails(popup_url + uuid, id, popup);
+            }
         }
 
         function loadDetails(url, id, popup) {
@@ -2060,7 +2302,6 @@ OpenLayers.Util.extend( selectPdfControl, {
                 if "popup_url" in layer:
                     _popup_url = urllib.unquote(layer["popup_url"])
                 else:
-                    #popup_url = urllib.unquote(URL(r=request, c=feature_class.module, f=feature_class.resource, args=["read.popup"]))
                     _popup_url = urllib.unquote(URL(r=request, c="gis", f="location", args=["read.popup?location.id="]))
 
                 # Generate HTML snippet
@@ -2071,6 +2312,7 @@ OpenLayers.Util.extend( selectPdfControl, {
                     visibility = "featureLayer" + name_safe + ".setVisibility(false);"
                 layers_features += """
         features = [];
+        var popup_url = '""" + _popup_url + """';
         """ + cluster_style + """
         var featureLayer""" + name_safe + """ = new OpenLayers.Layer.Vector(
             '""" + name + """',
@@ -2082,59 +2324,10 @@ OpenLayers.Util.extend( selectPdfControl, {
         """ + visibility + """
         map.addLayer(featureLayer""" + name_safe + """);
         featureLayer""" + name_safe + """.events.on({
-            "featureselected": onFeatureSelect""" + name_safe + """,
+            "featureselected": onFeatureSelect,
             "featureunselected": onFeatureUnselect
         });
         featureLayers.push(featureLayer""" + name_safe + """);
-
-        function onFeatureSelect""" + name_safe + """(event) {
-            // unselect any previous selections
-            tooltipUnselect(event);
-            var feature = event.feature;
-            var id = 'featureLayer""" + name_safe + """Popup';
-            centerPoint = feature.geometry.getBounds().getCenterLonLat();
-            if(feature.cluster) {
-                // Cluster
-                var name, uuid, url;
-                var html = 'There are multiple records at this location:<ul>';
-                var popupurl = '""" + _popup_url + """';
-                for (var i = 0; i < feature.cluster.length; i++) {
-                    name = feature.cluster[i].attributes.name;
-                    uuid = feature.cluster[i].fid;
-                    url = '""" + _popup_url + """' + uuid;
-                    html += "<li><a href='javascript:loadClusterPopup(" + "\\"" + url + "\\", \\"" + id + "\\"" + ")'>" + name + "</a></li>";
-                }
-                html += '</ul>';
-                html += "<div align='center'><a href='javascript:zoomToSelectedFeature(" + centerPoint.lon + "," + centerPoint.lat + ", 3)'>Zoom in</a></div>";
-                var popup = new OpenLayers.Popup.FramedCloud(
-                    id,
-                    centerPoint,
-                    new OpenLayers.Size(200, 200),
-                    html,
-                    null,
-                    true,
-                    onPopupClose
-                );
-                feature.popup = popup;
-                map.addPopup(popup);
-            } else {
-                // Single Feature
-                var popup = new OpenLayers.Popup.FramedCloud(
-                    id,
-                    centerPoint,
-                    new OpenLayers.Size(200, 200),
-                    "Loading...<img src='""" + str(URL(r=request, c="static", f="img")) + """/ajax-loader.gif' border=0>",
-                    null,
-                    true,
-                    onPopupClose
-                );
-                feature.popup = popup;
-                map.addPopup(popup);
-                // call AJAX to get the contentHTML
-                var uuid = feature.fid;
-                loadDetails('""" + _popup_url + """' + uuid, id, popup);
-            }
-        }
         """
                 features = layer["query"]
                 for _feature in features:
@@ -2222,24 +2415,24 @@ OpenLayers.Util.extend( selectPdfControl, {
                         # Faster to bypass the download handler
                         #marker_url = URL(r=request, c="default", f="download", args=[marker])
                         marker_url = URL(r=request, c="static", f="img", args=["markers", marker])
+                        
                     try:
                         # Has a per-feature popup_label been added to the query?
                         popup_label = feature.popup_label
                     except (AttributeError, KeyError):
                         popup_label = feature.name
 
-                    # Deal with null Feature Classes
-                    # @ToDo: Remove FeatureClass
-                    if feature.get("feature_class_id"):
-                        fc = "'" + str(feature.feature_class_id) + "'"
-                    else:
-                        fc = "null"
                     # Deal with apostrophes in Feature Names
                     fname = re.sub("'", "\\'", popup_label)
                     
                     if marker_url:
                         layers_features += """
         styleMarker.iconURL = '""" + marker_url + """';
+        // Pre-cache this image
+        // Need unique names
+        var i = new Image();
+        i.onload = scaleImage;
+        i.src = styleMarker.iconURL;
         """
                     else:
                         layers_features += """
@@ -2250,132 +2443,7 @@ OpenLayers.Util.extend( selectPdfControl, {
         """
                     layers_features += """
         geom = parser.read('""" + wkt + """').geometry;
-        featureVec = addFeature('""" + str(feature.id) + """', '""" + fname + """', """ + fc + """, geom, styleMarker)
-        features.push(featureVec);
-        """
-                # Append to Features layer
-                layers_features += """
-        featureLayer""" + name_safe + """.addFeatures(features);
-        """
-
-            # Feature Groups
-            for layer in feature_groups:
-                name = layer["feature_group"]
-                if "popup_url" in layer:
-                    _popup_url = urllib.unquote(layer["popup_url"])
-                # We'd like to do something like this:
-                #elif feature_class is office:
-                #    _popup_url = urllib.unquote(URL(r=request, c="or", f="office"))
-                else:
-                    _popup_url = urllib.unquote(URL(r=request, c="gis", f="location", args=["read.popup?location.uid="]))
-
-                # Generate HTML snippet
-                name_safe = re.sub("\W", "_", name)
-                if "active" in layer and layer["active"]:
-                    visibility = "featureLayer" + name_safe + ".setVisibility(true);"
-                else:
-                    visibility = "featureLayer" + name_safe + ".setVisibility(false);"
-                layers_features += """
-        features = [];
-        """ + cluster_style + """
-        var featureLayer""" + name_safe + """ = new OpenLayers.Layer.Vector(
-            '""" + name + """',
-            {
-                strategies: [ """ + strategy_cluster + """ ],
-                styleMap: featureClusterStyleMap
-            }
-        );
-        """ + visibility + """
-        map.addLayer(featureLayer""" + name_safe + """);
-        featureLayer""" + name_safe + """.events.on({
-            "featureselected": onFeatureSelect""" + name_safe + """,
-            "featureunselected": onFeatureUnselect
-        });
-        featureLayers.push(featureLayer""" + name_safe + """);
-
-        function onFeatureSelect""" + name_safe + """(event) {
-            // unselect any previous selections
-            tooltipUnselect(event);
-            var feature = event.feature;
-            var id = 'featureLayer""" + name_safe + """Popup';
-            centerPoint = feature.geometry.getBounds().getCenterLonLat();
-            if(feature.cluster) {
-                // Cluster
-                var name, uuid, url;
-                var html = 'There are multiple records at this location:<ul>';
-                var popupurl = '""" + _popup_url + """';
-                for (var i = 0; i < feature.cluster.length; i++) {
-                    name = feature.cluster[i].attributes.name;
-                    uuid = feature.cluster[i].fid;
-                    url = '""" + _popup_url + """' + uuid;
-                    html += "<li><a href='javascript:loadClusterPopup(" + "\\"" + url + "\\", \\"" + id + "\\"" + ")'>" + name + "</a></li>";
-                }
-                html += '</ul>';
-                html += "<a href='javascript:zoomToSelectedFeature(" + centerPoint.lon + "," + centerPoint.lat + ", 3)'>Zoom in</a>";
-                var popup = new OpenLayers.Popup.FramedCloud(
-                    id,
-                    centerPoint,
-                    new OpenLayers.Size(200, 200),
-                    html,
-                    null,
-                    true,
-                    onPopupClose
-                );
-                feature.popup = popup;
-                map.addPopup(popup);
-            } else {
-                // Single Feature
-                var popup = new OpenLayers.Popup.FramedCloud(
-                    id,
-                    centerPoint,
-                    new OpenLayers.Size(200, 200),
-                    "Loading...<img src='""" + str(URL(r=request, c="static", f="img")) + """/ajax-loader.gif' border=0>",
-                    null,
-                    true,
-                    onPopupClose
-                );
-                feature.popup = popup;
-                map.addPopup(popup);
-                // call AJAX to get the contentHTML
-                var uuid = feature.fid;
-                loadDetails('""" + _popup_url + """' + uuid, id, popup);
-            }
-        }
-        """
-                query = (db.gis_location.deleted == False) & (db.gis_feature_group.name == name) & (db.gis_feature_class_to_feature_group.feature_group_id == db.gis_feature_group.id) & (db.gis_location.feature_class_id == db.gis_feature_class_to_feature_group.feature_class_id)
-                if "parent" in layer:
-                    parent_id = db(db.gis_location.name == layer["parent"]).select(db.gis_location.id, limitby=(0, 1)).first().id
-                    query = query & (db.gis_location.parent == parent_id)
-                features = db(query).select(db.gis_location.id, db.gis_location.uuid, db.gis_location.name, db.gis_location.feature_class_id, db.gis_location.wkt, db.gis_location.lat, db.gis_location.lon)
-                for feature in features:
-                    if "marker" in layer:
-                        _marker = db(db.gis_marker.id == layer["marker"]).select(db.gis_marker.image, limitby=(0, 1), cache=cache).first()
-                        if _marker:
-                            marker = _marker.image
-                        else:
-                            marker = self.get_marker(feature.id)
-                    else:
-                        marker = self.get_marker(feature.id)
-                    marker_url = URL(r=request, c="static", f="img", args=["markers", marker])
-                    # Deal with null Feature Classes
-                    if feature.feature_class_id:
-                        fc = "'" + str(feature.feature_class_id) + "'"
-                    else:
-                        fc = "null"
-                    # Deal with manually-imported Features which are missing WKT
-                    if feature.wkt:
-                        wkt = feature.wkt
-                    elif (feature.lat == None) or (feature.lon == None):
-                        continue
-                    else:
-                        wkt = self.latlon_to_wkt(feature.lat, feature.lon)
-                    # Deal with apostrophes in Feature Names
-                    fname = re.sub("'", "\\'", feature.name)
-                    
-                    layers_features += """
-        geom = parser.read('""" + wkt + """').geometry;
-        styleMarker.iconURL = '""" + marker_url + """';
-        featureVec = addFeature('""" + feature.uuid + """', '""" + fname + """', """ + fc + """, geom, styleMarker)
+        featureVec = addFeature('""" + str(feature.id) + """', '""" + fname + """', geom, styleMarker, i, popup_url)
         features.push(featureVec);
         """
                 # Append to Features layer
@@ -2396,7 +2464,8 @@ OpenLayers.Util.extend( selectPdfControl, {
         layers_kml = ""
         if catalogue_overlays:
             # GeoRSS
-            georss_enabled = db(db.gis_layer_georss.enabled == True).select()
+            query = (db.gis_layer_georss.enabled == True) # No deletable field
+            georss_enabled = db(query).select(db.gis_layer_georss.name, db.gis_layer_georss.url, db.gis_layer_georss.visible, db.gis_layer_georss.projection_id, db.gis_layer_georss.marker_id)
             if georss_enabled:
                 layers_georss += """
         var georssLayers = new Array();
@@ -2490,43 +2559,37 @@ OpenLayers.Util.extend( selectPdfControl, {
                     else:
                         visibility = "georssLayer" + name_safe + ".setVisibility(false);"
                     layers_georss += """
-            iconURL = '""" + marker_url + """';
-            icon_img.src = iconURL;
-            width = icon_img.width;
-            height = icon_img.height;
-            if(width > max_w){
-                height = ((max_w / width) * height);
-                width = max_w;
+        iconURL = '""" + marker_url + """';
+        // Pre-cache this image
+        // Need unique names
+        var i = new Image();
+        i.onload = scaleImage;
+        i.src = iconURL;
+        // Needs to be uniquely instantiated
+        var style_marker = OpenLayers.Util.extend({}, OpenLayers.Feature.Vector.style['default']);
+        style_marker.graphicOpacity = 1;
+        style_marker.graphicWidth = width;
+        style_marker.graphicHeight = height;
+        style_marker.graphicXOffset = -(width / 2);
+        style_marker.graphicYOffset = -height;
+        style_marker.externalGraphic = iconURL;
+        var georssLayer""" + name_safe + """ = new OpenLayers.Layer.Vector(
+            '""" + name_safe + """',
+            {
+                """ + projection_str + """
+                strategies: [ """ + strategy_fixed + ", " + strategy_cluster + """ ],
+                style: style_marker,
+                protocol: new OpenLayers.Protocol.HTTP({
+                    url: '""" + url + """',
+                    format: format_georss
+                })
             }
-            if(height > max_h){
-                width = ((max_h / height) * width);
-                height = max_h;
-            }
-            // Needs to be uniquely instantiated
-            var style_marker = OpenLayers.Util.extend({}, OpenLayers.Feature.Vector.style['default']);
-            style_marker.graphicOpacity = 1;
-            style_marker.graphicWidth = width;
-            style_marker.graphicHeight = height;
-            style_marker.graphicXOffset = -(width / 2);
-            style_marker.graphicYOffset = -height;
-            style_marker.externalGraphic = iconURL;
-            var georssLayer""" + name_safe + """ = new OpenLayers.Layer.Vector(
-                '""" + name_safe + """',
-                {
-                    """ + projection_str + """
-                    strategies: [ """ + strategy_fixed + ", " + strategy_cluster + """ ],
-                    style: style_marker,
-                    protocol: new OpenLayers.Protocol.HTTP({
-                        url: '""" + url + """',
-                        format: format_georss
-                    })
-                }
-            );
-            """ + visibility + """
-            map.addLayer(georssLayer""" + name_safe + """);
-            georssLayers.push(georssLayer""" + name_safe + """);
-            georssLayer""" + name_safe + """.events.on({ "featureselected": onGeorssFeatureSelect, "featureunselected": onFeatureUnselect });
-            """
+        );
+        """ + visibility + """
+        map.addLayer(georssLayer""" + name_safe + """);
+        georssLayers.push(georssLayer""" + name_safe + """);
+        georssLayer""" + name_safe + """.events.on({ "featureselected": onGeorssFeatureSelect, "featureunselected": onFeatureUnselect });
+        """
                 layers_georss += """
         allLayers = allLayers.concat(georssLayers);
         """
@@ -2566,43 +2629,37 @@ OpenLayers.Util.extend( selectPdfControl, {
                     else:
                         visibility = "gpxLayer" + name_safe + ".setVisibility(false);"
                     layers_gpx += """
-            iconURL = '""" + marker_url + """';
-            icon_img.src = iconURL;
-            width = icon_img.width;
-            height = icon_img.height;
-            if(width > max_w){
-                height = ((max_w / width) * height);
-                width = max_w;
+        iconURL = '""" + marker_url + """';
+        // Pre-cache this image
+        // Need unique names
+        var i = new Image();
+        i.onload = scaleImage;
+        i.src = iconURL;
+        // Needs to be uniquely instantiated
+        var style_marker = OpenLayers.Util.extend({}, OpenLayers.Feature.Vector.style['default']);
+        style_marker.graphicOpacity = 1;
+        style_marker.graphicWidth = width;
+        style_marker.graphicHeight = height;
+        style_marker.graphicXOffset = -(width / 2);
+        style_marker.graphicYOffset = -height;
+        style_marker.externalGraphic = iconURL;
+        var gpxLayer""" + name_safe + """ = new OpenLayers.Layer.Vector(
+            '""" + name_safe + """',
+            {
+                projection: proj4326,
+                strategies: [ """ + strategy_fixed + ", " + strategy_cluster + """ ],
+                style: style_marker,
+                protocol: new OpenLayers.Protocol.HTTP({
+                    url: '""" + url + """',
+                    format: format_gpx
+                })
             }
-            if(height > max_h){
-                width = ((max_h / height) * width);
-                height = max_h;
-            }
-            // Needs to be uniquely instantiated
-            var style_marker = OpenLayers.Util.extend({}, OpenLayers.Feature.Vector.style['default']);
-            style_marker.graphicOpacity = 1;
-            style_marker.graphicWidth = width;
-            style_marker.graphicHeight = height;
-            style_marker.graphicXOffset = -(width / 2);
-            style_marker.graphicYOffset = -height;
-            style_marker.externalGraphic = iconURL;
-            var gpxLayer""" + name_safe + """ = new OpenLayers.Layer.Vector(
-                '""" + name_safe + """',
-                {
-                    projection: proj4326,
-                    strategies: [ """ + strategy_fixed + ", " + strategy_cluster + """ ],
-                    style: style_marker,
-                    protocol: new OpenLayers.Protocol.HTTP({
-                        url: '""" + url + """',
-                        format: format_gpx
-                    })
-                }
-            );
-            """ + visibility + """
-            map.addLayer(gpxLayer""" + name_safe + """);
-            gpxLayers.push(gpxLayer""" + name_safe + """);
-            gpxLayer""" + name_safe + """.events.on({ 'featureselected': onGpxFeatureSelect, 'featureunselected': onFeatureUnselect });
-            """
+        );
+        """ + visibility + """
+        map.addLayer(gpxLayer""" + name_safe + """);
+        gpxLayers.push(gpxLayer""" + name_safe + """);
+        gpxLayer""" + name_safe + """.events.on({ 'featureselected': onGpxFeatureSelect, 'featureunselected': onFeatureUnselect });
+        """
                 layers_gpx += """
         allLayers = allLayers.concat(gpxLayers);
         """
@@ -2728,45 +2785,39 @@ OpenLayers.Util.extend( selectPdfControl, {
                     else:
                         visibility = layer_name + ".setVisibility(false);"
                     layers_kml += """
-            iconURL = '""" + marker_url + """';
-            icon_img.src = iconURL;
-            width = icon_img.width;
-            height = icon_img.height;
-            if(width > max_w){
-                height = ((max_w / width) * height);
-                width = max_w;
+        iconURL = '""" + marker_url + """';
+        // Pre-cache this image
+        // Need unique names
+        var i = new Image();
+        i.onload = scaleImage;
+        i.src = iconURL;
+        // Needs to be uniquely instantiated
+        var style_marker = OpenLayers.Util.extend({}, OpenLayers.Feature.Vector.style['default']);
+        style_marker.graphicOpacity = 1;
+        style_marker.graphicWidth = width;
+        style_marker.graphicHeight = height;
+        style_marker.graphicXOffset = -(width / 2);
+        style_marker.graphicYOffset = -height;
+        style_marker.externalGraphic = iconURL;
+        var kmlLayer""" + name_safe + """ = new OpenLayers.Layer.Vector(
+            '""" + name + """',
+            {
+                """ + projection_str + """
+                strategies: [ """ + strategy_fixed + ", " + strategy_cluster + """ ],
+                style: style_marker,
+                protocol: new OpenLayers.Protocol.HTTP({
+                    url: '""" + url + """',
+                    format: format_kml
+                })
             }
-            if(height > max_h){
-                width = ((max_h / height) * width);
-                height = max_h;
-            }
-            // Needs to be uniquely instantiated
-            var style_marker = OpenLayers.Util.extend({}, OpenLayers.Feature.Vector.style['default']);
-            style_marker.graphicOpacity = 1;
-            style_marker.graphicWidth = width;
-            style_marker.graphicHeight = height;
-            style_marker.graphicXOffset = -(width / 2);
-            style_marker.graphicYOffset = -height;
-            style_marker.externalGraphic = iconURL;
-            var kmlLayer""" + name_safe + """ = new OpenLayers.Layer.Vector(
-                '""" + name + """',
-                {
-                    """ + projection_str + """
-                    strategies: [ """ + strategy_fixed + ", " + strategy_cluster + """ ],
-                    style: style_marker,
-                    protocol: new OpenLayers.Protocol.HTTP({
-                        url: '""" + url + """',
-                        format: format_kml
-                    })
-                }
-            );
-            """ + visibility + """
-            kmlLayer""" + name_safe + """.title = '""" + title + """';
-            kmlLayer""" + name_safe + """.body = '""" + body + """';
-            map.addLayer(kmlLayer""" + name_safe + """);
-            kmlLayers.push(kmlLayer""" + name_safe + """);
-            kmlLayer""" + name_safe + """.events.on({ "featureselected": onKmlFeatureSelect, "featureunselected": onFeatureUnselect });
-            """
+        );
+        """ + visibility + """
+        kmlLayer""" + name_safe + """.title = '""" + title + """';
+        kmlLayer""" + name_safe + """.body = '""" + body + """';
+        map.addLayer(kmlLayer""" + name_safe + """);
+        kmlLayers.push(kmlLayer""" + name_safe + """);
+        kmlLayer""" + name_safe + """.events.on({ "featureselected": onKmlFeatureSelect, "featureunselected": onFeatureUnselect });
+        """
                 layers_kml += """
         allLayers = allLayers.concat(kmlLayers);
         """
@@ -2779,10 +2830,10 @@ OpenLayers.Util.extend( selectPdfControl, {
     var map, mapPanel, legendPanel, toolbar, win;
     var pointButton, lastDraftFeature, draftLayer;
     var centerPoint, currentFeature, popupControl, highlightControl;
-    var wmsBrowser;
-    var printProvider;
+    var wmsBrowser, printProvider;
     var allLayers = new Array();
     OpenLayers.ImgPath = '/""" + request.application + """/static/img/gis/openlayers/';
+    var ajax_loader = '""" + str(URL(r=request, c="static", f="img")) + """/ajax-loader.gif';
     // avoid pink tiles
     OpenLayers.IMAGE_RELOAD_ATTEMPTS = 3;
     OpenLayers.Util.onImageLoadErrorColor = "transparent";
@@ -2804,16 +2855,16 @@ OpenLayers.Util.extend( selectPdfControl, {
 
     // Replace Cluster Popup contents with selected Feature Popup
     function loadClusterPopup(url, id) {
-            //$.getS3(
-            $.get(
-                    url,
-                    function(data) {
-                        $('#' + id + '_contentDiv').html(data);
-                        map.popups[0].updateSize();
-                    },
-                    'html'
-                );
-        }
+        //$.getS3(
+        $.get(
+                url,
+                function(data) {
+                    $('#' + id + '_contentDiv').html(data);
+                    map.popups[0].updateSize();
+                },
+                'html'
+            );
+    }
 
     // Zoom to Selected Feature from within Popup
     function zoomToSelectedFeature(lon, lat, zoomfactor) {
@@ -2850,13 +2901,29 @@ OpenLayers.Util.extend( selectPdfControl, {
         """ + layers_js + """
 
         // Overlays
-        var max_w = 25;
+        var max_w = 30;
         var max_h = 35;
-        var width, height;
-        var icon_img = new Image();
         var styleMarker = new Object();
         var iconURL;
 
+        var scaleImage = function(){
+            //s3_debug('image', i.src);
+            //s3_debug('initial height', i.height);
+            //s3_debug('initial width', i.width);
+            var scaleRatio = i.height/i.width;
+            var w = Math.min(i.width, max_w);
+            var h = w * scaleRatio;
+            if (h > max_h) {
+                    h = max_h;
+                    scaleRatio = w/h;
+                    w = w * scaleRatio;
+                }
+            i.height = h;
+            i.width = w;
+            //s3_debug('post height', i.height);
+            //s3_debug('post width', i.width);
+        }
+        
         // Features
         """ + layers_features + """
 
@@ -3088,19 +3155,19 @@ OpenLayers.Util.extend( selectPdfControl, {
             height: """ + str(height) + """,
             width: """ + str(width) + """,
             layout: 'border',
-            items:  [{
-                        region: 'west',
-                        id: 'tools',
-                        title: '""" + str(T("Tools")) + """',
-                        border: true,
-                        width: 250,
-                        collapsible: true,
-                        collapseMode: 'mini',
-                        collapsed: """ + collapsed + """,
-                        split: true,
-                        items: [
-                            layerTree""" + layers_wms_browser2 + search2 + print_tool2 + legend2 + """
-                            ]
+            items: [{
+                    region: 'west',
+                    id: 'tools',
+                    title: '""" + str(T("Tools")) + """',
+                    border: true,
+                    width: 250,
+                    collapsible: true,
+                    collapseMode: 'mini',
+                    collapsed: """ + collapsed + """,
+                    split: true,
+                    items: [
+                        layerTree""" + layers_wms_browser2 + search2 + print_tool2 + legend2 + """
+                        ]
                     },
                     mapPanel
                     ]
@@ -3113,167 +3180,16 @@ OpenLayers.Util.extend( selectPdfControl, {
 
         return html.xml()
 
-    def update_location_tree(self):
-        """
-            Update the Tree for GIS Locations:
-            http://eden.sahanafoundation.org/wiki/HaitiGISToDo#HierarchicalTrees
-        """
-
-        db = self.db
-
-        # tbc
-
-        return
-
-    def wkt_centroid(self, form):
-        """
-            OnValidation callback:
-            If a Point has LonLat defined: calculate the WKT.
-            If a Line/Polygon has WKT defined: validate the format, 
-                calculate the LonLat of the Centroid, and set bounds
-            Centroid and bounds calculation is done using Shapely, which wraps Geos.
-            A nice description of the algorithm is provided here: http://www.jennessent.com/arcgis/shapes_poster.htm
-        """
-
-        if not "gis_feature_type" in form.vars:
-            # Default to point
-            form.vars.gis_feature_type = "1"
-
-        if form.vars.gis_feature_type == "1":
-            # Point
-            if form.vars.lon == None and form.vars.lat == None:
-                # No geo to create WKT from, so skip
-                return
-            elif form.vars.lat == None:
-                form.errors["lat"] = self.messages.lat_empty
-                return
-            elif form.vars.lon == None:
-                form.errors["lon"] = self.messages.lon_empty
-                return
-            else:
-                form.vars.wkt = "POINT(%(lon)f %(lat)f)" % form.vars
-                form.vars.lon_min = form.vars.lon_max = form.vars.lon
-                form.vars.lat_min = form.vars.lat_max = form.vars.lat
-                return
-
-        elif form.vars.gis_feature_type in ("2","3"):
-            # Parse WKT for LineString, Polygon
-            try:
-                try:
-                    shape = wkt_loads(form.vars.wkt)
-                except:
-                    form.errors["wkt"] = {
-                        "2": self.messages.invalid_wkt_linestring,
-                        "3": self.messages.invalid_wkt_polygon,
-                    }
-                    return
-                centroid_point = shape.centroid
-                form.vars.lon = centroid_point.x
-                form.vars.lat = centroid_point.y
-                bounds = shape.bounds
-                form.vars.lon_min = bounds[0]
-                form.vars.lat_min = bounds[1]
-                form.vars.lon_max = bounds[2]
-                form.vars.lat_max = bounds[3]
-            except:
-                form.errors.gis_feature_type = self.messages.centroid_error
-        else:
-            form.errors.gis_feature_type = self.messages.unknown_type
-
-        return
-
-    def query_features_by_bbox(self, lon_min, lat_min, lon_max, lat_max):
-        """Returns a query of all locations objects in the given bounding box"""
-        db = self.db
-        _location = db.gis_location
-        query = (_location.lat_min <= lat_max) & (_location.lat_max >= lat_min) & (_location.lon_min <= lon_max) & (_location.lon_max >= lon_min)
-        return query
-
-    def get_features_by_bbox(self, lon_min, lat_min, lon_max, lat_max):
-        """
-        Returns Rows of locations whose shape intersects the given bbox.
-        """
-        return self.db(self.query_features_by_bbox(lon_min, lat_min, lon_max, lat_max)).select()
-
-    def _get_features_by_shape(self, shape):
-        """
-        Returns Rows of locations whose shape intersects the given shape.
-        
-        Relies on shapely for wkt parsing and intersection.
-        """
-
-        db = self.db
-        in_bbox = self.query_features_by_bbox(*shape.bounds)
-        has_wkt = (db.gis_location.wkt != None) & (db.gis_location.wkt != '')
-
-        for loc in db(in_bbox & has_wkt).select():
-            try: 
-                location_shape = wkt_loads(loc.wkt)
-                if location_shape.intersects(shape):
-                    yield loc
-            except shapely.geos.ReadingError:
-                print >> sys.stderr, "Error reading wkt of location with id %d" % loc.id
-
-    def _get_features_by_latlon(self, lat, lon):
-        """
-        Returns a generator of locations whose shape intersects the given LatLon.
-        
-        Relies on shapely.
-        """
-
-        point = shapely.geometry.point.Point(lon, lat)
-        return self._get_features_by_shape(point)
-
-    def _get_features_by_feature(self, feature):
-        """
-        Returns all locations whose geometry intersects the given feature.
-        
-        Relies on shapely.
-        """
-        shape = wkt_loads(feature.wkt)
-        return self.get_features_by_shape(shape)
-
-    if SHAPELY:
-        get_features_by_shape = _get_features_by_shape
-        get_features_by_latlon = _get_features_by_latlon
-        get_features_by_feature = _get_features_by_feature
-        
-    def set_all_bounds(self):
-        """
-        Sets bounds for all locations without them.
-        
-        If shapely is present, and a location has wkt, bounds of the geometry 
-        are used.  Otherwise, the (lat, lon) are used as bounds.
-        """
-        db = self.db
-        _location = db.gis_location
-        no_bounds = (_location.lon_min == None) & (_location.lat_min == None) & (_location.lon_max == None) & (_location.lat_max == None) & (_location.lat != None) & (_location.lon != None)
-        if SHAPELY:
-            wkt_no_bounds = no_bounds & (_location.wkt != None) & (_location.wkt != '')
-            for loc in db(wkt_no_bounds).select():
-                try :
-                    shape = wkt_loads(loc.wkt)
-                except:
-                    print >> sys.stderr, "Error reading wkt %s" % loc.wkt
-                    continue
-                bounds = shape.bounds
-                _location[loc.id] = dict(
-                    lon_min = bounds[0],
-                    lat_min = bounds[1],
-                    lon_max = bounds[2],
-                    lat_max = bounds[3],
-                )
-                    
-        db(no_bounds).update(lon_min=_location.lon, lat_min=_location.lat, lon_max=_location.lon, lat_max=_location.lat)
-
+# -----------------------------------------------------------------------------
 class Geocoder(object):
-    " Base class for all geocoders "
+    " Base class for all Geocoders "
 
     def __init__(self, db):
         " Initializes the page content object "
         self.db = db
         self.api_key = self.get_api_key()
 
+# -----------------------------------------------------------------------------
 class GoogleGeocoder(Geocoder):
     " Google Geocoder module "
 
@@ -3295,6 +3211,7 @@ class GoogleGeocoder(Geocoder):
         page = fetch(url)
         return page
 
+# -----------------------------------------------------------------------------
 class YahooGeocoder(Geocoder):
     " Yahoo Geocoder module "
 

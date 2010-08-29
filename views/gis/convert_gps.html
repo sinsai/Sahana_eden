@@ -1,62 +1,71 @@
 <div id='convert-win' class='x-hidden'>
-    <div class='x-window-header'>{{=T("Coordinate Conversion")}}</div>
-    <div id='convert-tabs'>
-        <!-- Auto create tab 1 -->
-        <div class='x-tab' title='{{=T("in GPS format")}}'>
-            <p style='padding:1px; 5px;'>
-                <form name='inGPScoord'>
-                    <table border='0' cellpadding='2' width='400'  class='gps_table'>
-                    <tr style='padding:2px;'>
-                        <td style='padding:2px;' align='center'><font face='Arial' size='2'><b>{{=T("Enter a GPS Coord")}}:</b>&nbsp;&nbsp;<input type='text' size='3' name='form3_gpsdeg'>&nbsp;deg &nbsp;
-                        <input type='text' size='6' name='form3_gpsmin'>&nbsp;min</font></td>
-                    </tr>
-                    <tr style='padding:2px;'>
-                        <td style='padding:2px;' align='center' bgcolor='#C0C0C0'><font face='Arial' size='2'><b>{{=T("Decimal Degrees")}}</b>
-                        <input type='text' size='8' name='form3_dec' id='form3_dec' /></font></td>
-                    </tr>
-                    <tr>
-                        <td style='padding:2px;' align='center'><input type='button' value='{{=T("Calculate")}}' onclick='convertGps(this.inGPScoord)'><input type='reset' value='{{=T("Reset")}}'></td>
-                    </tr>
-                    </table>
-                </form>
-            </p>
-        </div>
-        <!-- Auto create tab 2 -->
-        <div class='x-tab' title='{{=T("in Deg Min Sec format")}}'>
-            <p style='padding:1px; 5px;'>
-                <form name='inDDMMSS'>
-                    <table border='0' cellpadding='2' width='400' class='gps_table'>
-                    <tr style='padding:2px;'>
-                        <td style='padding:2px;' align='center'><font face='Arial' size='2'><b>{{=T("Enter Coordinates in Deg Min Sec")}}</b></font></td>
-                    </tr>
-                    <tr>
-                        <td style='padding:2px;' align='center'><font face='Arial' size='2'>
-                            DD&nbsp;<input type='text' size='3' name='form1_dd' align='right'>
-                            MM&nbsp;<input type='text' size='2' name='form1_mm' align='right'>
-                            SS&nbsp;<input type='text' size='2' name='form1_ss' align='right'></font>
-                        </td>
-                    </tr>
-                    <tr>
-                        <td style='padding:2px;' align='center' bgcolor='#C0C0C0'><font face='Arial' size='2'><b>{{=T("Decimal Degrees")}}</b>
-                            <input type='text' size='8' name='form1_dec' id='form1_dec' /></font></td>
-                    </tr>
-                    <tr>
-                        <td style='padding:2px;' align='center'><input type='button' value='{{=T("Calculate")}}' onclick='convertDD(this.inDDMMSS)'>
-                        <input type='reset' value='{{=T("Reset")}}'></td>
-                    </tr>
-                    </table>
-                </form>
-            </p>
-        </div>
+<div class='x-window-header'>{{=T("Coordinate Conversion")}}</div>
+  <div id='convert-tabs'>
+    <!-- Auto create tab 1 -->
+    <div class='x-tab' title='{{=T("in GPS format")}}'>
+      <p style='padding:1px; 5px;'>
+        <form name='inGPScoord'>
+          <table border='0' cellpadding='2' width='400'  class='gps_table'>
+            <tr style='padding:2px;'>
+              <td style='padding:2px;' align='center'><font face='Arial' size='2'><b>{{=T("Enter a GPS Coord")}}:</b>&nbsp;&nbsp;<input type='text' size='3' name='form3_gpsdeg'>&nbsp;deg &nbsp;
+                <input type='text' size='6' name='form3_gpsmin'>&nbsp;min</font>
+              </td>
+            </tr>
+            <tr style='padding:2px;'>
+              <td style='padding:2px;' align='center' bgcolor='#C0C0C0'><font face='Arial' size='2'><b>{{=T("Decimal Degrees")}}</b>
+                <input type='text' size='8' name='form3_dec' id='form3_dec' /></font>
+              </td>
+            </tr>
+            <tr>
+              <td style='padding:2px;' align='center'><input type='button' value='{{=T("Calculate")}}' onclick='s3_gis_convertGps(this.inGPScoord)'>
+                <input type='reset' value='{{=T("Reset")}}'>
+              </td>
+            </tr>
+          </table>
+        </form>
+      </p>
     </div>
+    <!-- Auto create tab 2 -->
+    <div class='x-tab' title='{{=T("in Deg Min Sec format")}}'>
+      <p style='padding:1px; 5px;'>
+        <form name='inDDMMSS'>
+          <table border='0' cellpadding='2' width='400' class='gps_table'>
+            <tr style='padding:2px;'>
+              <td style='padding:2px;' align='center'>
+                <font face='Arial' size='2'><b>{{=T("Enter Coordinates in Deg Min Sec")}}</b></font>
+              </td>
+            </tr>
+            <tr>
+              <td style='padding:2px;' align='center'><font face='Arial' size='2'>
+                DD&nbsp;<input type='text' size='3' name='form1_dd' align='right'>
+                MM&nbsp;<input type='text' size='2' name='form1_mm' align='right'>
+                SS&nbsp;<input type='text' size='2' name='form1_ss' align='right'></font>
+              </td>
+            </tr>
+            <tr>
+              <td style='padding:2px;' align='center' bgcolor='#C0C0C0'><font face='Arial' size='2'><b>{{=T("Decimal Degrees")}}</b>
+                <input type='text' size='8' name='form1_dec' id='form1_dec' /></font>
+              </td>
+            </tr>
+            <tr>
+              <td style='padding:2px;' align='center'>
+                <input type='button' value='{{=T("Calculate")}}' onclick='s3_gis_convertDD(this.inDDMMSS)'>
+                <input type='reset' value='{{=T("Reset")}}'>
+              </td>
+            </tr>
+          </table>
+        </form>
+    </p>
+  </div>
+</div>
 </div>
 
 <script type="text/javascript">//<![CDATA[
     // Coordinate Calculations
-    var calcDone = false;   // to track for finish button
-    var answer;             // lets have a global answer to fill back using 1 function
+    var s3_gis_calcDone = false;   // to track for finish button
+    var s3_gis_calcAnswer;         // lets have a global answer to fill back using 1 function
 
-    function convertDD() {
+    function s3_gis_convertDD() {
         // Convert Degrees Minutes Seconds to Decimal Degrees
         var deg = document.inDDMMSS.form1_dd.value;
         var min = document.inDDMMSS.form1_mm.value;
@@ -85,16 +94,16 @@
         if (invalid == false) {
             var dec_min = (min*1.0 + (sec/60.0));
             if (deg > 0){
-                answer = deg*1.0 + (dec_min/60.0);
+                s3_gis_calcAnswer = deg*1.0 + (dec_min/60.0);
             } else {
-                answer = deg*1.0 - (dec_min/60.0);
+                s3_gis_calcAnswer = deg*1.0 - (dec_min/60.0);
             }
-            document.inDDMMSS.form1_dec.value=answer;
-            calcDone = true;
+            document.inDDMMSS.form1_dec.value = s3_gis_calcAnswer;
+            s3_gis_calcDone = true;
         }
     }
 
-    function convertGps() {
+    function s3_gis_convertGps() {
         // Convert GPS Coordinates to Decimal Degrees
         var deg = 0;
         var min = 0;
@@ -106,7 +115,7 @@
         if (deg == ''){
             deg = 0;
         } else if (deg > 180 || deg < -180){
-            alert('{{=T("Degrees should be greater than 0 and less than 180")}}.');
+            alert('{{=T("Degrees must be between -180 and 180")}}.');
             invalid = true;
         }
         if (min == ''){
@@ -117,22 +126,22 @@
         }
         if (invalid == false) {
             if (deg > 0){
-                answer = (deg*1.0) + min/60.0;
+                s3_gis_calcAnswer = (deg*1.0) + min/60.0;
             } else {
-                answer = (deg*1.0) - min/60.0;
+                s3_gis_calcAnswer = (deg*1.0) - min/60.0;
             }
-            document.inGPScoord.form3_dec.value = answer;
-            calcDone = true;
+            document.inGPScoord.form3_dec.value = s3_gis_calcAnswer;
+            s3_gis_calcDone = true;
         }
     }
 
-    function convertFillBack(whereto) {
+    function s3_gis_convertFillBack(whereto) {
         // Fill calculated values into main page in background
-        if (calcDone == true) {
+        if (s3_gis_calcDone == true) {
             if (whereto == 1) {
-                $('#gis_location_lat').attr('value', answer);
+                $('#gis_location_lat').attr('value', s3_gis_calcAnswer);
             } else {
-                $('#gis_location_lon').attr('value', answer);
+                $('#gis_location_lon').attr('value', s3_gis_calcAnswer);
             }
             return true;
         } else {
@@ -169,8 +178,8 @@
                         text: '{{=T("Fill in Latitude")}}',
                         disabled: false,
                         handler: function(){
-                            if (convertFillBack(1)){
-                                calcDone = false;
+                            if (s3_gis_convertFillBack(1)){
+                                s3_gis_calcDone = false;
                                 $('#form1_dec').val('');
                                 $('#form3_dec').val('');
                                 //win.hide();
@@ -179,8 +188,8 @@
                     },{
                         text: '{{=T("Fill in Longitude")}}',
                         handler: function(){
-                            if (convertFillBack(2)){
-                                calcDone = false;
+                            if (s3_gis_convertFillBack(2)){
+                                s3_gis_calcDone = false;
                                 $('#form1_dec').val('');
                                 $('#form3_dec').val('');
                                 //win.hide();

@@ -64,6 +64,7 @@ deployment_settings.mail.approver = "useradmin@your.org"
 
 # L10n settings
 # Uncomment this if the deployment is just in a few countries
+# (gets used in the Location Selector & in future the Messaging)
 #deployment_settings.L10n.countries = ["PK"]
 # Unused: will be default language for GIS Locations
 #deployment_settings.L10n.language_default = "en"
@@ -258,7 +259,7 @@ deployment_settings.modules = Storage(
     	     name_nice = "Spreadsheet Importer",
     	     description = "Used to import data from spreadsheets into the database",
     	     module_type = 10,
-    ),
+    )
     survey = Storage(
     	     name_nice = "Survey Module",
     	     description = "Create, enter, and manage surveys.",

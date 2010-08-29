@@ -116,12 +116,36 @@ def school_district():
         return output
     response.s3.postp = user_postp
 
-    rheader = lambda r: shn_sitrep_rheader(r, tabs = [(T("Basic Details"), None),
-                                                      (T("School Reports"), "school_report")
-                                                     ])
+    rheader = lambda r: shn_sitrep_rheader(r,
+                                           tabs = [(T("Basic Details"), None),
+                                                   (T("School Reports"), "school_report")
+                                                  ])
 
     response.s3.pagination = True
-    output = shn_rest_controller(module, resource, rheader=rheader, sticky=True)
+    output = shn_rest_controller(module, resource, rheader=rheader)
+    return output
+
+# -----------------------------------------------------------------------------
+def school_report():
+    
+    """
+        REST Controller
+        Needed for Map Popups
+        @ToDo: Move to CR
+    """
+
+    resource = request.function
+    tablename = "%s_%s" % (module, resource)
+    table = db[tablename]
+
+    # Post-processor
+    def user_postp(jr, output):
+        shn_action_buttons(jr, deletable=False)
+        return output
+    response.s3.postp = user_postp
+
+    response.s3.pagination = True
+    output = shn_rest_controller(module, resource)
     return output
 
 # -----------------------------------------------------------------------------

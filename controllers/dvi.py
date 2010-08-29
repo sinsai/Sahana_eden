@@ -65,7 +65,7 @@ def recreq():
             label = UPDATE
             linkto = shn_linkto(jr, sticky=True)("[id]")
             response.s3.actions = [
-                dict(label=str(label), _class="action-btn", url=linkto)
+                dict(label=str(label), _class="action-btn", url=str(linkto))
             ]
         return output
     response.s3.postp = recreq_postp
@@ -99,8 +99,8 @@ def body():
     output = shn_rest_controller(module, resource,
                                  main="pe_label",
                                  extra="gender",
-                                 rheader=lambda jr: \
-                                         shn_dvi_rheader(jr, tabs=[
+                                 rheader=lambda r: \
+                                         shn_dvi_rheader(r, tabs=[
                                             (T("Recovery"), ""),
                                             (T("Checklist"), "checklist"),
                                             (T("Images"), "image"),
@@ -109,7 +109,6 @@ def body():
                                             (T("Tracing"), "presence"),
                                             (T("Identity"), "identification"),
                                          ]),
-                                 sticky=True,
                                  listadd=False)
     shn_menu()
     return output

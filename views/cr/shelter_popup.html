@@ -1,5 +1,6 @@
 {{extend "layout_popup.html"}}
 {{include "_popup.html"}}
+{{if jr.method in ("create", "update"):}}
 <script type="text/javascript">//<![CDATA[
 $(function() {
     // Person AutoComplete
@@ -23,3 +24,4 @@ $(function() {
 });
 //]]></script>
 {{include "gis/location_autocomplete.js"}}
+{{pass}}

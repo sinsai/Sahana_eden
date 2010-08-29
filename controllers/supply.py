@@ -49,11 +49,12 @@ def item():
         return output
     response.s3.postp = postp
     
-    rheader = lambda jr: shn_item_rheader(jr,
-                                          tabs = [(T("Edit Details"), None),
-                                                  (T("In Inventories"), "location_item"),  
-                                                  (T("Requested"), "ritem"),                                                                                                  
-                                                 ]
-                                         )    
-    
-    return shn_rest_controller(module, resource, rheader=rheader, sticky=True)
+    tabs = [
+            (T("Edit Details"), None),
+            (T("In Inventories"), "location_item"),  
+            (T("Requested"), "ritem"),                                                                                                  
+           ]
+
+    rheader = lambda r: shn_item_rheader(r, tabs)    
+
+    return shn_rest_controller(module, resource, rheader=rheader)

@@ -1778,6 +1778,7 @@ def shn_search(r, **attr):
 
         shn_represent(r.table, r.prefix, r.name, deletable, main, extra)
         search = t2.search(r.table, query=query)
+        #search = crud.search(r.table, query=query)[0]
 
         # Check for presence of Custom View
         shn_custom_view(r, "search.html")

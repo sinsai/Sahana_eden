@@ -86,7 +86,7 @@ def freport():
                                                      (T("Locations"), "freport_location")
                                                     ])
     response.s3.pagination = True
-    output = shn_rest_controller(module, resource, rheader=rheader, sticky=True)
+    output = shn_rest_controller(module, resource, rheader=rheader)
     return output
 
 # -----------------------------------------------------------------------------

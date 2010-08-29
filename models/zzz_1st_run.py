@@ -442,6 +442,18 @@ if empty:
             name = "volunteer",
             image = "gis_marker.image.Volunteer.png"
         )
+    tablename = "gis_symbology"
+    table = db[tablename]
+    if not db(table.id > 0).count():
+        table.insert(
+            name = "Australasia"
+        )
+        table.insert(
+            name = "Canada"
+        )
+        table.insert(
+            name = "US"
+        )
     tablename = "gis_projection"
     table = db[tablename]
     if not db(table.id > 0).count():
@@ -473,11 +485,12 @@ if empty:
             lat = "51.8",
             lon = "-1.3",
             zoom = 7,
-            # Doesn't work on Postgres!
+            # Doesn't work on Postgres! (db.commit() the previous step?)
             projection_id = 1,
             marker_id = 1,
             map_height = 600,
-            map_width = 800
+            map_width = 800,
+            symbology_id = db(db.gis_symbology.name == "US").select(limitby=(0, 1)).first().id,
         )
 
     tablename = "gis_feature_class"
@@ -617,132 +630,6 @@ if empty:
             marker_id = db(db.gis_marker.name == "water").select(limitby=(0, 1)).first().id,
             gps_marker = "Drinking Water",
         )
-    tablename = "gis_feature_group"
-    table = db[tablename]
-    if not db(table.id > 0).count():
-        table.insert(
-            uuid = "www.sahanafoundation.org/GIS-FEATURE-GROUP-L4",
-            name = "Towns",
-            enabled = False,
-        )
-        table.insert(
-            uuid = "www.sahanafoundation.org/GIS-FEATURE-GROUP-TRANSPORT",
-            name = "Transport",
-            enabled = False,
-        )
-        table.insert(
-            uuid = "www.sahanafoundation.org/GIS-FEATURE-GROUP-INFRASTRUCTURE",
-            name = "Infrastructure",
-            enabled = False,
-        )
-        table.insert(
-            uuid = "www.sahanafoundation.org/GIS-FEATURE-GROUP-PROGRAMME",
-            name = "Programmes",
-            enabled = False,
-        )
-        table.insert(
-            uuid = "www.sahanafoundation.org/GIS-FEATURE-GROUP-HOSPITALS",
-            name = "Hospitals",
-            enabled = False,
-        )
-        table.insert(
-            uuid = "www.sahanafoundation.org/GIS-FEATURE-GROUP-INCIDENTS",
-            name = "Incidents",
-            enabled = False,
-        )
-        table.insert(
-            uuid = "www.sahanafoundation.org/GIS-FEATURE-GROUP-OFFICES",
-            name = "Offices",
-            enabled = False,
-        )
-        table.insert(
-            uuid = "www.sahanafoundation.org/GIS-FEATURE-GROUP-PEOPLE",
-            name = "People",
-            enabled = False,
-        )
-        table.insert(
-            uuid = "www.sahanafoundation.org/GIS-FEATURE-GROUP-PROJECTS",
-            name = "Projects",
-            enabled = False,
-        )
-        table.insert(
-            uuid = "www.sahanafoundation.org/GIS-FEATURE-GROUP-SMS-ALERTS",
-            name = "SMS Alerts",
-            enabled = False,
-        )
-        table.insert(
-            uuid = "www.sahanafoundation.org/GIS-FEATURE-GROUP-VEHICLES",
-            name = "Vehicles",
-            enabled = False,
-        )
-    tablename = "gis_feature_class_to_feature_group"
-    table = db[tablename]
-    if not db(table.id > 0).count():
-        table.insert(
-            feature_group_id = db(db.gis_feature_group.name == "Towns").select(db.gis_feature_group.id, limitby=(0, 1)).first().id,
-            feature_class_id = db(db.gis_feature_class.name == "Town").select(db.gis_feature_class.id, limitby=(0, 1)).first().id,
-        )
-        table.insert(
-            feature_group_id = db(db.gis_feature_group.name == "Transport").select(db.gis_feature_group.id, limitby=(0, 1)).first().id,
-            feature_class_id = db(db.gis_feature_class.name == "Airport").select(db.gis_feature_class.id, limitby=(0, 1)).first().id,
-        )
-        table.insert(
-            feature_group_id = db(db.gis_feature_group.name == "Transport").select(db.gis_feature_group.id, limitby=(0, 1)).first().id,
-            feature_class_id = db(db.gis_feature_class.name == "Bridge").select(db.gis_feature_class.id, limitby=(0, 1)).first().id,
-        )
-        table.insert(
-            feature_group_id = db(db.gis_feature_group.name == "Transport").select(db.gis_feature_group.id, limitby=(0, 1)).first().id,
-            feature_class_id = db(db.gis_feature_class.name == "Port").select(db.gis_feature_class.id, limitby=(0, 1)).first().id,
-        )
-        table.insert(
-            feature_group_id = db(db.gis_feature_group.name == "Hospitals").select(db.gis_feature_group.id, limitby=(0, 1)).first().id,
-            feature_class_id = db(db.gis_feature_class.name == "Hospital").select(db.gis_feature_class.id, limitby=(0, 1)).first().id,
-        )
-        table.insert(
-            feature_group_id = db(db.gis_feature_group.name == "Incidents").select(db.gis_feature_group.id, limitby=(0, 1)).first().id,
-            feature_class_id = db(db.gis_feature_class.name == "Incident").select(db.gis_feature_class.id, limitby=(0, 1)).first().id,
-        )
-        table.insert(
-            feature_group_id = db(db.gis_feature_group.name == "Infrastructure").select(db.gis_feature_group.id, limitby=(0, 1)).first().id,
-            feature_class_id = db(db.gis_feature_class.name == "Church").select(db.gis_feature_class.id, limitby=(0, 1)).first().id,
-        )
-        table.insert(
-            feature_group_id = db(db.gis_feature_group.name == "Infrastructure").select(db.gis_feature_group.id, limitby=(0, 1)).first().id,
-            feature_class_id = db(db.gis_feature_class.name == "School").select(db.gis_feature_class.id, limitby=(0, 1)).first().id,
-        )
-        table.insert(
-            feature_group_id = db(db.gis_feature_group.name == "Programmes").select(db.gis_feature_group.id, limitby=(0, 1)).first().id,
-            feature_class_id = db(db.gis_feature_class.name == "Food").select(db.gis_feature_class.id, limitby=(0, 1)).first().id,
-        )
-        table.insert(
-            feature_group_id = db(db.gis_feature_group.name == "Programmes").select(db.gis_feature_group.id, limitby=(0, 1)).first().id,
-            feature_class_id = db(db.gis_feature_class.name == "Water").select(db.gis_feature_class.id, limitby=(0, 1)).first().id,
-        )
-        table.insert(
-            feature_group_id = db(db.gis_feature_group.name == "Offices").select(db.gis_feature_group.id, limitby=(0, 1)).first().id,
-            feature_class_id = db(db.gis_feature_class.name == "Office").select(db.gis_feature_class.id, limitby=(0, 1)).first().id,
-        )
-        table.insert(
-            feature_group_id = db(db.gis_feature_group.name == "People").select(db.gis_feature_group.id, limitby=(0, 1)).first().id,
-            feature_class_id = db(db.gis_feature_class.name == "Person").select(db.gis_feature_class.id, limitby=(0, 1)).first().id,
-        )
-        table.insert(
-            feature_group_id = db(db.gis_feature_group.name == "People").select(db.gis_feature_group.id, limitby=(0, 1)).first().id,
-            feature_class_id = db(db.gis_feature_class.name == "Volunteer").select(db.gis_feature_class.id, limitby=(0, 1)).first().id,
-        )
-        table.insert(
-            feature_group_id = db(db.gis_feature_group.name == "Projects").select(db.gis_feature_group.id, limitby=(0, 1)).first().id,
-            feature_class_id = db(db.gis_feature_class.name == "Project").select(db.gis_feature_class.id, limitby=(0, 1)).first().id,
-        )
-        table.insert(
-            feature_group_id = db(db.gis_feature_group.name == "SMS Alerts").select(db.gis_feature_group.id, limitby=(0, 1)).first().id,
-            feature_class_id = db(db.gis_feature_class.name == "SMS").select(db.gis_feature_class.id, limitby=(0, 1)).first().id,
-        )
-        table.insert(
-            feature_group_id = db(db.gis_feature_group.name == "Vehicles").select(db.gis_feature_group.id, limitby=(0, 1)).first().id,
-            feature_class_id = db(db.gis_feature_class.name == "Vehicle").select(db.gis_feature_class.id, limitby=(0, 1)).first().id,
-        )
-
     tablename = "gis_apikey"
     table = db[tablename]
     if not db(table.id > 0).count():

@@ -1,7 +1,10 @@
 <!--Running in Production mode, so we want fewer compressed scripts to download-->
 
 <script type="text/javascript">//<![CDATA[
-function s3_debug(message) {
+// Global variable to store all of our variables inside
+var S3 = Object();
+S3.gis = Object();
+function s3_debug(message, value) {
         // no debug
     }
 //]]></script>

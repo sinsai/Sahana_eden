@@ -40,12 +40,11 @@ def location():
     response.s3.postp = postp
 
     rheader = lambda r: shn_location_rheader(r,
-                                              tabs = [(T("Details"), None),
-                                                      (T("Items"), "location_item"),                                                                                                        
-                                                     ]
-                                              )
+                                             tabs = [(T("Details"), None),
+                                                     (T("Items"), "location_item"),                                                                                                        
+                                                    ])
 
-    return shn_rest_controller(module, resource, rheader=rheader, sticky=True)
+    return shn_rest_controller(module, resource, rheader=rheader)
 
 def index():
 

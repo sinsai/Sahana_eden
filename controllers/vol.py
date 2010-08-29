@@ -150,7 +150,8 @@ def person():
                                            "description"])
         # TODO: If we don't know what a "status report" is supposed to be,
         # take it out.  Take out resources til they're modernized.
-        tabs = [#(T("Status Report"), None),
+        tabs = [
+                #(T("Status Report"), None),
                 (T("Availablity"), "volunteer"),
                 (T("Teams"), "group_membership"),
                 (T("Skills"), "skill"),
@@ -161,8 +162,7 @@ def person():
     output = shn_rest_controller("pr", resource,
         main="first_name",
         extra="last_name",
-        rheader=lambda jr: shn_pr_rheader(jr, tabs),
-        sticky=True,
+        rheader=lambda r: shn_pr_rheader(r, tabs),
         listadd=False)
 
     shn_menu()
@@ -183,17 +183,20 @@ def project():
     # ServerSidePagination
     response.s3.pagination = True
 
+    tabs = [
+            (T("Basic Details"), None),
+            (T("Staff"), "staff"),
+            (T("Tasks"), "task"),
+            #(T("Donors"), "organisation"),
+            #(T("Sites"), "site"),  # Ticket 195
+           ]
+
+    rheader = lambda r: shn_project_rheader(r, tabs)
+
     output = shn_rest_controller("org", resource,
-        listadd=False,
-        main="code",
-        rheader=lambda jr: shn_project_rheader(jr,
-            tabs = [(T("Basic Details"), None),
-                    (T("Staff"), "staff"),
-                    (T("Tasks"), "task"),
-                    #(T("Donors"), "organisation"),
-                    #(T("Sites"), "site"),          # Ticket 195
-                   ]),
-        sticky=True)
+                                 listadd=False,
+                                 main="code",
+                                 rheader=rheader)
     
     return output
 
@@ -355,16 +358,15 @@ def group():
     response.s3.postp = group_postp
 
     output = shn_rest_controller("pr", "group",
-        main="name",
-        extra="description",
-        rheader=lambda jr: shn_pr_rheader(jr,
-            tabs = [(T("Team Details"), None),
-                    (T("Address"), "address"),
-                    (T("Contact Data"), "pe_contact"),
-                    (T("Members"), "group_membership")]),
-        sticky=True,
-	listadd=False,
-        deletable=False)
+                                 main="name",
+                                 extra="description",
+                                 rheader=lambda jr: shn_pr_rheader(jr,
+                                        tabs = [(T("Team Details"), None),
+                                                (T("Address"), "address"),
+                                                (T("Contact Data"), "pe_contact"),
+                                                (T("Members"), "group_membership")]),
+                                 listadd=False,
+                                 deletable=False)
 
     shn_menu()
     return output

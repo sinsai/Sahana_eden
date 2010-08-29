@@ -1578,7 +1578,8 @@ def shn_update(r, **attr):
             # Include a map
             config = gis.get_config()
             zoom = config.zoom
-            location = db((db[tablename].id == r.id) & (db.gis_location.id == db[tablename].location_id)).select(db.gis_location.id, db.gis_location.uuid, db.gis_location.lat, db.gis_location.lon, db.gis_location.level, db.gis_location.parent, limitby=(0, 1)).first()
+            _locations = db.gis_location
+            location = db((db[tablename].id == r.id) & (_locations.id == db[tablename].location_id)).select(_locations.id, _locations.uuid, _locations.name, _locations.lat, _locations.lon, _locations.level, _locations.parent, _locations.addr_street, limitby=(0, 1)).first()
             if location and location.lat is not None and location.lon is not None:
                 lat = location.lat
                 lon = location.lon
@@ -1607,10 +1608,12 @@ def shn_update(r, **attr):
             if location and location.id:
                 _location = Storage(id = location.id,
                                     uuid = location.uuid,
+                                    name = location.name,
                                     lat = location.lat,
                                     lon = location.lon,
-                                    level = location.lon,
-                                    parent = location.parent
+                                    level = location.level,
+                                    parent = location.parent,
+                                    addr_street = location.addr_street
                                     )
                 output.update(oldlocation=_location)
 
@@ -1805,14 +1808,15 @@ def shn_search(r, **attr):
                 field3 = str.lower(_vars.field3)
             else:
                 field3 = None
-            #if "level" in _vars:
-            #    level = str.upper(_vars.level)
-            #else:
-            #    level = None
             if "parent" in _vars and _vars.parent:
-                parent = int(_vars.parent)
+                if _vars.parent == "null":
+                    parent = None
+                else:
+                    parent = int(_vars.parent)
             else:
                 parent = None
+
+            limit = int(_vars.limit or 0)
 
             filter = _vars.filter
             if filter == "~":
@@ -1828,26 +1832,26 @@ def shn_search(r, **attr):
                                         (_table[field2].like("%" + value + "%")) | \
                                         (_table[field3].like("%" + value + "%")))
 
-                #elif level:
+                elif parent:
                     # gis_location hierarchical search
-                #    if parent:
-                #        query = query & (_table.parent == parent) & \
-                #                        (_table.level == level) & \
-                #                        (_field.like("%" + value + "%"))
-
-                #    else:
-                #        query = query & (_table.level == level) & \
-                #                        (_field.like("%" + value + "%"))
+                    # Immediate children only
+                    #query = query & (_table.parent == parent) & \
+                    #                (_field.like("%" + value + "%"))
+                    # Nice if we could filter in SQL but this breaks the recursion
+                    children = gis.get_children(parent)
+                    children = children.find(lambda row: value in str.lower(row.name))
+                    item = children.json()
+                    query = None
 
                 else:
                     # Normal single-field
                     query = query & (_field.like("%" + value + "%"))
 
-                limit = int(_vars.limit or 0)
-                if limit:
-                    item = db(query).select(limitby=(0, limit)).json()
-                else:
-                    item = db(query).select().json()
+                if query:
+                    if limit:
+                        item = db(query).select(limitby=(0, limit)).json()
+                    else:
+                        item = db(query).select().json()
 
             elif filter == "=":
                 query = query & (_field == value)

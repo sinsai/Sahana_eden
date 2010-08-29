@@ -110,22 +110,25 @@ def person():
     if len(request.args) == 0:
         response.s3.filter = (db.pr_person.missing == True)
 
+    mpr_tabs = [
+                (T("Person Details"), None),
+                (T("Missing Report"), "missing_report"),
+                (T("Physical Description"), "physical_description"),
+                (T("Images"), "image"),
+                (T("Identity"), "identity"),
+                (T("Address"), "address"),
+                (T("Contact Data"), "pe_contact"),
+                (T("Presence Log"), "presence"),
+               ]
+    
+    rheader = lambda r: shn_pr_rheader(r, tabs=mpr_tabs)
+
     response.s3.pagination = True
     output = shn_rest_controller("pr", resource,
-                main="first_name",
-                extra="last_name",
-                listadd=False,
-                rheader=lambda jr: shn_pr_rheader(jr,
-                    tabs = [(T("Person Details"), None),
-                            (T("Missing Report"), "missing_report"),
-                            (T("Physical Description"), "physical_description"),
-                            (T("Images"), "image"),
-                            (T("Identity"), "identity"),
-                            (T("Address"), "address"),
-                            (T("Contact Data"), "pe_contact"),
-                            (T("Presence Log"), "presence"),
-                            ]),
-                sticky=True)
+                                 main="first_name",
+                                 extra="last_name",
+                                 listadd=False,
+                                 rheader=rheader)
 
     shn_menu()
     return output

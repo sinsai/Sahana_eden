@@ -99,8 +99,8 @@ def body():
     output = shn_rest_controller(module, resource,
                                  main="pe_label",
                                  extra="gender",
-                                 rheader=lambda jr: \
-                                         shn_dvi_rheader(jr, tabs=[
+                                 rheader=lambda r: \
+                                         shn_dvi_rheader(r, tabs=[
                                             (T("Recovery"), ""),
                                             (T("Checklist"), "checklist"),
                                             (T("Images"), "image"),
@@ -109,7 +109,6 @@ def body():
                                             (T("Tracing"), "presence"),
                                             (T("Identity"), "identification"),
                                          ]),
-                                 sticky=True,
                                  listadd=False)
     shn_menu()
     return output

@@ -146,6 +146,7 @@ def shelter():
     shelter_tabs = [(T("Basic Details"), None),
                     (T("Assessments"), "assessment"),
                     (T("Requests"), "req"),
+                    (T("Inventory"), "location"),  # table is inventory_location
                    ]
 
     rheader = lambda r: shn_shelter_rheader(r, tabs=shelter_tabs)

@@ -385,7 +385,7 @@ table = db.define_table(tablename, timestamp, uuidstamp, deletion_status,
                 #Field("name_l10n"),             # Local Names are stored in this field
                 Field("name_dummy"),            # Dummy field to provide Widget
                 Field("code"),
-                feature_class_id,      # Will be removed
+                #feature_class_id,      # Will be removed
                 marker_id,              # Will be removed
                 Field("level", length=2),
                 Field("parent", "reference gis_location", ondelete = "RESTRICT"),   # This form of hierarchy may not work on all Databases
@@ -428,8 +428,9 @@ table.parent.requires = IS_NULL_OR(IS_ONE_OF(db, "gis_location.id", "%(name)s"))
 table.parent.represent = lambda id: (id and [db(db.gis_location.id == id).select(db.gis_location.name, limitby=(0, 1)).first().name] or [NONE])[0]
 table.gis_feature_type.requires = IS_IN_SET(gis_feature_type_opts, zero=None)
 table.gis_feature_type.represent = lambda opt: gis_feature_type_opts.get(opt, UNKNOWN_OPT)
-# WKT validation is done in the onvalidation callback
-#table.wkt.requires = IS_NULL_OR(IS_WKT())
+# Full WKT validation is done in the onvalidation callback
+# All we do here is allow longer fields than the default (2 ** 16)
+table.wkt.requires = IS_LENGTH(2 ** 24)
 table.wkt.represent = lambda wkt: gis.abbreviate_wkt(wkt)
 table.lat.requires = IS_NULL_OR(IS_LAT())
 table.lon.requires = IS_NULL_OR(IS_LON())

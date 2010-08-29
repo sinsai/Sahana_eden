@@ -936,6 +936,8 @@ class GIS(object):
         cluster_distance = config.cluster_distance
         cluster_threshold = config.cluster_threshold
 
+        markers = {}
+        
         html = DIV(_id="map_wrapper")
 
         #####
@@ -2832,6 +2834,7 @@ OpenLayers.Util.extend( selectPdfControl, {
     var centerPoint, currentFeature, popupControl, highlightControl;
     var wmsBrowser, printProvider;
     var allLayers = new Array();
+    S3.gis.Images = new Array();
     OpenLayers.ImgPath = '/""" + request.application + """/static/img/gis/openlayers/';
     var ajax_loader = '""" + str(URL(r=request, c="static", f="img")) + """/ajax-loader.gif';
     // avoid pink tiles

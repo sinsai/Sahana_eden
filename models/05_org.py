@@ -36,7 +36,6 @@ org_site_types = Storage(
     cr_shelter = T("Shelter"),
     org_office = T("Office"),
     hms_hospital = T("Hospital"),
-    inventory_store = T("Warehouse"),
 )
 
 resource = "site"
@@ -337,6 +336,7 @@ resource = "office"
 tablename = module + "_" + resource
 table = db.define_table(tablename, timestamp, uuidstamp, authorstamp, deletion_status,
                         pe_id,
+                        site_id,
                         Field("name", notnull=True),
                         organisation_id,
                         Field("type", "integer"),
@@ -424,10 +424,21 @@ s3xrc.model.add_component(module, resource,
                           deletable=True,
                           editable=True)
 
+# Office is a member of two superentities, so has to call both of their
+# onaccept and ondelete methods.
+
+def shn_office_onaccept(form, table=None):
+    shn_pentity_onaccept(form, table=table)
+    shn_site_onaccept(form, table=table)
+
+def shn_office_ondelete(form):
+    shn_pentity_ondelete(form)
+    shn_site_ondelete(form)
+
 s3xrc.model.configure(table,
                       # Ensure that table is substituted when lambda defined not evaluated by using the default value
-                      onaccept=lambda form, tab=table: shn_pentity_onaccept(form, table=tab),
-                      delete_onaccept=lambda form: shn_pentity_ondelete(form),
+                      onaccept=lambda form, tab=table: shn_office_onaccept(form, table=tab),
+                      delete_onaccept=lambda form: shn_office_ondelete(form),
                       list_fields=["id",
                                    "name",
                                    "organisation_id",   # Filtered in Component views

@@ -64,10 +64,25 @@ deployment_settings.mail.approver = "useradmin@your.org"
 
 # L10n settings
 # Uncomment this if the deployment is just in a few countries
-# (gets used in the Location Selector & in future the Messaging)
+# (used in the GIS Location Selector & maybe in future: Messaging)
 #deployment_settings.L10n.countries = ["PK"]
-# Unused: will be default language for GIS Locations
-#deployment_settings.L10n.language_default = "en"
+# Languages used in the deployment (used for Language Toolbar & GIS Locations)
+# http://www.loc.gov/standards/iso639-2/php/code_list.php
+deployment_settings.L10n.languages = {
+    "en":T("English"),
+    "es":T("Spanish"),
+    "pa":T("Punjabi"),
+    "ps":T("Pashto"),
+    "sd":T("Sindhi"),
+    "ur":T("Urdu"),
+    "zh-tw":T("Chinese (Taiwan)"),
+    "seraiki":T("Seraiki"),
+    "balochi":T("Balochi"),
+}
+# Default language for Language Toolbar (& GIS Locations in future)
+deployment_settings.L10n.default_language = "en"
+# Display the language toolbar
+deployment_settings.L10n.display_toolbar = True
 # Default timezone for users
 deployment_settings.L10n.utc_offset = "UTC +0000"
 

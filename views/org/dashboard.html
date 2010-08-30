@@ -1,5 +1,5 @@
-{{extend 'layout.html'}}
-{{include 'colorbox.html'}}
+{{extend "layout.html"}}
+{{include "colorbox.html"}}
 
 <script type="text/javascript">//<![CDATA[
 $(document).ready(function() {
@@ -30,36 +30,33 @@ $(document).ready(function() {
 <script type="text/javascript">//<![CDATA[
 
 $(function() {
-    $("#organisation_select").change(function () {
-		//new_url = "Test" //{{=URL(r=request, c="org", f="dashboard")}}
+    $('#organisation_select').change(function () {
+		//new_url = 'Test' //{{=URL(r=request, c="org", f="dashboard")}}
         //alert("changed: " + new_url + $("select").val()); //This is a bit of a hack, as it may break if there is more than one select
-		window.location.replace("{{=URL(r=request, c="org", f="dashboard")}}/" + $("#organisation_select").val());
+		window.location.replace('{{=URL(r=request, c="org", f="dashboard")}}/' + $('#organisation_select').val());
     });
 
 
     // if we are going to add a new office, and the organisation is pre-selected,
     // we would auto-assign the new office to that organisation
     set_parent_id = function(href, caller){
-        id = $("#organisation_select").val();
-	if(id == ''){
+        id = $('#organisation_select').val();
+        if(id == ''){
             return href.replace(/organisation_id=(.*?)&/,'');
-        }
-        else if(!href.match(/organisation_id/)){
+        } else if(!href.match(/organisation_id/)){
             return href.replace('?','?organisation_id=' + id + '&');
-        }
-        else{
+        } else {
             return href.replace(/organisation_id=(.*?)&/,'organisation_id=' + id + '&');
         }
     };
 
-    cleanup = function(id){
-	window.location.replace("{{=URL(r=request, c="org", f="dashboard")}}/" + $("#organisation_select").val());
+    s3_tb_cleanup = function(id){
+        window.location.replace('{{=URL(r=request, c="org", f="dashboard")}}/' + $('#organisation_select').val());
     }
-
 
 });
 {{if response.flash or response.confirmation:}}
 // Refresh the DIV and close the pop up
-self.parent.tb_remove();
+self.parent.s3_tb_remove();
 {{pass}}
 //]]></script>

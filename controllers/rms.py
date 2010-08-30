@@ -14,9 +14,9 @@ if module not in deployment_settings.modules:
 response.menu_options = [
     [T("Home"), False, URL(r=request, f="index")],
     [T("Requests"), False, URL(r=request, f="req")],
-#    [T("Requests"), False, URL(r=request, f="req"), 
+#    [T("Requests"), False, URL(r=request, f="req"),
 #     [T("Add"), False, URL(r=request, f="req", args="create")],
-#     ],    
+#     ],
     [T("All Requested Items"), False, URL(r=request, f="ritem")],
     [T("All Pledges"),False, URL(r=request, f="pledge")]
 ]
@@ -24,12 +24,12 @@ response.menu_options = [
 # S3 framework functions
 def index():
     "Module's Home Page"
-    
+
     """ Default to the rms_req list view - TODO does not work with paginate!!!"""
 
     request.function = "req"
     request.args = []
-    return req()    
+    return req()
 
     #module_name = deployment_settings.modules[module].name_nice
 
@@ -94,23 +94,32 @@ def ritem():
     resource = request.function
     tablename = "%s_%s" % (module, resource)
     table = db[tablename]
-    
-    def postp(jr, output):                          
+
+    def postp(jr, output):
         shn_action_buttons(jr)
         return output
     response.s3.postp = postp
-    
+
     #rheader = lambda jr: shn_item_rheader(jr,
     #                                      tabs = [(T("Requests for Item"), None),
-    #                                              (T("Inventories with Item"), "location_item"),  
-    #                                              (T("Requests for Item"), "req"),                                                                                                  
+    #                                              (T("Inventories with Item"), "location_item"),
+    #                                              (T("Requests for Item"), "req"),
     #                                             ]
+<<<<<<< TREE
     #                                     )    
     
     return shn_rest_controller(module, 
                                resource
                                )#, 
                                #rheader=rheader)
+=======
+    #                                     )
+
+    return shn_rest_controller(module,
+                               resource,
+                               #rheader=rheader
+                               )
+>>>>>>> MERGE-SOURCE
 
 def pledge():
     """ RESTful CRUD controller """
@@ -137,7 +146,7 @@ def pledge():
 
     # Change the request status to completed when pledge delivered
     # (this is necessary to close the loop)
-    #pledges = db(db.rms_pledge.status == 3).select() 
+    #pledges = db(db.rms_pledge.status == 3).select()
     #for pledge in pledges:
     #    req = db(db.rms_req.id == pledge.req_id).update(completion_status = True)
     #db.commit()
@@ -152,9 +161,9 @@ def pledge():
     response.s3.postp = pledge_postp
 
     response.s3.pagination = True
-    return shn_rest_controller(module, 
-                               resource, 
-                               editable = True, 
+    return shn_rest_controller(module,
+                               resource,
+                               editable = True,
                                #listadd=False
                                )
 
@@ -175,10 +184,10 @@ def shn_rms_rheader(jr):
                 except:
                     location_represent = None
 
-                rheader_tabs = shn_rheader_tabs( jr, 
+                rheader_tabs = shn_rheader_tabs( jr,
                                                  [(T("Edit Details"), None),
-                                                  (T("Items"), "ritem"),    
-                                                  (T("Pledge"), "pledge"),                                                                                                      
+                                                  (T("Items"), "ritem"),
+                                                  (T("Pledge"), "pledge"),
                                                   ]
                                                  )
 

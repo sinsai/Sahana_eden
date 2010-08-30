@@ -1285,7 +1285,8 @@ class S3Resource(object):
             item = xml.json_message(False, 400, self.__manager.error, tree=tree)
             raise HTTP(400, body=item)
 
-        return dict(item=item)
+        #return dict(item=item)
+        return item
 
 
     # -------------------------------------------------------------------------
@@ -1787,21 +1788,92 @@ class S3Resource(object):
 
 
     # -------------------------------------------------------------------------
-    def fetch_xml(self):
+    def __fetch_tree(self, url,
+                     username=None,
+                     password=None,
+                     proxy=None,
+                     json=False,
+                     template=None,
+                     ignore_errors=False, **args):
 
-        """ Fetch XML data from a URL and import them to this resource """
+        """ Fetch data to the current resource from a remote URL """
 
-        # Not implemented yet
-        raise NotImplementedError
+        xml = self.__manager.xml
+
+        response = None
+        url_split = url.split("://", 1)
+        if len(url_split) == 2:
+            protocol, path = url_split
+            if username and password:
+                url = "%s://%s:%s@%s" % (protocol, username, password, path)
+        else:
+            protocol, path = http, None
+        import urllib2
+        req = urllib2.Request(url=url)
+        handlers = []
+        if proxy:
+            proxy_handler = urllib2.ProxyHandler({protocol:proxy})
+            handlers.append(proxy_handler)
+        if username and password:
+            passwd_manager = urllib2.HTTPPasswordMgrWithDefaultRealm()
+            passwd_manager.add_password(realm=None,
+                                        uri=url,
+                                        user=username,
+                                        passwd=password)
+            auth_handler = urllib2.HTTPBasicAuthHandler(passwd_manager)
+            handlers.append(auth_handler)
+        if handlers:
+            opener = urllib2.build_opener(*handlers)
+            urllib2.install_opener(opener)
+        try:
+            f = urllib2.urlopen(req)
+        except urllib2.HTTPError, e:
+            response = e.read()
+        else:
+            response = f.read()
+
+        if json:
+            return self.import_json(response,
+                                    template=template,
+                                    ignore_errors=ignore_errors,
+                                    args=args)
+        else:
+            return self.import_xml(response,
+                                   template=template,
+                                   ignore_errors=ignore_errors,
+                                   args=args)
 
 
-    # -------------------------------------------------------------------------
-    def fetch_json(self):
+    def fetch_xml(self, url,
+                  username=None,
+                  password=None,
+                  proxy=None,
+                  template=None,
+                  ignore_errors=False, **args):
 
-        """ Fetch JSON data from a URL and import them to this resource """
+        return self.__fetch_tree(url,
+                                 username=username,
+                                 password=password,
+                                 proxy=proxy,
+                                 json=False,
+                                 template=template,
+                                 ignore_errors=ignore_errors, **args)
 
-        # Not implemented yet
-        raise NotImplementedError
+
+    def fetch_json(self, url,
+                   username=None,
+                   password=None,
+                   proxy=None,
+                   template=None,
+                   ignore_errors=False, **args):
+
+        return self.__fetch_tree(url,
+                                 username=username,
+                                 password=password,
+                                 proxy=proxy,
+                                 json=True,
+                                 template=template,
+                                 ignore_errors=ignore_errors, **args)
 
 
 # *****************************************************************************

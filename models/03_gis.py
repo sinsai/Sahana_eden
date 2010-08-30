@@ -11,6 +11,20 @@ MARKER = Tstr("Marker")
 # Expose settings to views
 _gis = response.s3.gis
 _gis.map_selector = deployment_settings.get_gis_map_selector()
+if shn_has_role("MapAdmin"):
+    _gis.edit_L0 = True
+    _gis.edit_L1 = True
+    _gis.edit_L2 = True
+    _gis.edit_L3 = True
+    _gis.edit_L4 = True
+    _gis.edit_L5 = True
+else:
+    _gis.edit_L0 = deployment_settings.get_gis_edit_l0()
+    _gis.edit_L1 = deployment_settings.get_gis_edit_l1()
+    _gis.edit_L2 = deployment_settings.get_gis_edit_l2()
+    _gis.edit_L3 = deployment_settings.get_gis_edit_l3()
+    _gis.edit_L4 = deployment_settings.get_gis_edit_l4()
+    _gis.edit_L5 = deployment_settings.get_gis_edit_l5()
 
 # Settings
 resource = "setting"
@@ -220,7 +234,7 @@ table = db.define_table(tablename, timestamp, uuidstamp, deletion_status,
                 migrate=migrate)
 table.uuid.requires = IS_NOT_IN_DB(db, "%s.uuid" % tablename)
 table.name.requires = [IS_NOT_EMPTY(), IS_NOT_IN_DB(db, "%s.name" % tablename)]
-table.gps_marker.requires = IS_IN_SET([
+table.gps_marker.requires = IS_NULL_OR(IS_IN_SET([
     "Airport",
     "Amusement Park"
     "Ball Park",
@@ -341,7 +355,7 @@ table.gps_marker.requires = IS_IN_SET([
     "White Buoy",
     "White Dot",
     "Zoo"
-    ])
+    ], zero=T("Use default")))
 #table.module.requires = IS_NULL_OR(IS_ONE_OF(db((db.s3_module.enabled=="True") & (~db.s3_module.name.like("default"))), "s3_module.name", "%(name_nice)s"))
 #table.resource.requires = IS_NULL_OR(IS_IN_SET(gis_resource_opts))
 table.name.label = T("Name")
@@ -524,16 +538,6 @@ s3xrc.model.add_component(module, resource,
 
 # -----------------------------------------------------------------------------
 # Local Names
-# http://www.loc.gov/standards/iso639-2/php/code_list.php
-gis_location_languages = {
-    "en":T("English"),  #1
-    "ur":T("Urdu"),     #2
-    "pa":T("Punjabi"),  #3
-    "ps":T("Pashto"),   #4
-    "sd":T("Sindhi"),   #5
-    "seraiki":T("Seraiki"), #6
-    "balochi":T("Balochi"), #7
-}
 resource = "location_name"
 tablename = module + "_" + resource
 table = db.define_table(tablename, timestamp, uuidstamp, deletion_status,
@@ -542,8 +546,8 @@ table = db.define_table(tablename, timestamp, uuidstamp, deletion_status,
                 Field("name_l10n"),
                 migrate=migrate)
 table.uuid.requires = IS_NOT_IN_DB(db, '%s.uuid' % tablename)
-table.language.requires = IS_IN_SET(gis_location_languages)
-table.language.represent = lambda opt: gis_location_languages.get(opt, UNKNOWN_OPT)
+table.language.requires = IS_IN_SET(s3.l10n_languages)
+table.language.represent = lambda opt: s3.l10n_languages.get(opt, UNKNOWN_OPT)
 table.language.label = T("Language")
 table.name_l10n.label = T("Name")
 
@@ -565,7 +569,7 @@ def gis_location_onaccept(form):
     else:
         location_id = form.vars.id
         table = db.gis_location_name
-        names = db(table.location_id==location_id).select(table.id)
+        names = db(table.location_id == location_id).select(table.id)
         if names:
             ids = [str(name.id) for name in names]
             #name_dummy = "|%s|" % "|".join(ids)
@@ -576,7 +580,42 @@ def gis_location_onaccept(form):
     gis.update_location_tree()
 
 def gis_location_onvalidation(form):
-    """ On Validation for GIS Locations (before DB I/O) """
+
+    """
+        On Validation for GIS Locations (before DB I/O)
+    """
+
+    record_error = T("Sorry, only users with the MapAdmin role are allowed to edit these locations")
+    field_error = T("Please select another level")
+
+    # Check Permissions
+    # 'MapAdmin' should have all these perms set, no matter what 000_config has
+    if form.vars.level == "L0" and not _gis.edit_L0:
+        response.error = record_error
+        form.errors["level"] = field_error
+        return
+    elif form.vars.level == "L1" and not _gis.edit_L1:
+        response.error = record_error
+        form.errors["level"] = field_error
+        return
+    elif form.vars.level == "L2" and not _gis.edit_L2:
+        response.error = record_error
+        form.errors["level"] = field_error
+        return
+    elif form.vars.level == "L3" and not _gis.edit_L3:
+        response.error = record_error
+        form.errors["level"] = field_error
+        return
+    elif form.vars.level == "L4" and not _gis.edit_L4:
+        response.error = record_error
+        form.errors["level"] = field_error
+        return
+    elif form.vars.level == "L5" and not _gis.edit_L5:
+        response.error = record_error
+        form.errors["level"] = field_error
+        return
+    # ToDo: Check for probable duplicates
+    # 
     # ToDo: Check within Bounds of the Parent
     # Calculate the Centroid for Polygons
     gis.wkt_centroid(form)

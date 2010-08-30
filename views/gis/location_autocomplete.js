@@ -73,7 +73,7 @@ $(function() {
     // Dropdown
     widget = "<select id='gis_location_l{{=level}}'></select>";
   {{if _gis.edit_L0:}}
-    comment = "<div><a href='{{=URL(r=request, c="gis", f="location", args="create", vars=dict(format="popup", level="L" + level))}}' id='gis_l{{=level}}_colorbox' class='colorbox' target='_top' title='{{=Tstr("Add") + " " + label}}'>{{=Tstr("Add") + " " + label}}</a><div title='" + label + '|' + '{{=T("Select to see a list of subdivisions.")}}' + "' id='gis_location_l{{=level}}_tooltip' class='tooltip'></div></div>";
+    comment = "<div><a href='{{=URL(r=request, c="gis", f="location", args="create", vars=dict(format="popup", level="L" + level))}}' id='gis_l{{=level}}_colorbox' class='colorbox' target='_top' title='{{=str(T("Add")) + " " + label}}'>{{=str(T("Add")) + " " + label}}</a><div title='" + label + '|' + '{{=T("Select to see a list of subdivisions.")}}' + "' id='gis_location_l{{=level}}_tooltip' class='tooltip'></div></div>";
   {{else:}}
     comment = "<div title='" + label + '|' + '{{=T("Select to see a list of subdivisions.")}}' + "' id='gis_location_l{{=level}}_tooltip' class='tooltip'></div>";
   {{pass}}
@@ -159,7 +159,7 @@ $(function() {
     if (null == l{{=level}}) {
         widget = "<select id='gis_location_l{{=level}}'></select>";
       {{if _gis.edit_L1:}}
-        comment = "<div><a href='{{=URL(r=request, c="gis", f="location", args="create", vars=dict(format="popup", level="L" + level))}}' id='gis_l{{=level}}_colorbox' class='colorbox' target='_top' title='{{=Tstr("Add") + " " + label}}'>{{=Tstr("Add") + " " + label}}</a><div title='" + label + '|' + '{{=T("Select to see a list of subdivisions.")}}' + "' id='gis_location_l{{=level}}_tooltip' class='tooltip'></div></div>";
+        comment = "<div><a href='{{=URL(r=request, c="gis", f="location", args="create", vars=dict(format="popup", level="L" + level))}}' id='gis_l{{=level}}_colorbox' class='colorbox' target='_top' title='{{=str(T("Add")) + " " + label}}'>{{=str(T("Add")) + " " + label}}</a><div title='" + label + '|' + '{{=T("Select to see a list of subdivisions.")}}' + "' id='gis_location_l{{=level}}_tooltip' class='tooltip'></div></div>";
       {{else:}}
         comment = "<div title='" + label + '|' + '{{=T("Select to see a list of subdivisions.")}}' + "' id='gis_location_l{{=level}}_tooltip' class='tooltip'></div>";
       {{pass}}
@@ -234,7 +234,7 @@ $(function() {
     if (null == l{{=level}}) {
         widget = "<select id='gis_location_l{{=level}}'></select>";
       {{if _gis.edit_L2:}}
-        comment = "<div><a href='{{=URL(r=request, c="gis", f="location", args="create", vars=dict(format="popup", level="L" + level))}}' id='gis_l{{=level}}_colorbox' class='colorbox' target='_top' title='{{=Tstr("Add") + " " + label}}'>{{=Tstr("Add") + " " + label}}</a><div title='" + label + '|' + '{{=T("Select to see a list of subdivisions.")}}' + "' id='gis_location_l{{=level}}_tooltip' class='tooltip'></div></div>";
+        comment = "<div><a href='{{=URL(r=request, c="gis", f="location", args="create", vars=dict(format="popup", level="L" + level))}}' id='gis_l{{=level}}_colorbox' class='colorbox' target='_top' title='{{=str(T("Add")) + " " + label}}'>{{=str(T("Add")) + " " + label}}</a><div title='" + label + '|' + '{{=T("Select to see a list of subdivisions.")}}' + "' id='gis_location_l{{=level}}_tooltip' class='tooltip'></div></div>";
       {{else:}}
         comment = "<div title='" + label + '|' + '{{=T("Select to see a list of subdivisions.")}}' + "' id='gis_location_l{{=level}}_tooltip' class='tooltip'></div>";
       {{pass}}
@@ -309,7 +309,7 @@ $(function() {
     if (null == l{{=level}}) {
         widget = "<select id='gis_location_l{{=level}}'></select>";
       {{if _gis.edit_L3:}}
-        comment = "<div><a href='{{=URL(r=request, c="gis", f="location", args="create", vars=dict(format="popup", level="L" + level))}}' id='gis_l{{=level}}_colorbox' class='colorbox' target='_top' title='{{=Tstr("Add") + " " + label}}'>{{=Tstr("Add") + " " + label}}</a><div title='" + label + '|' + '{{=T("Select to see a list of subdivisions.")}}' + "' id='gis_location_l{{=level}}_tooltip' class='tooltip'></div></div>";
+        comment = "<div><a href='{{=URL(r=request, c="gis", f="location", args="create", vars=dict(format="popup", level="L" + level))}}' id='gis_l{{=level}}_colorbox' class='colorbox' target='_top' title='{{=str(T("Add")) + " " + label}}'>{{=str(T("Add")) + " " + label}}</a><div title='" + label + '|' + '{{=T("Select to see a list of subdivisions.")}}' + "' id='gis_location_l{{=level}}_tooltip' class='tooltip'></div></div>";
       {{else:}}
         comment = "<div title='" + label + '|' + '{{=T("Select to see a list of subdivisions.")}}' + "' id='gis_location_l{{=level}}_tooltip' class='tooltip'></div>";
       {{pass}}
@@ -384,7 +384,7 @@ $(function() {
     if (null == l{{=level}}) {
         widget = "<select id='gis_location_l{{=level}}'></select>";
       {{if _gis.edit_L4:}}
-        comment = "<div><a href='{{=URL(r=request, c="gis", f="location", args="create", vars=dict(format="popup", level="L" + level))}}' id='gis_l{{=level}}_colorbox' class='colorbox' target='_top' title='{{=Tstr("Add") + " " + label}}'>{{=Tstr("Add") + " " + label}}</a><div title='" + label + '|' + '{{=T("Select to see a list of subdivisions.")}}' + "' id='gis_location_l{{=level}}_tooltip' class='tooltip'></div></div>";
+        comment = "<div><a href='{{=URL(r=request, c="gis", f="location", args="create", vars=dict(format="popup", level="L" + level))}}' id='gis_l{{=level}}_colorbox' class='colorbox' target='_top' title='{{=str(T("Add")) + " " + label}}'>{{=str(T("Add")) + " " + label}}</a><div title='" + label + '|' + '{{=T("Select to see a list of subdivisions.")}}' + "' id='gis_location_l{{=level}}_tooltip' class='tooltip'></div></div>";
       {{else:}}
         comment = "<div title='" + label + '|' + '{{=T("Select to see a list of subdivisions.")}}' + "' id='gis_location_l{{=level}}_tooltip' class='tooltip'></div>";
       {{pass}}
@@ -459,7 +459,7 @@ $(function() {
     if (null == l{{=level}}) {
         widget = "<select id='gis_location_l{{=level}}'></select>";
       {{if _gis.edit_L5:}}
-        comment = "<div><a href='{{=URL(r=request, c="gis", f="location", args="create", vars=dict(format="popup", level="L" + level))}}' id='gis_l{{=level}}_colorbox' class='colorbox' target='_top' title='{{=Tstr("Add") + " " + label}}'>{{=Tstr("Add") + " " + label}}</a><div title='" + label + '|' + '{{=T("Select to see a list of subdivisions.")}}' + "' id='gis_location_l{{=level}}_tooltip' class='tooltip'></div></div>";
+        comment = "<div><a href='{{=URL(r=request, c="gis", f="location", args="create", vars=dict(format="popup", level="L" + level))}}' id='gis_l{{=level}}_colorbox' class='colorbox' target='_top' title='{{=str(T("Add")) + " " + label}}'>{{=str(T("Add")) + " " + label}}</a><div title='" + label + '|' + '{{=T("Select to see a list of subdivisions.")}}' + "' id='gis_location_l{{=level}}_tooltip' class='tooltip'></div></div>";
       {{else:}}
         comment = "<div title='" + label + '|' + '{{=T("Select to see a list of subdivisions.")}}' + "' id='gis_location_l{{=level}}_tooltip' class='tooltip'></div>";
       {{pass}}
@@ -670,7 +670,7 @@ $(function() {
   {{if _gis.map_selector:}}
     // Map-based selector
     label = '';
-    widget = "<a id='openMap' href='#'>{{=T("Open Map")}}</a> ({{=Tstr("can use this to identify the Location")}})";
+    widget = "<a id='openMap' href='#'>{{=T("Open Map")}}</a> ({{=T("can use this to identify the Location")}})";
     row = "<tr id='gis_location_map__row'><td><label>" + label + '</label></td><td>' + widget + '</td><td></td></tr>';
     $(location_id_row).before(row);
     var mapButton = Ext.get('openMap');

@@ -1,7 +1,9 @@
 # -*- coding: utf-8 -*-
 
-"""
-    Synchronisation - Controllers
+""" Synchronisation - Controllers
+
+    @author: Amer Tahir
+
 """
 
 module = "admin"
@@ -11,7 +13,7 @@ log_table = "sync_log"
 conflict_table = "sync_conflict"
 sync_peer = None
 sync_policy = None
-import_export_format = "json"
+import_export_format = "xml"
 
 # Options Menu (available in all Functions' Views)
 # - can Insert/Delete items from default menus within a function, if required.
@@ -24,6 +26,8 @@ def call():
     session.forget()
     return service()
 
+
+# -----------------------------------------------------------------------------
 # S3 framework functions
 def index():
     "Module's Home Page"
@@ -32,29 +36,65 @@ def index():
 
 import urllib2
 
+
+# -----------------------------------------------------------------------------
 class RequestWithMethod(urllib2.Request):
+
+    """ ???
+
+        @todo: add doc string
+
+    """
+
     def __init__(self, method, *args, **kwargs):
+
+        """ docstring? """
+
         self._method = method
         urllib2.Request.__init__(self, *args, **kwargs)
+
+
     def get_method(self):
+
+        """ docstring? """
+
         return self._method
 
+
+# -----------------------------------------------------------------------------
 class Error:
-    # indicates an HTTP error
+
+    """ Indicates an HTTP error """
+
     def __init__(self, url, errcode, errmsg, headers, body=None):
+
+        """ docstring??? """
+
         self.url = url
         self.errcode = errcode
         self.errmsg = errmsg
         self.headers = headers
         self.body = body
+
     def __repr__(self):
+
+        """ docstring??? """
+
         return (
             "Error for %s: %s %s\n Response body: %s" %
             (self.url, self.errcode, self.errmsg, self.body)
             )
 
+
+# -----------------------------------------------------------------------------
 class FetchURL:
+
+    """ docstring ??? """
+
     def fetch(self, request, host, path, data, cookie=None, username=None, password=None):
+
+        """ docstring??? """
+
         import httplib, base64
         http = httplib.HTTPConnection(host)
         # write header
@@ -80,16 +120,18 @@ class FetchURL:
             raise Error(str(host) + str(path), retcode, retmsg, headers, retbody)
         return response.read()
 
+
+# -----------------------------------------------------------------------------
 @auth.requires_login()
 def now():
-    "Manual syncing"
+
+    """ Manual synchronization """
 
     import urllib, urlparse
     import gluon.contrib.simplejson as json
 
     final_status = ""
     sync_start = False
-
     if "start" in request.args:
         sync_start = True
 
@@ -97,11 +139,19 @@ def now():
     state = db().select(db.sync_now.ALL, limitby=(0, 1)).first()
 
     if sync_start:
+
         # retrieve sync partners from DB
         peers = db().select(db.sync_partner.ALL)
 
         # retrieve all scheduled jobs set to run manually
-        jobs = db(db.sync_schedule.period == "m" and db.sync_schedule.enabled == True).select(db.sync_schedule.ALL)
+        job = db.sync_schedule
+        jobs = db((job.period == "m") & (job.enabled == True)).select(job.ALL)
+        if not jobs:
+            final_status = "There are no scheduled jobs. Please schedule a sync operation (set to run manually).<br /><br /><a href=\"" + URL(r=request, c="sync", f="schedule") + "\">Click here</a> to go to Sync Schedules page.<br /><br />\n"
+            return dict(module_name=module_name,
+                        sync_status=final_status,
+                        sync_start=False,
+                        sync_state=state)
 
         # retrieve settings
         settings = db().select(db.sync_setting.ALL, limitby=(0, 1)).first()
@@ -109,26 +159,56 @@ def now():
         # url fetcher
         fetcher = FetchURL()
 
-        # for eden instances
         final_status = ""
-        modules = deployment_settings.modules
-        _db_tables = db.tables
-        db_tables = []
-        for __table in _db_tables:
-            if "modified_on" in db[__table].fields and "uuid" in db[__table].fields:
-                db_tables.append(__table)
-        tables = []
-        for _module in modules:
-            for _table in db_tables:
-                if _table.startswith(_module + "_"):
-                    tables.append(_module + "||" + _table[len(_module) + 1:])
 
-        if len(jobs) < 1:
-            final_status = "There are no scheduled jobs. Please schedule a sync operation (set to run manually).<br /><br /><a href=\"" + URL(r=request, c="sync", f="schedule") + "\">Click here</a> to go to Sync Schedules page.<br /><br />\n"
-            return dict(module_name=module_name, sync_status=final_status, sync_start=False, sync_state=state)
+        # for eden instances: select all available tables with a modified_on and a uuid field
+        # for sync
+        # actually, do we really want that?
+        # @todo: exclude component tables, auth/admin tables, s3 tables
+        # Give precedence to selected tables, if set so
+
+        # Find primay resources
+        modules = deployment_settings.modules
+        tables = []
+        for t in db.tables:
+            table = db[t]
+            if t.find("_") == -1:
+                continue
+            prefix, name = t.split("_", 1)
+            if prefix in modules and \
+               "modified_on" in table.fields and \
+               "uuid" in table.fields:
+                is_component = False
+                hook = s3xrc.model.components.get(name, None)
+                if hook:
+                    link = hook.get("_component", None)
+                    if link and link.tablename == t:
+                        continue
+                    for h in hook.values():
+                        if isinstance(h, dict):
+                            link = h.get("_component", None)
+                            if link and link.tablename == t:
+                                is_component = True
+                                break
+                    if is_component:
+                        continue
+                # No component
+                tables.append(t)
+
+        #_db_tables = db.tables
+        #db_tables = []
+        #for __table in _db_tables:
+            #if "modified_on" in db[__table].fields and "uuid" in db[__table].fields:
+                #db_tables.append(__table)
+        #tables = []
+        #for _module in modules:
+            #for _table in db_tables:
+                #if _table.startswith(_module + "_"):
+                    #tables.append(_module + "||" + _table[len(_module) + 1:])
 
         if not state:
-            res_list = tables
+            # New now-job
+            res_list = tables # Tables to sync
             first_job = None
             job_cmd = None
             res_list = []
@@ -153,12 +233,13 @@ def now():
             state = db(db.sync_now.id == sync_now_id).select(db.sync_now.ALL, limitby=(0, 1)).first()
             final_status += "Sync Now started:<br /><br /><br />\n"
         else:
+            # Now already started
             sync_now_id = state.id
             final_status += "Sync Now resumed (originally started on " + state.started_on.strftime("%x %H:%M:%S")+ "):<br /><br /><br />\n"
 
-        # unlock session
+        # unlock session - what for?
         session._unlock(response)
-        # become super-user
+        # become super-user - what for?
         session.s3.roles.append(1)
 
         # get job from queue
@@ -174,8 +255,14 @@ def now():
 
         # Whether a push was successful
         push_success = False
+
         if sync_job and peer:
-            final_status += "<br />Syncing with: " + peer.name + ", " + peer.instance_url + " (" + peer.instance_type + "):<br />\n\n"
+
+            final_status += "<br />Syncing with: " + \
+                            peer.name + ", " + \
+                            peer.instance_url + \
+                            " (" + peer.instance_type + "):<br />\n\n"
+
             peer_sync_success = True
             last_sync_on = sync_job.last_run
             complete_sync = False
@@ -186,105 +273,264 @@ def now():
                 sync_policy = int(job_cmd["policy"])
             if "mode" in job_cmd:
                 sync_mode = int(job_cmd["mode"])
+
             sync_resources = []
             sync_errors = ""
+
             # Keep Session for local URLs
             cookie = str(response.session_id_name) + "=" + str(response.session_id)
-            if sync_job.job_type == 1:
+            if sync_job.job_type == 1: # Eden <-> Eden
+
                 # Sahana Eden sync
-                if (not last_sync_on is None) and complete_sync == False:
-                    last_sync_on_str = "?msince=" + last_sync_on.strftime("%Y-%m-%dT%H:%M:%SZ")
+
+                # Build msince-query
+                if last_sync_on is not None and complete_sync == False:
+                    msince = last_sync_on.strftime("%Y-%m-%dT%H:%M:%SZ")
+                    msince_query = "?msince=" + msince
                 else:
-                    last_sync_on_str = ""
-                job_res_tmp = state.job_resources_pending.split(", ")
-                if "" in job_res_tmp:
-                    job_res_tmp.remove("")
-                job_res_list = []
-                for i in xrange(5):
-                    if len(job_res_tmp) > 0 and i < len(job_res_tmp):
-                        job_res = job_res_tmp[i].split("||")
-                        job_res_list.append([job_res[0], job_res[1]])
-                for _module, _resource in job_res_list:
-                    _resource_name = _module + "_" + _resource
+                    msince = ""
+                    msince_query = ""
+
+                # Find resources to sync
+                tablenames = state.job_resources_pending.split(",")
+
+                #job_res_tmp = state.job_resources_pending.split(",")
+                #if "" in job_res_tmp:
+                    #job_res_tmp.remove("")
+                #job_res_list = []
+
+                #for i in xrange(5):
+                    #if len(job_res_tmp) > 0 and i < len(job_res_tmp):
+                        #job_res = job_res_tmp[i].split("||")
+                        #job_res_list.append([job_res[0], job_res[1]])
+
+                #for _module, _resource in job_res_list:
+                for tablename in tablenames:
+
+                    if tablename not in db.tables:
+                        continue
+
+                    if tablename.find("||") == -1:
+                        if tablename.find("_") == -1:
+                            continue
+                        else:
+                            prefix, name = tablename.split("_", 1)
+                    else:
+                        prefix, name = tablename.split("||", 1)
+
+                    resource = s3xrc.resource(prefix, name)
+
+                    #_resource_name = _module + "_" + _resource
 #                    if not (_module == "budget" and _resource == "item"):
 #                        continue
-                    peer_instance_url = list(urlparse.urlparse(peer.instance_url))
-                    if peer_instance_url[2].endswith("/") == False:
-                        peer_instance_url[2] += "/"
-                    resource_remote_pull_url = peer.instance_url
-                    if resource_remote_pull_url.endswith("/") == False:
-                        resource_remote_pull_url += "/"
-                    resource_remote_pull_url += "sync/sync." + import_export_format + "/" + _module + "/" + _resource + last_sync_on_str
-                    resource_remote_push_url = peer_instance_url[2] + "sync/sync." + import_export_format + "/push/" + _module + "/" + _resource + "?sync_partner_uuid=" + str(settings.uuid)
-                    resource_local_pull_url = "/" + request.application + "/sync/sync." + import_export_format + "/" + _module + "/" + _resource + last_sync_on_str
-                    resource_local_push_url = "/" + request.application + "/sync/sync." + import_export_format + "/create/" + _module + "/" + _resource
-                    final_status += "......processing " + resource_remote_pull_url + "<br />\n"
-                    if sync_mode in [1, 3]:
+
+                    sync_path = "sync/sync/%s/%s.%s" % (prefix, name, import_export_format)
+
+                    remote_url = urlparse.urlparse(peer.instance_url)
+                    if remote_url.path[-1] != "/":
+                        remote_path = "%s/%s" % (remote_url.path, sync_path)
+                    else:
+                        remote_path = "%s%s" % (remote_url.path, sync_path)
+
+                    #peer_instance_url = list(urlparse.urlparse(peer.instance_url))
+                    #if peer_instance_url[2].endswith("/") == False:
+                        #peer_instance_url[2] += "/"
+
+                    #resource_remote_pull_url = peer.instance_url
+                    #if resource_remote_pull_url.endswith("/") == False:
+                        #resource_remote_pull_url += "/"
+
+                    ## sync/sync.<format>/module/resource?msince=
+                    #resource_remote_pull_url += "sync/sync." + \
+                                                #import_export_format + "/" + \
+                                                #_module + "/" + \
+                                                #_resource + \
+                                                #last_sync_on_str
+
+                    ## sync/sync.<format>/push/<module>/<resource>?sync_partner_uuid=<uuid>
+                    #resource_remote_push_url = peer_instance_url[2] + "sync/sync." + \
+                                               #import_export_format + "/push/" + \
+                                               #_module + "/" + \
+                                               #_resource + \
+                                               #"?sync_partner_uuid=" + str(settings.uuid)
+
+                    ## /<app>/sync/sync.<format>/<module>/<resource>?msince=
+                    #resource_local_pull_url = "/" + request.application + \
+                                              #"/sync/sync." + import_export_format + "/" + \
+                                              #_module + "/" + _resource + \
+                                              #last_sync_on_str
+
+                    ## /<app>/sync/sync.<format>/create/<module>/<resource>
+                    #resource_local_push_url = "/" + request.application + \
+                                              #"/sync/sync." + import_export_format + \
+                                              #"/create/" \
+                                              #+ _module + "/" + _resource
+
+                    #final_status += "......processing " + resource_remote_pull_url + "<br />\n"
+
+                    if sync_mode in [1, 3]: # pull
+
+                        params = dict(msince=msince)
+
+                        fetch_url = "%s://%s%s?%s" % (remote_url.scheme,
+                                                      remote_url.netloc,
+                                                      remote_path,
+                                                      urllib.urlencode(params))
+
+                        print fetch_url
+
+                        try:
+                            result = resource.fetch_xml(fetch_url,
+                                                        username=peer.username,
+                                                        password=peer.password)
+                                                        #proxy=settings.proxy)
+                        except SyntaxError, e:
+                            result = str(e)
+
+                        try:
+                            result_json = json.loads(result)
+                        except:
+                            error = str(result)
+                        else:
+                            if str(result_json["statuscode"]).startswith("2"):
+                                error = None
+                            else:
+                                error = str(result_json["message"])
+
+                        if error:
+                            tablename_error = "%s (pull error)"
+                            sync_errors = "%s\n%s" % (sync_errors,
+                                          "Error while synchronizing %s: %s" % (tablename, error))
+                            sync_resources.append(tablename_error)
+                            final_status += error + "<br /><br />\n"
+                        else:
+                            sync_resources.append(tablename)
+                            final_status += ".........processed %s (Pull Sync)<br />\n" % push_url
+
                         # Sync -> Pull
-                        _request_params = urllib.urlencode({"sync_partner_uuid": str(peer.uuid), "fetchurl": resource_remote_pull_url})
+                        # Does a PUT to the resource with a ?fetchurl= of the remote URL
+                        # This should be replaced by resource.import_xml
+
+                        #_request_params = urllib.urlencode({"sync_partner_uuid": str(peer.uuid),
+                                                            #"fetchurl": resource_remote_pull_url})
+                        #try:
+                            ##_request = RequestWithMethod("PUT", "http://" + str(request.env.http_host) + resource_local_push_url, _request_params)
+                            ##_response = urllib2.urlopen(_request).read()
+                            #_response = fetcher.fetch("PUT", request.env.http_host, resource_local_push_url, _request_params, cookie)
+                        #except Error, e:
+                            #if not _resource_name + " (error)" in sync_resources and not _resource_name in sync_resources:
+                                #sync_resources.append(_resource_name + " (error)")
+                            ##final_status += "ERROR while processing: http://" +  + str(request.env.http_host) + resource_local_push_url + "<br />\n"
+                            #error_str = str(e)
+                            #sync_errors +=  "Error while syncing => " + _resource_name + ": \n" + error_str + "\n\n"
+                            #final_status += error_str + "<br /><br />\n"
+                        #else:
+                            #if not _resource_name + " (error)" in sync_resources and not _resource_name in sync_resources:
+                                #sync_resources.append(_resource_name)
+                            #final_status += ".........processed http://" + str(request.env.http_host) + resource_local_push_url + " (Pull Sync)<br />\n"
+
+                    if sync_mode in [2, 3]: # push
+
+                        params = dict(sync_partner_uuid=settings.uuid)
+
+                        push_url = "%s://%s%s?%s" % (remote_url.scheme,
+                                                     remote_url.netloc,
+                                                     remote_path,
+                                                     urllib.urlencode(params))
+
                         try:
-                            #_request = RequestWithMethod("PUT", "http://" + str(request.env.http_host) + resource_local_push_url, _request_params)
-                            #_response = urllib2.urlopen(_request).read()
-                            _response = fetcher.fetch("PUT", request.env.http_host, resource_local_push_url, _request_params, cookie)
-                        except Error, e:
-                            if not _resource_name + " (error)" in sync_resources and not _resource_name in sync_resources:
-                                sync_resources.append(_resource_name + " (error)")
-                            #final_status += "ERROR while processing: http://" +  + str(request.env.http_host) + resource_local_push_url + "<br />\n"
-                            error_str = str(e)
-                            sync_errors +=  "Error while syncing => " + _resource_name + ": \n" + error_str + "\n\n"
-                            final_status += error_str + "<br /><br />\n"
+                            result = resource.push_xml(push_url,
+                                                       username=peer.username,
+                                                       password=peer.password,
+                                                       #proxy=settings.proxy,
+                                                       msince=msince)
+                        except SyntaxError, e:
+                            result = str(e)
+
+                        try:
+                            result_json = json.loads(result)
+                        except:
+                            error = str(result)
                         else:
-                            if not _resource_name + " (error)" in sync_resources and not _resource_name in sync_resources:
-                                sync_resources.append(_resource_name)
-                            final_status += ".........processed http://" + str(request.env.http_host) + resource_local_push_url + " (Pull Sync)<br />\n"
-                    if sync_mode in [2, 3]:
+                            if str(result_json["statuscode"]).startswith("2"):
+                                error = None
+                            else:
+                                error = str(result_json["message"])
+
+                        if error:
+                            tablename_error = "%s (push error)"
+                            sync_errors = "%s\n%s" % (sync_errors,
+                                          "Error while synchronizing %s: %s" % (tablename, error))
+                            sync_resources.append(tablename_error)
+                            final_status += error + "<br /><br />\n"
+                        else:
+                            sync_resources.append(tablename)
+                            final_status += ".........processed %s (Push Sync)<br />\n" % push_url
+
                         # Sync -> Push
-                        try:
-                            _local_data = fetcher.fetch("GET", request.env.http_host, resource_local_pull_url, None, cookie)
-                            _response = fetcher.fetch("PUT", peer_instance_url[1], resource_remote_push_url, _local_data, None, peer.username, peer.password)
-                        except Error, e:
-                            if not _resource_name + " (error)" in sync_resources and not _resource_name in sync_resources:
-                                sync_resources.append(_resource_name + " (error)")
-                            error_str = str(e)
-                            sync_errors +=  "Error while syncing => " + _resource_name + ": \n" + error_str + "\n\n"
-                            final_status += error_str + "<br /><br />\n"
-                        else:
-                            if not _resource_name + " (error)" in sync_resources and not _resource_name in sync_resources:
-                                sync_resources.append(_resource_name)
-                            final_status += ".........processed http://" + peer_instance_url[1] + resource_remote_push_url + " (Push Sync)<br />\n"
-#                final_status += "......completed<br />\n"
+                        # Does a GET of the local resource and then a PUT of the output to the remote URL
+                        # This should be replaced by resource.push_xml()
+
+                        #try:
+                            #_local_data = fetcher.fetch("GET", request.env.http_host, resource_local_pull_url, None, cookie)
+                            #_response = fetcher.fetch("PUT", peer_instance_url[1], resource_remote_push_url, _local_data, None, peer.username, peer.password)
+                        #except Error, e:
+                            #if not _resource_name + " (error)" in sync_resources and not _resource_name in sync_resources:
+                                #sync_resources.append(_resource_name + " (error)")
+                            #error_str = str(e)
+                            #sync_errors +=  "Error while syncing => " + _resource_name + ": \n" + error_str + "\n\n"
+                        #else:
+                            #if not _resource_name + " (error)" in sync_resources and not _resource_name in sync_resources:
+                                #sync_resources.append(_resource_name)
+
             else:
+                pass
                 # Custom sync
-                _request_params = urllib.urlencode({"sync_partner_uuid": str(peer.uuid), "fetchurl": job_cmd["custom_command"]})
-                resource_local_push_url = "/" + request.application + "/sync/sync." + import_export_format + "/create/sync/log"
-                try:
-                    _response = fetcher.fetch("PUT", request.env.http_host, resource_local_push_url, _request_params, cookie)
-                except Error, e:
-                    error_str = str(e)
-                    sync_errors +=  "Error while syncing job " + str(sync_job.id) + ": \n" + error_str + "\n\n"
-                    final_status += error_str + "<br /><br />\n"
-                else:
-                    final_status += ".........processed (Custom Pull Sync)<br />\n"
+                #_request_params = urllib.urlencode({"sync_partner_uuid": str(peer.uuid),
+                                                    #"fetchurl": job_cmd["custom_command"]})
+
+                #resource_local_push_url = "/" + request.application + \
+                                          #"/sync/sync." + import_export_format + \
+                                          #"/create/sync/log"
+
+                #try:
+                    #_response = fetcher.fetch("PUT",
+                                              #request.env.http_host,
+                                              #resource_local_push_url,
+                                              #_request_params, cookie)
+
+                #except Error, e:
+                    #error_str = str(e)
+                    #sync_errors +=  "Error while syncing job " + str(sync_job.id) + ": \n" + error_str + "\n\n"
+                    #final_status += error_str + "<br /><br />\n"
+                #else:
+                    #final_status += ".........processed (Custom Pull Sync)<br />\n"
 
             # update sync now state
             if state.job_resources_done:
-                state.job_resources_done += ", "
-            state.job_resources_done += ", ".join(map(str, sync_resources))
-            job_res_pending = state.job_resources_pending.split(", ")
+                state.job_resources_done += ","
+            state.job_resources_done += ",".join(map(str, sync_resources))
+
+            job_res_pending = state.job_resources_pending.split(",")
             if "" in job_res_pending:
                 job_res_pending.remove("")
+
             if sync_job.job_type == 1:
-                for _module, _resource in job_res_list:
-                    job_res_pending.remove(_module + "||" + _resource)
-            state.job_resources_pending = ", ".join(map(str, job_res_pending))
+                for tablename in tablenames:
+                    job_res_pending.remove(tablename)
+
+            state.job_resources_pending = ",".join(map(str, job_res_pending))
             state.job_sync_errors += sync_errors
-            vals = {"job_resources_done": state.job_resources_done, "job_resources_pending": state.job_resources_pending, "job_sync_errors": state.job_sync_errors}
+            vals = {"job_resources_done": state.job_resources_done,
+                    "job_resources_pending": state.job_resources_pending,
+                    "job_sync_errors": state.job_sync_errors}
             db(db.sync_now.id == sync_now_id).update(**vals)
             state = db(db.sync_now.id == sync_now_id).select(db.sync_now.ALL, limitby=(0, 1)).first()
 
             # check if all resources are synced for the current job, i.e. is it done?
             if (not state.job_resources_pending) or sync_job.job_type == 2:
                 # job completed, check if there are any more jobs, if not, then sync now completed
+
                 # log sync job
                 if sync_mode == 1:
                     sync_method = "Pull"
@@ -301,10 +547,12 @@ def now():
                     sync_method = sync_method,
                     complete_sync = complete_sync
                 )
+
                 # remove this job from queue and process next
                 sync_jobs_list = state.sync_jobs.split(", ")
                 if "" in sync_jobs_list:
                     sync_jobs_list.remove("")
+
                 if len(sync_jobs_list) > 0:
                     sync_jobs_list.remove(sync_jobs_list[0])
                     state.sync_jobs = ", ".join(map(str, sync_jobs_list))
@@ -318,9 +566,13 @@ def now():
                                 next_job_cmd = json.loads(next_job.job_command)
                                 state.job_resources_pending = ", ".join(map(str, next_job_cmd["resources"]))
                     state.job_sync_errors = ""
-                    vals = {"sync_jobs": state.sync_jobs, "job_resources_done": state.job_resources_done, "job_resources_pending": state.job_resources_pending}
+                    vals = {"sync_jobs": state.sync_jobs,
+                            "job_resources_done": state.job_resources_done,
+                            "job_resources_pending": state.job_resources_pending}
+
                     db(db.sync_now.id == sync_now_id).update(**vals)
                     state = db(db.sync_now.id == sync_now_id).select(db.sync_now.ALL, limitby=(0, 1)).first()
+
                 # update last_sync_on
                 vals = {"last_sync_on": datetime.datetime.utcnow()}
                 db(db.sync_partner.id == peer.id).update(**vals)
@@ -333,83 +585,184 @@ def now():
                 # we're done
                 final_status += "Sync completed successfully. Logs generated: " + str(A(T("Click here to open log"),_href=URL(r=request, c="sync", f="history"))) + "<br /><br />\n"
 
-    return dict(module_name=module_name, sync_status=final_status, sync_start=sync_start, sync_state=state)
+    return dict(module_name=module_name,
+                sync_status=final_status,
+                sync_start=sync_start,
+                sync_state=state)
 
+
+# -----------------------------------------------------------------------------
 def sync():
+
+    """ Sync interface
+
+        allows PUT/GET of any resource (universal RESTful controller)
+
+    """
+
+    # @todo: Do not use global variables
     global sync_peer, sync_policy
+
     import gluon.contrib.simplejson as json
 
-    if len(request.args) == 3:
-        _function, _module, _resource = tuple(request.args)
-        if _function.startswith("list"):
-            request.args = []
-        else:
-            request.args = [_function]
-    elif len(request.args) == 2:
-        _module, _resource = tuple(request.args)
-        _function = "list"
-        request.args = []
-    else:
-        return T("Not supported")
+    #if len(request.args) == 3:
+        #_function, _module, _resource = tuple(request.args)
+        #if _function.startswith("list"):
+            #request.args = []
+        #else:
+            #request.args = [_function]
+    #elif len(request.args) == 2:
+        #_module, _resource = tuple(request.args)
+        #_function = "list"
+        #request.args = []
+    #else:
+        #return T("Not supported")
 
-    sync_peer = None
-    if "sync_partner_uuid" in request.vars:
-        sync_peer = db(db.sync_partner.uuid == request.vars["sync_partner_uuid"]).select()[0]
-        if not sync_policy:
+    print request.env.path_info
+
+    if len(request.args) < 2:
+        # No resource specified
+        raise HTTP(501, body=s3xrc.ERROR.BAD_RESOURCE)
+    else:
+        prefix = request.args.pop(0)
+        name = request.args.pop(0)
+
+        if name.find(".") != -1:
+            name, extension = name.rsplit(".", 1)
+            request.extension = extension
+
+    #sync_peer = None
+    #if "sync_partner_uuid" in request.vars:
+        #sync_peer = db(db.sync_partner.uuid == request.vars["sync_partner_uuid"]).select()[0]
+        #if not sync_policy:
+            #sync_policy = sync_peer.policy
+
+    # Get the sync partner
+    peer_uuid = request.vars.get("sync_partner_uuid", None)
+    if peer_uuid:
+        peer = db.sync_partner
+        sync_peer = db(peer.uuid == peer_uuid).select(limitby=(0,1)).first()
+        if sync_peer and not sync_policy:
             sync_policy = sync_peer.policy
 
     # remote push?
-    remote_push = False
-    if _function == "push":
+    method = request.env.request_method
+    if method in ("PUT", "POST"):
         remote_push = True
-        request.args = ["create"]
-        _function = "create"
-
-    if _function == "create" and not sync_peer:
-        return T("Invalid Request")
-
-    if _function in ["list", "create"]:
-        s3xrc.sync_resolve = sync_res
-        ret_data = shn_rest_controller(module=_module, resource=_resource, push_limit=None)
-        if remote_push:
-            sync_resources = _module + "_" + _resource
-            sync_errors = ""
-            ret_json = json.loads(ret_data["item"])
-            if str(ret_json["statuscode"]) != "200":
-                sync_resources += " (error)"
-                sync_errors = str(ret_data["item"])
-            # log sync remote push
-            log_table_id = db[log_table].insert(
-                partner_uuid = sync_peer.uuid,
-                timestmp = datetime.datetime.utcnow(),
-                sync_resources = sync_resources,
-                sync_errors = sync_errors,
-                sync_mode = "online",
-                sync_method = "Remote Push",
-                complete_sync = False
-            )
-        return ret_data
+        # Must be registered partner for push:
+        if not sync_peer:
+            raise HTTP(501, body=s3xrc.ERROR.NOT_PERMITTED)
+    elif method == "GET":
+        remote_push = False
     else:
-        return T("Not supported")
+        raise HTTP(501, body=s3xrc.ERROR.BAD_METHOD)
 
-    return dict()
+    #remote_push = False
+    #if _function == "push":
+        #remote_push = True
+        #request.args = ["create"]
+        #_function = "create"
 
-def sync_res(vector):
+    #if _function == "create" and not sync_peer:
+        #return T("Invalid Request")
+
+    # Set the sync resolver
+    s3xrc.sync_resolve = lambda vector, peer=sync_peer: sync_res(vector, peer)
+
+    def prep(r):
+        # Do not allow interactive formats
+        if r.representation in ("html", "popup", "aadata"):
+            return False
+        # Do not allow URL methods
+        if r.method:
+            return False
+        # Neutralize push limit of the resource
+        r.resource.push_limit = None
+        return True
+    response.s3.prep = prep
+
+    def postp(r, output, sync_peer=sync_peer):
+
+        try:
+            output_json = Storage(json.loads(output))
+        except:
+            # No JSON response?
+            pass
+        else:
+            if r.http in ("PUT", "POST"):
+
+                resource = r.resource
+                sr = [c.component.tablename for c in resource.components.values()]
+                sr.insert(0, resource.tablename)
+                sync_resources = ",".join(sr)
+
+                if str(output_json["statuscode"]) != "200":
+                    sync_resources += " (error)"
+                    sync_errors = str(output)
+                else:
+                    sync_errors = ""
+
+                db[log_table].insert(
+                    partner_uuid = sync_peer.uuid,
+                    timestmp = datetime.datetime.utcnow(),
+                    sync_resources = sync_resources,
+                    sync_errors = sync_errors,
+                    sync_mode = "online",
+                    sync_method = "Remote Push",
+                    complete_sync = False)
+
+        return output
+    response.s3.postp = postp
+
+    # Execute the request
+    output = shn_rest_controller(prefix, name)
+
+    #if remote_push:
+        #sync_resources = _module + "_" + _resource
+        #sync_errors = ""
+        #ret_json = json.loads(ret_data["item"])
+        #if str(ret_json["statuscode"]) != "200":
+            #sync_resources += " (error)"
+            #sync_errors = str(ret_data["item"])
+
+        ## log sync remote push
+        #log_table_id = db[log_table].insert(
+        #)
+
+    #return ret_data
+    return output
+
+# -----------------------------------------------------------------------------
+def sync_res(vector, peer):
+
+    """ Sync resolver
+
+        designed as callback for s3xrc.sync_resolve
+
+    """
+
     import cPickle
-    global sync_peer, sync_policy
+    global sync_policy
+
+    sync_peer = peer
+
     if not sync_policy:
         sync_policy = sync_peer.policy
+
     db_record = vector.db(vector.table.id==vector.id).select(vector.table.ALL, limitby=(0,1))
     db_record_mtime = None
     record_dump = cPickle.dumps(dict(vector.record), 0)
+
     if db_record:
         db_record = db_record.first()
         if "modified_on" in vector.table.fields:
             db_record_mtime = db_record.modified_on
+
     # based on the sync_policy, make resolution
     if sync_policy == 0:    # No Sync
         # don't import anything in this case
         vector.strategy = []
+
     elif sync_policy == 1:  # Keep Local
         vector.resolution = vector.RESOLUTION.THIS
         if db_record_mtime and vector.mtime > db_record_mtime:
@@ -424,6 +777,7 @@ def sync_res(vector):
                 logged_on = datetime.datetime.utcnow(),
                 resolved = False
             )
+
     elif sync_policy == 2:  # Replace with Remote
         vector.resolution = vector.RESOLUTION.OTHER
         if db_record_mtime and vector.mtime < db_record_mtime:
@@ -450,6 +804,7 @@ def sync_res(vector):
                 logged_on = datetime.datetime.utcnow(),
                 resolved = False
             )
+
     elif sync_policy == 3:  # Keep with Newer Timestamp
         vector.resolution = vector.RESOLUTION.NEWER
         if db_record_mtime and vector.mtime < db_record_mtime:
@@ -464,9 +819,11 @@ def sync_res(vector):
                 logged_on = datetime.datetime.utcnow(),
                 resolved = False
             )
+
     elif sync_policy == 4:  # Role-based
         # not implemented, defaulting to "Newer Timestamp"
         vector.resolution = vector.RESOLUTION.NEWER
+
     elif sync_policy == 5:  # Choose Manually
         if db_record_mtime and vector.mtime != db_record_mtime:
             # just log and skip
@@ -480,40 +837,50 @@ def sync_res(vector):
                 logged_on = datetime.datetime.utcnow(),
                 resolved = False
             )
+
     return
 
+
+# -----------------------------------------------------------------------------
 @auth.shn_requires_membership(1)
 def partner():
-    "Synchronisation Partners"
+
+    """ Synchronisation Partners """
+
     import gluon.contrib.simplejson as json
-    db.sync_partner.uuid.label = "UUID"
-    db.sync_partner.uuid.comment = DIV(SPAN("*", _class="req"), DIV(_class="tooltip",
+
+    table = db.sync_partner
+
+    table.uuid.label = "UUID"
+    table.uuid.comment = DIV(SPAN("*", _class="req"), DIV(_class="tooltip",
         _title="UUID|" + Tstr("The unique identifier of the sync partner. Leave blank if the instance type is not Sahana Eden, it will be auto-assigned in that case.")))
-    db.sync_partner.name.label = T("Name")
-    db.sync_partner.name.comment = DIV(_class="tooltip",
+    table.name.label = T("Name")
+    table.name.comment = DIV(_class="tooltip",
         _title=Tstr("Name") + "|" + Tstr("The descriptive name of the sync partner."))
-    db.sync_partner.instance_url.label = T("Instance URL")
-    db.sync_partner.instance_url.comment = DIV(SPAN("*", _class="req"), DIV(_class="tooltip",
+    table.instance_url.label = T("Instance URL")
+    table.instance_url.comment = DIV(SPAN("*", _class="req"), DIV(_class="tooltip",
         _title=Tstr("Instance URL") + "|" + Tstr("For Eden instances - this is the application URL, e.g. http://sync.sahanfoundation.org/eden. For non-Eden instances, this is the Full ")))
-    db.sync_partner.instance_type.label = T("Instance Type")
-    db.sync_partner.instance_type.comment = DIV(SPAN("*", _class="req"), DIV(_class="tooltip",
+    table.instance_type.label = T("Instance Type")
+    table.instance_type.comment = DIV(SPAN("*", _class="req"), DIV(_class="tooltip",
         _title=Tstr("Instance Type") + "|" + Tstr("Whether this is a Sahana Eden, Sahana Agasti, Ushahidi or Other instance.")))
-    db.sync_partner.username.label = T("Sync Username")
-    db.sync_partner.username.comment = DIV(_class="tooltip",
+    table.username.label = T("Sync Username")
+    table.username.comment = DIV(_class="tooltip",
         _title=Tstr("Sync Username") + "|" + Tstr("Username used to login when synchronising with this partner. Note that only HTTP Basic authentication is supported."))
-    db.sync_partner.password.label = T("Sync Password")
-    db.sync_partner.password.comment = DIV(_class="tooltip",
+    table.password.label = T("Sync Password")
+    table.password.comment = DIV(_class="tooltip",
         _title=Tstr("Sync Password") + "|" + Tstr("Password used to login when synchronising with this partner. Note that only HTTP Basic authentication is supported."))
-    db.sync_partner.comments.label = T("Comments")
-    db.sync_partner.comments.comment = DIV(_class="tooltip",
+    table.comments.label = T("Comments")
+    table.comments.comment = DIV(_class="tooltip",
         _title=Tstr("Comments") + "|" + Tstr("Any comments about this sync partner."))
-    db.sync_partner.policy.label = T("Sync Policy")
-    db.sync_partner.policy.comment = DIV(SPAN("*", _class="req"), DIV(_class="tooltip",
+    table.policy.label = T("Sync Policy")
+    table.policy.comment = DIV(SPAN("*", _class="req"), DIV(_class="tooltip",
         _title=Tstr("Sync Policy") + "|" + Tstr("The policy to use while synchronising with this partner. All policies other than 'No Sync' come into effect when conflicts arise.")))
-    db.sync_partner.sync_pools.readable = False
-    db.sync_partner.sync_pools.writable = False
-    db.sync_partner.password.readable = False
-    db.sync_partner.last_sync_on.writable = False
+    table.sync_pools.readable = False
+    table.sync_pools.writable = False
+    table.password.readable = False
+    table.last_sync_on.writable = False
+
+    # CRUD Strings - @todo: make new style
     title_create = T("Add Partner")
     title_display = T("Partner Details")
     title_list = T("List Partners")
@@ -542,7 +909,9 @@ def partner():
                 sch_job_cmd = json.loads(sch_job.job_command)
                 if sch_job_cmd["partner_uuid"] == peer_uuid:
                     sch_jobs_del.append(sch_job.id)
-            db(db.sync_schedule.id.belongs(sch_jobs_del)).delete()
+            if sch_jobs_del:
+                db(db.sync_schedule.id.belongs(sch_jobs_del)).delete()
+
     elif (not "update" in request.args) and len(request.vars) > 0:
         # add new partner
         random_uuid = str(uuid.uuid4())
@@ -606,6 +975,8 @@ def partner():
 
     return shn_rest_controller("sync", "partner")
 
+
+# -----------------------------------------------------------------------------
 @auth.shn_requires_membership(1)
 def setting():
     "Synchronisation Settings"
@@ -632,15 +1003,21 @@ def setting():
     crud.settings.update_next = URL(r=request, args=["update", 1])
     return shn_rest_controller("sync", "setting", deletable=False, listadd=False)
 
+
+# -----------------------------------------------------------------------------
 @auth.shn_requires_membership(1)
 def schedule():
-    "Synchronisation Schedules"
+
+    """ Synchronisation Schedules """
+
     import gluon.contrib.simplejson as json
     title = T("Syncronisation Schedules")
 
     jobs = None
     confirmation_msg = None
+
     if "create" in request.args:
+
         response.view = "sync/schedule_create.html"
 
         if "form_action" in request.vars and request.vars["form_action"] == "submit":
@@ -732,6 +1109,8 @@ def schedule():
 
     return dict(title=title, jobs=jobs, confirmation_msg=confirmation_msg)
 
+
+# -----------------------------------------------------------------------------
 def schedule_cron():
     # only accept requests from local machine
     if not request.env.remote_addr == "127.0.0.1":
@@ -794,7 +1173,12 @@ def schedule_cron():
 
     return
 
+
+# -----------------------------------------------------------------------------
 def schedule_process_job(job_id):
+
+    """ docstring??? """
+
     import gluon.contrib.simplejson as json
     import urllib, urlparse
     global sync_policy
@@ -809,6 +1193,7 @@ def schedule_process_job(job_id):
         return
 
     job_cmd = json.loads(job.job_command)
+
     # url fetcher
     fetcher = FetchURL()
     # retrieve settings
@@ -830,8 +1215,10 @@ def schedule_process_job(job_id):
         sync_mode = int(job_cmd["mode"])
     sync_resources = []
     sync_errors = ""
+
     # Keep Session for local URLs
     cookie = str(response.session_id_name) + "=" + str(response.session_id)
+
     if job.job_type == 1:
         # Sync Eden sync
         if (not last_sync_on is None) and complete_sync == False:
@@ -956,19 +1343,33 @@ def schedule_process_job(job_id):
 
     return
 
+
+# -----------------------------------------------------------------------------
 @auth.requires_login()
 def history():
-    "Shows history of database synchronisations"
+
+    """ Shows history of database synchronisations
+
+        @todo: argument list processing too vulnerable
+    """
+
     title = T("Synchronisation History")
+
+    table = db[log_table]
     if len(request.args) > 0:
-        logs = db(db[log_table].id==int(request.args[0])).select(db[log_table].ALL, orderby=db[log_table].timestmp)
+        logs = db(table.id==int(request.args[0])).select(table.ALL, orderby=table.timestmp)
     else:
-        logs = db().select(db[log_table].ALL, orderby=db[log_table].timestmp)
+        logs = db().select(table.ALL, orderby=table.timestmp)
+
     return dict(title=title, logs=logs)
 
+
+# -----------------------------------------------------------------------------
 @auth.shn_requires_membership(1)
 def conflict():
-    "Conflict Resolution UI"
+
+    """ Conflict Resolution UI """
+
     import cPickle
     title = T("Conflict Resolution")
 
@@ -1078,4 +1479,17 @@ def conflict():
     form = None
     if conflict:
         form = SQLFORM.factory(db[conflict.resource_table])
-    return dict(title=title, skip_fields=skip_fields, total_conflicts=total_conflicts, conflict=conflict, record_nbr=record_nbr, local_record=local_record, remote_record=remote_record, local_modified_by=local_modified_by, remote_modified_by=remote_modified_by, form=form, field_errors=field_errors)
+
+    return dict(title=title,
+                skip_fields=skip_fields,
+                total_conflicts=total_conflicts,
+                conflict=conflict,
+                record_nbr=record_nbr,
+                local_record=local_record,
+                remote_record=remote_record,
+                local_modified_by=local_modified_by,
+                remote_modified_by=remote_modified_by,
+                form=form,
+                field_errors=field_errors)
+
+# -----------------------------------------------------------------------------

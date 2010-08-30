@@ -1848,15 +1848,20 @@ OpenLayers.Util.extend( selectPdfControl, {
         """
             if openstreetmap.Mapnik:
                 layers_openstreetmap += """
+        //var mapnik = new OpenLayers.Layer.TMS( '""" + openstreetmap.Mapnik + """', 'http://tile.openstreetmap.org/', {type: 'png', getURL: osm_getTileURL, displayOutsideMaxExtent: true, attribution: '<a href="http://www.openstreetmap.org/">OpenStreetMap</a>' } );
         var mapnik = new OpenLayers.Layer.OSM.Mapnik('""" + openstreetmap.Mapnik + """', {
-            layerCode: 'M',
-            displayOutsideMaxExtent: true,
-            wrapDateLine: true
+                // 54004 is almost 900913 but not quite:
+                // http://www.cadmaps.com/gisblog/?p=81
+                //projection: "EPSG:54004"
+                displayOutsideMaxExtent: true,
+                wrapDateLine: true,
+                layerCode: 'M'
         });
         map.addLayer(mapnik);
                     """
             if openstreetmap.Osmarender:
                 layers_openstreetmap += """
+        //var osmarender = new OpenLayers.Layer.TMS( '""" + openstreetmap.Osmarender + """', 'http://tah.openstreetmap.org/Tiles/tile/', {type: 'png', getURL: osm_getTileURL, displayOutsideMaxExtent: true, attribution: '<a href="http://www.openstreetmap.org/">OpenStreetMap</a>' } );
         var osmarender = new OpenLayers.Layer.OSM.Osmarender('""" + openstreetmap.Osmarender + """', {
             layerCode: 'O',
             displayOutsideMaxExtent: true,

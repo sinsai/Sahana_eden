@@ -239,6 +239,28 @@ if empty:
                 audit_write = False
             )
 
+    # Incident Reporting System
+    if "irs" in deployment_settings.modules:
+        tablename = "irs_setting"
+        table = db[tablename]
+        if not db(table.id > 0).count():
+            table.insert(
+                # If Disabled at the Global Level then can still Enable just for this Module here
+                audit_read = False,
+                audit_write = False
+            )
+        # Categories visible to ends-users by default
+        tablename = "irs_icategory"
+        table = db[tablename]
+        if not db(table.id > 0).count():
+            table.insert(code = "flood")
+            table.insert(code = "geophysical.landslide")
+            table.insert(code = "roadway.bridgeClosure")
+            table.insert(code = "roadway.roadwayClosure")
+            table.insert(code = "other.buildingCollapsed")
+            table.insert(code = "other.peopleTrapped")
+            table.insert(code = "other.powerFailure")
+
     # Messaging Module
     if "msg" in deployment_settings.modules:
         tablename = "msg_email_settings"

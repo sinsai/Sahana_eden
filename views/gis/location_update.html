@@ -6,7 +6,7 @@
 </div>
 {{include "_update.html"}}
 <p>&nbsp;</p>
-{{=T("You can select the Draw tool & then click on the map below to adjust the Lat/Lon fields:")}}
+{{=T("You can select the Draw tool (")}}<img src="/{{=request.application}}/static/img/gis/add_point_off.png">{{=T(") & then click on the map below to adjust the Lat/Lon fields:")}}
 <p>&nbsp;</p>
 {{try:}}
 {{=XML(_map)}}
@@ -14,7 +14,6 @@
 {{pass}}
 <script type="text/javascript">//<![CDATA[
 $(function() {
-    {{include "gis/feature_crud.js"}}
     // If the Location is a Country then Parent makes no sense
     var level = $('#gis_location_level').val();
     if (level == 'L0'){
@@ -22,4 +21,5 @@ $(function() {
     }
 });
 //]]></script>
+{{include "gis/feature_crud.js"}}
 {{include "gis/convert_gps.html"}}

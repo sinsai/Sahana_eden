@@ -75,6 +75,18 @@ class S3Config(Storage):
         return self.gis.get("display_L0", False)
     def get_gis_display_l1(self):
         return self.gis.get("display_L1", True)
+    def get_gis_edit_l0(self):
+        return self.gis.get("edit_L0", True)
+    def get_gis_edit_l1(self):
+        return self.gis.get("edit_L1", True)
+    def get_gis_edit_l2(self):
+        return self.gis.get("edit_L2", True)
+    def get_gis_edit_l3(self):
+        return self.gis.get("edit_L3", True)
+    def get_gis_edit_l4(self):
+        return self.gis.get("edit_L4", True)
+    def get_gis_edit_l5(self):
+        return self.gis.get("edit_L5", True)
     def get_gis_geoserver_url(self):
         return self.gis.get("geoserver_url", "http://localhost/geoserver")
     def get_gis__username(self):

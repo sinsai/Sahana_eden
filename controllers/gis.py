@@ -151,17 +151,19 @@ def location():
     # Pre-processor
     def prep(r, vars):
 
-        # Restrict access to top-level locations (& all Polygons currently) to just MapAdmins
+        # Restrict access to Polygons to just MapAdmins
         if deployment_settings.get_security_map() and not shn_has_role("MapAdmin"):
             table.code.writable = False
-            table.level.writable = False
             if r.method == "create":
                 table.code.readable = False
-                table.level.readable = False
             table.gis_feature_type.writable = table.gis_feature_type.readable = False
             table.wkt.writable = table.wkt.readable = False
         else:
             table.code.comment = DIV( _class="tooltip", _title=Tstr("Code") + "|" + Tstr("For a country this would be the ISO2 code, for a Town, it would be the Airport Locode."))
+            table.wkt.comment = DIV(SPAN("*", _class="req"), DIV( _class="tooltip", _title="WKT" + "|" + Tstr("The <a href='http://en.wikipedia.org/wiki/Well-known_text' target=_blank>Well-Known Text</a> representation of the Polygon/Line.")))
+
+        if r.http == "GET" and r.representation in ("html", "popup"):
+            # Options which are only required in interactive HTML views
             table.level.comment = DIV( _class="tooltip", _title=Tstr("Level") + "|" + Tstr("If the location is a geographic area, then state at what level here."))
             table.parent.comment = DIV(A(ADD_LOCATION,
                                            _class="colorbox",
@@ -171,10 +173,6 @@ def location():
                                          DIV(
                                            _class="tooltip",
                                            _title=Tstr("Parent") + "|" + Tstr("The Area which this Site is located within."))),
-            table.wkt.comment = DIV(SPAN("*", _class="req"), DIV( _class="tooltip", _title="WKT" + "|" + Tstr("The <a href='http://en.wikipedia.org/wiki/Well-known_text' target=_blank>Well-Known Text</a> representation of the Polygon/Line.")))
-
-        if r.http == "GET" and r.representation in ("html", "popup"):
-            # Options which are only required in interactive HTML views
             table.name.comment = SPAN("*", _class="req")
             table.osm_id.comment = DIV( _class="tooltip", _title="OSM ID" + "|" + Tstr("The <a href='http://openstreetmap.org' target=_blank>OpenStreetMap</a> ID. If you don't know the ID, you can just say 'Yes' if it has been added to OSM."))
 
@@ -257,7 +255,8 @@ def location():
         # Can't do this using a JOIN in DAL syntax
         # .belongs() not GAE-compatible!
         filters.append((db.gis_location.parent.belongs(db(db.gis_location.name.like(parent)).select(db.gis_location.id))))
-        # ToDo: Make this recursive - want ancestor not just direct parent!
+        # ToDo: Make this recursive - want descendants not just direct children!
+        # Use new gis.get_children() function
 
     # ToDo
     # bbox = _vars.get("bbox", None):
@@ -270,14 +269,11 @@ def location():
         # We've been called as a Popup
         if "gis_location_parent" in caller:
             # Populate defaults & hide unnecessary rows
-            table.code.readable = table.code.writable = False
-            #table.feature_class_id.readable = table.feature_class_id.writable = False
-            # Use default Marker for Class
+            # Use default Marker for Admin Locations
             table.marker_id.readable = table.marker_id.writable = False
-            table.wkt.readable = table.wkt.writable = False
             table.addr_street.readable = table.addr_street.writable = False
-            table.osm_id.readable = table.osm_id.writable = False
-            table.source.readable = table.source.writable = False
+            #table.osm_id.readable = table.osm_id.writable = False
+            #table.source.readable = table.source.writable = False
         else:
             parent = _vars.get("parent_", None)
             # Don't use 'parent' as the var name as otherwise it conflicts with the form's var of the same name & hence this will be triggered during form submission
@@ -339,6 +335,12 @@ def location():
             table.osm_id.readable = table.osm_id.writable = False
             table.source.readable = table.source.writable = False
 
+    level = _vars.get("level", None)
+    if level:
+        # We've been called from the Location Selector widget
+        table.marker_id.readable = table.marker_id.writable = False
+        table.addr_street.readable = table.addr_street.writable = False
+    
     # Post-processor
     def user_postp(jr, output):
         shn_action_buttons(jr)

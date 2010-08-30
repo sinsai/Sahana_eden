@@ -78,6 +78,11 @@ deployment_settings.gis.map_selector = True
 deployment_settings.gis.display_L0 = False
 # Currently unused
 #deployment_settings.gis.display_L1 = True
+# Allow non-MapAdmins to edit Admin locations?
+# (defaults to True, if not set)
+deployment_settings.gis.edit_L0 = False
+deployment_settings.gis.edit_L1 = True
+#deployment_settings.gis.edit_L2 = True
 deployment_settings.gis.locations_hierarchy = {
     "L0":T("Country"),
     "L1":T("Province"),

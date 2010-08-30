@@ -161,12 +161,6 @@ def now():
 
         final_status = ""
 
-        # for eden instances: select all available tables with a modified_on and a uuid field
-        # for sync
-        # actually, do we really want that?
-        # @todo: exclude component tables, auth/admin tables, s3 tables
-        # Give precedence to selected tables, if set so
-
         # Find primay resources
         modules = deployment_settings.modules
         tables = []
@@ -194,17 +188,6 @@ def now():
                         continue
                 # No component
                 tables.append(t)
-
-        #_db_tables = db.tables
-        #db_tables = []
-        #for __table in _db_tables:
-            #if "modified_on" in db[__table].fields and "uuid" in db[__table].fields:
-                #db_tables.append(__table)
-        #tables = []
-        #for _module in modules:
-            #for _table in db_tables:
-                #if _table.startswith(_module + "_"):
-                    #tables.append(_module + "||" + _table[len(_module) + 1:])
 
         if not state:
             # New now-job
@@ -294,16 +277,6 @@ def now():
                 # Find resources to sync
                 tablenames = state.job_resources_pending.split(",")
 
-                #job_res_tmp = state.job_resources_pending.split(",")
-                #if "" in job_res_tmp:
-                    #job_res_tmp.remove("")
-                #job_res_list = []
-
-                #for i in xrange(5):
-                    #if len(job_res_tmp) > 0 and i < len(job_res_tmp):
-                        #job_res = job_res_tmp[i].split("||")
-                        #job_res_list.append([job_res[0], job_res[1]])
-
                 #for _module, _resource in job_res_list:
                 for tablename in tablenames:
 
@@ -320,10 +293,6 @@ def now():
 
                     resource = s3xrc.resource(prefix, name)
 
-                    #_resource_name = _module + "_" + _resource
-#                    if not (_module == "budget" and _resource == "item"):
-#                        continue
-
                     sync_path = "sync/sync/%s/%s.%s" % (prefix, name, import_export_format)
 
                     remote_url = urlparse.urlparse(peer.instance_url)
@@ -331,42 +300,6 @@ def now():
                         remote_path = "%s/%s" % (remote_url.path, sync_path)
                     else:
                         remote_path = "%s%s" % (remote_url.path, sync_path)
-
-                    #peer_instance_url = list(urlparse.urlparse(peer.instance_url))
-                    #if peer_instance_url[2].endswith("/") == False:
-                        #peer_instance_url[2] += "/"
-
-                    #resource_remote_pull_url = peer.instance_url
-                    #if resource_remote_pull_url.endswith("/") == False:
-                        #resource_remote_pull_url += "/"
-
-                    ## sync/sync.<format>/module/resource?msince=
-                    #resource_remote_pull_url += "sync/sync." + \
-                                                #import_export_format + "/" + \
-                                                #_module + "/" + \
-                                                #_resource + \
-                                                #last_sync_on_str
-
-                    ## sync/sync.<format>/push/<module>/<resource>?sync_partner_uuid=<uuid>
-                    #resource_remote_push_url = peer_instance_url[2] + "sync/sync." + \
-                                               #import_export_format + "/push/" + \
-                                               #_module + "/" + \
-                                               #_resource + \
-                                               #"?sync_partner_uuid=" + str(settings.uuid)
-
-                    ## /<app>/sync/sync.<format>/<module>/<resource>?msince=
-                    #resource_local_pull_url = "/" + request.application + \
-                                              #"/sync/sync." + import_export_format + "/" + \
-                                              #_module + "/" + _resource + \
-                                              #last_sync_on_str
-
-                    ## /<app>/sync/sync.<format>/create/<module>/<resource>
-                    #resource_local_push_url = "/" + request.application + \
-                                              #"/sync/sync." + import_export_format + \
-                                              #"/create/" \
-                                              #+ _module + "/" + _resource
-
-                    #final_status += "......processing " + resource_remote_pull_url + "<br />\n"
 
                     if sync_mode in [1, 3]: # pull
 
@@ -376,8 +309,6 @@ def now():
                                                       remote_url.netloc,
                                                       remote_path,
                                                       urllib.urlencode(params))
-
-                        print fetch_url
 
                         try:
                             result = resource.fetch_xml(fetch_url,
@@ -406,28 +337,6 @@ def now():
                         else:
                             sync_resources.append(tablename)
                             final_status += ".........processed %s (Pull Sync)<br />\n" % push_url
-
-                        # Sync -> Pull
-                        # Does a PUT to the resource with a ?fetchurl= of the remote URL
-                        # This should be replaced by resource.import_xml
-
-                        #_request_params = urllib.urlencode({"sync_partner_uuid": str(peer.uuid),
-                                                            #"fetchurl": resource_remote_pull_url})
-                        #try:
-                            ##_request = RequestWithMethod("PUT", "http://" + str(request.env.http_host) + resource_local_push_url, _request_params)
-                            ##_response = urllib2.urlopen(_request).read()
-                            #_response = fetcher.fetch("PUT", request.env.http_host, resource_local_push_url, _request_params, cookie)
-                        #except Error, e:
-                            #if not _resource_name + " (error)" in sync_resources and not _resource_name in sync_resources:
-                                #sync_resources.append(_resource_name + " (error)")
-                            ##final_status += "ERROR while processing: http://" +  + str(request.env.http_host) + resource_local_push_url + "<br />\n"
-                            #error_str = str(e)
-                            #sync_errors +=  "Error while syncing => " + _resource_name + ": \n" + error_str + "\n\n"
-                            #final_status += error_str + "<br /><br />\n"
-                        #else:
-                            #if not _resource_name + " (error)" in sync_resources and not _resource_name in sync_resources:
-                                #sync_resources.append(_resource_name)
-                            #final_status += ".........processed http://" + str(request.env.http_host) + resource_local_push_url + " (Pull Sync)<br />\n"
 
                     if sync_mode in [2, 3]: # push
 
@@ -467,44 +376,8 @@ def now():
                             sync_resources.append(tablename)
                             final_status += ".........processed %s (Push Sync)<br />\n" % push_url
 
-                        # Sync -> Push
-                        # Does a GET of the local resource and then a PUT of the output to the remote URL
-                        # This should be replaced by resource.push_xml()
-
-                        #try:
-                            #_local_data = fetcher.fetch("GET", request.env.http_host, resource_local_pull_url, None, cookie)
-                            #_response = fetcher.fetch("PUT", peer_instance_url[1], resource_remote_push_url, _local_data, None, peer.username, peer.password)
-                        #except Error, e:
-                            #if not _resource_name + " (error)" in sync_resources and not _resource_name in sync_resources:
-                                #sync_resources.append(_resource_name + " (error)")
-                            #error_str = str(e)
-                            #sync_errors +=  "Error while syncing => " + _resource_name + ": \n" + error_str + "\n\n"
-                        #else:
-                            #if not _resource_name + " (error)" in sync_resources and not _resource_name in sync_resources:
-                                #sync_resources.append(_resource_name)
-
             else:
                 pass
-                # Custom sync
-                #_request_params = urllib.urlencode({"sync_partner_uuid": str(peer.uuid),
-                                                    #"fetchurl": job_cmd["custom_command"]})
-
-                #resource_local_push_url = "/" + request.application + \
-                                          #"/sync/sync." + import_export_format + \
-                                          #"/create/sync/log"
-
-                #try:
-                    #_response = fetcher.fetch("PUT",
-                                              #request.env.http_host,
-                                              #resource_local_push_url,
-                                              #_request_params, cookie)
-
-                #except Error, e:
-                    #error_str = str(e)
-                    #sync_errors +=  "Error while syncing job " + str(sync_job.id) + ": \n" + error_str + "\n\n"
-                    #final_status += error_str + "<br /><br />\n"
-                #else:
-                    #final_status += ".........processed (Custom Pull Sync)<br />\n"
 
             # update sync now state
             if state.job_resources_done:
@@ -605,21 +478,6 @@ def sync():
 
     import gluon.contrib.simplejson as json
 
-    #if len(request.args) == 3:
-        #_function, _module, _resource = tuple(request.args)
-        #if _function.startswith("list"):
-            #request.args = []
-        #else:
-            #request.args = [_function]
-    #elif len(request.args) == 2:
-        #_module, _resource = tuple(request.args)
-        #_function = "list"
-        #request.args = []
-    #else:
-        #return T("Not supported")
-
-    print request.env.path_info
-
     if len(request.args) < 2:
         # No resource specified
         raise HTTP(501, body=s3xrc.ERROR.BAD_RESOURCE)
@@ -630,12 +488,6 @@ def sync():
         if name.find(".") != -1:
             name, extension = name.rsplit(".", 1)
             request.extension = extension
-
-    #sync_peer = None
-    #if "sync_partner_uuid" in request.vars:
-        #sync_peer = db(db.sync_partner.uuid == request.vars["sync_partner_uuid"]).select()[0]
-        #if not sync_policy:
-            #sync_policy = sync_peer.policy
 
     # Get the sync partner
     peer_uuid = request.vars.get("sync_partner_uuid", None)
@@ -656,15 +508,6 @@ def sync():
         remote_push = False
     else:
         raise HTTP(501, body=s3xrc.ERROR.BAD_METHOD)
-
-    #remote_push = False
-    #if _function == "push":
-        #remote_push = True
-        #request.args = ["create"]
-        #_function = "create"
-
-    #if _function == "create" and not sync_peer:
-        #return T("Invalid Request")
 
     # Set the sync resolver
     s3xrc.sync_resolve = lambda vector, peer=sync_peer: sync_res(vector, peer)
@@ -716,18 +559,6 @@ def sync():
 
     # Execute the request
     output = shn_rest_controller(prefix, name)
-
-    #if remote_push:
-        #sync_resources = _module + "_" + _resource
-        #sync_errors = ""
-        #ret_json = json.loads(ret_data["item"])
-        #if str(ret_json["statuscode"]) != "200":
-            #sync_resources += " (error)"
-            #sync_errors = str(ret_data["item"])
-
-        ## log sync remote push
-        #log_table_id = db[log_table].insert(
-        #)
 
     #return ret_data
     return output
@@ -1157,7 +988,8 @@ def schedule_cron():
                         log_file.write(str(datetime.datetime.now()) + " - error while running job " + str(job.id) + ":\n" + str(e) + "\n\n")
                         log_file.close()
                     except:
-                        print "error while appending scheduler error log file!"
+                        pass
+                        #print "error while appending scheduler error log file!"
             db.commit()
         except Error, e:
             # log scheduler error
@@ -1166,7 +998,8 @@ def schedule_cron():
                 log_file.write(str(datetime.datetime.now()) + " - error while running job " + str(job.id) + ":\n" + str(e) + "\n\n")
                 log_file.close()
             except:
-                print "error while appending scheduler error log file!"
+                pass
+                #print "error while appending scheduler error log file!"
 
         # pause for 15 seconds
         time.sleep(15)
@@ -1268,7 +1101,7 @@ def schedule_process_job(job_id):
                         sync_resources.append(_resource_name + " (error)")
                         error_str = str(e)
                         sync_errors +=  "Error while syncing => " + _resource_name + ": \n" + error_str + "\n\n"
-                        print "Error while syncing => " + _resource_name + ": \n" + error_str + "\n\n"
+                        #print "Error while syncing => " + _resource_name + ": \n" + error_str + "\n\n"
                 else:
                     if not _resource_name + " (error)" in sync_resources and not _resource_name in sync_resources:
                         sync_resources.append(_resource_name)
@@ -1310,7 +1143,7 @@ def schedule_process_job(job_id):
         except Error, e:
             error_str = str(e)
             sync_errors =  "Error while syncing job " + str(job.id) + ": \n" + error_str + "\n\n"
-            print sync_errors
+            #print sync_errors
         request.args = _request_args_copy
         request.get_vars = _request_get_vars_copy
         request.post_vars = _request_post_vars_copy

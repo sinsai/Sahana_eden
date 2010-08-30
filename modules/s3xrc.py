@@ -194,7 +194,6 @@ class S3Resource(object):
 
         self.table = self.__db.get(self.tablename, None)
         if not self.table:
-            print "Undefined table: %s" % self.tablename
             raise KeyError("Undefined table: %s" % self.tablename)
 
         if self.__storage is not None:

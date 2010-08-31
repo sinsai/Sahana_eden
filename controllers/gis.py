@@ -1433,7 +1433,7 @@ def display_feature():
     """
         Cut-down version of the Map Viewing Client.
         Used by shn_gis_location_represent() to show just this feature on the map.
-        Called by the viewMap() JavaScript
+        Called by the s3_viewMap() JavaScript
     """
 
     # The Feature

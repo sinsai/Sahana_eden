@@ -61,12 +61,12 @@ jQuery(document).ready(function(){
 
 {{include 'ajaxS3messages.js'}}
 
-function viewMap(feature_id) {
+function s3_viewMap(feature_id) {
     var url = '{{=URL(r=request, c='gis', f='display_feature')}}/' + feature_id;
     var iframe = "<iframe width='640' height='480' src='" + url + "'></iframe>";
     $('#map').html(iframe);
 }
-function viewMapMulti(module, resource, instance, jresource) {
+function s3_viewMapMulti(module, resource, instance, jresource) {
     var url = '{{=URL(r=request, c='gis', f='display_features')}}/?module=' + module + '&resource=' + resource + '&instance=' + instance + '&jresource=' + jresource;
     var iframe = "<iframe width='640' height='480' src='" + url + "'></iframe>";
     $('#map').html(iframe);

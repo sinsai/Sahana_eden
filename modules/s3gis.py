@@ -1858,9 +1858,6 @@ OpenLayers.Util.extend( selectPdfControl, {
                 layers_openstreetmap += """
         //var mapnik = new OpenLayers.Layer.TMS( '""" + openstreetmap.Mapnik + """', 'http://tile.openstreetmap.org/', {type: 'png', getURL: osm_getTileURL, displayOutsideMaxExtent: true, attribution: '<a href="http://www.openstreetmap.org/">OpenStreetMap</a>' } );
         var mapnik = new OpenLayers.Layer.OSM.Mapnik('""" + openstreetmap.Mapnik + """', {
-                // 54004 is almost 900913 but not quite:
-                // http://www.cadmaps.com/gisblog/?p=81
-                //projection: "EPSG:54004"
                 displayOutsideMaxExtent: true,  // Not working! Can revert to TMS, if necessary
                 wrapDateLine: true,
                 layerCode: 'M'

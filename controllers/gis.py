@@ -127,7 +127,7 @@ def define_map(window=False, toolbar=False):
     map = gis.show_map(
                        window=window,
                        catalogue_toolbar=catalogue_toolbar,
-                       #wms_browser = {"name" : "Pacific Disaster Center", "url" : "http://agsprod.pdc.org/arcgis/Pakistan/PAKISTAN_FLOOD/MapServer/WMSServer?request=GetCapabilities&service=WMS"},
+                       #wms_browser = {"name" : "Sahana ", "url" : "http://geo.eden.sahanafoundation.org:8180/geoserver/ows?service=WMS&request=GetCapabilities"},
                        toolbar=toolbar,
                        search=search,
                        catalogue_overlays=catalogue_overlays,

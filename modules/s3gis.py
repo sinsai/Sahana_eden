@@ -419,15 +419,17 @@ class GIS(object):
         return features
 
     # -----------------------------------------------------------------------------
-    def get_latlon(self, feature_id):
+    def get_latlon(self, feature_id, filter=False):
     
         """ Returns the Lat/Lon for a Feature (using recursion where necessary)
 
             @param feature_id: the feature ID (int) or UUID (str)
+            @param filter: Filter out results based on deployment_settings
             @ToDo Rewrite to use self.get_parents()
         """
         
         db = self.db
+        deployment_settings = self.deployment_settings
         table_feature = db.gis_location
         
         if isinstance(feature_id, int):
@@ -440,6 +442,10 @@ class GIS(object):
         
         feature = db(query).select(table_feature.lat, table_feature.lon, table_feature.parent, limitby=(0, 1)).first()
         
+        query = (table_feature.deleted == False)
+        if filter and not deployment_settings.get_gis_display_l0():
+            query = query & ((table_feature.level != "L0") | (table_feature.level == None))
+
         try:
             lat = feature.lat
             lon = feature.lon
@@ -452,7 +458,7 @@ class GIS(object):
                 if parent_id:
                     # @ToDo Recursion
                     #latlon = self.get_latlon(parent_id)
-                    parent = db(table_feature.id == parent_id).select(table_feature.lat, table_feature.lon, table_feature.parent, limitby=(0, 1)).first()
+                    parent = db(query & (table_feature.id == parent_id)).select(table_feature.lat, table_feature.lon, table_feature.parent, limitby=(0, 1)).first()
                     lat = parent.lat
                     lon = parent.lon
                     if (lat is not None) and (lon is not None):
@@ -462,7 +468,7 @@ class GIS(object):
                         # Try the Parent (e.g. L4)
                         parent_id = feature.parent
                         if parent_id:
-                            parent = db(table_feature.id == parent_id).select(table_feature.lat, table_feature.lon, table_feature.parent, limitby=(0, 1)).first()
+                            parent = db(query & (table_feature.id == parent_id)).select(table_feature.lat, table_feature.lon, table_feature.parent, limitby=(0, 1)).first()
                             lat = parent.lat
                             lon = parent.lon
                             if (lat is not None) and (lon is not None):
@@ -472,7 +478,7 @@ class GIS(object):
                                 # Try the Parent (e.g. L3)
                                 parent_id = feature.parent
                                 if parent_id:
-                                    parent = db(table_feature.id == parent_id).select(table_feature.lat, table_feature.lon, table_feature.parent, limitby=(0, 1)).first()
+                                    parent = db(query & (table_feature.id == parent_id)).select(table_feature.lat, table_feature.lon, table_feature.parent, limitby=(0, 1)).first()
                                     lat = parent.lat
                                     lon = parent.lon
                                     if (lat is not None) and (lon is not None):
@@ -482,7 +488,7 @@ class GIS(object):
                                         # Try the Parent (e.g. L2)
                                         parent_id = feature.parent
                                         if parent_id:
-                                            parent = db(table_feature.id == parent_id).select(table_feature.lat, table_feature.lon, table_feature.parent, limitby=(0, 1)).first()
+                                            parent = db(query & (table_feature.id == parent_id)).select(table_feature.lat, table_feature.lon, table_feature.parent, limitby=(0, 1)).first()
                                             lat = parent.lat
                                             lon = parent.lon
                                             if (lat is not None) and (lon is not None):
@@ -492,7 +498,7 @@ class GIS(object):
                                                 # Try the Parent (e.g. L1)
                                                 parent_id = feature.parent
                                                 if parent_id:
-                                                    parent = db(table_feature.id == parent_id).select(table_feature.lat, table_feature.lon, table_feature.parent, limitby=(0, 1)).first()
+                                                    parent = db(query & (table_feature.id == parent_id)).select(table_feature.lat, table_feature.lon, table_feature.parent, limitby=(0, 1)).first()
                                                     lat = parent.lat
                                                     lon = parent.lon
                                                     if (lat is not None) and (lon is not None):
@@ -502,7 +508,7 @@ class GIS(object):
                                                         # Try the Parent (e.g. L0)
                                                         parent_id = feature.parent
                                                         if parent_id:
-                                                            parent = db(table_feature.id == parent_id).select(table_feature.lat, table_feature.lon, table_feature.parent, limitby=(0, 1)).first()
+                                                            parent = db(query & (table_feature.id == parent_id)).select(table_feature.lat, table_feature.lon, table_feature.parent, limitby=(0, 1)).first()
                                                             lat = parent.lat
                                                             lon = parent.lon
                                                             if (lat is not None) and (lon is not None):
@@ -861,7 +867,8 @@ class GIS(object):
                  query  : query,        # A gluon.sql.Rows of gis_locations, which can be from a simple query or a Join. Extra fields can be added for 'marker' or 'shape' (with optional 'color' & 'size') & 'popup_label'
                  active : False,        # Is the feed displayed upon load or needs ticking to load afterwards?
                  popup_url : None,      # The URL which will be used to fill the pop-up. it will be appended by the Location ID.
-                 marker : None          # The marker_id for the icon used to display the feature (over-riding the normal process).
+                 marker : None,         # The marker_id for the icon used to display the feature (over-riding the normal process).
+                 polygons : False       # Use Polygon data, if-available (defaults to just using Point)
                 }]
             @param wms_browser: WMS Server's GetCapabilities & options (dict)
                 {
@@ -899,6 +906,7 @@ class GIS(object):
         db = self.db
         auth = self.auth
         cache = self.cache
+        deployment_settings = self.deployment_settings
 
         # Read configuration
         config = self.get_config()
@@ -2313,6 +2321,11 @@ OpenLayers.Util.extend( selectPdfControl, {
                 else:
                     _popup_url = urllib.unquote(URL(r=request, c="gis", f="location", args=["read.popup?location.id="]))
 
+                if "polygon" in layer and layer.polygon:
+                    polygons = True
+                else:
+                    polygons = False
+
                 # Generate HTML snippet
                 name_safe = re.sub("\W", "_", name)
                 if "active" in layer and layer["active"]:
@@ -2347,10 +2360,50 @@ OpenLayers.Util.extend( selectPdfControl, {
                     except (AttributeError, KeyError):
                         # Query is a simple select
                         feature = _feature
-                    # Deal with manually-imported Features which are missing WKT
-                    if feature.get("wkt"):
-                        wkt = feature.wkt
+                    # Should we use Polygons or Points?
+                    if polygons:
+                        # Deal with manually-imported Features which are missing WKT
+                        if feature.get("wkt"):
+                            wkt = feature.wkt
+                        else:
+                            try:
+                                lat = feature.lat
+                                lon = feature.lon
+                                if (lat is None) or (lon is None):
+                                    # Zero is allowed but not None
+                                    if feature.get("parent"):
+                                        # Skip the current record if we can
+                                        latlon = self.get_latlon(feature.parent)
+                                    elif feature.get("id"):
+                                        latlon = self.get_latlon(feature.id)
+                                    else:
+                                        # nothing we can do!
+                                        continue
+                                    if latlon:
+                                        lat = latlon["lat"]
+                                        lon = latlon["lon"]
+                                    else:
+                                        # nothing we can do!
+                                        continue
+                            except:
+                                if feature.get("parent"):
+                                    # Skip the current record if we can
+                                    latlon = self.get_latlon(feature.parent)
+                                elif feature.get("id"):
+                                    latlon = self.get_latlon(feature.id)
+                                else:
+                                    # nothing we can do!
+                                    continue
+                                if latlon:
+                                    lat = latlon["lat"]
+                                    lon = latlon["lon"]
+                                else:
+                                    # nothing we can do!
+                                    continue
+                            wkt = self.latlon_to_wkt(lat, lon)
                     else:
+                        # Just display Point data, even if we have Polygons
+                        # ToDo: DRY with Polygon
                         try:
                             lat = feature.lat
                             lon = feature.lon
@@ -2386,7 +2439,7 @@ OpenLayers.Util.extend( selectPdfControl, {
                                 # nothing we can do!
                                 continue
                         wkt = self.latlon_to_wkt(lat, lon)
-                            
+
                     try:
                         # Has a per-feature Vector Shape been added to the query?
                         graphicName = feature.shape

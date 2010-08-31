@@ -1,4 +1,6 @@
 ﻿{{_gis = response.s3.gis}}
+{{if not _gis.location_id:}}
+{{else:}}
 <script type="text/javascript">//<![CDATA[
 $(function() {
     var empty_set = '<option value="">' + '{{=T("No locations registered at this level")}}</option>';
@@ -833,3 +835,5 @@ s3_tb_cleanup = function(level){
 {{pass}}
 
 {{include "gis/convert_gps.html"}}
+
+{{pass}}

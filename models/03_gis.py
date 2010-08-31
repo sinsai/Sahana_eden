@@ -10,6 +10,7 @@ MARKER = Tstr("Marker")
 
 # Expose settings to views
 _gis = response.s3.gis
+_gis.location_id = False    # Don't display the Location Selector in Views unless the location_id field is present
 _gis.map_selector = deployment_settings.get_gis_map_selector()
 if shn_has_role("MapAdmin"):
     _gis.edit_L0 = True

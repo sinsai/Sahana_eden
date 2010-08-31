@@ -27,8 +27,8 @@ if deployment_settings.has_module(module):
     ADD_SHELTER_TYPE = T("Add Shelter Type")
     LIST_SHELTER_TYPES = T("List Shelter Types")
     s3.crud_strings[tablename] = Storage(
-        title_create = T("Add Shelter Type"),
-        title_display = ADD_SHELTER_TYPE,
+        title_create = ADD_SHELTER_TYPE,
+        title_display = T("Shelter Type Details"),
         title_list = LIST_SHELTER_TYPES,
         title_update = T("Edit Shelter Type"),
         title_search = T("Search Shelter Types"),
@@ -62,8 +62,8 @@ if deployment_settings.has_module(module):
     ADD_SHELTER_SERVICE = T("Add Shelter Service")
     LIST_SHELTER_SERVICES = T("List Shelter Services")
     s3.crud_strings[tablename] = Storage(
-        title_create = T("Add Shelter Service"),
-        title_display = ADD_SHELTER_SERVICE,
+        title_create = ADD_SHELTER_SERVICE,
+        title_display = T("Shelter Service Details"),
         title_list = LIST_SHELTER_SERVICES,
         title_update = T("Edit Shelter Service"),
         title_search = T("Search Shelter Services"),
@@ -151,8 +151,8 @@ if deployment_settings.has_module(module):
     ADD_SHELTER = T("Add Shelter")
     LIST_SHELTERS = T("List Shelters")
     s3.crud_strings[tablename] = Storage(
-        title_create = T("Add Shelter"),
-        title_display = ADD_SHELTER,
+        title_create = ADD_SHELTER,
+        title_display = T("Shelter Details"),
         title_list = LIST_SHELTERS,
         title_update = T("Edit Shelter"),
         title_search = T("Search Shelters"),

@@ -538,26 +538,26 @@ $(function() {
     $('#gis_location_name').autocomplete('{{=URL(r=request, c="gis", f="location", args="search.json", vars={"filter":"~", "field":"name"})}}', {
         extraParams: {
             // Read 'parent' field dynamically
-            // @ToDo: ensure that the parent search is hierarchical!
-            parent: function() {
-                        var parent = $('#gis_location_l5').val();
-                        if (undefined == parent || '' == parent) {
-                            parent = $('#gis_location_l4').val();
-                            if (undefined == parent || '' == parent) {
-                                parent = $('#gis_location_l3').val();
-                                if (undefined == parent || '' == parent) {
-                                    parent = $('#gis_location_l2').val();
-                                    if (undefined == parent || '' == parent) {
-                                        parent = $('#gis_location_l1').val();
-                                        if (undefined == parent || '' == parent) {
-                                            parent = $('#gis_location_l0').val();
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                        return parent
-                    }
+            // @ ToDo Disabled temporarily until the bad Lx data is fixed
+            //parent: function() {
+            //            var parent = $('#gis_location_l5').val();
+            //            if (undefined == parent || '' == parent) {
+            //                parent = $('#gis_location_l4').val();
+            //                if (undefined == parent || '' == parent) {
+            //                    parent = $('#gis_location_l3').val();
+            //                    if (undefined == parent || '' == parent) {
+            //                        parent = $('#gis_location_l2').val();
+            //                        if (undefined == parent || '' == parent) {
+            //                            parent = $('#gis_location_l1').val();
+            //                            if (undefined == parent || '' == parent) {
+            //                                parent = $('#gis_location_l0').val();
+            //                            }
+            //                        }
+            //                    }
+            //                }
+            //           }
+            //            return parent
+            //        }
         },
         // Don't cache
         cacheLength: 1,

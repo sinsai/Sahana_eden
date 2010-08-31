@@ -98,7 +98,20 @@ if deployment_settings.has_module(module):
     # -------------------------------------------------------------------------
     resource = "shelter"
     tablename = module + "_" + resource
-    table = db.define_table(tablename, timestamp, uuidstamp, deletion_status,
+
+    # If the hms module is enabled, we include a hospital_id field, so if the
+    # shelter is co-located with a hospital, the hospital can be identified.
+    # To get the fields in the correct order in the table, get the fields
+    # before and after where hospital_id should go.
+    #
+    # Caution (mainly for developers):  If you start with hms enabled, and
+    # fill in hospital info, then disable hms, the hospital_id column will
+    # get dropped.  If hms is re-enabled, the hospital_id links will be gone.
+    # Moral is, if this is a production site, do not disable hms unless you
+    # really mean it...
+
+    fields_before_hospital = db.Table(None, None,
+                    timestamp, uuidstamp, deletion_status,
                     site_id,
                     Field("name", notnull=True),
                     shelter_type_id,
@@ -123,15 +136,28 @@ if deployment_settings.has_module(module):
                     # the shelter is not a school.
                     Field("school_code", "integer"),
                     Field("school_pf", "integer"),
-                    # If the shelter is a hospital, connect it to its hospital
-                    # record.  Although this could be a relationship, with a
-                    # separate table, it is only a single field.
-                    hospital_id,
-                    comments,
-                    migrate=migrate)
+                    )
+    fields_after_hospital = db.Table(None, None, comments)
+
+    # Only include hospital_id if the hms module is enabled.
+    if deployment_settings.has_module("hms"):
+        table = db.define_table(tablename,
+                                fields_before_hospital,
+                                hospital_id,
+                                fields_after_hospital,
+                                migrate=migrate)
+    else:
+        table = db.define_table(tablename,
+                                fields_before_hospital,
+                                fields_after_hospital,
+                                migrate=migrate)
 
     table.uuid.requires = IS_NOT_IN_DB(db, "%s.uuid" % tablename)
-    table.name.requires = IS_NOT_EMPTY()   # Shelters don't have to have unique names
+    # Shelters don't have to have unique names
+    # @ToDo If we want to filter incoming reports automatically to see if
+    # they apply to shelters, then we may need to reconsider whether names
+    # can be non-unique, *especially* since location is not required.
+    table.name.requires = IS_NOT_EMPTY()
     table.name.label = T("Shelter Name")
     table.name.comment = SPAN("*", _class="req")
     table.person_id.label = T("Contact Person")

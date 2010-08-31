@@ -127,95 +127,62 @@ def now():
 
     """ Manual synchronization """
 
-    import urllib, urlparse
-    import gluon.contrib.simplejson as json
+    # Settings
+    settings = db().select(db.sync_setting.uuid,
+                           db.sync_setting.proxy,
+                           limitby=(0, 1)).first()
+    if not settings:
+        session.error = T("Synchronization not configured")
+        return dict(module_name=module_name,
+                    sync_status="Configuration Error - no settings found.",
+                    sync_start=False,
+                    sync_state=None)
 
-    final_status = ""
-    sync_start = False
-    if "start" in request.args:
-        sync_start = True
-
-    # retrieve sync now state
+    # Last state (=first record in sync_now)
     state = db().select(db.sync_now.ALL, limitby=(0, 1)).first()
 
-    if sync_start:
+    action = request.get_vars.get("sync", None)
 
-        # retrieve sync partners from DB
-        peers = db().select(db.sync_partner.ALL)
+    if action == "start":
 
-        # retrieve all scheduled jobs set to run manually
-        job = db.sync_schedule
-        jobs = db((job.period == "m") & (job.enabled == True)).select(job.ALL)
-        if not jobs:
-            final_status = "There are no scheduled jobs. Please schedule a sync operation (set to run manually).<br /><br /><a href=\"" + URL(r=request, c="sync", f="schedule") + "\">Click here</a> to go to Sync Schedules page.<br /><br />\n"
-            return dict(module_name=module_name,
-                        sync_status=final_status,
-                        sync_start=False,
-                        sync_state=state)
+        if session.s3.sync_msg is None:
+            session.s3.sync_msg = []
 
-        # retrieve settings
-        settings = db().select(db.sync_setting.ALL, limitby=(0, 1)).first()
+        #tablesnames = s3_sync_primary_resources()
 
-        # url fetcher
-        fetcher = FetchURL()
+        if not state: # =no prior sync to be resumed.
 
-        final_status = ""
+            # Get all scheduled jobs
+            table_job = db.sync_schedule
+            jobs = db((table_job.period == "m") &
+                      (table_job.enabled == True)).select(job.ALL)
+            if not jobs:
+                final_status = "There are no scheduled jobs. Please schedule a sync operation (set to run manually).<br /><br /><a href=\"" + URL(r=request, c="sync", f="schedule") + "\">Click here</a> to go to Sync Schedules page.<br /><br />\n"
+            else:
+                # Load first resource list
+                job = jobs.first()
+                try:
+                    job_cmd = json.loads(job.job_command)
+                except:
+                    res_list = ""
+                else:
+                    res_list = ",".join(map(str, job_cmd.get("resources", [])))
 
-        # Find primay resources
-        modules = deployment_settings.modules
-        tables = []
-        for t in db.tables:
-            table = db[t]
-            if t.find("_") == -1:
-                continue
-            prefix, name = t.split("_", 1)
-            if prefix in modules and \
-               "modified_on" in table.fields and \
-               "uuid" in table.fields:
-                is_component = False
-                hook = s3xrc.model.components.get(name, None)
-                if hook:
-                    link = hook.get("_component", None)
-                    if link and link.tablename == t:
-                        continue
-                    for h in hook.values():
-                        if isinstance(h, dict):
-                            link = h.get("_component", None)
-                            if link and link.tablename == t:
-                                is_component = True
-                                break
-                    if is_component:
-                        continue
-                # No component
-                tables.append(t)
+            job_list = ",".join(map(str, [j.id for j in jobs]))
 
-        if not state:
-            # New now-job
-            res_list = tables # Tables to sync
-            first_job = None
-            job_cmd = None
-            res_list = []
-            if jobs:
-                first_job = jobs[0]
-            if first_job:
-                if first_job.job_type == 1:
-                    job_cmd = json.loads(first_job.job_command)
-                    res_list = job_cmd["resources"]
             # begin new sync now session
-            sync_jobs_enabled_list = []
-            for job in jobs:
-                if job.enabled:
-                    sync_jobs_enabled_list.append(str(job.id))
-            sync_now_id = db["sync_now"].insert(
-                sync_jobs = ", ".join(map(str, sync_jobs_enabled_list)),
-                started_on = request.utcnow,
-                job_resources_done = "",
-                job_resources_pending = ", ".join(map(str, res_list)),
-                job_sync_errors = ""
-            )
+            sync_now_id = db.sync_now.insert(sync_jobs = job_list,
+                                             started_on = request.utcnow,
+                                             job_resources_done = "",
+                                             job_resources_pending = res_list,
+                                             job_sync_errors = "")
+
             state = db(db.sync_now.id == sync_now_id).select(db.sync_now.ALL, limitby=(0, 1)).first()
-            final_status += "Sync Now started:<br /><br /><br />\n"
+
+            session.s3.sync_msg.append()
+
         else:
+
             # Now already started
             sync_now_id = state.id
             final_status += "Sync Now resumed (originally started on " + state.started_on.strftime("%x %H:%M:%S")+ "):<br /><br /><br />\n"
@@ -241,10 +208,10 @@ def now():
 
         if sync_job and peer:
 
-            final_status += "<br />Syncing with: " + \
-                            peer.name + ", " + \
-                            peer.instance_url + \
-                            " (" + peer.instance_type + "):<br />\n\n"
+            #final_status += "<br />Syncing with: " + \
+                            #peer.name + ", " + \
+                            #peer.instance_url + \
+                            #" (" + peer.instance_type + "):<br />\n\n"
 
             peer_sync_success = True
             last_sync_on = sync_job.last_run
@@ -261,123 +228,25 @@ def now():
             sync_errors = ""
 
             # Keep Session for local URLs
-            cookie = str(response.session_id_name) + "=" + str(response.session_id)
-            if sync_job.job_type == 1: # Eden <-> Eden
+            #cookie = str(response.session_id_name) + "=" + str(response.session_id)
 
-                # Sahana Eden sync
+            # Find resources to sync
+            tn = state.job_resources_pending.split(",")
+            tablenames = [n.strip().lower() for n in tn]
 
-                # Build msince-query
-                if last_sync_on is not None and complete_sync == False:
-                    msince = last_sync_on.strftime("%Y-%m-%dT%H:%M:%SZ")
-                    msince_query = "?msince=" + msince
-                else:
-                    msince = ""
-                    msince_query = ""
+            if sync_job.job_type == 1:
 
-                # Find resources to sync
-                tablenames = state.job_resources_pending.split(",")
-
-                #for _module, _resource in job_res_list:
-                for tablename in tablenames:
-
-                    if tablename not in db.tables:
-                        continue
-
-                    if tablename.find("||") == -1:
-                        if tablename.find("_") == -1:
-                            continue
-                        else:
-                            prefix, name = tablename.split("_", 1)
-                    else:
-                        prefix, name = tablename.split("||", 1)
-
-                    resource = s3xrc.resource(prefix, name)
-
-                    sync_path = "sync/sync/%s/%s.%s" % (prefix, name, import_export_format)
-
-                    remote_url = urlparse.urlparse(peer.instance_url)
-                    if remote_url.path[-1] != "/":
-                        remote_path = "%s/%s" % (remote_url.path, sync_path)
-                    else:
-                        remote_path = "%s%s" % (remote_url.path, sync_path)
-
-                    if sync_mode in [1, 3]: # pull
-
-                        params = dict(msince=msince)
-
-                        fetch_url = "%s://%s%s?%s" % (remote_url.scheme,
-                                                      remote_url.netloc,
-                                                      remote_path,
-                                                      urllib.urlencode(params))
-
-                        try:
-                            result = resource.fetch_xml(fetch_url,
-                                                        username=peer.username,
-                                                        password=peer.password)
-                                                        #proxy=settings.proxy)
-                        except SyntaxError, e:
-                            result = str(e)
-
-                        try:
-                            result_json = json.loads(result)
-                        except:
-                            error = str(result)
-                        else:
-                            if str(result_json["statuscode"]).startswith("2"):
-                                error = None
-                            else:
-                                error = str(result_json["message"])
-
-                        if error:
-                            tablename_error = "%s (pull error)"
-                            sync_errors = "%s\n%s" % (sync_errors,
-                                          "Error while synchronizing %s: %s" % (tablename, error))
-                            sync_resources.append(tablename_error)
-                            final_status += error + "<br /><br />\n"
-                        else:
-                            sync_resources.append(tablename)
-                            final_status += ".........processed %s (Pull Sync)<br />\n" % push_url
-
-                    if sync_mode in [2, 3]: # push
-
-                        params = dict(sync_partner_uuid=settings.uuid)
-
-                        push_url = "%s://%s%s?%s" % (remote_url.scheme,
-                                                     remote_url.netloc,
-                                                     remote_path,
-                                                     urllib.urlencode(params))
-
-                        try:
-                            result = resource.push_xml(push_url,
-                                                       username=peer.username,
-                                                       password=peer.password,
-                                                       #proxy=settings.proxy,
-                                                       msince=msince)
-                        except SyntaxError, e:
-                            result = str(e)
-
-                        try:
-                            result_json = json.loads(result)
-                        except:
-                            error = str(result)
-                        else:
-                            if str(result_json["statuscode"]).startswith("2"):
-                                error = None
-                            else:
-                                error = str(result_json["message"])
-
-                        if error:
-                            tablename_error = "%s (push error)"
-                            sync_errors = "%s\n%s" % (sync_errors,
-                                          "Error while synchronizing %s: %s" % (tablename, error))
-                            sync_resources.append(tablename_error)
-                            final_status += error + "<br /><br />\n"
-                        else:
-                            sync_resources.append(tablename)
-                            final_status += ".........processed %s (Push Sync)<br />\n" % push_url
+                # Synchronize Eden<->Eden
+                result = s3_sync_eden_eden(peer, sync_mode, tablenames,
+                                        settings=settings,
+                                        last_sync=last_sync_on,
+                                        complete_sync=complete_sync)
 
             else:
-                pass
+
+                # Synchronize Eden<->Other
+                result = s3_sync_eden_other(peer, sync_mode, tablenames,
+                                            settings=settings)
 
             # update sync now state
             if state.job_resources_done:
@@ -457,6 +326,26 @@ def now():
                 db(db.sync_now.id == sync_now_id).delete()
                 # we're done
                 final_status += "Sync completed successfully. Logs generated: " + str(A(T("Click here to open log"),_href=URL(r=request, c="sync", f="history"))) + "<br /><br />\n"
+
+    elif action == "stop":
+        # Stop the running sync process (remove all pending jobs)
+        pass
+
+    elif action == "status":
+        if session.s3.sync_msg is None:
+            final_status = "No synchronization process currently running."
+        else:
+            msg_list = []
+            for i in xrange(len(session.s3.sync_msg)):
+                msg = str(session.s3.sync_msg.pop(0))
+                if msg.find("FAIL"):
+                    msg_list.append(DIV(msg, _class="failure"))
+                else:
+                    msg_list.append(DIV(msg, _class="success"))
+            if msg_list:
+                return DIV(msg_list).xml()
+            else:
+                return ""
 
     return dict(module_name=module_name,
                 sync_status=final_status,
@@ -1014,7 +903,8 @@ def schedule_process_job(job_id):
 
     import gluon.contrib.simplejson as json
     import urllib, urlparse
-    global sync_policy
+
+    global sync_policy # @todo: do not use global vars
 
     job_sel = db(db.sync_schedule.id==job_id).select(db.sync_schedule.ALL)
     if not job_sel:

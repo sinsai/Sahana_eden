@@ -633,7 +633,7 @@ class AuthS3(Auth):
         db = self.db
         session = self.session
 
-        if hasattr(table, "_tablename"):
+        if not hasattr(table, "_tablename"):
             table = db[table]
 
         if session.s3.security_policy == 1:

@@ -9,22 +9,23 @@
 module = "admin"
 module_name = T("Synchronization")
 
-log_table = "sync_log"
-conflict_table = "sync_conflict"
-sync_peer = None
-sync_policy = None
-import_export_format = "xml"
+# Don't use global variables
+#log_table = "sync_log"
+#conflict_table = "sync_conflict"
+#sync_peer = None
+#sync_policy = None
+#import_export_format = "xml"
 
 # Options Menu (available in all Functions' Views)
 # - can Insert/Delete items from default menus within a function, if required.
 response.menu_options = admin_menu_options
 
-# Web2Py Tools functions
-def call():
-    "Call an XMLRPC, JSONRPC or RSS service"
-    # Sync webservices don't use sessions, so avoid cluttering up the storage
-    session.forget()
-    return service()
+## Web2Py Tools functions
+#def call():
+    #"Call an XMLRPC, JSONRPC or RSS service"
+    ## Sync webservices don't use sessions, so avoid cluttering up the storage
+    #session.forget()
+    #return service()
 
 
 # -----------------------------------------------------------------------------
@@ -42,7 +43,7 @@ class RequestWithMethod(urllib2.Request):
 
     """ ???
 
-        @todo: add doc string
+        @todo: deprecate
 
     """
 
@@ -65,6 +66,8 @@ class RequestWithMethod(urllib2.Request):
 class Error:
 
     """ Indicates an HTTP error """
+
+    # @todo: deprecate
 
     def __init__(self, url, errcode, errmsg, headers, body=None):
 
@@ -90,6 +93,8 @@ class Error:
 class FetchURL:
 
     """ docstring ??? """
+
+    # @todo: deprecate
 
     def fetch(self, request, host, path, data, cookie=None, username=None, password=None):
 
@@ -219,16 +224,21 @@ def now():
             sync_mode = 1
             if "complete" in job_cmd and str(job_cmd["complete"]) == "True":
                 complete_sync = True
-            if "policy" in job_cmd:
-                sync_policy = int(job_cmd["policy"])
             if "mode" in job_cmd:
                 sync_mode = int(job_cmd["mode"])
 
+            # Get policy and set resolver (defaults to peer policy)
+            job_policy = job_cmd.get("policy", peer.policy)
+            if job_policy:
+                try:
+                    policy = int(job_policy)
+                except ValueError:
+                    policy = None
+            s3xrc.sync_resolve = lambda vector, peer=peer, policy=policy: \
+                                        sync_res(vector, peer, policy)
+
             sync_resources = []
             sync_errors = ""
-
-            # Keep Session for local URLs
-            #cookie = str(response.session_id_name) + "=" + str(response.session_id)
 
             # Find resources to sync
             tn = state.job_resources_pending.split(",")
@@ -362,9 +372,6 @@ def sync():
 
     """
 
-    # @todo: Do not use global variables
-    global sync_peer, sync_policy
-
     import gluon.contrib.simplejson as json
 
     if len(request.args) < 2:
@@ -381,10 +388,8 @@ def sync():
     # Get the sync partner
     peer_uuid = request.vars.get("sync_partner_uuid", None)
     if peer_uuid:
-        peer = db.sync_partner
-        sync_peer = db(peer.uuid == peer_uuid).select(limitby=(0,1)).first()
-        if sync_peer and not sync_policy:
-            sync_policy = sync_peer.policy
+        peers = db.sync_partner
+        peer = db(peers.uuid == peer_uuid).select(limitby=(0,1)).first()
 
     # remote push?
     method = request.env.request_method
@@ -398,8 +403,8 @@ def sync():
     else:
         raise HTTP(501, body=s3xrc.ERROR.BAD_METHOD)
 
-    # Set the sync resolver
-    s3xrc.sync_resolve = lambda vector, peer=sync_peer: sync_res(vector, peer)
+    # Set the sync resolver with no policy (defaults to peer policy)
+    s3xrc.sync_resolve = lambda vector, peer=peer: sync_res(vector, peer, None)
 
     def prep(r):
         # Do not allow interactive formats
@@ -453,7 +458,7 @@ def sync():
     return output
 
 # -----------------------------------------------------------------------------
-def sync_res(vector, peer):
+def sync_res(vector, peer, policy):
 
     """ Sync resolver
 
@@ -462,101 +467,114 @@ def sync_res(vector, peer):
     """
 
     import cPickle
-    global sync_policy
 
-    sync_peer = peer
+    if policy is None:
+        policy = peer.policy
 
-    if not sync_policy:
-        sync_policy = sync_peer.policy
+    newer = True # assume that the peer record is newer
 
-    db_record = vector.db(vector.table.id==vector.id).select(vector.table.ALL, limitby=(0,1))
-    db_record_mtime = None
-    record_dump = cPickle.dumps(dict(vector.record), 0)
+    if vector.method == vector.METHOD_UPDATE:
+        table = vector.table
+        if "modified_on" in table.fields and vector.mtime is not None:
+            row = vector.db(table.id==vector.id).select(table.modified_on,
+                                                        limitby=(0,1)).first()
+            if row:
+                local_mtime = row.modified_on
+            if local_mtime > vector.mtime:
+                newer = False
 
-    if db_record:
-        db_record = db_record.first()
-        if "modified_on" in vector.table.fields:
-            db_record_mtime = db_record.modified_on
+    # Sync policies:
+    #
+    #  Option    local records                 peer records     Title
+    #
+    #  0         do nothing                    do nothing       No Sync
+    #  1         --                            --               Manual
+    #  2         do nothing                    import           Import
+    #  3         update to peer version        import           Replace
+    #  4         update to peer version        do nothing       Update
+    #  5         update to/keep newer version  import           Replace Newer
+    #  6         update to/keep newer version  do nothing       Update Newer
+    #  7         do nothing                    import master    Import Master
+    #  8         update to master              import master    Replace Master
+    #  9         update to master              do nothing       Update Master
+    # 10         --                            --               Role-Based (not implemented)
 
-    # based on the sync_policy, make resolution
-    if sync_policy == 0:    # No Sync
-        # don't import anything in this case
-        vector.strategy = []
+    conflict = False
 
-    elif sync_policy == 1:  # Keep Local
+    # @todo: conflict detection
+
+    if sync_policy == 0: # No Sync
         vector.resolution = vector.RESOLUTION.THIS
-        if db_record_mtime and vector.mtime > db_record_mtime:
-            # log this as a conflict, local record is older
-            #print "Conflict: local record is kept and is older"
-            db[conflict_table].insert(
-                uuid = vector.record.uuid,
-                resource_table = vector.tablename,
-                remote_record = record_dump,
-                remote_modified_by = vector.element.get("modified_by"),
-                remote_modified_on = vector.mtime,
-                logged_on = datetime.datetime.utcnow(),
-                resolved = False
-            )
-
-    elif sync_policy == 2:  # Replace with Remote
+        vector.strategy = []
+    elif sync_policy == 1: # Manual
+        vector.resolution = vector.RESOLUTION.THIS
+        vector.strategy = []
+    elif sync_policy == 2: # Import
         vector.resolution = vector.RESOLUTION.OTHER
-        if db_record_mtime and vector.mtime < db_record_mtime:
-            # log this as a conflict, remote record is older
-            #print "Conflict: remote record is imported and is older"
-            db[conflict_table].insert(
-                uuid = vector.record.uuid,
-                resource_table = vector.tablename,
-                remote_record = record_dump,
-                remote_modified_by = vector.element.get("modified_by"),
-                remote_modified_on = vector.mtime,
-                logged_on = datetime.datetime.utcnow(),
-                resolved = False
-            )
-        elif db_record_mtime and sync_peer.last_sync_on and db_record_mtime > sync_peer.last_sync_on:
-            # log this as a conflict, local record was modified too, but overwritten
-            #print "Conflict: local record was modified since last sync but overwritten by remote record"
-            db[conflict_table].insert(
-                uuid = vector.record.uuid,
-                resource_table = vector.tablename,
-                remote_record = record_dump,
-                remote_modified_by = vector.element.get("modified_by"),
-                remote_modified_on = vector.mtime,
-                logged_on = datetime.datetime.utcnow(),
-                resolved = False
-            )
-
-    elif sync_policy == 3:  # Keep with Newer Timestamp
+        vector.strategy = [vector.METHOD.CREATE]
+    elif sync_policy == 3: # Replace
+        vector.resolution = vector.RESOLUTION.OTHER
+        vector.strategy = [vector.METHOD.CREATE, vector.METHOD.UPDATE]
+    elif sync_policy == 4: # Update
+        vector.resolution = vector.RESOLUTION.OTHER
+        vector.strategy = [vector.METHOD.UPDATE]
+    elif sync_policy == 5: # Replace Newer
         vector.resolution = vector.RESOLUTION.NEWER
-        if db_record_mtime and vector.mtime < db_record_mtime:
-            # log this as a conflict, remote record is older
-            #print "Conflict: remote record is imported and is older"
-            db[conflict_table].insert(
-                uuid = vector.record.uuid,
-                resource_table = vector.tablename,
-                remote_record = record_dump,
-                remote_modified_by = vector.element.get("modified_by"),
-                remote_modified_on = vector.mtime,
-                logged_on = datetime.datetime.utcnow(),
-                resolved = False
-            )
-
-    elif sync_policy == 4:  # Role-based
-        # not implemented, defaulting to "Newer Timestamp"
+        vector.strategy = [vector.METHOD.CREATE, vector.METHOD.UPDATE]
+    elif sync_policy == 6: # Update Newer
         vector.resolution = vector.RESOLUTION.NEWER
+        vector.strategy = [vector.METHOD.UPDATE]
+    elif sync_policy == 7: # Import Master
+        vector.resolution = vector.RESOLUTION.MASTER
+        vector.strategy = [vector.METHOD.CREATE]
+    elif sync_policy == 8: # Replace Master
+        vector.resolution = vector.RESOLUTION.MASTER
+        vector.strategy = [vector.METHOD.CREATE, vector.METHOD.UPDATE]
+    elif sync_policy == 9: # Update Master
+        vector.resolution = vector.RESOLUTION.THIS
+        vector.strategy = [vector.METHOD.UPDATE]
+    elif sync_policy == 10: # Role Based (not implemented)
+        vector.resolution = vector.RESOLUTION.THIS
+        vector.strategy = []
+    else:
+        pass # use defaults
 
-    elif sync_policy == 5:  # Choose Manually
-        if db_record_mtime and vector.mtime != db_record_mtime:
-            # just log and skip
-            vector.strategy = []
-            db[conflict_table].insert(
-                uuid = vector.record.uuid,
-                resource_table = vector.tablename,
-                remote_record = record_dump,
-                remote_modified_by = vector.element.get("modified_by"),
-                remote_modified_on = vector.mtime,
-                logged_on = datetime.datetime.utcnow(),
-                resolved = False
-            )
+    #elif sync_policy == 1:  # Keep Local
+        #vector.resolution = vector.RESOLUTION.THIS
+
+    #elif sync_policy == 2:  # Replace with Remote
+        #vector.resolution = vector.RESOLUTION.OTHER
+        #if (db_record_mtime and vector.mtime < db_record_mtime) or \
+           #(db_record_mtime and sync_peer.last_sync_on and db_record_mtime > sync_peer.last_sync_on):
+           ## log this as a conflict, remote record is older
+            ## log this as a conflict, local record was modified too, but overwritten
+
+    #elif sync_policy == 3:  # Keep with Newer Timestamp
+        #vector.resolution = vector.RESOLUTION.NEWER
+        #if db_record_mtime and vector.mtime < db_record_mtime:
+            ## log this as a conflict, remote record is older
+
+    #elif sync_policy == 4:  # Role-based
+        ## not implemented, defaulting to "Newer Timestamp"
+        #vector.resolution = vector.RESOLUTION.NEWER
+
+    #elif sync_policy == 5:  # Choose Manually
+        #if db_record_mtime and vector.mtime != db_record_mtime:
+            ## just log and skip
+            #vector.strategy = []
+
+    if conflict: # log conflict
+
+        record_dump = cPickle.dumps(dict(vector.record), 0)
+
+        db[conflict_table].insert(
+            uuid = vector.uuid,
+            resource_table = vector.tablename,
+            remote_record = record_dump,
+            remote_modified_by = vector.element.get("modified_by", None),
+            remote_modified_on = vector.mtime,
+            logged_on = datetime.datetime.utcnow(),
+            resolved = False)
 
     return
 
@@ -904,7 +922,7 @@ def schedule_process_job(job_id):
     import gluon.contrib.simplejson as json
     import urllib, urlparse
 
-    global sync_policy # @todo: do not use global vars
+    #global sync_policy # @todo: do not use global vars
 
     job_sel = db(db.sync_schedule.id==job_id).select(db.sync_schedule.ALL)
     if not job_sel:

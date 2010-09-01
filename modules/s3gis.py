@@ -1983,6 +1983,37 @@ OpenLayers.Util.extend( selectPdfControl, {
         map.addLayer(bingterrain);
                     """
 
+        # WFS
+        layers_wfs = ""
+        wfs_enabled = db(db.gis_layer_wfs.enabled == True).select()
+        for layer in wfs_enabled:
+            name = layer.name
+            name_safe = re.sub('\W', '_', name)
+            url = layer.url
+            try:
+                wfs_version = "version: '" + layer.version + "',"
+            except:
+                wfs_version = ""
+            featureType = layer.featureType
+            featureNS = layer.featureNS
+            #if layer.editable:
+            #    wfs_strategy = "strategies: [new OpenLayers.Strategy.BBOX(), new OpenLayers.Strategy.Save()],"
+            wfs_strategy = "strategies: [new OpenLayers.Strategy.BBOX()],"
+            layers_wfs  += """
+        var wfsLayer""" + name_safe + """ = new OpenLayers.Layer.Vector( '""" + name + """', {
+                """ + wfs_strategy + """
+                protocol: new OpenLayers.Protocol.WFS({
+                    version: '""" + wfs_version + """',
+                    //srsName: "EPSG:4326",
+                    url:  '""" + url + """',
+                    featureType: '""" + featureType + """',
+                    featureNS: '""" + featureNS + """'
+                    //geometryName: "the_geom"
+                });
+            );
+        map.addLayer(wfsLayer""" + name_safe + """);
+        """
+
         # WMS
         layers_wms = ""
         wms_enabled = db(db.gis_layer_wms.enabled == True).select()

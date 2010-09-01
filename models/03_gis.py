@@ -880,8 +880,8 @@ track_id = db.Table(None, "track_id",
 
 # -----------------------------------------------------------------------------
 # GIS Layers
-#gis_layer_types = ["bing", "shapefile", "scan", "wfs"]
-gis_layer_types = ["openstreetmap", "georss", "google", "gpx", "js", "kml", "mgrs", "tms", "wms", "xyz", "yahoo"]
+#gis_layer_types = ["bing", "shapefile", "scan"]
+gis_layer_types = ["openstreetmap", "georss", "google", "gpx", "js", "kml", "mgrs", "tms", "wfs", "wms", "xyz", "yahoo"]
 gis_layer_openstreetmap_subtypes = gis.layer_subtypes("openstreetmap")
 gis_layer_google_subtypes = gis.layer_subtypes("google")
 gis_layer_yahoo_subtypes = gis.layer_subtypes("yahoo")
@@ -950,6 +950,19 @@ for layertype in gis_layer_types:
             Field("layers", label=T("Layers"), requires = IS_NOT_EMPTY()),
             Field("format", label=T("Format")))
         table = db.define_table(tablename, t, migrate=migrate)
+    elif layertype == "wfs":
+        t = db.Table(db, table,
+            gis_layer,
+            Field("visible", "boolean", default=False, label=T("On by default?")),
+            Field("url", label=T("Location"), requires = IS_NOT_EMPTY()),
+            Field("version", label=T("Version"), default="1.1.0", requires = IS_IN_SET(["1.0.0", "1.1.0"], zero=None)),
+            Field("featureType", label=T("Feature Type")),
+            Field("featureNS", label=T("Feature Namespace")),
+            #projection_id,
+            #Field("editable", "boolean", default=False, label=T("Editable?")),
+            )
+        table = db.define_table(tablename, t, migrate=migrate)
+        #table.url.requires = [IS_URL, IS_NOT_EMPTY()]
     elif layertype == "wms":
         t = db.Table(db, table,
             gis_layer,
@@ -961,16 +974,12 @@ for layertype in gis_layer_types:
             Field("layers", label=T("Layers"), requires = IS_NOT_EMPTY()),
             Field("format", label=T("Format"), requires = IS_NULL_OR(IS_IN_SET(["image/jpeg", "image/png", "image/bmp", "image/tiff", "image/gif", "image/svg+xml"]))),
             Field("transparent", "boolean", default=False, label=T("Transparent?")),
-            #projection_id, # Client-side reprojection deprecated. Use MapProxy instead.
             #Field("queryable", "boolean", default=False, label=T("Queryable?")),
             #Field("legend_url", label=T("legend URL")),
             #Field("legend_format", label=T("Legend Format"), requires = IS_NULL_OR(IS_IN_SET(["image/jpeg", "image/png", "image/bmp", "image/tiff", "image/gif", "image/svg+xml"]))),
             )
         table = db.define_table(tablename, t, migrate=migrate)
         #table.url.requires = [IS_URL, IS_NOT_EMPTY()]
-        # Default IS_NULL_OR() not appropriate here
-        #table.projection_id.requires = IS_ONE_OF(db, "gis_projection.id", "%(name)s")
-        #table.projection_id.default = 2
     elif layertype == "xyz":
         t = db.Table(db, table,
             gis_layer,

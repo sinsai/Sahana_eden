@@ -20,7 +20,9 @@ if deployment_settings.has_module(module):
     resource = "shelter_type"
     tablename = module + "_" + resource
     table = db.define_table(tablename, timestamp, uuidstamp, deletion_status,
-                    Field("name", notnull=True),
+                    Field("name",
+                          notnull=True,
+                          comment = SPAN("*", _class="req")),
                     comments,
                     migrate=migrate)
     
@@ -55,7 +57,9 @@ if deployment_settings.has_module(module):
     resource = "shelter_service"
     tablename = module + "_" + resource
     table = db.define_table(tablename, timestamp, uuidstamp, deletion_status,
-                    Field("name", notnull=True),
+                    Field("name",
+                          notnull=True,
+                          comment = SPAN("*", _class="req")),
                     comments,
                     migrate=migrate)
     
@@ -134,16 +138,26 @@ if deployment_settings.has_module(module):
                     # are for Pakistan flood response.  It is simpler
                     # to keep this info in the shelter table and hide it if
                     # the shelter is not a school.
-                    Field("school_code", "integer"),
+                    Field("school_code", "integer",
+                          comment = SPAN("*", _class="req")),
                     Field("school_pf", "integer"),
                     )
+
     fields_after_hospital = db.Table(None, None, comments)
+
+    # Make a copy of reusable field hospital_id and change its comment to
+    # include a *.  # We want it to look required whenever it's visible.
+    cr_hospital_id = db.Table(None, "hospital_id", hospital_id)
+    comment_with_star = DIV(SPAN("*", _class="req"), 
+                            cr_hospital_id.hospital_id.comment)
+    cr_hospital_id.hospital_id.comment = comment_with_star
+
 
     # Only include hospital_id if the hms module is enabled.
     if deployment_settings.has_module("hms"):
         table = db.define_table(tablename,
                                 fields_before_hospital,
-                                hospital_id,
+                                cr_hospital_id,
                                 fields_after_hospital,
                                 migrate=migrate)
     else:

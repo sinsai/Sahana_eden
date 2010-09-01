@@ -15,14 +15,11 @@
     // Adding tooltip here is too late to get proper decorations, so add them.
     $('#is_school_tooltip').cluetip(
         {activation: 'hover', sticky: false, splitTitle: '|'});
-    // Make the school code line appear required -- we'll test for a non-empty
-    // code if the checkbox is checked.  (This jQuery selector tests within
-    // the set selected by the first selector for a child matching the second.)
-    $('#cr_shelter_school_code__row .w2p_fc').append(
-        '{{=SPAN("*", _class="req")}}');
     // If data is present (on update), or if there's a validation error
     // (meaning box was checked but no school code filled in on create),
-    // set checked and do not hide.
+    // set checked and do not hide.  (The jQuery selector with two terms
+    // tests within the set selected by the first selector, for a child
+    // matching the second.)
     if ($('#cr_shelter_school_code').val() != "" ||
         $('#cr_shelter_school_code__row #school_code__error').length != 0) {
         $('#is_school').attr('checked','on');
@@ -64,9 +61,6 @@
         // Add tooltip decorations.
         $('#is_hospital_tooltip').cluetip(
             {activation: 'hover', sticky: false, splitTitle: '|'});
-        // Make hospital_id appear required.
-        $('#cr_shelter_hospital_id__row .w2p_fc').append(
-            '{{=SPAN("*", _class="req")}}');
         // If data is present (on update), or if there's a validation error
         // (meaning box was checked but no hospital id filled in on create),
         // set checked and do not hide.

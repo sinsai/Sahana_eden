@@ -158,7 +158,7 @@ def shn_sector_represent(sector_ids):
         return db(db.org_sector.id == sector_ids).select(db.org_sector.name, limitby=(0, 1)).first().name
 
 # Reusable field
-ADD_SECTOR = T("Add Sector")
+ADD_SECTOR = T("Add Cluster")
 sector_id = db.Table(None, "sector_id",
                      FieldS3("sector_id", sortby="name",
                            requires = IS_NULL_OR(IS_ONE_OF(db, "org_sector.id", "%(name)s", multiple=True)),
@@ -250,7 +250,7 @@ s3.crud_strings[tablename] = Storage(
 def shn_organisation_represent(id):
     row = db(db.org_organisation.id == id).select(db.org_organisation.name,
                                                   db.org_organisation.acronym,
-                                                  limitby = [0,1]).first()
+                                                  limitby = (0, 1)).first()
     if row:
         organisation_represent = row.name
         if row.acronym:
@@ -279,7 +279,7 @@ organisation_id = db.Table(None, "organisation_id",
                            ondelete = "RESTRICT"
                           ))
 
-def get_organisastion_id(name = "organisation_id",
+def get_organisation_id(name = "organisation_id",
                          label = T("Organization"),
                          add_label = ADD_ORGANIZATION,
                          help_str = Tstr("The Organization this record is associated with."),

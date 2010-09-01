@@ -3,7 +3,7 @@
 """
     Inventory 
     
-    @author: Michael Howden (michael@aidiq.com)
+    @author: Michael Howden (michael@sahanafoundation.org)
     @date-created: 2010-08-16    
     
     A module to record inventories of items at a location (store)
@@ -51,7 +51,7 @@ if deployment_settings.has_module(module):
             location = db(db.inventory_store.id == id).select(db.inventory_store.location_id, limitby=(0, 1)).first().location_id
             return shn_gis_location_represent(location)
         else:
-            return None
+            return NONE
     
     def get_inventory_store_id (field_name = "inventory_store_id", 
                                    label = T("Inventory Store"),
@@ -59,6 +59,7 @@ if deployment_settings.has_module(module):
                                    
         requires = IS_NULL_OR(IS_ONE_OF(db, "inventory_store.id", inventory_store_represent, sort=True))
         
+        #represent = inventory_store_represent #TODO Test if this works
         represent = lambda id: shn_gis_location_represent( 
                                    shn_get_db_field_value(db = db,
                                                           table = "inventory_store", 
@@ -86,7 +87,7 @@ if deployment_settings.has_module(module):
         return db.Table(None, 
                         field_name,
                         FieldS3(field_name, 
-                                db.supply_item, sortby="name",
+                                db.inventory_store,# sortby="name",
                                 requires = requires,
                                 represent = represent,
                                 label = label,
@@ -138,10 +139,14 @@ if deployment_settings.has_module(module):
                               editable=True)
 
 
-    inventory_menu = [
+    logs_menu = [
                       [T("Inventory Stores"), False, URL(r=request, c="inventory", f="store"),
                       [
                        [T("Add"), False, URL(r=request, c="inventory", f="store", args="create")],
+                      ]],
+                      [T("Distribution"), False, URL(r=request, c="logs", f="distrib"),
+                      [
+                       [T("Add"), False, URL(r=request, c="logs", f="distrib", args="create")],
                       ]],
                       [T("Relief Items"), False, URL(r=request, c="supply", f="item"), None]
                      ]

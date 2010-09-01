@@ -3,7 +3,7 @@
 """
     Supply 
     
-    @author: Michael Howden (michael@aidiq.com)
+    @author: Michael Howden (michael@sahanafoundation.org)
     @date-created: 2010-08-16    
     
     Generic Supply functionality such as catalogs and items that will be used across multiple modules
@@ -11,7 +11,7 @@
 
 module = request.controller
 
-response.menu_options = inventory_menu
+response.menu_options = logs_menu
 
 #==============================================================================
 # @ToDo: Create should be restricted to Admin

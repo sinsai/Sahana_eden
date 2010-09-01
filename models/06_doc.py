@@ -66,7 +66,8 @@ def document_represent(id):
     #Website
     #Person
     return A ( represent,
-               _href = URL(r=request, c="doc", f="document", args = [id])
+               _href = URL(r=request, c="doc", f="document", args = [id], extension = ""),
+               _target = "blank"
                )
 
 DOCUMENT = Tstr("Reference Document")

@@ -10,7 +10,7 @@
 """
 
 module = "supply"
-if deployment_settings.has_module("inventory"):
+if deployment_settings.has_module("logs"):
     #==============================================================================
     # Settings
     #

@@ -10,7 +10,7 @@
 """
 
 module = "inventory"
-if deployment_settings.has_module(module):
+if deployment_settings.has_module("logs"):
     #==============================================================================
     # Settings
     #
@@ -148,5 +148,8 @@ if deployment_settings.has_module(module):
                       [
                        [T("Add"), False, URL(r=request, c="logs", f="distrib", args="create")],
                       ]],
-                      [T("Relief Items"), False, URL(r=request, c="supply", f="item"), None]
+                      [T("Relief Items"), False, URL(r=request, c="supply", f="item"), 
+                       [
+                       [T("Add"), False, URL(r=request, c="losupplygs", f="item", args="create")],
+                      ]],
                      ]

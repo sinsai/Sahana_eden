@@ -833,6 +833,7 @@ class GIS(object):
                   legend = False,
                   toolbar = False,
                   search = False,
+                  mouse_position = "normal",
                   print_tool = {},
                   mgrs = {},
                   window = False,
@@ -880,6 +881,7 @@ class GIS(object):
             @param legend: Show the Legend panel
             @param toolbar: Show the Icon Toolbar of Controls
             @param search: Show the Geonames search box
+            @param mouse_position: Show the current coordinates in the bottom-right of the map. 3 Options: 'normal' (default), 'mgrs' (MGRS), False (off)
             @param print_tool: Show a print utility (NB This requires server-side support: http://eden.sahanafoundation.org/wiki/BluePrintGISPrinting)
                 {
                 url: string,            # URL of print service (e.g. http://localhost:8080/geoserver/pdf/)
@@ -1557,6 +1559,14 @@ OpenLayers.Util.extend( selectPdfControl, {
             layers_wms_browser = ""
             layers_wms_browser2 = ""
 
+        # Mouse Position
+        if mouse_position and mouse_position is not "mgrs":
+            mouse_position = "map.addControl(new OpenLayers.Control.MousePosition());"
+        elif mouse_position == "mgrs":
+            mouse_position = "map.addControl(new OpenLayers.Control.MGRSMousePosition());"
+        else:
+            mouse_position = ""
+        
         # Print
         if print_tool:
             url = print_tool["url"]
@@ -3152,7 +3162,7 @@ OpenLayers.Util.extend( selectPdfControl, {
         addLayers(map);
 
         map.addControl(new OpenLayers.Control.ScaleLine());
-        map.addControl(new OpenLayers.Control.MGRSMousePosition());
+        """ + mouse_position + """
         map.addControl(new OpenLayers.Control.Permalink());
         map.addControl(new OpenLayers.Control.OverviewMap({mapOptions: options}));
 

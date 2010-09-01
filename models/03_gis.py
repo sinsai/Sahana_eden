@@ -91,7 +91,7 @@ table.units.label = T("Units")
 projection_id = db.Table(None, "projection_id",
             FieldS3("projection_id", db.gis_projection, sortby="name",
                 requires = IS_NULL_OR(IS_ONE_OF(db, "gis_projection.id", "%(name)s")),
-                represent = lambda id: db(db.gis_projection.id == id).select(db.gis_projection.name, limitby=(0, 1)).first().name,
+                represent = lambda id: (id and [db(db.gis_projection.id == id).select(db.gis_projection.name, limitby=(0, 1)).first().name] or [NONE])[0],
                 label = T("Projection"),
                 comment = "",
                 ondelete = "RESTRICT"
@@ -956,9 +956,9 @@ for layertype in gis_layer_types:
             Field("visible", "boolean", default=False, label=T("On by default?")),
             Field("url", label=T("Location"), requires = IS_NOT_EMPTY()),
             Field("version", label=T("Version"), default="1.1.0", requires = IS_IN_SET(["1.0.0", "1.1.0"], zero=None)),
-            Field("featureType", label=T("Feature Type")),
-            Field("featureNS", label=T("Feature Namespace")),
-            #projection_id,
+            Field("featureNS", requires=IS_NOT_EMPTY(), label=T("Feature Namespace"), comment=DIV(SPAN("*", _class="req"), DIV( _class="tooltip", _title="Feature Namespace" + "|" + Tstr("In GeoServer, this is the Workspace Name. Within the WFS getCapabilities, this is the FeatureType Name part before the colon(:).")))),
+            Field("featureType", requires=IS_NOT_EMPTY(), label=T("Feature Type"), comment=DIV(SPAN("*", _class="req"), DIV( _class="tooltip", _title="Feature Type" + "|" + Tstr("In GeoServer, this is the Layer Name. Within the WFS getCapabilities, this is the FeatureType Name part after the colon(:).")))),
+            projection_id,
             #Field("editable", "boolean", default=False, label=T("Editable?")),
             )
         table = db.define_table(tablename, t, migrate=migrate)

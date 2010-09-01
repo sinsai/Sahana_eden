@@ -1991,27 +1991,39 @@ OpenLayers.Util.extend( selectPdfControl, {
             name_safe = re.sub('\W', '_', name)
             url = layer.url
             try:
-                wfs_version = "version: '" + layer.version + "',"
+                wfs_version = layer.version
             except:
                 wfs_version = ""
             featureType = layer.featureType
             featureNS = layer.featureNS
+            try:
+                wfs_projection = db(db.gis_projection.id == layer.projection_id).select(db.gis_projection.epsg, limitby=(0, 1)).first().epsg
+                wfs_projection = "srsName: 'EPSG:" + wfs_projection + "',"
+            except:
+                wfs_projection = ""
+            if layer.visible:
+                wfs_visibility = ""
+            else:
+                wfs_visibility = "wfsLayer" + name_safe + ".setVisibility(false);"
             #if layer.editable:
             #    wfs_strategy = "strategies: [new OpenLayers.Strategy.BBOX(), new OpenLayers.Strategy.Save()],"
-            wfs_strategy = "strategies: [new OpenLayers.Strategy.BBOX()],"
+            wfs_strategy = "new OpenLayers.Strategy.BBOX()"
             layers_wfs  += """
         var wfsLayer""" + name_safe + """ = new OpenLayers.Layer.Vector( '""" + name + """', {
-                """ + wfs_strategy + """
+                strategies: [""" + wfs_strategy + """],
+                projection: projection_current,
                 protocol: new OpenLayers.Protocol.WFS({
                     version: '""" + wfs_version + """',
-                    //srsName: "EPSG:4326",
+                    """ + wfs_projection + """
                     url:  '""" + url + """',
                     featureType: '""" + featureType + """',
                     featureNS: '""" + featureNS + """'
-                    //geometryName: "the_geom"
-                });
-            );
+                    //,geometryName: "the_geom"
+                })
+                //,styleMap: styleMap
+            });
         map.addLayer(wfsLayer""" + name_safe + """);
+        """ + wfs_visibility + """
         """
 
         # WMS
@@ -2984,6 +2996,8 @@ OpenLayers.Util.extend( selectPdfControl, {
         """ + layers_bing + """
         // TMS
         """ + layers_tms + """
+        // WFS
+        """ + layers_wfs + """
         // WMS
         """ + layers_wms + """
         // XYZ

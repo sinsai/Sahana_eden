@@ -1162,6 +1162,14 @@ def shn_list(r, **attr):
                                             _onclick="window.location='%s';" %
                                                      response.s3.cancel))
 
+            if "location_id" in db[tablename].fields:
+                # Allow the Location Selector to take effect
+                _gis.location_id = True
+                if response.s3.gis.map_selector:
+                    # Include a map
+                    _map = shn_map(r, method="create")
+                    output.update(_map=_map)
+
             if r.component:
                 table[r.fkey].comment = _comment
 
@@ -1267,15 +1275,13 @@ def shn_create(r, **attr):
         # Default components
         output = dict(module=prefix, resource=name, main=main, extra=extra)
 
-        if "location_id" in db[tablename].fields and response.s3.gis.map_selector:
-            # Include a map
-            _map = gis.show_map(add_feature = True,
-                                add_feature_active = True,
-                                toolbar = True,
-                                collapsed = True,
-                                window = True,
-                                window_hide = True)
-            output.update(_map=_map)
+        if "location_id" in db[tablename].fields:
+            # Allow the Location Selector to take effect
+            _gis.location_id = True
+            if response.s3.gis.map_selector:
+                # Include a map
+                _map = shn_map(r, method="create")
+                output.update(_map=_map)
 
         # Title, subtitle and resource header
         if r.component:
@@ -1574,48 +1580,15 @@ def shn_update(r, **attr):
             list_btn = A(label_list_button, _href=r.there(), _class="action-btn")
             output.update(list_btn=list_btn)
 
-        if "location_id" in db[tablename].fields and response.s3.gis.map_selector:
-            # Include a map
-            config = gis.get_config()
-            zoom = config.zoom
-            _locations = db.gis_location
-            location = db((db[tablename].id == r.id) & (_locations.id == db[tablename].location_id)).select(_locations.id, _locations.uuid, _locations.name, _locations.lat, _locations.lon, _locations.level, _locations.parent, _locations.addr_street, limitby=(0, 1)).first()
-            if location and location.lat is not None and location.lon is not None:
-                lat = location.lat
-                lon = location.lon
-            else:
-                lat = config.lat
-                lon = config.lon
-            layername = Tstr("Location")
-            popup_label = ""
-            filter = Storage(tablename = tablename,
-                             id = r.id
-                            )
-            layer = gis.get_feature_layer(prefix, name, layername, popup_label, filter=filter)
-            feature_queries = [layer]
-            _map = gis.show_map(lat = lat,
-                                lon = lon,
-                                # Same as a single zoom on a cluster
-                                zoom = zoom + 2,
-                                feature_queries = feature_queries,
-                                add_feature = True,
-                                add_feature_active = False,
-                                toolbar = True,
-                                collapsed = True,
-                                window = True,
-                                window_hide = True)
-            output.update(_map=_map)
-            if location and location.id:
-                _location = Storage(id = location.id,
-                                    uuid = location.uuid,
-                                    name = location.name,
-                                    lat = location.lat,
-                                    lon = location.lon,
-                                    level = location.level,
-                                    parent = location.parent,
-                                    addr_street = location.addr_street
-                                    )
-                output.update(oldlocation=_location)
+        if "location_id" in db[tablename].fields:
+            # Allow the Location Selector to take effect
+            _gis.location_id = True
+            if response.s3.gis.map_selector:
+                # Include a map
+                _map = shn_map(r, method="update", tablename=tablename, prefix=prefix, name=name)
+                oldlocation = _map["oldlocation"]
+                _map = _map["_map"]
+                output.update(_map=_map, oldlocation=oldlocation)
 
         return output
 
@@ -1751,6 +1724,67 @@ def shn_copy(r, **attr):
     redirect(URL(r=request, args="create", vars={"from_record":r.id}))
 
 #
+# shn_map ------------------------------------------------------------------
+#
+def shn_map(r, method="create", tablename=None, prefix=None, name=None):
+    """ Prepare a Map to include in forms"""
+    
+    if method == "create":
+        _map = gis.show_map(add_feature = True,
+                            add_feature_active = True,
+                            toolbar = True,
+                            collapsed = True,
+                            window = True,
+                            window_hide = True)
+        return _map
+
+    elif method == "update" and tablename and prefix and name:
+        config = gis.get_config()
+        zoom = config.zoom
+        _locations = db.gis_location
+        fields = [_locations.id, _locations.uuid, _locations.name, _locations.lat, _locations.lon, _locations.level, _locations.parent, _locations.addr_street]
+        location = db((db[tablename].id == r.id) & (_locations.id == db[tablename].location_id)).select(limitby=(0, 1), *fields).first()
+        if location and location.lat is not None and location.lon is not None:
+            lat = location.lat
+            lon = location.lon
+        else:
+            lat = config.lat
+            lon = config.lon
+        layername = Tstr("Location")
+        popup_label = ""
+        filter = Storage(tablename = tablename,
+                         id = r.id
+                        )
+        layer = gis.get_feature_layer(prefix, name, layername, popup_label, filter=filter)
+        feature_queries = [layer]
+        _map = gis.show_map(lat = lat,
+                            lon = lon,
+                            # Same as a single zoom on a cluster
+                            zoom = zoom + 2,
+                            feature_queries = feature_queries,
+                            add_feature = True,
+                            add_feature_active = False,
+                            toolbar = True,
+                            collapsed = True,
+                            window = True,
+                            window_hide = True)
+        if location and location.id:
+            _location = Storage(id = location.id,
+                                uuid = location.uuid,
+                                name = location.name,
+                                lat = location.lat,
+                                lon = location.lon,
+                                level = location.level,
+                                parent = location.parent,
+                                addr_street = location.addr_street
+                                )
+        else:
+            _location = None
+        return dict(_map=_map, oldlocation=_location)
+
+    return dict(None, None)
+
+#
 # shn_search ------------------------------------------------------------------
 #
 def shn_search(r, **attr):
@@ -1778,6 +1812,7 @@ def shn_search(r, **attr):
 
         shn_represent(r.table, r.prefix, r.name, deletable, main, extra)
         search = t2.search(r.table, query=query)
+        #search = crud.search(r.table, query=query)[0]
 
         # Check for presence of Custom View
         shn_custom_view(r, "search.html")

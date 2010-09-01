@@ -7,7 +7,7 @@
 """
 
 module = "hms"
-if deployment_settings.has_module(module) or deployment_settings.has_module("cr"):
+if deployment_settings.has_module(module):
 
     # -----------------------------------------------------------------------------
     # Settings
@@ -89,6 +89,7 @@ if deployment_settings.has_module(module) or deployment_settings.has_module("cr"
     resource = "hospital"
     tablename = "%s_%s" % (module, resource)
     table = db.define_table(tablename, timestamp, uuidstamp, authorstamp, deletion_status,
+                    site_id,
                     Field("gov_uuid", unique=True, length=128), # UUID assigned by Local Government
                     Field("name", notnull=True),                # Name of the facility
                     Field("aka1"),                              # Alternate name, or name in local language
@@ -240,19 +241,21 @@ if deployment_settings.has_module(module) or deployment_settings.has_module("cr"
                 form.vars.gov_uuid = None
 
 
-    def shn_hms_hospital_onaccept(form):
+    def shn_hms_hospital_onaccept(form, table=None):
 
         # Update requests
         hospital = db.hms_hospital[form.vars.id]
         if hospital:
             db(db.hms_hrequest.hospital_id == hospital.id).update(city=hospital.city)
 
+        shn_site_onaccept(form, table=table)
+
 
     s3xrc.model.configure(table,
                           onvalidation=lambda form: \
                           shn_hms_hospital_onvalidation(form),
-                          onaccept=lambda form: \
-                          shn_hms_hospital_onaccept(form),
+                          onaccept=lambda form, tab=table: \
+                          shn_hms_hospital_onaccept(form, table=tab),
                           list_fields=["id",
                                        "gov_uuid",
                                        "name",

@@ -89,10 +89,22 @@
             //});
     });
     //]]></script>
-{{elif jr.method != "read":}}
-    <script type="text/javascript">//<![CDATA[
-        {{include "gis/feature_crud.js"}}
+{{elif "level" in request.vars:}}
+<script type="text/javascript">//<![CDATA[
+    $(function() {
+        $('#gis_location_level__row').hide();
+        $('#gis_location_level').val('{{=request.vars.level}}');
+      {{if request.vars.level == "L0":}}
+        $('#gis_location_parent__row').hide();
+      {{elif "parent" in request.vars:}}
+        $('#gis_location_parent').val({{=request.vars.parent}});
+        $('#gis_location_parent__row').hide();
+      {{else:}}
+      {{pass}}
     });
-//]]></script>
+    //]]></script>
+{{pass}}
+{if jr.method != "read":}}
+    {{include "gis/feature_crud.js"}}
 {{pass}}
 {{include "gis/convert_gps.html"}}

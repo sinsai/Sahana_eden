@@ -117,7 +117,17 @@
             <data field="gis_feature_type" value="1">Point</data>
 
             <data field="name">
-                <xsl:value-of select="name"/>
+                <xsl:choose>
+                    <xsl:when test="./name/text()">
+                        <xsl:value-of select="./name/text()"/>
+                    </xsl:when>
+                    <xsl:when test="./latitude/text() and ./longitude/text()">
+                        <xsl:value-of select="concat(./latitude/text(), ',', ./longitude/text())"/>
+                    </xsl:when>
+                    <xsl:otherwise>
+                        <xsl:text>Unnamed location</xsl:text>
+                    </xsl:otherwise>
+                </xsl:choose>
             </data>
 
             <data field="lat">

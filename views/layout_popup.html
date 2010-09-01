@@ -20,27 +20,36 @@
 
 $(document).ready( function() {
     // Reset the parent's toggle
-    self.parent.window.togglecallerappend = "True";
+    self.parent.window.togglecallerappend = 'True';
 });
 
-function TB_cleanup(caller) {
-    if(self.parent.cleanup)
-       self.parent.cleanup(caller);
-    self.parent.tb_remove();
+function s3_tb_call_cleanup(caller) {
+    if(self.parent.s3_tb_cleanup)
+       self.parent.s3_tb_cleanup(caller);
+    self.parent.s3_tb_remove();
 }
 
-function TB_refresh() {
+function s3_tb_refresh() {
     // The Get parameters
     var $_GET = getQueryParams(document.location.search);
 
-    var caller = $_GET["caller"];
-    if (caller.match(/but_add_/)){
-        // OR Dashboard
-        TB_cleanup(caller);
+    var level = $_GET['level'];
+    if (typeof level === 'undefined'){
+        // continue
+    } else {
+        // Location Selector
+        s3_tb_call_cleanup(level);
         return;
     }
-    var child = $_GET["child"];
-    if (typeof child === "undefined"){
+    
+    var caller = $_GET['caller'];
+    if (caller.match(/but_add_/)){
+        // OR Dashboard
+        s3_tb_call_cleanup(caller);
+        return;
+    }
+    var child = $_GET['child'];
+    if (typeof child === 'undefined'){
             // Use default
             var child_resource = '{{=request.function}}_id';
         } else {
@@ -55,7 +64,7 @@ function TB_refresh() {
     var parent_resource = parent_field.replace(parent_module + '_', '');
     var parent_url = new String(self.parent.location);
     var rel_url = parent_url.replace(/.*\/{{=request.application}}\//, '');
-    var args = rel_url.split("?")[0].split("/");
+    var args = rel_url.split('?')[0].split('/');
     var parent_component = null;
     parent_function = args[1]
     if (args.length > 2) {
@@ -68,12 +77,12 @@ function TB_refresh() {
       }
     }
     if ((parent_component != null) && (parent_resource != parent_function) && (parent_resource == parent_component)) {
-      parent_resource = parent_function + "/" + parent_component;
+      parent_resource = parent_function + '/' + parent_component;
     }
 
     // URL to retrieve the Options list for the field of the master resource
     var url = '{{=URL(r=request, c="aaa", f="bbb")}}'.replace('aaa/bbb', parent_module + '/' + parent_resource);
-    url += "/options.json?field=" + child_resource;    
+    url += '/options.json?field=' + child_resource;
     var selector = self.parent.$('#' + caller);
     var dummy = self.parent.$('#dummy_' + caller);
     var has_dummy = (dummy.val() != undefined);
@@ -83,14 +92,14 @@ function TB_refresh() {
         var append=[];
     }
     var value_high = 1;
-    var represent_high = "";
+    var represent_high = '';
     $.getJSONS3(url, function (data) {
         var value, represent;
         $.each(data['option'], function() {
             value = this['@value'];
             represent = this['$'];
-            if(typeof represent === "undefined") {
-                represent = "";
+            if(typeof represent === 'undefined') {
+                represent = '';
             }
             if (dropdown) {
                 append.push(["<option value='", value, "'>", represent, "</option>"].join(''));
@@ -118,7 +127,7 @@ function TB_refresh() {
                 selector.val(value_high);
             }, 1);
         // Clean-up
-        TB_cleanup(caller);
+        s3_tb_call_cleanup(caller);
     });
 }
 // Function to get the URL parameters
@@ -139,9 +148,9 @@ function getQueryParams(qs) {
 {{if response.flash or response.confirmation:}}
 // Refresh the DIV and close the pop up
 $(document).ready( function() {
-        self.parent.$(".TB_closeAjaxWindow").html('');
+        self.parent.$('.TB_closeAjaxWindow').html('');
     });
-TB_refresh();
+s3_tb_refresh();
 {{pass}}
 
 //]]></script>

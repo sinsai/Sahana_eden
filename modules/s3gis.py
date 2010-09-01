@@ -343,7 +343,7 @@ class GIS(object):
             return None
 
     # -----------------------------------------------------------------------------
-    def get_feature_layer(self, module, resource, layername, popup_label, marker=None, filter=None):
+    def get_feature_layer(self, module, resource, layername, popup_label, marker=None, filter=None, active=True):
         """
             Return a Feature Layer suitable to display on a map
             @param: layername: Used as the label in the LayerSwitcher
@@ -370,9 +370,9 @@ class GIS(object):
         popup_url = URL(r=request, c=module, f=resource, args="read.plain?%s.location_id=" % resource)
         try:
             marker = db(db.gis_marker.name == marker).select(db.gis_marker.id, limitby=(0, 1)).first().id
-            layer = {"name":layername, "query":locations, "active":True, "marker":marker, "popup_url": popup_url}
+            layer = {"name":layername, "query":locations, "active":active, "marker":marker, "popup_url": popup_url}
         except:
-            layer = {"name":layername, "query":locations, "active":True, "popup_url": popup_url}
+            layer = {"name":layername, "query":locations, "active":active, "popup_url": popup_url}
 
         return layer
     
@@ -419,15 +419,17 @@ class GIS(object):
         return features
 
     # -----------------------------------------------------------------------------
-    def get_latlon(self, feature_id):
+    def get_latlon(self, feature_id, filter=False):
     
         """ Returns the Lat/Lon for a Feature (using recursion where necessary)
 
             @param feature_id: the feature ID (int) or UUID (str)
+            @param filter: Filter out results based on deployment_settings
             @ToDo Rewrite to use self.get_parents()
         """
         
         db = self.db
+        deployment_settings = self.deployment_settings
         table_feature = db.gis_location
         
         if isinstance(feature_id, int):
@@ -440,6 +442,10 @@ class GIS(object):
         
         feature = db(query).select(table_feature.lat, table_feature.lon, table_feature.parent, limitby=(0, 1)).first()
         
+        query = (table_feature.deleted == False)
+        if filter and not deployment_settings.get_gis_display_l0():
+            query = query & ((table_feature.level != "L0") | (table_feature.level == None))
+
         try:
             lat = feature.lat
             lon = feature.lon
@@ -452,7 +458,7 @@ class GIS(object):
                 if parent_id:
                     # @ToDo Recursion
                     #latlon = self.get_latlon(parent_id)
-                    parent = db(table_feature.id == parent_id).select(table_feature.lat, table_feature.lon, table_feature.parent, limitby=(0, 1)).first()
+                    parent = db(query & (table_feature.id == parent_id)).select(table_feature.lat, table_feature.lon, table_feature.parent, limitby=(0, 1)).first()
                     lat = parent.lat
                     lon = parent.lon
                     if (lat is not None) and (lon is not None):
@@ -462,7 +468,7 @@ class GIS(object):
                         # Try the Parent (e.g. L4)
                         parent_id = feature.parent
                         if parent_id:
-                            parent = db(table_feature.id == parent_id).select(table_feature.lat, table_feature.lon, table_feature.parent, limitby=(0, 1)).first()
+                            parent = db(query & (table_feature.id == parent_id)).select(table_feature.lat, table_feature.lon, table_feature.parent, limitby=(0, 1)).first()
                             lat = parent.lat
                             lon = parent.lon
                             if (lat is not None) and (lon is not None):
@@ -472,7 +478,7 @@ class GIS(object):
                                 # Try the Parent (e.g. L3)
                                 parent_id = feature.parent
                                 if parent_id:
-                                    parent = db(table_feature.id == parent_id).select(table_feature.lat, table_feature.lon, table_feature.parent, limitby=(0, 1)).first()
+                                    parent = db(query & (table_feature.id == parent_id)).select(table_feature.lat, table_feature.lon, table_feature.parent, limitby=(0, 1)).first()
                                     lat = parent.lat
                                     lon = parent.lon
                                     if (lat is not None) and (lon is not None):
@@ -482,7 +488,7 @@ class GIS(object):
                                         # Try the Parent (e.g. L2)
                                         parent_id = feature.parent
                                         if parent_id:
-                                            parent = db(table_feature.id == parent_id).select(table_feature.lat, table_feature.lon, table_feature.parent, limitby=(0, 1)).first()
+                                            parent = db(query & (table_feature.id == parent_id)).select(table_feature.lat, table_feature.lon, table_feature.parent, limitby=(0, 1)).first()
                                             lat = parent.lat
                                             lon = parent.lon
                                             if (lat is not None) and (lon is not None):
@@ -492,7 +498,7 @@ class GIS(object):
                                                 # Try the Parent (e.g. L1)
                                                 parent_id = feature.parent
                                                 if parent_id:
-                                                    parent = db(table_feature.id == parent_id).select(table_feature.lat, table_feature.lon, table_feature.parent, limitby=(0, 1)).first()
+                                                    parent = db(query & (table_feature.id == parent_id)).select(table_feature.lat, table_feature.lon, table_feature.parent, limitby=(0, 1)).first()
                                                     lat = parent.lat
                                                     lon = parent.lon
                                                     if (lat is not None) and (lon is not None):
@@ -502,7 +508,7 @@ class GIS(object):
                                                         # Try the Parent (e.g. L0)
                                                         parent_id = feature.parent
                                                         if parent_id:
-                                                            parent = db(table_feature.id == parent_id).select(table_feature.lat, table_feature.lon, table_feature.parent, limitby=(0, 1)).first()
+                                                            parent = db(query & (table_feature.id == parent_id)).select(table_feature.lat, table_feature.lon, table_feature.parent, limitby=(0, 1)).first()
                                                             lat = parent.lat
                                                             lon = parent.lon
                                                             if (lat is not None) and (lon is not None):
@@ -861,7 +867,8 @@ class GIS(object):
                  query  : query,        # A gluon.sql.Rows of gis_locations, which can be from a simple query or a Join. Extra fields can be added for 'marker' or 'shape' (with optional 'color' & 'size') & 'popup_label'
                  active : False,        # Is the feed displayed upon load or needs ticking to load afterwards?
                  popup_url : None,      # The URL which will be used to fill the pop-up. it will be appended by the Location ID.
-                 marker : None          # The marker_id for the icon used to display the feature (over-riding the normal process).
+                 marker : None,         # The marker_id for the icon used to display the feature (over-riding the normal process).
+                 polygons : False       # Use Polygon data, if-available (defaults to just using Point)
                 }]
             @param wms_browser: WMS Server's GetCapabilities & options (dict)
                 {
@@ -899,6 +906,7 @@ class GIS(object):
         db = self.db
         auth = self.auth
         cache = self.cache
+        deployment_settings = self.deployment_settings
 
         # Read configuration
         config = self.get_config()
@@ -936,6 +944,8 @@ class GIS(object):
         cluster_distance = config.cluster_distance
         cluster_threshold = config.cluster_threshold
 
+        markers = {}
+        
         html = DIV(_id="map_wrapper")
 
         #####
@@ -1819,20 +1829,17 @@ OpenLayers.Util.extend( selectPdfControl, {
         layers_yahoo = ""
         layers_bing = ""
 
-        # Only enable commercial base layers if using a sphericalMercator projection
-        if projection == 900913:
+        # OpenStreetMap
+        gis_layer_openstreetmap_subtypes = self.layer_subtypes("openstreetmap")
+        openstreetmap = Storage()
+        openstreetmap_enabled = db(db.gis_layer_openstreetmap.enabled == True).select()
+        for layer in openstreetmap_enabled:
+            for subtype in gis_layer_openstreetmap_subtypes:
+                if layer.subtype == subtype:
+                    openstreetmap["%s" % subtype] = layer.name
 
-            # OpenStreetMap
-            gis_layer_openstreetmap_subtypes = self.layer_subtypes("openstreetmap")
-            openstreetmap = Storage()
-            openstreetmap_enabled = db(db.gis_layer_openstreetmap.enabled == True).select()
-            for layer in openstreetmap_enabled:
-                for subtype in gis_layer_openstreetmap_subtypes:
-                    if layer.subtype == subtype:
-                        openstreetmap["%s" % subtype] = layer.name
-
-            if openstreetmap:
-                functions_openstreetmap = """
+        if openstreetmap:
+            functions_openstreetmap = """
         function osm_getTileURL(bounds) {
             var res = this.map.getResolution();
             var x = Math.round((bounds.left - this.maxExtent.left) / (res * this.tileSize.w));
@@ -1847,34 +1854,41 @@ OpenLayers.Util.extend( selectPdfControl, {
             }
         }
         """
-                if openstreetmap.Mapnik:
-                    layers_openstreetmap += """
+            if openstreetmap.Mapnik:
+                layers_openstreetmap += """
+        //var mapnik = new OpenLayers.Layer.TMS( '""" + openstreetmap.Mapnik + """', 'http://tile.openstreetmap.org/', {type: 'png', getURL: osm_getTileURL, displayOutsideMaxExtent: true, attribution: '<a href="http://www.openstreetmap.org/">OpenStreetMap</a>' } );
         var mapnik = new OpenLayers.Layer.OSM.Mapnik('""" + openstreetmap.Mapnik + """', {
-            displayOutsideMaxExtent: true,
-            wrapDateLine: true
+                displayOutsideMaxExtent: true,  // Not working! Can revert to TMS, if necessary
+                wrapDateLine: true,
+                layerCode: 'M'
         });
         map.addLayer(mapnik);
                     """
-                if openstreetmap.Osmarender:
-                    layers_openstreetmap += """
+            if openstreetmap.Osmarender:
+                layers_openstreetmap += """
+        //var osmarender = new OpenLayers.Layer.TMS( '""" + openstreetmap.Osmarender + """', 'http://tah.openstreetmap.org/Tiles/tile/', {type: 'png', getURL: osm_getTileURL, displayOutsideMaxExtent: true, attribution: '<a href="http://www.openstreetmap.org/">OpenStreetMap</a>' } );
         var osmarender = new OpenLayers.Layer.OSM.Osmarender('""" + openstreetmap.Osmarender + """', {
-            displayOutsideMaxExtent: true,
+            layerCode: 'O',
+            displayOutsideMaxExtent: true,  // Not working! Can revert to TMS, if necessary
             wrapDateLine: true
         });
         map.addLayer(osmarender);
                     """
-                if openstreetmap.Aerial:
-                    layers_openstreetmap += """
+            if openstreetmap.Aerial:
+                layers_openstreetmap += """
         var oam = new OpenLayers.Layer.TMS( '""" + openstreetmap.Aerial + """', 'http://tile.openaerialmap.org/tiles/1.0.0/openaerialmap-900913/', {type: 'png', getURL: osm_getTileURL } );
         map.addLayer(oam);
                     """
-                if openstreetmap.Taiwan:
-                    layers_openstreetmap += """
+            if openstreetmap.Taiwan:
+                layers_openstreetmap += """
         var osmtw = new OpenLayers.Layer.TMS( '""" + openstreetmap.Taiwan + """', 'http://tile.openstreetmap.tw/tiles/', {type: 'png', getURL: osm_getTileURL } );
         map.addLayer(osmtw);
                     """
-            else:
-                functions_openstreetmap = ""
+        else:
+            functions_openstreetmap = ""
+
+        # Only enable commercial base layers if using a sphericalMercator projection
+        if projection == 900913:
 
             # Google
             gis_layer_google_subtypes = self.layer_subtypes("google")
@@ -1968,6 +1982,49 @@ OpenLayers.Util.extend( selectPdfControl, {
         var bingterrain = new OpenLayers.Layer.VirtualEarth( '""" + bing.Terrain + """' , {type: VEMapStyle.Shaded, 'sphericalMercator': true } );
         map.addLayer(bingterrain);
                     """
+
+        # WFS
+        layers_wfs = ""
+        wfs_enabled = db(db.gis_layer_wfs.enabled == True).select()
+        for layer in wfs_enabled:
+            name = layer.name
+            name_safe = re.sub('\W', '_', name)
+            url = layer.url
+            try:
+                wfs_version = layer.version
+            except:
+                wfs_version = ""
+            featureType = layer.featureType
+            featureNS = layer.featureNS
+            try:
+                wfs_projection = db(db.gis_projection.id == layer.projection_id).select(db.gis_projection.epsg, limitby=(0, 1)).first().epsg
+                wfs_projection = "srsName: 'EPSG:" + wfs_projection + "',"
+            except:
+                wfs_projection = ""
+            if layer.visible:
+                wfs_visibility = ""
+            else:
+                wfs_visibility = "wfsLayer" + name_safe + ".setVisibility(false);"
+            #if layer.editable:
+            #    wfs_strategy = "strategies: [new OpenLayers.Strategy.BBOX(), new OpenLayers.Strategy.Save()],"
+            wfs_strategy = "new OpenLayers.Strategy.BBOX()"
+            layers_wfs  += """
+        var wfsLayer""" + name_safe + """ = new OpenLayers.Layer.Vector( '""" + name + """', {
+                strategies: [""" + wfs_strategy + """],
+                projection: projection_current,
+                protocol: new OpenLayers.Protocol.WFS({
+                    version: '""" + wfs_version + """',
+                    """ + wfs_projection + """
+                    url:  '""" + url + """',
+                    featureType: '""" + featureType + """',
+                    featureNS: '""" + featureNS + """'
+                    //,geometryName: "the_geom"
+                })
+                //,styleMap: styleMap
+            });
+        map.addLayer(wfsLayer""" + name_safe + """);
+        """ + wfs_visibility + """
+        """
 
         # WMS
         layers_wms = ""
@@ -2304,6 +2361,11 @@ OpenLayers.Util.extend( selectPdfControl, {
                 else:
                     _popup_url = urllib.unquote(URL(r=request, c="gis", f="location", args=["read.popup?location.id="]))
 
+                if "polygon" in layer and layer.polygon:
+                    polygons = True
+                else:
+                    polygons = False
+
                 # Generate HTML snippet
                 name_safe = re.sub("\W", "_", name)
                 if "active" in layer and layer["active"]:
@@ -2338,10 +2400,50 @@ OpenLayers.Util.extend( selectPdfControl, {
                     except (AttributeError, KeyError):
                         # Query is a simple select
                         feature = _feature
-                    # Deal with manually-imported Features which are missing WKT
-                    if feature.get("wkt"):
-                        wkt = feature.wkt
+                    # Should we use Polygons or Points?
+                    if polygons:
+                        # Deal with manually-imported Features which are missing WKT
+                        if feature.get("wkt"):
+                            wkt = feature.wkt
+                        else:
+                            try:
+                                lat = feature.lat
+                                lon = feature.lon
+                                if (lat is None) or (lon is None):
+                                    # Zero is allowed but not None
+                                    if feature.get("parent"):
+                                        # Skip the current record if we can
+                                        latlon = self.get_latlon(feature.parent)
+                                    elif feature.get("id"):
+                                        latlon = self.get_latlon(feature.id)
+                                    else:
+                                        # nothing we can do!
+                                        continue
+                                    if latlon:
+                                        lat = latlon["lat"]
+                                        lon = latlon["lon"]
+                                    else:
+                                        # nothing we can do!
+                                        continue
+                            except:
+                                if feature.get("parent"):
+                                    # Skip the current record if we can
+                                    latlon = self.get_latlon(feature.parent)
+                                elif feature.get("id"):
+                                    latlon = self.get_latlon(feature.id)
+                                else:
+                                    # nothing we can do!
+                                    continue
+                                if latlon:
+                                    lat = latlon["lat"]
+                                    lon = latlon["lon"]
+                                else:
+                                    # nothing we can do!
+                                    continue
+                            wkt = self.latlon_to_wkt(lat, lon)
                     else:
+                        # Just display Point data, even if we have Polygons
+                        # ToDo: DRY with Polygon
                         try:
                             lat = feature.lat
                             lon = feature.lon
@@ -2377,7 +2479,7 @@ OpenLayers.Util.extend( selectPdfControl, {
                                 # nothing we can do!
                                 continue
                         wkt = self.latlon_to_wkt(lat, lon)
-                            
+
                     try:
                         # Has a per-feature Vector Shape been added to the query?
                         graphicName = feature.shape
@@ -2832,6 +2934,7 @@ OpenLayers.Util.extend( selectPdfControl, {
     var centerPoint, currentFeature, popupControl, highlightControl;
     var wmsBrowser, printProvider;
     var allLayers = new Array();
+    S3.gis.Images = new Array();
     OpenLayers.ImgPath = '/""" + request.application + """/static/img/gis/openlayers/';
     var ajax_loader = '""" + str(URL(r=request, c="static", f="img")) + """/ajax-loader.gif';
     // avoid pink tiles
@@ -2893,6 +2996,8 @@ OpenLayers.Util.extend( selectPdfControl, {
         """ + layers_bing + """
         // TMS
         """ + layers_tms + """
+        // WFS
+        """ + layers_wfs + """
         // WMS
         """ + layers_wms + """
         // XYZ

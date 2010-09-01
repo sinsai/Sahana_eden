@@ -17,6 +17,122 @@ table = db.define_table(tablename,
                         migrate=migrate)
 
 # -----------------------------------------------------------------------------
+# Site
+# 
+# Site is a generic type for any facility (office, hospital, shelter,
+# warehouse, etc.) and serves the same purpose as pentity does for person
+# entity types:  It provides a common join key name across all types of
+# sites, with a unique value for each sites.  This allows other types that
+# are useful to any sort of site to have a common way to join to any of
+# them.  It's especially useful for component types.
+#
+# This is currently being added so people can discuss it, and to get
+# inventories quickly associated with shelters without adding shelter_id
+# to inventory_store, or attempting to join on location_id.  It is in
+# org because that's relatively generic and has one of the site types.
+# You'll note that it is a slavish copy of pentity with the names changed.
+
+org_site_types = Storage(
+    cr_shelter = T("Shelter"),
+    org_office = T("Office"),
+    hms_hospital = T("Hospital"),
+)
+
+resource = "site"
+tablename = "%s_%s" % (module, resource)
+table = db.define_table(tablename, deletion_status,
+                        Field("site_type"),
+                        Field("uuid", length=128),
+                        Field("site_id", "integer"),
+                        migrate=migrate)
+
+table.site_type.writable = False
+table.site_type.represent = lambda opt: org_site_types.get(opt, opt)
+table.uuid.writable = False
+
+def shn_site_represent(id, default_label="[no label]"):
+
+    """
+        Represent a site in option fields or list views
+    """
+
+    site_str = T("None (no such record)")
+
+    site_table = db.org_site
+    site = db(site_table.id == id).select(site_table.site_type,
+                                          limitby=(0, 1)).first()
+    if not site:
+        return site_str
+
+    site_type = site.site_type
+    site_type_nice = site_table.site_type.represent(site_type)
+
+    table = db.get(site_type, None)
+    if not table:
+        return site_str
+
+    # All the current types of sites have a required "name" field that can
+    # serve as their representation.
+    record = db(table.site_id == id).select(table.name, limitby=(0, 1)).first()
+
+    if record:
+        site_str = "%s (%s)" % (record.name, site_type_nice) 
+    else:
+        # Since name is notnull for all types so far, this won't be reached.
+        site_str = "[site %d] (%s)" % (id, site_type_nice)
+
+    return site_str
+
+def shn_site_ondelete(record):
+
+    uid = record.get("uuid", None)
+
+    if uid:
+
+        site_table = db.org_site
+        db(site_table.uuid == uid).update(deleted=True)
+
+    return True
+
+def shn_site_onaccept(form, table=None):
+
+    if "uuid" not in table.fields or "id" not in form.vars:
+        return False
+
+    id = form.vars.id
+
+    fields = [table.id, table.uuid]
+    record = db(table.id == id).select(limitby=(0, 1), *fields).first()
+
+    if record:
+
+        site_table = db.org_site
+        uid = record.uuid
+
+        site = db(site_table.uuid == uid).select(site_table.id, limitby=(0, 1)).first()
+        if site:
+            values = dict(site_id = site.id)
+            db(site_table.uuid == uid).update(**values)
+        else:
+            site_type = table._tablename
+            site_id = site_table.insert(uuid=uid, site_type=site_type)
+            db(site_table.id == site_id).update(site_id=site_id, deleted=False)
+            db(table.id == id).update(site_id=site_id)
+
+        return True
+
+    else:
+        return False
+
+site_id = db.Table(None, "site_id",
+    Field("site_id", db.org_site,
+          requires = IS_NULL_OR(IS_ONE_OF(db, "org_site.id", shn_site_represent)),
+          represent = lambda id: (id and [shn_site_represent(id)] or [NONE])[0],
+          readable = False,
+          writable = False,
+          ondelete = "RESTRICT"))
+
+# -----------------------------------------------------------------------------
 # Sectors (to be renamed as Clusters)
 #
 resource = "sector"
@@ -220,6 +336,7 @@ resource = "office"
 tablename = module + "_" + resource
 table = db.define_table(tablename, timestamp, uuidstamp, authorstamp, deletion_status,
                         pe_id,
+                        site_id,
                         Field("name", notnull=True),
                         organisation_id,
                         Field("type", "integer"),
@@ -307,10 +424,21 @@ s3xrc.model.add_component(module, resource,
                           deletable=True,
                           editable=True)
 
+# Office is a member of two superentities, so has to call both of their
+# onaccept and ondelete methods.
+
+def shn_office_onaccept(form, table=None):
+    shn_pentity_onaccept(form, table=table)
+    shn_site_onaccept(form, table=table)
+
+def shn_office_ondelete(form):
+    shn_pentity_ondelete(form)
+    shn_site_ondelete(form)
+
 s3xrc.model.configure(table,
                       # Ensure that table is substituted when lambda defined not evaluated by using the default value
-                      onaccept=lambda form, tab=table: shn_pentity_onaccept(form, table=tab),
-                      delete_onaccept=lambda form: shn_pentity_ondelete(form),
+                      onaccept=lambda form, tab=table: shn_office_onaccept(form, table=tab),
+                      delete_onaccept=lambda form: shn_office_ondelete(form),
                       list_fields=["id",
                                    "name",
                                    "organisation_id",   # Filtered in Component views
@@ -523,7 +651,7 @@ staff_id = db.Table(None, "staff_id",
                         requires = IS_NULL_OR(IS_ONE_OF(db, "org_staff.id", shn_org_staff_represent)),
                         represent = lambda id: shn_org_staff_represent(id),
                         comment = DIV(A(ADD_STAFF, _class="colorbox", _href=URL(r=request, c="org", f="staff", args="create", vars=dict(format="popup")), _target="top", _title=ADD_STAFF),
-                                  DIV( _class="tooltip", _title=ADD_STAFF + "|" + Tstr("Add new staff."))),
+                                  DIV( _class="tooltip", _title=ADD_STAFF + "|" + Tstr("Add new staff role."))),
                         label = T("Staff"),
                         ondelete = "RESTRICT"
                         ))

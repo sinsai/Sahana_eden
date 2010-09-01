@@ -10,7 +10,22 @@ MARKER = Tstr("Marker")
 
 # Expose settings to views
 _gis = response.s3.gis
+_gis.location_id = False    # Don't display the Location Selector in Views unless the location_id field is present
 _gis.map_selector = deployment_settings.get_gis_map_selector()
+if shn_has_role("MapAdmin"):
+    _gis.edit_L0 = True
+    _gis.edit_L1 = True
+    _gis.edit_L2 = True
+    _gis.edit_L3 = True
+    _gis.edit_L4 = True
+    _gis.edit_L5 = True
+else:
+    _gis.edit_L0 = deployment_settings.get_gis_edit_l0()
+    _gis.edit_L1 = deployment_settings.get_gis_edit_l1()
+    _gis.edit_L2 = deployment_settings.get_gis_edit_l2()
+    _gis.edit_L3 = deployment_settings.get_gis_edit_l3()
+    _gis.edit_L4 = deployment_settings.get_gis_edit_l4()
+    _gis.edit_L5 = deployment_settings.get_gis_edit_l5()
 
 # Settings
 resource = "setting"
@@ -76,7 +91,7 @@ table.units.label = T("Units")
 projection_id = db.Table(None, "projection_id",
             FieldS3("projection_id", db.gis_projection, sortby="name",
                 requires = IS_NULL_OR(IS_ONE_OF(db, "gis_projection.id", "%(name)s")),
-                represent = lambda id: db(db.gis_projection.id == id).select(db.gis_projection.name, limitby=(0, 1)).first().name,
+                represent = lambda id: (id and [db(db.gis_projection.id == id).select(db.gis_projection.name, limitby=(0, 1)).first().name] or [NONE])[0],
                 label = T("Projection"),
                 comment = "",
                 ondelete = "RESTRICT"
@@ -220,7 +235,7 @@ table = db.define_table(tablename, timestamp, uuidstamp, deletion_status,
                 migrate=migrate)
 table.uuid.requires = IS_NOT_IN_DB(db, "%s.uuid" % tablename)
 table.name.requires = [IS_NOT_EMPTY(), IS_NOT_IN_DB(db, "%s.name" % tablename)]
-table.gps_marker.requires = IS_IN_SET([
+table.gps_marker.requires = IS_NULL_OR(IS_IN_SET([
     "Airport",
     "Amusement Park"
     "Ball Park",
@@ -341,7 +356,7 @@ table.gps_marker.requires = IS_IN_SET([
     "White Buoy",
     "White Dot",
     "Zoo"
-    ])
+    ], zero=T("Use default")))
 #table.module.requires = IS_NULL_OR(IS_ONE_OF(db((db.s3_module.enabled=="True") & (~db.s3_module.name.like("default"))), "s3_module.name", "%(name_nice)s"))
 #table.resource.requires = IS_NULL_OR(IS_IN_SET(gis_resource_opts))
 table.name.label = T("Name")
@@ -428,8 +443,9 @@ table.parent.requires = IS_NULL_OR(IS_ONE_OF(db, "gis_location.id", "%(name)s"))
 table.parent.represent = lambda id: (id and [db(db.gis_location.id == id).select(db.gis_location.name, limitby=(0, 1)).first().name] or [NONE])[0]
 table.gis_feature_type.requires = IS_IN_SET(gis_feature_type_opts, zero=None)
 table.gis_feature_type.represent = lambda opt: gis_feature_type_opts.get(opt, UNKNOWN_OPT)
-# WKT validation is done in the onvalidation callback
-#table.wkt.requires = IS_NULL_OR(IS_WKT())
+# Full WKT validation is done in the onvalidation callback
+# All we do here is allow longer fields than the default (2 ** 16)
+table.wkt.requires = IS_LENGTH(2 ** 24)
 table.wkt.represent = lambda wkt: gis.abbreviate_wkt(wkt)
 table.lat.requires = IS_NULL_OR(IS_LAT())
 table.lon.requires = IS_NULL_OR(IS_LON())
@@ -449,7 +465,7 @@ table.osm_id.label = "OpenStreetMap"
 CONVERSION_TOOL = T("Conversion Tool")
 table.lat.comment = DIV( _class="tooltip", _id="gis_location_lat_tooltip", _title=Tstr("Latitude & Longitude") + "|" + Tstr("You can click on the map to select the Lat/Lon fields. Longitude is West - East (sideways). Latitude is North-South (Up-Down). Latitude is zero on the equator and positive in the northern hemisphere and negative in the southern hemisphere. Longitude is zero on the prime meridian (Greenwich Mean Time) and is positive to the east, across Europe and Asia.  Longitude is negative to the west, across the Atlantic and the Americas.  This needs to be added in Decimal Degrees."))
 table.lon.comment = A(CONVERSION_TOOL, _style="cursor:pointer;", _title=T("You can use the Conversion Tool to convert from either GPS coordinates or Degrees/Minutes/Seconds."), _id="btnConvert")
-            
+
 # Reusable field to include in other table definitions
 ADD_LOCATION = T("Add Location")
 repr_select = lambda l: len(l.name) > 48 and "%s..." % l.name[:44] or l.name
@@ -479,32 +495,32 @@ if response.s3.countries:
         _countries.append(_id)
 
 # -----------------------------------------------------------------------------
-def get_location_id (field_name = "location_id", 
+def get_location_id (field_name = "location_id",
                      label = T("Location"),
                      filterby = None,
                      filter_opts = None,
                      editable = True):
     """
     @author Michael Howden
-    
+
     Function for creating a location field with a customisable field_name/label
-    
+
     @ToDo: more functionality from this function to port from ADPC Branch
     """
-    
+
     requires = location_id.location_id.requires
-    
+
     comment = location_id.location_id.comment
-    comment[0].attributes['_href'] = URL(r=request, 
-                                         c="gis", 
-                                         f="location", 
-                                         args="create", 
+    comment[0].attributes['_href'] = URL(r=request,
+                                         c="gis",
+                                         f="location",
+                                         args="create",
                                          vars=dict(format="popup", child=field_name)
                                         )
-    
-    return db.Table(None, 
+
+    return db.Table(None,
                     field_name,
-                    FieldS3(field_name, 
+                    FieldS3(field_name,
                             db.gis_location, sortby="name",
                             requires = requires,
                             represent = shn_gis_location_represent,
@@ -523,16 +539,6 @@ s3xrc.model.add_component(module, resource,
 
 # -----------------------------------------------------------------------------
 # Local Names
-# http://www.loc.gov/standards/iso639-2/php/code_list.php
-gis_location_languages = {
-    "en":T("English"),  #1
-    "ur":T("Urdu"),     #2
-    "pa":T("Punjabi"),  #3
-    "ps":T("Pashto"),   #4
-    "sd":T("Sindhi"),   #5
-    "seraiki":T("Seraiki"), #6
-    "balochi":T("Balochi"), #7
-}
 resource = "location_name"
 tablename = module + "_" + resource
 table = db.define_table(tablename, timestamp, uuidstamp, deletion_status,
@@ -541,8 +547,8 @@ table = db.define_table(tablename, timestamp, uuidstamp, deletion_status,
                 Field("name_l10n"),
                 migrate=migrate)
 table.uuid.requires = IS_NOT_IN_DB(db, '%s.uuid' % tablename)
-table.language.requires = IS_IN_SET(gis_location_languages)
-table.language.represent = lambda opt: gis_location_languages.get(opt, UNKNOWN_OPT)
+table.language.requires = IS_IN_SET(s3.l10n_languages)
+table.language.represent = lambda opt: s3.l10n_languages.get(opt, UNKNOWN_OPT)
 table.language.label = T("Language")
 table.name_l10n.label = T("Name")
 
@@ -564,7 +570,7 @@ def gis_location_onaccept(form):
     else:
         location_id = form.vars.id
         table = db.gis_location_name
-        names = db(table.location_id==location_id).select(table.id)
+        names = db(table.location_id == location_id).select(table.id)
         if names:
             ids = [str(name.id) for name in names]
             #name_dummy = "|%s|" % "|".join(ids)
@@ -575,7 +581,42 @@ def gis_location_onaccept(form):
     gis.update_location_tree()
 
 def gis_location_onvalidation(form):
-    """ On Validation for GIS Locations (before DB I/O) """
+
+    """
+        On Validation for GIS Locations (before DB I/O)
+    """
+
+    record_error = T("Sorry, only users with the MapAdmin role are allowed to edit these locations")
+    field_error = T("Please select another level")
+
+    # Check Permissions
+    # 'MapAdmin' should have all these perms set, no matter what 000_config has
+    if form.vars.level == "L0" and not _gis.edit_L0:
+        response.error = record_error
+        form.errors["level"] = field_error
+        return
+    elif form.vars.level == "L1" and not _gis.edit_L1:
+        response.error = record_error
+        form.errors["level"] = field_error
+        return
+    elif form.vars.level == "L2" and not _gis.edit_L2:
+        response.error = record_error
+        form.errors["level"] = field_error
+        return
+    elif form.vars.level == "L3" and not _gis.edit_L3:
+        response.error = record_error
+        form.errors["level"] = field_error
+        return
+    elif form.vars.level == "L4" and not _gis.edit_L4:
+        response.error = record_error
+        form.errors["level"] = field_error
+        return
+    elif form.vars.level == "L5" and not _gis.edit_L5:
+        response.error = record_error
+        form.errors["level"] = field_error
+        return
+    # ToDo: Check for probable duplicates
+    # 
     # ToDo: Check within Bounds of the Parent
     # Calculate the Centroid for Polygons
     gis.wkt_centroid(form)
@@ -678,7 +719,7 @@ def s3_gis_location_parents(r, **attr):
         raise HTTP(501, body=s3xrc.ERROR.BAD_FORMAT)
 
     elif r.representation == "json":
-        
+
         if r.id:
             import gluon.contrib.simplejson as sj
             # Get the parents for a Location
@@ -731,7 +772,7 @@ def shn_gis_location_represent(id):
         # Hyperlink
         #represent = A(text, _href = deployment_settings.get_base_public_url() + URL(r=request, c="gis", f="location", args=[location.id]))
         # Map
-        represent = A(text, _href="#", _onclick="viewMap(" + str(id) +");return false")
+        represent = A(text, _href="#", _onclick="s3_viewMap(" + str(id) +");return false")
         # ToDo: Convert to popup? (HTML again!)
     except:
         try:
@@ -839,8 +880,8 @@ track_id = db.Table(None, "track_id",
 
 # -----------------------------------------------------------------------------
 # GIS Layers
-#gis_layer_types = ["bing", "shapefile", "scan", "wfs"]
-gis_layer_types = ["openstreetmap", "georss", "google", "gpx", "js", "kml", "mgrs", "tms", "wms", "xyz", "yahoo"]
+#gis_layer_types = ["bing", "shapefile", "scan"]
+gis_layer_types = ["openstreetmap", "georss", "google", "gpx", "js", "kml", "mgrs", "tms", "wfs", "wms", "xyz", "yahoo"]
 gis_layer_openstreetmap_subtypes = gis.layer_subtypes("openstreetmap")
 gis_layer_google_subtypes = gis.layer_subtypes("google")
 gis_layer_yahoo_subtypes = gis.layer_subtypes("yahoo")
@@ -909,6 +950,19 @@ for layertype in gis_layer_types:
             Field("layers", label=T("Layers"), requires = IS_NOT_EMPTY()),
             Field("format", label=T("Format")))
         table = db.define_table(tablename, t, migrate=migrate)
+    elif layertype == "wfs":
+        t = db.Table(db, table,
+            gis_layer,
+            Field("visible", "boolean", default=False, label=T("On by default?")),
+            Field("url", label=T("Location"), requires = IS_NOT_EMPTY()),
+            Field("version", label=T("Version"), default="1.1.0", requires = IS_IN_SET(["1.0.0", "1.1.0"], zero=None)),
+            Field("featureNS", requires=IS_NOT_EMPTY(), label=T("Feature Namespace"), comment=DIV(SPAN("*", _class="req"), DIV( _class="tooltip", _title="Feature Namespace" + "|" + Tstr("In GeoServer, this is the Workspace Name. Within the WFS getCapabilities, this is the FeatureType Name part before the colon(:).")))),
+            Field("featureType", requires=IS_NOT_EMPTY(), label=T("Feature Type"), comment=DIV(SPAN("*", _class="req"), DIV( _class="tooltip", _title="Feature Type" + "|" + Tstr("In GeoServer, this is the Layer Name. Within the WFS getCapabilities, this is the FeatureType Name part after the colon(:).")))),
+            projection_id,
+            #Field("editable", "boolean", default=False, label=T("Editable?")),
+            )
+        table = db.define_table(tablename, t, migrate=migrate)
+        #table.url.requires = [IS_URL, IS_NOT_EMPTY()]
     elif layertype == "wms":
         t = db.Table(db, table,
             gis_layer,
@@ -920,16 +974,12 @@ for layertype in gis_layer_types:
             Field("layers", label=T("Layers"), requires = IS_NOT_EMPTY()),
             Field("format", label=T("Format"), requires = IS_NULL_OR(IS_IN_SET(["image/jpeg", "image/png", "image/bmp", "image/tiff", "image/gif", "image/svg+xml"]))),
             Field("transparent", "boolean", default=False, label=T("Transparent?")),
-            #projection_id, # Client-side reprojection deprecated. Use MapProxy instead.
             #Field("queryable", "boolean", default=False, label=T("Queryable?")),
             #Field("legend_url", label=T("legend URL")),
             #Field("legend_format", label=T("Legend Format"), requires = IS_NULL_OR(IS_IN_SET(["image/jpeg", "image/png", "image/bmp", "image/tiff", "image/gif", "image/svg+xml"]))),
             )
         table = db.define_table(tablename, t, migrate=migrate)
         #table.url.requires = [IS_URL, IS_NOT_EMPTY()]
-        # Default IS_NULL_OR() not appropriate here
-        #table.projection_id.requires = IS_ONE_OF(db, "gis_projection.id", "%(name)s")
-        #table.projection_id.default = 2
     elif layertype == "xyz":
         t = db.Table(db, table,
             gis_layer,

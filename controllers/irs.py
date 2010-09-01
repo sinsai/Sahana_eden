@@ -36,7 +36,16 @@ if shn_has_role("Editor"):
             #[T("Search"), False, URL(r=request, f="incident", args="search")]
         ]]
     )
-    
+if shn_has_role(1):
+    response.menu_options.append(
+        [T("Incident Categories"), False, URL(r=request, f="icategory"),[
+            [T("List"), False, URL(r=request, f="icategory")],
+            [T("Add"), False, URL(r=request, f="icategory", args="create")]
+        ]]
+    )
+    response.menu_options.append(
+        [T("Ushahidi Import"), False, URL(r=request, f="ireport", args="ushahidi")],
+    )
 
 # -----------------------------------------------------------------------------
 def index():
@@ -61,6 +70,29 @@ def maps():
 
     return dict(map=map)
 
+
+# -----------------------------------------------------------------------------
+@auth.shn_requires_membership(1)
+def icategory():
+
+    """
+        Incident Categories, RESTful controller
+        Note: This just defines which categories are visible to end-users
+        The full list of hard-coded categories are visible to admins & should remain unchanged for sync
+    """
+
+    resource = request.function
+    tablename = "%s_%s" % (module, resource)
+    table = db[tablename]
+    
+    # Post-processor
+    def user_postp(jr, output):
+        shn_action_buttons(jr)
+        return output
+    response.s3.postp = user_postp
+
+    output = shn_rest_controller(module, resource)
+    return output
 
 # -----------------------------------------------------------------------------
 def incident():
@@ -109,6 +141,11 @@ def ireport():
     # Don't send the locations list to client (pulled by AJAX instead)
     table.location_id.requires = IS_NULL_OR(IS_ONE_OF_EMPTY(db, "gis_location.id"))
 
+    # Non-Editors should only see a limited set of options
+    if not shn_has_role("Editor"):
+        allowed_opts = [irs_incident_type_opts.get(opt.code, opt.code) for opt in db().select(db.irs_icategory.code)]
+        table.category.requires = IS_NULL_OR(IS_IN_SET(allowed_opts))
+    
     # Pre-processor
     def prep(r):
         if r.method == "ushahidi":

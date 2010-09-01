@@ -70,7 +70,10 @@ def freport():
     resource = request.function
     
     # Don't send the locations list to client (pulled by AJAX instead)
-    table.location_id.requires = IS_NULL_OR(IS_ONE_OF_EMPTY(db, "gis_location.id"))
+    # Make the Location field mandatory
+    table.location_id.requires = IS_ONE_OF_EMPTY(db, "gis_location.id")
+    
+    table.datetime.comment = SPAN("*", _class="req")
 
     # Disable legacy fields, unless updating, so the data can be manually transferred to new fields
     #if "update" not in request.args:

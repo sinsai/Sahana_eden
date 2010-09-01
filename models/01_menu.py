@@ -5,14 +5,12 @@
 """
 
 # Language Menu (available in all screens)
-s3.menu_lang = [ T("Language"), True, "#",
-        [
-            [T("English"), False, URL(r=request, vars={"_language":"en"})],
-            [T("Chinese"), False, URL(r=request, vars={"_language":"zh-tw"})],
-            [T("Spanish"), False, URL(r=request, vars={"_language":"es"})],
-        ]
-    ]
-
+s3.menu_lang = [ T("Language"), True, "#"]
+_menu_lang = []
+for language in s3.l10n_languages.keys():
+    _menu_lang.append([s3.l10n_languages[language], False, URL(r=request, vars={"_language":language}).xml()])
+s3.menu_lang.append(_menu_lang)
+    
 # Help Menu (available in all screens)
 s3.menu_help = [ T("Help"), True, "#",
         [
@@ -208,7 +206,7 @@ else:
 response.menu = s3.menu_modules
 response.menu.append(s3.menu_help)
 response.menu.append(s3.menu_auth)
-# Uncomment to enable Language tool on menu
-#response.menu.append(s3.menu_lang)
+if deployment_settings.get_L10n_display_toolbar():
+    response.menu.append(s3.menu_lang)
 if s3.menu_admin:
     response.menu.append(s3.menu_admin)

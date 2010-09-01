@@ -17,127 +17,150 @@ if deployment_settings.has_module(module):
                             Field("audit_write", "boolean"),
                             migrate=migrate)
 
+    # List of Incident Categories
+    # NB It is important that the meaning of these entries is not changed as otherwise this hurts our ability to do synchronisation
+    # The keys are based on the Canadian ems.incident hierarchy, with a few extra general versions added
+    # The 2nd is meant for end-users
+    # Entries can be hidden from user view in the controller.
+    # Additional sets of 'translations' can be added to the tuples.
     irs_incident_type_opts = {
-        1:T("animalHealth.animalDieOff"),
-        2:T("animalHealth.animalFeed"),
-        3:T("aviation.aircraftCrash"),
-        4:T("aviation.aircraftHijacking"),
-        5:T("aviation.airportClosure"),
-        6:T("aviation.airspaceClosure"),
-        7:T("aviation.noticeToAirmen"),
-        8:T("aviation.spaceDebris"),
-        9:T("civil.demonstrations"),
-        10:T("civil.dignitaryVisit"),
-        11:T("civil.displacedPopulations"),
-        12:T("civil.emergency"),
-        13:T("civil.looting"),
-        14:T("civil.publicEvent"),
-        15:T("civil.riot"),
-        16:T("civil.volunteerRequest"),
-        17:T("crime.bomb"),
-        18:T("crime.bombExplosion"),
-        19:T("crime.bombThreat"),
-        20:T("crime.dangerousPerson"),
-        21:T("crime.drugs"),
-        22:T("crime.homeCrime"),
-        23:T("crime.illegalImmigrant"),
-        24:T("crime.industrialCrime"),
-        25:T("crime.poisoning"),
-        26:T("crime.retailCrime"),
-        27:T("crime.shooting"),
-        28:T("crime.stowaway"),
-        29:T("crime.terrorism"),
-        30:T("crime.vehicleCrime"),
-        31:T("fire.forestFire"),
-        32:T("fire.hotSpot"),
-        33:T("fire.industryFire"),
-        34:T("fire.smoke"),
-        35:T("fire.urbanFire"),
-        36:T("fire.wildFire"),
-        37:T("flood.damOverflow"),
-        38:T("flood.flashFlood"),
-        39:T("flood.highWater"),
-        40:T("flood.overlandFlowFlood"),
-        41:T("flood.tsunami"),
-        42:T("geophysical.avalanche"),
-        43:T("geophysical.earthquake"),
-        44:T("geophysical.lahar"),
-        45:T("geophysical.landslide"),
-        46:T("geophysical.magneticStorm"),
-        47:T("geophysical.meteorite"),
-        48:T("geophysical.pyroclasticFlow"),
-        49:T("geophysical.pyroclasticSurge"),
-        50:T("geophysical.volcanicAshCloud"),
-        51:T("geophysical.volcanicEvent"),
-        52:T("hazardousMaterial.biologicalHazard"),
-        53:T("hazardousMaterial.chemicalHazard"),
-        54:T("hazardousMaterial.explosiveHazard"),
-        55:T("hazardousMaterial.fallingObjectHazard"),
-        56:T("hazardousMaterial.infectiousDisease"),
-        57:T("hazardousMaterial.poisonousGas"),
-        58:T("hazardousMaterial.radiologicalHazard"),
-        59:T("health.infectiousDisease"),
-        60:T("health.infestation"),
-        61:T("ice.iceberg"),
-        62:T("ice.icePressure"),
-        63:T("ice.rapidCloseLead"),
-        64:T("ice.specialIce"),
-        65:T("marine.marineSecurity"),
-        66:T("marine.nauticalAccident"),
-        67:T("marine.nauticalHijacking"),
-        68:T("marine.portClosure"),
-        69:T("marine.specialMarine"),
-        70:T("meteorological.blizzard"),
-        71:T("meteorological.blowingSnow"),
-        72:T("meteorological.drought"),
-        73:T("meteorological.dustStorm"),
-        74:T("meteorological.fog"),
-        75:T("meteorological.freezingDrizzle"),
-        76:T("meteorological.freezingRain"),
-        77:T("meteorological.freezingSpray"),
-        78:T("meteorological.hail"),
-        79:T("meteorological.hurricane"),
-        80:T("meteorological.rainFall"),
-        81:T("meteorological.snowFall"),
-        82:T("meteorological.snowSquall"),
-        83:T("meteorological.squall"),
-        84:T("meteorological.stormSurge"),
-        85:T("meteorological.thunderstorm"),
-        86:T("meteorological.tornado"),
-        87:T("meteorological.tropicalStorm"),
-        88:T("meteorological.waterspout"),
-        89:T("meteorological.winterStorm"),
-        90:T("missingPerson.amberAlert"),
-        91:T("missingPerson.missingVulnerablePerson"),
-        92:T("missingPerson.silver"),
-        93:T("publicService.emergencySupportFacility"),
-        94:T("publicService.emergencySupportService"),
-        95:T("publicService.schoolClosure"),
-        96:T("publicService.schoolLockdown"),
-        97:T("publicService.serviceOrFacility"),
-        98:T("publicService.transit"),
-        99:T("railway.railwayAccident"),
-        100:T("railway.railwayHijacking"),
-        101:T("roadway.bridgeClosure"),
-        102:T("roadway.hazardousRoadConditions"),
-        103:T("roadway.roadwayAccident"),
-        104:T("roadway.roadwayClosure"),
-        105:T("roadway.roadwayDelay"),
-        106:T("roadway.roadwayHijacking"),
-        107:T("roadway.roadwayUsageCondition"),
-        108:T("roadway.trafficReport"),
-        109:T("temperature.arcticOutflow"),
-        110:T("temperature.coldWave"),
-        111:T("temperature.flashFreeze"),
-        112:T("temperature.frost"),
-        113:T("temperature.heatAndHumidity"),
-        114:T("temperature.heatWave"),
-        115:T("temperature.windChill"),
-        116:T("wind.galeWind"),
-        117:T("wind.hurricaneForceWind"),
-        118:T("wind.stormForceWind"),
-        119:T("wind.strongWind")
+        "animalHealth.animalDieOff" : T("Animal Die Off"),
+        "animalHealth.animalFeed" : T("Animal Feed"),
+        "aviation.aircraftCrash" : T("Aircraft Crash"),
+        "aviation.aircraftHijacking" : T("Aircraft Hijacking"),
+        "aviation.airportClosure" : T("Airport Closure"),
+        "aviation.airspaceClosure" : T("Airspace Closure"),
+        "aviation.noticeToAirmen" : T("Notice to Airmen"),
+        "aviation.spaceDebris" : T("Space Debris"),
+        "civil.demonstrations" : T("Demonstrations"),
+        "civil.dignitaryVisit" : T("Dignitary Visit"),
+        "civil.displacedPopulations" : T("Displaced Populations"),
+        "civil.emergency" : T("Civil Emergency"),
+        "civil.looting" : T("Looting"),
+        "civil.publicEvent" : T("Public Event"),
+        "civil.riot" : T("Riot"),
+        "civil.volunteerRequest" : T("Volunteer Request"),
+        "crime" : T("Crime"),
+        "crime.bomb" : T("Bomb"),
+        "crime.bombExplosion" : T("Bomb Explosion"),
+        "crime.bombThreat" : T("Bomb Threat"),
+        "crime.dangerousPerson" : T("Dangerous Person"),
+        "crime.drugs" : T("Drugs"),
+        "crime.homeCrime" : T("Home Crime"),
+        "crime.illegalImmigrant" : T("Illegal Immigrant"),
+        "crime.industrialCrime" : T("Industrial Crime"),
+        "crime.poisoning" : T("Poisoning"),
+        "crime.retailCrime" : T("Retail Crime"),
+        "crime.shooting" : T("Shooting"),
+        "crime.stowaway" : T("Stowaway"),
+        "crime.terrorism" : T("Terrorism"),
+        "crime.vehicleCrime" : T("Vehicle Crime"),
+        "fire" : T("Fire"),
+        "fire.forestFire" : T("Forest Fire"),
+        "fire.hotSpot" : T("Hot Spot"),
+        "fire.industryFire" : T("Industry Fire"),
+        "fire.smoke" : T("Smoke"),
+        "fire.urbanFire" : T("Urban Fire"),
+        "fire.wildFire" : T("Wild Fire"),
+        "flood" : T("Flood"),
+        "flood.damOverflow" : T("Dam Overflow"),
+        "flood.flashFlood" : T("Flash Flood"),
+        "flood.highWater" : T("High Water"),
+        "flood.overlandFlowFlood" : T("Overland Flow Flood"),
+        "flood.tsunami" : T("Tsunami"),
+        "geophysical.avalanche" : T("Avalanche"),
+        "geophysical.earthquake" : T("Earthquake"),
+        "geophysical.lahar" : T("Lahar"),
+        "geophysical.landslide" : T("Landslide"),
+        "geophysical.magneticStorm" : T("Magnetic Storm"),
+        "geophysical.meteorite" : T("Meteorite"),
+        "geophysical.pyroclasticFlow" : T("Pyroclastic Flow"),
+        "geophysical.pyroclasticSurge" : T("Pyroclastic Surge"),
+        "geophysical.volcanicAshCloud" : T("Volcanic Ash Cloud"),
+        "geophysical.volcanicEvent" : T("Volcanic Event"),
+        "hazardousMaterial" : T("Hazardous Material"),
+        "hazardousMaterial.biologicalHazard" : T("Biological Hazard"),
+        "hazardousMaterial.chemicalHazard" : T("Chemical Hazard"),
+        "hazardousMaterial.explosiveHazard" : T("Explosive Hazard"),
+        "hazardousMaterial.fallingObjectHazard" : T("Falling Object Hazard"),
+        "hazardousMaterial.infectiousDisease" : T("Infectious Disease"),
+        "hazardousMaterial.poisonousGas" : T("Poisonous Gas"),
+        "hazardousMaterial.radiologicalHazard" : T("Radiological Hazard"),
+        "health.infectiousDisease" : T("Infectious Disease"),
+        "health.infestation" : T("Infestation"),
+        "ice.iceberg" : T("Iceberg"),
+        "ice.icePressure" : T("Ice Pressure"),
+        "ice.rapidCloseLead" : T("Rapid Close Lead"),
+        "ice.specialIce" : T("Special Ice"),
+        "marine.marineSecurity" : T("Marine Security"),
+        "marine.nauticalAccident" : T("Nautical Accident"),
+        "marine.nauticalHijacking" : T("Nautical Hijacking"),
+        "marine.portClosure" : T("Port Closure"),
+        "marine.specialMarine" : T("Special Marine"),
+        "meteorological.blizzard" : T("Blizzard"),
+        "meteorological.blowingSnow" : T("Blowing Snow"),
+        "meteorological.drought" : T("Drought"),
+        "meteorological.dustStorm" : T("Dust Storm"),
+        "meteorological.fog" : T("Fog"),
+        "meteorological.freezingDrizzle" : T("Freezing Drizzle"),
+        "meteorological.freezingRain" : T("Freezing Rain"),
+        "meteorological.freezingSpray" : T("Freezing Spray"),
+        "meteorological.hail" : T("Hail"),
+        "meteorological.hurricane" : T("Hurricane"),
+        "meteorological.rainFall" : T("Rain Fall"),
+        "meteorological.snowFall" : T("Snow Fall"),
+        "meteorological.snowSquall" : T("Snow Squall"),
+        "meteorological.squall" : T("Squall"),
+        "meteorological.stormSurge" : T("Storm Surge"),
+        "meteorological.thunderstorm" : T("Thunderstorm"),
+        "meteorological.tornado" : T("Tornado"),
+        "meteorological.tropicalStorm" : T("Tropical Storm"),
+        "meteorological.waterspout" : T("Waterspout"),
+        "meteorological.winterStorm" : T("Winter Storm"),
+        "missingPerson" : T("Missing Person"),
+        "missingPerson.amberAlert" : T("Child Abduction Emergency"),    # http://en.wikipedia.org/wiki/Amber_Alert
+        "missingPerson.missingVulnerablePerson" : T("Missing Vulnerable Person"),
+        "missingPerson.silver" : T("Missing Senior Citizen"),           # http://en.wikipedia.org/wiki/Silver_Alert
+        "publicService.emergencySupportFacility" : T("Emergency Support Facility"),
+        "publicService.emergencySupportService" : T("Emergency Support Service"),
+        "publicService.schoolClosure" : T("School Closure"),
+        "publicService.schoolLockdown" : T("School Lockdown"),
+        "publicService.serviceOrFacility" : T("Service or Facility"),
+        "publicService.transit" : T("Transit"),
+        "railway.railwayAccident" : T("Railway Accident"),
+        "railway.railwayHijacking" : T("Railway Hijacking"),
+        "roadway.bridgeClosure" : T("Bridge Closed"),
+        "roadway.hazardousRoadConditions" : T("Hazardous Road Conditions"),
+        "roadway.roadwayAccident" : T("Road Accident"),
+        "roadway.roadwayClosure" : T("Road Closed"),
+        "roadway.roadwayDelay" : T("Road Delay"),
+        "roadway.roadwayHijacking" : T("Road Hijacking"),
+        "roadway.roadwayUsageCondition" : T("Road Usage Condition"),
+        "roadway.trafficReport" : T("Traffic Report"),
+        "temperature.arcticOutflow" : T("Arctic Outflow"),
+        "temperature.coldWave" : T("Cold Wave"),
+        "temperature.flashFreeze" : T("Flash Freeze"),
+        "temperature.frost" : T("Frost"),
+        "temperature.heatAndHumidity" : T("Heat and Humidity"),
+        "temperature.heatWave" : T("Heat Wave"),
+        "temperature.windChill" : T("Wind Chill"),
+        "wind.galeWind" : T("Gale Wind"),
+        "wind.hurricaneForceWind" : T("Hurricane Force Wind"),
+        "wind.stormForceWind" : T("Storm Force Wind"),
+        "wind.strongWind" : T("Strong Wind"),
+        "other.buildingCollapsed" : T("Building Collapsed"),
+        "other.peopleTrapped" : T("People Trapped"),
+        "other.powerFailure" : T("Power Failure"),
     }
+
+    # This Table defines which Categories are visible to end-users
+    resource = "icategory"
+    tablename = "%s_%s" % (module, resource)
+    table = db.define_table(tablename,
+                            Field("code"))
+    table.code.label = T("Category")
+    table.code.requires = IS_IN_SET(irs_incident_type_opts)
+    table.code.represent = lambda opt: irs_incident_type_opts.get(opt, opt)
 
     # Incidents
     # This is the current status of an Incident
@@ -164,6 +187,8 @@ if deployment_settings.has_module(module):
                                IS_UTC_DATETIME(utc_offset=shn_user_utc_offset(), allow_future=False)]
     table.datetime.comment = SPAN("*", _class="req")
 
+    # The full set available to Admins & Imports/Exports
+    # (users use the subset by over-riding this in the Controller)
     table.category.requires = IS_NULL_OR(IS_IN_SET(irs_incident_type_opts))
     table.category.represent = lambda opt: irs_incident_type_opts.get(opt, opt)
 
@@ -225,6 +250,8 @@ if deployment_settings.has_module(module):
                             migrate=migrate)
 
     table.category.label = T("Category")
+    # The full set available to Admins & Imports/Exports
+    # (users use the subset by over-riding this in the Controller)
     table.category.requires = IS_NULL_OR(IS_IN_SET(irs_incident_type_opts))
     table.category.represent = lambda opt: irs_incident_type_opts.get(opt, opt)
 
@@ -485,10 +512,12 @@ if deployment_settings.has_module(module):
             subtitle = T("Import from Ushahidi Instance")
 
             form = FORM(TABLE(TR(
-                        TH("%s: " % T("URL of the Ushahidi instance")),
-                        INPUT(_type="text", _name="url", _size="40", _value=url,
+                        TH("URL: "),
+                        INPUT(_type="text", _name="url", _size="100", _value=url,
                               requires=[IS_URL(), IS_NOT_EMPTY()]),
-                        TD(DIV(SPAN("*", _class="req", _style="padding-right: 5px;")))),
+                        TH(DIV(SPAN("*", _class="req", _style="padding-right: 5px;")))),
+                        TR(TD("Ignore Errors?: "),
+                        TD(INPUT(_type="checkbox", _name="ignore_errors", _id="ignore_errors"))),
                         TR("", INPUT(_type="submit", _value="Import"))))
 
             label_list_btn = shn_get_crud_string(r.tablename, "title_list")
@@ -496,7 +525,9 @@ if deployment_settings.has_module(module):
                          _href=r.other(method="", vars=None),
                          _class="action-btn")
 
-            output = dict(title=title, form=form, subtitle=subtitle, list_btn=list_btn)
+            rheader = DIV(P(Tstr("API is documented here") + ": http://wiki.ushahidi.com/doku.php?id=ushahidi_api"), P(Tstr("Example") + " URL: http://ushahidi.my.domain/api?task=incidents&by=all&resp=xml&limit=1000"))
+            
+            output = dict(title=title, form=form, subtitle=subtitle, list_btn=list_btn, rheader=rheader)
 
             if form.accepts(request.vars, session):
 
@@ -509,11 +540,13 @@ if deployment_settings.has_module(module):
                 ireports = r.resource
                 ushahidi = form.vars.url
 
+                ignore_errors = form.vars.get("ignore_errors", None)
+
                 template = os.path.join(request.folder, "static", "xslt", "import", "ushahidi.xsl")
 
                 if os.path.exists(template) and ushahidi:
                     try:
-                        success = ireports.import_xml(ushahidi, template=template)
+                        success = ireports.import_xml(ushahidi, template=template, ignore_errors=ignore_errors)
                     except:
                         import sys
                         e = sys.exc_info()[1]

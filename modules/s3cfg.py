@@ -99,6 +99,12 @@ class S3Config(Storage):
     # L10N Settings
     def get_L10n_countries(self):
         return self.L10n.get("countries", "")
+    def get_L10n_default_language(self):
+        return self.L10n.get("default_language", "en")
+    def get_L10n_display_toolbar(self):
+        return self.L10n.get("display_toolbar", True)
+    def get_L10n_languages(self):
+        return self.L10n.get("languages", { "en":self.T("English") })
     def get_L10n_utc_offset(self):
         return self.L10n.get("utc_offset", "UTC +0000")
 

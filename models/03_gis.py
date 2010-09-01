@@ -10,6 +10,7 @@ MARKER = Tstr("Marker")
 
 # Expose settings to views
 _gis = response.s3.gis
+_gis.location_id = False    # Don't display the Location Selector in Views unless the location_id field is present
 _gis.map_selector = deployment_settings.get_gis_map_selector()
 if shn_has_role("MapAdmin"):
     _gis.edit_L0 = True
@@ -90,7 +91,7 @@ table.units.label = T("Units")
 projection_id = db.Table(None, "projection_id",
             FieldS3("projection_id", db.gis_projection, sortby="name",
                 requires = IS_NULL_OR(IS_ONE_OF(db, "gis_projection.id", "%(name)s")),
-                represent = lambda id: db(db.gis_projection.id == id).select(db.gis_projection.name, limitby=(0, 1)).first().name,
+                represent = lambda id: (id and [db(db.gis_projection.id == id).select(db.gis_projection.name, limitby=(0, 1)).first().name] or [NONE])[0],
                 label = T("Projection"),
                 comment = "",
                 ondelete = "RESTRICT"
@@ -538,16 +539,6 @@ s3xrc.model.add_component(module, resource,
 
 # -----------------------------------------------------------------------------
 # Local Names
-# http://www.loc.gov/standards/iso639-2/php/code_list.php
-gis_location_languages = {
-    "en":T("English"),  #1
-    "ur":T("Urdu"),     #2
-    "pa":T("Punjabi"),  #3
-    "ps":T("Pashto"),   #4
-    "sd":T("Sindhi"),   #5
-    "seraiki":T("Seraiki"), #6
-    "balochi":T("Balochi"), #7
-}
 resource = "location_name"
 tablename = module + "_" + resource
 table = db.define_table(tablename, timestamp, uuidstamp, deletion_status,
@@ -556,8 +547,8 @@ table = db.define_table(tablename, timestamp, uuidstamp, deletion_status,
                 Field("name_l10n"),
                 migrate=migrate)
 table.uuid.requires = IS_NOT_IN_DB(db, '%s.uuid' % tablename)
-table.language.requires = IS_IN_SET(gis_location_languages)
-table.language.represent = lambda opt: gis_location_languages.get(opt, UNKNOWN_OPT)
+table.language.requires = IS_IN_SET(s3.l10n_languages)
+table.language.represent = lambda opt: s3.l10n_languages.get(opt, UNKNOWN_OPT)
 table.language.label = T("Language")
 table.name_l10n.label = T("Name")
 
@@ -781,7 +772,7 @@ def shn_gis_location_represent(id):
         # Hyperlink
         #represent = A(text, _href = deployment_settings.get_base_public_url() + URL(r=request, c="gis", f="location", args=[location.id]))
         # Map
-        represent = A(text, _href="#", _onclick="viewMap(" + str(id) +");return false")
+        represent = A(text, _href="#", _onclick="s3_viewMap(" + str(id) +");return false")
         # ToDo: Convert to popup? (HTML again!)
     except:
         try:
@@ -889,8 +880,8 @@ track_id = db.Table(None, "track_id",
 
 # -----------------------------------------------------------------------------
 # GIS Layers
-#gis_layer_types = ["bing", "shapefile", "scan", "wfs"]
-gis_layer_types = ["openstreetmap", "georss", "google", "gpx", "js", "kml", "mgrs", "tms", "wms", "xyz", "yahoo"]
+#gis_layer_types = ["bing", "shapefile", "scan"]
+gis_layer_types = ["openstreetmap", "georss", "google", "gpx", "js", "kml", "mgrs", "tms", "wfs", "wms", "xyz", "yahoo"]
 gis_layer_openstreetmap_subtypes = gis.layer_subtypes("openstreetmap")
 gis_layer_google_subtypes = gis.layer_subtypes("google")
 gis_layer_yahoo_subtypes = gis.layer_subtypes("yahoo")
@@ -959,6 +950,19 @@ for layertype in gis_layer_types:
             Field("layers", label=T("Layers"), requires = IS_NOT_EMPTY()),
             Field("format", label=T("Format")))
         table = db.define_table(tablename, t, migrate=migrate)
+    elif layertype == "wfs":
+        t = db.Table(db, table,
+            gis_layer,
+            Field("visible", "boolean", default=False, label=T("On by default?")),
+            Field("url", label=T("Location"), requires = IS_NOT_EMPTY()),
+            Field("version", label=T("Version"), default="1.1.0", requires = IS_IN_SET(["1.0.0", "1.1.0"], zero=None)),
+            Field("featureNS", requires=IS_NOT_EMPTY(), label=T("Feature Namespace"), comment=DIV(SPAN("*", _class="req"), DIV( _class="tooltip", _title="Feature Namespace" + "|" + Tstr("In GeoServer, this is the Workspace Name. Within the WFS getCapabilities, this is the FeatureType Name part before the colon(:).")))),
+            Field("featureType", requires=IS_NOT_EMPTY(), label=T("Feature Type"), comment=DIV(SPAN("*", _class="req"), DIV( _class="tooltip", _title="Feature Type" + "|" + Tstr("In GeoServer, this is the Layer Name. Within the WFS getCapabilities, this is the FeatureType Name part after the colon(:).")))),
+            projection_id,
+            #Field("editable", "boolean", default=False, label=T("Editable?")),
+            )
+        table = db.define_table(tablename, t, migrate=migrate)
+        #table.url.requires = [IS_URL, IS_NOT_EMPTY()]
     elif layertype == "wms":
         t = db.Table(db, table,
             gis_layer,
@@ -970,16 +974,12 @@ for layertype in gis_layer_types:
             Field("layers", label=T("Layers"), requires = IS_NOT_EMPTY()),
             Field("format", label=T("Format"), requires = IS_NULL_OR(IS_IN_SET(["image/jpeg", "image/png", "image/bmp", "image/tiff", "image/gif", "image/svg+xml"]))),
             Field("transparent", "boolean", default=False, label=T("Transparent?")),
-            #projection_id, # Client-side reprojection deprecated. Use MapProxy instead.
             #Field("queryable", "boolean", default=False, label=T("Queryable?")),
             #Field("legend_url", label=T("legend URL")),
             #Field("legend_format", label=T("Legend Format"), requires = IS_NULL_OR(IS_IN_SET(["image/jpeg", "image/png", "image/bmp", "image/tiff", "image/gif", "image/svg+xml"]))),
             )
         table = db.define_table(tablename, t, migrate=migrate)
         #table.url.requires = [IS_URL, IS_NOT_EMPTY()]
-        # Default IS_NULL_OR() not appropriate here
-        #table.projection_id.requires = IS_ONE_OF(db, "gis_projection.id", "%(name)s")
-        #table.projection_id.default = 2
     elif layertype == "xyz":
         t = db.Table(db, table,
             gis_layer,

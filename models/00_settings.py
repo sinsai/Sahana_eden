@@ -18,6 +18,8 @@ DELETE = T("Delete")
 COPY = T("Copy")
 NOT_APPLICABLE = T("N/A")
 
+s3.l10n_languages = deployment_settings.get_L10n_languages()
+
 # Default strings are in US English
 T.current_languages = ["en", "en-us"]
 # Check if user has selected a specific language

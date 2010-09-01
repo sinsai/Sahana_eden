@@ -1894,7 +1894,11 @@ def shn_search(r, **attr):
                     # e.g. gis_location hierarchical search
                     query = query & (_table.parent == parent)
 
-                item = db(query).select().json()
+                if _table == db.gis_location:
+                    # Don't return unnecessary fields (WKT is large!)
+                    item = db(query).select(_table.id, _table.uuid, _table.parent, _table.name, _table.level, _table.lat, _table.lon, _table.addr_street).json()
+                else:
+                    item = db(query).select().json()
 
             elif filter == "<":
                 query = query & (_field < value)

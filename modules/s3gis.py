@@ -343,7 +343,7 @@ class GIS(object):
             return None
 
     # -----------------------------------------------------------------------------
-    def get_feature_layer(self, module, resource, layername, popup_label, marker=None, filter=None):
+    def get_feature_layer(self, module, resource, layername, popup_label, marker=None, filter=None, active=True):
         """
             Return a Feature Layer suitable to display on a map
             @param: layername: Used as the label in the LayerSwitcher
@@ -370,9 +370,9 @@ class GIS(object):
         popup_url = URL(r=request, c=module, f=resource, args="read.plain?%s.location_id=" % resource)
         try:
             marker = db(db.gis_marker.name == marker).select(db.gis_marker.id, limitby=(0, 1)).first().id
-            layer = {"name":layername, "query":locations, "active":True, "marker":marker, "popup_url": popup_url}
+            layer = {"name":layername, "query":locations, "active":active, "marker":marker, "popup_url": popup_url}
         except:
-            layer = {"name":layername, "query":locations, "active":True, "popup_url": popup_url}
+            layer = {"name":layername, "query":locations, "active":active, "popup_url": popup_url}
 
         return layer
     

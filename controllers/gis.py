@@ -73,7 +73,7 @@ def define_map(window=False, toolbar=False):
     popup_label = Tstr("Incident")
     # Default (but still better to define here as otherwise each feature needs to check it's feature_class)
     marker = "marker_red"
-    incidents = gis.get_feature_layer(module, resource, layername, popup_label, marker)
+    incidents = gis.get_feature_layer(module, resource, layername, popup_label, marker, active=False)
     
     # Shelters
     module = "cr"
@@ -81,7 +81,7 @@ def define_map(window=False, toolbar=False):
     layername = Tstr("Shelters")
     popup_label = Tstr("Shelter")
     marker = "shelter"
-    shelters = gis.get_feature_layer(module, resource, layername, popup_label, marker)
+    shelters = gis.get_feature_layer(module, resource, layername, popup_label, marker, active=True)
     
     # Schools
     module = "sitrep"
@@ -89,7 +89,7 @@ def define_map(window=False, toolbar=False):
     layername = Tstr("Schools")
     popup_label = Tstr("School")
     marker = "school"
-    schools = gis.get_feature_layer(module, resource, layername, popup_label, marker)
+    schools = gis.get_feature_layer(module, resource, layername, popup_label, marker, active=True)
     
     # Requests
     module = "rms"
@@ -97,7 +97,7 @@ def define_map(window=False, toolbar=False):
     layername = Tstr("Requests")
     popup_label = Tstr("Request")
     marker = "marker_yellow"
-    requests = gis.get_feature_layer(module, resource, layername, popup_label, marker)
+    requests = gis.get_feature_layer(module, resource, layername, popup_label, marker, active=True)
     
     # Assessments
     module = "sitrep"
@@ -105,7 +105,7 @@ def define_map(window=False, toolbar=False):
     layername = Tstr("Assessments")
     popup_label = Tstr("Assessment")
     marker = "marker_green"
-    assessments = gis.get_feature_layer(module, resource, layername, popup_label, marker)
+    assessments = gis.get_feature_layer(module, resource, layername, popup_label, marker, active=True)
     
     # Activities
     module = "project"
@@ -113,7 +113,7 @@ def define_map(window=False, toolbar=False):
     layername = Tstr("Activities")
     popup_label = Tstr("Activity")
     marker = "activity"
-    activities = gis.get_feature_layer(module, resource, layername, popup_label, marker)
+    activities = gis.get_feature_layer(module, resource, layername, popup_label, marker, active=True)
     
     feature_queries = [
                        incidents,

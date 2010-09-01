@@ -2,6 +2,13 @@
  {{=H2(title)}}
 {{except:}}
 {{pass}}
+<div id='rheader'>
+{{try:}}
+ {{=XML(rheader)}}
+{{except:}}
+ {{pass}}
+</div>
+<div id='map'></div>
 <div class='form-container'>
 {{try:}}
  {{=form}}

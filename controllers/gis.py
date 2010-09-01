@@ -73,7 +73,7 @@ def define_map(window=False, toolbar=False):
     popup_label = Tstr("Incident")
     # Default (but still better to define here as otherwise each feature needs to check it's feature_class)
     marker = "marker_red"
-    incidents = gis.get_feature_layer(module, resource, layername, popup_label, marker)
+    incidents = gis.get_feature_layer(module, resource, layername, popup_label, marker, active=False)
     
     # Shelters
     module = "cr"
@@ -81,7 +81,7 @@ def define_map(window=False, toolbar=False):
     layername = Tstr("Shelters")
     popup_label = Tstr("Shelter")
     marker = "shelter"
-    shelters = gis.get_feature_layer(module, resource, layername, popup_label, marker)
+    shelters = gis.get_feature_layer(module, resource, layername, popup_label, marker, active=True)
     
     # Schools
     module = "sitrep"
@@ -89,7 +89,7 @@ def define_map(window=False, toolbar=False):
     layername = Tstr("Schools")
     popup_label = Tstr("School")
     marker = "school"
-    schools = gis.get_feature_layer(module, resource, layername, popup_label, marker)
+    schools = gis.get_feature_layer(module, resource, layername, popup_label, marker, active=True)
     
     # Requests
     module = "rms"
@@ -97,7 +97,7 @@ def define_map(window=False, toolbar=False):
     layername = Tstr("Requests")
     popup_label = Tstr("Request")
     marker = "marker_yellow"
-    requests = gis.get_feature_layer(module, resource, layername, popup_label, marker)
+    requests = gis.get_feature_layer(module, resource, layername, popup_label, marker, active=True)
     
     # Assessments
     module = "sitrep"
@@ -105,7 +105,7 @@ def define_map(window=False, toolbar=False):
     layername = Tstr("Assessments")
     popup_label = Tstr("Assessment")
     marker = "marker_green"
-    assessments = gis.get_feature_layer(module, resource, layername, popup_label, marker)
+    assessments = gis.get_feature_layer(module, resource, layername, popup_label, marker, active=True)
     
     # Activities
     module = "project"
@@ -113,7 +113,7 @@ def define_map(window=False, toolbar=False):
     layername = Tstr("Activities")
     popup_label = Tstr("Activity")
     marker = "activity"
-    activities = gis.get_feature_layer(module, resource, layername, popup_label, marker)
+    activities = gis.get_feature_layer(module, resource, layername, popup_label, marker, active=True)
     
     feature_queries = [
                        incidents,
@@ -127,7 +127,7 @@ def define_map(window=False, toolbar=False):
     map = gis.show_map(
                        window=window,
                        catalogue_toolbar=catalogue_toolbar,
-                       #wms_browser = {"name" : "Pacific Disaster Center", "url" : "http://agsprod.pdc.org/arcgis/Pakistan/PAKISTAN_FLOOD/MapServer/WMSServer?request=GetCapabilities&service=WMS"},
+                       #wms_browser = {"name" : "Sahana ", "url" : "http://geo.eden.sahanafoundation.org:8180/geoserver/ows?service=WMS&request=GetCapabilities"},
                        toolbar=toolbar,
                        search=search,
                        catalogue_overlays=catalogue_overlays,
@@ -158,6 +158,7 @@ def location():
                 table.code.readable = False
             table.gis_feature_type.writable = table.gis_feature_type.readable = False
             table.wkt.writable = table.wkt.readable = False
+            table.marker_id.comment = ""
         else:
             table.code.comment = DIV( _class="tooltip", _title=Tstr("Code") + "|" + Tstr("For a country this would be the ISO2 code, for a Town, it would be the Airport Locode."))
             table.wkt.comment = DIV(SPAN("*", _class="req"), DIV( _class="tooltip", _title="WKT" + "|" + Tstr("The <a href='http://en.wikipedia.org/wiki/Well-known_text' target=_blank>Well-Known Text</a> representation of the Polygon/Line.")))
@@ -1266,6 +1267,54 @@ def layer_tms():
 
     return output
 
+def layer_wfs():
+    """ RESTful CRUD controller """
+    if deployment_settings.get_security_map() and not shn_has_role("MapAdmin"):
+        unauthorised()
+
+    resource = request.function
+    tablename = module + "_" + resource
+    table = db[tablename]
+
+    # Model options
+    table.url.comment = SPAN("*", _class="req")
+
+    # CRUD Strings
+    type = "WFS"
+    LAYERS = T(TYPE_LAYERS_FMT % type)
+    ADD_NEW_LAYER = T(ADD_NEW_TYPE_LAYER_FMT % type)
+    EDIT_LAYER = T(EDIT_TYPE_LAYER_FMT % type)
+    LIST_LAYERS = T(LIST_TYPE_LAYERS_FMT % type)
+    NO_LAYERS = T(NO_TYPE_LAYERS_FMT % type)
+    s3.crud_strings[tablename] = Storage(
+        title_create=ADD_LAYER,
+        title_display=LAYER_DETAILS,
+        title_list=LAYERS,
+        title_update=EDIT_LAYER,
+        title_search=SEARCH_LAYERS,
+        subtitle_create=ADD_NEW_LAYER,
+        subtitle_list=LIST_LAYERS,
+        label_list_button=LIST_LAYERS,
+        label_create_button=ADD_LAYER,
+        label_delete_button = DELETE_LAYER,
+        msg_record_created=LAYER_ADDED,
+        msg_record_modified=LAYER_UPDATED,
+        msg_record_deleted=LAYER_DELETED,
+        msg_list_empty=NO_LAYERS)
+
+    # Post-processor
+    def user_postp(jr, output):
+        shn_action_buttons(jr)
+        return output
+    response.s3.postp = user_postp
+
+    output = shn_rest_controller(module, resource)
+
+    if not "gis" in response.view:
+        response.view = "gis/" + response.view
+
+    return output
+
 def layer_wms():
     """ RESTful CRUD controller """
     if deployment_settings.get_security_map() and not shn_has_role("MapAdmin"):
@@ -1433,7 +1482,7 @@ def display_feature():
     """
         Cut-down version of the Map Viewing Client.
         Used by shn_gis_location_represent() to show just this feature on the map.
-        Called by the viewMap() JavaScript
+        Called by the s3_viewMap() JavaScript
     """
 
     # The Feature

@@ -20,15 +20,17 @@ if deployment_settings.has_module(module):
     resource = "shelter_type"
     tablename = module + "_" + resource
     table = db.define_table(tablename, timestamp, uuidstamp, deletion_status,
-                    Field("name", notnull=True),
+                    Field("name",
+                          notnull=True,
+                          comment = SPAN("*", _class="req")),
                     comments,
                     migrate=migrate)
     
     ADD_SHELTER_TYPE = T("Add Shelter Type")
     LIST_SHELTER_TYPES = T("List Shelter Types")
     s3.crud_strings[tablename] = Storage(
-        title_create = T("Add Shelter Type"),
-        title_display = ADD_SHELTER_TYPE,
+        title_create = ADD_SHELTER_TYPE,
+        title_display = T("Shelter Type Details"),
         title_list = LIST_SHELTER_TYPES,
         title_update = T("Edit Shelter Type"),
         title_search = T("Search Shelter Types"),
@@ -55,15 +57,17 @@ if deployment_settings.has_module(module):
     resource = "shelter_service"
     tablename = module + "_" + resource
     table = db.define_table(tablename, timestamp, uuidstamp, deletion_status,
-                    Field("name", notnull=True),
+                    Field("name",
+                          notnull=True,
+                          comment = SPAN("*", _class="req")),
                     comments,
                     migrate=migrate)
     
     ADD_SHELTER_SERVICE = T("Add Shelter Service")
     LIST_SHELTER_SERVICES = T("List Shelter Services")
     s3.crud_strings[tablename] = Storage(
-        title_create = T("Add Shelter Service"),
-        title_display = ADD_SHELTER_SERVICE,
+        title_create = ADD_SHELTER_SERVICE,
+        title_display = T("Shelter Service Details"),
         title_list = LIST_SHELTER_SERVICES,
         title_update = T("Edit Shelter Service"),
         title_search = T("Search Shelter Services"),
@@ -98,7 +102,20 @@ if deployment_settings.has_module(module):
     # -------------------------------------------------------------------------
     resource = "shelter"
     tablename = module + "_" + resource
-    table = db.define_table(tablename, timestamp, uuidstamp, deletion_status,
+
+    # If the hms module is enabled, we include a hospital_id field, so if the
+    # shelter is co-located with a hospital, the hospital can be identified.
+    # To get the fields in the correct order in the table, get the fields
+    # before and after where hospital_id should go.
+    #
+    # Caution (mainly for developers):  If you start with hms enabled, and
+    # fill in hospital info, then disable hms, the hospital_id column will
+    # get dropped.  If hms is re-enabled, the hospital_id links will be gone.
+    # Moral is, if this is a production site, do not disable hms unless you
+    # really mean it...
+
+    fields_before_hospital = db.Table(None, None,
+                    timestamp, uuidstamp, deletion_status,
                     site_id,
                     Field("name", notnull=True),
                     shelter_type_id,
@@ -121,17 +138,40 @@ if deployment_settings.has_module(module):
                     # are for Pakistan flood response.  It is simpler
                     # to keep this info in the shelter table and hide it if
                     # the shelter is not a school.
-                    Field("school_code", "integer"),
+                    Field("school_code", "integer",
+                          comment = SPAN("*", _class="req")),
                     Field("school_pf", "integer"),
-                    # If the shelter is a hospital, connect it to its hospital
-                    # record.  Although this could be a relationship, with a
-                    # separate table, it is only a single field.
-                    hospital_id,
-                    comments,
-                    migrate=migrate)
+                    )
+
+    fields_after_hospital = db.Table(None, None, comments)
+
+    # Make a copy of reusable field hospital_id and change its comment to
+    # include a *.  # We want it to look required whenever it's visible.
+    cr_hospital_id = db.Table(None, "hospital_id", hospital_id)
+    comment_with_star = DIV(SPAN("*", _class="req"), 
+                            cr_hospital_id.hospital_id.comment)
+    cr_hospital_id.hospital_id.comment = comment_with_star
+
+
+    # Only include hospital_id if the hms module is enabled.
+    if deployment_settings.has_module("hms"):
+        table = db.define_table(tablename,
+                                fields_before_hospital,
+                                cr_hospital_id,
+                                fields_after_hospital,
+                                migrate=migrate)
+    else:
+        table = db.define_table(tablename,
+                                fields_before_hospital,
+                                fields_after_hospital,
+                                migrate=migrate)
 
     table.uuid.requires = IS_NOT_IN_DB(db, "%s.uuid" % tablename)
-    table.name.requires = IS_NOT_EMPTY()   # Shelters don't have to have unique names
+    # Shelters don't have to have unique names
+    # @ToDo If we want to filter incoming reports automatically to see if
+    # they apply to shelters, then we may need to reconsider whether names
+    # can be non-unique, *especially* since location is not required.
+    table.name.requires = IS_NOT_EMPTY()
     table.name.label = T("Shelter Name")
     table.name.comment = SPAN("*", _class="req")
     table.person_id.label = T("Contact Person")
@@ -151,8 +191,8 @@ if deployment_settings.has_module(module):
     ADD_SHELTER = T("Add Shelter")
     LIST_SHELTERS = T("List Shelters")
     s3.crud_strings[tablename] = Storage(
-        title_create = T("Add Shelter"),
-        title_display = ADD_SHELTER,
+        title_create = ADD_SHELTER,
+        title_display = T("Shelter Details"),
         title_list = LIST_SHELTERS,
         title_update = T("Edit Shelter"),
         title_search = T("Search Shelters"),

@@ -105,9 +105,9 @@ deployment_settings.gis.locations_hierarchy = {
     "L3":T("Town"),
     "L4":T("Village")
 }
-# Do we have a spatial DB available? (currently unused)
+# Do we have a spatial DB available? (currently unused. Will support PostGIS & Spatialite.)
 deployment_settings.gis.spatialdb = False
-# GeoServer (currently unused)
+# GeoServer (currently unused. Will allow REST control of GeoServer.)
 deployment_settings.gis.geoserver_url = "http://localhost/geoserver"
 deployment_settings.gis.geoserver_username = "admin"
 deployment_settings.gis.geoserver_password = "password"

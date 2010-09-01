@@ -836,8 +836,8 @@ $(function() {
                         }
                     }
                 }
-                // Clear the Name box, so that it's free for a future sub-location
-                // @ToDo: Critical!
+                // Clear the Name box, so that it's obviously free for a future sub-location
+                $('#gis_location_name').val('');
             }
         });
     });

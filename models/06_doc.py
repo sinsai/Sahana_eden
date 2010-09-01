@@ -18,14 +18,14 @@ resource = "document"
 tablename = "%s_%s" % (module, resource)
 table = db.define_table(tablename, timestamp, uuidstamp, authorstamp, deletion_status,
                         Field("name", length=128, notnull=True, unique=True),
-                        Field("file","upload", autodelete = True,),
+                        Field("file", "upload", autodelete = True,),
                         Field("url"),                        
                         person_id,
                         organisation_id,
                         location_id,
                         Field("date", "date"),
                         comments,
-                        Field("entered","boolean"),
+                        Field("entered", "boolean"),
                         migrate=migrate
                         )
 

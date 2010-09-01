@@ -435,96 +435,38 @@ if deployment_settings.has_module(module):
 
         return None
 
-    # -----------------------------------------------------------------------------
-    #
-    def shn_dvi_get_body_id(label, fields=None, filterby=None):
-
-        """" find IDs for all body records matching a label """
-
-        if fields and isinstance(fields, (list,tuple)):
-            search_fields = []
-            for f in fields:
-                if db.dvi_body.has_key(f):     # TODO: check for field type?
-                    search_fields.append(f)
-            if not len(search_fields):
-                # Error: none of the specified search fields exists
-                return None
-        else:
-            # No search fields specified at all => fallback
-            search_fields = ["pe_label"]
-
-        if label and isinstance(label,str):
-            labels = label.split()
-            results = []
-            query = None
-            # TODO: make a more sophisticated search function (levenshtein?)
-            for l in labels:
-
-                # append wildcards
-                wc = "%"
-                _l = "%s%s%s" % (wc, l, wc)
-
-                # build query
-                for f in search_fields:
-                    if query:
-                        query = (db.dvi_body[f].like(_l)) | query
-                    else:
-                        query = (db.dvi_body[f].like(_l))
-
-                # undeleted records only
-                query = (db.dvi_body.deleted==False) & (query)
-                # restrict to prior results (AND)
-                if len(results):
-                    query = (db.dvi_body.id.belongs(results)) & query
-                if filterby:
-                    query = (filterby) & (query)
-                records = db(query).select(db.dvi_body.id)
-                # rebuild result list
-                results = [r.id for r in records]
-                # any results left?
-                if not len(results):
-                    return None
-            return results
-        else:
-            # no label given or wrong parameter type
-            return None
 
     # -----------------------------------------------------------------------------
     #
-    def shn_dvi_body_search_simple(xrequest, **attr):
+    def shn_dvi_body_search_simple(r, **attr):
 
-        """ Simple Search form for body recovery reports """
+        """ Simple search form for bodies (recovery reports) """
 
-        if attr is None:
-            attr = {}
+        resource = r.resource
+        table = resource.table
 
-        if not shn_has_permission("read", db.dvi_body):
-            session.error = UNAUTHORISED
-            redirect(URL(r=request, c="default", f="user", args="login", vars={"_next":URL(r=request, args="search_simple", vars=request.vars)}))
+        r.id = None
 
-        if xrequest.representation=="html":
+        # Check permission
+        if not shn_has_permission("read", table):
+            r.unauthorised()
+
+        if r.representation == "html":
+
             # Check for redirection
-            if request.vars._next:
-                next = str.lower(request.vars._next)
-            else:
-                next = str.lower(URL(r=request, f="body", args="[id]"))
-
-            # Custom view
-            response.view = "%s/body_search.html" % xrequest.prefix
-
-            # Title and subtitle
-            title = T("Find Recovery Report")
-            subtitle = T("Matching Records")
+            next = r.request.vars.get("_next", None)
+            if not next:
+                next = URL(r=request, f="body", args="[id]")
 
             # Select form
             form = FORM(TABLE(
-                    TR(T("ID Label: "),
+                    TR(T("ID Tag: "),
                     INPUT(_type="text", _name="label", _size="40"),
-                    DIV( _class="tooltip", _title=Tstr("ID Label") + "|" + Tstr("To search for a body, enter the ID label of the body. You may use % as wildcard. Press 'Search' without input to list all bodies."))),
-                    TR("", INPUT(_type="submit", _value="Search"))
-                    ))
+                    DIV(DIV(_class="tooltip",
+                            _title=Tstr("ID Tag") + "|" + Tstr("To search for a body, enter the ID label of the body. You may use % as wildcard. Press 'Search' without input to list all bodies.")))),
+                    TR("", INPUT(_type="submit", _value="Search"))))
 
-            output = dict(title=title, subtitle=subtitle, form=form, vars=form.vars)
+            output = dict(form=form, vars=form.vars)
 
             # Accept action
             items = None
@@ -533,44 +475,31 @@ if deployment_settings.has_module(module):
                 if form.vars.label == "":
                     form.vars.label = "%"
 
-                results = shn_dvi_get_body_id(form.vars.label)
+                # Search
+                results = s3xrc.search_simple(table,
+                            fields = ["pe_label",],
+                            label = form.vars.label)
 
-                if results and len(results):
-                    rows = db(db.dvi_body.id.belongs(results)).select()
+                # Get the results
+                if results:
+                    resource.build_query(id=results)
+                    report = shn_list(r, listadd=False)
                 else:
-                    rows = None
+                    report = dict(items=T("No matching records found."))
 
-                # Build table rows from matching records
-                if rows:
-                    records = []
-                    for row in rows:
-                        href = next.replace("%5bid%5d", "%s" % row.id)
-                        records.append(TR(
-                            A(row.pe_label or "[no label]", _href=href),
-                            row.gender and pr_gender_opts[row.gender] or "unknown",
-                            row.age_group and pr_age_group_opts[row.age_group] or "unknown",
-                            row.date_of_recovery,
-                            (row.location_id and [db.gis_location[row.location_id].name] or [""])[0],
-    #                        location_id.location_id.represent(row.location_id)
-                            ))
-                    items=DIV(TABLE(THEAD(TR(
-                        TH("ID Label"),
-                        TH("Gender"),
-                        TH("Age Group"),
-                        TH("Recovery Date"),
-                        TH("Recovery Site"))),
-                        TBODY(records), _id="list", _class="display"))
-                else:
-                    items = T("None")
+                output.update(dict(report))
 
-            try:
-                label_create_button = s3.crud_strings["dvi_body"].label_create_button
-            except:
-                label_create_button = s3.crud_strings.label_create_button
+            # Title and subtitle
+            title = T("Search Recovery Reports")
+            subtitle = T("Matching Records")
 
-            add_btn = A(label_create_button, _href=URL(r=request, f="body", args="create"), _class="action-btn")
+            # Add-button
+            label_create_button = shn_get_crud_string("dvi_body", "label_create_button")
+            add_btn = A(label_create_button, _class="action-btn",
+                        _href=URL(r=request, f="body", args="create"))
 
-            output.update(dict(items=items, add_btn=add_btn))
+            output.update(title=title, subtitle=subtitle, add_btn=add_btn)
+            response.view = "search_simple.html"
             return output
 
         else:

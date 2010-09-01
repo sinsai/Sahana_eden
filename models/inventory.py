@@ -6,7 +6,7 @@
     @author: Michael Howden (michael@aidiq.com)
     @date-created: 2010-08-16    
     
-    A module for record inventories of items at a location
+    A module to record inventories of items at a location (store)
 """
 
 module = "inventory"
@@ -23,61 +23,63 @@ if deployment_settings.has_module(module):
 
 
     #==============================================================================
-    # Inventory Location
+    # Inventory Store
     #
-    resource = "location"
+    resource = "store"
     tablename = "%s_%s" % (module, resource)
     table = db.define_table(tablename, 
                             timestamp, 
                             uuidstamp, 
                             authorstamp, 
                             deletion_status,
-                            get_location_id(),
-                            Field("description", 
-                                  "text",
-                                  length=320),
+                            location_id,
+                            #get_location_id(),
+                            document_id,
+                            site_id,
+                            comments,
                             migrate=migrate)
 
-    table.location_id.requires = IS_ONE_OF(db, "gis_location.id", repr_select, sort=True)
-    table.location_id.comment.append(SPAN("*", _class="req"))
+    #THESE CHANGE THE VALUE OF location_id EVERYWHERE!!!
+    #table.location_id.requires = IS_ONE_OF(db, "gis_location.id", repr_select, sort=True)
+    #table.location_id.comment.append(SPAN("*", _class="req"))
 
-    s3.crud_strings[tablename] = shn_crud_strings("Inventory Location")
+    s3.crud_strings[tablename] = shn_crud_strings("Inventory Store")
 
     # -----------------------------------------------------------------------------
-    def inventory_location_represent(id):
+    def inventory_store_represent(id):
         if id:
-            location = db(db.inventory_location.id == id).select(db.inventory_location.location_id, limitby=(0, 1)).first().location_id
+            location = db(db.inventory_store.id == id).select(db.inventory_store.location_id, limitby=(0, 1)).first().location_id
             return shn_gis_location_represent(location)
         else:
             return None
     
-    def get_inventory_location_id (field_name = "inventory_location_id", 
-                                   label = T("Inventory Location"),
+    def get_inventory_store_id (field_name = "inventory_store_id", 
+                                   label = T("Inventory Store"),
                                    ):
                                    
-        requires = IS_NULL_OR(IS_ONE_OF(db, "inventory_location.id", inventory_location_represent, sort=True))
+        requires = IS_NULL_OR(IS_ONE_OF(db, "inventory_store.id", inventory_store_represent, sort=True))
         
         represent = lambda id: shn_gis_location_represent( 
                                    shn_get_db_field_value(db = db,
-                                                          table = "inventory_location", 
+                                                          table = "inventory_store", 
                                                           field = "location_id", 
                                                           look_up = id
                                                           )
                                                           )
         
-        comment = DIV( A( "Add Inventory Location",
+        comment = DIV( A( "Add Inventory Store",
                           _class="colorbox",
                           _href=URL(r=request, 
                                     c="inventory", 
-                                    f="location", 
+                                    f="store", 
                                     args="create", 
                                     vars=dict(format="popup", child=field_name)
                                     ),
                           _target="top",
-                          _title="Add Inventory Location",
+                          _title="Add Inventory Store",
                           ),
                        DIV( _class="tooltip",
-                            _title=Tstr("Inventory Location") + "|" + Tstr("Add a New Inventory Location")
+                            _title=Tstr("Inventory Store") + "|" + Tstr("Add a New Inventory Store")
                             )
                        )
 
@@ -92,18 +94,35 @@ if deployment_settings.has_module(module):
                                 ondelete = "RESTRICT"
                                 )
                         )
+        
+    # inventory_store as component of doc_documents
+    s3xrc.model.add_component(module, resource,
+                              multiple=True,
+                              joinby=dict(doc_document="document_id"),
+                              deletable=True,
+                              editable=True)
+    # Also a component of sites, but these are 1-1 and use a natural join.
+    # @ToDo Should these be editable and deletable?  Or should an
+    # inventory store be created when a site is created?
+    # @ToDo Is multiple assumed True or False?  It's not touched
+    # in add_component, so safest to set it explicitly.
+    s3xrc.model.add_component(module, resource,
+                              multiple=False,
+                              joinby="site_id",
+                              deletable=True,
+                              editable=True)
 
     #==============================================================================
     # Inventory Item
     #
-    resource = "location_item"
+    resource = "store_item"
     tablename = "%s_%s" % (module, resource)
     table = db.define_table(tablename, 
                             timestamp, 
                             uuidstamp, 
                             authorstamp, 
                             deletion_status,
-                            get_inventory_location_id(),
+                            get_inventory_store_id(),
                             get_item_id(),
                             Field("quantity", "double"),
                             comments,
@@ -111,20 +130,18 @@ if deployment_settings.has_module(module):
 
     s3.crud_strings[tablename] = shn_crud_strings("Inventory Item")
 
-    # Items as component of Locations
+    # Items as component of Stores
     s3xrc.model.add_component(module, resource,
                               multiple=True,
-                              joinby=dict(inventory_location="inventory_location_id", supply_item="item_id"),
+                              joinby=dict(inventory_store="inventory_store_id", supply_item="item_id"),
                               deletable=True,
                               editable=True)
 
 
-    inventory_menu = [[T("Inventories"), False, URL(r=request, 
-                                                    c = "inventory",
-                                                    f = "location"),
-                       None],
-                      [T("Relief Items"), False, URL(r=request, 
-                                                     c = "supply",
-                                                     f = "item"),
-                       None]
-                      ]
+    inventory_menu = [
+                      [T("Inventory Stores"), False, URL(r=request, c="inventory", f="store"),
+                      [
+                       [T("Add"), False, URL(r=request, c="inventory", f="store", args="create")],
+                      ]],
+                      [T("Relief Items"), False, URL(r=request, c="supply", f="item"), None]
+                     ]

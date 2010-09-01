@@ -17,6 +17,122 @@ table = db.define_table(tablename,
                         migrate=migrate)
 
 # -----------------------------------------------------------------------------
+# Site
+# 
+# Site is a generic type for any facility (office, hospital, shelter,
+# warehouse, etc.) and serves the same purpose as pentity does for person
+# entity types:  It provides a common join key name across all types of
+# sites, with a unique value for each sites.  This allows other types that
+# are useful to any sort of site to have a common way to join to any of
+# them.  It's especially useful for component types.
+#
+# This is currently being added so people can discuss it, and to get
+# inventories quickly associated with shelters without adding shelter_id
+# to inventory_store, or attempting to join on location_id.  It is in
+# org because that's relatively generic and has one of the site types.
+# You'll note that it is a slavish copy of pentity with the names changed.
+
+org_site_types = Storage(
+    cr_shelter = T("Shelter"),
+    org_office = T("Office"),
+    hms_hospital = T("Hospital"),
+)
+
+resource = "site"
+tablename = "%s_%s" % (module, resource)
+table = db.define_table(tablename, deletion_status,
+                        Field("site_type"),
+                        Field("uuid", length=128),
+                        Field("site_id", "integer"),
+                        migrate=migrate)
+
+table.site_type.writable = False
+table.site_type.represent = lambda opt: org_site_types.get(opt, opt)
+table.uuid.writable = False
+
+def shn_site_represent(id, default_label="[no label]"):
+
+    """
+        Represent a site in option fields or list views
+    """
+
+    site_str = T("None (no such record)")
+
+    site_table = db.org_site
+    site = db(site_table.id == id).select(site_table.site_type,
+                                          limitby=(0, 1)).first()
+    if not site:
+        return site_str
+
+    site_type = site.site_type
+    site_type_nice = site_table.site_type.represent(site_type)
+
+    table = db.get(site_type, None)
+    if not table:
+        return site_str
+
+    # All the current types of sites have a required "name" field that can
+    # serve as their representation.
+    record = db(table.site_id == id).select(table.name, limitby=(0, 1)).first()
+
+    if record:
+        site_str = "%s (%s)" % (record.name, site_type_nice) 
+    else:
+        # Since name is notnull for all types so far, this won't be reached.
+        site_str = "[site %d] (%s)" % (id, site_type_nice)
+
+    return site_str
+
+def shn_site_ondelete(record):
+
+    uid = record.get("uuid", None)
+
+    if uid:
+
+        site_table = db.org_site
+        db(site_table.uuid == uid).update(deleted=True)
+
+    return True
+
+def shn_site_onaccept(form, table=None):
+
+    if "uuid" not in table.fields or "id" not in form.vars:
+        return False
+
+    id = form.vars.id
+
+    fields = [table.id, table.uuid]
+    record = db(table.id == id).select(limitby=(0, 1), *fields).first()
+
+    if record:
+
+        site_table = db.org_site
+        uid = record.uuid
+
+        site = db(site_table.uuid == uid).select(site_table.id, limitby=(0, 1)).first()
+        if site:
+            values = dict(site_id = site.id)
+            db(site_table.uuid == uid).update(**values)
+        else:
+            site_type = table._tablename
+            site_id = site_table.insert(uuid=uid, site_type=site_type)
+            db(site_table.id == site_id).update(site_id=site_id, deleted=False)
+            db(table.id == id).update(site_id=site_id)
+
+        return True
+
+    else:
+        return False
+
+site_id = db.Table(None, "site_id",
+    Field("site_id", db.org_site,
+          requires = IS_NULL_OR(IS_ONE_OF(db, "org_site.id", shn_site_represent)),
+          represent = lambda id: (id and [shn_site_represent(id)] or [NONE])[0],
+          readable = False,
+          writable = False,
+          ondelete = "RESTRICT"))
+
+# -----------------------------------------------------------------------------
 # Sectors (to be renamed as Clusters)
 #
 resource = "sector"
@@ -34,7 +150,7 @@ table.name.comment = SPAN("*", _class="req")
 # Functions
 def shn_sector_represent(sector_ids):
     if not sector_ids:
-        return "None"
+        return NONE
     elif "|" in str(sector_ids):
         sectors = [db(db.org_sector.id == id).select(db.org_sector.name, limitby=(0, 1)).first().name for id in sector_ids.split("|") if id]
         return ", ".join(sectors)
@@ -50,7 +166,9 @@ sector_id = db.Table(None, "sector_id",
                            label = T("Sector"),
                            comment = DIV(A(ADD_SECTOR, _class="colorbox", _href=URL(r=request, c="org", f="sector", args="create", vars=dict(format="popup")), _target="top", _title=ADD_SECTOR),
                                      DIV( _class="tooltip", _title=Tstr("Add Sector") + "|" + Tstr("The Sector(s) this organization works in. Multiple values can be selected by holding down the 'Control' key."))),
-                           ondelete = "RESTRICT"
+                           ondelete = "RESTRICT",
+                           # Doesn't re-populate on edit (FF 3.6.8)
+                           #widget = SQLFORM.widgets.checkboxes.widget
                           ))
 
 # -----------------------------------------------------------------------------
@@ -130,16 +248,16 @@ s3.crud_strings[tablename] = Storage(
 
 # Reusable field
 def shn_organisation_represent(id):
-    row = db(db.org_organisation.id == id).select(db.org_organisation.name, 
-                                                  db.org_organisation.acronym, 
+    row = db(db.org_organisation.id == id).select(db.org_organisation.name,
+                                                  db.org_organisation.acronym,
                                                   limitby = [0,1]).first()
     if row:
-        organisation_represent = row.name 
+        organisation_represent = row.name
         if row.acronym:
             organisation_represent = organisation_represent + " (" + row.acronym + ")"
     else:
         organisation_represent = "-"
-    
+
     return organisation_represent
 
 organisation_popup_url = URL(r=request, c="org", f="organisation", args="create", vars=dict(format="popup"))
@@ -151,14 +269,40 @@ shn_organisation_comment = DIV(A(ADD_ORGANIZATION,
                            _title=ADD_ORGANIZATION),
                          DIV(DIV(_class="tooltip",
                                  _title=ADD_ORGANIZATION + "|" + Tstr("The Organization this record is associated with."))))
+
 organisation_id = db.Table(None, "organisation_id",
                            FieldS3("organisation_id", db.org_organisation, sortby="name",
-                           requires = IS_NULL_OR(IS_ONE_OF(db, "org_organisation.id", shn_organisation_represent)),
+                           requires = IS_NULL_OR(IS_ONE_OF(db, "org_organisation.id", shn_organisation_represent, sort=True)),
                            represent = shn_organisation_represent,
                            label = T("Organization"),
                            comment = shn_organisation_comment,
                            ondelete = "RESTRICT"
                           ))
+
+def get_organisastion_id(name = "organisation_id",
+                         label = T("Organization"),
+                         add_label = ADD_ORGANIZATION,
+                         help_str = Tstr("The Organization this record is associated with."),
+                         ):
+    return db.Table(None, 
+                    name,
+                    FieldS3(name, db.org_organisation, sortby="name",
+                            requires = IS_NULL_OR(IS_ONE_OF(db, "org_organisation.id", shn_organisation_represent, sort=True)),
+                            represent = shn_organisation_represent,
+                            label = label,
+                            comment = DIV(A(add_label,
+                                            _class="colorbox",
+                                            _href=organisation_popup_url,
+                                            _target="top",
+                                            _title=add_label),
+                                          DIV(DIV(_class="tooltip",
+                                                  _title=add_label + "|" + help_str
+                                                  )
+                                              )
+                                          ),
+                            ondelete = "RESTRICT"
+                            )
+                    )
 
 # Orgs as component of Clusters
 s3xrc.model.add_component(module, resource,
@@ -192,6 +336,7 @@ resource = "office"
 tablename = module + "_" + resource
 table = db.define_table(tablename, timestamp, uuidstamp, authorstamp, deletion_status,
                         pe_id,
+                        site_id,
                         Field("name", notnull=True),
                         organisation_id,
                         Field("type", "integer"),
@@ -219,7 +364,7 @@ table.name.requires = [IS_NOT_EMPTY(), IS_NOT_IN_DB(db, "%s.name" % tablename)]
 table.type.requires = IS_NULL_OR(IS_IN_SET(org_office_type_opts))
 table.type.represent = lambda opt: org_office_type_opts.get(opt, UNKNOWN_OPT)
 table.parent.requires = IS_NULL_OR(IS_ONE_OF(db, "org_office.id", "%(name)s"))
-table.parent.represent = lambda id: (id and [db(db.org_office.id == id).select(db.org_office.name, limitby=(0, 1)).first().name] or ["None"])[0]
+table.parent.represent = lambda id: (id and [db(db.org_office.id == id).select(db.org_office.name, limitby=(0, 1)).first().name] or [NONE])[0]
 table.phone1.requires = shn_phone_requires
 table.phone2.requires = shn_phone_requires
 table.fax.requires = shn_phone_requires
@@ -265,7 +410,7 @@ s3.crud_strings[tablename] = Storage(
 office_id = db.Table(None, "office_id",
             FieldS3("office_id", db.org_office, sortby="default/indexname",
                 requires = IS_NULL_OR(IS_ONE_OF(db, "org_office.id", "%(name)s")),
-                represent = lambda id: (id and [db(db.org_office.id == id).select(db.org_office.name, limitby=(0, 1)).first().name] or ["None"])[0],
+                represent = lambda id: (id and [db(db.org_office.id == id).select(db.org_office.name, limitby=(0, 1)).first().name] or [NONE])[0],
                 label = T("Office"),
                 comment = DIV(A(ADD_OFFICE, _class="colorbox", _href=URL(r=request, c="org", f="office", args="create", vars=dict(format="popup")), _target="top", _title=ADD_OFFICE),
                           DIV( _class="tooltip", _title=ADD_OFFICE + "|" + Tstr("The Office this record is associated with."))),
@@ -279,10 +424,21 @@ s3xrc.model.add_component(module, resource,
                           deletable=True,
                           editable=True)
 
+# Office is a member of two superentities, so has to call both of their
+# onaccept and ondelete methods.
+
+def shn_office_onaccept(form, table=None):
+    shn_pentity_onaccept(form, table=table)
+    shn_site_onaccept(form, table=table)
+
+def shn_office_ondelete(form):
+    shn_pentity_ondelete(form)
+    shn_site_ondelete(form)
+
 s3xrc.model.configure(table,
                       # Ensure that table is substituted when lambda defined not evaluated by using the default value
-                      onaccept=lambda form, tab=table: shn_pentity_onaccept(form, table=tab),
-                      delete_onaccept=lambda form: shn_pentity_ondelete(form),
+                      onaccept=lambda form, tab=table: shn_office_onaccept(form, table=tab),
+                      delete_onaccept=lambda form: shn_office_ondelete(form),
                       list_fields=["id",
                                    "name",
                                    "organisation_id",   # Filtered in Component views
@@ -293,7 +449,7 @@ s3xrc.model.configure(table,
 # Donors are a type of Organisation
 def shn_donor_represent(donor_ids):
     if not donor_ids:
-        return "None"
+        return NONE
     elif "|" in str(donor_ids):
         donors = [db(db.org_organisation.id == id).select(db.org_organisation.name, limitby=(0, 1)).first().name for id in donor_ids.split("|") if id]
         return ", ".join(donors)
@@ -382,7 +538,7 @@ s3.crud_strings[tablename] = Storage(
 project_id = db.Table(None, "project_id",
                         FieldS3("project_id", db.org_project, sortby="name",
                         requires = IS_NULL_OR(IS_ONE_OF(db, "org_project.id", "%(code)s")),
-                        represent = lambda id: (id and [db.org_project[id].code] or ["None"])[0],
+                        represent = lambda id: (id and [db.org_project[id].code] or [NONE])[0],
                         comment = DIV(A(ADD_PROJECT, _class="colorbox", _href=URL(r=request, c="org", f="project", args="create", vars=dict(format="popup")), _target="top", _title=ADD_PROJECT),
                                   DIV( _class="tooltip", _title=ADD_PROJECT + "|" + Tstr("Add new project."))),
                         label = "Project",
@@ -432,7 +588,7 @@ table = db.define_table(tablename, timestamp, uuidstamp, authorstamp, deletion_s
 # Over-ride the default IS_NULL_OR as Staff doesn't make sense without an associated Organisation
 table.organisation_id.requires = IS_ONE_OF(db, "org_organisation.id", "%(name)s")
 table.manager_id.requires = IS_NULL_OR(IS_ONE_OF(db, "pr_person.id", shn_pr_person_represent))
-table.manager_id.represent = lambda id: (id and [shn_pr_person_represent(id)] or ["None"])[0]
+table.manager_id.represent = lambda id: (id and [shn_pr_person_represent(id)] or [NONE])[0]
 
 # Staff Resource called from multiple controllers
 # - so we define strings in the model
@@ -495,7 +651,7 @@ staff_id = db.Table(None, "staff_id",
                         requires = IS_NULL_OR(IS_ONE_OF(db, "org_staff.id", shn_org_staff_represent)),
                         represent = lambda id: shn_org_staff_represent(id),
                         comment = DIV(A(ADD_STAFF, _class="colorbox", _href=URL(r=request, c="org", f="staff", args="create", vars=dict(format="popup")), _target="top", _title=ADD_STAFF),
-                                  DIV( _class="tooltip", _title=ADD_STAFF + "|" + Tstr("Add new staff."))),
+                                  DIV( _class="tooltip", _title=ADD_STAFF + "|" + Tstr("Add new staff role."))),
                         label = T("Staff"),
                         ondelete = "RESTRICT"
                         ))
@@ -571,7 +727,7 @@ s3xrc.model.configure(table,
 #org_position_id = db.Table(None, "org_position_id",
 #                        FieldS3("org_position_id", db.org_position, sortby="title",
 #                        requires = IS_NULL_OR(IS_ONE_OF(db, "org_position.id", "%(title)s")),
-#                        represent = lambda id: lambda id: (id and [db.org_position[id].title] or ["None"])[0],
+#                        represent = lambda id: lambda id: (id and [db.org_position[id].title] or [NONE])[0],
 #                        comment = DIV(A(ADD_POSITION, _class="colorbox", _href=URL(r=request, c="org", f="project", args="create", vars=dict(format="popup")), _target="top", _title=ADD_POSITION),
 #                                  DIV( _class="tooltip", _title=ADD_POSITION + "|" + Tstr("Add new position."))),
 #                        ondelete = "RESTRICT"
@@ -622,6 +778,18 @@ table = db.define_table(tablename, timestamp, uuidstamp, authorstamp, deletion_s
 # Task Resource called from multiple controllers
 # - so we define strings in the model
 table.person_id.label = T("Assigned to")
+
+
+def shn_org_task_onvalidation(form):
+
+    """ Task form validation """
+
+    if str(form.vars.status) == "2" and not form.vars.person_id:
+        form.errors.person_id = T("Select a person in charge for status 'assigned'")
+
+    return False
+
+
 # CRUD Strings
 ADD_TASK = T("Add Task")
 LIST_TASKS = T("List Tasks")
@@ -649,6 +817,7 @@ s3xrc.model.add_component(module, resource,
     main="subject", extra="description")
 
 s3xrc.model.configure(table,
+                      onvalidation = lambda form: shn_org_task_onvalidation(form),
                       list_fields=["id",
                                    "project_id",
                                    "office_id",
@@ -715,9 +884,9 @@ def shn_project_search_location(xrequest, **attr):
                     href = next.replace("%5bid%5d", "%s" % result.id)
                     records.append(TR(
                         A(result.name, _href=href),
-                        result.start_date or "None",
-                        result.end_date or "None",
-                        result.description or "None",
+                        result.start_date or NONE,
+                        result.end_date or NONE,
+                        result.description or NONE,
                         result.status and org_project_status_opts[result.status] or "unknown",
                         ))
                 items=DIV(TABLE(THEAD(TR(
@@ -733,7 +902,7 @@ def shn_project_search_location(xrequest, **attr):
                     TH("Budgeted Cost"))),
                     TBODY(records), _id="list", _class="display"))
             else:
-                    items = T("None")
+                    items = T(NONE)
 
         try:
             label_create_button = s3.crud_strings["org_project"].label_create_button
@@ -801,3 +970,32 @@ def shn_project_rheader(jr, tabs=[]):
     return None
 
 # -----------------------------------------------------------------------------
+
+org_menu = [
+    #[T("Dashboard"), False, URL(r=request, f="dashboard")],
+    [T("Organizations"), False, URL(r=request, c="org", f="organisation"),[
+        [T("List"), False, URL(r=request, c="org", f="organisation")],
+        [T("Add"), False, URL(r=request, c="org", f="organisation", args="create")],
+        #[T("Search"), False, URL(r=request, f="organisation", args="search")]
+    ]],
+    [T("Activities"), False, URL(r=request, c="project", f="activity"),[
+        [T("List"), False, URL(r=request, c="project", f="activity")],
+        [T("Add"), False, URL(r=request,  c="project", f="activity", args="create")],                                                                         
+        #[T("Search"), False, URL(r=request, f="project", args="search")]
+    ]],    
+    [T("Offices"), False, URL(r=request, c="org", f="office"),[
+        [T("List"), False, URL(r=request, c="org", f="office")],
+        [T("Add"), False, URL(r=request,  c="org",f="office", args="create")],
+        #[T("Search"), False, URL(r=request, f="office", args="search")]
+    ]],
+    [T("Staff"), False, URL(r=request,  c="org",f="staff"),[
+        [T("List"), False, URL(r=request,  c="org",f="staff")],
+        [T("Add"), False, URL(r=request,  c="org",f="staff", args="create")],
+        #[T("Search"), False, URL(r=request, f="staff", args="search")]
+    ]],
+    #[T("Tasks"), False, URL(r=request,  c="org",f="task"),[
+    #    [T("List"), False, URL(r=request,  c="org",f="task")],
+    #    [T("Add"), False, URL(r=request,  c="org",f="task", args="create")],
+        #[T("Search"), False, URL(r=request, f="task", args="search")]
+    #]],
+]

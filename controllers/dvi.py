@@ -11,11 +11,8 @@ if module not in deployment_settings.modules:
     redirect(URL(r=request, c="default", f="index"))
 
 # Only people with the DVI role should be able to access this module
-#if shn_has_role("DVI"):
-#    pass
-#else:
-#    session.error = T("Not Authorised!")
-#    redirect(URL(r=request, c="default", f="user", args="login"))
+#if not shn_has_role("DVI"):
+#    unauthorised()
 
 # Options Menu (available in all Functions" Views)
 def shn_menu():
@@ -63,18 +60,17 @@ def recreq():
 
     resource = request.function
 
-    response.s3.pagination = True
-
     def recreq_postp(jr, output):
         if jr.representation in ("html", "popup"):
             label = UPDATE
             linkto = shn_linkto(jr, sticky=True)("[id]")
             response.s3.actions = [
-                dict(label=str(label), _class="action-btn", url=linkto)
+                dict(label=str(label), _class="action-btn", url=str(linkto))
             ]
         return output
     response.s3.postp = recreq_postp
 
+    response.s3.pagination = True
     output = shn_rest_controller(module, resource, listadd=False)
 
     shn_menu()
@@ -86,8 +82,6 @@ def body():
 
     resource = request.function
 
-    response.s3.pagination = True
-
     def body_postp(jr, output):
         if jr.representation in ("html", "popup"):
             if not jr.component:
@@ -96,16 +90,17 @@ def body():
                 label = UPDATE
             linkto = shn_linkto(jr, sticky=True)("[id]")
             response.s3.actions = [
-                dict(label=str(label), _class="action-btn", url=linkto)
+                dict(label=str(label), _class="action-btn", url=str(linkto))
             ]
         return output
     response.s3.postp = body_postp
 
+    response.s3.pagination = True
     output = shn_rest_controller(module, resource,
                                  main="pe_label",
                                  extra="gender",
-                                 rheader=lambda jr: \
-                                         shn_dvi_rheader(jr, tabs=[
+                                 rheader=lambda r: \
+                                         shn_dvi_rheader(r, tabs=[
                                             (T("Recovery"), ""),
                                             (T("Checklist"), "checklist"),
                                             (T("Images"), "image"),
@@ -114,7 +109,6 @@ def body():
                                             (T("Tracing"), "presence"),
                                             (T("Identity"), "identification"),
                                          ]),
-                                 sticky=True,
                                  listadd=False)
     shn_menu()
     return output

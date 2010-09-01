@@ -217,7 +217,7 @@ class JSON(INPUT):
                                        self["existing_value"],
                                        link_field_value = link_field_value,
                                        json_request = json_request )
-            value = "|".join(value)
+            value = "|%s|" % "|".join(value)
             update_dict = {self["_name"]: value}
             db(db[self["table_name"]].id == link_field_value).update(**update_dict)
 

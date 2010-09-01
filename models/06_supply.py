@@ -32,13 +32,12 @@ if deployment_settings.has_module("inventory"):
                             authorstamp, 
                             deletion_status,
                             Field("name", length=128, notnull=True, unique=True),
+                            comments,
                             migrate=migrate)
 
     table.name.comment = SPAN("*", _class="req")
 
     s3.crud_strings[tablename] = shn_crud_strings("Item Category", "Item Categories")
-
-    shn_import_table("supply_item_category")
 
     # -----------------------------------------------------------------------------
     def get_item_category_id (field_name = "item_category_id", 
@@ -76,13 +75,12 @@ if deployment_settings.has_module("inventory"):
                             deletion_status,                        
                             get_item_category_id(),
                             Field("name", length=128, notnull=True, unique=True),
+                            comments,
                             migrate=migrate)
 
     table.name.comment = SPAN("*", _class="req")
 
     s3.crud_strings[tablename] = shn_crud_strings("Relief Item")
-
-    shn_import_table("supply_item")
 
     # -----------------------------------------------------------------------------
     def get_item_id ( field_name = "item_id", 

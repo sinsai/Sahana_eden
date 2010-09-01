@@ -15,25 +15,6 @@ $(document).ready(function() {
     $('.confirmation').hide().slideDown('slow')
     $('.confirmation').click(function() { $(this).fadeOut('slow'); return false; });
     $('input.date').datepicker({ changeMonth: true, changeYear: true, dateFormat: 'yy-mm-dd', isRTL: false });
-    $('a.colorbox').click(function(){
-        // Function to Add a Resource from within a form
-        $(this).attr('href', function() {
-            // Add the caller to the URL vars so that the popup knows which field to refresh/set
-            var url_in = $(this).attr('href');
-            var caller = '';
-            try {
-                caller = $(this).parents('tr').attr('id').replace(/__row/, '');
-            } catch(e) {
-                if(caller == "") return url_in;  
-            }
-            var url_out = url_in;
-            if (url_out.indexOf('&caller=') == -1){
-                url_out = url_out + '&caller=' + caller;
-            }
-            return url_out;
-        });
-        return false;
-    });
     // IE6 non anchor hover hack
     $('.hoverable').hover(
         function() { $(this).addClass('hovered'); },
@@ -124,15 +105,20 @@ _ajaxS3_rtr_ = {{=T('retry')}};
         });
     };
 
-    jQuery.getS3 = function(url, data, callback, type, message) {
+    jQuery.getS3 = function(url, data, callback, type, message, sync) {
         // shift arguments if data argument was omitted
         if ( jQuery.isFunction( data ) ) {
             callback = data;
             data = null;
         }
+        // Not yet proven to work!
+        if (!sync) {
+            var async = true;
+        }
         return jQuery.ajaxS3({
             type: 'GET',
             url: url,
+            async: async,
             data: data,
             success: callback,
             dataType: type,
@@ -140,14 +126,19 @@ _ajaxS3_rtr_ = {{=T('retry')}};
         });
     };
 
-    jQuery.getJSONS3 = function(url, data, callback, message) {
+    jQuery.getJSONS3 = function(url, data, callback, message, sync) {
         // shift arguments if data argument was omitted
         if ( jQuery.isFunction( data ) ) {
+            sync = message;
             message = callback;
             callback = data;
             data = null;
         }
-        return jQuery.getS3(url, data, callback, 'json', message);
+        // Not yet proven to work!
+        if (!sync) {
+            var sync = false;
+        }
+        return jQuery.getS3(url, data, callback, 'json', message, sync);
     };
 
     jQuery.ajaxS3Settings = {
@@ -178,11 +169,12 @@ _ajaxS3_rtr_ = {{=T('retry')}};
 //  to remove bar, use
 //  hideStatus()
 //
-function StatusBar(sel,options)
+function StatusBar(sel, options)
 {
     var _I = this;
     var _sb = null;
     // options
+    // ToDo allow options passed-in to over-ride defaults
     this.elementId = '_showstatus';
     this.prependMultiline = true;
     this.showCloseButton = false;

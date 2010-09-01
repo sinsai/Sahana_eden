@@ -20,19 +20,32 @@ response.menu_options = [
         #[T("Ushahidi"), False, URL(r=request, f="ireport", args="ushahidi")],
         #[T("Search"), False, URL(r=request, f="ireport", args="search")]
     ]],
-    [T("Confirmed Incidents"), False, URL(r=request, f="incident"),[
-        [T("List"), False, URL(r=request, f="incident")],
-        [T("Add"), False, URL(r=request, f="incident", args="create")],
-        #[T("Search"), False, URL(r=request, f="incident", args="search")]
-    ]],
     #[T("Assessments"), False, URL(r=request, f="iassessment"),[
     #    [T("List"), False, URL(r=request, f="iassessment")],
     #    [T("Add"), False, URL(r=request, f="iassessment", args="create")],
         #[T("Search"), False, URL(r=request, f="iassessment", args="search")]
     #]],
-    [T("Map"), False, URL(r=request, f="maps")],
+    #[T("Map"), False, URL(r=request, f="maps")],
 ]
 
+if shn_has_role("Editor"):
+    response.menu_options.append(
+        [T("Confirmed Incidents"), False, URL(r=request, f="incident"),[
+            [T("List"), False, URL(r=request, f="incident")],
+            [T("Add"), False, URL(r=request, f="incident", args="create")],
+            #[T("Search"), False, URL(r=request, f="incident", args="search")]
+        ]]
+    )
+if shn_has_role(1):
+    response.menu_options.append(
+        [T("Incident Categories"), False, URL(r=request, f="icategory"),[
+            [T("List"), False, URL(r=request, f="icategory")],
+            [T("Add"), False, URL(r=request, f="icategory", args="create")]
+        ]]
+    )
+    response.menu_options.append(
+        [T("Ushahidi Import"), False, URL(r=request, f="ireport", args="ushahidi")],
+    )
 
 # -----------------------------------------------------------------------------
 def index():
@@ -48,21 +61,38 @@ def maps():
 
     """ Show a Map of all Incident Reports """
 
-    class MyVirtualFields:
-        def shape(self):
-            return "star"
-        def color(self):
-            return "green"
-        def size(self):
-            return 18
-
-    #db.gis_location.virtualfields.append(MyVirtualFields())
     reports = db(db.gis_location.id == db.irs_ireport.location_id).select()
     popup_url = URL(r=request, f="ireport", args="read.popup?ireport.location_id=")
-    map = gis.show_map(feature_queries = [{"name":Tstr("Incident Reports"), "query":reports, "active":True, "popup_url": popup_url}], window=True)
+    incidents = {"name":Tstr("Incident Reports"), "query":reports, "active":True, "popup_url": popup_url}
+    feature_queries = [incidents]
+    
+    map = gis.show_map(feature_queries=feature_queries, window=True)
 
     return dict(map=map)
 
+
+# -----------------------------------------------------------------------------
+@auth.shn_requires_membership(1)
+def icategory():
+
+    """
+        Incident Categories, RESTful controller
+        Note: This just defines which categories are visible to end-users
+        The full list of hard-coded categories are visible to admins & should remain unchanged for sync
+    """
+
+    resource = request.function
+    tablename = "%s_%s" % (module, resource)
+    table = db[tablename]
+    
+    # Post-processor
+    def user_postp(jr, output):
+        shn_action_buttons(jr)
+        return output
+    response.s3.postp = user_postp
+
+    output = shn_rest_controller(module, resource)
+    return output
 
 # -----------------------------------------------------------------------------
 def incident():
@@ -72,8 +102,6 @@ def incident():
     resource = request.function
     tablename = "%s_%s" % (module, resource)
     table = db[tablename]
-
-    response.s3.pagination = True
 
     db.irs_iimage.assessment_id.readable = \
     db.irs_iimage.assessment_id.writable = False
@@ -90,18 +118,16 @@ def incident():
         return output
     response.s3.postp = user_postp
 
-    output = shn_rest_controller(module, resource,
-                                 rheader=lambda r: \
-                                         shn_irs_rheader(r,
-                                            tabs = [(T("Incident Details"), None),
-                                                    (T("Reports"), "ireport"),
-                                                    (T("Images"), "iimage"),
-                                                    #(T("Assessments"), "iassessment"),
-                                                    (T("Response"), "iresponse")]),
-                                            sticky=True)
+    rheader = lambda r: shn_irs_rheader(r, tabs = [(T("Incident Details"), None),
+                                                   (T("Reports"), "ireport"),
+                                                   (T("Images"), "iimage"),
+                                                   #(T("Assessments"), "iassessment"),
+                                                   (T("Response"), "iresponse")
+                                                  ])
 
+    response.s3.pagination = True
+    output = shn_rest_controller(module, resource, listadd=False, rheader=rheader)
     return output
-
 
 # -----------------------------------------------------------------------------
 def ireport():
@@ -112,48 +138,63 @@ def ireport():
     tablename = "%s_%s" % (module, resource)
     table = db[tablename]
 
-    response.s3.pagination = True
+    # Don't send the locations list to client (pulled by AJAX instead)
+    table.location_id.requires = IS_NULL_OR(IS_ONE_OF_EMPTY(db, "gis_location.id"))
 
-    person = session.auth.user.id if auth.is_logged_in() else None
-    if person:
-        person_uuid = db(db.auth_user.id == person).select(db.auth_user.person_uuid, limitby=(0, 1)).first().person_uuid
-        person = db(db.pr_person.uuid == person_uuid).select(db.pr_person.id, limitby=(0, 1)).first().id
-    table.person_id.default = person
+    # Non-Editors should only see a limited set of options
+    if not shn_has_role("Editor"):
+        allowed_opts = [irs_incident_type_opts.get(opt.code, opt.code) for opt in db().select(db.irs_icategory.code)]
+        table.category.requires = IS_NULL_OR(IS_IN_SET(allowed_opts))
+    
+    # Pre-processor
+    def prep(r):
+        if r.method == "ushahidi":
+            auth.settings.on_failed_authorization = r.other(method="", vars=None)
+        elif r.method == "update":
+            # Disable legacy fields, unless updating, so the data can be manually transferred to new fields
+            table.source.readable = table.source.writable = False        
+            table.source_id.readable = table.source_id.writable = False         
+        elif r.representation in ("html", "popup") and r.method == "create":
+            table.datetime.default = request.utcnow
+            person = session.auth.user.id if auth.is_logged_in() else None
+            if person:
+                person_uuid = db(db.auth_user.id == person).select(db.auth_user.person_uuid, limitby=(0, 1)).first().person_uuid
+                person = db(db.pr_person.uuid == person_uuid).select(db.pr_person.id, limitby=(0, 1)).first().id
+            table.person_id.default = person
 
+        return True
+    response.s3.prep = prep
+
+    if not shn_has_role("Editor"):
+        table.incident_id.readable = table.incident_id.writable = False
+    
     db.irs_iimage.assessment_id.readable = \
     db.irs_iimage.assessment_id.writable = False
 
     db.irs_iimage.report_id.readable = \
     db.irs_iimage.report_id.writable = False
 
-    def prep(r):
-        if r.method == "ushahidi":
-            auth.settings.on_failed_authorization = r.other(method="", vars=None)
-        return True
-    response.s3.prep = prep
-
     # Post-processor
     def user_postp(jr, output):
-        shn_action_buttons(jr, deletable=False)
+        shn_action_buttons(jr, deletable=False, copyable=True)
         return output
     response.s3.postp = user_postp
 
-    output = shn_rest_controller(module, resource,
-                                 rheader=lambda r: \
-                                         shn_irs_rheader(r,
-                                            tabs = [(T("Report Details"), None),
-                                                    (T("Images"), "iimage")  ]),
-                                            sticky=True)
+    rheader = lambda r: shn_irs_rheader(r, tabs = [(T("Report Details"), None),
+                                                   (T("Images"), "iimage")
+                                                  ])
+
+    response.s3.pagination = True
+    output = shn_rest_controller(module, resource, listadd=False, rheader=rheader)
     return output
 
-
 # -----------------------------------------------------------------------------
+# Currently unused - Assessment module (in 'sitrep' currently) is used instead
 def iassessment():
 
     """ Incident Assessment, RESTful controller """
 
     resource = request.function
-    response.s3.pagination = True
 
     db.irs_iimage.assessment_id.readable = \
     db.irs_iimage.assessment_id.writable = False
@@ -167,13 +208,12 @@ def iassessment():
         return output
     response.s3.postp = user_postp
 
-    output = shn_rest_controller(module, resource,
-                                 rheader=lambda r: \
-                                         shn_irs_rheader(r,
-                                            tabs = [(T("Assessment Details"), None),
-                                                    (T("Images"), "iimage")  ]),
-                                            sticky=True)
+    rheader = lambda r: shn_irs_rheader(r, tabs = [(T("Assessment Details"), None),
+                                                   (T("Images"), "iimage")
+                                                  ])
 
+    response.s3.pagination = True
+    output = shn_rest_controller(module, resource, rheader=rheader)
     return output
 
 

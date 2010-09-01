@@ -8,7 +8,7 @@
 
 # Set to False in Production (to save 1x DAL hit every page)
 if db(db["s3_setting"].id > 0).count() or \
-   not deployment_settings.get_base_prepopulate:
+   not deployment_settings.get_base_prepopulate():
     empty = False
 else:
     empty = True
@@ -239,6 +239,28 @@ if empty:
                 audit_write = False
             )
 
+    # Incident Reporting System
+    if "irs" in deployment_settings.modules:
+        tablename = "irs_setting"
+        table = db[tablename]
+        if not db(table.id > 0).count():
+            table.insert(
+                # If Disabled at the Global Level then can still Enable just for this Module here
+                audit_read = False,
+                audit_write = False
+            )
+        # Categories visible to ends-users by default
+        tablename = "irs_icategory"
+        table = db[tablename]
+        if not db(table.id > 0).count():
+            table.insert(code = "flood")
+            table.insert(code = "geophysical.landslide")
+            table.insert(code = "roadway.bridgeClosure")
+            table.insert(code = "roadway.roadwayClosure")
+            table.insert(code = "other.buildingCollapsed")
+            table.insert(code = "other.peopleTrapped")
+            table.insert(code = "other.powerFailure")
+
     # Messaging Module
     if "msg" in deployment_settings.modules:
         tablename = "msg_email_settings"
@@ -335,13 +357,21 @@ if empty:
         # We want to start at ID 1
         table.truncate()
         table.insert(
-            name = "marker",
-            image = "gis_marker.image.marker.png"
+            name = "marker_red",
+            image = "gis_marker.image.marker_red.png"
         )
-        #table.insert(
-        #    name = "marker_r1",
-        #    image = "marker_r1.png"
-        #)
+        table.insert(
+            name = "marker_yellow",
+            image = "gis_marker.image.marker_yellow.png"
+        )
+        table.insert(
+            name = "marker_amber",
+            image = "gis_marker.image.marker_amber.png"
+        )
+        table.insert(
+            name = "marker_green",
+            image = "gis_marker.image.marker_green.png"
+        )
         table.insert(
             name = "person",
             image = "gis_marker.image.Civil_Disturbance_Theme.png"
@@ -361,6 +391,10 @@ if empty:
         table.insert(
             name = "office",
             image = "gis_marker.image.Emergency_Operations_Center_S1.png"
+        )
+        table.insert(
+            name = "activity",
+            image = "gis_marker.image.Emergency_Teams_S1.png"
         )
         table.insert(
             name = "hospital",
@@ -430,6 +464,18 @@ if empty:
             name = "volunteer",
             image = "gis_marker.image.Volunteer.png"
         )
+    tablename = "gis_symbology"
+    table = db[tablename]
+    if not db(table.id > 0).count():
+        table.insert(
+            name = "Australasia"
+        )
+        table.insert(
+            name = "Canada"
+        )
+        table.insert(
+            name = "US"
+        )
     tablename = "gis_projection"
     table = db[tablename]
     if not db(table.id > 0).count():
@@ -450,6 +496,9 @@ if empty:
             maxExtent = "-180,-90,180,90",
             maxResolution = 1.40625,
             units = "degrees"
+            # OSM use these:
+            #maxResolution = 156543.0339,
+            #units = "m"
         )
 
     tablename = "gis_config"
@@ -461,11 +510,12 @@ if empty:
             lat = "51.8",
             lon = "-1.3",
             zoom = 7,
-            # Doesn't work on Postgres!
+            # Doesn't work on Postgres! (db.commit() the previous step?)
             projection_id = 1,
             marker_id = 1,
-            map_height = 400,
-            map_width = 640
+            map_height = 600,
+            map_width = 800,
+            symbology_id = db(db.gis_symbology.name == "US").select(limitby=(0, 1)).first().id,
         )
 
     tablename = "gis_feature_class"
@@ -484,7 +534,7 @@ if empty:
         )
         table.insert(
             uuid = "www.sahanafoundation.org/GIS-FEATURE-CLASS-L1",
-            name = "Region",
+            name = "Province",
         )
         table.insert(
             uuid = "www.sahanafoundation.org/GIS-FEATURE-CLASS-L2",
@@ -494,6 +544,11 @@ if empty:
             uuid = "www.sahanafoundation.org/GIS-FEATURE-CLASS-L3",
             name = "Town",
             gps_marker = "City (Medium)",
+        )
+        table.insert(
+            uuid = "www.sahanafoundation.org/GIS-FEATURE-CLASS-L4",
+            name = "Village",
+            gps_marker = "City (Small)",
         )
         table.insert(
             uuid = "www.sahanafoundation.org/GIS-FEATURE-CLASS-AIRPORT",
@@ -600,123 +655,6 @@ if empty:
             marker_id = db(db.gis_marker.name == "water").select(limitby=(0, 1)).first().id,
             gps_marker = "Drinking Water",
         )
-    tablename = "gis_feature_group"
-    table = db[tablename]
-    if not db(table.id > 0).count():
-        table.insert(
-            uuid = "www.sahanafoundation.org/GIS-FEATURE-GROUP-L4",
-            name = "Towns",
-        )
-        table.insert(
-            uuid = "www.sahanafoundation.org/GIS-FEATURE-GROUP-TRANSPORT",
-            name = "Transport",
-        )
-        table.insert(
-            uuid = "www.sahanafoundation.org/GIS-FEATURE-GROUP-INFRASTRUCTURE",
-            name = "Infrastructure",
-            enabled = False,
-        )
-        table.insert(
-            uuid = "www.sahanafoundation.org/GIS-FEATURE-GROUP-PROGRAMME",
-            name = "Programmes",
-        )
-        table.insert(
-            uuid = "www.sahanafoundation.org/GIS-FEATURE-GROUP-HOSPITALS",
-            name = "Hospitals",
-        )
-        table.insert(
-            uuid = "www.sahanafoundation.org/GIS-FEATURE-GROUP-INCIDENTS",
-            name = "Incidents",
-        )
-        table.insert(
-            uuid = "www.sahanafoundation.org/GIS-FEATURE-GROUP-OFFICES",
-            name = "Offices",
-        )
-        table.insert(
-            uuid = "www.sahanafoundation.org/GIS-FEATURE-GROUP-PEOPLE",
-            name = "People",
-        )
-        table.insert(
-            uuid = "www.sahanafoundation.org/GIS-FEATURE-GROUP-PROJECTS",
-            name = "Projects",
-        )
-        table.insert(
-            uuid = "www.sahanafoundation.org/GIS-FEATURE-GROUP-SMS-ALERTS",
-            name = "SMS Alerts",
-            enabled = False,
-        )
-        table.insert(
-            uuid = "www.sahanafoundation.org/GIS-FEATURE-GROUP-VEHICLES",
-            name = "Vehicles",
-        )
-    tablename = "gis_feature_class_to_feature_group"
-    table = db[tablename]
-    if not db(table.id > 0).count():
-        table.insert(
-            feature_group_id = db(db.gis_feature_group.name == "Towns").select(db.gis_feature_group.id, limitby=(0, 1)).first().id,
-            feature_class_id = db(db.gis_feature_class.name == "Town").select(db.gis_feature_class.id, limitby=(0, 1)).first().id,
-        )
-        table.insert(
-            feature_group_id = db(db.gis_feature_group.name == "Transport").select(db.gis_feature_group.id, limitby=(0, 1)).first().id,
-            feature_class_id = db(db.gis_feature_class.name == "Airport").select(db.gis_feature_class.id, limitby=(0, 1)).first().id,
-        )
-        table.insert(
-            feature_group_id = db(db.gis_feature_group.name == "Transport").select(db.gis_feature_group.id, limitby=(0, 1)).first().id,
-            feature_class_id = db(db.gis_feature_class.name == "Bridge").select(db.gis_feature_class.id, limitby=(0, 1)).first().id,
-        )
-        table.insert(
-            feature_group_id = db(db.gis_feature_group.name == "Transport").select(db.gis_feature_group.id, limitby=(0, 1)).first().id,
-            feature_class_id = db(db.gis_feature_class.name == "Port").select(db.gis_feature_class.id, limitby=(0, 1)).first().id,
-        )
-        table.insert(
-            feature_group_id = db(db.gis_feature_group.name == "Hospitals").select(db.gis_feature_group.id, limitby=(0, 1)).first().id,
-            feature_class_id = db(db.gis_feature_class.name == "Hospital").select(db.gis_feature_class.id, limitby=(0, 1)).first().id,
-        )
-        table.insert(
-            feature_group_id = db(db.gis_feature_group.name == "Incidents").select(db.gis_feature_group.id, limitby=(0, 1)).first().id,
-            feature_class_id = db(db.gis_feature_class.name == "Incident").select(db.gis_feature_class.id, limitby=(0, 1)).first().id,
-        )
-        table.insert(
-            feature_group_id = db(db.gis_feature_group.name == "Infrastructure").select(db.gis_feature_group.id, limitby=(0, 1)).first().id,
-            feature_class_id = db(db.gis_feature_class.name == "Church").select(db.gis_feature_class.id, limitby=(0, 1)).first().id,
-        )
-        table.insert(
-            feature_group_id = db(db.gis_feature_group.name == "Infrastructure").select(db.gis_feature_group.id, limitby=(0, 1)).first().id,
-            feature_class_id = db(db.gis_feature_class.name == "School").select(db.gis_feature_class.id, limitby=(0, 1)).first().id,
-        )
-        table.insert(
-            feature_group_id = db(db.gis_feature_group.name == "Programmes").select(db.gis_feature_group.id, limitby=(0, 1)).first().id,
-            feature_class_id = db(db.gis_feature_class.name == "Food").select(db.gis_feature_class.id, limitby=(0, 1)).first().id,
-        )
-        table.insert(
-            feature_group_id = db(db.gis_feature_group.name == "Programmes").select(db.gis_feature_group.id, limitby=(0, 1)).first().id,
-            feature_class_id = db(db.gis_feature_class.name == "Water").select(db.gis_feature_class.id, limitby=(0, 1)).first().id,
-        )
-        table.insert(
-            feature_group_id = db(db.gis_feature_group.name == "Offices").select(db.gis_feature_group.id, limitby=(0, 1)).first().id,
-            feature_class_id = db(db.gis_feature_class.name == "Office").select(db.gis_feature_class.id, limitby=(0, 1)).first().id,
-        )
-        table.insert(
-            feature_group_id = db(db.gis_feature_group.name == "People").select(db.gis_feature_group.id, limitby=(0, 1)).first().id,
-            feature_class_id = db(db.gis_feature_class.name == "Person").select(db.gis_feature_class.id, limitby=(0, 1)).first().id,
-        )
-        table.insert(
-            feature_group_id = db(db.gis_feature_group.name == "People").select(db.gis_feature_group.id, limitby=(0, 1)).first().id,
-            feature_class_id = db(db.gis_feature_class.name == "Volunteer").select(db.gis_feature_class.id, limitby=(0, 1)).first().id,
-        )
-        table.insert(
-            feature_group_id = db(db.gis_feature_group.name == "Projects").select(db.gis_feature_group.id, limitby=(0, 1)).first().id,
-            feature_class_id = db(db.gis_feature_class.name == "Project").select(db.gis_feature_class.id, limitby=(0, 1)).first().id,
-        )
-        table.insert(
-            feature_group_id = db(db.gis_feature_group.name == "SMS Alerts").select(db.gis_feature_group.id, limitby=(0, 1)).first().id,
-            feature_class_id = db(db.gis_feature_class.name == "SMS").select(db.gis_feature_class.id, limitby=(0, 1)).first().id,
-        )
-        table.insert(
-            feature_group_id = db(db.gis_feature_group.name == "Vehicles").select(db.gis_feature_group.id, limitby=(0, 1)).first().id,
-            feature_class_id = db(db.gis_feature_class.name == "Vehicle").select(db.gis_feature_class.id, limitby=(0, 1)).first().id,
-        )
-
     tablename = "gis_apikey"
     table = db[tablename]
     if not db(table.id > 0).count():
@@ -800,7 +738,7 @@ if empty:
                 name = "VMap0",
                 description = "A Free low-resolution Vector Map of the whole world",
                 url = "http://labs.metacarta.com/wms/vmap0",
-                projection_id = db(db.gis_projection.epsg == 4326).select(limitby=(0, 1)).first().id,
+                #projection_id = db(db.gis_projection.epsg == 4326).select(limitby=(0, 1)).first().id,
                 layers = "basic",
                 enabled = False
             )
@@ -808,7 +746,7 @@ if empty:
                 name = "Blue Marble",
                 description = "A composite of four months of MODIS observations with a spatial resolution (level of detail) of 1 square kilometer per pixel.",
                 url = "http://maps.opengeo.org/geowebcache/service/wms",
-                projection_id = db(db.gis_projection.epsg == 4326).select(limitby=(0, 1)).first().id,
+                #projection_id = db(db.gis_projection.epsg == 4326).select(limitby=(0, 1)).first().id,
                 layers = "bluemarble",
                 enabled = False
             )
@@ -846,19 +784,22 @@ if empty:
     # User Roles (uses native Web2Py Auth Groups)
     table = auth.settings.table_group_name
     if not db(db[table].id > 0).count():
+        # The 1st 4 permissions are hard-coded for performance reasons
         # This must stay as id=1
         auth.add_group("Administrator", description = "System Administrator - can access & make changes to any data")
         # This must stay as id=2
         auth.add_group("Authenticated", description = "Authenticated - all logged-in users")
         # This must stay as id=3
         auth.add_group("Creator", description = "Creator - dummy role which isn't meant to have users added to it. Used to restrict records to just those created by the user")
-        if session.s3.security_policy != 1:
-            auth.add_group("Editor", description = "Editor - can access & make changes to any unprotected data")
+        # Optional roles for delegating access
+        # This must stay as id=4
+        auth.add_group("Editor", description = "Editor - can access & make changes to any unprotected data")
+        auth.add_group("UserAdmin", description = "UserAdmin - allowed to manage the membership of the Editor role")
         #auth.add_group("Restricted", description = "Restricted - is given a simplified full-screen view so as to minimise the possibility of errors")
+        # GIS
+        auth.add_group("MapAdmin", description = "MapAdmin - allowed access to edit the MapService Catalogue")
         # DVI
         auth.add_group("DVI", description = "DVI - allowed access to the DVI module")
-        # GIS
-        auth.add_group("AdvancedJS", description = "AdvancedJS - allowed access to edit the Advanced JS layers")
         # HMS
         auth.add_group("HMSAdmin", description = "HMSAdmin - full access to HMS")
         auth.add_group("HMSOfficer", description = "HMSOfficer - permission to edit requests and pledges")
@@ -867,6 +808,18 @@ if empty:
         auth.add_group("HMSViewer", description = "HMSViewer - permission to access HMS")
         # Ticketing
         auth.add_group("TicketAdmin", description = "TicketAdmin - full access to Ticketing")
+
+    # Supply / Inventory
+    tablename = "supply_item_category"
+    table = db[tablename]
+    if not db(table.id > 0).count():
+        shn_import_table("supply_item_category")
+    tablename = "supply_item"
+    table = db[tablename]
+    if not db(table.id > 0).count():
+        shn_import_table("supply_item")
+
+
     # Security Defaults for all tables (if using 'full' security policy)
     if session.s3.security_policy != 1:
         table = auth.settings.table_permission_name

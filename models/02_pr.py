@@ -126,7 +126,7 @@ pe_label = db.Table(None, "pe_label",
 pe_id = db.Table(None, "pe_id",
                  Field("pe_id", db.pr_pentity,
                        requires = IS_NULL_OR(IS_ONE_OF(db, "pr_pentity.id", shn_pentity_represent)),
-                       represent = lambda id: (id and [shn_pentity_represent(id)] or ["None"])[0],
+                       represent = lambda id: (id and [shn_pentity_represent(id)] or [NONE])[0],
                        readable = False,
                        writable = False,
                        ondelete = "RESTRICT"))
@@ -153,9 +153,11 @@ def shn_pentity_onaccept(form, table=None):
     id = form.vars.id
 
     if "pe_label" in table.fields:
-        fields = (table.uuid, table.pe_label)
+        fields = [table.id, table.uuid, table.pe_label]
     else:
-        fields = (table.uuid,)
+        fields = [table.id, table.uuid]
+    if "missing" in table.fields:
+        fields.append(table.missing)
     record = db(table.id == id).select(limitby=(0,1), *fields).first()
 
     if record:
@@ -175,6 +177,12 @@ def shn_pentity_onaccept(form, table=None):
             pe_id = pentity.insert(uuid=uid, pe_label=pe_label, pe_type=pe_type)
             db(pentity.id == pe_id).update(pe_id=pe_id, deleted=False)
             db(table.id == id).update(pe_id=pe_id)
+
+        # If a person gets added in MPR, then redirect to missing report
+        if request.controller == "mpr" and \
+           table._tablename == "pr_person" and \
+           record.missing == True:
+            response.s3.mpr_next = URL(r=request, c="mpr", f="person", args=[record.id, "missing_report"])
 
         return True
 
@@ -327,6 +335,7 @@ table.date_of_birth.requires = IS_NULL_OR(IS_DATE_IN_RANGE(
                                error_message="%s " % T("Enter a date before") + "%(max)s!"))
 
 table.first_name.requires = IS_NOT_EMPTY()
+table.first_name.requires.error_message = T("Please enter a First Name")
 
 table.pe_label.comment = DIV(DIV(_class="tooltip",
     _title=Tstr("ID Label") + "|" + Tstr("Number or Label on the identification tag this person is wearing (if any).")))
@@ -385,9 +394,10 @@ person_id = db.Table(None, "person_id",
                      FieldS3("person_id", db.pr_person,
                              sortby = ["first_name", "middle_name", "last_name"],
                              requires = IS_NULL_OR(IS_ONE_OF(db, "pr_person.id",
-                                                             shn_pr_person_represent)),
+                                                             shn_pr_person_represent, sort=True)),
                              represent = lambda id: (id and \
-                                         [shn_pr_person_represent(id)] or ["None"])[0],
+                                         [shn_pr_person_represent(id)] or [NONE])[0],
+                             label = T("Person"),
                              comment = shn_person_id_comment,
                              ondelete = "RESTRICT"))
 
@@ -481,7 +491,7 @@ group_id = db.Table(None, "group_id",
                                         filterby="system",
                                         filter_opts=(False,))),
                             represent = lambda id: (id and \
-                                        [db(db.pr_group.id == id).select(db.pr_group.name, limitby=(0, 1)).first().name] or ["None"])[0],
+                                        [db(db.pr_group.id == id).select(db.pr_group.name, limitby=(0, 1)).first().name] or [NONE])[0],
                             ondelete = "RESTRICT"))
 
 group_id.group_id.comment = \
@@ -598,7 +608,7 @@ def shn_pr_person_search_simple(r, **attr):
 
         # Select form
         form = FORM(TABLE(
-                TR(T("Name and/or ID Label: "),
+                TR(Tstr("Name and/or ID Label" + ": "),
                    INPUT(_type="text", _name="label", _size="40"),
                    DIV(DIV(_class="tooltip",
                            _title=Tstr("Name and/or ID Label") + "|" + Tstr("To search for a person, enter any of the first, middle or last names and/or the ID label of a person, separated by spaces. You may use % as wildcard. Press 'Search' without input to list all persons.")))),
@@ -608,7 +618,7 @@ def shn_pr_person_search_simple(r, **attr):
 
         # Accept action
         items = None
-        if form.accepts(request.vars, session):
+        if form.accepts(request.vars, session, keepvalues=True):
 
             if form.vars.label == "":
                 form.vars.label = "%"
@@ -640,7 +650,7 @@ def shn_pr_person_search_simple(r, **attr):
                     _href=URL(r=request, f="person", args="create"))
 
         output.update(title=title, subtitle=subtitle, add_btn=add_btn)
-        response.view = "%s/person_search.html" % resource.prefix
+        response.view = "search_simple.html"
         return output
 
     else:

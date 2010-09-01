@@ -2,17 +2,17 @@
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
 {{if session.s3.debug:}}
-  {{include 'sahana_styles_debug.html'}}
-  {{include 'sahana_scripts_debug.html'}}
+  {{include "sahana_styles_debug.html"}}
+  {{include "sahana_scripts_debug.html"}}
 {{else:}}
   <link href="/{{=request.application}}/static/styles/S3/sahana.min.css" rel="stylesheet" type="text/css" media="screen" charset="utf-8" />
-  {{include 'sahana_scripts_min.html'}}
+  {{include "sahana_scripts_min.html"}}
 {{pass}}
 
 <script type="text/javascript">//<![CDATA[
 $(function() {
     // Hide the ID Label Field (not relevant to an OR deployment)
-    //$("#pr_person_pr_pe_label__row").hide();
+    //$('#pr_person_pr_pe_label__row').hide();
 });
 //]]></script>
 
@@ -41,19 +41,19 @@ $(function() {
     }
 });
 
-function TB_cleanup(caller) {
-    if(self.parent.cleanup)
-       self.parent.cleanup(caller);
-    self.parent.tb_remove();
+function s3_tb_call_cleanup(caller) {
+    if(self.parent.s3_tb_cleanup)
+       self.parent.s3_tb_cleanup(caller);
+    self.parent.s3_tb_remove();
 }
 
-function TB_refresh() {
+function s3_tb_refresh() {
     // The Get parameters
     // ToDo: Make this less fragile by passing these fields as separate vars?
     var $_GET = getQueryParams(document.location.search);
-    var caller = $_GET["caller"];
+    var caller = $_GET['caller'];
     // The JSON of the resource we just created
-    var url = document.location.pathname.replace("/create","/options.json?field=pe_id");
+    var url = document.location.pathname.replace('/create','/options.json?field=pe_id');
     var selector = self.parent.$('#' + caller);
     var dummy = self.parent.$('#dummy_' + caller);
     var has_dummy = (dummy.val() != undefined);
@@ -63,14 +63,14 @@ function TB_refresh() {
         var append=[];
     }
     var value_high = 1;
-    var represent_high = "";
+    var represent_high = '';
     $.getJSONS3(url, function (data) {
         var value, represent;
         $.each(data['option'], function() {
             value = this['@value'];
             represent = this['$'];
-            if(typeof represent === "undefined") {
-                represent = "";
+            if(typeof represent === 'undefined') {
+                represent = '';
             } else {
                 represent = represent.split(' [')[0];
             }
@@ -100,7 +100,7 @@ function TB_refresh() {
                 selector.val(value_high);
             }, 1);
         // Clean-up
-        TB_cleanup(caller);
+        s3_tb_call_cleanup(caller);
     });
 }
 // Function to get the URL parameters
@@ -122,15 +122,15 @@ function getQueryParams(qs) {
 // If submission succesful
 {{if response.flash or response.confirmation:}}
 // Refresh the DIV and close the pop up
-$(document).ready( function() {self.parent.$(".TB_closeAjaxWindow").html('');});
-TB_refresh();
+$(document).ready( function() {self.parent.$('.TB_closeAjaxWindow').html('');});
+s3_tb_refresh();
 {{pass}}
 
 //]]></script>
 </head>
 
 <body>
-{{include '_popup.html'}}
+{{include "_popup.html"}}
 </body>
 
 </html>

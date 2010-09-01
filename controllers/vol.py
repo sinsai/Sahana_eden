@@ -120,7 +120,7 @@ def person():
                 label = UPDATE
             linkto = shn_linkto(jr, sticky=True)("[id]")
             response.s3.actions = [
-                dict(label=str(label), _class="action-btn", url=linkto)
+                dict(label=str(label), _class="action-btn", url=str(linkto))
             ]
         return output
     response.s3.postp = person_postp
@@ -150,7 +150,8 @@ def person():
                                            "description"])
         # TODO: If we don't know what a "status report" is supposed to be,
         # take it out.  Take out resources til they're modernized.
-        tabs = [#(T("Status Report"), None),
+        tabs = [
+                #(T("Status Report"), None),
                 (T("Availablity"), "volunteer"),
                 (T("Teams"), "group_membership"),
                 (T("Skills"), "skill"),
@@ -161,8 +162,7 @@ def person():
     output = shn_rest_controller("pr", resource,
         main="first_name",
         extra="last_name",
-        rheader=lambda jr: shn_pr_rheader(jr, tabs),
-        sticky=True,
+        rheader=lambda r: shn_pr_rheader(r, tabs),
         listadd=False)
 
     shn_menu()
@@ -174,27 +174,30 @@ def project():
     "Project controller"
 
     resource = request.function
-    
+
     def org_postp(jr, output):
         shn_action_buttons(jr)
         return output
     response.s3.postp = org_postp
-    
+
     # ServerSidePagination
     response.s3.pagination = True
 
+    tabs = [
+            (T("Basic Details"), None),
+            (T("Staff"), "staff"),
+            (T("Tasks"), "task"),
+            #(T("Donors"), "organisation"),
+            #(T("Sites"), "site"),  # Ticket 195
+           ]
+
+    rheader = lambda r: shn_project_rheader(r, tabs)
+
     output = shn_rest_controller("org", resource,
-        listadd=False,
-        main="code",
-        rheader=lambda jr: shn_project_rheader(jr,
-            tabs = [(T("Basic Details"), None),
-                    (T("Staff"), "staff"),
-                    (T("Tasks"), "task"),
-                    #(T("Donors"), "organisation"),
-                    #(T("Sites"), "site"),          # Ticket 195
-                   ]),
-        sticky=True)
-    
+                                 listadd=False,
+                                 main="code",
+                                 rheader=rheader)
+
     return output
 
 
@@ -228,7 +231,7 @@ def task():
     return shn_rest_controller("org", resource, listadd=False)
 
 
-# ----------------------------------------------------------------------------- 
+# -----------------------------------------------------------------------------
 def skill_types():
     "Allow user to define new skill types."
     return shn_rest_controller(module, "skill_types")
@@ -296,7 +299,7 @@ def group():
     table.name.label = T("Team Name")
     db.pr_group_membership.group_id.label = T("Team Id")
     db.pr_group_membership.group_head.label = T("Team Head")
- 
+
     # CRUD Strings
     ADD_TEAM = T("Add Team")
     LIST_TEAMS = T("List Teams")
@@ -349,22 +352,21 @@ def group():
                 label = UPDATE
             linkto = shn_linkto(jr, sticky=True)("[id]")
             response.s3.actions = [
-                dict(label=str(label), _class="action-btn", url=linkto)
+                dict(label=str(label), _class="action-btn", url=str(linkto))
             ]
         return output
     response.s3.postp = group_postp
 
     output = shn_rest_controller("pr", "group",
-        main="name",
-        extra="description",
-        rheader=lambda jr: shn_pr_rheader(jr,
-            tabs = [(T("Team Details"), None),
-                    (T("Address"), "address"),
-                    (T("Contact Data"), "pe_contact"),
-                    (T("Members"), "group_membership")]),
-        sticky=True,
-	listadd=False,
-        deletable=False)
+                                 main="name",
+                                 extra="description",
+                                 rheader=lambda jr: shn_pr_rheader(jr,
+                                        tabs = [(T("Team Details"), None),
+                                                (T("Address"), "address"),
+                                                (T("Contact Data"), "pe_contact"),
+                                                (T("Members"), "group_membership")]),
+                                 listadd=False,
+                                 deletable=False)
 
     shn_menu()
     return output
@@ -430,29 +432,29 @@ def view_team_map():
 
 # -----------------------------------------------------------------------------
 def compose_person():
-    "Send message to volunteer"  
+    "Send message to volunteer"
 
     person_pe_id_query = (db.pr_person.id == request.vars.person_id)
     pe_id_row = db(person_pe_id_query).select(db.pr_person.pe_id).first()
     request.vars.pe_id = pe_id_row["pe_id"]
-    
-    return shn_msg_compose( redirect_module=module, 
-                            redirect_function="compose_person", 
-                            redirect_vars={"person_id":request.vars.person_id}, 
+
+    return shn_msg_compose( redirect_module=module,
+                            redirect_function="compose_person",
+                            redirect_vars={"person_id":request.vars.person_id},
                             title_name="Send a message to a volunteer" )
 
 
 # -----------------------------------------------------------------------------
 def compose_group():
-    "Send message to members of a team"  
+    "Send message to members of a team"
 
     group_pe_id_query = (db.pr_group.id == request.vars.group_id)
     pe_id_row = db(group_pe_id_query).select(db.pr_group.pe_id).first()
     request.vars.pe_id = pe_id_row["pe_id"]
 
-    return shn_msg_compose( redirect_module=module, 
-                            redirect_function="compose_group", 
-                            redirect_vars={"group_id":request.vars.group_id}, 
+    return shn_msg_compose( redirect_module=module,
+                            redirect_function="compose_group",
+                            redirect_vars={"group_id":request.vars.group_id},
                             title_name="Send a message to a team of volunteers" )
 
 

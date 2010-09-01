@@ -39,6 +39,7 @@ if deployment_settings.has_module(module):
     table = db.define_table(tablename, timestamp, uuidstamp, deletion_status,
         Field("subject"),
         Field("message", "text"),
+        person_id,
         Field("attachment", "upload", autodelete = True),
         Field("priority", "integer"),
         Field("source", default="local"),

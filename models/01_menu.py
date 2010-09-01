@@ -5,13 +5,12 @@
 """
 
 # Language Menu (available in all screens)
-s3.menu_lang = [ T("Language"), True, #,
-        [
-            [T("English"), False, URL(r=request, vars={"_language":"en"})],
-            [T("Chinese"), False, URL(r=request, vars={"_language":"zh-tw"})],
-        ]
-    ]
-
+s3.menu_lang = [ T("Language"), True, "#"]
+_menu_lang = []
+for language in s3.l10n_languages.keys():
+    _menu_lang.append([s3.l10n_languages[language], False, URL(r=request, vars={"_language":language}).xml()])
+s3.menu_lang.append(_menu_lang)
+    
 # Help Menu (available in all screens)
 s3.menu_help = [ T("Help"), True, "#",
         [
@@ -70,7 +69,7 @@ admin_menu_options = [
     [T("User Management"), False, URL(r=request, c="admin", f="user"), [
         [T("Users"), False, URL(r=request, c="admin", f="user")],
         [T("Roles"), False, URL(r=request, c="admin", f="group")],
-        #[T("Membership"), False, URL(r=request, c="admin", f="membership")]
+        [T("Membership"), False, URL(r=request, c="admin", f="membership")]
     ]],
     [T("Database"), False, "#", [
         [T("Import"), False, URL(r=request, c="admin", f="import_data")],
@@ -207,7 +206,7 @@ else:
 response.menu = s3.menu_modules
 response.menu.append(s3.menu_help)
 response.menu.append(s3.menu_auth)
-# Uncomment to enable Language tool on menu
-#response.menu.append(s3.menu_lang)
+if deployment_settings.get_L10n_display_toolbar():
+    response.menu.append(s3.menu_lang)
 if s3.menu_admin:
     response.menu.append(s3.menu_admin)

@@ -400,6 +400,8 @@ ul.x-tab-strip-bottom{
 	background-image: url(../images/default/button/group-lr.gif);
 }
 
+.action-delete { background-image: url(../images/button/default/arrow.gif) !important; background-repeat: no-repeat; }
+
 .x-btn-group-notitle .x-btn-group-tc {
 	background-image: url(../images/default/button/group-tb.gif);
 }.x-toolbar{

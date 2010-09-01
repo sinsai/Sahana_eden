@@ -3,12 +3,11 @@
 """
     Sahana Eden GIS Module
 
-    @version: 0.0.7
+    @version: 0.0.8
     @requires: U{B{I{shapely}} <http://trac.gispython.org/lab/wiki/Shapely>}
 
     @author: Fran Boon <francisboon@gmail.com>
     @author: Timothy Caro-Bruce <tcarobruce@gmail.com>
-    @author: Zubin Mithra <zubin.mithra@gmail.com>
     @copyright: (c) 2010 Sahana Software Foundation
     @license: MIT
 
@@ -80,15 +79,17 @@ GEOM_TYPES = {
     "multipolygon": 3,
 }
 
+# -----------------------------------------------------------------------------
 class GIS(object):
     """ GIS functions """
 
-    def __init__(self, environment, db, auth=None, cache=None):
+    def __init__(self, environment, deployment_settings, db, auth=None, cache=None):
         self.environment = Storage(environment)
         self.request = self.environment.request
         self.response = self.environment.response
         self.session = self.environment.session
         self.T = self.environment.T
+        self.deployment_settings = deployment_settings
         assert db is not None, "Database must not be None."
         self.db = db
         self.cache = cache and (cache.ram, 60) or None
@@ -98,6 +99,7 @@ class GIS(object):
         #self.messages.centroid_error = str(A("Shapely", _href="http://pypi.python.org/pypi/Shapely/", _target="_blank")) + " library not found, so can't find centroid!"
         self.messages.centroid_error = "Shapely library not functional, so can't find centroid! Install Geos & Shapely for Line/Polygon support"
         self.messages.unknown_type = "Unknown Type!"
+        self.messages.invalid_wkt_point = "Invalid WKT: Must be like POINT(3 4)!"
         self.messages.invalid_wkt_linestring = "Invalid WKT: Must be like LINESTRING(3 4,10 50,20 25)!"
         self.messages.invalid_wkt_polygon = "Invalid WKT: Must be like POLYGON((1 1,5 1,5 5,1 5,1 1),(2 2, 3 2, 3 3, 2 3,2 2))!"
         self.messages.lon_empty = "Invalid: Longitude can't be empty if Latitude specified!"
@@ -106,6 +108,7 @@ class GIS(object):
         self.messages["T"] = self.T
         self.messages.lock_keys = True
 
+    # -----------------------------------------------------------------------------
     def abbreviate_wkt(self, wkt, max_length=30):
         if not wkt:
             # Blank WKT field
@@ -115,13 +118,14 @@ class GIS(object):
         else:
             return wkt
 
+    # -----------------------------------------------------------------------------
     def download_kml(self, url, public_url):
         """
-        Download a KML file:
-            unzip it if-required
-            follow NetworkLinks recursively if-required
+            Download a KML file:
+                unzip it if-required
+                follow NetworkLinks recursively if-required
 
-        Returns a file object
+            Returns a file object
         """
 
         response = self.response
@@ -191,6 +195,7 @@ class GIS(object):
 
         return file, warning
 
+    # -----------------------------------------------------------------------------
     def get_api_key(self, layer="google"):
         " Acquire API key from the database "
 
@@ -198,6 +203,7 @@ class GIS(object):
         query = db.gis_apikey.name == layer
         return db(query).select(db.gis_apikey.apikey, limitby=(0, 1)).first().apikey
 
+    # -----------------------------------------------------------------------------
     def get_bearing(self, lat_start, lon_start, lat_end, lon_end):
         """
             Given a Start & End set of Coordinates, return a Bearing
@@ -213,62 +219,83 @@ class GIS(object):
 
         return bearing
 
+    # -----------------------------------------------------------------------------
+    def _min_not_none(self, *args):
+        """
+            Utility function returns minimal argument that is not None.
+        """
+        return min(*(a for a in args if a is not None))
+
+    # -----------------------------------------------------------------------------
     def get_bounds(self, features=[]):
         """
             Calculate the Bounds of a list of Features
             e.g. to use in GPX export for correct zooming
-            @ToDo: Support Polygons
             @ToDo: Optimised Geospatial routines rather than this crude hack
         """
-        # If we have a list of features, then use this to build the bounds
-        if features:
-            min_lon = 180
-            min_lat = 90
-            max_lon = -180
-            max_lat = -90
-            for feature in features:
-                if feature.lon > max_lon:
-                    max_lon = feature.lon
-                if feature.lon < min_lon:
-                    min_lon = feature.lon
-                if feature.lat > max_lat:
-                    max_lat = feature.lat
-                if feature.lat < min_lat:
-                    min_lat = feature.lat
-            # Check that we're still within overall bounds
-            config = self.get_config()
-            if min_lon < config.min_lon:
-                min_lon = config.min_lon
-            if min_lat < config.min_lat:
-                min_lat = config.min_lat
-            if max_lon > config.max_lon:
-                max_lon = config.max_lon
-            if max_lat > config.max_lat:
-                max_lat = config.max_lat
+        min_lon = 180
+        min_lat = 90
+        max_lon = -180
+        max_lat = -90
+        min_not_none = self._min_not_none  # use this instead of min
+        for feature in features:
+            min_lon = min_not_none(feature.lon, feature.lon_min, min_lon)
+            min_lat = min_not_none(feature.lat, feature.lat_min, min_lat)
+            max_lon = max(feature.lon, feature.lon_max, max_lon)
+            max_lat = max(feature.lat, feature.lat_max, max_lat)
 
-        else:
-            # Read from config
-            config = self.get_config()
-            min_lon = config.min_lon
-            min_lat = config.min_lat
-            max_lon = config.max_lon
-            max_lat = config.max_lat
+        # Check that we're still within overall bounds
+        config = self.get_config()
+        min_lon = max(config.lon, min_lon)
+        min_lat = max(config.lat, min_lat)
+        max_lon = min_not_none(config.lon, max_lon)
+        max_lat = min_not_none(config.lat, max_lat)
 
         return dict(min_lon=min_lon, min_lat=min_lat, max_lon=max_lon, max_lat=max_lat)
 
+    # -----------------------------------------------------------------------------
     def get_children(self, parent_id):
-        "Return a list of all GIS Features which are children of the requested parent"
+        """
+            Return a list of all GIS Features which are children of the requested feature
+            @ ToDo Switch to modified preorder tree traversal:
+            http://eden.sahanafoundation.org/wiki/HaitiGISToDo#HierarchicalTrees
+        """
 
         db = self.db
+        _locations = db.gis_location
 
-        # Switch to modified preorder tree traversal:
-        # http://eden.sahanafoundation.org/wiki/HaitiGISToDo#HierarchicalTrees
-        children = db(db.gis_location.parent == parent_id).select()
+        deleted = (_locations.deleted == False)
+        query = deleted & (_locations.parent == parent_id)
+        children = db(query).select()
         for child in children:
             children = children & self.get_children(child.id)
 
         return children
 
+    # -----------------------------------------------------------------------------
+    def get_parents(self, feature_id):
+        """
+            Return a list of all GIS Features which are parents of the requested feature
+            @ ToDo Switch to modified preorder tree traversal:
+            http://eden.sahanafoundation.org/wiki/HaitiGISToDo#HierarchicalTrees
+        """
+
+        db = self.db
+        _locations = db.gis_location
+
+        deleted = (_locations.deleted == False)
+        query = deleted & (_locations.id == feature_id)
+        feature = db(query).select(_locations.parent, limitby=(0, 1)).first()
+        if feature and feature.parent:
+            parents = db(_locations.id == feature.parent).select(limitby=(0, 1))
+            _parents = self.get_parents(feature.parent)
+            if _parents:
+                parents = parents & _parents
+            return parents
+        else:
+            return None
+
+    # -----------------------------------------------------------------------------
     def get_config(self):
         " Reads the current GIS Config from the DB "
 
@@ -301,6 +328,7 @@ class GIS(object):
         
         return output
 
+    # -----------------------------------------------------------------------------
     def get_feature_class_id_from_name(self, name):
         """
             Returns the Feature Class ID from it's name
@@ -314,6 +342,41 @@ class GIS(object):
         else:
             return None
 
+    # -----------------------------------------------------------------------------
+    def get_feature_layer(self, module, resource, layername, popup_label, marker=None, filter=None, active=True):
+        """
+            Return a Feature Layer suitable to display on a map
+            @param: layername: Used as the label in the LayerSwitcher
+            @param: popup_label: Used in Cluster Popups to differentiate between types
+        """
+        db = self.db
+        deployment_settings = self.deployment_settings
+        request = self.request
+        
+        # Hide deleted Resources
+        query = (db.gis_location.deleted == False)
+            
+        if filter:
+            query = query & (db[filter.tablename].id == filter.id)
+        
+        # Hide Resources recorded to Country Locations on the map?
+        if not deployment_settings.get_gis_display_l0():
+            query = query & ((db.gis_location.level != "L0") | (db.gis_location.level == None))
+            
+        query = query & (db.gis_location.id == db["%s_%s" % (module, resource)].location_id)
+        locations = db(query).select(db.gis_location.id, db.gis_location.uuid, db.gis_location.parent, db.gis_location.name, db.gis_location.wkt, db.gis_location.lat, db.gis_location.lon)
+        for i in range(0, len(locations)):
+            locations[i].popup_label = locations[i].name + "-" + popup_label
+        popup_url = URL(r=request, c=module, f=resource, args="read.plain?%s.location_id=" % resource)
+        try:
+            marker = db(db.gis_marker.name == marker).select(db.gis_marker.id, limitby=(0, 1)).first().id
+            layer = {"name":layername, "query":locations, "active":active, "marker":marker, "popup_url": popup_url}
+        except:
+            layer = {"name":layername, "query":locations, "active":active, "popup_url": popup_url}
+
+        return layer
+    
+    # -----------------------------------------------------------------------------
     def get_features_in_radius(self, lat, lon, radius):
         """
             Returns Features within a Radius (in km) of a LatLon Location
@@ -355,12 +418,115 @@ class GIS(object):
 
         return features
 
+    # -----------------------------------------------------------------------------
+    def get_latlon(self, feature_id, filter=False):
+    
+        """ Returns the Lat/Lon for a Feature (using recursion where necessary)
+
+            @param feature_id: the feature ID (int) or UUID (str)
+            @param filter: Filter out results based on deployment_settings
+            @ToDo Rewrite to use self.get_parents()
+        """
+        
+        db = self.db
+        deployment_settings = self.deployment_settings
+        table_feature = db.gis_location
+        
+        if isinstance(feature_id, int):
+            query = (table_feature.id == feature_id)
+        elif isinstance(feature_id, str):
+            query = (table_feature.uuid == feature_id)
+        else:
+            # What else could feature_id be?
+            return None
+        
+        feature = db(query).select(table_feature.lat, table_feature.lon, table_feature.parent, limitby=(0, 1)).first()
+        
+        query = (table_feature.deleted == False)
+        if filter and not deployment_settings.get_gis_display_l0():
+            query = query & ((table_feature.level != "L0") | (table_feature.level == None))
+
+        try:
+            lat = feature.lat
+            lon = feature.lon
+            if (lat is not None) and (lon is not None):
+                # Zero is allowed
+                return dict(lat=lat, lon=lon)
+            else:
+                # Try the Parent (e.g. L5)
+                parent_id = feature.parent
+                if parent_id:
+                    # @ToDo Recursion
+                    #latlon = self.get_latlon(parent_id)
+                    parent = db(query & (table_feature.id == parent_id)).select(table_feature.lat, table_feature.lon, table_feature.parent, limitby=(0, 1)).first()
+                    lat = parent.lat
+                    lon = parent.lon
+                    if (lat is not None) and (lon is not None):
+                        # Zero is allowed
+                        return dict(lat=lat, lon=lon)
+                    else:
+                        # Try the Parent (e.g. L4)
+                        parent_id = feature.parent
+                        if parent_id:
+                            parent = db(query & (table_feature.id == parent_id)).select(table_feature.lat, table_feature.lon, table_feature.parent, limitby=(0, 1)).first()
+                            lat = parent.lat
+                            lon = parent.lon
+                            if (lat is not None) and (lon is not None):
+                                # Zero is allowed
+                                return dict(lat=lat, lon=lon)
+                            else:
+                                # Try the Parent (e.g. L3)
+                                parent_id = feature.parent
+                                if parent_id:
+                                    parent = db(query & (table_feature.id == parent_id)).select(table_feature.lat, table_feature.lon, table_feature.parent, limitby=(0, 1)).first()
+                                    lat = parent.lat
+                                    lon = parent.lon
+                                    if (lat is not None) and (lon is not None):
+                                        # Zero is allowed
+                                        return dict(lat=lat, lon=lon)
+                                    else:
+                                        # Try the Parent (e.g. L2)
+                                        parent_id = feature.parent
+                                        if parent_id:
+                                            parent = db(query & (table_feature.id == parent_id)).select(table_feature.lat, table_feature.lon, table_feature.parent, limitby=(0, 1)).first()
+                                            lat = parent.lat
+                                            lon = parent.lon
+                                            if (lat is not None) and (lon is not None):
+                                                # Zero is allowed
+                                                return dict(lat=lat, lon=lon)
+                                            else:
+                                                # Try the Parent (e.g. L1)
+                                                parent_id = feature.parent
+                                                if parent_id:
+                                                    parent = db(query & (table_feature.id == parent_id)).select(table_feature.lat, table_feature.lon, table_feature.parent, limitby=(0, 1)).first()
+                                                    lat = parent.lat
+                                                    lon = parent.lon
+                                                    if (lat is not None) and (lon is not None):
+                                                        # Zero is allowed
+                                                        return dict(lat=lat, lon=lon)
+                                                    else:
+                                                        # Try the Parent (e.g. L0)
+                                                        parent_id = feature.parent
+                                                        if parent_id:
+                                                            parent = db(query & (table_feature.id == parent_id)).select(table_feature.lat, table_feature.lon, table_feature.parent, limitby=(0, 1)).first()
+                                                            lat = parent.lat
+                                                            lon = parent.lon
+                                                            if (lat is not None) and (lon is not None):
+                                                                # Zero is allowed
+                                                                return dict(lat=lat, lon=lon)
+        except:
+            # Invalid feature_id
+            pass
+        
+        return None
+
+    # -----------------------------------------------------------------------------
     def get_marker(self, feature_id):
 
         """ Returns the Marker URL for a Feature
 
             @param feature_id: the feature ID (int) or UUID (str)
-
+            @ToDo: Update for new FeatureClass/Symbology
         """
 
         cache = self.cache
@@ -368,8 +534,8 @@ class GIS(object):
         table_feature = db.gis_location
         table_marker = db.gis_marker
         _image = table_marker.image
-        table_fclass = db.gis_feature_class
-        table_symbology = db.gis_symbology_to_feature_class
+        #table_fclass = db.gis_feature_class
+        #table_symbology = db.gis_symbology_to_feature_class
 
         config = self.get_config()
         symbology = config.symbology_id
@@ -381,37 +547,37 @@ class GIS(object):
         elif isinstance(feature_id, str):
             query = (table_feature.uuid == feature_id)
 
-        feature = db(query).select(table_feature.marker_id,
-                                   table_feature.feature_class_id,
-                                   limitby=(0, 1)).first()
-        if feature:
-            feature_class =  feature.feature_class_id
-            marker_id =  feature.marker_id
+        #feature = db(query).select(table_feature.marker_id,
+        #                           table_feature.feature_class_id,
+        #                           limitby=(0, 1)).first()
+        #if feature:
+        #    feature_class =  feature.feature_class_id
+        #    marker_id =  feature.marker_id
 
             # 1st choice for a Marker is the Feature's
-            if marker_id:
-                query = (table_marker.id == marker_id)
-                marker = db(query).select(_image, limitby=(0, 1),
-                                          cache=cache)
-                if marker:
-                    return marker.first().image
+        #    if marker_id:
+        #        query = (table_marker.id == marker_id)
+        #        marker = db(query).select(_image, limitby=(0, 1),
+        #                                  cache=cache)
+        #        if marker:
+        #            return marker.first().image
 
             # 2nd choice for a Marker is the Symbology for the Feature Class
-            query = (table_symbology.feature_class_id == feature_class) & \
-                    (table_symbology.symbology_id == symbology) & \
-                    (table_marker.id == table_symbology.marker_id)
-            marker = db(query).select(_image, limitby=(0, 1),
-                                      cache=cache)
-            if marker:
-                return marker.first().image
+            #query = (table_symbology.feature_class_id == feature_class) & \
+            #        (table_symbology.symbology_id == symbology) & \
+            #        (table_marker.id == table_symbology.marker_id)
+            #marker = db(query).select(_image, limitby=(0, 1),
+            #                          cache=cache)
+            #if marker:
+            #    return marker.first().image
 
             # 3rd choice for a Marker is the Feature Class's
-            query = (table_fclass.id == feature_class) & \
-                    (table_marker.id == table_fclass.marker_id)
-            marker = db(query).select(_image, limitby=(0, 1),
-                                      cache=cache)
-            if marker:
-                return marker.first().image
+            #query = (table_fclass.id == feature_class) & \
+            #        (table_marker.id == table_fclass.marker_id)
+            #marker = db(query).select(_image, limitby=(0, 1),
+            #                          cache=cache)
+            #if marker:
+            #    return marker.first().image
 
         # 4th choice for a Marker is the default
         query = (table_marker.id == config.marker_id)
@@ -422,6 +588,7 @@ class GIS(object):
         else:
             return ""
 
+    # -----------------------------------------------------------------------------
     def latlon_to_wkt(self, lat, lon):
         """
             Convert a LatLon to a WKT string
@@ -432,6 +599,7 @@ class GIS(object):
         WKT = "POINT(%f %f)" % (lon, lat)
         return WKT
 
+    # -----------------------------------------------------------------------------
     def layer_subtypes(self, layer="openstreetmap"):
         """ Return a lit of the subtypes available for a Layer """
 
@@ -448,6 +616,7 @@ class GIS(object):
             return None
 
 
+    # -----------------------------------------------------------------------------
     def parse_location(self, wkt, lon=None, lat=None):
         """
             Parses a location from wkt, returning wkt, lat, lon, bounding box and type.
@@ -481,6 +650,172 @@ class GIS(object):
 
         return res
 
+    # -----------------------------------------------------------------------------
+    def update_location_tree(self):
+        """
+            Update the Tree for GIS Locations:
+            http://eden.sahanafoundation.org/wiki/HaitiGISToDo#HierarchicalTrees
+        """
+
+        db = self.db
+
+        # tbc
+
+        return
+
+    # -----------------------------------------------------------------------------
+    def wkt_centroid(self, form):
+        """
+            OnValidation callback:
+            If a Point has LonLat defined: calculate the WKT.
+            If a Line/Polygon has WKT defined: validate the format, 
+                calculate the LonLat of the Centroid, and set bounds
+            Centroid and bounds calculation is done using Shapely, which wraps Geos.
+            A nice description of the algorithm is provided here: http://www.jennessent.com/arcgis/shapes_poster.htm
+        """
+
+        if not "gis_feature_type" in form.vars:
+            # Default to point
+            form.vars.gis_feature_type = "1"
+
+        if form.vars.gis_feature_type == "1":
+            # Point
+            if form.vars.lon == None and form.vars.lat == None:
+                # No geo to create WKT from, so skip
+                return
+            elif form.vars.lat == None:
+                form.errors["lat"] = self.messages.lat_empty
+                return
+            elif form.vars.lon == None:
+                form.errors["lon"] = self.messages.lon_empty
+                return
+            else:
+                form.vars.wkt = "POINT(%(lon)f %(lat)f)" % form.vars
+                form.vars.lon_min = form.vars.lon_max = form.vars.lon
+                form.vars.lat_min = form.vars.lat_max = form.vars.lat
+                return
+
+        elif form.vars.gis_feature_type in ("2","3"):
+            # Parse WKT for LineString, Polygon
+            try:
+                try:
+                    shape = wkt_loads(form.vars.wkt)
+                except:
+                    form.errors["wkt"] = {
+                        "2": self.messages.invalid_wkt_linestring,
+                        "3": self.messages.invalid_wkt_polygon,
+                    }
+                    return
+                centroid_point = shape.centroid
+                form.vars.lon = centroid_point.x
+                form.vars.lat = centroid_point.y
+                bounds = shape.bounds
+                form.vars.lon_min = bounds[0]
+                form.vars.lat_min = bounds[1]
+                form.vars.lon_max = bounds[2]
+                form.vars.lat_max = bounds[3]
+            except:
+                form.errors.gis_feature_type = self.messages.centroid_error
+        else:
+            form.errors.gis_feature_type = self.messages.unknown_type
+
+        return
+
+    # -----------------------------------------------------------------------------
+    def query_features_by_bbox(self, lon_min, lat_min, lon_max, lat_max):
+        """
+            Returns a query of all locations objects in the given bounding box
+        """
+        db = self.db
+        _location = db.gis_location
+        query = (_location.lat_min <= lat_max) & (_location.lat_max >= lat_min) & (_location.lon_min <= lon_max) & (_location.lon_max >= lon_min)
+        return query
+
+    # -----------------------------------------------------------------------------
+    def get_features_by_bbox(self, lon_min, lat_min, lon_max, lat_max):
+        """
+            Returns Rows of locations whose shape intersects the given bbox.
+        """
+        db = self.db
+        return db(self.query_features_by_bbox(lon_min, lat_min, lon_max, lat_max)).select()
+
+    # -----------------------------------------------------------------------------
+    def _get_features_by_shape(self, shape):
+        """
+            Returns Rows of locations whose shape intersects the given shape.
+            
+            Relies on shapely for wkt parsing and intersection.
+        """
+
+        db = self.db
+        in_bbox = self.query_features_by_bbox(*shape.bounds)
+        has_wkt = (db.gis_location.wkt != None) & (db.gis_location.wkt != '')
+
+        for loc in db(in_bbox & has_wkt).select():
+            try: 
+                location_shape = wkt_loads(loc.wkt)
+                if location_shape.intersects(shape):
+                    yield loc
+            except shapely.geos.ReadingError:
+                print >> sys.stderr, "Error reading wkt of location with id %d" % loc.id
+
+    # -----------------------------------------------------------------------------
+    def _get_features_by_latlon(self, lat, lon):
+        """
+        Returns a generator of locations whose shape intersects the given LatLon.
+        
+        Relies on shapely.
+        """
+
+        point = shapely.geometry.point.Point(lon, lat)
+        return self._get_features_by_shape(point)
+
+    # -----------------------------------------------------------------------------
+    def _get_features_by_feature(self, feature):
+        """
+        Returns all locations whose geometry intersects the given feature.
+        
+        Relies on shapely.
+        """
+        shape = wkt_loads(feature.wkt)
+        return self.get_features_by_shape(shape)
+
+    # -----------------------------------------------------------------------------
+    if SHAPELY:
+        get_features_by_shape = _get_features_by_shape
+        get_features_by_latlon = _get_features_by_latlon
+        get_features_by_feature = _get_features_by_feature
+        
+    # -----------------------------------------------------------------------------
+    def set_all_bounds(self):
+        """
+        Sets bounds for all locations without them.
+        
+        If shapely is present, and a location has wkt, bounds of the geometry 
+        are used.  Otherwise, the (lat, lon) are used as bounds.
+        """
+        db = self.db
+        _location = db.gis_location
+        no_bounds = (_location.lon_min == None) & (_location.lat_min == None) & (_location.lon_max == None) & (_location.lat_max == None) & (_location.lat != None) & (_location.lon != None)
+        if SHAPELY:
+            wkt_no_bounds = no_bounds & (_location.wkt != None) & (_location.wkt != '')
+            for loc in db(wkt_no_bounds).select():
+                try :
+                    shape = wkt_loads(loc.wkt)
+                except:
+                    print >> sys.stderr, "Error reading wkt %s" % loc.wkt
+                    continue
+                bounds = shape.bounds
+                _location[loc.id] = dict(
+                    lon_min = bounds[0],
+                    lat_min = bounds[1],
+                    lon_max = bounds[2],
+                    lat_max = bounds[3],
+                )
+                    
+        db(no_bounds).update(lon_min=_location.lon, lat_min=_location.lat, lon_max=_location.lon, lat_max=_location.lat)
+
+    # -----------------------------------------------------------------------------
     def show_map( self,
                   height = None,
                   width = None,
@@ -489,8 +824,9 @@ class GIS(object):
                   lon = None,
                   zoom = None,
                   projection = None,
+                  add_feature = False,
+                  add_feature_active = False,
                   feature_queries = [],
-                  feature_groups = [],
                   wms_browser = {},
                   catalogue_overlays = False,
                   catalogue_toolbar = False,
@@ -500,6 +836,7 @@ class GIS(object):
                   print_tool = {},
                   mgrs = {},
                   window = False,
+                  window_hide = False,
                   collapsed = False,
                   public_url = "http://127.0.0.1:8000"
                 ):
@@ -522,24 +859,16 @@ class GIS(object):
             @param lon: default Longitude of viewport (if not provided then the default setting from the Map Service Catalogue is used)
             @param zoom: default Zoom level of viewport (if not provided then the default setting from the Map Service Catalogue is used)
             @param projection: EPSG code for the Projection to use (if not provided then the default setting from the Map Service Catalogue is used)
+            @param add_feature: Whether to include a DrawFeature control to allow adding a marker to the map
+            @param add_feature_active: Whether the DrawFeature control should be active by default
             @param feature_queries: Feature Queries to overlay onto the map & their options (List of Dicts):
                 [{
                  name   : "MyLabel",    # A string: the label for the layer
-                 query  : query,        # A gluon.sql.Rows of gis_locations, which can be from a simple query or a Join. VirtualFields can be added for 'marker' or 'shape' (with optional 'color' & 'size')
+                 query  : query,        # A gluon.sql.Rows of gis_locations, which can be from a simple query or a Join. Extra fields can be added for 'marker' or 'shape' (with optional 'color' & 'size') & 'popup_label'
                  active : False,        # Is the feed displayed upon load or needs ticking to load afterwards?
                  popup_url : None,      # The URL which will be used to fill the pop-up. it will be appended by the Location ID.
-                 marker : None          # The marker_id for the icon used to display the feature (over-riding the normal process).
-                                        # [Plan: Can be a lambda to vary icon (size/colour) based on attribute levels.]
-                }]
-            @param feature_groups: Feature Groups to overlay onto the map & their options (List of Dicts):
-                [{
-                 feature_group : db.gis_feature_group.name,
-                 parent : None,         # Only display features with this parent set. ToDo: search recursively to allow all descendants
-                 filter : None,         # A query to further limit which features from the feature group are loaded
-                 active : False,        # Is the feed displayed upon load or needs ticking to load afterwards?
-                 popup_url : None,      # The URL which will be used to fill the pop-up. it will be appended by the Location ID.
-                 marker : None          # The marker_id for the icon used to display the feature (over-riding the normal process).
-                                        # [Plan: Can be a lambda to vary icon (size/colour) based on attribute levels.]
+                 marker : None,         # The marker_id for the icon used to display the feature (over-riding the normal process).
+                 polygons : False       # Use Polygon data, if-available (defaults to just using Point)
                 }]
             @param wms_browser: WMS Server's GetCapabilities & options (dict)
                 {
@@ -563,6 +892,7 @@ class GIS(object):
                 url: string             # URL of PDF server
                 }
             @param window: Have viewport pop out of page into a resizable window
+            @param window_hide: Have the window hidden by default, ready to appear (e.g. on clicking a button)
             @param collapsed: Start the Tools panel (West region) collapsed
             @param public_url: pass from model (not yet defined when Module instantiated
         """
@@ -576,6 +906,7 @@ class GIS(object):
         db = self.db
         auth = self.auth
         cache = self.cache
+        deployment_settings = self.deployment_settings
 
         # Read configuration
         config = self.get_config()
@@ -613,19 +944,19 @@ class GIS(object):
         cluster_distance = config.cluster_distance
         cluster_threshold = config.cluster_threshold
 
+        markers = {}
+        
         html = DIV(_id="map_wrapper")
 
         #####
         # CSS
         #####
         if session.s3.debug:
-            html.append(LINK( _rel="stylesheet", _type="text/css", _href=URL(r=request, c="static", f="scripts/ext/resources/css/ext-all.css"), _media="screen", _charset="utf-8") )
             html.append(LINK( _rel="stylesheet", _type="text/css", _href=URL(r=request, c="static", f="styles/gis/ie6-style.css"), _media="screen", _charset="utf-8") )
             html.append(LINK( _rel="stylesheet", _type="text/css", _href=URL(r=request, c="static", f="styles/gis/google.css"), _media="screen", _charset="utf-8") )
             html.append(LINK( _rel="stylesheet", _type="text/css", _href=URL(r=request, c="static", f="styles/gis/geoext-all-debug.css"), _media="screen", _charset="utf-8") )
             html.append(LINK( _rel="stylesheet", _type="text/css", _href=URL(r=request, c="static", f="styles/gis/gis.css"), _media="screen", _charset="utf-8") )
         else:
-            html.append(LINK( _rel="stylesheet", _type="text/css", _href=URL(r=request, c="static", f="scripts/ext/resources/css/ext-all.min.css"), _media="screen", _charset="utf-8") )
             html.append(LINK( _rel="stylesheet", _type="text/css", _href=URL(r=request, c="static", f="styles/gis/gis.min.css"), _media="screen", _charset="utf-8") )
 
         ######
@@ -640,8 +971,8 @@ class GIS(object):
             catalogue_toolbar = DIV(
                 config_button,
                 SPAN( A(T("Layers"), _href=URL(r=request, c="gis", f="map_service_catalogue")), _class="rheader_tab_other" ),
-                SPAN( A(T("Feature Classes"), _href=URL(r=request, c="gis", f="feature_class")), _class="rheader_tab_other" ),
-                SPAN( A(T("Feature Groups"), _href=URL(r=request, c="gis", f="feature_group")), _class="rheader_tab_other" ),
+                #SPAN( A(T("Feature Layers"), _href=URL(r=request, c="gis", f="feature_layer")), _class="rheader_tab_other" ),
+                #SPAN( A(T("Feature Classes"), _href=URL(r=request, c="gis", f="feature_class")), _class="rheader_tab_other" ),
                 SPAN( A(T("Markers"), _href=URL(r=request, c="gis", f="marker")), _class="rheader_tab_other" ),
                 SPAN( A(T("Keys"), _href=URL(r=request, c="gis", f="apikey")), _class="rheader_tab_other" ),
                 SPAN( A(T("Projections"), _href=URL(r=request, c="gis", f="projection")), _class="rheader_tab_other" ),
@@ -673,8 +1004,6 @@ class GIS(object):
         # Scripts
         #########
         if session.s3.debug:
-            html.append(SCRIPT(_type="text/javascript", _src=URL(r=request, c="static", f="scripts/ext/adapter/jquery/ext-jquery-adapter-debug.js")))
-            html.append(SCRIPT(_type="text/javascript", _src=URL(r=request, c="static", f="scripts/ext/ext-all-debug.js")))
             html.append(SCRIPT(_type="text/javascript", _src=URL(r=request, c="static", f="scripts/gis/openlayers/lib/OpenLayers.js")))
             html.append(SCRIPT(_type="text/javascript", _src=URL(r=request, c="static", f="scripts/gis/OpenStreetMap.js")))
             html.append(SCRIPT(_type="text/javascript", _src=URL(r=request, c="static", f="scripts/gis/MP.js")))
@@ -684,8 +1013,6 @@ class GIS(object):
             html.append(SCRIPT(_type="text/javascript", _src=URL(r=request, c="static", f="scripts/gis/geoext/lib/GeoExt.js")))
             html.append(SCRIPT(_type="text/javascript", _src=URL(r=request, c="static", f="scripts/gis/geoext/ux/GeoNamesSearchCombo.js")))
         else:
-            html.append(SCRIPT(_type="text/javascript", _src=URL(r=request, c="static", f="scripts/ext/adapter/jquery/ext-jquery-adapter.js")))
-            html.append(SCRIPT(_type="text/javascript", _src=URL(r=request, c="static", f="scripts/ext/ext-all.js")))
             html.append(SCRIPT(_type="text/javascript", _src=URL(r=request, c="static", f="scripts/gis/OpenLayers.js")))
             html.append(SCRIPT(_type="text/javascript", _src=URL(r=request, c="static", f="scripts/gis/OpenStreetMap.js")))
             html.append(SCRIPT(_type="text/javascript", _src=URL(r=request, c="static", f="scripts/gis/RemoveFeature.js")))
@@ -723,7 +1050,6 @@ OpenLayers.Util.extend( selectPdfControl, {
             }
         }
         html += '</ul>';
-        //console.log(html);
         this.w = new Ext.Window({
             'html': html,
             width: 300,
@@ -734,11 +1060,9 @@ OpenLayers.Util.extend( selectPdfControl, {
     },
     getPdf: function (bounds) {
         var ll = map.getLonLatFromPixel(new OpenLayers.Pixel(bounds.left, bounds.bottom)).transform(projection_current, proj4326);
-        //console.log(ll);
         var ur = map.getLonLatFromPixel(new OpenLayers.Pixel(bounds.right, bounds.top)).transform(projection_current, proj4326);
         var boundsgeog = new OpenLayers.Bounds(ll.lon, ll.lat, ur.lon, ur.lat);
         bbox = boundsgeog.toBBOX();
-        //console.log(bbox);
         OpenLayers.Request.GET({
             url: '""" + str(XML(mgrs["url"])) + """&bbox=' + bbox,
             callback: OpenLayers.Function.bind(this.response, this)
@@ -795,8 +1119,195 @@ OpenLayers.Util.extend( selectPdfControl, {
             legend1= ""
             legend2 = ""
 
+        # Draw Feature Control
+        crosshair_on = "$('.olMapViewport').addClass('crosshair');"
+        crosshair_off = "$('.olMapViewport').removeClass('crosshair');"
+        crosshair = ""
+        if add_feature:
+            if add_feature_active:
+                draw_depress = "true"
+                crosshair = crosshair_on
+            else:
+                draw_depress = "false"
+            draw_feature = """
+        // Controls for Draft Features
+        // - interferes with popupControl which is active on allLayers
+        //var selectControl = new OpenLayers.Control.SelectFeature(draftLayer, {
+        //    onSelect: onFeatureSelect,
+        //    onUnselect: onFeatureUnselect,
+        //    multiple: false,
+        //    clickout: true,
+        //    isDefault: true
+        //});
+
+        //var removeControl = new OpenLayers.Control.RemoveFeature(draftLayer, {
+        //    onDone: function(feature) {
+        //        console.log(feature)
+        //    }
+        //});
+
+        //var selectButton = new GeoExt.Action({
+            //control: selectControl,
+        //    map: map,
+        //    iconCls: 'searchclick',
+            // button options
+        //    tooltip: '""" + str(T("Query Feature")) + """',
+        //    toggleGroup: 'controls',
+        //    enableToggle: true
+        //});
+
+        pointButton = new GeoExt.Action({
+            control: new OpenLayers.Control.DrawFeature(draftLayer, OpenLayers.Handler.Point, {
+                // custom Callback
+                'featureAdded': function(feature){
+                    // Remove previous point
+                    if (lastDraftFeature){
+                        lastDraftFeature.destroy();
+                    }
+                    // updateFormFields
+                    centerPoint = feature.geometry.getBounds().getCenterLonLat();
+                    centerPoint.transform(projection_current, proj4326);
+                    $('#gis_location_lon').val(centerPoint.lon);
+                    $('#gis_location_lat').val(centerPoint.lat);
+                    // Prepare in case user selects a new point
+                    lastDraftFeature = feature;
+                }
+            }),
+            handler: function(){
+                if (pointButton.items[0].pressed) {
+                    """ + crosshair_on + """
+                } else {
+                    """ + crosshair_off + """
+                }
+            },
+            map: map,
+            iconCls: 'drawpoint-off',
+            tooltip: '""" + str(T("Add Point")) + """',
+            toggleGroup: 'controls',
+            allowDepress: true,
+            enableToggle: true,
+            pressed: """ + draw_depress + """
+        });
+        
+        //var lineButton = new GeoExt.Action({
+        //    control: new OpenLayers.Control.DrawFeature(draftLayer, OpenLayers.Handler.Path),
+        //    map: map,
+        //    iconCls: 'drawline-off',
+        //    tooltip: '""" + str(T("Add Line")) + """',
+        //    toggleGroup: 'controls'
+        //});
+
+        //var polygonButton = new GeoExt.Action({
+        //    control: new OpenLayers.Control.DrawFeature(draftLayer, OpenLayers.Handler.Polygon),
+        //    map: map,
+        //    iconCls: 'drawpolygon-off',
+        //    tooltip: '""" + str(T("Add Polygon")) + """',
+        //    toggleGroup: 'controls'
+        //});
+
+        //var dragButton = new GeoExt.Action({
+        //    control: new OpenLayers.Control.DragFeature(draftLayer),
+        //    map: map,
+        //    iconCls: 'movefeature',
+        //    tooltip: '""" + str(T("Move Feature: Drag feature to desired location")) + """',
+        //    toggleGroup: 'controls'
+        //});
+
+        //var resizeButton = new GeoExt.Action({
+        //    control: new OpenLayers.Control.ModifyFeature(draftLayer, { mode: OpenLayers.Control.ModifyFeature.RESIZE }),
+        //    map: map,
+        //    iconCls: 'resizefeature',
+        //    tooltip: '""" + str(T("Resize Feature: Select the feature you wish to resize & then Drag the associated dot to your desired size")) + """',
+        //    toggleGroup: 'controls'
+        //});
+
+        //var rotateButton = new GeoExt.Action({
+        //    control: new OpenLayers.Control.ModifyFeature(draftLayer, { mode: OpenLayers.Control.ModifyFeature.ROTATE }),
+        //    map: map,
+        //    iconCls: 'rotatefeature',
+        //    tooltip: '""" + str(T("Rotate Feature: Select the feature you wish to rotate & then Drag the associated dot to rotate to your desired location")) + """',
+        //    toggleGroup: 'controls'
+        //});
+
+        //var modifyButton = new GeoExt.Action({
+        //    control: new OpenLayers.Control.ModifyFeature(draftLayer),
+        //    map: map,
+        //    iconCls: 'modifyfeature',
+        //    tooltip: '""" + str(T("Modify Feature: Select the feature you wish to deform & then Drag one of the dots to deform the feature in your chosen manner")) + """',
+        //    toggleGroup: 'controls'
+        //});
+
+        //var removeButton = new GeoExt.Action({
+        //    control: removeControl,
+        //    map: map,
+        //    iconCls: 'removefeature',
+        //    tooltip: '""" + str(T("Remove Feature: Select the feature you wish to remove & press the delete key")) + """',
+        //    toggleGroup: 'controls'
+        //});
+        """
+            draw_feature2 = """
+        // Draw Controls
+        //toolbar.add(selectButton);
+        toolbar.add(pointButton);
+        //toolbar.add(lineButton);
+        //toolbar.add(polygonButton);
+        //toolbar.add(dragButton);
+        //toolbar.add(resizeButton);
+        //toolbar.add(rotateButton);
+        //toolbar.add(modifyButton);
+        //toolbar.add(removeButton);
+        toolbar.addSeparator();
+        """
+        else:
+            draw_feature = ""
+            draw_feature2 = ""
+
         # Toolbar
-        if toolbar:
+        if toolbar or add_feature:
+            #if 1 in session.s3.roles or auth.shn_has_role("MapAdmin"):
+            if auth.is_logged_in():
+                # Provide a way to save the viewport
+                # @ToDo Extend to personalised Map Views
+                # @ToDo Extend to choice of Base Layer & Enabled status of Overlays
+                save_button = """
+        var saveButton = new Ext.Toolbar.Button({
+            iconCls: 'save',
+            tooltip: '""" + str(T("Save: Default Lat, Lon & Zoom for the Viewport")) + """',
+            handler: function() {
+                // Read current settings from map
+                var lonlat = map.getCenter();
+                var zoom_current = map.getZoom();
+                // Convert back to LonLat for saving
+                lonlat.transform(map.getProjectionObject(), proj4326);
+                // Use AJAX to send back
+                var url = '""" + URL(r=request, c="gis", f="config", args=["1.url", "update"]) + """';
+                Ext.Ajax.request({
+                    url: url,
+                    method: 'GET',
+                    params: {
+                        uuid: '""" + config.uuid + """',
+                        lat: lonlat.lat,
+                        lon: lonlat.lon,
+                        zoom: zoom_current
+                    }
+                });
+            }
+        });
+        """
+                save_button2 = """
+        toolbar.addSeparator();
+        // Save Viewport
+        toolbar.addButton(saveButton);
+        """
+            else:
+                save_button = ""
+                save_button2 = ""
+
+            if add_feature:
+                pan_depress = "false"
+            else:
+                pan_depress = "true"
+            
             toolbar = """
         toolbar = mapPanel.getTopToolbar();
         
@@ -861,21 +1372,6 @@ OpenLayers.Util.extend( selectPdfControl, {
                 alert('""" + str(T("The area is ")) + """' + evt.measure.toFixed(2) + ' ' + evt.units + '2');
             }
         });
-            
-
-        // Controls for Draft Features
-        // - interferes with Feature Layers!
-        //var selectControl = new OpenLayers.Control.SelectFeature(featuresLayer, {
-        //    onSelect: onFeatureSelect,
-        //    onUnselect: onFeatureUnselect,
-        //    multiple: false,
-        //    clickout: true,
-        //    isDefault: true
-        //});
-
-        //var removeControl = new OpenLayers.Control.RemoveFeature(featuresLayer,
-        //    {onDone: function(feature) {console.log(feature)}
-        //});
 
         var nav = new OpenLayers.Control.NavigationHistory();
 
@@ -913,8 +1409,8 @@ OpenLayers.Util.extend( selectPdfControl, {
             // button options
             tooltip: '""" + str(T("Pan Map: keep the left mouse button pressed and drag the map")) + """',
             toggleGroup: 'controls',
-            allowDepress: false,
-            pressed: true
+            allowDepress: true,
+            pressed: """ + pan_depress + """
         });
 
         // 1st of these 2 to get activated cannot be deselected!
@@ -942,79 +1438,7 @@ OpenLayers.Util.extend( selectPdfControl, {
 
         """ + mgrs2 + """
 
-        var selectButton = new GeoExt.Action({
-            //control: selectControl,
-            map: map,
-            iconCls: 'searchclick',
-            // button options
-            tooltip: '""" + str(T("Query Feature")) + """',
-            toggleGroup: 'controls',
-            enableToggle: true
-        });
-
-        //var pointButton = new GeoExt.Action({
-        //    control: new OpenLayers.Control.DrawFeature(featuresLayer, OpenLayers.Handler.Point),
-        //    map: map,
-        //    iconCls: 'drawpoint-off',
-        //    tooltip: '""" + str(T("Add Point")) + """',
-        //    toggleGroup: 'controls'
-        //});
-
-        //var lineButton = new GeoExt.Action({
-        //    control: new OpenLayers.Control.DrawFeature(featuresLayer, OpenLayers.Handler.Path),
-        //    map: map,
-        //    iconCls: 'drawline-off',
-        //    tooltip: '""" + str(T("Add Line")) + """',
-        //    toggleGroup: 'controls'
-        //});
-
-        //var polygonButton = new GeoExt.Action({
-        //    control: new OpenLayers.Control.DrawFeature(featuresLayer, OpenLayers.Handler.Polygon),
-        //    map: map,
-        //    iconCls: 'drawpolygon-off',
-        //    tooltip: '""" + str(T("Add Polygon")) + """',
-        //    toggleGroup: 'controls'
-        //});
-
-        //var dragButton = new GeoExt.Action({
-        //    control: new OpenLayers.Control.DragFeature(featuresLayer),
-        //    map: map,
-        //    iconCls: 'movefeature',
-        //    tooltip: '""" + str(T("Move Feature: Drag feature to desired location")) + """',
-        //    toggleGroup: 'controls'
-        //});
-
-        //var resizeButton = new GeoExt.Action({
-        //    control: new OpenLayers.Control.ModifyFeature(featuresLayer, { mode: OpenLayers.Control.ModifyFeature.RESIZE }),
-        //    map: map,
-        //    iconCls: 'resizefeature',
-        //    tooltip: '""" + str(T("Resize Feature: Select the feature you wish to resize & then Drag the associated dot to your desired size")) + """',
-        //    toggleGroup: 'controls'
-        //});
-
-        //var rotateButton = new GeoExt.Action({
-        //    control: new OpenLayers.Control.ModifyFeature(featuresLayer, { mode: OpenLayers.Control.ModifyFeature.ROTATE }),
-        //    map: map,
-        //    iconCls: 'rotatefeature',
-        //    tooltip: '""" + str(T("Rotate Feature: Select the feature you wish to rotate & then Drag the associated dot to rotate to your desired location")) + """',
-        //    toggleGroup: 'controls'
-        //});
-
-        //var modifyButton = new GeoExt.Action({
-        //    control: new OpenLayers.Control.ModifyFeature(featuresLayer),
-        //    map: map,
-        //    iconCls: 'modifyfeature',
-        //    tooltip: '""" + str(T("Modify Feature: Select the feature you wish to deform & then Drag one of the dots to deform the feature in your chosen manner")) + """',
-        //    toggleGroup: 'controls'
-        //});
-
-        //var removeButton = new GeoExt.Action({
-        //    control: removeControl,
-        //    map: map,
-        //    iconCls: 'removefeature',
-        //    tooltip: '""" + str(T("Remove Feature: Select the feature you wish to remove & press the delete key")) + """',
-        //    toggleGroup: 'controls'
-        //});
+        """ + draw_feature + """
 
         var navPreviousButton = new Ext.Toolbar.Button({
             iconCls: 'back',
@@ -1028,24 +1452,10 @@ OpenLayers.Util.extend( selectPdfControl, {
             handler: nav.next.trigger
         });
 
-        var saveButton = new Ext.Toolbar.Button({
-            // ToDo: Make work!
-            iconCls: 'save',
-            tooltip: '""" + str(T("Save: Default Lat, Lon & Zoom for the Viewport")) + """',
-            handler: function saveViewport(map) {
-                // Read current settings from map
-                var lonlat = map.getCenter();
-                var zoom_current = map.getZoom();
-                // Convert back to LonLat for saving
-                //var proj4326 = new OpenLayers.Projection('EPSG:4326');
-                lonlat.transform(map.getProjectionObject(), proj4326);
-                //alert('""" + str(T("Latitude")) + """': ' + lat);
-                // Use AJAX to send back
-                var url = '""" + URL(r=request, c="gis", f="config", args=["1.json", "update"]) + """';
-            }
-        });
+        """ + save_button + """
 
         // Add to Map & Toolbar
+        toolbar.add(zoomfull);
         toolbar.add(zoomfull);
         toolbar.add(zoomout);
         toolbar.add(zoomin);
@@ -1056,26 +1466,13 @@ OpenLayers.Util.extend( selectPdfControl, {
         toolbar.add(areaButton);
         toolbar.addSeparator();
         """ + mgrs3 + """
-        // Draw Controls
-        //toolbar.add(selectButton);
-        //toolbar.add(pointButton);
-        //toolbar.add(lineButton);
-        //toolbar.add(polygonButton);
-        //toolbar.add(dragButton);
-        //toolbar.add(resizeButton);
-        //toolbar.add(rotateButton);
-        //toolbar.add(modifyButton);
-        //toolbar.add(removeButton);
-        //toolbar.addSeparator();
+        """ + draw_feature2 + """
         // Navigation
         map.addControl(nav);
         nav.activate();
         toolbar.addButton(navPreviousButton);
         toolbar.addButton(navNextButton);
-        toolbar.addSeparator();
-        // Save Viewport
-        toolbar.addButton(saveButton);
-        """
+        """ + save_button2
             toolbar2 = "Ext.QuickTips.init();"
         else:
             toolbar = ""
@@ -1357,9 +1754,20 @@ OpenLayers.Util.extend( selectPdfControl, {
         strategy_cluster = """new OpenLayers.Strategy.Cluster({distance: """ + str(cluster_distance) + """, threshold: """ + str(cluster_threshold) + """})"""
 
         # Layout
-        if window:
+        if window and window_hide:
             layout = """
-        var win = new Ext.Window({
+        win = new Ext.Window({
+            collapsible: true,
+            constrain: true,
+            closeAction: 'hide',
+            """
+            layout2 = """
+        //win.show();
+        //win.maximize();
+        """
+        elif window:
+            layout = """
+        win = new Ext.Window({
             collapsible: true,
             constrain: true,
             """
@@ -1370,8 +1778,8 @@ OpenLayers.Util.extend( selectPdfControl, {
         else:
             # Embedded
             layout = """
-    var panel = new Ext.Panel({
-        renderTo: "map_panel",
+        var panel = new Ext.Panel({
+            renderTo: "map_panel",
             """
             layout2 = ""
 
@@ -1385,27 +1793,27 @@ OpenLayers.Util.extend( selectPdfControl, {
         if bbox:
             # Calculate from Bounds
             center = """
-        var bottom_left = new OpenLayers.LonLat(""" + str(bbox["min_lon"]) + "," + str(bbox["min_lat"]) + """);
-        bottom_left.transform(proj4326, projection_current);
-        var left = bottom_left.lon;
-        var bottom = bottom_left.lat;
-        top_right = new OpenLayers.LonLat(""" + str(bbox["max_lon"]) + "," + str(bbox["max_lat"]) + """);
-        top_right.transform(proj4326, projection_current);
-        var right = top_right.lon;
-        var top = top_right.lat;
-        var bounds = OpenLayers.Bounds.fromArray([left, bottom, right, top]);
-        var center = bounds.getCenterLonLat();
-        """
+    var bottom_left = new OpenLayers.LonLat(""" + str(bbox["min_lon"]) + "," + str(bbox["min_lat"]) + """);
+    bottom_left.transform(proj4326, projection_current);
+    var left = bottom_left.lon;
+    var bottom = bottom_left.lat;
+    top_right = new OpenLayers.LonLat(""" + str(bbox["max_lon"]) + "," + str(bbox["max_lat"]) + """);
+    top_right.transform(proj4326, projection_current);
+    var right = top_right.lon;
+    var top = top_right.lat;
+    var bounds = OpenLayers.Bounds.fromArray([left, bottom, right, top]);
+    var center = bounds.getCenterLonLat();
+    """
             zoomToExtent = """
         map.zoomToExtent(bounds);
         """
         else:
             center = """
-        var lat = """ + str(lat) + """;
-        var lon = """ + str(lon) + """;
-        var center = new OpenLayers.LonLat(lon, lat);
-        center.transform(proj4326, projection_current);
-        """
+    var lat = """ + str(lat) + """;
+    var lon = """ + str(lon) + """;
+    var center = new OpenLayers.LonLat(lon, lat);
+    center.transform(proj4326, projection_current);
+    """
             zoomToExtent = ""
             
         ########
@@ -1421,20 +1829,17 @@ OpenLayers.Util.extend( selectPdfControl, {
         layers_yahoo = ""
         layers_bing = ""
 
-        # Only enable commercial base layers if using a sphericalMercator projection
-        if projection == 900913:
+        # OpenStreetMap
+        gis_layer_openstreetmap_subtypes = self.layer_subtypes("openstreetmap")
+        openstreetmap = Storage()
+        openstreetmap_enabled = db(db.gis_layer_openstreetmap.enabled == True).select()
+        for layer in openstreetmap_enabled:
+            for subtype in gis_layer_openstreetmap_subtypes:
+                if layer.subtype == subtype:
+                    openstreetmap["%s" % subtype] = layer.name
 
-            # OpenStreetMap
-            gis_layer_openstreetmap_subtypes = self.layer_subtypes("openstreetmap")
-            openstreetmap = Storage()
-            openstreetmap_enabled = db(db.gis_layer_openstreetmap.enabled == True).select()
-            for layer in openstreetmap_enabled:
-                for subtype in gis_layer_openstreetmap_subtypes:
-                    if layer.subtype == subtype:
-                        openstreetmap["%s" % subtype] = layer.name
-
-            if openstreetmap:
-                functions_openstreetmap = """
+        if openstreetmap:
+            functions_openstreetmap = """
         function osm_getTileURL(bounds) {
             var res = this.map.getResolution();
             var x = Math.round((bounds.left - this.maxExtent.left) / (res * this.tileSize.w));
@@ -1449,34 +1854,41 @@ OpenLayers.Util.extend( selectPdfControl, {
             }
         }
         """
-                if openstreetmap.Mapnik:
-                    layers_openstreetmap += """
+            if openstreetmap.Mapnik:
+                layers_openstreetmap += """
+        //var mapnik = new OpenLayers.Layer.TMS( '""" + openstreetmap.Mapnik + """', 'http://tile.openstreetmap.org/', {type: 'png', getURL: osm_getTileURL, displayOutsideMaxExtent: true, attribution: '<a href="http://www.openstreetmap.org/">OpenStreetMap</a>' } );
         var mapnik = new OpenLayers.Layer.OSM.Mapnik('""" + openstreetmap.Mapnik + """', {
-            displayOutsideMaxExtent: true,
-            wrapDateLine: true
+                displayOutsideMaxExtent: true,  // Not working! Can revert to TMS, if necessary
+                wrapDateLine: true,
+                layerCode: 'M'
         });
         map.addLayer(mapnik);
                     """
-                if openstreetmap.Osmarender:
-                    layers_openstreetmap += """
+            if openstreetmap.Osmarender:
+                layers_openstreetmap += """
+        //var osmarender = new OpenLayers.Layer.TMS( '""" + openstreetmap.Osmarender + """', 'http://tah.openstreetmap.org/Tiles/tile/', {type: 'png', getURL: osm_getTileURL, displayOutsideMaxExtent: true, attribution: '<a href="http://www.openstreetmap.org/">OpenStreetMap</a>' } );
         var osmarender = new OpenLayers.Layer.OSM.Osmarender('""" + openstreetmap.Osmarender + """', {
-            displayOutsideMaxExtent: true,
+            layerCode: 'O',
+            displayOutsideMaxExtent: true,  // Not working! Can revert to TMS, if necessary
             wrapDateLine: true
         });
         map.addLayer(osmarender);
                     """
-                if openstreetmap.Aerial:
-                    layers_openstreetmap += """
+            if openstreetmap.Aerial:
+                layers_openstreetmap += """
         var oam = new OpenLayers.Layer.TMS( '""" + openstreetmap.Aerial + """', 'http://tile.openaerialmap.org/tiles/1.0.0/openaerialmap-900913/', {type: 'png', getURL: osm_getTileURL } );
         map.addLayer(oam);
                     """
-                if openstreetmap.Taiwan:
-                    layers_openstreetmap += """
+            if openstreetmap.Taiwan:
+                layers_openstreetmap += """
         var osmtw = new OpenLayers.Layer.TMS( '""" + openstreetmap.Taiwan + """', 'http://tile.openstreetmap.tw/tiles/', {type: 'png', getURL: osm_getTileURL } );
         map.addLayer(osmtw);
                     """
-            else:
-                functions_openstreetmap = ""
+        else:
+            functions_openstreetmap = ""
+
+        # Only enable commercial base layers if using a sphericalMercator projection
+        if projection == 900913:
 
             # Google
             gis_layer_google_subtypes = self.layer_subtypes("google")
@@ -1571,6 +1983,49 @@ OpenLayers.Util.extend( selectPdfControl, {
         map.addLayer(bingterrain);
                     """
 
+        # WFS
+        layers_wfs = ""
+        wfs_enabled = db(db.gis_layer_wfs.enabled == True).select()
+        for layer in wfs_enabled:
+            name = layer.name
+            name_safe = re.sub('\W', '_', name)
+            url = layer.url
+            try:
+                wfs_version = layer.version
+            except:
+                wfs_version = ""
+            featureType = layer.featureType
+            featureNS = layer.featureNS
+            try:
+                wfs_projection = db(db.gis_projection.id == layer.projection_id).select(db.gis_projection.epsg, limitby=(0, 1)).first().epsg
+                wfs_projection = "srsName: 'EPSG:" + wfs_projection + "',"
+            except:
+                wfs_projection = ""
+            if layer.visible:
+                wfs_visibility = ""
+            else:
+                wfs_visibility = "wfsLayer" + name_safe + ".setVisibility(false);"
+            #if layer.editable:
+            #    wfs_strategy = "strategies: [new OpenLayers.Strategy.BBOX(), new OpenLayers.Strategy.Save()],"
+            wfs_strategy = "new OpenLayers.Strategy.BBOX()"
+            layers_wfs  += """
+        var wfsLayer""" + name_safe + """ = new OpenLayers.Layer.Vector( '""" + name + """', {
+                strategies: [""" + wfs_strategy + """],
+                projection: projection_current,
+                protocol: new OpenLayers.Protocol.WFS({
+                    version: '""" + wfs_version + """',
+                    """ + wfs_projection + """
+                    url:  '""" + url + """',
+                    featureType: '""" + featureType + """',
+                    featureNS: '""" + featureNS + """'
+                    //,geometryName: "the_geom"
+                })
+                //,styleMap: styleMap
+            });
+        map.addLayer(wfsLayer""" + name_safe + """);
+        """ + wfs_visibility + """
+        """
+
         # WMS
         layers_wms = ""
         wms_enabled = db(db.gis_layer_wms.enabled == True).select()
@@ -1578,6 +2033,10 @@ OpenLayers.Util.extend( selectPdfControl, {
             name = layer.name
             name_safe = re.sub('\W', '_', name)
             url = layer.url
+            try:
+                wms_version = "version: '" + layer.version + "',"
+            except:
+                wms_version = ""
             try:
                 wms_map = "map: '" + layer.map + "',"
             except:
@@ -1587,11 +2046,6 @@ OpenLayers.Util.extend( selectPdfControl, {
                 format = "type: '" + layer.format + "',"
             except:
                 format = ""
-            wms_projection = db(db.gis_projection.id == layer.projection_id).select(db.gis_projection.epsg, limitby=(0, 1)).first().epsg
-            if wms_projection == 4326:
-                wms_projection = "projection: proj4326"
-            else:
-                wms_projection = "projection: new OpenLayers.Projection('EPSG:" + wms_projection + "')"
             if layer.transparent:
                 transparent = "transparent: true,"
             else:
@@ -1611,7 +2065,7 @@ OpenLayers.Util.extend( selectPdfControl, {
                layers: '""" + wms_layers + """',
                """ + format + """
                """ + transparent + """
-               """ + wms_projection + """
+               """ + wms_version + """
                },
                {
                """ + options + """
@@ -1704,30 +2158,11 @@ OpenLayers.Util.extend( selectPdfControl, {
         # Features
         #
         layers_features = ""
-        if feature_groups or feature_queries:
+        if feature_queries or add_feature:
 
             cluster_style = """
-        // Style Rule For Clusters
-        var style_cluster = new OpenLayers.Style({
-            pointRadius: '${radius}',
-            fillColor: '#8087ff',
-            fillOpacity: 0.5,
-            strokeColor: '#2b2f76',
-            strokeWidth: 2,
-            strokeOpacity: 1
-        }, {
-            context: {
-                radius: function(feature) {
-                    // Size For Unclustered Point
-                    var pix = 6;
-                    // Size For Clustered Point
-                    if(feature.cluster) {
-                        pix = Math.min(feature.attributes.count, 7) + 4;
-                    }
-                    return pix;
-                }
-            }
-        });
+        // Needs to be uniquely instantiated
+        var style_cluster = new OpenLayers.Style(style_cluster_style, style_cluster_options);
         // Define StyleMap, Using 'style_cluster' rule for 'default' styling intent
         var featureClusterStyleMap = new OpenLayers.StyleMap({
                                           'default': style_cluster,
@@ -1744,7 +2179,40 @@ OpenLayers.Util.extend( selectPdfControl, {
         var parser = new OpenLayers.Format.WKT();
         var geom, featureVec;
 
-        function addFeature(feature_id, name, feature_class, geom, styleMarker) {
+        // Style Rule For Clusters
+        var style_cluster_style = {
+            label: '${label}',
+            pointRadius: '${radius}',
+            fillColor: '#8087ff',
+            fillOpacity: 0.5,
+            strokeColor: '#2b2f76',
+            strokeWidth: 2,
+            strokeOpacity: 1
+        };
+        var style_cluster_options = {
+            context: {
+                radius: function(feature) {
+                    // Size For Unclustered Point
+                    var pix = 6;
+                    // Size For Clustered Point
+                    if(feature.cluster) {
+                        pix = Math.min(feature.attributes.count, 7) + 4;
+                    }
+                    return pix;
+                },
+                label: function(feature) {
+                    // Label For Unclustered Point or Cluster of just 2
+                    var label = '';
+                    // Size For Clustered Point
+                    if(feature.cluster && feature.attributes.count > 2) {
+                        label = feature.attributes.count;
+                    }
+                    return label;
+                }
+            }
+        };
+        
+        function addFeature(feature_id, name, geom, styleMarker, image, popup_url) {
             geom = geom.transform(proj4326, projection_current);
             // Needs to be uniquely instantiated
             var style_marker = OpenLayers.Util.extend({}, OpenLayers.Feature.Vector.style['default']);
@@ -1757,18 +2225,9 @@ OpenLayers.Util.extend( selectPdfControl, {
                 style_marker.strokeWidth = 2;
                 style_marker.strokeOpacity = 1;
             } else {
-                // Set icon dims
-                icon_img.src = styleMarker.iconURL;
-                width = icon_img.width;
-                height = icon_img.height;
-                if(width > max_w){
-                    height = ((max_w / width) * height);
-                    width = max_w;
-                }
-                if(height > max_h){
-                    width = ((max_h / height) * width);
-                    height = max_h;
-                }
+                // Set icon dims (set in onload)
+                width = image.width;
+                height = image.height;
                 style_marker.graphicOpacity = 1;
                 style_marker.graphicWidth = width;
                 style_marker.graphicHeight = height;
@@ -1779,9 +2238,59 @@ OpenLayers.Util.extend( selectPdfControl, {
             // Create Feature Vector
             var featureVec = new OpenLayers.Feature.Vector(geom, null, style_marker);
             featureVec.fid = feature_id;
+            // Store the popup_url in the feature so that onFeatureSelect can read it
+            featureVec.popup_url = popup_url;
             featureVec.attributes.name = name;
-            featureVec.attributes.feature_class = feature_class;
             return featureVec;
+        }
+
+        function onFeatureSelect(event) {
+            // unselect any previous selections
+            tooltipUnselect(event);
+            var feature = event.feature;
+            var id = 'featureLayerPopup';
+            centerPoint = feature.geometry.getBounds().getCenterLonLat();
+            if(feature.cluster) {
+                // Cluster
+                var name, uuid, url;
+                var html = '""" + str(T("There are multiple records at this location")) + """:<ul>';
+                for (var i = 0; i < feature.cluster.length; i++) {
+                    name = feature.cluster[i].attributes.name;
+                    uuid = feature.cluster[i].fid;
+                    url = feature.cluster[i].popup_url + uuid;
+                    html += "<li><a href='javascript:loadClusterPopup(" + "\\"" + url + "\\", \\"" + id + "\\"" + ")'>" + name + "</a></li>";
+                }
+                html += '</ul>';
+                html += "<div align='center'><a href='javascript:zoomToSelectedFeature(" + centerPoint.lon + "," + centerPoint.lat + ", 3)'>Zoom in</a></div>";
+                var popup = new OpenLayers.Popup.FramedCloud(
+                    id,
+                    centerPoint,
+                    new OpenLayers.Size(200, 200),
+                    html,
+                    null,
+                    true,
+                    onPopupClose
+                );
+                feature.popup = popup;
+                map.addPopup(popup);
+            } else {
+                // Single Feature
+                var popup_url = feature.popup_url;
+                var popup = new OpenLayers.Popup.FramedCloud(
+                    id,
+                    centerPoint,
+                    new OpenLayers.Size(200, 200),
+                    "Loading...<img src='" + ajax_loader + "' border=0>",
+                    null,
+                    true,
+                    onPopupClose
+                );
+                feature.popup = popup;
+                map.addPopup(popup);
+                // call AJAX to get the contentHTML
+                var uuid = feature.fid;
+                loadDetails(popup_url + uuid, id, popup);
+            }
         }
 
         function loadDetails(url, id, popup) {
@@ -1795,18 +2304,67 @@ OpenLayers.Util.extend( selectPdfControl, {
                     'html'
                 );
         }
+
         """
+            # Draft Features
+            # This is currently used just to select the Lat/Lon for a Location, so no Features pre-loaded
+            if add_feature:
+                layers_features += """
+            //features = [];
+        """ + cluster_style + """
+        draftLayer = new OpenLayers.Layer.Vector(
+            '""" + str(T("Draft Features")) + """', {}
+            //{
+            //    strategies: [ """ + strategy_cluster + """ ],
+            //    styleMap: featureClusterStyleMap
+            //}
+        );
+        draftLayer.setVisibility(true);
+        map.addLayer(draftLayer);
+        //draftLayer.events.on({
+        //    "featureselected": onFeatureSelect,
+        //    "featureunselected": onFeatureUnselect
+        //});
+        // Don't include here as we don't want the highlightControl & currently gain nothing else from it
+        //featureLayers.push(draftLayer);
+
+        // We don't currently do anything here
+        //function onFeatureSelect(event) {
+            // unselect any previous selections
+        //    tooltipUnselect(event);
+        //    var feature = event.feature;
+        //    var id = 'draftLayerPopup';
+        //    if(feature.cluster) {
+                // Cluster
+        //        centerPoint = feature.geometry.getBounds().getCenterLonLat();
+        //    } else {
+                // Single Feature
+        //    }
+        //}
+        """
+            
+            # Feature Queries
             for layer in feature_queries:
                 # Features passed as Query
                 if "name" in layer:
                     name = layer["name"]
                 else:
                     name = "Query" + str(int(random.random()*1000))
+
+                if "marker" in layer:
+                    markerLayer = db(db.gis_marker.id == layer["marker"]).select(db.gis_marker.image, limitby=(0, 1), cache=cache).first()
+                else:
+                    markerLayer = ""
+
                 if "popup_url" in layer:
                     _popup_url = urllib.unquote(layer["popup_url"])
                 else:
-                    #popup_url = urllib.unquote(URL(r=request, c=feature_class.module, f=feature_class.resource, args=["read.popup"]))
                     _popup_url = urllib.unquote(URL(r=request, c="gis", f="location", args=["read.popup?location.id="]))
+
+                if "polygon" in layer and layer.polygon:
+                    polygons = True
+                else:
+                    polygons = False
 
                 # Generate HTML snippet
                 name_safe = re.sub("\W", "_", name)
@@ -1816,6 +2374,7 @@ OpenLayers.Util.extend( selectPdfControl, {
                     visibility = "featureLayer" + name_safe + ".setVisibility(false);"
                 layers_features += """
         features = [];
+        var popup_url = '""" + _popup_url + """';
         """ + cluster_style + """
         var featureLayer""" + name_safe + """ = new OpenLayers.Layer.Vector(
             '""" + name + """',
@@ -1827,53 +2386,10 @@ OpenLayers.Util.extend( selectPdfControl, {
         """ + visibility + """
         map.addLayer(featureLayer""" + name_safe + """);
         featureLayer""" + name_safe + """.events.on({
-            "featureselected": onFeatureSelect""" + name_safe + """,
+            "featureselected": onFeatureSelect,
             "featureunselected": onFeatureUnselect
         });
         featureLayers.push(featureLayer""" + name_safe + """);
-
-        function onFeatureSelect""" + name_safe + """(event) {
-            // unselect any previous selections
-            tooltipUnselect(event);
-            var feature = event.feature;
-            if(feature.cluster) {
-                // Cluster
-                // Create Empty Array to Contain Feature Names
-                var clusterFeaturesArray = [];
-                // Add Each Feature To Array
-                for (var i = 0; i < feature.cluster.length; i++)
-                {
-                    var clusterFeaturesArrayName = feature.cluster[i].attributes.name;
-                    var clusterFeaturesArrayType = feature.cluster[i].attributes.feature_class;
-                    var clusterFeaturesArrayX = feature.cluster[i].geometry.x;
-                    var clusterFeaturesArrayY = feature.cluster[i].geometry.y;
-                    var clusterFeaturesArrayID = feature.cluster[i].fid;
-
-                    // ToDo: Refine
-                    var clusterFeaturesArrayEntry = "<li>" + clusterFeaturesArrayName + "</li>";
-
-                    clusterFeaturesArray.push(clusterFeaturesArrayEntry);
-                };
-            } else {
-                // Single Feature
-                var selectedFeature = feature;
-                var id = 'featureLayer""" + name_safe + """Popup';
-                var popup = new OpenLayers.Popup.FramedCloud(
-                    id,
-                    feature.geometry.getBounds().getCenterLonLat(),
-                    new OpenLayers.Size(200, 200),
-                    "Loading...<img src='""" + str(URL(r=request, c="static", f="img")) + """/ajax-loader.gif' border=0>",
-                    null,
-                    true,
-                    onPopupClose
-                );
-                feature.popup = popup;
-                map.addPopup(popup);
-                // call AJAX to get the contentHTML
-                var uuid = feature.fid;
-                loadDetails('""" + _popup_url + """' + uuid, id, popup);
-            }
-        }
         """
                 features = layer["query"]
                 for _feature in features:
@@ -1884,8 +2400,88 @@ OpenLayers.Util.extend( selectPdfControl, {
                     except (AttributeError, KeyError):
                         # Query is a simple select
                         feature = _feature
+                    # Should we use Polygons or Points?
+                    if polygons:
+                        # Deal with manually-imported Features which are missing WKT
+                        if feature.get("wkt"):
+                            wkt = feature.wkt
+                        else:
+                            try:
+                                lat = feature.lat
+                                lon = feature.lon
+                                if (lat is None) or (lon is None):
+                                    # Zero is allowed but not None
+                                    if feature.get("parent"):
+                                        # Skip the current record if we can
+                                        latlon = self.get_latlon(feature.parent)
+                                    elif feature.get("id"):
+                                        latlon = self.get_latlon(feature.id)
+                                    else:
+                                        # nothing we can do!
+                                        continue
+                                    if latlon:
+                                        lat = latlon["lat"]
+                                        lon = latlon["lon"]
+                                    else:
+                                        # nothing we can do!
+                                        continue
+                            except:
+                                if feature.get("parent"):
+                                    # Skip the current record if we can
+                                    latlon = self.get_latlon(feature.parent)
+                                elif feature.get("id"):
+                                    latlon = self.get_latlon(feature.id)
+                                else:
+                                    # nothing we can do!
+                                    continue
+                                if latlon:
+                                    lat = latlon["lat"]
+                                    lon = latlon["lon"]
+                                else:
+                                    # nothing we can do!
+                                    continue
+                            wkt = self.latlon_to_wkt(lat, lon)
+                    else:
+                        # Just display Point data, even if we have Polygons
+                        # ToDo: DRY with Polygon
+                        try:
+                            lat = feature.lat
+                            lon = feature.lon
+                            if (lat is None) or (lon is None):
+                                # Zero is allowed but not None
+                                if feature.get("parent"):
+                                    # Skip the current record if we can
+                                    latlon = self.get_latlon(feature.parent)
+                                elif feature.get("id"):
+                                    latlon = self.get_latlon(feature.id)
+                                else:
+                                    # nothing we can do!
+                                    continue
+                                if latlon:
+                                    lat = latlon["lat"]
+                                    lon = latlon["lon"]
+                                else:
+                                    # nothing we can do!
+                                    continue
+                        except:
+                            if feature.get("parent"):
+                                # Skip the current record if we can
+                                latlon = self.get_latlon(feature.parent)
+                            elif feature.get("id"):
+                                latlon = self.get_latlon(feature.id)
+                            else:
+                                # nothing we can do!
+                                continue
+                            if latlon:
+                                lat = latlon["lat"]
+                                lon = latlon["lon"]
+                            else:
+                                # nothing we can do!
+                                continue
+                        wkt = self.latlon_to_wkt(lat, lon)
+
                     try:
-                        # Has a per-feature Vector Shape been provided through VirtualFields?
+                        # Has a per-feature Vector Shape been added to the query?
                         graphicName = feature.shape
                         if graphicName not in ["circle", "square", "star", "x", "cross", "triangle"]:
                             # Default to Circle
@@ -1906,40 +2502,39 @@ OpenLayers.Util.extend( selectPdfControl, {
                     except (AttributeError, KeyError):
                         # Use a Marker not a Vector Shape
                         try:
-                            # Has a per-feature marker been provided through VirtualFields?
+                            # Has a per-feature marker been added to the query?
                             _marker = feature.marker
                             if _marker:
                                 marker = _marker.image
                             else:
                                 marker = self.get_marker(feature.id)
                         except (AttributeError, KeyError):
-                            if "marker" in layer:
-                                _marker = db(db.gis_marker.id == layer["marker"]).select(db.gis_marker.image, limitby=(0, 1), cache=cache).first()
-                                if _marker:
-                                    marker = _marker.image
-                                else:
-                                    marker = self.get_marker(feature.id)
+                            if markerLayer:
+                                # Marker specified at the layer level
+                                marker = markerLayer.image
                             else:
                                 marker = self.get_marker(feature.id)
-                        marker_url = URL(r=request, c="default", f="download", args=[marker])
-                    # Deal with null Feature Classes
-                    if feature.get("feature_class_id"):
-                        fc = "'" + str(feature.feature_class_id) + "'"
-                    else:
-                        fc = "null"
-                    # Deal with manually-imported Features which are missing WKT
-                    if feature.get("wkt"):
-                        wkt = feature.wkt
-                    elif (feature.lat == None) or (feature.lon == None):
-                        continue
-                    else:
-                        wkt = self.latlon_to_wkt(feature.lat, feature.lon)
+                        # Faster to bypass the download handler
+                        #marker_url = URL(r=request, c="default", f="download", args=[marker])
+                        marker_url = URL(r=request, c="static", f="img", args=["markers", marker])
+                        
+                    try:
+                        # Has a per-feature popup_label been added to the query?
+                        popup_label = feature.popup_label
+                    except (AttributeError, KeyError):
+                        popup_label = feature.name
+
                     # Deal with apostrophes in Feature Names
-                    fname = re.sub("'", "\\'", feature.name)
+                    fname = re.sub("'", "\\'", popup_label)
                     
                     if marker_url:
                         layers_features += """
         styleMarker.iconURL = '""" + marker_url + """';
+        // Pre-cache this image
+        // Need unique names
+        var i = new Image();
+        i.onload = scaleImage;
+        i.src = styleMarker.iconURL;
         """
                     else:
                         layers_features += """
@@ -1950,126 +2545,7 @@ OpenLayers.Util.extend( selectPdfControl, {
         """
                     layers_features += """
         geom = parser.read('""" + wkt + """').geometry;
-        featureVec = addFeature('""" + str(feature.id) + """', '""" + fname + """', """ + fc + """, geom, styleMarker)
-        features.push(featureVec);
-        """
-                # Append to Features layer
-                layers_features += """
-        featureLayer""" + name_safe + """.addFeatures(features);
-        """
-
-            # Feature Groups
-            for layer in feature_groups:
-                name = layer["feature_group"]
-                if "popup_url" in layer:
-                    popup_url = urllib.unquote(layer["popup_url"])
-                # We'd like to do something like this:
-                #elif feature_class is office:
-                #    popup_url = urllib.unquote(URL(r=request, c="or", f="office"))
-                else:
-                    popup_url = urllib.unquote(URL(r=request, c="gis", f="location", args=["read.popup?location.id="]))
-
-                # Generate HTML snippet
-                name_safe = re.sub("\W", "_", name)
-                if "active" in layer and layer["active"]:
-                    visibility = "featureLayer" + name_safe + ".setVisibility(true);"
-                else:
-                    visibility = "featureLayer" + name_safe + ".setVisibility(false);"
-                layers_features += """
-        features = [];
-        """ + cluster_style + """
-        var featureLayer""" + name_safe + """ = new OpenLayers.Layer.Vector(
-            '""" + name + """',
-            {
-                strategies: [ """ + strategy_cluster + """ ],
-                styleMap: featureClusterStyleMap
-            }
-        );
-        """ + visibility + """
-        map.addLayer(featureLayer""" + name_safe + """);
-        featureLayer""" + name_safe + """.events.on({
-            "featureselected": onFeatureSelect""" + name_safe + """,
-            "featureunselected": onFeatureUnselect
-        });
-        featureLayers.push(featureLayer""" + name_safe + """);
-
-        function onFeatureSelect""" + name_safe + """(event) {
-            // unselect any previous selections
-            tooltipUnselect(event);
-            var feature = event.feature;
-            if(feature.cluster) {
-                // Cluster
-                // Create Empty Array to Contain Feature Names
-                var clusterFeaturesArray = [];
-                // Add Each Feature To Array
-                for (var i = 0; i < feature.cluster.length; i++)
-                {
-                    var clusterFeaturesArrayName = feature.cluster[i].attributes.name;
-                    var clusterFeaturesArrayType = feature.cluster[i].attributes.feature_class;
-                    var clusterFeaturesArrayX = feature.cluster[i].geometry.x;
-                    var clusterFeaturesArrayY = feature.cluster[i].geometry.y;
-                    var clusterFeaturesArrayID = feature.cluster[i].fid;
-
-                    // ToDo: Refine
-                    var clusterFeaturesArrayEntry = "<li>" + clusterFeaturesArrayName + "</li>";
-
-                    clusterFeaturesArray.push(clusterFeaturesArrayEntry);
-                };
-            } else {
-                // Single Feature
-                var selectedFeature = feature;
-                var id = 'featureLayer""" + name_safe + """Popup';
-                var popup = new OpenLayers.Popup.FramedCloud(
-                    id,
-                    feature.geometry.getBounds().getCenterLonLat(),
-                    new OpenLayers.Size(200, 200),
-                    "Loading...<img src='""" + str(URL(r=request, c="static", f="img")) + """/ajax-loader.gif' border=0>",
-                    null,
-                    true,
-                    onPopupClose
-                );
-                feature.popup = popup;
-                map.addPopup(popup);
-                // call AJAX to get the contentHTML
-                var uuid = feature.fid;
-                loadDetails('""" + popup_url + """' + '?location.uid=' + uuid, id, popup);
-            }
-        }
-        """
-                query = (db.gis_location.deleted == False) & (db.gis_feature_group.name == name) & (db.gis_feature_class_to_feature_group.feature_group_id == db.gis_feature_group.id) & (db.gis_location.feature_class_id == db.gis_feature_class_to_feature_group.feature_class_id)
-                if "parent" in layer:
-                    parent_id = db(db.gis_location.name == layer["parent"]).select(db.gis_location.id, limitby=(0, 1)).first().id
-                    query = query & (db.gis_location.parent == parent_id)
-                features = db(query).select()
-                for feature in features:
-                    if "marker" in layer:
-                        _marker = db(db.gis_marker.id == layer["marker"]).select(db.gis_marker.image, limitby=(0, 1), cache=cache).first()
-                        if _marker:
-                            marker = _marker.image
-                        else:
-                            marker = self.get_marker(feature.gis_location.id)
-                    else:
-                        marker = self.get_marker(feature.gis_location.id)
-                    marker_url = URL(r=request, c="default", f="download", args=[marker])
-                    # Deal with null Feature Classes
-                    if feature.gis_location.feature_class_id:
-                        fc = "'" + str(feature.gis_location.feature_class_id) + "'"
-                    else:
-                        fc = "null"
-                    # Deal with manually-imported Features which are missing WKT
-                    if feature.gis_location.wkt:
-                        wkt = feature.gis_location.wkt
-                    elif (feature.gis_location.lat == None) or (feature.gis_location.lon == None):
-                        continue
-                    else:
-                        wkt = self.latlon_to_wkt(feature.gis_location.lat, feature.gis_location.lon)
-                    # Deal with apostrophes in Feature Names
-                    fname = re.sub("'", "\\'", feature.gis_location.name)
-                    
-                    layers_features += """
-        geom = parser.read('""" + wkt + """').geometry;
-        iconURL = '""" + marker_url + """';
-        featureVec = addFeature('""" + feature.gis_location.uuid + """', '""" + fname + """', """ + fc + """, geom, iconURL)
+        featureVec = addFeature('""" + str(feature.id) + """', '""" + fname + """', geom, styleMarker, i, popup_url)
         features.push(featureVec);
         """
                 # Append to Features layer
@@ -2090,7 +2566,8 @@ OpenLayers.Util.extend( selectPdfControl, {
         layers_kml = ""
         if catalogue_overlays:
             # GeoRSS
-            georss_enabled = db(db.gis_layer_georss.enabled == True).select()
+            query = (db.gis_layer_georss.enabled == True) # No deletable field
+            georss_enabled = db(query).select(db.gis_layer_georss.name, db.gis_layer_georss.url, db.gis_layer_georss.visible, db.gis_layer_georss.projection_id, db.gis_layer_georss.marker_id)
             if georss_enabled:
                 layers_georss += """
         var georssLayers = new Array();
@@ -2100,16 +2577,17 @@ OpenLayers.Util.extend( selectPdfControl, {
             tooltipUnselect(event);
             var feature = event.feature;
             var selectedFeature = feature;
+            centerPoint = feature.geometry.getBounds().getCenterLonLat();
             if (undefined == feature.attributes.description) {
                 var popup = new OpenLayers.Popup.FramedCloud('georsspopup',
-                feature.geometry.getBounds().getCenterLonLat(),
-                new OpenLayers.Size(200,200),
+                centerPoint,
+                new OpenLayers.Size(200, 200),
                 '<h2>' + feature.attributes.title + '</h2>',
                 null, true, onPopupClose);
             } else {
                 var popup = new OpenLayers.Popup.FramedCloud('georsspopup',
-                feature.geometry.getBounds().getCenterLonLat(),
-                new OpenLayers.Size(200,200),
+                centerPoint,
+                new OpenLayers.Size(200, 200),
                 '<h2>' + feature.attributes.title + '</h2>' + feature.attributes.description,
                 null, true, onPopupClose);
             };
@@ -2132,7 +2610,7 @@ OpenLayers.Util.extend( selectPdfControl, {
                         marker = db(db.gis_marker.id == marker_id).select(db.gis_marker.image, limitby=(0, 1)).first().image
                     else:
                         marker = db(db.gis_marker.id == marker_default).select(db.gis_marker.image, limitby=(0, 1)).first().image
-                    marker_url = URL(r=request, c="default", f="download", args=marker)
+                    marker_url = URL(r=request, c="static", f="img", args=["markers", marker])
 
                     if cacheable:
                         # Download file
@@ -2143,7 +2621,9 @@ OpenLayers.Util.extend( selectPdfControl, {
                             warning = "URLError"
                         except urllib2.HTTPError:
                             warning = "HTTPError"
-                        filename = "gis_cache.file." + name.replace(" ", "_") + ".rss"
+                        _name = name.replace(" ", "_")
+                        _name = _name.replace(",", "_")
+                        filename = "gis_cache.file." + _name + ".rss"
                         filepath = os.path.join(cachepath, filename)
                         f = open(filepath, "w")
                         # Handle errors
@@ -2181,43 +2661,37 @@ OpenLayers.Util.extend( selectPdfControl, {
                     else:
                         visibility = "georssLayer" + name_safe + ".setVisibility(false);"
                     layers_georss += """
-            iconURL = '""" + marker_url + """';
-            icon_img.src = iconURL;
-            width = icon_img.width;
-            height = icon_img.height;
-            if(width > max_w){
-                height = ((max_w / width) * height);
-                width = max_w;
+        iconURL = '""" + marker_url + """';
+        // Pre-cache this image
+        // Need unique names
+        var i = new Image();
+        i.onload = scaleImage;
+        i.src = iconURL;
+        // Needs to be uniquely instantiated
+        var style_marker = OpenLayers.Util.extend({}, OpenLayers.Feature.Vector.style['default']);
+        style_marker.graphicOpacity = 1;
+        style_marker.graphicWidth = width;
+        style_marker.graphicHeight = height;
+        style_marker.graphicXOffset = -(width / 2);
+        style_marker.graphicYOffset = -height;
+        style_marker.externalGraphic = iconURL;
+        var georssLayer""" + name_safe + """ = new OpenLayers.Layer.Vector(
+            '""" + name_safe + """',
+            {
+                """ + projection_str + """
+                strategies: [ """ + strategy_fixed + ", " + strategy_cluster + """ ],
+                style: style_marker,
+                protocol: new OpenLayers.Protocol.HTTP({
+                    url: '""" + url + """',
+                    format: format_georss
+                })
             }
-            if(height > max_h){
-                width = ((max_h / height) * width);
-                height = max_h;
-            }
-            // Needs to be uniquely instantiated
-            var style_marker = OpenLayers.Util.extend({}, OpenLayers.Feature.Vector.style['default']);
-            style_marker.graphicOpacity = 1;
-            style_marker.graphicWidth = width;
-            style_marker.graphicHeight = height;
-            style_marker.graphicXOffset = -(width / 2);
-            style_marker.graphicYOffset = -height;
-            style_marker.externalGraphic = iconURL;
-            var georssLayer""" + name_safe + """ = new OpenLayers.Layer.Vector(
-                '""" + name_safe + """',
-                {
-                    """ + projection_str + """
-                    strategies: [ """ + strategy_fixed + ", " + strategy_cluster + """ ],
-                    style: style_marker,
-                    protocol: new OpenLayers.Protocol.HTTP({
-                        url: '""" + url + """',
-                        format: format_georss
-                    })
-                }
-            );
-            """ + visibility + """
-            map.addLayer(georssLayer""" + name_safe + """);
-            georssLayers.push(georssLayer""" + name_safe + """);
-            georssLayer""" + name_safe + """.events.on({ "featureselected": onGeorssFeatureSelect, "featureunselected": onFeatureUnselect });
-            """
+        );
+        """ + visibility + """
+        map.addLayer(georssLayer""" + name_safe + """);
+        georssLayers.push(georssLayer""" + name_safe + """);
+        georssLayer""" + name_safe + """.events.on({ "featureselected": onGeorssFeatureSelect, "featureunselected": onFeatureUnselect });
+        """
                 layers_georss += """
         allLayers = allLayers.concat(georssLayers);
         """
@@ -2237,15 +2711,18 @@ OpenLayers.Util.extend( selectPdfControl, {
         """
                 for layer in gpx_enabled:
                     name = layer["name"]
-                    track = db(db.gis_track.id == layer.track_id).select(limitby=(0, 1)).first()
-                    url = track.track
+                    track = db(db.gis_track.id == layer.track_id).select(db.gis_track.track, limitby=(0, 1)).first()
+                    if track:
+                        url = track.track
+                    else:
+                        url = ""
                     visible = layer["visible"]
                     marker_id = layer["marker_id"]
                     if marker_id:
                         marker = db(db.gis_marker.id == marker_id).select(db.gis_marker.image, limitby=(0, 1)).first().image
                     else:
                         marker = db(db.gis_marker.id == marker_default).select(db.gis_marker.image, limitby=(0, 1)).first().image
-                    marker_url = URL(r=request, c="default", f="download", args=marker)
+                    marker_url = URL(r=request, c="static", f="img", args=["markers", marker])
 
                     # Generate HTML snippet
                     name_safe = re.sub("\W", "_", name)
@@ -2254,43 +2731,37 @@ OpenLayers.Util.extend( selectPdfControl, {
                     else:
                         visibility = "gpxLayer" + name_safe + ".setVisibility(false);"
                     layers_gpx += """
-            iconURL = '""" + marker_url + """';
-            icon_img.src = iconURL;
-            width = icon_img.width;
-            height = icon_img.height;
-            if(width > max_w){
-                height = ((max_w / width) * height);
-                width = max_w;
+        iconURL = '""" + marker_url + """';
+        // Pre-cache this image
+        // Need unique names
+        var i = new Image();
+        i.onload = scaleImage;
+        i.src = iconURL;
+        // Needs to be uniquely instantiated
+        var style_marker = OpenLayers.Util.extend({}, OpenLayers.Feature.Vector.style['default']);
+        style_marker.graphicOpacity = 1;
+        style_marker.graphicWidth = width;
+        style_marker.graphicHeight = height;
+        style_marker.graphicXOffset = -(width / 2);
+        style_marker.graphicYOffset = -height;
+        style_marker.externalGraphic = iconURL;
+        var gpxLayer""" + name_safe + """ = new OpenLayers.Layer.Vector(
+            '""" + name_safe + """',
+            {
+                projection: proj4326,
+                strategies: [ """ + strategy_fixed + ", " + strategy_cluster + """ ],
+                style: style_marker,
+                protocol: new OpenLayers.Protocol.HTTP({
+                    url: '""" + url + """',
+                    format: format_gpx
+                })
             }
-            if(height > max_h){
-                width = ((max_h / height) * width);
-                height = max_h;
-            }
-            // Needs to be uniquely instantiated
-            var style_marker = OpenLayers.Util.extend({}, OpenLayers.Feature.Vector.style['default']);
-            style_marker.graphicOpacity = 1;
-            style_marker.graphicWidth = width;
-            style_marker.graphicHeight = height;
-            style_marker.graphicXOffset = -(width / 2);
-            style_marker.graphicYOffset = -height;
-            style_marker.externalGraphic = iconURL;
-            var gpxLayer""" + name_safe + """ = new OpenLayers.Layer.Vector(
-                '""" + name_safe + """',
-                {
-                    projection: proj4326,
-                    strategies: [ """ + strategy_fixed + ", " + strategy_cluster + """ ],
-                    style: style_marker,
-                    protocol: new OpenLayers.Protocol.HTTP({
-                        url: '""" + url + """',
-                        format: format_gpx
-                    })
-                }
-            );
-            """ + visibility + """
-            map.addLayer(gpxLayer""" + name_safe + """);
-            gpxLayers.push(gpxLayer""" + name_safe + """);
-            gpxLayer""" + name_safe + """.events.on({ "featureselected": onGpxFeatureSelect, "featureunselected": onFeatureUnselect });
-            """
+        );
+        """ + visibility + """
+        map.addLayer(gpxLayer""" + name_safe + """);
+        gpxLayers.push(gpxLayer""" + name_safe + """);
+        gpxLayer""" + name_safe + """.events.on({ 'featureselected': onGpxFeatureSelect, 'featureunselected': onFeatureUnselect });
+        """
                 layers_gpx += """
         allLayers = allLayers.concat(gpxLayers);
         """
@@ -2309,35 +2780,45 @@ OpenLayers.Util.extend( selectPdfControl, {
             // unselect any previous selections
             tooltipUnselect(event);
             var feature = event.feature;
+            centerPoint = feature.geometry.getBounds().getCenterLonLat();
             var selectedFeature = feature;
-            var type = typeof feature.attributes.name;
+            var title = feature.layer.title;
+            var _attributes = feature.attributes;
+            var type = typeof _attributes[title];
             if ('object' == type) {
-                var popup = new OpenLayers.Popup.FramedCloud("kmlpopup",
-                    feature.geometry.getBounds().getCenterLonLat(),
-                    new OpenLayers.Size(200,200),
-                    "<h2>" + "</h2>",
-                    null, true, onPopupClose
-                );
-            } else if (undefined == feature.attributes.description) {
-                var popup = new OpenLayers.Popup.FramedCloud("kmlpopup",
-                    feature.geometry.getBounds().getCenterLonLat(),
-                    new OpenLayers.Size(200,200),
-                    "<h2>" + feature.attributes.name + "</h2>",
-                    null, true, onPopupClose
-                );
+                _title = _attributes[title].value;
             } else {
-                var content = "<h2>" + feature.attributes.name + "</h2>" + feature.attributes.description;
-                // Protect the description against JavaScript attacks
-                if (content.search("<script") != -1) {
-                    content = "Content contained Javascript! Escaped content below.<br />" + content.replace(/</g, "<");
+                _title = _attributes[title];
+            }
+            var body = feature.layer.body.split(' ');
+            var content = '';
+            for (var i = 0; i < body.length; i++) {
+                type = typeof _attributes[body[i]];
+                if ('object' == type) {
+                    // Geocommons style
+                    var displayName = _attributes[body[i]].displayName;
+                    if (displayName == '') {
+                        displayName = body[i];
+                    }
+                    var value = _attributes[body[i]].value;
+                    var row = '<b>' + displayName + '</b>: ' + value + '<br />';
+                } else {
+                    var row = _attributes[body[i]] + '<br />';
                 }
-                var popup = new OpenLayers.Popup.FramedCloud("kmlpopup",
-                    feature.geometry.getBounds().getCenterLonLat(),
-                    new OpenLayers.Size(200,200),
-                    content,
-                    null, true, onPopupClose
-                );
-            };
+                content += row;
+            }
+            // Protect the content against JavaScript attacks
+            if (content.search('<script') != -1) {
+                content = 'Content contained Javascript! Escaped content below.<br />' + content.replace(/</g, '<');
+            }
+            var contents = '<h2>' + _title + '</h2>' + content;
+            
+            var popup = new OpenLayers.Popup.FramedCloud('kmlpopup',
+                centerPoint,
+                new OpenLayers.Size(200, 200),
+                contents,
+                null, true, onPopupClose
+            );
             feature.popup = popup;
             popup.feature = feature;
             map.addPopup(popup);
@@ -2347,11 +2828,15 @@ OpenLayers.Util.extend( selectPdfControl, {
                     name = layer["name"]
                     url = layer["url"]
                     visible = layer["visible"]
+                    title = layer["title"] or "name"
+                    body = layer["body"] or "description"
                     projection_str = "projection: proj4326,"
                     if cacheable:
                         # Download file
                         file, warning = self.download_kml(url, public_url)
-                        filename = "gis_cache.file." + name.replace(" ", "_") + ".kml"
+                        _name = name.replace(" ", "_")
+                        _name = _name.replace(",", "_")
+                        filename = "gis_cache.file." + _name + ".kml"
                         filepath = os.path.join(cachepath, filename)
                         f = open(filepath, "w")
                         # Handle errors
@@ -2396,48 +2881,45 @@ OpenLayers.Util.extend( selectPdfControl, {
 
                     # Generate HTML snippet
                     name_safe = re.sub("\W", "_", name)
+                    layer_name = "kmlLayer" + name_safe
                     if visible:
-                        visibility = "kmlLayer" + name_safe + ".setVisibility(true);"
+                        visibility = layer_name + ".setVisibility(true);"
                     else:
-                        visibility = "kmlLayer" + name_safe + ".setVisibility(false);"
+                        visibility = layer_name + ".setVisibility(false);"
                     layers_kml += """
-            iconURL = '""" + marker_url + """';
-            icon_img.src = iconURL;
-            width = icon_img.width;
-            height = icon_img.height;
-            if(width > max_w){
-                height = ((max_w / width) * height);
-                width = max_w;
+        iconURL = '""" + marker_url + """';
+        // Pre-cache this image
+        // Need unique names
+        var i = new Image();
+        i.onload = scaleImage;
+        i.src = iconURL;
+        // Needs to be uniquely instantiated
+        var style_marker = OpenLayers.Util.extend({}, OpenLayers.Feature.Vector.style['default']);
+        style_marker.graphicOpacity = 1;
+        style_marker.graphicWidth = width;
+        style_marker.graphicHeight = height;
+        style_marker.graphicXOffset = -(width / 2);
+        style_marker.graphicYOffset = -height;
+        style_marker.externalGraphic = iconURL;
+        var kmlLayer""" + name_safe + """ = new OpenLayers.Layer.Vector(
+            '""" + name + """',
+            {
+                """ + projection_str + """
+                strategies: [ """ + strategy_fixed + ", " + strategy_cluster + """ ],
+                style: style_marker,
+                protocol: new OpenLayers.Protocol.HTTP({
+                    url: '""" + url + """',
+                    format: format_kml
+                })
             }
-            if(height > max_h){
-                width = ((max_h / height) * width);
-                height = max_h;
-            }
-            // Needs to be uniquely instantiated
-            var style_marker = OpenLayers.Util.extend({}, OpenLayers.Feature.Vector.style['default']);
-            style_marker.graphicOpacity = 1;
-            style_marker.graphicWidth = width;
-            style_marker.graphicHeight = height;
-            style_marker.graphicXOffset = -(width / 2);
-            style_marker.graphicYOffset = -height;
-            style_marker.externalGraphic = iconURL;
-            var kmlLayer""" + name_safe + """ = new OpenLayers.Layer.Vector(
-                '""" + name_safe + """',
-                {
-                    """ + projection_str + """
-                    strategies: [ """ + strategy_fixed + ", " + strategy_cluster + """ ],
-                    style: style_marker,
-                    protocol: new OpenLayers.Protocol.HTTP({
-                        url: '""" + url + """',
-                        format: format_kml
-                    })
-                }
-            );
-            """ + visibility + """
-            map.addLayer(kmlLayer""" + name_safe + """);
-            kmlLayers.push(kmlLayer""" + name_safe + """);
-            kmlLayer""" + name_safe + """.events.on({ "featureselected": onKmlFeatureSelect, "featureunselected": onFeatureUnselect });
-            """
+        );
+        """ + visibility + """
+        kmlLayer""" + name_safe + """.title = '""" + title + """';
+        kmlLayer""" + name_safe + """.body = '""" + body + """';
+        map.addLayer(kmlLayer""" + name_safe + """);
+        kmlLayers.push(kmlLayer""" + name_safe + """);
+        kmlLayer""" + name_safe + """.events.on({ "featureselected": onKmlFeatureSelect, "featureunselected": onFeatureUnselect });
+        """
                 layers_kml += """
         allLayers = allLayers.concat(kmlLayers);
         """
@@ -2447,12 +2929,14 @@ OpenLayers.Util.extend( selectPdfControl, {
         #############
 
         html.append(SCRIPT("""
-    var map, mapPanel, legendPanel, toolbar;
-    var currentFeature, popupControl, highlightControl;
-    var wmsBrowser;
-    var printProvider;
+    var map, mapPanel, legendPanel, toolbar, win;
+    var pointButton, lastDraftFeature, draftLayer;
+    var centerPoint, currentFeature, popupControl, highlightControl;
+    var wmsBrowser, printProvider;
     var allLayers = new Array();
+    S3.gis.Images = new Array();
     OpenLayers.ImgPath = '/""" + request.application + """/static/img/gis/openlayers/';
+    var ajax_loader = '""" + str(URL(r=request, c="static", f="img")) + """/ajax-loader.gif';
     // avoid pink tiles
     OpenLayers.IMAGE_RELOAD_ATTEMPTS = 3;
     OpenLayers.Util.onImageLoadErrorColor = "transparent";
@@ -2470,6 +2954,36 @@ OpenLayers.Util.extend( selectPdfControl, {
         numZoomLevels: """ + str(numZoomLevels) + """
     };
 
+    // Functions which are called by user & hence need to be in global scope
+
+    // Replace Cluster Popup contents with selected Feature Popup
+    function loadClusterPopup(url, id) {
+        //$.getS3(
+        $.get(
+                url,
+                function(data) {
+                    $('#' + id + '_contentDiv').html(data);
+                    map.popups[0].updateSize();
+                },
+                'html'
+            );
+    }
+
+    // Zoom to Selected Feature from within Popup
+    function zoomToSelectedFeature(lon, lat, zoomfactor) {
+        var lonlat = new OpenLayers.LonLat(lon, lat);
+        // Get Current Zoom
+        currZoom = map.getZoom();
+        // New Zoom
+        newZoom = currZoom + zoomfactor;
+        // Center and Zoom
+        map.setCenter(lonlat, newZoom);
+        // Remove Popups
+        for (var i=0; i<map.popups.length; ++i)	{
+            map.removePopup(map.popups[i]);
+        }
+    }
+    
     function addLayers(map) {
         // Base Layers
         // OSM
@@ -2482,6 +2996,8 @@ OpenLayers.Util.extend( selectPdfControl, {
         """ + layers_bing + """
         // TMS
         """ + layers_tms + """
+        // WFS
+        """ + layers_wfs + """
         // WMS
         """ + layers_wms + """
         // XYZ
@@ -2490,13 +3006,29 @@ OpenLayers.Util.extend( selectPdfControl, {
         """ + layers_js + """
 
         // Overlays
-        var max_w = 25;
+        var max_w = 30;
         var max_h = 35;
-        var width, height;
-        var icon_img = new Image();
         var styleMarker = new Object();
         var iconURL;
 
+        var scaleImage = function(){
+            //s3_debug('image', i.src);
+            //s3_debug('initial height', i.height);
+            //s3_debug('initial width', i.width);
+            var scaleRatio = i.height/i.width;
+            var w = Math.min(i.width, max_w);
+            var h = w * scaleRatio;
+            if (h > max_h) {
+                    h = max_h;
+                    scaleRatio = w/h;
+                    w = w * scaleRatio;
+                }
+            i.height = h;
+            i.width = w;
+            //s3_debug('post height', i.height);
+            //s3_debug('post width', i.width);
+        }
+        
         // Features
         """ + layers_features + """
 
@@ -2551,33 +3083,57 @@ OpenLayers.Util.extend( selectPdfControl, {
                 }
             }
             lastFeature = feature;
-            if (undefined == feature.attributes.name) {
-                // GeoRSS
-                tooltipPopup = new OpenLayers.Popup("activetooltip",
-                        feature.geometry.getBounds().getCenterLonLat(),
+            centerPoint = feature.geometry.getBounds().getCenterLonLat();
+            _attributes = feature.attributes;
+            if (undefined == _attributes.name && undefined == _attributes.title) {
+                // KML Layer
+                var title = feature.layer.title;
+                if (undefined == title) {
+                    // We don't have a suitable title, so don't display a tooltip
+                    tooltipPopup = null;
+                } else {
+                    var type = typeof _attributes[title];
+                    if ('object' == type) {
+                        _title = _attributes[title].value;
+                    } else {
+                        _title = _attributes[title];
+                    }
+                    tooltipPopup = new OpenLayers.Popup("activetooltip",
+                        centerPoint,
                         new OpenLayers.Size(80, 12),
-                        feature.attributes.title,
-                        true
+                        _title,
+                        false
+                    );
+                }
+            } else if (undefined == _attributes.title) {
+                // Features
+                tooltipPopup = new OpenLayers.Popup("activetooltip",
+                        centerPoint,
+                        new OpenLayers.Size(80, 12),
+                        _attributes.name,
+                        false
                 );
             } else {
-                // KML
+                // GeoRSS
                 tooltipPopup = new OpenLayers.Popup("activetooltip",
-                        feature.geometry.getBounds().getCenterLonLat(),
+                        centerPoint,
                         new OpenLayers.Size(80, 12),
-                        feature.attributes.name,
-                        true
+                        _attributes.title,
+                        false
                 );
             }
-            // should be moved to CSS
-            tooltipPopup.contentDiv.style.backgroundColor='ffffcb';
-            tooltipPopup.closeDiv.style.backgroundColor='ffffcb';
-            tooltipPopup.contentDiv.style.overflow='hidden';
-            tooltipPopup.contentDiv.style.padding='3px';
-            tooltipPopup.contentDiv.style.margin='0';
-            tooltipPopup.closeOnMove = true;
-            tooltipPopup.autoSize = true;
-            feature.popup = tooltipPopup;
-            map.addPopup(tooltipPopup);
+            if (tooltipPopup != null) {
+                // should be moved to CSS
+                tooltipPopup.contentDiv.style.backgroundColor='ffffcb';
+                tooltipPopup.contentDiv.style.overflow='hidden';
+                tooltipPopup.contentDiv.style.padding='3px';
+                tooltipPopup.contentDiv.style.margin='10px';
+                tooltipPopup.closeOnMove = true;
+                tooltipPopup.autoSize = true;
+                tooltipPopup.opacity = 0.6;
+                feature.popup = tooltipPopup;
+                map.addPopup(tooltipPopup);
+            }
         }
     }
     function tooltipUnselect(event){
@@ -2652,7 +3208,7 @@ OpenLayers.Util.extend( selectPdfControl, {
             nodeType: 'gx_baselayercontainer',
             layerStore: mapPanel.layers,
             leaf: false,
-            expanded: true
+            expanded: false
         };
 
         var layerTreeFeaturesExternal = {
@@ -2704,18 +3260,19 @@ OpenLayers.Util.extend( selectPdfControl, {
             height: """ + str(height) + """,
             width: """ + str(width) + """,
             layout: 'border',
-            items:  [{
-                        region: 'west',
-                        id: 'tools',
-                        title: '""" + str(T("Tools")) + """',
-                        border: true,
-                        width: 250,
-                        collapsible: true,
-                        collapsed: """ + collapsed + """,
-                        split: true,
-                        items: [
-                            layerTree""" + layers_wms_browser2 + search2 + print_tool2 + legend2 + """
-                            ]
+            items: [{
+                    region: 'west',
+                    id: 'tools',
+                    title: '""" + str(T("Tools")) + """',
+                    border: true,
+                    width: 250,
+                    collapsible: true,
+                    collapseMode: 'mini',
+                    collapsed: """ + collapsed + """,
+                    split: true,
+                    items: [
+                        layerTree""" + layers_wms_browser2 + search2 + print_tool2 + legend2 + """
+                        ]
                     },
                     mapPanel
                     ]
@@ -2728,114 +3285,16 @@ OpenLayers.Util.extend( selectPdfControl, {
 
         return html.xml()
 
-    def update_location_tree(self):
-        """
-            Update the Tree for GIS Locations:
-            http://eden.sahanafoundation.org/wiki/HaitiGISToDo#HierarchicalTrees
-        """
-
-        db = self.db
-
-        # tbc
-
-        return
-
-    def wkt_centroid(self, form):
-        """
-            OnValidation callback:
-            If a Point has LonLat defined: calculate the WKT.
-            If a Line/Polygon has WKT defined: validate the format & calculate the LonLat of the Centroid
-            Centroid calculation is done using Shapely, which wraps Geos.
-            A nice description of the algorithm is provided here: http://www.jennessent.com/arcgis/shapes_poster.htm
-        """
-
-        if form.vars.gis_feature_type == "1":
-            # Point
-            if form.vars.lon == None and form.vars.lat == None:
-                # No geo to create WKT from, so skip
-                return
-            elif form.vars.lat == None:
-                form.errors["lat"] = self.messages.lat_empty
-                return
-            elif form.vars.lon == None:
-                form.errors["lon"] = self.messages.lon_empty
-                return
-            else:
-                form.vars.wkt = "POINT(%(lon)f %(lat)f)" % form.vars
-                return
-
-        elif form.vars.gis_feature_type == "2":
-            # Line
-            try:
-                try:
-                    line = wkt_loads(form.vars.wkt)
-                except:
-                    form.errors["wkt"] = self.messages.invalid_wkt_linestring
-                    return
-                centroid_point = line.centroid
-                form.vars.lon = centroid_point.wkt.split("(")[1].split(" ")[0]
-                form.vars.lat = centroid_point.wkt.split("(")[1].split(" ")[1][:1]
-            except:
-                form.errors.gis_feature_type = self.messages.centroid_error
-        elif form.vars.gis_feature_type == "3":
-            # Polygon
-            try:
-                try:
-                    polygon = wkt_loads(form.vars.wkt)
-                except:
-                    form.errors["wkt"] = self.messages.invalid_wkt_polygon
-                    return
-                centroid_point = polygon.centroid
-                form.vars.lon = centroid_point.wkt.split("(")[1].split(" ")[0]
-                form.vars.lat = centroid_point.wkt.split("(")[1].split(" ")[1][:1]
-            except:
-                form.errors.gis_feature_type = self.messages.centroid_error
-
-        else:
-            form.errors.gis_feature_type = self.messages.unknown_type
-
-        return
-
-    def bbox_intersects(self, lon_min, lat_min, lon_max, lat_max):
-
-        db = self.db
-        _location = db.gis_location
-        query = (_location.lat_min <= lat_max) & (_location.lat_max >= lat_min) & (_location.lon_min <= lon_max) & (_location.lon_max >= lon_min)
-        return query
-
-    def _intersects(self, shape):
-        """
-            Returns Rows of locations whose shape intersects the given shape
-        """
-
-        db = self.db
-        query = self.bbox_intersects(*shape.bounds)
-        for loc in db(query).select():
-            location_shape = wkt_loads(loc.wkt)
-            if location_shape.intersects(shape):
-                yield loc
-
-    def _intersects_latlon(self, lat, lon):
-        """
-            Returns a generator of locations whose shape intersects the given LatLon
-        """
-
-        point = shapely.geometry.point.Point(lon, lat)
-        return self.intersects(point)
-
-    if SHAPELY:
-        intersects = _intersects
-        intersects_latlon = _intersects_latlon
-
-
+# -----------------------------------------------------------------------------
 class Geocoder(object):
-    " Base class for all geocoders "
+    " Base class for all Geocoders "
 
     def __init__(self, db):
         " Initializes the page content object "
         self.db = db
         self.api_key = self.get_api_key()
 
+# -----------------------------------------------------------------------------
 class GoogleGeocoder(Geocoder):
     " Google Geocoder module "
 
@@ -2857,6 +3316,7 @@ class GoogleGeocoder(Geocoder):
         page = fetch(url)
         return page
 
+# -----------------------------------------------------------------------------
 class YahooGeocoder(Geocoder):
     " Yahoo Geocoder module "
 

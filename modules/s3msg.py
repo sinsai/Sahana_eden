@@ -45,7 +45,7 @@ class Msg(object):
             self.db = db
             settings = db(db.msg_setting.id > 0).select(limitby=(0, 1)).first()
             self.default_country_code = settings.default_country_code
-            self.outgoing_is_gateway = settings.outgoing_sms_handler ==  "Gateway"
+            self.outgoing_is_gateway = settings.outgoing_sms_handler == "Gateway"
             self.sms_api = db(db.msg_gateway_settings.enabled == True).select(limitby=(0, 1)).first()
             if self.sms_api:
                 tmp_parameters = self.sms_api.parameters.split("&")
@@ -216,11 +216,11 @@ class Msg(object):
             entity = row.pe_id
             table2 = db.pr_pentity
             query = table2.id == entity
-            entity_type = db(query).select(limitby=(0, 1)).first().pe_type
+            entity_type = db(query).select(table2.pe_type, limitby=(0, 1)).first().pe_type
             def dispatch_to_pe_id(pe_id):
                 table3 = db.pr_pe_contact
                 query = (table3.pe_id == pe_id) & (table3.contact_method == contact_method)
-                recipient = db(query).select(table3.value, orderby = table3.priority).first()
+                recipient = db(query).select(table3.value, orderby = table3.priority, limitby=(0, 1)).first()
                 if recipient:
                     if (contact_method == 2 and option == 2):
                         if self.outgoing_is_gateway:
@@ -242,7 +242,7 @@ class Msg(object):
                 # Set system generated = True
                 table3 = db.pr_group
                 query = (table3.pe_id == entity)
-                group_id = db(query).select(limitby=(0, 1)).first().id
+                group_id = db(query).select(table3.id, limitby=(0, 1)).first().id
                 table4 = db.pr_group_membership
                 query = (table4.group_id == group_id)
                 recipients = db(query).select()
@@ -250,7 +250,7 @@ class Msg(object):
                     person_id = recipient.person_id
                     table5 = db.pr_person
                     query = (table5.id == person_id)
-                    pe_id = db(query).select(limitby=(0, 1)).first().pe_id
+                    pe_id = db(query).select(table5.pe_id, limitby=(0, 1)).first().pe_id
                     db.msg_outbox.insert(message_id = message_id,
                                          pe_id = pe_id,
                                          pr_message_method = contact_method,

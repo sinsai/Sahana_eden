@@ -14,34 +14,7 @@ if module not in deployment_settings.modules:
     redirect(URL(r=request, c="default", f="index"))
 
 # Options Menu (available in all Functions" Views)
-response.menu_options = [
-    #[T("Dashboard"), False, URL(r=request, f="dashboard")],
-    [T("Organizations"), False, URL(r=request, f="organisation"),[
-        [T("List"), False, URL(r=request, f="organisation")],
-        [T("Add"), False, URL(r=request, f="organisation", args="create")],
-        #[T("Search"), False, URL(r=request, f="organisation", args="search")]
-    ]],
-    [T("Offices"), False, URL(r=request, f="office"),[
-        [T("List"), False, URL(r=request, f="office")],
-        [T("Add"), False, URL(r=request, f="office", args="create")],
-        #[T("Search"), False, URL(r=request, f="office", args="search")]
-    ]],
-    [T("Projects"), False, URL(r=request, f="project"),[
-        [T("List"), False, URL(r=request, f="project")],
-        [T("Add"), False, URL(r=request, f="project", args="create")],
-        #[T("Search"), False, URL(r=request, f="project", args="search")]
-    ]],
-    [T("Staff"), False, URL(r=request, f="staff"),[
-        [T("List"), False, URL(r=request, f="staff")],
-        [T("Add"), False, URL(r=request, f="staff", args="create")],
-        #[T("Search"), False, URL(r=request, f="staff", args="search")]
-    ]],
-    [T("Tasks"), False, URL(r=request, f="task"),[
-        [T("List"), False, URL(r=request, f="task")],
-        [T("Add"), False, URL(r=request, f="task", args="create")],
-        #[T("Search"), False, URL(r=request, f="task", args="search")]
-    ]],
-]
+response.menu_options = org_menu
 
 # S3 framework functions
 def index():
@@ -52,7 +25,7 @@ def index():
     return dict(module_name=module_name)
 
 def sector():
-    "RESTful CRUD controller"
+    """ RESTful CRUD controller """
     resource = request.function
     tablename = "%s_%s" % (module, resource)
     table = db[tablename]
@@ -77,7 +50,7 @@ def sector():
     return shn_rest_controller(module, resource, listadd=False)
 
 def organisation():
-    "RESTful CRUD controller"
+    """ RESTful CRUD controller """
 
     resource = request.function
 
@@ -94,28 +67,25 @@ def organisation():
         return output
     response.s3.postp = org_postp
     
-    # ServerSidePagination
+    rheader = lambda r: shn_org_rheader(r,
+                                        tabs = [(T("Basic Details"), None),
+                                                (T("Offices"), "office"),
+                                                (T("Staff"), "staff"),
+                                                (T("Projects"), "project"),
+                                                (T("Tasks"), "task"),
+                                                #(T("Donors"), "organisation"),
+                                                #(T("Sites"), "site"),  # Ticket 195
+                                               ])
+
     response.s3.pagination = True
-    
     output = shn_rest_controller(module, resource,
                                  listadd=False,
-                                 rheader=lambda jr: shn_org_rheader(jr,
-                                                                    tabs = [(T("Basic Details"), None),
-                                                                            (T("Offices"), "office"),
-                                                                            (T("Staff"), "staff"),
-                                                                            (T("Projects"), "project"),
-                                                                            (T("Tasks"), "task"),
-                                                                            #(T("Donors"), "organisation"),
-                                                                            #(T("Sites"), "site"),          # Ticket 195
-                                                                           ]
-                                                                   ),
-                                 sticky=True
-                                )
+                                 rheader=rheader)
 
     return output
 
 def office():
-    "RESTful CRUD controller"
+    """ RESTful CRUD controller """
     resource = request.function
     tablename = "%s_%s" % (module, resource)
     table = db[tablename]
@@ -123,78 +93,83 @@ def office():
     if isinstance(request.vars.organisation_id, list):
         request.vars.organisation_id = request.vars.organisation_id[0]
 
+    # Pre-processor
+    def prep(jr):
+        # No point in downloading large dropdowns which we hide, so provide a smaller represent
+        # the update forms are not ready. when they will - uncomment this and comment the next one
+        #if jr.method in ("create", "update"):
+        if jr.method == "create":
+            table.organisation_id.requires = IS_NULL_OR(IS_ONE_OF_EMPTY(db, "org_organisation.id"))
+            if request.vars.organisation_id and request.vars.organisation_id != "None":
+                session.s3.organisation_id = request.vars.organisation_id
+                # Organisation name should be displayed on the form if organisation_id is pre-selected
+                session.s3.organisation_name = db(db.org_organisation.id == int(session.s3.organisation_id)).select(db.org_organisation.name).first().name
+        return True
+    response.s3.prep = prep
+    
+    # Post-processor
     def org_postp(jr, output):
         shn_action_buttons(jr)
         return output
     response.s3.postp = org_postp
     
-    # ServerSidePagination
-    response.s3.pagination = True
+    rheader = lambda r: shn_org_rheader(r,
+                                        tabs = [(T("Basic Details"), None),
+                                                (T("Contact Data"), "pe_contact"),
+                                                (T("Staff"), "staff"),
+                                               ])
 
-    # the update forms are not ready. when they will - uncomment this and comment the next one
-    #if request.args(0) in ("create", "update"):
-    if request.args(0) == "create":
-        table.organisation_id.requires = IS_NULL_OR(IS_ONE_OF_EMPTY(db, "org_organisation.id"))
-        if request.vars.organisation_id and request.vars.organisation_id != "None":
-            session.s3.organisation_id = request.vars.organisation_id
-            # Organisation name should be displayed on the form if organisation_id is pre-selected
-            session.s3.organisation_name = db(db.org_organisation.id == int(session.s3.organisation_id)).select(db.org_organisation.name).first().name
-    
-    output = shn_rest_controller(module, resource, listadd=False,
-                                 rheader=lambda jr: shn_org_rheader(jr,
-                                                                       tabs = [(T("Basic Details"), None),
-                                                                               (T("Contact Data"), "pe_contact"),
-                                                                               (T("Staff"), "staff"),
-                                                                              ]
-                                                                      ),
-                                 sticky=True
-                                )
+    response.s3.pagination = True
+    output = shn_rest_controller(module, resource,
+                                 listadd=False,
+                                 rheader=rheader)
 
     return output
 
 
 def staff():
-    "RESTful CRUD controller"
+    """ RESTful CRUD controller """
     resource = request.function
     tablename = "%s_%s" % (module, resource)
     table = db[tablename]
     
+    # Pre-processor
+    def prep(jr):
+        # No point in downloading large dropdowns which we hide, so provide a smaller represent
+        # the update forms are not ready. when they will - uncomment this and comment the next one
+        #if jr.method in ("create", "update"):
+        if jr.method == "create":
+            # person_id mandatory for a staff!
+            table.person_id.requires = IS_ONE_OF_EMPTY(db, "pr_person.id")
+            table.organisation_id.requires = IS_NULL_OR(IS_ONE_OF_EMPTY(db, "org_organisation.id"))
+            table.office_id.requires = IS_NULL_OR(IS_ONE_OF_EMPTY(db, "org_office.id"))
+        return True
+    response.s3.prep = prep
+
+    # Post-processor
     def org_postp(jr, output):
         shn_action_buttons(jr)
         return output
     response.s3.postp = org_postp
     
-    # ServerSidePagination
     response.s3.pagination = True
-
-    # No point in downloading large dropdowns which we hide, so provide a smaller represent
-
-    # the update forms are not ready. when they will - uncomment this and comment the next one
-    #if request.args(0) in ("create", "update"):
-    if request.args(0) == "create":
-        # person_id mandatory for a staff!
-        table.person_id.requires = IS_ONE_OF_EMPTY(db, "pr_person.id")
-        table.organisation_id.requires = IS_NULL_OR(IS_ONE_OF_EMPTY(db, "org_organisation.id"))
-        table.office_id.requires = IS_NULL_OR(IS_ONE_OF_EMPTY(db, "org_office.id"))
-
     output = shn_rest_controller(module, resource, listadd=False)
     
     return output
 
 def donor():
-    "RESTful CRUD controller"
+    """ RESTful CRUD controller """
     resource = request.function
     tablename = "%s_%s" % (module, resource)
     table = db[tablename]
     
+    # Post-processor
     def org_postp(jr, output):
         shn_action_buttons(jr)
         return output
     response.s3.postp = org_postp
     
-    # ServerSidePagination
     response.s3.pagination = True
-
     output = shn_rest_controller(module, resource, listadd=False)
     
     return output
@@ -219,52 +194,50 @@ s3.crud_strings[tablename] = Storage(
     msg_list_empty = T("No Donors currently registered"))
 
 def project():
-    "RESTful CRUD controller"
+    """ RESTful CRUD controller """
     resource = request.function
     tablename = "%s_%s" % (module, resource)
     table = db[tablename]
-    
+
+    db.org_staff.person_id.comment[1] = DIV(DIV(_class="tooltip",
+                              _title=Tstr("Person") + "|" + Tstr("Select the person assigned to this role for this project.")))
+
+    # Post-processor
     def org_postp(jr, output):
         shn_action_buttons(jr)
         return output
     response.s3.postp = org_postp
     
-    # ServerSidePagination
+    rheader = lambda r: shn_project_rheader(r,
+                                            tabs = [(T("Basic Details"), None),
+                                                    (T("Staff"), "staff"),
+                                                    (T("Tasks"), "task"),
+                                                    #(T("Donors"), "organisation"),
+                                                    #(T("Sites"), "site"),  # Ticket 195
+                                                   ])
+                                           
     response.s3.pagination = True
-
-    db.org_staff.person_id.comment[1] = DIV(DIV(_class="tooltip",
-                              _title=Tstr("Person") + "|" + Tstr("Select the person assigned to this role for this project.")))
-    
     output = shn_rest_controller(module, resource,
                                  listadd=False,
                                  main="code",
-                                 rheader=lambda jr: shn_project_rheader(jr,
-                                                                    tabs = [(T("Basic Details"), None),
-                                                                            (T("Staff"), "staff"),
-                                                                            (T("Tasks"), "task"),
-                                                                            #(T("Donors"), "organisation"),
-                                                                            #(T("Sites"), "site"),          # Ticket 195
-                                                                           ]
-                                                                   ),
-                                 sticky=True
+                                 rheader=rheader
                                 )
     
     return output
 
 def task():
-    "RESTful CRUD controller"
+    """ RESTful CRUD controller """
     resource = request.function
     tablename = "%s_%s" % (module, resource)
     table = db[tablename]
     
+    # Post-processor
     def org_postp(jr, output):
         shn_action_buttons(jr)
         return output
     response.s3.postp = org_postp
     
-    # ServerSidePagination
     response.s3.pagination = True
-
     output = shn_rest_controller(module, resource,
                                  listadd=False
                                 )
@@ -318,7 +291,7 @@ def org_sub_list(tablename, org_id):
     if authorised:
         linkto = table_linkto_update[tablename]
     else:
-        linkto = table_linkto[tablenname]
+        linkto = table_linkto[tablename]
 
     query = (table.organisation_id == org_id)
 
@@ -420,19 +393,19 @@ def dashboard():
 
     return dict(organisation_id=org_id, organisation_select=organisation_select, org_details=org_details, office_list=office_list, staff_list=staff_list, project_list=project_list, but_add_org=but_add_org, but_edit_org=but_edit_org, but_add_office=but_add_office, but_add_staff=but_add_staff, but_add_project=but_add_project)
 
-def shn_org_rheader(jr, tabs=[]):
+def shn_org_rheader(r, tabs=[]):
     " Organisation Registry page headers "
 
-    if jr.representation == "html":
+    if r.representation == "html":
         
-        rheader_tabs = shn_rheader_tabs(jr, tabs)
+        rheader_tabs = shn_rheader_tabs(r, tabs)
         
-        if jr.name == "organisation":
+        if r.name == "organisation":
         
-            #_next = jr.here()
-            #_same = jr.same()
+            #_next = r.here()
+            #_same = r.same()
 
-            organisation = jr.record
+            organisation = r.record
 
             if organisation.sector_id:
                 sectors = re.split("\|", organisation.sector_id)[1:-1]
@@ -456,7 +429,7 @@ def shn_org_rheader(jr, tabs=[]):
                     ),
                 TR(
                     #TH(A(T("Edit Organization"),
-                    #    _href=URL(r=request, c="org", f="organisation", args=[jr.id, "update"], vars={"_next": _next})))
+                    #    _href=URL(r=request, c="org", f="organisation", args=[r.id, "update"], vars={"_next": _next})))
                     TH(T("Type: ")),
                     _type,
                     )
@@ -464,12 +437,12 @@ def shn_org_rheader(jr, tabs=[]):
 
             return rheader
 
-        elif jr.name == "office":
+        elif r.name == "office":
         
-            #_next = jr.here()
-            #_same = jr.same()
+            #_next = r.here()
+            #_same = r.same()
 
-            office = jr.record
+            office = r.record
             organisation = db(db.org_organisation.id == office.organisation_id).select(db.org_organisation.name, limitby=(0, 1)).first()
             if organisation:
                 org_name = organisation.name
@@ -491,7 +464,7 @@ def shn_org_rheader(jr, tabs=[]):
                         ),
                     TR(
                         #TH(A(T("Edit Office"),
-                        #    _href=URL(r=request, c="org", f="office", args=[jr.id, "update"], vars={"_next": _next})))
+                        #    _href=URL(r=request, c="org", f="office", args=[r.id, "update"], vars={"_next": _next})))
                         )
                 ), rheader_tabs)
 

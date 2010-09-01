@@ -30,7 +30,7 @@ Module to spawn modem connectivity
 __author__ = "Praneeth Bodduluri <lifeeth[at]gmail.com>"
 
 import sys, os
-path = os.path.join(request.folder, 'modules')
+path = os.path.join(request.folder, "modules")
 if not path in sys.path:
             sys.path.append(path)
 import pygsm
@@ -40,16 +40,17 @@ from pygsm.autogsmmodem import GsmModemNotFound
 import s3msg
 
 class ModemThread( threading.Thread ):
-    def __init__(self,modem):
+    def __init__(self, modem):
         self.modem = modem
         threading.Thread.__init__ ( self )
-        self.msg = s3msg.Msg(globals(), db, T, modem = modem)
+        self.msg = s3msg.Msg(globals(), db, T, modem=modem)
+
     def run(self):
-        boxdata = self.modem.query('AT+CMGD=?')
+        boxdata = self.modem.query("AT+CMGD=?")
         boxsize = int(boxdata.split("(")[1].split(")")[0].split("-")[1])
         cleanup = False
         while True:
-            self.msg.process_outbox(contact_method = 2, option = 2)
+            self.msg.process_outbox(contact_method=2, option=2)
             for i in range(5):
                 # parse 5 messages in one shot
                 message = self.modem.next_message()
@@ -59,32 +60,32 @@ class ModemThread( threading.Thread ):
                     #print "Got message: " + message.text
                     # Temp: SMS AutoResponder on by default
                     #self.modem.send_sms(message.sender,"This is to be replaced with the autorespond message")
-                    self.receive_msg(message=message.text,fromaddress=message.sender,pr_message_method = 2) 
+                    self.receive_msg(message=message.text, fromaddress=message.sender, pr_message_method=2) 
                     # ^ dependent on the pr_message_method
                 if cleanup:
                     for i in range(boxsize): # For cleaning up read messages.
                         try:
-                            temp = self.modem.command('AT+CMGR=' + str(i+1)+',1')
+                            temp = self.modem.command("AT+CMGR=" + str(i+1) + ",1")
                             if "REC READ" in temp[0]:
-                                self.modem.query('AT+CMGD=' + str(i+1))
+                                self.modem.query("AT+CMGD=" + str(i+1))
                         except:
                             pass
                     cleanup = False
             time.sleep(5)
-		#self.modem.send_sms("9935648569","Hey!")
+		#self.modem.send_sms("9935648569", "Hey!")
 
 
 modem_configs = db(db.msg_modem_settings.enabled == True).select()
 
 # PyGSM GsmModem class instances
-modems=[]
+modems = []
 
 for modem in modem_configs:
     # mode is set to text as PDU mode is flaky
     modems.append(pygsm.GsmModem(port=modem.modem_port, baudrate=modem.modem_baud, mode="text")) 
 
 if len(modems) == 0:
-    # If no modem is found try autoconfiguring - We shouldnt do this anymore
+    # If no modem is found try autoconfiguring - We shouldn't do this anymore
     #try:
     #  modems.append(pygsm.AutoGsmModem())
     #except GsmModemNotFound, e:

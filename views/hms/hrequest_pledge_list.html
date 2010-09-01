@@ -1,4 +1,4 @@
-{{extend 'layout.html'}}
+{{extend "layout.html"}}
 {{try:}}
  {{=H2(title)}}
 {{except:}}
@@ -7,7 +7,7 @@
 {{try:}}
  {{=rheader}}
 <!--
-<a onclick="viewMapMulti('{{=request.controller}}', '{{=request.function}}', {{=request.args[0]}}, '{{=request.args[1]}}');return false" href="#">View All on Map</a>
+<a onclick="s3_viewMapMulti('{{=request.controller}}', '{{=request.function}}', {{=request.args[0]}}, '{{=request.args[1]}}');return false" href='#'>View All on Map</a>
 <p>&nbsp;</p>
 -->
 {{except:}}
@@ -17,7 +17,7 @@
  {{=H3(subtitle)}}
 {{except:}}
 {{pass}}
-{{include 'formats.html'}}
+{{include "formats.html"}}
 <div id='table-container'>
 {{try:}}
  {{=items}}
@@ -25,11 +25,11 @@
 {{pass}}
 </div>
 <p>&nbsp;</p>
-{{include 'pagenav.html'}}
-{{include 'searchbox.html'}}
+{{include "pagenav.html"}}
+{{include "searchbox.html"}}
 {{try:}}
  {{=add_btn}}
 {{except:}}
 {{pass}}
 <div id='map'></div>
-{{include 'dataTables.html'}}
+{{include "dataTables.html"}}

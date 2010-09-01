@@ -1,3 +1,11 @@
+<script type="text/javascript">//<![CDATA[
+jQuery(document).ready(function(){
+$("#show-add-btn").click(function() {
+  $("#list-add").show() 
+  $("#show-add-btn").hide()
+});
+});
+//]]></script>
 {{try:}}
  {{=H2(title)}}
 {{except:}}
@@ -9,6 +17,15 @@
  {{pass}}
 </div>
 <div id='map'></div>
+ {{if not request.vars:}}
+ {{try:}}
+{{=showaddbtn}}
+{{except:}}
+ {{pass}}
+ <div id='list-add'>
+ {{else:}}
+ <div>
+ {{pass}}
 {{try:}}
  {{=H3(addtitle)}}
 {{except:}}
@@ -20,6 +37,7 @@
 {{pass}}
 </div>
 {{include "key.html"}}
+</div>
 <p>&nbsp;</p>
 {{try:}}
  {{=H3(subtitle)}}

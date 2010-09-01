@@ -28,6 +28,7 @@ auth.settings.register_onaccept = lambda form: auth.shn_register(form)
 
 _table_user = auth.settings.table_user
 _table_user.first_name.comment = SPAN("*", _class="req")
+_table_user.last_name.comment = SPAN("*", _class="req")
 _table_user.email.comment = SPAN("*", _class="req")
 _table_user.password.comment = SPAN("*", _class="req")
 _table_user.language.label = T("Language")
@@ -43,12 +44,19 @@ def index():
     module_name = modules[module].name_nice
 
     settings = db(db.s3_setting.id == 1).select(limitby=(0, 1)).first()
-    admin_name = settings.admin_name
-    admin_email = settings.admin_email
-    admin_tel = settings.admin_tel
-    response.title = T("Sahana FOSS Disaster Management System")
-    self_registration = settings.self_registration
+    if settings:
+        admin_name = settings.admin_name
+        admin_email = settings.admin_email
+        admin_tel = settings.admin_tel
+        self_registration = settings.self_registration
+    else:
+        # db empty and prepopulate is false
+        admin_name = T("Sahana Administrator"),
+        admin_email = "support@Not Set",
+        admin_tel = T("Not Set"),
+        self_registration = True
 
+    response.title = T("Sahana FOSS Disaster Management System")
     login_form = None
     register_form = None
 

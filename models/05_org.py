@@ -279,6 +279,7 @@ organisation_id = db.Table(None, "organisation_id",
                            ondelete = "RESTRICT"
                           ))
 
+#@TODO Replace Function with Class
 def get_organisation_id(name = "organisation_id",
                          label = T("Organization"),
                          add_label = ADD_ORGANIZATION,

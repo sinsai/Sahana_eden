@@ -105,21 +105,12 @@ def ritem():
     #                                              (T("Inventories with Item"), "location_item"),
     #                                              (T("Requests for Item"), "req"),
     #                                             ]
-<<<<<<< TREE
-    #                                     )    
-    
-    return shn_rest_controller(module, 
-                               resource
-                               )#, 
-                               #rheader=rheader)
-=======
     #                                     )
 
     return shn_rest_controller(module,
                                resource,
                                #rheader=rheader
                                )
->>>>>>> MERGE-SOURCE
 
 def pledge():
     """ RESTful CRUD controller """

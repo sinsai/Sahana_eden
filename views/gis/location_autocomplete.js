@@ -207,7 +207,10 @@ $(function() {
                 // Show the next level of hierarchy
                 S3.gis.locations_l{{=int(level) + 1}}(false);
             };
-        };	
+        };
+        // @ToDo Test
+        //var sync = true;
+        //$.getJSONS3(url, load_locations, '{{=T("locations")}}', sync);
         $.getJSONS3(url, load_locations, '{{=T("locations")}}');
     }
     // When dropdown is selected
@@ -621,6 +624,220 @@ $(function() {
             $('#gis_location_lon').val(data.lon);
             if (data.addr_street != 'None') {
                 $('#gis_location_addr_street').val(data.addr_street);
+            }
+            // If a location in the admin hierarchy has been selected
+            if ((data.level != 'None') && (data.level != '')){
+                if (data.level == 'L0') {
+                    // Set the location (whether visible or not)
+                    $('#gis_location_l0').val(data.id);
+                    // @ToDo Refresh other dropdowns
+                    // (Not needed for PK)
+                } else if (data.level == 'L1') {
+                    // Check if that dropdown is visible
+                    if ($('#gis_location_l1__row').length == 0) {
+                        // Open the dropdown
+                        // @ToDo Check for bad side-effects of reusing these!
+                        // Better to use arguments than flags!
+                        S3.gis.level = 'L1';
+                        old_id = data.id;
+                        S3.gis.locations_l1(false);
+                        // Set the right entry
+                        //s3_debug('opened dropdown', data.id)
+                        // Not working - async issue?
+                        //$('#gis_location_l1').val(data.id);
+                        // @ToDo If we know country has changed, then reset that dropdown too
+                        // (Not needed for PK)
+                    } else {
+                        // @ToDo Check that our location is in this dropdown!
+                        // (Not needed for PK)
+                        // Set the right entry
+                        $('#gis_location_l1').val(data.id);
+                        // @ToDo If we know country has changed, then reset that dropdown too
+                        // (Not needed for PK)
+                        // Refresh L2-L5 dropdowns
+                        $('#gis_location_l2').val('');
+                        $('#gis_location_l3').val('');
+                        $('#gis_location_l4').val('');
+                        $('#gis_location_l5').val('');
+                    }
+                } else if (data.level == 'L2') {
+                    // Check if that dropdown is visible
+                    if ($('#gis_location_l2__row').length == 0) {
+                        // Open the dropdown
+                        S3.gis.level = 'L2';
+                        old_id = data.id;
+                        S3.gis.locations_l2(false);
+                        // Set the right entry
+                        //$('#gis_location_l2').val(data.id);
+                        if (data.parent) {
+                            var exists = $("#gis_location_l1").itemExists(data.parent.toString());
+                            if (exists) {
+                                // Set the L1 to the Parent
+                                $('#gis_location_l1').val(data.parent);
+                            } else {
+                                // Reset the L1 dropdown
+                                $('#gis_location_l1').val('');
+                            }
+                            // @ToDo Check the L0
+                            // (Not needed for PK)
+                        }
+                    } else {
+                        // Check that our location is in this dropdown!
+                        var exists = $("#gis_location_l2").itemExists(data.id.toString());
+                        if (exists) {
+                            // Set the right entry
+                            $('#gis_location_l2').val(data.id);
+                            if (data.parent) {
+                                var exists = $("#gis_location_l1").itemExists(data.parent.toString());
+                                if (exists) {
+                                    // Set the L1 to the Parent
+                                    $('#gis_location_l1').val(data.parent);
+                                } else {
+                                    // Reset the L1 dropdown
+                                    $('#gis_location_l1').val('');
+                                }
+                                // @ToDo Check the L0
+                                // (Not needed for PK)
+                            }
+                            // Refresh L3-L5 dropdowns
+                            $('#gis_location_l3').val('');
+                            $('#gis_location_l4').val('');
+                            $('#gis_location_l5').val('');
+                        } else {
+                            // @ToDo Reload this Dropdown
+                        }
+                    }
+                } else if (data.level == 'L3') {
+                    // Check if that dropdown is visible
+                    if ($('#gis_location_l3__row').length == 0) {
+                        // Open the dropdown
+                        S3.gis.level = 'L3';
+                        old_id = data.id;
+                        S3.gis.locations_l3(false);
+                        // Set the right entry
+                        //$('#gis_location_l3').val(data.id);
+                        if (data.parent) {
+                            var exists = $("#gis_location_l2").itemExists(data.parent.toString());
+                            if (exists) {
+                                // Set the L2 to the Parent
+                                $('#gis_location_l2').val(data.parent);
+                            } else {
+                                // Reset the L2 dropdown
+                                $('#gis_location_l2').val('');
+                            }
+                            // @ToDo Check the L1
+                            // @ToDo Check the L0 (not needed for PK)
+                        }
+                    } else {
+                        // Check that our location is in this dropdown!
+                        var exists = $("#gis_location_l3").itemExists(data.id.toString());
+                        if (exists) {
+                            // Set the right entry
+                            $('#gis_location_l3').val(data.id);
+                            if (data.parent) {
+                                var exists = $("#gis_location_l2").itemExists(data.parent.toString());
+                                if (exists) {
+                                    // Set the L2 to the Parent
+                                    $('#gis_location_l2').val(data.parent);
+                                } else {
+                                    // Reset the L2 dropdown
+                                    $('#gis_location_l2').val('');
+                                }
+                                // @ToDo Check the L1
+                                // @ToDo Check the L0 (not needed for PK)
+                            }
+                            // Refresh L4-L5 dropdowns
+                            $('#gis_location_l4').val('');
+                            $('#gis_location_l5').val('');
+                        } else {
+                            // @ToDo Reload this Dropdown
+                        }
+                    }
+                } else if (data.level == 'L4') {
+                    // Check if that dropdown is visible
+                    if ($('#gis_location_l4__row').length == 0) {
+                        // Open the dropdown
+                        S3.gis.level = 'L4';
+                        old_id = data.id;
+                        S3.gis.locations_l4(false);
+                        // Set the right entry
+                        //$('#gis_location_l4').val(data.id);
+                        if (data.parent) {
+                            var exists = $("#gis_location_l3").itemExists(data.parent.toString());
+                            if (exists) {
+                                // Set the L3 to the Parent
+                                $('#gis_location_l3').val(data.parent);
+                            } else {
+                                // Reset the L3 dropdown
+                                $('#gis_location_l3').val('');
+                            }
+                            // @ToDo Check the L2
+                            // @ToDo Check the L1
+                            // @ToDo Check the L0 (not needed for PK)
+                        }
+                    } else {
+                        // Check that our location is in this dropdown!
+                        var exists = $("#gis_location_l4").itemExists(data.id.toString());
+                        if (exists) {
+                            // Set the right entry
+                            $('#gis_location_l4').val(data.id);
+                            if (data.parent) {
+                                var exists = $("#gis_location_l3").itemExists(data.parent.toString());
+                                if (exists) {
+                                    // Set the L3 to the Parent
+                                    $('#gis_location_l3').val(data.parent);
+                                } else {
+                                    // Reset the L3 dropdown
+                                    $('#gis_location_l3').val('');
+                                }
+                                // @ToDo Check the L2
+                                // @ToDo Check the L1
+                                // @ToDo Check the L0 (not needed for PK)
+                            }
+                            // Refresh L5 dropdown
+                            $('#gis_location_l5').val('');
+                        } else {
+                            // @ToDo Reload this Dropdown
+                        }
+                    }
+                } else if (data.level == 'L5') {
+                    // Check if that dropdown is visible
+                    if ($('#gis_location_l5__row').length == 0) {
+                        // Open the dropdown
+                        S3.gis.level = 'L5';
+                        old_id = data.id;
+                        S3.gis.locations_l5(false);
+                        // Set the right entry
+                        //$('#gis_location_l5').val(data.id);
+                        // @ToDo Ensure that all dropdowns above it are now visible
+                        // @ToDo If we have parent data, set those too
+                    } else {
+                        // Check that our location is in this dropdown!
+                        var exists = $("#gis_location_l5").itemExists(data.id.toString());
+                        if (exists) {
+                            // Set the right entry
+                            $('#gis_location_l5').val(data.id);
+                            if (data.parent) {
+                                var exists = $("#gis_location_l4").itemExists(data.parent.toString());
+                                if (exists) {
+                                    // Set the L4 to the Parent
+                                    $('#gis_location_l4').val(data.parent);
+                                } else {
+                                    // Reset the L4 dropdown
+                                    $('#gis_location_l4').val('');
+                                }
+                                // @ToDo Check the L3
+                                // @ToDo Check the L2
+                                // @ToDo Check the L1
+                                // @ToDo Check the L0 (not needed for PK)
+                            }
+                        } else {
+                            // @ToDo Reload this Dropdown
+                        }
+                    }
+                }
+                // Clear the Name box, so that it's free for a future sub-location
+                // @ToDo: Critical!
             }
         });
     });

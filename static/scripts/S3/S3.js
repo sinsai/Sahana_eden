@@ -105,15 +105,20 @@ _ajaxS3_rtr_ = {{=T('retry')}};
         });
     };
 
-    jQuery.getS3 = function(url, data, callback, type, message) {
+    jQuery.getS3 = function(url, data, callback, type, message, sync) {
         // shift arguments if data argument was omitted
         if ( jQuery.isFunction( data ) ) {
             callback = data;
             data = null;
         }
+        // Not yet proven to work!
+        if (!sync) {
+            var async = true;
+        }
         return jQuery.ajaxS3({
             type: 'GET',
             url: url,
+            async: async,
             data: data,
             success: callback,
             dataType: type,
@@ -121,14 +126,19 @@ _ajaxS3_rtr_ = {{=T('retry')}};
         });
     };
 
-    jQuery.getJSONS3 = function(url, data, callback, message) {
+    jQuery.getJSONS3 = function(url, data, callback, message, sync) {
         // shift arguments if data argument was omitted
         if ( jQuery.isFunction( data ) ) {
+            sync = message;
             message = callback;
             callback = data;
             data = null;
         }
-        return jQuery.getS3(url, data, callback, 'json', message);
+        // Not yet proven to work!
+        if (!sync) {
+            var sync = false;
+        }
+        return jQuery.getS3(url, data, callback, 'json', message, sync);
     };
 
     jQuery.ajaxS3Settings = {

@@ -1,8 +1,12 @@
 {{extend "layout.html"}}
-<div id="home">
-{{=H2(T(module_name))}}
+<div id='home'>
+<H2>Rapid Assessments</H2>
 <p>
-{{=T("The")}} {{=module_name}} {{=T("Module stores structured reports done by Professional Organisations.")}}
+{{=T("The Rapid Assessments Module stores structured reports done by Professional Organisations.")}}
 </p>
-<h3>{{=T("Report Types Include")}}:</h3>
-{{=LI(A("Assessments", _href=URL(r=request, f="assessment")))}}
+<p>
+It is built using the Template agreed by a group of NGOs working together as the Emergency Capacity Building project:<br />
+<a href="http://www.ecbproject.org/page/48">Template</a>
+</p>
+{{=LI(A("List Assessments", _href=URL(r=request, f="assessment")))}}
+{{=LI(A("Create Assessment", _href=URL(r=request, f="assessment", args="create")))}}

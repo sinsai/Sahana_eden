@@ -3,14 +3,14 @@
 """
     Supply 
     
-    @author: Michael Howden (michael@aidiq.com)
+    @author: Michael Howden (michael@sahanafoundation.org)
     @date-created: 2010-08-16    
     
     Generic Supply functionality such as catalogs and items that will be used across multiple modules
 """
 
 module = "supply"
-if deployment_settings.has_module("inventory"):
+if deployment_settings.has_module("logs"):
     #==============================================================================
     # Settings
     #
@@ -40,6 +40,7 @@ if deployment_settings.has_module("inventory"):
     s3.crud_strings[tablename] = shn_crud_strings("Item Category", "Item Categories")
 
     # -----------------------------------------------------------------------------
+    # @ToDo Replace Function with Class
     def get_item_category_id (field_name = "item_category_id", 
                               label = T("Category"),
                               ):
@@ -73,6 +74,7 @@ if deployment_settings.has_module("inventory"):
                             uuidstamp, 
                             authorstamp, 
                             deletion_status,                        
+                            # @ToDo Replace Function with Class
                             get_item_category_id(),
                             Field("name", length=128, notnull=True, unique=True),
                             comments,
@@ -83,6 +85,7 @@ if deployment_settings.has_module("inventory"):
     s3.crud_strings[tablename] = shn_crud_strings("Relief Item")
 
     # -----------------------------------------------------------------------------
+    # @ToDo Replace Function with Class
     def get_item_id ( field_name = "item_id", 
                       label = T("Item"),
                       ):

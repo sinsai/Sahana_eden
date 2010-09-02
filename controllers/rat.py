@@ -23,7 +23,7 @@ response.menu_options = [
     [T("Assessments"), False, URL(r=request, f="assessment"),[
        [T("List"), False, URL(r=request, f="assessment")],
        [T("Add"), False, URL(r=request, f="assessment", args="create")],
-       [T("Search"), False, URL(r=request, f="assessment", args="search")],
+       #[T("Search"), False, URL(r=request, f="assessment", args="search")],
     ]],
     #[T("Summary"), False, URL(r=request, f="assessment", args="summary")],
     #[T("Map"), False, URL(r=request, f="maps")],

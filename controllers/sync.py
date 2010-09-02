@@ -6,131 +6,28 @@
 
 """
 
-module = "admin"
+module = "admin" # sync?
 module_name = T("Synchronization")
 
-# Don't use global variables
-#log_table = "sync_log"
-#conflict_table = "sync_conflict"
-#sync_peer = None
-#sync_policy = None
-#import_export_format = "xml"
-
 # Options Menu (available in all Functions' Views)
-# - can Insert/Delete items from default menus within a function, if required.
 response.menu_options = admin_menu_options
-
-## Web2Py Tools functions
-#def call():
-    #"Call an XMLRPC, JSONRPC or RSS service"
-    ## Sync webservices don't use sessions, so avoid cluttering up the storage
-    #session.forget()
-    #return service()
-
 
 # -----------------------------------------------------------------------------
 # S3 framework functions
+#
 def index():
-    "Module's Home Page"
+
+    """ Module's Home Page """
 
     return dict(module_name=module_name)
-
-import urllib2
-
-
-# -----------------------------------------------------------------------------
-class RequestWithMethod(urllib2.Request):
-
-    """ ???
-
-        @todo: deprecate
-
-    """
-
-    def __init__(self, method, *args, **kwargs):
-
-        """ docstring? """
-
-        self._method = method
-        urllib2.Request.__init__(self, *args, **kwargs)
-
-
-    def get_method(self):
-
-        """ docstring? """
-
-        return self._method
-
-
-# -----------------------------------------------------------------------------
-class Error:
-
-    """ Indicates an HTTP error """
-
-    # @todo: deprecate
-
-    def __init__(self, url, errcode, errmsg, headers, body=None):
-
-        """ docstring??? """
-
-        self.url = url
-        self.errcode = errcode
-        self.errmsg = errmsg
-        self.headers = headers
-        self.body = body
-
-    def __repr__(self):
-
-        """ docstring??? """
-
-        return (
-            "Error for %s: %s %s\n Response body: %s" %
-            (self.url, self.errcode, self.errmsg, self.body)
-            )
-
-
-# -----------------------------------------------------------------------------
-class FetchURL:
-
-    """ docstring ??? """
-
-    # @todo: deprecate
-
-    def fetch(self, request, host, path, data, cookie=None, username=None, password=None):
-
-        """ docstring??? """
-
-        import httplib, base64
-        http = httplib.HTTPConnection(host)
-        # write header
-        headers = {"Content-type": "application/x-www-form-urlencoded", "Accept": "text/plain"}
-        if cookie:
-            headers["Cookie"] = cookie
-        # auth
-        if username:
-            base64string =  base64.encodestring("%s:%s" % (username, password))[:-1]
-            authheader =  "Basic %s" % base64string
-            headers["Authorization"] = authheader
-        http.request(request, path, data, headers)
-        # get response
-        response = http.getresponse()
-        retcode = response.status
-        retmsg = response.reason
-        retbody = None
-        if retcode != 200:
-            try:
-                retbody = response.read()
-            except:
-                retbody = None
-            raise Error(str(host) + str(path), retcode, retmsg, headers, retbody)
-        return response.read()
-
 
 # -----------------------------------------------------------------------------
 @auth.requires_login()
 def now():
 
     """ Manual synchronization """
+
+    import simplejson as json
 
     # Settings
     settings = db().select(db.sync_setting.uuid,
@@ -160,7 +57,7 @@ def now():
             # Get all scheduled jobs
             table_job = db.sync_schedule
             jobs = db((table_job.period == "m") &
-                      (table_job.enabled == True)).select(job.ALL)
+                      (table_job.enabled == True)).select(table_job.ALL)
             if not jobs:
                 final_status = "There are no scheduled jobs. Please schedule a sync operation (set to run manually).<br /><br /><a href=\"" + URL(r=request, c="sync", f="schedule") + "\">Click here</a> to go to Sync Schedules page.<br /><br />\n"
             else:
@@ -184,16 +81,16 @@ def now():
 
             state = db(db.sync_now.id == sync_now_id).select(db.sync_now.ALL, limitby=(0, 1)).first()
 
-            session.s3.sync_msg.append()
+            #session.s3.sync_msg.append()
 
         else:
 
             # Now already started
             sync_now_id = state.id
-            final_status += "Sync Now resumed (originally started on " + state.started_on.strftime("%x %H:%M:%S")+ "):<br /><br /><br />\n"
+            session.s3.sync_msg.append("Sync resumed (originally started on %s)" % state.started_on.strftime("%x %H:%M:%S"))
 
         # unlock session - what for?
-        session._unlock(response)
+        #session._unlock(response)
         # become super-user - what for?
         session.s3.roles.append(1)
 
@@ -342,24 +239,36 @@ def now():
         pass
 
     elif action == "status":
+        response.view = "xml.html"
         if session.s3.sync_msg is None:
-            final_status = "No synchronization process currently running."
-        else:
-            msg_list = []
-            for i in xrange(len(session.s3.sync_msg)):
-                msg = str(session.s3.sync_msg.pop(0))
-                if msg.find("FAIL"):
-                    msg_list.append(DIV(msg, _class="failure"))
-                else:
-                    msg_list.append(DIV(msg, _class="success"))
-            if msg_list:
-                return DIV(msg_list).xml()
+            item = DIV(DIV("No synchronization process currently running.", _class="failure"))
+            session.s3.sync_msg = "DONE"
+        elif isinstance(session.s3.sync_msg, list):
+            if session.s3.sync_msg:
+                msg_list = []
+                for i in xrange(len(session.s3.sync_msg)):
+                    msg = str(session.s3.sync_msg.pop(0))
+                    if msg.find("FAIL"):
+                        msg_list.append(DIV(msg, _class="failure"))
+                    else:
+                        msg_list.append(DIV(msg, _class="success"))
+                if msg_list:
+                    item = DIV(msg_list).xml()
             else:
-                return ""
+                item = DIV(DIV("Synchronization complete.", _class="success"))
+                session.s3.sync_msg = "DONE"
+        else:
+            item = "DONE"
+            session.s3.sync_msg = None
+
+        return dict(item=item)
+    else:
+        pass
 
     return dict(module_name=module_name,
-                sync_status=final_status,
-                sync_start=sync_start,
+                action=action,
+                sync_status=None,
+                sync_start=None,
                 sync_state=state)
 
 
@@ -456,6 +365,7 @@ def sync():
 
     #return ret_data
     return output
+
 
 # -----------------------------------------------------------------------------
 def sync_res(vector, peer, policy):
@@ -716,29 +626,43 @@ def partner():
 
 # -----------------------------------------------------------------------------
 @auth.shn_requires_membership(1)
-def setting():
-    "Synchronisation Settings"
+def setting(): # OK
+
+    """ Synchronisation Settings """
+
     if not "update" in request.args:
         redirect(URL(r=request, args=["update", 1]))
-    db.sync_setting.uuid.writable = False
-    db.sync_setting.uuid.label = "UUID"
-    db.sync_setting.uuid.comment = DIV(_class="tooltip",
+
+    # Table settings
+    table = db.sync_setting
+
+    table.uuid.writable = False
+    table.uuid.label = "UUID"
+    table.uuid.comment = DIV(_class="tooltip",
         _title="UUID|" + Tstr("The unique identifier which identifies this instance to other instances."))
-    db.sync_setting.comments.label = T("Comments")
-    db.sync_setting.comments.comment = DIV(_class="tooltip",
+
+    table.comments.label = T("Comments")
+    table.comments.comment = DIV(_class="tooltip",
         _title=Tstr("Comments") + "|" + Tstr("Any comments for this instance."))
-#    db.sync_setting.beacon_service_url.label = T("Beacon Service URL")
-#    db.sync_setting.beacon_service_url.comment = DIV(_class="tooltip",
+
+    table.beacon_service_url.readable = False
+    table.beacon_service_url.writable = False
+#    table.beacon_service_url.label = T("Beacon Service URL")
+#    table.beacon_service_url.comment = DIV(_class="tooltip",
 #        _title=Tstr("Beacon Service URL") + "|" + Tstr("Beacon service allows searching for other instances that wish to synchronise. This is the URL of the beacon service this instance will use."))
-    db.sync_setting.sync_pools.readable = False
-    db.sync_setting.sync_pools.writable = False
-    db.sync_setting.beacon_service_url.readable = False
-    db.sync_setting.beacon_service_url.writable = False
-    title_update = T("Edit Sync Settings")
-    label_list_button = T("Sync Settings")
-    msg_record_modified = T("Sync Settings updated")
-    s3.crud_strings.sync_setting = Storage(title_update=title_update,label_list_button=label_list_button,msg_record_modified=msg_record_modified)
+
+    table.sync_pools.readable = False
+    table.sync_pools.writable = False
+
+    # CRUD strings
+    s3.crud_strings.sync_setting = Storage(
+        title_update = T("Edit Sync Settings"),
+        label_list_button = T("Sync Settings"),
+        msg_record_modified = T("Sync Settings updated"))
+
+    # Return to this
     crud.settings.update_next = URL(r=request, args=["update", 1])
+
     return shn_rest_controller("sync", "setting", deletable=False, listadd=False)
 
 
@@ -936,7 +860,7 @@ def schedule_process_job(job_id):
     job_cmd = json.loads(job.job_command)
 
     # url fetcher
-    fetcher = FetchURL()
+    #fetcher = FetchURL()
     # retrieve settings
     settings = db().select(db.sync_setting.ALL)[0]
     peer_sel = db(db.sync_partner.uuid==str(job_cmd["partner_uuid"])).select(db.sync_partner.ALL)

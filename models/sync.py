@@ -229,9 +229,7 @@ def s3_sync_eden_eden(peer, mode, tablenames,
         msince = None
 
     errcount = 0
-    for i in xrange(len(tablenames)):
-
-        tablename = tablenames[i]
+    for tablename in tablenames:
         if tablename not in db.tables or tablename.find("_") == -1:
             status.pending.remove(tablename)
             status.done.append(tablename)
@@ -406,9 +404,7 @@ def s3_sync_eden_other(peer, mode, tablenames, settings=None):
         return status
 
     errcount = 0
-    for i in xrange(len(tablenames)):
-
-        tablename = tablenames[i]
+    for tablename in tablenames:
         if tablename not in db.tables or tablename.find("_") == -1:
             status.pending.remove(tablename)
             status.done.append(tablename)

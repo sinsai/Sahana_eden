@@ -83,14 +83,16 @@ def person():
         if jr.representation in ("html", "popup"):
             if not jr.component:
                 label = READ
+                report = URL(r=request, f="person", args=("[id]", "missing_report"))
             else:
                 label = UPDATE
+                report = None
             linkto = shn_linkto(jr, sticky=True)("[id]")
-            report = URL(r=request, f="person", args=("[id]", "missing_report"))
             response.s3.actions = [
-                dict(label=str(label), _class="action-btn", url=str(linkto)),
-                dict(label=str(T("Report")), _class="action-btn", url=str(report))
-            ]
+                dict(label=str(label), _class="action-btn", url=str(linkto))]
+            if report:
+                response.s3.actions.append(
+                    dict(label=str(T("Report")), _class="action-btn", url=str(report)))
         if jr.http == "POST" and jr.method == "create" and not jr.component:
             # If a new person gets added, redirect to mpr_next
             if response.s3.mpr_next:
@@ -120,7 +122,7 @@ def person():
                 (T("Contact Data"), "pe_contact"),
                 (T("Presence Log"), "presence"),
                ]
-    
+
     rheader = lambda r: shn_pr_rheader(r, tabs=mpr_tabs)
 
     response.s3.pagination = True

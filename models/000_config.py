@@ -279,6 +279,11 @@ deployment_settings.modules = Storage(
     	     name_nice = "Spreadsheet Importer",
     	     description = "Used to import data from spreadsheets into the database",
     	     module_type = 10,
+    ),
+    survey = Storage(
+    	     name_nice = "Survey Module",
+    	     description = "Create, enter, and manage surveys.",
+    	     module_type = 10,
     )
     #lms = Storage(
     #        name_nice = Tstr("Logistics Management System"),

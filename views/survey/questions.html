@@ -1,0 +1,75 @@
+<link rel="stylesheet" type="text/css" href="/{{=request.application}}/static/styles/S3/jquery.bsmselect.css"/>
+{{extend "layout.html"}}
+{{=H2("Add Questions")}}
+{{if session.s3.debug:}}
+<script type="text/javascript" src="/{{=request.application}}/static/scripts/S3/jquery.ui.widget.js"></script>
+<script type="text/javascript" src="/{{=request.application}}/static/scripts/S3/jquery.ui.mouse.js"></script>
+<script type="text/javascript" src="/{{=request.application}}/static/scripts/S3/jquery.ui.draggable.js"></script>
+<script type="text/javascript" src="/{{=request.application}}/static/scripts/S3/jquery.ui.droppable.js"></script>
+<script type="text/javascript" src="/{{=request.application}}/static/scripts/S3/jquery.bsmselect.js"></script>
+<script type="text/javascript" src="/{{=request.application}}/static/scripts/S3/jquery.selectboxes.js"></script>
+{{else:}}
+<script type="text/javascript" src="/{{=request.application}}/static/scripts/S3/jquery.survey_reqs.js"></script>
+{{pass}}
+<script type="text/javascript">//<![CDATA[
+    function getQuestions() {
+        var questions = []
+      {{for question in contained_questions:}}
+        questions.push({{=question.id}})
+      {{pass}}
+        $('.ms').selectOptions(questions).change();       
+    }
+    $(document).ready(function() {
+            $('select[multiple]').bsmSelect({
+                ol: true,
+                addItemTarget: 'bottom',
+                animate: true,
+                highlight: true,
+                sortable: true,
+                hideWhenAdded: true,
+                title: '{{=T("Select a question from the list")}}...'
+            }).after($("<a href='#'>Select All</a>").click(function() {
+                $('select[multiple]').children().attr('selected', 'selected').end().change();
+                return false;
+            })).after('<br>').after($("&nbsp;<a href='#'>Remove all</a>").click(function() {
+                $('select[multiple]').children().attr('selected', '').end().change();
+            }));
+            getQuestions();
+    });
+//>
+</script>
+<div class='form-container'>
+{{=form.custom.begin}}
+    <table id='question_form'>
+        <tbody>
+        <!-- TODO: make it so that editing of questions is allowed. -->
+        <tr id='survey_template_link_table_survey_question_id__row'>
+            <td><label>Questions:</label></td>
+            <td>
+                <select name='questions' class='ms' id='survey_question_id' multiple='multiple'>
+                  {{for question in all_questions:}}
+                    <option value='{{=question.id}}'>{{=question.name}}</option>
+                  {{pass}}
+                </select>
+
+            </td>
+            <td style='float:right; overflow:hidden;'>
+                <a href='{{=URL(r=request, f="question", args="create", vars=dict(format="popup"))}}' class='colorbox' title='{{=T("Add Question")}}'>
+                    {{=T("Add Question")}}
+                </a>
+            </td>
+        </tr>
+        </tbody>
+    </table>
+    <table>
+    <br/>
+        <tr class='buttonsAtBottom'>
+            <td>
+                {{=INPUT(_type="button", _value=T("Cancel"), _onclick="window.location='%s'" % (request.url))}}
+                {{=INPUT(_type="submit", _value=T("Save"), _id="dummy_submit")}}
+            </td>
+        </tr>
+    </table>
+{{=form.custom.end}}
+</div>
+{{include "colorbox.html"}}

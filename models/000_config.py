@@ -190,7 +190,7 @@ deployment_settings.modules = Storage(
         ),
     sitrep = Storage(
             name_nice = Tstr("Assessments"),
-            description = Tstr("Assessments are structured reports done by Professional Organisations - data includes WFP Assessments (Rapid Assessment Tool to come)"),
+            description = Tstr("Assessments are structured reports done by Professional Organisations - data includes WFP Assessments"),
             module_type = 10
         ),
     rat = Storage(

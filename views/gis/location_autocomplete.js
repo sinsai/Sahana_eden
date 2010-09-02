@@ -142,6 +142,8 @@ $(function() {
             if ('' != new_id) {
                 $('#' + location_id).val(new_id);
             }
+            // Set the name box to this value
+            $('#gis_location_name').val($('#gis_location_l{{=level}} :selected').text());
         }
         // Show the next level of hierarchy
         S3.gis.locations_l{{=int(level) + 1}}(false);
@@ -221,6 +223,8 @@ $(function() {
             if ('' != new_id) {
                 $('#' + location_id).val(new_id);
             }
+            // Set the name box to this value
+            $('#gis_location_name').val($('#gis_location_l{{=level}} :selected').text());
         }
         // Show the next level of hierarchy
         S3.gis.locations_l{{=int(level) + 1}}(false);
@@ -296,6 +300,8 @@ $(function() {
             if ('' != new_id) {
                 $('#' + location_id).val(new_id);
             }
+            // Set the name box to this value
+            $('#gis_location_name').val($('#gis_location_l{{=level}} :selected').text());
         }
         // Show the next level of hierarchy
         S3.gis.locations_l{{=int(level) + 1}}(false);
@@ -371,6 +377,8 @@ $(function() {
             if ('' != new_id) {
                 $('#' + location_id).val(new_id);
             }
+            // Set the name box to this value
+            $('#gis_location_name').val($('#gis_location_l{{=level}} :selected').text());
         }
         // Show the next level of hierarchy
         S3.gis.locations_l{{=int(level) + 1}}(false);
@@ -446,6 +454,8 @@ $(function() {
             if ('' != new_id) {
                 $('#' + location_id).val(new_id);
             }
+            // Set the name box to this value
+            $('#gis_location_name').val($('#gis_location_l{{=level}} :selected').text());
         }
         // Show the next level of hierarchy
         S3.gis.locations_l{{=int(level) + 1}}(false);
@@ -519,6 +529,8 @@ $(function() {
             if ('' != new_id) {
                 $('#' + location_id).val(new_id);
             }
+            // Set the name box to this value
+            $('#gis_location_name').val($('#gis_location_l{{=level}} :selected').text());
         }
         // Show the next level of hierarchy
         S3.gis.locations_l{{=int(level) + 1}}(false);

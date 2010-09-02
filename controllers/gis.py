@@ -127,7 +127,7 @@ def define_map(window=False, toolbar=False):
     map = gis.show_map(
                        window=window,
                        catalogue_toolbar=catalogue_toolbar,
-                       #wms_browser = {"name" : "Sahana ", "url" : "http://geo.eden.sahanafoundation.org:8180/geoserver/ows?service=WMS&request=GetCapabilities"},
+                       #wms_browser = {"name" : "Sahana ", "url" : "http://geo.eden.sahanafoundation.org/geoserver/ows?service=WMS&request=GetCapabilities"},
                        toolbar=toolbar,
                        search=search,
                        catalogue_overlays=catalogue_overlays,

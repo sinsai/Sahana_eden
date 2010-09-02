@@ -25,27 +25,30 @@ def index():
     return dict(module_name=module_name)
 
 def sector():
-    """ RESTful CRUD controller """
+    """
+        RESTful CRUD controller
+        @ToDo: Rename as Cluster? (Too UN/INGO-focussed?)
+    """
     resource = request.function
     tablename = "%s_%s" % (module, resource)
     table = db[tablename]
 
     # CRUD strings
-    LIST_SECTORS = T("List Sectors")
+    LIST_SECTORS = T("List Clusters")
     s3.crud_strings[tablename] = Storage(
         title_create = ADD_SECTOR,
-        title_display = T("Sector Details"),
+        title_display = T("Cluster Details"),
         title_list = LIST_SECTORS,
-        title_update = T("Edit Sector"),
-        title_search = T("Search Sectors"),
-        subtitle_create = T("Add New Sector"),
-        subtitle_list = T("Sectors"),
+        title_update = T("Edit Cluster"),
+        title_search = T("Search Clusters"),
+        subtitle_create = T("Add New Cluster"),
+        subtitle_list = T("Clusters"),
         label_list_button = LIST_SECTORS,
         label_create_button = ADD_SECTOR,
-        msg_record_created = T("Sector added"),
-        msg_record_modified = T("Sector updated"),
-        msg_record_deleted = T("Sector deleted"),
-        msg_list_empty = T("No Sectors currently registered"))
+        msg_record_created = T("Cluster added"),
+        msg_record_modified = T("Cluster updated"),
+        msg_record_deleted = T("Cluster deleted"),
+        msg_list_empty = T("No Clusters currently registered"))
     
     return shn_rest_controller(module, resource, listadd=False)
 
@@ -60,7 +63,8 @@ def organisation():
             crud.settings.create_next = URL(r=request, f="dashboard")
             crud.settings.update_next = URL(r=request, f="dashboard")
         return True
-    response.s3.prep = org_prep
+    # Dashboard is deprecated now we have components
+    #response.s3.prep = org_prep
 
     def org_postp(jr, output):
         shn_action_buttons(jr)
@@ -71,8 +75,9 @@ def organisation():
                                         tabs = [(T("Basic Details"), None),
                                                 (T("Offices"), "office"),
                                                 (T("Staff"), "staff"),
-                                                (T("Projects"), "project"),
-                                                (T("Tasks"), "task"),
+                                                (T("Activities"), "activity"),
+                                                #(T("Projects"), "project"),
+                                                #(T("Tasks"), "task"),
                                                 #(T("Donors"), "organisation"),
                                                 #(T("Sites"), "site"),  # Ticket 195
                                                ])

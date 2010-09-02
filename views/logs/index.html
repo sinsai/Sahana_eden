@@ -1,0 +1,10 @@
+{{extend "layout.html"}}
+<div id="home">
+{{=H2(T("Logistics Management"))}}
+<p>
+{{=T("Managing, Storing and Distributing Relief Items.")}}
+</p>
+<h3>{{=T("Features Include")}}:</h3>
+{{=LI(A("Inventory Stores", _href=URL(r=request, c = "inventory", f="store")))}}
+{{=LI(A("Distributions", _href=URL(r=request, c="supply", f="item")))}}
+{{=LI(A("Relief Items", _href=URL(r=request, c="supply", f="item")))}}

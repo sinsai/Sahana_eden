@@ -142,16 +142,20 @@ if deployment_settings.has_module("logs"):
 
 
     logs_menu = [
+                      [T("Home"), False, URL(r=request, c="logs", f="index")],
                       [T("Inventory Stores"), False, URL(r=request, c="inventory", f="store"),
                       [
+                       [T("List"), False, URL(r=request, c="inventory", f="store")],
                        [T("Add"), False, URL(r=request, c="inventory", f="store", args="create")],
                       ]],
-                      #[T("Distribution"), False, URL(r=request, c="logs", f="distrib"),
-                      #[
-                      # [T("Add"), False, URL(r=request, c="logs", f="distrib", args="create")],
-                      #]],
+                      [T("Distributions"), False, URL(r=request, c="logs", f="distrib"),
+                      [
+                       [T("List"), False, URL(r=request, c="logs", f="distrib")],
+                       [T("Add"), False, URL(r=request, c="logs", f="distrib", args="create")],
+                      ]],
                       [T("Relief Items"), False, URL(r=request, c="supply", f="item"), 
                        [
-                       [T("Add"), False, URL(r=request, c="losupplygs", f="item", args="create")],
+                       [T("List"), False, URL(r=request, c="supply", f="item")],
+                       [T("Add"), False, URL(r=request, c="supply", f="item", args="create")],
                       ]],
                      ]

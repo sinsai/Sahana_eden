@@ -1,12 +1,10 @@
 {{extend "layout.html"}}
 <div id='home'>
-{{=H2(T(module_name))}}
+{{=H2(T("Logistics Management"))}}
 <p>
-{{=T("The")}} {{=module_name}} {{=T("System allows the Management, Storing and Distribution of Relief Items.")}}
+{{=T("Managing, Storing and Distributing Relief Items.")}}
 </p>
 <h3>{{=T("Features Include")}}:</h3>
-{{=LI(A("Inventory Stores", _href=URL(r=request, c="inventory", f="store")))}}
-{{=LI(A("Relief Items", _href=URL(r=request, c="supply", f="item")))}}
-<!--
-{{=LI(A("Distribution", _href=URL(r=request, c="logs", f="distrib")))}}
--->
+{{=LI(A("Inventory Stores", _href=URL(r=request, c = "inventory", f="store")))}} - register an Inventory Store & then add Items to it
+{{=LI(A("Distributions", _href=URL(r=request, c="logs", f="distrib")))}} - register a Distribution & then add Items to it
+{{=LI(A("Relief Items", _href=URL(r=request, c="supply", f="item")))}} - manage the Catalogue of Items

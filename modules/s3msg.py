@@ -281,7 +281,6 @@ class Msg(object):
                       sender="",
                       fromaddress="",
                       system_generated = False,
-                      inbound = True,
                       pr_message_method = 1,
                       ):
         """ Function to call to drop messages into msg_log """
@@ -289,7 +288,7 @@ class Msg(object):
         db = self.db
 
         try:
-            message_log_id = db.msg_log.insert(inbound = inbound,
+            message_log_id = db.msg_log.insert(inbound = True,
                                                subject = subject,
                                                message = message,
                                                sender  = sender,

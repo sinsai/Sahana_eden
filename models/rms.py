@@ -311,7 +311,7 @@ if deployment_settings.has_module(module):
                             authorstamp, 
                             deletion_status,
                             req_id,
-                            get_item_id(),
+                            item_id,
                             Field("quantity", "double"),
                             comments,
                             migrate=migrate)

@@ -14,7 +14,7 @@ module = request.controller
 response.menu_options = logs_menu
 
 #==============================================================================
-# @ToDo: Create should be restricted to Admin
+#@auth.shn_requires_membership(1)
 def item_category():
     "RESTful CRUD controller"
     resource = request.function

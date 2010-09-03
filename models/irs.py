@@ -17,6 +17,7 @@ if deployment_settings.has_module(module):
                             Field("audit_write", "boolean"),
                             migrate=migrate)
 
+    # ---------------------------------------------------------------------
     # List of Incident Categories
     # NB It is important that the meaning of these entries is not changed as otherwise this hurts our ability to do synchronisation
     # The keys are based on the Canadian ems.incident hierarchy, with a few extra general versions added
@@ -162,8 +163,10 @@ if deployment_settings.has_module(module):
     table.code.requires = IS_IN_SET(irs_incident_type_opts)
     table.code.represent = lambda opt: irs_incident_type_opts.get(opt, opt)
 
+    # ---------------------------------------------------------------------
     # Incidents
     # This is the current status of an Incident
+    # @ToDo
     resource = "incident"
     tablename = "%s_%s" % (module, resource)
     table = db.define_table(tablename,
@@ -205,6 +208,7 @@ if deployment_settings.has_module(module):
         subtitle_list = T("Incidents"),
         label_list_button = LIST_INCIDENTS,
         label_create_button = ADD_INCIDENT,
+        label_delete_button = T("Delete Incident"),
         msg_record_created = T("Incident added"),
         msg_record_modified = T("Incident updated"),
         msg_record_deleted = T("Incident deleted"),
@@ -295,6 +299,7 @@ if deployment_settings.has_module(module):
         subtitle_list = T("Incident Reports"),
         label_list_button = LIST_INC_REPORTS,
         label_create_button = ADD_INC_REPORT,
+        label_delete_button = T("Delete Incident Report"),
         msg_record_created = T("Incident Report added"),
         msg_record_modified = T("Incident Report updated"),
         msg_record_deleted = T("Incident Report deleted"),

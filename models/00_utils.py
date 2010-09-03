@@ -473,6 +473,9 @@ def shn_crud_strings(table_name,
         @description:
             Creates the strings for the title of/in the various CRUD Forms.
 
+            NB Whilst this is useful for RAD purposes, it isn't ideal for maintenance of translations,
+               so it's use should be discouraged for the core system
+
         @arguments:
             table_name - string - The User's name for the resource in the table - eg. "Person"
             table_name_plural - string - The User's name for the plural of the resource in the table - eg. "People"
@@ -496,12 +499,13 @@ def shn_crud_strings(table_name,
     title_create = ADD,
     title_display = T(table_name + " Details"),
     title_list = LIST,
-    title_update = T("Edit "+ table_name) ,
-    title_search = T("Search " + table_name_plural) ,
-    subtitle_create = T("Add New " + table_name) ,
+    title_update = T("Edit "+ table_name),
+    title_search = T("Search " + table_name_plural),
+    subtitle_create = T("Add New " + table_name),
     subtitle_list = T(table_name_plural),
     label_list_button = LIST,
     label_create_button = ADD,
+    label_delete_button = T("Delete " + table_name),
     msg_record_created =  T(table_name +" added"),
     msg_record_modified =  T(table_name + " updated"),
     msg_record_deleted = T( table_name + " deleted"),

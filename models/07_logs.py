@@ -39,8 +39,6 @@ if deployment_settings.has_module(module):
                             comments,
                             migrate=migrate)
 
-    s3.crud_strings[tablename] = shn_crud_strings("Distribution")
-
     # -----------------------------------------------------------------------------
     def distrib_represent(id):
         if id:
@@ -54,43 +52,36 @@ if deployment_settings.has_module(module):
         else:
             return NONE
     
-    # @ToDo Replace Function with Class
-    def get_distrib_id (field_name = "distrib_id", 
-                                   label = T("Distribution"),
-                                   ):
-                                   
-        requires = IS_NULL_OR(IS_ONE_OF(db, "logs_distrib.id", distrib_represent, sort=True))
-        
-        represent = distrib_represent
-        
-        comment = DIV( A( "Add Distribution",
-                          _class="colorbox",
-                          _href=URL(r=request, 
-                                    c="log", 
-                                    f="distrib", 
-                                    args="create", 
-                                    vars=dict(format="popup", child=field_name)
-                                    ),
-                          _target="top",
-                          _title="Add Distribution",
-                          ),
-                       DIV( _class="tooltip",
-                            _title=Tstr("Distribution") + "|" + Tstr("Add Distribution")
-                            )
-                       )
-
-        return db.Table(None, 
-                        field_name,
-                        FieldS3(field_name, 
-                                db.logs_distrib, #sortby="name",
-                                requires = requires,
-                                represent = represent,
-                                label = label,
-                                comment = comment,
-                                ondelete = "RESTRICT"
-                                )
-                        )
-
+    # CRUD strings
+    ADD_DISTRIBUTION = T("Add Distribution")
+    LIST_DISTRIBUTIONS = T("List Distributions")
+    s3.crud_strings[tablename] = Storage(
+        title_create = ADD_DISTRIBUTION,
+        title_display = T("Distribution Details"),
+        title_list = LIST_DISTRIBUTIONS,
+        title_update = T("Edit Distribution"),
+        title_search = T("Search Distributions"),
+        subtitle_create = T("Add New Distribution"),
+        subtitle_list = T("Distributions"),
+        label_list_button = LIST_DISTRIBUTIONS,
+        label_create_button = ADD_DISTRIBUTION,
+        label_delete_button = T("Delete Distribution"),
+        msg_record_created = T("Distribution added"),
+        msg_record_modified = T("Distribution updated"),
+        msg_record_deleted = T("Distribution deleted"),
+        msg_list_empty = T("No Distributions currently registered"))
+    
+    # Reusable Field
+    distrib_id = db.Table(None, "distrib_id",
+            FieldS3("distrib_id", db.logs_distrib, sortby="name",
+                requires = IS_NULL_OR(IS_ONE_OF(db, "logs_distrib.id", distrib_represent, sort=True)),
+                represent = distrib_represent,
+                label = T("Distribution"),
+                #comment = DIV(A(ADD_DISTRIBUTION, _class="colorbox", _href=URL(r=request, c="logs", f="distrib", args="create", vars=dict(format="popup")), _target="top", _title=ADD_DISTRIBUTION),
+                #          DIV( _class="tooltip", _title=Tstr("Distribution") + "|" + Tstr("Add Distribution."))),
+                ondelete = "RESTRICT"
+                ))
+    
     #==============================================================================
     # Distribution Item
     #
@@ -101,9 +92,8 @@ if deployment_settings.has_module(module):
                             uuidstamp, 
                             authorstamp, 
                             deletion_status,
-                            # @ToDo Replace Function with Class
-                            get_distrib_id(),
-                            get_item_id(),
+                            distrib_id,
+                            item_id,
                             Field("quantity", "double"),
                             comments,
                             migrate=migrate)

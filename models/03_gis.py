@@ -389,6 +389,7 @@ gis_source_opts = {
     1:T("GPS"),
     2:T("Imagery"),
     3:T("Wikipedia"),
+    4:T("Geonames"),
     }
 gis_location_hierarchy = deployment_settings.get_gis_locations_hierarchy()
 # Expose this to Views for AutoCompletes
@@ -401,7 +402,7 @@ table = db.define_table(tablename, timestamp, uuidstamp, deletion_status,
                 Field("name_dummy"),            # Dummy field to provide Widget
                 Field("code"),
                 #feature_class_id,      # Will be removed
-                marker_id,              # Will be removed
+                #marker_id,             # Will be removed
                 Field("level", length=2),
                 Field("parent", "reference gis_location", ondelete = "RESTRICT"),   # This form of hierarchy may not work on all Databases
                 Field("lft", "integer", readable=False, writable=False), # Left will be for MPTT: http://eden.sahanafoundation.org/wiki/HaitiGISToDo#HierarchicalTrees

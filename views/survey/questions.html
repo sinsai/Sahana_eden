@@ -2,15 +2,18 @@
 {{extend "layout.html"}}
 {{=H2("Add Questions")}}
 {{if session.s3.debug:}}
+<!--
 <script type="text/javascript" src="/{{=request.application}}/static/scripts/S3/jquery.ui.widget.js"></script>
 <script type="text/javascript" src="/{{=request.application}}/static/scripts/S3/jquery.ui.mouse.js"></script>
 <script type="text/javascript" src="/{{=request.application}}/static/scripts/S3/jquery.ui.draggable.js"></script>
 <script type="text/javascript" src="/{{=request.application}}/static/scripts/S3/jquery.ui.droppable.js"></script>
 <script type="text/javascript" src="/{{=request.application}}/static/scripts/S3/jquery.ui.sortable.js"></script>
+-->
 <script type="text/javascript" src="/{{=request.application}}/static/scripts/S3/jquery.bsmselect.js"></script>
 <script type="text/javascript" src="/{{=request.application}}/static/scripts/S3/jquery.selectboxes.js"></script>
 {{else:}}
-<script type="text/javascript" src="/{{=request.application}}/static/scripts/S3/jquery.survey_reqs.js"></script>
+<script type="text/javascript" src="/{{=request.application}}/static/scripts/S3/jquery.bsmselect.min.js"></script>
+<script type="text/javascript" src="/{{=request.application}}/static/scripts/S3/jquery.selectboxes.pack.js"></script>
 {{pass}}
 <script type="text/javascript">//<![CDATA[
     function getQuestions() {

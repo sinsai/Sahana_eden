@@ -269,7 +269,7 @@ pr_religion = db.Table(None, "religion",
 
 
 # -----------------------------------------------------------------------------
-pr_nations = shn_list_of_nations
+pr_nations = s3_list_of_nations
 
 pr_nationality = db.Table(None, "nationality",
                           Field("nationality", "string", length=2,

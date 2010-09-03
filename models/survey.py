@@ -9,7 +9,7 @@
 module = "survey"
 
 if deployment_settings.has_module(module):
-    from gluon.sqlhtml import *
+    #from gluon.sqlhtml import *
 
     # Reusable table
     name_desc = db.Table(db, timestamp, uuidstamp, deletion_status, authorstamp,
@@ -47,13 +47,13 @@ if deployment_settings.has_module(module):
                                 Field("question_type", "integer"),
                                 Field("description", "text", default="", length=500))
 
-#                               Field("options_id", db.survey_question_options),
-#                               Field("tf_ta_columns", "integer"), # number of columns for TF/TA
-#                               Field("ta_rows", "integer"), # number of rows for text areas
-#                               Field("allow_comments", "boolean"), # whether or not to allow comments
-#                               Field("comment_display_label"), # the label for the comment field
-#                               Field("required", "boolean"), # marks the question as required
-#                               Field("aggregation_type", "string"))
+                                #Field("options_id", db.survey_question_options),
+                                #Field("tf_ta_columns", "integer"), # number of columns for TF/TA
+                                #Field("ta_rows", "integer"), # number of rows for text areas
+                                #Field("allow_comments", "boolean"), # whether or not to allow comments
+                                #Field("comment_display_label"), # the label for the comment field
+                                #Field("required", "boolean"), # marks the question as required
+                                #Field("aggregation_type", "string"))
 
 
     # Link table

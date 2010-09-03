@@ -721,15 +721,15 @@ def s3_gis_location_parents(r, **attr):
     elif r.representation == "json":
 
         if r.id:
-            import gluon.contrib.simplejson as sj
+            import gluon.contrib.simplejson as json
             # Get the parents for a Location
             parents = gis.get_parents(r.id)
             if parents:
                 _parents = {}
                 for parent in parents:
                     _parents[parent.level] = parent.id
-                json = sj.dumps(_parents)
-                return json
+                output = json.dumps(_parents)
+                return output
             else:
                 raise HTTP(404, body=s3xrc.ERROR.NO_MATCH)
         else:

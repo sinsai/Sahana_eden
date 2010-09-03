@@ -143,9 +143,12 @@ if deployment_settings.has_module(module):
     #table.pr_pe_parent.requires = IS_NULL_OR(IS_ONE_OF(db,"pr_pentity.id",shn_pentity_represent,filterby="type",filter_opts=("dvi_body",)))
 
     table.pe_label.comment = SPAN("*", _class="req")
-    table.pe_label.requires = [IS_NOT_EMPTY(),IS_NOT_IN_DB(db, "dvi_body.pe_label")]
+    table.pe_label.requires = [IS_NOT_EMPTY(error_message=T("Enter a unique label!")),
+                               IS_NOT_IN_DB(db, "dvi_body.pe_label")]
     table.date_of_recovery.comment = SPAN("*", _class="req")
-    table.date_of_recovery.requires = IS_DATETIME()
+    table.date_of_recovery.requires = IS_UTC_DATETIME(utc_offset=shn_user_utc_offset(),
+                                                      allow_future=False)
+    table.date_of_recovery.represent = lambda value: shn_as_local_time(value)
 
     # Labels
     table.dvi_recreq_id.label = T("Recovery Request")

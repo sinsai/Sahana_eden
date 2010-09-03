@@ -343,16 +343,20 @@ class IS_NOT_ONE_OF(IS_NOT_IN_DB):
         return (value, None)
 
 
-# IS_UTC_OFFSET ---------------------------------------------------------------
-# added 2009-08-20 by nursix
+# -----------------------------------------------------------------------------
 #
 class IS_UTC_OFFSET(Validator):
     """
-    validates a given string value as UTC offset in the format +/-HHMM
+    Validates a given string value as UTC offset in the format +/-HHMM
 
-    Note: all leading parts of the string (before the trailing offset specification)
-    will be ignored and replaced by 'UTC ' in the return value, if the string passes
-    through.
+    @author: nursix
+
+    @param error_message:   the error message to be returned
+
+    @note:
+        all leading parts of the string (before the trailing offset specification)
+        will be ignored and replaced by 'UTC ' in the return value, if the string
+        passes through.
     """
 
     def __init__(self,
@@ -386,49 +390,60 @@ class IS_UTC_OFFSET(Validator):
 
         return (value, self.error_message)
 
-# IS_UTC_DATETIME -------------------------------------------------------------
-# added 2009-08-19 by nursix
+
+# -----------------------------------------------------------------------------
 #
 class IS_UTC_DATETIME(Validator):
     """
-    validates a given value as datetime string and returns the corresponding UTC datetime
+    Validates a given value as datetime string and returns the corresponding
+    UTC datetime.
 
-    example:
+    @author: nursix
 
+    @param format:          strptime/strftime format template string, for
+                            directives refer to your strptime implementation
+    @param error_message:   dict of error messages to be returned
+    @param utc_offset:      offset to UTC in seconds, if not specified, the value
+                            is considered to be UTC
+    @param allow_future:    whether future date/times are allowed or not, if
+                            set to False, all date/times beyond now+max_future
+                            will fail
+    @type allow_future:     boolean
+    @param max_future:      the maximum acceptable future time interval in
+                            seconds from now for unsynchronized local clocks
+
+    @example:
         INPUT(_type="text", _name="name", requires=IS_UTC_DATETIME())
 
-    datetime has to be in the ISO8960 format YYYY-MM-DD hh:mm:ss, with an optional
-    trailing UTC offset specified as +/-HHMM (+ for eastern, - for western timezones)
+    @note:
+        datetime has to be in the ISO8960 format YYYY-MM-DD hh:mm:ss, with an
+        optional trailing UTC offset specified as +/-HHMM (+ for eastern, - for
+        western timezones)
 
-    optional parameters:
-        format              str         strptime/strftime format template string, for
-                                        directives refer to your strptime implementation
-
-        error_message       str         error message to be returned
-
-        utc_offset          integer     offset to UTC in seconds,
-                                        if not specified, the value is considered to be UTC
-
-        allow_future        boolean     whether future date/times are allowed or not, if
-                                        set to False, all date/times beyond now+max_future
-                                        will fail
-
-        max_future          integer     the maximum acceptable future time interval in seconds
-                                        from now for unsynchronized local clocks
     """
 
     isodatetime = "%Y-%m-%d %H:%M:%S"
 
     def __init__(self,
-        format="%Y-%m-%d %H:%M:%S",
-        error_message="must be YYYY-MM-DD HH:MM:SS (+/-HHMM)!",
+        format=None,
+        error_message=None,
         utc_offset=None,
         allow_future=True,
-        max_future=900
-        ):
+        max_future=900):
 
-        self.format = format
-        self.error_message = error_message
+        self.format = format or self.isodatetime
+
+        self.error_message = dict(
+            format = "Required format: YYYY-MM-DD HH:MM:SS!",
+            offset = "Invalid UTC offset!",
+            future = "Future times not allowed!")
+
+        if error_message and isinstance(error_message, dict):
+            self.error_message["format"] = error_message.get("format", None) or self.error_message["format"]
+            self.error_message["offset"] = error_message.get("offset", None) or self.error_message["offset"]
+            self.error_message["future"] = error_message.get("future", None) or self.error_message["future"]
+        elif error_message:
+            self.error_message["format"] = error_message
 
         validate = IS_UTC_OFFSET()
         offset, error = validate(utc_offset)
@@ -462,8 +477,7 @@ class IS_UTC_DATETIME(Validator):
 
         # Offset must be in range -1439 to +1439 minutes
         if offset < -86340 or offset > 86340:
-            self.error_message = "invalid UTC offset!"
-            return (dt, self.error_message)
+            return (dt, self.error_message["offset"])
 
         try:
             (y,m,d,hh,mm,ss,t0,t1,t2) = time.strptime(dtstr, str(self.format))
@@ -473,8 +487,7 @@ class IS_UTC_DATETIME(Validator):
                 (y,m,d,hh,mm,ss,t0,t1,t2) = time.strptime(dtstr+":00", str(self.format))
                 dt = datetime(y,m,d,hh,mm,ss)
             except:
-                self.error_message="must be YYYY-MM-DD HH:MM:SS (+/-HHMM)!"
-                return(value, self.error_message)
+                return(value, self.error_message["format"])
 
         if self.allow_future:
             return (dt, None)
@@ -482,11 +495,12 @@ class IS_UTC_DATETIME(Validator):
             latest = datetime.utcnow() + timedelta(seconds=self.max_future)
             dt_utc = dt - timedelta(seconds=offset)
             if dt_utc > latest:
-                self.error_message = "future times not allowed!"
-                return (dt_utc, self.error_message)
+                return (dt_utc, self.error_message["future"])
             else:
                 return (dt_utc, None)
 
     def formatter(self, value):
         # Always format with trailing UTC offset
         return value.strftime(str(self.format)) + " +0000"
+
+# -----------------------------------------------------------------------------

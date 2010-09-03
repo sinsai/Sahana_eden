@@ -536,10 +536,10 @@ if deployment_settings.has_module("dvi") or \
     }
 
     pr_blood_type_opts = {
-        1: T("A"),
-        2: T("B"),
-        3: T("0"),
-        4: T("AB")
+        1: "A",
+        2: "B",
+        3: "0",
+        4: "AB"
     }
 
     pr_eye_color_opts = {

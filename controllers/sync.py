@@ -6,120 +6,20 @@
 
 """
 
-module = "admin"
+module = "admin" # sync?
 module_name = T("Synchronization")
 
-log_table = "sync_log"
-conflict_table = "sync_conflict"
-sync_peer = None
-sync_policy = None
-import_export_format = "xml"
-
 # Options Menu (available in all Functions' Views)
-# - can Insert/Delete items from default menus within a function, if required.
 response.menu_options = admin_menu_options
-
-# Web2Py Tools functions
-def call():
-    "Call an XMLRPC, JSONRPC or RSS service"
-    # Sync webservices don't use sessions, so avoid cluttering up the storage
-    session.forget()
-    return service()
-
 
 # -----------------------------------------------------------------------------
 # S3 framework functions
+#
 def index():
-    "Module's Home Page"
+
+    """ Module's Home Page """
 
     return dict(module_name=module_name)
-
-import urllib2
-
-
-# -----------------------------------------------------------------------------
-class RequestWithMethod(urllib2.Request):
-
-    """ ???
-
-        @todo: add doc string
-
-    """
-
-    def __init__(self, method, *args, **kwargs):
-
-        """ docstring? """
-
-        self._method = method
-        urllib2.Request.__init__(self, *args, **kwargs)
-
-
-    def get_method(self):
-
-        """ docstring? """
-
-        return self._method
-
-
-# -----------------------------------------------------------------------------
-class Error:
-
-    """ Indicates an HTTP error """
-
-    def __init__(self, url, errcode, errmsg, headers, body=None):
-
-        """ docstring??? """
-
-        self.url = url
-        self.errcode = errcode
-        self.errmsg = errmsg
-        self.headers = headers
-        self.body = body
-
-    def __repr__(self):
-
-        """ docstring??? """
-
-        return (
-            "Error for %s: %s %s\n Response body: %s" %
-            (self.url, self.errcode, self.errmsg, self.body)
-            )
-
-
-# -----------------------------------------------------------------------------
-class FetchURL:
-
-    """ docstring ??? """
-
-    def fetch(self, request, host, path, data, cookie=None, username=None, password=None):
-
-        """ docstring??? """
-
-        import httplib, base64
-        http = httplib.HTTPConnection(host)
-        # write header
-        headers = {"Content-type": "application/x-www-form-urlencoded", "Accept": "text/plain"}
-        if cookie:
-            headers["Cookie"] = cookie
-        # auth
-        if username:
-            base64string =  base64.encodestring("%s:%s" % (username, password))[:-1]
-            authheader =  "Basic %s" % base64string
-            headers["Authorization"] = authheader
-        http.request(request, path, data, headers)
-        # get response
-        response = http.getresponse()
-        retcode = response.status
-        retmsg = response.reason
-        retbody = None
-        if retcode != 200:
-            try:
-                retbody = response.read()
-            except:
-                retbody = None
-            raise Error(str(host) + str(path), retcode, retmsg, headers, retbody)
-        return response.read()
-
 
 # -----------------------------------------------------------------------------
 @auth.requires_login()
@@ -127,101 +27,70 @@ def now():
 
     """ Manual synchronization """
 
-    import urllib, urlparse
-    import gluon.contrib.simplejson as json
+    import simplejson as json
 
-    final_status = ""
-    sync_start = False
-    if "start" in request.args:
-        sync_start = True
+    # Settings
+    settings = db().select(db.sync_setting.uuid,
+                           db.sync_setting.proxy,
+                           limitby=(0, 1)).first()
+    if not settings:
+        session.error = T("Synchronization not configured")
+        return dict(module_name=module_name,
+                    sync_status="Configuration Error - no settings found.",
+                    sync_start=False,
+                    sync_state=None)
 
-    # retrieve sync now state
+    # Last state (=first record in sync_now)
     state = db().select(db.sync_now.ALL, limitby=(0, 1)).first()
 
-    if sync_start:
+    action = request.get_vars.get("sync", None)
 
-        # retrieve sync partners from DB
-        peers = db().select(db.sync_partner.ALL)
+    if action == "start":
 
-        # retrieve all scheduled jobs set to run manually
-        job = db.sync_schedule
-        jobs = db((job.period == "m") & (job.enabled == True)).select(job.ALL)
-        if not jobs:
-            final_status = "There are no scheduled jobs. Please schedule a sync operation (set to run manually).<br /><br /><a href=\"" + URL(r=request, c="sync", f="schedule") + "\">Click here</a> to go to Sync Schedules page.<br /><br />\n"
-            return dict(module_name=module_name,
-                        sync_status=final_status,
-                        sync_start=False,
-                        sync_state=state)
+        if session.s3.sync_msg is None:
+            session.s3.sync_msg = []
 
-        # retrieve settings
-        settings = db().select(db.sync_setting.ALL, limitby=(0, 1)).first()
+        #tablesnames = s3_sync_primary_resources()
 
-        # url fetcher
-        fetcher = FetchURL()
+        if not state: # =no prior sync to be resumed.
 
-        final_status = ""
+            # Get all scheduled jobs
+            table_job = db.sync_schedule
+            jobs = db((table_job.period == "m") &
+                      (table_job.enabled == True)).select(table_job.ALL)
+            if not jobs:
+                final_status = "There are no scheduled jobs. Please schedule a sync operation (set to run manually).<br /><br /><a href=\"" + URL(r=request, c="sync", f="schedule") + "\">Click here</a> to go to Sync Schedules page.<br /><br />\n"
+            else:
+                # Load first resource list
+                job = jobs.first()
+                try:
+                    job_cmd = json.loads(job.job_command)
+                except:
+                    res_list = ""
+                else:
+                    res_list = ",".join(map(str, job_cmd.get("resources", [])))
 
-        # Find primay resources
-        modules = deployment_settings.modules
-        tables = []
-        for t in db.tables:
-            table = db[t]
-            if t.find("_") == -1:
-                continue
-            prefix, name = t.split("_", 1)
-            if prefix in modules and \
-               "modified_on" in table.fields and \
-               "uuid" in table.fields:
-                is_component = False
-                hook = s3xrc.model.components.get(name, None)
-                if hook:
-                    link = hook.get("_component", None)
-                    if link and link.tablename == t:
-                        continue
-                    for h in hook.values():
-                        if isinstance(h, dict):
-                            link = h.get("_component", None)
-                            if link and link.tablename == t:
-                                is_component = True
-                                break
-                    if is_component:
-                        continue
-                # No component
-                tables.append(t)
+            job_list = ",".join(map(str, [j.id for j in jobs]))
 
-        if not state:
-            # New now-job
-            res_list = tables # Tables to sync
-            first_job = None
-            job_cmd = None
-            res_list = []
-            if jobs:
-                first_job = jobs[0]
-            if first_job:
-                if first_job.job_type == 1:
-                    job_cmd = json.loads(first_job.job_command)
-                    res_list = job_cmd["resources"]
             # begin new sync now session
-            sync_jobs_enabled_list = []
-            for job in jobs:
-                if job.enabled:
-                    sync_jobs_enabled_list.append(str(job.id))
-            sync_now_id = db["sync_now"].insert(
-                sync_jobs = ", ".join(map(str, sync_jobs_enabled_list)),
-                started_on = request.utcnow,
-                job_resources_done = "",
-                job_resources_pending = ", ".join(map(str, res_list)),
-                job_sync_errors = ""
-            )
+            sync_now_id = db.sync_now.insert(sync_jobs = job_list,
+                                             started_on = request.utcnow,
+                                             job_resources_done = "",
+                                             job_resources_pending = res_list,
+                                             job_sync_errors = "")
+
             state = db(db.sync_now.id == sync_now_id).select(db.sync_now.ALL, limitby=(0, 1)).first()
-            final_status += "Sync Now started:<br /><br /><br />\n"
+
+            #session.s3.sync_msg.append()
+
         else:
+
             # Now already started
             sync_now_id = state.id
-            final_status += "Sync Now resumed (originally started on " + state.started_on.strftime("%x %H:%M:%S")+ "):<br /><br /><br />\n"
+            session.s3.sync_msg.append("Sync resumed (originally started on %s)" % state.started_on.strftime("%x %H:%M:%S"))
 
         # unlock session - what for?
-        session._unlock(response)
+        #session._unlock(response)
         # become super-user - what for?
         session.s3.roles.append(1)
 
@@ -241,10 +110,10 @@ def now():
 
         if sync_job and peer:
 
-            final_status += "<br />Syncing with: " + \
-                            peer.name + ", " + \
-                            peer.instance_url + \
-                            " (" + peer.instance_type + "):<br />\n\n"
+            #final_status += "<br />Syncing with: " + \
+                            #peer.name + ", " + \
+                            #peer.instance_url + \
+                            #" (" + peer.instance_type + "):<br />\n\n"
 
             peer_sync_success = True
             last_sync_on = sync_job.last_run
@@ -252,132 +121,39 @@ def now():
             sync_mode = 1
             if "complete" in job_cmd and str(job_cmd["complete"]) == "True":
                 complete_sync = True
-            if "policy" in job_cmd:
-                sync_policy = int(job_cmd["policy"])
             if "mode" in job_cmd:
                 sync_mode = int(job_cmd["mode"])
+
+            # Get policy and set resolver (defaults to peer policy)
+            job_policy = job_cmd.get("policy", peer.policy)
+            if job_policy:
+                try:
+                    policy = int(job_policy)
+                except ValueError:
+                    policy = None
+            s3xrc.sync_resolve = lambda vector, peer=peer, policy=policy: \
+                                        sync_res(vector, peer, policy)
 
             sync_resources = []
             sync_errors = ""
 
-            # Keep Session for local URLs
-            cookie = str(response.session_id_name) + "=" + str(response.session_id)
-            if sync_job.job_type == 1: # Eden <-> Eden
+            # Find resources to sync
+            tn = state.job_resources_pending.split(",")
+            tablenames = [n.strip().lower() for n in tn]
 
-                # Sahana Eden sync
+            if sync_job.job_type == 1:
 
-                # Build msince-query
-                if last_sync_on is not None and complete_sync == False:
-                    msince = last_sync_on.strftime("%Y-%m-%dT%H:%M:%SZ")
-                    msince_query = "?msince=" + msince
-                else:
-                    msince = ""
-                    msince_query = ""
-
-                # Find resources to sync
-                tablenames = state.job_resources_pending.split(",")
-
-                #for _module, _resource in job_res_list:
-                for tablename in tablenames:
-
-                    if tablename not in db.tables:
-                        continue
-
-                    if tablename.find("||") == -1:
-                        if tablename.find("_") == -1:
-                            continue
-                        else:
-                            prefix, name = tablename.split("_", 1)
-                    else:
-                        prefix, name = tablename.split("||", 1)
-
-                    resource = s3xrc.resource(prefix, name)
-
-                    sync_path = "sync/sync/%s/%s.%s" % (prefix, name, import_export_format)
-
-                    remote_url = urlparse.urlparse(peer.instance_url)
-                    if remote_url.path[-1] != "/":
-                        remote_path = "%s/%s" % (remote_url.path, sync_path)
-                    else:
-                        remote_path = "%s%s" % (remote_url.path, sync_path)
-
-                    if sync_mode in [1, 3]: # pull
-
-                        params = dict(msince=msince)
-
-                        fetch_url = "%s://%s%s?%s" % (remote_url.scheme,
-                                                      remote_url.netloc,
-                                                      remote_path,
-                                                      urllib.urlencode(params))
-
-                        try:
-                            result = resource.fetch_xml(fetch_url,
-                                                        username=peer.username,
-                                                        password=peer.password)
-                                                        #proxy=settings.proxy)
-                        except SyntaxError, e:
-                            result = str(e)
-
-                        try:
-                            result_json = json.loads(result)
-                        except:
-                            error = str(result)
-                        else:
-                            if str(result_json["statuscode"]).startswith("2"):
-                                error = None
-                            else:
-                                error = str(result_json["message"])
-
-                        if error:
-                            tablename_error = "%s (pull error)"
-                            sync_errors = "%s\n%s" % (sync_errors,
-                                          "Error while synchronizing %s: %s" % (tablename, error))
-                            sync_resources.append(tablename_error)
-                            final_status += error + "<br /><br />\n"
-                        else:
-                            sync_resources.append(tablename)
-                            final_status += ".........processed %s (Pull Sync)<br />\n" % push_url
-
-                    if sync_mode in [2, 3]: # push
-
-                        params = dict(sync_partner_uuid=settings.uuid)
-
-                        push_url = "%s://%s%s?%s" % (remote_url.scheme,
-                                                     remote_url.netloc,
-                                                     remote_path,
-                                                     urllib.urlencode(params))
-
-                        try:
-                            result = resource.push_xml(push_url,
-                                                       username=peer.username,
-                                                       password=peer.password,
-                                                       #proxy=settings.proxy,
-                                                       msince=msince)
-                        except SyntaxError, e:
-                            result = str(e)
-
-                        try:
-                            result_json = json.loads(result)
-                        except:
-                            error = str(result)
-                        else:
-                            if str(result_json["statuscode"]).startswith("2"):
-                                error = None
-                            else:
-                                error = str(result_json["message"])
-
-                        if error:
-                            tablename_error = "%s (push error)"
-                            sync_errors = "%s\n%s" % (sync_errors,
-                                          "Error while synchronizing %s: %s" % (tablename, error))
-                            sync_resources.append(tablename_error)
-                            final_status += error + "<br /><br />\n"
-                        else:
-                            sync_resources.append(tablename)
-                            final_status += ".........processed %s (Push Sync)<br />\n" % push_url
+                # Synchronize Eden<->Eden
+                result = s3_sync_eden_eden(peer, sync_mode, tablenames,
+                                        settings=settings,
+                                        last_sync=last_sync_on,
+                                        complete_sync=complete_sync)
 
             else:
-                pass
+
+                # Synchronize Eden<->Other
+                result = s3_sync_eden_other(peer, sync_mode, tablenames,
+                                            settings=settings)
 
             # update sync now state
             if state.job_resources_done:
@@ -458,9 +234,41 @@ def now():
                 # we're done
                 final_status += "Sync completed successfully. Logs generated: " + str(A(T("Click here to open log"),_href=URL(r=request, c="sync", f="history"))) + "<br /><br />\n"
 
+    elif action == "stop":
+        # Stop the running sync process (remove all pending jobs)
+        pass
+
+    elif action == "status":
+        response.view = "xml.html"
+        if session.s3.sync_msg is None:
+            item = DIV(DIV("No synchronization process currently running.", _class="failure"))
+            session.s3.sync_msg = "DONE"
+        elif isinstance(session.s3.sync_msg, list):
+            if session.s3.sync_msg:
+                msg_list = []
+                for i in xrange(len(session.s3.sync_msg)):
+                    msg = str(session.s3.sync_msg.pop(0))
+                    if msg.find("FAIL"):
+                        msg_list.append(DIV(msg, _class="failure"))
+                    else:
+                        msg_list.append(DIV(msg, _class="success"))
+                if msg_list:
+                    item = DIV(msg_list).xml()
+            else:
+                item = DIV(DIV("Synchronization complete.", _class="success"))
+                session.s3.sync_msg = "DONE"
+        else:
+            item = "DONE"
+            session.s3.sync_msg = None
+
+        return dict(item=item)
+    else:
+        pass
+
     return dict(module_name=module_name,
-                sync_status=final_status,
-                sync_start=sync_start,
+                action=action,
+                sync_status=None,
+                sync_start=None,
                 sync_state=state)
 
 
@@ -472,9 +280,6 @@ def sync():
         allows PUT/GET of any resource (universal RESTful controller)
 
     """
-
-    # @todo: Do not use global variables
-    global sync_peer, sync_policy
 
     import gluon.contrib.simplejson as json
 
@@ -492,10 +297,8 @@ def sync():
     # Get the sync partner
     peer_uuid = request.vars.get("sync_partner_uuid", None)
     if peer_uuid:
-        peer = db.sync_partner
-        sync_peer = db(peer.uuid == peer_uuid).select(limitby=(0,1)).first()
-        if sync_peer and not sync_policy:
-            sync_policy = sync_peer.policy
+        peers = db.sync_partner
+        peer = db(peers.uuid == peer_uuid).select(limitby=(0,1)).first()
 
     # remote push?
     method = request.env.request_method
@@ -509,8 +312,8 @@ def sync():
     else:
         raise HTTP(501, body=s3xrc.ERROR.BAD_METHOD)
 
-    # Set the sync resolver
-    s3xrc.sync_resolve = lambda vector, peer=sync_peer: sync_res(vector, peer)
+    # Set the sync resolver with no policy (defaults to peer policy)
+    s3xrc.sync_resolve = lambda vector, peer=peer: sync_res(vector, peer, None)
 
     def prep(r):
         # Do not allow interactive formats
@@ -563,8 +366,9 @@ def sync():
     #return ret_data
     return output
 
+
 # -----------------------------------------------------------------------------
-def sync_res(vector, peer):
+def sync_res(vector, peer, policy):
 
     """ Sync resolver
 
@@ -573,101 +377,114 @@ def sync_res(vector, peer):
     """
 
     import cPickle
-    global sync_policy
 
-    sync_peer = peer
+    if policy is None:
+        policy = peer.policy
 
-    if not sync_policy:
-        sync_policy = sync_peer.policy
+    newer = True # assume that the peer record is newer
 
-    db_record = vector.db(vector.table.id==vector.id).select(vector.table.ALL, limitby=(0,1))
-    db_record_mtime = None
-    record_dump = cPickle.dumps(dict(vector.record), 0)
+    if vector.method == vector.METHOD_UPDATE:
+        table = vector.table
+        if "modified_on" in table.fields and vector.mtime is not None:
+            row = vector.db(table.id==vector.id).select(table.modified_on,
+                                                        limitby=(0,1)).first()
+            if row:
+                local_mtime = row.modified_on
+            if local_mtime > vector.mtime:
+                newer = False
 
-    if db_record:
-        db_record = db_record.first()
-        if "modified_on" in vector.table.fields:
-            db_record_mtime = db_record.modified_on
+    # Sync policies:
+    #
+    #  Option    local records                 peer records     Title
+    #
+    #  0         do nothing                    do nothing       No Sync
+    #  1         --                            --               Manual
+    #  2         do nothing                    import           Import
+    #  3         update to peer version        import           Replace
+    #  4         update to peer version        do nothing       Update
+    #  5         update to/keep newer version  import           Replace Newer
+    #  6         update to/keep newer version  do nothing       Update Newer
+    #  7         do nothing                    import master    Import Master
+    #  8         update to master              import master    Replace Master
+    #  9         update to master              do nothing       Update Master
+    # 10         --                            --               Role-Based (not implemented)
 
-    # based on the sync_policy, make resolution
-    if sync_policy == 0:    # No Sync
-        # don't import anything in this case
-        vector.strategy = []
+    conflict = False
 
-    elif sync_policy == 1:  # Keep Local
+    # @todo: conflict detection
+
+    if sync_policy == 0: # No Sync
         vector.resolution = vector.RESOLUTION.THIS
-        if db_record_mtime and vector.mtime > db_record_mtime:
-            # log this as a conflict, local record is older
-            #print "Conflict: local record is kept and is older"
-            db[conflict_table].insert(
-                uuid = vector.record.uuid,
-                resource_table = vector.tablename,
-                remote_record = record_dump,
-                remote_modified_by = vector.element.get("modified_by"),
-                remote_modified_on = vector.mtime,
-                logged_on = datetime.datetime.utcnow(),
-                resolved = False
-            )
-
-    elif sync_policy == 2:  # Replace with Remote
+        vector.strategy = []
+    elif sync_policy == 1: # Manual
+        vector.resolution = vector.RESOLUTION.THIS
+        vector.strategy = []
+    elif sync_policy == 2: # Import
         vector.resolution = vector.RESOLUTION.OTHER
-        if db_record_mtime and vector.mtime < db_record_mtime:
-            # log this as a conflict, remote record is older
-            #print "Conflict: remote record is imported and is older"
-            db[conflict_table].insert(
-                uuid = vector.record.uuid,
-                resource_table = vector.tablename,
-                remote_record = record_dump,
-                remote_modified_by = vector.element.get("modified_by"),
-                remote_modified_on = vector.mtime,
-                logged_on = datetime.datetime.utcnow(),
-                resolved = False
-            )
-        elif db_record_mtime and sync_peer.last_sync_on and db_record_mtime > sync_peer.last_sync_on:
-            # log this as a conflict, local record was modified too, but overwritten
-            #print "Conflict: local record was modified since last sync but overwritten by remote record"
-            db[conflict_table].insert(
-                uuid = vector.record.uuid,
-                resource_table = vector.tablename,
-                remote_record = record_dump,
-                remote_modified_by = vector.element.get("modified_by"),
-                remote_modified_on = vector.mtime,
-                logged_on = datetime.datetime.utcnow(),
-                resolved = False
-            )
-
-    elif sync_policy == 3:  # Keep with Newer Timestamp
+        vector.strategy = [vector.METHOD.CREATE]
+    elif sync_policy == 3: # Replace
+        vector.resolution = vector.RESOLUTION.OTHER
+        vector.strategy = [vector.METHOD.CREATE, vector.METHOD.UPDATE]
+    elif sync_policy == 4: # Update
+        vector.resolution = vector.RESOLUTION.OTHER
+        vector.strategy = [vector.METHOD.UPDATE]
+    elif sync_policy == 5: # Replace Newer
         vector.resolution = vector.RESOLUTION.NEWER
-        if db_record_mtime and vector.mtime < db_record_mtime:
-            # log this as a conflict, remote record is older
-            #print "Conflict: remote record is imported and is older"
-            db[conflict_table].insert(
-                uuid = vector.record.uuid,
-                resource_table = vector.tablename,
-                remote_record = record_dump,
-                remote_modified_by = vector.element.get("modified_by"),
-                remote_modified_on = vector.mtime,
-                logged_on = datetime.datetime.utcnow(),
-                resolved = False
-            )
-
-    elif sync_policy == 4:  # Role-based
-        # not implemented, defaulting to "Newer Timestamp"
+        vector.strategy = [vector.METHOD.CREATE, vector.METHOD.UPDATE]
+    elif sync_policy == 6: # Update Newer
         vector.resolution = vector.RESOLUTION.NEWER
+        vector.strategy = [vector.METHOD.UPDATE]
+    elif sync_policy == 7: # Import Master
+        vector.resolution = vector.RESOLUTION.MASTER
+        vector.strategy = [vector.METHOD.CREATE]
+    elif sync_policy == 8: # Replace Master
+        vector.resolution = vector.RESOLUTION.MASTER
+        vector.strategy = [vector.METHOD.CREATE, vector.METHOD.UPDATE]
+    elif sync_policy == 9: # Update Master
+        vector.resolution = vector.RESOLUTION.THIS
+        vector.strategy = [vector.METHOD.UPDATE]
+    elif sync_policy == 10: # Role Based (not implemented)
+        vector.resolution = vector.RESOLUTION.THIS
+        vector.strategy = []
+    else:
+        pass # use defaults
 
-    elif sync_policy == 5:  # Choose Manually
-        if db_record_mtime and vector.mtime != db_record_mtime:
-            # just log and skip
-            vector.strategy = []
-            db[conflict_table].insert(
-                uuid = vector.record.uuid,
-                resource_table = vector.tablename,
-                remote_record = record_dump,
-                remote_modified_by = vector.element.get("modified_by"),
-                remote_modified_on = vector.mtime,
-                logged_on = datetime.datetime.utcnow(),
-                resolved = False
-            )
+    #elif sync_policy == 1:  # Keep Local
+        #vector.resolution = vector.RESOLUTION.THIS
+
+    #elif sync_policy == 2:  # Replace with Remote
+        #vector.resolution = vector.RESOLUTION.OTHER
+        #if (db_record_mtime and vector.mtime < db_record_mtime) or \
+           #(db_record_mtime and sync_peer.last_sync_on and db_record_mtime > sync_peer.last_sync_on):
+           ## log this as a conflict, remote record is older
+            ## log this as a conflict, local record was modified too, but overwritten
+
+    #elif sync_policy == 3:  # Keep with Newer Timestamp
+        #vector.resolution = vector.RESOLUTION.NEWER
+        #if db_record_mtime and vector.mtime < db_record_mtime:
+            ## log this as a conflict, remote record is older
+
+    #elif sync_policy == 4:  # Role-based
+        ## not implemented, defaulting to "Newer Timestamp"
+        #vector.resolution = vector.RESOLUTION.NEWER
+
+    #elif sync_policy == 5:  # Choose Manually
+        #if db_record_mtime and vector.mtime != db_record_mtime:
+            ## just log and skip
+            #vector.strategy = []
+
+    if conflict: # log conflict
+
+        record_dump = cPickle.dumps(dict(vector.record), 0)
+
+        db[conflict_table].insert(
+            uuid = vector.uuid,
+            resource_table = vector.tablename,
+            remote_record = record_dump,
+            remote_modified_by = vector.element.get("modified_by", None),
+            remote_modified_on = vector.mtime,
+            logged_on = datetime.datetime.utcnow(),
+            resolved = False)
 
     return
 
@@ -809,29 +626,43 @@ def partner():
 
 # -----------------------------------------------------------------------------
 @auth.shn_requires_membership(1)
-def setting():
-    "Synchronisation Settings"
+def setting(): # OK
+
+    """ Synchronisation Settings """
+
     if not "update" in request.args:
         redirect(URL(r=request, args=["update", 1]))
-    db.sync_setting.uuid.writable = False
-    db.sync_setting.uuid.label = "UUID"
-    db.sync_setting.uuid.comment = DIV(_class="tooltip",
+
+    # Table settings
+    table = db.sync_setting
+
+    table.uuid.writable = False
+    table.uuid.label = "UUID"
+    table.uuid.comment = DIV(_class="tooltip",
         _title="UUID|" + Tstr("The unique identifier which identifies this instance to other instances."))
-    db.sync_setting.comments.label = T("Comments")
-    db.sync_setting.comments.comment = DIV(_class="tooltip",
+
+    table.comments.label = T("Comments")
+    table.comments.comment = DIV(_class="tooltip",
         _title=Tstr("Comments") + "|" + Tstr("Any comments for this instance."))
-#    db.sync_setting.beacon_service_url.label = T("Beacon Service URL")
-#    db.sync_setting.beacon_service_url.comment = DIV(_class="tooltip",
+
+    table.beacon_service_url.readable = False
+    table.beacon_service_url.writable = False
+#    table.beacon_service_url.label = T("Beacon Service URL")
+#    table.beacon_service_url.comment = DIV(_class="tooltip",
 #        _title=Tstr("Beacon Service URL") + "|" + Tstr("Beacon service allows searching for other instances that wish to synchronise. This is the URL of the beacon service this instance will use."))
-    db.sync_setting.sync_pools.readable = False
-    db.sync_setting.sync_pools.writable = False
-    db.sync_setting.beacon_service_url.readable = False
-    db.sync_setting.beacon_service_url.writable = False
-    title_update = T("Edit Sync Settings")
-    label_list_button = T("Sync Settings")
-    msg_record_modified = T("Sync Settings updated")
-    s3.crud_strings.sync_setting = Storage(title_update=title_update,label_list_button=label_list_button,msg_record_modified=msg_record_modified)
+
+    table.sync_pools.readable = False
+    table.sync_pools.writable = False
+
+    # CRUD strings
+    s3.crud_strings.sync_setting = Storage(
+        title_update = T("Edit Sync Settings"),
+        label_list_button = T("Sync Settings"),
+        msg_record_modified = T("Sync Settings updated"))
+
+    # Return to this
     crud.settings.update_next = URL(r=request, args=["update", 1])
+
     return shn_rest_controller("sync", "setting", deletable=False, listadd=False)
 
 
@@ -1014,7 +845,8 @@ def schedule_process_job(job_id):
 
     import gluon.contrib.simplejson as json
     import urllib, urlparse
-    global sync_policy
+
+    #global sync_policy # @todo: do not use global vars
 
     job_sel = db(db.sync_schedule.id==job_id).select(db.sync_schedule.ALL)
     if not job_sel:
@@ -1028,7 +860,7 @@ def schedule_process_job(job_id):
     job_cmd = json.loads(job.job_command)
 
     # url fetcher
-    fetcher = FetchURL()
+    #fetcher = FetchURL()
     # retrieve settings
     settings = db().select(db.sync_setting.ALL)[0]
     peer_sel = db(db.sync_partner.uuid==str(job_cmd["partner_uuid"])).select(db.sync_partner.ALL)

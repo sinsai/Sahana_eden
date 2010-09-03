@@ -211,8 +211,8 @@ table.uuid.requires = IS_NOT_IN_DB(db, "%s.uuid" % tablename)
 table.name.requires = [IS_NOT_EMPTY(), IS_NOT_IN_DB(db, "%s.name" % tablename)]
 table.type.requires = IS_NULL_OR(IS_IN_SET(org_organisation_type_opts))
 table.type.represent = lambda opt: org_organisation_type_opts.get(opt, UNKNOWN_OPT)
-table.country.requires = IS_NULL_OR(IS_IN_SET(shn_list_of_nations, sort=True))
-table.country.represent = lambda opt: shn_list_of_nations.get(opt, UNKNOWN_OPT)
+table.country.requires = IS_NULL_OR(IS_IN_SET(s3_list_of_nations, sort=True))
+table.country.represent = lambda opt: s3_list_of_nations.get(opt, UNKNOWN_OPT)
 table.website.requires = IS_NULL_OR(IS_URL())
 table.donation_phone.requires = shn_phone_requires
 table.name.label = T("Name")

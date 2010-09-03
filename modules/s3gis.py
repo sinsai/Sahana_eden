@@ -79,6 +79,17 @@ GEOM_TYPES = {
     "multipolygon": 3,
 }
 
+def s3_debug(message, value=None):
+    """
+        Provide an easy, safe, systematic way of handling Debug output
+        (print to stdout doesn't work with WSGI deployments)
+    """
+    output = "S3 Debug: " + str(message)
+    if value:
+        output += ": " + str(value)
+    
+    print >> sys.stderr, output
+
 # -----------------------------------------------------------------------------
 class GIS(object):
     """ GIS functions """
@@ -587,6 +598,177 @@ class GIS(object):
             return marker.first().image
         else:
             return ""
+
+    # -----------------------------------------------------------------------------
+    def import_csv(self, filename, domain=None):
+        """
+            Import a CSV file of Admin Boundaries into the Locations table
+            
+            File is expected to have been generated from a Shapefile as:
+            ogr2ogr -f CSV CSV TM_WORLD_BORDERS-0.3.shp -lco GEOMETRY=AS_WKT
+            
+            There needs to be a column named 'WKT'
+            The Location names should be ADM0_NAME to ADM3_NAME
+            - the highest-numbered name will be taken as the name of the current location
+            - the previous will be taken as the parent(s)
+            
+            Currently it expects to be run from the CLI, with the file in the web2py folder
+            @ToDo: Extend to support being run from the webpage
+            @ToDo: Write additional function(s) to do the OGR2OGR transformation from an uploaded Shapefile
+            
+            @ToDo: Currently it expects L0 data to be pre-imported into the database.
+                   - L1 should be imported 1st, then L2, then L3
+                   - parents are found though the use of the name columns,
+                     so the previous level of hierarchy shouldn't have duplicate names in
+        """
+        
+        import csv
+        cache = self.cache
+        db = self.db
+        _locations = db.gis_location
+        
+        csv.field_size_limit(2**20 * 10)  # 10 megs
+
+        # from http://docs.python.org/library/csv.html#csv-examples
+        def latin_csv_reader(unicode_csv_data, dialect=csv.excel, **kwargs):
+            for row in csv.reader(unicode_csv_data):
+                yield [unicode(cell, "latin-1") for cell in row]
+
+        def latin_dict_reader(data, dialect=csv.excel, **kwargs):
+            reader = latin_csv_reader(data, dialect=dialect, **kwargs)
+            headers = reader.next()
+            for r in reader:
+                yield dict(zip(headers, r))
+
+        # For each row
+        current_row = 0
+        for row in latin_dict_reader(open(filename)):
+            current_row += 1
+            try:
+                wkt = row.pop("WKT")
+            except:
+                s3_debug("No WKT column!")
+                continue
+            try:
+                name0 = row.pop("ADM0_NAME")
+            except:
+                name0 = ""
+            try:
+                name1 = row.pop("ADM1_NAME")
+            except:
+                name1 = ""
+            try:
+                name2 = row.pop("ADM2_NAME")
+            except:
+                name2 = ""
+            try:
+                name3 = row.pop("ADM3_NAME")
+            except:
+                name3 = ""
+
+            if not name3 and not name2 and not name1:
+                # We need a name! (L0's are already in DB)
+                s3_debug("No name provided", current_row)
+                continue
+
+            if domain:
+                try:
+                    uuid = domain + "/" + row.pop("UUID")
+                except:
+                    uuid = ""
+            else:
+                uuid = ""
+
+            # What level are we?
+            if name3:
+                level = "L3"
+                name = name3
+                parent = name2
+            elif name2:
+                level = "L2"
+                name = name2
+                parent = name1
+            else:
+                level = "L1"
+                name = name1
+                parent = name0
+
+            if name == "Name Unknown" or parent == "Name Unknown":
+                # Skip these locations
+                continue
+            
+            # Calculate Centroid & Bounds
+            try:
+                shape = wkt_loads(wkt)
+            except:
+                # Invalid WKT
+                s3_debug("Invalid WKT", name)
+                continue
+            centroid_point = shape.centroid
+            lon = centroid_point.x
+            lat = centroid_point.y
+            bounds = shape.bounds
+            lon_min = bounds[0]
+            lat_min = bounds[1]
+            lon_max = bounds[2]
+            lat_max = bounds[3]
+            
+            # Locate Parent
+            # @ToDo: Extend to search alternate names
+            if parent:
+                # Hack for Pakistan
+                if parent == "Jammu Kashmir":
+                    parent = "Pakistan"
+                _parent = db(_locations.name == parent).select(_locations.id, limitby=(0, 1), cache=cache).first()
+                if _parent:
+                    parent = _parent.id
+                else:
+                    s3_debug("Location", name)
+                    s3_debug("Parent cannot be found", parent)
+                    parent = ""
+            
+            # Add entry to database
+            if uuid:
+                _locations.insert(name=name, level=level, parent=parent, lat=lat, lon=lon, wkt=wkt, lon_min=lon_min, lon_max=lon_max, lat_min=lat_min, lat_max=lat_max, uuid=uuid)
+            else:
+                _locations.insert(name=name, level=level, parent=parent, lat=lat, lon=lon, wkt=wkt, lon_min=lon_min, lon_max=lon_max, lat_min=lat_min, lat_max=lat_max)
+        
+        # Better to give user control, can then dry-run
+        #db.commit()
+        return
+
+    # -----------------------------------------------------------------------------
+    def import_geonames(self, country):
+        """
+            Import Locations from the Geonames database
+            
+            Designed to import the data for single country from:
+            http://download.geonames.org/export/dump/
+            
+            Format of the data is described here:
+            http://download.geonames.org/export/dump/readme.txt
+            
+            @ToDo!
+            
+        """
+        
+        cache = self.cache
+        db = self.db
+        _locations = db.gis_location
+        
+        # Download File
+        
+        # Unzip File
+        
+        # Parse File
+        
+        # Add WKT & Bounds
+        
+        # Locate Parent
+        
+        # Add entry to database
+        
+        return
 
     # -----------------------------------------------------------------------------
     def latlon_to_wkt(self, lat, lon):

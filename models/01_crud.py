@@ -1707,9 +1707,9 @@ def shn_delete(r, **attr):
 
     if not session.error:
         if numrows > 1:
-            session.confirmation = "%s %s" % ( numrows, T("records deleted"))
+            response.confirmation = "%s %s" % ( numrows, T("records deleted"))
         else:
-            session.confirmation = message
+            response.confirmation = message
 
     item = s3xrc.xml.json_message()
     response.view = "plain.html"
@@ -1728,7 +1728,7 @@ def shn_copy(r, **attr):
 #
 def shn_map(r, method="create", tablename=None, prefix=None, name=None):
     """ Prepare a Map to include in forms"""
-    
+
     if method == "create":
         _map = gis.show_map(add_feature = True,
                             add_feature_active = True,

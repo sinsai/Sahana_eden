@@ -1,12 +1,5 @@
 #!/usr/bin/env python
 # coding: utf8
-from gluon.html import *
-from gluon.http import *
-from gluon.validators import *
-from gluon.sqlhtml import *
-# request, response, session, cache, T, db(s)
-# must be passed and cannot be imported!
-
 
 try:
     from xlrd import *
@@ -16,6 +9,13 @@ except ImportError:
     print >> sys.stderr, "WARNING: %s: XLRD not installed" % __name__
 
 import os
+
+from gluon.html import *
+from gluon.http import *
+from gluon.validators import *
+from gluon.sqlhtml import *
+# request, response, session, cache, T, db(s)
+# must be passed and cannot be imported!
 
 def removerowcol(path_to_file):
 
@@ -95,12 +95,12 @@ def pathfind(filename):
     return str
 
 def jaro_winkler(str1, str2):
-	"""Return Jaro_Winkler distance of two strings (between 0.0 and 1.0)
+	"""
+        Return Jaro_Winkler distance of two strings (between 0.0 and 1.0)
 
-	ARGUMENTS:
-      str1  The first string
-      str2  The second string
-
+        ARGUMENTS:
+          str1  The first string
+          str2  The second string
 	"""
 
 	jaro_winkler_marker_char = chr(1)

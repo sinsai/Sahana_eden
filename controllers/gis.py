@@ -158,7 +158,7 @@ def location():
                 table.code.readable = False
             table.gis_feature_type.writable = table.gis_feature_type.readable = False
             table.wkt.writable = table.wkt.readable = False
-            table.marker_id.comment = ""
+            #table.marker_id.comment = ""
         else:
             table.code.comment = DIV( _class="tooltip", _title=Tstr("Code") + "|" + Tstr("For a country this would be the ISO2 code, for a Town, it would be the Airport Locode."))
             table.wkt.comment = DIV(SPAN("*", _class="req"), DIV( _class="tooltip", _title="WKT" + "|" + Tstr("The <a href='http://en.wikipedia.org/wiki/Well-known_text' target=_blank>Well-Known Text</a> representation of the Polygon/Line.")))
@@ -271,7 +271,7 @@ def location():
         if "gis_location_parent" in caller:
             # Populate defaults & hide unnecessary rows
             # Use default Marker for Admin Locations
-            table.marker_id.readable = table.marker_id.writable = False
+            #table.marker_id.readable = table.marker_id.writable = False
             table.addr_street.readable = table.addr_street.writable = False
             #table.osm_id.readable = table.osm_id.writable = False
             #table.source.readable = table.source.writable = False
@@ -306,22 +306,22 @@ def location():
             elif "assessment_location" in caller:
                 table.level.default = "L4"
                 #table.feature_class_id.readable = table.feature_class_id.writable = False
-                table.marker_id.readable = table.marker_id.writable = False
+                #table.marker_id.readable = table.marker_id.writable = False
                 table.addr_street.readable = table.addr_street.writable = False
             elif "school_district" in caller:
                 table.level.default = "L2"
                 #table.feature_class_id.readable = table.feature_class_id.writable = False
-                table.marker_id.readable = table.marker_id.writable = False
+                #table.marker_id.readable = table.marker_id.writable = False
                 table.addr_street.readable = table.addr_street.writable = False
             elif "school_report_location" in caller:
                 table.level.default = "L2"
                 #table.feature_class_id.readable = table.feature_class_id.writable = False
-                table.marker_id.readable = table.marker_id.writable = False
+                #table.marker_id.readable = table.marker_id.writable = False
                 table.addr_street.readable = table.addr_street.writable = False
             elif "school_report_union" in caller:
                 table.level.default = "L4"
                 #table.feature_class_id.readable = table.feature_class_id.writable = False
-                table.marker_id.readable = table.marker_id.writable = False
+                #table.marker_id.readable = table.marker_id.writable = False
                 table.addr_street.readable = table.addr_street.writable = False
             
             #try:
@@ -339,7 +339,7 @@ def location():
     level = _vars.get("level", None)
     if level:
         # We've been called from the Location Selector widget
-        table.marker_id.readable = table.marker_id.writable = False
+        #table.marker_id.readable = table.marker_id.writable = False
         table.addr_street.readable = table.addr_street.writable = False
     
     # Post-processor

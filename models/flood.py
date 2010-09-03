@@ -132,7 +132,6 @@ if deployment_settings.has_module(module):
     table.flowstatus.represent = lambda opt: freport_flowstatus_opts.get(opt, opt)
 
     # CRUD strings
-    ADD_LOCATION = T("Add Location")
     LIST_LOCATIONS = T("List Locations")
     s3.crud_strings[tablename] = Storage(
         title_create = ADD_LOCATION,

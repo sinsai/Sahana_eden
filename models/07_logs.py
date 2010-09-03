@@ -98,8 +98,25 @@ if deployment_settings.has_module(module):
                             comments,
                             migrate=migrate)
 
-    s3.crud_strings[tablename] = shn_crud_strings("Distribution Item")
-
+    # CRUD strings
+    ADD_DISTRIBUTION_ITEM = T("Distribution Item")
+    LIST_DISTRIBUTION_ITEMS = T("List Distribution Items")
+    s3.crud_strings[tablename] = Storage(
+        title_create = ADD_DISTRIBUTION_ITEM,
+        title_display = T("Distribution Item Details"),
+        title_list = LIST_DISTRIBUTION_ITEMS,
+        title_update = T("Edit Distribution Item"),
+        title_search = T("Search Distribution Items"),
+        subtitle_create = T("Add New Distribution Item"),
+        subtitle_list = T("Distribution Items"),
+        label_list_button = LIST_DISTRIBUTION_ITEMS,
+        label_create_button = ADD_DISTRIBUTION_ITEM,
+        label_delete_button = T("Delete Distribution Item"),
+        msg_record_created = T("Distribution Item added"),
+        msg_record_modified = T("Distribution Item updated"),
+        msg_record_deleted = T("Distribution Item deleted"),
+        msg_list_empty = T("No Distribution Items currently registered"))
+    
     # Items as component of Distributions
     s3xrc.model.add_component(module, resource,
                               multiple=True,

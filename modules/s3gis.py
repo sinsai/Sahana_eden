@@ -757,34 +757,52 @@ class GIS(object):
 
         cache = self.cache
         db = self.db
+        request = self.request
         deployment_settings = self.deployment_settings
         _locations = db.gis_location
 
         url = "http://download.geonames.org/export/dump/" + country + ".zip"
 
-        # Download File
-        try:
-            f = fetch(url)
-        except (urllib2.URLError,):
-            e = sys.exc_info()[1]
-            s3_debug("URL Error", e)
-            return
-        except (urllib2.HTTPError,):
-            e = sys.exc_info()[1]
-            s3_debug("HTTP Error", e)
-            return
-
-        # Unzip File
-        if f[:2] == "PK":
-            # Unzip
-            fp = StringIO(f)
-            myfile = zipfile.ZipFile(fp)
-            try:
-                f = codecs.open(country + ".txt", encoding="utf-8")
-            except:
-                s3_debug("Zipfile contents don't seem correct!")
+        cachepath = os.path.join(request.folder, "cache")
+        filename = country + ".txt"
+        filepath = os.path.join(cachepath, filename)
+        if os.access(filepath, os.R_OK):
+            cached = 1
+        else:
+            cached = 0
+            if not os.access(cachepath, os.W_OK):
+                s3_debug("Folder not writable", cachepath)
                 return
-            myfile.close()
+        
+        if not cached:
+            # Download File
+            try:
+                f = fetch(url)
+            except (urllib2.URLError,):
+                e = sys.exc_info()[1]
+                s3_debug("URL Error", e)
+                return
+            except (urllib2.HTTPError,):
+                e = sys.exc_info()[1]
+                s3_debug("HTTP Error", e)
+                return
+
+            # Unzip File
+            if f[:2] == "PK":
+                # Unzip
+                fp = StringIO(f)
+                myfile = zipfile.ZipFile(fp)
+                try:
+                    myfile.extract(filename, cachepath)
+                    myfile.close()
+                except:
+                    s3_debug("Zipfile contents don't seem correct!")
+                    myfile.close()
+                    return
+
+        f = codecs.open(filepath, encoding="utf-8")
+        # Downloaded file is worth keeping
+        #os.remove(filepath)
 
         if level == "L1":
             fc = "ADM1"
@@ -807,6 +825,7 @@ class GIS(object):
                 level = "L5"
                 parent_level = "L4"
             except:
+                # ADM4 data in Geonames isn't always good (e.g. PK bad)
                 level = "L4"
                 parent_level = "L3"
             finally:

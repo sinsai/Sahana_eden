@@ -42,12 +42,12 @@ table = db.define_table(tablename,
 resource = "marker"
 tablename = "%s_%s" % (module, resource)
 table = db.define_table(tablename, timestamp,
-                #uuidstamp, # Markers don't sync
-                Field("name", length=128, notnull=True, unique=True),
-                #Field("height", "integer"), # In Pixels, for display purposes
-                #Field("width", "integer"),  # Not needed since we get size client-side using Javascript's Image() class
-                Field("image", "upload", autodelete = True),
-                migrate=migrate)
+                        #uuidstamp, # Markers don't sync
+                        Field("name", length=128, notnull=True, unique=True),
+                        #Field("height", "integer"), # In Pixels, for display purposes
+                        #Field("width", "integer"),  # Not needed since we get size client-side using Javascript's Image() class
+                        Field("image", "upload", autodelete = True),
+                        migrate=migrate)
 table.name.requires = [IS_NOT_EMPTY(), IS_NOT_IN_DB(db, "%s.name" % tablename)]
 # upload folder needs to be visible to the download() function as well as the upload
 table.image.uploadfolder = os.path.join(request.folder, "static/img/markers")
@@ -72,12 +72,12 @@ marker_id = db.Table(None, "marker_id",
 resource = "projection"
 tablename = "%s_%s" % (module, resource)
 table = db.define_table(tablename, timestamp, uuidstamp,
-                Field("name", length=128, notnull=True, unique=True),
-                Field("epsg", "integer", notnull=True),
-                Field("maxExtent", length=64, notnull=True),
-                Field("maxResolution", "double", notnull=True),
-                Field("units", notnull=True),
-                migrate=migrate)
+                        Field("name", length=128, notnull=True, unique=True),
+                        Field("epsg", "integer", notnull=True),
+                        Field("maxExtent", length=64, notnull=True),
+                        Field("maxResolution", "double", notnull=True),
+                        Field("units", notnull=True),
+                        migrate=migrate)
 table.uuid.requires = IS_NOT_IN_DB(db, "%s.uuid" % tablename)
 table.name.requires = [IS_NOT_EMPTY(), IS_NOT_IN_DB(db, "%s.name" % tablename)]
 table.epsg.requires = IS_NOT_EMPTY()
@@ -134,24 +134,24 @@ opt_gis_layout = db.Table(None, "opt_gis_layout",
 resource = "config"
 tablename = "%s_%s" % (module, resource)
 table = db.define_table(tablename, timestamp, uuidstamp,
-                pe_id,                           # Personal Entity Reference
-                Field("lat", "double"),
-                Field("lon", "double"),
-                Field("zoom", "integer"),
-                projection_id,
-                symbology_id,
-                marker_id,
-                Field("map_height", "integer", notnull=True),
-                Field("map_width", "integer", notnull=True),
-                Field("min_lon", "double", default=-180),
-                Field("min_lat", "double", default=-90),
-                Field("max_lon", "double", default=180),
-                Field("max_lat", "double", default=90),
-                Field("zoom_levels", "integer", default=16, notnull=True),
-                Field("cluster_distance", "integer", default=5, notnull=True),
-                Field("cluster_threshold", "integer", default=2, notnull=True),
-                opt_gis_layout,
-                migrate=migrate)
+                        pe_id,                           # Personal Entity Reference
+                        Field("lat", "double"),
+                        Field("lon", "double"),
+                        Field("zoom", "integer"),
+                        projection_id,
+                        symbology_id,
+                        marker_id,
+                        Field("map_height", "integer", notnull=True),
+                        Field("map_width", "integer", notnull=True),
+                        Field("min_lon", "double", default=-180),
+                        Field("min_lat", "double", default=-90),
+                        Field("max_lon", "double", default=180),
+                        Field("max_lat", "double", default=90),
+                        Field("zoom_levels", "integer", default=16, notnull=True),
+                        Field("cluster_distance", "integer", default=5, notnull=True),
+                        Field("cluster_threshold", "integer", default=2, notnull=True),
+                        opt_gis_layout,
+                        migrate=migrate)
 
 table.uuid.requires = IS_NOT_IN_DB(db, "gis_config.uuid")
 table.pe_id.requires = IS_NULL_OR(IS_ONE_OF(db, "pr_pentity.id", shn_pentity_represent))
@@ -228,13 +228,14 @@ s3xrc.model.configure(table,
 resource = "feature_class"
 tablename = "%s_%s" % (module, resource)
 table = db.define_table(tablename, timestamp, uuidstamp, deletion_status,
-                Field("name", length=128, notnull=True, unique=True),
-                Field("description"),
-                marker_id,
-                Field("gps_marker"),
-                Field("module"),    # Used to build Edit URL
-                Field("resource"),  # Used to build Edit URL & to provide Attributes to Display
-                migrate=migrate)
+                        Field("name", length=128, notnull=True, unique=True),
+                        Field("description"),
+                        marker_id,
+                        Field("gps_marker"),
+                        Field("module"),    # Used to build Edit URL
+                        Field("resource"),  # Used to build Edit URL & to provide Attributes to Display
+                        migrate=migrate)
+
 table.uuid.requires = IS_NOT_IN_DB(db, "%s.uuid" % tablename)
 table.name.requires = [IS_NOT_EMPTY(), IS_NOT_IN_DB(db, "%s.name" % tablename)]
 table.gps_marker.requires = IS_NULL_OR(IS_IN_SET([
@@ -398,35 +399,35 @@ gis_source_opts = {
 resource = "location"
 tablename = "%s_%s" % (module, resource)
 table = db.define_table(tablename, timestamp, uuidstamp, deletion_status,
-                Field("name", notnull=True),    # Primary name
-                Field("name_dummy"),            # Dummy field to provide Widget (real data is stored in the separate table which links back to this one)
-                Field("code"),
-                #feature_class_id,      # Being removed
-                #marker_id,             # Being removed
-                Field("level", length=2),
-                Field("parent", "reference gis_location", ondelete = "RESTRICT"),   # This form of hierarchy may not work on all Databases
-                Field("lft", "integer", readable=False, writable=False), # Left will be for MPTT: http://eden.sahanafoundation.org/wiki/HaitiGISToDo#HierarchicalTrees
-                Field("rght", "integer", readable=False, writable=False),# Right currently unused
-                # Street Address (other address fields come from hierarchy)
-                Field("addr_street"),
-                #Field("addr_postcode"),
-                Field("gis_feature_type", "integer", default=1, notnull=True),
-                Field("lat", "double"), # Points or Centroid for Polygons
-                Field("lon", "double"), # Points or Centroid for Polygons
-                Field("wkt", "text"),   # WKT is auto-calculated from lat/lon for Points
-                Field("url"),
-                Field("geonames_id", "integer"),# Geonames ID (for cross-correlation. OSM cannot take data from Geonames as 'polluted' with unclear sources, so can't use them as UUIDs)
-                Field("osm_id"),                # OpenStreetMap ID (for cross-correlation. OSM IDs can change over time, so they also have UUID fields they can store our IDs in)
-                Field("lon_min", "double", writable=False, readable=False), # bounding-box
-                Field("lat_min", "double", writable=False, readable=False), # bounding-box
-                Field("lon_max", "double", writable=False, readable=False), # bounding-box
-                Field("lat_max", "double", writable=False, readable=False), # bounding-box
-                Field("elevation", "integer", writable=False, readable=False),   # m in height above WGS84 ellipsoid (approximately sea-level). not displayed currently
-                Field("ce", "integer", writable=False, readable=False), # Circular 'Error' around Lat/Lon (in m). Needed for CoT.
-                Field("le", "integer", writable=False, readable=False), # Linear 'Error' for the Elevation (in m). Needed for CoT.
-                Field("source", requires=IS_NULL_OR(IS_IN_SET(gis_source_opts))),
-                comments,
-                migrate=migrate)
+                        Field("name", notnull=True),    # Primary name
+                        Field("name_dummy"),            # Dummy field to provide Widget (real data is stored in the separate table which links back to this one)
+                        Field("code"),
+                        #feature_class_id,      # Being removed
+                        #marker_id,             # Being removed
+                        Field("level", length=2),
+                        Field("parent", "reference gis_location", ondelete = "RESTRICT"),   # This form of hierarchy may not work on all Databases
+                        Field("lft", "integer", readable=False, writable=False), # Left will be for MPTT: http://eden.sahanafoundation.org/wiki/HaitiGISToDo#HierarchicalTrees
+                        Field("rght", "integer", readable=False, writable=False),# Right currently unused
+                        # Street Address (other address fields come from hierarchy)
+                        Field("addr_street"),
+                        #Field("addr_postcode"),
+                        Field("gis_feature_type", "integer", default=1, notnull=True),
+                        Field("lat", "double"), # Points or Centroid for Polygons
+                        Field("lon", "double"), # Points or Centroid for Polygons
+                        Field("wkt", "text"),   # WKT is auto-calculated from lat/lon for Points
+                        Field("url"),
+                        Field("geonames_id", "integer"),# Geonames ID (for cross-correlation. OSM cannot take data from Geonames as 'polluted' with unclear sources, so can't use them as UUIDs)
+                        Field("osm_id"),                # OpenStreetMap ID (for cross-correlation. OSM IDs can change over time, so they also have UUID fields they can store our IDs in)
+                        Field("lon_min", "double", writable=False, readable=False), # bounding-box
+                        Field("lat_min", "double", writable=False, readable=False), # bounding-box
+                        Field("lon_max", "double", writable=False, readable=False), # bounding-box
+                        Field("lat_max", "double", writable=False, readable=False), # bounding-box
+                        Field("elevation", "integer", writable=False, readable=False),   # m in height above WGS84 ellipsoid (approximately sea-level). not displayed currently
+                        Field("ce", "integer", writable=False, readable=False), # Circular 'Error' around Lat/Lon (in m). Needed for CoT.
+                        Field("le", "integer", writable=False, readable=False), # Linear 'Error' for the Elevation (in m). Needed for CoT.
+                        Field("source", requires=IS_NULL_OR(IS_IN_SET(gis_source_opts))),
+                        comments,
+                        migrate=migrate)
 
 table.uuid.requires = IS_NOT_IN_DB(db, "%s.uuid" % table)
 table.name.requires = IS_NOT_EMPTY()    # Placenames don't have to be unique
@@ -544,10 +545,11 @@ s3xrc.model.add_component(module, resource,
 resource = "location_name"
 tablename = module + "_" + resource
 table = db.define_table(tablename, timestamp, uuidstamp, deletion_status,
-                location_id,
-                Field("language"),
-                Field("name_l10n"),
-                migrate=migrate)
+                        location_id,
+                        Field("language"),
+                        Field("name_l10n"),
+                        migrate=migrate)
+
 table.uuid.requires = IS_NOT_IN_DB(db, '%s.uuid' % tablename)
 table.language.requires = IS_IN_SET(s3.l10n_languages)
 table.language.represent = lambda opt: s3.l10n_languages.get(opt, UNKNOWN_OPT)
@@ -791,21 +793,22 @@ def shn_gis_location_represent(id):
 resource = "feature_layer"
 tablename = "%s_%s" % (module, resource)
 table = db.define_table(tablename, timestamp, uuidstamp, authorstamp, deletion_status,
-                Field("name", length=128, notnull=True, unique=True),
-                Field("module"),
-                Field("resource"),
-                Field("popup_label"),       # Replace with s3.crud_strings[tablename]
-                marker_id,                  # Optional Marker to over-ride the values from the Feature Classes
-                Field("enabled", "boolean", default=True, label=T("Available in Viewer?")),
-                Field("visible", "boolean", default=False, label=T("On by default?")),
-                # ToDo Expose the Graphic options
-                # ToDo Allow defining more complex queries
-                # e.g. L1 for Provinces, L2 for Districts, etc
-                #Field("filter_field"),     # Used to build a simple query
-                #Field("filter_value"),     # Used to build a simple query
-                #Field("query", notnull=True),
-                comments,
-                migrate=migrate)
+                        Field("name", length=128, notnull=True, unique=True),
+                        Field("module"),
+                        Field("resource"),
+                        Field("popup_label"),       # Replace with s3.crud_strings[tablename]
+                        marker_id,                  # Optional Marker to over-ride the values from the Feature Classes
+                        Field("enabled", "boolean", default=True, label=T("Available in Viewer?")),
+                        Field("visible", "boolean", default=False, label=T("On by default?")),
+                        # ToDo Expose the Graphic options
+                        # ToDo Allow defining more complex queries
+                        # e.g. L1 for Provinces, L2 for Districts, etc
+                        #Field("filter_field"),     # Used to build a simple query
+                        #Field("filter_value"),     # Used to build a simple query
+                        #Field("query", notnull=True),
+                        comments,
+                        migrate=migrate)
+
 table.uuid.requires = IS_NOT_IN_DB(db, "%s.uuid" % tablename)
 #table.author.requires = IS_ONE_OF(db, "auth_user.id","%(id)s: %(first_name)s %(last_name)s")
 table.name.requires = [IS_NOT_EMPTY(), IS_NOT_IN_DB(db, "%s.name" % tablename)]
@@ -822,10 +825,10 @@ table.resource.label = T("Resource")
 resource = "apikey" # Can't use 'key' as this has other meanings for dicts!
 tablename = "%s_%s" % (module, resource)
 table = db.define_table(tablename, timestamp,
-                Field("name", notnull=True),
-                Field("apikey", length=128, notnull=True),
-                Field("description"),
-                migrate=migrate)
+                        Field("name", notnull=True),
+                        Field("apikey", length=128, notnull=True),
+                        Field("description"),
+                        migrate=migrate)
 # FIXME
 # We want a THIS_NOT_IN_DB here: http://groups.google.com/group/web2py/browse_thread/thread/27b14433976c0540/fc129fd476558944?lnk=gst&q=THIS_NOT_IN_DB#fc129fd476558944
 table.name.requires = IS_IN_SET(["google", "multimap", "yahoo"], zero=None)
@@ -839,11 +842,12 @@ table.apikey.label = T("Key")
 resource = "track"
 tablename = "%s_%s" % (module, resource)
 table = db.define_table(tablename, timestamp,
-                #uuidstamp, # Tracks don't sync
-                Field("name", length=128, notnull=True, unique=True),
-                Field("description", length=128),
-                Field("track", "upload", autodelete = True),
-                migrate=migrate)
+                        #uuidstamp, # Tracks don't sync
+                        Field("name", length=128, notnull=True, unique=True),
+                        Field("description", length=128),
+                        Field("track", "upload", autodelete = True),
+                        migrate=migrate)
+
 # upload folder needs to be visible to the download() function as well as the upload
 table.track.uploadfolder = os.path.join(request.folder, "uploads/tracks")
 table.name.requires = [IS_NOT_EMPTY(), IS_NOT_IN_DB(db, "%s.name" % tablename)]

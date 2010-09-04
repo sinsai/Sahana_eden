@@ -336,6 +336,7 @@ def location_duplicates():
     form = SQLFORM.factory(
                            Field("old", db.gis_location, requires=IS_ONE_OF(db, "gis_location.id", "%(name)s"), label = SPAN(B(T("Old")), " (" + Tstr("To delete") + ")"), comment=open_btn("btn_old")),
                            Field("new", db.gis_location, requires=IS_ONE_OF(db, "gis_location.id", "%(name)s"), label = B(T("New")), comment=open_btn("btn_new")),
+                           #formstyle = s3_formstyle
                           )
     
     if form.accepts(request.vars, session):

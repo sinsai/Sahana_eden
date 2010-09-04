@@ -30,22 +30,22 @@ if deployment_settings.has_module(module):
     resource = "volunteer"
     tablename = module + "_" + resource
     table = db.define_table(tablename, timestamp, uuidstamp,
-                    person_id,
-                    # TODO: A person may volunteer for more than one org.
-                    # Remove this -- the org can be inferred from the project
-                    # or team in which the person participates.
-                    organisation_id,
-                    Field("date_avail_start", "date"),
-                    Field("date_avail_end", "date"),
-                    Field("hrs_avail_start", "time"),
-                    Field("hrs_avail_end", "time"),
-                    Field("status", "integer",
-                        requires = IS_IN_SET(pr_volunteer_status_opts, zero=None),
-                        # default = 1,
-                        label = T("Status"),
-                        represent = lambda opt: pr_volunteer_status_opts.get(opt, UNKNOWN_OPT)),
-                    Field("special_needs", "text"),
-                    migrate=migrate)
+                            person_id,
+                            # TODO: A person may volunteer for more than one org.
+                            # Remove this -- the org can be inferred from the project
+                            # or team in which the person participates.
+                            organisation_id,
+                            Field("date_avail_start", "date"),
+                            Field("date_avail_end", "date"),
+                            Field("hrs_avail_start", "time"),
+                            Field("hrs_avail_end", "time"),
+                            Field("status", "integer",
+                                requires = IS_IN_SET(pr_volunteer_status_opts, zero=None),
+                                # default = 1,
+                                label = T("Status"),
+                                represent = lambda opt: pr_volunteer_status_opts.get(opt, UNKNOWN_OPT)),
+                            Field("special_needs", "text"),
+                            migrate=migrate)
 
     # Settings and Restrictions
 
@@ -144,28 +144,28 @@ if deployment_settings.has_module(module):
     resource = "resource"
     tablename = module + "_" + resource
     table = db.define_table(tablename, timestamp, uuidstamp,
-                    person_id,
-                    Field("type", "integer",
-                        requires = IS_IN_SET(vol_resource_type_opts, zero=None),
-                        # default = 99,
-                        label = T("Resource"),
-                        represent = lambda opt: vol_resource_type_opts.get(opt, UNKNOWN_OPT)),
-                    Field("subject", "integer",
-                        requires = IS_IN_SET(vol_resource_subject_opts, zero=None),
-                        # default = 99,
-                        label = T("Subject"),
-                        represent = lambda opt: vol_resource_subject_opts.get(opt, UNKNOWN_OPT)),
-                    Field("deployment", "integer",
-                        requires = IS_IN_SET(vol_resource_deployment_opts, zero=None),
-                        # default = 99,
-                        label = T("Deployment"),
-                        represent = lambda opt: vol_resource_deployment_opts.get(opt, UNKNOWN_OPT)),
-                    Field("status", "integer",
-                        requires = IS_IN_SET(vol_resource_status_opts, zero=None),
-                        # default = 2,
-                        label = T("Status"),
-                        represent = lambda opt: vol_resource_status_opts.get(opt, UNKNOWN_OPT)),
-                    migrate=migrate)
+                            person_id,
+                            Field("type", "integer",
+                                requires = IS_IN_SET(vol_resource_type_opts, zero=None),
+                                # default = 99,
+                                label = T("Resource"),
+                                represent = lambda opt: vol_resource_type_opts.get(opt, UNKNOWN_OPT)),
+                            Field("subject", "integer",
+                                requires = IS_IN_SET(vol_resource_subject_opts, zero=None),
+                                # default = 99,
+                                label = T("Subject"),
+                                represent = lambda opt: vol_resource_subject_opts.get(opt, UNKNOWN_OPT)),
+                            Field("deployment", "integer",
+                                requires = IS_IN_SET(vol_resource_deployment_opts, zero=None),
+                                # default = 99,
+                                label = T("Deployment"),
+                                represent = lambda opt: vol_resource_deployment_opts.get(opt, UNKNOWN_OPT)),
+                            Field("status", "integer",
+                                requires = IS_IN_SET(vol_resource_status_opts, zero=None),
+                                # default = 2,
+                                label = T("Status"),
+                                represent = lambda opt: vol_resource_status_opts.get(opt, UNKNOWN_OPT)),
+                            migrate=migrate)
 
     s3xrc.model.add_component(module, resource,
                               multiple=True,
@@ -198,94 +198,141 @@ if deployment_settings.has_module(module):
         msg_record_deleted = T("Resource deleted"),
         msg_list_empty = T("No resources currently registered"))
 
-    # TODO: Rather than the hours a volunteer "has a position" this will likely
-    # become hours the volunteer "works on a task", so vol_postion_id will
-    # switch to the task id.
     # -------------------------------------------------------------------------
-    # vol_hours:
-    #   documents the hours a volunteer has a position
+    # vol_skill_types
+    #   Customize to add more client defined Skill
     #
-    #resource = "hours"
-    #table = module + "_" + resource
-    #db.define_table(table,
-    #                person_id,
-    #                vol_position_id,
-    #                Field("shift_start", "datetime", label=T("shift_start"), notnull=True),
-    #                Field("shift_end", "datetime", label=T("shift_end"), notnull=True),
-    #                migrate=migrate)
 
-    #db[table].shift_start.requires=[IS_NOT_EMPTY(),
-    #                                      IS_DATETIME]
-    #db[table].shift_end.requires=[IS_NOT_EMPTY(),
-    #                                      IS_DATETIME]
+    resource = "skill_types"
+    tablename = module + "_" + resource
+    table = db.define_table(tablename, timestamp, uuidstamp, deletion_status,
+                            Field("name",  length=128,notnull=True),
+                            Field("category", "string", length=50),
+                            Field("description"),
+                            migrate=migrate)
 
-    # TODO: Remove?
-    # -----------------------------------------------------------------------------
-    # courier
-    #resource = "courier"
-    #table = module + "_" + resource
-    #db.define_table(table, timestamp, uuidstamp,
-    #db.define_table("vol_courier", timestamp, uuidstamp,
-    #    Field("message_id", "integer", label=T("message_id"), notnull=True),
-    #    Field("to_id", "string", label=T("to_id"), notnull=True),
-    #    Field("from_id", "string", label=T("from_id"), notnull=True),
-    #    migrate=migrate)
+    # Field settings
+    table.uuid.requires = IS_NOT_IN_DB(db, "%s.uuid" % tablename)
+    table.name.requires = [IS_NOT_EMPTY(), IS_NOT_IN_DB(db, "%s.name" % tablename)]
+    table.name.label = T("Name")
+    table.name.comment = SPAN("*", _class="req")
 
-    #db[table].message_id.requires = IS_NOT_EMPTY()
-    #db[table].to_id.requires = IS_NOT_EMPTY()
-    #db[table].from_id.requires = IS_NOT_EMPTY()
-    #db[table].message_id.requires = IS_NOT_NULL()
+    # CRUD strings
+    s3.crud_strings[tablename] = Storage(
+        title_create = T("Add Skill Type"),
+        title_display = T("Skill Type Details"),
+        title_list = T("Skill Types"),
+        title_update = T("Edit Skill Type"),
+        title_search = T("Search Skill Types"),
+        subtitle_create = T("Add New Skill Type"),
+        subtitle_list = T("Skill Types"),
+        label_list_button = T("List Skill Types"),
+        label_create_button = T("Add Skill Types"),
+        label_delete_button = T("Delete Skill Type"),
+        msg_record_created = T("Skill Type added"),
+        msg_record_modified = T("Skill Type updated"),
+        msg_record_deleted = T("Skill Type deleted"),
+        msg_list_empty = T("No Skill Types currently set"))
 
-    # TODO: Which of these are requests for access or granted access,
-    # associated with a particular volunteer, and which represent types of
-    # access or types of requests?  Anything tied to a particular volunteer
-    # should be a component of pr.
-    # -----------------------------------------------------------------------------
-    # vol_access_request
-    #resource = "access_request"
-    #table = module + "_" + resource
-    #db.define_table(table, timestamp, uuidstamp,
-    #    Field("request_id", "integer", notnull=True),
-    #    Field("act", "string", length=100, label=T("act")),
-    #    Field("vm_action", "string", length=100, label=T("vm_action")),
-    #    Field("description", "string", length=300, label=T("description")),
-    #    migrate=migrate)
+    # Representation function
+    def vol_skill_types_represent(id):
+        if id:
+            record = db(db.vol_skill_types.id == id).select().first()
+            category = record.category
+            name = record.name
+            if category:
+                return "%s: %s" % (category, name)
+            else:
+                return name
+        else:
+            return None
 
-    # -----------------------------------------------------------------------------
-    # vol_access_constraint
-    #resource = "access_constraint"
-    #table = module + "_" + resource
-    #db.define_table(table, timestamp, uuidstamp,
-    #    Field("constraint_id","string", length=30, notnull=True, default=" ", label=T("constraint_id")),
-    #    Field("description","string", length=200,label=T("description")),
-    #    migrate=migrate)
+    skill_types_id = db.Table(None, "skill_types_id",
+                              FieldS3("skill_types_id", db.vol_skill_types,
+                                      sortby = ["category", "name"],
+                                      requires = IS_ONE_OF(db, "vol_skill_types.id", vol_skill_types_represent),
+                                      represent = vol_skill_types_represent,
+                                      label = T("Skill"),
+                                      ondelete = "RESTRICT"))
 
-    # -----------------------------------------------------------------------------
-    # vol_access_constraint_to_request
-    #resource = "access_constraint_to_request"
-    #table = module + "_" + resource
-    #db.define_table(table, timestamp, uuidstamp,
-    #    Field("request_id", db.vol_access_request),
-    #    Field("constraint_id", db.vol_access_constraint),
-    #    migrate=migrate)
 
-    # -----------------------------------------------------------------------------
-    # vol_access_classification_to_request
-    #resource = "access_classification_to_request"
-    #table = module + "_" + resource
-    #db.define_table(table, timestamp, uuidstamp,
-    #    Field("request_id", "integer", length=11, notnull=True, default=0),
-    #    Field("table_name", "string", length=200, notnull=True, default=" ", label=T("table_name")),
-    #    Field("crud", "string", length=4, notnull=True, default=" ", label=T("crud")),
-    #    migrate=migrate)
+    # -------------------------------------------------------------------------
+    # vol_skill
+    #   A volunteer's skills (component of pr)
+    #
 
+    resource = "skill"
+    tablename = module + "_" + resource
+    table = db.define_table(tablename, timestamp, uuidstamp, deletion_status,
+                            person_id,
+                            skill_types_id,
+                            Field("status",
+                                  requires=IS_IN_SET(["approved","unapproved","denied"]),
+                                  label=T("Status"),
+                                  notnull=True,
+                                  default="unapproved"),
+                            migrate=migrate)
+
+    s3xrc.model.add_component(module, resource,
+        multiple=True,
+        joinby=dict(pr_person="person_id"),
+        deletable=True,
+        editable=True)
+
+    s3xrc.model.configure(table,
+                          list_fields=["id",
+                                       "skill_types_id",
+                                       "status"])
+
+    # CRUD Strings
+    ADD_SKILL = T("Add Skill")
+    SKILL = T("Skill")
+    s3.crud_strings[tablename] = Storage(
+        title_create = ADD_SKILL,
+        title_display = T("Skill Details"),
+        title_list = SKILL,
+        title_update = T("Edit Skill"),
+        title_search = T("Search Skills"),
+        subtitle_create = T("Add New Skill"),
+        subtitle_list = SKILL,
+        label_list_button = T("List Skills"),
+        label_create_button = ADD_SKILL,
+        label_delete_button = T("Delete Skill"),
+        msg_record_created = T("Skill added"),
+        msg_record_modified = T("Skill updated"),
+        msg_record_deleted = T("Skill deleted"),
+        msg_list_empty = T("No skills currently set"))
+
+    # shn_pr_group_represent -------------------------------------------------
+    #
+    def teamname(record):
+        """
+            Returns the Team Name
+        """
+
+        tname = ""
+        if record and record.name:
+            tname = "%s " % record.name.strip()
+        return tname
+
+    def shn_pr_group_represent(id):
+
+        def _represent(id):
+            table = db.pr_group
+            group = db(table.id == id).select(table.name)
+            if group:
+                return teamname(group[0])
+            else:
+                return None
+
+        name = cache.ram("pr_group_%s" % id, lambda: _represent(id))
+        return name
+        
     # TODO: Is this in use?  Have project location fields changed, since a
     # project could have multiple locations?
     # -------------------------------------------------------------------------
-    # shn_org_project_search_location:
-    #   form function to search projects by location
-    #
     def shn_org_project_search_location(xrequest, **attr):
+        """ Form function to search projects by location """
 
         if attr is None:
             attr = {}
@@ -372,133 +419,87 @@ if deployment_settings.has_module(module):
     # Plug into REST controller
     s3xrc.model.set_method(module, "project", method="search_location", action=shn_org_project_search_location )
 
-
     # -------------------------------------------------------------------------
-    # vol_skill_types
-    #   Customize to add more client defined Skill
-    #
-
-    resource = "skill_types"
-    tablename = module + "_" + resource
-    table = db.define_table(tablename, timestamp, uuidstamp, deletion_status,
-            Field("name",  length=128,notnull=True),
-            Field("category", "string", length=50),
-            Field("description"),
-            migrate=migrate)
-
-    # Field settings
-    table.uuid.requires = IS_NOT_IN_DB(db, "%s.uuid" % tablename)
-    table.name.requires = [IS_NOT_EMPTY(), IS_NOT_IN_DB(db, "%s.name" % tablename)]
-    table.name.label = T("Name")
-    table.name.comment = SPAN("*", _class="req")
-
-    # CRUD strings
-    s3.crud_strings[tablename] = Storage(
-        title_create = T("Add Skill Type"),
-        title_display = T("Skill Type Details"),
-        title_list = T("Skill Types"),
-        title_update = T("Edit Skill Type"),
-        title_search = T("Search Skill Types"),
-        subtitle_create = T("Add New Skill Type"),
-        subtitle_list = T("Skill Types"),
-        label_list_button = T("List Skill Types"),
-        label_create_button = T("Add Skill Types"),
-        label_delete_button = T("Delete Skill Type"),
-        msg_record_created = T("Skill Type added"),
-        msg_record_modified = T("Skill Type updated"),
-        msg_record_deleted = T("Skill Type deleted"),
-        msg_list_empty = T("No Skill Types currently set"))
-
-    # Representation function
-    def vol_skill_types_represent(id):
-        if id:
-            record = db(db.vol_skill_types.id == id).select().first()
-            category = record.category
-            name = record.name
-            if category:
-                return "%s: %s" % (category, name)
-            else:
-                return name
-        else:
-            return None
-
-    skill_types_id = db.Table(None, "skill_types_id",
-                              FieldS3("skill_types_id", db.vol_skill_types,
-                                      sortby = ["category", "name"],
-                                      requires = IS_ONE_OF(db, "vol_skill_types.id", vol_skill_types_represent),
-                                      represent = vol_skill_types_represent,
-                                      label = T("Skill"),
-                                      ondelete = "RESTRICT"))
-
-
+    # Unused Code
     # -------------------------------------------------------------------------
-    # vol_skill
-    #   A volunteer's skills (component of pr)
+    
+    # TODO: Rather than the hours a volunteer "has a position" this will likely
+    # become hours the volunteer "works on a task", so vol_postion_id will
+    # switch to the task id.
+    # -------------------------------------------------------------------------
+    # vol_hours:
+    #   documents the hours a volunteer has a position
     #
+    #resource = "hours"
+    #table = module + "_" + resource
+    #db.define_table(table,
+    #                person_id,
+    #                vol_position_id,
+    #                Field("shift_start", "datetime", label=T("shift_start"), notnull=True),
+    #                Field("shift_end", "datetime", label=T("shift_end"), notnull=True),
+    #                migrate=migrate)
 
-    resource = "skill"
-    tablename = module + "_" + resource
-    table = db.define_table(
-        tablename, timestamp, uuidstamp, deletion_status,
-        person_id, skill_types_id,
-        Field("status",
-              requires=IS_IN_SET(["approved","unapproved","denied"]),
-              label=T("Status"),
-              notnull=True,
-              default="unapproved"),
-        migrate=migrate)
+    #db[table].shift_start.requires=[IS_NOT_EMPTY(),
+    #                                      IS_DATETIME]
+    #db[table].shift_end.requires=[IS_NOT_EMPTY(),
+    #                                      IS_DATETIME]
 
-    s3xrc.model.add_component(module, resource,
-        multiple=True,
-        joinby=dict(pr_person="person_id"),
-        deletable=True,
-        editable=True)
+    # TODO: Remove?
+    # -----------------------------------------------------------------------------
+    # courier
+    #resource = "courier"
+    #table = module + "_" + resource
+    #db.define_table(table, timestamp, uuidstamp,
+    #db.define_table("vol_courier", timestamp, uuidstamp,
+    #    Field("message_id", "integer", label=T("message_id"), notnull=True),
+    #    Field("to_id", "string", label=T("to_id"), notnull=True),
+    #    Field("from_id", "string", label=T("from_id"), notnull=True),
+    #    migrate=migrate)
 
-    s3xrc.model.configure(table,
-                          list_fields=["id",
-                                       "skill_types_id",
-                                       "status"])
+    #db[table].message_id.requires = IS_NOT_EMPTY()
+    #db[table].to_id.requires = IS_NOT_EMPTY()
+    #db[table].from_id.requires = IS_NOT_EMPTY()
+    #db[table].message_id.requires = IS_NOT_NULL()
 
-    # CRUD Strings
-    ADD_SKILL = T("Add Skill")
-    SKILL = T("Skill")
-    s3.crud_strings[tablename] = Storage(
-        title_create = ADD_SKILL,
-        title_display = T("Skill Details"),
-        title_list = SKILL,
-        title_update = T("Edit Skill"),
-        title_search = T("Search Skills"),
-        subtitle_create = T("Add New Skill"),
-        subtitle_list = SKILL,
-        label_list_button = T("List Skills"),
-        label_create_button = ADD_SKILL,
-        label_delete_button = T("Delete Skill"),
-        msg_record_created = T("Skill added"),
-        msg_record_modified = T("Skill updated"),
-        msg_record_deleted = T("Skill deleted"),
-        msg_list_empty = T("No skills currently set"))
+    # TODO: Which of these are requests for access or granted access,
+    # associated with a particular volunteer, and which represent types of
+    # access or types of requests?  Anything tied to a particular volunteer
+    # should be a component of pr.
+    # -----------------------------------------------------------------------------
+    # vol_access_request
+    #resource = "access_request"
+    #table = module + "_" + resource
+    #db.define_table(table, timestamp, uuidstamp,
+    #    Field("request_id", "integer", notnull=True),
+    #    Field("act", "string", length=100, label=T("act")),
+    #    Field("vm_action", "string", length=100, label=T("vm_action")),
+    #    Field("description", "string", length=300, label=T("description")),
+    #    migrate=migrate)
 
-    # shn_pr_group_represent -------------------------------------------------
-    #
-    def teamname(record):
-        """
-            Returns the Team Name
-        """
+    # -----------------------------------------------------------------------------
+    # vol_access_constraint
+    #resource = "access_constraint"
+    #table = module + "_" + resource
+    #db.define_table(table, timestamp, uuidstamp,
+    #    Field("constraint_id","string", length=30, notnull=True, default=" ", label=T("constraint_id")),
+    #    Field("description","string", length=200,label=T("description")),
+    #    migrate=migrate)
 
-        tname = ""
-        if record and record.name:
-            tname = "%s " % record.name.strip()
-        return tname
+    # -----------------------------------------------------------------------------
+    # vol_access_constraint_to_request
+    #resource = "access_constraint_to_request"
+    #table = module + "_" + resource
+    #db.define_table(table, timestamp, uuidstamp,
+    #    Field("request_id", db.vol_access_request),
+    #    Field("constraint_id", db.vol_access_constraint),
+    #    migrate=migrate)
 
-    def shn_pr_group_represent(id):
-
-        def _represent(id):
-            table = db.pr_group
-            group = db(table.id == id).select(table.name)
-            if group:
-                return teamname(group[0])
-            else:
-                return None
-
-        name = cache.ram("pr_group_%s" % id, lambda: _represent(id))
-        return name
+    # -----------------------------------------------------------------------------
+    # vol_access_classification_to_request
+    #resource = "access_classification_to_request"
+    #table = module + "_" + resource
+    #db.define_table(table, timestamp, uuidstamp,
+    #    Field("request_id", "integer", length=11, notnull=True, default=0),
+    #    Field("table_name", "string", length=200, notnull=True, default=" ", label=T("table_name")),
+    #    Field("crud", "string", length=4, notnull=True, default=" ", label=T("crud")),
+    #    migrate=migrate)

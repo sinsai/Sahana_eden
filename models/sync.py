@@ -147,12 +147,12 @@ table = db.define_table(tablename, timestamp,
                               notnull=True,
                               default="h",
                               requires = IS_IN_SET(sync_schedule_period_opts) ),
-                        Field("hours", "integer", default=4),       # specifies the number of hours when hourly period is specified in 'period' field
-                        Field("days_of_week", length=40),           # comma-separated list of the day(s) of the week when job runs on weekly basis.
-                                                            # A day in a week is represented as a number ranging from 1 to 7 (1 = Sunday, 7 = Saturday)
-                        Field("time_of_day", "time"),               # the time (at day_of_week) when job runs on a weekly or daily basis
-                        Field("runonce_datetime", "datetime"),      # the date and time when job runs just once
-                        Field("job_type", "integer", default=1,     # This specifies the type of job: 1 - SahanaEden <=> SahanaEden sync,
+                        Field("hours", "integer", default=4),   # specifies the number of hours when hourly period is specified in 'period' field
+                        Field("days_of_week", length=40),       # comma-separated list of the day(s) of the week when job runs on weekly basis.
+                                                                # A day in a week is represented as a number ranging from 1 to 7 (1 = Sunday, 7 = Saturday)
+                        Field("time_of_day", "time"),           # the time (at day_of_week) when job runs on a weekly or daily basis
+                        Field("runonce_datetime", "datetime"),  # the date and time when job runs just once
+                        Field("job_type", "integer", default=1, # This specifies the type of job: 1 - SahanaEden <=> SahanaEden sync,
                               requires = IS_IN_SET(sync_schedule_job_type_opts) ),
                                                             # 2 - SahanaEden <= Other sync (could be SahanaAgasti, Ushahidi, etc.)
                         Field("job_command", "text", notnull=True), # sync command to execute when this job runs. This command is encoded as a JSON formatted object.
@@ -161,9 +161,9 @@ table = db.define_table(tablename, timestamp,
                                                             # (partial sync only retrieves data modified after the last sync, complete sync fetches all),
                                                             # whether this sync would be a two-way (both push and pull) or one-way (push or pull),
                                                             # and sync policy (default policy is taken from the sync partner's record)
-                        Field("last_run", "datetime"),              # the date and time of last scheduled run
-                        Field("enabled", "boolean",                 # whether this schedule is enabled or not. Useful in cases when you want to temporarily
-                              default=True),                          # disable a schedule
+                        Field("last_run", "datetime"),      # the date and time of last scheduled run
+                        Field("enabled", "boolean",         # whether this schedule is enabled or not. Useful in cases when you want to temporarily
+                              default=True),                # disable a schedule
                         migrate=migrate)
 
 

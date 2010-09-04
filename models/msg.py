@@ -161,7 +161,7 @@ if deployment_settings.has_module(module):
 
     # The following was added to show only the supported messaging methods
     msg_contact_method_opts = { # pr_contact_method dependency
-        1:T("E-Mail"),
+        1:T("Email"),
         2:T("Mobile Phone"),
     }
 

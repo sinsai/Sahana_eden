@@ -81,7 +81,8 @@ jQuery(document).ready(function() {
             return false;
         }
     });
-    jQuery('.tooltip').cluetip({activation: 'hover', sticky: false, closePosition: 'title', closeText: '<img src="/{{=request.application}}/static/img/cross2.png" alt="close" />', splitTitle: '|'});
+    jQuery('.tooltip').cluetip({activation: 'hover', sticky: false, splitTitle: '|'});
+    jQuery('.stickytip').cluetip({activation: 'hover', sticky: true, closePosition: 'title', closeText: '<img src="/{{=request.application}}/static/img/cross2.png" alt="close" />', splitTitle: '|'});
     jQuery('.ajaxtip').cluetip({activation: 'click', sticky: true, closePosition: 'title', closeText: '<img src="/{{=request.application}}/static/img/cross2.png" alt="close" />', width: 380});
 });
 //]]></script>

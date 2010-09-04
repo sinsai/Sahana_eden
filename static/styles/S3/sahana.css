@@ -447,6 +447,7 @@ div.question-container { text-align:center;
 
 /* Help Popup */
 .tooltip,
+.stickytip,
 .ajaxtip { position:static;
           text-transform:uppercase;
           height:20px;
@@ -454,8 +455,10 @@ div.question-container { text-align:center;
           background-image: url(../../img/help_off.gif); }
 
 .tooltip span,
+.stickytip span,
 .ajaxtip span { display:none; }
 .tooltip:hover,
+.stickytip:hover,
 .ajaxtip:hover { background-color:transparent;
                 background-image: url(../../img/help_on.gif); }
 

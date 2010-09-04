@@ -17,7 +17,6 @@ response.menu_options = [
     [T("Incident Reports"), False, URL(r=request, f="ireport"),[
         [T("List"), False, URL(r=request, f="ireport")],
         [T("Add"), False, URL(r=request, f="ireport", args="create")],
-        #[T("Ushahidi"), False, URL(r=request, f="ireport", args="ushahidi")],
         #[T("Search"), False, URL(r=request, f="ireport", args="search")]
     ]],
     #[T("Assessments"), False, URL(r=request, f="iassessment"),[
@@ -44,7 +43,7 @@ if shn_has_role(1):
         ]]
     )
     response.menu_options.append(
-        [T("Ushahidi Import"), False, URL(r=request, f="ireport", args="ushahidi")],
+        ["Ushahidi " + Tstr("Import"), False, URL(r=request, f="ireport", args="ushahidi")],
     )
 
 # -----------------------------------------------------------------------------

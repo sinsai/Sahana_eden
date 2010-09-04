@@ -248,8 +248,18 @@ if deployment_settings.has_module(module):
     # Assessment as component of doc_document and cr_shelter.
     s3xrc.model.add_component(module, resource,
                               multiple=True,
-                              joinby=dict(doc_document="document_id",
-                                          cr_shelter="shelter_id"),
+                              joinby=dict(doc_document="document_id"),
+                              deletable=True,
+                              editable=True)
+    # @ToDo There is a problem with "components as components": If resource
+    # A has B as a component, and B itself has components, then in A's tabbed
+    # view, only B's own form shows up, not its tabbed display.  Since the
+    # create form for rat shown in the shelter tabbed display only has the
+    # first page of an assessment, don't show it.
+    s3xrc.model.add_component(module, resource,
+                              multiple=True,
+                              joinby=dict(cr_shelter="shelter_id"),
+                              listadd=False,
                               deletable=True,
                               editable=True)
 

@@ -135,6 +135,23 @@ def assessment():
         }
     }
 
+    # If this assessment is being created as a component of a shelter,
+    # it will have the shelter id in its vars.
+    # @ToDo  Generalize this and make it available as a function that other
+    # component prep methods can call to set the default for a join field.
+    def prep(r):
+        if r.representation=="html" and r.http=="GET" and r.method=="create":
+            shelter_id = r.request.get_vars.get("assessment.shelter_id", None)
+            if shelter_id:
+                try:
+                    shelter_id = int(shelter_id)
+                except ValueError:
+                    pass
+                else:
+                    db.rat_assessment.shelter_id.default = shelter_id
+        return True
+    response.s3.prep = prep
+
     # Post-processor
     def postp(r, output):
         shn_action_buttons(r, deletable=False)

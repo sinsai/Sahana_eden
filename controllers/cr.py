@@ -134,15 +134,11 @@ def shelter():
     # Don't send the locations list to client (pulled by AJAX instead)
     table.location_id.requires = IS_NULL_OR(IS_ONE_OF_EMPTY(db, "gis_location.id"))
 
-    response.s3.prep = shelter_prep
+    response.s3.prep = shn_shelter_prep
+    response.s3.postp = shn_component_postp
 
-    crud.settings.create_onvalidation = shelter_onvalidation
-    crud.settings.update_onvalidation = shelter_onvalidation
-
-    def user_postp(jr, output):
-        shn_action_buttons(jr, deletable=False)
-        return output
-    response.s3.postp = user_postp
+    crud.settings.create_onvalidation = shn_shelter_onvalidation
+    crud.settings.update_onvalidation = shn_shelter_onvalidation
 
     response.s3.pagination = True
 
@@ -154,6 +150,7 @@ def shelter():
 
     rheader = lambda r: shn_shelter_rheader(r, tabs=shelter_tabs)
 
+
     output = shn_rest_controller(module, resource,
                                  listadd=False,
                                  rheader=rheader)
@@ -161,6 +158,7 @@ def shelter():
     shn_menu()
     return output
 
+# -----------------------------------------------------------------------------
 """
 The school- and hospital-specific fields are guarded by checkboxes in
 the form.  If the "is_school" or "is_hospital" checkbox was checked,
@@ -174,16 +172,18 @@ there is a (small) possibility that someone deleted the chosen hospital
 record while this request was in flight.  If the user doesn't want the
 hospital they selected, there's no reason to make sure it's in the database.
 
-On the other hand, we don't check for a missing school code or hospital id
-value until after other fields have been validated, as that allows the
-user to get all the user to see al the errors in one go.
+The check for a missing school code or hospital id value is in an
+onvalidation function.  Web2py short-circuits validation, so if there are
+other errors, the check on school code and hospital id won't be called.
+If the user corrects their other errors but has a mistake in school code
+or hospital id, they'll do another round trip through fixing an error.
 
 We don't just clear the fields in the form if the user unchecks the
 checkbox because they might do that accidentally, and it would not be
 nice to make them re-enter the info.
 """
 
-def shelter_prep(r):
+def shn_shelter_prep(r):
     """
     If the "is_school" or "is_hospital" checkbox was checked, we use the
     corresponding field values, else we clear them so no attempt is made
@@ -216,7 +216,8 @@ def shelter_prep(r):
 
     return True
 
-def shelter_onvalidation(form):
+# -----------------------------------------------------------------------------
+def shn_shelter_onvalidation(form):
     """
     If the user checked is_school, but there is no school_code, add a
     form.error for that field, to fail the submission and get an error
@@ -238,7 +239,6 @@ def shelter_onvalidation(form):
                 "Please select a hospital or don't check 'Is this a hospital?'")
 
     return
-
 
 # -----------------------------------------------------------------------------
 def shn_shelter_rheader(r, tabs=[]):

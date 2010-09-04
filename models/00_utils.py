@@ -403,11 +403,20 @@ def shn_abbreviate(word, size=48):
         return word
 
 
+# @ToDo An alternative to having the caller pass in a constructed url
+# would be to let then pass in an url or a linkto function, and call
+# the function here.
+
 # -----------------------------------------------------------------------------
-def shn_action_buttons(jr, deletable=True, copyable=False):
+def shn_action_buttons(jr, deletable=True, copyable=False,
+                       read_url=None, update_url=None,
+                       delete_url=None, copy_url=None):
 
     """
         Provide the usual Action Buttons for Column views.
+        Allow customizing the urls, since this overwrites anything
+        that would be inserted by shn_list via linkto.  The resource
+        id should be represented by "[id]".
         Designed to be called from a postp
     """
 
@@ -417,21 +426,29 @@ def shn_action_buttons(jr, deletable=True, copyable=False):
         args = ["[id]"]
 
     if shn_has_permission("update", jr.table):
-        # Provide the ability to delete records in bulk
+        if not update_url:
+            update_url = str(URL(r=request, args = args + ["update"]))
         response.s3.actions = [
-            dict(label=str(UPDATE), _class="action-btn", url=str(URL(r=request, args = args + ["update"]))),
+            dict(label=str(UPDATE), _class="action-btn", url=update_url),
         ]
+        # Provide the ability to delete records in bulk
         if deletable and shn_has_permission("delete", jr.table):
+            if not delete_url:
+                delete_url = str(URL(r=request, args = args + ["delete"]))
             response.s3.actions.append(
-                dict(label=str(DELETE), _class="action-btn", url=str(URL(r=request, args = args + ["delete"])))
+                dict(label=str(DELETE), _class="action-btn", url=delete_url)
             )
         if copyable:
+            if not copy_url:
+                copy_url = str(URL(r=request, args = args + ["copy"]))
             response.s3.actions.append(
-                dict(label=str(COPY), _class="action-btn", url=str(URL(r=request, args = args + ["copy"])))
+                dict(label=str(COPY), _class="action-btn", url=copy_url)
             )
     else:
+        if not read_url:
+            read_url = str(URL(r=request, args = args))
         response.s3.actions = [
-            dict(label=str(READ), _class="action-btn", url=str(URL(r=request, args = args)))
+            dict(label=str(READ), _class="action-btn", url=read_url)
         ]
 
     return
@@ -732,5 +749,3 @@ def shn_rheader_tabs(r, tabs=[], paging=False):
         rheader_tabs = ""
 
     return rheader_tabs
-
-# -----------------------------------------------------------------------------

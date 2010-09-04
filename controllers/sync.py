@@ -545,22 +545,48 @@ def partner():
     msg_list_empty = T("No Partners currently registered")
     s3.crud_strings.sync_partner = Storage(title_create=title_create,title_display=title_display,title_list=title_list,title_update=title_update,title_search=title_search,subtitle_create=subtitle_create,subtitle_list=subtitle_list,label_list_button=label_list_button,label_create_button=label_create_button,msg_record_created=msg_record_created,msg_record_modified=msg_record_modified,msg_record_deleted=msg_record_deleted,msg_list_empty=msg_list_empty)
 
-    if "delete" in request.args:
-        peer_sel = db(db.sync_partner.id==int(request.args[0])).select(db.sync_partner.ALL)
-        peer_uuid = None
-        if peer_sel:
-            peer_uuid = peer_sel[0].uuid
-        if peer_uuid:
-            sch_jobs_del = []
-            sch_jobs = db().select(db.sync_schedule.ALL)
-            for sch_job in sch_jobs:
-                sch_job_cmd = json.loads(sch_job.job_command)
-                if sch_job_cmd["partner_uuid"] == peer_uuid:
-                    sch_jobs_del.append(sch_job.id)
-            if sch_jobs_del:
-                db(db.sync_schedule.id.belongs(sch_jobs_del)).delete()
+    def partner_ondelete(row):
 
-    elif (not "update" in request.args) and len(request.vars) > 0:
+        """ Delete all jobs with this partner """
+
+        uuid = row.get("uuid")
+        if uuid:
+            schedule = db.sync_schedule
+            jobs = db().select(schedule.ALL)
+            jobs_del = []
+            for job in jobs:
+                try:
+                    job_cmd = json.loads(job.job_command)
+                except:
+                    continue
+                else:
+                    if job_cmd["partner_uuid"] == uuid:
+                        jobs_del.append(job.id)
+            db(schedule.id.belongs(jobs_del)).delete()
+    s3xrc.configure(table, delete_onaccept=partner_ondelete)
+
+    def partner_onadd(form):
+
+        """ Add default jobs with this partner """
+
+        return
+
+    #if "delete" in request.args: # @todo: make this a delete_onaccept
+        #peer_sel = db(db.sync_partner.id==int(request.args[0])).select(db.sync_partner.ALL)
+        #peer_uuid = None
+        #if peer_sel:
+            #peer_uuid = peer_sel[0].uuid
+        #if peer_uuid:
+            #sch_jobs_del = []
+            #sch_jobs = db().select(db.sync_schedule.ALL)
+            #for sch_job in sch_jobs:
+                #sch_job_cmd = json.loads(sch_job.job_command)
+                #if sch_job_cmd["partner_uuid"] == peer_uuid:
+                    #sch_jobs_del.append(sch_job.id)
+            #if sch_jobs_del:
+                #db(db.sync_schedule.id.belongs(sch_jobs_del)).delete()
+
+    if (not "update" in request.args) and len(request.vars) > 0: # @todo: make this prep/postp and onaccept
         # add new partner
         random_uuid = str(uuid.uuid4())
         new_instance_type = ""

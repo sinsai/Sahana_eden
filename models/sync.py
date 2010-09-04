@@ -12,12 +12,17 @@ module = "sync"
 # Sync Policy
 #
 sync_policy_opts = {
-    0:T("No Sync"),
-    1:T("Keep Local"),
-    2:T("Replace with Remote"),
-    3:T("Newer Timestamp"),
-#    4:T("Role-based"),
-    5:T("Choose Manually")
+    0: T("No synchronization"),
+    1: T("Manual"),             # choose records manually
+    2: T("Import"),             # import new records, do not update existing records
+    3: T("Replace"),            # import new records and update existing records to peer version
+    4: T("Update"),             # update existing records to peer version, do not import new records
+    5: T("Replace/Newer"),      # import new records, update existing records to newer version
+    6: T("Update/Newer"),       # do not import new records, only update existing records to newer version
+    7: T("Import/Master"),      # import master records, do not update existing records
+    8: T("Replace/Master"),     # import master records and update existing records to master version
+    9: T("Update/Master"),      # update existing records to master version, do not import new records
+    #10: T("Role-based") # not implemented yet
 }
 
 opt_sync_policy = db.Table(None, "sync_policy",
@@ -33,7 +38,8 @@ opt_sync_policy = db.Table(None, "sync_policy",
 resource = "setting"
 tablename = "%s_%s" % (module, resource)
 table = db.define_table(tablename,
-                        Field("uuid", length=36, notnull=True),     # Our UUID for sync purposes
+                        uuidstamp,
+                        #Field("uuid", length=36, notnull=True),     # Our UUID for sync purposes
                         Field("beacon_service_url", default = "http://sync.eden.sahanafoundation.org/sync/beacon"), # URL of beacon service that our sahana instance is configured to work with
                         Field("sync_pools"),                        # Comma-separated list of sync pools we've subscribed to
                         Field("proxy"),
@@ -55,7 +61,8 @@ sync_partner_instance_type_opts = {
 resource = "partner"
 tablename = "%s_%s" % (module, resource)
 table = db.define_table(tablename,
-                        Field("uuid", length=36, notnull=True),     # uuid of this partner
+                        uuidstamp,
+                        #Field("uuid", length=36, notnull=True),     # uuid of this partner
                         Field("name", default="Sahana Eden Instance"), # name of the partner (descriptive title)
                         Field("instance_url", default = "http://sync.eden.sahanafoundation.org/eden", notnull=True), # URL of their instance
                         Field("instance_type",                      # the type of instance => "SahanaEden", "SahanaAgasti", "Ushahidi", etc.
@@ -93,14 +100,14 @@ table = db.define_table(tablename,
 resource = "log"
 tablename = "%s_%s" % (module, resource)
 table = db.define_table(tablename,
-                Field("partner_uuid", length=36),           # uuid of remote system we synced with
-                Field("timestmp", "datetime"),              # the date and time when sync was performed
-                Field("sync_resources", "text"),            # comma-separated list of resources synced
-                Field("sync_errors", "text"),               # sync errors encountered
-                Field("sync_mode"),                         # whether this was an "online" sync (standard sync mode) or "offline" sync (USB/File based)
-                Field("complete_sync", "boolean"),          # whether all resources were synced (complete sync) or only those modified since the last sync (partial sync)
-                Field("sync_method"),                       # whether this was a Pull only, Push only, Remote Push or a Pull-Push sync operation
-                migrate=migrate)
+                        Field("partner_uuid", length=36),           # uuid of remote system we synced with
+                        Field("timestmp", "datetime"),              # the date and time when sync was performed
+                        Field("sync_resources", "text"),            # comma-separated list of resources synced
+                        Field("sync_errors", "text"),               # sync errors encountered
+                        Field("sync_mode"),                         # whether this was an "online" sync (standard sync mode) or "offline" sync (USB/File based)
+                        Field("complete_sync", "boolean"),          # whether all resources were synced (complete sync) or only those modified since the last sync (partial sync)
+                        Field("sync_method"),                       # whether this was a Pull only, Push only, Remote Push or a Pull-Push sync operation
+                        migrate=migrate)
 
 # -----------------------------------------------------------------------------
 # Sync Now - stored state
@@ -108,12 +115,12 @@ table = db.define_table(tablename,
 resource = "now"
 tablename = "%s_%s" % (module, resource)
 table = db.define_table(tablename,
-                Field("sync_jobs", "text"),                 # comma-separated list of sync jobs (partner uuids for now, sync job ids from scheduler in future)
-                Field("started_on", "datetime"),            # timestamp when the sync now process began
-                Field("job_resources_done", "text"),        # comma-separated list of resources synced of the currently running job
-                Field("job_resources_pending", "text"),     # comma-separated list of resources to be synced of the currently running job
-                Field("job_sync_errors", "text"),           # sync errors encountered while processing the current job
-                migrate=migrate)
+                        Field("sync_jobs", "text"),                 # comma-separated list of sync jobs (partner uuids for now, sync job ids from scheduler in future)
+                        Field("started_on", "datetime"),            # timestamp when the sync now process began
+                        Field("job_resources_done", "text"),        # comma-separated list of resources synced of the currently running job
+                        Field("job_resources_pending", "text"),     # comma-separated list of resources to be synced of the currently running job
+                        Field("job_sync_errors", "text"),           # sync errors encountered while processing the current job
+                        migrate=migrate)
 
 # -----------------------------------------------------------------------------
 # Sync Schedule - scheduled sync jobs

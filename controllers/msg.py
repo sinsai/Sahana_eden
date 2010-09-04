@@ -124,7 +124,7 @@ def group_membership():
 
     # Hide unnecessary fields
     table.description.readable = table.description.writable = False
-    table.comment.readable = table.comment.writable = False
+    table.comments.readable = table.comments.writable = False
     table.group_head.readable = table.group_head.writable = False
     
     return shn_rest_controller(module, resource)

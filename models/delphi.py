@@ -13,10 +13,10 @@ if deployment_settings.has_module(module):
     resource = 'group'
     tablename = module + '_' + resource
     table = db.define_table(tablename, timestamp,
-        Field('name', notnull=True),
-        Field('description', 'text'),
-        Field('active', 'boolean', default=True),
-        migrate=migrate)
+                            Field('name', notnull=True),
+                            Field('description', 'text'),
+                            Field('active', 'boolean', default=True),
+                            migrate=migrate)
 
     table.name.label = T("Group Title")
     table.name.requires = [IS_NOT_EMPTY(), IS_NOT_IN_DB(db, "delphi_group.name")]
@@ -53,12 +53,12 @@ if deployment_settings.has_module(module):
     resource = 'user_to_group'
     tablename = module + '_' + resource
     table = db.define_table(tablename,
-        Field('group_id', db.delphi_group, notnull=True),
-        Field('user_id', db.auth_user, notnull=True),
-        Field('description'),
-        Field('req', 'boolean', default=False),
-        Field('status', 'integer', default=1),
-        migrate=migrate)
+                            Field('group_id', db.delphi_group, notnull=True),
+                            Field('user_id', db.auth_user, notnull=True),
+                            Field('description'),
+                            Field('req', 'boolean', default=False),
+                            Field('status', 'integer', default=1),
+                            migrate=migrate)
 
     table.group_id.label = T('Problem Group')
     table.group_id.requires = IS_IN_DB(db, 'delphi_group.id', '%(name)s')
@@ -96,14 +96,14 @@ if deployment_settings.has_module(module):
     resource = 'problem'
     tablename = module + '_' + resource
     table = db.define_table(tablename,
-        Field('group_id', db.delphi_group, notnull=True),
-        Field('name', notnull=True),
-        Field('description', 'text'),
-        Field('criteria', 'text', notnull=True),
-        Field('active', 'boolean', default=True),
-        Field('created_by', db.auth_user, writable=False, readable=False),
-        Field('last_modification','datetime', default=request.now, writable=False),
-        migrate=migrate)
+                            Field('group_id', db.delphi_group, notnull=True),
+                            Field('name', notnull=True),
+                            Field('description', 'text'),
+                            Field('criteria', 'text', notnull=True),
+                            Field('active', 'boolean', default=True),
+                            Field('created_by', db.auth_user, writable=False, readable=False),
+                            Field('last_modification','datetime', default=request.now, writable=False),
+                            migrate=migrate)
 
     table.name.label = T('Problem Title')
     table.name.requires = [IS_NOT_EMPTY(), IS_NOT_IN_DB(db, "delphi_problem.name")]
@@ -143,12 +143,12 @@ if deployment_settings.has_module(module):
     resource = 'solution'
     tablename = module + '_' + resource
     table = db.define_table(tablename,
-        Field('problem_id', db.delphi_problem, notnull=True),
-        Field('name'),
-        Field('description', 'text'),
-        Field('suggested_by', db.auth_user, writable=False, readable=False),
-        Field('last_modification', 'datetime', default=request.now, writable=False),
-        migrate=migrate)
+                            Field('problem_id', db.delphi_problem, notnull=True),
+                            Field('name'),
+                            Field('description', 'text'),
+                            Field('suggested_by', db.auth_user, writable=False, readable=False),
+                            Field('last_modification', 'datetime', default=request.now, writable=False),
+                            migrate=migrate)
 
     table.name.requires = IS_NOT_EMPTY()
     table.name.label = T('Title')
@@ -184,12 +184,12 @@ if deployment_settings.has_module(module):
     resource = 'vote'
     tablename = module + '_' + resource
     table = db.define_table(tablename,
-        Field('problem_id', db.delphi_problem, notnull=True),
-        Field('solution_id', db.delphi_solution, notnull=True),
-        Field('rank', 'integer'),
-        Field('user_id', db.auth_user, writable=False, readable=False),
-        Field('last_modification','datetime', default=request.now, writable=False),
-        migrate=migrate)
+                            Field('problem_id', db.delphi_problem, notnull=True),
+                            Field('solution_id', db.delphi_solution, notnull=True),
+                            Field('rank', 'integer'),
+                            Field('user_id', db.auth_user, writable=False, readable=False),
+                            Field('last_modification','datetime', default=request.now, writable=False),
+                            migrate=migrate)
 
     table.problem_id.label = T("Problem")
     table.solution_id.label = T("Solution")
@@ -202,13 +202,13 @@ if deployment_settings.has_module(module):
     resource = 'forum_post'
     tablename = module + '_' + resource
     table = db.define_table(tablename,
-        Field('solution_id', db.delphi_solution, notnull=True),
-        Field('title'),
-        Field('post', 'text', notnull=True),
-        Field('post_html', 'text', default=""),
-        Field('user_id', db.auth_user, writable=False, readable=False),
-        Field('last_modification','datetime', default=request.now, writable=False),
-        migrate=migrate)
+                            Field('solution_id', db.delphi_solution, notnull=True),
+                            Field('title'),
+                            Field('post', 'text', notnull=True),
+                            Field('post_html', 'text', default=""),
+                            Field('user_id', db.auth_user, writable=False, readable=False),
+                            Field('last_modification','datetime', default=request.now, writable=False),
+                            migrate=migrate)
 
     table.solution_id.label = T("Solution")
     table.user_id.label = T("User")

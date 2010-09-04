@@ -22,11 +22,11 @@ if deployment_settings.has_module(module):
     resource = "parameter"
     tablename = "%s_%s" % (module, resource)
     table = db.define_table(tablename, timestamp, uuidstamp,
-                    Field("shipping", "double", default=15.00, notnull=True),
-                    Field("logistics", "double", default=0.00, notnull=True),
-                    Field("admin", "double", default=0.00, notnull=True),
-                    Field("indirect", "double", default=7.00, notnull=True),
-                    migrate=migrate)
+                            Field("shipping", "double", default=15.00, notnull=True),
+                            Field("logistics", "double", default=0.00, notnull=True),
+                            Field("admin", "double", default=0.00, notnull=True),
+                            Field("indirect", "double", default=7.00, notnull=True),
+                            migrate=migrate)
 
     table.shipping.requires = IS_FLOAT_IN_RANGE(0, 100)
     table.logistics.requires = IS_FLOAT_IN_RANGE(0, 100)
@@ -74,16 +74,16 @@ if deployment_settings.has_module(module):
     resource = "item"
     tablename = "%s_%s" % (module, resource)
     table = db.define_table(tablename, timestamp, uuidstamp, deletion_status,
-                    opt_budget_category_type,
-                    Field("code", length=128, notnull=True, unique=True),
-                    Field("description", notnull=True),
-                    opt_budget_cost_type,
-                    Field("unit_cost", "double", default=0.00),
-                    Field("monthly_cost", "double", default=0.00),
-                    Field("minute_cost", "double", default=0.00),
-                    Field("megabyte_cost", "double", default=0.00),
-                    comments,
-                    migrate=migrate)
+                            opt_budget_category_type,
+                            Field("code", length=128, notnull=True, unique=True),
+                            Field("description", notnull=True),
+                            opt_budget_cost_type,
+                            Field("unit_cost", "double", default=0.00),
+                            Field("monthly_cost", "double", default=0.00),
+                            Field("minute_cost", "double", default=0.00),
+                            Field("megabyte_cost", "double", default=0.00),
+                            comments,
+                            migrate=migrate)
 
     table.code.requires = [IS_NOT_EMPTY(), IS_NOT_IN_DB(db, "%s.code" % table)]
     table.description.requires = IS_NOT_EMPTY()
@@ -127,14 +127,14 @@ if deployment_settings.has_module(module):
     resource = "kit"
     tablename = "%s_%s" % (module, resource)
     table = db.define_table(tablename, timestamp, uuidstamp, deletion_status,
-                    Field("code", length=128, notnull=True, unique=True),
-                    Field("description"),
-                    Field("total_unit_cost", "double", writable=False),
-                    Field("total_monthly_cost", "double", writable=False),
-                    Field("total_minute_cost", "double", writable=False),
-                    Field("total_megabyte_cost", "double", writable=False),
-                    comments,
-                    migrate=migrate)
+                            Field("code", length=128, notnull=True, unique=True),
+                            Field("description"),
+                            Field("total_unit_cost", "double", writable=False),
+                            Field("total_monthly_cost", "double", writable=False),
+                            Field("total_minute_cost", "double", writable=False),
+                            Field("total_megabyte_cost", "double", writable=False),
+                            comments,
+                            migrate=migrate)
 
     table.code.requires = [IS_NOT_EMPTY(), IS_NOT_IN_DB(db, "%s.code" % table)]
 
@@ -175,10 +175,10 @@ if deployment_settings.has_module(module):
     resource = "kit_item"
     tablename = "%s_%s" % (module, resource)
     table = db.define_table(tablename, timestamp, uuidstamp, deletion_status,
-                    Field("kit_id", db.budget_kit),
-                    Field("item_id", db.budget_item, ondelete="RESTRICT"),
-                    Field("quantity", "integer", default=1, notnull=True),
-                    migrate=migrate)
+                            Field("kit_id", db.budget_kit),
+                            Field("item_id", db.budget_item, ondelete="RESTRICT"),
+                            Field("quantity", "integer", default=1, notnull=True),
+                            migrate=migrate)
 
     table.kit_id.requires = IS_ONE_OF(db, "budget_kit.id", "%(code)s")
     table.item_id.requires = IS_ONE_OF(db, "budget_item.id", "%(description)s")
@@ -188,12 +188,12 @@ if deployment_settings.has_module(module):
     resource = "bundle"
     tablename = "%s_%s" % (module, resource)
     table = db.define_table(tablename, timestamp, uuidstamp, deletion_status,
-                    Field("name", length=128, notnull=True, unique=True),
-                    Field("description"),
-                    Field("total_unit_cost", "double", writable=False),
-                    Field("total_monthly_cost", "double", writable=False),
-                    comments,
-                    migrate=migrate)
+                            Field("name", length=128, notnull=True, unique=True),
+                            Field("description"),
+                            Field("total_unit_cost", "double", writable=False),
+                            Field("total_monthly_cost", "double", writable=False),
+                            comments,
+                            migrate=migrate)
 
     table.name.requires = [IS_NOT_EMPTY(), IS_NOT_IN_DB(db, "%s.name" % table)]
     
@@ -247,12 +247,12 @@ if deployment_settings.has_module(module):
     resource = "bundle_kit"
     tablename = "%s_%s" % (module, resource)
     table = db.define_table(tablename, timestamp, deletion_status,
-                    Field("bundle_id", db.budget_bundle),
-                    Field("kit_id", db.budget_kit, ondelete="RESTRICT"),
-                    Field("quantity", "integer", default=1, notnull=True),
-                    Field("minutes", "integer", default=0, notnull=True),
-                    Field("megabytes", "integer", default=0, notnull=True),
-                    migrate=migrate)
+                            Field("bundle_id", db.budget_bundle),
+                            Field("kit_id", db.budget_kit, ondelete="RESTRICT"),
+                            Field("quantity", "integer", default=1, notnull=True),
+                            Field("minutes", "integer", default=0, notnull=True),
+                            Field("megabytes", "integer", default=0, notnull=True),
+                            migrate=migrate)
 
     table.bundle_id.requires = IS_ONE_OF(db, "budget_bundle.id", "%(description)s")
     table.kit_id.requires = IS_ONE_OF(db, "budget_kit.id", "%(code)s")
@@ -264,12 +264,12 @@ if deployment_settings.has_module(module):
     resource = "bundle_item"
     tablename = "%s_%s" % (module, resource)
     table = db.define_table(tablename, timestamp, deletion_status,
-                    Field("bundle_id", db.budget_bundle),
-                    Field("item_id", db.budget_item, ondelete="RESTRICT"),
-                    Field("quantity", "integer", default=1, notnull=True),
-                    Field("minutes", "integer", default=0, notnull=True),
-                    Field("megabytes", "integer", default=0, notnull=True),
-                    migrate=migrate)
+                            Field("bundle_id", db.budget_bundle),
+                            Field("item_id", db.budget_item, ondelete="RESTRICT"),
+                            Field("quantity", "integer", default=1, notnull=True),
+                            Field("minutes", "integer", default=0, notnull=True),
+                            Field("megabytes", "integer", default=0, notnull=True),
+                            migrate=migrate)
 
     table.bundle_id.requires = IS_ONE_OF(db, "budget_bundle.id", "%(description)s")
     table.item_id.requires = IS_ONE_OF(db, "budget_item.id", "%(description)s")
@@ -281,17 +281,17 @@ if deployment_settings.has_module(module):
     resource = "staff"
     tablename = "%s_%s" % (module, resource)
     table = db.define_table(tablename, timestamp, uuidstamp, deletion_status,
-                    Field("name", length=128, notnull=True, unique=True),
-                    Field("grade", notnull=True),
-                    Field("salary", "integer", notnull=True),
-                    opt_currency_type,
-                    Field("travel", "integer", default=0),
-                    # Shouldn't be grade-dependent, but purely location-dependent
-                    #Field("subsistence", "double", default=0.00),
-                    # Location-dependent
-                    #Field("hazard_pay", "double", default=0.00),
-                    comments,
-                    migrate=migrate)
+                            Field("name", length=128, notnull=True, unique=True),
+                            Field("grade", notnull=True),
+                            Field("salary", "integer", notnull=True),
+                            opt_currency_type,
+                            Field("travel", "integer", default=0),
+                            # Shouldn't be grade-dependent, but purely location-dependent
+                            #Field("subsistence", "double", default=0.00),
+                            # Location-dependent
+                            #Field("hazard_pay", "double", default=0.00),
+                            comments,
+                            migrate=migrate)
 
     table.name.requires = [IS_NOT_EMPTY(), IS_NOT_IN_DB(db, "%s.name" % table)]
     table.grade.requires = IS_NOT_EMPTY()
@@ -301,37 +301,25 @@ if deployment_settings.has_module(module):
     resource = "location"
     tablename = "%s_%s" % (module, resource)
     table = db.define_table(tablename, timestamp, uuidstamp, deletion_status,
-                    Field("code", length=3, notnull=True, unique=True),
-                    Field("description"),
-                    Field("subsistence", "double", default=0.00),
-                    Field("hazard_pay", "double", default=0.00),
-                    comments,
-                    migrate=migrate)
+                            Field("code", length=3, notnull=True, unique=True),
+                            Field("description"),
+                            Field("subsistence", "double", default=0.00),
+                            Field("hazard_pay", "double", default=0.00),
+                            comments,
+                            migrate=migrate)
 
     table.code.requires = [IS_NOT_EMPTY(), IS_NOT_IN_DB(db, "%s.code" % table)]
-
-    # Projects
-    # Deprecated: we use org_project
-    #resource = "project"
-    #tablename = "%s_%s" % (module, resource)
-    #table = db.define_table(tablename, timestamp, uuidstamp, deletion_status,
-    #                Field("code", length=128, notnull=True, unique=True),
-    #                Field("title"),
-    #                comments,
-    #                migrate=migrate)
-
-    #table.code.requires = [IS_NOT_EMPTY(), IS_NOT_IN_DB(db, "%s.code" % table)]
 
     # Budgets
     resource = "budget"
     tablename = "%s_%s" % (module, resource)
     table = db.define_table(tablename, timestamp, uuidstamp, deletion_status,
-                    Field("name", length=128, notnull=True, unique=True),
-                    Field("description"),
-                    Field("total_onetime_costs", "double", writable=False),
-                    Field("total_recurring_costs", "double", writable=False),
-                    comments,
-                    migrate=migrate)
+                            Field("name", length=128, notnull=True, unique=True),
+                            Field("description"),
+                            Field("total_onetime_costs", "double", writable=False),
+                            Field("total_recurring_costs", "double", writable=False),
+                            comments,
+                            migrate=migrate)
 
     table.name.requires = [IS_NOT_EMPTY(), IS_NOT_IN_DB(db, "%s.name" % table)]
 
@@ -339,13 +327,13 @@ if deployment_settings.has_module(module):
     resource = "budget_bundle"
     tablename = "%s_%s" % (module, resource)
     table = db.define_table(tablename, timestamp, deletion_status,
-                    Field("budget_id", db.budget_budget),
-                    project_id,
-                    Field("location_id", db.budget_location),
-                    Field("bundle_id", db.budget_bundle, ondelete="RESTRICT"),
-                    Field("quantity", "integer", default=1, notnull=True),
-                    Field("months", "integer", default=3, notnull=True),
-                    migrate=migrate)
+                            Field("budget_id", db.budget_budget),
+                            project_id,
+                            Field("location_id", db.budget_location),
+                            Field("bundle_id", db.budget_bundle, ondelete="RESTRICT"),
+                            Field("quantity", "integer", default=1, notnull=True),
+                            Field("months", "integer", default=3, notnull=True),
+                            migrate=migrate)
 
     table.budget_id.requires = IS_ONE_OF(db, "budget_budget.id", "%(name)s")
     table.location_id.requires = IS_ONE_OF(db, "budget_location.id", "%(code)s")
@@ -357,13 +345,13 @@ if deployment_settings.has_module(module):
     resource = "budget_staff"
     tablename = "%s_%s" % (module, resource)
     table = db.define_table(tablename, timestamp, deletion_status,
-                    Field("budget_id", db.budget_budget),
-                    project_id,
-                    Field("location_id", db.budget_location),
-                    Field("staff_id", db.budget_staff, ondelete="RESTRICT"),
-                    Field("quantity", "integer", default=1, notnull=True),
-                    Field("months", "integer", default=3, notnull=True),
-                    migrate=migrate)
+                            Field("budget_id", db.budget_budget),
+                            project_id,
+                            Field("location_id", db.budget_location),
+                            Field("staff_id", db.budget_staff, ondelete="RESTRICT"),
+                            Field("quantity", "integer", default=1, notnull=True),
+                            Field("months", "integer", default=3, notnull=True),
+                            migrate=migrate)
 
     table.budget_id.requires = IS_ONE_OF(db, "budget_budget.id", "%(name)s")
     table.location_id.requires = IS_ONE_OF(db, "budget_location.id", "%(code)s")

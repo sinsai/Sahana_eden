@@ -67,7 +67,8 @@ if deployment_settings.has_module("project"):
                             uuidstamp, 
                             authorstamp, 
                             deletion_status,
-                            get_organisastion_id(name = "donor_id",
+                            #@TODO Replace Function with Class
+                            get_organisation_id(name = "donor_id",
                                                  label = T("Funding Organisation"),                                                 
                                                  help_str = Tstr("The Organisation which is funding this Activity."),
                                                  ),
@@ -75,7 +76,7 @@ if deployment_settings.has_module("project"):
                             activity_type_id,
                             Field("description"),
                             Field("quantity"),
-                            Field("unit"), #Change to link to supply
+                            Field("unit"), # Change to link to supply
                             Field("start_date","date"),
                             Field("end_date","date"),
                             location_id,
@@ -135,3 +136,10 @@ if deployment_settings.has_module("project"):
                                          msg_record_deleted = T("Activity Deleted"),
                                          msg_list_empty = T("No Activities Found")
                                          )
+    # Activities as component of Orgs & Locations
+    s3xrc.model.add_component(module, resource,
+                              multiple=True,
+                              joinby=dict(org_organisation="organisation_id", gis_location="location_id"),
+                              deletable=True,
+                              editable=True)
+

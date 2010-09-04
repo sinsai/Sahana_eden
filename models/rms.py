@@ -117,25 +117,26 @@ if deployment_settings.has_module(module):
     table.source_type.represent = lambda stype: stype and rms_req_source_type[stype]
     table.source_type.label = T("Source Type")
 
+    # CRUD strings
     ADD_AID_REQUEST = T("Add Aid Request")
-
+    LIST_AID_REQUESTS = T("List Aid Requests")
     s3.crud_strings[tablename] = Storage(
-                                    title_create        = ADD_AID_REQUEST,
-                                    title_display       = "Aid Request Details",
-                                    title_list          = "List Aid Requests",
-                                    title_update        = "Edit Aid Request",
-                                    title_search        = "Search Aid Requests",
-                                    subtitle_create     = "Add New Aid Request",
-                                    subtitle_list       = "Aid Requests",
-                                    label_list_button   = "List Aid Requests",
-                                    label_create_button = ADD_AID_REQUEST,
-                                    msg_record_created  = "Aid request added",
-                                    msg_record_modified = "Aid request updated",
-                                    msg_record_deleted  = "Aid request deleted",
-                                    msg_list_empty      = "No aid requests currently available"
-                                    )
-
-    # Reusable field for other tables
+        title_create = ADD_AID_REQUEST,
+        title_display = T("Aid Request Details"),
+        title_list = LIST_AID_REQUESTS,
+        title_update = T("Edit Aid Request"),
+        title_search = T("Search Aid Requests"),
+        subtitle_create = T("Add New Aid Request"),
+        subtitle_list = T("Aid Requests"),
+        label_list_button = LIST_AID_REQUESTS,
+        label_create_button = ADD_AID_REQUEST,
+        label_delete_button = T("Delete Aid Request"),
+        msg_record_created = T("Aid Request added"),
+        msg_record_modified = T("Aid Request updated"),
+        msg_record_deleted = T("Aid Request deleted"),
+        msg_list_empty = T("No Aid Requests currently registered"))
+    
+    # Reusable Field
     req_id = db.Table(None, "req_id",
                 FieldS3("req_id", db.rms_req, sortby="message",
                     requires = IS_NULL_OR(IS_ONE_OF(db, "rms_req.id", "%(message)s")),
@@ -154,8 +155,7 @@ if deployment_settings.has_module(module):
                               deletable=True,
                               editable=True)
 
-    # shn_rms_get_req --------------------------------------------------------
-    # copied from pr.py
+    # --------------------------------------------------------------------
     def shn_rms_get_req(label, fields=None, filterby=None):
         """
             Finds a request by Message string
@@ -209,12 +209,10 @@ if deployment_settings.has_module(module):
             # no label given or wrong parameter type
             return None
 
-    #
-    # shn_rms_req_search_simple -------------------------------------------------
-    # copied from pr.py
+    # ---------------------------------------------------------------------
     def shn_rms_req_search_simple(xrequest, **attr):
         """
-            Simple search form for persons
+            Simple search form for requests
         """
 
         if attr is None:
@@ -311,14 +309,29 @@ if deployment_settings.has_module(module):
                             authorstamp, 
                             deletion_status,
                             req_id,
-                            get_item_id(),
+                            item_id,
                             Field("quantity", "double"),
                             comments,
                             migrate=migrate)
 
-    s3.crud_strings[tablename] = shn_crud_strings("Request Item")
-    s3.crud_strings[tablename].msg_list_empty = "No Items currently requested"
-    
+    # CRUD strings
+    ADD_REQUEST_ITEM = T("Add Request Item")
+    LIST_REQUEST_ITEMS = T("List Request Items")
+    s3.crud_strings[tablename] = Storage(
+        title_create = ADD_REQUEST_ITEM,
+        title_display = T("Request Item Details"),
+        title_list = LIST_REQUEST_ITEMS,
+        title_update = T("Edit Request Item"),
+        title_search = T("Search Request Items"),
+        subtitle_create = T("Add New Request Item"),
+        subtitle_list = T("Request Items"),
+        label_list_button = LIST_REQUEST_ITEMS,
+        label_create_button = ADD_REQUEST_ITEM,
+        label_delete_button = T("Delete Request Item"),
+        msg_record_created = T("Request Item added"),
+        msg_record_modified = T("Request Item updated"),
+        msg_record_deleted = T("Request Item deleted"),
+        msg_list_empty = T("No Items currently requested"))
 
     # Items as component of Locations
     s3xrc.model.add_component(module, resource,
@@ -332,7 +345,6 @@ if deployment_settings.has_module(module):
 
     #def shn_req_pledge_represent(id):
         #return  A(T("Edit Pledge"), _href=URL(r=request, f="pledge", args=[id]))
-
 
     resource = "pledge"
     tablename = "%s_%s" % (module, resource)

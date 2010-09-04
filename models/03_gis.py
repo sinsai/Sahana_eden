@@ -12,6 +12,8 @@ MARKER = Tstr("Marker")
 _gis = response.s3.gis
 _gis.location_id = False    # Don't display the Location Selector in Views unless the location_id field is present
 _gis.map_selector = deployment_settings.get_gis_map_selector()
+gis_location_hierarchy = deployment_settings.get_gis_locations_hierarchy()
+_gis.location_hierarchy = gis_location_hierarchy
 if shn_has_role("MapAdmin"):
     _gis.edit_L0 = True
     _gis.edit_L1 = True
@@ -389,10 +391,8 @@ gis_source_opts = {
     1:T("GPS"),
     2:T("Imagery"),
     3:T("Wikipedia"),
+    4:T("Geonames"),
     }
-gis_location_hierarchy = deployment_settings.get_gis_locations_hierarchy()
-# Expose this to Views for AutoCompletes
-response.s3.gis.location_hierarchy = gis_location_hierarchy
 resource = "location"
 tablename = "%s_%s" % (module, resource)
 table = db.define_table(tablename, timestamp, uuidstamp, deletion_status,
@@ -401,7 +401,7 @@ table = db.define_table(tablename, timestamp, uuidstamp, deletion_status,
                 Field("name_dummy"),            # Dummy field to provide Widget
                 Field("code"),
                 #feature_class_id,      # Will be removed
-                marker_id,              # Will be removed
+                #marker_id,             # Will be removed
                 Field("level", length=2),
                 Field("parent", "reference gis_location", ondelete = "RESTRICT"),   # This form of hierarchy may not work on all Databases
                 Field("lft", "integer", readable=False, writable=False), # Left will be for MPTT: http://eden.sahanafoundation.org/wiki/HaitiGISToDo#HierarchicalTrees
@@ -483,10 +483,9 @@ location_id = db.Table(None, "location_id",
                                        _title=Tstr("Location") + "|" + Tstr("The Location of this Site, which can be general (for Reporting) or precise (for displaying on a Map)."))),
                        ondelete = "RESTRICT"))
 
-# Expose the default countries to Views for Autocompletes
 _gis.countries = Storage()
 _countries = []
-_gis.provinces = Storage()
+#_gis.provinces = Storage()
 if response.s3.countries:
     countries = db(table.code.belongs(response.s3.countries)).select(table.id, table.code, table.name, limitby=(0, len(response.s3.countries)))
     for country in countries:
@@ -721,15 +720,15 @@ def s3_gis_location_parents(r, **attr):
     elif r.representation == "json":
 
         if r.id:
-            import gluon.contrib.simplejson as sj
+            import gluon.contrib.simplejson as json
             # Get the parents for a Location
             parents = gis.get_parents(r.id)
             if parents:
                 _parents = {}
                 for parent in parents:
                     _parents[parent.level] = parent.id
-                json = sj.dumps(_parents)
-                return json
+                output = json.dumps(_parents)
+                return output
             else:
                 raise HTTP(404, body=s3xrc.ERROR.NO_MATCH)
         else:

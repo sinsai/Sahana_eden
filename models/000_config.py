@@ -168,9 +168,9 @@ deployment_settings.modules = Storage(
             description = Tstr("Manage volunteers by capturing their skills, availability and allocation"),
             module_type = 5,
         ),
-    inventory = Storage(
-            name_nice = Tstr("Inventory Management"),
-            description = Tstr("Relief Items stored in Inventories in different locations"),
+    logs = Storage(
+            name_nice = Tstr("Logistics Management"),
+            description = Tstr("Managing, Storing and Distributing Relief Items"),
             module_type = 10
         ),
     project = Storage(
@@ -190,7 +190,7 @@ deployment_settings.modules = Storage(
         ),
     sitrep = Storage(
             name_nice = Tstr("Assessments"),
-            description = Tstr("Assessments are structured reports done by Professional Organisations - data includes WFP Assessments (Rapid Assessment Tool to come)"),
+            description = Tstr("Assessments are structured reports done by Professional Organisations - data includes WFP Assessments"),
             module_type = 10
         ),
     rat = Storage(
@@ -278,6 +278,11 @@ deployment_settings.modules = Storage(
     importer = Storage(
     	     name_nice = "Spreadsheet Importer",
     	     description = "Used to import data from spreadsheets into the database",
+    	     module_type = 10,
+    ),
+    survey = Storage(
+    	     name_nice = "Survey Module",
+    	     description = "Create, enter, and manage surveys.",
     	     module_type = 10,
     )
     #lms = Storage(

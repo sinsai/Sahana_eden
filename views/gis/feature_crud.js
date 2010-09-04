@@ -1,6 +1,6 @@
 ﻿<script type="text/javascript">//<![CDATA[
 $(function() {
-    feature_type=$('#gis_location_gis_feature_type').val();
+    var feature_type = $('#gis_location_gis_feature_type').val();
     if (feature_type==1) {
         // Point
         // Hide the WKT input
@@ -27,7 +27,7 @@ $(function() {
     // When the Type changes:
 	$('#gis_location_gis_feature_type').change(function() {
 		// What is the new type?
-        feature_type=$(this).val();
+        feature_type = $(this).val();
         if (feature_type==1) {
             // Point
             // Hide the WKT input

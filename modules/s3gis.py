@@ -60,6 +60,17 @@ from gluon.html import *
 #from gluon.http import HTTP
 from gluon.tools import fetch
 
+def s3_debug(message, value=None):
+    """
+        Provide an easy, safe, systematic way of handling Debug output
+        (print to stdout doesn't work with WSGI deployments)
+    """
+    output = "S3 Debug: " + str(message)
+    if value:
+        output += ": " + str(value)
+    
+    print >> sys.stderr, output
+
 SHAPELY = False
 try:
     import shapely
@@ -67,7 +78,7 @@ try:
     from shapely.wkt import loads as wkt_loads
     SHAPELY = True
 except ImportError:
-    print >> sys.stderr, "WARNING: %s: Shapely GIS library not installed" % __name__
+    s3_debug("WARNING: %s: Shapely GIS library not installed" % __name__)
 
 # Map WKT types to db types (multi-geometry types are mapped to single types)
 GEOM_TYPES = {
@@ -589,6 +600,297 @@ class GIS(object):
             return ""
 
     # -----------------------------------------------------------------------------
+    def import_csv(self, filename, domain=None):
+        """
+            Import a CSV file of Admin Boundaries into the Locations table
+            
+            File is expected to have been generated from a Shapefile as:
+            ogr2ogr -f CSV CSV TM_WORLD_BORDERS-0.3.shp -lco GEOMETRY=AS_WKT
+            
+            There needs to be a column named 'WKT'
+            The Location names should be ADM0_NAME to ADM3_NAME
+            - the highest-numbered name will be taken as the name of the current location
+            - the previous will be taken as the parent(s)
+            
+            Currently it expects to be run from the CLI, with the file in the web2py folder
+            @ToDo: Extend to support being run from the webpage
+            @ToDo: Write additional function(s) to do the OGR2OGR transformation from an uploaded Shapefile
+            
+            @ToDo: Currently it expects L0 data to be pre-imported into the database.
+                   - L1 should be imported 1st, then L2, then L3
+                   - parents are found though the use of the name columns,
+                     so the previous level of hierarchy shouldn't have duplicate names in
+        """
+        
+        import csv
+
+        cache = self.cache
+        db = self.db
+        _locations = db.gis_location
+        
+        csv.field_size_limit(2**20 * 10)  # 10 megs
+
+        # from http://docs.python.org/library/csv.html#csv-examples
+        def latin_csv_reader(unicode_csv_data, dialect=csv.excel, **kwargs):
+            for row in csv.reader(unicode_csv_data):
+                yield [unicode(cell, "latin-1") for cell in row]
+
+        def latin_dict_reader(data, dialect=csv.excel, **kwargs):
+            reader = latin_csv_reader(data, dialect=dialect, **kwargs)
+            headers = reader.next()
+            for r in reader:
+                yield dict(zip(headers, r))
+
+        # For each row
+        current_row = 0
+        for row in latin_dict_reader(open(filename)):
+            current_row += 1
+            try:
+                wkt = row.pop("WKT")
+            except:
+                s3_debug("No WKT column!")
+                continue
+            try:
+                name0 = row.pop("ADM0_NAME")
+            except:
+                name0 = ""
+            try:
+                name1 = row.pop("ADM1_NAME")
+            except:
+                name1 = ""
+            try:
+                name2 = row.pop("ADM2_NAME")
+            except:
+                name2 = ""
+            try:
+                name3 = row.pop("ADM3_NAME")
+            except:
+                name3 = ""
+
+            if not name3 and not name2 and not name1:
+                # We need a name! (L0's are already in DB)
+                s3_debug("No name provided", current_row)
+                continue
+
+            if domain:
+                try:
+                    uuid = domain + "/" + row.pop("UUID")
+                except:
+                    uuid = ""
+            else:
+                uuid = ""
+
+            # What level are we?
+            if name3:
+                level = "L3"
+                name = name3
+                parent = name2
+            elif name2:
+                level = "L2"
+                name = name2
+                parent = name1
+            else:
+                level = "L1"
+                name = name1
+                parent = name0
+
+            if name == "Name Unknown" or parent == "Name Unknown":
+                # Skip these locations
+                continue
+            
+            # Calculate Centroid & Bounds
+            try:
+                shape = wkt_loads(wkt)
+            except:
+                # Invalid WKT
+                s3_debug("Invalid WKT", name)
+                continue
+            centroid_point = shape.centroid
+            lon = centroid_point.x
+            lat = centroid_point.y
+            bounds = shape.bounds
+            lon_min = bounds[0]
+            lat_min = bounds[1]
+            lon_max = bounds[2]
+            lat_max = bounds[3]
+            
+            # Locate Parent
+            # @ToDo: Extend to search alternate names
+            if parent:
+                # Hack for Pakistan
+                if parent == "Jammu Kashmir":
+                    parent = "Pakistan"
+                _parent = db(_locations.name == parent).select(_locations.id, limitby=(0, 1), cache=cache).first()
+                if _parent:
+                    parent = _parent.id
+                else:
+                    s3_debug("Location", name)
+                    s3_debug("Parent cannot be found", parent)
+                    parent = ""
+            
+            # Add entry to database
+            if uuid:
+                _locations.insert(name=name, level=level, parent=parent, lat=lat, lon=lon, wkt=wkt, lon_min=lon_min, lon_max=lon_max, lat_min=lat_min, lat_max=lat_max, uuid=uuid)
+            else:
+                _locations.insert(name=name, level=level, parent=parent, lat=lat, lon=lon, wkt=wkt, lon_min=lon_min, lon_max=lon_max, lat_min=lat_min, lat_max=lat_max)
+        
+        # Better to give user control, can then dry-run
+        #db.commit()
+        return
+
+    # -----------------------------------------------------------------------------
+    def import_geonames(self, country, level=None):
+        """
+            Import Locations from the Geonames database
+            
+            @param country: the 2-letter country code
+            @param level: the ADM level to import
+
+            Designed to be run from the CLI
+            Levels should be imported sequentially.
+            It is assumed that L0 exists in the DB already
+            L1-L3 may have been imported from Shapefiles with Polygon info
+            Geonames can then be used to populate the lower levels of hierarchy
+        """
+
+        import codecs
+
+        cache = self.cache
+        db = self.db
+        request = self.request
+        deployment_settings = self.deployment_settings
+        _locations = db.gis_location
+
+        url = "http://download.geonames.org/export/dump/" + country + ".zip"
+
+        cachepath = os.path.join(request.folder, "cache")
+        filename = country + ".txt"
+        filepath = os.path.join(cachepath, filename)
+        if os.access(filepath, os.R_OK):
+            cached = 1
+        else:
+            cached = 0
+            if not os.access(cachepath, os.W_OK):
+                s3_debug("Folder not writable", cachepath)
+                return
+        
+        if not cached:
+            # Download File
+            try:
+                f = fetch(url)
+            except (urllib2.URLError,):
+                e = sys.exc_info()[1]
+                s3_debug("URL Error", e)
+                return
+            except (urllib2.HTTPError,):
+                e = sys.exc_info()[1]
+                s3_debug("HTTP Error", e)
+                return
+
+            # Unzip File
+            if f[:2] == "PK":
+                # Unzip
+                fp = StringIO(f)
+                myfile = zipfile.ZipFile(fp)
+                try:
+                    myfile.extract(filename, cachepath)
+                    myfile.close()
+                except:
+                    s3_debug("Zipfile contents don't seem correct!")
+                    myfile.close()
+                    return
+
+        f = codecs.open(filepath, encoding="utf-8")
+        # Downloaded file is worth keeping
+        #os.remove(filepath)
+
+        if level == "L1":
+            fc = "ADM1"
+            parent_level = "L0"
+        elif level == "L2":
+            fc = "ADM2"
+            parent_level = "L1"
+        elif level == "L3":
+            fc = "ADM3"
+            parent_level = "L2"
+        elif level == "L4":
+            fc = "ADM4"
+            parent_level = "L3"
+        else:
+            # 5 levels of hierarchy or 4?
+            # @ToDo make more extensible still
+            gis_location_hierarchy = deployment_settings.get_gis_locations_hierarchy()
+            try:
+                label = gis_location_hierarchy["L5"]
+                level = "L5"
+                parent_level = "L4"
+            except:
+                # ADM4 data in Geonames isn't always good (e.g. PK bad)
+                level = "L4"
+                parent_level = "L3"
+            finally:
+                fc = "PPL"
+
+        deleted = (_locations.deleted == False)
+        query = deleted & (_locations.level == parent_level)
+        # Do the DB query once (outside loop)
+        all_parents = db(query).select(_locations.wkt, _locations.lon_min, _locations.lon_max, _locations.lat_min, _locations.lat_max, _locations.id)
+        if not all_parents:
+            # No locations in the parent level found
+            # - use the one higher instead
+            parent_level = "L" + str(int(parent_level[1:]) + 1)
+            query = deleted & (_locations.level == parent_level)
+            all_parents = db(query).select(_locations.wkt, _locations.lon_min, _locations.lon_max, _locations.lat_min, _locations.lat_max, _locations.id)
+
+        # Parse File
+        current_row = 0
+        for line in f:
+            current_row += 1
+            # Format of file: http://download.geonames.org/export/dump/readme.txt
+            geonameid, name, asciiname, alternatenames, lat, lon, feature_class, feature_code, country_code, cc2, admin1_code, admin2_code, admin3_code, admin4_code, population, elevation, gtopo30, timezone, modification_date = line.split("\t")
+            
+            if feature_code == fc:
+                uuid = "www.geonames.org/" + str(geonameid)
+                
+                # Add WKT
+                lat = float(lat)
+                lon = float(lon)
+                wkt = self.latlon_to_wkt(lat, lon)
+                
+                shape = shapely.geometry.point.Point(lon, lat)
+                
+                # Add Bounds
+                lon_min = lon_max = lon
+                lat_min = lat_max = lat
+
+                # Locate Parent
+                parent = ""
+                # 1st check for Parents whose bounds include this location (faster)
+                def in_bbox(row):
+                    return (row.lon_min < lon_min) & (row.lon_max > lon_max) & (row.lat_min < lat_min) & (row.lat_max > lat_max)
+                for row in all_parents.find(lambda row: in_bbox(row)):
+                    # Search within this subset with a full geometry check
+                    # Uses Shapely.
+                    # @ToDo provide option to use PostGIS/Spatialite
+                    try: 
+                        parent_shape = wkt_loads(row.wkt)
+                        if parent_shape.intersects(shape):
+                            parent = row.id
+                            # Should be just a single parent
+                            break
+                    except shapely.geos.ReadingError:
+                        s3_debug("Error reading wkt of location with id", row.id)
+
+                # Add entry to database
+                _locations.insert(uuid=uuid, name=name, level=level, parent=parent, lat=lat, lon=lon, wkt=wkt, lon_min=lon_min, lon_max=lon_max, lat_min=lat_min, lat_max=lat_max)
+
+            else:
+                continue
+                
+        s3_debug("All done!")
+        return
+
+    # -----------------------------------------------------------------------------
     def latlon_to_wkt(self, lat, lon):
         """
             Convert a LatLon to a WKT string
@@ -622,7 +924,7 @@ class GIS(object):
             Parses a location from wkt, returning wkt, lat, lon, bounding box and type.
             For points, wkt may be None if lat and lon are provided; wkt will be generated.
             For lines and polygons, the lat, lon returned represent the shape's centroid.
-            Centroid and bounding box will be None if shapely is not available.
+            Centroid and bounding box will be None if Shapely is not available.
         """
 
         if not wkt:
@@ -672,6 +974,9 @@ class GIS(object):
                 calculate the LonLat of the Centroid, and set bounds
             Centroid and bounds calculation is done using Shapely, which wraps Geos.
             A nice description of the algorithm is provided here: http://www.jennessent.com/arcgis/shapes_poster.htm
+            
+            Relies on Shapely.
+            @ToDo provide an option to use PostGIS/Spatialite
         """
 
         if not "gis_feature_type" in form.vars:
@@ -724,17 +1029,17 @@ class GIS(object):
     # -----------------------------------------------------------------------------
     def query_features_by_bbox(self, lon_min, lat_min, lon_max, lat_max):
         """
-            Returns a query of all locations objects in the given bounding box
+            Returns a query of all Locations inside the given bounding box
         """
         db = self.db
-        _location = db.gis_location
-        query = (_location.lat_min <= lat_max) & (_location.lat_max >= lat_min) & (_location.lon_min <= lon_max) & (_location.lon_max >= lon_min)
+        _locations = db.gis_location
+        query = (_locations.lat_min <= lat_max) & (_locations.lat_max >= lat_min) & (_locations.lon_min <= lon_max) & (_locations.lon_max >= lon_min)
         return query
 
     # -----------------------------------------------------------------------------
     def get_features_by_bbox(self, lon_min, lat_min, lon_max, lat_max):
         """
-            Returns Rows of locations whose shape intersects the given bbox.
+            Returns Rows of Locations whose shape intersects the given bbox.
         """
         db = self.db
         return db(self.query_features_by_bbox(lon_min, lat_min, lon_max, lat_max)).select()
@@ -742,9 +1047,10 @@ class GIS(object):
     # -----------------------------------------------------------------------------
     def _get_features_by_shape(self, shape):
         """
-            Returns Rows of locations whose shape intersects the given shape.
+            Returns Rows of locations which intersect the given shape.
             
-            Relies on shapely for wkt parsing and intersection.
+            Relies on Shapely for wkt parsing and intersection.
+            @ToDo provide an option to use PostGIS/Spatialite
         """
 
         db = self.db
@@ -757,14 +1063,15 @@ class GIS(object):
                 if location_shape.intersects(shape):
                     yield loc
             except shapely.geos.ReadingError:
-                print >> sys.stderr, "Error reading wkt of location with id %d" % loc.id
+                s3_debug("Error reading wkt of location with id", loc.id)
 
     # -----------------------------------------------------------------------------
     def _get_features_by_latlon(self, lat, lon):
         """
         Returns a generator of locations whose shape intersects the given LatLon.
         
-        Relies on shapely.
+        Relies on Shapely.
+        @ToDo provide an option to use PostGIS/Spatialite
         """
 
         point = shapely.geometry.point.Point(lon, lat)
@@ -773,9 +1080,10 @@ class GIS(object):
     # -----------------------------------------------------------------------------
     def _get_features_by_feature(self, feature):
         """
-        Returns all locations whose geometry intersects the given feature.
+        Returns all Locations whose geometry intersects the given feature.
         
-        Relies on shapely.
+        Relies on Shapely.
+        @ToDo provide an option to use PostGIS/Spatialite
         """
         shape = wkt_loads(feature.wkt)
         return self.get_features_by_shape(shape)
@@ -803,7 +1111,7 @@ class GIS(object):
                 try :
                     shape = wkt_loads(loc.wkt)
                 except:
-                    print >> sys.stderr, "Error reading wkt %s" % loc.wkt
+                    s3_debug("Error reading wkt", loc.wkt)
                     continue
                 bounds = shape.bounds
                 _location[loc.id] = dict(
@@ -833,6 +1141,7 @@ class GIS(object):
                   legend = False,
                   toolbar = False,
                   search = False,
+                  mouse_position = "normal",
                   print_tool = {},
                   mgrs = {},
                   window = False,
@@ -880,6 +1189,7 @@ class GIS(object):
             @param legend: Show the Legend panel
             @param toolbar: Show the Icon Toolbar of Controls
             @param search: Show the Geonames search box
+            @param mouse_position: Show the current coordinates in the bottom-right of the map. 3 Options: 'normal' (default), 'mgrs' (MGRS), False (off)
             @param print_tool: Show a print utility (NB This requires server-side support: http://eden.sahanafoundation.org/wiki/BluePrintGISPrinting)
                 {
                 url: string,            # URL of print service (e.g. http://localhost:8080/geoserver/pdf/)
@@ -1557,6 +1867,14 @@ OpenLayers.Util.extend( selectPdfControl, {
             layers_wms_browser = ""
             layers_wms_browser2 = ""
 
+        # Mouse Position
+        if mouse_position and mouse_position is not "mgrs":
+            mouse_position = "map.addControl(new OpenLayers.Control.MousePosition());"
+        elif mouse_position == "mgrs":
+            mouse_position = "map.addControl(new OpenLayers.Control.MGRSMousePosition());"
+        else:
+            mouse_position = ""
+        
         # Print
         if print_tool:
             url = print_tool["url"]
@@ -3152,7 +3470,7 @@ OpenLayers.Util.extend( selectPdfControl, {
         addLayers(map);
 
         map.addControl(new OpenLayers.Control.ScaleLine());
-        map.addControl(new OpenLayers.Control.MGRSMousePosition());
+        """ + mouse_position + """
         map.addControl(new OpenLayers.Control.Permalink());
         map.addControl(new OpenLayers.Control.OverviewMap({mapOptions: options}));
 

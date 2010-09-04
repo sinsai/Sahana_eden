@@ -115,8 +115,7 @@ def shn_field_represent_sspage(field, row, col, linkto=None):
         except TypeError:
             href = linkto % id
         # strip away ".aaData" extension => dangerous!
-        href = str(href).replace(".aaData", "")
-        href = str(href).replace(".aadata", "")
+        href = shn_strip_aadata_extension(href)
         return A( shn_field_represent(field, row, col), _href=href).xml()
     else:
         return shn_field_represent(field, row, col)
@@ -926,7 +925,14 @@ def shn_read(r, **attr):
 #
 def shn_linkto(r, sticky=False):
 
-    """ Helper function to generate links in list views """
+    """ Helper that supplies a linkto function, used in list views.
+        Note: Except for the detail that this does not strip the r and
+        sticky params off shn_list_linkto, it is just doing:
+        return lambda field: shn_list_linkto(field, r=r, sticky=sticky)
+        The linkto functions only ever get called with one argument.
+        (Comment provided in the hope of assisting someone else's code
+        tracing to puzzle out how linkto works.)
+    """
 
     def shn_list_linkto(field, r=r, sticky=sticky):
         if r.component:
@@ -987,6 +993,7 @@ def shn_list(r, **attr):
     extra = _attr.get("extra", None)
     orderby = _attr.get("orderby", None)
     sortby = _attr.get("sortby", None)
+    linkto = _attr.get("linkto", None)
 
     # Provide the ability to get a subset of records
     start = vars.get("start", 0)
@@ -1033,7 +1040,10 @@ def shn_list(r, **attr):
         fields = [f for f in table.fields if table[f].readable]
 
     # Where to link the ID column?
-    linkto = shn_linkto(r, sticky)
+    if not linkto:
+        linkto = shn_linkto(r, sticky)
+    # At this point, linkto is either a fixed url, or is a function that
+    # takes an id and produces an url.
 
     if representation == "aadata":
 
@@ -1894,7 +1904,11 @@ def shn_search(r, **attr):
                     # e.g. gis_location hierarchical search
                     query = query & (_table.parent == parent)
 
-                item = db(query).select().json()
+                if _table == db.gis_location:
+                    # Don't return unnecessary fields (WKT is large!)
+                    item = db(query).select(_table.id, _table.uuid, _table.parent, _table.name, _table.level, _table.lat, _table.lon, _table.addr_street).json()
+                else:
+                    item = db(query).select().json()
 
             elif filter == "<":
                 query = query & (_field < value)
@@ -2015,6 +2029,171 @@ def shn_rest_controller(module, resource, **attr):
     output = res.execute_request(req, **attr)
 
     return output
+
+#
+# Helpers for components with components --------------------------------------
+#
+
+"""
+The following functions assist in overriding the "Add <component>" and
+"Open" buttons on component list forms, to send them to the component's
+native form.
+
+If a component has components of its own, then only the component
+itself currently is shown in the tabbed display of the parent
+resource.  This is not good for components like RAT where the
+bare assessment form does not make sense without its own components.
+So (for now), we let the component's native form handle adds and
+updates.
+
+The add component url is modified by calling shn_component_add_linkto
+and using that in an add button.  The open buttons are passed to
+shn_action_buttons in postp, since shn_action_buttons will replace
+anything we would have passed via linkto in prep.
+
+@ToDo:
+An alternative to sending operations for a component with components to
+their own forms would be to include a component's tabbed display in a
+tab of its primary resource.  OTOH, someone said, two rows of tabs will
+take up too much vertical space.  I talked to Dominic about that worry
+over vertical space, and he might like sending the component to its own
+native form better, especially if it's simple or can be automated.
+
+We both want a button on the component's tabbed page that lets to user
+go back to the parent resource, like [Done; Return to Shelter XYZ].
+And want Dominic's "breadcrumb" menu enabled.
+"""
+
+def shn_strip_aadata_extension(url):
+    """ strip away ".aaData" extension => dangerous! """
+
+    url = str(url).replace(".aaData", "")
+    url = str(url).replace(".aadata", "")
+
+    return url
+
+def shn_component_postp(r, output):
+    """
+    Add action buttons, but with custom url for read, update, add if
+    it's for a component that itself has components.
+    Usage:  Call this from the postp for controllers where the primary
+    resource has components that my have components.
+    """
+
+    # If this is not a list view, then we don't need it
+    if r.method:
+        return output
+
+    # Is this a component that has components itself?
+    if r.component and s3xrc.model.has_components(r.component.prefix,
+                                                  r.component_name):
+        # Yes -- it gets non-default urls.
+
+        # Buttons on a list element.
+        read_url = shn_component_linkto(r)
+        update_url = shn_component_linkto(r, update=True)
+        shn_action_buttons(r, deletable=False,
+                           read_url=read_url, update_url=update_url)
+
+        # Add an add button in the listadd=False case.  This is non-standard
+        # in two ways:  It uses the component's native module context so
+        # that once the new component is created, it will get its tabbed
+        # display.  And it adds the primary id in vars, where it will be
+        # picked up in the component controller and set as a default for
+        # the primary join field.
+
+        authorised = shn_has_permission("update", r.component.tablename)
+        # listadd defaults to true if not specified.
+        listadd = not r.component.attr or r.component.attr.get("listadd", True)
+
+        if authorised and not listadd:
+
+            label_create_button = shn_get_crud_string(
+                r.component.tablename, "label_create_button")
+            href_add = shn_component_add_linkto(r)
+            add_btn = A(label_create_button,
+                        _href=href_add,
+                        _class="action-btn")
+            output.update(add_btn=add_btn)
+
+    else:
+        # Primary resource or simple component without its own components.
+        shn_action_buttons(r, deletable=False)
+
+    return output
+
+def shn_component_linkto(r, update=False):
+    """
+    Currently components that themselves have components only show the
+    form for their primary resource in the tabbed display.  As a workaround,
+    one can turn off listadd, and for the list "open" buttons, dispatch to
+    the component's own native form, and add a "done" button to return
+    to the current primary resource record afterward.
+
+    shn_component_linkto provides urls for buttons on component list entries.
+    It produces a read url if update is False, or an update url if True.
+    The component id field in the url contains "[id]", which gets replaced
+    elsewhere.  Usage -- in postp, do:
+
+    read_url = shn_component_linkto(r)
+    update_url = shn_component_linkto(r, update=True)
+    shn_action_buttons(jr, deletable=False,
+                       read_url=read_url, update_url=update_url)
+    """
+
+    if r.component:
+
+        vars = request.vars
+        authorised = shn_has_permission("update", r.component.tablename)
+
+        if authorised and update:
+            url = str(URL(r=request, c=r.component.prefix, f=r.component_name,
+                          args=["[id]", "update"], vars=vars))
+
+        else:
+            url = str(URL(r=request, c=r.component.prefix, f=r.component_name,
+                          args=["[id]"], vars=vars))
+
+    else:
+        # If this is called for the primary resource, defer to
+        # shn_linkto / shn_list_linkto.
+        url = shn_linkto(r)("[id]")
+
+    return shn_strip_aadata_extension(url)
+
+def shn_component_add_linkto(r):
+    """
+    Provides url to override the add button on component list forms.
+    The url includes the primary
+    resource id because the component add form needs to prefill the field
+    that joins to the primary resource.
+
+    Usage:  In postp, if the call is for a component with components (so
+    we want the work to be done in that component's module context), and
+    if the user is authorized, and if listadd is false, do:
+
+    href_add = shn_component_add_linkto(r)
+
+    Then use that to form an add button.
+    """
+
+    if r.component and shn_has_permission("create", r.component.tablename):
+
+        vars = request.vars.copy()
+        component, pkey, fkey = s3xrc.model.get_component(module,
+                                                          request.function,
+                                                          r.component_name)
+        var_key = "%s.%s" % (r.component_name, fkey)
+        vars.update({var_key: r.id})
+        url = str(URL(r=request, c=r.component.prefix, f=r.component_name,
+                  args=["create"], vars=vars))
+
+        # Strip ".aaData" extension
+        url = shn_strip_aadata_extension(url)
+        return url
+
+    else:
+        return ""
 
 # END
 # *****************************************************************************

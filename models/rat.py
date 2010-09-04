@@ -246,13 +246,14 @@ if deployment_settings.has_module(module):
 
 
     # Assessment as component of doc_document and cr_shelter.
+    # RAT has components itself, so best not to constrain within the parent resource tabs
+    # - therefore disable the listadd & jump out of the tabs for Create/Update
     s3xrc.model.add_component(module, resource,
                               multiple=True,
-                              joinby=dict(doc_document="document_id",
-                                          cr_shelter="shelter_id"),
+                              joinby=dict(cr_shelter="shelter_id", doc_document="document_id"),
+                              listadd=False,
                               deletable=True,
                               editable=True)
-
 
     # Section 2: Demographic --------------------------------------------------
 

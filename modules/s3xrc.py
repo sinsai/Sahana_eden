@@ -2502,6 +2502,31 @@ class S3ResourceModel(object):
 
 
     # -------------------------------------------------------------------------
+    def has_components(self, prefix, name):
+
+        """ Check whether the specified resource has components
+
+            @param prefix: prefix of the resource name (=module name)
+            @param name: name of the resource (=without prefix)
+
+        """
+
+        # Like get_components, except quits on first match.
+        tablename = "%s_%s" % (prefix, name)
+        table = self.db.get(tablename, None)
+
+        if table:
+            for hook in self.components.values():
+                if tablename in hook:
+                    return True
+                else:
+                    nkey = hook._joinby
+                    if nkey and nkey in table.fields:
+                        return True
+
+        return False
+
+    # -------------------------------------------------------------------------
     def get_many2many(self, prefix, name):
 
         """ Finds all many-to-many links of a resource (introspective)

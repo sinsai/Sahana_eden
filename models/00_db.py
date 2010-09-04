@@ -6,8 +6,12 @@
     Instantiate Classes
 """
 
-import os, traceback, datetime
+
+import datetime
+import os
 import re
+import time
+import traceback
 import uuid
 
 from lxml import etree

@@ -34,7 +34,7 @@ _table_user.password.comment = SPAN("*", _class="req")
 _table_user.language.label = T("Language")
 _table_user.language.default = "en"
 _table_user.language.comment = DIV(_class="tooltip", _title=Tstr("Language") + "|" + Tstr("The language to use for notifications."))
-_table_user.language.represent = lambda opt: shn_languages.get(opt, UNKNOWN_OPT)
+_table_user.language.represent = lambda opt: s3_languages.get(opt, UNKNOWN_OPT)
 
 def index():
     "Module's Home Page"

@@ -21,11 +21,11 @@ response.menu_options = [
         [T("Add"), False, URL(r=request, f="assessment", args="create")],
         #[T("Search"), False, URL(r=request, f="assessment", args="search")]
     ]],
-    [T("Schools"), False, URL(r=request, f="school_district"),[
-        [T("List"), False, URL(r=request, f="school_district")],
-        [T("Add"), False, URL(r=request, f="school_district", args="create")],
-        #[T("Search"), False, URL(r=request, f="school_district", args="search")]
-    ]],
+    #[T("Schools"), False, URL(r=request, f="school_district"),[
+    #    [T("List"), False, URL(r=request, f="school_district")],
+    #    [T("Add"), False, URL(r=request, f="school_district", args="create")],
+    #    #[T("Search"), False, URL(r=request, f="school_district", args="search")]
+    #]],
     #[T("Map"), False, URL(r=request, f="maps")],
 ]
 

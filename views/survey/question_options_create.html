@@ -1,0 +1,98 @@
+{{list_btn = ""}}
+{{extend "layout.html"}}
+{{include "_create.html"}}
+
+<script type="text/javascript">
+    $(document).ready(function() {
+
+        // hide all question options rows except those common among all types.
+//        $('#survey_question_options_display_option__row').hide();
+//        $('#survey_question_options_answer_choices__row').hide();
+//        $('#survey_question_options_row_choices__row').hide();
+//        $('#survey_question_options_column_choices__row').hide();
+//        $('#survey_question_options_number_of_options__row').hide();
+        $('#survey_question_options_ta_rows__row').hide();
+        $('#survey_question_options_tf_ta_columns__row').hide();        
+//        $('#survey_question_options_validation_options__row').hide();
+//        $('#survey_question_options_tf_choices__row').hide();
+
+//        $('#survey_question_options_answer_choices__row').attr('disabled', 'true');
+//        $('#survey_question_options_row_choices__row').attr('disabled', 'true');
+//        $('#survey_question_options_column_choices__row').attr('disabled', 'true');
+//        $('#survey_question_options_number_of_options__row').attr('disabled', 'true');
+        $('#survey_question_options_ta_rows__row').attr('disabled', 'true');
+        $('#survey_question_options_tf_ta_columns__row').attr('disabled', 'true');
+//        $('#survey_question_options_validation_options__row').attr('disabled', 'true');
+//        $('#survey_question_options_tf_choices__row').attr('disabled', 'true');
+
+
+        // only show the comment display label tf if it's enabled!
+        $('#survey_question_options_comment_display_label__row').hide();        
+        $('#survey_question_options_allow_comments').click(function() {
+            $('#survey_question_options_comment_display_label__row').toggle();
+        });
+
+        {{if question_type:}}
+        var question_type = {{=question_type}}        
+        switch(question_type) {
+//            // MC -- One Answer
+//             case 1: {
+////                $('#survey_question_options_display_option__row').show();
+//                $('#survey_question_options_answer_choices__row').show();
+//                break;
+//             }
+//            // MC -- More than one answer
+//            case 2: {
+////                $('#survey_question_options_display_option__row').show();
+//                $('#survey_question_options_answer_choices__row').show();
+//                break;
+//            }
+//            // Matrix of choices -- One answer
+//            case 3: {
+//                $('#survey_question_options_row_choice__row').show();
+//                $('#survey_question_options_column_choice__row').show();
+//                break;
+//            }
+//            // Matrix of choices -- More than one answer
+//            case 4: {
+//                $('#survey_question_options_row_choices__row').show();
+//                $('#survey_question_options_column_choices__row').show();
+//                break;
+//            }
+//
+//            // Rating scale
+//            case 5: {
+//                $('#survey_question_options_column_choices__row').show();
+//                $('#survey_question_options_number_of_options__row').show();
+//                break;
+//            }
+
+            // Single Text-field
+            case 6: {
+                $('#survey_question_options_tf_ta_columns__row').show();
+                break;
+            }
+
+//            // Multiple Text Fields
+//            case 7: {
+//                $('#survey_question_options_tf_ta_columns__row').show()            
+//                $('#survey_question_options_tf_choices__row').show();
+//                break;
+//            }
+            // Comment/Essay Box
+            case 8: {
+                $('#survey_question_options_ta_rows__row').show();
+                $('#survey_question_options_tf_ta_columns__row').show();
+                break;
+            }
+            // Numeric text field
+            case 9: {
+                $('#survey_question_options_tf_ta_columns__row').show();
+                break;
+            }
+
+        }    
+       {{else:}}
+         {{pass}}
+    });
+</script>

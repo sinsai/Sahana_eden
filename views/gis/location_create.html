@@ -7,5 +7,22 @@
 {{=XML(_map)}}
 {{except:}}
 {{pass}}
+<script type="text/javascript">//<![CDATA[
+$(function() {
+    // When the Level changes:
+	$('#gis_location_level').change(function() {
+		// What is the new type?
+        var level = $(this).val();
+        if (level){
+            // If the Location is a Admin Boundary then Street Address makes no sense
+            $('#gis_location_addr_street__row').hide();
+            // If the Location is a Country then Parent makes no sense
+            if (level == 'L0'){
+                $('#gis_location_parent__row').hide();
+            }
+        }
+    });
+});
+//]]></script>
 {{include "gis/feature_crud.js"}}
 {{include "gis/convert_gps.html"}}

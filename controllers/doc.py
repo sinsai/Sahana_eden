@@ -37,36 +37,36 @@ def index():
 # Used to display the number of Components in the tabs
 def shn_document_tabs(jr):
     
-    tab_opts = [{"tablename": "sitrep_assessment",
+    tab_opts = [{"tablename": "rat_assessment",
                  "resource": "assessment",
                  "one_title": T("1 Assessment"),
                  "num_title": " Assessments",
-                 },
-                 {"tablename": "irs_ireport",
+                },
+                {"tablename": "irs_ireport",
                  "resource": "ireport",
                  "one_title": "1 Incident Report",
                  "num_title": " Incident Reports",
-                 },
-                 {"tablename": "inventory_store",
+                },
+                {"tablename": "inventory_store",
                  "resource": "store",
                  "one_title": "1 Inventory Store",
                  "num_title": " Inventory Stores",
-                 },
-                 {"tablename": "cr_shelter",
+                },
+                {"tablename": "cr_shelter",
                  "resource": "shelter",
                  "one_title": "1 Shelter",
                  "num_title": " Shelters",
-                 },
-                 {"tablename": "flood_freport",
+                },
+                {"tablename": "flood_freport",
                  "resource": "freport",
                  "one_title": "1 Flood Report",
                  "num_title": " Flood Reports",
-                 },
-                 {"tablename": "rms_req",
+                },
+                {"tablename": "rms_req",
                  "resource": "req",
                  "one_title": "1 Request",
                  "num_title": " Requests",
-                 },
+                },
                 ] 
     tabs = [(T("Details"), None)]
     for tab_opt in tab_opts:
@@ -114,20 +114,22 @@ def document():
     #Disable legacy fields in components, unless updating, so the data can be manually transferred to new fields
     if "update" not in request.args:
         db.sitrep_assessment.source.readable = db.sitrep_assessment.source.writable = False   
-        db.sitrep_school_district.document.readable = db.sitrep_school_district.document.writable = False 
+        #db.sitrep_school_district.document.readable = db.sitrep_school_district.document.writable = False 
         db.irs_ireport.source.readable = db.irs_ireport.source.writable = False        
         db.irs_ireport.source_id.readable = db.irs_ireport.source_id.writable = False  
         #db.flood_freport.document.readable = db.flood_freport.document.writable = False   
    
-    def postp(jr, output):                          
-        shn_action_buttons(jr)
-        return output
-    response.s3.postp = postp
+    #def postp(jr, output):                          
+    #    shn_action_buttons(jr)
+    #    return output
+    #response.s3.postp = postp
+    response.s3.postp = shn_component_postp
     
     rheader = lambda r: shn_document_rheader(r)
 
     response.s3.pagination = True
     output = shn_rest_controller(module, resource,
+                                 #listadd=False,
                                  rheader=rheader)
 
     return output

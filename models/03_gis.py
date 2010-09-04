@@ -12,6 +12,8 @@ MARKER = Tstr("Marker")
 _gis = response.s3.gis
 _gis.location_id = False    # Don't display the Location Selector in Views unless the location_id field is present
 _gis.map_selector = deployment_settings.get_gis_map_selector()
+gis_location_hierarchy = deployment_settings.get_gis_locations_hierarchy()
+_gis.location_hierarchy = gis_location_hierarchy
 if shn_has_role("MapAdmin"):
     _gis.edit_L0 = True
     _gis.edit_L1 = True
@@ -391,9 +393,6 @@ gis_source_opts = {
     3:T("Wikipedia"),
     4:T("Geonames"),
     }
-gis_location_hierarchy = deployment_settings.get_gis_locations_hierarchy()
-# Expose this to Views for AutoCompletes
-response.s3.gis.location_hierarchy = gis_location_hierarchy
 resource = "location"
 tablename = "%s_%s" % (module, resource)
 table = db.define_table(tablename, timestamp, uuidstamp, deletion_status,
@@ -484,10 +483,9 @@ location_id = db.Table(None, "location_id",
                                        _title=Tstr("Location") + "|" + Tstr("The Location of this Site, which can be general (for Reporting) or precise (for displaying on a Map)."))),
                        ondelete = "RESTRICT"))
 
-# Expose the default countries to Views for Autocompletes
 _gis.countries = Storage()
 _countries = []
-_gis.provinces = Storage()
+#_gis.provinces = Storage()
 if response.s3.countries:
     countries = db(table.code.belongs(response.s3.countries)).select(table.id, table.code, table.name, limitby=(0, len(response.s3.countries)))
     for country in countries:

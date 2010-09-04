@@ -385,23 +385,24 @@ gis_feature_type_opts = {
     1:T("Point"),
     2:T("Line"),
     3:T("Polygon"),
-    #4:T("MultiPolygon")
+    #4:T("MultiPolygon") This just counts as Polygon as far as we're concerned
     }
 gis_source_opts = {
-    1:T("GPS"),
-    2:T("Imagery"),
-    3:T("Wikipedia"),
-    4:T("Geonames"),
+    "gps":T("GPS"),
+    "imagery":T("Imagery"),
+    "geonames":"Geonames",
+    "osm":"OpenStreetMap",
+    "wikipedia":"Wikipedia",
+    "yahoo":"Yahoo! GeoPlanet",
     }
 resource = "location"
 tablename = "%s_%s" % (module, resource)
 table = db.define_table(tablename, timestamp, uuidstamp, deletion_status,
                 Field("name", notnull=True),    # Primary name
-                #Field("name_l10n"),             # Local Names are stored in this field
-                Field("name_dummy"),            # Dummy field to provide Widget
+                Field("name_dummy"),            # Dummy field to provide Widget (real data is stored in the separate table which links back to this one)
                 Field("code"),
-                #feature_class_id,      # Will be removed
-                #marker_id,             # Will be removed
+                #feature_class_id,      # Being removed
+                #marker_id,             # Being removed
                 Field("level", length=2),
                 Field("parent", "reference gis_location", ondelete = "RESTRICT"),   # This form of hierarchy may not work on all Databases
                 Field("lft", "integer", readable=False, writable=False), # Left will be for MPTT: http://eden.sahanafoundation.org/wiki/HaitiGISToDo#HierarchicalTrees
@@ -414,7 +415,8 @@ table = db.define_table(tablename, timestamp, uuidstamp, deletion_status,
                 Field("lon", "double"), # Points or Centroid for Polygons
                 Field("wkt", "text"),   # WKT is auto-calculated from lat/lon for Points
                 Field("url"),
-                Field("osm_id"),        # OpenStreetMap ID. Should this be used in UUID field instead?
+                Field("geonames_id", "integer"),# Geonames ID (for cross-correlation. OSM cannot take data from Geonames as 'polluted' with unclear sources, so can't use them as UUIDs)
+                Field("osm_id"),                # OpenStreetMap ID (for cross-correlation. OSM IDs can change over time, so they also have UUID fields they can store our IDs in)
                 Field("lon_min", "double", writable=False, readable=False), # bounding-box
                 Field("lat_min", "double", writable=False, readable=False), # bounding-box
                 Field("lon_max", "double", writable=False, readable=False), # bounding-box
@@ -422,22 +424,17 @@ table = db.define_table(tablename, timestamp, uuidstamp, deletion_status,
                 Field("elevation", "integer", writable=False, readable=False),   # m in height above WGS84 ellipsoid (approximately sea-level). not displayed currently
                 Field("ce", "integer", writable=False, readable=False), # Circular 'Error' around Lat/Lon (in m). Needed for CoT.
                 Field("le", "integer", writable=False, readable=False), # Linear 'Error' for the Elevation (in m). Needed for CoT.
-                Field("source", "integer"),
+                Field("source", requires=IS_NULL_OR(IS_IN_SET(gis_source_opts))),
                 comments,
                 migrate=migrate)
 
 table.uuid.requires = IS_NOT_IN_DB(db, "%s.uuid" % table)
 table.name.requires = IS_NOT_EMPTY()    # Placenames don't have to be unique
+
 table.name.label = T("Primary Name")
-# We never access name_l10n directly
-#table.name_l10n.readable = False
-#table.name_l10n.writable = False
-#table.name_l10n.label = T("Local Names")
-#table.name_l10n.comment = DIV(_class="tooltip", _title=Tstr("Local Names") + "|" + Tstr("Names can be added in multiple languages"))
-#table.name_l10n.requires = IS_NULL_OR(IS_ONE_OF(db, "gis_location_name.id", "%(name)s"))
-#table.name_l10n.represent = lambda id: (id and [db(db.gis_location_name.id == id).select(db.gis_location_name.name, limitby=(0, 1)).first().name] or [NONE])[0]
 table.name_dummy.label = T("Local Names")
 table.name_dummy.comment = DIV(_class="tooltip", _title=Tstr("Local Names") + "|" + Tstr("Names can be added in multiple languages"))
+
 table.level.requires = IS_NULL_OR(IS_IN_SET(gis_location_hierarchy))
 table.parent.requires = IS_NULL_OR(IS_ONE_OF(db, "gis_location.id", "%(name)s"))
 table.parent.represent = lambda id: (id and [db(db.gis_location.id == id).select(db.gis_location.name, limitby=(0, 1)).first().name] or [NONE])[0]
@@ -450,7 +447,7 @@ table.wkt.represent = lambda wkt: gis.abbreviate_wkt(wkt)
 table.lat.requires = IS_NULL_OR(IS_LAT())
 table.lon.requires = IS_NULL_OR(IS_LON())
 table.url.requires = IS_NULL_OR(IS_URL())
-table.source.requires = IS_NULL_OR(IS_IN_SET(gis_source_opts))
+
 table.level.label = T("Level")
 table.code.label = T("Code")
 table.parent.label = T("Parent")
@@ -458,13 +455,19 @@ table.addr_street.label = T("Street Address")
 table.gis_feature_type.label = T("Feature Type")
 table.lat.label = T("Latitude")
 table.lon.label = T("Longitude")
-table.wkt.label = T("Well-Known Text")
+table.wkt.label = "WKT (" + Tstr("Well-Known Text") + ")"
 table.url.label = "URL"
+table.geonames_id.label = "Geonames"
 table.osm_id.label = "OpenStreetMap"
 # We want these visible from forms which reference the Location
 CONVERSION_TOOL = T("Conversion Tool")
-table.lat.comment = DIV( _class="tooltip", _id="gis_location_lat_tooltip", _title=Tstr("Latitude & Longitude") + "|" + Tstr("You can click on the map to select the Lat/Lon fields. Longitude is West - East (sideways). Latitude is North-South (Up-Down). Latitude is zero on the equator and positive in the northern hemisphere and negative in the southern hemisphere. Longitude is zero on the prime meridian (Greenwich Mean Time) and is positive to the east, across Europe and Asia.  Longitude is negative to the west, across the Atlantic and the Americas.  This needs to be added in Decimal Degrees."))
-table.lon.comment = A(CONVERSION_TOOL, _style="cursor:pointer;", _title=T("You can use the Conversion Tool to convert from either GPS coordinates or Degrees/Minutes/Seconds."), _id="btnConvert")
+table.lat.comment = DIV(_class="tooltip",
+                        _id="gis_location_lat_tooltip",
+                        _title=Tstr("Latitude & Longitude") + "|" + Tstr("You can click on the map to select the Lat/Lon fields. Longitude is West - East (sideways). Latitude is North-South (Up-Down). Latitude is zero on the equator and positive in the northern hemisphere and negative in the southern hemisphere. Longitude is zero on the prime meridian (Greenwich Mean Time) and is positive to the east, across Europe and Asia.  Longitude is negative to the west, across the Atlantic and the Americas.  This needs to be added in Decimal Degrees."))
+table.lon.comment = A(CONVERSION_TOOL,
+                      _style="cursor:pointer;",
+                      _title=T("You can use the Conversion Tool to convert from either GPS coordinates or Degrees/Minutes/Seconds."),
+                      _id="btnConvert")
 
 # Reusable field to include in other table definitions
 ADD_LOCATION = T("Add Location")
@@ -480,7 +483,7 @@ location_id = db.Table(None, "location_id",
                                        _target="top",
                                        _title=ADD_LOCATION),
                                      DIV( _class="tooltip",
-                                       _title=Tstr("Location") + "|" + Tstr("The Location of this Site, which can be general (for Reporting) or precise (for displaying on a Map)."))),
+                                         _title=Tstr("Location") + "|" + Tstr("The Location of this Site, which can be general (for Reporting) or precise (for displaying on a Map)."))),
                        ondelete = "RESTRICT"))
 
 _gis.countries = Storage()

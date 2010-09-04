@@ -84,12 +84,12 @@ def define_map(window=False, toolbar=False):
     shelters = gis.get_feature_layer(module, resource, layername, popup_label, marker, active=True)
     
     # Schools
-    module = "sitrep"
-    resource = "school_report"
-    layername = Tstr("Schools")
-    popup_label = Tstr("School")
-    marker = "school"
-    schools = gis.get_feature_layer(module, resource, layername, popup_label, marker, active=True)
+    #module = "sitrep"
+    #resource = "school_report"
+    #layername = Tstr("Schools")
+    #popup_label = Tstr("School")
+    #marker = "school"
+    #schools = gis.get_feature_layer(module, resource, layername, popup_label, marker, active=True)
     
     # Requests
     module = "rms"
@@ -118,7 +118,7 @@ def define_map(window=False, toolbar=False):
     feature_queries = [
                        incidents,
                        shelters,
-                       schools,
+                       #schools,
                        requests,
                        assessments,
                        activities
@@ -158,14 +158,17 @@ def location():
                 table.code.readable = False
             table.gis_feature_type.writable = table.gis_feature_type.readable = False
             table.wkt.writable = table.wkt.readable = False
-            #table.marker_id.comment = ""
         else:
-            table.code.comment = DIV( _class="tooltip", _title=Tstr("Code") + "|" + Tstr("For a country this would be the ISO2 code, for a Town, it would be the Airport Locode."))
-            table.wkt.comment = DIV(SPAN("*", _class="req"), DIV( _class="tooltip", _title="WKT" + "|" + Tstr("The <a href='http://en.wikipedia.org/wiki/Well-known_text' target=_blank>Well-Known Text</a> representation of the Polygon/Line.")))
+            table.code.comment = DIV(_class="tooltip",
+                                     _title=Tstr("Code") + "|" + Tstr("For a country this would be the ISO2 code, for a Town, it would be the Airport Locode."))
+            table.wkt.comment = DIV(SPAN("*", _class="req"),
+                                    DIV(_class="stickytip",
+                                        _title="WKT|" + Tstr("The" + " <a href='http://en.wikipedia.org/wiki/Well-known_text' target=_blank>" + Tstr("Well-Known Text") + "</a> " + "representation of the Polygon/Line.")))
 
         if r.http == "GET" and r.representation in ("html", "popup"):
             # Options which are only required in interactive HTML views
-            table.level.comment = DIV( _class="tooltip", _title=Tstr("Level") + "|" + Tstr("If the location is a geographic area, then state at what level here."))
+            table.level.comment = DIV(_class="tooltip",
+                                      _title=Tstr("Level") + "|" + Tstr("If the location is a geographic area, then state at what level here."))
             table.parent.comment = DIV(A(ADD_LOCATION,
                                            _class="colorbox",
                                            _href=URL(r=request, c="gis", f="location", args="create", vars=dict(format="popup", child="parent")),
@@ -175,7 +178,12 @@ def location():
                                            _class="tooltip",
                                            _title=Tstr("Parent") + "|" + Tstr("The Area which this Site is located within."))),
             table.name.comment = SPAN("*", _class="req")
-            table.osm_id.comment = DIV( _class="tooltip", _title="OSM ID" + "|" + Tstr("The <a href='http://openstreetmap.org' target=_blank>OpenStreetMap</a> ID. If you don't know the ID, you can just say 'Yes' if it has been added to OSM."))
+            table.osm_id.comment = DIV(_class="stickytip",
+                                       _title="OSM ID|" + Tstr("The") + " <a href='http://openstreetmap.org' target=_blank>OpenStreetMap</a> ID. " + Tstr("If you don't know the ID, you can just say 'Yes' if it has been added to OSM."))
+            table.geonames_id.comment = DIV(_class="stickytip",
+                                            _title="Geonames ID|" + Tstr("The") + " <a href='http://geonames.org' target=_blank>Geonames</a> ID. If you knwo what the Geonames ID of this location is then you can enter it here.")
+            table.comments.comment = DIV(_class="tooltip",
+                                         _title=Tstr("Comments") + "|" + Tstr("Please use this field to record any additional information, such as Ushahidi instance IDs. Include a history of the record if it is updated."))
 
             # CRUD Strings
             LIST_LOCATIONS = T("List Locations")
@@ -244,11 +252,6 @@ def location():
     # Options
     _vars = request.vars
     filters = []
-    # Deprecate!
-    #fclass = _vars.get("feature_class", None)
-    #if fclass:
-    #    filters.append((db.gis_location.feature_class_id == db.gis_feature_class.id) &
-    #                          (db.gis_feature_class.name.like(fclass)))
 
     parent = _vars.get("parent_", None)
     # Don't use 'parent' as the var name as otherwise it conflicts with the form's var of the same name & hence this will be triggered during form submission
@@ -269,77 +272,24 @@ def location():
     if caller:
         # We've been called as a Popup
         if "gis_location_parent" in caller:
-            # Populate defaults & hide unnecessary rows
-            # Use default Marker for Admin Locations
-            #table.marker_id.readable = table.marker_id.writable = False
+            # Hide unnecessary rows
             table.addr_street.readable = table.addr_street.writable = False
-            #table.osm_id.readable = table.osm_id.writable = False
-            #table.source.readable = table.source.writable = False
         else:
             parent = _vars.get("parent_", None)
             # Don't use 'parent' as the var name as otherwise it conflicts with the form's var of the same name & hence this will be triggered during form submission
             if parent:
                 table.parent.default = parent
-            
-            #fc = None
-            # Populate defaults & hide unnecessary rows
-            if "cr_shelter" in caller:
-                #fc = db(db.gis_feature_class.name == "Shelter").select(db.gis_feature_class.id, limitby=(0, 1)).first()
-                table.level.readable = table.level.writable = False
-                table.url.readable = table.url.writable = False
-            elif "hms_hospital" in caller:
-                #fc = db(db.gis_feature_class.name == "Hospital").select(db.gis_feature_class.id, limitby=(0, 1)).first()
-                table.level.readable = table.level.writable = False
-                table.url.readable = table.url.writable = False
-            elif "irs_ireport" in caller:
-                #fc = db(db.gis_feature_class.name == "Incident").select(db.gis_feature_class.id, limitby=(0, 1)).first()
-                table.level.readable = table.level.writable = False
-                table.url.readable = table.url.writable = False
-            elif "org_office" in caller:
-                #fc = db(db.gis_feature_class.name == "Office").select(db.gis_feature_class.id, limitby=(0, 1)).first()
-                table.level.readable = table.level.writable = False
-                table.url.readable = table.url.writable = False
-            elif "pr_presence" in caller:
-                #fc = db(db.gis_feature_class.name == "Person").select(db.gis_feature_class.id, limitby=(0, 1)).first()
-                table.level.readable = table.level.writable = False
-                table.url.readable = table.url.writable = False
-            elif "assessment_location" in caller:
-                table.level.default = "L4"
-                #table.feature_class_id.readable = table.feature_class_id.writable = False
-                #table.marker_id.readable = table.marker_id.writable = False
-                table.addr_street.readable = table.addr_street.writable = False
-            elif "school_district" in caller:
-                table.level.default = "L2"
-                #table.feature_class_id.readable = table.feature_class_id.writable = False
-                #table.marker_id.readable = table.marker_id.writable = False
-                table.addr_street.readable = table.addr_street.writable = False
-            elif "school_report_location" in caller:
-                table.level.default = "L2"
-                #table.feature_class_id.readable = table.feature_class_id.writable = False
-                #table.marker_id.readable = table.marker_id.writable = False
-                table.addr_street.readable = table.addr_street.writable = False
-            elif "school_report_union" in caller:
-                table.level.default = "L4"
-                #table.feature_class_id.readable = table.feature_class_id.writable = False
-                #table.marker_id.readable = table.marker_id.writable = False
-                table.addr_street.readable = table.addr_street.writable = False
-            
-            #try:
-                # If we have a pre-assigned Feature Class
-                #table.feature_class_id.default = fc.id
-                #table.feature_class_id.readable = table.feature_class_id.writable = False
-                # Use default Marker for Class
-                #table.marker_id.readable = table.marker_id.writable = False
-            #except:
-                #pass
 
+            # Hide unnecessary rows
+            table.level.readable = table.level.writable = False
+            table.geonames_id.readable = table.geonames_id.writable = False
             table.osm_id.readable = table.osm_id.writable = False
             table.source.readable = table.source.writable = False
+            table.url.readable = table.url.writable = False
 
     level = _vars.get("level", None)
     if level:
         # We've been called from the Location Selector widget
-        #table.marker_id.readable = table.marker_id.writable = False
         table.addr_street.readable = table.addr_street.writable = False
     
     # Post-processor
@@ -384,7 +334,7 @@ def location_duplicates():
         return A(T("Open in New Tab"), _id=field, _href=URL(r=request, f="location"), _class="action-btn", _target="_blank")
 
     form = SQLFORM.factory(
-                           Field("old", db.gis_location, requires=IS_ONE_OF(db, "gis_location.id", "%(name)s"), label = B(T("Old")), comment=open_btn("btn_old")),
+                           Field("old", db.gis_location, requires=IS_ONE_OF(db, "gis_location.id", "%(name)s"), label = SPAN(B(T("Old")), " (" + Tstr("To delete") + ")"), comment=open_btn("btn_old")),
                            Field("new", db.gis_location, requires=IS_ONE_OF(db, "gis_location.id", "%(name)s"), label = B(T("New")), comment=open_btn("btn_new")),
                           )
     
@@ -394,7 +344,8 @@ def location_duplicates():
         if not _vars.old == _vars.new:
             # Take Action
             delete_location(_vars.old, _vars.new)
-            response.confirmation = T("Location De-duplicated")
+            session.confirmation = T("Location De-duplicated")
+            redirect(URL(r=request))
         else:
             response.error = T("Locations should be different!")
 

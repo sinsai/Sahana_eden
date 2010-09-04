@@ -45,7 +45,7 @@ import sys
 import random           # Needed when feature_queries are passed in without a name
 import urllib           # Needed for urlencoding
 import urllib2          # Needed for error handling on fetch
-#import uuid
+import uuid
 import Cookie           # Needed for Sessions on Internal KML feeds
 try:
     from cStringIO import StringIO    # Faster, where available
@@ -767,9 +767,9 @@ class GIS(object):
         filename = country + ".txt"
         filepath = os.path.join(cachepath, filename)
         if os.access(filepath, os.R_OK):
-            cached = 1
+            cached = True
         else:
-            cached = 0
+            cached = False
             if not os.access(cachepath, os.W_OK):
                 s3_debug("Folder not writable", cachepath)
                 return
@@ -793,6 +793,8 @@ class GIS(object):
                 fp = StringIO(f)
                 myfile = zipfile.ZipFile(fp)
                 try:
+                    # Python 2.6+ only :/
+                    # For now, 2.5 users need to download/unzip manually to cache folder
                     myfile.extract(filename, cachepath)
                     myfile.close()
                 except:
@@ -850,8 +852,10 @@ class GIS(object):
             geonameid, name, asciiname, alternatenames, lat, lon, feature_class, feature_code, country_code, cc2, admin1_code, admin2_code, admin3_code, admin4_code, population, elevation, gtopo30, timezone, modification_date = line.split("\t")
             
             if feature_code == fc:
-                uuid = "www.geonames.org/" + str(geonameid)
-                
+                # @ToDo: Agree on a global repository for UUIDs:
+                # http://eden.sahanafoundation.org/wiki/UserGuidelinesGISData#UUIDs
+                uuid = "geo.sahanafoundation.org/" + uuid.uuid4()
+
                 # Add WKT
                 lat = float(lat)
                 lon = float(lon)
@@ -882,7 +886,10 @@ class GIS(object):
                         s3_debug("Error reading wkt of location with id", row.id)
 
                 # Add entry to database
-                _locations.insert(uuid=uuid, name=name, level=level, parent=parent, lat=lat, lon=lon, wkt=wkt, lon_min=lon_min, lon_max=lon_max, lat_min=lat_min, lat_max=lat_max)
+                _locations.insert(uuid=uuid, geonames_id=geonames_id, source="geonames",
+                                  name=name, level=level, parent=parent,
+                                  lat=lat, lon=lon, wkt=wkt,
+                                  lon_min=lon_min, lon_max=lon_max, lat_min=lat_min, lat_max=lat_max)
 
             else:
                 continue

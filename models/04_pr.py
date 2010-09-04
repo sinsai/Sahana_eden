@@ -99,7 +99,7 @@ s3xrc.model.configure(table,
 # Contact (pe_contact)
 #
 pr_contact_method_opts = {
-    1:T("E-Mail"),
+    1:T("Email"),
     2:T("Mobile Phone"),
     3:"XMPP",
     4:T("Twitter"),

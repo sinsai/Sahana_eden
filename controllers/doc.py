@@ -129,7 +129,6 @@ def document():
 
     response.s3.pagination = True
     output = shn_rest_controller(module, resource,
-                                 #listadd=False,
                                  rheader=rheader)
 
     return output

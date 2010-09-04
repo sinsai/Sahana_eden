@@ -101,11 +101,11 @@ if deployment_settings.has_module(module):
         msg_list_empty = T("No Assessments currently registered"))
 
     # assessment as component of doc_documents
-    s3xrc.model.add_component(module, resource,
-                              multiple=True,
-                              joinby=dict(doc_document="document_id"),
-                              deletable=True,
-                              editable=True)
+    #s3xrc.model.add_component(module, resource,
+    #                          multiple=True,
+    #                          joinby=dict(doc_document="document_id"),
+    #                          deletable=True,
+    #                          editable=True)
 
     # -----------------------------------------------------------------------------
     # School Districts

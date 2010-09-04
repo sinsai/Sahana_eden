@@ -447,28 +447,27 @@ class AuthS3(Auth):
 
         """
 
+        db = self.db
         request = self.environment.request
         response = self.environment.response
         session = self.environment.session
+        deployment_settings = self.deployment_settings
 
         # S3: Don't allow registration if disabled
-        db = self.db
-        settings = db(db.s3_setting.id > 0).select(db.s3_setting.utc_offset, limitby=(0, 1)).first()
-        if settings:
-            self_registration = session.s3.self_registration
-            utc_offset = settings.utc_offset
-        else:
-            # db empty and prepopulate is false
-            self_registration = True
-            utc_offset = self.deployment_settings.get_L10n_utc_offset()
+        self_registration = deployment_settings.get_security_self_registration()
         if not self_registration:
             session.error = self.messages.registration_disabled
             redirect(URL(r=request, args=["login"]))
-
-
+        
+        settings = db(db.s3_setting.id > 0).select(db.s3_setting.utc_offset, limitby=(0, 1)).first()
+        if settings:
+            utc_offset = settings.utc_offset
+        else:
+            # db empty and prepopulate is false
+            utc_offset = self.deployment_settings.get_L10n_utc_offset()
+        
         if self.is_logged_in() and request.function != "index":
             redirect(self.settings.logged_url)
-
 
         if next == DEFAULT:
             next = request.vars._next or self.settings.register_next

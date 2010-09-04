@@ -22,7 +22,7 @@ s3.menu_help = [ T("Help"), True, "#",
 # Auth Menu (available in all screens)
 if not auth.is_logged_in():
 
-    self_registration = s3_settings.self_registration if s3_settings else True
+    self_registration = deployment_settings.get_security_self_registration()
 
     if self_registration:
         s3.menu_auth = [T("Login"), True, URL(request.application, "default", "user/login"),

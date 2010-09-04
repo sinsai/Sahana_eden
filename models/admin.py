@@ -8,14 +8,6 @@ import cPickle as pickle
 
 module = "admin"
 
-# Settings
-resource = "setting"
-tablename = "%s_%s" % (module, resource)
-table = db.define_table(tablename,
-                Field("audit_read", "boolean"),
-                Field("audit_write", "boolean"),
-                migrate=migrate)
-
 # Import Jobs
 resource = "import_job"
 tablename = "%s_%s" % (module, resource)

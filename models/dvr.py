@@ -1,18 +1,17 @@
 # -*- coding: utf-8 -*-
 
 """
-    DVR Disaster Victim Registry (Sahana Legacy)
-
-    @author nursix
+    DVR Disaster Victim Registry
+    @ToDo (Sahana Legacy)
 """
 
 module = "dvr"
 if deployment_settings.has_module(module):
 
-    # Settings
-    resource = "setting"
-    table = module + "_" + resource
-    db.define_table(table,
-                    Field("audit_read", "boolean"),
-                    Field("audit_write", "boolean"),
-                    migrate=migrate)
+    pass
+    # Resource
+    #resource = "resource"
+    #table = module + "_" + resource
+    #db.define_table(table,
+    #                Field("name"),
+    #                migrate=migrate)

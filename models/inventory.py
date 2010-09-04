@@ -1,4 +1,4 @@
-# -*- coding: utf-8 -*-
+﻿# -*- coding: utf-8 -*-
 
 """
     Inventory 
@@ -11,16 +11,6 @@
 
 module = "inventory"
 if deployment_settings.has_module("logs"):
-    #==============================================================================
-    # Settings
-    #
-    resource = "setting"
-    tablename = "%s_%s" % (module, resource)
-    table = db.define_table(tablename,
-                            Field("audit_read", "boolean"),
-                            Field("audit_write", "boolean"),
-                            migrate=migrate)
-
 
     #==============================================================================
     # Inventory Store

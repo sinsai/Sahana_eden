@@ -48,13 +48,13 @@ def index():
         admin_name = settings.admin_name
         admin_email = settings.admin_email
         admin_tel = settings.admin_tel
-        self_registration = settings.self_registration
     else:
         # db empty and prepopulate is false
         admin_name = T("Sahana Administrator"),
         admin_email = "support@Not Set",
         admin_tel = T("Not Set"),
-        self_registration = True
+
+    self_registration = deployment_settings.get_security_self_registration()
 
     response.title = T("Sahana FOSS Disaster Management System")
     login_form = None
@@ -103,7 +103,7 @@ def user():
     if request.args and request.args(0) == "profile" and deployment_settings.get_auth_openid():
             form = DIV(form, openid_login_form.list_user_openids())
 
-    self_registration = session.s3.self_registration
+    self_registration = deployment_settings.get_security_self_registration()
 
     # Use Custom Ext views
     # Best to not use an Ext form for login: can't save username/password in browser & can't hit 'Enter' to submit!

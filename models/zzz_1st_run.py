@@ -88,53 +88,7 @@ if empty:
             theme = 1
         )
 
-    tablename = "admin_setting"
-    table = db[tablename]
-    if not db(table.id > 0).count():
-        table.insert(
-            # If Disabled at the Global Level then can still Enable just for this Module here
-            audit_read = False,
-            audit_write = False
-        )
-
-    tablename = "appadmin_setting"
-    table = db[tablename]
-    if not db(table.id > 0).count():
-        table.insert(
-            # If Disabled at the Global Level then can still Enable just for this Module here
-            audit_read = False,
-            audit_write = False
-        )
-
-    tablename = "gis_setting"
-    table = db[tablename]
-    if not db(table.id > 0).count():
-        table.insert(
-            # If Disabled at the Global Level then can still Enable just for this Module here
-            audit_read = False,
-            audit_write = False
-        )
-
-    # Person Registry
-    tablename = "pr_setting"
-    table = db[tablename]
-    if not db(table.id > 0).count():
-       table.insert(
-            # If Disabled at the Global Level then can still Enable just for this Module here
-            audit_read = False,
-            audit_write = False
-        )
-
     # Organisation Registry
-    tablename = "org_setting"
-    table = db[tablename]
-    if not db(table.id > 0).count():
-        table.insert(
-            # If Disabled at the Global Level then can still Enable just for this Module here
-            audit_read = False,
-            audit_write = False
-        )
-
     tablename = "org_sector"
     table = db[tablename]
     if not db(table.id > 0).count():
@@ -158,17 +112,8 @@ if empty:
             uuid = uuid.uuid4()
         )
 
-    # Logistics
+    # Logistics (old)
     if "lms" in deployment_settings.modules:
-        tablename = "lms_setting"
-        table = db[tablename]
-        if not db(table.id > 0).count():
-            table.insert(
-                # If Disabled at the Global Level then can still Enable just for this Module here
-                audit_read = False,
-                audit_write = False
-            )
-
         tablename = "lms_catalog"
         table = db[tablename]
         if not db(table.id > 0).count():
@@ -180,75 +125,14 @@ if empty:
 
     # Budget Module
     if "budget" in deployment_settings.modules:
-        tablename = "budget_setting"
-        table = db[tablename]
-        if not db(table.id > 0).count():
-            table.insert(
-                # If Disabled at the Global Level then can still Enable just for this Module here
-                audit_read = False,
-                audit_write = False
-            )
-
         tablename = "budget_parameter"
         table = db[tablename]
         if not db(table.id > 0).count():
             table.insert(
             )
 
-    # Shelter Registry
-    if "cr" in deployment_settings.modules:
-        tablename = "cr_setting"
-        table = db[tablename]
-        if not db(table.id > 0).count():
-            table.insert(
-                # If Disabled at the Global Level then can still Enable just for this Module here
-                audit_read = False,
-                audit_write = False
-            )
-
-    # Disaster Victim Identification
-    if "dvi" in deployment_settings.modules:
-        tablename = "dvi_setting"
-        table = db[tablename]
-        if not db(table.id > 0).count():
-            table.insert(
-                # If Disabled at the Global Level then can still Enable just for this Module here
-                audit_read = False,
-                audit_write = False
-            )
-
-    # Disaster Victim Registration
-    if "dvr" in deployment_settings.modules:
-        tablename = "dvr_setting"
-        table = db[tablename]
-        if not db(table.id > 0).count():
-            table.insert(
-                # If Disabled at the Global Level then can still Enable just for this Module here
-                audit_read = False,
-                audit_write = False
-            )
-
-    # Human Remains Management
-    if "hrm" in deployment_settings.modules:
-        tablename = "hrm_setting"
-        table = db[tablename]
-        if not db(table.id > 0).count():
-            table.insert(
-                # If Disabled at the Global Level then can still Enable just for this Module here
-                audit_read = False,
-                audit_write = False
-            )
-
     # Incident Reporting System
     if "irs" in deployment_settings.modules:
-        tablename = "irs_setting"
-        table = db[tablename]
-        if not db(table.id > 0).count():
-            table.insert(
-                # If Disabled at the Global Level then can still Enable just for this Module here
-                audit_read = False,
-                audit_write = False
-            )
         # Categories visible to ends-users by default
         tablename = "irs_icategory"
         table = db[tablename]
@@ -289,44 +173,12 @@ if empty:
         table = db[tablename]
         if not db(table.id > 0).count():
             table.insert(
-                audit_read = False,
-                audit_write = False,
                 outgoing_sms_handler = "Gateway"
                 )
 
 
-    # Missing Person Registry
-    if "mpr" in deployment_settings.modules:
-        tablename = "mpr_setting"
-        table = db[tablename]
-        if not db(table.id > 0).count():
-            table.insert(
-                # If Disabled at the Global Level then can still Enable just for this Module here
-                audit_read = False,
-                audit_write = False
-            )
-
-    # Request Management System
-    if "rms" in deployment_settings.modules:
-        tablename = "rms_setting"
-        table = db[tablename]
-        if not db(table.id > 0).count():
-            table.insert(
-                # If Disabled at the Global Level then can still Enable just for this Module here
-                audit_read = False,
-                audit_write = False
-            )
-
     # Ticketing System
     if "ticket" in deployment_settings.modules:
-        tablename = "ticket_setting"
-        table = db[tablename]
-        if not db(table.id > 0).count():
-            table.insert(
-                # If Disabled at the Global Level then can still Enable just for this Module here
-                audit_read = False,
-                audit_write = False
-            )
         tablename = "ticket_category"
         table = db[tablename]
         if not db(table.id > 0).count():
@@ -336,17 +188,6 @@ if empty:
             table.insert( name = "Request for Assistance" )
             table.insert( name = "Offer of Help" )
 
-
-    # Volunteer Management
-    if "vol" in deployment_settings.modules:
-        tablename = "vol_setting"
-        table = db[tablename]
-        if not db(table.id > 0).count():
-            table.insert(
-                # If Disabled at the Global Level then can still Enable just for this Module here
-                audit_read = False,
-                audit_write = False
-            )
 
     # GIS Module
     tablename = "gis_marker"
@@ -823,7 +664,7 @@ if empty:
     # Security Defaults for all tables (if using 'full' security policy)
     if session.s3.security_policy != 1:
         table = auth.settings.table_permission_name
-        if not db(db[table].id>0).count():
+        if not db(db[table].id > 0).count():
             # For performance we only populate this once (at system startup)
             # => need to populate manually when adding new tables to the database! (less RAD)
             authenticated = auth.id_group("Authenticated")

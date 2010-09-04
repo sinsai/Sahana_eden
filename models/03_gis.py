@@ -29,14 +29,6 @@ else:
     _gis.edit_L4 = deployment_settings.get_gis_edit_l4()
     _gis.edit_L5 = deployment_settings.get_gis_edit_l5()
 
-# Settings
-resource = "setting"
-tablename = "%s_%s" % (module, resource)
-table = db.define_table(tablename,
-                Field("audit_read", "boolean"),
-                Field("audit_write", "boolean"),
-                migrate=migrate)
-
 # -----------------------------------------------------------------------------
 # GIS Markers (Icons)
 resource = "marker"

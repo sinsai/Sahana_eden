@@ -257,3 +257,32 @@ function hideStatus()
     if (_statusbar)
         _statusbar.release();
 }
+
+
+//----------------------------------------------------------------------------------------------
+//Code to warn on exit without saving 
+// by: michael howden
+function SetNavigateAwayConfirm () 
+{
+	window.onbeforeunload = function()
+					{ 
+					return "You have unsaved changes. "  +
+						   "Click Cancel now, then 'Save' to save them. " +
+						   "Click OK now to discard them."
+					};	
+};
+
+function ClearNavigateAwayConfirm () 
+{
+	window.onbeforeunload = function () {};
+};
+
+function EnableNavigateAwayConfirm () 
+{
+$(document).ready(function() {
+	$("input, select, textarea").keypress( SetNavigateAwayConfirm );		
+	$("input, select, textarea").change( SetNavigateAwayConfirm );	
+	$("form").submit( ClearNavigateAwayConfirm );
+	});
+	
+};

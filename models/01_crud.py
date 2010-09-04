@@ -1162,7 +1162,7 @@ def shn_list(r, **attr):
                                onvalidation=onvalidation,
                                onaccept=_onaccept,
                                message=message,
-                               next=r.there())
+                               next=r.there())            
 
             # Cancel button?
             #form[0].append(TR(TD(), TD(INPUT(_type="reset", _value="Reset form"))))
@@ -1191,6 +1191,10 @@ def shn_list(r, **attr):
                            _class="action-btn")
 
             shn_custom_view(r, "list_create.html")
+            
+            if deployment_settings.navigate_away_confirm:
+                form.append( SCRIPT ("EnableNavigateAwayConfirm();") )
+            
             output.update(form=form, addtitle=addtitle, showaddbtn=showaddbtn)
 
         else:
@@ -1374,7 +1378,10 @@ def shn_create(r, **attr):
                                         _value="Cancel",
                                         _onclick="window.location='%s';" %
                                                  response.s3.cancel))
-
+        
+        if deployment_settings.navigate_away_confirm:
+            form.append( SCRIPT ("EnableNavigateAwayConfirm();") )
+        
         # Put the form into output
         output.update(form=form)
 
@@ -1411,6 +1418,10 @@ def shn_create(r, **attr):
 
         form = crud.create(table,
                            onvalidation=onvalidation, onaccept=_onaccept)
+        
+        if deployment_settings.navigate_away_confirm:
+            form.append( SCRIPT ("EnableNavigateAwayConfirm();") )
+        
         response.view = "plain.html"
         return dict(item=form)
 
@@ -1578,6 +1589,9 @@ def shn_update(r, **attr):
                                         _onclick="window.location='%s';" %
                                                  response.s3.cancel))
 
+        if deployment_settings.navigate_away_confirm:
+            form.append( SCRIPT ("EnableNavigateAwayConfirm();") )
+            
         output.update(form=form)
 
         # Restore comment
@@ -1619,6 +1633,10 @@ def shn_update(r, **attr):
                            deletable=False)
 
         response.view = "plain.html"
+        
+        if deployment_settings.navigate_away_confirm:
+            form.append( SCRIPT ("EnableNavigateAwayConfirm();") )        
+        
         return dict(item=form)
 
     elif r.representation == "url":

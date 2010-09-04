@@ -845,7 +845,7 @@ def shn_project_search_location(xrequest, **attr):
         if request.vars._next:
             next = str.lower(request.vars._next)
         else:
-            next = str.lower(URL(r=request, c="org", f="project", args="[id]"))
+            next = URL(r=request, c="org", f="project", args="[id]")
 
         # Custom view
         response.view = "%s/project_search.html" % xrequest.prefix

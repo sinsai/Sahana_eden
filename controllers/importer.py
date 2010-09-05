@@ -1,5 +1,10 @@
-# coding: utf8
+﻿# -*- coding: utf-8 -*-
 
+"""
+    Importer 
+    
+    @author: Shikhar Kohli
+"""
 module = request.controller
 
 if module not in deployment_settings.modules:

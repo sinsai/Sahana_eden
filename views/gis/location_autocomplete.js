@@ -682,7 +682,7 @@ $(function() {
                         // Set the right entry
                         //$('#gis_location_l2').val(data.id);
                         if (data.parent) {
-                            var exists = $("#gis_location_l1").itemExists(data.parent.toString());
+                            var exists = $('#gis_location_l1').itemExists(data.parent.toString());
                             if (exists) {
                                 // Set the L1 to the Parent
                                 $('#gis_location_l1').val(data.parent);
@@ -695,12 +695,12 @@ $(function() {
                         }
                     } else {
                         // Check that our location is in this dropdown!
-                        var exists = $("#gis_location_l2").itemExists(data.id.toString());
+                        var exists = $('#gis_location_l2').itemExists(data.id.toString());
                         if (exists) {
                             // Set the right entry
                             $('#gis_location_l2').val(data.id);
                             if (data.parent) {
-                                var exists = $("#gis_location_l1").itemExists(data.parent.toString());
+                                var exists = $('#gis_location_l1').itemExists(data.parent.toString());
                                 if (exists) {
                                     // Set the L1 to the Parent
                                     $('#gis_location_l1').val(data.parent);
@@ -729,7 +729,7 @@ $(function() {
                         // Set the right entry
                         //$('#gis_location_l3').val(data.id);
                         if (data.parent) {
-                            var exists = $("#gis_location_l2").itemExists(data.parent.toString());
+                            var exists = $('#gis_location_l2').itemExists(data.parent.toString());
                             if (exists) {
                                 // Set the L2 to the Parent
                                 $('#gis_location_l2').val(data.parent);
@@ -742,12 +742,12 @@ $(function() {
                         }
                     } else {
                         // Check that our location is in this dropdown!
-                        var exists = $("#gis_location_l3").itemExists(data.id.toString());
+                        var exists = $('#gis_location_l3').itemExists(data.id.toString());
                         if (exists) {
                             // Set the right entry
                             $('#gis_location_l3').val(data.id);
                             if (data.parent) {
-                                var exists = $("#gis_location_l2").itemExists(data.parent.toString());
+                                var exists = $('#gis_location_l2').itemExists(data.parent.toString());
                                 if (exists) {
                                     // Set the L2 to the Parent
                                     $('#gis_location_l2').val(data.parent);
@@ -775,7 +775,7 @@ $(function() {
                         // Set the right entry
                         //$('#gis_location_l4').val(data.id);
                         if (data.parent) {
-                            var exists = $("#gis_location_l3").itemExists(data.parent.toString());
+                            var exists = $('#gis_location_l3').itemExists(data.parent.toString());
                             if (exists) {
                                 // Set the L3 to the Parent
                                 $('#gis_location_l3').val(data.parent);
@@ -789,12 +789,12 @@ $(function() {
                         }
                     } else {
                         // Check that our location is in this dropdown!
-                        var exists = $("#gis_location_l4").itemExists(data.id.toString());
+                        var exists = $('#gis_location_l4').itemExists(data.id.toString());
                         if (exists) {
                             // Set the right entry
                             $('#gis_location_l4').val(data.id);
                             if (data.parent) {
-                                var exists = $("#gis_location_l3").itemExists(data.parent.toString());
+                                var exists = $('#gis_location_l3').itemExists(data.parent.toString());
                                 if (exists) {
                                     // Set the L3 to the Parent
                                     $('#gis_location_l3').val(data.parent);
@@ -825,12 +825,12 @@ $(function() {
                         // @ToDo If we have parent data, set those too
                     } else {
                         // Check that our location is in this dropdown!
-                        var exists = $("#gis_location_l5").itemExists(data.id.toString());
+                        var exists = $('#gis_location_l5').itemExists(data.id.toString());
                         if (exists) {
                             // Set the right entry
                             $('#gis_location_l5').val(data.id);
                             if (data.parent) {
-                                var exists = $("#gis_location_l4").itemExists(data.parent.toString());
+                                var exists = $('#gis_location_l4').itemExists(data.parent.toString());
                                 if (exists) {
                                     // Set the L4 to the Parent
                                     $('#gis_location_l4').val(data.parent);

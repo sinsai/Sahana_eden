@@ -200,7 +200,7 @@ def shn_shelter_prep(r):
     # in request.vars in a variable that won't be used to carry any real
     # form data.
 
-    if r.representation in ("popup", "html"):
+    if r.representation in shn_interactive_view_formats:
         # Remember this is html or popup.
         response.cr_shelter_request_was_html_or_popup = True
 

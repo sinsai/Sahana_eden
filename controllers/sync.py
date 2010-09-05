@@ -401,7 +401,7 @@ def sync():
 
     def prep(r):
         # Do not allow interactive formats
-        if r.representation in ("html", "popup", "aadata"):
+        if r.representation in ("html", "popup", "iframe", "aadata"):
             return False
         # Do not allow URL methods
         if r.method:

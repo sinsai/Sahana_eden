@@ -48,14 +48,13 @@ def river():
 
     resource = request.function
 
-    response.s3.pagination = True
-
     # Post-processor
     def user_postp(jr, output):
         shn_action_buttons(jr, deletable=False)
         return output
     response.s3.postp = user_postp
 
+    response.s3.pagination = True
     output = shn_rest_controller(module, resource)
     return output
 

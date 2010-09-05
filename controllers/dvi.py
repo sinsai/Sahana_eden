@@ -61,7 +61,7 @@ def recreq():
     resource = request.function
 
     def recreq_postp(jr, output):
-        if jr.representation in ("html", "popup"):
+        if jr.representation in shn_interactive_view_formats:
             label = UPDATE
             linkto = shn_linkto(jr, sticky=True)("[id]")
             response.s3.actions = [
@@ -83,7 +83,7 @@ def body():
     resource = request.function
 
     def body_postp(jr, output):
-        if jr.representation in ("html", "popup"):
+        if jr.representation in shn_interactive_view_formats:
             if not jr.component:
                 label = READ
             else:

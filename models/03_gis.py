@@ -29,14 +29,6 @@ else:
     _gis.edit_L4 = deployment_settings.get_gis_edit_l4()
     _gis.edit_L5 = deployment_settings.get_gis_edit_l5()
 
-# Settings
-resource = "setting"
-tablename = "%s_%s" % (module, resource)
-table = db.define_table(tablename,
-                Field("audit_read", "boolean"),
-                Field("audit_write", "boolean"),
-                migrate=migrate)
-
 # -----------------------------------------------------------------------------
 # GIS Markers (Icons)
 resource = "marker"
@@ -504,11 +496,10 @@ def get_location_id (field_name = "location_id",
                      filter_opts = None,
                      editable = True):
     """
-    @author Michael Howden
-
-    Function for creating a location field with a customisable field_name/label
-
-    @ToDo: more functionality from this function to port from ADPC Branch
+        Function for creating a location field with a customisable field_name/label
+        @author Michael Howden
+        @ToDo: more functionality from this function to port from ADPC Branch
+        @ToDo: Replace with a Class: S3ReusableField
     """
 
     requires = location_id.location_id.requires
@@ -628,6 +619,30 @@ def gis_location_onvalidation(form):
 s3xrc.model.configure(table,
                       onvalidation=gis_location_onvalidation,
                       onaccept=gis_location_onaccept)
+
+# -----------------------------------------------------------------------------
+def s3_gis_location_simple(r, **attr):
+    """
+        Provide a simple JSON output for a Location
+        - easier to parse than S3XRC
+        - Don't include the potentially heavy WKT field
+        
+        Status: Currently unused
+        @ToDo: Extend to a group of locations
+    """
+    
+    resource = r.resource
+    table = resource.table
+    id = r.id
+    
+    fields = [uuid, level, parent, gis_feature_type, lat, lon, geonames_id, osm_id, comments]
+    # @ToDo local_name
+    output = db(table.id == id).select(table.uuid).json()
+
+    return output
+
+# Plug into REST controller
+s3xrc.model.set_method(module, "location", method="simple", action=s3_gis_location_simple )
 
 # -----------------------------------------------------------------------------
 def s3_gis_location_search_simple(r, **attr):

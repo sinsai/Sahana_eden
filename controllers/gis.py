@@ -165,7 +165,7 @@ def location():
                                     DIV(_class="stickytip",
                                         _title="WKT|" + Tstr("The" + " <a href='http://en.wikipedia.org/wiki/Well-known_text' target=_blank>" + Tstr("Well-Known Text") + "</a> " + "representation of the Polygon/Line.")))
 
-        if r.http == "GET" and r.representation in ("html", "popup"):
+        if r.http == "GET" and r.representation in shn_interactive_view_formats:
             # Options which are only required in interactive HTML views
             table.level.comment = DIV(_class="tooltip",
                                       _title=Tstr("Level") + "|" + Tstr("If the location is a geographic area, then state at what level here."))
@@ -181,10 +181,17 @@ def location():
             table.osm_id.comment = DIV(_class="stickytip",
                                        _title="OSM ID|" + Tstr("The") + " <a href='http://openstreetmap.org' target=_blank>OpenStreetMap</a> ID. " + Tstr("If you don't know the ID, you can just say 'Yes' if it has been added to OSM."))
             table.geonames_id.comment = DIV(_class="stickytip",
-                                            _title="Geonames ID|" + Tstr("The") + " <a href='http://geonames.org' target=_blank>Geonames</a> ID. If you knwo what the Geonames ID of this location is then you can enter it here.")
+                                            _title="Geonames ID|" + Tstr("The") + " <a href='http://geonames.org' target=_blank>Geonames</a> ID. " + Tstr("If you know what the Geonames ID of this location is then you can enter it here."))
             table.comments.comment = DIV(_class="tooltip",
                                          _title=Tstr("Comments") + "|" + Tstr("Please use this field to record any additional information, such as Ushahidi instance IDs. Include a history of the record if it is updated."))
 
+            if r.representation == "iframe":
+                # De-duplicator needs to be able to access UUID fields
+                table.uuid.readable = table.uuid.writable = True
+                table.uuid.label = "UUID"
+                table.uuid.comment = DIV(_class="stickytip",
+                                         _title="UUID|" + Tstr("The") + " <a href='http://eden.sahanafoundation.org/wiki/UUID#Mapping' target=_blank>Universally Unique ID</a>. " + Tstr("Suggest not changing this field unless you know what you are doing."))
+                
             # CRUD Strings
             LIST_LOCATIONS = T("List Locations")
             s3.crud_strings[tablename] = Storage(
@@ -331,13 +338,16 @@ def location_duplicates():
         db(db.gis_location.id == old).update(deleted=True)
 
     def open_btn(field):
-        return A(T("Open in New Tab"), _id=field, _href=URL(r=request, f="location"), _class="action-btn", _target="_blank")
-
+        return A(T("Load Details"), _id=field, _href=URL(r=request, f="location"), _class="action-btn", _target="_blank")
+    
+    table = db.gis_location
     form = SQLFORM.factory(
-                           Field("old", db.gis_location, requires=IS_ONE_OF(db, "gis_location.id", "%(name)s"), label = SPAN(B(T("Old")), " (" + Tstr("To delete") + ")"), comment=open_btn("btn_old")),
-                           Field("new", db.gis_location, requires=IS_ONE_OF(db, "gis_location.id", "%(name)s"), label = B(T("New")), comment=open_btn("btn_new")),
-                           #formstyle = s3_formstyle
+                           Field("old", table, requires=IS_ONE_OF(db, "gis_location.id", "%(name)s"), label = SPAN(B(T("Old")), " (" + Tstr("To delete") + ")"), comment=open_btn("btn_old")),
+                           Field("new", table, requires=IS_ONE_OF(db, "gis_location.id", "%(name)s"), label = B(T("New")), comment=open_btn("btn_new")),
+                           formstyle = s3_formstyle
                           )
+    
+    form.custom.submit.attributes['_value'] = T("Delete Old")
     
     if form.accepts(request.vars, session):
         _vars = form.vars
@@ -528,7 +538,7 @@ def config():
 
     # Pre-processor
     def prep(r):
-        if r.representation in ("html", "popup"):
+        if r.representation in shn_interactive_view_formats:
             # Model options
             # In Model so that they're visible to person() as component
             # CRUD Strings (over-ride)

@@ -5,56 +5,76 @@
 <meta http-equiv="content-type" content="text/html; charset=utf-8" />
 {{if response.refresh:}}{{=XML(response.refresh)}}{{pass}}
 {{if session.s3.debug:}}
-  {{include 'sahana_styles_debug.html'}}
-  {{include 'sahana_scripts_debug.html'}}
+  {{include "sahana_styles_debug.html"}}
+  {{include "sahana_scripts_debug.html"}}
 {{else:}}
   <link rel="stylesheet" type="text/css" href="/{{=request.application}}/static/scripts/ext/resources/css/ext-all.min.css" />
   <link rel="stylesheet" type="text/css" href="/{{=request.application}}/static/scripts/ext/resources/css/xtheme-gray.css" />
   <link href="/{{=request.application}}/static/styles/S3/sahana.min.css" rel="stylesheet" type="text/css" media="screen" charset="utf-8" />
-  {{include 'sahana_scripts_min.html'}}
+  {{include "sahana_scripts_min.html"}}
 {{pass}}
 {{if response.extra_styles:}}{{for sheet in response.extra_styles:}}
   <link href="/{{=request.application}}/static/styles/{{=sheet}}" rel="stylesheet" type="text/css" media="screen" charset="utf-8" />
 {{pass}}
 {{pass}}
+
+{{try:}}
+  {{if jr.representation == "popup":}}
+    {{representation = "popup"}}
+  {{elif jr.representation == "iframe":}}
+    {{representation = "iframe"}}
+  {{else:}}
+    {{representation = ""}}
+  {{pass}}
+{{except:}}
+  {{representation = ""}}
+{{pass}}
+
+{{if representation == "popup":}}
+    {{include "layout_popup.html"}}
+    {{if response.flash or response.confirmation:}}
+        <div id='popup' class='clearfix'><center>
+        <p style='padding:20px 20px;'><h2>
+            {{=T("Submission successful - please wait")}}...
+        </h2><p></center></div>
+    {{else:}}
+        {{include}}
+    {{pass}}
+{{elif representation == "iframe":}}
+    {{include "layout_iframe.html"}}
+    {{include}}
+{{else:}}
 </head>
+
 <body>
 
-<!--
-If restricted in session.s3.roles:
-Load JavaScript to:
-* Go full-screen
-* Require Confirmation when leaving a page
-* Hide browser buttons, menu & URL bar
--->
+    <div id='menu_modules'>
+        {{=MENU2(response.menu, _id="modulenav")}}
+    </div>
 
-<div id="menu_modules">
-    {{=MENU2(response.menu, _id='modulenav')}}
-</div>
+    {{if response.menu_options:}}
+      <div id='menu_options'>
+        {{=MENU2(response.menu_options, _id="subnav")}}
+      </div>
+    {{pass}}
 
-{{if response.menu_options:}}
-  <div id="menu_options">
-    {{=MENU2(response.menu_options, _id='subnav')}}
-  </div>
-{{pass}}
-{{pass}}
-
-<div class="colmask fullpage">
-	<div class="col1">
-        <div id="content" class="clearfix">
-            {{if response.error:}}<div class="error">{{=response.error}}</div>{{pass}}
-            {{if response.warning:}}<div class="warning">{{=response.warning}}</div>{{pass}}
-            {{if response.information:}}<div class="information">{{=response.information}}</div>{{pass}}
-            {{if response.confirmation:}}<div class="confirmation">{{=response.confirmation}}</div>{{pass}}
-            {{if response.flash:}}<div class="confirmation">{{=response.flash}}</div>{{pass}}
-            {{include}}
+    <div class='colmask fullpage'>
+        <div class='col1'>
+            <div id='content' class='clearfix'>
+                {{if response.error:}}<div class='error'>{{=response.error}}</div>{{pass}}
+                {{if response.warning:}}<div class='warning'>{{=response.warning}}</div>{{pass}}
+                {{if response.information:}}<div class='information'>{{=response.information}}</div>{{pass}}
+                {{if response.confirmation:}}<div class='confirmation'>{{=response.confirmation}}</div>{{pass}}
+                {{if response.flash:}}<div class='confirmation'>{{=response.flash}}</div>{{pass}}
+                {{include}}
+            </div>
         </div>
-	</div>
-</div>
+    </div>
 
-<div id="footer">
-    {{include "footer.html"}}
-</div>
+    <div id='footer'>
+        {{include "footer.html"}}
+    </div>
 
+{{pass}}
 </body>
 </html>

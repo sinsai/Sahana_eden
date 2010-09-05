@@ -92,7 +92,7 @@ deletion_status = db.Table(None, "deletion_status",
 #                ))
 
 # Reusable Document field to include in other table definitions
-# @ToDo Deprecate: replace by document_id which links to central Document Library
+# @ToDo Deprecate: replace by source_id which links to central Document Library
 document = db.Table(None, "document",
                     Field("document", "upload", autodelete = True,
                           label=T("Scanned File"),
@@ -190,6 +190,7 @@ s3_setting_security_policy_opts = {
     2:T("editor"),
     3:T("full")
     }
+# @ToDo Move these to deployment_settings
 resource = "setting"
 tablename = "%s_%s" % (module, resource)
 table = db.define_table(tablename, timestamp, uuidstamp,
@@ -198,16 +199,16 @@ table = db.define_table(tablename, timestamp, uuidstamp,
                         Field("admin_tel"),
                         Field("utc_offset", length=16, default=deployment_settings.get_L10n_utc_offset()), # default UTC offset of the instance
                         Field("theme", db.admin_theme),
-                        Field("debug", "boolean", default=False),
-                        Field("self_registration", "boolean", default=True),
-                        Field("security_policy", "integer", default=1),
                         Field("archive_not_delete", "boolean", default=True),
-                        Field("audit_read", "boolean", default=False),
-                        Field("audit_write", "boolean", default=False),
+                        #Field("debug", "boolean", default=False),
+                        #Field("self_registration", "boolean", default=True),
+                        #Field("security_policy", "integer", default=1),
+                        #Field("audit_read", "boolean", default=False),
+                        #Field("audit_write", "boolean", default=False),
                         migrate=migrate)
 
-table.security_policy.requires = IS_IN_SET(s3_setting_security_policy_opts, zero=None)
-table.security_policy.represent = lambda opt: s3_setting_security_policy_opts.get(opt, UNKNOWN_OPT)
+#table.security_policy.requires = IS_IN_SET(s3_setting_security_policy_opts, zero=None)
+#table.security_policy.represent = lambda opt: s3_setting_security_policy_opts.get(opt, UNKNOWN_OPT)
 table.theme.requires = IS_IN_DB(db, "admin_theme.id", "admin_theme.name", zero=None)
 table.theme.represent = lambda name: db(db.admin_theme.id == name).select(db.admin_theme.name, limitby=(0, 1)).first().name
 # Define CRUD strings (NB These apply to all Modules' "settings" too)
@@ -268,13 +269,3 @@ source_id = db.Table(None, "source_id",
                 comment = DIV(A(ADD_SOURCE, _class="colorbox", _href=URL(r=request, c="default", f="source", args="create", vars=dict(format="popup")), _target="top", _title=ADD_SOURCE), DIV( _class="tooltip", _title=str(T("Add Source")) + "|" + str(T("The Source this information came from.")))),
                 ondelete = "RESTRICT"
                 ))
-
-# Settings - appadmin
-module = "appadmin"
-resource = "setting"
-tablename = "%s_%s" % (module, resource)
-table = db.define_table(tablename,
-                        Field("audit_read", "boolean"),
-                        Field("audit_write", "boolean"),
-                        migrate=migrate)
-

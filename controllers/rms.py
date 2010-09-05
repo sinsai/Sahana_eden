@@ -47,7 +47,7 @@ def req():
 
     # Pre-processor
     def prep(r):
-        if r.representation in ("html", "popup"):
+        if r.representation in shn_interactive_view_formats:
             if r.method == "create":
                 table.timestmp.default = request.utcnow
                 person = session.auth.user.id if auth.is_logged_in() else None
@@ -67,7 +67,7 @@ def req():
 
     # Post-processor
     def req_postp(jr, output):
-        if jr.representation in ("html", "popup"):
+        if jr.representation in shn_interactive_view_formats:
             if not jr.component:
                 response.s3.actions = [
                     dict(label=str(T("Open")), _class="action-btn", url=str(URL(r=request, args=["update", "[id]"]))),
@@ -121,7 +121,7 @@ def pledge():
 
     # Pre-processor
     def prep(r):
-        if r.representation in ("html", "popup"):
+        if r.representation in shn_interactive_view_formats:
             if r.method == "create":
                 # auto fill posted_on field and make it readonly
                 table.submitted_on.default = request.now
@@ -143,7 +143,7 @@ def pledge():
     #db.commit()
 
     def pledge_postp(jr, output):
-        if jr.representation in ("html", "popup"):
+        if jr.representation in shn_interactive_view_formats:
             if not jr.component:
                 response.s3.actions = [
                     dict(label=str(READ), _class="action-btn", url=str(URL(r=request, args=["[id]", "read"])))

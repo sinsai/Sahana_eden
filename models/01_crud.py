@@ -2122,14 +2122,14 @@ def shn_rest_controller(module, resource, **attr):
 
             # Override add button for native controller use (+automatic linking)
             if native and not listadd:
-                if shn_has_permission("create", r.component.tablename):
-                    label = shn_get_crud_string(r.component.tablename,
+                if shn_has_permission("create", c.tablename):
+                    label = shn_get_crud_string(c.tablename,
                                                 "label_create_button")
-                    c = r.resource.components[r.component_name]
-                    fkey = "%s.%s" % (r.component_name, c.fkey)
+                    c = r.resource.components[c.name]
+                    fkey = "%s.%s" % (c.name, c.fkey)
                     vars = request.vars.copy()
                     vars.update({fkey: r.id})
-                    url = str(URL(r=request, c=r.component.prefix, f=r.component_name,
+                    url = str(URL(r=request, c=c.prefix, f=c.name,
                                   args=["create"], vars=vars))
                     add_btn = A(label, _href=url, _class="action-btn")
                     output.update(add_btn=add_btn)

@@ -749,15 +749,15 @@ org_task_priority_opts = {
 resource = "task"
 tablename = module + "_" + resource
 table = db.define_table(tablename, timestamp, uuidstamp, authorstamp, deletion_status,
-                        project_id,
-                        office_id,
                         Field("priority", "integer",
                             requires = IS_IN_SET(org_task_priority_opts, zero=None),
                             # default = 4,
                             label = T("Priority"),
                             represent = lambda opt: org_task_priority_opts.get(opt, UNKNOWN_OPT)),
-                        Field("subject", length=80),
+                        Field("subject", length=80, notnull=True),
                         Field("description", "text"),
+                        project_id,
+                        office_id,
                         person_id,
                         Field("status", "integer",
                             requires = IS_IN_SET(org_task_status_opts, zero=None),
@@ -768,6 +768,10 @@ table = db.define_table(tablename, timestamp, uuidstamp, authorstamp, deletion_s
 
 # Task Resource called from multiple controllers
 # - so we define strings in the model
+table.subject.requires = IS_NOT_EMPTY()
+table.subject.label = T("Subject")
+table.subject.comment = SPAN("*", _class="req")
+
 table.person_id.label = T("Assigned to")
 
 

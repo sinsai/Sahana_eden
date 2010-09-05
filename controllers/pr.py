@@ -12,6 +12,7 @@ module = request.controller
 # Options Menu (available in all Functions" Views)
 def shn_menu():
     response.menu_options = [
+        [T("Home"), False, URL(r=request, f="index")],
         [T("Search for a Person"), False, URL(r=request, f="person", args="search_simple")],
         [T("Persons"), False, URL(r=request, f="person"), [
             [T("List"), False, URL(r=request, f="person")],

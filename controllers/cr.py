@@ -62,7 +62,7 @@ def shelter_type():
         shn_action_buttons(jr, deletable=False)
         return output
     response.s3.postp = user_postp
-    
+
     rheader = lambda r: shn_shelter_rheader(r,
                                             tabs = [(T("Basic Details"), None),
                                                     (T("Shelters"), "shelter")
@@ -94,7 +94,7 @@ def shelter_service():
     rheader = lambda r: shn_shelter_rheader(r,
                                             tabs = [(T("Basic Details"), None),
                                                     (T("Shelters"), "shelter")])
-                                                    
+
     output = shn_rest_controller(module, resource,
                                  listadd=False,
                                  rheader=rheader)
@@ -135,7 +135,7 @@ def shelter():
     table.location_id.requires = IS_NULL_OR(IS_ONE_OF_EMPTY(db, "gis_location.id"))
 
     response.s3.prep = shn_shelter_prep
-    response.s3.postp = shn_component_postp
+    #response.s3.postp = shn_component_postp
 
     crud.settings.create_onvalidation = shn_shelter_onvalidation
     crud.settings.update_onvalidation = shn_shelter_onvalidation
@@ -167,7 +167,7 @@ later whether a shelter record is a school or hospital, as the is_school
 and is_hospital values are not in the table.
 
 Note we clear the unused hospital value *before* validation, because
-there is a (small) possibility that someone deleted the chosen hospital 
+there is a (small) possibility that someone deleted the chosen hospital
 record while this request was in flight.  If the user doesn't want the
 hospital they selected, there's no reason to make sure it's in the database.
 
@@ -209,7 +209,7 @@ def shn_shelter_prep(r):
             if not "is_school" in request.vars:
                 request.post_vars.school_code = None
                 request.post_vars.school_pf = None
-    
+
             if not "is_hospital" in request.vars and "hospital_id" in request.post_vars:
                 request.post_vars.hospital_id = None
 

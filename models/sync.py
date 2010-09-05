@@ -120,6 +120,7 @@ table = db.define_table(tablename,
                         Field("job_resources_done", "text"),        # comma-separated list of resources synced of the currently running job
                         Field("job_resources_pending", "text"),     # comma-separated list of resources to be synced of the currently running job
                         Field("job_sync_errors", "text"),           # sync errors encountered while processing the current job
+                        Field("locked", "boolean"),
                         migrate=migrate)
 
 # -----------------------------------------------------------------------------
@@ -217,6 +218,8 @@ def s3_sync_eden_eden(peer, mode, tablenames,
     import urllib, urlparse
     import gluon.contrib.simplejson as json
 
+    print "s3_sync_eden_eden"
+
     status = Storage(
         success = False,
         errors = [],
@@ -236,14 +239,23 @@ def s3_sync_eden_eden(peer, mode, tablenames,
         msince = None
 
     errcount = 0
+    print tablenames
     for tablename in tablenames:
+        print tablename
         if tablename not in db.tables or tablename.find("_") == -1:
             status.pending.remove(tablename)
             status.done.append(tablename)
+            print "table not found"
             continue
+
+        if session.s3.sync_stop:
+            print "Got sync_stop"
+            return status
 
         prefix, name = tablename.split("_", 1)
         resource = s3xrc.resource(prefix, name)
+
+        print "resource created"
 
         if format == "json":
             _get = resource.fetch_json
@@ -252,17 +264,22 @@ def s3_sync_eden_eden(peer, mode, tablenames,
             _get = resource.fetch_xml
             _put = resource.push_xml
         else:
+            print "Error: bad format"
             status.success = False
             status.errors.append(s3xrc.ERROR.BAD_FORMAT)
             return status
 
-        sync_path = "sync/sync/%s/%s.%s" % (prefix, name, import_export_format)
+        sync_path = "sync/sync/%s/%s.%s" % (prefix, name, format)
+        print "sync_path %s" % sync_path
 
         remote_url = urlparse.urlparse(peer.instance_url)
-        if remote_url.path[-1] != "/":
+        print remote_url
+        if remote_url.path[-1:] != "/":
             remote_path = "%s/%s" % (remote_url.path, sync_path)
         else:
             remote_path = "%s%s" % (remote_url.path, sync_path)
+
+        print "remote_path=%s" % remote_path
 
         if mode in [1, 3]: # pull
 
@@ -277,11 +294,14 @@ def s3_sync_eden_eden(peer, mode, tablenames,
                                          params)
             error = None
             try:
+                print "Fetching %s" % fetch_url
                 result = _get(fetch_url,
                               username=peer.username,
                               password=peer.password,
                               proxy=proxy)
-            except SyntaxError, e:
+                print "fetched=%s" % result
+            except Exception, e:
+                print "Error %s" % e
                 result = str(e)
             else:
                 try:
@@ -289,6 +309,7 @@ def s3_sync_eden_eden(peer, mode, tablenames,
                 except:
                     error = str(result)
                 else:
+                    print result_json
                     statuscode = str(result_json.get("statuscode", ""))
                     message = str(result_json.get("message", "Unknown error"))
                     if statuscode.startswith("2"):
@@ -304,6 +325,8 @@ def s3_sync_eden_eden(peer, mode, tablenames,
             else:
                 msg = "...fetch %s - SUCCESS" % tablename
                 status.messages.append(msg)
+
+            print msg
 
         if mode in [2, 3]: # push
 
@@ -323,7 +346,8 @@ def s3_sync_eden_eden(peer, mode, tablenames,
                               password=peer.password,
                               proxy=proxy,
                               msince=last_sync)
-            except SyntaxError, e:
+            except Exception, e:
+                print "Error %s" % e
                 result = str(e)
             else:
                 try:
@@ -351,6 +375,7 @@ def s3_sync_eden_eden(peer, mode, tablenames,
         status.pending.remove(tablename)
 
     msg = "...synchronize %s - DONE (%s errors)." % (peer.instance_url, errcount)
+    status.messages.append(msg)
     status.success = True
     return status
 
@@ -367,7 +392,7 @@ def s3_sync_eden_other(peer, mode, tablenames, settings=None):
         success = False,
         errors = [],
         messages = [],
-        pending = tablenames,
+        pending = list(tablenames),
         done = []
     )
 
@@ -375,7 +400,7 @@ def s3_sync_eden_other(peer, mode, tablenames, settings=None):
 
     format = peer.format
 
-    json = False
+    is_json = False
     pull = False
     push = False
 
@@ -391,7 +416,7 @@ def s3_sync_eden_other(peer, mode, tablenames, settings=None):
     elif format == "json":
         pull = True
         push = True
-        json = True
+        is_json = True
     elif format in s3xrc.xml_import_formats and \
          os.path.exists(import_template):
             pull = True
@@ -401,7 +426,7 @@ def s3_sync_eden_other(peer, mode, tablenames, settings=None):
     elif format in s3xrc.json_import_formats and \
          os.path.exists(import_template):
             pull = True
-            json = True
+            is_json = True
             if format in s3xrc.json_export_formats and \
                os.path.exists(export_template):
                 push = True
@@ -411,21 +436,22 @@ def s3_sync_eden_other(peer, mode, tablenames, settings=None):
         return status
 
     errcount = 0
+    msg = dict(success=True,
+               message="....Synchronization with %s - START" % peer.name)
+    status.messages.append(msg)
+    print "tablenames=%s" % tablenames
     for tablename in tablenames:
+        print tablename
         if tablename not in db.tables or tablename.find("_") == -1:
             status.pending.remove(tablename)
             status.done.append(tablename)
             continue
 
+        if session.s3.sync_stop:
+            return status
+
         prefix, name = tablename.split("_", 1)
         resource = s3xrc.resource(prefix, name)
-
-        if json:
-            _get = resource.fetch_json
-            _put = resource.push_json
-        else:
-            _get = resource.fetch_xml
-            _put = resource.push_xml
 
         if pull and mode in [1, 3]: # pull
 
@@ -433,16 +459,17 @@ def s3_sync_eden_other(peer, mode, tablenames, settings=None):
 
             error = None
             try:
-                result = _get(fetch_url,
-                              username=peer.username,
-                              password=peer.password,
-                              proxy=proxy)
-            except SyntaxError, e:
-                result = str(e)
+                result = resource.fetch(fetch_url,
+                                        username=peer.username,
+                                        password=peer.password,
+                                        json=is_json,
+                                        proxy=proxy)
+            except Exception, e:
+                error = str(e)
             else:
                 try:
-                    result_json = json.loads(result)
-                except:
+                    result_json = json.loads(str(result))
+                except Exception, e:
                     error = str(result)
                 else:
                     statuscode = str(result_json.get("statuscode", ""))
@@ -453,17 +480,24 @@ def s3_sync_eden_other(peer, mode, tablenames, settings=None):
                         error = message
             if error:
                 errcount += 1
-                msg = "...fetch %s - FAILURE: %s" (tablename, error)
+                msg = dict(success=False,
+                           message="........fetch %s - FAILURE: %s" % (tablename, error))
                 status.messages.append(msg)
                 status.errors.append(error)
                 continue
             else:
-                msg = "...fetch %s - SUCCESS" % tablename
+                msg = dict(success=True,
+                           message="........fetch %s - SUCCESS" % tablename)
                 status.messages.append(msg)
 
         if push and mode in [2, 3]: # push
 
             push_url = peer.instance_url
+
+            if is_json:
+                _put = resource.push_json
+            else:
+                _put = resource.push_xml
 
             error = None
             try:
@@ -471,7 +505,7 @@ def s3_sync_eden_other(peer, mode, tablenames, settings=None):
                               username=peer.username,
                               password=peer.password,
                               proxy=proxy)
-            except SyntaxError, e:
+            except Exception, e:
                 result = str(e)
             else:
                 try:
@@ -487,19 +521,25 @@ def s3_sync_eden_other(peer, mode, tablenames, settings=None):
                         error = message
             if error:
                 errcount += 1
-                msg = "...send %s - FAILURE: %s" (tablename, error)
+                msg = dict(success=False,
+                           message="........send %s - FAILURE: %s" % (tablename, error))
                 status.messages.append(msg)
                 status.errors.append(error)
                 continue
             else:
-                msg = "...send %s - SUCCESS." % tablename
+                msg = dict(success=True,
+                           message="........send %s - SUCCESS" % tablename)
                 status.messages.append(msg)
 
         status.done.append(tablename)
         status.pending.remove(tablename)
+        print tablenames
 
-    msg = "...synchronize %s - DONE (%s errors)." % (peer.instance_url, errcount)
+    msg = dict(success=errcount and False or True,
+               message="...Synchronization with %s - DONE (%s errors)." % (peer.name, errcount))
+    status.messages.append(msg)
     status.success = True
+
     return status
 
 # -----------------------------------------------------------------------------

@@ -1,29 +1,26 @@
 {{extend "layout.html"}}
 <h1>{{=T("Synchronisation - Sync Now")}}</h1>
-{{if action=="start":}}
-<!--{{if sync_start:}}
-{{=XML(sync_status, sanitize=False)}}
-{{if not sync_state.sync_jobs:}}
-Click <a href="{{=URL(r=request, c="sync", f="index")}}">here</a> to return to the main page.
-{{else:}}
-<br />A batch of 5 resources synced. Processing the next batch, <a href="{{=URL(r=request, c="sync", f="now", args="start")}}">click here</a> if the page doesn't reload automatically...<br />
-{{pass}}
-{{else:}}
-{{pass}}
-<br /><br />-->
-<div id="sync_status"/>
 <script type="text/javascript">//<![CDATA[
 function getSyncStatus() {
+    alert("GET STATUS");
     $.get("{{=URL(r=request, c="sync", f="now", vars=dict(sync="status"))}}", function(data) {
+        alert("Status received.");
         if (!(data === "DONE")) {
             $('#sync_status').append(data);
             setTimeout('getSyncStatus()', 3000);
         }
     });
-}
-setTimeout('getSyncStatus()', 500);
+};
+function startSync() {
+    $.ajax({
+        type: "POST",
+        url: '{{=URL(r=request, c="sync", f="now", vars=dict(sync="start"))}}',
+        async: true,
+        global: false});
+    getSyncStatus();
+    $('#sync_status').append("<div class=\"success\">Synchronization started.</div>");
+};
 //]]></script>
-{{else:}}
 <table border="0" cellpadding="0" cellspacing="0" style="font-size: small">
 {{if sync_state:}}
     <tr>
@@ -31,9 +28,7 @@ setTimeout('getSyncStatus()', 500);
             {{=T("Sync process already started on " + sync_state.started_on.strftime("%x %H:%M:%S") + ", click this button to resume => ")}}&nbsp;&nbsp;&nbsp;
         </td>
         <td nowrap>
-            <form method="post" action="{{=URL(r=request, c="sync", f="now", vars=dict(sync="start"))}}">
-                <input id="btnSubmit" type="submit" value="{{=T("Resume Sync")}}" />
-            </form>
+            <a href="#" onclick="startSync();">START</a>
         </td>
     </tr>
 {{else:}}
@@ -42,11 +37,11 @@ setTimeout('getSyncStatus()', 500);
             {{=T("To begin the sync process, click this button => ")}}&nbsp;&nbsp;&nbsp;
         </td>
         <td nowrap>
-            <form method="post" action="{{=URL(r=request, c="sync", f="now", vars=dict(sync="start"))}}">
-                <input id="btnSubmit" type="submit" value="{{=T("Sync Now")}}" />
-            </form>
+            <a href="#" onclick="startSync();">START</a>
         </td>
     </tr>
 {{pass}}
 </table>
-{{pass}}
+<h4>Log</h4>
+<div id="sync_status">
+</div>

@@ -52,10 +52,11 @@ comments = db.Table(None, "comments",
                                         _title=Tstr("Comments") + "|" +Tstr("Please use this field to record any additional information, including a history of the record if it is updated."))))
 
 # Reusable UUID field to include in other table definitions
+# Uses URNs according to http://tools.ietf.org/html/rfc4122
 s3uuid = SQLCustomType(
                 type = "string",
                 native = "VARCHAR(128)",
-                encoder = (lambda x: "'%s'" % (uuid.uuid4() if x == "" else str(x).replace("'", "''"))),
+                encoder = (lambda x: "'%s'" % (uuid.uuid4().urn if x == "" else str(x).replace("'", "''"))),
                 decoder = (lambda x: x)
             )
 

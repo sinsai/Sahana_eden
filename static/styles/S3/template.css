@@ -475,8 +475,6 @@ div.confirmation { color:#070;
                  margin-bottom: 1.0em;
                  padding-top: 1.0em;
                  padding-bottom: 1.0em;
-                 padding-left: 30px;
-                 padding-right: 1em;
                  cursor: pointer; }
 .confirmation p em { color:#070; }
 .error { color:#c00;
@@ -488,6 +486,8 @@ div.confirmation { color:#070;
         margin-bottom: 1.0em;
         padding-top: 1.0em;
         padding-bottom: 1.0em;
+        padding-left: 30px;
+        padding-right: 1em;
         cursor: pointer; }
 .error p em { color:#c00; }
 .information { color:#748d8e;

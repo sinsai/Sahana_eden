@@ -3261,7 +3261,7 @@ OpenLayers.Util.extend( selectPdfControl, {
     var allLayers = new Array();
     S3.gis.Images = new Array();
     OpenLayers.ImgPath = '/""" + request.application + """/static/img/gis/openlayers/';
-    var ajax_loader = '""" + str(URL(r=request, c="static", f="img")) + """/ajax-loader.gif';
+    var ajax_loader = '""" + URL(r=request, c="static", f="img") + """/ajax-loader.gif';
     // avoid pink tiles
     OpenLayers.IMAGE_RELOAD_ATTEMPTS = 3;
     OpenLayers.Util.onImageLoadErrorColor = "transparent";

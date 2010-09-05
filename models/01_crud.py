@@ -3,7 +3,7 @@
 """
     CRUD+LS Method Handlers (Frontend for S3REST)
 
-    @author: Fran Boon
+    @author: Fran Boon <fran@aidiq.com>
     @author: nursix
 
     @see: U{http://eden.sahanafoundation.org/wiki/RESTController}
@@ -39,6 +39,8 @@ shn_json_export_formats = dict(
     json = "text/x-json",
     geojson = "text/x-json"
 ) #: Supported JSON output formats and corresponding response headers
+
+shn_interactive_view_formats = ("html", "popup", "iframe")
 
 # Error messages
 UNAUTHORISED = T("Not authorised!")
@@ -847,7 +849,7 @@ def shn_read(r, **attr):
     s3xrc.audit("read", prefix, name,
                 record=record_id, representation=representation)
 
-    if r.representation in ("html", "popup"):
+    if r.representation in shn_interactive_view_formats:
 
         # Title and subtitle
         title = shn_get_crud_string(r.tablename, "title_display")
@@ -877,7 +879,7 @@ def shn_read(r, **attr):
         if representation == "html":
             shn_custom_view(r, "display.html")
             output.update(item=item)
-        elif representation == "popup":
+        elif representation in ("popup", "iframe"):
             shn_custom_view(r, "popup.html")
             output.update(form=item, main=main, extra=extra, caller=caller)
 
@@ -1086,7 +1088,7 @@ def shn_list(r, **attr):
         from gluon.serializers import json
         return json(result)
 
-    elif representation in ("html", "popup"):
+    elif representation in shn_interactive_view_formats:
 
         output = dict(main=main, extra=extra, sortby=sortby)
 
@@ -1248,7 +1250,7 @@ def shn_create(r, **attr):
     extra = _attr.get("extra", None)
     create_next = _attr.get("create_next")
 
-    if representation in ("html", "popup"):
+    if representation in shn_interactive_view_formats:
 
         # Copy from a previous record?
         from_record = r.request.get_vars.get("from_record", None)
@@ -1389,7 +1391,7 @@ def shn_create(r, **attr):
             output.update(list_btn=list_btn)
 
         # Custom view
-        if representation == "popup":
+        if representation in ("popup", "iframe"):
             shn_custom_view(r, "popup.html")
             output.update(caller=r.request.vars.caller)
             r.next = None
@@ -1487,12 +1489,12 @@ def shn_update(r, **attr):
     s3xrc.audit("read", prefix, name,
                 record=record_id, representation=representation)
 
-    if r.representation == "html" or r.representation == "popup":
+    if r.representation in shn_interactive_view_formats:
 
         # Custom view
         if r.representation == "html":
             shn_custom_view(r, "update.html")
-        elif r.representation == "popup":
+        elif r.representation in ("popup", "iframe"):
             shn_custom_view(r, "popup.html")
 
         # Title and subtitle
@@ -1534,10 +1536,10 @@ def shn_update(r, **attr):
                 table[r.fkey].writable = False
             crud.settings.update_onvalidation = None
             crud.settings.update_onaccept = None
-            if not representation == "popup":
+            if not representation in ("popup", "iframe"):
                 crud.settings.update_next = update_next or r.there()
         else:
-            if not representation == "popup" and \
+            if not representation in ("popup", "iframe") and \
                not crud.settings.update_next:
                 crud.settings.update_next = update_next or r.here()
             if not onvalidation:
@@ -1818,7 +1820,7 @@ def shn_search(r, **attr):
     if response.s3.filter:
         query = response.s3.filter & query
 
-    if r.representation in ("html", "popup"):
+    if r.representation in shn_interactive_view_formats:
 
         shn_represent(r.table, r.prefix, r.name, deletable, main, extra)
         search = t2.search(r.table, query=query)
@@ -1957,6 +1959,7 @@ def shn_rest_controller(module, resource, **attr):
             - B{plain}: is HTML with no layout
                 - can be inserted into DIVs via AJAX calls
                 - can be useful for clients on low-bandwidth or small screen sizes
+                - used for the Map popups
             - B{ext}: is Ext layouts (experimental)
             - B{json}: JSON export/import using XSLT
             - B{xml}: XML export/import using XSLT
@@ -1969,7 +1972,8 @@ def shn_rest_controller(module, resource, **attr):
             - B{url}: designed to be accessed via JavaScript
                 - responses in JSON format
                 - create/update/delete done via simple GET vars (no form displayed)
-            - B{popup}: designed to be used inside popups
+            - B{popup}: designed to be used inside colorbox popups
+            - B{iframe}: designed to be used inside iframes
             - B{aaData}: used by dataTables for server-side pagination
 
         Request options:

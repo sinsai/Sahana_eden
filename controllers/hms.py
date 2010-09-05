@@ -139,7 +139,7 @@ def hospital():
     #s3xrc.sync_resolve = shn_hospital_resolver
 
     def hospital_postp(jr, output):
-        if jr.representation in ("html", "popup"):
+        if jr.representation in shn_interactive_view_formats:
             if jr.component and jr.component.name == "bed_capacity":
                 label = UPDATE
             else:
@@ -205,7 +205,7 @@ def hrequest():
             db.hms_hpledge.person_id.default = person[0].id
 
     def hrequest_postp(jr, output):
-        if jr.representation in ("html", "popup") and not jr.component:
+        if jr.representation in shn_interactive_view_formats and not jr.component:
             response.s3.actions = [
                 dict(label=str(T("Pledge")), _class="action-btn", url=str(URL(r=request, args=["[id]", "hpledge"])))
             ]

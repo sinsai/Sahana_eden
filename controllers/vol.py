@@ -113,7 +113,7 @@ def person():
     response.s3.pagination = True
 
     def person_postp(jr, output):
-        if jr.representation in ("html", "popup"):
+        if jr.representation in shn_interactive_view_formats:
             if not jr.component:
                 label = READ
             else:
@@ -345,7 +345,7 @@ def group():
                                        "description"])
 
     def group_postp(jr, output):
-        if jr.representation in ("html", "popup"):
+        if jr.representation in shn_interactive_view_formats:
             if not jr.component:
                 label = READ
             else:

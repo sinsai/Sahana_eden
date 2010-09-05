@@ -70,7 +70,6 @@ def index():
             request.args = ["register"]
             register_form = auth()
 
-
     return dict(module_name=module_name, modules=modules, admin_name=admin_name, admin_email=admin_email, admin_tel=admin_tel, self_registration=self_registration, login_form=login_form, register_form=register_form)
 
 def user():

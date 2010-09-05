@@ -80,7 +80,7 @@ def index():
 
             total = int(db(db.pr_person.deleted == False).count())
             output.update(module_name=module_name, gender=gender, age=age, total=total)
-        if jr.representation in ("html", "popup"):
+        if jr.representation in shn_interactive_view_formats:
             if not jr.component:
                 label = READ
             else:
@@ -129,7 +129,7 @@ def person():
                                        "description"])
 
     def postp(r, output):
-        if r.representation in ("html", "popup"):
+        if r.representation in shn_interactive_view_formats:
             if not r.component:
                 label = READ
             else:
@@ -177,7 +177,7 @@ def group():
                                        "description"])
 
     def group_postp(jr, output):
-        if jr.representation in ("html", "popup"):
+        if jr.representation in shn_interactive_view_formats:
             if not jr.component:
                 label = READ
             else:

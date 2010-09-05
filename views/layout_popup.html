@@ -1,31 +1,10 @@
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
-<html xmlns="http://www.w3.org/1999/xhtml">
-<head>
-{{if session.s3.debug:}}
-  {{include "sahana_styles_debug.html"}}
-  {{include "sahana_scripts_debug.html"}}
-{{else:}}
-  <link rel="stylesheet" type="text/css" href="/{{=request.application}}/static/scripts/ext/resources/css/ext-all.min.css" />
-  <link rel="stylesheet" type="text/css" href="/{{=request.application}}/static/scripts/ext/resources/css/xtheme-gray.css" />
-  <link href="/{{=request.application}}/static/styles/S3/sahana.min.css" rel="stylesheet" type="text/css" media="screen" charset="utf-8" />
-  {{include "sahana_scripts_min.html"}}
-{{pass}}
-{{if response.extra_styles:}}{{for sheet in response.extra_styles:}}
-  <link href="/{{=request.application}}/static/styles/{{=sheet}}" rel="stylesheet" type="text/css" media="screen" charset="utf-8" />
-{{pass}}
-{{pass}}
 {{include "colorbox.html"}}
 
 <script type="text/javascript">//<![CDATA[
-
-$(document).ready( function() {
-    // Reset the parent's toggle
-    self.parent.window.togglecallerappend = 'True';
-});
-
 function s3_tb_call_cleanup(caller) {
-    if(self.parent.s3_tb_cleanup)
-       self.parent.s3_tb_cleanup(caller);
+    if (self.parent.s3_tb_cleanup)
+        // Cleanup the parent
+        self.parent.s3_tb_cleanup(caller);
     self.parent.s3_tb_remove();
 }
 
@@ -194,31 +173,16 @@ function getQueryParams(qs) {
 
 // If submission succesful
 {{if response.flash or response.confirmation:}}
-// Refresh the DIV and close the pop up
-$(document).ready( function() {
+    $(document).ready( function() {
+        // Close the pop up
         self.parent.$('.TB_closeAjaxWindow').html('');
     });
-s3_tb_refresh();
+    // Refresh the DIV
+    s3_tb_refresh();
+{{else:}}
 {{pass}}
 
 //]]></script>
-
 </head>
 
 <body>
-{{if response.flash or response.confirmation:}}
-    <div id='popup' class='clearfix'>
-        <p style='padding:20px 20px;'>
-            <center>
-                <h2>
-                    {{=T("Submission successful - please wait")}}...
-                </h2>
-            </center>
-        <p>
-    </div>
-{{else:}}
-    {{include}}
-{{pass}}
-</body>
-
-</html>

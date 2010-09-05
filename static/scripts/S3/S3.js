@@ -1,8 +1,9 @@
+// Custom Javascript functions added as part of the S3 Framework
 var popupWin = null;
 
 function openPopup(url) {
     if ( !popupWin || popupWin.closed ) {
-        popupWin = window.open( url, 'popupWin', 'width=640,height=480' );
+        popupWin = window.open(url, 'popupWin', 'width=640, height=480');
     } else popupWin.focus();
 }
 $(document).ready(function() {
@@ -47,20 +48,11 @@ $(document).ready(function() {
         function() { $('ul', this).css('display', 'none');  }
     );
 });
+
 /*
   ajaxS3 ------------------------------------------------------------
   added by sunneach 2010-feb-14
-*/
-
-/*
-  these set in the ajaxS3messages.js :
-_ajaxS3_wht_ = {{=T('We have tried')}};
-_ajaxS3_gvn_ = {{=T('times and it is still not working. We give in. Sorry.')}};
-_ajaxS3_500_ = {{=T('Sorry - the server has a problem, please try again later.')}};
-_ajaxS3_dwn_ = {{=T('There was a problem, sorry, please try again later.')}};
-_ajaxS3_get_ = {{=T('getting')}};
-_ajaxS3_fmd_ = {{=T('form data')}};
-_ajaxS3_rtr_ = {{=T('retry')}};
+  Strings get set in a localised in views/l10n.js :
 */
 (function($) {
     jQuery.ajaxS3 = function(s) {
@@ -169,8 +161,7 @@ _ajaxS3_rtr_ = {{=T('retry')}};
 //  to remove bar, use
 //  hideStatus()
 //
-function StatusBar(sel, options)
-{
+function StatusBar(sel, options) {
     var _I = this;
     var _sb = null;
     // options
@@ -188,40 +179,34 @@ function StatusBar(sel, options)
     $.extend(this, options);
     if (sel)
       _sb = $(sel);
-    // create statusbar object manually
-    if (!_sb)
-    {
+    // Create statusbar object manually
+    if (!_sb) {
         _sb = $("<div id='_statusbar' class='" + _I.cssClass + "'>" +
                 "<div class='" + _I.closeButtonClass +  "'>" +
-                (_I.showCloseButton ? " X </div></div>" : "") )
+                (_I.showCloseButton ? ' X </div></div>' : '') )
                 .appendTo(document.body)
                 .show();
     }
     //if (_I.showCloseButton)
         $('.' + _I.cssClass).click(function(e) { $(_sb).hide(); });
-    this.show = function(message, timeout, additive, isError)
-    {
-        if (additive || ((additive == undefined) && _I.additive))
-        {
+    this.show = function(message, timeout, additive, isError) {
+        if (additive || ((additive == undefined) && _I.additive)) {
             var html = "<div style='margin-bottom: 2px;' >" + message + '</div>';
             if (_I.prependMultiline)
                 _sb.prepend(html);
             else
                 _sb.append(html);
         }
-        else
-        {
+        else {
             if (!_I.showCloseButton)
                 _sb.text(message);
-            else
-            {
+            else {
                 var t = _sb.find('div.statusbarclose');
                 _sb.text(message).prepend(t);
             }
         }
         _sb.show();
-        if (timeout)
-        {
+        if (timeout) {
             if (isError)
                 _sb.addClass(_I.errorClass);
             else
@@ -235,25 +220,44 @@ function StatusBar(sel, options)
                 timeout);
         }
     }
-    this.release = function()
-    {
+    this.release = function() {
         if (_statusbar) {
             $('#_statusbar').remove();
             _statusbar = undefined;
         }
     }
 }
-// use this as a global instance to customize constructor
+// Use this as a global instance to customize constructor
 // or do nothing and get a default status bar
 var _statusbar = null;
-function showStatus(message, timeout, additive, isError)
-{
+function showStatus(message, timeout, additive, isError) {
     if (!_statusbar)
         _statusbar = new StatusBar();
     _statusbar.show(message, timeout, additive, isError);
 }
-function hideStatus()
-{
+function hideStatus() {
     if (_statusbar)
         _statusbar.release();
 }
+
+
+//----------------------------------------------------------------------------------------------
+// Code to warn on exit without saving 
+//  by: michael howden
+function SetNavigateAwayConfirm() {
+	window.onbeforeunload = function() {
+        return _s3_msg_unsaved_changes;
+		};	
+};
+
+function ClearNavigateAwayConfirm() {
+	window.onbeforeunload = function() {};
+};
+
+function EnableNavigateAwayConfirm() {
+$(document).ready(function() {
+        $('input, select, textarea').keypress( SetNavigateAwayConfirm );		
+        $('input, select, textarea').change( SetNavigateAwayConfirm );	
+        $('form').submit( ClearNavigateAwayConfirm );
+	});
+};

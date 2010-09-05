@@ -13,6 +13,7 @@ class S3Config(Storage):
         self.mail = Storage()
         self.L10n = Storage()
         self.security = Storage()
+        self.ui = Storage()
         self.T = T
 
     # Auth settings
@@ -131,6 +132,12 @@ class S3Config(Storage):
         return self.security.get("map", False)
     def get_security_self_registration(self):
         return self.security.get("self_registration", True)
+
+    # UI/Workflow Settings
+    def get_ui_navigate_away_confirm(self):
+        return self.ui.get("navigate_away_confirm", True)
+    def get_ui_autocomplete(self):
+        return self.ui.get("autocomplete", False)
 
     # Active modules list
     def has_module(self, module_name):

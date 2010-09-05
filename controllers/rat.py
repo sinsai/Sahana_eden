@@ -60,10 +60,13 @@ def assessment():
     tablename = "%s_%s" % (module, resource)
     table = db[tablename]
 
+    # Don't send the locations list to client (pulled by AJAX instead)
+    table.location_id.requires = IS_NULL_OR(IS_ONE_OF_EMPTY(db, "gis_location.id"))
+    
     # Villages only
-    table.location_id.requires = IS_NULL_OR(IS_ONE_OF(db(db.gis_location.level == "L4"),
-                                                      "gis_location.id",
-                                                      repr_select, sort=True))
+    #table.location_id.requires = IS_NULL_OR(IS_ONE_OF(db(db.gis_location.level == "L5"),
+    #                                                  "gis_location.id",
+    #                                                  repr_select, sort=True))
 
     # Pre-populate staff ID
     if auth.is_logged_in():

@@ -43,7 +43,7 @@ deployment_settings.base.public_url = "http://127.0.0.1:8000"
 # JS Debug messages are also available in the Console
 # can also load an individual page in debug mode by appending URL with
 # ?debug=1
-#deployment_settings.base.debug = False
+deployment_settings.base.debug = False
 
 # Switch to "False" in Production for a Performance gain
 # (need to set to "True" again when Table definitions are changed)
@@ -133,6 +133,13 @@ deployment_settings.security.self_registration = True
 # NB Auditing (especially Reads) slows system down & consumes diskspace
 #deployment_settings.security.audit_write = False
 #deployment_settings.security.audit_read = False
+
+# UI/Workflow options
+# Should user be prompted to save before navigating away?
+#deployment_settings.ui.navigate_away_confirm = False
+# Should potentially large dropdowns be turned into autocompletes?
+# (unused currently)
+#deployment_settings.ui.autocomplete = True
 
 # Comment/uncomment modules here to disable/enable them
 # Modules menu is defined in 01_menu.py

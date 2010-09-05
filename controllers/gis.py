@@ -190,9 +190,8 @@ def location():
                 table.uuid.readable = table.uuid.writable = True
                 table.uuid.label = "UUID"
                 table.uuid.comment = DIV(_class="stickytip",
-                                         _title="UUID|" + Tstr("The") + " <a href='http://eden.sahanafoundation.org/wiki/UUID#Mapping' target=_blank>Universally Unique ID</a>. " + Tstr("Suggest not changing this field unless you know what you are doing.")
+                                         _title="UUID|" + Tstr("The") + " <a href='http://eden.sahanafoundation.org/wiki/UUID#Mapping' target=_blank>Universally Unique ID</a>. " + Tstr("Suggest not changing this field unless you know what you are doing."))
                 
-
             # CRUD Strings
             LIST_LOCATIONS = T("List Locations")
             s3.crud_strings[tablename] = Storage(

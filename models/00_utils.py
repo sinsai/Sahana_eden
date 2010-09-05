@@ -155,9 +155,13 @@ def shn_abbreviate(word, size=48):
 # the function here.
 
 # -----------------------------------------------------------------------------
-def shn_action_buttons(jr, deletable=True, copyable=False,
-                       read_url=None, update_url=None,
-                       delete_url=None, copy_url=None):
+def shn_action_buttons(r,
+                       deletable=True,
+                       copyable=False,
+                       read_url=None,
+                       update_url=None,
+                       delete_url=None,
+                       copy_url=None):
 
     """
         Provide the usual Action Buttons for Column views.
@@ -167,19 +171,19 @@ def shn_action_buttons(jr, deletable=True, copyable=False,
         Designed to be called from a postp
     """
 
-    if jr.component:
-        args = [jr.component_name, "[id]"]
+    if r.component:
+        args = [r.component_name, "[id]"]
     else:
         args = ["[id]"]
 
-    if shn_has_permission("update", jr.table):
+    if shn_has_permission("update", r.table):
         if not update_url:
             update_url = str(URL(r=request, args = args + ["update"]))
         response.s3.actions = [
             dict(label=str(UPDATE), _class="action-btn", url=update_url),
         ]
         # Provide the ability to delete records in bulk
-        if deletable and shn_has_permission("delete", jr.table):
+        if deletable and shn_has_permission("delete", r.table):
             if not delete_url:
                 delete_url = str(URL(r=request, args = args + ["delete"]))
             response.s3.actions.append(

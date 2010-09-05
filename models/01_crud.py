@@ -1164,7 +1164,7 @@ def shn_list(r, **attr):
                                onvalidation=onvalidation,
                                onaccept=_onaccept,
                                message=message,
-                               next=r.there())
+                               next=r.there())            
 
             # Cancel button?
             #form[0].append(TR(TD(), TD(INPUT(_type="reset", _value="Reset form"))))
@@ -1193,6 +1193,10 @@ def shn_list(r, **attr):
                            _class="action-btn")
 
             shn_custom_view(r, "list_create.html")
+            
+            if deployment_settings.get_ui_navigate_away_confirm():
+                form.append( SCRIPT ("EnableNavigateAwayConfirm();") )
+            
             output.update(form=form, addtitle=addtitle, showaddbtn=showaddbtn)
 
         else:
@@ -1376,7 +1380,10 @@ def shn_create(r, **attr):
                                         _value="Cancel",
                                         _onclick="window.location='%s';" %
                                                  response.s3.cancel))
-
+        
+        if deployment_settings.get_ui_navigate_away_confirm():
+            form.append( SCRIPT ("EnableNavigateAwayConfirm();") )
+        
         # Put the form into output
         output.update(form=form)
 
@@ -1413,6 +1420,10 @@ def shn_create(r, **attr):
 
         form = crud.create(table,
                            onvalidation=onvalidation, onaccept=_onaccept)
+        
+        if deployment_settings.get_ui_navigate_away_confirm():
+            form.append( SCRIPT ("EnableNavigateAwayConfirm();") )
+        
         response.view = "plain.html"
         return dict(item=form)
 
@@ -1580,6 +1591,9 @@ def shn_update(r, **attr):
                                         _onclick="window.location='%s';" %
                                                  response.s3.cancel))
 
+        if deployment_settings.get_ui_navigate_away_confirm():
+            form.append( SCRIPT ("EnableNavigateAwayConfirm();") )
+            
         output.update(form=form)
 
         # Restore comment
@@ -1621,6 +1635,10 @@ def shn_update(r, **attr):
                            deletable=False)
 
         response.view = "plain.html"
+        
+        if deployment_settings.get_ui_navigate_away_confirm():
+            form.append( SCRIPT ("EnableNavigateAwayConfirm();") )        
+        
         return dict(item=form)
 
     elif r.representation == "url":
@@ -2095,26 +2113,27 @@ def shn_component_postp(r, output):
         shn_action_buttons(r, deletable=False,
                            read_url=read_url, update_url=update_url)
 
-        # Add an add button in the listadd=False case.  This is non-standard
-        # in two ways:  It uses the component's native module context so
-        # that once the new component is created, it will get its tabbed
-        # display.  And it adds the primary id in vars, where it will be
-        # picked up in the component controller and set as a default for
-        # the primary join field.
+        if r.representation in shn_interactive_view_formats:
+            # Add an add button in the listadd=False case.  This is non-standard
+            # in two ways:  It uses the component's native module context so
+            # that once the new component is created, it will get its tabbed
+            # display.  And it adds the primary id in vars, where it will be
+            # picked up in the component controller and set as a default for
+            # the primary join field.
 
-        authorised = shn_has_permission("update", r.component.tablename)
-        # listadd defaults to true if not specified.
-        listadd = not r.component.attr or r.component.attr.get("listadd", True)
+            authorised = shn_has_permission("update", r.component.tablename)
+            # listadd defaults to true if not specified.
+            listadd = not r.component.attr or r.component.attr.get("listadd", True)
 
-        if authorised and not listadd:
+            if authorised and not listadd:
 
-            label_create_button = shn_get_crud_string(
-                r.component.tablename, "label_create_button")
-            href_add = shn_component_add_linkto(r)
-            add_btn = A(label_create_button,
-                        _href=href_add,
-                        _class="action-btn")
-            output.update(add_btn=add_btn)
+                label_create_button = shn_get_crud_string(
+                    r.component.tablename, "label_create_button")
+                href_add = shn_component_add_linkto(r)
+                add_btn = A(label_create_button,
+                            _href=href_add,
+                            _class="action-btn")
+                output.update(add_btn=add_btn)
 
     else:
         # Primary resource or simple component without its own components.

@@ -7,13 +7,12 @@
 # Deployments can change settings live via appadmin
 
 # Set to False in Production (to save 1x DAL hit every page)
-if db(db["s3_setting"].id > 0).count() or \
-   not deployment_settings.get_base_prepopulate():
-    empty = False
+if not deployment_settings.get_base_prepopulate() or db(db["s3_setting"].id > 0).count():
+    populate = False
 else:
-    empty = True
+    populate = True
 
-if empty:
+if populate:
 
     # Themes
     tablename = "admin_theme"

@@ -11,22 +11,22 @@ if module not in deployment_settings.modules:
     redirect(URL(r=request, c="default", f="index"))
 
 response.menu_options = [
-    [T("Active Problems"), False, URL(r=request, f='index')],
+    [T("Active Problems"), False, URL(r=request, f="index")],
 ]
 
-if auth.has_membership(1):
+if shn_has_role(1):
     response.menu_options.extend([
-        [T('Groups'), False, URL(r=request, f='group')],
+        [T("Groups"), False, URL(r=request, f="group")],
     ])
 
-if auth.has_membership(1):
+if shn_has_role(1):
     response.menu_options.extend([
-        [T('Group Memberships'), False, URL(r=request, f='user_to_group')],
+        [T("Group Memberships"), False, URL(r=request, f="user_to_group")],
     ])
 
-if auth.has_membership(1):
+if shn_has_role(1):
     response.menu_options.extend([
-        [T('Problem Administration'), False, URL(r=request, f='problem')],
+        [T("Problem Administration"), False, URL(r=request, f="problem")],
     ])
 
 
@@ -154,10 +154,10 @@ class DU:
     def __init__(self, group_id=None):
         self.authorised = auth.has_membership(1)
         self.user_id = auth.user.id if (auth.is_logged_in() and session.auth) else None
-        self.status = 'guest'
+        self.status = "guest"
         self.membership = None
         if self.authorised:
-            self.status = 'moderator'
+            self.status = "moderator"
         elif self.user_id != None and group_id != None:
             self.membership = db((db.delphi_user_to_group.group_id == group_id) &
                                  (db.delphi_user_to_group.user_id == self.user_id)).select()
@@ -165,11 +165,11 @@ class DU:
                 self.membership = self.membership[0]
                 self.status = self.membership.status
 
-        self.authorised = (self.status == 'moderator')
+        self.authorised = (self.status == "moderator")
 
-        self.can_vote = self.status in ('moderator', 'participant')
-        self.can_add_item = self.status != 'guest'
-        self.can_post = self.status != 'guest'
+        self.can_vote = self.status in ("moderator", "participant")
+        self.can_add_item = self.status != "guest"
+        self.can_post = self.status != "guest"
 
 
 def __get_commons(solution=None):
@@ -185,7 +185,7 @@ def __get_commons(solution=None):
     user = DU(pr.group_id)
 
     response.menu_options.extend([
-        [pr.group_id.name, False, URL(r=request, f='group_summary', args=pr.group_id.id)],
+        [pr.group_id.name, False, URL(r=request, f="group_summary", args=pr.group_id.id)],
     ])
 
     return (pr, user)
@@ -205,13 +205,13 @@ def index():
             actions.append(("group/%d/update" % group.id, "Edit"))
             actions.append(("new_problem/create/?group=%s&next=%s" % \
                     (group.id,
-                    URL(r=request, f='group_summary', args=group.id)),
+                    URL(r=request, f="group_summary", args=group.id)),
                     "Add New Problem"))
             actions.append(("group_summary/%s/#request" % group.id, "Review Requests"))
         else:
             actions.append(("group_summary/%s/#request" % group.id,
                     "Role: %s%s" % (duser.status,
-                                    (duser.membership and duser.membership.req) and '*' or '')))
+                                    (duser.membership and duser.membership.req) and "*" or "")))
 
         latest_problems = db((db.delphi_problem.group_id == group.id) &
                          (db.delphi_problem.active == True)). \
@@ -235,34 +235,34 @@ def group_summary():
     table.user_id.default = duser.user_id
     table.group_id.default = group_id
     table.group_id.writable = False
-    fields = ['user_id', 'description', 'status']
+    fields = ["user_id", "description", "status"]
 
     if duser.authorised:
-        fields.append('req')
+        fields.append("req")
         membership_requests = db((table.group_id==group.id) &
                                  (table.req==True)).select()
         for membership_req in membership_requests:
             form = SQLFORM(table, record=membership_req.id,
                            fields=fields, labels={
-                                   'req': 'Needs more review:'
+                                   "req": "Needs more review:"
                                    })
             ret = form.accepts(request.post_vars, session, dbio=True)
             if form.errors:
-                session.error = str(T('There are errors'))
+                session.error = str(T("There are errors"))
 
             forms.append(form)
 
     elif duser.user_id:
         table.status.writable = False
-        if duser.membership: fields.append('req')
+        if duser.membership: fields.append("req")
         form = SQLFORM(table, record=duser.membership,
                        fields=fields, labels={
-                            'status': 'Current status:',
-                            'req': 'Request for review:'
+                            "status": "Current status:",
+                            "req": "Request for review:"
                             })
         ret = form.accepts(request.post_vars, session, dbio=True)
         if form.errors:
-            session.error = str(T('There are errors'))
+            session.error = str(T("There are errors"))
 
         forms.append(form)
 
@@ -276,41 +276,41 @@ def group_summary():
 
 
 def new_problem():
-    group = db(db.delphi_group.id == request.get_vars['group']).select()[0]
+    group = db(db.delphi_group.id == request.get_vars["group"]).select()[0]
     duser = DU(group)
     if not duser.authorised:
         raise HTTP(403)
 
     response.menu_options.extend([
-        [group.name, False, URL(r=request, f='group_summary', args=group.id)],
+        [group.name, False, URL(r=request, f="group_summary", args=group.id)],
     ])
 
     table = db.delphi_problem
-    table.group.default = request.get_vars['group']
+    table.group.default = request.get_vars["group"]
     table.group.writable = False
 
     return problem()
 
 def group():
-    if not auth.has_membership(1):
+    if not shn_has_role(1)
         raise HTTP(403)
 
-    return shn_rest_controller(module, 'group')
+    return shn_rest_controller(module, "group")
 
 def user_to_group():
-    if not auth.has_membership(1):
+    if not shn_has_role(1)
         raise HTTP(403)
 
-    return shn_rest_controller(module, 'user_to_group')
+    return shn_rest_controller(module, "user_to_group")
 
 def problem():
     # TODO: access check
-    return shn_rest_controller(module, 'problem')
+    return shn_rest_controller(module, "problem")
 
 def solution():
     # TODO: access check
-    return shn_rest_controller(module, 'solution')
-
+    table.problem_id.default = get_last_problem_id()
+    return shn_rest_controller(module, "solution")
 
 def summary():
     pr, duser = __get_commons()
@@ -320,10 +320,10 @@ def summary():
     else:
         voted = False
 
-    if duser.can_add_item and 'item_name' in request.post_vars:
+    if duser.can_add_item and "item_name" in request.post_vars:
         db.delphi_solution.insert(problem_id=pr,
-                                       name=request.post_vars['item_name'],
-                                       description=request.post_vars['item_description'])
+                                       name=request.post_vars["item_name"],
+                                       description=request.post_vars["item_description"])
 
     return dict(problem=pr, items=pr.delphi_solution.select(),
                 voted=voted, name="Options", duser=duser)
@@ -465,20 +465,20 @@ def discuss():
 
     if user and duser.can_post:
         form = SQLFORM(db.delphi_forum_post,
-            fields=['title', 'post'],
+            fields=["title", "post"],
             labels=dict(post="%s %s:" % (user.first_name, user.last_name)))
     else:
         form = None
     if form and form.accepts(request.post_vars, session):
-        post = request.post_vars['post']
-        title = request.post_vars['title']
+        post = request.post_vars["post"]
+        title = request.post_vars["title"]
         post_html = ""
         k = -1
         for l in post.split("\n"):
             l = l.strip()
             old = k
             k = 0
-            while k<len(l) and l[k] == '>':
+            while k<len(l) and l[k] == ">":
                 k += 1
             if k != old:
                 if old > 0:
@@ -486,7 +486,7 @@ def discuss():
                 else:
                     post_html += "</p>"
                 if k > 0:
-                    post_html += "<blockquote class='delphi_q%d'>" % (((k-1) % 6) + 1)
+                    post_html += "<blockquote class='delphi_q%d'>" % (((k - 1) % 6) + 1)
                 else:
                     post_html += "<p>"
             else:
@@ -495,9 +495,9 @@ def discuss():
         if k > 0:
             post_html += "</blockquote>"
         db.delphi_forum_post.insert(title=title, solution_id=item, post=post, post_html=post_html)
-        session.flash = str(T('Your post was added successfully.'))
+        session.flash = str(T("Your post was added successfully."))
     elif form and form.errors:
-        session.error = str(T('There are errors'))
+        session.error = str(T("There are errors"))
 
     return dict(item=item, problem=item.problem_id, duser=duser,
                 form=form, title=T("Discussion Forum"), authorised=False)

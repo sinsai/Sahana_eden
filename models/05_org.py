@@ -150,14 +150,16 @@ def shn_sector_represent(sector_ids):
 # Reusable field
 ADD_SECTOR = T("Add Cluster")
 sector_id = db.Table(None, "sector_id",
-                     FieldS3("sector_id", sortby="name",
-                           requires = IS_NULL_OR(IS_ONE_OF(db, "org_sector.id", "%(name)s", multiple=True)),
+                     #FieldS3("sector_id", "list:integer", sortby="name",
+                     FieldS3("sector_id", "string", sortby="name",
+                           requires = IS_NULL_OR(IS_IN_DB(db, "org_sector.id", "%(name)s", multiple=True)),
                            represent = shn_sector_represent,
                            label = T("Cluster"),
                            comment = DIV(A(ADD_SECTOR, _class="colorbox", _href=URL(r=request, c="org", f="sector", args="create", vars=dict(format="popup")), _target="top", _title=ADD_SECTOR),
                                      DIV( _class="tooltip", _title=Tstr("Add Sector") + "|" + Tstr("The Sector(s) this organization works in. Multiple values can be selected by holding down the 'Control' key."))),
                            ondelete = "RESTRICT",
                            # Doesn't re-populate on edit (FF 3.6.8)
+                           # should use list:integer & ...?
                            #widget = SQLFORM.widgets.checkboxes.widget
                           ))
 

@@ -103,6 +103,17 @@ if empty:
         table.insert( name = "Health" )
         table.insert( name = "Protection and Human Rights and Rule of Law" )
         table.insert( name = "Urban Search and Rescue" )
+    
+    # Person Registry
+    tablename = "pr_person"
+    table = db[tablename]
+    # Should work for our 3 supported databases: sqlite, MySQL & PostgreSQL
+    field = "first_name"
+    db.executesql("CREATE INDEX %s__idx on %s(%s);" % (field, tablename, field))
+    field = "middle_name"
+    db.executesql("CREATE INDEX %s__idx on %s(%s);" % (field, tablename, field))
+    field = "last_name"
+    db.executesql("CREATE INDEX %s__idx on %s(%s);" % (field, tablename, field))
 
     # Synchronisation
     tablename = "sync_setting"
@@ -620,6 +631,9 @@ if empty:
                                    "private", "import",
                                    "countries.csv")
         table.import_from_csv_file(open(import_file,"r"))
+    # Should work for our 3 supported databases: sqlite, MySQL & PostgreSQL
+    field = "name"
+    db.executesql("CREATE INDEX %s__idx on %s(%s);" % (field, tablename, field))
 
     # Authorization
     # User Roles (uses native Web2Py Auth Groups)

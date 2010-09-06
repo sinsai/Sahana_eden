@@ -2125,8 +2125,8 @@ def shn_rest_controller(module, resource, **attr):
                 if shn_has_permission("create", c.tablename):
                     label = shn_get_crud_string(c.tablename,
                                                 "label_create_button")
-                    c = r.resource.components[c.name]
-                    fkey = "%s.%s" % (c.name, c.fkey)
+                    hook = r.resource.components[c.name]
+                    fkey = "%s.%s" % (c.name, hook.fkey)
                     vars = request.vars.copy()
                     vars.update({fkey: r.id})
                     url = str(URL(r=request, c=c.prefix, f=c.name,

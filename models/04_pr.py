@@ -46,6 +46,7 @@ table = db.define_table(tablename,
 table.uuid.requires = IS_NOT_IN_DB(db, "%s.uuid" % tablename)
 
 table.pe_id.requires = IS_ONE_OF(db, "pr_pentity.id", shn_pentity_represent,
+                                 orderby="pe_type",
                                  filterby="pe_type",
                                  filter_opts=("pr_person", "pr_group"))
 
@@ -131,6 +132,7 @@ table = db.define_table(tablename,
 table.uuid.requires = IS_NOT_IN_DB(db, "%s.uuid" % tablename)
 table.pe_id.requires = IS_ONE_OF(db, "pr_pentity.id",
                                     shn_pentity_represent,
+                                    orderby="pe_type",
                                     filterby="pe_type",
                                     filter_opts=("pr_person", "pr_group"))
 
@@ -329,14 +331,14 @@ table = db.define_table(tablename,
 
 table.uuid.requires = IS_NOT_IN_DB(db, "%s.uuid" % tablename)
 
-table.observer.requires = IS_NULL_OR(IS_ONE_OF(db, "pr_person.id", shn_pr_person_represent))
+table.observer.requires = IS_NULL_OR(IS_ONE_OF(db, "pr_person.id", shn_pr_person_represent, orderby="pr_person.first_name"))
 table.observer.represent = lambda id: (id and [shn_pr_person_represent(id)] or ["None"])[0]
 table.observer.comment = shn_person_comment(
         Tstr("Observer"),
         Tstr("Person who observed the presence (if different from reporter)."))
 table.observer.ondelete = "RESTRICT"
 
-table.reporter.requires = IS_NULL_OR(IS_ONE_OF(db, "pr_person.id", shn_pr_person_represent))
+table.reporter.requires = IS_NULL_OR(IS_ONE_OF(db, "pr_person.id", shn_pr_person_represent, orderby="pr_person.first_name"))
 table.reporter.represent = lambda id: (id and [shn_pr_person_represent(id)] or ["None"])[0]
 table.reporter.comment = shn_person_comment(
         Tstr("Reporter"),
@@ -400,6 +402,7 @@ table.uuid.requires = IS_NOT_IN_DB(db, "%s.uuid" % tablename)
 table.pe_id.requires = IS_ONE_OF(db, "pr_pentity.id",
                                     shn_pentity_represent,
                                     filterby="pe_type",
+                                    orderby="pe_type",
                                     filter_opts=("pr_person", "pr_group"))
 
 # Moved to zzz_last.py to ensure all tables caught!

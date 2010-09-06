@@ -89,7 +89,7 @@ if deployment_settings.has_module(module):
     # Reusable field
     vol_volunteer_id = db.Table(None, "vol_volunteer_id",
         FieldS3("vol_volunteer_id", db.vol_volunteer, sortby=["first_name", "middle_name", "last_name"],
-        requires = IS_NULL_OR(IS_ONE_OF(db(db.vol_volunteer.status == 1), "vol_volunteer.id", shn_vol_volunteer_represent)),
+        requires = IS_NULL_OR(IS_ONE_OF(db(db.vol_volunteer.status == 1), "vol_volunteer.id", shn_vol_volunteer_represent, orderby="vol_volunteer.person_id")),
         represent = lambda id: (id and [shn_vol_volunteer_represent(id)] or ["None"])[0],
         # TODO: Creating a vol_volunteer entry requires a person, so does this
         # make sense?  For now, turn this into add person.  Could add _next
@@ -250,7 +250,7 @@ if deployment_settings.has_module(module):
     skill_types_id = db.Table(None, "skill_types_id",
                               FieldS3("skill_types_id", db.vol_skill_types,
                                       sortby = ["category", "name"],
-                                      requires = IS_ONE_OF(db, "vol_skill_types.id", vol_skill_types_represent),
+                                      requires = IS_ONE_OF(db, "vol_skill_types.id", vol_skill_types_represent, orderby="vol_skill_types.name"),
                                       represent = vol_skill_types_represent,
                                       label = T("Skill"),
                                       ondelete = "RESTRICT"))
@@ -327,7 +327,7 @@ if deployment_settings.has_module(module):
 
         name = cache.ram("pr_group_%s" % id, lambda: _represent(id))
         return name
-        
+
     # TODO: Is this in use?  Have project location fields changed, since a
     # project could have multiple locations?
     # -------------------------------------------------------------------------
@@ -422,7 +422,7 @@ if deployment_settings.has_module(module):
     # -------------------------------------------------------------------------
     # Unused Code
     # -------------------------------------------------------------------------
-    
+
     # TODO: Rather than the hours a volunteer "has a position" this will likely
     # become hours the volunteer "works on a task", so vol_postion_id will
     # switch to the task id.

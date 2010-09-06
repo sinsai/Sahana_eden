@@ -76,7 +76,7 @@ if deployment_settings.has_module(module):
     db.rms_req.pledge_status.writable = False
 
     # Make Person Mandatory
-    table.person_id.requires = IS_ONE_OF(db, "pr_person.id", shn_pr_person_represent)
+    table.person_id.requires = IS_ONE_OF(db, "pr_person.id", shn_pr_person_represent, orderby="pr_person.first_name")
     table.person_id.label = T("Requestor")
     table.person_id.comment = SPAN("*", _class="req")
 
@@ -135,7 +135,7 @@ if deployment_settings.has_module(module):
         msg_record_modified = T("Aid Request updated"),
         msg_record_deleted = T("Aid Request deleted"),
         msg_list_empty = T("No Aid Requests currently registered"))
-    
+
     # Reusable Field
     req_id = db.Table(None, "req_id",
                 FieldS3("req_id", db.rms_req, sortby="message",
@@ -145,7 +145,7 @@ if deployment_settings.has_module(module):
                     comment = DIV(A(ADD_AID_REQUEST, _class="colorbox", _href=URL(r=request, c="rms", f="req", args="create", vars=dict(format="popup")), _target="top", _title=ADD_AID_REQUEST), DIV( _class="tooltip", _title=Tstr("Add Request") + "|" + Tstr("The Request this record is associated with."))),
                     ondelete = "RESTRICT"
                     ))
-    
+
     request_id = req_id #only for other models - this should be replaced!
 
     # rms_req as component of doc_documents
@@ -297,16 +297,16 @@ if deployment_settings.has_module(module):
 
     # Plug into REST controller
     s3xrc.model.set_method(module, resource, method="search_simple", action=shn_rms_req_search_simple )
-    
+
     #==============================================================================
     # Request Item
     #
     resource = "ritem"
     tablename = "%s_%s" % (module, resource)
-    table = db.define_table(tablename, 
-                            timestamp, 
-                            uuidstamp, 
-                            authorstamp, 
+    table = db.define_table(tablename,
+                            timestamp,
+                            uuidstamp,
+                            authorstamp,
                             deletion_status,
                             req_id,
                             item_id,
@@ -338,7 +338,7 @@ if deployment_settings.has_module(module):
                               multiple=True,
                               joinby=dict(rms_req="req_id", supply_item="item_id"),
                               deletable=True,
-                              editable=True)    
+                              editable=True)
 
     # ------------------
     # Create pledge table
@@ -397,12 +397,12 @@ if deployment_settings.has_module(module):
                                     msg_record_modified = "Pledge updated",
                                     msg_record_deleted  = "Pledge deleted",
                                     msg_list_empty      = "No Pledges currently available")
-    
+
     def rms_pledge_onaccept(form):
         #pledge_id = session.rcvars.rms_pledge
-        
+
         req_id = session.rcvars.rms_req #db(db.rms_pledge.id == pledge_id).select(db.rms_pledge.req_id).first().req_id
-        
+
         if req_id:
             #This could be done as a join
             pledges = db(db.rms_pledge.req_id == req_id).select(db.rms_pledge.status)
@@ -414,15 +414,15 @@ if deployment_settings.has_module(module):
                         num_status[status] = 1
                     else:
                         num_status[status] = num_status[status] + 1
-            
+
             pledge_status = ""
             for i in (3,2,1):
                 if i in num_status:
                     pledge_status = pledge_status + str(rms_status_opts[i]) + ": " + str(num_status[i]) + ", "
             pledge_status = pledge_status[:-2]
-            db(db.rms_req.id == req_id).update(pledge_status = pledge_status)     
-        
-    s3xrc.model.configure(db.rms_pledge, onaccept=rms_pledge_onaccept)  
+            db(db.rms_req.id == req_id).update(pledge_status = pledge_status)
+
+    s3xrc.model.configure(db.rms_pledge, onaccept=rms_pledge_onaccept)
 
     # ------------------
     # Create the table for request_detail for requests with arbitrary keys
@@ -474,7 +474,7 @@ if deployment_settings.has_module(module):
     #Reusable field for other tables
     req_detail_id = db.Table(None, "req_detail_id",
                 FieldS3("req_detail_id", db.rms_req_detail, sortby="request_key",
-                    requires = IS_NULL_OR(IS_ONE_OF(db, "rms_req_detail.id", "%( request_key)s")),
+                    requires = IS_NULL_OR(IS_ONE_OF(db, "rms_req_detail.id", "%(request_key)s")),
                     represent = lambda id: (id and [db(db.rms_req_detail.id == id).select(limitby=(0, 1)).first().updated] or ["None"])[0],
                     label = T("Request Detail"),
                     comment = DIV(A(ADD_REQUEST_DETAIL, _class="colorbox", _href=URL(r=request, c="rms", f="req_detail", args="create", vars=dict(format="popup")), _target="top", _title=ADD_REQUEST_DETAIL), DIV( _class="tooltip", _title=Tstr("Add Request") + "|" + Tstr("The Request this record is associated with."))),

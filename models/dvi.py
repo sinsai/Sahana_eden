@@ -350,17 +350,17 @@ if deployment_settings.has_module(module):
                     migrate = migrate)
 
     # Settings and Restrictions
-    table.identified_by.requires = IS_NULL_OR(IS_ONE_OF(db, "pr_person.id", shn_pr_person_represent))
+    table.identified_by.requires = IS_NULL_OR(IS_ONE_OF(db, "pr_person.id", shn_pr_person_represent, orderby="pr_person.first_name"))
     table.identified_by.represent = lambda id: (id and [shn_pr_person_represent(id)] or ["None"])[0]
     table.identified_by.comment = shn_person_id_comment
     table.identified_by.ondelete = "RESTRICT"
 
-    table.reported_by.requires = IS_NULL_OR(IS_ONE_OF(db, "pr_person.id", shn_pr_person_represent))
+    table.reported_by.requires = IS_NULL_OR(IS_ONE_OF(db, "pr_person.id", shn_pr_person_represent, orderby="pr_person.first_name"))
     table.reported_by.represent = lambda id: (id and [shn_pr_person_represent(id)] or ["None"])[0]
     table.reported_by.comment = shn_person_id_comment
     table.reported_by.ondelete = "RESTRICT"
 
-    table.identity.requires = IS_NULL_OR(IS_ONE_OF(db, "pr_person.id", shn_pr_person_represent))
+    table.identity.requires = IS_NULL_OR(IS_ONE_OF(db, "pr_person.id", shn_pr_person_represent, orderby="pr_person.first_name"))
     table.identity.represent = lambda id: (id and [shn_pr_person_represent(id)] or ["None"])[0]
     table.identity.comment = shn_person_id_comment
     table.identity.ondelete = "RESTRICT"

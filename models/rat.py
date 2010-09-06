@@ -159,7 +159,7 @@ if deployment_settings.has_module(module):
     table.date.comment = SPAN("*", _class="req")
     table.date.default = datetime.datetime.today()
 
-    table.staff2_id.requires = IS_NULL_OR(IS_ONE_OF(db, "org_staff.id", shn_org_staff_represent))
+    table.staff2_id.requires = IS_NULL_OR(IS_ONE_OF(db, "org_staff.id", shn_org_staff_represent, orderby="org_staff.id"))
     table.staff2_id.represent = lambda id: shn_org_staff_represent(id)
     table.staff2_id.comment = A(ADD_STAFF, _class="colorbox", _href=URL(r=request, c="org", f="staff", args="create", vars=dict(format="popup", child="staff2_id")), _target="top", _title=ADD_STAFF)
     table.staff2_id.label = T("Staff 2")
@@ -240,7 +240,7 @@ if deployment_settings.has_module(module):
     # re-usable field
     assessment_id = db.Table(None, "assessment_id",
                              Field("assessment_id", table,
-                                   requires = IS_NULL_OR(IS_ONE_OF(db, "rat_assessment.id", shn_assessment_represent)),
+                                   requires = IS_NULL_OR(IS_ONE_OF(db, "rat_assessment.id", shn_assessment_represent, orderby="rat_assessment.id")),
                                    represent = lambda id: shn_assessment_represent(id),
                                    label = T("Rapid Assessment"),
                                    comment = A(ADD_ASSESSMENT, _class="colorbox", _href=URL(r=request, c="rat", f="assessment", args="create", vars=dict(format="popup")), _target="top", _title=ADD_ASSESSMENT),

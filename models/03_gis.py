@@ -467,7 +467,7 @@ ADD_LOCATION = T("Add Location")
 repr_select = lambda l: len(l.name) > 48 and "%s..." % l.name[:44] or l.name
 location_id = db.Table(None, "location_id",
                        FieldS3("location_id", db.gis_location, sortby="name",
-                       requires = IS_NULL_OR(IS_ONE_OF(db, "gis_location.id", repr_select, sort=True)),
+                       requires = IS_NULL_OR(IS_ONE_OF(db, "gis_location.id", repr_select, orderby="gis_location.name", sort=True)),
                        represent = lambda id: shn_gis_location_represent(id),
                        label = T("Location"),
                        comment = DIV(A(ADD_LOCATION,
@@ -611,7 +611,7 @@ def gis_location_onvalidation(form):
         form.errors["level"] = field_error
         return
     # ToDo: Check for probable duplicates
-    # 
+    #
     # ToDo: Check within Bounds of the Parent
     # Calculate the Centroid for Polygons
     gis.wkt_centroid(form)
@@ -626,15 +626,15 @@ def s3_gis_location_simple(r, **attr):
         Provide a simple JSON output for a Location
         - easier to parse than S3XRC
         - Don't include the potentially heavy WKT field
-        
+
         Status: Currently unused
         @ToDo: Extend to a group of locations
     """
-    
+
     resource = r.resource
     table = resource.table
     id = r.id
-    
+
     fields = [uuid, level, parent, gis_feature_type, lat, lon, geonames_id, osm_id, comments]
     # @ToDo local_name
     output = db(table.id == id).select(table.uuid).json()

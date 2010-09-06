@@ -29,7 +29,8 @@ if deployment_settings.has_module(module):
                                 sortby=["first_name", "middle_name", "last_name"],
                                 requires = IS_NULL_OR(IS_ONE_OF(db,
                                                 "pr_person.id",
-                                                shn_pr_person_represent)),
+                                                shn_pr_person_represent,
+                                                orderby="pr_person.first_name")),
                                 represent = lambda id: \
                                             (id and
                                             [shn_pr_person_represent(id)] or

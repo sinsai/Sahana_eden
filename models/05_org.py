@@ -8,7 +8,7 @@ module = "org"
 
 # -----------------------------------------------------------------------------
 # Site
-# 
+#
 # Site is a generic type for any facility (office, hospital, shelter,
 # warehouse, etc.) and serves the same purpose as pentity does for person
 # entity types:  It provides a common join key name across all types of
@@ -66,7 +66,7 @@ def shn_site_represent(id, default_label="[no label]"):
     record = db(table.site_id == id).select(table.name, limitby=(0, 1)).first()
 
     if record:
-        site_str = "%s (%s)" % (record.name, site_type_nice) 
+        site_str = "%s (%s)" % (record.name, site_type_nice)
     else:
         # Since name is notnull for all types so far, this won't be reached.
         site_str = "[site %d] (%s)" % (id, site_type_nice)
@@ -116,7 +116,7 @@ def shn_site_onaccept(form, table=None):
 
 site_id = db.Table(None, "site_id",
     Field("site_id", db.org_site,
-          requires = IS_NULL_OR(IS_ONE_OF(db, "org_site.id", shn_site_represent)),
+          requires = IS_NULL_OR(IS_ONE_OF(db, "org_site.id", shn_site_represent, orderby="org_site.id")),
           represent = lambda id: (id and [shn_site_represent(id)] or [NONE])[0],
           readable = False,
           writable = False,
@@ -262,7 +262,7 @@ shn_organisation_comment = DIV(A(ADD_ORGANIZATION,
 
 organisation_id = db.Table(None, "organisation_id",
                            FieldS3("organisation_id", db.org_organisation, sortby="name",
-                           requires = IS_NULL_OR(IS_ONE_OF(db, "org_organisation.id", shn_organisation_represent, sort=True)),
+                           requires = IS_NULL_OR(IS_ONE_OF(db, "org_organisation.id", shn_organisation_represent, orderby="org_organisation.name", sort=True)),
                            represent = shn_organisation_represent,
                            label = T("Organization"),
                            comment = shn_organisation_comment,
@@ -275,10 +275,10 @@ def get_organisation_id(name = "organisation_id",
                          add_label = ADD_ORGANIZATION,
                          help_str = Tstr("The Organization this record is associated with."),
                          ):
-    return db.Table(None, 
+    return db.Table(None,
                     name,
                     FieldS3(name, db.org_organisation, sortby="name",
-                            requires = IS_NULL_OR(IS_ONE_OF(db, "org_organisation.id", shn_organisation_represent, sort=True)),
+                            requires = IS_NULL_OR(IS_ONE_OF(db, "org_organisation.id", shn_organisation_represent, orderby="org_organisation.name", sort=True)),
                             represent = shn_organisation_represent,
                             label = label,
                             comment = DIV(A(add_label,
@@ -578,7 +578,7 @@ table = db.define_table(tablename, timestamp, uuidstamp, authorstamp, deletion_s
 # Field settings
 # Over-ride the default IS_NULL_OR as Staff doesn't make sense without an associated Organisation
 table.organisation_id.requires = IS_ONE_OF(db, "org_organisation.id", "%(name)s")
-table.manager_id.requires = IS_NULL_OR(IS_ONE_OF(db, "pr_person.id", shn_pr_person_represent))
+table.manager_id.requires = IS_NULL_OR(IS_ONE_OF(db, "pr_person.id", shn_pr_person_represent, orderby="pr_person.first_name"))
 table.manager_id.represent = lambda id: (id and [shn_pr_person_represent(id)] or [NONE])[0]
 
 # Staff Resource called from multiple controllers
@@ -639,7 +639,7 @@ def shn_orgs_to_person(person_id):
 # Reusable field
 staff_id = db.Table(None, "staff_id",
                         FieldS3("staff_id", db.org_staff, sortby="name",
-                        requires = IS_NULL_OR(IS_ONE_OF(db, "org_staff.id", shn_org_staff_represent)),
+                        requires = IS_NULL_OR(IS_ONE_OF(db, "org_staff.id", shn_org_staff_represent, orderby="org_staff.id")),
                         represent = lambda id: shn_org_staff_represent(id),
                         comment = DIV(A(ADD_STAFF, _class="colorbox", _href=URL(r=request, c="org", f="staff", args="create", vars=dict(format="popup")), _target="top", _title=ADD_STAFF),
                                   DIV( _class="tooltip", _title=ADD_STAFF + "|" + Tstr("Add new staff role."))),
@@ -975,9 +975,9 @@ org_menu = [
     ]],
     [T("Activities"), False, URL(r=request, c="project", f="activity"),[
         [T("List"), False, URL(r=request, c="project", f="activity")],
-        [T("Add"), False, URL(r=request,  c="project", f="activity", args="create")],                                                                         
+        [T("Add"), False, URL(r=request,  c="project", f="activity", args="create")],
         #[T("Search"), False, URL(r=request, f="project", args="search")]
-    ]],    
+    ]],
     [T("Offices"), False, URL(r=request, c="org", f="office"),[
         [T("List"), False, URL(r=request, c="org", f="office")],
         [T("Add"), False, URL(r=request,  c="org",f="office", args="create")],

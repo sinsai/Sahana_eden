@@ -179,7 +179,7 @@ def location():
                                            _title=Tstr("Parent") + "|" + Tstr("The Area which this Site is located within."))),
             table.name.comment = SPAN("*", _class="req")
             table.osm_id.comment = DIV(_class="stickytip",
-                                       _title="OSM ID|" + Tstr("The") + " <a href='http://openstreetmap.org' target=_blank>OpenStreetMap</a> ID. " + Tstr("If you don't know the ID, you can just say 'Yes' if it has been added to OSM."))
+                                       _title="OpenStreetMap ID|" + Tstr("The") + " <a href='http://openstreetmap.org' target=_blank>OpenStreetMap</a> ID. " + Tstr("If you know what the OSM ID of this location is then you can enter it here."))
             table.geonames_id.comment = DIV(_class="stickytip",
                                             _title="Geonames ID|" + Tstr("The") + " <a href='http://geonames.org' target=_blank>Geonames</a> ID. " + Tstr("If you know what the Geonames ID of this location is then you can enter it here."))
             table.comments.comment = DIV(_class="tooltip",

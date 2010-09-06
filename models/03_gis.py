@@ -408,8 +408,8 @@ table = db.define_table(tablename, timestamp, uuidstamp, deletion_status,
                         Field("lon", "double"), # Points or Centroid for Polygons
                         Field("wkt", "text"),   # WKT is auto-calculated from lat/lon for Points
                         Field("url"),
-                        Field("geonames_id", "integer"),# Geonames ID (for cross-correlation. OSM cannot take data from Geonames as 'polluted' with unclear sources, so can't use them as UUIDs)
-                        Field("osm_id"),                # OpenStreetMap ID (for cross-correlation. OSM IDs can change over time, so they also have UUID fields they can store our IDs in)
+                        Field("geonames_id", "integer", unique=True),# Geonames ID (for cross-correlation. OSM cannot take data from Geonames as 'polluted' with unclear sources, so can't use them as UUIDs)
+                        Field("osm_id", "integer", unique=True),     # OpenStreetMap ID (for cross-correlation. OSM IDs can change over time, so they also have UUID fields they can store our IDs in)
                         Field("lon_min", "double", writable=False, readable=False), # bounding-box
                         Field("lat_min", "double", writable=False, readable=False), # bounding-box
                         Field("lon_max", "double", writable=False, readable=False), # bounding-box
@@ -450,8 +450,8 @@ table.lat.label = T("Latitude")
 table.lon.label = T("Longitude")
 table.wkt.label = "WKT (" + Tstr("Well-Known Text") + ")"
 table.url.label = "URL"
-table.geonames_id.label = "Geonames"
-table.osm_id.label = "OpenStreetMap"
+table.geonames_id.label = "Geonames ID"
+table.osm_id.label = "OpenStreetMap ID"
 # We want these visible from forms which reference the Location
 CONVERSION_TOOL = T("Conversion Tool")
 table.lat.comment = DIV(_class="tooltip",

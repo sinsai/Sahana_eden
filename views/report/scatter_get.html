@@ -1,0 +1,28 @@
+{{extend "layout.html"}}
+{{try:}}
+  {{=BEAUTIFY (graphs)}}
+{{except:}} 
+<table>
+  <tr>
+    <td>x</td>
+    <td>y</td>
+  </tr>
+{{for point in points:}}
+  <tr>
+    <td>{{=point[0]}}</td>
+    <td>{{=point[1]}}</td>
+  </tr>
+{{pass}}
+</table>
+
+{{if settings:}}
+<table>
+{{for key, value in settings.iteritems ():}}
+  <tr>
+    <td>{{=key}}</td>
+    <td>{{=value}}</td>
+  </tr>
+{{pass}}
+</table>
+{{pass}}
+{{pass}}

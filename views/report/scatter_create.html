@@ -1,0 +1,9 @@
+{{extend "layout.html"}}
+{{url = "/" + request.application + "/report/scatter/get." + graphRep  + "?id=" + graphId}}
+
+<div>
+  The following graph has been created at <a href="{{=url}}">{{=url}}</a>
+</div>
+
+
+<object width="600" height="400" data="{{=url}}" />

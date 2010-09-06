@@ -1030,7 +1030,7 @@ def shn_list(r, **attr):
     main = _attr.get("main", None)
     extra = _attr.get("extra", None)
     orderby = _attr.get("orderby", None)
-    sortby = _attr.get("sortby", None)
+    sortby = _attr.get("sortby", [[1,'asc']])
     linkto = _attr.get("linkto", None)
 
     # Provide the ability to get a subset of records

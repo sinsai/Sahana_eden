@@ -1916,7 +1916,16 @@ def shn_search(r, **attr):
                     parent = int(_vars.parent)
             else:
                 parent = None
-
+            if "exclude_field" in _vars:
+                exclude_field = str.lower(_vars.exclude_field)
+                if "exclude_value" in _vars:
+                    exclude_value = str.lower(_vars.exclude_value)
+                else:
+                    exclude_value = None
+            else:
+                exclude_field = None
+                exclude_value = None
+            
             limit = int(_vars.limit or 0)
 
             filter = _vars.filter
@@ -1933,12 +1942,18 @@ def shn_search(r, **attr):
                                         (_table[field2].like("%" + value + "%")) | \
                                         (_table[field3].like("%" + value + "%")))
 
+                elif exclude_field and exclude_value:
+                    # gis_location hierarchical search
+                    # Filter out poor-quality data, such as from Ushahidi
+                    query = query & (_field.like("%" + value + "%")) & \
+                                    (_table[exclude_field] != exclude_value)
+
                 elif parent:
                     # gis_location hierarchical search
-                    # Immediate children only
+                    # NB Currently not used - we allow people to search freely across all the hierarchy
+                    # SQL Filter is immediate children only so need slow lookup
                     #query = query & (_table.parent == parent) & \
                     #                (_field.like("%" + value + "%"))
-                    # Nice if we could filter in SQL but this breaks the recursion
                     children = gis.get_children(parent)
                     children = children.find(lambda row: value in str.lower(row.name))
                     item = children.json()

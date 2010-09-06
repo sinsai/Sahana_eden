@@ -17,7 +17,7 @@ s3cfg = local_import("s3cfg")
 deployment_settings = s3cfg.S3Config(T)
 
 # Database settings
-deployment_settings.database.db_type = "sqlite"
+deployment_settings.database.db_type = "mysql"
 deployment_settings.database.host = "localhost"
 deployment_settings.database.port = "" # use default
 deployment_settings.database.database = "sahana"

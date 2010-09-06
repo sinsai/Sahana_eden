@@ -116,6 +116,9 @@
 
             <data field="gis_feature_type" value="1">Point</data>
 
+            <!-- Ushahidi data is prone to duplicates so we don't want it to clutter other views -->
+            <data field="level" value="XX">XX</data>
+
             <data field="name">
                 <xsl:choose>
                     <xsl:when test="./name/text()">

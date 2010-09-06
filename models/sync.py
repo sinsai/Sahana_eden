@@ -12,12 +12,17 @@ module = "sync"
 # Sync Policy
 #
 sync_policy_opts = {
-    0:T("No Sync"),
-    1:T("Keep Local"),
-    2:T("Replace with Remote"),
-    3:T("Newer Timestamp"),
-#    4:T("Role-based"),
-    5:T("Choose Manually")
+    0: T("No synchronization"),
+    1: T("Manual"),             # choose records manually
+    2: T("Import"),             # import new records, do not update existing records
+    3: T("Replace"),            # import new records and update existing records to peer version
+    4: T("Update"),             # update existing records to peer version, do not import new records
+    5: T("Replace/Newer"),      # import new records, update existing records to newer version
+    6: T("Update/Newer"),       # do not import new records, only update existing records to newer version
+    7: T("Import/Master"),      # import master records, do not update existing records
+    8: T("Replace/Master"),     # import master records and update existing records to master version
+    9: T("Update/Master"),      # update existing records to master version, do not import new records
+    #10: T("Role-based") # not implemented yet
 }
 
 opt_sync_policy = db.Table(None, "sync_policy",
@@ -33,7 +38,8 @@ opt_sync_policy = db.Table(None, "sync_policy",
 resource = "setting"
 tablename = "%s_%s" % (module, resource)
 table = db.define_table(tablename,
-                        Field("uuid", length=36, notnull=True),     # Our UUID for sync purposes
+                        uuidstamp,
+                        #Field("uuid", length=36, notnull=True),     # Our UUID for sync purposes
                         Field("beacon_service_url", default = "http://sync.eden.sahanafoundation.org/sync/beacon"), # URL of beacon service that our sahana instance is configured to work with
                         Field("sync_pools"),                        # Comma-separated list of sync pools we've subscribed to
                         Field("proxy"),
@@ -55,7 +61,8 @@ sync_partner_instance_type_opts = {
 resource = "partner"
 tablename = "%s_%s" % (module, resource)
 table = db.define_table(tablename,
-                        Field("uuid", length=36, notnull=True),     # uuid of this partner
+                        uuidstamp,
+                        #Field("uuid", length=36, notnull=True),     # uuid of this partner
                         Field("name", default="Sahana Eden Instance"), # name of the partner (descriptive title)
                         Field("instance_url", default = "http://sync.eden.sahanafoundation.org/eden", notnull=True), # URL of their instance
                         Field("instance_type",                      # the type of instance => "SahanaEden", "SahanaAgasti", "Ushahidi", etc.
@@ -93,13 +100,13 @@ table = db.define_table(tablename,
 resource = "log"
 tablename = "%s_%s" % (module, resource)
 table = db.define_table(tablename,
-                        Field("partner_uuid", length=36),   # uuid of remote system we synced with
-                        Field("timestmp", "datetime"),      # the date and time when sync was performed
-                        Field("sync_resources", "text"),    # comma-separated list of resources synced
-                        Field("sync_errors", "text"),       # sync errors encountered
-                        Field("sync_mode"),                 # whether this was an "online" sync (standard sync mode) or "offline" sync (USB/File based)
-                        Field("complete_sync", "boolean"),  # whether all resources were synced (complete sync) or only those modified since the last sync (partial sync)
-                        Field("sync_method"),               # whether this was a Pull only, Push only, Remote Push or a Pull-Push sync operation
+                        Field("partner_uuid", length=36),           # uuid of remote system we synced with
+                        Field("timestmp", "datetime"),              # the date and time when sync was performed
+                        Field("sync_resources", "text"),            # comma-separated list of resources synced
+                        Field("sync_errors", "text"),               # sync errors encountered
+                        Field("sync_mode"),                         # whether this was an "online" sync (standard sync mode) or "offline" sync (USB/File based)
+                        Field("complete_sync", "boolean"),          # whether all resources were synced (complete sync) or only those modified since the last sync (partial sync)
+                        Field("sync_method"),                       # whether this was a Pull only, Push only, Remote Push or a Pull-Push sync operation
                         migrate=migrate)
 
 # -----------------------------------------------------------------------------
@@ -113,6 +120,7 @@ table = db.define_table(tablename,
                         Field("job_resources_done", "text"),        # comma-separated list of resources synced of the currently running job
                         Field("job_resources_pending", "text"),     # comma-separated list of resources to be synced of the currently running job
                         Field("job_sync_errors", "text"),           # sync errors encountered while processing the current job
+                        Field("locked", "boolean"),
                         migrate=migrate)
 
 # -----------------------------------------------------------------------------
@@ -210,6 +218,8 @@ def s3_sync_eden_eden(peer, mode, tablenames,
     import urllib, urlparse
     import gluon.contrib.simplejson as json
 
+    print "s3_sync_eden_eden"
+
     status = Storage(
         success = False,
         errors = [],
@@ -229,14 +239,23 @@ def s3_sync_eden_eden(peer, mode, tablenames,
         msince = None
 
     errcount = 0
+    print tablenames
     for tablename in tablenames:
+        print tablename
         if tablename not in db.tables or tablename.find("_") == -1:
             status.pending.remove(tablename)
             status.done.append(tablename)
+            print "table not found"
             continue
+
+        if session.s3.sync_stop:
+            print "Got sync_stop"
+            return status
 
         prefix, name = tablename.split("_", 1)
         resource = s3xrc.resource(prefix, name)
+
+        print "resource created"
 
         if format == "json":
             _get = resource.fetch_json
@@ -245,17 +264,22 @@ def s3_sync_eden_eden(peer, mode, tablenames,
             _get = resource.fetch_xml
             _put = resource.push_xml
         else:
+            print "Error: bad format"
             status.success = False
             status.errors.append(s3xrc.ERROR.BAD_FORMAT)
             return status
 
-        sync_path = "sync/sync/%s/%s.%s" % (prefix, name, import_export_format)
+        sync_path = "sync/sync/%s/%s.%s" % (prefix, name, format)
+        print "sync_path %s" % sync_path
 
         remote_url = urlparse.urlparse(peer.instance_url)
-        if remote_url.path[-1] != "/":
+        print remote_url
+        if remote_url.path[-1:] != "/":
             remote_path = "%s/%s" % (remote_url.path, sync_path)
         else:
             remote_path = "%s%s" % (remote_url.path, sync_path)
+
+        print "remote_path=%s" % remote_path
 
         if mode in [1, 3]: # pull
 
@@ -270,11 +294,14 @@ def s3_sync_eden_eden(peer, mode, tablenames,
                                          params)
             error = None
             try:
+                print "Fetching %s" % fetch_url
                 result = _get(fetch_url,
                               username=peer.username,
                               password=peer.password,
                               proxy=proxy)
-            except SyntaxError, e:
+                print "fetched=%s" % result
+            except Exception, e:
+                print "Error %s" % e
                 result = str(e)
             else:
                 try:
@@ -282,6 +309,7 @@ def s3_sync_eden_eden(peer, mode, tablenames,
                 except:
                     error = str(result)
                 else:
+                    print result_json
                     statuscode = str(result_json.get("statuscode", ""))
                     message = str(result_json.get("message", "Unknown error"))
                     if statuscode.startswith("2"):
@@ -297,6 +325,8 @@ def s3_sync_eden_eden(peer, mode, tablenames,
             else:
                 msg = "...fetch %s - SUCCESS" % tablename
                 status.messages.append(msg)
+
+            print msg
 
         if mode in [2, 3]: # push
 
@@ -316,7 +346,8 @@ def s3_sync_eden_eden(peer, mode, tablenames,
                               password=peer.password,
                               proxy=proxy,
                               msince=last_sync)
-            except SyntaxError, e:
+            except Exception, e:
+                print "Error %s" % e
                 result = str(e)
             else:
                 try:
@@ -344,6 +375,7 @@ def s3_sync_eden_eden(peer, mode, tablenames,
         status.pending.remove(tablename)
 
     msg = "...synchronize %s - DONE (%s errors)." % (peer.instance_url, errcount)
+    status.messages.append(msg)
     status.success = True
     return status
 
@@ -360,7 +392,7 @@ def s3_sync_eden_other(peer, mode, tablenames, settings=None):
         success = False,
         errors = [],
         messages = [],
-        pending = tablenames,
+        pending = list(tablenames),
         done = []
     )
 
@@ -368,7 +400,7 @@ def s3_sync_eden_other(peer, mode, tablenames, settings=None):
 
     format = peer.format
 
-    json = False
+    is_json = False
     pull = False
     push = False
 
@@ -384,7 +416,7 @@ def s3_sync_eden_other(peer, mode, tablenames, settings=None):
     elif format == "json":
         pull = True
         push = True
-        json = True
+        is_json = True
     elif format in s3xrc.xml_import_formats and \
          os.path.exists(import_template):
             pull = True
@@ -394,7 +426,7 @@ def s3_sync_eden_other(peer, mode, tablenames, settings=None):
     elif format in s3xrc.json_import_formats and \
          os.path.exists(import_template):
             pull = True
-            json = True
+            is_json = True
             if format in s3xrc.json_export_formats and \
                os.path.exists(export_template):
                 push = True
@@ -404,21 +436,22 @@ def s3_sync_eden_other(peer, mode, tablenames, settings=None):
         return status
 
     errcount = 0
+    msg = dict(success=True,
+               message="....Synchronization with %s - START" % peer.name)
+    status.messages.append(msg)
+    print "tablenames=%s" % tablenames
     for tablename in tablenames:
+        print tablename
         if tablename not in db.tables or tablename.find("_") == -1:
             status.pending.remove(tablename)
             status.done.append(tablename)
             continue
 
+        if session.s3.sync_stop:
+            return status
+
         prefix, name = tablename.split("_", 1)
         resource = s3xrc.resource(prefix, name)
-
-        if json:
-            _get = resource.fetch_json
-            _put = resource.push_json
-        else:
-            _get = resource.fetch_xml
-            _put = resource.push_xml
 
         if pull and mode in [1, 3]: # pull
 
@@ -426,16 +459,17 @@ def s3_sync_eden_other(peer, mode, tablenames, settings=None):
 
             error = None
             try:
-                result = _get(fetch_url,
-                              username=peer.username,
-                              password=peer.password,
-                              proxy=proxy)
-            except SyntaxError, e:
-                result = str(e)
+                result = resource.fetch(fetch_url,
+                                        username=peer.username,
+                                        password=peer.password,
+                                        json=is_json,
+                                        proxy=proxy)
+            except Exception, e:
+                error = str(e)
             else:
                 try:
-                    result_json = json.loads(result)
-                except:
+                    result_json = json.loads(str(result))
+                except Exception, e:
                     error = str(result)
                 else:
                     statuscode = str(result_json.get("statuscode", ""))
@@ -446,17 +480,24 @@ def s3_sync_eden_other(peer, mode, tablenames, settings=None):
                         error = message
             if error:
                 errcount += 1
-                msg = "...fetch %s - FAILURE: %s" (tablename, error)
+                msg = dict(success=False,
+                           message="........fetch %s - FAILURE: %s" % (tablename, error))
                 status.messages.append(msg)
                 status.errors.append(error)
                 continue
             else:
-                msg = "...fetch %s - SUCCESS" % tablename
+                msg = dict(success=True,
+                           message="........fetch %s - SUCCESS" % tablename)
                 status.messages.append(msg)
 
         if push and mode in [2, 3]: # push
 
             push_url = peer.instance_url
+
+            if is_json:
+                _put = resource.push_json
+            else:
+                _put = resource.push_xml
 
             error = None
             try:
@@ -464,7 +505,7 @@ def s3_sync_eden_other(peer, mode, tablenames, settings=None):
                               username=peer.username,
                               password=peer.password,
                               proxy=proxy)
-            except SyntaxError, e:
+            except Exception, e:
                 result = str(e)
             else:
                 try:
@@ -480,19 +521,25 @@ def s3_sync_eden_other(peer, mode, tablenames, settings=None):
                         error = message
             if error:
                 errcount += 1
-                msg = "...send %s - FAILURE: %s" (tablename, error)
+                msg = dict(success=False,
+                           message="........send %s - FAILURE: %s" % (tablename, error))
                 status.messages.append(msg)
                 status.errors.append(error)
                 continue
             else:
-                msg = "...send %s - SUCCESS." % tablename
+                msg = dict(success=True,
+                           message="........send %s - SUCCESS" % tablename)
                 status.messages.append(msg)
 
         status.done.append(tablename)
         status.pending.remove(tablename)
+        print tablenames
 
-    msg = "...synchronize %s - DONE (%s errors)." % (peer.instance_url, errcount)
+    msg = dict(success=errcount and False or True,
+               message="...Synchronization with %s - DONE (%s errors)." % (peer.name, errcount))
+    status.messages.append(msg)
     status.success = True
+
     return status
 
 # -----------------------------------------------------------------------------

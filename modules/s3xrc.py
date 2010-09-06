@@ -793,7 +793,6 @@ class S3Resource(object):
 
         r._bind(self) # Bind request to resource
         r.next = None
-        r.attr = attr # Provide controller options w/o explicit args
 
         bypass = False
         output = None
@@ -828,7 +827,6 @@ class S3Resource(object):
             preprocess = hooks.get("prep", None)
         if preprocess:
             self.__dbg("pre-processing")
-            # @ToDo  Should prep be passed **attr?
             pre = preprocess(r)
             if pre and isinstance(pre, dict):
                 bypass = pre.get("bypass", False) is True
@@ -1418,6 +1416,8 @@ class S3Resource(object):
             @raise IOError: at insufficient permissions
         """
 
+        json_message = self.__manager.xml.json_message
+
         if files is not None and isinstance(files, dict):
             self.__files = Storage(files)
 
@@ -1675,7 +1675,14 @@ class S3Resource(object):
             try:
                 f = urllib2.urlopen(req)
             except urllib2.HTTPError, e:
-                response = e.read()
+                code = e.code
+                message = e.read()
+                try:
+                    message_json = json.loads(message)
+                    message = message_json.get("message", message)
+                except:
+                    pass
+                return xml.json_message(False, code, message)
             else:
                 response = f.read()
 
@@ -1790,13 +1797,13 @@ class S3Resource(object):
 
 
     # -------------------------------------------------------------------------
-    def __fetch_tree(self, url,
-                     username=None,
-                     password=None,
-                     proxy=None,
-                     json=False,
-                     template=None,
-                     ignore_errors=False, **args):
+    def fetch(self, url,
+              username=None,
+              password=None,
+              proxy=None,
+              json=False,
+              template=None,
+              ignore_errors=False, **args):
 
         """ Fetch data to the current resource from a remote URL """
 
@@ -1830,20 +1837,46 @@ class S3Resource(object):
         try:
             f = urllib2.urlopen(req)
         except urllib2.HTTPError, e:
-            response = e.read()
+            code = e.code
+            message = e.read()
+            try:
+                message_json = json.loads(message)
+                message = message_json.get("message", message)
+            except:
+                pass
+            message = "<message>PEER ERROR: %s</message>" % message
+            try:
+                markup = etree.XML(message)
+                message = markup.xpath(".//text()")
+                if message:
+                    message = " ".join(message)
+                else:
+                    message = ""
+            except etree.XMLSyntaxError:
+                pass
+            return xml.json_message(False, code, message, tree=None)
         else:
-            response = f.read()
+            response = f
 
-        if json:
-            return self.import_json(response,
-                                    template=template,
-                                    ignore_errors=ignore_errors,
-                                    args=args)
+        try:
+            if json:
+                success = self.import_json(response,
+                                        template=template,
+                                        ignore_errors=ignore_errors,
+                                        args=args)
+            else:
+                success = self.import_xml(response,
+                                        template=template,
+                                        ignore_errors=ignore_errors,
+                                        args=args)
+        except IOError, e:
+            return xml.json_message(False, 400, "LOCAL ERROR: %s" % e)
+
+        if not success:
+            error = self.__manager.error
+            return xml.json_message(False, 400, "LOCAL ERROR: %s" % error, tree=tree)
         else:
-            return self.import_xml(response,
-                                   template=template,
-                                   ignore_errors=ignore_errors,
-                                   args=args)
+            return xml.json_message()
 
 
     def fetch_xml(self, url,
@@ -1853,13 +1886,13 @@ class S3Resource(object):
                   template=None,
                   ignore_errors=False, **args):
 
-        return self.__fetch_tree(url,
-                                 username=username,
-                                 password=password,
-                                 proxy=proxy,
-                                 json=False,
-                                 template=template,
-                                 ignore_errors=ignore_errors, **args)
+        return self.fetch(url,
+                          username=username,
+                          password=password,
+                          proxy=proxy,
+                          json=False,
+                          template=template,
+                          ignore_errors=ignore_errors, **args)
 
 
     def fetch_json(self, url,
@@ -1869,13 +1902,13 @@ class S3Resource(object):
                    template=None,
                    ignore_errors=False, **args):
 
-        return self.__fetch_tree(url,
-                                 username=username,
-                                 password=password,
-                                 proxy=proxy,
-                                 json=True,
-                                 template=template,
-                                 ignore_errors=ignore_errors, **args)
+        return self.fetch(url,
+                          username=username,
+                          password=password,
+                          proxy=proxy,
+                          json=True,
+                          template=template,
+                          ignore_errors=ignore_errors, **args)
 
 
 # *****************************************************************************
@@ -4143,6 +4176,8 @@ class S3XML(object):
     S3XRC = "{%s}" % S3XRC_NAMESPACE #: LXML namespace prefix
     NSMAP = {None: S3XRC_NAMESPACE} #: LXML default namespace
 
+    namespace = "sahana"
+
     CACHE_TTL = 5 # time-to-live of RAM cache for field representations
 
     UID = "uuid"
@@ -4418,41 +4453,49 @@ class S3XML(object):
     # -------------------------------------------------------------------------
     def export_uid(self, uid):
 
-        """ Maps internal UUIDs to export format
+        """ Exports UUIDs with domain prefix
 
-            @param uid: the (internally used) UUID
+            @param uid: the UUID
 
         """
 
-        if not self.domain:
+        if not uid:
             return uid
-        x = uid.find("/")
-        if x < 1 or x == len(uid)-1:
-            return "%s/%s" % (self.domain, uid)
+
+        if uid.startswith("urn:"):
+            return uid
         else:
-            return uid
+            x = uid.find("/")
+            if (x < 1 or x == len(uid)-1) and self.domain:
+                return "%s/%s" % (self.domain, uid)
+            else:
+                return uid
 
 
     # -------------------------------------------------------------------------
     def import_uid(self, uid):
 
-        """ Maps imported UUIDs to internal format
+        """ Imports UUIDs with domain prefixes
 
-            @param uid: the (externally used) UUID
+            @param uid: the UUID
 
         """
 
-        if not self.domain:
+        if not uid or not self.domain:
             return uid
-        x = uid.find("/")
-        if x < 1 or x == len(uid)-1:
+
+        if uid.startswith("urn:"):
             return uid
         else:
-            (_domain, _uid) = uid.split("/", 1)
-            if _domain == self.domain:
-                return _uid
-            else:
+            x = uid.find("/")
+            if x < 1 or x == len(uid)-1:
                 return uid
+            else:
+                (_domain, _uid) = uid.split("/", 1)
+                if _domain == self.domain:
+                    return _uid
+                else:
+                    return uid
 
 
     # Data export =============================================================
@@ -5314,19 +5357,14 @@ class S3XML(object):
 
         code = '"statuscode": "%s"' % status_code
 
-        if not success:
-            if message:
-                return '{%s, %s, "message": "%s", "tree": %s }' % \
-                       (status, code, message, tree)
-            else:
-                return '{%s, %s, "tree": %s }' % \
-                       (status, code, tree)
-        else:
-            if message:
-                return '{%s, %s, "message": "%s"}' % \
-                       (status, code, message)
-            else:
-                return '{%s, %s}' % \
-                       (status, code)
+        output = "{%s, %s" % (status, code)
+
+        if message:
+            output = '%s, "message": "%s"' % (output, message)
+
+        if not success and tree:
+            output = '%s, "tree": "%s"' % (output, tree)
+
+        return "%s}" % output
 
 # *****************************************************************************

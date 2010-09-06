@@ -100,6 +100,17 @@ def shn_field_represent(field, row, col):
                     represent = ur[:48 - 3].encode("utf8") + "..."
     return represent
 
+
+def shn_strip_aadata_extension(url):
+
+    """ strip away ".aaData" extension """
+
+    url = str(url).replace(".aaData", "")
+    url = str(url).replace(".aadata", "")
+
+    return url
+
+
 def shn_field_represent_sspage(field, row, col, linkto=None):
 
     """ Represent columns in SSPage responses """
@@ -116,7 +127,6 @@ def shn_field_represent_sspage(field, row, col, linkto=None):
             href = linkto(id)
         except TypeError:
             href = linkto % id
-        # strip away ".aaData" extension => dangerous!
         href = shn_strip_aadata_extension(href)
         return A( shn_field_represent(field, row, col), _href=href).xml()
     else:
@@ -925,46 +935,72 @@ def shn_read(r, **attr):
 #
 # shn_linkto ------------------------------------------------------------------
 #
-def shn_linkto(r, sticky=False):
+def shn_linkto(r, sticky=None, authorised=None, update=None, native=False):
 
-    """ Helper that supplies a linkto function, used in list views.
-        Note: Except for the detail that this does not strip the r and
-        sticky params off shn_list_linkto, it is just doing:
-        return lambda field: shn_list_linkto(field, r=r, sticky=sticky)
-        The linkto functions only ever get called with one argument.
-        (Comment provided in the hope of assisting someone else's code
-        tracing to puzzle out how linkto works.)
+    """ Return a function that translates record IDs into links to open the
+        respective record for read or update.
+
+        @param r:       the current S3Request
+        @param update:  render update URLs rather than read URLs if user is permitted
+
     """
 
-    def shn_list_linkto(field, r=r, sticky=sticky):
-        if r.component:
+    c = None
+    f = None
+
+    if r.component:
+        if authorised is None:
             authorised = shn_has_permission("update", r.component.tablename)
-            if authorised:
-                return r.component.attr.linkto_update or \
-                       URL(r=request, args=[r.id, r.component_name, field, "update"],
-                           vars={"_next":URL(r=request, args=request.args, vars=request.vars)})
-            else:
-                return r.component.attr.linkto or \
-                       URL(r=request, args=[r.id, r.component_name, field],
-                           vars={"_next":URL(r=request, args=request.args, vars=request.vars)})
+        if authorised and update:
+            linkto = r.component.attr.get("linkto_update", None)
         else:
+            linkto = r.component.attr.get("linkto", None)
+        if native:
+            # link to native component controller (be sure that you have one)
+            c = r.component.prefix
+            f = r.component.name
+    else:
+        if authorised is None:
             authorised = shn_has_permission("update", r.tablename)
-            if authorised:
-                if sticky:
-                    # Render "sticky" update form (returns to itself)
-                    _next = str(URL(r=request, args=[field], vars=request.vars))
-                     # need to avoid double URL-encoding if "[id]"
-                    _next = str(_next).replace("%5Bid%5D", "[id]")
+        if authorised and update:
+            linkto = response.s3.get("linkto_update", None)
+        else:
+            linkto = response.s3.get("linkto", None)
+
+    def shn_list_linkto(record_id,
+                        r=r,
+                        c=c,
+                        f=f,
+                        linkto=linkto,
+                        update=authorised and update):
+
+        if linkto:
+            try:
+                url = str(linkto(record_id))
+            except TypeError:
+                url = linkto % record_id
+            return url
+        else:
+            if r.component:
+                if c and f:
+                    args = [record_id]
                 else:
-                    _next = URL(r=request, args=request.args, vars=request.vars)
-                return response.s3.linkto_update or \
-                       URL(r=request, args=[field, "update"])
+                    c = request.controller
+                    f = request.function
+                    args = [r.id, r.component_name, record_id]
+                if update:
+                    return str(URL(r=request, c=c, f=f, args=args + ["update"], vars=request.vars))
+                else:
+                    return str(URL(r=request, c=c, f=f, args=args, vars=request.vars))
             else:
-                return response.s3.linkto or \
-                       URL(r=request, args=[field],
-                           vars={"_next":URL(r=request, args=request.args, vars=request.vars)})
+                args = [record_id]
+                if update:
+                    return str(URL(r=request, c=c, f=f, args=args + ["update"]))
+                else:
+                    return str(URL(r=request, c=c, f=f, args=args))
 
     return shn_list_linkto
+
 
 #
 # shn_list --------------------------------------------------------------------
@@ -1164,7 +1200,7 @@ def shn_list(r, **attr):
                                onvalidation=onvalidation,
                                onaccept=_onaccept,
                                message=message,
-                               next=r.there())            
+                               next=r.there())
 
             # Cancel button?
             #form[0].append(TR(TD(), TD(INPUT(_type="reset", _value="Reset form"))))
@@ -1193,10 +1229,10 @@ def shn_list(r, **attr):
                            _class="action-btn")
 
             shn_custom_view(r, "list_create.html")
-            
+
             if deployment_settings.get_ui_navigate_away_confirm():
                 form.append( SCRIPT ("EnableNavigateAwayConfirm();") )
-            
+
             output.update(form=form, addtitle=addtitle, showaddbtn=showaddbtn)
 
         else:
@@ -1380,10 +1416,10 @@ def shn_create(r, **attr):
                                         _value="Cancel",
                                         _onclick="window.location='%s';" %
                                                  response.s3.cancel))
-        
+
         if deployment_settings.get_ui_navigate_away_confirm():
             form.append( SCRIPT ("EnableNavigateAwayConfirm();") )
-        
+
         # Put the form into output
         output.update(form=form)
 
@@ -1420,10 +1456,10 @@ def shn_create(r, **attr):
 
         form = crud.create(table,
                            onvalidation=onvalidation, onaccept=_onaccept)
-        
+
         if deployment_settings.get_ui_navigate_away_confirm():
             form.append( SCRIPT ("EnableNavigateAwayConfirm();") )
-        
+
         response.view = "plain.html"
         return dict(item=form)
 
@@ -1593,7 +1629,7 @@ def shn_update(r, **attr):
 
         if deployment_settings.get_ui_navigate_away_confirm():
             form.append( SCRIPT ("EnableNavigateAwayConfirm();") )
-            
+
         output.update(form=form)
 
         # Restore comment
@@ -1635,10 +1671,10 @@ def shn_update(r, **attr):
                            deletable=False)
 
         response.view = "plain.html"
-        
+
         if deployment_settings.get_ui_navigate_away_confirm():
-            form.append( SCRIPT ("EnableNavigateAwayConfirm();") )        
-        
+            form.append( SCRIPT ("EnableNavigateAwayConfirm();") )
+
         return dict(item=form)
 
     elif r.representation == "url":
@@ -2047,172 +2083,58 @@ def shn_rest_controller(module, resource, **attr):
     s3xrc.set_handler("search", shn_search)
     s3xrc.set_handler("copy", shn_copy)
 
-    res, req = s3xrc.parse_request(module, resource, session, request, response)
-    output = res.execute_request(req, **attr)
+    res, r = s3xrc.parse_request(module, resource, session, request, response)
+    output = res.execute_request(r, **attr)
+
+    # Add default action buttons in list views:
+    if isinstance(output, dict) and not r.method:
+        c = r.component
+        if response.s3.actions is None:
+            native = False
+            if c:
+                _attr = c.attr
+                authorised = shn_has_permission("update", c.tablename)
+                if s3xrc.model.has_components(c.prefix, c.name):
+                    # Use the component's native controller for CRU(D), need
+                    # to make sure you have one, or override by native=False
+                    native = attr.get("native", True)
+            else:
+                _attr = attr
+                authorised = shn_has_permission("update", r.tablename)
+
+            listadd = _attr.get("listadd", True)
+            editable = _attr.get("editable", True)
+            deletable = _attr.get("deletable", True)
+            copyable = _attr.get("copyable", False)
+
+            # URL to open the resource
+            open_url = shn_linkto(r,
+                                  authorised=authorised,
+                                  update=editable,
+                                  native=native)("[id]")
+
+            # Add action buttons for Open/Delete/Copy as appropriate
+            shn_action_buttons(r,
+                               deletable=deletable,
+                               copyable=copyable,
+                               read_url=open_url,
+                               update_url=open_url)
+
+            # Override add button for native controller use (+automatic linking)
+            if native and not listadd:
+                if shn_has_permission("create", c.tablename):
+                    label = shn_get_crud_string(c.tablename,
+                                                "label_create_button")
+                    c = r.resource.components[c.name]
+                    fkey = "%s.%s" % (c.name, c.fkey)
+                    vars = request.vars.copy()
+                    vars.update({fkey: r.id})
+                    url = str(URL(r=request, c=c.prefix, f=c.name,
+                                  args=["create"], vars=vars))
+                    add_btn = A(label, _href=url, _class="action-btn")
+                    output.update(add_btn=add_btn)
 
     return output
-
-#
-# Helpers for components with components --------------------------------------
-#
-
-"""
-The following functions assist in overriding the "Add <component>" and
-"Open" buttons on component list forms, to send them to the component's
-native form.
-
-If a component has components of its own, then only the component
-itself currently is shown in the tabbed display of the parent
-resource.  This is not good for components like RAT where the
-bare assessment form does not make sense without its own components.
-So (for now), we let the component's native form handle adds and
-updates.
-
-The add component url is modified by calling shn_component_add_linkto
-and using that in an add button.  The open buttons are passed to
-shn_action_buttons in postp, since shn_action_buttons will replace
-anything we would have passed via linkto in prep.
-
-@ToDo:
-An alternative to sending operations for a component with components to
-their own forms would be to include a component's tabbed display in a
-tab of its primary resource.  OTOH, someone said, two rows of tabs will
-take up too much vertical space.  I talked to Dominic about that worry
-over vertical space, and he might like sending the component to its own
-native form better, especially if it's simple or can be automated.
-
-We both want a button on the component's tabbed page that lets to user
-go back to the parent resource, like [Done; Return to Shelter XYZ].
-And want Dominic's "breadcrumb" menu enabled.
-"""
-
-def shn_strip_aadata_extension(url):
-    """ strip away ".aaData" extension => dangerous! """
-
-    url = str(url).replace(".aaData", "")
-    url = str(url).replace(".aadata", "")
-
-    return url
-
-def shn_component_postp(r, output):
-    """
-    Add action buttons, but with custom url for read, update, add if
-    it's for a component that itself has components.
-    Usage:  Call this from the postp for controllers where the primary
-    resource has components that my have components.
-    """
-
-    # Is this a component that has components itself?
-    if r.component and s3xrc.model.has_components(r.component.prefix,
-                                                  r.component_name):
-        # Yes -- it gets non-default urls.
-
-        # Buttons on a list element.
-        read_url = shn_component_linkto(r)
-        update_url = shn_component_linkto(r, update=True)
-        shn_action_buttons(r, deletable=False,
-                           read_url=read_url, update_url=update_url)
-
-        if r.representation in shn_interactive_view_formats:
-            # Add an add button in the listadd=False case.  This is non-standard
-            # in two ways:  It uses the component's native module context so
-            # that once the new component is created, it will get its tabbed
-            # display.  And it adds the primary id in vars, where it will be
-            # picked up in the component controller and set as a default for
-            # the primary join field.
-
-            authorised = shn_has_permission("update", r.component.tablename)
-            # listadd defaults to true if not specified.
-            listadd = not r.component.attr or r.component.attr.get("listadd", True)
-
-            if authorised and not listadd:
-
-                label_create_button = shn_get_crud_string(
-                    r.component.tablename, "label_create_button")
-                href_add = shn_component_add_linkto(r)
-                add_btn = A(label_create_button,
-                            _href=href_add,
-                            _class="action-btn")
-                output.update(add_btn=add_btn)
-
-    else:
-        # Primary resource or simple component without its own components.
-        shn_action_buttons(r, deletable=False)
-
-    return output
-
-def shn_component_linkto(r, update=False):
-    """
-    Currently components that themselves have components only show the
-    form for their primary resource in the tabbed display.  As a workaround,
-    one can turn off listadd, and for the list "open" buttons, dispatch to
-    the component's own native form, and add a "done" button to return
-    to the current primary resource record afterward.
-
-    shn_component_linkto provides urls for buttons on component list entries.
-    It produces a read url if update is False, or an update url if True.
-    The component id field in the url contains "[id]", which gets replaced
-    elsewhere.  Usage -- in postp, do:
-
-    read_url = shn_component_linkto(r)
-    update_url = shn_component_linkto(r, update=True)
-    shn_action_buttons(jr, deletable=False,
-                       read_url=read_url, update_url=update_url)
-    """
-
-    if r.component:
-
-        vars = request.vars
-        authorised = shn_has_permission("update", r.component.tablename)
-
-        if authorised and update:
-            url = str(URL(r=request, c=r.component.prefix, f=r.component_name,
-                          args=["[id]", "update"], vars=vars))
-
-        else:
-            url = str(URL(r=request, c=r.component.prefix, f=r.component_name,
-                          args=["[id]"], vars=vars))
-
-    else:
-        # If this is called for the primary resource, defer to
-        # shn_linkto / shn_list_linkto.
-        url = shn_linkto(r)("[id]")
-
-    return shn_strip_aadata_extension(url)
-
-def shn_component_add_linkto(r):
-    """
-    Provides url to override the add button on component list forms.
-    The url includes the primary
-    resource id because the component add form needs to prefill the field
-    that joins to the primary resource.
-
-    Usage:  In postp, if the call is for a component with components (so
-    we want the work to be done in that component's module context), and
-    if the user is authorized, and if listadd is false, do:
-
-    href_add = shn_component_add_linkto(r)
-
-    Then use that to form an add button.
-    """
-
-    if r.component and shn_has_permission("create", r.component.tablename):
-
-        vars = request.vars.copy()
-        component, pkey, fkey = s3xrc.model.get_component(module,
-                                                          request.function,
-                                                          r.component_name)
-        var_key = "%s.%s" % (r.component_name, fkey)
-        vars.update({var_key: r.id})
-        url = str(URL(r=request, c=r.component.prefix, f=r.component_name,
-                  args=["create"], vars=vars))
-
-        # Strip ".aaData" extension
-        url = shn_strip_aadata_extension(url)
-        return url
-
-    else:
-        return ""
 
 # END
 # *****************************************************************************

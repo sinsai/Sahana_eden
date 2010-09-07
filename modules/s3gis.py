@@ -714,6 +714,11 @@ class GIS(object):
             lon_max = bounds[2]
             lat_max = bounds[3]
             
+            if lon_min == lon:
+                feature_type = 1 # Point
+            else:
+                feature_type = 3 # Polygon
+
             # Locate Parent
             # @ToDo: Extend to search alternate names
             if parent:
@@ -730,9 +735,9 @@ class GIS(object):
             
             # Add entry to database
             if uuid:
-                _locations.insert(name=name, level=level, parent=parent, lat=lat, lon=lon, wkt=wkt, lon_min=lon_min, lon_max=lon_max, lat_min=lat_min, lat_max=lat_max, uuid=uuid)
+                _locations.insert(name=name, level=level, parent=parent, lat=lat, lon=lon, wkt=wkt, lon_min=lon_min, lon_max=lon_max, lat_min=lat_min, lat_max=lat_max, gis_feature_type=feature_type, uuid=uuid)
             else:
-                _locations.insert(name=name, level=level, parent=parent, lat=lat, lon=lon, wkt=wkt, lon_min=lon_min, lon_max=lon_max, lat_min=lat_min, lat_max=lat_max)
+                _locations.insert(name=name, level=level, parent=parent, lat=lat, lon=lon, wkt=wkt, lon_min=lon_min, lon_max=lon_max, lat_min=lat_min, lat_max=lat_max, gis_feature_type=feature_type)
         
         # Better to give user control, can then dry-run
         #db.commit()
@@ -3612,7 +3617,9 @@ OpenLayers.Util.extend( selectPdfControl, {
 
 # -----------------------------------------------------------------------------
 class Geocoder(object):
-    " Base class for all Geocoders "
+    """
+        Base class for all Geocoders
+    """
 
     def __init__(self, db):
         " Initializes the page content object "
@@ -3621,7 +3628,10 @@ class Geocoder(object):
 
 # -----------------------------------------------------------------------------
 class GoogleGeocoder(Geocoder):
-    " Google Geocoder module "
+    """
+        Google Geocoder module
+        http://code.google.com/apis/maps/documentation/javascript/v2/reference.html#GGeoStatusCode
+    """
 
     def __init__(self, location, db):
         " Initialise parent class & make any necessary modifications "
@@ -3643,7 +3653,9 @@ class GoogleGeocoder(Geocoder):
 
 # -----------------------------------------------------------------------------
 class YahooGeocoder(Geocoder):
-    " Yahoo Geocoder module "
+    """
+        Yahoo Geocoder module
+    """
 
     def __init__(self, location, db):
         " Initialise parent class & make any necessary modifications "

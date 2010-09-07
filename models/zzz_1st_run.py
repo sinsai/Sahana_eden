@@ -7,13 +7,12 @@
 # Deployments can change settings live via appadmin
 
 # Set to False in Production (to save 1x DAL hit every page)
-if db(db["s3_setting"].id > 0).count() or \
-   not deployment_settings.get_base_prepopulate():
-    empty = False
+if not deployment_settings.get_base_prepopulate() or db(db["s3_setting"].id > 0).count():
+    populate = False
 else:
-    empty = True
+    populate = True
 
-if empty:
+if populate:
 
     # Themes
     tablename = "admin_theme"
@@ -103,6 +102,17 @@ if empty:
         table.insert( name = "Health" )
         table.insert( name = "Protection and Human Rights and Rule of Law" )
         table.insert( name = "Urban Search and Rescue" )
+    
+    # Person Registry
+    tablename = "pr_person"
+    table = db[tablename]
+    # Should work for our 3 supported databases: sqlite, MySQL & PostgreSQL
+    field = "first_name"
+    db.executesql("CREATE INDEX %s__idx on %s(%s);" % (field, tablename, field))
+    field = "middle_name"
+    db.executesql("CREATE INDEX %s__idx on %s(%s);" % (field, tablename, field))
+    field = "last_name"
+    db.executesql("CREATE INDEX %s__idx on %s(%s);" % (field, tablename, field))
 
     # Synchronisation
     tablename = "sync_setting"
@@ -620,6 +630,9 @@ if empty:
                                    "private", "import",
                                    "countries.csv")
         table.import_from_csv_file(open(import_file,"r"))
+    # Should work for our 3 supported databases: sqlite, MySQL & PostgreSQL
+    field = "name"
+    db.executesql("CREATE INDEX %s__idx on %s(%s);" % (field, tablename, field))
 
     # Authorization
     # User Roles (uses native Web2Py Auth Groups)

@@ -154,7 +154,8 @@ if deployment_settings.has_module(module):
     table.name.label = T("Title")
     table.suggested_by.default = auth.user.id if auth.user else 0
     table.problem_id.label = T("Problem")
-    table.problem_id.default = get_last_problem_id()
+    # Breaks on 1st_run with prepopulate=False, so moved to controller
+    #table.problem_id.default = get_last_problem_id()
     table.problem_id.requires = IS_IN_DB(db, "delphi_problem.id", "%(id)s: %(name)s")
     table.problem_id.represent = lambda id: (id and [db(db.delphi_problem.id == id).select(limitby=(0, 1)).first().name] or ["None"])[0]
 

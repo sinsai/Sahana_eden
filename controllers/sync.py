@@ -391,8 +391,6 @@ def sync():
         # Do not allow URL methods
         if r.method:
             return False
-        # Neutralize push limit of the resource
-        r.resource.push_limit = None
         return True
     response.s3.prep = prep
 

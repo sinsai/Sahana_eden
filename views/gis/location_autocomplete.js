@@ -550,7 +550,7 @@ $(function() {
     $('#gis_location_name_tooltip').cluetip({activation: 'hover', sticky: false, splitTitle: '|'});
 
     // Autocomplete-enable the Name Input
-    $('#gis_location_name').autocomplete('{{=URL(r=request, c="gis", f="location", args="search.json", vars={"filter":"~", "field":"name"})}}', {
+    $('#gis_location_name').autocomplete('{{=URL(r=request, c="gis", f="location", args="search.json", vars={"filter":"~", "field":"name", "exclude_field":"level", "exclude_value":"XX"})}}', {
         extraParams: {
             // Read 'parent' field dynamically
             // @ ToDo Disabled temporarily until the bad Lx data is fixed

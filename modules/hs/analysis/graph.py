@@ -32,9 +32,9 @@
 """
 
 
-from ..utils.dictionary import DefaultDictionary
+from ...utils.dictionary import DefaultDictionary
 
-from ..graph.types import ScatterPlot, DoubleScatterPlot, BarGraph, LineChart, PieChart
+from savage.graph import ScatterPlot, DoubleScatterPlot, BarGraph, LineChart, PieChart
 
 from rpy2 import rinterface as R
 from rpy2.robjects import RFormula

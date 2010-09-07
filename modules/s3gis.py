@@ -3649,6 +3649,7 @@ class GoogleGeocoder(Geocoder):
     """
         Google Geocoder module
         http://code.google.com/apis/maps/documentation/javascript/v2/reference.html#GGeoStatusCode
+        Should convert this to be a thin wrapper for modules.geopy.geocoders.google
     """
 
     def __init__(self, location, db):
@@ -3673,6 +3674,7 @@ class GoogleGeocoder(Geocoder):
 class YahooGeocoder(Geocoder):
     """
         Yahoo Geocoder module
+        Should convert this to be a thin wrapper for modules.geopy.geocoders.yahoo
     """
 
     def __init__(self, location, db):

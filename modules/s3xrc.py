@@ -990,6 +990,9 @@ class S3Resource(object):
                 r.next = URL(r=r.request, f=self.name)
             return None
 
+        elif method == "barchart":
+            authorised = permit("read", tablename)
+
         else:
             raise HTTP(501, body=self.ERROR.BAD_METHOD)
 

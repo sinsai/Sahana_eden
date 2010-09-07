@@ -1,38 +1,3 @@
-"""                                                                                                                            
-    Healthscapes Geolytics Module                                                                                                   
-                                                                                                                                                                               
-                                                                                                                               
-    @author: Nico Preston <nicopresto@gmail.com>                                                                                 
-    @author: Colin Burreson <kasapo@gmail.com>                                                                         
-    @author: Zack Krejci <zack.krejci@gmail.com>                                                                             
-    @copyright: (c) 2010 Healthscapes                                                                             
-    @license: MIT                                                                                                              
-                                                                                                                               
-    Permission is hereby granted, free of charge, to any person                                                                
-    obtaining a copy of this software and associated documentation                                                             
-    files (the "Software"), to deal in the Software without                                                                    
-    restriction, including without limitation the rights to use,                                                               
-    copy, modify, merge, publish, distribute, sublicense, and/or sell                                                          
-    copies of the Software, and to permit persons to whom the                                                                  
-    Software is furnished to do so, subject to the following                                                                   
-    conditions:                                                                                                                
-          
-    The above copyright notice and this permission notice shall be                                                             
-    included in all copies or substantial portions of the Software.                                                            
-                                                                                                                               
-    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,                                                            
-    EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES                                                            
-    OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND                                                                   
-    NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT                                                                
-    HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY,                                                               
-    WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING                                                               
-    FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR                                                              
-    OTHER DEALINGS IN THE SOFTWARE.                                                                                            
-                                                                                                                               
-"""
-
-
-
 class Matrix (object):
     def __init__ (self, rows, cols, array=None):
         super (Matrix, self).__init__ ()
@@ -63,13 +28,13 @@ class Matrix (object):
     def set (self, entry, i, j):
         self.array [self.index (i, j)] = entry
 
-    def __getattr__ (self, key):
+    """def __getattr__ (self, key):
         if key == 'x':
             return self.get (0, 0)
         elif key == 'y':
             return self.get (1, 0)
         else:
-            raise AttributeError ('No such attribute')
+            raise AttributeError ('No such attribute')"""
 
     def __setattr__ (self, key, value):
         if key == 'x':
@@ -95,7 +60,7 @@ class Matrix (object):
         return Matrix (self.rows, self.cols, negative)
 
     def __isub__ (self, ob):
-        ob = -ob
+        #ob = -ob
         self.array = (self + (-ob)).array
         return self
 
@@ -124,7 +89,6 @@ class Matrix (object):
         for a, b in zip (self.array, matrix.array):
             summation.append (a + b)
         return summation
-
 
     def scalarAddition (self, scalar):
         summation = []
@@ -159,8 +123,20 @@ class Matrix (object):
             product.append (element * scalar)
         return Matrix (self.rows, self.cols, product)
 
-def Vector2D (x, y):
-    return Matrix (3, 1, [x, y, 1])
+    def vector (self):
+        if self.rows != 1:
+            raise RuntimeError ('Cannot be cast to vector: Bad row dim')
+        if self.cols != 3:
+            raise RuntimeError ('Cannot be cast to vector: Bad col dim')
+        x = self.get (0, 0)
+        y = self.get (1, 0)
+        w = self.get (2, 0)
+        v = Vector (x, y)
+        if w != 0:
+            v.x /= w
+            v.y /= w
+        return v
+
 
 def identity (rows):
     sqr = pow (rows, 2)
@@ -175,10 +151,46 @@ def identity (rows):
         m.set (1, i, i)
     return m
 
-class VStruct:
+class Vector:
     def __init__ (self, x, y):
         self.x = x
         self.y = y
+
+    def matrix (self):
+        return Matrix (3, 1, [self.x, self.y, 1.0])
+
+    def __add__ (self, v):
+        return Vector (self.x + v.x, self.y + v.y)
+
+    def __iadd__ (self, v):
+        self.x += v.x
+        self.y += v.y
+        return self
+
+    def __sub__ (self, v):
+        return Vector (self.x - v.x, self.y - v.y)
+
+    def __mul__ (self, scalar):
+        return Vector (self.x * scalar, self.y * scalar)
+
+    def __imul__ (self, scalar):
+        self.x *= scalar
+        self.y *= scalar
+
+    def __str__ (self):
+        return str(self.x) + ' ' + str(self.y)
+
+    def matrix (self, dir = False):
+        if dir:
+            dir = 0
+        else:
+            dir = 1
+        return Matrix (3, 1, [self.x, self.y, dir])
+
+"""class VStruct:
+    def __init__ (self, x, y):
+        self.x = x
+        self.y = y"""
         
 
 #class Vector2D (Matrix):

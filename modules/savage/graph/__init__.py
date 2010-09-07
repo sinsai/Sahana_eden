@@ -164,7 +164,7 @@ class BarGraph (UnifiedGraph):
         self.canvas.addSpace ()
 
     def addBar (self, name, data):
-        self.canvas.addBar (name, '', data)
+        self.canvas.addBar (name, None, data)
         #if self.horizontal:
         #    self.ylabels.append (name)
 

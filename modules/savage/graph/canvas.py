@@ -329,9 +329,9 @@ class BarCanvas (GraphCanvas):
         rect.xml['has-tooltip'] = True
         if group and name:
             rect.xml['tooltip-text'] = str(group) + ': ' + str(name)
-        elif not name:
+        elif group:
             rect.xml['tooltip-text'] = str(group)
-        elif not group:
+        elif name:
             rect.xml['tooltip-text'] = str(name)
         else:
             rect.xml['has-tooltip'] = False
@@ -346,15 +346,34 @@ class BarCanvas (GraphCanvas):
         for child in self.data:
             ylist.append (child.height)
         
-        minY = min (ylist)
-        maxY = max (ylist)
+        if len (ylist):
+            minY = min (ylist)
+            maxY = max (ylist)
 
-        rangeY = maxY - minY
-        self.minX = 0
-        self.maxX = self.lastBar
-        #self.minY = minY - minY * .05
-        self.minY = minY - rangeY * .05
-        self.maxY = maxY + rangeY * .05
+            rangeY = maxY - minY
+            
+            if rangeY:
+                self.minY = minY - rangeY * .05
+                self.maxY = maxY + rangeY * .05
+            else:
+                self.minY = minY - 1.0
+                self.maxY = maxY + 1.0
+
+            if self.lastBar:
+                self.minX = 0
+                self.maxX = self.lastBar
+            
+            else:
+                self.minX = 0
+                self.maxX = 1
+
+        else:
+
+            self.minX = 0.0
+            self.maxX = 1.0
+            self.minY = 0.0
+            self.maxY = 1.0
+
 
         self.xml['minX'] = self.minX
         self.xml['maxX'] = self.maxX
@@ -371,6 +390,10 @@ class BarCanvas (GraphCanvas):
                 child.style.fill = self.colors[key]
             except KeyError:
                 child.style.fill = self.graph ().settings.barColor
+            if child.xml['has-tooltip']:
+                child.xml['has-highlight'] = True
+                child.xml['default-fill'] = child.style.fill
+                child.xml['highlight-fill'] = child.style.fill.interpolate (white, .35)
 
     def barHeights (self):
         for child in self.data:

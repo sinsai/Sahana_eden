@@ -180,6 +180,7 @@ class BaseGraph (PrintableCanvas):
     def formatSettings (self, settings):
         addAttr (settings, 'width', float, 300.0)
         addAttr (settings, 'height', float, 200.0)
+        addAttr (settings, 'fixedWidth', float, None)
 
         addAttr (settings, 'titleSize', float, 15.0)
         addAttr (settings, 'xLabelSize', float, 10.0)
@@ -290,7 +291,12 @@ class BaseGraph (PrintableCanvas):
 
     def setSVG (self):
         self.finalize ()
-        return PrintableCanvas.setSVG (self)
+        attr = PrintableCanvas.setSVG (self)
+        if self.settings.fixedWidth:
+            height = self.settings.fixedWidth * (self.settings.height / self.settings.width)
+            attr.update ([('width', self.settings.fixedWidth),
+                          ('height', height)]) 
+        return attr
 
     def finalize (self):
         self.dataGroup.transform.set (-1, 1, 1)
@@ -374,8 +380,9 @@ class UnifiedGraph (BaseGraph):
       positionText ();
     }
 
-    this.move = function (v) {
-      var o = getOffset (v);
+    this.move = function (target) {
+      var v = pos (target)
+      var o = getOffset (target);
       var transform = 'translate(' + (v.x + o.x) + ' ' + (v.y + o.y) + ')'
       tooltipGroup.setAttribute ('transform', transform);
     }
@@ -408,8 +415,14 @@ class UnifiedGraph (BaseGraph):
 
     }
 
-    var getOffset = function (v) {
+    var getOffset = function (target) {
+      var v = pos (target);
       var x, y;
+      var targetWidth;
+      if (target.getAttribute ('width'))
+        targetWidth = parseFloat (target.getAttribute ('width'));
+      else
+        targetWidth = 0;
       var width = parseFloat (tooltipTextNode.getBBox().width);
       var height = parseFloat (tooltipTextNode.getBBox ().height);
       quad = getView (canvasRoot).quadrant (v);
@@ -419,11 +432,11 @@ class UnifiedGraph (BaseGraph):
         y = yOffset;
         break;
       case 2:
-        x = xOffset;
+        x = xOffset + targetWidth;
         y = yOffset;
         break;
       case 3:
-        x = xOffset;
+        x = xOffset + targetWidth;
         y = -(height + yPadding + yOffset);
         break;
       case 4:
@@ -460,7 +473,7 @@ class UnifiedGraph (BaseGraph):
       var target = event.target;
       p = pos (target);  
       this.setText (target.getAttribute ('tooltip-text'));
-      this.move (pos (target));
+      this.move (target);
       this.show ();
     }
 
@@ -470,7 +483,7 @@ class UnifiedGraph (BaseGraph):
 
     var setEvents = function (node) {
       if (node.getAttribute) {
-        if (node.getAttribute ('has-tooltip')) {
+        if (node.getAttribute ('has-tooltip') && node.getAttribute ('has-tooltip') != 'False') {
           registerEvent (node, 'mouseover', onHover, this);
           registerEvent (node, 'mouseout', unHover, this);
         }

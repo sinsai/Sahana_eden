@@ -1991,6 +1991,7 @@ def shn_search(r, **attr):
 
 
 def shn_barchart (r, **attr):
+    import simplejson
 
     # Get all the variables and format them if needed
     valKey = r.request.vars.get ('value')
@@ -2007,7 +2008,7 @@ def shn_barchart (r, **attr):
 
     settings = r.request.vars.get ('settings')
     if settings:
-        settings = json.loads (settings)
+        settings = simplejson.loads (settings)
     else:
         settings = {}
 

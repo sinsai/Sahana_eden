@@ -73,7 +73,7 @@ def define_map(window=False, toolbar=False):
     popup_label = Tstr("Incident")
     # Default (but still better to define here as otherwise each feature needs to check it's feature_class)
     marker = "marker_red"
-    incidents = gis.get_feature_layer(module, resource, layername, popup_label, marker, active=False)
+    incidents = gis.get_feature_layer(module, resource, layername, popup_label, marker, active=True, polygons=False)
     
     # Shelters
     module = "cr"
@@ -81,7 +81,7 @@ def define_map(window=False, toolbar=False):
     layername = Tstr("Shelters")
     popup_label = Tstr("Shelter")
     marker = "shelter"
-    shelters = gis.get_feature_layer(module, resource, layername, popup_label, marker, active=True)
+    shelters = gis.get_feature_layer(module, resource, layername, popup_label, marker, active=True, polygons=False)
     
     # Schools
     #module = "sitrep"
@@ -89,7 +89,7 @@ def define_map(window=False, toolbar=False):
     #layername = Tstr("Schools")
     #popup_label = Tstr("School")
     #marker = "school"
-    #schools = gis.get_feature_layer(module, resource, layername, popup_label, marker, active=True)
+    #schools = gis.get_feature_layer(module, resource, layername, popup_label, marker, active=True, polygons=False)
     
     # Requests
     module = "rms"
@@ -97,7 +97,7 @@ def define_map(window=False, toolbar=False):
     layername = Tstr("Requests")
     popup_label = Tstr("Request")
     marker = "marker_yellow"
-    requests = gis.get_feature_layer(module, resource, layername, popup_label, marker, active=True)
+    requests = gis.get_feature_layer(module, resource, layername, popup_label, marker, active=True, polygons=False)
     
     # Assessments
     module = "sitrep"
@@ -105,7 +105,7 @@ def define_map(window=False, toolbar=False):
     layername = Tstr("Assessments")
     popup_label = Tstr("Assessment")
     marker = "marker_green"
-    assessments = gis.get_feature_layer(module, resource, layername, popup_label, marker, active=True)
+    assessments = gis.get_feature_layer(module, resource, layername, popup_label, marker, active=True, polygons=False)
     
     # Activities
     module = "project"
@@ -113,7 +113,7 @@ def define_map(window=False, toolbar=False):
     layername = Tstr("Activities")
     popup_label = Tstr("Activity")
     marker = "activity"
-    activities = gis.get_feature_layer(module, resource, layername, popup_label, marker, active=True)
+    activities = gis.get_feature_layer(module, resource, layername, popup_label, marker, active=True, polygons=False)
     
     feature_queries = [
                        incidents,
@@ -299,12 +299,6 @@ def location():
         # We've been called from the Location Selector widget
         table.addr_street.readable = table.addr_street.writable = False
     
-    # Post-processor
-    def user_postp(jr, output):
-        shn_action_buttons(jr)
-        return output
-    response.s3.postp = user_postp
-
     response.s3.pagination = True
     output = shn_rest_controller(module, resource, listadd=False)
 
@@ -517,12 +511,6 @@ def apikey():
         msg_record_deleted = T("Key deleted"),
         msg_list_empty = T("No Keys currently defined"))
 
-    # Post-processor
-    def user_postp(jr, output):
-        shn_action_buttons(jr, deletable=False)
-        return output
-    response.s3.postp = user_postp
-
     output = shn_rest_controller(module, resource, deletable=False, listadd=False)
 
     if not "gis" in response.view:
@@ -600,12 +588,6 @@ def feature_class():
         msg_record_deleted = T("Feature Class deleted"),
         msg_list_empty = T("No Feature Classes currently defined"))
 
-    # Post-processor
-    def user_postp(jr, output):
-        shn_action_buttons(jr)
-        return output
-    response.s3.postp = user_postp
-
     output = shn_rest_controller(module, resource)
 
     if not "gis" in response.view and response.view != "popup.html":
@@ -644,12 +626,6 @@ def feature_layer():
         msg_record_modified = T("Feature Layer updated"),
         msg_record_deleted = T("Feature Layer deleted"),
         msg_list_empty = T("No Feature Layers currently defined"))
-
-    # Post-processor
-    def user_postp(jr, output):
-        shn_action_buttons(jr)
-        return output
-    response.s3.postp = user_postp
 
     crud.settings.create_onvalidation = lambda form: feature_layer_query(form)
     crud.settings.update_onvalidation = lambda form: feature_layer_query(form)
@@ -714,12 +690,6 @@ def marker():
         msg_record_deleted = T("Marker deleted"),
         msg_list_empty = T("No Markers currently available"))
 
-    # Post-processor
-    def user_postp(jr, output):
-        shn_action_buttons(jr)
-        return output
-    response.s3.postp = user_postp
-
     response.s3.pagination = True
     output = shn_rest_controller(module, resource)
 
@@ -762,12 +732,6 @@ def projection():
         msg_record_deleted = T("Projection deleted"),
         msg_list_empty = T("No Projections currently defined"))
 
-    # Post-processor
-    def user_postp(jr, output):
-        shn_action_buttons(jr)
-        return output
-    response.s3.postp = user_postp
-
     output = shn_rest_controller(module, resource, deletable=False)
 
     if not "gis" in response.view:
@@ -788,12 +752,6 @@ def track():
 
     # CRUD Strings
     # used in multiple controllers, so defined in model
-
-    # Post-processor
-    def user_postp(jr, output):
-        shn_action_buttons(jr)
-        return output
-    response.s3.postp = user_postp
 
     output = shn_rest_controller(module, resource, deletable=False)
     return output
@@ -848,12 +806,6 @@ def layer_openstreetmap():
         msg_record_deleted=LAYER_DELETED,
         msg_list_empty=NO_LAYERS)
 
-    # Post-processor
-    def user_postp(jr, output):
-        shn_action_buttons(jr, deletable=False)
-        return output
-    response.s3.postp = user_postp
-
     output = shn_rest_controller(module, resource, deletable=False, listadd=False)
 
     if not "gis" in response.view:
@@ -891,12 +843,6 @@ def layer_google():
         msg_record_modified=LAYER_UPDATED,
         msg_record_deleted=LAYER_DELETED,
         msg_list_empty=NO_LAYERS)
-
-    # Post-processor
-    def user_postp(jr, output):
-        shn_action_buttons(jr, deletable=False)
-        return output
-    response.s3.postp = user_postp
 
     output = shn_rest_controller(module, resource, deletable=False, listadd=False)
 
@@ -936,12 +882,6 @@ def layer_yahoo():
         msg_record_deleted=LAYER_DELETED,
         msg_list_empty=NO_LAYERS)
 
-    # Post-processor
-    def user_postp(jr, output):
-        shn_action_buttons(jr, deletable=False)
-        return output
-    response.s3.postp = user_postp
-
     output = shn_rest_controller(module, resource, deletable=False, listadd=False)
 
     if not "gis" in response.view:
@@ -980,12 +920,6 @@ def layer_mgrs():
         msg_record_deleted=LAYER_DELETED,
         msg_list_empty=NO_LAYERS)
 
-    # Post-processor
-    def user_postp(jr, output):
-        shn_action_buttons(jr, deletable=False)
-        return output
-    response.s3.postp = user_postp
-
     output = shn_rest_controller(module, resource, deletable=False, listadd=False)
 
     if not "gis" in response.view:
@@ -1023,12 +957,6 @@ def layer_bing():
         msg_record_modified=LAYER_UPDATED,
         msg_record_deleted=LAYER_DELETED,
         msg_list_empty=NO_LAYERS)
-
-    # Post-processor
-    def user_postp(jr, output):
-        shn_action_buttons(jr, deletable=False)
-        return output
-    response.s3.postp = user_postp
 
     output = shn_rest_controller(module, resource, deletable=False, listadd=False)
 
@@ -1072,12 +1000,6 @@ def layer_georss():
         msg_record_deleted=LAYER_DELETED,
         msg_list_empty=NO_LAYERS)
 
-    # Post-processor
-    def user_postp(jr, output):
-        shn_action_buttons(jr)
-        return output
-    response.s3.postp = user_postp
-
     output = shn_rest_controller(module, resource)
 
     if not "gis" in response.view:
@@ -1118,12 +1040,6 @@ def layer_gpx():
         msg_record_modified=LAYER_UPDATED,
         msg_record_deleted=LAYER_DELETED,
         msg_list_empty=NO_LAYERS)
-
-    # Post-processor
-    def user_postp(jr, output):
-        shn_action_buttons(jr)
-        return output
-    response.s3.postp = user_postp
 
     output = shn_rest_controller(module, resource)
 
@@ -1216,12 +1132,6 @@ def layer_tms():
         msg_record_deleted=LAYER_DELETED,
         msg_list_empty=NO_LAYERS)
 
-    # Post-processor
-    def user_postp(jr, output):
-        shn_action_buttons(jr)
-        return output
-    response.s3.postp = user_postp
-
     output = shn_rest_controller(module, resource)
 
     if not "gis" in response.view:
@@ -1263,12 +1173,6 @@ def layer_wfs():
         msg_record_modified=LAYER_UPDATED,
         msg_record_deleted=LAYER_DELETED,
         msg_list_empty=NO_LAYERS)
-
-    # Post-processor
-    def user_postp(jr, output):
-        shn_action_buttons(jr)
-        return output
-    response.s3.postp = user_postp
 
     output = shn_rest_controller(module, resource)
 
@@ -1313,12 +1217,6 @@ def layer_wms():
         msg_record_deleted=LAYER_DELETED,
         msg_list_empty=NO_LAYERS)
 
-    # Post-processor
-    def user_postp(jr, output):
-        shn_action_buttons(jr)
-        return output
-    response.s3.postp = user_postp
-
     output = shn_rest_controller(module, resource)
 
     if not "gis" in response.view:
@@ -1356,12 +1254,6 @@ def layer_js():
         msg_record_modified=LAYER_UPDATED,
         msg_record_deleted=LAYER_DELETED,
         msg_list_empty=NO_LAYERS)
-
-    # Post-processor
-    def user_postp(jr, output):
-        shn_action_buttons(jr)
-        return output
-    response.s3.postp = user_postp
 
     output = shn_rest_controller(module, resource)
 
@@ -1404,12 +1296,6 @@ def layer_xyz():
         msg_record_modified=LAYER_UPDATED,
         msg_record_deleted=LAYER_DELETED,
         msg_list_empty=NO_LAYERS)
-
-    # Post-processor
-    def user_postp(jr, output):
-        shn_action_buttons(jr)
-        return output
-    response.s3.postp = user_postp
 
     output = shn_rest_controller(module, resource)
 

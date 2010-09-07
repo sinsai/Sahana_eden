@@ -90,9 +90,13 @@ class S3Config(Storage):
         return self.gis.get("edit_L4", True)
     def get_gis_edit_l5(self):
         return self.gis.get("edit_L5", True)
+    def get_gis_marker_max_height(self):
+        return self.gis.get("marker_max_height", 35)
+    def get_gis_marker_max_width(self):
+        return self.gis.get("marker_max_width", 30)
     def get_gis_geoserver_url(self):
         return self.gis.get("geoserver_url", "http://localhost/geoserver")
-    def get_gis__username(self):
+    def get_gis_geoserver_username(self):
         return self.gis.get("geoserver_username", "admin")
     def get_gis_geoserver_password(self):
         return self.gis.get("geoserver_password", "password")

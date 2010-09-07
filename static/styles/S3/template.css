@@ -59,6 +59,16 @@ li { margin-left: 1em; }
 /* Hides from IE-mac */
 * html .clearfix { height: 1%; }
 
+/* Over-ride Ext */
+ol, ul {
+    list-style:disc inside none;
+}
+/* Except here */
+ul.x-tree-node-ct,
+ul.x-tree-root-ct {
+    list-style:none outside none;
+}
+
 /* Basic Page Formatting Styles
    ------------------------------------------------------------------------------- */
 body { font-size: 0.8em;

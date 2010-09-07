@@ -118,7 +118,7 @@ $(function() {
             // we don't assume that an L2 is parented to L1 - might skip a level!
             url = '{{=URL(r=request, c="gis", f="location")}}' + '/' + old_id + '/parents.json';
             $.getJSON(url, function(data) {
-                showStatus('{{=T("Looking up Parents")}}');
+                //showStatus('{{=T("Looking up Parents")}}');
                 // Parse the new location
                 S3.gis.old_l0 = data['L0'];
                 S3.gis.old_l1 = data['L1'];
@@ -133,7 +133,7 @@ $(function() {
             });
         };
     };	
-    $.getJSONS3(url, load_locations, '{{=T("locations")}}');
+    $.getJSONS3(url, load_locations, false);
     // When dropdown is selected
     $('#gis_location_l{{=level}}').change(function() {
         if (('' == $('#gis_location_lat').val() || '' == $('#gis_location_lon').val()) && ('' == $('#gis_location_addr_street').val()) ) {
@@ -213,7 +213,7 @@ $(function() {
         // @ToDo Test
         //var sync = true;
         //$.getJSONS3(url, load_locations, '{{=T("locations")}}', sync);
-        $.getJSONS3(url, load_locations, '{{=T("locations")}}');
+        $.getJSONS3(url, load_locations, false);
     }
     // When dropdown is selected
     $('#gis_location_l{{=level}}').change(function() {
@@ -290,7 +290,7 @@ $(function() {
                 S3.gis.locations_l{{=int(level) + 1}}(false);
             };
         };	
-        $.getJSONS3(url, load_locations, '{{=T("locations")}}');
+        $.getJSONS3(url, load_locations, false);
     }
     // When dropdown is selected
     $('#gis_location_l{{=level}}').change(function() {
@@ -367,7 +367,7 @@ $(function() {
                 S3.gis.locations_l{{=int(level) + 1}}(false);
             };
         };	
-        $.getJSONS3(url, load_locations, '{{=T("locations")}}');
+        $.getJSONS3(url, load_locations, false);
     }
     // When dropdown is selected
     $('#gis_location_l{{=level}}').change(function() {
@@ -444,7 +444,7 @@ $(function() {
                 S3.gis.locations_l{{=int(level) + 1}}(false);
             };
         };	
-        $.getJSONS3(url, load_locations, '{{=T("locations")}}');
+        $.getJSONS3(url, load_locations, false);
     }
     // When dropdown is selected
     $('#gis_location_l{{=level}}').change(function() {
@@ -519,7 +519,7 @@ $(function() {
                 $('#gis_location_l{{=level}}').val(S3.gis.old_l5);
             };
         };	
-        $.getJSONS3(url, load_locations, '{{=T("locations")}}');
+        $.getJSONS3(url, load_locations, false);
     }
     // When dropdown is selected
     $('#gis_location_l{{=level}}').change(function() {
@@ -881,7 +881,7 @@ $(function() {
         // we don't assume that an L2 is parented to L1 - might skip a level!
         url = '{{=URL(r=request, c="gis", f="location")}}' + '/' + old_id + '/parents.json';
         $.getJSON(url, function(data) {
-            showStatus('{{=T("Looking up Parents")}}');
+            //showStatus('{{=T("Looking up Parents")}}');
             // Parse the new location
             S3.gis.old_l0 = data['L0'];
             S3.gis.old_l1 = data['L1'];
@@ -1000,7 +1000,7 @@ $(function() {
                 dataType: 'json',
                 success: function(data) {
                     // Report Success/Failure
-                    showStatus(data.message);
+                    //showStatus(data.message);
 
                     if (('' == S3.gis.uuid) && (data.status == 'success')) {
                         // Parse the new location
@@ -1053,8 +1053,7 @@ s3_tb_cleanup = function(level){
         // We know that there won't be any child locations since we just created this location!
         S3.gis['locations_l' + new_level](true);
     };	
-    $.getJSONS3(url, load_locations, '{{=T("locations")}}');
-    
+    $.getJSONS3(url, load_locations, false);
 }
 //]]></script>
 

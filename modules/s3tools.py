@@ -458,14 +458,14 @@ class AuthS3(Auth):
         if not self_registration:
             session.error = self.messages.registration_disabled
             redirect(URL(r=request, args=["login"]))
-        
+
         settings = db(db.s3_setting.id > 0).select(db.s3_setting.utc_offset, limitby=(0, 1)).first()
         if settings:
             utc_offset = settings.utc_offset
         else:
             # db empty and prepopulate is false
             utc_offset = self.deployment_settings.get_L10n_utc_offset()
-        
+
         if self.is_logged_in() and request.function != "index":
             redirect(self.settings.logged_url)
 
@@ -598,6 +598,10 @@ class AuthS3(Auth):
         #deployment_settings = self.deployment_settings
         db = self.db
         session = self.session
+
+        # => trigger basic auth
+        if not self.shn_logged_in():
+            return False
 
         # Administrators have all roles
         if 1 in session.s3.roles:

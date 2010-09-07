@@ -802,6 +802,9 @@ class S3Resource(object):
         postprocess = None
 
         push_limit = self.push_limit
+        session = r.session
+        if session.s3 and session.s3.roles and 1 in session.s3.roles:
+            self.push_limit = None
 
         # Enforce primary record ID
         if not r.id and not r.custom_action and r.representation == "html":
@@ -1874,7 +1877,7 @@ class S3Resource(object):
 
         if not success:
             error = self.__manager.error
-            return xml.json_message(False, 400, "LOCAL ERROR: %s" % error, tree=tree)
+            return xml.json_message(False, 400, "LOCAL ERROR: %s" % error)
         else:
             return xml.json_message()
 
@@ -4034,7 +4037,8 @@ class S3Vector(object):
                             this_mci = this[self.MCI]
                         else:
                             this_mci = 0
-                        for f in self.record:
+                        fields = self.record.keys()
+                        for f in fields:
                             r = self.get_resolution(f)
                             if r == self.RESOLUTION.THIS:
                                 del self.record[f]

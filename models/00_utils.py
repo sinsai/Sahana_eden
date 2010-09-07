@@ -40,7 +40,7 @@ def s3_sessions():
     session.s3.roles = roles
 
     # Are we running in debug mode?
-    session.s3.debug = deployment_settings.get_base_debug()
+    session.s3.debug = request.vars.get("debug", None) or deployment_settings.get_base_debug()
 
     # Security Policy
     #session.s3.self_registration = deployment_settings.get_security_self_registration()

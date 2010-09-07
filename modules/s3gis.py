@@ -1809,6 +1809,7 @@ OpenLayers.Util.extend( selectPdfControl, {
          });
 
         var searchCombo = new Ext.Panel({
+            id: 'searchCombo',
             title: '""" + str(T("Search Geonames")) + """',
             layout: 'border',
             rootVisible: false,

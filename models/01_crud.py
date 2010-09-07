@@ -1925,7 +1925,7 @@ def shn_search(r, **attr):
             else:
                 exclude_field = None
                 exclude_value = None
-            
+
             limit = int(_vars.limit or 0)
 
             filter = _vars.filter

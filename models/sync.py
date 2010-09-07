@@ -121,6 +121,7 @@ table = db.define_table(tablename,
                         Field("job_resources_pending", "text"),     # comma-separated list of resources to be synced of the currently running job
                         Field("job_sync_errors", "text"),           # sync errors encountered while processing the current job
                         Field("locked", "boolean"),
+                        Field("halt", "boolean"),
                         migrate=migrate)
 
 # -----------------------------------------------------------------------------
@@ -166,6 +167,92 @@ table = db.define_table(tablename, timestamp,
                         Field("enabled", "boolean",         # whether this schedule is enabled or not. Useful in cases when you want to temporarily
                               default=True),                # disable a schedule
                         migrate=migrate)
+
+
+# -----------------------------------------------------------------------------
+# Notifications - notifications queue
+#
+resource = "notification"
+tablename = "%s_%s" % (module, resource)
+table = db.define_table(tablename, timestamp,
+                        Field("pid", "integer"),
+                        Field("notified", "boolean", default=False),
+                        Field("error", "boolean", default=False),
+                        Field("message", length=192),
+                        migrate=migrate)
+
+
+# -----------------------------------------------------------------------------
+def s3_sync_push_message(message, error=False, pid=None):
+
+    """ Push a notification message to the queue """
+
+    print message
+
+    table = db.sync_notification
+
+    if message:
+        if not pid:
+            status = db().select(db.sync_now.id, limitby=(0,1)).first()
+            if status:
+                pid = status.id
+            else:
+                pid = 0
+
+        success = table.insert(pid=pid, message=message, error=error)
+
+        if success:
+            db.commit()
+            return True
+
+    return False
+
+
+# -----------------------------------------------------------------------------
+def s3_sync_get_messages(pid=None):
+
+    """ Get pending notification messages from the queue """
+
+    table = db.sync_notification
+
+    if pid is None:
+        status = db().select(db.sync_now.id, limitby=(0,1)).first()
+        if status:
+            pid = status.id
+
+    if pid is not None:
+        query = ((table.pid == pid) | (table.pid == 0)) & \
+                (table.notified == False)
+    else:
+        query = (table.notified == False)
+
+    rows = db(query).select(table.id, table.message, table.error)
+    ids = [row.id for row in rows]
+    messages = [dict(error=row.error,
+                     message=row.message) for row in rows]
+
+    if ids:
+        db(table.id.belongs(ids)).update(notified=True)
+
+    return messages
+
+
+# -----------------------------------------------------------------------------
+def s3_sync_clear_messages():
+
+    """ Remove notified messages from the queue """
+
+    table = db.sync_notification
+    db(table.notified == True).delete()
+
+
+# -----------------------------------------------------------------------------
+def s3_sync_init_messages():
+
+    """ Remove all (pid-bound) messages from the queue """
+
+    table = db.sync_notification
+    db(table.pid > 0).delete()
 
 
 # -----------------------------------------------------------------------------
@@ -220,7 +307,7 @@ def s3_sync_eden_eden(peer, mode, tablenames,
 
     print "s3_sync_eden_eden"
 
-    status = Storage(
+    output = Storage(
         success = False,
         errors = [],
         messages = [],
@@ -243,14 +330,14 @@ def s3_sync_eden_eden(peer, mode, tablenames,
     for tablename in tablenames:
         print tablename
         if tablename not in db.tables or tablename.find("_") == -1:
-            status.pending.remove(tablename)
-            status.done.append(tablename)
+            output.pending.remove(tablename)
+            output.done.append(tablename)
             print "table not found"
             continue
 
         if session.s3.sync_stop:
             print "Got sync_stop"
-            return status
+            return output
 
         prefix, name = tablename.split("_", 1)
         resource = s3xrc.resource(prefix, name)
@@ -265,9 +352,9 @@ def s3_sync_eden_eden(peer, mode, tablenames,
             _put = resource.push_xml
         else:
             print "Error: bad format"
-            status.success = False
-            status.errors.append(s3xrc.ERROR.BAD_FORMAT)
-            return status
+            output.success = False
+            output.errors.append(s3xrc.ERROR.BAD_FORMAT)
+            return output
 
         sync_path = "sync/sync/%s/%s.%s" % (prefix, name, format)
         print "sync_path %s" % sync_path
@@ -319,12 +406,12 @@ def s3_sync_eden_eden(peer, mode, tablenames,
             if error:
                 errcount += 1
                 msg = "...fetch %s - FAILURE: %s" (tablename, error)
-                status.messages.append(msg)
-                status.errors.append(error)
+                output.messages.append(msg)
+                output.errors.append(error)
                 continue
             else:
                 msg = "...fetch %s - SUCCESS" % tablename
-                status.messages.append(msg)
+                output.messages.append(msg)
 
             print msg
 
@@ -364,42 +451,49 @@ def s3_sync_eden_eden(peer, mode, tablenames,
             if error:
                 errcount += 1
                 msg = "...send %s - FAILURE: %s" (tablename, error)
-                status.messages.append(msg)
-                status.errors.append(error)
+                output.messages.append(msg)
+                output.errors.append(error)
                 continue
             else:
                 msg = "...send %s - SUCCESS." % tablename
-                status.messages.append(msg)
+                output.messages.append(msg)
 
-        status.done.append(tablename)
-        status.pending.remove(tablename)
+        output.done.append(tablename)
+        output.pending.remove(tablename)
 
     msg = "...synchronize %s - DONE (%s errors)." % (peer.instance_url, errcount)
-    status.messages.append(msg)
-    status.success = True
-    return status
+    output.messages.append(msg)
+    output.success = True
+    return output
 
 
 # -----------------------------------------------------------------------------
-def s3_sync_eden_other(peer, mode, tablenames, settings=None):
+def s3_sync_eden_other(peer, mode, tablenames, settings=None, pid=None):
 
     """ Synchronization Eden<->Other """
 
     import urllib, urlparse
     import gluon.contrib.simplejson as json
 
-    status = Storage(
-        success = False,
-        errors = [],
-        messages = [],
-        pending = list(tablenames),
-        done = []
-    )
+    # Initialize output object
+    output = Storage(
+                success = False,
+                errors = [],
+                errcount = 0,
+                pending = list(tablenames),
+                done = [])
 
+    # Notification helpers
+    notify = lambda message: s3_sync_push_message(message, pid=pid)
+    def error(message, output=output, pid=pid):
+        output.errors.append(message)
+        s3_sync_push_message(message, error=True, pid=pid)
+
+    # Get the proxy setting
     proxy = settings.proxy or None
 
+    # Analyse requested format
     format = peer.format
-
     is_json = False
     pull = False
     push = False
@@ -407,15 +501,19 @@ def s3_sync_eden_other(peer, mode, tablenames, settings=None):
     import_templates = os.path.join(request.folder, s3xrc.XSLT_IMPORT_TEMPLATES)
     export_templates = os.path.join(request.folder, s3xrc.XSLT_EXPORT_TEMPLATES)
     template_name = "%s.%s" % (format, s3xrc.XSLT_FILE_EXTENSION)
-    import_template_path = os.path.join(import_templates, template_name)
-    export_template_path = os.path.join(export_templates, template_name)
+    import_template = os.path.join(import_templates, template_name)
+    export_template = os.path.join(export_templates, template_name)
 
     if format == "xml":
         pull = True
         push = True
+        import_template = None
+        export_template = None
     elif format == "json":
         pull = True
         push = True
+        import_template = None
+        export_template = None
         is_json = True
     elif format in s3xrc.xml_import_formats and \
          os.path.exists(import_template):
@@ -431,64 +529,66 @@ def s3_sync_eden_other(peer, mode, tablenames, settings=None):
                os.path.exists(export_template):
                 push = True
     else:
-        status.success = False
-        status.errors.append(s3xrc.ERROR.BAD_FORMAT)
-        return status
+        error(s3xrc.ERROR.BAD_FORMAT)
+        output.success = False
+        return output
 
-    errcount = 0
-    msg = dict(success=True,
-               message="....Synchronization with %s - START" % peer.name)
-    status.messages.append(msg)
-    print "tablenames=%s" % tablenames
+    notify("....Synchronization with %s (%s) - started" % (peer.name, peer.instance_url))
+
     for tablename in tablenames:
-        print tablename
+
+        # Skip invalid tablenames silently
         if tablename not in db.tables or tablename.find("_") == -1:
-            status.pending.remove(tablename)
-            status.done.append(tablename)
+            output.pending.remove(tablename)
+            output.done.append(tablename)
             continue
 
-        if session.s3.sync_stop:
-            return status
+        # Reload status
+        now = db.sync_now
+        status = db(now.id==pid).select(db.sync_now.halt, limitby=(0,1)).first()
 
+        # Check for HALT
+        if status and status.halt:
+            notify("HALT command received.")
+            output.success = True
+            return output
+
+        # Create resource
         prefix, name = tablename.split("_", 1)
         resource = s3xrc.resource(prefix, name)
 
-        if pull and mode in [1, 3]: # pull
+        if pull and mode in [1, 3]:
 
             fetch_url = peer.instance_url
 
-            error = None
+            err = None
             try:
                 result = resource.fetch(fetch_url,
                                         username=peer.username,
                                         password=peer.password,
                                         json=is_json,
+                                        template=import_template,
                                         proxy=proxy)
             except Exception, e:
-                error = str(e)
+                err = str(e)
             else:
                 try:
                     result_json = json.loads(str(result))
                 except Exception, e:
-                    error = str(result)
+                    err = str(result)
                 else:
                     statuscode = str(result_json.get("statuscode", ""))
-                    message = str(result_json.get("message", "Unknown error"))
                     if statuscode.startswith("2"):
-                        error = None
+                        err = None
                     else:
-                        error = message
-            if error:
-                errcount += 1
-                msg = dict(success=False,
-                           message="........fetch %s - FAILURE: %s" % (tablename, error))
-                status.messages.append(msg)
-                status.errors.append(error)
-                continue
+                        err = str(result_json.get("message", "Unknown error"))
+            if err is not None:
+                output.errcount += 1
+                error("........fetch %s : %s" % (tablename, err))
+                if mode == 1:
+                    continue
             else:
-                msg = dict(success=True,
-                           message="........fetch %s - SUCCESS" % tablename)
-                status.messages.append(msg)
+                notify("........fetch %s : success" % tablename)
 
         if push and mode in [2, 3]: # push
 
@@ -499,47 +599,39 @@ def s3_sync_eden_other(peer, mode, tablenames, settings=None):
             else:
                 _put = resource.push_xml
 
-            error = None
+            err = None
             try:
                 result = _put(push_url,
                               username=peer.username,
                               password=peer.password,
+                              template=export_template,
                               proxy=proxy)
             except Exception, e:
-                result = str(e)
+                err = str(e)
             else:
                 try:
                     result_json = json.loads(result)
                 except:
-                    error = str(result)
+                    err = str(result)
                 else:
                     statuscode = str(result_json.get("statuscode", ""))
-                    message = str(result_json.get("message", "Unknown error"))
                     if statuscode.startswith("2"):
-                        error = None
+                        err = None
                     else:
-                        error = message
-            if error:
-                errcount += 1
-                msg = dict(success=False,
-                           message="........send %s - FAILURE: %s" % (tablename, error))
-                status.messages.append(msg)
-                status.errors.append(error)
+                        err = str(result_json.get("message", "Unknown error"))
+            if err is not None:
+                output.errcount += 1
+                error("........send %s : %s" % (tablename, err))
                 continue
             else:
-                msg = dict(success=True,
-                           message="........send %s - SUCCESS" % tablename)
-                status.messages.append(msg)
+                notify("........send %s : success" % tablename)
 
-        status.done.append(tablename)
-        status.pending.remove(tablename)
-        print tablenames
+        output.done.append(tablename)
+        output.pending.remove(tablename)
 
-    msg = dict(success=errcount and False or True,
-               message="...Synchronization with %s - DONE (%s errors)." % (peer.name, errcount))
-    status.messages.append(msg)
-    status.success = True
+    notify("...Synchronization with %s - done (%s errors)" % (peer.name, output.errcount))
 
-    return status
+    output.success = True
+    return output
 
 # -----------------------------------------------------------------------------

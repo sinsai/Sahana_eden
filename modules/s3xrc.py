@@ -132,8 +132,6 @@ class S3Resource(object):
                                  export_tree=self.__get_tree,
                                  import_tree=self.__put_tree)
 
-        self.push_limit = 1 #: maximum number of records accepted in PUT/POST
-
 
     # -------------------------------------------------------------------------
     def __dbg(self, msg):
@@ -801,8 +799,6 @@ class S3Resource(object):
         preprocess = None
         postprocess = None
 
-        push_limit = self.push_limit
-
         # Enforce primary record ID
         if not r.id and not r.custom_action and r.representation == "html":
             if r.component or r.method in ("read", "update"):
@@ -860,7 +856,6 @@ class S3Resource(object):
                 self.__dbg("custom method %s" % r.method)
                 handler = r.custom_action
             elif r.http == "GET":
-                self.push_limit = None
                 handler = self.__get(r)
             elif r.http == "PUT":
                 handler = self.__put(r)
@@ -873,7 +868,6 @@ class S3Resource(object):
             if handler is not None:
                 self.__dbg("method handler found - executing request")
                 output = handler(r, **attr)
-                self.push_limit = push_limit
             else:
                 self.__dbg("no method handler - finalizing request")
 
@@ -1275,7 +1269,6 @@ class S3Resource(object):
             ignore_errors = False
 
         success = self.__import_tree(id, tree,
-                                     push_limit=self.push_limit,
                                      ignore_errors=ignore_errors)
 
         if success:
@@ -1406,7 +1399,6 @@ class S3Resource(object):
     # -------------------------------------------------------------------------
     def __import_tree(self, id, tree,
                       files=None,
-                      push_limit=None,
                       ignore_errors=False):
 
         """ Import data from an element tree to this resource
@@ -1422,7 +1414,6 @@ class S3Resource(object):
             self.__files = Storage(files)
 
         success = self.__manager.import_tree(self, id, tree,
-                                             push_limit=push_limit,
                                              ignore_errors=ignore_errors)
 
         self.__files = Storage()
@@ -1470,7 +1461,6 @@ class S3Resource(object):
                     raise SyntaxError(xml.error)
             return self.__import_tree(id, tree,
                                       files=files,
-                                      push_limit=None,
                                       ignore_errors=ignore_errors)
         else:
             raise SyntaxError("Invalid XML source")
@@ -1521,7 +1511,6 @@ class S3Resource(object):
                     raise SyntaxError(xml.error)
             return self.__import_tree(id, tree,
                                       files=files,
-                                      push_limit=None,
                                       ignore_errors=ignore_errors)
         else:
             raise SyntaxError("Invalid JSON source.")
@@ -1874,7 +1863,7 @@ class S3Resource(object):
 
         if not success:
             error = self.__manager.error
-            return xml.json_message(False, 400, "LOCAL ERROR: %s" % error, tree=tree)
+            return xml.json_message(False, 400, "LOCAL ERROR: %s" % error)
         else:
             return xml.json_message()
 
@@ -3559,15 +3548,13 @@ class S3ResourceController(object):
 
     # -------------------------------------------------------------------------
     def import_tree(self, resource, id, tree,
-                    push_limit=None, ignore_errors=False):
+                    ignore_errors=False):
 
         """ Imports data from an element tree to a resource
 
             @param resource: the resource
             @param id: record ID or list of record IDs to update
             @param tree: the element tree
-            @param push_limit: maximum allowed number of imports
-                (None for unlimited)
             @param ignore_errors: continue at errors (=skip invalid elements)
 
         """
@@ -3612,10 +3599,6 @@ class S3ResourceController(object):
                 return False
             else:
                 elements = matches
-
-        if push_limit is not None and len(elements) > push_limit:
-            self.error = self.ERROR.NOT_PERMITTED
-            return False
 
         # Import all matching elements
         error = None
@@ -4034,7 +4017,8 @@ class S3Vector(object):
                             this_mci = this[self.MCI]
                         else:
                             this_mci = 0
-                        for f in self.record:
+                        fields = self.record.keys()
+                        for f in fields:
                             r = self.get_resolution(f)
                             if r == self.RESOLUTION.THIS:
                                 del self.record[f]

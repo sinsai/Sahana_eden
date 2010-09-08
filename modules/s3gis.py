@@ -233,7 +233,7 @@ class GIS(object):
     # -----------------------------------------------------------------------------
     def _min_not_none(self, *args):
         """
-            Utility function returns minimal argument that is not None.
+            Utility function: returns minimal argument that is not None.
         """
         return min(*(a for a in args if a is not None))
 
@@ -614,15 +614,15 @@ class GIS(object):
     def import_csv(self, filename, domain=None):
         """
             Import a CSV file of Admin Boundaries into the Locations table
-            
+
             File is expected to have been generated from a Shapefile as:
             ogr2ogr -f CSV CSV TM_WORLD_BORDERS-0.3.shp -lco GEOMETRY=AS_WKT
-            
+
             There needs to be a column named 'WKT'
             The Location names should be ADM0_NAME to ADM3_NAME
             - the highest-numbered name will be taken as the name of the current location
             - the previous will be taken as the parent(s)
-            
+
             Currently it expects to be run from the CLI, with the file in the web2py folder
             @ToDo: Extend to support being run from the webpage
             @ToDo: Write additional function(s) to do the OGR2OGR transformation from an uploaded Shapefile
@@ -1023,7 +1023,7 @@ class GIS(object):
                 form.vars.lat_min = form.vars.lat_max = form.vars.lat
                 return
 
-        elif form.vars.gis_feature_type in ("2","3"):
+        elif form.vars.gis_feature_type in ("2", "3"):
             # Parse WKT for LineString, Polygon
             try:
                 try:
@@ -3674,7 +3674,7 @@ class GoogleGeocoder(Geocoder):
 class YahooGeocoder(Geocoder):
     """
         Yahoo Geocoder module
-        Should convert this to be a thin wrapper for modules.geopy.geocoders.yahoo
+        Should convert this to be a thin wrapper for modules.geopy.geocoders.`
     """
 
     def __init__(self, location, db):

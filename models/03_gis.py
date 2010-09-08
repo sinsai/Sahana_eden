@@ -572,8 +572,11 @@ name_dummy_element = S3MultiSelectWidget(db = db,
 table = db.gis_location
 table.name_dummy.widget = name_dummy_element.widget
 table.name_dummy.represent = name_dummy_element.represent
+
 def gis_location_onaccept(form):
-    """ On Accept for GIS Locations (after DB I/O) """
+    """
+        On Accept for GIS Locations (after DB I/O)
+    """
     if session.rcvars and hasattr(name_dummy_element, "onaccept"):
         # HTML UI, not XML import
         name_dummy_element.onaccept(db, session.rcvars.gis_location, request)
@@ -587,8 +590,10 @@ def gis_location_onaccept(form):
             name_dummy = "|".join(ids) # That's not how it should be
             table = db.gis_location
             db(table.id==location_id).update(name_dummy=name_dummy)
-    # Include the normal onaccept
+    # Update the parent Hierarchy
     gis.update_location_tree()
+    
+    return
 
 def gis_location_onvalidation(form):
 
@@ -625,11 +630,35 @@ def gis_location_onvalidation(form):
         response.error = record_error
         form.errors["level"] = field_error
         return
+    # Check within permitted bounds for the Instance
+    # (avoid incorrect data entry)
+    # Points only for now
+    if not "gis_feature_type" in form.vars or (form.vars.gis_feature_type == "1"):
+        config = gis.get_config()
+        base_error = T("Sorry that location appears to be outside the area supported by this deployment.")
+        lat_error =  Tstr("Latitude should be between") + ": " + str(config.min_lat) + " & " + str(config.max_lat)
+        lon_error = Tstr("Longitude should be between") + ": " + str(config.min_lon) + " & " + str(config.max_lon)
+        if (form.vars.lat > config.max_lat) or (form.vars.lat < config.min_lat):
+            response.error = base_error
+            form.errors["lat"] = lat_error
+            return
+        elif (form.vars.lon > config.max_lon) or (form.vars.lon < config.min_lon):
+            response.error = base_error
+            form.errors["lon"] = lon_error
+            return
+
     # ToDo: Check for probable duplicates
     #
     # ToDo: Check within Bounds of the Parent
-    # Calculate the Centroid for Polygons
+    #
+
+    # Add the bounds (& Centroid for Polygons)
     gis.wkt_centroid(form)
+    
+    # ToDo: Calculate the bounding box
+    # gis.parse_location(form)
+        
+    return
 
 s3xrc.model.configure(table,
                       onvalidation=gis_location_onvalidation,

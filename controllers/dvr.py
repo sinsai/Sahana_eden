@@ -14,21 +14,21 @@ if module not in deployment_settings.modules:
 
 # Options Menu (available in all Functions' Views)
 response.menu_options = [
-    [T('Add Disaster Victims'), False,  URL(r=request, f='index'),[
-        [T('Add new Group'), False, URL(r=request, f='index')],
-        [T('Add new Individual'), False, URL(r=request, f='index')]
+    [T("Add Disaster Victims"), False,  URL(r=request, f="index"),[
+        [T("Add new Group"), False, URL(r=request, f="index")],
+        [T("Add new Individual"), False, URL(r=request, f="index")]
     ]],
-    [T('Edit Disaster Victims'), False,  URL(r=request, f='index'),[
-        [T('Search and Edit Group'), False, URL(r=request, f='index')],
-        [T('Search and Edit Individual'), False, URL(r=request, f='index')]
+    [T("Edit Disaster Victims"), False,  URL(r=request, f="index"),[
+        [T("Search and Edit Group"), False, URL(r=request, f="index")],
+        [T("Search and Edit Individual"), False, URL(r=request, f="index")]
     ]],
-    [T('List Groups'), False,  URL(r=request, f='index'),[
-        [T('List Groups/View Members'), False, URL(r=request, f='index')]
+    [T("List Groups"), False,  URL(r=request, f="index"),[
+        [T("List Groups/View Members"), False, URL(r=request, f="index")]
     ]],
-    [T('Reports'), False,  URL(r=request, f='index'),[
-        [T('Drill Down by Group'), False, URL(r=request, f='index')],
-        [T('Drill Down by Shelter'), False, URL(r=request, f='index')],
-        [T('Drill Down by Incident'), False, URL(r=request, f='index')]
+    [T("Reports"), False,  URL(r=request, f="index"),[
+        [T("Drill Down by Group"), False, URL(r=request, f="index")],
+        [T("Drill Down by Shelter"), False, URL(r=request, f="index")],
+        [T("Drill Down by Incident"), False, URL(r=request, f="index")]
     ]],
 ]
 

@@ -135,7 +135,6 @@ def shelter():
     table.location_id.requires = IS_NULL_OR(IS_ONE_OF_EMPTY(db, "gis_location.id"))
 
     response.s3.prep = shn_shelter_prep
-    #response.s3.postp = shn_component_postp
 
     crud.settings.create_onvalidation = shn_shelter_onvalidation
     crud.settings.update_onvalidation = shn_shelter_onvalidation

@@ -25,12 +25,12 @@ sync_policy_opts = {
     #10: T("Role-based") # not implemented yet
 }
 
-opt_sync_policy = db.Table(None, "sync_policy",
-                           Field("policy", "integer", notnull=True,
-                                 requires = IS_IN_SET(sync_policy_opts),
-                                 default = 3,
-                                 represent = lambda opt: sync_policy_opts.get(opt, UNKNOWN_OPT)))
-
+# reusable field
+policy = db.Table(None, "policy",
+                  Field("policy", "integer", notnull=True,
+                        requires = IS_IN_SET(sync_policy_opts),
+                        default = 3,
+                        represent = lambda opt: sync_policy_opts.get(opt, UNKNOWN_OPT)))
 
 # -----------------------------------------------------------------------------
 # Settings
@@ -39,43 +39,158 @@ resource = "setting"
 tablename = "%s_%s" % (module, resource)
 table = db.define_table(tablename,
                         uuidstamp,
-                        #Field("uuid", length=36, notnull=True),     # Our UUID for sync purposes
-                        Field("beacon_service_url", default = "http://sync.eden.sahanafoundation.org/sync/beacon"), # URL of beacon service that our sahana instance is configured to work with
-                        Field("sync_pools"),                        # Comma-separated list of sync pools we've subscribed to
+                        Field("beacon_service_url"),
+                        Field("sync_pools"),
                         Field("proxy"),
-                        Field("comments", length=128, default = "This is a SahanaEden instance, see http://eden.sahanafoundation.org" ),
+                        #Field("comments", length=128),
                         migrate=migrate)
 
+table.uuid.readable = True
+
+table.beacon_service_url.readable = False
+table.beacon_service_url.writable = False
+table.beacon_service_url.default = "http://sync.eden.sahanafoundation.org/sync/beacon"
+
+table.sync_pools.readable = False
+table.sync_pools.writable = False
+
+table.proxy.label = T("Proxy-server")
 
 # -----------------------------------------------------------------------------
 # Sync partners
 #
-sync_partner_instance_type_opts = {
-    "Sahana Eden":T("Sahana Eden"),
-    "Sahana Agasti":T("Sahana Agasti"),
-    "Ushahidi":T("Ushahidi"),
-    "Other":T("Other")
+sync_peer_types = {
+    1: T("Sahana Eden"),
+    2: T("Sahana Agasti"),
+    3: T("Ushahidi"),
+    99: T("Other")
 }
+
+formats = [f for f in s3xrc.xml_export_formats]
+formats += [f for f in s3xrc.xml_import_formats if f not in formats]
+formats += [f for f in s3xrc.json_export_formats if f not in formats]
+formats += [f for f in s3xrc.json_import_formats if f not in formats]
 
 # Custom settings for sync partners
 resource = "partner"
 tablename = "%s_%s" % (module, resource)
 table = db.define_table(tablename,
                         uuidstamp,
-                        #Field("uuid", length=36, notnull=True),     # uuid of this partner
-                        Field("name", default="Sahana Eden Instance"), # name of the partner (descriptive title)
-                        Field("instance_url", default = "http://sync.eden.sahanafoundation.org/eden", notnull=True), # URL of their instance
-                        Field("instance_type",                      # the type of instance => "SahanaEden", "SahanaAgasti", "Ushahidi", etc.
-                              default="Sahana Eden",
-                              requires = IS_IN_SET(sync_partner_instance_type_opts) ),
-                        Field("username"),                          # username required to sync with this partner
-                        Field("password", "password"),              # password required to sync with this partner
+                        Field("name"),
+                        Field("url", notnull=True),
+                        Field("type", "integer"),
+                        Field("username"),
+                        Field("password", "password"),
                         Field("format"),
-                        Field("sync_pools"),                        # Comma-separated list of sync pools they're subscribed to
-                        opt_sync_policy,                            # sync_policy for this partner
-                        Field("last_sync_on", "datetime"),          # the last time we sync-ed with this partner
-                        Field("comments", length=128),
+                        Field("sync_pools"),
+                        policy,
+                        Field("last_sync_on", "datetime"),
+                        #Field("comments", length=128),
                         migrate=migrate)
+
+table.uuid.readable = True
+table.uuid.writable = True
+
+table.name.requires = IS_NOT_EMPTY()
+table.name.default = "Sahana Eden Instance"
+
+table.url.requires = IS_NOT_EMPTY()
+table.url.default = "http://sync.eden.sahanafoundation.org/eden"
+
+table.type.requires = IS_IN_SET(sync_peer_types, zero=None)
+table.type.represent = lambda opt: sync_peer_types.get(opt, UNKNOWN_OPT)
+table.type.default = 1
+
+table.format.requires = IS_IN_SET(formats, zero=None)
+table.format.default = "xml"
+
+table.sync_pools.readable = False
+table.sync_pools.writable = False
+
+table.policy.label = T("Default synchronization policy")
+
+table.last_sync_on.label = T("Last synchronization on")
+table.last_sync_on.writable = False
+
+
+def sync_partner_ondelete(row):
+
+    """ Delete all jobs with this partner """
+
+    uuid = row.get("uuid")
+    if uuid:
+        schedule = db.sync_schedule
+        jobs = db().select(schedule.id, schedule.job_command)
+        jobs_del = []
+        for job in jobs:
+            try:
+                job_cmd = json.loads(job.job_command)
+            except:
+                continue
+            else:
+                if job_cmd["partner_uuid"] == uuid:
+                    jobs_del.append(job.id)
+        db(schedule.id.belongs(jobs_del)).delete()
+
+
+def sync_partner_onaccept(form):
+
+    """ Create default job for Eden peers """
+
+    # @todo: implement this correctly
+
+    # create new default scheduled job for this partner, it's a Sahana Eden instance
+    #modules = deployment_settings.modules
+    #_db_tables = db.tables
+    #db_tables = []
+    #for __table in _db_tables:
+    #if "modified_on" in db[__table].fields and "uuid" in db[__table].fields:
+    #db_tables.append(__table)
+    #sch_resources = []
+    #for _module in modules:
+    #for _table in db_tables:
+    #if _table.startswith(_module + "_"):
+    #sch_resources.append(_module + "||" + _table[len(_module)+1:])
+
+    ## add job to db
+    #new_partner_uuid = request.vars["uuid"]
+    #new_partner_type = request.vars["type"]
+    #new_partner_policy = int(request.vars["policy"])
+    #new_partner_name = None
+    #if "name" in request.vars and request.vars["name"]:
+    #new_partner_name = request.vars["name"]
+    #sch_comments = "Default manually triggered schedule job for sync partner '"
+    #if new_partner_name:
+    #sch_comments += new_partner_name
+    #else:
+    #sch_comments += new_partner_uuid
+    #sch_comments += "'"
+    #sch_cmd = dict()
+    #sch_cmd["partner_uuid"] = new_partner_uuid
+    #sch_cmd["policy"] = new_partner_policy
+    #sch_cmd["resources"] = sch_resources
+    #sch_cmd["complete"] = False
+    #sch_cmd["mode"] = 3
+    #db["sync_schedule"].insert(
+    #comments = sch_comments,
+    #period = "m",
+    #hours = None,
+    #days_of_week = None,
+    #time_of_day = None,
+    #runonce_datetime = None,
+    #job_type = 1,
+    #job_command = json.dumps(sch_cmd),
+    #last_run = None,
+    #enabled = True,
+    #created_on = datetime.datetime.now(),
+    #modified_on = datetime.datetime.now()
+    #)
+    pass
+
+
+s3xrc.model.configure(table,
+    delete_onaccept=sync_partner_ondelete,
+    list_fields = ["id", "name", "uuid", "type", "url", "last_sync_on"])
 
 
 # -----------------------------------------------------------------------------
@@ -128,16 +243,16 @@ table = db.define_table(tablename,
 # Sync Schedule - scheduled sync jobs
 #
 sync_schedule_period_opts = {
-    "h":T("Hourly"),
-    "d":T("Daily"),
-    "w":T("Weekly"),
-    "o":T("Just Once"),
-    "m":T("Manual")
+    "h": T("Hourly"),
+    "d": T("Daily"),
+    "w": T("Weekly"),
+    "o": T("Just Once"),
+    "m": T("Manual")
 }
 
 sync_schedule_job_type_opts = {
-    1:T("Sahana Eden <=> Sahana Eden sync"),
-    2:T("Sahana Eden <=> Other sync (Sahana Agasti, Ushahidi, etc.)")
+    1: T("Sahana Eden <=> Sahana Eden"),
+    2: T("Sahana Eden <=> Other (Sahana Agasti, Ushahidi, etc.)")
 }
 
 resource = "schedule"
@@ -147,7 +262,7 @@ table = db.define_table(tablename, timestamp,
                         Field("period",                             # schedule interval period, either hourly, "h", daily, "d", weekly, "w" or one-time, "o"
                               length=10,
                               notnull=True,
-                              default="h",
+                              default="m",
                               requires = IS_IN_SET(sync_schedule_period_opts) ),
                         Field("hours", "integer", default=4),   # specifies the number of hours when hourly period is specified in 'period' field
                         Field("days_of_week", length=40),       # comma-separated list of the day(s) of the week when job runs on weekly basis.
@@ -359,7 +474,7 @@ def s3_sync_eden_eden(peer, mode, tablenames,
         sync_path = "sync/sync/%s/%s.%s" % (prefix, name, format)
         print "sync_path %s" % sync_path
 
-        remote_url = urlparse.urlparse(peer.instance_url)
+        remote_url = urlparse.urlparse(peer.url)
         print remote_url
         if remote_url.path[-1:] != "/":
             remote_path = "%s/%s" % (remote_url.path, sync_path)
@@ -461,7 +576,7 @@ def s3_sync_eden_eden(peer, mode, tablenames,
         output.done.append(tablename)
         output.pending.remove(tablename)
 
-    msg = "...synchronize %s - DONE (%s errors)." % (peer.instance_url, errcount)
+    msg = "...synchronize %s - DONE (%s errors)." % (peer.url, errcount)
     output.messages.append(msg)
     output.success = True
     return output
@@ -533,7 +648,7 @@ def s3_sync_eden_other(peer, mode, tablenames, settings=None, pid=None):
         output.success = False
         return output
 
-    notify("....Synchronization with %s (%s) - started" % (peer.name, peer.instance_url))
+    notify("....Synchronization with %s (%s) - started" % (peer.name, peer.url))
 
     for tablename in tablenames:
 
@@ -559,7 +674,7 @@ def s3_sync_eden_other(peer, mode, tablenames, settings=None, pid=None):
 
         if pull and mode in [1, 3]:
 
-            fetch_url = peer.instance_url
+            fetch_url = peer.url
 
             err = None
             try:
@@ -592,7 +707,7 @@ def s3_sync_eden_other(peer, mode, tablenames, settings=None, pid=None):
 
         if push and mode in [2, 3]: # push
 
-            push_url = peer.instance_url
+            push_url = peer.url
 
             if is_json:
                 _put = resource.push_json

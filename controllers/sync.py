@@ -544,7 +544,7 @@ def sync_res(vector, peer, policy):
 
         record_dump = cPickle.dumps(dict(vector.record), 0)
 
-        db[conflict_table].insert(
+        table_conflict.insert(
             uuid = vector.uuid,
             resource_table = vector.tablename,
             remote_record = record_dump,
@@ -560,7 +560,7 @@ def sync_res(vector, peer, policy):
 @auth.shn_requires_membership(1)
 def partner():
 
-    """ Synchronisation Partners """
+    """ Synchronization Partners """
 
     import gluon.contrib.simplejson as json
 
@@ -568,192 +568,97 @@ def partner():
 
     table.uuid.label = "UUID"
     table.uuid.comment = DIV(SPAN("*", _class="req"), DIV(_class="tooltip",
-        _title="UUID|" + Tstr("The unique identifier of the sync partner. Leave blank if the instance type is not Sahana Eden, it will be auto-assigned in that case.")))
+        _title="UUID|" + Tstr("The unique identifier of the peer. Leave blank if the peer is no Sahana Eden instance, it will be auto-assigned in that case.")))
+
     table.name.label = T("Name")
     table.name.comment = DIV(_class="tooltip",
-        _title=Tstr("Name") + "|" + Tstr("The descriptive name of the sync partner."))
-    table.instance_url.label = T("Instance URL")
-    table.instance_url.comment = DIV(SPAN("*", _class="req"), DIV(_class="tooltip",
-        _title=Tstr("Instance URL") + "|" + Tstr("For Eden instances - this is the application URL, e.g. http://sync.sahanfoundation.org/eden. For non-Eden instances, this is the Full ")))
-    table.instance_type.label = T("Instance Type")
-    table.instance_type.comment = DIV(SPAN("*", _class="req"), DIV(_class="tooltip",
-        _title=Tstr("Instance Type") + "|" + Tstr("Whether this is a Sahana Eden, Sahana Agasti, Ushahidi or Other instance.")))
-    table.username.label = T("Sync Username")
+        _title=Tstr("Name") + "|" + Tstr("The descriptive name of the peer."))
+
+    table.url.label = T("URL")
+    table.url.comment = DIV(SPAN("*", _class="req"), DIV(_class="tooltip",
+        _title=Tstr("URL") + "|" + Tstr("For Eden instances enter the application base URL, e.g. http://sync.sahanfoundation.org/eden, for other peers the URL of the synchronization interface.")))
+
+    #table.type.label = T("Instance Type")
+    #table.type.comment = DIV(SPAN("*", _class="req"), DIV(_class="tooltip",
+        #_title=Tstr("Instance Type") + "|" + Tstr("Whether this is a Sahana Eden, Sahana Agasti, Ushahidi or Other instance.")))
+
+    table.username.label = T("Username")
     table.username.comment = DIV(_class="tooltip",
-        _title=Tstr("Sync Username") + "|" + Tstr("Username used to login when synchronising with this partner. Note that only HTTP Basic authentication is supported."))
-    table.password.label = T("Sync Password")
+        _title=Tstr("Username") + "|" + Tstr("Username for authentication at the peer. Note that only HTTP Basic authentication is supported."))
+
+    table.password.label = T("Password")
     table.password.comment = DIV(_class="tooltip",
-        _title=Tstr("Sync Password") + "|" + Tstr("Password used to login when synchronising with this partner. Note that only HTTP Basic authentication is supported."))
-    table.comments.label = T("Comments")
-    table.comments.comment = DIV(_class="tooltip",
-        _title=Tstr("Comments") + "|" + Tstr("Any comments about this sync partner."))
-    table.policy.label = T("Sync Policy")
+        _title=Tstr("Password") + "|" + Tstr("Password for authentication at the peer. Note that only HTTP Basic authentication is supported."))
+
+    #table.comments.label = T("Comments")
+    #table.comments.comment = DIV(_class="tooltip",
+        #_title=Tstr("Comments") + "|" + Tstr("Any comments about this sync partner."))
+
+    table.policy.label = T("Data import policy")
     table.policy.comment = DIV(SPAN("*", _class="req"), DIV(_class="tooltip",
-        _title=Tstr("Sync Policy") + "|" + Tstr("The policy to use while synchronising with this partner. All policies other than 'No Sync' come into effect when conflicts arise.")))
-    table.sync_pools.readable = False
-    table.sync_pools.writable = False
-    table.password.readable = False
-    table.last_sync_on.writable = False
+        _title=Tstr("Data import policy") + "|" + Tstr("The default policy for data import from this peer.")))
 
-    # CRUD Strings - @todo: make new style
-    title_create = T("Add Partner")
-    title_display = T("Partner Details")
-    title_list = T("List Partners")
-    title_update = T("Edit Partner")
-    title_search = T("Search Partners")
-    subtitle_create = T("Add New Partner")
-    subtitle_list = T("Partners")
-    label_list_button = T("List Partners")
-    label_create_button = T("Add Partner")
-    label_search_button = T("Search Partners")
-    msg_record_created = T("Partner added")
-    msg_record_modified = T("Partner updated")
-    msg_record_deleted = T("Partner deleted")
-    msg_list_empty = T("No Partners currently registered")
-    s3.crud_strings.sync_partner = Storage(title_create=title_create,title_display=title_display,title_list=title_list,title_update=title_update,title_search=title_search,subtitle_create=subtitle_create,subtitle_list=subtitle_list,label_list_button=label_list_button,label_create_button=label_create_button,msg_record_created=msg_record_created,msg_record_modified=msg_record_modified,msg_record_deleted=msg_record_deleted,msg_list_empty=msg_list_empty)
+    # CRUD Strings
+    s3.crud_strings["sync_partner"] = Storage(
+        title_create = T("Add Peer"),
+        title_display = T("Peer Details"),
+        title_list = T("Synchronization Peers"),
+        title_update = T("Edit Peer"),
+        title_search = T("Search Peers"),
+        subtitle_create = T("Add New Peer"),
+        subtitle_list = T("Peers"),
+        label_list_button = T("List Peers"),
+        label_create_button = T("Add Peer"),
+        label_search_button = T("Search Peers"),
+        msg_record_created = T("Peer added"),
+        msg_record_modified = T("Peer updated"),
+        msg_record_deleted = T("Peer deleted"),
+        msg_list_empty = T("No Peers currently registered"))
 
-    def partner_ondelete(row):
 
-        """ Delete all jobs with this partner """
+    def prep(r):
+        if r.method == "create":
+            s3xrc.model.configure(db.sync_partner,
+                onaccept = lambda form: sync_partner_onaccept(form))
+        return True
+    response.s3.prep = prep
 
-        uuid = row.get("uuid")
-        if uuid:
-            schedule = db.sync_schedule
-            jobs = db().select(schedule.ALL)
-            jobs_del = []
-            for job in jobs:
-                try:
-                    job_cmd = json.loads(job.job_command)
-                except:
-                    continue
-                else:
-                    if job_cmd["partner_uuid"] == uuid:
-                        jobs_del.append(job.id)
-            db(schedule.id.belongs(jobs_del)).delete()
-    s3xrc.model.configure(table, delete_onaccept=partner_ondelete)
-
-    def partner_onadd(form):
-
-        """ Add default jobs with this partner """
-
-        return
-
-    #if "delete" in request.args: # @todo: make this a delete_onaccept
-        #peer_sel = db(db.sync_partner.id==int(request.args[0])).select(db.sync_partner.ALL)
-        #peer_uuid = None
-        #if peer_sel:
-            #peer_uuid = peer_sel[0].uuid
-        #if peer_uuid:
-            #sch_jobs_del = []
-            #sch_jobs = db().select(db.sync_schedule.ALL)
-            #for sch_job in sch_jobs:
-                #sch_job_cmd = json.loads(sch_job.job_command)
-                #if sch_job_cmd["partner_uuid"] == peer_uuid:
-                    #sch_jobs_del.append(sch_job.id)
-            #if sch_jobs_del:
-                #db(db.sync_schedule.id.belongs(sch_jobs_del)).delete()
-
-    if (not "update" in request.args) and len(request.vars) > 0: # @todo: make this prep/postp and onaccept
-        # add new partner
-        random_uuid = str(uuid.uuid4())
-        new_instance_type = ""
-        if "instance_type" in request.vars:
-            new_instance_type = request.vars["instance_type"]
-        if new_instance_type != "Sahana Eden":
-            if "uuid" in request.vars:
-                request.vars["uuid"] = random_uuid
-            if "uuid" in request.get_vars:
-                request.get_vars["uuid"] = random_uuid
-            if "uuid" in request.post_vars:
-                request.post_vars["uuid"] = random_uuid
-        elif "uuid" in request.vars and request.vars["uuid"] and "instance_url" in request.vars and request.vars["instance_url"]:
-            # create new default scheduled job for this partner, it's a Sahana Eden instance
-            modules = deployment_settings.modules
-            _db_tables = db.tables
-            db_tables = []
-            for __table in _db_tables:
-                if "modified_on" in db[__table].fields and "uuid" in db[__table].fields:
-                    db_tables.append(__table)
-            sch_resources = []
-            for _module in modules:
-                for _table in db_tables:
-                    if _table.startswith(_module + "_"):
-                        sch_resources.append(_module + "||" + _table[len(_module)+1:])
-
-            # add job to db
-            new_partner_uuid = request.vars["uuid"]
-            new_partner_instance_type = request.vars["instance_type"]
-            new_partner_policy = int(request.vars["policy"])
-            new_partner_name = None
-            if "name" in request.vars and request.vars["name"]:
-                new_partner_name = request.vars["name"]
-            sch_comments = "Default manually triggered schedule job for sync partner '"
-            if new_partner_name:
-                sch_comments += new_partner_name
-            else:
-                sch_comments += new_partner_uuid
-            sch_comments += "'"
-            sch_cmd = dict()
-            sch_cmd["partner_uuid"] = new_partner_uuid
-            sch_cmd["policy"] = new_partner_policy
-            sch_cmd["resources"] = sch_resources
-            sch_cmd["complete"] = False
-            sch_cmd["mode"] = 3
-            db["sync_schedule"].insert(
-                comments = sch_comments,
-                period = "m",
-                hours = None,
-                days_of_week = None,
-                time_of_day = None,
-                runonce_datetime = None,
-                job_type = 1,
-                job_command = json.dumps(sch_cmd),
-                last_run = None,
-                enabled = True,
-                created_on = datetime.datetime.now(),
-                modified_on = datetime.datetime.now()
-            )
+    response.s3.pagination = True
 
     return shn_rest_controller("sync", "partner")
 
 
 # -----------------------------------------------------------------------------
 @auth.shn_requires_membership(1)
-def setting(): # OK
+def setting():
 
     """ Synchronisation Settings """
-
-    if not "update" in request.args:
-        redirect(URL(r=request, args=["update", 1]))
 
     # Table settings
     table = db.sync_setting
 
-    table.uuid.writable = False
     table.uuid.label = "UUID"
     table.uuid.comment = DIV(_class="tooltip",
         _title="UUID|" + Tstr("The unique identifier which identifies this instance to other instances."))
 
-    table.comments.label = T("Comments")
-    table.comments.comment = DIV(_class="tooltip",
-        _title=Tstr("Comments") + "|" + Tstr("Any comments for this instance."))
-
-    table.beacon_service_url.readable = False
-    table.beacon_service_url.writable = False
-#    table.beacon_service_url.label = T("Beacon Service URL")
-#    table.beacon_service_url.comment = DIV(_class="tooltip",
-#        _title=Tstr("Beacon Service URL") + "|" + Tstr("Beacon service allows searching for other instances that wish to synchronise. This is the URL of the beacon service this instance will use."))
-
-    table.sync_pools.readable = False
-    table.sync_pools.writable = False
-
     # CRUD strings
     s3.crud_strings.sync_setting = Storage(
-        title_update = T("Edit Sync Settings"),
-        label_list_button = T("Sync Settings"),
-        msg_record_modified = T("Sync Settings updated"))
+        title_update = T("Synchronization Settings"),
+        msg_record_modified = T("Synchronization settings updated"))
 
-    # Return to this
+    def prep(r):
+        if r.component or \
+           str(r.id) != "1" or r.method != "update":
+               redirect(URL(r=request, args=["update", 1]))
+        return True
+    response.s3.prep = prep
+
+    def postp(r, output):
+        if isinstance(output, dict) and output.get("list_btn", None):
+            del output["list_btn"]
+        return output
+    response.s3.postp = postp
+
     crud.settings.update_next = URL(r=request, args=["update", 1])
 
     return shn_rest_controller("sync", "setting", deletable=False, listadd=False)
@@ -990,14 +895,14 @@ def schedule_process_job(job_id):
         for res_item in job_cmd["resources"]:
             _module, _resource = res_item.split("||")
             _resource_name = _module + "_" + _resource
-            peer_instance_url = list(urlparse.urlparse(peer.instance_url))
-            if peer_instance_url[2].endswith("/")==False:
-                peer_instance_url[2] += "/"
-            resource_remote_pull_url = peer.instance_url
+            peer_url = list(urlparse.urlparse(peer.url))
+            if peer_url[2].endswith("/")==False:
+                peer_url[2] += "/"
+            resource_remote_pull_url = peer.url
             if resource_remote_pull_url.endswith("/")==False:
                 resource_remote_pull_url += "/"
             resource_remote_pull_url += "sync/sync." + import_export_format + "/" + _module + "/" + _resource + last_sync_on_str
-            resource_remote_push_url = peer_instance_url[2] + "sync/sync." + import_export_format + "/push/" + _module + "/" + _resource + "?sync_partner_uuid=" + str(settings.uuid)
+            resource_remote_push_url = peer_url[2] + "sync/sync." + import_export_format + "/push/" + _module + "/" + _resource + "?sync_partner_uuid=" + str(settings.uuid)
             resource_local_pull_url = "/" + request.application + "/sync/sync." + import_export_format + "/" + _module + "/" + _resource + last_sync_on_str
             resource_local_push_url = "/" + request.application + "/sync/sync." + import_export_format + "/create/" + _module + "/" + _resource
             if sync_mode in [1, 3]:
@@ -1040,7 +945,7 @@ def schedule_process_job(job_id):
                 # Sync -> Push
                 try:
                     _local_data = fetcher.fetch("GET", request.env.http_host, resource_local_pull_url, None, cookie)
-                    _response = fetcher.fetch("PUT", peer_instance_url[1], resource_remote_push_url, _local_data, None, peer.username, peer.password)
+                    _response = fetcher.fetch("PUT", peer_url[1], resource_remote_push_url, _local_data, None, peer.username, peer.password)
                 except Error, e:
                     if not _resource_name + " (error)" in sync_resources and not _resource_name in sync_resources:
                         sync_resources.append(_resource_name + " (error)")
@@ -1106,16 +1011,21 @@ def schedule_process_job(job_id):
 @auth.requires_login()
 def history():
 
-    """ Shows history of database synchronisations
-
-        @todo: argument list processing too vulnerable
-    """
+    """ Shows history of database synchronisations """
 
     title = T("Synchronisation History")
 
-    table = db[log_table]
+    table = db.sync_log
+
+    id = None
     if len(request.args) > 0:
-        logs = db(table.id==int(request.args[0])).select(table.ALL, orderby=table.timestmp)
+        try:
+            id = int(request.args[0])
+        except ValueError:
+            pass
+
+    if id:
+        logs = db(table.id==id).select(table.ALL, limitby=(0,1))
     else:
         logs = db().select(table.ALL, orderby=table.timestmp)
 
@@ -1129,11 +1039,18 @@ def conflict():
     """ Conflict Resolution UI """
 
     import cPickle
+    table_conflict = db.sync_conflict
+
     title = T("Conflict Resolution")
 
     def get_modified_by(user_email):
+        """ Get a "nice" name for a user """
+        # Q: is this necessary? isn't the email-address better?
         modified_by = user_email
-        user = db(db.auth_user.email == user_email).select().first()
+        table = db.auth_user
+        user = db(table.email == user_email).select(user.first_name,
+                                                    user.last_name,
+                                                    limitby=(0,1)).first()
         if user:
             modified_by  = user.first_name
             if user.last_name:
@@ -1141,9 +1058,10 @@ def conflict():
         return modified_by
 
     skip_fields = ["uuid", "id"]
+
     field_errors = dict()
 
-    conflicts = db(db[conflict_table].resolved==False).select(db[conflict_table].ALL, orderby=db[conflict_table].logged_on)
+    conflicts = db(table_conflict.resolved==False).select(table_conflict.ALL, orderby=table_conflict.logged_on)
     for idx in xrange(0, len(conflicts)):
         if not conflicts[idx].resource_table in db.tables:
             del conflicts[idx]
@@ -1197,7 +1115,7 @@ def conflict():
                 # insert record
                 new_rec = dict()
                 for field in remote_record:
-                    if field in db[conflict_table].fields:
+                    if field in table_conflict.fields:
                         if "final_"+field in request.vars:
                             new_rec[field] = request.vars["final_"+field]
                         else:
@@ -1213,7 +1131,7 @@ def conflict():
             if len(field_errors) == 0:
                 conflict.update_record(resolved = True)
             # next conflict
-            conflicts = db(db[conflict_table].resolved==False).select(db[conflict_table].ALL, orderby=db[conflict_table].logged_on)
+            conflicts = db(table_conflict.resolved==False).select(table_conflict.ALL, orderby=table_conflict.logged_on)
             for idx in xrange(0, len(conflicts)):
                 if not conflicts[idx].resource_table in db.tables:
                     del conflicts[idx]

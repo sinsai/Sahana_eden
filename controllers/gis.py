@@ -165,18 +165,23 @@ def location():
                                     DIV(_class="stickytip",
                                         _title="WKT|" + Tstr("The" + " <a href='http://en.wikipedia.org/wiki/Well-known_text' target=_blank>" + Tstr("Well-Known Text") + "</a> " + "representation of the Polygon/Line.")))
 
-        if r.http == "GET" and r.representation in shn_interactive_view_formats:
+        if r.http in ("GET", "POST") and r.representation in shn_interactive_view_formats:
             # Options which are only required in interactive HTML views
             table.level.comment = DIV(_class="tooltip",
                                       _title=Tstr("Level") + "|" + Tstr("If the location is a geographic area, then state at what level here."))
-            table.parent.comment = DIV(A(ADD_LOCATION,
-                                           _class="colorbox",
-                                           _href=URL(r=request, c="gis", f="location", args="create", vars=dict(format="popup", child="parent")),
-                                           _target="top",
-                                           _title=ADD_LOCATION),
-                                         DIV(
-                                           _class="tooltip",
-                                           _title=Tstr("Parent") + "|" + Tstr("The Area which this Site is located within."))),
+            if r.representation == "popup":
+                # No 'Add Location' button
+                table.parent.comment = DIV(_class="tooltip",
+                                           _title=Tstr("Parent") + "|" + Tstr("The Area which this Site is located within."))
+            else:
+                table.parent.comment = DIV(A(ADD_LOCATION,
+                                               _class="colorbox",
+                                               _href=URL(r=request, c="gis", f="location", args="create", vars=dict(format="popup", child="parent")),
+                                               _target="top",
+                                               _title=ADD_LOCATION),
+                                             DIV(
+                                               _class="tooltip",
+                                               _title=Tstr("Parent") + "|" + Tstr("The Area which this Site is located within."))),
             table.name.comment = SPAN("*", _class="req")
             table.osm_id.comment = DIV(_class="stickytip",
                                        _title="OpenStreetMap ID|" + Tstr("The") + " <a href='http://openstreetmap.org' target=_blank>OpenStreetMap</a> ID. " + Tstr("If you know what the OSM ID of this location is then you can enter it here."))

@@ -958,13 +958,7 @@ class S3Resource(object):
         elif method == "delete":
             return self.__delete(r)
 
-        elif method == "options":
-            authorised = permit("read", tablename)
-
-        elif method == "fields":
-            authorised = permit("read", tablename)
-
-        elif method == "search" and not r.component:
+        elif method in ("options", "fields", "search", "barchart"):
             authorised = permit("read", tablename)
 
         elif method == "clear" and not r.component:
@@ -983,9 +977,6 @@ class S3Resource(object):
             else:
                 r.next = URL(r=r.request, f=self.name)
             return None
-
-        elif method == "barchart":
-            authorised = permit("read", tablename)
 
         else:
             raise HTTP(501, body=self.ERROR.BAD_METHOD)

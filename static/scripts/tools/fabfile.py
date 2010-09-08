@@ -1,6 +1,7 @@
 from __future__ import with_statement
 from fabric.api import *
-import urllib2
+import pexpect
+#import urllib2
 
 env.key_filename = ['/home/release/.ssh/sahana_release']
 
@@ -81,9 +82,12 @@ def migrate():
     "Perform a Migration"
     #migrate_url = urllib2.urlopen('http://%s/eden/default/index' % env.host) 
     #print migrate_url.read()
-    with cd('/home/web2py'):
-        # ToDo: Pass input into remote PTY
-        run('sudo -H -u web2py python web2py.py -S eden -M', pty=True)
+    #with cd('/home/web2py'):
+    # ToDo: Pass input into remote PTY
+    #run('sudo -H -u web2py python web2py.py -S eden -M', pty=True)
+    child = pexpect.spawn('ssh -i keys/sahana_release %s@%s' % (env.user, env.host))
+    
+        
  
 def migrate_off():
     "Disabling migrations"

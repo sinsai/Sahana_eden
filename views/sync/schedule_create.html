@@ -105,7 +105,7 @@ for module in deployment_settings.modules:
         if table.startswith(str(module) + "_"):
 			resource = table[len(str(module))+1:]
 }}
-                    <option value="{{=str(module) + "||" + resource}}" selected="selected">{{=table}}</option>
+                    <option value="{{=str(module) + "_" + resource}}" selected="selected">{{=table}}</option>
 {{
         pass
     pass

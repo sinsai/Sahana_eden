@@ -453,6 +453,8 @@ table.wkt.represent = lambda wkt: gis.abbreviate_wkt(wkt)
 table.lat.requires = IS_NULL_OR(IS_LAT())
 table.lon.requires = IS_NULL_OR(IS_LON())
 table.url.requires = IS_NULL_OR(IS_URL())
+table.osm_id.requires = IS_EMPTY_OR(IS_INT_IN_RANGE(0, 999999999999))
+table.geonames_id.requires = IS_EMPTY_OR(IS_INT_IN_RANGE(0, 999999999))
 
 table.level.label = T("Level")
 table.code.label = T("Code")
@@ -634,18 +636,20 @@ def gis_location_onvalidation(form):
     # (avoid incorrect data entry)
     # Points only for now
     if not "gis_feature_type" in form.vars or (form.vars.gis_feature_type == "1"):
-        config = gis.get_config()
-        base_error = T("Sorry that location appears to be outside the area supported by this deployment.")
-        lat_error =  Tstr("Latitude should be between") + ": " + str(config.min_lat) + " & " + str(config.max_lat)
-        lon_error = Tstr("Longitude should be between") + ": " + str(config.min_lon) + " & " + str(config.max_lon)
-        if (form.vars.lat > config.max_lat) or (form.vars.lat < config.min_lat):
-            response.error = base_error
-            form.errors["lat"] = lat_error
-            return
-        elif (form.vars.lon > config.max_lon) or (form.vars.lon < config.min_lon):
-            response.error = base_error
-            form.errors["lon"] = lon_error
-            return
+        # Skip if no Lat/Lon provided
+        if (form.vars.lat != None) and (form.vars.lon != None):
+            config = gis.get_config()
+            base_error = T("Sorry that location appears to be outside the area supported by this deployment.")
+            lat_error =  Tstr("Latitude should be between") + ": " + str(config.min_lat) + " & " + str(config.max_lat)
+            lon_error = Tstr("Longitude should be between") + ": " + str(config.min_lon) + " & " + str(config.max_lon)
+            if (form.vars.lat > config.max_lat) or (form.vars.lat < config.min_lat):
+                response.error = base_error
+                form.errors["lat"] = lat_error
+                return
+            elif (form.vars.lon > config.max_lon) or (form.vars.lon < config.min_lon):
+                response.error = base_error
+                form.errors["lon"] = lon_error
+                return
 
     # ToDo: Check for probable duplicates
     #

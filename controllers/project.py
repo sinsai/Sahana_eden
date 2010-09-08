@@ -29,9 +29,4 @@ def activity():
     tablename = "%s_%s" % (module, resource)
     table = db[tablename]
     
-    def postp(jr, output):                          
-        shn_action_buttons(jr)
-        return output
-    response.s3.postp = postp
-        
     return shn_rest_controller(module, resource)

@@ -61,7 +61,18 @@ def db_sync():
     if not "test" in env.host:
         pass
     else:
-        # ToDo: Pull database from Live
+        # ToDo: see dbstruct.py
+        # Step 0: Drop old database 'sahana'
+        # Step 1: Create a new, empty MySQL database 'sahana' as-normal
+        # Step 2: set deployment_settings.base.prepopulate = False in models/000_config.py
+        # Step 3: Allow web2py to run the Eden model to configure the Database structure
+        # Step 4: Export the Live database from the Live server (including structure)
+        # Step 5: Use this to populate a new table 'old'
+        # Step 7: Run the script: python dbstruct.py
+        # Step 8: Fixup manually anything which couldn't be done automatically
+        # Step 9: Take a dump of the fixed data (no structure, full inserts)
+        # Step 10: Import it into the empty database
+        # mysql -u root -p sahana < old.sql
         pass
 
 def maintenance_on():
@@ -91,11 +102,13 @@ def migrate():
     # ToDo: Pass input into remote PTY
     #run("sudo -H -u web2py python web2py.py -N -S eden -M", pty=True)
     child = pexpect.spawn("ssh -i /root/.ssh/sahana_release %s@%s" % (env.user, env.host))
+    child.expect(":~#")
     child.sendline("cd /home/web2py")
     child.expect("/home/web2py#")
     child.sendline("sudo -H -u web2py python web2py.py -N -S eden -M")
-    child.expect("In [1]:")
+    print child.before
     child.interact()     # Give control of the child to the user.
+    # Need to exit() w2p shell & also the SSH session
 
 def migrate_off():
     """ Disabling migrations """

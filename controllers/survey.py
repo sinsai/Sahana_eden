@@ -198,6 +198,8 @@ def series():
         msg_record_modified = T("Survey Series updated"),
         msg_record_deleted = T("Survey Series deleted"),
         msg_list_empty = T("No Survey Series currently registered"))
+
+    # Post-processor
     def _postp(jr, output):
         shn_survey_action_buttons(jr, deletable=False)
         return output

@@ -39,11 +39,6 @@ def store():
     # Don't send the locations list to client (pulled by AJAX instead)
     table.location_id.requires = IS_NULL_OR(IS_ONE_OF_EMPTY(db, "gis_location.id"))
 
-    def postp(jr, output):                          
-        shn_action_buttons(jr)
-        return output
-    response.s3.postp = postp
-
     tabs = [
             (T("Details"), None),
             (T("Items"), "store_item"),
@@ -74,9 +69,4 @@ def store_item():
     tablename = "%s_%s" % (module, resource)
     table = db[tablename]
        
-    def postp(jr, output):                          
-        shn_action_buttons(jr)
-        return output
-    response.s3.postp = postp    
-    
     return shn_rest_controller(module, resource)

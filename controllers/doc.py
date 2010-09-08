@@ -119,12 +119,6 @@ def document():
         db.irs_ireport.source_id.readable = db.irs_ireport.source_id.writable = False
         #db.flood_freport.document.readable = db.flood_freport.document.writable = False
 
-    #def postp(jr, output):
-    #    shn_action_buttons(jr)
-    #    return output
-    #response.s3.postp = postp
-    #response.s3.postp = shn_component_postp
-
     rheader = lambda r: shn_document_rheader(r)
 
     response.s3.pagination = True
@@ -141,11 +135,6 @@ def image():
 
     # Model options
     # used in multiple controllers, so in the model
-
-    def postp(jr, output):
-        shn_action_buttons(jr)
-        return output
-    response.s3.postp = postp
 
     response.s3.pagination = True
     output = shn_rest_controller(module, resource)

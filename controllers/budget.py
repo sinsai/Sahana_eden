@@ -1115,11 +1115,6 @@ def project():
     tablename = "org_%s" % (resource)
     table = db[tablename]
     
-    def org_postp(jr, output):
-        shn_action_buttons(jr)
-        return output
-    response.s3.postp = org_postp
-    
     # ServerSidePagination
     response.s3.pagination = True
 

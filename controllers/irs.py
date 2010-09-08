@@ -84,12 +84,6 @@ def icategory():
     tablename = "%s_%s" % (module, resource)
     table = db[tablename]
     
-    # Post-processor
-    def user_postp(jr, output):
-        shn_action_buttons(jr)
-        return output
-    response.s3.postp = user_postp
-
     output = shn_rest_controller(module, resource)
     return output
 
@@ -110,12 +104,6 @@ def incident():
 
     db.irs_iimage.report_id.readable = \
     db.irs_iimage.report_id.writable = False
-
-    # Post-processor
-    def user_postp(jr, output):
-        shn_action_buttons(jr, deletable=False)
-        return output
-    response.s3.postp = user_postp
 
     rheader = lambda r: shn_irs_rheader(r, tabs = [(T("Incident Details"), None),
                                                    (T("Reports"), "ireport"),

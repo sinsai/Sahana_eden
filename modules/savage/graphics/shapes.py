@@ -1,45 +1,13 @@
-
-"""                                                                                                                            
-    Healthscapes Geolytics Module                                                                                                   
-                                                                                                                                                                               
-                                                                                                                               
-    @author: Nico Preston <nicopresto@gmail.com>                                                                                 
-    @author: Colin Burreson <kasapo@gmail.com>                                                                         
-    @author: Zack Krejci <zack.krejci@gmail.com>                                                                             
-    @copyright: (c) 2010 Healthscapes                                                                             
-    @license: MIT                                                                                                              
-                                                                                                                               
-    Permission is hereby granted, free of charge, to any person                                                                
-    obtaining a copy of this software and associated documentation                                                             
-    files (the "Software"), to deal in the Software without                                                                    
-    restriction, including without limitation the rights to use,                                                               
-    copy, modify, merge, publish, distribute, sublicense, and/or sell                                                          
-    copies of the Software, and to permit persons to whom the                                                                  
-    Software is furnished to do so, subject to the following                                                                   
-    conditions:                                                                                                                
-          
-    The above copyright notice and this permission notice shall be                                                             
-    included in all copies or substantial portions of the Software.                                                            
-                                                                                                                               
-    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,                                                            
-    EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES                                                            
-    OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND                                                                   
-    NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT                                                                
-    HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY,                                                               
-    WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING                                                               
-    FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR                                                              
-    OTHER DEALINGS IN THE SOFTWARE.                                                                                            
-                                                                                                                               
-"""
-
-
 from base import Element, PositionableElement, BoxElement
 from group import Grouping
 from defs import Symbol, Use
 from utils import ViewBox
 
-from ..utils.struct import Vector2D as V, VStruct
+from ..utils.struct import Vector as V, Matrix
 from math import sqrt, cos, sin
+
+
+from copy import deepcopy
 
 
 class Circle (PositionableElement):
@@ -50,6 +18,9 @@ class Circle (PositionableElement):
         else:
             self.radius = 0.0
 
+    def size (self, value):
+        self.radius = value
+
     def setSVG (self):
         pos = V (self.x, self.y)
         self.applyTransform (pos)
@@ -59,7 +30,67 @@ class Circle (PositionableElement):
                       ('r', self.radius)])
         return attr
 
-class Path (Element):
+class PathElement:
+    def matrix (self):
+        return Matrix (3, 1, [self.x, self.y, 1])
+
+class AnchorElement (PathElement):
+    def __init__ (self, x, y):
+        self.x = x
+        self.y = y
+
+    def __str__ (self):
+        return ' '.join (['M'] + map (str, [self.x, self.y])) 
+
+class LinearElement (PathElement):
+    def __init__ (self, x, y):
+        self.x = x
+        self.y = y
+
+    def __str__ (self):
+        return ' '.join (['L'] + map (str, [self.x, self.y])) 
+
+class CloseElement (PathElement):
+    def __init__ (self):
+        pass
+
+    def __str__ (self):
+        return 'Z'
+
+class Path (PositionableElement):
+    def __init__ (self, **attr):
+        PositionableElement.__init__ (self, name = 'path', **attr)
+        if attr.has_key ('transform'):
+            self.postTransform = attr['transform']
+        else:
+            self.postTransform = None
+        self.elements = []
+        self.closed = False
+
+    def line (self, x, y):
+        self.elements.append (LinearElement (x, y))
+
+    def move (self, x, y):
+        self.elements.append (AnchorElement (x, y))
+
+    def close (self):
+        self.closed = True
+
+    def open (self):
+        self.closed = False
+
+    def setSVG (self):
+        attr = Element.setSVG (self)
+        elements = deepcopy (self.elements)
+        self.applyTransform (*elements)
+        strings = map (str, elements)
+        if self.closed:
+            strings.append (str (CloseElement ()))
+        attr.update ([('d', ' '.join (strings)), ('transform', self.postTransform)])
+        return attr
+        
+
+class CDATAPath (Element):
     def __init__ (self, **attr):
         Element.__init__ (self, name='path', **attr)
         if attr.has_key ('data'):
@@ -88,25 +119,54 @@ class Rectangle (BoxElement):
             self.height = float (attr['height'])
         else:
             self.height = None
+        if attr.has_key ('absoluteSize'):
+            self.absoluteSize = bool (attr['absoluteSize'])
+        else:
+            self.absoluteSize = False
+        if attr.has_key ('worldDeltaX'):
+            self.worldDeltaX = float (attr['worldDeltaX'])
+        else:
+            self.worldDeltaX = 0.0
+        if attr.has_key ('worldDeltaY'):
+            self.worldDeltaY = float (attr['worldDeltaY'])
+        else:
+            self.worldDeltaY = 0.0
         
     def setSVG (self):
         attr = BoxElement.setSVG (self)
-        points = self.calulateBox (self.x, self.y, self.width, self.height)
+        if not self.absoluteSize:
+            points = self.calulateBox (self.x, self.y, self.width, self.height)
+        else:
+            point = V (self.x, self.y)
+            self.applyTransform (point)
+            points = {'x': point.x, 'y': point.y,
+                      'width': self.width, 'height': self.height}
+        points['x'] += self.worldDeltaX
+        points['y'] += self.worldDeltaY
         attr.update (points)
         return attr
+
+class Square (Rectangle):
+    def __init__ (self, width, **attr):
+        attr.update ([('width', width), ('height', width)])
+        Rectangle.__init__ (self, **attr)
+
+    def size (self, value):
+        self.width = value
+        self.height = value
 
 
 class Line (PositionableElement):
     def __init__ (self, **attr):
         PositionableElement.__init__ (self, name = 'line', **attr)
         if attr.has_key ('point1'):
-            self.point1 = VStruct (*attr['point1'])
+            self.point1 = V (*attr['point1'])
         else:
-            self.point1 = VStruct (0.0, 0.0)
+            self.point1 = V (0.0, 0.0)
         if attr.has_key ('point2'):
-            self.point2 = VStruct (*attr['point2'])
+            self.point2 = V (*attr['point2'])
         else:
-            self.point2 = VStruct (0.0, 0.0)
+            self.point2 = V (0.0, 0.0)
 
     def setSVG (self):
         attr = PositionableElement.setSVG (self)
@@ -117,6 +177,38 @@ class Line (PositionableElement):
                       ('y1', point1.y),
                       ('x2', point2.x),
                       ('y2', point2.y)])
+        return attr
+
+
+class Sector (PositionableElement):
+    def __init__ (self, radius, start, delta, **attr):
+        PositionableElement.__init__ (self, name = 'path', **attr)
+        self.radius = radius
+        if delta < 0:
+            delta = -delta
+            start -= delta
+        self.point1 = self.arcPoint (start)
+        self.point2 = self.arcPoint (start + delta)
+
+    def arcPoint (self, rads):
+        x = self.radius * cos (rads)
+        y = self.radius * sin (rads)
+        return V (x, y)
+
+    def setSVG (self):
+        attr = PositionableElement.setSVG (self)
+        pos = V (self.x, self.y)
+        o = pos
+        p1 = self.point1 + pos
+        p2 = self.point2 + pos
+        self.applyTransform (o, p1, p2)
+        d1 = 'M ' + str (o)
+        d2 = 'L ' + str (p1)
+        d3 = 'A ' + str(self.radius) + ' ' + str(self.radius) + ' 1 0 0 '
+        d3 += str(p2)
+        d4 = 'Z'
+        data = ' '.join ([d1, d2, d3, d4])
+        attr.update ([('d', data)])
         return attr
 
 class Text (Grouping, PositionableElement):
@@ -150,7 +242,7 @@ class Text (Grouping, PositionableElement):
                 letter = LetterDict[char]
                 id = char
                 s = Symbol (id = id, viewBox = ViewBox (0, -800, letter[0], 250))
-                p = Path (data=letter[1], transform = 'scale(1,-1)')
+                p = CDATAPath (data=letter[1], transform = 'scale(1,-1)')
                 p.style.strokeColor = 'black'
                 s.draw (p)
                 self.createDef (s)
@@ -220,10 +312,6 @@ class Letter (Use):
                 'xlink:href': self.href,
                 }
 
-
-class Sector (PositionableElement):
-    def SVG (self, indent):
-        return '<TMP>'
 
 LetterDict = {
 "!": (278,"M208 729V391L186 168H147L125 391V729H208ZM208 104V0H124V104H208Z"),

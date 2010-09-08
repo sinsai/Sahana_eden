@@ -27,7 +27,7 @@ def now():
 
     """ Manual synchronization """
 
-    import simplejson as json
+    import gluon.contrib.simplejson as json
 
     pid = None
 
@@ -51,7 +51,6 @@ def now():
 
     # Read the action from URL vars
     action = request.get_vars.get("sync", None)
-    print "action=%s" % action
 
     if action == "start": # Start synchronization
 
@@ -195,35 +194,47 @@ def now():
 
             # Job done => read status
             if result:
-                job_resources_done = ",".join(result.done)
-                job_resources_pending = ",".join(result.pending)
                 job_sync_errors = ",".join(result.errors)
+                resources_done = ",".join(result.done)
                 total_errors += result.errcount
             else:
-                job_resources_done = ""
-                job_resources_pending =""
                 job_sync_errors = ""
+
+            notify("Job %s done." % job_id)
+
+            # Next job
+            if jobs:
+                job_id = jobs[0]
+                job = db(db.sync_schedule.id == job_id).select(db.sync_schedule.ALL, limitby=(0, 1)).first()
+                try:
+                    job_cmd = json.loads(job.job_command)
+                except:
+                    res_list = ""
+                else:
+                    res_list = ",".join(map(str, job_cmd.get("resources", [])))
 
             # Update status
             db(db.sync_now.id==status.id).update(
                     sync_jobs = ",".join(jobs),
-                    job_resources_done = job_resources_done,
-                    job_resources_pending = job_resources_pending,
-                    job_sync_errors = job_sync_errors)
+                    job_resources_done = "%s,%s" % (status.job_resources_done,
+                                                    resources_done),
+                    job_resources_pending = res_list,
+                    job_sync_errors = "%s,%s" % (status.job_sync_errors, job_sync_errors))
 
             # Reload status
             status = db(db.sync_now.id == status.id).select(db.sync_now.ALL, limitby=(0, 1)).first()
-            notify("Job %s done." % job_id)
 
         # All jobs done?
         if not status.sync_jobs:
+
+            # @todo: log in history
 
             # Remove status
             db(db.sync_now.id==status.id).delete()
 
             # Notification
             if total_errors:
-                error("Synchronization complete (%s errors)." % total_errors)
+                notify("Synchronization complete (%s errors)." % total_errors)
             else:
                 notify("Synchronization complete.")
 
@@ -304,7 +315,6 @@ def now():
         table = db.sync_now
 
         if status:
-            print status
             messages = s3_sync_get_messages(pid=status.id)
             if not messages:
                 if status.locked:
@@ -818,7 +828,6 @@ def schedule_cron():
                         log_file.close()
                     except:
                         pass
-                        #print "error while appending scheduler error log file!"
             db.commit()
         except Error, e:
             # log scheduler error
@@ -828,7 +837,6 @@ def schedule_cron():
                 log_file.close()
             except:
                 pass
-                #print "error while appending scheduler error log file!"
 
         # pause for 15 seconds
         time.sleep(15)
@@ -931,7 +939,6 @@ def schedule_process_job(job_id):
                         sync_resources.append(_resource_name + " (error)")
                         error_str = str(e)
                         sync_errors +=  "Error while syncing => " + _resource_name + ": \n" + error_str + "\n\n"
-                        #print "Error while syncing => " + _resource_name + ": \n" + error_str + "\n\n"
                 else:
                     if not _resource_name + " (error)" in sync_resources and not _resource_name in sync_resources:
                         sync_resources.append(_resource_name)
@@ -973,7 +980,6 @@ def schedule_process_job(job_id):
         except Error, e:
             error_str = str(e)
             sync_errors =  "Error while syncing job " + str(job.id) + ": \n" + error_str + "\n\n"
-            #print sync_errors
         request.args = _request_args_copy
         request.get_vars = _request_get_vars_copy
         request.post_vars = _request_post_vars_copy

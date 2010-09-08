@@ -302,8 +302,6 @@ def s3_sync_push_message(message, error=False, pid=None):
 
     """ Push a notification message to the queue """
 
-    print message
-
     table = db.sync_notification
 
     if message:
@@ -420,8 +418,6 @@ def s3_sync_eden_eden(peer, mode, tablenames,
     import urllib, urlparse
     import gluon.contrib.simplejson as json
 
-    print "s3_sync_eden_eden"
-
     output = Storage(
         success = False,
         errors = [],
@@ -441,23 +437,17 @@ def s3_sync_eden_eden(peer, mode, tablenames,
         msince = None
 
     errcount = 0
-    print tablenames
     for tablename in tablenames:
-        print tablename
         if tablename not in db.tables or tablename.find("_") == -1:
             output.pending.remove(tablename)
             output.done.append(tablename)
-            print "table not found"
             continue
 
         if session.s3.sync_stop:
-            print "Got sync_stop"
             return output
 
         prefix, name = tablename.split("_", 1)
         resource = s3xrc.resource(prefix, name)
-
-        print "resource created"
 
         if format == "json":
             _get = resource.fetch_json
@@ -466,22 +456,17 @@ def s3_sync_eden_eden(peer, mode, tablenames,
             _get = resource.fetch_xml
             _put = resource.push_xml
         else:
-            print "Error: bad format"
             output.success = False
             output.errors.append(s3xrc.ERROR.BAD_FORMAT)
             return output
 
         sync_path = "sync/sync/%s/%s.%s" % (prefix, name, format)
-        print "sync_path %s" % sync_path
 
         remote_url = urlparse.urlparse(peer.url)
-        print remote_url
         if remote_url.path[-1:] != "/":
             remote_path = "%s/%s" % (remote_url.path, sync_path)
         else:
             remote_path = "%s%s" % (remote_url.path, sync_path)
-
-        print "remote_path=%s" % remote_path
 
         if mode in [1, 3]: # pull
 
@@ -496,14 +481,11 @@ def s3_sync_eden_eden(peer, mode, tablenames,
                                          params)
             error = None
             try:
-                print "Fetching %s" % fetch_url
                 result = _get(fetch_url,
                               username=peer.username,
                               password=peer.password,
                               proxy=proxy)
-                print "fetched=%s" % result
             except Exception, e:
-                print "Error %s" % e
                 result = str(e)
             else:
                 try:
@@ -511,7 +493,6 @@ def s3_sync_eden_eden(peer, mode, tablenames,
                 except:
                     error = str(result)
                 else:
-                    print result_json
                     statuscode = str(result_json.get("statuscode", ""))
                     message = str(result_json.get("message", "Unknown error"))
                     if statuscode.startswith("2"):
@@ -527,8 +508,6 @@ def s3_sync_eden_eden(peer, mode, tablenames,
             else:
                 msg = "...fetch %s - SUCCESS" % tablename
                 output.messages.append(msg)
-
-            print msg
 
         if mode in [2, 3]: # push
 
@@ -549,7 +528,6 @@ def s3_sync_eden_eden(peer, mode, tablenames,
                               proxy=proxy,
                               msince=last_sync)
             except Exception, e:
-                print "Error %s" % e
                 result = str(e)
             else:
                 try:

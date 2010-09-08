@@ -2004,6 +2004,88 @@ def shn_search(r, **attr):
 
     return output
 
+
+def shn_barchart (r, **attr):
+    """
+        Provide simple barcharts for resource attributes
+        SVG representation uses the SaVaGe library
+        Need to request a specific value to graph in request.vars
+    """
+
+    import gluon.contrib.simplejson as json
+
+    # Get all the variables and format them if needed
+    valKey = r.request.vars.get("value")
+
+    nameKey = r.request.vars.get("name")
+    if not nameKey and r.table.get("name"):
+        # Try defaulting to the most-commonly used:
+        nameKey = "name"
+
+    # The parameter value is required; it must be provided
+    # The parameter name is optional; it is useful, but we don't need it
+    # Here we check to make sure we can find value in the table,
+    # and name (if it was provided)
+    if not r.table.get(valKey):
+        raise HTTP (400, s3xrc.xml.json_message(success=False, status_code="400", message="Need a Value for the Y axis"))
+    elif nameKey and not r.table.get(nameKey):
+        raise HTTP (400, s3xrc.xml.json_message(success=False, status_code="400", message=nameKey + " attribute not found in this resource."))
+
+    start = request.vars.get("start")
+    if start:
+        start = int(start)
+
+    limit = r.request.vars.get("limit")
+    if limit:
+        limit = int(limit)
+
+    settings = r.request.vars.get("settings")
+    if settings:
+        settings = json.loads(settings)
+    else:
+        settings = {}
+
+    if r.representation.lower() == "svg":
+        r.response.headers["Content-Type"] = "image/svg+xml"
+        
+        graph = local_import("savage.graph")
+        bar = graph.BarGraph(settings=settings)
+
+        title = deployment_settings.modules.get(module).name_nice
+        bar.setTitle(title)
+
+        if nameKey:
+            xlabel = r.table.get(nameKey).label
+            if xlabel:
+                bar.setXLabel(str(xlabel))
+            else:
+                bar.setXLabel(nameKey)
+
+        ylabel = r.table.get(valKey).label
+        if ylabel:
+            bar.setYLabel(str(ylabel))
+        else:
+            bar.setYLabel(valKey)
+        
+        try:
+            records = r.resource.load(start, limit)
+            for entry in r.resource:
+                val = entry[valKey]
+
+                # Can't graph None type
+                if not val is None:
+                    if nameKey:
+                        name = entry[nameKey]
+                    else:
+                        name = None
+                    bar.addBar(name, val)
+            return bar.save()
+        # If the field that was provided was not numeric, we have problems
+        except ValueError:
+            raise HTTP(400, "Bad Request")
+    else:
+        raise HTTP(501, body=BADFORMAT)
+
 # *****************************************************************************
 # Main controller function
 
@@ -2036,6 +2118,7 @@ def shn_rest_controller(module, resource, **attr):
                 - List/Display/Create for now
             - B{pdf}: list/read only
             - B{rss}: list only
+            - B{svg}: barchart method only
             - B{xls}: list/read only
             - B{ajax}: designed to be run asynchronously to refresh page elements
             - B{url}: designed to be accessed via JavaScript
@@ -2097,6 +2180,7 @@ def shn_rest_controller(module, resource, **attr):
     s3xrc.set_handler("delete", shn_delete)
     s3xrc.set_handler("search", shn_search)
     s3xrc.set_handler("copy", shn_copy)
+    s3xrc.set_handler("barchart", shn_barchart)
 
     res, r = s3xrc.parse_request(module, resource, session, request, response)
     output = res.execute_request(r, **attr)

@@ -8,7 +8,7 @@
 s3.menu_lang = [ T("Language"), True, "#"]
 _menu_lang = []
 for language in s3.l10n_languages.keys():
-    _menu_lang.append([s3.l10n_languages[language], False, URL(r=request, vars={"_language":language}).xml()])
+    _menu_lang.append([s3.l10n_languages[language], False, URL(r=request, vars={"_language":language})])
 s3.menu_lang.append(_menu_lang)
     
 # Help Menu (available in all screens)

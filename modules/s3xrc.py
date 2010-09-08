@@ -958,13 +958,7 @@ class S3Resource(object):
         elif method == "delete":
             return self.__delete(r)
 
-        elif method == "options":
-            authorised = permit("read", tablename)
-
-        elif method == "fields":
-            authorised = permit("read", tablename)
-
-        elif method == "search" and not r.component:
+        elif method in ("options", "fields", "search", "barchart"):
             authorised = permit("read", tablename)
 
         elif method == "clear" and not r.component:
@@ -4637,7 +4631,7 @@ class S3XML(object):
                                      (download_url, marker)
                     else:
                         marker = self.gis.get_marker(r.value)
-                        marker_url = "%s/%s" % (download_url, marker)
+                        marker_url = "%s/%s" % (download_url, marker.image)
                     r.element.set(self.ATTRIBUTE.marker,
                                   self.xml_encode(marker_url))
                     # Lookup GPS Marker
@@ -4690,7 +4684,7 @@ class S3XML(object):
             if table._tablename == "gis_location" and self.gis:
                 # Look up the marker to display
                 marker = self.gis.get_marker(_value)
-                marker_url = "%s/%s" % (download_url, marker)
+                marker_url = "%s/%s" % (download_url, marker.image)
                 resource.set(self.ATTRIBUTE.marker,
                                 self.xml_encode(marker_url))
                 # Look up the GPS Marker

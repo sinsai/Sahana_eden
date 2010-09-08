@@ -36,9 +36,9 @@ tablename = "%s_%s" % (module, resource)
 table = db.define_table(tablename, timestamp,
                         #uuidstamp, # Markers don't sync
                         Field("name", length=128, notnull=True, unique=True),
-                        #Field("height", "integer"), # In Pixels, for display purposes
-                        #Field("width", "integer"),  # Not needed since we get size client-side using Javascript's Image() class
-                        Field("image", "upload", autodelete = True),
+                        Field("image", "upload", autodelete=True),
+                        Field("height", "integer", writable=False), # In Pixels, for display purposes
+                        Field("width", "integer", writable=False),  # We could get size client-side using Javascript's Image() class, although this is unreliable!
                         migrate=migrate)
 table.name.requires = [IS_NOT_EMPTY(), IS_NOT_IN_DB(db, "%s.name" % tablename)]
 # upload folder needs to be visible to the download() function as well as the upload
@@ -50,14 +50,34 @@ table.image.label = T("Image")
 # Reusable field to include in other table definitions
 ADD_MARKER = Tstr("Add") + " " + MARKER
 marker_id = db.Table(None, "marker_id",
-            FieldS3("marker_id", db.gis_marker, sortby="name",
-                requires = IS_NULL_OR(IS_ONE_OF(db, "gis_marker.id", "%(name)s", zero=T("Use default from feature class"))),
-                represent = lambda id: (id and [DIV(IMG(_src=URL(r=request, c="default", f="download", args=db(db.gis_marker.id == id).select(db.gis_marker.image, limitby=(0, 1)).first().image), _height=40))] or [""])[0],
-                label = T("Marker"),
-                comment = DIV(A(ADD_MARKER, _class="colorbox", _href=URL(r=request, c="gis", f="marker", args="create", vars=dict(format="popup")), _target="top", _title=ADD_MARKER),
-                          DIV( _class="tooltip", _title=MARKER + "|" + Tstr("Defines the icon used for display of features on interactive map & KML exports. A Marker assigned to an individual Location is set if there is a need to override the Marker assigned to the Feature Class. If neither are defined, then the Default Marker is used."))),
-                ondelete = "RESTRICT"
-                ))
+                     FieldS3("marker_id", db.gis_marker, sortby="name",
+                             requires = IS_NULL_OR(IS_ONE_OF(db, "gis_marker.id", "%(name)s", zero=T("Use default from feature class"))),
+                             represent = lambda id: (id and [DIV(IMG(_src=URL(r=request, c="default", f="download", args=db(db.gis_marker.id == id).select(db.gis_marker.image, limitby=(0, 1)).first().image), _height=40))] or [""])[0],
+                             label = T("Marker"),
+                             comment = DIV(A(ADD_MARKER, _class="colorbox", _href=URL(r=request, c="gis", f="marker", args="create", vars=dict(format="popup")), _target="top", _title=ADD_MARKER),
+                                       DIV( _class="tooltip", _title=MARKER + "|" + Tstr("Defines the icon used for display of features on interactive map & KML exports. A Marker assigned to an individual Location is set if there is a need to override the Marker assigned to the Feature Class. If neither are defined, then the Default Marker is used."))),
+                             ondelete = "RESTRICT"
+                            ))
+
+def gis_marker_onvalidation(form):
+
+    """
+        Record the size of an Image upon Upload
+        Don't wish to resixe here as we'd like to use full resolution for printed output
+    """
+
+    import Image
+
+    im = Image.open(form.vars.image.file)
+    (width, height) = im.size
+
+    form.vars.width = width
+    form.vars.height = height
+
+    return
+
+s3xrc.model.configure(table,
+                      onvalidation=gis_marker_onvalidation)
 
 # -----------------------------------------------------------------------------
 # GIS Projections
@@ -83,30 +103,30 @@ table.maxResolution.label = T("maxResolution")
 table.units.label = T("Units")
 # Reusable field to include in other table definitions
 projection_id = db.Table(None, "projection_id",
-            FieldS3("projection_id", db.gis_projection, sortby="name",
-                requires = IS_NULL_OR(IS_ONE_OF(db, "gis_projection.id", "%(name)s")),
-                represent = lambda id: (id and [db(db.gis_projection.id == id).select(db.gis_projection.name, limitby=(0, 1)).first().name] or [NONE])[0],
-                label = T("Projection"),
-                comment = "",
-                ondelete = "RESTRICT"
-                ))
+                         FieldS3("projection_id", db.gis_projection, sortby="name",
+                                 requires = IS_NULL_OR(IS_ONE_OF(db, "gis_projection.id", "%(name)s")),
+                                 represent = lambda id: (id and [db(db.gis_projection.id == id).select(db.gis_projection.name, limitby=(0, 1)).first().name] or [NONE])[0],
+                                 label = T("Projection"),
+                                 comment = "",
+                                 ondelete = "RESTRICT"
+                                ))
 
 # -----------------------------------------------------------------------------
 # GIS Symbology
 resource = "symbology"
 tablename = "%s_%s" % (module, resource)
 table = db.define_table(tablename, timestamp, uuidstamp,
-                Field("name", length=128, notnull=True, unique=True),
-                migrate=migrate)
+                        Field("name", length=128, notnull=True, unique=True),
+                        migrate=migrate)
 # Reusable field to include in other table definitions
 symbology_id = db.Table(None, "symbology_id",
-            FieldS3("symbology_id", db.gis_symbology, sortby="name",
-                requires = IS_NULL_OR(IS_ONE_OF(db, "gis_symbology.id", "%(name)s")),
-                represent = lambda id: (id and [db(db.gis_symbology.id == id).select(db.gis_symbology.name, limitby=(0, 1)).first().name] or [NONE])[0],
-                label = T("Symbology"),
-                comment = "",
-                ondelete = "RESTRICT"
-                ))
+                        FieldS3("symbology_id", db.gis_symbology, sortby="name",
+                                requires = IS_NULL_OR(IS_ONE_OF(db, "gis_symbology.id", "%(name)s")),
+                                represent = lambda id: (id and [db(db.gis_symbology.id == id).select(db.gis_symbology.name, limitby=(0, 1)).first().name] or [NONE])[0],
+                                label = T("Symbology"),
+                                comment = "",
+                                ondelete = "RESTRICT"
+                               ))
 
 # -----------------------------------------------------------------------------
 # GIS Config
@@ -115,14 +135,12 @@ gis_config_layout_opts = {
     2:T("embedded")
     }
 opt_gis_layout = db.Table(None, "opt_gis_layout",
-                    Field("opt_gis_layout", "integer",
-                        requires = IS_IN_SET(gis_config_layout_opts, zero=None),
-                        default = 1,
-                        label = T("Layout"),
-                        represent = lambda opt: gis_config_layout_opts.get(opt, UNKNOWN_OPT)))
+                          Field("opt_gis_layout", "integer",
+                                requires = IS_IN_SET(gis_config_layout_opts, zero=None),
+                                default = 1,
+                                label = T("Layout"),
+                                represent = lambda opt: gis_config_layout_opts.get(opt, UNKNOWN_OPT)))
 # id=1 = Default settings
-# separated from Framework settings above
-# ToDo Extend for per-user Profiles - this is the WMC
 resource = "config"
 tablename = "%s_%s" % (module, resource)
 table = db.define_table(tablename, timestamp, uuidstamp,
@@ -194,7 +212,7 @@ s3.crud_strings[tablename] = Storage(
     msg_list_empty = T("No Configs currently defined")
 )
 
-# Configs as component of Persons
+# Configs as component of Persons (Personalised configurations)
 s3xrc.model.add_component(module, resource,
                           multiple=False,
                           joinby="pe_id",
@@ -211,26 +229,8 @@ s3xrc.model.configure(table,
 # -----------------------------------------------------------------------------
 # GIS Feature Classes
 # These are used in groups (for display/export), for icons & for URLs to edit data
-#gis_resource_opts = {
-#        "shelter":T("Shelter"),
-#        "office":T("Office"),
-#        "track":T("Track"),
-#        "image":T("Photo"),
-#        }
-resource = "feature_class"
-tablename = "%s_%s" % (module, resource)
-table = db.define_table(tablename, timestamp, uuidstamp, deletion_status,
-                        Field("name", length=128, notnull=True, unique=True),
-                        Field("description"),
-                        marker_id,
-                        Field("gps_marker"),
-                        Field("module"),    # Used to build Edit URL
-                        Field("resource"),  # Used to build Edit URL & to provide Attributes to Display
-                        migrate=migrate)
-
-table.uuid.requires = IS_NOT_IN_DB(db, "%s.uuid" % tablename)
-table.name.requires = [IS_NOT_EMPTY(), IS_NOT_IN_DB(db, "%s.name" % tablename)]
-table.gps_marker.requires = IS_NULL_OR(IS_IN_SET([
+# This is the list of GPS Markers for Garmin devices
+gis_gps_marker_opts = [
     "Airport",
     "Amusement Park"
     "Ball Park",
@@ -351,26 +351,39 @@ table.gps_marker.requires = IS_NULL_OR(IS_IN_SET([
     "White Buoy",
     "White Dot",
     "Zoo"
-    ], zero=T("Use default")))
-#table.module.requires = IS_NULL_OR(IS_ONE_OF(db((db.s3_module.enabled=="True") & (~db.s3_module.name.like("default"))), "s3_module.name", "%(name_nice)s"))
-#table.resource.requires = IS_NULL_OR(IS_IN_SET(gis_resource_opts))
+]
+resource = "feature_class"
+tablename = "%s_%s" % (module, resource)
+table = db.define_table(tablename, timestamp, uuidstamp, deletion_status,
+                        Field("name", length=128, notnull=True, unique=True),
+                        Field("description"),
+                        symbology_id,
+                        marker_id,
+                        Field("gps_marker"),
+                        Field("resource"),  # Used for Web Service Feeds
+                        migrate=migrate)
+
+table.uuid.requires = IS_NOT_IN_DB(db, "%s.uuid" % tablename)
+table.name.requires = [IS_NOT_EMPTY(), IS_NOT_IN_DB(db, "%s.name" % tablename)]
+table.gps_marker.requires = IS_NULL_OR(IS_IN_SET(gis_gps_marker_opts, zero=T("Use default")))
+# Configured in zzz_last.py when all tables are available
+#table.resource.requires = IS_NULL_OR(IS_IN_SET(db.tables))
 table.name.label = T("Name")
 table.gps_marker.label = T("GPS Marker")
 table.description.label = T("Description")
-table.module.label = T("Module")
 table.resource.label = T("Resource")
 
 # Reusable field to include in other table definitions
 ADD_FEATURE_CLASS = T("Add Feature Class")
 feature_class_id = db.Table(None, "feature_class_id",
-            FieldS3("feature_class_id", db.gis_feature_class, sortby="name",
-                requires = IS_NULL_OR(IS_ONE_OF(db, "gis_feature_class.id", "%(name)s")),
-                represent = lambda id: (id and [db(db.gis_feature_class.id == id).select(db.gis_feature_class.name, limitby=(0, 1)).first().name] or [NONE])[0],
-                label = T("Feature Class"),
-                comment = DIV(A(ADD_FEATURE_CLASS, _class="colorbox", _href=URL(r=request, c="gis", f="feature_class", args="create", vars=dict(format="popup")), _target="top", _title=ADD_FEATURE_CLASS),
-                          DIV( _class="tooltip", _title=Tstr("Feature Class") + "|" + Tstr("Defines the marker used for display & the attributes visible in the popup."))),
-                ondelete = "RESTRICT"
-                ))
+                            FieldS3("feature_class_id", db.gis_feature_class, sortby="name",
+                                    requires = IS_NULL_OR(IS_ONE_OF(db, "gis_feature_class.id", "%(name)s")),
+                                    represent = lambda id: (id and [db(db.gis_feature_class.id == id).select(db.gis_feature_class.name, limitby=(0, 1)).first().name] or [NONE])[0],
+                                    label = T("Feature Class"),
+                                    comment = DIV(A(ADD_FEATURE_CLASS, _class="colorbox", _href=URL(r=request, c="gis", f="feature_class", args="create", vars=dict(format="popup")), _target="top", _title=ADD_FEATURE_CLASS),
+                                              DIV( _class="tooltip", _title=Tstr("Feature Class") + "|" + Tstr("Defines the marker used for display & the attributes visible in the popup."))),
+                                    ondelete = "RESTRICT"
+                                    ))
 
 # -----------------------------------------------------------------------------
 # GIS Locations
@@ -498,7 +511,7 @@ def get_location_id (field_name = "location_id",
     """
         Function for creating a location field with a customisable field_name/label
         @author Michael Howden
-        @ToDo: more functionality from this function to port from ADPC Branch
+        @ToDo: more functionality for this function to port from ADPC Branch
         @ToDo: Replace with a Class: S3ReusableField
     """
 
@@ -548,7 +561,9 @@ table.language.label = T("Language")
 table.name_l10n.label = T("Name")
 
 # Names as component of Locations
-s3xrc.model.add_component(module, resource, joinby=dict(gis_location="location_id"), multiple=True)
+s3xrc.model.add_component(module, resource,
+                          joinby=dict(gis_location="location_id"),
+                          multiple=True)
 
 # Multiselect Widget
 name_dummy_element = S3MultiSelectWidget(db = db,

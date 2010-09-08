@@ -112,6 +112,10 @@ deployment_settings.gis.locations_hierarchy = {
     "L3":T("Town"),
     "L4":T("Village")
 }
+# Maximum Marker Size
+# (takes effect only on display)
+deployment_settings.gis.marker_max_height = 35
+deployment_settings.gis.marker_max_width = 30
 # Do we have a spatial DB available? (currently unused. Will support PostGIS & Spatialite.)
 deployment_settings.gis.spatialdb = False
 # GeoServer (currently unused. Will allow REST control of GeoServer.)

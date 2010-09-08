@@ -1,5 +1,5 @@
 {{extend "layout.html"}}
-<h1>{{=T("Synchronisation - Sync Now")}}</h1>
+<h1>{{=T("Manual Synchronization")}}</h1>
 <script type="text/javascript">//<![CDATA[
 function getSyncStatus() {
     $.get("{{=URL(r=request, c="sync", f="now", vars=dict(sync="status"))}}", function(data) {
@@ -41,6 +41,6 @@ function startSync() {
     </tr>
 {{pass}}
 </table>
-<h4>Log</h4>
+<h4>Message Log</h4>
 <div id="sync_status">
 </div>

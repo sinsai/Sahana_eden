@@ -58,7 +58,9 @@ $(document).ready(function() {
     jQuery.ajaxS3 = function(s) {
         var options = jQuery.extend( {}, jQuery.ajaxS3Settings, s );
         options.tryCount = 0;
-        showStatus(_ajaxS3_get_ + ' ' + (s.message ? s.message : _ajaxS3_fmd_) + '...', this.ajaxS3Settings.msgTimeout);
+        if (s.message) {
+            showStatus(_ajaxS3_get_ + ' ' + (s.message ? s.message : _ajaxS3_fmd_) + '...', this.ajaxS3Settings.msgTimeout);
+        }
         options.success = function(data, status) {
             hideStatus();
             if (s.success)

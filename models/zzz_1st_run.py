@@ -209,110 +209,164 @@ if populate:
         table.truncate()
         table.insert(
             name = "marker_red",
+            height = 34,
+            width = 20,
             image = "gis_marker.image.marker_red.png"
         )
         table.insert(
             name = "marker_yellow",
+            height = 34,
+            width = 20,
             image = "gis_marker.image.marker_yellow.png"
         )
         table.insert(
             name = "marker_amber",
+            height = 34,
+            width = 20,
             image = "gis_marker.image.marker_amber.png"
         )
         table.insert(
             name = "marker_green",
+            height = 34,
+            width = 20,
             image = "gis_marker.image.marker_green.png"
         )
         table.insert(
             name = "person",
+            height = 50,
+            width = 50,
             image = "gis_marker.image.Civil_Disturbance_Theme.png"
         )
         table.insert(
             name = "school",
+            height = 33,
+            width = 44,
             image = "gis_marker.image.Edu_Schools_S1.png"
         )
         table.insert(
             name = "food",
+            height = 40,
+            width = 40,
             image = "gis_marker.image.Emergency_Food_Distribution_Centers_S1.png"
         )
         table.insert(
-            name = "shelter",
-            image = "gis_marker.image.Emergency_Shelters_S1.png"
-        )
-        table.insert(
             name = "office",
+            height = 40,
+            width = 40,
             image = "gis_marker.image.Emergency_Operations_Center_S1.png"
         )
         table.insert(
+            name = "shelter",
+            height = 40,
+            width = 40,
+            image = "gis_marker.image.Emergency_Shelters_S1.png"
+        )
+        table.insert(
             name = "activity",
+            height = 40,
+            width = 40,
             image = "gis_marker.image.Emergency_Teams_S1.png"
         )
         table.insert(
             name = "hospital",
+            height = 40,
+            width = 40,
             image = "gis_marker.image.E_Med_Hospital_S1.png"
         )
         table.insert(
             name = "earthquake",
+            height = 50,
+            width = 50,
             image = "gis_marker.image.Geo_Earth_Quake_Epicenter.png"
         )
         table.insert(
             name = "volcano",
+            height = 50,
+            width = 50,
             image = "gis_marker.image.Geo_Volcanic_Threat.png"
         )
         table.insert(
             name = "tsunami",
+            height = 50,
+            width = 50,
             image = "gis_marker.image.Hydro_Meteor_Tsunami_ch.png"
         )
         table.insert(
             name = "church",
+            height = 33,
+            width = 44,
             image = "gis_marker.image.Public_Venue_Church_S1.png"
         )
         table.insert(
-            name = "temple",
-            image = "gis_marker.image.Public_Venue_Temple_S1.png"
-        )
-        table.insert(
             name = "mosque",
+            height = 33,
+            width = 44,
             image = "gis_marker.image.Public_Venue_Mosque_S1.png"
         )
         table.insert(
+            name = "temple",
+            height = 33,
+            width = 44,
+            image = "gis_marker.image.Public_Venue_Temple_S1.png"
+        )
+        table.insert(
             name = "phone",
+            height = 10,
+            width = 5,
             image = "gis_marker.image.SMS_Message_Phone.png"
         )
         table.insert(
             name = "orphanage",
+            height = 33,
+            width = 44,
             image = "gis_marker.image.Special_Needs_Child_Day_Care_S1.png"
         )
         table.insert(
             name = "airport",
+            height = 33,
+            width = 44,
             image = "gis_marker.image.Trans_Airport_S1.png"
         )
         table.insert(
             name = "bridge",
+            height = 33,
+            width = 44,
             image = "gis_marker.image.Trans_Bridge_S1.png"
         )
         table.insert(
             name = "helicopter",
+            height = 33,
+            width = 44,
             image = "gis_marker.image.Trans_Helicopter_Landing_Site_S1.png"
         )
         table.insert(
             name = "port",
+            height = 33,
+            width = 44,
             image = "gis_marker.image.Trans_Port_S1.png"
         )
         table.insert(
             name = "rail_station",
+            height = 33,
+            width = 44,
             image = "gis_marker.image.Trans_Rail_Station_S1.png"
         )
         table.insert(
             name = "vehicle",
+            height = 50,
+            width = 50,
             image = "gis_marker.image.Transport_Vehicle_Theme.png"
         )
         table.insert(
             name = "water",
+            height = 33,
+            width = 44,
             image = "gis_marker.image.Water_Supply_Infrastructure_Theme_S1.png"
         )
         table.insert(
             name = "volunteer",
+            height = 40,
+            width = 39,
             image = "gis_marker.image.Volunteer.png"
         )
     tablename = "gis_symbology"
@@ -376,8 +430,7 @@ if populate:
             uuid = "www.sahanafoundation.org/GIS-FEATURE-CLASS-TRACK",
             name = "Track",
             gps_marker = "TracBack Point",
-            module = "gis",
-            resource = "track"
+            resource = "gis_track"
         )
         table.insert(
             uuid = "www.sahanafoundation.org/GIS-FEATURE-CLASS-L0",
@@ -430,8 +483,7 @@ if populate:
             name = "Hospital",
             marker_id = db(db.gis_marker.name == "hospital").select(limitby=(0, 1)).first().id,
             gps_marker = "Medical Facility",
-            module = "hms",
-            resource = "hospital"
+            resource = "hms_hospital"
         )
         table.insert(
             uuid = "www.sahanafoundation.org/GIS-FEATURE-CLASS-INCIDENT",
@@ -443,16 +495,14 @@ if populate:
             name = "Office",
             marker_id = db(db.gis_marker.name == "office").select(limitby=(0, 1)).first().id,
             gps_marker = "Building",
-            module = "or",
-            resource = "office"
+            resource = "or_office"
         )
         table.insert(
             uuid = "www.sahanafoundation.org/GIS-FEATURE-CLASS-PERSON",
             name = "Person",
             marker_id = db(db.gis_marker.name == "person").select(limitby=(0, 1)).first().id,
             gps_marker = "Contact, Dreadlocks",
-            module = "pr",
-            resource = "person"
+            resource = "pr_person"
         )
         table.insert(
             uuid = "www.sahanafoundation.org/GIS-FEATURE-CLASS-PORT",
@@ -475,8 +525,7 @@ if populate:
             name = "Shelter",
             marker_id = db(db.gis_marker.name == "shelter").select(limitby=(0, 1)).first().id,
             gps_marker = "Campground",
-            module = "cr",
-            resource = "shelter"
+            resource = "cr_shelter"
         )
         table.insert(
             uuid = "www.sahanafoundation.org/GIS-FEATURE-CLASS-SMS",

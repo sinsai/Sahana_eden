@@ -60,10 +60,13 @@ def assessment():
     tablename = "%s_%s" % (module, resource)
     table = db[tablename]
 
+    # Don't send the locations list to client (pulled by AJAX instead)
+    table.location_id.requires = IS_NULL_OR(IS_ONE_OF_EMPTY(db, "gis_location.id"))
+    
     # Villages only
-    table.location_id.requires = IS_NULL_OR(IS_ONE_OF(db(db.gis_location.level == "L4"),
-                                                      "gis_location.id",
-                                                      repr_select, sort=True))
+    #table.location_id.requires = IS_NULL_OR(IS_ONE_OF(db(db.gis_location.level == "L5"),
+    #                                                  "gis_location.id",
+    #                                                  repr_select, sort=True))
 
     # Pre-populate staff ID
     if auth.is_logged_in():
@@ -134,6 +137,33 @@ def assessment():
             "Comments": "comments"
         }
     }
+
+    # @ToDo  Generalize this and make it available as a function that other
+    # component prep methods can call to set the default for a join field.
+    def prep(r):
+        if r.representation=="html" and r.http=="GET" and r.method=="create":
+            # If this assessment is being created as a component of a shelter,
+            # it will have the shelter id in its vars.
+            shelter_id = r.request.get_vars.get("assessment.shelter_id", None)
+            if shelter_id:
+                try:
+                    shelter_id = int(shelter_id)
+                except ValueError:
+                    pass
+                else:
+                    db.rat_assessment.shelter_id.default = shelter_id
+            # If this assessment is being created as a component of a document,
+            # it will have the document id in its vars.
+            document_id = r.request.get_vars.get("assessment.document_id", None)
+            if document_id:
+                try:
+                    document_id = int(document_id)
+                except ValueError:
+                    pass
+                else:
+                    db.rat_assessment.document_id.default = document_id
+        return True
+    response.s3.prep = prep
 
     # Post-processor
     def postp(r, output):

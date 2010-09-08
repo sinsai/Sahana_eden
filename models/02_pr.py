@@ -10,17 +10,6 @@
 module = "pr"
 
 # *****************************************************************************
-# Settings
-#
-resource = "setting"
-tablename = "%s_%s" % (module, resource)
-table = db.define_table(tablename,
-                Field("audit_read", "boolean"),
-                Field("audit_write", "boolean"),
-                migrate=migrate)
-
-
-# *****************************************************************************
 # Person Entity
 #
 pr_pe_types = Storage(
@@ -125,7 +114,7 @@ pe_label = db.Table(None, "pe_label",
 
 pe_id = db.Table(None, "pe_id",
                  Field("pe_id", db.pr_pentity,
-                       requires = IS_NULL_OR(IS_ONE_OF(db, "pr_pentity.id", shn_pentity_represent)),
+                       requires = IS_NULL_OR(IS_ONE_OF(db, "pr_pentity.id", shn_pentity_represent, orderby="pr_pentity.id")),
                        represent = lambda id: (id and [shn_pentity_represent(id)] or [NONE])[0],
                        readable = False,
                        writable = False,
@@ -394,7 +383,9 @@ person_id = db.Table(None, "person_id",
                      FieldS3("person_id", db.pr_person,
                              sortby = ["first_name", "middle_name", "last_name"],
                              requires = IS_NULL_OR(IS_ONE_OF(db, "pr_person.id",
-                                                             shn_pr_person_represent, sort=True)),
+                                                             shn_pr_person_represent,
+                                                             orderby="pr_person.first_name",
+                                                             sort=True)),
                              represent = lambda id: (id and \
                                          [shn_pr_person_represent(id)] or [NONE])[0],
                              label = T("Person"),

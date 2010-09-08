@@ -1,36 +1,26 @@
 # -*- coding: utf-8 -*-
 
 """
-    Inventory 
-    
+    Inventory
+
     @author: Michael Howden (michael@sahanafoundation.org)
-    @date-created: 2010-08-16    
-    
+    @date-created: 2010-08-16
+
     A module to record inventories of items at a location (store)
 """
 
 module = "inventory"
 if deployment_settings.has_module("logs"):
-    #==============================================================================
-    # Settings
-    #
-    resource = "setting"
-    tablename = "%s_%s" % (module, resource)
-    table = db.define_table(tablename,
-                            Field("audit_read", "boolean"),
-                            Field("audit_write", "boolean"),
-                            migrate=migrate)
-
 
     #==============================================================================
     # Inventory Store
     #
     resource = "store"
     tablename = "%s_%s" % (module, resource)
-    table = db.define_table(tablename, 
-                            timestamp, 
-                            uuidstamp, 
-                            authorstamp, 
+    table = db.define_table(tablename,
+                            timestamp,
+                            uuidstamp,
+                            authorstamp,
                             deletion_status,
                             location_id,
                             document_id,
@@ -38,7 +28,7 @@ if deployment_settings.has_module("logs"):
                             comments,
                             migrate=migrate)
 
-    table.location_id.requires = IS_ONE_OF(db, "gis_location.id", repr_select, sort=True)
+    table.location_id.requires = IS_ONE_OF(db, "gis_location.id", repr_select, orderby="gis_location.name", sort=True)
     table.location_id.comment.append(SPAN("*", _class="req"))
 
     # -----------------------------------------------------------------------------
@@ -48,7 +38,7 @@ if deployment_settings.has_module("logs"):
             return shn_gis_location_represent(location)
         else:
             return NONE
-    
+
     # CRUD strings
     ADD_INVENTORY_STORE = T("Add Inventory Store")
     LIST_INVENTORY_STORES = T("List Inventory Stores")
@@ -67,18 +57,18 @@ if deployment_settings.has_module("logs"):
         msg_record_modified = T("Inventory Store updated"),
         msg_record_deleted = T("Inventory Store deleted"),
         msg_list_empty = T("No Inventory Stores currently registered"))
-    
+
     # Reusable Field
     inventory_store_id = db.Table(None, "inventory_store_id",
             FieldS3("inventory_store_id", db.inventory_store, sortby="name",
-                requires = IS_NULL_OR(IS_ONE_OF(db, "inventory_store.id", inventory_store_represent, sort=True)),
+                requires = IS_NULL_OR(IS_ONE_OF(db, "inventory_store.id", inventory_store_represent, orderby="inventory_store.id", sort=True)),
                 represent = lambda id: shn_gis_location_represent(shn_get_db_field_value(db=db, table="inventory_store", field="location_id", look_up=id)),
                 label = T("Inventory Store"),
                 comment = DIV(A(ADD_INVENTORY_STORE, _class="colorbox", _href=URL(r=request, c="inventory", f="store", args="create", vars=dict(format="popup")), _target="top", _title=ADD_INVENTORY_STORE),
                           DIV( _class="tooltip", _title=Tstr("Inventory Store") + "|" + Tstr("An Inventory Store is a physical place which contains Relief Items available to be Distributed."))),
                 ondelete = "RESTRICT"
                 ))
-    
+
     # inventory_store as component of doc_documents
     s3xrc.model.add_component(module, resource,
                               multiple=True,
@@ -101,10 +91,10 @@ if deployment_settings.has_module("logs"):
     #
     resource = "store_item"
     tablename = "%s_%s" % (module, resource)
-    table = db.define_table(tablename, 
-                            timestamp, 
-                            uuidstamp, 
-                            authorstamp, 
+    table = db.define_table(tablename,
+                            timestamp,
+                            uuidstamp,
+                            authorstamp,
                             deletion_status,
                             inventory_store_id,
                             item_id,
@@ -130,7 +120,7 @@ if deployment_settings.has_module("logs"):
         msg_record_modified = T("Inventory Item updated"),
         msg_record_deleted = T("Inventory Item deleted"),
         msg_list_empty = T("No Inventory Items currently registered"))
-    
+
     # Items as component of Stores
     s3xrc.model.add_component(module, resource,
                               multiple=True,
@@ -151,7 +141,7 @@ if deployment_settings.has_module("logs"):
                     [T("List"), False, URL(r=request, c="logs", f="distrib")],
                     [T("Add"), False, URL(r=request, c="logs", f="distrib", args="create")],
                 ]],
-                [T("Relief Items"), False, URL(r=request, c="supply", f="item"), 
+                [T("Relief Items"), False, URL(r=request, c="supply", f="item"),
                 [
                     [T("List"), False, URL(r=request, c="supply", f="item")],
                     [T("Add"), False, URL(r=request, c="supply", f="item", args="create")],

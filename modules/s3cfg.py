@@ -13,6 +13,7 @@ class S3Config(Storage):
         self.mail = Storage()
         self.L10n = Storage()
         self.security = Storage()
+        self.ui = Storage()
         self.T = T
 
     # Auth settings
@@ -26,12 +27,14 @@ class S3Config(Storage):
         return self.auth.get("openid", False)
 
     # Base settings
-    def get_base_public_url(self):
-        return self.base.get("public_url", "http://127.0.0.1:8000")
+    def get_base_debug(self):
+        return self.base.get("debug", False)
     def get_base_migrate(self):
         return self.base.get("migrate", True)
     def get_base_prepopulate(self):
         return self.base.get("prepopulate", True)
+    def get_base_public_url(self):
+        return self.base.get("public_url", "http://127.0.0.1:8000")
 
     # Database settings
     def get_database_string(self):
@@ -87,9 +90,13 @@ class S3Config(Storage):
         return self.gis.get("edit_L4", True)
     def get_gis_edit_l5(self):
         return self.gis.get("edit_L5", True)
+    def get_gis_marker_max_height(self):
+        return self.gis.get("marker_max_height", 35)
+    def get_gis_marker_max_width(self):
+        return self.gis.get("marker_max_width", 30)
     def get_gis_geoserver_url(self):
         return self.gis.get("geoserver_url", "http://localhost/geoserver")
-    def get_gis__username(self):
+    def get_gis_geoserver_username(self):
         return self.gis.get("geoserver_username", "admin")
     def get_gis_geoserver_password(self):
         return self.gis.get("geoserver_password", "password")
@@ -119,10 +126,22 @@ class S3Config(Storage):
         return self.mail.get("approver", "useradmin@your.org")
 
     # Security Settings
+    def get_security_audit_read(self):
+        return self.security.get("audit_read", False)
+    def get_security_audit_write(self):
+        return self.security.get("audit_write", False)
     def get_security_policy(self):
         return self.security.get("policy", 1)
     def get_security_map(self):
         return self.security.get("map", False)
+    def get_security_self_registration(self):
+        return self.security.get("self_registration", True)
+
+    # UI/Workflow Settings
+    def get_ui_navigate_away_confirm(self):
+        return self.ui.get("navigate_away_confirm", True)
+    def get_ui_autocomplete(self):
+        return self.ui.get("autocomplete", False)
 
     # Active modules list
     def has_module(self, module_name):

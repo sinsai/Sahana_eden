@@ -11,16 +11,6 @@ module = "mpr"
 
 if deployment_settings.has_module(module):
 
-    #
-    # Settings --------------------------------------------------------------------
-    #
-    resource = 'setting'
-    tablename = "%s_%s" % (module, resource)
-    table = db.define_table(tablename,
-                            Field('audit_read', 'boolean'),
-                            Field('audit_write', 'boolean'),
-                            migrate=migrate)
-
     # *************************************************************************
     # Missing report
     #
@@ -39,7 +29,8 @@ if deployment_settings.has_module(module):
                                 sortby=["first_name", "middle_name", "last_name"],
                                 requires = IS_NULL_OR(IS_ONE_OF(db,
                                                 "pr_person.id",
-                                                shn_pr_person_represent)),
+                                                shn_pr_person_represent,
+                                                orderby="pr_person.first_name")),
                                 represent = lambda id: \
                                             (id and
                                             [shn_pr_person_represent(id)] or
@@ -73,6 +64,7 @@ if deployment_settings.has_module(module):
     table.since.label = T("Date/Time of disappearence")
     table.since.requires = IS_UTC_DATETIME(utc_offset=shn_user_utc_offset(), allow_future=False)
     table.since.represent = lambda value: shn_as_local_time(value)
+    table.since.comment = SPAN("*", _class="req")
 
     table.location_id.label = T("Last known location")
     table.location_id.comment = DIV(A(ADD_LOCATION,

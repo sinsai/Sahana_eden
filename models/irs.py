@@ -9,14 +9,6 @@
 module = "irs"
 if deployment_settings.has_module(module):
 
-    # Settings
-    resource = "setting"
-    tablename = "%s_%s" % (module, resource)
-    table = db.define_table(tablename,
-                            Field("audit_read", "boolean"),
-                            Field("audit_write", "boolean"),
-                            migrate=migrate)
-
     # ---------------------------------------------------------------------
     # List of Incident Categories
     # NB It is important that the meaning of these entries is not changed as otherwise this hurts our ability to do synchronisation

@@ -1,4 +1,4 @@
-@charset "UTF-8";
+﻿@charset "UTF-8";
 
 /*
 Sahana - Default Theme - Stylesheet
@@ -58,6 +58,16 @@ li { margin-left: 1em; }
 
 /* Hides from IE-mac */
 * html .clearfix { height: 1%; }
+
+/* Over-ride Ext */
+ol, ul {
+    list-style:disc inside none;
+}
+/* Except here */
+ul.x-tree-node-ct,
+ul.x-tree-root-ct {
+    list-style:none outside none;
+}
 
 /* Basic Page Formatting Styles
    ------------------------------------------------------------------------------- */
@@ -447,6 +457,7 @@ div.question-container { text-align:center;
 
 /* Help Popup */
 .tooltip,
+.stickytip,
 .ajaxtip { position:static;
           text-transform:uppercase;
           height:20px;
@@ -454,8 +465,10 @@ div.question-container { text-align:center;
           background-image: url(../../img/help_off.gif); }
 
 .tooltip span,
+.stickytip span,
 .ajaxtip span { display:none; }
 .tooltip:hover,
+.stickytip:hover,
 .ajaxtip:hover { background-color:transparent;
                 background-image: url(../../img/help_on.gif); }
 
@@ -483,6 +496,8 @@ div.confirmation { color:#070;
         margin-bottom: 1.0em;
         padding-top: 1.0em;
         padding-bottom: 1.0em;
+        padding-left: 30px;
+        padding-right: 1em;
         cursor: pointer; }
 .error p em { color:#c00; }
 .information { color:#748d8e;

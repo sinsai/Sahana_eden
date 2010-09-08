@@ -45,7 +45,7 @@ import sys
 import random           # Needed when feature_queries are passed in without a name
 import urllib           # Needed for urlencoding
 import urllib2          # Needed for error handling on fetch
-#import uuid
+import uuid
 import Cookie           # Needed for Sessions on Internal KML feeds
 try:
     from cStringIO import StringIO    # Faster, where available
@@ -354,13 +354,14 @@ class GIS(object):
             return None
 
     # -----------------------------------------------------------------------------
-    def get_feature_layer(self, module, resource, layername, popup_label, marker=None, filter=None, active=True):
+    def get_feature_layer(self, module, resource, layername, popup_label, marker=None, filter=None, active=True, polygons=False):
         """
             Return a Feature Layer suitable to display on a map
             @param: layername: Used as the label in the LayerSwitcher
             @param: popup_label: Used in Cluster Popups to differentiate between types
         """
         db = self.db
+        cache = self.cache
         deployment_settings = self.deployment_settings
         request = self.request
         
@@ -375,15 +376,19 @@ class GIS(object):
             query = query & ((db.gis_location.level != "L0") | (db.gis_location.level == None))
             
         query = query & (db.gis_location.id == db["%s_%s" % (module, resource)].location_id)
-        locations = db(query).select(db.gis_location.id, db.gis_location.uuid, db.gis_location.parent, db.gis_location.name, db.gis_location.wkt, db.gis_location.lat, db.gis_location.lon)
+        if polygons:
+            # Only retrieve the bulky polygons if-required
+            locations = db(query).select(db.gis_location.id, db.gis_location.uuid, db.gis_location.parent, db.gis_location.name, db.gis_location.wkt, db.gis_location.lat, db.gis_location.lon)
+        else:
+            locations = db(query).select(db.gis_location.id, db.gis_location.uuid, db.gis_location.parent, db.gis_location.name, db.gis_location.lat, db.gis_location.lon)
         for i in range(0, len(locations)):
             locations[i].popup_label = locations[i].name + "-" + popup_label
         popup_url = URL(r=request, c=module, f=resource, args="read.plain?%s.location_id=" % resource)
         try:
-            marker = db(db.gis_marker.name == marker).select(db.gis_marker.id, limitby=(0, 1)).first().id
-            layer = {"name":layername, "query":locations, "active":active, "marker":marker, "popup_url": popup_url}
+            marker = db(db.gis_marker.name == marker).select(db.gis_marker.image, db.gis_marker.height, db.gis_marker.width, db.gis_marker.id, limitby=(0, 1), cache=cache).first()
+            layer = {"name":layername, "query":locations, "active":active, "marker":marker, "popup_url": popup_url, "polygons": polygons}
         except:
-            layer = {"name":layername, "query":locations, "active":active, "popup_url": popup_url}
+            layer = {"name":layername, "query":locations, "active":active, "popup_url": popup_url, "polygons": polygons}
 
         return layer
     
@@ -534,7 +539,11 @@ class GIS(object):
     # -----------------------------------------------------------------------------
     def get_marker(self, feature_id):
 
-        """ Returns the Marker URL for a Feature
+        """
+            Returns the Marker for a Feature
+                marker.image = filename
+                marker.height
+                marker.width
 
             @param feature_id: the feature ID (int) or UUID (str)
             @ToDo: Update for new FeatureClass/Symbology
@@ -544,7 +553,7 @@ class GIS(object):
         db = self.db
         table_feature = db.gis_location
         table_marker = db.gis_marker
-        _image = table_marker.image
+        
         #table_fclass = db.gis_feature_class
         #table_symbology = db.gis_symbology_to_feature_class
 
@@ -568,7 +577,7 @@ class GIS(object):
             # 1st choice for a Marker is the Feature's
         #    if marker_id:
         #        query = (table_marker.id == marker_id)
-        #        marker = db(query).select(_image, limitby=(0, 1),
+        #        marker = db(query).select(table_marker.image, limitby=(0, 1),
         #                                  cache=cache)
         #        if marker:
         #            return marker.first().image
@@ -577,7 +586,7 @@ class GIS(object):
             #query = (table_symbology.feature_class_id == feature_class) & \
             #        (table_symbology.symbology_id == symbology) & \
             #        (table_marker.id == table_symbology.marker_id)
-            #marker = db(query).select(_image, limitby=(0, 1),
+            #marker = db(query).select(table_marker.image, limitby=(0, 1),
             #                          cache=cache)
             #if marker:
             #    return marker.first().image
@@ -585,17 +594,19 @@ class GIS(object):
             # 3rd choice for a Marker is the Feature Class's
             #query = (table_fclass.id == feature_class) & \
             #        (table_marker.id == table_fclass.marker_id)
-            #marker = db(query).select(_image, limitby=(0, 1),
+            #marker = db(query).select(table_marker.image, limitby=(0, 1),
             #                          cache=cache)
             #if marker:
             #    return marker.first().image
 
         # 4th choice for a Marker is the default
         query = (table_marker.id == config.marker_id)
-        marker = db(query).select(_image, limitby=(0, 1),
+        marker = db(query).select(table_marker.image, table_marker.height, table_marker.width, limitby=(0, 1),
                                   cache=cache)
+        
         if marker:
-            return marker.first().image
+            marker = marker.first()
+            return marker
         else:
             return ""
 
@@ -714,6 +725,11 @@ class GIS(object):
             lon_max = bounds[2]
             lat_max = bounds[3]
             
+            if lon_min == lon:
+                feature_type = 1 # Point
+            else:
+                feature_type = 3 # Polygon
+
             # Locate Parent
             # @ToDo: Extend to search alternate names
             if parent:
@@ -730,9 +746,9 @@ class GIS(object):
             
             # Add entry to database
             if uuid:
-                _locations.insert(name=name, level=level, parent=parent, lat=lat, lon=lon, wkt=wkt, lon_min=lon_min, lon_max=lon_max, lat_min=lat_min, lat_max=lat_max, uuid=uuid)
+                _locations.insert(name=name, level=level, parent=parent, lat=lat, lon=lon, wkt=wkt, lon_min=lon_min, lon_max=lon_max, lat_min=lat_min, lat_max=lat_max, gis_feature_type=feature_type, uuid=uuid)
             else:
-                _locations.insert(name=name, level=level, parent=parent, lat=lat, lon=lon, wkt=wkt, lon_min=lon_min, lon_max=lon_max, lat_min=lat_min, lat_max=lat_max)
+                _locations.insert(name=name, level=level, parent=parent, lat=lat, lon=lon, wkt=wkt, lon_min=lon_min, lon_max=lon_max, lat_min=lat_min, lat_max=lat_max, gis_feature_type=feature_type)
         
         # Better to give user control, can then dry-run
         #db.commit()
@@ -757,34 +773,54 @@ class GIS(object):
 
         cache = self.cache
         db = self.db
+        request = self.request
         deployment_settings = self.deployment_settings
         _locations = db.gis_location
 
         url = "http://download.geonames.org/export/dump/" + country + ".zip"
 
-        # Download File
-        try:
-            f = fetch(url)
-        except (urllib2.URLError,):
-            e = sys.exc_info()[1]
-            s3_debug("URL Error", e)
-            return
-        except (urllib2.HTTPError,):
-            e = sys.exc_info()[1]
-            s3_debug("HTTP Error", e)
-            return
-
-        # Unzip File
-        if f[:2] == "PK":
-            # Unzip
-            fp = StringIO(f)
-            myfile = zipfile.ZipFile(fp)
-            try:
-                f = codecs.open(country + ".txt", encoding="utf-8")
-            except:
-                s3_debug("Zipfile contents don't seem correct!")
+        cachepath = os.path.join(request.folder, "cache")
+        filename = country + ".txt"
+        filepath = os.path.join(cachepath, filename)
+        if os.access(filepath, os.R_OK):
+            cached = True
+        else:
+            cached = False
+            if not os.access(cachepath, os.W_OK):
+                s3_debug("Folder not writable", cachepath)
                 return
-            myfile.close()
+        
+        if not cached:
+            # Download File
+            try:
+                f = fetch(url)
+            except (urllib2.URLError,):
+                e = sys.exc_info()[1]
+                s3_debug("URL Error", e)
+                return
+            except (urllib2.HTTPError,):
+                e = sys.exc_info()[1]
+                s3_debug("HTTP Error", e)
+                return
+
+            # Unzip File
+            if f[:2] == "PK":
+                # Unzip
+                fp = StringIO(f)
+                myfile = zipfile.ZipFile(fp)
+                try:
+                    # Python 2.6+ only :/
+                    # For now, 2.5 users need to download/unzip manually to cache folder
+                    myfile.extract(filename, cachepath)
+                    myfile.close()
+                except:
+                    s3_debug("Zipfile contents don't seem correct!")
+                    myfile.close()
+                    return
+
+        f = codecs.open(filepath, encoding="utf-8")
+        # Downloaded file is worth keeping
+        #os.remove(filepath)
 
         if level == "L1":
             fc = "ADM1"
@@ -807,6 +843,7 @@ class GIS(object):
                 level = "L5"
                 parent_level = "L4"
             except:
+                # ADM4 data in Geonames isn't always good (e.g. PK bad)
                 level = "L4"
                 parent_level = "L3"
             finally:
@@ -831,8 +868,10 @@ class GIS(object):
             geonameid, name, asciiname, alternatenames, lat, lon, feature_class, feature_code, country_code, cc2, admin1_code, admin2_code, admin3_code, admin4_code, population, elevation, gtopo30, timezone, modification_date = line.split("\t")
             
             if feature_code == fc:
-                uuid = "www.geonames.org/" + str(geonameid)
-                
+                # @ToDo: Agree on a global repository for UUIDs:
+                # http://eden.sahanafoundation.org/wiki/UserGuidelinesGISData#UUIDs
+                uuid = "geo.sahanafoundation.org/" + uuid.uuid4()
+
                 # Add WKT
                 lat = float(lat)
                 lon = float(lon)
@@ -863,7 +902,10 @@ class GIS(object):
                         s3_debug("Error reading wkt of location with id", row.id)
 
                 # Add entry to database
-                _locations.insert(uuid=uuid, name=name, level=level, parent=parent, lat=lat, lon=lon, wkt=wkt, lon_min=lon_min, lon_max=lon_max, lat_min=lat_min, lat_max=lat_max)
+                _locations.insert(uuid=uuid, geonames_id=geonames_id, source="geonames",
+                                  name=name, level=level, parent=parent,
+                                  lat=lat, lon=lon, wkt=wkt,
+                                  lon_min=lon_min, lon_max=lon_max, lat_min=lat_min, lat_max=lat_max)
 
             else:
                 continue
@@ -1157,7 +1199,7 @@ class GIS(object):
                  query  : query,        # A gluon.sql.Rows of gis_locations, which can be from a simple query or a Join. Extra fields can be added for 'marker' or 'shape' (with optional 'color' & 'size') & 'popup_label'
                  active : False,        # Is the feed displayed upon load or needs ticking to load afterwards?
                  popup_url : None,      # The URL which will be used to fill the pop-up. it will be appended by the Location ID.
-                 marker : None,         # The marker_id for the icon used to display the feature (over-riding the normal process).
+                 marker : None,         # The marker query or marker_id for the icon used to display the feature (over-riding the normal process).
                  polygons : False       # Use Polygon data, if-available (defaults to just using Point)
                 }]
             @param wms_browser: WMS Server's GetCapabilities & options (dict)
@@ -1778,6 +1820,7 @@ OpenLayers.Util.extend( selectPdfControl, {
          });
 
         var searchCombo = new Ext.Panel({
+            id: 'searchCombo',
             title: '""" + str(T("Search Geonames")) + """',
             layout: 'border',
             rootVisible: false,
@@ -1857,6 +1900,7 @@ OpenLayers.Util.extend( selectPdfControl, {
             mouse_position = ""
         
         # Print
+        # NB This isn't too-flexible a method. We're now focussing on print.css
         if print_tool:
             url = print_tool["url"]
             if "title" in print_tool:
@@ -2061,8 +2105,6 @@ OpenLayers.Util.extend( selectPdfControl, {
             closeAction: 'hide',
             """
             layout2 = """
-        //win.show();
-        //win.maximize();
         """
         elif window:
             layout = """
@@ -2317,7 +2359,7 @@ OpenLayers.Util.extend( selectPdfControl, {
                     url:  '""" + url + """',
                     featureType: '""" + featureType + """',
                     featureNS: '""" + featureNS + """'
-                    //,geometryName: "the_geom"
+                    //,geometryName: "the_geom" // default PostGIS geometry column
                 })
                 //,styleMap: styleMap
             });
@@ -2651,7 +2693,14 @@ OpenLayers.Util.extend( selectPdfControl, {
                     name = "Query" + str(int(random.random()*1000))
 
                 if "marker" in layer:
-                    markerLayer = db(db.gis_marker.id == layer["marker"]).select(db.gis_marker.image, limitby=(0, 1), cache=cache).first()
+                    marker = layer["marker"]
+                    try:
+                        # query
+                        marker_id = marker.id
+                        markerLayer = marker
+                    except:
+                        # integer (marker_id)
+                        markerLayer = db(db.gis_marker.id == layer["marker"]).select(db.gis_marker.image, limitby=(0, 1), cache=cache).first()
                 else:
                     markerLayer = ""
 
@@ -2804,18 +2853,17 @@ OpenLayers.Util.extend( selectPdfControl, {
                             # Has a per-feature marker been added to the query?
                             _marker = feature.marker
                             if _marker:
-                                marker = _marker.image
+                                marker = _marker
                             else:
                                 marker = self.get_marker(feature.id)
                         except (AttributeError, KeyError):
                             if markerLayer:
-                                # Marker specified at the layer level
-                                marker = markerLayer.image
+                                marker = markerLayer
                             else:
                                 marker = self.get_marker(feature.id)
                         # Faster to bypass the download handler
-                        #marker_url = URL(r=request, c="default", f="download", args=[marker])
-                        marker_url = URL(r=request, c="static", f="img", args=["markers", marker])
+                        #marker_url = URL(r=request, c="default", f="download", args=[marker.image])
+                        marker_url = URL(r=request, c="static", f="img", args=["markers", marker.image])
                         
                     try:
                         # Has a per-feature popup_label been added to the query?
@@ -2829,11 +2877,12 @@ OpenLayers.Util.extend( selectPdfControl, {
                     if marker_url:
                         layers_features += """
         styleMarker.iconURL = '""" + marker_url + """';
-        // Pre-cache this image
         // Need unique names
-        var i = new Image();
-        i.onload = scaleImage;
-        i.src = styleMarker.iconURL;
+        // More reliable & faster to use the height/width calculated on upload
+        var i = new Array();
+        i.height = """ + str(marker.height) + """;
+        i.width = """ + str(marker.width) + """;
+        scaleImage(i);
         """
                     else:
                         layers_features += """
@@ -3235,7 +3284,7 @@ OpenLayers.Util.extend( selectPdfControl, {
     var allLayers = new Array();
     S3.gis.Images = new Array();
     OpenLayers.ImgPath = '/""" + request.application + """/static/img/gis/openlayers/';
-    var ajax_loader = '""" + str(URL(r=request, c="static", f="img")) + """/ajax-loader.gif';
+    var ajax_loader = '""" + URL(r=request, c="static", f="img") + """/ajax-loader.gif';
     // avoid pink tiles
     OpenLayers.IMAGE_RELOAD_ATTEMPTS = 3;
     OpenLayers.Util.onImageLoadErrorColor = "transparent";
@@ -3305,8 +3354,8 @@ OpenLayers.Util.extend( selectPdfControl, {
         """ + layers_js + """
 
         // Overlays
-        var max_w = 30;
-        var max_h = 35;
+        var max_w = """ + str(deployment_settings.get_gis_marker_max_width()) + """;
+        var max_h = """ + str(deployment_settings.get_gis_marker_max_height()) + """;
         var styleMarker = new Object();
         var iconURL;
 
@@ -3586,7 +3635,9 @@ OpenLayers.Util.extend( selectPdfControl, {
 
 # -----------------------------------------------------------------------------
 class Geocoder(object):
-    " Base class for all Geocoders "
+    """
+        Base class for all Geocoders
+    """
 
     def __init__(self, db):
         " Initializes the page content object "
@@ -3595,7 +3646,11 @@ class Geocoder(object):
 
 # -----------------------------------------------------------------------------
 class GoogleGeocoder(Geocoder):
-    " Google Geocoder module "
+    """
+        Google Geocoder module
+        http://code.google.com/apis/maps/documentation/javascript/v2/reference.html#GGeoStatusCode
+        Should convert this to be a thin wrapper for modules.geopy.geocoders.google
+    """
 
     def __init__(self, location, db):
         " Initialise parent class & make any necessary modifications "
@@ -3617,7 +3672,10 @@ class GoogleGeocoder(Geocoder):
 
 # -----------------------------------------------------------------------------
 class YahooGeocoder(Geocoder):
-    " Yahoo Geocoder module "
+    """
+        Yahoo Geocoder module
+        Should convert this to be a thin wrapper for modules.geopy.geocoders.yahoo
+    """
 
     def __init__(self, location, db):
         " Initialise parent class & make any necessary modifications "

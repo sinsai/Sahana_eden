@@ -8,7 +8,7 @@
 s3.menu_lang = [ T("Language"), True, "#"]
 _menu_lang = []
 for language in s3.l10n_languages.keys():
-    _menu_lang.append([s3.l10n_languages[language], False, URL(r=request, vars={"_language":language}).xml()])
+    _menu_lang.append([s3.l10n_languages[language], False, URL(r=request, vars={"_language":language})])
 s3.menu_lang.append(_menu_lang)
     
 # Help Menu (available in all screens)
@@ -22,7 +22,7 @@ s3.menu_help = [ T("Help"), True, "#",
 # Auth Menu (available in all screens)
 if not auth.is_logged_in():
 
-    self_registration = s3_settings.self_registration if s3_settings else True
+    self_registration = deployment_settings.get_security_self_registration()
 
     if self_registration:
         s3.menu_auth = [T("Login"), True, URL(request.application, "default", "user/login"),

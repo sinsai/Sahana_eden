@@ -6,20 +6,12 @@
 
 module = "doc"
 #==============================================================================
-# Settings
-resource = "setting"
-tablename = "%s_%s" % (module, resource)
-table = db.define_table(tablename,
-                Field("audit_read", "boolean"),
-                Field("audit_write", "boolean"),
-                migrate=migrate)
-#==============================================================================
 resource = "document"
 tablename = "%s_%s" % (module, resource)
 table = db.define_table(tablename, timestamp, uuidstamp, authorstamp, deletion_status,
                         Field("name", length=128, notnull=True, unique=True),
                         Field("file", "upload", autodelete = True,),
-                        Field("url"),                        
+                        Field("url"),
                         person_id,
                         organisation_id,
                         location_id,
@@ -34,12 +26,12 @@ table.name.requires = [IS_NOT_EMPTY(), IS_NOT_IN_DB(db, "%s.name" % tablename)]
 table.name.comment = SPAN("*", _class="req")
 
 def shn_file_represent( file, table):
-    if file:        
-        return A(table.file.retrieve(file)[0], 
+    if file:
+        return A(table.file.retrieve(file)[0],
                  _href=URL(r=request, f="download", args=[file]))
     else:
         return NONE
-    
+
 table.file.represent = lambda file, table=table: shn_file_represent(file, table)
 table.url.label = T("URL")
 table.url.represent = lambda url: url and A(url,_href=url) or NONE
@@ -49,9 +41,9 @@ table.url.requires = [IS_NULL_OR(IS_URL()),IS_NULL_OR(IS_NOT_IN_DB(db, "%s.url" 
 table.person_id.label = T("Author")
 table.person_id.comment = shn_person_comment(T("Author"), T("The Author of this Document (optional)"))
 
-table.location_id.readable = table.location_id.writable = False 
+table.location_id.readable = table.location_id.writable = False
 
-table.entered.comment = DIV( _class="tooltip", 
+table.entered.comment = DIV( _class="tooltip",
                              _title="Entered" + "|" + Tstr("Has data from this Reference Document been entered into Sahana?")
                              )
 # -----------------------------------------------------------------------------
@@ -59,9 +51,9 @@ def document_represent(id):
     if not id:
         return NONE
     represent = shn_get_db_field_value(db = db,
-                                       table = "doc_document", 
-                                       field = "name", 
-                                       look_up = id)    
+                                       table = "doc_document",
+                                       field = "name",
+                                       look_up = id)
     #File
     #Website
     #Person
@@ -73,13 +65,13 @@ def document_represent(id):
 DOCUMENT = Tstr("Reference Document")
 ADD_DOCUMENT = Tstr("Add Reference Document")
 
-document_comment = DIV( A( ADD_DOCUMENT, 
-                           _class="colorbox", 
-                           _href=URL(r=request, c="doc", f="document", args="create", vars=dict(format="popup")), 
-                           _target="top", 
+document_comment = DIV( A( ADD_DOCUMENT,
+                           _class="colorbox",
+                           _href=URL(r=request, c="doc", f="document", args="create", vars=dict(format="popup")),
+                           _target="top",
                            _title=Tstr("If you need to add a new document then you can click here to attach one."),
                            ),
-                        DIV( _class="tooltip", 
+                        DIV( _class="tooltip",
                              _title=DOCUMENT + "|" + \
                              Tstr("A Reference Document such as a file, URL or contact person to verify this data. You can type the 1st few characters of the document name to link to an existing document."),
                              #Tstr("Add a Reference Document such as a file, URL or contact person to verify this data. If you do not enter a Reference Document, your email will be displayed instead."),
@@ -107,11 +99,11 @@ s3.crud_strings[tablename] = Storage(
     msg_record_deleted = T("Document deleted"),
     msg_list_empty = T("No Documents found"))
 
-document_id = db.Table(None, 
+document_id = db.Table(None,
                        "document_id",
-                       Field("document_id", 
+                       Field("document_id",
                              db.doc_document,
-                             requires = IS_NULL_OR(IS_ONE_OF(db, "doc_document.id", document_represent)),
+                             requires = IS_NULL_OR(IS_ONE_OF(db, "doc_document.id", document_represent, orderby="doc_document.name")),
                              represent = document_represent,
                              label = DOCUMENT,
                              comment = document_comment,
@@ -123,14 +115,14 @@ resource = "image"
 tablename = "%s_%s" % (module, resource)
 table = db.define_table(tablename, timestamp, uuidstamp, authorstamp, deletion_status,
                         Field("name", length=128, notnull=True, unique=True),
-                        Field("image", "upload"),                        
+                        Field("image", "upload"),
                         #metadata_id,
-                        Field("url"),                        
+                        Field("url"),
                         person_id,
                         organisation_id,
                         location_id,
                         Field("date", "date"),
-                        comments,                
+                        comments,
                         migrate=migrate)
 
 table.name.requires = [IS_NOT_EMPTY(), IS_NOT_IN_DB(db, "%s.name" % tablename)]

@@ -21,11 +21,11 @@ response.menu_options = [
         [T("Add"), False, URL(r=request, f="assessment", args="create")],
         #[T("Search"), False, URL(r=request, f="assessment", args="search")]
     ]],
-    [T("Schools"), False, URL(r=request, f="school_district"),[
-        [T("List"), False, URL(r=request, f="school_district")],
-        [T("Add"), False, URL(r=request, f="school_district", args="create")],
-        #[T("Search"), False, URL(r=request, f="school_district", args="search")]
-    ]],
+    #[T("Schools"), False, URL(r=request, f="school_district"),[
+    #    [T("List"), False, URL(r=request, f="school_district")],
+    #    [T("Add"), False, URL(r=request, f="school_district", args="create")],
+    #    #[T("Search"), False, URL(r=request, f="school_district", args="search")]
+    #]],
     #[T("Map"), False, URL(r=request, f="maps")],
 ]
 
@@ -57,7 +57,7 @@ def assessment():
     table = db[tablename]
 
     # Villages only
-    table.location_id.requires = IS_NULL_OR(IS_ONE_OF(db(db.gis_location.level == "L5"), "gis_location.id", repr_select, sort=True))
+    table.location_id.requires = IS_NULL_OR(IS_ONE_OF(db(db.gis_location.level == "L5"), "gis_location.id", repr_select, orderby="gis_location.name", sort=True))
 
     # Don't send the locations list to client (pulled by AJAX instead)
     table.location_id.requires = IS_NULL_OR(IS_ONE_OF_EMPTY(db, "gis_location.id"))
@@ -66,7 +66,7 @@ def assessment():
     def prep(r):
         if r.method == "update":
             # Disable legacy fields, unless updating, so the data can be manually transferred to new fields
-            table.source.readable = table.source.writable = False        
+            table.source.readable = table.source.writable = False
         return True
     response.s3.prep = prep
 
@@ -93,7 +93,7 @@ def school_district():
     table = db[tablename]
 
     # Districts only
-    table.location_id.requires = IS_NULL_OR(IS_ONE_OF(db(db.gis_location.level == "L2"), "gis_location.id", repr_select, sort=True))
+    table.location_id.requires = IS_NULL_OR(IS_ONE_OF(db(db.gis_location.level == "L2"), "gis_location.id", repr_select, orderby="gis_location.name", sort=True))
     table.location_id.comment = DIV(A(ADD_LOCATION,
                                        _class="colorbox",
                                        _href=URL(r=request, c="gis", f="location", args="create", vars=dict(format="popup")),
@@ -106,7 +106,7 @@ def school_district():
     def prep(r):
         if r.method == "update":
             # Disable legacy fields, unless updating, so the data can be manually transferred to new fields
-            table.document.readable = table.document.writable = False        
+            table.document.readable = table.document.writable = False
         return True
     response.s3.prep = prep
 
@@ -127,7 +127,7 @@ def school_district():
 
 # -----------------------------------------------------------------------------
 def school_report():
-    
+
     """
         REST Controller
         Needed for Map Popups

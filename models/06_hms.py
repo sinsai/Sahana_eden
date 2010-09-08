@@ -10,16 +10,6 @@ module = "hms"
 if deployment_settings.has_module(module):
 
     # -----------------------------------------------------------------------------
-    # Settings
-    #
-    resource = "setting"
-    tablename = "%s_%s" % (module, resource)
-    table = db.define_table(tablename,
-                            Field("audit_read", "boolean"),
-                            Field("audit_write", "boolean"),
-                            migrate=migrate)
-
-    # -----------------------------------------------------------------------------
     # Hospitals
     #
 
@@ -851,7 +841,7 @@ if deployment_settings.has_module(module):
     hms_hrequest_source_type = {
         1 : "Manual",
         2 : "Voice",
-        3 : "E-Mail",
+        3 : "Email",
         4 : "SMS",
         99: "Other"
     }

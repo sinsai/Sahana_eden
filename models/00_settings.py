@@ -128,6 +128,31 @@ auth.settings.lock_keys = True
 #crud.settings.keepvalues = True
 crud.messages.submit_button = T("Save")
 
+def s3_formstyle(id, label, widget, comment):
+    """
+        Provide the Sahana Eden Form Style
+        Label above the Inputs:
+        http://uxmovement.com/design-articles/faster-with-top-aligned-labels
+    """
+
+    row = TAG['']()
+
+    # Label on the 1st row
+    #row.append(TR(TD(label, _class="w2p_fl", _colspan="2"), _id=id + "1", _class="even"))
+    row.append(TR(TD(label, _class="w2p_fl", _colspan="2"), _id=id + "1"))   
+
+    # Widget & Comment on the 2nd Row
+    #row.append(TR(TD(widget, _class="w2p_fw"), TD(comment, _class="w2p_fc"), _id=id + "2", _class="odd"))
+    row.append(TR(TD(widget, _class="w2p_fw"), TD(comment, _class="w2p_fc"), _id=id))
+
+    return row
+
+# Enabling this means:
+# (1) Reworking the Location Selector from 3 cols to 2 cols
+# (2) Lookign at all Autocompletes which hide the original __row (need to also hide __row1)
+#crud.settings.formstyle = s3_formstyle
+
+
 ##########
 # Messages
 ##########

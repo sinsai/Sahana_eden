@@ -1,27 +1,59 @@
 {{extend "layout.html"}}
 <H2>{{=T("Locations De-duplicator")}}</H2>
-<p>{{=T("This form allows the administrator to remove a duplicate location by 1st updating all references to it by a different location.")}}</p>
-<p>{{=T("It is suggested to open the 2 locations into new tabs so that it can be decided which is the best one to keep out of the 2.")}}</p>
-{{=form}}
-<p>{{=T("Note that the dropdowns won't refresh automatically. Refresh the page if you wish to verify that the locations have gone.")}}</p>
+<p>{{=T("This form allows the administrator to remove a duplicate location.")}}</p>
+<ol style='list-style-type:decimal; margin-left:20px;'>
+<li>{{=T("Select 2 potential locations from the dropdowns.")}}</li>
+<li>{{=T("Load the details to help decide which is the best one to keep out of the 2.")}}</li>
+<li>{{=T("Copy any data from the one to be deleted into the one to keep")}}</li>
+<li>{{=T("Save any Changes in the one you wish to keep")}}</li>
+<li>{{=T("Press the 'Delete Old' button to have all records which reference this one be repointed at the new one & then the old record will be deleted.")}}</li>
+</ol>
+{{=form.custom.begin}}
+<div align='center'>{{=form.custom.submit}}</div>
+<p>&nbsp;</p>
+<div id='form-container'>
+<div class='col2left'>
+{{=form[0][0]}}
+<p>&nbsp;</p>
+<div id='details_old'></div>
+</div>
+<div class='col2right'>
+{{=form[0][1]}}
+<p>&nbsp;</p>
+<div id='details_new'></div>
+</div>
+</div>
+
 <script type="text/javascript">//<![CDATA[
+// Resize iframe to full height
+function resizeIframe(height) {
+    // From: http://stackoverflow.com/questions/153152/resizing-an-iframe-based-on-content
+    // "+60" is a general rule of thumb to allow for differences in
+    // IE & and FF height reporting, can be adjusted as required..
+    if ($('#iframe_old').length > 0) {
+        document.getElementById('iframe_old').height = parseInt(height) + 60;
+    }
+    if ($('#iframe_new').length > 0) {
+        document.getElementById('iframe_new').height = parseInt(height) + 60;
+    }
+}
 $(document).ready(function(){
     $('a.action-btn').click(function(){
-        $(this).attr('href', function(index, attr) {
-            var base_url = '{{=URL(r=request, f="location")}}'
-            // Add the location to the URL vars so that we know which Location to get
-            var id = '';
-            var _id = '';
-            try {
-                _id = $(this).attr('id').replace(/btn_/, 'no_table_');
-                id = $('#'+_id).val();
-            } catch(e) {
-                // Do nothing
-                if(id == '') return base_url;
-            }
-            var url_out = base_url + '/' + id;
-            return url_out;
-        });
+        // Is this Old or New?
+        var _id = $(this).attr('id').replace(/btn_/, '');
+        // Which location is selected?
+        var id = $('#no_table_' + _id).val();
+        if (id == '') {
+            // Do nothing if no location selected
+            return false;
+        }
+        // Get a form for the record (allows reading details & also updating)
+        var url = '{{=URL(r=request, c="gis", f="location")}}' + '/' + id + '.iframe/update';
+        var html = "<iframe src='" + url + "' id='iframe_" + _id + "' width='100%' frameborder='0'></iframe>";
+        $('#details_' + _id).html(html);
+
+        // Don't open the Tab
+        return false;
     });
 });
 //]]></script>

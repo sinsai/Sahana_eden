@@ -80,7 +80,7 @@ def person():
                                        "description"])
 
     def person_postp(jr, output):
-        if jr.representation in ("html", "popup"):
+        if jr.representation in shn_interactive_view_formats:
             if not jr.component:
                 label = READ
                 report = URL(r=request, f="person", args=("[id]", "missing_report"))

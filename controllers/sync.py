@@ -6,7 +6,7 @@
 
 """
 
-module = "admin" # sync?
+module = "sync"
 module_name = T("Synchronization")
 
 # Options Menu (available in all Functions' Views)
@@ -29,7 +29,13 @@ def now():
 
     import simplejson as json
 
-    # Settings
+    pid = None
+
+    error = lambda message: s3_sync_push_message(message,
+                                                 pid=pid, error=True)
+    notify = lambda message: s3_sync_push_message(message, pid=pid)
+
+    # Get synchronization settings from the DB
     settings = db().select(db.sync_setting.uuid,
                            db.sync_setting.proxy,
                            limitby=(0, 1)).first()
@@ -40,28 +46,29 @@ def now():
                     sync_start=False,
                     sync_state=None)
 
-    # Last state (=first record in sync_now)
-    state = db().select(db.sync_now.ALL, limitby=(0, 1)).first()
+    # Load status
+    status = db().select(db.sync_now.ALL, limitby=(0, 1)).first()
 
+    # Read the action from URL vars
     action = request.get_vars.get("sync", None)
+    print "action=%s" % action
 
-    if action == "start":
+    if action == "start": # Start synchronization
 
-        if session.s3.sync_msg is None:
-            session.s3.sync_msg = []
+        # Set view
+        response.view = "xml.html"
 
-        #tablesnames = s3_sync_primary_resources()
-
-        if not state: # =no prior sync to be resumed.
-
+        if not status:
             # Get all scheduled jobs
             table_job = db.sync_schedule
             jobs = db((table_job.period == "m") &
                       (table_job.enabled == True)).select(table_job.ALL)
             if not jobs:
-                final_status = "There are no scheduled jobs. Please schedule a sync operation (set to run manually).<br /><br /><a href=\"" + URL(r=request, c="sync", f="schedule") + "\">Click here</a> to go to Sync Schedules page.<br /><br />\n"
+                job_list = None
+                error("There are no scheduled jobs. Please schedule a sync operation (set to run manually).")
+                return dict(item="SYNC NOW: no jobs on schedule.")
             else:
-                # Load first resource list
+                job_list = ",".join(map(str, [j.id for j in jobs]))
                 job = jobs.first()
                 try:
                     job_cmd = json.loads(job.job_command)
@@ -70,207 +77,269 @@ def now():
                 else:
                     res_list = ",".join(map(str, job_cmd.get("resources", [])))
 
-            job_list = ",".join(map(str, [j.id for j in jobs]))
+            # Save state
+            sync_pid = db.sync_now.insert(sync_jobs = job_list,
+                                          started_on = request.utcnow,
+                                          job_resources_done = "",
+                                          job_resources_pending = res_list,
+                                          job_sync_errors = "")
 
-            # begin new sync now session
-            sync_now_id = db.sync_now.insert(sync_jobs = job_list,
-                                             started_on = request.utcnow,
-                                             job_resources_done = "",
-                                             job_resources_pending = res_list,
-                                             job_sync_errors = "")
+            if not sync_pid:
+                error("Could not store synchronization session data.")
+                return dict(item="SYNC NOW: cannot store sync session.")
+            else:
+                db.commit()
 
-            state = db(db.sync_now.id == sync_now_id).select(db.sync_now.ALL, limitby=(0, 1)).first()
+            # Reload status
+            status = db(db.sync_now.id == sync_pid).select(db.sync_now.ALL, limitby=(0, 1)).first()
 
-            #session.s3.sync_msg.append()
+            # Notification
+            notify("Starting new synchronization process (started on %s)" % \
+                    status.started_on.strftime("%x %H:%M:%S"))
 
         else:
 
-            # Now already started
-            sync_now_id = state.id
-            session.s3.sync_msg.append("Sync resumed (originally started on %s)" % state.started_on.strftime("%x %H:%M:%S"))
+            # Notification
+            notify("Resuming prior synchronization process (originally started on %s)" % \
+                    status.started_on.strftime("%x %H:%M:%S"))
 
-        # unlock session - what for?
-        #session._unlock(response)
-        # become super-user - what for?
+        # Lock
+        if status and status.locked:
+            error("Manual synchronization already activated.")
+            return dict(item="SYNC NOW: already active")
+        else:
+            pid = status.id
+            db(db.sync_now.id==pid).update(locked=True)
+            s3_sync_init_messages()
+            db.commit()
+
+        session._unlock(response)
+
+        #for i in xrange(5):
+            #time.sleep(3)
+            #notify("Test message")
+
+        # Become admin
         session.s3.roles.append(1)
 
-        # get job from queue
-        sync_jobs_list = state.sync_jobs.split(", ")
-        if "" in sync_jobs_list:
-            sync_jobs_list.remove("")
-        sync_job = db(db.sync_schedule.id == int(sync_jobs_list[0])).select(db.sync_schedule.ALL, limitby=(0, 1)).first()
-        job_cmd = None
-        if sync_job:
-            job_cmd = json.loads(sync_job.job_command)
-        sync_job_partner = job_cmd["partner_uuid"]
-        peer = db(db.sync_partner.uuid == sync_job_partner).select(limitby=(0, 1)).first()
+        # Get job list
+        jobs = status.sync_jobs.split(",")
 
-        # Whether a push was successful
-        push_success = False
+        # Process jobs
+        total_errors = 0
+        while jobs:
 
-        if sync_job and peer:
+            # Initialize result
+            result = None
 
-            #final_status += "<br />Syncing with: " + \
-                            #peer.name + ", " + \
-                            #peer.instance_url + \
-                            #" (" + peer.instance_type + "):<br />\n\n"
+            # Load first job
+            job_id = jobs.pop(0)
+            job = db(db.sync_schedule.id == job_id).select(db.sync_schedule.ALL, limitby=(0, 1)).first()
 
-            peer_sync_success = True
-            last_sync_on = sync_job.last_run
-            complete_sync = False
-            sync_mode = 1
-            if "complete" in job_cmd and str(job_cmd["complete"]) == "True":
-                complete_sync = True
-            if "mode" in job_cmd:
-                sync_mode = int(job_cmd["mode"])
+            # Process job
+            if job:
 
-            # Get policy and set resolver (defaults to peer policy)
-            job_policy = job_cmd.get("policy", peer.policy)
-            if job_policy:
+                # Last synchronization for this job
+                last_sync_on = job.last_run
+
+                # Parse job command
                 try:
-                    policy = int(job_policy)
-                except ValueError:
-                    policy = None
-            s3xrc.sync_resolve = lambda vector, peer=peer, policy=policy: \
-                                        sync_res(vector, peer, policy)
+                    job_cmd = json.loads(job.job_command)
+                except:
+                    job_cmd = None
 
-            sync_resources = []
-            sync_errors = ""
+                # Load peer_uuid, complete and mode from job command
+                if job_cmd and isinstance(job_cmd, dict):
+                    peer_uuid = job_cmd.get("partner_uuid", None)
+                    complete = job_cmd.get("complete", False) == "True" and True or False
+                    try:
+                        mode = int(job_cmd.get("mode", 1))
+                    except ValueError:
+                        mode = 1
+                else:
+                    peer_uuid = None
+                    complete = None
+                    mode = None
 
-            # Find resources to sync
-            tn = state.job_resources_pending.split(",")
-            tablenames = [n.strip().lower() for n in tn]
+                # Get the peer
+                peer = db(db.sync_partner.uuid == peer_uuid).select(limitby=(0, 1)).first()
+                if peer:
 
-            if sync_job.job_type == 1:
+                    notify("Processing job %s..." % job_id)
 
-                # Synchronize Eden<->Eden
-                result = s3_sync_eden_eden(peer, sync_mode, tablenames,
-                                        settings=settings,
-                                        last_sync=last_sync_on,
-                                        complete_sync=complete_sync)
+                    # Get policy and set resolver (defaults to peer policy)
+                    job_policy = job_cmd.get("policy", peer.policy)
+                    if job_policy:
+                        try:
+                            policy = int(job_policy)
+                        except ValueError:
+                            policy = None
+                    s3xrc.sync_resolve = lambda vector, peer=peer, policy=policy: \
+                                                sync_res(vector, peer, policy)
 
+
+                    # Find resources to sync
+                    tn = status.job_resources_pending.split(",")
+                    tablenames = [n.strip().lower() for n in tn]
+
+                    # Synchronize all tables
+                    if job.job_type == 1:
+                        result = s3_sync_eden_eden(peer, mode, tablenames,
+                                                   settings=settings,
+                                                   last_sync=last_sync_on,
+                                                   complete_sync=complete)
+                    else:
+                        result = s3_sync_eden_other(peer, mode, tablenames,
+                                                    pid=pid,
+                                                    settings=settings)
+
+            # Job done => read status
+            if result:
+                job_resources_done = ",".join(result.done)
+                job_resources_pending = ",".join(result.pending)
+                job_sync_errors = ",".join(result.errors)
+                total_errors += result.errcount
             else:
+                job_resources_done = ""
+                job_resources_pending =""
+                job_sync_errors = ""
 
-                # Synchronize Eden<->Other
-                result = s3_sync_eden_other(peer, sync_mode, tablenames,
-                                            settings=settings)
+            # Update status
+            db(db.sync_now.id==status.id).update(
+                    sync_jobs = ",".join(jobs),
+                    job_resources_done = job_resources_done,
+                    job_resources_pending = job_resources_pending,
+                    job_sync_errors = job_sync_errors)
 
-            # update sync now state
-            if state.job_resources_done:
-                state.job_resources_done += ","
-            state.job_resources_done += ",".join(map(str, sync_resources))
+            # Reload status
+            status = db(db.sync_now.id == status.id).select(db.sync_now.ALL, limitby=(0, 1)).first()
+            notify("Job %s done." % job_id)
 
-            job_res_pending = state.job_resources_pending.split(",")
-            if "" in job_res_pending:
-                job_res_pending.remove("")
+        # All jobs done?
+        if not status.sync_jobs:
 
-            if sync_job.job_type == 1:
-                for tablename in tablenames:
-                    job_res_pending.remove(tablename)
+            # Remove status
+            db(db.sync_now.id==status.id).delete()
 
-            state.job_resources_pending = ",".join(map(str, job_res_pending))
-            state.job_sync_errors += sync_errors
-            vals = {"job_resources_done": state.job_resources_done,
-                    "job_resources_pending": state.job_resources_pending,
-                    "job_sync_errors": state.job_sync_errors}
-            db(db.sync_now.id == sync_now_id).update(**vals)
-            state = db(db.sync_now.id == sync_now_id).select(db.sync_now.ALL, limitby=(0, 1)).first()
+            # Notification
+            if total_errors:
+                error("Synchronization complete (%s errors)." % total_errors)
+            else:
+                notify("Synchronization complete.")
 
-            # check if all resources are synced for the current job, i.e. is it done?
-            if (not state.job_resources_pending) or sync_job.job_type == 2:
-                # job completed, check if there are any more jobs, if not, then sync now completed
+        else:
 
-                # log sync job
-                if sync_mode == 1:
-                    sync_method = "Pull"
-                elif sync_mode == 2:
-                    sync_method = "Push"
-                elif sync_mode == 3:
-                    sync_method = "Pull-Push"
-                log_table_id = db[log_table].insert(
-                    partner_uuid = sync_job_partner,
-                    timestmp = datetime.datetime.utcnow(),
-                    sync_resources = state.job_resources_done,
-                    sync_errors = state.job_sync_errors,
-                    sync_mode = "online",
-                    sync_method = sync_method,
-                    complete_sync = complete_sync
-                )
+            # Unlock
+            db(db.sync_now.id==pid).update(locked=False, stop=False)
 
-                # remove this job from queue and process next
-                sync_jobs_list = state.sync_jobs.split(", ")
-                if "" in sync_jobs_list:
-                    sync_jobs_list.remove("")
+            # Notification
+            error("Synchronization suspended.")
 
-                if len(sync_jobs_list) > 0:
-                    sync_jobs_list.remove(sync_jobs_list[0])
-                    state.sync_jobs = ", ".join(map(str, sync_jobs_list))
-                    state.job_resources_done = ""
-                    state.job_resources_pending = ""
-                    if len(sync_jobs_list) > 0:
-                        next_job_sel = db(db.sync_schedule.id == int(state.sync_jobs[0])).select(db.sync_schedule.ALL)
-                        if next_job_sel:
-                            next_job = next_job_sel[0]
-                            if next_job.job_type == 1:
-                                next_job_cmd = json.loads(next_job.job_command)
-                                state.job_resources_pending = ", ".join(map(str, next_job_cmd["resources"]))
-                    state.job_sync_errors = ""
-                    vals = {"sync_jobs": state.sync_jobs,
-                            "job_resources_done": state.job_resources_done,
-                            "job_resources_pending": state.job_resources_pending}
+        return dict(item="SYNC NOW: done")
 
-                    db(db.sync_now.id == sync_now_id).update(**vals)
-                    state = db(db.sync_now.id == sync_now_id).select(db.sync_now.ALL, limitby=(0, 1)).first()
+    elif action == "halt":
 
-                # update last_sync_on
-                vals = {"last_sync_on": datetime.datetime.utcnow()}
-                db(db.sync_partner.id == peer.id).update(**vals)
-                vals = {"last_run": datetime.datetime.utcnow()}
-                db(db.sync_schedule.id == sync_job.id).update(**vals)
+        """ Send HALT command to suspend a running sync/now """
 
-            if not state.sync_jobs:
-                # remove sync now session state
-                db(db.sync_now.id == sync_now_id).delete()
-                # we're done
-                final_status += "Sync completed successfully. Logs generated: " + str(A(T("Click here to open log"),_href=URL(r=request, c="sync", f="history"))) + "<br /><br />\n"
+        response.view = "xml.html"
+
+        table = db.sync_now
+
+        if status:
+            pid = status.id
+            db(table.id == pid).update(halt=True)
+
+        notify("HALT command sent.")
+        return dict(item="SYNC HALT: done")
 
     elif action == "stop":
-        # Stop the running sync process (remove all pending jobs)
-        pass
+
+        """ Remove a suspended sync/now """
+
+        response.view = "xml.html"
+
+        force = request.vars.get("force", False) and True
+
+        table = db.sync_now
+
+        if status:
+            pid = status.id
+            if (status.locked or status.halt) and not force:
+                error("Synchronization process not halted - send HALT command first.")
+            else:
+                db(table.id == pid).delete()
+                notify("Synchronization process removed.")
+        else:
+            error("No synchronization process found.")
+
+        return dict(item="SYNC STOP: done")
+
+    elif action == "unlock":
+
+        """ Safely remove the lock from a broken Sync/now """
+
+        response.view = "xml.html"
+
+        table = db.sync_now
+
+        if status:
+            pid = status.id
+            # Set HALT status at the same time to not deny
+            # immedate resumption => requires two calls to
+            # "start" to resume.
+            db(table.id == pid).update(locked=False, halt=True)
+            notify("Synchronization process unlocked and halted.")
+
+        return dict(item="SYNC UNLOCK: done")
 
     elif action == "status":
+
+        """ Retrieve pending messages from the notification queue """
+
         response.view = "xml.html"
-        if session.s3.sync_msg is None:
-            item = DIV(DIV("No synchronization process currently running.", _class="failure"))
-            session.s3.sync_msg = "DONE"
-        elif isinstance(session.s3.sync_msg, list):
-            if session.s3.sync_msg:
-                msg_list = []
-                for i in xrange(len(session.s3.sync_msg)):
-                    msg = str(session.s3.sync_msg.pop(0))
-                    if msg.find("FAIL"):
-                        msg_list.append(DIV(msg, _class="failure"))
-                    else:
-                        msg_list.append(DIV(msg, _class="success"))
-                if msg_list:
-                    item = DIV(msg_list).xml()
+
+        # Clear message queue
+        s3_sync_clear_messages()
+
+        table = db.sync_now
+
+        if status:
+            print status
+            messages = s3_sync_get_messages(pid=status.id)
+            if not messages:
+                if status.locked:
+                    return dict(item="")
+        else:
+            messages = s3_sync_get_messages()
+
+        msg_list = []
+        for i in xrange(len(messages)):
+            msg = messages[i]
+            if msg["error"]:
+                msg_list.append(DIV(SPAN(msg["message"], _class="sync_message"),
+                                    SPAN("ERROR", _class="sync_status"),
+                                    _class="failure"))
             else:
-                item = DIV(DIV("Synchronization complete.", _class="success"))
-                session.s3.sync_msg = "DONE"
+                msg_list.append(DIV(SPAN(msg["message"], _class="sync_message"),
+                                    SPAN("OK", _class="sync_status"),
+                                    _class="success"))
+
+        if msg_list:
+            item = DIV(msg_list).xml()
         else:
             item = "DONE"
-            session.s3.sync_msg = None
 
         return dict(item=item)
+
     else:
+        """ Default view """
+
         pass
 
-    return dict(module_name=module_name,
-                action=action,
-                sync_status=None,
-                sync_start=None,
-                sync_state=state)
+    # Extra stylesheet
+    response.extra_styles = ["S3/sync.css"]
 
+    return dict(module_name=module_name, action=action, status=status)
 
 # -----------------------------------------------------------------------------
 def sync():
@@ -317,13 +386,11 @@ def sync():
 
     def prep(r):
         # Do not allow interactive formats
-        if r.representation in ("html", "popup", "aadata"):
+        if r.representation in ("html", "popup", "iframe", "aadata"):
             return False
         # Do not allow URL methods
         if r.method:
             return False
-        # Neutralize push limit of the resource
-        r.resource.push_limit = None
         return True
     response.s3.prep = prep
 
@@ -383,7 +450,7 @@ def sync_res(vector, peer, policy):
 
     newer = True # assume that the peer record is newer
 
-    if vector.method == vector.METHOD_UPDATE:
+    if vector.method == vector.METHOD.UPDATE:
         table = vector.table
         if "modified_on" in table.fields and vector.mtime is not None:
             row = vector.db(table.id==vector.id).select(table.modified_on,
@@ -413,37 +480,37 @@ def sync_res(vector, peer, policy):
 
     # @todo: conflict detection
 
-    if sync_policy == 0: # No Sync
+    if policy == 0: # No Sync
         vector.resolution = vector.RESOLUTION.THIS
         vector.strategy = []
-    elif sync_policy == 1: # Manual
+    elif policy == 1: # Manual
         vector.resolution = vector.RESOLUTION.THIS
         vector.strategy = []
-    elif sync_policy == 2: # Import
+    elif policy == 2: # Import
         vector.resolution = vector.RESOLUTION.OTHER
         vector.strategy = [vector.METHOD.CREATE]
-    elif sync_policy == 3: # Replace
+    elif policy == 3: # Replace
         vector.resolution = vector.RESOLUTION.OTHER
         vector.strategy = [vector.METHOD.CREATE, vector.METHOD.UPDATE]
-    elif sync_policy == 4: # Update
+    elif policy == 4: # Update
         vector.resolution = vector.RESOLUTION.OTHER
         vector.strategy = [vector.METHOD.UPDATE]
-    elif sync_policy == 5: # Replace Newer
+    elif policy == 5: # Replace Newer
         vector.resolution = vector.RESOLUTION.NEWER
         vector.strategy = [vector.METHOD.CREATE, vector.METHOD.UPDATE]
-    elif sync_policy == 6: # Update Newer
+    elif policy == 6: # Update Newer
         vector.resolution = vector.RESOLUTION.NEWER
         vector.strategy = [vector.METHOD.UPDATE]
-    elif sync_policy == 7: # Import Master
+    elif policy == 7: # Import Master
         vector.resolution = vector.RESOLUTION.MASTER
         vector.strategy = [vector.METHOD.CREATE]
-    elif sync_policy == 8: # Replace Master
+    elif policy == 8: # Replace Master
         vector.resolution = vector.RESOLUTION.MASTER
         vector.strategy = [vector.METHOD.CREATE, vector.METHOD.UPDATE]
-    elif sync_policy == 9: # Update Master
+    elif policy == 9: # Update Master
         vector.resolution = vector.RESOLUTION.THIS
         vector.strategy = [vector.METHOD.UPDATE]
-    elif sync_policy == 10: # Role Based (not implemented)
+    elif policy == 10: # Role Based (not implemented)
         vector.resolution = vector.RESOLUTION.THIS
         vector.strategy = []
     else:
@@ -545,22 +612,48 @@ def partner():
     msg_list_empty = T("No Partners currently registered")
     s3.crud_strings.sync_partner = Storage(title_create=title_create,title_display=title_display,title_list=title_list,title_update=title_update,title_search=title_search,subtitle_create=subtitle_create,subtitle_list=subtitle_list,label_list_button=label_list_button,label_create_button=label_create_button,msg_record_created=msg_record_created,msg_record_modified=msg_record_modified,msg_record_deleted=msg_record_deleted,msg_list_empty=msg_list_empty)
 
-    if "delete" in request.args:
-        peer_sel = db(db.sync_partner.id==int(request.args[0])).select(db.sync_partner.ALL)
-        peer_uuid = None
-        if peer_sel:
-            peer_uuid = peer_sel[0].uuid
-        if peer_uuid:
-            sch_jobs_del = []
-            sch_jobs = db().select(db.sync_schedule.ALL)
-            for sch_job in sch_jobs:
-                sch_job_cmd = json.loads(sch_job.job_command)
-                if sch_job_cmd["partner_uuid"] == peer_uuid:
-                    sch_jobs_del.append(sch_job.id)
-            if sch_jobs_del:
-                db(db.sync_schedule.id.belongs(sch_jobs_del)).delete()
+    def partner_ondelete(row):
 
-    elif (not "update" in request.args) and len(request.vars) > 0:
+        """ Delete all jobs with this partner """
+
+        uuid = row.get("uuid")
+        if uuid:
+            schedule = db.sync_schedule
+            jobs = db().select(schedule.ALL)
+            jobs_del = []
+            for job in jobs:
+                try:
+                    job_cmd = json.loads(job.job_command)
+                except:
+                    continue
+                else:
+                    if job_cmd["partner_uuid"] == uuid:
+                        jobs_del.append(job.id)
+            db(schedule.id.belongs(jobs_del)).delete()
+    s3xrc.model.configure(table, delete_onaccept=partner_ondelete)
+
+    def partner_onadd(form):
+
+        """ Add default jobs with this partner """
+
+        return
+
+    #if "delete" in request.args: # @todo: make this a delete_onaccept
+        #peer_sel = db(db.sync_partner.id==int(request.args[0])).select(db.sync_partner.ALL)
+        #peer_uuid = None
+        #if peer_sel:
+            #peer_uuid = peer_sel[0].uuid
+        #if peer_uuid:
+            #sch_jobs_del = []
+            #sch_jobs = db().select(db.sync_schedule.ALL)
+            #for sch_job in sch_jobs:
+                #sch_job_cmd = json.loads(sch_job.job_command)
+                #if sch_job_cmd["partner_uuid"] == peer_uuid:
+                    #sch_jobs_del.append(sch_job.id)
+            #if sch_jobs_del:
+                #db(db.sync_schedule.id.belongs(sch_jobs_del)).delete()
+
+    if (not "update" in request.args) and len(request.vars) > 0: # @todo: make this prep/postp and onaccept
         # add new partner
         random_uuid = str(uuid.uuid4())
         new_instance_type = ""

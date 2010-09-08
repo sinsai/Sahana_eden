@@ -11,13 +11,13 @@ if deployment_settings.has_module(module):
     resource = "setting"
     tablename = "%s_%s" % (module, resource)
     table = db.define_table(tablename,
-                            Field("audit_read", "boolean"),
-                            Field("audit_write", "boolean"),
                             Field("outgoing_sms_handler"),
                             Field("default_country_code", "integer", default = 44),
                             migrate=migrate)
+
     table.outgoing_sms_handler.requires = IS_IN_SET(["Modem", "Gateway"], zero=None)
 
+    #------------------------------------------------------------------------
     resource = "email_settings"
     tablename = "%s_%s" % (module, resource)
     table = db.define_table(tablename,
@@ -161,7 +161,7 @@ if deployment_settings.has_module(module):
 
     # The following was added to show only the supported messaging methods
     msg_contact_method_opts = { # pr_contact_method dependency
-        1:T("E-Mail"),
+        1:T("Email"),
         2:T("Mobile Phone"),
     }
 

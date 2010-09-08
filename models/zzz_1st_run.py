@@ -7,13 +7,12 @@
 # Deployments can change settings live via appadmin
 
 # Set to False in Production (to save 1x DAL hit every page)
-if db(db["s3_setting"].id > 0).count() or \
-   not deployment_settings.get_base_prepopulate():
-    empty = False
+if not deployment_settings.get_base_prepopulate() or db(db["s3_setting"].id > 0).count():
+    populate = False
 else:
-    empty = True
+    populate = True
 
-if empty:
+if populate:
 
     # Themes
     tablename = "admin_theme"
@@ -88,53 +87,7 @@ if empty:
             theme = 1
         )
 
-    tablename = "admin_setting"
-    table = db[tablename]
-    if not db(table.id > 0).count():
-        table.insert(
-            # If Disabled at the Global Level then can still Enable just for this Module here
-            audit_read = False,
-            audit_write = False
-        )
-
-    tablename = "appadmin_setting"
-    table = db[tablename]
-    if not db(table.id > 0).count():
-        table.insert(
-            # If Disabled at the Global Level then can still Enable just for this Module here
-            audit_read = False,
-            audit_write = False
-        )
-
-    tablename = "gis_setting"
-    table = db[tablename]
-    if not db(table.id > 0).count():
-        table.insert(
-            # If Disabled at the Global Level then can still Enable just for this Module here
-            audit_read = False,
-            audit_write = False
-        )
-
-    # Person Registry
-    tablename = "pr_setting"
-    table = db[tablename]
-    if not db(table.id > 0).count():
-       table.insert(
-            # If Disabled at the Global Level then can still Enable just for this Module here
-            audit_read = False,
-            audit_write = False
-        )
-
     # Organisation Registry
-    tablename = "org_setting"
-    table = db[tablename]
-    if not db(table.id > 0).count():
-        table.insert(
-            # If Disabled at the Global Level then can still Enable just for this Module here
-            audit_read = False,
-            audit_write = False
-        )
-
     tablename = "org_sector"
     table = db[tablename]
     if not db(table.id > 0).count():
@@ -149,6 +102,17 @@ if empty:
         table.insert( name = "Health" )
         table.insert( name = "Protection and Human Rights and Rule of Law" )
         table.insert( name = "Urban Search and Rescue" )
+    
+    # Person Registry
+    tablename = "pr_person"
+    table = db[tablename]
+    # Should work for our 3 supported databases: sqlite, MySQL & PostgreSQL
+    field = "first_name"
+    db.executesql("CREATE INDEX %s__idx on %s(%s);" % (field, tablename, field))
+    field = "middle_name"
+    db.executesql("CREATE INDEX %s__idx on %s(%s);" % (field, tablename, field))
+    field = "last_name"
+    db.executesql("CREATE INDEX %s__idx on %s(%s);" % (field, tablename, field))
 
     # Synchronisation
     tablename = "sync_setting"
@@ -158,17 +122,8 @@ if empty:
             uuid = uuid.uuid4()
         )
 
-    # Logistics
+    # Logistics (old)
     if "lms" in deployment_settings.modules:
-        tablename = "lms_setting"
-        table = db[tablename]
-        if not db(table.id > 0).count():
-            table.insert(
-                # If Disabled at the Global Level then can still Enable just for this Module here
-                audit_read = False,
-                audit_write = False
-            )
-
         tablename = "lms_catalog"
         table = db[tablename]
         if not db(table.id > 0).count():
@@ -180,75 +135,14 @@ if empty:
 
     # Budget Module
     if "budget" in deployment_settings.modules:
-        tablename = "budget_setting"
-        table = db[tablename]
-        if not db(table.id > 0).count():
-            table.insert(
-                # If Disabled at the Global Level then can still Enable just for this Module here
-                audit_read = False,
-                audit_write = False
-            )
-
         tablename = "budget_parameter"
         table = db[tablename]
         if not db(table.id > 0).count():
             table.insert(
             )
 
-    # Shelter Registry
-    if "cr" in deployment_settings.modules:
-        tablename = "cr_setting"
-        table = db[tablename]
-        if not db(table.id > 0).count():
-            table.insert(
-                # If Disabled at the Global Level then can still Enable just for this Module here
-                audit_read = False,
-                audit_write = False
-            )
-
-    # Disaster Victim Identification
-    if "dvi" in deployment_settings.modules:
-        tablename = "dvi_setting"
-        table = db[tablename]
-        if not db(table.id > 0).count():
-            table.insert(
-                # If Disabled at the Global Level then can still Enable just for this Module here
-                audit_read = False,
-                audit_write = False
-            )
-
-    # Disaster Victim Registration
-    if "dvr" in deployment_settings.modules:
-        tablename = "dvr_setting"
-        table = db[tablename]
-        if not db(table.id > 0).count():
-            table.insert(
-                # If Disabled at the Global Level then can still Enable just for this Module here
-                audit_read = False,
-                audit_write = False
-            )
-
-    # Human Remains Management
-    if "hrm" in deployment_settings.modules:
-        tablename = "hrm_setting"
-        table = db[tablename]
-        if not db(table.id > 0).count():
-            table.insert(
-                # If Disabled at the Global Level then can still Enable just for this Module here
-                audit_read = False,
-                audit_write = False
-            )
-
     # Incident Reporting System
     if "irs" in deployment_settings.modules:
-        tablename = "irs_setting"
-        table = db[tablename]
-        if not db(table.id > 0).count():
-            table.insert(
-                # If Disabled at the Global Level then can still Enable just for this Module here
-                audit_read = False,
-                audit_write = False
-            )
         # Categories visible to ends-users by default
         tablename = "irs_icategory"
         table = db[tablename]
@@ -289,44 +183,12 @@ if empty:
         table = db[tablename]
         if not db(table.id > 0).count():
             table.insert(
-                audit_read = False,
-                audit_write = False,
                 outgoing_sms_handler = "Gateway"
                 )
 
 
-    # Missing Person Registry
-    if "mpr" in deployment_settings.modules:
-        tablename = "mpr_setting"
-        table = db[tablename]
-        if not db(table.id > 0).count():
-            table.insert(
-                # If Disabled at the Global Level then can still Enable just for this Module here
-                audit_read = False,
-                audit_write = False
-            )
-
-    # Request Management System
-    if "rms" in deployment_settings.modules:
-        tablename = "rms_setting"
-        table = db[tablename]
-        if not db(table.id > 0).count():
-            table.insert(
-                # If Disabled at the Global Level then can still Enable just for this Module here
-                audit_read = False,
-                audit_write = False
-            )
-
     # Ticketing System
     if "ticket" in deployment_settings.modules:
-        tablename = "ticket_setting"
-        table = db[tablename]
-        if not db(table.id > 0).count():
-            table.insert(
-                # If Disabled at the Global Level then can still Enable just for this Module here
-                audit_read = False,
-                audit_write = False
-            )
         tablename = "ticket_category"
         table = db[tablename]
         if not db(table.id > 0).count():
@@ -336,17 +198,6 @@ if empty:
             table.insert( name = "Request for Assistance" )
             table.insert( name = "Offer of Help" )
 
-
-    # Volunteer Management
-    if "vol" in deployment_settings.modules:
-        tablename = "vol_setting"
-        table = db[tablename]
-        if not db(table.id > 0).count():
-            table.insert(
-                # If Disabled at the Global Level then can still Enable just for this Module here
-                audit_read = False,
-                audit_write = False
-            )
 
     # GIS Module
     tablename = "gis_marker"
@@ -358,110 +209,164 @@ if empty:
         table.truncate()
         table.insert(
             name = "marker_red",
+            height = 34,
+            width = 20,
             image = "gis_marker.image.marker_red.png"
         )
         table.insert(
             name = "marker_yellow",
+            height = 34,
+            width = 20,
             image = "gis_marker.image.marker_yellow.png"
         )
         table.insert(
             name = "marker_amber",
+            height = 34,
+            width = 20,
             image = "gis_marker.image.marker_amber.png"
         )
         table.insert(
             name = "marker_green",
+            height = 34,
+            width = 20,
             image = "gis_marker.image.marker_green.png"
         )
         table.insert(
             name = "person",
+            height = 50,
+            width = 50,
             image = "gis_marker.image.Civil_Disturbance_Theme.png"
         )
         table.insert(
             name = "school",
+            height = 33,
+            width = 44,
             image = "gis_marker.image.Edu_Schools_S1.png"
         )
         table.insert(
             name = "food",
+            height = 40,
+            width = 40,
             image = "gis_marker.image.Emergency_Food_Distribution_Centers_S1.png"
         )
         table.insert(
-            name = "shelter",
-            image = "gis_marker.image.Emergency_Shelters_S1.png"
-        )
-        table.insert(
             name = "office",
+            height = 40,
+            width = 40,
             image = "gis_marker.image.Emergency_Operations_Center_S1.png"
         )
         table.insert(
+            name = "shelter",
+            height = 40,
+            width = 40,
+            image = "gis_marker.image.Emergency_Shelters_S1.png"
+        )
+        table.insert(
             name = "activity",
+            height = 40,
+            width = 40,
             image = "gis_marker.image.Emergency_Teams_S1.png"
         )
         table.insert(
             name = "hospital",
+            height = 40,
+            width = 40,
             image = "gis_marker.image.E_Med_Hospital_S1.png"
         )
         table.insert(
             name = "earthquake",
+            height = 50,
+            width = 50,
             image = "gis_marker.image.Geo_Earth_Quake_Epicenter.png"
         )
         table.insert(
             name = "volcano",
+            height = 50,
+            width = 50,
             image = "gis_marker.image.Geo_Volcanic_Threat.png"
         )
         table.insert(
             name = "tsunami",
+            height = 50,
+            width = 50,
             image = "gis_marker.image.Hydro_Meteor_Tsunami_ch.png"
         )
         table.insert(
             name = "church",
+            height = 33,
+            width = 44,
             image = "gis_marker.image.Public_Venue_Church_S1.png"
         )
         table.insert(
-            name = "temple",
-            image = "gis_marker.image.Public_Venue_Temple_S1.png"
-        )
-        table.insert(
             name = "mosque",
+            height = 33,
+            width = 44,
             image = "gis_marker.image.Public_Venue_Mosque_S1.png"
         )
         table.insert(
+            name = "temple",
+            height = 33,
+            width = 44,
+            image = "gis_marker.image.Public_Venue_Temple_S1.png"
+        )
+        table.insert(
             name = "phone",
+            height = 10,
+            width = 5,
             image = "gis_marker.image.SMS_Message_Phone.png"
         )
         table.insert(
             name = "orphanage",
+            height = 33,
+            width = 44,
             image = "gis_marker.image.Special_Needs_Child_Day_Care_S1.png"
         )
         table.insert(
             name = "airport",
+            height = 33,
+            width = 44,
             image = "gis_marker.image.Trans_Airport_S1.png"
         )
         table.insert(
             name = "bridge",
+            height = 33,
+            width = 44,
             image = "gis_marker.image.Trans_Bridge_S1.png"
         )
         table.insert(
             name = "helicopter",
+            height = 33,
+            width = 44,
             image = "gis_marker.image.Trans_Helicopter_Landing_Site_S1.png"
         )
         table.insert(
             name = "port",
+            height = 33,
+            width = 44,
             image = "gis_marker.image.Trans_Port_S1.png"
         )
         table.insert(
             name = "rail_station",
+            height = 33,
+            width = 44,
             image = "gis_marker.image.Trans_Rail_Station_S1.png"
         )
         table.insert(
             name = "vehicle",
+            height = 50,
+            width = 50,
             image = "gis_marker.image.Transport_Vehicle_Theme.png"
         )
         table.insert(
             name = "water",
+            height = 33,
+            width = 44,
             image = "gis_marker.image.Water_Supply_Infrastructure_Theme_S1.png"
         )
         table.insert(
             name = "volunteer",
+            height = 40,
+            width = 39,
             image = "gis_marker.image.Volunteer.png"
         )
     tablename = "gis_symbology"
@@ -525,8 +430,7 @@ if empty:
             uuid = "www.sahanafoundation.org/GIS-FEATURE-CLASS-TRACK",
             name = "Track",
             gps_marker = "TracBack Point",
-            module = "gis",
-            resource = "track"
+            resource = "gis_track"
         )
         table.insert(
             uuid = "www.sahanafoundation.org/GIS-FEATURE-CLASS-L0",
@@ -579,8 +483,7 @@ if empty:
             name = "Hospital",
             marker_id = db(db.gis_marker.name == "hospital").select(limitby=(0, 1)).first().id,
             gps_marker = "Medical Facility",
-            module = "hms",
-            resource = "hospital"
+            resource = "hms_hospital"
         )
         table.insert(
             uuid = "www.sahanafoundation.org/GIS-FEATURE-CLASS-INCIDENT",
@@ -592,16 +495,14 @@ if empty:
             name = "Office",
             marker_id = db(db.gis_marker.name == "office").select(limitby=(0, 1)).first().id,
             gps_marker = "Building",
-            module = "or",
-            resource = "office"
+            resource = "or_office"
         )
         table.insert(
             uuid = "www.sahanafoundation.org/GIS-FEATURE-CLASS-PERSON",
             name = "Person",
             marker_id = db(db.gis_marker.name == "person").select(limitby=(0, 1)).first().id,
             gps_marker = "Contact, Dreadlocks",
-            module = "pr",
-            resource = "person"
+            resource = "pr_person"
         )
         table.insert(
             uuid = "www.sahanafoundation.org/GIS-FEATURE-CLASS-PORT",
@@ -624,8 +525,7 @@ if empty:
             name = "Shelter",
             marker_id = db(db.gis_marker.name == "shelter").select(limitby=(0, 1)).first().id,
             gps_marker = "Campground",
-            module = "cr",
-            resource = "shelter"
+            resource = "cr_shelter"
         )
         table.insert(
             uuid = "www.sahanafoundation.org/GIS-FEATURE-CLASS-SMS",
@@ -779,6 +679,9 @@ if empty:
                                    "private", "import",
                                    "countries.csv")
         table.import_from_csv_file(open(import_file,"r"))
+    # Should work for our 3 supported databases: sqlite, MySQL & PostgreSQL
+    field = "name"
+    db.executesql("CREATE INDEX %s__idx on %s(%s);" % (field, tablename, field))
 
     # Authorization
     # User Roles (uses native Web2Py Auth Groups)
@@ -823,7 +726,7 @@ if empty:
     # Security Defaults for all tables (if using 'full' security policy)
     if session.s3.security_policy != 1:
         table = auth.settings.table_permission_name
-        if not db(db[table].id>0).count():
+        if not db(db[table].id > 0).count():
             # For performance we only populate this once (at system startup)
             # => need to populate manually when adding new tables to the database! (less RAD)
             authenticated = auth.id_group("Authenticated")

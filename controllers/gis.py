@@ -73,7 +73,7 @@ def define_map(window=False, toolbar=False):
     popup_label = Tstr("Incident")
     # Default (but still better to define here as otherwise each feature needs to check it's feature_class)
     marker = "marker_red"
-    incidents = gis.get_feature_layer(module, resource, layername, popup_label, marker, active=False)
+    incidents = gis.get_feature_layer(module, resource, layername, popup_label, marker, active=True, polygons=False)
     
     # Shelters
     module = "cr"
@@ -81,15 +81,15 @@ def define_map(window=False, toolbar=False):
     layername = Tstr("Shelters")
     popup_label = Tstr("Shelter")
     marker = "shelter"
-    shelters = gis.get_feature_layer(module, resource, layername, popup_label, marker, active=True)
+    shelters = gis.get_feature_layer(module, resource, layername, popup_label, marker, active=True, polygons=False)
     
     # Schools
-    module = "sitrep"
-    resource = "school_report"
-    layername = Tstr("Schools")
-    popup_label = Tstr("School")
-    marker = "school"
-    schools = gis.get_feature_layer(module, resource, layername, popup_label, marker, active=True)
+    #module = "sitrep"
+    #resource = "school_report"
+    #layername = Tstr("Schools")
+    #popup_label = Tstr("School")
+    #marker = "school"
+    #schools = gis.get_feature_layer(module, resource, layername, popup_label, marker, active=True, polygons=False)
     
     # Requests
     module = "rms"
@@ -97,7 +97,7 @@ def define_map(window=False, toolbar=False):
     layername = Tstr("Requests")
     popup_label = Tstr("Request")
     marker = "marker_yellow"
-    requests = gis.get_feature_layer(module, resource, layername, popup_label, marker, active=True)
+    requests = gis.get_feature_layer(module, resource, layername, popup_label, marker, active=True, polygons=False)
     
     # Assessments
     module = "sitrep"
@@ -105,7 +105,7 @@ def define_map(window=False, toolbar=False):
     layername = Tstr("Assessments")
     popup_label = Tstr("Assessment")
     marker = "marker_green"
-    assessments = gis.get_feature_layer(module, resource, layername, popup_label, marker, active=True)
+    assessments = gis.get_feature_layer(module, resource, layername, popup_label, marker, active=True, polygons=False)
     
     # Activities
     module = "project"
@@ -113,12 +113,12 @@ def define_map(window=False, toolbar=False):
     layername = Tstr("Activities")
     popup_label = Tstr("Activity")
     marker = "activity"
-    activities = gis.get_feature_layer(module, resource, layername, popup_label, marker, active=True)
+    activities = gis.get_feature_layer(module, resource, layername, popup_label, marker, active=True, polygons=False)
     
     feature_queries = [
                        incidents,
                        shelters,
-                       schools,
+                       #schools,
                        requests,
                        assessments,
                        activities
@@ -158,14 +158,17 @@ def location():
                 table.code.readable = False
             table.gis_feature_type.writable = table.gis_feature_type.readable = False
             table.wkt.writable = table.wkt.readable = False
-            #table.marker_id.comment = ""
         else:
-            table.code.comment = DIV( _class="tooltip", _title=Tstr("Code") + "|" + Tstr("For a country this would be the ISO2 code, for a Town, it would be the Airport Locode."))
-            table.wkt.comment = DIV(SPAN("*", _class="req"), DIV( _class="tooltip", _title="WKT" + "|" + Tstr("The <a href='http://en.wikipedia.org/wiki/Well-known_text' target=_blank>Well-Known Text</a> representation of the Polygon/Line.")))
+            table.code.comment = DIV(_class="tooltip",
+                                     _title=Tstr("Code") + "|" + Tstr("For a country this would be the ISO2 code, for a Town, it would be the Airport Locode."))
+            table.wkt.comment = DIV(SPAN("*", _class="req"),
+                                    DIV(_class="stickytip",
+                                        _title="WKT|" + Tstr("The" + " <a href='http://en.wikipedia.org/wiki/Well-known_text' target=_blank>" + Tstr("Well-Known Text") + "</a> " + "representation of the Polygon/Line.")))
 
-        if r.http == "GET" and r.representation in ("html", "popup"):
+        if r.http == "GET" and r.representation in shn_interactive_view_formats:
             # Options which are only required in interactive HTML views
-            table.level.comment = DIV( _class="tooltip", _title=Tstr("Level") + "|" + Tstr("If the location is a geographic area, then state at what level here."))
+            table.level.comment = DIV(_class="tooltip",
+                                      _title=Tstr("Level") + "|" + Tstr("If the location is a geographic area, then state at what level here."))
             table.parent.comment = DIV(A(ADD_LOCATION,
                                            _class="colorbox",
                                            _href=URL(r=request, c="gis", f="location", args="create", vars=dict(format="popup", child="parent")),
@@ -175,8 +178,20 @@ def location():
                                            _class="tooltip",
                                            _title=Tstr("Parent") + "|" + Tstr("The Area which this Site is located within."))),
             table.name.comment = SPAN("*", _class="req")
-            table.osm_id.comment = DIV( _class="tooltip", _title="OSM ID" + "|" + Tstr("The <a href='http://openstreetmap.org' target=_blank>OpenStreetMap</a> ID. If you don't know the ID, you can just say 'Yes' if it has been added to OSM."))
+            table.osm_id.comment = DIV(_class="stickytip",
+                                       _title="OpenStreetMap ID|" + Tstr("The") + " <a href='http://openstreetmap.org' target=_blank>OpenStreetMap</a> ID. " + Tstr("If you know what the OSM ID of this location is then you can enter it here."))
+            table.geonames_id.comment = DIV(_class="stickytip",
+                                            _title="Geonames ID|" + Tstr("The") + " <a href='http://geonames.org' target=_blank>Geonames</a> ID. " + Tstr("If you know what the Geonames ID of this location is then you can enter it here."))
+            table.comments.comment = DIV(_class="tooltip",
+                                         _title=Tstr("Comments") + "|" + Tstr("Please use this field to record any additional information, such as Ushahidi instance IDs. Include a history of the record if it is updated."))
 
+            if r.representation == "iframe":
+                # De-duplicator needs to be able to access UUID fields
+                table.uuid.readable = table.uuid.writable = True
+                table.uuid.label = "UUID"
+                table.uuid.comment = DIV(_class="stickytip",
+                                         _title="UUID|" + Tstr("The") + " <a href='http://eden.sahanafoundation.org/wiki/UUID#Mapping' target=_blank>Universally Unique ID</a>. " + Tstr("Suggest not changing this field unless you know what you are doing."))
+                
             # CRUD Strings
             LIST_LOCATIONS = T("List Locations")
             s3.crud_strings[tablename] = Storage(
@@ -244,11 +259,6 @@ def location():
     # Options
     _vars = request.vars
     filters = []
-    # Deprecate!
-    #fclass = _vars.get("feature_class", None)
-    #if fclass:
-    #    filters.append((db.gis_location.feature_class_id == db.gis_feature_class.id) &
-    #                          (db.gis_feature_class.name.like(fclass)))
 
     parent = _vars.get("parent_", None)
     # Don't use 'parent' as the var name as otherwise it conflicts with the form's var of the same name & hence this will be triggered during form submission
@@ -269,85 +279,26 @@ def location():
     if caller:
         # We've been called as a Popup
         if "gis_location_parent" in caller:
-            # Populate defaults & hide unnecessary rows
-            # Use default Marker for Admin Locations
-            #table.marker_id.readable = table.marker_id.writable = False
+            # Hide unnecessary rows
             table.addr_street.readable = table.addr_street.writable = False
-            #table.osm_id.readable = table.osm_id.writable = False
-            #table.source.readable = table.source.writable = False
         else:
             parent = _vars.get("parent_", None)
             # Don't use 'parent' as the var name as otherwise it conflicts with the form's var of the same name & hence this will be triggered during form submission
             if parent:
                 table.parent.default = parent
-            
-            #fc = None
-            # Populate defaults & hide unnecessary rows
-            if "cr_shelter" in caller:
-                #fc = db(db.gis_feature_class.name == "Shelter").select(db.gis_feature_class.id, limitby=(0, 1)).first()
-                table.level.readable = table.level.writable = False
-                table.url.readable = table.url.writable = False
-            elif "hms_hospital" in caller:
-                #fc = db(db.gis_feature_class.name == "Hospital").select(db.gis_feature_class.id, limitby=(0, 1)).first()
-                table.level.readable = table.level.writable = False
-                table.url.readable = table.url.writable = False
-            elif "irs_ireport" in caller:
-                #fc = db(db.gis_feature_class.name == "Incident").select(db.gis_feature_class.id, limitby=(0, 1)).first()
-                table.level.readable = table.level.writable = False
-                table.url.readable = table.url.writable = False
-            elif "org_office" in caller:
-                #fc = db(db.gis_feature_class.name == "Office").select(db.gis_feature_class.id, limitby=(0, 1)).first()
-                table.level.readable = table.level.writable = False
-                table.url.readable = table.url.writable = False
-            elif "pr_presence" in caller:
-                #fc = db(db.gis_feature_class.name == "Person").select(db.gis_feature_class.id, limitby=(0, 1)).first()
-                table.level.readable = table.level.writable = False
-                table.url.readable = table.url.writable = False
-            elif "assessment_location" in caller:
-                table.level.default = "L4"
-                #table.feature_class_id.readable = table.feature_class_id.writable = False
-                #table.marker_id.readable = table.marker_id.writable = False
-                table.addr_street.readable = table.addr_street.writable = False
-            elif "school_district" in caller:
-                table.level.default = "L2"
-                #table.feature_class_id.readable = table.feature_class_id.writable = False
-                #table.marker_id.readable = table.marker_id.writable = False
-                table.addr_street.readable = table.addr_street.writable = False
-            elif "school_report_location" in caller:
-                table.level.default = "L2"
-                #table.feature_class_id.readable = table.feature_class_id.writable = False
-                #table.marker_id.readable = table.marker_id.writable = False
-                table.addr_street.readable = table.addr_street.writable = False
-            elif "school_report_union" in caller:
-                table.level.default = "L4"
-                #table.feature_class_id.readable = table.feature_class_id.writable = False
-                #table.marker_id.readable = table.marker_id.writable = False
-                table.addr_street.readable = table.addr_street.writable = False
-            
-            #try:
-                # If we have a pre-assigned Feature Class
-                #table.feature_class_id.default = fc.id
-                #table.feature_class_id.readable = table.feature_class_id.writable = False
-                # Use default Marker for Class
-                #table.marker_id.readable = table.marker_id.writable = False
-            #except:
-                #pass
 
+            # Hide unnecessary rows
+            table.level.readable = table.level.writable = False
+            table.geonames_id.readable = table.geonames_id.writable = False
             table.osm_id.readable = table.osm_id.writable = False
             table.source.readable = table.source.writable = False
+            table.url.readable = table.url.writable = False
 
     level = _vars.get("level", None)
     if level:
         # We've been called from the Location Selector widget
-        #table.marker_id.readable = table.marker_id.writable = False
         table.addr_street.readable = table.addr_street.writable = False
     
-    # Post-processor
-    def user_postp(jr, output):
-        shn_action_buttons(jr)
-        return output
-    response.s3.postp = user_postp
-
     response.s3.pagination = True
     output = shn_rest_controller(module, resource, listadd=False)
 
@@ -381,12 +332,16 @@ def location_duplicates():
         db(db.gis_location.id == old).update(deleted=True)
 
     def open_btn(field):
-        return A(T("Open in New Tab"), _id=field, _href=URL(r=request, f="location"), _class="action-btn", _target="_blank")
-
+        return A(T("Load Details"), _id=field, _href=URL(r=request, f="location"), _class="action-btn", _target="_blank")
+    
+    table = db.gis_location
     form = SQLFORM.factory(
-                           Field("old", db.gis_location, requires=IS_ONE_OF(db, "gis_location.id", "%(name)s"), label = B(T("Old")), comment=open_btn("btn_old")),
-                           Field("new", db.gis_location, requires=IS_ONE_OF(db, "gis_location.id", "%(name)s"), label = B(T("New")), comment=open_btn("btn_new")),
+                           Field("old", table, requires=IS_ONE_OF(db, "gis_location.id", "%(name)s"), label = SPAN(B(T("Old")), " (" + Tstr("To delete") + ")"), comment=open_btn("btn_old")),
+                           Field("new", table, requires=IS_ONE_OF(db, "gis_location.id", "%(name)s"), label = B(T("New")), comment=open_btn("btn_new")),
+                           formstyle = s3_formstyle
                           )
+    
+    form.custom.submit.attributes['_value'] = T("Delete Old")
     
     if form.accepts(request.vars, session):
         _vars = form.vars
@@ -394,7 +349,8 @@ def location_duplicates():
         if not _vars.old == _vars.new:
             # Take Action
             delete_location(_vars.old, _vars.new)
-            response.confirmation = T("Location De-duplicated")
+            session.confirmation = T("Location De-duplicated")
+            redirect(URL(r=request))
         else:
             response.error = T("Locations should be different!")
 
@@ -555,12 +511,6 @@ def apikey():
         msg_record_deleted = T("Key deleted"),
         msg_list_empty = T("No Keys currently defined"))
 
-    # Post-processor
-    def user_postp(jr, output):
-        shn_action_buttons(jr, deletable=False)
-        return output
-    response.s3.postp = user_postp
-
     output = shn_rest_controller(module, resource, deletable=False, listadd=False)
 
     if not "gis" in response.view:
@@ -576,7 +526,7 @@ def config():
 
     # Pre-processor
     def prep(r):
-        if r.representation in ("html", "popup"):
+        if r.representation in shn_interactive_view_formats:
             # Model options
             # In Model so that they're visible to person() as component
             # CRUD Strings (over-ride)
@@ -638,12 +588,6 @@ def feature_class():
         msg_record_deleted = T("Feature Class deleted"),
         msg_list_empty = T("No Feature Classes currently defined"))
 
-    # Post-processor
-    def user_postp(jr, output):
-        shn_action_buttons(jr)
-        return output
-    response.s3.postp = user_postp
-
     output = shn_rest_controller(module, resource)
 
     if not "gis" in response.view and response.view != "popup.html":
@@ -682,12 +626,6 @@ def feature_layer():
         msg_record_modified = T("Feature Layer updated"),
         msg_record_deleted = T("Feature Layer deleted"),
         msg_list_empty = T("No Feature Layers currently defined"))
-
-    # Post-processor
-    def user_postp(jr, output):
-        shn_action_buttons(jr)
-        return output
-    response.s3.postp = user_postp
 
     crud.settings.create_onvalidation = lambda form: feature_layer_query(form)
     crud.settings.update_onvalidation = lambda form: feature_layer_query(form)
@@ -752,12 +690,6 @@ def marker():
         msg_record_deleted = T("Marker deleted"),
         msg_list_empty = T("No Markers currently available"))
 
-    # Post-processor
-    def user_postp(jr, output):
-        shn_action_buttons(jr)
-        return output
-    response.s3.postp = user_postp
-
     response.s3.pagination = True
     output = shn_rest_controller(module, resource)
 
@@ -800,12 +732,6 @@ def projection():
         msg_record_deleted = T("Projection deleted"),
         msg_list_empty = T("No Projections currently defined"))
 
-    # Post-processor
-    def user_postp(jr, output):
-        shn_action_buttons(jr)
-        return output
-    response.s3.postp = user_postp
-
     output = shn_rest_controller(module, resource, deletable=False)
 
     if not "gis" in response.view:
@@ -826,12 +752,6 @@ def track():
 
     # CRUD Strings
     # used in multiple controllers, so defined in model
-
-    # Post-processor
-    def user_postp(jr, output):
-        shn_action_buttons(jr)
-        return output
-    response.s3.postp = user_postp
 
     output = shn_rest_controller(module, resource, deletable=False)
     return output
@@ -886,12 +806,6 @@ def layer_openstreetmap():
         msg_record_deleted=LAYER_DELETED,
         msg_list_empty=NO_LAYERS)
 
-    # Post-processor
-    def user_postp(jr, output):
-        shn_action_buttons(jr, deletable=False)
-        return output
-    response.s3.postp = user_postp
-
     output = shn_rest_controller(module, resource, deletable=False, listadd=False)
 
     if not "gis" in response.view:
@@ -929,12 +843,6 @@ def layer_google():
         msg_record_modified=LAYER_UPDATED,
         msg_record_deleted=LAYER_DELETED,
         msg_list_empty=NO_LAYERS)
-
-    # Post-processor
-    def user_postp(jr, output):
-        shn_action_buttons(jr, deletable=False)
-        return output
-    response.s3.postp = user_postp
 
     output = shn_rest_controller(module, resource, deletable=False, listadd=False)
 
@@ -974,12 +882,6 @@ def layer_yahoo():
         msg_record_deleted=LAYER_DELETED,
         msg_list_empty=NO_LAYERS)
 
-    # Post-processor
-    def user_postp(jr, output):
-        shn_action_buttons(jr, deletable=False)
-        return output
-    response.s3.postp = user_postp
-
     output = shn_rest_controller(module, resource, deletable=False, listadd=False)
 
     if not "gis" in response.view:
@@ -1018,12 +920,6 @@ def layer_mgrs():
         msg_record_deleted=LAYER_DELETED,
         msg_list_empty=NO_LAYERS)
 
-    # Post-processor
-    def user_postp(jr, output):
-        shn_action_buttons(jr, deletable=False)
-        return output
-    response.s3.postp = user_postp
-
     output = shn_rest_controller(module, resource, deletable=False, listadd=False)
 
     if not "gis" in response.view:
@@ -1061,12 +957,6 @@ def layer_bing():
         msg_record_modified=LAYER_UPDATED,
         msg_record_deleted=LAYER_DELETED,
         msg_list_empty=NO_LAYERS)
-
-    # Post-processor
-    def user_postp(jr, output):
-        shn_action_buttons(jr, deletable=False)
-        return output
-    response.s3.postp = user_postp
 
     output = shn_rest_controller(module, resource, deletable=False, listadd=False)
 
@@ -1110,12 +1000,6 @@ def layer_georss():
         msg_record_deleted=LAYER_DELETED,
         msg_list_empty=NO_LAYERS)
 
-    # Post-processor
-    def user_postp(jr, output):
-        shn_action_buttons(jr)
-        return output
-    response.s3.postp = user_postp
-
     output = shn_rest_controller(module, resource)
 
     if not "gis" in response.view:
@@ -1156,12 +1040,6 @@ def layer_gpx():
         msg_record_modified=LAYER_UPDATED,
         msg_record_deleted=LAYER_DELETED,
         msg_list_empty=NO_LAYERS)
-
-    # Post-processor
-    def user_postp(jr, output):
-        shn_action_buttons(jr)
-        return output
-    response.s3.postp = user_postp
 
     output = shn_rest_controller(module, resource)
 
@@ -1254,12 +1132,6 @@ def layer_tms():
         msg_record_deleted=LAYER_DELETED,
         msg_list_empty=NO_LAYERS)
 
-    # Post-processor
-    def user_postp(jr, output):
-        shn_action_buttons(jr)
-        return output
-    response.s3.postp = user_postp
-
     output = shn_rest_controller(module, resource)
 
     if not "gis" in response.view:
@@ -1301,12 +1173,6 @@ def layer_wfs():
         msg_record_modified=LAYER_UPDATED,
         msg_record_deleted=LAYER_DELETED,
         msg_list_empty=NO_LAYERS)
-
-    # Post-processor
-    def user_postp(jr, output):
-        shn_action_buttons(jr)
-        return output
-    response.s3.postp = user_postp
 
     output = shn_rest_controller(module, resource)
 
@@ -1351,12 +1217,6 @@ def layer_wms():
         msg_record_deleted=LAYER_DELETED,
         msg_list_empty=NO_LAYERS)
 
-    # Post-processor
-    def user_postp(jr, output):
-        shn_action_buttons(jr)
-        return output
-    response.s3.postp = user_postp
-
     output = shn_rest_controller(module, resource)
 
     if not "gis" in response.view:
@@ -1394,12 +1254,6 @@ def layer_js():
         msg_record_modified=LAYER_UPDATED,
         msg_record_deleted=LAYER_DELETED,
         msg_list_empty=NO_LAYERS)
-
-    # Post-processor
-    def user_postp(jr, output):
-        shn_action_buttons(jr)
-        return output
-    response.s3.postp = user_postp
 
     output = shn_rest_controller(module, resource)
 
@@ -1442,12 +1296,6 @@ def layer_xyz():
         msg_record_modified=LAYER_UPDATED,
         msg_record_deleted=LAYER_DELETED,
         msg_list_empty=NO_LAYERS)
-
-    # Post-processor
-    def user_postp(jr, output):
-        shn_action_buttons(jr)
-        return output
-    response.s3.postp = user_postp
 
     output = shn_rest_controller(module, resource)
 

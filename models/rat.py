@@ -35,6 +35,7 @@ if deployment_settings.has_module(module):
         subtitle_list = T("Sections"),
         label_list_button = LIST_SECTIONS,
         label_create_button = ADD_SECTION,
+        label_delete_button = T("Delete Section"),
         msg_record_created = T("Section updated"),
         msg_record_modified = T("Section updated"),
         msg_record_deleted = T("Section deleted"),
@@ -158,7 +159,7 @@ if deployment_settings.has_module(module):
     table.date.comment = SPAN("*", _class="req")
     table.date.default = datetime.datetime.today()
 
-    table.staff2_id.requires = IS_NULL_OR(IS_ONE_OF(db, "org_staff.id", shn_org_staff_represent))
+    table.staff2_id.requires = IS_NULL_OR(IS_ONE_OF(db, "org_staff.id", shn_org_staff_represent, orderby="org_staff.id"))
     table.staff2_id.represent = lambda id: shn_org_staff_represent(id)
     table.staff2_id.comment = A(ADD_STAFF, _class="colorbox", _href=URL(r=request, c="org", f="staff", args="create", vars=dict(format="popup", child="staff2_id")), _target="top", _title=ADD_STAFF)
     table.staff2_id.label = T("Staff 2")
@@ -193,6 +194,7 @@ if deployment_settings.has_module(module):
         subtitle_list = T("Assessments"),
         label_list_button = LIST_ASSESSMENTS,
         label_create_button = ADD_ASSESSMENT,
+        label_delete_button = T("Delete Assessment"),
         msg_record_created = T("Assessment added"),
         msg_record_modified = T("Assessment updated"),
         msg_record_deleted = T("Assessment deleted"),
@@ -238,7 +240,7 @@ if deployment_settings.has_module(module):
     # re-usable field
     assessment_id = db.Table(None, "assessment_id",
                              Field("assessment_id", table,
-                                   requires = IS_NULL_OR(IS_ONE_OF(db, "rat_assessment.id", shn_assessment_represent)),
+                                   requires = IS_NULL_OR(IS_ONE_OF(db, "rat_assessment.id", shn_assessment_represent, orderby="rat_assessment.id")),
                                    represent = lambda id: shn_assessment_represent(id),
                                    label = T("Rapid Assessment"),
                                    comment = A(ADD_ASSESSMENT, _class="colorbox", _href=URL(r=request, c="rat", f="assessment", args="create", vars=dict(format="popup")), _target="top", _title=ADD_ASSESSMENT),
@@ -246,13 +248,14 @@ if deployment_settings.has_module(module):
 
 
     # Assessment as component of doc_document and cr_shelter.
+    # RAT has components itself, so best not to constrain within the parent resource tabs
+    # - therefore disable the listadd & jump out of the tabs for Create/Update
     s3xrc.model.add_component(module, resource,
                               multiple=True,
-                              joinby=dict(doc_document="document_id",
-                                          cr_shelter="shelter_id"),
+                              joinby=dict(cr_shelter="shelter_id", doc_document="document_id"),
+                              listadd=False,
                               deletable=True,
                               editable=True)
-
 
     # Section 2: Demographic --------------------------------------------------
 

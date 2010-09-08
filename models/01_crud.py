@@ -3,7 +3,7 @@
 """
     CRUD+LS Method Handlers (Frontend for S3REST)
 
-    @author: Fran Boon
+    @author: Fran Boon <fran@aidiq.com>
     @author: nursix
 
     @see: U{http://eden.sahanafoundation.org/wiki/RESTController}
@@ -39,6 +39,8 @@ shn_json_export_formats = dict(
     json = "text/x-json",
     geojson = "text/x-json"
 ) #: Supported JSON output formats and corresponding response headers
+
+shn_interactive_view_formats = ("html", "popup", "iframe")
 
 # Error messages
 UNAUTHORISED = T("Not authorised!")
@@ -98,6 +100,17 @@ def shn_field_represent(field, row, col):
                     represent = ur[:48 - 3].encode("utf8") + "..."
     return represent
 
+
+def shn_strip_aadata_extension(url):
+
+    """ strip away ".aaData" extension """
+
+    url = str(url).replace(".aaData", "")
+    url = str(url).replace(".aadata", "")
+
+    return url
+
+
 def shn_field_represent_sspage(field, row, col, linkto=None):
 
     """ Represent columns in SSPage responses """
@@ -114,9 +127,7 @@ def shn_field_represent_sspage(field, row, col, linkto=None):
             href = linkto(id)
         except TypeError:
             href = linkto % id
-        # strip away ".aaData" extension => dangerous!
-        href = str(href).replace(".aaData", "")
-        href = str(href).replace(".aadata", "")
+        href = shn_strip_aadata_extension(href)
         return A( shn_field_represent(field, row, col), _href=href).xml()
     else:
         return shn_field_represent(field, row, col)
@@ -848,7 +859,7 @@ def shn_read(r, **attr):
     s3xrc.audit("read", prefix, name,
                 record=record_id, representation=representation)
 
-    if r.representation in ("html", "popup"):
+    if r.representation in shn_interactive_view_formats:
 
         # Title and subtitle
         title = shn_get_crud_string(r.tablename, "title_display")
@@ -878,7 +889,7 @@ def shn_read(r, **attr):
         if representation == "html":
             shn_custom_view(r, "display.html")
             output.update(item=item)
-        elif representation == "popup":
+        elif representation in ("popup", "iframe"):
             shn_custom_view(r, "popup.html")
             output.update(form=item, main=main, extra=extra, caller=caller)
 
@@ -924,39 +935,72 @@ def shn_read(r, **attr):
 #
 # shn_linkto ------------------------------------------------------------------
 #
-def shn_linkto(r, sticky=False):
+def shn_linkto(r, sticky=None, authorised=None, update=None, native=False):
 
-    """ Helper function to generate links in list views """
+    """ Return a function that translates record IDs into links to open the
+        respective record for read or update.
 
-    def shn_list_linkto(field, r=r, sticky=sticky):
-        if r.component:
+        @param r:       the current S3Request
+        @param update:  render update URLs rather than read URLs if user is permitted
+
+    """
+
+    c = None
+    f = None
+
+    if r.component:
+        if authorised is None:
             authorised = shn_has_permission("update", r.component.tablename)
-            if authorised:
-                return r.component.attr.linkto_update or \
-                       URL(r=request, args=[r.id, r.component_name, field, "update"],
-                           vars={"_next":URL(r=request, args=request.args, vars=request.vars)})
-            else:
-                return r.component.attr.linkto or \
-                       URL(r=request, args=[r.id, r.component_name, field],
-                           vars={"_next":URL(r=request, args=request.args, vars=request.vars)})
+        if authorised and update:
+            linkto = r.component.attr.get("linkto_update", None)
         else:
+            linkto = r.component.attr.get("linkto", None)
+        if native:
+            # link to native component controller (be sure that you have one)
+            c = r.component.prefix
+            f = r.component.name
+    else:
+        if authorised is None:
             authorised = shn_has_permission("update", r.tablename)
-            if authorised:
-                if sticky:
-                    # Render "sticky" update form (returns to itself)
-                    _next = str(URL(r=request, args=[field], vars=request.vars))
-                     # need to avoid double URL-encoding if "[id]"
-                    _next = str(_next).replace("%5Bid%5D", "[id]")
+        if authorised and update:
+            linkto = response.s3.get("linkto_update", None)
+        else:
+            linkto = response.s3.get("linkto", None)
+
+    def shn_list_linkto(record_id,
+                        r=r,
+                        c=c,
+                        f=f,
+                        linkto=linkto,
+                        update=authorised and update):
+
+        if linkto:
+            try:
+                url = str(linkto(record_id))
+            except TypeError:
+                url = linkto % record_id
+            return url
+        else:
+            if r.component:
+                if c and f:
+                    args = [record_id]
                 else:
-                    _next = URL(r=request, args=request.args, vars=request.vars)
-                return response.s3.linkto_update or \
-                       URL(r=request, args=[field, "update"])
+                    c = request.controller
+                    f = request.function
+                    args = [r.id, r.component_name, record_id]
+                if update:
+                    return str(URL(r=request, c=c, f=f, args=args + ["update"], vars=request.vars))
+                else:
+                    return str(URL(r=request, c=c, f=f, args=args, vars=request.vars))
             else:
-                return response.s3.linkto or \
-                       URL(r=request, args=[field],
-                           vars={"_next":URL(r=request, args=request.args, vars=request.vars)})
+                args = [record_id]
+                if update:
+                    return str(URL(r=request, c=c, f=f, args=args + ["update"]))
+                else:
+                    return str(URL(r=request, c=c, f=f, args=args))
 
     return shn_list_linkto
+
 
 #
 # shn_list --------------------------------------------------------------------
@@ -986,7 +1030,8 @@ def shn_list(r, **attr):
     main = _attr.get("main", None)
     extra = _attr.get("extra", None)
     orderby = _attr.get("orderby", None)
-    sortby = _attr.get("sortby", None)
+    sortby = _attr.get("sortby", [[1,'asc']])
+    linkto = _attr.get("linkto", None)
 
     # Provide the ability to get a subset of records
     start = vars.get("start", 0)
@@ -1033,7 +1078,10 @@ def shn_list(r, **attr):
         fields = [f for f in table.fields if table[f].readable]
 
     # Where to link the ID column?
-    linkto = shn_linkto(r, sticky)
+    if not linkto:
+        linkto = shn_linkto(r, sticky)
+    # At this point, linkto is either a fixed url, or is a function that
+    # takes an id and produces an url.
 
     if representation == "aadata":
 
@@ -1076,7 +1124,7 @@ def shn_list(r, **attr):
         from gluon.serializers import json
         return json(result)
 
-    elif representation in ("html", "popup"):
+    elif representation in shn_interactive_view_formats:
 
         output = dict(main=main, extra=extra, sortby=sortby)
 
@@ -1181,6 +1229,10 @@ def shn_list(r, **attr):
                            _class="action-btn")
 
             shn_custom_view(r, "list_create.html")
+
+            if deployment_settings.get_ui_navigate_away_confirm():
+                form.append( SCRIPT ("EnableNavigateAwayConfirm();") )
+
             output.update(form=form, addtitle=addtitle, showaddbtn=showaddbtn)
 
         else:
@@ -1238,7 +1290,7 @@ def shn_create(r, **attr):
     extra = _attr.get("extra", None)
     create_next = _attr.get("create_next")
 
-    if representation in ("html", "popup"):
+    if representation in shn_interactive_view_formats:
 
         # Copy from a previous record?
         from_record = r.request.get_vars.get("from_record", None)
@@ -1365,6 +1417,9 @@ def shn_create(r, **attr):
                                         _onclick="window.location='%s';" %
                                                  response.s3.cancel))
 
+        if deployment_settings.get_ui_navigate_away_confirm():
+            form.append( SCRIPT ("EnableNavigateAwayConfirm();") )
+
         # Put the form into output
         output.update(form=form)
 
@@ -1379,7 +1434,7 @@ def shn_create(r, **attr):
             output.update(list_btn=list_btn)
 
         # Custom view
-        if representation == "popup":
+        if representation in ("popup", "iframe"):
             shn_custom_view(r, "popup.html")
             output.update(caller=r.request.vars.caller)
             r.next = None
@@ -1401,6 +1456,10 @@ def shn_create(r, **attr):
 
         form = crud.create(table,
                            onvalidation=onvalidation, onaccept=_onaccept)
+
+        if deployment_settings.get_ui_navigate_away_confirm():
+            form.append( SCRIPT ("EnableNavigateAwayConfirm();") )
+
         response.view = "plain.html"
         return dict(item=form)
 
@@ -1477,12 +1536,12 @@ def shn_update(r, **attr):
     s3xrc.audit("read", prefix, name,
                 record=record_id, representation=representation)
 
-    if r.representation == "html" or r.representation == "popup":
+    if r.representation in shn_interactive_view_formats:
 
         # Custom view
         if r.representation == "html":
             shn_custom_view(r, "update.html")
-        elif r.representation == "popup":
+        elif r.representation in ("popup", "iframe"):
             shn_custom_view(r, "popup.html")
 
         # Title and subtitle
@@ -1524,10 +1583,10 @@ def shn_update(r, **attr):
                 table[r.fkey].writable = False
             crud.settings.update_onvalidation = None
             crud.settings.update_onaccept = None
-            if not representation == "popup":
+            if not representation in ("popup", "iframe"):
                 crud.settings.update_next = update_next or r.there()
         else:
-            if not representation == "popup" and \
+            if not representation in ("popup", "iframe") and \
                not crud.settings.update_next:
                 crud.settings.update_next = update_next or r.here()
             if not onvalidation:
@@ -1567,6 +1626,9 @@ def shn_update(r, **attr):
                                         _value="Cancel",
                                         _onclick="window.location='%s';" %
                                                  response.s3.cancel))
+
+        if deployment_settings.get_ui_navigate_away_confirm():
+            form.append( SCRIPT ("EnableNavigateAwayConfirm();") )
 
         output.update(form=form)
 
@@ -1609,6 +1671,10 @@ def shn_update(r, **attr):
                            deletable=False)
 
         response.view = "plain.html"
+
+        if deployment_settings.get_ui_navigate_away_confirm():
+            form.append( SCRIPT ("EnableNavigateAwayConfirm();") )
+
         return dict(item=form)
 
     elif r.representation == "url":
@@ -1808,7 +1874,7 @@ def shn_search(r, **attr):
     if response.s3.filter:
         query = response.s3.filter & query
 
-    if r.representation in ("html", "popup"):
+    if r.representation in shn_interactive_view_formats:
 
         shn_represent(r.table, r.prefix, r.name, deletable, main, extra)
         search = t2.search(r.table, query=query)
@@ -1850,6 +1916,15 @@ def shn_search(r, **attr):
                     parent = int(_vars.parent)
             else:
                 parent = None
+            if "exclude_field" in _vars:
+                exclude_field = str.lower(_vars.exclude_field)
+                if "exclude_value" in _vars:
+                    exclude_value = str.lower(_vars.exclude_value)
+                else:
+                    exclude_value = None
+            else:
+                exclude_field = None
+                exclude_value = None
 
             limit = int(_vars.limit or 0)
 
@@ -1867,12 +1942,18 @@ def shn_search(r, **attr):
                                         (_table[field2].like("%" + value + "%")) | \
                                         (_table[field3].like("%" + value + "%")))
 
+                elif exclude_field and exclude_value:
+                    # gis_location hierarchical search
+                    # Filter out poor-quality data, such as from Ushahidi
+                    query = query & (_field.like("%" + value + "%")) & \
+                                    (_table[exclude_field] != exclude_value)
+
                 elif parent:
                     # gis_location hierarchical search
-                    # Immediate children only
+                    # NB Currently not used - we allow people to search freely across all the hierarchy
+                    # SQL Filter is immediate children only so need slow lookup
                     #query = query & (_table.parent == parent) & \
                     #                (_field.like("%" + value + "%"))
-                    # Nice if we could filter in SQL but this breaks the recursion
                     children = gis.get_children(parent)
                     children = children.find(lambda row: value in str.lower(row.name))
                     item = children.json()
@@ -1923,6 +2004,88 @@ def shn_search(r, **attr):
 
     return output
 
+
+def shn_barchart (r, **attr):
+    """
+        Provide simple barcharts for resource attributes
+        SVG representation uses the SaVaGe library
+        Need to request a specific value to graph in request.vars
+    """
+
+    import gluon.contrib.simplejson as json
+
+    # Get all the variables and format them if needed
+    valKey = r.request.vars.get("value")
+
+    nameKey = r.request.vars.get("name")
+    if not nameKey and r.table.get("name"):
+        # Try defaulting to the most-commonly used:
+        nameKey = "name"
+
+    # The parameter value is required; it must be provided
+    # The parameter name is optional; it is useful, but we don't need it
+    # Here we check to make sure we can find value in the table,
+    # and name (if it was provided)
+    if not r.table.get(valKey):
+        raise HTTP (400, s3xrc.xml.json_message(success=False, status_code="400", message="Need a Value for the Y axis"))
+    elif nameKey and not r.table.get(nameKey):
+        raise HTTP (400, s3xrc.xml.json_message(success=False, status_code="400", message=nameKey + " attribute not found in this resource."))
+
+    start = request.vars.get("start")
+    if start:
+        start = int(start)
+
+    limit = r.request.vars.get("limit")
+    if limit:
+        limit = int(limit)
+
+    settings = r.request.vars.get("settings")
+    if settings:
+        settings = json.loads(settings)
+    else:
+        settings = {}
+
+    if r.representation.lower() == "svg":
+        r.response.headers["Content-Type"] = "image/svg+xml"
+        
+        graph = local_import("savage.graph")
+        bar = graph.BarGraph(settings=settings)
+
+        title = deployment_settings.modules.get(module).name_nice
+        bar.setTitle(title)
+
+        if nameKey:
+            xlabel = r.table.get(nameKey).label
+            if xlabel:
+                bar.setXLabel(str(xlabel))
+            else:
+                bar.setXLabel(nameKey)
+
+        ylabel = r.table.get(valKey).label
+        if ylabel:
+            bar.setYLabel(str(ylabel))
+        else:
+            bar.setYLabel(valKey)
+        
+        try:
+            records = r.resource.load(start, limit)
+            for entry in r.resource:
+                val = entry[valKey]
+
+                # Can't graph None type
+                if not val is None:
+                    if nameKey:
+                        name = entry[nameKey]
+                    else:
+                        name = None
+                    bar.addBar(name, val)
+            return bar.save()
+        # If the field that was provided was not numeric, we have problems
+        except ValueError:
+            raise HTTP(400, "Bad Request")
+    else:
+        raise HTTP(501, body=BADFORMAT)
+
 # *****************************************************************************
 # Main controller function
 
@@ -1947,6 +2110,7 @@ def shn_rest_controller(module, resource, **attr):
             - B{plain}: is HTML with no layout
                 - can be inserted into DIVs via AJAX calls
                 - can be useful for clients on low-bandwidth or small screen sizes
+                - used for the Map popups
             - B{ext}: is Ext layouts (experimental)
             - B{json}: JSON export/import using XSLT
             - B{xml}: XML export/import using XSLT
@@ -1954,12 +2118,14 @@ def shn_rest_controller(module, resource, **attr):
                 - List/Display/Create for now
             - B{pdf}: list/read only
             - B{rss}: list only
+            - B{svg}: barchart method only
             - B{xls}: list/read only
             - B{ajax}: designed to be run asynchronously to refresh page elements
             - B{url}: designed to be accessed via JavaScript
                 - responses in JSON format
                 - create/update/delete done via simple GET vars (no form displayed)
-            - B{popup}: designed to be used inside popups
+            - B{popup}: designed to be used inside colorbox popups
+            - B{iframe}: designed to be used inside iframes
             - B{aaData}: used by dataTables for server-side pagination
 
         Request options:
@@ -2014,9 +2180,58 @@ def shn_rest_controller(module, resource, **attr):
     s3xrc.set_handler("delete", shn_delete)
     s3xrc.set_handler("search", shn_search)
     s3xrc.set_handler("copy", shn_copy)
+    s3xrc.set_handler("barchart", shn_barchart)
 
-    res, req = s3xrc.parse_request(module, resource, session, request, response)
-    output = res.execute_request(req, **attr)
+    res, r = s3xrc.parse_request(module, resource, session, request, response)
+    output = res.execute_request(r, **attr)
+
+    # Add default action buttons in list views:
+    if isinstance(output, dict) and not r.method:
+        c = r.component
+        if response.s3.actions is None:
+            native = False
+            if c:
+                _attr = c.attr
+                authorised = shn_has_permission("update", c.tablename)
+                if s3xrc.model.has_components(c.prefix, c.name):
+                    # Use the component's native controller for CRU(D), need
+                    # to make sure you have one, or override by native=False
+                    native = attr.get("native", True)
+            else:
+                _attr = attr
+                authorised = shn_has_permission("update", r.tablename)
+
+            listadd = _attr.get("listadd", True)
+            editable = _attr.get("editable", True)
+            deletable = _attr.get("deletable", True)
+            copyable = _attr.get("copyable", False)
+
+            # URL to open the resource
+            open_url = shn_linkto(r,
+                                  authorised=authorised,
+                                  update=editable,
+                                  native=native)("[id]")
+
+            # Add action buttons for Open/Delete/Copy as appropriate
+            shn_action_buttons(r,
+                               deletable=deletable,
+                               copyable=copyable,
+                               read_url=open_url,
+                               update_url=open_url)
+
+            # Override add button for native controller use (+automatic linking)
+            if native and not listadd:
+                if shn_has_permission("create", c.tablename):
+                    label = shn_get_crud_string(c.tablename,
+                                                "label_create_button")
+                    hook = r.resource.components[c.name]
+                    fkey = "%s.%s" % (c.name, hook.fkey)
+                    vars = request.vars.copy()
+                    vars.update({fkey: r.id})
+                    url = str(URL(r=request, c=c.prefix, f=c.name,
+                                  args=["create"], vars=vars))
+                    add_btn = A(label, _href=url, _class="action-btn")
+                    output.update(add_btn=add_btn)
 
     return output
 

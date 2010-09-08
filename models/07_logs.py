@@ -1,37 +1,26 @@
 # -*- coding: utf-8 -*-
 
 """
-    Logistics Management 
-    
+    Logistics Management
+
     @author: Michael Howden (michael@sahanafoundation.org)
-    @date-created: 2010-09-02    
-    
+    @date-created: 2010-09-02
+
     Distribution, Shipments
-        
+
 """
 
 module = "logs"
 if deployment_settings.has_module(module):
     #==============================================================================
-    # Settings
-    #
-    resource = "setting"
-    tablename = "%s_%s" % (module, resource)
-    table = db.define_table(tablename,
-                            Field("audit_read", "boolean"),
-                            Field("audit_write", "boolean"),
-                            migrate=migrate)
-
-
-    #==============================================================================
     # Distribution
     #
     resource = "distrib"
     tablename = "%s_%s" % (module, resource)
-    table = db.define_table(tablename, 
-                            timestamp, 
-                            uuidstamp, 
-                            authorstamp, 
+    table = db.define_table(tablename,
+                            timestamp,
+                            uuidstamp,
+                            authorstamp,
                             deletion_status,
                             Field("date", "date"),
                             location_id,
@@ -44,14 +33,14 @@ if deployment_settings.has_module(module):
         if id:
             distrib_row = db(db.logs_distrib.id == id).select(db.logs_distrib.location_id, db.logs_distrib.date, limitby=(0, 1)).first()
             location = shn_get_db_field_value(db = db,
-                                              table = "gis_location", 
-                                              field = "name", 
+                                              table = "gis_location",
+                                              field = "name",
                                               look_up = distrib_row.location_id
                                               )
             return "%s - %s" % (shn_gis_location_represent(location), distrib_row.date)
         else:
             return NONE
-    
+
     # CRUD strings
     ADD_DISTRIBUTION = T("Add Distribution")
     LIST_DISTRIBUTIONS = T("List Distributions")
@@ -70,27 +59,27 @@ if deployment_settings.has_module(module):
         msg_record_modified = T("Distribution updated"),
         msg_record_deleted = T("Distribution deleted"),
         msg_list_empty = T("No Distributions currently registered"))
-    
+
     # Reusable Field
     distrib_id = db.Table(None, "distrib_id",
             FieldS3("distrib_id", db.logs_distrib, sortby="name",
-                requires = IS_NULL_OR(IS_ONE_OF(db, "logs_distrib.id", distrib_represent, sort=True)),
+                requires = IS_NULL_OR(IS_ONE_OF(db, "logs_distrib.id", distrib_represent, orderby="logs_distrib.date", sort=True)),
                 represent = distrib_represent,
                 label = T("Distribution"),
                 #comment = DIV(A(ADD_DISTRIBUTION, _class="colorbox", _href=URL(r=request, c="logs", f="distrib", args="create", vars=dict(format="popup")), _target="top", _title=ADD_DISTRIBUTION),
                 #          DIV( _class="tooltip", _title=Tstr("Distribution") + "|" + Tstr("Add Distribution."))),
                 ondelete = "RESTRICT"
                 ))
-    
+
     #==============================================================================
     # Distribution Item
     #
     resource = "distrib_item"
     tablename = "%s_%s" % (module, resource)
-    table = db.define_table(tablename, 
-                            timestamp, 
-                            uuidstamp, 
-                            authorstamp, 
+    table = db.define_table(tablename,
+                            timestamp,
+                            uuidstamp,
+                            authorstamp,
                             deletion_status,
                             distrib_id,
                             item_id,
@@ -116,7 +105,7 @@ if deployment_settings.has_module(module):
         msg_record_modified = T("Distribution Item updated"),
         msg_record_deleted = T("Distribution Item deleted"),
         msg_list_empty = T("No Distribution Items currently registered"))
-    
+
     # Items as component of Distributions
     s3xrc.model.add_component(module, resource,
                               multiple=True,

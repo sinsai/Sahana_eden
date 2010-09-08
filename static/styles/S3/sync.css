@@ -1,0 +1,28 @@
+#sync_status {
+    background-color: #F7F2D1;
+    margin-left: 10px;
+    margin-right: 10px;
+    margin-top: 10px;
+    border: solid 1px #000000;
+    padding: 8px;
+    min-height:24em;
+}
+
+#sync_status .sync_message {
+    text-align: left;
+}
+
+#sync_status .sync_status {
+    float: right;
+    text-align: right;
+    font-weight: bold;
+}
+
+#sync_status .failure {
+    color: #CE322E;
+    font-weight: bold;
+}
+
+#sync_status .success {
+    color: #288D31;
+}

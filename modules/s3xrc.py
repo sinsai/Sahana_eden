@@ -132,8 +132,6 @@ class S3Resource(object):
                                  export_tree=self.__get_tree,
                                  import_tree=self.__put_tree)
 
-        self.push_limit = 1 #: maximum number of records accepted in PUT/POST
-
 
     # -------------------------------------------------------------------------
     def __dbg(self, msg):
@@ -801,8 +799,6 @@ class S3Resource(object):
         preprocess = None
         postprocess = None
 
-        push_limit = self.push_limit
-
         # Enforce primary record ID
         if not r.id and not r.custom_action and r.representation == "html":
             if r.component or r.method in ("read", "update"):
@@ -860,7 +856,6 @@ class S3Resource(object):
                 self.__dbg("custom method %s" % r.method)
                 handler = r.custom_action
             elif r.http == "GET":
-                self.push_limit = None
                 handler = self.__get(r)
             elif r.http == "PUT":
                 handler = self.__put(r)
@@ -873,7 +868,6 @@ class S3Resource(object):
             if handler is not None:
                 self.__dbg("method handler found - executing request")
                 output = handler(r, **attr)
-                self.push_limit = push_limit
             else:
                 self.__dbg("no method handler - finalizing request")
 
@@ -989,6 +983,9 @@ class S3Resource(object):
             else:
                 r.next = URL(r=r.request, f=self.name)
             return None
+
+        elif method == "barchart":
+            authorised = permit("read", tablename)
 
         else:
             raise HTTP(501, body=self.ERROR.BAD_METHOD)
@@ -1275,7 +1272,6 @@ class S3Resource(object):
             ignore_errors = False
 
         success = self.__import_tree(id, tree,
-                                     push_limit=self.push_limit,
                                      ignore_errors=ignore_errors)
 
         if success:
@@ -1406,7 +1402,6 @@ class S3Resource(object):
     # -------------------------------------------------------------------------
     def __import_tree(self, id, tree,
                       files=None,
-                      push_limit=None,
                       ignore_errors=False):
 
         """ Import data from an element tree to this resource
@@ -1416,11 +1411,12 @@ class S3Resource(object):
             @raise IOError: at insufficient permissions
         """
 
+        json_message = self.__manager.xml.json_message
+
         if files is not None and isinstance(files, dict):
             self.__files = Storage(files)
 
         success = self.__manager.import_tree(self, id, tree,
-                                             push_limit=push_limit,
                                              ignore_errors=ignore_errors)
 
         self.__files = Storage()
@@ -1468,7 +1464,6 @@ class S3Resource(object):
                     raise SyntaxError(xml.error)
             return self.__import_tree(id, tree,
                                       files=files,
-                                      push_limit=None,
                                       ignore_errors=ignore_errors)
         else:
             raise SyntaxError("Invalid XML source")
@@ -1519,7 +1514,6 @@ class S3Resource(object):
                     raise SyntaxError(xml.error)
             return self.__import_tree(id, tree,
                                       files=files,
-                                      push_limit=None,
                                       ignore_errors=ignore_errors)
         else:
             raise SyntaxError("Invalid JSON source.")
@@ -1673,7 +1667,14 @@ class S3Resource(object):
             try:
                 f = urllib2.urlopen(req)
             except urllib2.HTTPError, e:
-                response = e.read()
+                code = e.code
+                message = e.read()
+                try:
+                    message_json = json.loads(message)
+                    message = message_json.get("message", message)
+                except:
+                    pass
+                return xml.json_message(False, code, message)
             else:
                 response = f.read()
 
@@ -1788,13 +1789,13 @@ class S3Resource(object):
 
 
     # -------------------------------------------------------------------------
-    def __fetch_tree(self, url,
-                     username=None,
-                     password=None,
-                     proxy=None,
-                     json=False,
-                     template=None,
-                     ignore_errors=False, **args):
+    def fetch(self, url,
+              username=None,
+              password=None,
+              proxy=None,
+              json=False,
+              template=None,
+              ignore_errors=False, **args):
 
         """ Fetch data to the current resource from a remote URL """
 
@@ -1828,20 +1829,46 @@ class S3Resource(object):
         try:
             f = urllib2.urlopen(req)
         except urllib2.HTTPError, e:
-            response = e.read()
+            code = e.code
+            message = e.read()
+            try:
+                message_json = json.loads(message)
+                message = message_json.get("message", message)
+            except:
+                pass
+            message = "<message>PEER ERROR: %s</message>" % message
+            try:
+                markup = etree.XML(message)
+                message = markup.xpath(".//text()")
+                if message:
+                    message = " ".join(message)
+                else:
+                    message = ""
+            except etree.XMLSyntaxError:
+                pass
+            return xml.json_message(False, code, message, tree=None)
         else:
-            response = f.read()
+            response = f
 
-        if json:
-            return self.import_json(response,
-                                    template=template,
-                                    ignore_errors=ignore_errors,
-                                    args=args)
+        try:
+            if json:
+                success = self.import_json(response,
+                                        template=template,
+                                        ignore_errors=ignore_errors,
+                                        args=args)
+            else:
+                success = self.import_xml(response,
+                                        template=template,
+                                        ignore_errors=ignore_errors,
+                                        args=args)
+        except IOError, e:
+            return xml.json_message(False, 400, "LOCAL ERROR: %s" % e)
+
+        if not success:
+            error = self.__manager.error
+            return xml.json_message(False, 400, "LOCAL ERROR: %s" % error)
         else:
-            return self.import_xml(response,
-                                   template=template,
-                                   ignore_errors=ignore_errors,
-                                   args=args)
+            return xml.json_message()
 
 
     def fetch_xml(self, url,
@@ -1851,13 +1878,13 @@ class S3Resource(object):
                   template=None,
                   ignore_errors=False, **args):
 
-        return self.__fetch_tree(url,
-                                 username=username,
-                                 password=password,
-                                 proxy=proxy,
-                                 json=False,
-                                 template=template,
-                                 ignore_errors=ignore_errors, **args)
+        return self.fetch(url,
+                          username=username,
+                          password=password,
+                          proxy=proxy,
+                          json=False,
+                          template=template,
+                          ignore_errors=ignore_errors, **args)
 
 
     def fetch_json(self, url,
@@ -1867,13 +1894,13 @@ class S3Resource(object):
                    template=None,
                    ignore_errors=False, **args):
 
-        return self.__fetch_tree(url,
-                                 username=username,
-                                 password=password,
-                                 proxy=proxy,
-                                 json=True,
-                                 template=template,
-                                 ignore_errors=ignore_errors, **args)
+        return self.fetch(url,
+                          username=username,
+                          password=password,
+                          proxy=proxy,
+                          json=True,
+                          template=template,
+                          ignore_errors=ignore_errors, **args)
 
 
 # *****************************************************************************
@@ -2500,6 +2527,31 @@ class S3ResourceModel(object):
 
         return components
 
+
+    # -------------------------------------------------------------------------
+    def has_components(self, prefix, name):
+
+        """ Check whether the specified resource has components
+
+            @param prefix: prefix of the resource name (=module name)
+            @param name: name of the resource (=without prefix)
+
+        """
+
+        # Like get_components, except quits on first match.
+        tablename = "%s_%s" % (prefix, name)
+        table = self.db.get(tablename, None)
+
+        if table:
+            for hook in self.components.values():
+                if tablename in hook:
+                    return True
+                else:
+                    nkey = hook._joinby
+                    if nkey and nkey in table.fields:
+                        return True
+
+        return False
 
     # -------------------------------------------------------------------------
     def get_many2many(self, prefix, name):
@@ -3499,15 +3551,13 @@ class S3ResourceController(object):
 
     # -------------------------------------------------------------------------
     def import_tree(self, resource, id, tree,
-                    push_limit=None, ignore_errors=False):
+                    ignore_errors=False):
 
         """ Imports data from an element tree to a resource
 
             @param resource: the resource
             @param id: record ID or list of record IDs to update
             @param tree: the element tree
-            @param push_limit: maximum allowed number of imports
-                (None for unlimited)
             @param ignore_errors: continue at errors (=skip invalid elements)
 
         """
@@ -3552,10 +3602,6 @@ class S3ResourceController(object):
                 return False
             else:
                 elements = matches
-
-        if push_limit is not None and len(elements) > push_limit:
-            self.error = self.ERROR.NOT_PERMITTED
-            return False
 
         # Import all matching elements
         error = None
@@ -3974,7 +4020,8 @@ class S3Vector(object):
                             this_mci = this[self.MCI]
                         else:
                             this_mci = 0
-                        for f in self.record:
+                        fields = self.record.keys()
+                        for f in fields:
                             r = self.get_resolution(f)
                             if r == self.RESOLUTION.THIS:
                                 del self.record[f]
@@ -4115,6 +4162,8 @@ class S3XML(object):
     S3XRC_NAMESPACE = "http://eden.sahanafoundation.org/wiki/S3XRC"
     S3XRC = "{%s}" % S3XRC_NAMESPACE #: LXML namespace prefix
     NSMAP = {None: S3XRC_NAMESPACE} #: LXML default namespace
+
+    namespace = "sahana"
 
     CACHE_TTL = 5 # time-to-live of RAM cache for field representations
 
@@ -4391,41 +4440,49 @@ class S3XML(object):
     # -------------------------------------------------------------------------
     def export_uid(self, uid):
 
-        """ Maps internal UUIDs to export format
+        """ Exports UUIDs with domain prefix
 
-            @param uid: the (internally used) UUID
+            @param uid: the UUID
 
         """
 
-        if not self.domain:
+        if not uid:
             return uid
-        x = uid.find("/")
-        if x < 1 or x == len(uid)-1:
-            return "%s/%s" % (self.domain, uid)
+
+        if uid.startswith("urn:"):
+            return uid
         else:
-            return uid
+            x = uid.find("/")
+            if (x < 1 or x == len(uid)-1) and self.domain:
+                return "%s/%s" % (self.domain, uid)
+            else:
+                return uid
 
 
     # -------------------------------------------------------------------------
     def import_uid(self, uid):
 
-        """ Maps imported UUIDs to internal format
+        """ Imports UUIDs with domain prefixes
 
-            @param uid: the (externally used) UUID
+            @param uid: the UUID
 
         """
 
-        if not self.domain:
+        if not uid or not self.domain:
             return uid
-        x = uid.find("/")
-        if x < 1 or x == len(uid)-1:
+
+        if uid.startswith("urn:"):
             return uid
         else:
-            (_domain, _uid) = uid.split("/", 1)
-            if _domain == self.domain:
-                return _uid
-            else:
+            x = uid.find("/")
+            if x < 1 or x == len(uid)-1:
                 return uid
+            else:
+                (_domain, _uid) = uid.split("/", 1)
+                if _domain == self.domain:
+                    return _uid
+                else:
+                    return uid
 
 
     # Data export =============================================================
@@ -4583,7 +4640,7 @@ class S3XML(object):
                                      (download_url, marker)
                     else:
                         marker = self.gis.get_marker(r.value)
-                        marker_url = "%s/%s" % (download_url, marker)
+                        marker_url = "%s/%s" % (download_url, marker.image)
                     r.element.set(self.ATTRIBUTE.marker,
                                   self.xml_encode(marker_url))
                     # Lookup GPS Marker
@@ -4636,7 +4693,7 @@ class S3XML(object):
             if table._tablename == "gis_location" and self.gis:
                 # Look up the marker to display
                 marker = self.gis.get_marker(_value)
-                marker_url = "%s/%s" % (download_url, marker)
+                marker_url = "%s/%s" % (download_url, marker.image)
                 resource.set(self.ATTRIBUTE.marker,
                                 self.xml_encode(marker_url))
                 # Look up the GPS Marker
@@ -5287,19 +5344,14 @@ class S3XML(object):
 
         code = '"statuscode": "%s"' % status_code
 
-        if not success:
-            if message:
-                return '{%s, %s, "message": "%s", "tree": %s }' % \
-                       (status, code, message, tree)
-            else:
-                return '{%s, %s, "tree": %s }' % \
-                       (status, code, tree)
-        else:
-            if message:
-                return '{%s, %s, "message": "%s"}' % \
-                       (status, code, message)
-            else:
-                return '{%s, %s}' % \
-                       (status, code)
+        output = "{%s, %s" % (status, code)
+
+        if message:
+            output = '%s, "message": "%s"' % (output, message)
+
+        if not success and tree:
+            output = '%s, "tree": "%s"' % (output, tree)
+
+        return "%s}" % output
 
 # *****************************************************************************

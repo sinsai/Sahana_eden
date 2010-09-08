@@ -8,11 +8,10 @@ def s3_sessions():
     """
         Extend session to support:
             Multiple flash classes
+            Roles caching
             Settings
                 Debug mode
                 Security mode
-                Restricted mode
-                Theme
                 Audit modes
     """
     response.error = session.error
@@ -40,26 +39,29 @@ def s3_sessions():
             roles.append(membership.group_id)
     session.s3.roles = roles
 
-    controller_settings_table = "%s_setting" % request.controller
-    controller_settings = controller_settings_table in db.tables and \
-       db(db[controller_settings_table].id > 0).select(limitby=(0, 1)).first()
-
-    settings = db(db.s3_setting.id > 0).select(db.s3_setting.debug, db.s3_setting.security_policy, db.s3_setting.self_registration, db.s3_setting.audit_read, db.s3_setting.audit_write, limitby=(0, 1)).first()
     # Are we running in debug mode?
-    session.s3.debug = request.vars.get("debug", None) or settings and settings.debug
-    session.s3.self_registration = (settings and settings.self_registration) or 1
-    session.s3.security_policy = (settings and settings.security_policy) or 1
+    session.s3.debug = request.vars.get("debug", None) or deployment_settings.get_base_debug()
+
+    # Security Policy
+    #session.s3.self_registration = deployment_settings.get_security_self_registration()
+    session.s3.security_policy = deployment_settings.get_security_policy()
 
     # We Audit if either the Global or Module asks us to
     # (ignore gracefully if module author hasn't implemented this)
-    session.s3.audit_read = (settings and settings.audit_read) \
-        or (controller_settings and controller_settings.audit_read)
-    session.s3.audit_write = (settings and settings.audit_write) \
-        or (controller_settings and controller_settings.audit_write)
+    try:
+        session.s3.audit_read = deployment_settings.get_security_audit_read() \
+            or deployment_settings.modules[request.controller].get("audit_read", False)
+        session.s3.audit_write = deployment_settings.get_security_audit_write() \
+            or deployment_settings.modules[request.controller].get("audit_write", False)
+    except:
+        # Controller doesn't link to a 'module' (e.g. appadmin)
+        session.s3.audit_read = False
+        session.s3.audit_write = False
 
-    return settings
+    return
 
-s3_settings = s3_sessions()
+# Extend the session
+s3_sessions()
 
 # -----------------------------------------------------------------------------
 # Debug Function (same name/parameters as JavaScript one)
@@ -148,35 +150,56 @@ def shn_abbreviate(word, size=48):
         return word
 
 
+# @ToDo An alternative to having the caller pass in a constructed url
+# would be to let then pass in an url or a linkto function, and call
+# the function here.
+
 # -----------------------------------------------------------------------------
-def shn_action_buttons(jr, deletable=True, copyable=False):
+def shn_action_buttons(r,
+                       deletable=True,
+                       copyable=False,
+                       read_url=None,
+                       update_url=None,
+                       delete_url=None,
+                       copy_url=None):
 
     """
         Provide the usual Action Buttons for Column views.
+        Allow customizing the urls, since this overwrites anything
+        that would be inserted by shn_list via linkto.  The resource
+        id should be represented by "[id]".
         Designed to be called from a postp
     """
 
-    if jr.component:
-        args = [jr.component_name, "[id]"]
+    if r.component:
+        args = [r.component_name, "[id]"]
     else:
         args = ["[id]"]
 
-    if shn_has_permission("update", jr.table):
-        # Provide the ability to delete records in bulk
+    if shn_has_permission("update", r.table):
+        if not update_url:
+            update_url = str(URL(r=request, args = args + ["update"]))
         response.s3.actions = [
-            dict(label=str(UPDATE), _class="action-btn", url=str(URL(r=request, args = args + ["update"]))),
+            dict(label=str(UPDATE), _class="action-btn", url=update_url),
         ]
-        if deletable and shn_has_permission("delete", jr.table):
+        # Provide the ability to delete records in bulk
+        if deletable and shn_has_permission("delete", r.table):
+            if not delete_url:
+                delete_url = str(URL(r=request, args = args + ["delete"]))
             response.s3.actions.append(
-                dict(label=str(DELETE), _class="action-btn", url=str(URL(r=request, args = args + ["delete"])))
+                dict(label=str(DELETE), _class="action-btn", url=delete_url)
             )
         if copyable:
+            if not copy_url:
+                copy_url = str(URL(r=request, args = args + ["copy"]))
             response.s3.actions.append(
-                dict(label=str(COPY), _class="action-btn", url=str(URL(r=request, args = args + ["copy"])))
+                dict(label=str(COPY), _class="action-btn", url=copy_url)
             )
     else:
+        if not read_url:
+            read_url = str(URL(r=request, args = args))
         response.s3.actions = [
-            dict(label=str(READ), _class="action-btn", url=str(URL(r=request, args = args)))
+            dict(label=str(READ), _class="action-btn", url=read_url)
         ]
 
     return
@@ -481,5 +504,3 @@ def shn_rheader_tabs(r, tabs=[], paging=False):
         rheader_tabs = ""
 
     return rheader_tabs
-
-# -----------------------------------------------------------------------------

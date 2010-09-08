@@ -1,12 +1,12 @@
-{{extend "layout_popup.html"}}
+{{extend "layout.html"}}
 {{include "_popup.html"}}
 <script type="text/javascript">//<![CDATA[
 
 {{include "org/offices_by_org.js"}}
 
 $(function() {
-    $("#org_staff_organisation_id").val("{{=session.s3.organisation_id}}");
-    $("#org_staff_organisation_id__row").hide();
+    $('#org_staff_organisation_id').val('{{=session.s3.organisation_id}}');
+    $('#org_staff_organisation_id__row').hide();
     
     // Person AutoComplete
     {{entity_id = "org_staff_person_id"}}
@@ -32,7 +32,7 @@ $(function() {
 {{if response.flash or response.confirmation:}}
     // Refresh the staff list
     var url = '{{=URL(r=request, c="org", f="dashboard") + "/" + str(session.s3.organisation_id)}}';    
-    self.parent.$("#org_staff_list").load(url + " #org_staff_list"); 
+    self.parent.$('#org_staff_list').load(url + ' #org_staff_list'); 
 {{pass}}
 
 //]]></script>

@@ -23,7 +23,8 @@ if deployment_settings.has_module(module):
                                Field("table_name", "string", readable=False, writable=False),
                                Field("locked", "boolean", readable=False, writable=False),
                                person_id,
-                               organisation_id)
+                               organisation_id,
+                               migrate=migrate)
 
     # Survey Series
     resource = "series"
@@ -32,7 +33,8 @@ if deployment_settings.has_module(module):
                              Field("survey_template_id", db.survey_template),
                              Field("from_date", "date", default=None),
                              Field("to_date", "date", default=None),
-                             location_id)
+                             location_id,
+                             migrate=migrate)
 
     # Survey Section
     resource = "questions"
@@ -45,7 +47,8 @@ if deployment_settings.has_module(module):
     question = db.define_table(tablename,timestamp, uuidstamp, deletion_status, authorstamp,                               
                                 Field("name", "string", default="", length=120),
                                 Field("question_type", "integer"),
-                                Field("description", "text", default="", length=500))
+                                Field("description", "text", default="", length=500),
+                                migrate=migrate)
 
                                 #Field("options_id", db.survey_question_options),
                                 #Field("tf_ta_columns", "integer"), # number of columns for TF/TA
@@ -62,7 +65,8 @@ if deployment_settings.has_module(module):
     link_table = db.define_table(tablename,timestamp, uuidstamp, deletion_status, authorstamp,
                                  Field("survey_question_id", db.survey_question),
                                  Field("survey_template_id", db.survey_template),
-                                 Field("survey_questions_id", db.survey_questions))
+                                 Field("survey_questions_id", db.survey_questions),
+                                 migrate=migrate)
     link_table.survey_question_id.requires = IS_NULL_OR(IS_ONE_OF(db, "survey_question.id", "%(name)s"))
 
 
@@ -72,7 +76,8 @@ if deployment_settings.has_module(module):
 #    resource = "instance"
 #    tablename = module + "_" + resource
 #    instance = db.define_table(tablename, timestamp, uuidstamp, deletion_status, authorstamp,
-#                               Field("survey_series_id", db.survey_series))
+#                               Field("survey_series_id", db.survey_series),
+#                               migrate=migrate)
 
 #    # Survey Answer
 #    resource = "answer"
@@ -84,7 +89,8 @@ if deployment_settings.has_module(module):
 #                             Field("answer_image", "upload"), # store the image if "Image" is selected.
 #                             Field("answer_location", db.gis_location),
 #                             Field("answer_person", db.pr_person),
-#                             Field("answer_organisation", db.org_organisation))
+#                             Field("answer_organisation", db.org_organisation),
+#                             migrate=migrate)
 
 #    # Question options e.g., Row choices, Column Choices, Layout Configuration data, etc...
 #    resource = "question_options"
@@ -103,7 +109,8 @@ if deployment_settings.has_module(module):
 #                                       Field("required", "boolean"), # marks the question as required
 ##                                      Field("validate", "boolean"),  # whether or not to enable validation
 ###                                     Field("validation_options", "integer"), # pre-set validation regexps and such.
-#                                       Field("aggregation_type", "string"))
+#                                       Field("aggregation_type", "string"),
+#                                       migrate=migrate)
 
 #    def question_options_onaccept(form):
 #        if form.vars.id and session.rcvars.survey_question:

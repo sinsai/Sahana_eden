@@ -1,44 +1,9 @@
-"""                                                                                                                            
-    Healthscapes Geolytics Module                                                                                                   
-                                                                                                                                                                               
-                                                                                                                               
-    @author: Nico Preston <nicopresto@gmail.com>                                                                                 
-    @author: Colin Burreson <kasapo@gmail.com>                                                                         
-    @author: Zack Krejci <zack.krejci@gmail.com>                                                                             
-    @copyright: (c) 2010 Healthscapes                                                                             
-    @license: MIT                                                                                                              
-                                                                                                                               
-    Permission is hereby granted, free of charge, to any person                                                                
-    obtaining a copy of this software and associated documentation                                                             
-    files (the "Software"), to deal in the Software without                                                                    
-    restriction, including without limitation the rights to use,                                                               
-    copy, modify, merge, publish, distribute, sublicense, and/or sell                                                          
-    copies of the Software, and to permit persons to whom the                                                                  
-    Software is furnished to do so, subject to the following                                                                   
-    conditions:                                                                                                                
-          
-    The above copyright notice and this permission notice shall be                                                             
-    included in all copies or substantial portions of the Software.                                                            
-                                                                                                                               
-    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,                                                            
-    EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES                                                            
-    OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND                                                                   
-    NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT                                                                
-    HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY,                                                               
-    WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING                                                               
-    FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR                                                              
-    OTHER DEALINGS IN THE SOFTWARE.                                                                                            
-                                                                                                                               
-"""
-
-
-
 from utils import ViewBox, attributesToSVG
-from ..utils.struct import Vector2D as V, identity
+from ..utils.struct import Vector as V, identity
 from ..utils.dictionary import Dictionary
 
 
-class Element:
+class Element (object):
     def __init__ (self, **attr):
         if attr.has_key ('name'):
             self.name = attr['name']
@@ -55,6 +20,12 @@ class Element:
         self.parent = None
         self.style = Style ()
         self.xml = {}
+
+    def root (self):
+        parent = self
+        while not parent.parent is None:
+            parent = parent.parent
+        return parent
 
     def createDef (self, element):
         if not hasattr (self, 'defs') :
@@ -77,15 +48,16 @@ class Element:
         attr = self.setSVG ()
         return indent + '<' + self.name + ' ' + attributesToSVG (attr) + ' />\n'
 
-class Style:
-    def __init__ (self):
-        pass
 
+class Style:
     def setSVG (self):
         attr = {}
         elements = []
         for key, value in self.__dict__.iteritems ():
-            elements.append ((StyleDict[key], value))
+            try:
+                elements.append ((StyleDict[key], value))
+            except KeyError:
+                print 'Warning: ' + str(key) + ' is not a known style attribute. Skipping.'
         attr.update (elements)
         return attr
 
@@ -99,11 +71,12 @@ StyleDict = {'strokeColor': 'stroke',
 }
 
 class Script (Element):
-    def __init__ (self, filename, **attr):
+    def __init__ (self, cdata, **attr):
         Element.__init__ (self, name = 'script', **attr)
         self.xml ['type'] = 'text/javascript'
-        file = open (filename)
-        self.text = file.read ()
+        #file = open (filename)
+        #self.text = file.read ()
+        self.text = cdata
 
     def SVG (self, indent):
         tag = '<script type="text/javascript"><![CDATA[\n'
@@ -138,7 +111,7 @@ class PositionableElement (Element):
             matrix = parent.transform * matrix
             parent = parent.parent
         for p in points:
-            q = matrix * p
+            q = matrix * p.matrix ()
             p.x = q.get (0, 0)
             p.y = q.get (1, 0)
 

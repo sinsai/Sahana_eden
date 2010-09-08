@@ -7,14 +7,14 @@
 # Reusable timestamp fields to include in other table definitions
 timestamp = db.Table(None, "timestamp",
             Field("created_on", "datetime",
-                          readable=False,
-                          writable=False,
-                          default=request.utcnow),
+                  readable=False,
+                  writable=False,
+                  default=request.utcnow),
             Field("modified_on", "datetime",
-                          readable=False,
-                          writable=False,
-                          default=request.utcnow,
-                          update=request.utcnow)
+                  readable=False,
+                  writable=False,
+                  default=request.utcnow,
+                  update=request.utcnow)
             )
 
 # Reusable Author fields to include in other table definitions
@@ -32,18 +32,18 @@ def shn_user_represent(id):
 
 authorstamp = db.Table(None, "authorstamp",
             Field("created_by", db.auth_user,
-                          readable=False, # Enable when needed, not by default
-                          writable=False,
-                          default=session.auth.user.id if auth.is_logged_in() else None,
-                          represent = lambda id: id and shn_user_represent(id) or UNKNOWN_OPT,
-                          ondelete="RESTRICT"),
+                  readable=False, # Enable when needed, not by default
+                  writable=False,
+                  default=session.auth.user.id if auth.is_logged_in() else None,
+                  represent = lambda id: id and shn_user_represent(id) or UNKNOWN_OPT,
+                  ondelete="RESTRICT"),
             Field("modified_by", db.auth_user,
-                          readable=False, # Enable when needed, not by default
-                          writable=False,
-                          default=session.auth.user.id if auth.is_logged_in() else None,
-                          update=session.auth.user.id if auth.is_logged_in() else None,
-                          represent = lambda id: id and shn_user_represent(id) or UNKNOWN_OPT,
-                          ondelete="RESTRICT")
+                  readable=False, # Enable when needed, not by default
+                  writable=False,
+                  default=session.auth.user.id if auth.is_logged_in() else None,
+                  update=session.auth.user.id if auth.is_logged_in() else None,
+                  represent = lambda id: id and shn_user_represent(id) or UNKNOWN_OPT,
+                  ondelete="RESTRICT")
             )
 
 comments = db.Table(None, "comments",
@@ -52,10 +52,11 @@ comments = db.Table(None, "comments",
                                         _title=Tstr("Comments") + "|" +Tstr("Please use this field to record any additional information, including a history of the record if it is updated."))))
 
 # Reusable UUID field to include in other table definitions
+# Uses URNs according to http://tools.ietf.org/html/rfc4122
 s3uuid = SQLCustomType(
                 type = "string",
                 native = "VARCHAR(128)",
-                encoder = (lambda x: "'%s'" % (uuid.uuid4() if x == "" else str(x).replace("'", "''"))),
+                encoder = (lambda x: "'%s'" % (uuid.uuid4().urn if x == "" else str(x).replace("'", "''"))),
                 decoder = (lambda x: x)
             )
 
@@ -72,12 +73,13 @@ uuidstamp = db.Table(None, "uuidstamp",
                   default=0,
                   readable=False,
                   writable=False))
+
 # Reusable Deletion_Status field to include in other table definitions
 deletion_status = db.Table(None, "deletion_status",
-                    Field("deleted", "boolean",
-                          readable=False,
-                          writable=False,
-                          default=False))
+                           Field("deleted", "boolean",
+                                 readable=False,
+                                 writable=False,
+                                 default=False))
 
 # Reusable Admin field to include in other table definitions
 # Deprecated: http://eden.sahanafoundation.org/wiki/BluePrintAuthorization#Recordrestriction
@@ -90,11 +92,12 @@ deletion_status = db.Table(None, "deletion_status",
 #                ))
 
 # Reusable Document field to include in other table definitions
+# @ToDo Deprecate: replace by source_id which links to central Document Library
 document = db.Table(None, "document",
-            Field("document", "upload", autodelete = True,
-                label=T("Scanned File"),
-                #comment = DIV( _class="tooltip", _title=str(T("Scanned File")) + "|" + str(T("The scanned copy of this document."))),
-                ))
+                    Field("document", "upload", autodelete = True,
+                          label=T("Scanned File"),
+                          #comment = DIV( _class="tooltip", _title=str(T("Scanned File")) + "|" + str(T("The scanned copy of this document."))),
+                          ))
 
 # Reusable Currency field to include in other table definitions
 currency_type_opts = {
@@ -103,11 +106,11 @@ currency_type_opts = {
     3:T("Pounds")
 }
 opt_currency_type = db.Table(None, "currency_type",
-                    Field("currency_type", "integer", notnull=True,
-                    requires = IS_IN_SET(currency_type_opts, zero=None),
-                    # default = 1,
-                    label = T("Currency"),
-                    represent = lambda opt: currency_type_opts.get(opt, UNKNOWN_OPT)))
+                             Field("currency_type", "integer", notnull=True,
+                             requires = IS_IN_SET(currency_type_opts, zero=None),
+                             #default = 1,
+                             label = T("Currency"),
+                             represent = lambda opt: currency_type_opts.get(opt, UNKNOWN_OPT)))
 
 # Default CRUD strings
 ADD_RECORD = T("Add Record")
@@ -132,22 +135,22 @@ module = "admin"
 resource = "theme"
 tablename = "%s_%s" % (module, resource)
 table = db.define_table(tablename,
-                Field("name"),
-                Field("logo"),
-                Field("header_background"),
-                Field("text_direction"),
-                Field("col_background"),
-                Field("col_txt"),
-                Field("col_txt_background"),
-                Field("col_txt_border"),
-                Field("col_txt_underline"),
-                Field("col_menu"),
-                Field("col_highlight"),
-                Field("col_input"),
-                Field("col_border_btn_out"),
-                Field("col_border_btn_in"),
-                Field("col_btn_hover"),
-                migrate=migrate)
+                        Field("name"),
+                        Field("logo"),
+                        Field("header_background"),
+                        Field("text_direction"),
+                        Field("col_background"),
+                        Field("col_txt"),
+                        Field("col_txt_background"),
+                        Field("col_txt_border"),
+                        Field("col_txt_underline"),
+                        Field("col_menu"),
+                        Field("col_highlight"),
+                        Field("col_input"),
+                        Field("col_border_btn_out"),
+                        Field("col_border_btn_in"),
+                        Field("col_btn_hover"),
+                        migrate=migrate)
 
 table.name.requires = [IS_NOT_EMPTY(), IS_NOT_IN_DB(db, "%s.name" % tablename)]
 table.text_direction.requires = IS_IN_SET({"ltr":T("Left-to-Right"), "rtl":T("Right-to-Left")}, zero=None)
@@ -169,15 +172,16 @@ module = "s3"
 resource = "audit"
 tablename = "%s_%s" % (module, resource)
 table = db.define_table(tablename,timestamp,
-                Field("person", db.auth_user, ondelete="RESTRICT"),
-                Field("operation"),
-                Field("representation"),
-                Field("module"),
-                Field("resource"),
-                Field("record", "integer"),
-                Field("old_value"),
-                Field("new_value"),
-                migrate=migrate)
+                        Field("person", db.auth_user, ondelete="RESTRICT"),
+                        Field("operation"),
+                        Field("representation"),
+                        Field("module"),
+                        Field("resource"),
+                        Field("record", "integer"),
+                        Field("old_value"),
+                        Field("new_value"),
+                        migrate=migrate)
+
 table.operation.requires = IS_IN_SET(["create", "read", "update", "delete", "list", "search"])
 
 # Settings - systemwide
@@ -186,23 +190,25 @@ s3_setting_security_policy_opts = {
     2:T("editor"),
     3:T("full")
     }
+# @ToDo Move these to deployment_settings
 resource = "setting"
 tablename = "%s_%s" % (module, resource)
 table = db.define_table(tablename, timestamp, uuidstamp,
-                Field("admin_name"),
-                Field("admin_email"),
-                Field("admin_tel"),
-                Field("utc_offset", length=16, default=deployment_settings.get_L10n_utc_offset()), # default UTC offset of the instance
-                Field("theme", db.admin_theme),
-                Field("debug", "boolean", default=False),
-                Field("self_registration", "boolean", default=True),
-                Field("security_policy", "integer", default=1),
-                Field("archive_not_delete", "boolean", default=True),
-                Field("audit_read", "boolean", default=False),
-                Field("audit_write", "boolean", default=False),
-                migrate=migrate)
-table.security_policy.requires = IS_IN_SET(s3_setting_security_policy_opts, zero=None)
-table.security_policy.represent = lambda opt: s3_setting_security_policy_opts.get(opt, UNKNOWN_OPT)
+                        Field("admin_name"),
+                        Field("admin_email"),
+                        Field("admin_tel"),
+                        Field("utc_offset", length=16, default=deployment_settings.get_L10n_utc_offset()), # default UTC offset of the instance
+                        Field("theme", db.admin_theme),
+                        Field("archive_not_delete", "boolean", default=True),
+                        #Field("debug", "boolean", default=False),
+                        #Field("self_registration", "boolean", default=True),
+                        #Field("security_policy", "integer", default=1),
+                        #Field("audit_read", "boolean", default=False),
+                        #Field("audit_write", "boolean", default=False),
+                        migrate=migrate)
+
+#table.security_policy.requires = IS_IN_SET(s3_setting_security_policy_opts, zero=None)
+#table.security_policy.represent = lambda opt: s3_setting_security_policy_opts.get(opt, UNKNOWN_OPT)
 table.theme.requires = IS_IN_DB(db, "admin_theme.id", "admin_theme.name", zero=None)
 table.theme.represent = lambda name: db(db.admin_theme.id == name).select(db.admin_theme.name, limitby=(0, 1)).first().name
 # Define CRUD strings (NB These apply to all Modules' "settings" too)
@@ -227,10 +233,11 @@ s3.crud_strings[resource] = Storage(
 resource = "source"
 tablename = "%s_%s" % (module, resource)
 table = db.define_table(tablename, timestamp, uuidstamp,
-            Field("name"),
-            Field("description"),
-            Field("url"),
-            migrate=migrate)
+                        Field("name"),
+                        Field("description"),
+                        Field("url"),
+                        migrate=migrate)
+
 table.uuid.requires = IS_NOT_IN_DB(db, "%s.uuid" % tablename)
 table.name.requires = [IS_NOT_EMPTY(), IS_NOT_IN_DB(db, "%s.name" % tablename)]
 table.name.label = T("Source of Information")
@@ -262,13 +269,3 @@ source_id = db.Table(None, "source_id",
                 comment = DIV(A(ADD_SOURCE, _class="colorbox", _href=URL(r=request, c="default", f="source", args="create", vars=dict(format="popup")), _target="top", _title=ADD_SOURCE), DIV( _class="tooltip", _title=str(T("Add Source")) + "|" + str(T("The Source this information came from.")))),
                 ondelete = "RESTRICT"
                 ))
-
-# Settings - appadmin
-module = "appadmin"
-resource = "setting"
-tablename = "%s_%s" % (module, resource)
-table = db.define_table(tablename,
-                Field("audit_read", "boolean"),
-                Field("audit_write", "boolean"),
-                migrate=migrate)
-

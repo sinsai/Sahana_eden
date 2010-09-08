@@ -1,12 +1,11 @@
 {{extend "layout.html"}}
 <div id='home'>
-<H2>Rapid Assessments</H2>
+<H2>{{=T("Rapid Assessments")}}</H2>
 <p>
 {{=T("The Rapid Assessments Module stores structured reports done by Professional Organisations.")}}
 </p>
 <p>
-It is built using the Template agreed by a group of NGOs working together as the Emergency Capacity Building project:<br />
-<a href="http://www.ecbproject.org/page/48">Template</a>
+{{=T("It is built using the Template agreed by a group of NGOs working together as the")}} <a href='http://www.ecbproject.org/page/48' target='_blank'>{{=T("Emergency Capacity Building project")}}</a>
 </p>
+{{=LI(A("Add New Assessment", _href=URL(r=request, f="assessment", args="create")))}}
 {{=LI(A("List Assessments", _href=URL(r=request, f="assessment")))}}
-{{=LI(A("Create Assessment", _href=URL(r=request, f="assessment", args="create")))}}

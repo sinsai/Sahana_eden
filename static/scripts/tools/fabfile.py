@@ -61,19 +61,21 @@ def db_sync():
     if not "test" in env.host:
         pass
     else:
-        # ToDo: see dbstruct.py
-        # Step 0: Drop old database 'sahana'
-        # Step 1: Create a new, empty MySQL database 'sahana' as-normal
-        # Step 2: set deployment_settings.base.prepopulate = False in models/000_config.py
-        # Step 3: Allow web2py to run the Eden model to configure the Database structure
-        # Step 4: Export the Live database from the Live server (including structure)
-        # Step 5: Use this to populate a new table 'old'
-        # Step 7: Run the script: python dbstruct.py
-        # Step 8: Fixup manually anything which couldn't be done automatically
-        # Step 9: Take a dump of the fixed data (no structure, full inserts)
-        # Step 10: Import it into the empty database
-        # mysql -u root -p sahana < old.sql
-        pass
+        with cd("/home/web2py/applications/eden/models/"):
+            # See dbstruct.py
+            # Step 0: Drop old database 'sahana'
+            run("mysqladmin drop sahana", pty=True)
+            # Step 1: Create a new, empty MySQL database 'sahana' as-normal
+            run("mysqladmin create sahana", pty=True)
+            # Step 2: set deployment_settings.base.prepopulate = False in models/000_config.py
+            # Step 3: Allow web2py to run the Eden model to configure the Database structure
+            # Step 4: Export the Live database from the Live server (including structure)
+            # Step 5: Use this to populate a new table 'old'
+            # Step 7: Run the script: python dbstruct.py
+            # Step 8: Fixup manually anything which couldn't be done automatically
+            # Step 9: Take a dump of the fixed data (no structure, full inserts)
+            # Step 10: Import it into the empty database
+            run("mysql sahana < old.sql", pty=True)
 
 def maintenance_on():
     """ Enable maintenance mode """

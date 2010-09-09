@@ -52,7 +52,7 @@ def cleanup():
     """ Cleanup after the bzr pull """
     with cd("/home/web2py/applications/eden/"):
         run("chown web2py:web2py languages/*", pty=True)
-        # ToDo: Extend to all conflicts (models at least)
+        # ToDo: Extend to all conflicts (models & languages at least)
         # ToDo: Provide more comforting output (an error here is good!)
         run("mv models/000_config.py.THIS models/000_config.py", pty=True)
 

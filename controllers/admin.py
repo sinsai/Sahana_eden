@@ -75,8 +75,6 @@ def theme():
     #table.header_background.comment = A(SPAN("[Help]"), _class="tooltip", _title=Tstr("Header Background") + "|" + Tstr("Name of the file (& optional sub-path) located in static which should be used for the background of the header."))
     #table.footer.label = T("Footer")
     #table.footer.comment = A(SPAN("[Help]"), _class="tooltip", _title=Tstr("Footer") + "|" + Tstr("Name of the file (& optional sub-path) located in views which should be used for footer."))
-    table.text_direction.label = T("Text Direction")
-    table.text_direction.comment = A(SPAN("[Help]"), _class="tooltip", _title=Tstr("Text Direction") + "|" + Tstr("Whilst most languages are read from Left-to-Right, Arabic, Hebrew & Farsi go from Right-to-Left."))
     table.col_background.label = T("Background Colour")
     table.col_txt.label = T("Text Colour for Text blocks")
     table.col_txt_background.label = T("Background Colour for Text blocks")
@@ -162,7 +160,6 @@ def theme_apply(form):
         for line in lines:
             #line = line.replace("YOURLOGOHERE", logo)
             #line = line.replace("HEADERBACKGROUND", header_background )
-            line = line.replace("TEXT_DIRECTION", text_direction)
             # Iterate through Colours
             for key in theme.keys():
                 if key[:4] == "col_":

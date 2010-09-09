@@ -3,6 +3,11 @@
 <script type="text/javascript">//<![CDATA[
 // Global variable to store all of our variables inside
 var S3 = Object();
+{{if response.s3.rtl:}}
+S3.rtl = true;
+{{else:}}
+S3.rtl = false;
+{{pass}}
 S3.gis = Object();
 function s3_debug(message, value) {
         // no debug

@@ -57,9 +57,11 @@ def shelter_type():
 
     resource = request.function
 
-    # Don't provide delete button in list view
+    # Post-processor
     def postp(jr, output):
-        shn_action_buttons(jr, deletable=False)
+        if r.representation in shn_interactive_view_formats:
+            # Don't provide delete button in list view
+            shn_action_buttons(jr, deletable=False)
         return output
     response.s3.postp = postp
 
@@ -85,9 +87,11 @@ def shelter_service():
 
     resource = request.function
 
-    # Don't provide delete button in list view
+    # Post-processor
     def postp(jr, output):
-        shn_action_buttons(jr, deletable=False)
+        if r.representation in shn_interactive_view_formats:
+            # Don't provide delete button in list view
+            shn_action_buttons(jr, deletable=False)
         return output
     response.s3.postp = postp
 
@@ -136,6 +140,21 @@ def shelter():
 
     crud.settings.create_onvalidation = shn_shelter_onvalidation
     crud.settings.update_onvalidation = shn_shelter_onvalidation
+
+    # Post-processor
+    def postp(r, output):
+        if r.representation in shn_interactive_view_formats:
+            if r.method == "create" and not r.component:
+            # listadd arrives here as method=None
+            # - however record_id gets set to 0
+            #if r.method != "delete" and not r.component:
+                # Redirect to the Assessments tabs after creation
+                r.next = r.other(method="assessment", record_id=s3xrc.get_session(session, module, resource))
+
+            # Normal Action Buttons
+            shn_action_buttons(r)
+        return output
+    response.s3.postp = postp
 
     response.s3.pagination = True
 
@@ -199,15 +218,6 @@ def shn_shelter_prep(r):
     if r.representation in shn_interactive_view_formats:
         # Don't send the locations list to client (pulled by AJAX instead)
         r.table.location_id.requires = IS_NULL_OR(IS_ONE_OF_EMPTY(db, "gis_location.id"))
-
-        # @ToDo: listadd arrives here as method=None
-        if r.method == "create" and not r.component:
-            # Redirect to the Assessments tabs after creation
-            # crud.settings needs this to not start with either http or / in order to expand the [id]
-            #crud.settings.create_next = request.function + "/[id]/assessment"
-            #crud.settings.create_next = "[id]/assessment"
-            #r.next = "[id]/assessment"
-            pass
 
         # Remember this is html or popup.
         response.cr_shelter_request_was_html_or_popup = True

@@ -1200,8 +1200,11 @@ def shn_list(r, **attr):
                                onvalidation=onvalidation,
                                onaccept=_onaccept,
                                message=message,
-                               # Should this be next=crud.settings.create_next or r.there() ?
-                               next=r.there())
+                               # Return to normal list view after creation
+                               # @ToDo enable override with fallthrough to this behaviour
+                               #next=crud.settings.create_next or r.there()
+                               next=r.there()
+                              )
 
             # Cancel button?
             #form[0].append(TR(TD(), TD(INPUT(_type="reset", _value="Reset form"))))

@@ -56,6 +56,7 @@ def req():
             r.table.location_id.requires = IS_NULL_OR(IS_ONE_OF_EMPTY(db, "gis_location.id"))
 
             if r.method == "create":
+                # @ToDo: listadd arrives here as method=None
                 table.timestmp.default = request.utcnow
                 person = session.auth.user.id if auth.is_logged_in() else None
                 if person:
@@ -64,11 +65,6 @@ def req():
                 table.person_id.default = person
                 table.pledge_status.readable = False
 
-                if not r.component:
-                    # Redirect to the Items tabs after creation: See CR for trials to get this working
-                    #crud.settings.create_next = URL(r=request, args=["[id]", "item"])
-                    pass
-            
             elif r.method == "update":
                 table.pledge_status.readable = False
             
@@ -77,25 +73,27 @@ def req():
         return True
     response.s3.prep = prep
 
-    # Filter out non-actionable SMS requests:
-    #response.s3.filter = (db.rms_req.actionable == True) | (db.rms_req.source_type != 2) # disabled b/c Ushahidi no longer updating actionaable fielde
-
     # Post-processor
-    def postp(jr, output):
-        if jr.representation in shn_interactive_view_formats:
-            if not jr.component:
+    def postp(r, output):
+        if r.representation in shn_interactive_view_formats:
+            if r.method == "create" and not r.component:
+            # listadd arrives here as method=None
+            # - however record_id gets set to 0
+            #if r.method != "delete" and not r.component:
+                # Redirect to the Assessments tabs after creation
+                r.next = r.other(method="ritem", record_id=s3xrc.get_session(session, module, resource))
+
+            # Custom Action Buttons
+            if not r.component:
                 response.s3.actions = [
-                    dict(label=str(T("Open")), _class="action-btn", url=str(URL(r=request, args=["update", "[id]"]))),
+                    dict(label=str(T("Open")), _class="action-btn", url=str(URL(r=request, args=["[id]", "update"]))),
                     dict(label=str(T("Items")), _class="action-btn", url=str(URL(r=request, args=["[id]", "ritem"]))),
                     dict(label=str(T("Pledge")), _class="action-btn", url=str(URL(r=request, args=["[id]", "pledge"])))
                 ]
-            elif jr.component_name == "pledge":
+            elif r.component_name == "pledge":
                 response.s3.actions = [
-                    dict(label=str(T("Details")), _class="action-btn", url=str(URL(r=request, args=["pledge", "[id]"])))
+                    dict(label=str(T("Details")), _class="action-btn", url=str(URL(r=request, args=["[id]", "pledge"])))
                 ]
-            if jr.representation == "html":
-                # Redirect to the Items tabs after creation
-                crud.settings.create_next = URL(r=request, args=["[id]", "item"])
 
         return output
     response.s3.postp = postp
@@ -156,9 +154,9 @@ def pledge():
     #    req = db(db.rms_req.id == pledge.req_id).update(completion_status = True)
     #db.commit()
 
-    def postp(jr, output):
-        if jr.representation in shn_interactive_view_formats:
-            if not jr.component:
+    def postp(r, output):
+        if r.representation in shn_interactive_view_formats:
+            if not r.component:
                 response.s3.actions = [
                     dict(label=str(READ), _class="action-btn", url=str(URL(r=request, args=["[id]", "read"])))
                 ]
@@ -218,36 +216,3 @@ def shn_rms_rheader(jr):
                 return rheader
 
     return None
-
-
-# Unused: Was done for Haiti
-def sms_complete(): #contributes to RSS feed for closing the loop with Ushahidi
-
-    def t(record):
-        return "Sahana Record Number: " + str(record.id)
-
-    def d(record):
-        ush_id = db(db.rms_sms_request.id == record.id).select("ush_id")[0]["ush_id"]
-        smsrec = db(db.rms_sms_request.id == record.id).select("smsrec")[0]["smsrec"]
-
-        return \
-            "Ushahidi Link: " + A(ush_id, _href=ush_id).xml() + "<br>" + \
-            "SMS Record: " + str(smsrec)
-
-    rss = { "title" : t , "description" : d }
-    response.s3.filter = (db.rms_req.completion_status == True) & (db.rms_req.source_type == 2)
-    return shn_rest_controller(module, "req", editable=False, listadd=False, rss=rss)
-
-# Unused: Was done for Haiti
-def tweet_complete(): #contributes to RSS feed for closing the loop with TtT
-
-    def t(record):
-        return "Sahana Record Number: " + str(record.id)
-
-    def d(record):
-        ttt_id = db(db.rms_tweet_request.id == record.id).select("ttt_id")[0]["ttt_id"]
-        return "Twitter: " + ttt_id
-
-    rss = { "title" : t , "description" : d }
-    response.s3.filter = (db.rms_req.completion_status == True) & (db.rms_req.source_type == 3)
-    return shn_rest_controller(module, "req", editable=False, listadd=False, rss = rss)

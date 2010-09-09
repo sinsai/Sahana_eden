@@ -437,15 +437,15 @@ if deployment_settings.has_module(module):
     table.assessment_id.writable = False
 
     table.houses_total.label = T("Total number of houses in the area")
-    table.houses_total.requires = IS_EMPTY_OR(IS_INT_IN_RANGE(0,99999999))
+    table.houses_total.requires = IS_EMPTY_OR(IS_INT_IN_RANGE(0, 99999999))
     shn_rat_label_and_tooltip(table.houses_destroyed,
         "Number of houses destroyed/uninhabitable",
         "How many houses are uninhabitable (uninhabitable = foundation and structure destroyed)?")
-    table.houses_destroyed.requires = IS_EMPTY_OR(IS_INT_IN_RANGE(0,99999999))
+    table.houses_destroyed.requires = IS_EMPTY_OR(IS_INT_IN_RANGE(0, 99999999))
     shn_rat_label_and_tooltip(table.houses_damaged,
         "Number of houses damaged, but usable",
         "How many houses suffered damage but remain usable (usable = windows broken, cracks in walls, roof slightly damaged)?")
-    table.houses_destroyed.requires = IS_EMPTY_OR(IS_INT_IN_RANGE(0,99999999))
+    table.houses_destroyed.requires = IS_EMPTY_OR(IS_INT_IN_RANGE(0, 99999999))
     shn_rat_label_and_tooltip(table.houses_salvmat,
         "Salvage material usable from destroyed houses",
         "What type of salvage material can be used from destroyed houses?",

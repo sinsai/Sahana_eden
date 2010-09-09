@@ -175,11 +175,6 @@ def project():
 
     resource = request.function
 
-    def org_postp(jr, output):
-        shn_action_buttons(jr)
-        return output
-    response.s3.postp = org_postp
-
     # ServerSidePagination
     response.s3.pagination = True
 

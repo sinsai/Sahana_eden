@@ -44,11 +44,6 @@ def item():
     tablename = "%s_%s" % (module, resource)
     table = db[tablename]
     
-    def postp(jr, output):                          
-        shn_action_buttons(jr)
-        return output
-    response.s3.postp = postp
-    
     tabs = [
             (T("Edit Details"), None),
             (T("In Inventories"), "store_item"),  

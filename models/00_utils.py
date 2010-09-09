@@ -24,11 +24,6 @@ def s3_sessions():
     # Use session for persistent variables
     if not session.s3:
         session.s3 = Storage()
-    # Use response for one-off variables which are visible in views without explicit passing
-    response.s3 = Storage()
-    response.s3.countries = deployment_settings.get_L10n_countries()
-    response.s3.formats = Storage()
-    response.s3.gis = Storage()
 
     roles = []
     if auth.is_logged_in():

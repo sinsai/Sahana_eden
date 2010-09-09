@@ -167,7 +167,7 @@ def s3_sync_partner_onaccept(form):
 
 
 s3xrc.model.configure(table,
-    delete_onaccept=sync_partner_ondelete,
+    delete_onaccept=s3_sync_partner_ondelete,
     list_fields = ["id", "name", "uuid", "type", "url", "last_sync_on"])
 
 
@@ -413,7 +413,7 @@ def s3_sync_eden_eden(peer, mode, tablenames,
             return s3_sync_push_message(message, error=True, pid=pid)
         else:
             return True
-            
+
     # Get proxy setting and uuid
     uuid = settings.uuid
     proxy = settings.proxy or None
@@ -452,7 +452,7 @@ def s3_sync_eden_eden(peer, mode, tablenames,
             notify("HALT command received.")
             output.success = True
             return output
-    
+
         # Create resource
         prefix, name = tablename.split("_", 1)
         resource = s3xrc.resource(prefix, name)
@@ -463,7 +463,7 @@ def s3_sync_eden_eden(peer, mode, tablenames,
         else:
             _get = resource.fetch_xml
             _put = resource.push_xml
-    
+
         # Sync path
         sync_path = "sync/sync/%s/%s.%s" % (prefix, name, format)
         remote_url = urlparse.urlparse(peer.url)
@@ -483,7 +483,7 @@ def s3_sync_eden_eden(peer, mode, tablenames,
                                          remote_url.netloc,
                                          remote_path,
                                          params)
-            #notify(fetch_url)
+            notify(fetch_url)
             err = None
             try:
                 result = _get(fetch_url,
@@ -510,7 +510,7 @@ def s3_sync_eden_eden(peer, mode, tablenames,
                     continue
             else:
                 notify("........fetch %s : success" % tablename)
-                    
+
         if mode in [2, 3]: # push
 
             if uuid:

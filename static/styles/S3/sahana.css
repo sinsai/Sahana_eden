@@ -73,8 +73,7 @@ ul.x-tree-root-ct {
    ------------------------------------------------------------------------------- */
 body { font-size: 0.8em;
        color: #000;
-       background: #336699;
-       direction: ltr; }
+       background: #336699; }
 
 /* Miscellaneous conveniences: */
 form label { cursor: pointer; }

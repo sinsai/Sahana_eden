@@ -18,6 +18,16 @@ DELETE = T("Delete")
 COPY = T("Copy")
 NOT_APPLICABLE = T("N/A")
 
+# Use response for one-off variables which are visible in views without explicit passing
+response.s3 = Storage()
+response.s3.countries = deployment_settings.get_L10n_countries()
+response.s3.formats = Storage()
+response.s3.gis = Storage()
+
+###########
+# Languages
+###########
+
 s3.l10n_languages = deployment_settings.get_L10n_languages()
 
 # Default strings are in US English
@@ -30,6 +40,15 @@ if session._language:
 else:
     # Use what browser requests
     T.force(T.http_accept_language)
+
+# List of Languages which use a Right-to-Left script (Arabic, Hebrew, Farsi, Ursdu)
+s3_rtl_languages = ["ur"]
+
+if T.accepted_language in s3_rtl_languages:
+    response.s3.rtl = True
+else:
+    response.s3.rtl = False
+
 
 ######
 # Mail
@@ -142,7 +161,6 @@ def s3_formstyle(id, label, widget, comment):
     row.append(TR(TD(label, _class="w2p_fl", _colspan="2"), _id=id + "1"))   
 
     # Widget & Comment on the 2nd Row
-    #row.append(TR(TD(widget, _class="w2p_fw"), TD(comment, _class="w2p_fc"), _id=id + "2", _class="odd"))
     row.append(TR(TD(widget, _class="w2p_fw"), TD(comment, _class="w2p_fc"), _id=id))
 
     return row
@@ -162,16 +180,7 @@ s3.messages = Messages(T)
 s3.messages.confirmation_email_subject = T("Sahana access granted")
 s3.messages.confirmation_email = Tstr("Welcome to the Sahana Portal at ") + deployment_settings.get_base_public_url() + Tstr(". Thanks for your assistance.")
 
-# -----------------------------------------------------------------------------
-# List of supported languages
-#
-s3_languages = {
-    "en": T("English"),
-    "fr": T("French"),
-    "es": T("Spanish"),
-    "zh-tw": T("Chinese")
-}
-auth.settings.table_user.language.requires = IS_IN_SET(s3_languages, zero=None)
+auth.settings.table_user.language.requires = IS_IN_SET(s3.l10n_languages, zero=None)
 
 
 # -----------------------------------------------------------------------------

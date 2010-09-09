@@ -387,19 +387,20 @@ def sync():
         peer = db(peers.uuid == peer_uuid).select(limitby=(0,1)).first()
 
     # remote push?
+    peer = None
     method = request.env.request_method
     if method in ("PUT", "POST"):
         remote_push = True
         # Must be registered partner for push:
-        if not sync_peer:
+        if not peer:
             raise HTTP(501, body=s3xrc.ERROR.NOT_PERMITTED)
+        else:
+            # Set the sync resolver with no policy (defaults to peer policy)
+            s3xrc.sync_resolve = lambda vector, peer=peer: sync_res(vector, peer, None)
     elif method == "GET":
         remote_push = False
     else:
         raise HTTP(501, body=s3xrc.ERROR.BAD_METHOD)
-
-    # Set the sync resolver with no policy (defaults to peer policy)
-    s3xrc.sync_resolve = lambda vector, peer=peer: sync_res(vector, peer, None)
 
     def prep(r):
         # Do not allow interactive formats
@@ -411,16 +412,15 @@ def sync():
         return True
     response.s3.prep = prep
 
-    def postp(r, output, sync_peer=sync_peer):
+    def postp(r, output, peer=peer):
 
-        try:
-            output_json = Storage(json.loads(output))
-        except:
-            # No JSON response?
-            pass
-        else:
-            if r.http in ("PUT", "POST"):
-
+        if r.http in ("PUT", "POST") and peer:
+            try:
+                output_json = Storage(json.loads(output))
+            except:
+                # No JSON response?
+                pass
+            else:
                 resource = r.resource
                 sr = [c.component.tablename for c in resource.components.values()]
                 sr.insert(0, resource.tablename)
@@ -433,7 +433,7 @@ def sync():
                     sync_errors = ""
 
                 db[log_table].insert(
-                    partner_uuid = sync_peer.uuid,
+                    partner_uuid = peer.uuid,
                     timestmp = datetime.datetime.utcnow(),
                     sync_resources = sync_resources,
                     sync_errors = sync_errors,

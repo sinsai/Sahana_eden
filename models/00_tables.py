@@ -138,7 +138,6 @@ table = db.define_table(tablename,
                         Field("name"),
                         Field("logo"),
                         Field("header_background"),
-                        Field("text_direction"),
                         Field("col_background"),
                         Field("col_txt"),
                         Field("col_txt_background"),
@@ -153,7 +152,6 @@ table = db.define_table(tablename,
                         migrate=migrate)
 
 table.name.requires = [IS_NOT_EMPTY(), IS_NOT_IN_DB(db, "%s.name" % tablename)]
-table.text_direction.requires = IS_IN_SET({"ltr":T("Left-to-Right"), "rtl":T("Right-to-Left")}, zero=None)
 table.col_background.requires = IS_HTML_COLOUR()
 table.col_txt.requires = IS_HTML_COLOUR()
 table.col_txt_background.requires = IS_HTML_COLOUR()

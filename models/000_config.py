@@ -78,13 +78,14 @@ deployment_settings.mail.approver = "useradmin@your.org"
 deployment_settings.L10n.languages = {
     "en":T("English"),
     "es":T("Spanish"),
-    "pa":T("Punjabi"),
-    "ps":T("Pashto"),
-    "sd":T("Sindhi"),
+    #"fr":T("French"),
+    #"pa":T("Punjabi"),
+    #"ps":T("Pashto"),
+    #"sd":T("Sindhi"),
     "ur":T("Urdu"),
     "zh-tw":T("Chinese (Taiwan)"),
-    "seraiki":T("Seraiki"),
-    "balochi":T("Balochi"),
+    #"seraiki":T("Seraiki"),
+    #"balochi":T("Balochi"),
 }
 # Default language for Language Toolbar (& GIS Locations in future)
 deployment_settings.L10n.default_language = "en"

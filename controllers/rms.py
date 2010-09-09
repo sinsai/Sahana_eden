@@ -76,10 +76,9 @@ def req():
     # Post-processor
     def postp(r, output):
         if r.representation in shn_interactive_view_formats:
-            if r.method == "create" and not r.component:
+            #if r.method == "create" and not r.component:
             # listadd arrives here as method=None
-            # - however record_id gets set to 0
-            #if r.method != "delete" and not r.component:
+            if r.method != "delete" and not r.component:
                 # Redirect to the Assessments tabs after creation
                 r.next = r.other(method="ritem", record_id=s3xrc.get_session(session, module, resource))
 

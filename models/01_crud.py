@@ -1168,8 +1168,9 @@ def shn_list(r, **attr):
         authorised = shn_has_permission("create", tablename)
         if authorised and listadd:
 
-            # Block join field
+            # @ToDo: This should share a subroutine with shn_create()
             if r.component:
+                # Block join field
                 _comment = table[r.fkey].comment
                 table[r.fkey].comment = None
                 table[r.fkey].default = r.record[r.pkey]
@@ -1181,17 +1182,30 @@ def shn_list(r, **attr):
                 else:
                     table[r.fkey].writable = False
 
+                # Neutralize callbacks
+                crud.settings.create_onvalidation = None
+                crud.settings.create_onaccept = None
+                crud.settings.create_next = None
+                r.next = create_next or r.there()
+            else:
+                r.next = crud.settings.create_next or r.there()
+                crud.settings.create_next = None
+                if not onvalidation:
+                    onvalidation = crud.settings.create_onvalidation
+                if not onaccept:
+                    onaccept = crud.settings.create_onaccept
+
             if onaccept:
                 _onaccept = lambda form: \
                             s3xrc.audit("create", prefix, name, form=form,
                                         representation=representation) and \
-                            s3xrc.store_session(session, prefix, name, 0) and \
+                            s3xrc.store_session(session, prefix, name, form.vars.id) and \
                             onaccept(form)
             else:
                 _onaccept = lambda form: \
                             s3xrc.audit("create", prefix, name, form=form,
                                         representation=representation) and \
-                            s3xrc.store_session(session, prefix, name, 0)
+                            s3xrc.store_session(session, prefix, name, form.vars.id)
 
             message = shn_get_crud_string(tablename, "msg_record_created")
 
@@ -1201,9 +1215,7 @@ def shn_list(r, **attr):
                                onaccept=_onaccept,
                                message=message,
                                # Return to normal list view after creation
-                               # @ToDo enable override with fallthrough to this behaviour
-                               #next=crud.settings.create_next or r.there()
-                               next=r.there()
+                               #next=r.there()
                               )
 
             # Cancel button?

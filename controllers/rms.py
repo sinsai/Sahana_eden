@@ -13,12 +13,19 @@ if module not in deployment_settings.modules:
 # Options Menu (available in all Functions' Views)
 response.menu_options = [
     [T("Home"), False, URL(r=request, f="index")],
-    [T("Requests"), False, URL(r=request, f="req")],
-#    [T("Requests"), False, URL(r=request, f="req"),
-#     [T("Add"), False, URL(r=request, f="req", args="create")],
-#     ],
+    [T("Requests"), False, URL(r=request, f="req"), [
+        [T("List"), False, URL(r=request, f="req")],
+        [T("Add"), False, URL(r=request, f="req", args="create")],
+        # @ToDo Search by priority, status, location
+        #[T("Search"), False, URL(r=request, f="req", args="search")],
+    ]],
     [T("All Requested Items"), False, URL(r=request, f="ritem")],
-    [T("All Pledges"),False, URL(r=request, f="pledge")]
+    [T("Pledges"), False, URL(r=request, f="pledge"), [
+        [T("List"), False, URL(r=request, f="pledge")],
+        [T("Add"), False, URL(r=request, f="pledge", args="create")],
+        # @ToDo Search by status, location, organisation
+        #[T("Search"), False, URL(r=request, f="pledge", args="search")],
+    ]],
 ]
 
 # S3 framework functions

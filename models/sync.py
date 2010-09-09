@@ -113,7 +113,7 @@ table.last_sync_on.label = T("Last synchronization on")
 table.last_sync_on.writable = False
 
 
-def sync_partner_ondelete(row):
+def s3_sync_partner_ondelete(row):
 
     """ Delete all jobs with this partner """
 
@@ -133,59 +133,37 @@ def sync_partner_ondelete(row):
         db(schedule.id.belongs(jobs_del)).delete()
 
 
-def sync_partner_onaccept(form):
+def s3_sync_partner_onaccept(form):
 
     """ Create default job for Eden peers """
 
-    # @todo: implement this correctly
+    table = db.sync_partner
+    peer = db(table.id == form.id).select(table.uuid,
+                                          table.name,
+                                          table.policy,
+                                          limitby=(0,1)).first()
+    if not peer or not peer.uuid:
+        return
 
-    # create new default scheduled job for this partner, it's a Sahana Eden instance
-    #modules = deployment_settings.modules
-    #_db_tables = db.tables
-    #db_tables = []
-    #for __table in _db_tables:
-    #if "modified_on" in db[__table].fields and "uuid" in db[__table].fields:
-    #db_tables.append(__table)
-    #sch_resources = []
-    #for _module in modules:
-    #for _table in db_tables:
-    #if _table.startswith(_module + "_"):
-    #sch_resources.append(_module + "||" + _table[len(_module)+1:])
+    tablenames = s3_sync_primary_resources()
 
-    ## add job to db
-    #new_partner_uuid = request.vars["uuid"]
-    #new_partner_type = request.vars["type"]
-    #new_partner_policy = int(request.vars["policy"])
-    #new_partner_name = None
-    #if "name" in request.vars and request.vars["name"]:
-    #new_partner_name = request.vars["name"]
-    #sch_comments = "Default manually triggered schedule job for sync partner '"
-    #if new_partner_name:
-    #sch_comments += new_partner_name
-    #else:
-    #sch_comments += new_partner_uuid
-    #sch_comments += "'"
-    #sch_cmd = dict()
-    #sch_cmd["partner_uuid"] = new_partner_uuid
-    #sch_cmd["policy"] = new_partner_policy
-    #sch_cmd["resources"] = sch_resources
-    #sch_cmd["complete"] = False
-    #sch_cmd["mode"] = 3
-    #db["sync_schedule"].insert(
-    #comments = sch_comments,
-    #period = "m",
-    #hours = None,
-    #days_of_week = None,
-    #time_of_day = None,
-    #runonce_datetime = None,
-    #job_type = 1,
-    #job_command = json.dumps(sch_cmd),
-    #last_run = None,
-    #enabled = True,
-    #created_on = datetime.datetime.now(),
-    #modified_on = datetime.datetime.now()
-    #)
-    pass
+    job_command = json.dumps(dict(
+        partner_uuid = uuid,
+        policy = peer.policy,
+        resources = ",".join(tablenames),
+        complete = False,
+        mode = 3
+    ))
+
+    print job_command
+
+    db.sync_schedule.insert(
+        comments = "auto-generated job for %s" % peer.name,
+        period = "m",
+        job_type = 1,
+        job_command = json.dumps(sch_cmd),
+        last_run = None,
+        enabled = True)
 
 
 s3xrc.model.configure(table,
@@ -387,21 +365,21 @@ def s3_sync_primary_resources():
         "modified_on" in table.fields and \
         "uuid" in table.fields:
             is_component = False
-            hook = s3xrc.model.components.get(name, None)
-            if hook:
-                link = hook.get("_component", None)
-                if link and link.tablename == t:
-                    continue
-                for h in hook.values():
-                    if isinstance(h, dict):
-                        link = h.get("_component", None)
-                        if link and link.tablename == t:
-                            is_component = True
-                            break
-                if is_component:
-                    continue
+            if not s3xrc.model.has_components(prefix, name):
+                hook = s3xrc.model.components.get(name, None)
+                if hook:
+                    link = hook.get("_component", None)
+                    if link and link.tablename == t:
+                        continue
+                    for h in hook.values():
+                        if isinstance(h, dict):
+                            link = h.get("_component", None)
+                            if link and link.tablename == t:
+                                is_component = True
+                                break
+                    if is_component:
+                        continue
 
-            # Not a component
             tablenames.append(t)
 
     return tablenames
@@ -411,57 +389,83 @@ def s3_sync_primary_resources():
 def s3_sync_eden_eden(peer, mode, tablenames,
                       settings=None,
                       last_sync=None,
-                      complete_sync=False):
+                      complete_sync=False,
+                      pid=None,
+                      silent=False):
 
     """ Synchronization Eden<->Eden """
 
     import urllib, urlparse
     import gluon.contrib.simplejson as json
 
-    output = Storage(
-        success = False,
-        errors = [],
-        messages = [],
-        pending = tablenames,
-        done = []
-    )
+    # Initialize output object
+    output = Storage(success = False,
+                     errors = [],
+                     errcount = 0,
+                     pending = list(tablenames),
+                     done = [])
 
+    # Notification helpers
+    notify = lambda message: not silent and s3_sync_push_message(message, pid=pid) or True
+    def error(message, output=output, pid=pid, silent=silent):
+        output.errors.append(message)
+        if not silent:
+            return s3_sync_push_message(message, error=True, pid=pid)
+        else:
+            return True
+            
+    # Get proxy setting and uuid
     uuid = settings.uuid
     proxy = settings.proxy or None
 
+    # Analyse requested format
     format = peer.format
 
+    if format == "json":
+        is_json = True
+    elif format == "xml":
+        is_json = False
+    else:
+        output.errors.append(s3xrc.ERROR.BAD_FORMAT)
+        return output
+
+    # Get msince
     if last_sync is not None and complete_sync == False:
         msince = last_sync.strftime("%Y-%m-%dT%H:%M:%SZ")
     else:
         msince = None
 
-    errcount = 0
     for tablename in tablenames:
+
+        # Skip invalid tablenames silently
         if tablename not in db.tables or tablename.find("_") == -1:
             output.pending.remove(tablename)
             output.done.append(tablename)
             continue
 
-        if session.s3.sync_stop:
-            return output
+        # Reload status
+        now = db.sync_now
+        status = db(now.id==pid).select(db.sync_now.halt, limitby=(0,1)).first()
 
+        # Check for HALT
+        if status and status.halt:
+            notify("HALT command received.")
+            output.success = True
+            return output
+    
+        # Create resource
         prefix, name = tablename.split("_", 1)
         resource = s3xrc.resource(prefix, name)
 
-        if format == "json":
+        if is_json:
             _get = resource.fetch_json
-            _put = resource.push_json
-        elif format == "xml":
+            _put = resource.psuh_json
+        else:
             _get = resource.fetch_xml
             _put = resource.push_xml
-        else:
-            output.success = False
-            output.errors.append(s3xrc.ERROR.BAD_FORMAT)
-            return output
-
+    
+        # Sync path
         sync_path = "sync/sync/%s/%s.%s" % (prefix, name, format)
-
         remote_url = urlparse.urlparse(peer.url)
         if remote_url.path[-1:] != "/":
             remote_path = "%s/%s" % (remote_url.path, sync_path)
@@ -479,36 +483,34 @@ def s3_sync_eden_eden(peer, mode, tablenames,
                                          remote_url.netloc,
                                          remote_path,
                                          params)
-            error = None
+            #notify(fetch_url)
+            err = None
             try:
                 result = _get(fetch_url,
                               username=peer.username,
                               password=peer.password,
                               proxy=proxy)
             except Exception, e:
-                result = str(e)
+                err = str(e)
             else:
                 try:
-                    result_json = json.loads(result)
+                    result_json = json.loads(str(result))
                 except:
                     error = str(result)
                 else:
                     statuscode = str(result_json.get("statuscode", ""))
-                    message = str(result_json.get("message", "Unknown error"))
                     if statuscode.startswith("2"):
-                        error = None
+                        err = None
                     else:
-                        error = message
-            if error:
-                errcount += 1
-                msg = "...fetch %s - FAILURE: %s" (tablename, error)
-                output.messages.append(msg)
-                output.errors.append(error)
-                continue
+                        err = str(result_json.get("message", "Unknown error"))
+            if err is not None:
+                output.errcount += 1
+                error("........fetch %s : %s" % (tablename, err))
+                if mode == 1:
+                    continue
             else:
-                msg = "...fetch %s - SUCCESS" % tablename
-                output.messages.append(msg)
-
+                notify("........fetch %s : success" % tablename)
+                    
         if mode in [2, 3]: # push
 
             if uuid:
@@ -520,7 +522,8 @@ def s3_sync_eden_eden(peer, mode, tablenames,
                                         remote_url.netloc,
                                         remote_path,
                                         params)
-            error = None
+            #notify(push_url)
+            err = None
             try:
                 result = _put(push_url,
                               username=peer.username,
@@ -528,40 +531,39 @@ def s3_sync_eden_eden(peer, mode, tablenames,
                               proxy=proxy,
                               msince=last_sync)
             except Exception, e:
-                result = str(e)
+                err = str(e)
             else:
                 try:
                     result_json = json.loads(result)
                 except:
-                    error = str(result)
+                    err = str(result)
                 else:
                     statuscode = str(result_json.get("statuscode", ""))
-                    message = str(result_json.get("message", "Unknown error"))
                     if statuscode.startswith("2"):
-                        error = None
+                        err = None
                     else:
-                        error = message
-            if error:
-                errcount += 1
-                msg = "...send %s - FAILURE: %s" (tablename, error)
-                output.messages.append(msg)
-                output.errors.append(error)
+                        err = str(result_json.get("message", "Unknown error"))
+            if err is not None:
+                output.errcount += 1
+                error("........send %s : %s" % (tablename, err))
                 continue
             else:
-                msg = "...send %s - SUCCESS." % tablename
-                output.messages.append(msg)
+                notify("........send %s : success" % tablename)
 
         output.done.append(tablename)
         output.pending.remove(tablename)
 
-    msg = "...synchronize %s - DONE (%s errors)." % (peer.url, errcount)
-    output.messages.append(msg)
+    notify("...Synchronization with %s - done (%s errors)" % (peer.name, output.errcount))
+
     output.success = True
     return output
 
 
 # -----------------------------------------------------------------------------
-def s3_sync_eden_other(peer, mode, tablenames, settings=None, pid=None):
+def s3_sync_eden_other(peer, mode, tablenames,
+                       settings=None,
+                       pid=None,
+                       silent=False):
 
     """ Synchronization Eden<->Other """
 
@@ -569,18 +571,20 @@ def s3_sync_eden_other(peer, mode, tablenames, settings=None, pid=None):
     import gluon.contrib.simplejson as json
 
     # Initialize output object
-    output = Storage(
-                success = False,
-                errors = [],
-                errcount = 0,
-                pending = list(tablenames),
-                done = [])
+    output = Storage(success = False,
+                     errors = [],
+                     errcount = 0,
+                     pending = list(tablenames),
+                     done = [])
 
     # Notification helpers
-    notify = lambda message: s3_sync_push_message(message, pid=pid)
-    def error(message, output=output, pid=pid):
+    notify = lambda message: not silent and s3_sync_push_message(message, pid=pid) or True
+    def error(message, output=output, pid=pid, silent=silent):
         output.errors.append(message)
-        s3_sync_push_message(message, error=True, pid=pid)
+        if not silent:
+            return s3_sync_push_message(message, error=True, pid=pid)
+        else:
+            return True
 
     # Get the proxy setting
     proxy = settings.proxy or None
@@ -667,7 +671,7 @@ def s3_sync_eden_other(peer, mode, tablenames, settings=None, pid=None):
             else:
                 try:
                     result_json = json.loads(str(result))
-                except Exception, e:
+                except:
                     err = str(result)
                 else:
                     statuscode = str(result_json.get("statuscode", ""))
@@ -726,5 +730,6 @@ def s3_sync_eden_other(peer, mode, tablenames, settings=None, pid=None):
 
     output.success = True
     return output
+
 
 # -----------------------------------------------------------------------------

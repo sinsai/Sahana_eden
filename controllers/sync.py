@@ -12,6 +12,7 @@ module_name = T("Synchronization")
 # Options Menu (available in all Functions' Views)
 response.menu_options = admin_menu_options
 
+
 # -----------------------------------------------------------------------------
 # S3 framework functions
 #
@@ -20,6 +21,7 @@ def index():
     """ Module's Home Page """
 
     return dict(module_name=module_name)
+
 
 # -----------------------------------------------------------------------------
 @auth.requires_login()
@@ -52,7 +54,9 @@ def now():
     # Read the action from URL vars
     action = request.get_vars.get("sync", None)
 
-    if action == "start": # Start synchronization
+    if action == "start":
+
+        """ Start synchronization (Ajax routine) """
 
         # Set view
         response.view = "xml.html"
@@ -113,10 +117,6 @@ def now():
             db.commit()
 
         session._unlock(response)
-
-        #for i in xrange(5):
-            #time.sleep(3)
-            #notify("Test message")
 
         # Become admin
         session.s3.roles.append(1)
@@ -185,6 +185,7 @@ def now():
                     if job.job_type == 1:
                         result = s3_sync_eden_eden(peer, mode, tablenames,
                                                    settings=settings,
+                                                   pid=pid,
                                                    last_sync=last_sync_on,
                                                    complete_sync=complete)
                     else:
@@ -197,10 +198,10 @@ def now():
                 job_sync_errors = ",".join(result.errors)
                 resources_done = ",".join(result.done)
                 total_errors += result.errcount
+                notify("Job %s done." % job_id)
             else:
                 job_sync_errors = ""
-
-            notify("Job %s done." % job_id)
+                resources_done = ""
 
             # Next job
             if jobs:
@@ -212,6 +213,8 @@ def now():
                     res_list = ""
                 else:
                     res_list = ",".join(map(str, job_cmd.get("resources", [])))
+            else:
+                res_list = ""
 
             # Update status
             db(db.sync_now.id==status.id).update(
@@ -224,8 +227,12 @@ def now():
             # Reload status
             status = db(db.sync_now.id == status.id).select(db.sync_now.ALL, limitby=(0, 1)).first()
 
+            if status and status.halt:
+                notify("HALT")
+                break;
+
         # All jobs done?
-        if not status.sync_jobs:
+        if not status.halt and not status.sync_jobs:
 
             # @todo: log in history
 
@@ -241,7 +248,7 @@ def now():
         else:
 
             # Unlock
-            db(db.sync_now.id==pid).update(locked=False, stop=False)
+            db(db.sync_now.id==pid).update(locked=False, halt=False)
 
             # Notification
             error("Synchronization suspended.")
@@ -295,7 +302,7 @@ def now():
 
         if status:
             pid = status.id
-            # Set HALT status at the same time to not deny
+            # Set HALT status at the same time to not allow
             # immedate resumption => requires two calls to
             # "start" to resume.
             db(table.id == pid).update(locked=False, halt=True)
@@ -629,7 +636,7 @@ def partner():
     def prep(r):
         if r.method == "create":
             s3xrc.model.configure(db.sync_partner,
-                onaccept = lambda form: sync_partner_onaccept(form))
+                onaccept = lambda form: s3_sync_partner_oncreate(form))
         return True
     response.s3.prep = prep
 
@@ -786,7 +793,7 @@ def schedule_cron():
     if not request.env.remote_addr == "127.0.0.1":
         return
 
-    while True:
+    while False:
         try:
             # look at each job and run if it it's scheduled time
             jobs = db(db.sync_schedule.enabled==True).select(db.sync_schedule.ALL)

@@ -2533,13 +2533,19 @@ class S3ResourceModel(object):
         tablename = "%s_%s" % (prefix, name)
         table = self.db.get(tablename, None)
 
+        h = self.components.get(name, None)
+        if h and h._component and h._component.tablename == tablename:
+            k = h._joinby
+        else:
+            k = None
+
         if table:
             for hook in self.components.values():
                 if tablename in hook:
                     return True
                 else:
                     nkey = hook._joinby
-                    if nkey and nkey in table.fields:
+                    if nkey and nkey in table.fields and nkey != k:
                         return True
 
         return False
@@ -3422,10 +3428,14 @@ class S3ResourceController(object):
             for c in resource.components.values():
 
                 component = c.component
-                cresource = c.resource
+                
                 cprefix = component.prefix
                 cname = component.name
+                if self.model.has_components(cprefix, cname):
+                    continue
+
                 ctable = component.table
+                cresource = c.resource
                 c_url = "%s/%s" % (r_url, cname)
 
                 ctablename = component.tablename

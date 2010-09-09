@@ -49,12 +49,12 @@ def req():
     tablename = module + "_" + resource
     table = db[tablename]
 
-    # Don't send the locations list to client (pulled by AJAX instead)
-    table.location_id.requires = IS_NULL_OR(IS_ONE_OF_EMPTY(db, "gis_location.id"))
-
     # Pre-processor
     def prep(r):
         if r.representation in shn_interactive_view_formats:
+            # Don't send the locations list to client (pulled by AJAX instead)
+            r.table.location_id.requires = IS_NULL_OR(IS_ONE_OF_EMPTY(db, "gis_location.id"))
+
             if r.method == "create":
                 table.timestmp.default = request.utcnow
                 person = session.auth.user.id if auth.is_logged_in() else None
@@ -63,9 +63,17 @@ def req():
                     person = db(db.pr_person.uuid == person_uuid).select(db.pr_person.id, limitby=(0, 1)).first().id
                 table.person_id.default = person
                 table.pledge_status.readable = False
+
+                if not r.component:
+                    # Redirect to the Items tabs after creation: See CR for trials to get this working
+                    #crud.settings.create_next = URL(r=request, args=["[id]", "item"])
+                    pass
+            
             elif r.method == "update":
                 table.pledge_status.readable = False
+            
             shn_action_buttons(r)
+
         return True
     response.s3.prep = prep
 
@@ -73,7 +81,7 @@ def req():
     #response.s3.filter = (db.rms_req.actionable == True) | (db.rms_req.source_type != 2) # disabled b/c Ushahidi no longer updating actionaable fielde
 
     # Post-processor
-    def req_postp(jr, output):
+    def postp(jr, output):
         if jr.representation in shn_interactive_view_formats:
             if not jr.component:
                 response.s3.actions = [
@@ -85,8 +93,12 @@ def req():
                 response.s3.actions = [
                     dict(label=str(T("Details")), _class="action-btn", url=str(URL(r=request, args=["pledge", "[id]"])))
                 ]
+            if jr.representation == "html":
+                # Redirect to the Items tabs after creation
+                crud.settings.create_next = URL(r=request, args=["[id]", "item"])
+
         return output
-    response.s3.postp = req_postp
+    response.s3.postp = postp
 
     response.s3.pagination = True
     output = shn_rest_controller(module, resource,
@@ -101,11 +113,6 @@ def ritem():
     resource = request.function
     tablename = "%s_%s" % (module, resource)
     table = db[tablename]
-
-    def postp(jr, output):
-        shn_action_buttons(jr)
-        return output
-    response.s3.postp = postp
 
     #rheader = lambda jr: shn_item_rheader(jr,
     #                                      tabs = [(T("Requests for Item"), None),
@@ -149,14 +156,14 @@ def pledge():
     #    req = db(db.rms_req.id == pledge.req_id).update(completion_status = True)
     #db.commit()
 
-    def pledge_postp(jr, output):
+    def postp(jr, output):
         if jr.representation in shn_interactive_view_formats:
             if not jr.component:
                 response.s3.actions = [
                     dict(label=str(READ), _class="action-btn", url=str(URL(r=request, args=["[id]", "read"])))
                 ]
         return output
-    response.s3.postp = pledge_postp
+    response.s3.postp = postp
 
     response.s3.pagination = True
     return shn_rest_controller(module,

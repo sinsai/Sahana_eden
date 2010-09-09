@@ -1200,6 +1200,7 @@ def shn_list(r, **attr):
                                onvalidation=onvalidation,
                                onaccept=_onaccept,
                                message=message,
+                               # Should this be next=crud.settings.create_next or r.there() ?
                                next=r.there())
 
             # Cancel button?
@@ -1307,7 +1308,7 @@ def shn_create(r, **attr):
                 del r.request.get_vars["from_fields"] # forget it
                 from_fields = from_fields.split(",")
             else:
-                from_fields = [f for f in table.fields if f in source.fields and f!="id"]
+                from_fields = [f for f in table.fields if f in source.fields and f != "id"]
             if source and from_record:
                 copy_fields = [source[f] for f in from_fields if
                                     f in source.fields and

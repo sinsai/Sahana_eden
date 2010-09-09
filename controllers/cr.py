@@ -58,10 +58,10 @@ def shelter_type():
     resource = request.function
 
     # Don't provide delete button in list view
-    def user_postp(jr, output):
+    def postp(jr, output):
         shn_action_buttons(jr, deletable=False)
         return output
-    response.s3.postp = user_postp
+    response.s3.postp = postp
 
     rheader = lambda r: shn_shelter_rheader(r,
                                             tabs = [(T("Basic Details"), None),
@@ -86,10 +86,10 @@ def shelter_service():
     resource = request.function
 
     # Don't provide delete button in list view
-    def user_postp(jr, output):
+    def postp(jr, output):
         shn_action_buttons(jr, deletable=False)
         return output
-    response.s3.postp = user_postp
+    response.s3.postp = postp
 
     rheader = lambda r: shn_shelter_rheader(r,
                                             tabs = [(T("Basic Details"), None),
@@ -131,9 +131,7 @@ def shelter():
     tablename = module + "_" + resource
     table = db[tablename]
 
-    # Don't send the locations list to client (pulled by AJAX instead)
-    table.location_id.requires = IS_NULL_OR(IS_ONE_OF_EMPTY(db, "gis_location.id"))
-
+    # Pre-processor
     response.s3.prep = shn_shelter_prep
 
     crud.settings.create_onvalidation = shn_shelter_onvalidation
@@ -148,7 +146,6 @@ def shelter():
                    ]
 
     rheader = lambda r: shn_shelter_rheader(r, tabs=shelter_tabs)
-
 
     output = shn_rest_controller(module, resource,
                                  rheader=rheader)
@@ -200,6 +197,18 @@ def shn_shelter_prep(r):
     # form data.
 
     if r.representation in shn_interactive_view_formats:
+        # Don't send the locations list to client (pulled by AJAX instead)
+        r.table.location_id.requires = IS_NULL_OR(IS_ONE_OF_EMPTY(db, "gis_location.id"))
+
+        # @ToDo: listadd arrives here as method=None
+        if r.method == "create" and not r.component:
+            # Redirect to the Assessments tabs after creation
+            # crud.settings needs this to not start with either http or / in order to expand the [id]
+            #crud.settings.create_next = request.function + "/[id]/assessment"
+            #crud.settings.create_next = "[id]/assessment"
+            #r.next = "[id]/assessment"
+            pass
+
         # Remember this is html or popup.
         response.cr_shelter_request_was_html_or_popup = True
 

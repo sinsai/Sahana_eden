@@ -51,23 +51,32 @@ def req():
 
     # Pre-processor
     def prep(r):
-        if r.representation in shn_interactive_view_formats:
+        if r.representation in shn_interactive_view_formats and r.method != "delete":
             # Don't send the locations list to client (pulled by AJAX instead)
             r.table.location_id.requires = IS_NULL_OR(IS_ONE_OF_EMPTY(db, "gis_location.id"))
 
-            if r.method == "create":
-                # @ToDo: listadd arrives here as method=None
+            #if r.method == "create" and not r.component:
+            # listadd arrives here as method=None
+            if not r.component:
                 table.timestmp.default = request.utcnow
                 person = session.auth.user.id if auth.is_logged_in() else None
                 if person:
                     person_uuid = db(db.auth_user.id == person).select(db.auth_user.person_uuid, limitby=(0, 1)).first().person_uuid
                     person = db(db.pr_person.uuid == person_uuid).select(db.pr_person.id, limitby=(0, 1)).first().id
-                table.person_id.default = person
-                table.pledge_status.readable = False
+                    table.person_id.default = person
+                # If we hide this field then the dataTables columns don't match up
+                #table.pledge_status.readable = False
 
-            elif r.method == "update":
-                table.pledge_status.readable = False
+            elif r.component.name == "pledge":
+                db.rms_pledge.submitted_on.default = request.utcnow
+                person = session.auth.user.id if auth.is_logged_in() else None
+                if person:
+                    person_uuid = db(db.auth_user.id == person).select(db.auth_user.person_uuid, limitby=(0, 1)).first().person_uuid
+                    person = db(db.pr_person.uuid == person_uuid).select(db.pr_person.id, limitby=(0, 1)).first().id
+                    db.rms_pledge.person_id.default = person
+                # @ToDo Default the Organisation too
             
+            # Normal Action Buttons
             shn_action_buttons(r)
 
         return True

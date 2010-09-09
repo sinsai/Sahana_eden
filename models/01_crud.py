@@ -1021,7 +1021,7 @@ def shn_list(r, **attr):
     # Get controller attributes
     rheader = attr.get("rheader", None)
     sticky = attr.get("sticky", rheader is not None)
-
+    
     # Table-specific controller attributes
     _attr = r.component and r.component.attr or attr
     editable = _attr.get("editable", True)
@@ -1032,6 +1032,7 @@ def shn_list(r, **attr):
     orderby = _attr.get("orderby", None)
     sortby = _attr.get("sortby", [[1,'asc']])
     linkto = _attr.get("linkto", None)
+    create_next = _attr.get("create_next")
 
     # Provide the ability to get a subset of records
     start = vars.get("start", 0)
@@ -1174,7 +1175,6 @@ def shn_list(r, **attr):
                 _comment = table[r.fkey].comment
                 table[r.fkey].comment = None
                 table[r.fkey].default = r.record[r.pkey]
-
                 # Fix for #447:
                 if r.http == "POST":
                     table[r.fkey].writable = True
@@ -1215,7 +1215,7 @@ def shn_list(r, **attr):
                                onaccept=_onaccept,
                                message=message,
                                # Return to normal list view after creation
-                               #next=r.there()
+                               #next=r.there() # Better to use r.next
                               )
 
             # Cancel button?
@@ -1376,6 +1376,7 @@ def shn_create(r, **attr):
                 request.post_vars.update({r.fkey: str(r.record[r.pkey])})
             else:
                 table[r.fkey].writable = False
+
             # Neutralize callbacks
             crud.settings.create_onvalidation = None
             crud.settings.create_onaccept = None

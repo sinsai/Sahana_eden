@@ -70,11 +70,11 @@ def index():
         @TODO does not work with paginate!!!
     """
 
-    request.function = "distrib"
-    request.args = []
-    return dict()
-    #module_name = deployment_settings.modules[module].name_nice
-    #return dict(module_name=module_name)
+    #request.function = "distrib"
+    #request.args = []
+    #return dict()
+    module_name = deployment_settings.modules[module].name_nice
+    return dict(module_name=module_name)
 
 #==============================================================================
 def distrib_item():

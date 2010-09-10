@@ -1,5 +1,7 @@
 #
-# Recommended usage:
+# Recommended usage: fabfile.py
+#
+# - or manually:
 #
 # 0. Configure /root/.my.cnf to allow the root user to access MySQL as root without password
 #
@@ -20,7 +22,7 @@
 #     mysqladmin create old
 #     mysql old < backup.sql
 #
-# 6. Change database names/passwords in the script &/or access rights in the table, as-appropriate
+# 6. Change database names/passwords in the script &/or access rights in the table, if not using root & .my.cnf
 #     mysql
 #      GRANT SELECT,INSERT,UPDATE,DELETE,CREATE,INDEX,ALTER,DROP ON old.* TO 'sahana'@'localhost' IDENTIFIED BY 'password';
 #
@@ -66,15 +68,37 @@
 #       db.executesql("CREATE INDEX %s__idx on %s(%s);" % (field, tablename, field))
 #
 
+user = "root"
+# Password can be added to script, if it can't be read from /root/.my.cnf
+passwd = "password"
+
+# An empty database with the new db schema
+new_db = "sahana"
+
+# The old database (structure & data)
+old_db = "old"
+
+# ----------------------------------------------------------------------------------
+
+import os
 import MySQLdb
 
-# DB1 is the db to sync to (Test)
-# a plain structure export of the new db schema
-db1 = MySQLdb.connection(host="localhost", user="sahana", passwd="password", db="sahana")
+# If possible, read the password for root from /root/.my.cnf
+config = "/root/.my.cnf"
+if os.access(config, os.R_OK):
+    f = open(config, "r")
+    lines = f.readlines()
+    f.close()
+    for line in lines:
+        findstring = "password="
+        if findstring in line:
+            passwd = line.replace(findstring, "")
 
-# DB2 is the db to sync from (Live)
-# the complete db (structure & data)
-db2 = MySQLdb.connection(host="localhost", user="sahana", passwd="password", db="old")
+# DB1 is the db to sync to (Test or new Live)
+db1 = MySQLdb.connection(host="localhost", user=user, passwd=passwd, db=new_db)
+
+# DB2 is the db to sync from (backup of Live)
+db2 = MySQLdb.connection(host="localhost", user=user, passwd=passwd, db=old_db)
 
 def tablelist(db):
     db.query("SHOW TABLES;")
@@ -135,4 +159,7 @@ for table in fields_to_delete:
             db2.query("ALTER TABLE `" + table + "` DROP  `" + field + "` ;")
             db2.query("SET FOREIGN_KEY_CHECKS = 1;")
         except:
+            # @ToDo List issues as clearly/concisely as possible for us to resolve manually
+            # @ToDo Try to resolve any FK constraint issues automatically
+            # - parse output from 'show innodb status'
             print "The table -> " + table + " has a field -> " + field + " that could not be automatically removed"

@@ -7,19 +7,22 @@ import pexpect
 # http://eden.sahanafoundation.org/wiki/PakistanDeploymentCycle
 #
 
+test_host = "test.eden.sahanafoundation.org"
+prod_host = "pakistan.sahanafoundation.org"
 env.key_filename = ["/home/release/.ssh/sahana_release"]
+
 
 # Definitions for 'Test' infrastructure
 def test():
-    """ List of server(s) for test infratructure """
+    """ List of server(s) for Test infrastructure """
     env.user = "root"
-    env.hosts = ["test.eden.sahanafoundation.org"]
+    env.hosts = [test_host]
 
 # Definitions for 'Production' infrastructure
 def prod():
-    """ List of server(s) for production infrastructure """
+    """ List of server(s) for Production infrastructure """
     env.user = "root"
-    env.hosts = ["pakistan.sahanafoundation.org"]
+    env.hosts = [prod_host]
 
 
 # Key distribution and management
@@ -37,8 +40,18 @@ def distribute_keys():
 def deploy():
     """
         Perform the full upgrade cycle
-        - requires preceding with 'test' or 'prod'
     """
+    # Upgrade Production to current Test version
+    prod()
+    maintenance_on()
+    migrate_on()
+    pull()
+    cleanup()
+    migrate()
+    migrate_off()
+    maintenance_off()
+    # Upgrade Test to current Trunk version
+    test()
     maintenance_on()
     migrate_on()
     db_sync()
@@ -57,25 +70,48 @@ def cleanup():
         run("mv models/000_config.py.THIS models/000_config.py", pty=True)
 
 def db_sync():
-    """ Synchronise the Database """
+    """
+        Synchronise the Database
+        - this assumes that /root/.my.cnf is configured to allow the root SSH user to have access to the MySQL DB
+          without needing '-u root -p'
+    """
     if not "test" in env.host:
+        # Skip for Production sites
         pass
     else:
+        # See dbstruct.py
         with cd("/home/web2py/applications/eden/models/"):
-            # See dbstruct.py
             # Step 0: Drop old database 'sahana'
             run("mysqladmin drop sahana", pty=True)
             # Step 1: Create a new, empty MySQL database 'sahana' as-normal
             run("mysqladmin create sahana", pty=True)
             # Step 2: set deployment_settings.base.prepopulate = False in models/000_config.py
-            # Step 3: Allow web2py to run the Eden model to configure the Database structure
-            # Step 4: Export the Live database from the Live server (including structure)
+            run("sed -i 's/deployment_settings.base.prepopulate = True/deployment_settings.base.prepopulate = False/g' 000_config.py", pty=True)
+        # Step 3: Allow web2py to run the Eden model to configure the Database structure
+        migrate()
+        # Step 4: Export the Live database from the Live server (including structure)
+        prod()
+        with cd("/root"):
+        run("mysqldump sahana > backup.sql", pty=True)
+        test()
+        with cd(""):
+            # Step 4.5: Copy this dumpfile to the Test server
+            run("scp backup.sql .", pty=True)
             # Step 5: Use this to populate a new table 'old'
+            run("mysqladmin create old", pty=True)
+            run("mysql old < backup.sql", pty=True)
             # Step 7: Run the script: python dbstruct.py
+            run("cp -f /home/web2py/applications/eden/static/scripts/tools/dbstruct.py .", pty=True)
+            run("cp -f static/scripts/tools/dbstruct.py .", pty=True)
+            run("cp -f static/scripts/tools/dbstruct.py .", pty=True)
             # Step 8: Fixup manually anything which couldn't be done automatically
             # Step 9: Take a dump of the fixed data (no structure, full inserts)
             # Step 10: Import it into the empty database
             run("mysql sahana < old.sql", pty=True)
+            # Cleanup
+            run("rm -f backup.sql", pty=True)
+            run("rm -f old.sql", pty=True)
+            run("rm -f dbstruct.py", pty=True)
 
 def maintenance_on():
     """ Enable maintenance mode """

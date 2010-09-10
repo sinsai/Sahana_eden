@@ -146,8 +146,8 @@ if deployment_settings.has_module(module):
                         label = T("Clinical Operations"),
                         represent = lambda opt: hms_resource_status_opts.get(opt, UNKNOWN_OPT)),
                     Field("access_status"),                     # Access Status
-                    Field("info_source"),                       # Source of Information
-                    comments,                         # Comments field
+                    document_id,                                # Information Source
+                    comments,
                     migrate=migrate)
 
 
@@ -156,23 +156,39 @@ if deployment_settings.has_module(module):
     table.organisation_id.represent = lambda id: \
         (id and [db(db.org_organisation.id == id).select(db.org_organisation.acronym, limitby=(0, 1)).first().acronym] or ["None"])[0]
 
+    table.gov_uuid.label = T("Government UID")
     table.gov_uuid.requires = IS_NULL_OR(IS_NOT_IN_DB(db, "%s.gov_uuid" % tablename))
-    table.gov_uuid.comment = DIV(DIV(_class="tooltip",
-        _title=Tstr("Government UID") + "|" + Tstr("The Unique Identifier (UUID) as assigned to this facility by the government.")))
-
+    table.name.label = T("Name")
     table.name.requires = [IS_NOT_EMPTY(), IS_NOT_IN_DB(db, "%s.name" % tablename)]
+    table.aka1.label = T("Other Name")
+    table.aka2.label = T("Other Name")
+    table.address.label = T("Address")
+    table.postcode.label = T("Postcode")
+    table.phone_exchange.label = T("Phone/Exchange")
+    table.phone_business.label = T("Phone/Business")
+    table.phone_emergency.label = T("Phone/Emergency")
+    table.email.label = T("Email")
+    table.fax.label = T("Fax")
+    table.website.represent = shn_url_represent
     table.email.requires = IS_NULL_OR(IS_EMAIL())
+    table.total_beds.label = T("Total Beds")
     table.total_beds.requires = IS_NULL_OR(IS_INT_IN_RANGE(0, 9999))
     table.total_beds.readable = False
     table.total_beds.writable = False
+    table.available_beds.label = T("Available Beds")
     table.available_beds.requires = IS_NULL_OR(IS_INT_IN_RANGE(0, 9999))
     table.available_beds.readable = False
     table.available_beds.writable = False
+    table.morgue_units.label = T("Morgue Units Available")
     table.morgue_units.requires = IS_NULL_OR(IS_INT_IN_RANGE(0, 99999))
+    table.doctors.label = T("Number of doctors")
     table.doctors.requires = IS_NULL_OR(IS_INT_IN_RANGE(0, 99999))
+    table.nurses.label = T("Number of nurses")
     table.nurses.requires = IS_NULL_OR(IS_INT_IN_RANGE(0, 99999))
+    table.non_medical_staff.label = T("Number of non-medical staff")
     table.non_medical_staff.requires = IS_NULL_OR(IS_INT_IN_RANGE(0, 99999))
-
+    table.access_status.label = T("Road Conditions")
+    
     # Reusable field for other tables to reference
     ADD_HOSPITAL = T("Add Hospital")
     hospital_id = db.Table(None, "hospital_id",

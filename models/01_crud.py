@@ -1237,7 +1237,7 @@ def shn_list(r, **attr):
 
         else:
             # List only
-            if authorised:
+            if authorised and editable:
                 label_create_button = shn_get_crud_string(tablename, "label_create_button")
                 add_btn = A(label_create_button, _href=href_add, _class="action-btn")
             else:
@@ -2047,7 +2047,7 @@ def shn_barchart (r, **attr):
 
     if r.representation.lower() == "svg":
         r.response.headers["Content-Type"] = "image/svg+xml"
-        
+
         graph = local_import("savage.graph")
         bar = graph.BarGraph(settings=settings)
 
@@ -2066,7 +2066,7 @@ def shn_barchart (r, **attr):
             bar.setYLabel(str(ylabel))
         else:
             bar.setYLabel(valKey)
-        
+
         try:
             records = r.resource.load(start, limit)
             for entry in r.resource:

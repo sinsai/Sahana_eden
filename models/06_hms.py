@@ -80,7 +80,7 @@ if deployment_settings.has_module(module):
     tablename = "%s_%s" % (module, resource)
     table = db.define_table(tablename, timestamp, uuidstamp, authorstamp, deletion_status,
                     site_id,
-                    Field("gov_uuid", unique=True, length=128), # UUID assigned by Local Government
+                    Field("gov_uuid", unique=True, length=128), # UID assigned by Local Government
                     Field("name", notnull=True),                # Name of the facility
                     Field("aka1"),                              # Alternate name, or name in local language
                     Field("aka2"),                              # Alternate name, or name in local language
@@ -147,7 +147,7 @@ if deployment_settings.has_module(module):
                         represent = lambda opt: hms_resource_status_opts.get(opt, UNKNOWN_OPT)),
                     Field("access_status"),                     # Access Status
                     Field("info_source"),                       # Source of Information
-                    comments,                         # Comments field
+                    comments,                                   # Comments field
                     migrate=migrate)
 
 
@@ -226,7 +226,7 @@ if deployment_settings.has_module(module):
 
         if "gov_uuid" in db.hms_hospital.fields and HMS_HOSPITAL_USE_GOVUUID:
             if form.vars.gov_uuid is not None and not str(form.vars.gov_uuid).isspace():
-                form.vars.uuid = form.vars.gov_uuid
+                form.vars.uuid = "urn:health-facilty-id:%s" % form.vars.gov_uuid
             else:
                 form.vars.gov_uuid = None
 

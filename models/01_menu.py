@@ -10,7 +10,7 @@ _menu_lang = []
 for language in s3.l10n_languages.keys():
     _menu_lang.append([s3.l10n_languages[language], False, URL(r=request, args=request.args, vars={"_language":language})])
 s3.menu_lang.append(_menu_lang)
-    
+
 # Help Menu (available in all screens)
 s3.menu_help = [ T("Help"), True, "#",
         [
@@ -81,11 +81,11 @@ admin_menu_options = [
             [T("Manual Synchronization"), False, URL(r=request, c="sync", f="now")],
             #[T("Offline Sync"), False, URL(r=request, c="sync", f="offline")],
             [T("Settings"), False, URL(r=request, c="sync", f="setting", args=[1, "update"])],
-            [T("Peers"), False, URL(r=request, c="sync", f="partner")],
-            [T("Schedule"), False, URL(r=request, c="sync", f="schedule")],
+            [T("Peers"), False, URL(r=request, c="sync", f="peer")],
+            [T("Schedule"), False, URL(r=request, c="sync", f="job")],
             #[T("Sync Pools"), False, URL(r=request, c="sync", f="pool")],
             [T("Conflict Resolution"), False, URL(r=request, c="sync", f="conflict")],
-            [T("History"), False, URL(r=request, c="sync", f="history")]
+            [T("History"), False, URL(r=request, c="sync", f="log")]
     ]],
     [T("Messaging"), False, "#",[
             [T("Global Messaging Settings"), False, URL(r=request, c="msg", f="setting", args=[1, "update"])],

@@ -99,7 +99,7 @@ if populate:
         table.insert( name = "Health" )
         table.insert( name = "Protection and Human Rights and Rule of Law" )
         table.insert( name = "Urban Search and Rescue" )
-    
+
     # Person Registry
     tablename = "pr_person"
     table = db[tablename]
@@ -115,9 +115,7 @@ if populate:
     tablename = "sync_setting"
     table = db[tablename]
     if not db(table.id > 0).count():
-       table.insert(
-            uuid = uuid.uuid4()
-        )
+       table.insert(proxy="")
 
     # Logistics (old)
     if "lms" in deployment_settings.modules:

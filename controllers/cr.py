@@ -23,7 +23,7 @@ def shn_menu():
             #[T("Search"), False, URL(r=request, f="shelter", args="search")],
         ]],
     ]
-    if not deployment_settings.get_security_map() or shn_has_role("Editor"):
+    if shn_has_role("Editor"):
         menu_editor = [
             [T("Shelter Types and Services"), False, URL(r=request, f="#"), [
                 [T("List / Add Services"), False, URL(r=request, f="shelter_service")],
@@ -221,6 +221,12 @@ def shn_shelter_prep(r):
         # Remember this is html or popup.
         response.cr_shelter_request_was_html_or_popup = True
 
+        if r.component and r.component.name == "req":
+                # Hide the Implied fields
+                db.rms_req.location_id.writable = False
+                db.rms_req.location_id.default = r.record.location_id
+                db.rms_req.location_id.comment = ""
+                
         if r.http == "POST":
 
             if not "is_school" in request.vars:

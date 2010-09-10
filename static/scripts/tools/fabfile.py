@@ -72,7 +72,7 @@ def cleanup():
 def db_sync():
     """
         Synchronise the Database
-        - this assumes that /root/.my.cnf is configured to allow the root SSH user to have access to the MySQL DB
+        - this assumes that /root/.my.cnf is configured on both Test & Prod to allow the root SSH user to have access to the MySQL DB
           without needing '-u root -p'
     """
     if not "test" in env.host:
@@ -92,20 +92,37 @@ def db_sync():
         # Step 4: Export the Live database from the Live server (including structure)
         prod()
         with cd("/root"):
-        run("mysqldump sahana > backup.sql", pty=True)
+            run("mysqldump sahana > backup.sql", pty=True)
         test()
-        with cd(""):
+        with cd("/root"):
             # Step 4.5: Copy this dumpfile to the Test server
-            run("scp backup.sql .", pty=True)
+            run("scp %s/backup.sql ." % prod_host, pty=True)
             # Step 5: Use this to populate a new table 'old'
             run("mysqladmin create old", pty=True)
             run("mysql old < backup.sql", pty=True)
             # Step 7: Run the script: python dbstruct.py
+            # copy the script to outside the web-readable area so that we can add the passwords safely
             run("cp -f /home/web2py/applications/eden/static/scripts/tools/dbstruct.py .", pty=True)
-            run("cp -f static/scripts/tools/dbstruct.py .", pty=True)
-            run("cp -f static/scripts/tools/dbstruct.py .", pty=True)
-            # Step 8: Fixup manually anything which couldn't be done automatically
+            # read the passwords from /root/.my.cnf
+            # @ToDo
+            # replace the password in the script copy
+            run("sed -i 's/user="sahana", passwd="password"/user="root", passwd="password"/g' dbstruct.py", pty=True)
+        # Run the modified script
+        # use pexpect to allow us to jump in to do manual fixes
+        child = pexpect.spawn("ssh -i /root/.ssh/sahana_release %s@%s" % (env.user, env.host))
+        child.expect(":~#")
+        child.sendline("cd /root")
+        child.expect("/root#")
+        child.sendline("python dbstruct.py")
+        print child.before
+        # Step 8: Fixup manually anything which couldn't be done automatically
+        # @ToDo List issues as clearly/concisely as possible for us to resolve manually
+        # @ToDo Try to resolve any FK constraint issues automatically
+        child.interact()     # Give control of the child to the user.
+        # Need to exit() w2p shell & also the SSH session
+        with cd("/root"):
             # Step 9: Take a dump of the fixed data (no structure, full inserts)
+            run("mysqldump -tc old > old.sql", pty=True)
             # Step 10: Import it into the empty database
             run("mysql sahana < old.sql", pty=True)
             # Cleanup

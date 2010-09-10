@@ -1226,7 +1226,7 @@ def shn_list(r, **attr):
                                             _onclick="window.location='%s';" %
                                                      response.s3.cancel))
 
-            if "location_id" in db[tablename].fields:
+            if "location_id" in db[tablename].fields and db[tablename].location_id.writable:
                 # Allow the Location Selector to take effect
                 _gis.location_id = True
                 if response.s3.gis.map_selector:
@@ -1343,7 +1343,7 @@ def shn_create(r, **attr):
         # Default components
         output = dict(module=prefix, resource=name, main=main, extra=extra)
 
-        if "location_id" in db[tablename].fields:
+        if "location_id" in db[tablename].fields and db[tablename].location_id.writable:
             # Allow the Location Selector to take effect
             _gis.location_id = True
             if response.s3.gis.map_selector:
@@ -1659,7 +1659,7 @@ def shn_update(r, **attr):
             list_btn = A(label_list_button, _href=r.there(), _class="action-btn")
             output.update(list_btn=list_btn)
 
-        if "location_id" in db[tablename].fields:
+        if "location_id" in db[tablename].fields and db[tablename].location_id.writable:
             # Allow the Location Selector to take effect
             _gis.location_id = True
             if response.s3.gis.map_selector:

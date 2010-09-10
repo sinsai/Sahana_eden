@@ -1597,8 +1597,8 @@ OpenLayers.Util.extend( selectPdfControl, {
 
         # Toolbar
         if toolbar or add_feature:
-            #if 1 in session.s3.roles or auth.shn_has_role("MapAdmin"):
-            if auth.is_logged_in():
+            if 1 in session.s3.roles or auth.shn_has_role("MapAdmin"):
+            #if auth.is_logged_in():
                 # Provide a way to save the viewport
                 # @ToDo Extend to personalised Map Views
                 # @ToDo Extend to choice of Base Layer & Enabled status of Overlays

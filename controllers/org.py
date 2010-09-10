@@ -57,15 +57,6 @@ def organisation():
 
     resource = request.function
 
-    def org_prep(jr):
-        if jr.representation == "html":
-            # Redirect to Dashboard after adding/editing an Organisation to add Offices/Staff/Projects
-            crud.settings.create_next = URL(r=request, f="dashboard")
-            crud.settings.update_next = URL(r=request, f="dashboard")
-        return True
-    # Dashboard is deprecated now we have components
-    #response.s3.prep = org_prep
-
     rheader = lambda r: shn_org_rheader(r,
                                         tabs = [(T("Basic Details"), None),
                                                 (T("Offices"), "office"),

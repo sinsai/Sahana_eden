@@ -1021,7 +1021,7 @@ def shn_list(r, **attr):
     # Get controller attributes
     rheader = attr.get("rheader", None)
     sticky = attr.get("sticky", rheader is not None)
-
+    
     # Table-specific controller attributes
     _attr = r.component and r.component.attr or attr
     editable = _attr.get("editable", True)
@@ -1032,6 +1032,7 @@ def shn_list(r, **attr):
     orderby = _attr.get("orderby", None)
     sortby = _attr.get("sortby", [[1,'asc']])
     linkto = _attr.get("linkto", None)
+    create_next = _attr.get("create_next")
 
     # Provide the ability to get a subset of records
     start = vars.get("start", 0)
@@ -1168,12 +1169,12 @@ def shn_list(r, **attr):
         authorised = shn_has_permission("create", tablename)
         if authorised and listadd:
 
-            # Block join field
+            # @ToDo: This should share a subroutine with shn_create()
             if r.component:
+                # Block join field
                 _comment = table[r.fkey].comment
                 table[r.fkey].comment = None
                 table[r.fkey].default = r.record[r.pkey]
-
                 # Fix for #447:
                 if r.http == "POST":
                     table[r.fkey].writable = True
@@ -1181,17 +1182,30 @@ def shn_list(r, **attr):
                 else:
                     table[r.fkey].writable = False
 
+                # Neutralize callbacks
+                crud.settings.create_onvalidation = None
+                crud.settings.create_onaccept = None
+                crud.settings.create_next = None
+                r.next = create_next or r.there()
+            else:
+                r.next = crud.settings.create_next or r.there()
+                crud.settings.create_next = None
+                if not onvalidation:
+                    onvalidation = crud.settings.create_onvalidation
+                if not onaccept:
+                    onaccept = crud.settings.create_onaccept
+
             if onaccept:
                 _onaccept = lambda form: \
                             s3xrc.audit("create", prefix, name, form=form,
                                         representation=representation) and \
-                            s3xrc.store_session(session, prefix, name, 0) and \
+                            s3xrc.store_session(session, prefix, name, form.vars.id) and \
                             onaccept(form)
             else:
                 _onaccept = lambda form: \
                             s3xrc.audit("create", prefix, name, form=form,
                                         representation=representation) and \
-                            s3xrc.store_session(session, prefix, name, 0)
+                            s3xrc.store_session(session, prefix, name, form.vars.id)
 
             message = shn_get_crud_string(tablename, "msg_record_created")
 
@@ -1200,7 +1214,9 @@ def shn_list(r, **attr):
                                onvalidation=onvalidation,
                                onaccept=_onaccept,
                                message=message,
-                               next=r.there())
+                               # Return to normal list view after creation
+                               #next=r.there() # Better to use r.next
+                              )
 
             # Cancel button?
             #form[0].append(TR(TD(), TD(INPUT(_type="reset", _value="Reset form"))))
@@ -1210,7 +1226,7 @@ def shn_list(r, **attr):
                                             _onclick="window.location='%s';" %
                                                      response.s3.cancel))
 
-            if "location_id" in db[tablename].fields:
+            if "location_id" in db[tablename].fields and db[tablename].location_id.writable:
                 # Allow the Location Selector to take effect
                 _gis.location_id = True
                 if response.s3.gis.map_selector:
@@ -1307,7 +1323,7 @@ def shn_create(r, **attr):
                 del r.request.get_vars["from_fields"] # forget it
                 from_fields = from_fields.split(",")
             else:
-                from_fields = [f for f in table.fields if f in source.fields and f!="id"]
+                from_fields = [f for f in table.fields if f in source.fields and f != "id"]
             if source and from_record:
                 copy_fields = [source[f] for f in from_fields if
                                     f in source.fields and
@@ -1327,7 +1343,7 @@ def shn_create(r, **attr):
         # Default components
         output = dict(module=prefix, resource=name, main=main, extra=extra)
 
-        if "location_id" in db[tablename].fields:
+        if "location_id" in db[tablename].fields and db[tablename].location_id.writable:
             # Allow the Location Selector to take effect
             _gis.location_id = True
             if response.s3.gis.map_selector:
@@ -1360,6 +1376,7 @@ def shn_create(r, **attr):
                 request.post_vars.update({r.fkey: str(r.record[r.pkey])})
             else:
                 table[r.fkey].writable = False
+
             # Neutralize callbacks
             crud.settings.create_onvalidation = None
             crud.settings.create_onaccept = None
@@ -1642,7 +1659,7 @@ def shn_update(r, **attr):
             list_btn = A(label_list_button, _href=r.there(), _class="action-btn")
             output.update(list_btn=list_btn)
 
-        if "location_id" in db[tablename].fields:
+        if "location_id" in db[tablename].fields and db[tablename].location_id.writable:
             # Allow the Location Selector to take effect
             _gis.location_id = True
             if response.s3.gis.map_selector:

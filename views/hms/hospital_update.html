@@ -1,35 +1,13 @@
-{{extend 'layout.html'}}
+{{extend "layout.html"}}
+{{include "_update.html"}}
 {{try:}}
- {{=H2(title)}}
+{{last_update = shn_last_update(db.hms_hospital, record_id)}}
+<script type="text/javascript">//<![CDATA[
+$(document).ready(function(){
+    var last_update = "<h4 id='last_update'>{{=last_update}}</h4>";
+    $('#rheader').before(last_update);
+});
+//]]></script>
 {{except:}}
 {{pass}}
-{{try:}}
- {{=H4(shn_last_update(db.hms_hospital, record_id), _id='last_update')}}
-{{except:}}
-{{pass}}
-<div id='rheader'>
-{{try:}}
- {{=rheader}}
-{{except:}}
- {{pass}}
-</div>
-{{try:}}
- {{=H3(subtitle)}}
-{{except:}}
-{{pass}}
-<div class='form-container'>
-{{try:}}
- {{=form}}
-{{except:}}
-{{pass}}
-</div>
-{{include 'key.html'}}
-{{try:}}
- {{=list_btn}}
-{{except:}}
-{{pass}}
-{{try:}}
- {{=del_btn}}
-{{except:}}
-{{pass}}
-{{include 'colorbox.html'}}
+{{include "gis/location_autocomplete.js"}}

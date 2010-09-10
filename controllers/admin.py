@@ -151,10 +151,6 @@ def theme_apply(form):
         #    header_background = theme.header_background
         #else:
         #    header_background = default_theme.header_background
-        if theme.text_direction:
-            text_direction = theme.text_direction
-        else:
-            text_direction = "ltr"
         # Write out CSS
         ofile = open(out_file, "w")
         for line in lines:

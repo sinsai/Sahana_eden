@@ -95,16 +95,14 @@ if deployment_settings.has_module(module):
     resource = "shelter"
     tablename = module + "_" + resource
 
-    # If the hms module is enabled, we include a hospital_id field, so if the
+    # If the HMS module is enabled, we include a hospital_id field, so if the
     # shelter is co-located with a hospital, the hospital can be identified.
     # To get the fields in the correct order in the table, get the fields
     # before and after where hospital_id should go.
     #
-    # Caution (mainly for developers):  If you start with hms enabled, and
-    # fill in hospital info, then disable hms, the hospital_id column will
-    # get dropped.  If hms is re-enabled, the hospital_id links will be gone.
-    # Moral is, if this is a production site, do not disable hms unless you
-    # really mean it...
+    # Caution:  If you start with HMS enabled, and# fill in hospital info, then disable HMS,
+    # the hospital_id column will get dropped.  If HMS is re-enabled, the hospital_id links will be gone.
+    # If this is a production site, do not disable HMS unless you really mean it...
 
     fields_before_hospital = db.Table(None, None,
                     timestamp, uuidstamp, deletion_status,

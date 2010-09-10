@@ -12,6 +12,9 @@
 {{elif request.args(0) == "change_password":}}
  {{=H2(T("Change Password"))}}
  {{=form}}
+{{elif request.args(0) == "reset_password":}}
+ {{=H2(T("Reset Password"))}}
+ {{=form}}
 {{elif request.args(0) == "retrieve_password":}}
  {{=H2(T("Retrieve Password"))}}
  {{=form}}

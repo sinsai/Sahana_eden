@@ -85,14 +85,14 @@ if deployment_settings.has_module(module):
                     Field("aka1"),                              # Alternate name, or name in local language
                     Field("aka2"),                              # Alternate name, or name in local language
                     Field("facility_type", "integer",           # Type of facility
-                        requires = IS_NULL_OR(IS_IN_SET(hms_facility_type_opts)),
-                        label = T("Facility Type"),
-                        represent = lambda opt: hms_facility_type_opts.get(opt, T("not specified"))),
+                          requires = IS_NULL_OR(IS_IN_SET(hms_facility_type_opts)),
+                          label = T("Facility Type"),
+                          represent = lambda opt: hms_facility_type_opts.get(opt, T("not specified"))),
                     organisation_id,
                     location_id,
-                    Field("address"),
-                    Field("postcode"),
-                    Field("city"),
+                    Field("address"),      # @ToDo: Deprecate these & use location_id in HAVE exporter
+                    Field("postcode"),     # @ToDo: Deprecate these & use location_id in HAVE exporter
+                    Field("city"),         # @ToDo: Deprecate these & use location_id in HAVE exporter
                     Field("phone_exchange", requires = shn_phone_requires), # Switchboard
                     Field("phone_business", requires = shn_phone_requires),
                     Field("phone_emergency", requires = shn_phone_requires),
@@ -102,52 +102,52 @@ if deployment_settings.has_module(module):
                     Field("total_beds", "integer"),             # Total Beds
                     Field("available_beds", "integer"),         # Available Beds
                     Field("ems_status", "integer",              # Emergency Room Status
-                        requires = IS_NULL_OR(IS_IN_SET(hms_ems_traffic_opts)),
-                        label = T("EMS Traffic Status"),
-                        represent = lambda opt: hms_ems_traffic_opts.get(opt, UNKNOWN_OPT)),
+                          requires = IS_NULL_OR(IS_IN_SET(hms_ems_traffic_opts)),
+                          label = T("EMS Traffic Status"),
+                          represent = lambda opt: hms_ems_traffic_opts.get(opt, UNKNOWN_OPT)),
                     Field("ems_reason", length=128,             # Reason for EMS Status
-                        label = T("EMS Status Reason")),
+                          label = T("EMS Status Reason")),
                     Field("or_status", "integer",               # Operating Room Status
-                        requires = IS_NULL_OR(IS_IN_SET(hms_or_status_opts)),
-                        label = T("OR Status"),
-                        represent = lambda opt: hms_or_status_opts.get(opt, UNKNOWN_OPT)),
+                          requires = IS_NULL_OR(IS_IN_SET(hms_or_status_opts)),
+                          label = T("OR Status"),
+                          represent = lambda opt: hms_or_status_opts.get(opt, UNKNOWN_OPT)),
                     Field("or_reason", length=128,              # Reason for OR Status
-                        label = T("OR Status Reason")),
+                          label = T("OR Status Reason")),
                     Field("facility_status", "integer",         # Facility Status
-                        requires = IS_NULL_OR(IS_IN_SET(hms_facility_status_opts)),
-                        label = T("Facility Status"),
-                        represent = lambda opt: hms_facility_status_opts.get(opt, UNKNOWN_OPT)),
+                          requires = IS_NULL_OR(IS_IN_SET(hms_facility_status_opts)),
+                          label = T("Facility Status"),
+                          represent = lambda opt: hms_facility_status_opts.get(opt, UNKNOWN_OPT)),
                     Field("clinical_status", "integer",         # Clinical Status
-                        requires = IS_NULL_OR(IS_IN_SET(hms_clinical_status_opts)),
-                        label = T("Clinical Status"),
-                        represent = lambda opt: hms_clinical_status_opts.get(opt, UNKNOWN_OPT)),
+                          requires = IS_NULL_OR(IS_IN_SET(hms_clinical_status_opts)),
+                          label = T("Clinical Status"),
+                          represent = lambda opt: hms_clinical_status_opts.get(opt, UNKNOWN_OPT)),
                     Field("morgue_status", "integer",           # Morgue Status
-                        requires = IS_NULL_OR(IS_IN_SET(hms_morgue_status_opts)),
-                        label = T("Morgue Status"),
-                        represent = lambda opt: hms_clinical_status_opts.get(opt, UNKNOWN_OPT)),
+                          requires = IS_NULL_OR(IS_IN_SET(hms_morgue_status_opts)),
+                          label = T("Morgue Status"),
+                          represent = lambda opt: hms_clinical_status_opts.get(opt, UNKNOWN_OPT)),
                     Field("morgue_units", "integer"),           # Number of available/vacant morgue units
                     Field("security_status", "integer",         # Security status
-                        requires = IS_NULL_OR(IS_IN_SET(hms_security_status_opts)),
-                        label = T("Security Status"),
-                        represent = lambda opt: hms_security_status_opts.get(opt, UNKNOWN_OPT)),
+                          requires = IS_NULL_OR(IS_IN_SET(hms_security_status_opts)),
+                          label = T("Security Status"),
+                          represent = lambda opt: hms_security_status_opts.get(opt, UNKNOWN_OPT)),
                     Field("doctors", "integer"),                # Number of Doctors
                     Field("nurses", "integer"),                 # Number of Nurses
                     Field("non_medical_staff", "integer"),      # Number of Non-Medical Staff
                     Field("staffing", "integer",                # Staffing status
-                        requires = IS_NULL_OR(IS_IN_SET(hms_resource_status_opts)),
-                        label = T("Staffing"),
-                        represent = lambda opt: hms_resource_status_opts.get(opt, UNKNOWN_OPT)),
+                          requires = IS_NULL_OR(IS_IN_SET(hms_resource_status_opts)),
+                          label = T("Staffing"),
+                          represent = lambda opt: hms_resource_status_opts.get(opt, UNKNOWN_OPT)),
                     Field("facility_operations", "integer",     # Facility Operations Status
-                        requires = IS_NULL_OR(IS_IN_SET(hms_resource_status_opts)),
-                        label = T("Facility Operations"),
-                        represent = lambda opt: hms_resource_status_opts.get(opt, UNKNOWN_OPT)),
+                          requires = IS_NULL_OR(IS_IN_SET(hms_resource_status_opts)),
+                          label = T("Facility Operations"),
+                          represent = lambda opt: hms_resource_status_opts.get(opt, UNKNOWN_OPT)),
                     Field("clinical_operations", "integer",     # Clinical Operations Status
-                        requires = IS_NULL_OR(IS_IN_SET(hms_resource_status_opts)),
-                        label = T("Clinical Operations"),
-                        represent = lambda opt: hms_resource_status_opts.get(opt, UNKNOWN_OPT)),
+                          requires = IS_NULL_OR(IS_IN_SET(hms_resource_status_opts)),
+                          label = T("Clinical Operations"),
+                          represent = lambda opt: hms_resource_status_opts.get(opt, UNKNOWN_OPT)),
                     Field("access_status"),                     # Access Status
-                    Field("info_source"),                       # Source of Information
-                    comments,                                   # Comments field
+                    document_id,                                # Information Source
+                    comments,
                     migrate=migrate)
 
 
@@ -156,22 +156,38 @@ if deployment_settings.has_module(module):
     table.organisation_id.represent = lambda id: \
         (id and [db(db.org_organisation.id == id).select(db.org_organisation.acronym, limitby=(0, 1)).first().acronym] or ["None"])[0]
 
+    table.gov_uuid.label = T("Government UID")
     table.gov_uuid.requires = IS_NULL_OR(IS_NOT_IN_DB(db, "%s.gov_uuid" % tablename))
-    table.gov_uuid.comment = DIV(DIV(_class="tooltip",
-        _title=Tstr("Government UID") + "|" + Tstr("The Unique Identifier (UUID) as assigned to this facility by the government.")))
-
+    table.name.label = T("Name")
     table.name.requires = [IS_NOT_EMPTY(), IS_NOT_IN_DB(db, "%s.name" % tablename)]
+    table.aka1.label = T("Other Name")
+    table.aka2.label = T("Other Name")
+    table.address.label = T("Address")
+    table.postcode.label = T("Postcode")
+    table.phone_exchange.label = T("Phone/Exchange")
+    table.phone_business.label = T("Phone/Business")
+    table.phone_emergency.label = T("Phone/Emergency")
+    table.email.label = T("Email")
+    table.fax.label = T("Fax")
+    table.website.represent = shn_url_represent
     table.email.requires = IS_NULL_OR(IS_EMAIL())
+    table.total_beds.label = T("Total Beds")
     table.total_beds.requires = IS_NULL_OR(IS_INT_IN_RANGE(0, 9999))
     table.total_beds.readable = False
     table.total_beds.writable = False
+    table.available_beds.label = T("Available Beds")
     table.available_beds.requires = IS_NULL_OR(IS_INT_IN_RANGE(0, 9999))
     table.available_beds.readable = False
     table.available_beds.writable = False
+    table.morgue_units.label = T("Morgue Units Available")
     table.morgue_units.requires = IS_NULL_OR(IS_INT_IN_RANGE(0, 99999))
+    table.doctors.label = T("Number of doctors")
     table.doctors.requires = IS_NULL_OR(IS_INT_IN_RANGE(0, 99999))
+    table.nurses.label = T("Number of nurses")
     table.nurses.requires = IS_NULL_OR(IS_INT_IN_RANGE(0, 99999))
+    table.non_medical_staff.label = T("Number of non-medical staff")
     table.non_medical_staff.requires = IS_NULL_OR(IS_INT_IN_RANGE(0, 99999))
+    table.access_status.label = T("Road Conditions")
 
     # Reusable field for other tables to reference
     ADD_HOSPITAL = T("Add Hospital")
@@ -234,9 +250,9 @@ if deployment_settings.has_module(module):
     def shn_hms_hospital_onaccept(form, table=None):
 
         # Update requests
-        hospital = db.hms_hospital[form.vars.id]
-        if hospital:
-            db(db.hms_hrequest.hospital_id == hospital.id).update(city=hospital.city)
+        #hospital = db.hms_hospital[form.vars.id]
+        #if hospital:
+        #    db(db.hms_hrequest.hospital_id == hospital.id).update(city=hospital.city)
 
         shn_site_onaccept(form, table=table)
 
@@ -792,380 +808,3 @@ if deployment_settings.has_module(module):
 
     # Plug into REST controller
     s3xrc.model.set_method(module, "hospital", method="search_simple", action=shn_hms_hospital_search_simple )
-
-
-    # -----------------------------------------------------------------------------
-    # Hospital Requests for Support
-    #
-    hms_hrequest_priority_opts = {
-        5: T("immediately"),
-        4: T("urgent"),
-        3: T("high"),
-        2: T("normal"),
-        1: T("low")
-    }
-
-    hms_hrequest_impact_opts = {
-        5: T("highly critical"),
-        4: T("critical"),
-        3: T("non-critical"),
-        2: T("improvement"),
-        1: T("wish")
-    }
-
-    hms_hrequest_status_opts = {
-        6: T("completed"),              # Completed
-        5: T("invalid"),                # Invalid request
-        4: T("accepted"),               # Accepted request
-        3: T("deferred"),               # Deferred
-        2: T("review"),                 # For further review
-        1: T("new")                     # New
-    }
-
-    hms_hrequest_type_opts = {
-        1: T("Water"),
-        2: T("Electricity"),
-        3: T("Food"),
-        4: T("Medical Supplies"),
-        5: T("Medical Staff"),
-        6: T("Non-medical Staff"),
-        7: T("Security"),
-        8: T("Transport"),
-        9: T("Fuel"),
-        10:T("Shelter"),
-        11:T("Find"),
-        12:T("Report"),
-        99: T("Other")
-    }
-
-    hms_hrequest_source_type = {
-        1 : "Manual",
-        2 : "Voice",
-        3 : "Email",
-        4 : "SMS",
-        99: "Other"
-    }
-
-    resource = "hrequest"
-    tablename = "%s_%s" % (module, resource)
-    table = db.define_table(tablename, timestamp, uuidstamp, authorstamp, deletion_status,
-                hospital_id,
-                Field("subject"),
-                Field("message", "text"),
-                Field("timestmp", "datetime"),  # 'timestamp' is a reserved word in Postgres
-                Field("type", "integer",
-                    requires = IS_NULL_OR(IS_IN_SET(hms_hrequest_type_opts)),
-                    represent = lambda type: hms_hrequest_type_opts.get(type, T("not specified")),
-                    label = T("Type")),
-                Field("priority", "integer",
-                    requires = IS_NULL_OR(IS_IN_SET(hms_hrequest_priority_opts)),
-                    default = 2,
-                    represent = lambda opt: hms_hrequest_priority_opts.get(opt, T("not specified")),
-                    #represent = lambda id: (id and
-                    #  [DIV(IMG(_src="/%s/static/img/priority/hms_priority_%d.gif" % \
-                    #      (request.application, id), _height=12))] or
-                    #  [DIV(IMG(_src="/%s/static/img/priority/hms_priority_1.gif" % \
-                    #      request.application, _height=12))]),
-                    label = T("Priority")),
-                Field("city", "string"),
-                Field("status", "integer",
-                    requires = IS_NULL_OR(IS_IN_SET(hms_hrequest_status_opts)),
-                    represent = lambda type: hms_hrequest_status_opts.get(type, T("not specified")),
-                    label = T("Status")),
-                Field("source_type", "integer",
-                    requires = IS_NULL_OR(IS_IN_SET(hms_hrequest_source_type)),
-                    represent = lambda stype: stype and hms_hrequest_source_type[stype],
-                    label = T("Source Type")),
-                Field("actionable", "boolean", default=False),
-                migrate=migrate)
-
-    #label the fields for the view
-    table.timestmp.label = T("Date & Time")
-
-    #Hide fields from user:
-    table.actionable.writable = table.actionable.readable = False
-    table.source_type.writable = table.source_type.readable = False
-
-    #set default values
-    table.actionable.default = 1
-    table.source_type.default = 1
-
-    table.message.requires = IS_NOT_EMPTY()
-    table.message.comment = SPAN("*", _class="req")
-
-    s3.crud_strings[tablename] = Storage(
-        title_create        = "Add Aid Request",
-        title_display       = "Aid Request Details",
-        title_list          = "List Aid Requests",
-        title_update        = "Edit Aid Request",
-        title_search        = "Search Aid Requests",
-        subtitle_create     = "Add New Aid Request",
-        subtitle_list       = "Aid Requests",
-        label_list_button   = "List Aid Requests",
-        label_create_button = "Add Aid Request",
-        msg_record_created  = "Aid request added",
-        msg_record_modified = "Aid request updated",
-        msg_record_deleted  = "Aid request deleted",
-        msg_list_empty      = "No aid requests currently available")
-
-    # Reusable field for other tables to reference
-    hms_hrequest_id = db.Table(None, "hms_hrequest_id",
-                        Field("hms_hrequest_id", db.hms_hrequest,
-                                requires = IS_NULL_OR(IS_ONE_OF(db, "hms_hrequest.id", "%(id)s")),
-                                represent = lambda id: (id and [db(db.hms_hrequest.id==id).select()[0].id] or ["None"])[0],
-                                label = T("Request"),
-                                comment = DIV(A(s3.crud_strings[tablename].title_create,
-                                               _class="colorbox",
-                                               _href=URL(r=request, c="hms", f="hrequest", args="create", vars=dict(format="popup")),
-                                               _target="top",
-                                               _title=s3.crud_strings[tablename].title_create),
-                                              DIV(DIV(_class="tooltip",
-                                                      _title=Tstr("Request") + "|" + Tstr("The request this record is associated with.")))),
-                                ondelete = "RESTRICT"))
-
-    s3xrc.model.add_component(module, resource,
-        multiple=True,
-        joinby=dict(hms_hospital = "hospital_id"),
-        deletable=True,
-        editable=True)
-
-    s3xrc.model.configure(table,
-                          list_fields=["id",
-                                       "timestmp",
-                                       "hospital_id",
-                                       "city",
-                                       "type",
-                                       "subject",
-                                       "priority",
-                                       "status"])
-
-    # -----------------------------------------------------------------------------
-    # Request Representation
-    #
-    def shn_hms_hrequest_onaccept(form):
-
-        hrequest = db.hms_hrequest[form.vars.id]
-        if hrequest:
-            hospital = db.hms_hospital[hrequest.hospital_id]
-            if hospital:
-                db(db.hms_hrequest.id == hrequest.id).update(city=hospital.city)
-
-    s3xrc.model.configure(db.hms_hrequest,
-                          onaccept=lambda form: shn_hms_hrequest_onaccept(form))
-
-    # -----------------------------------------------------------------------------
-    # Request Search by Message Text
-    #
-    def shn_hms_get_hrequest(label, fields=None, filterby=None):
-
-        """ Finds a request by Message string """
-
-        if fields and isinstance(fields, (list,tuple)):
-            search_fields = []
-            for f in fields:
-                if db.hms_hrequest.has_key(f):     # TODO: check for field type?
-                    search_fields.append(f)
-            if not len(search_fields):
-                # Error: none of the specified search fields exists
-                return None
-        else:
-            # No search fields specified at all => fallback
-            search_fields = ["message"]
-
-        if label and isinstance(label, str):
-            labels = label.split()
-            results = []
-            query = None
-            # TODO: make a more sophisticated search function (levenshtein?)
-            for l in labels:
-
-                # append wildcards
-                wc = "%"
-                _l = "%s%s%s" % (wc, l, wc)
-
-                # build query
-                for f in search_fields:
-                    if query:
-                        query = (db.hms_hrequest[f].like(_l)) | query
-                    else:
-                        query = (db.hms_hrequest[f].like(_l))
-
-                # undeleted records only
-                query = (db.hms_hrequest.deleted==False) & (query)
-                # restrict to prior results (AND)
-                if len(results):
-                    query = (db.hms_hrequest.id.belongs(results)) & query
-                if filterby:
-                    query = (filterby) & (query)
-                records = db(query).select(db.hms_hrequest.id)
-                # rebuild result list
-                results = [r.id for r in records]
-                # any results left?
-                if not len(results):
-                    return None
-            return results
-        else:
-            # no label given or wrong parameter type
-            return None
-
-    # -----------------------------------------------------------------------------
-    # Request Search Form
-    #
-    def shn_hms_hrequest_search_simple(xrequest, **attr):
-
-        """ Simple search form for requests """
-
-        if attr is None:
-            attr = {}
-
-        if not shn_has_permission("read", db.hms_hrequest):
-            session.error = UNAUTHORISED
-            redirect(URL(r=request, c="default", f="user", args="login", vars={"_next":URL(r=request, args="search_simple", vars=request.vars)}))
-
-        if xrequest.representation=="html":
-            # Check for redirection
-            if request.vars._next:
-                next = str.lower(request.vars._next)
-            else:
-                next = str.lower(URL(r=request, f="req", args="[id]"))
-
-            # Custom view
-            response.view = "%s/hrequest_search.html" % xrequest.prefix
-
-            # Title and subtitle
-            title = T("Search for a Request")
-            subtitle = T("Matching Records")
-
-            # Select form
-            form = FORM(TABLE(
-                    TR(T("Text in Message: "),
-                    INPUT(_type="text", _name="label", _size="40"),
-                    DIV(DIV(_class="tooltip",
-                            _title=Tstr("Text in Message") + "|" + Tstr("To search for a request, enter some of the text that you are looking for. You may use % as wildcard. Press 'Search' without input to list all requests.")))),
-                    TR("", INPUT(_type="submit", _value="Search"))))
-
-            output = dict(title=title, subtitle=subtitle, form=form, vars=form.vars)
-
-            # Accept action
-            items = None
-            if form.accepts(request.vars, session):
-
-                if form.vars.label == "":
-                    form.vars.label = "%"
-
-                results = shn_hms_get_hrequest(form.vars.label)
-
-                if results and len(results):
-                    rows = db(db.hms_hrequest.id.belongs(results)).select()
-                else:
-                    rows = None
-
-                # Build table rows from matching records
-                if rows:
-                    records = []
-                    for row in rows:
-                        href = next.replace("%5bid%5d", "%s" % row.id)
-                        records.append(TR(
-                            row.completion_status,
-                            row.message,
-                            row.timestmp,
-                            row.hospital_id and hospital_id.hospital_id.represent(row.hospital_id) or "unknown",
-                            ))
-                    items=DIV(TABLE(THEAD(TR(
-                        TH("Completion Status"),
-                        TH("Message"),
-                        TH("Time"),
-                        TH("Hospital"),
-                        )),
-                        TBODY(records), _id="list", _class="display"))
-                else:
-                    items = T("None")
-
-            try:
-                label_create_button = s3.crud_strings["hms_hrequest"].label_create_button
-            except:
-                label_create_button = s3.crud_strings.label_create_button
-
-            add_btn = A(label_create_button, _href=URL(r=request, f="req", args="create"), _class="action-btn")
-
-            output.update(dict(items=items, add_btn=add_btn))
-            return output
-
-        else:
-            session.error = BADFORMAT
-            redirect(URL(r=request))
-
-    # Plug into REST controller
-    s3xrc.model.set_method(module, resource,
-                        method="search_simple",
-                        action=shn_hms_hrequest_search_simple)
-
-    # -----------------------------------------------------------------------------
-    # Pledges
-    #
-    hms_pledge_status_opts = {
-        1:T("Pledged"),
-        2:T("In Transit"),
-        3:T("Delivered"),
-    }
-
-    resource = "hpledge"
-    tablename = "%s_%s" % (module, resource)
-    table = db.define_table(tablename, timestamp, uuidstamp, authorstamp, deletion_status,
-                    Field("submitted_on", "datetime"),
-                    hms_hrequest_id,
-                    Field("status", "integer"),
-                    organisation_id,
-                    person_id,
-                    Field("description"),
-                    migrate=migrate)
-
-    # hide unnecessary fields
-    table.hms_hrequest_id.writable = False
-
-    # set pledge default
-    table.status.default = 1
-
-    # auto fill posted_on field and make it readonly
-    table.submitted_on.requires = IS_UTC_DATETIME(utc_offset=shn_user_utc_offset(),
-                                                  allow_future=False)
-    table.submitted_on.represent = lambda value: shn_as_local_time(value)
-    table.submitted_on.default = request.utcnow
-    table.submitted_on.writable = False
-
-    table.status.requires = IS_IN_SET(hms_pledge_status_opts, zero=None)
-    table.status.represent = lambda status: status and hms_pledge_status_opts[status]
-    table.status.label = T("Status")
-
-    # Pledges as a component of requests
-    s3xrc.model.add_component(module, resource,
-                              multiple=True,
-                              joinby=dict(hms_hrequest = "hms_hrequest_id"),
-                              deletable=True,
-                              editable=True)
-
-    s3xrc.model.configure(table,
-                          list_fields=["id",
-                                       #"organisation_id",
-                                       #"person_id",
-                                       "submitted_on",
-                                       "description",
-                                       "status"])
-
-    s3.crud_strings[tablename] = Storage(
-        title_create = "Add Pledge",
-        title_display = "Pledge Details",
-        title_list = "List Pledges",
-        title_update = "Edit Pledge",
-        title_search = "Search Pledges",
-        subtitle_create = "Add New Pledge",
-        subtitle_list = "Pledges",
-        label_list_button = "List Pledges",
-        label_create_button = "Add Pledge",
-        label_delete_button = "Delete Pledge",
-        msg_record_created = "Pledge added",
-        msg_record_modified = "Pledge updated",
-        msg_record_deleted = "Pledge deleted",
-        msg_list_empty = "No Pledges currently available")
-
-    # -----------------------------------------------------------------------------

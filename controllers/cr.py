@@ -23,7 +23,7 @@ def shn_menu():
             #[T("Search"), False, URL(r=request, f="shelter", args="search")],
         ]],
     ]
-    if not deployment_settings.get_security_map() or shn_has_role("Editor"):
+    if shn_has_role("Editor"):
         menu_editor = [
             [T("Shelter Types and Services"), False, URL(r=request, f="#"), [
                 [T("List / Add Services"), False, URL(r=request, f="shelter_service")],
@@ -57,11 +57,13 @@ def shelter_type():
 
     resource = request.function
 
-    # Don't provide delete button in list view
-    def user_postp(jr, output):
-        shn_action_buttons(jr, deletable=False)
+    # Post-processor
+    def postp(jr, output):
+        if r.representation in shn_interactive_view_formats:
+            # Don't provide delete button in list view
+            shn_action_buttons(jr, deletable=False)
         return output
-    response.s3.postp = user_postp
+    response.s3.postp = postp
 
     rheader = lambda r: shn_shelter_rheader(r,
                                             tabs = [(T("Basic Details"), None),
@@ -85,11 +87,13 @@ def shelter_service():
 
     resource = request.function
 
-    # Don't provide delete button in list view
-    def user_postp(jr, output):
-        shn_action_buttons(jr, deletable=False)
+    # Post-processor
+    def postp(jr, output):
+        if r.representation in shn_interactive_view_formats:
+            # Don't provide delete button in list view
+            shn_action_buttons(jr, deletable=False)
         return output
-    response.s3.postp = user_postp
+    response.s3.postp = postp
 
     rheader = lambda r: shn_shelter_rheader(r,
                                             tabs = [(T("Basic Details"), None),
@@ -131,13 +135,25 @@ def shelter():
     tablename = module + "_" + resource
     table = db[tablename]
 
-    # Don't send the locations list to client (pulled by AJAX instead)
-    table.location_id.requires = IS_NULL_OR(IS_ONE_OF_EMPTY(db, "gis_location.id"))
-
+    # Pre-processor
     response.s3.prep = shn_shelter_prep
 
     crud.settings.create_onvalidation = shn_shelter_onvalidation
     crud.settings.update_onvalidation = shn_shelter_onvalidation
+
+    # Post-processor
+    def postp(r, output):
+        if r.representation in shn_interactive_view_formats:
+            #if r.method == "create" and not r.component:
+            # listadd arrives here as method=None
+            if r.method != "delete" and not r.component:
+                # Redirect to the Assessments tabs after creation
+                r.next = r.other(method="assessment", record_id=s3xrc.get_session(session, module, resource))
+
+            # Normal Action Buttons
+            shn_action_buttons(r)
+        return output
+    response.s3.postp = postp
 
     response.s3.pagination = True
 
@@ -148,7 +164,6 @@ def shelter():
                    ]
 
     rheader = lambda r: shn_shelter_rheader(r, tabs=shelter_tabs)
-
 
     output = shn_rest_controller(module, resource,
                                  rheader=rheader)
@@ -200,9 +215,18 @@ def shn_shelter_prep(r):
     # form data.
 
     if r.representation in shn_interactive_view_formats:
+        # Don't send the locations list to client (pulled by AJAX instead)
+        r.table.location_id.requires = IS_NULL_OR(IS_ONE_OF_EMPTY(db, "gis_location.id"))
+
         # Remember this is html or popup.
         response.cr_shelter_request_was_html_or_popup = True
 
+        if r.component and r.component.name == "req":
+                # Hide the Implied fields
+                db.rms_req.location_id.writable = False
+                db.rms_req.location_id.default = r.record.location_id
+                db.rms_req.location_id.comment = ""
+                
         if r.http == "POST":
 
             if not "is_school" in request.vars:

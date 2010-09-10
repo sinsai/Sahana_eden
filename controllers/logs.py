@@ -39,13 +39,29 @@ def distrib():
     # Don't send the locations list to client (pulled by AJAX instead)
     table.location_id.requires = IS_NULL_OR(IS_ONE_OF_EMPTY(db, "gis_location.id"))
 
+    # Post-processor
+    def postp(r, output):
+        if r.representation in shn_interactive_view_formats:
+            #if r.method == "create" and not r.component:
+            # listadd arrives here as method=None
+            if r.method != "delete" and not r.component:
+                # Redirect to the Items tabs after creation
+                r.next = r.other(method="distrib_item", record_id=s3xrc.get_session(session, module, resource))
+
+            # Normal Action Buttons
+            shn_action_buttons(r)
+
+        return output
+    response.s3.postp = postp
+
     tabs = [
             (T("Details"), None),
             (T("Items"), "distrib_item"),
            ]
     rheader = lambda r: shn_distrib_rheader(r, tabs)
 
-    return shn_rest_controller(module, resource, rheader=rheader)
+    output = shn_rest_controller(module, resource, rheader=rheader)
+    return output
 
 def index():
 
@@ -69,4 +85,5 @@ def distrib_item():
     tablename = "%s_%s" % (module, resource)
     table = db[tablename]
        
-    return shn_rest_controller(module, resource)
+    output = shn_rest_controller(module, resource)
+    return output

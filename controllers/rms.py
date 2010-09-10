@@ -76,9 +76,6 @@ def req():
                     db.rms_pledge.person_id.default = person
                 # @ToDo Default the Organisation too
             
-            # Normal Action Buttons
-            shn_action_buttons(r)
-
         return True
     response.s3.prep = prep
 

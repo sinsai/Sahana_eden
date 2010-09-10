@@ -44,20 +44,19 @@ def deploy():
     # Upgrade Production to current Test version
     prod()
     maintenance_on()
-    migrate_on()
     pull()
     cleanup()
-    migrate()
+    migrate_on()
+    db_upgrade()
     migrate_off()
     maintenance_off()
     # Upgrade Test to current Trunk version
     test()
     maintenance_on()
-    migrate_on()
-    db_sync()
     pull()
     cleanup()
-    migrate()
+    migrate_on()
+    db_sync()
     migrate_off()
     maintenance_off()
 
@@ -69,6 +68,62 @@ def cleanup():
         # ToDo: Provide more comforting output (an error here is good!)
         run("mv models/000_config.py.THIS models/000_config.py", pty=True)
 
+def db_upgrade():
+    """
+        Upgrade the Database
+        - this assumes that /root/.my.cnf is configured on both Test & Prod to allow the root SSH user to have access to the MySQL DB
+          without needing '-u root -p'
+    """
+    if "test" in env.host:
+        # Skip for Test sites
+        # (they use db_sync instead)
+        pass
+    else:
+        # See dbstruct.py
+        with cd("/root/"):
+            # Step 4: Export the Live database from the (including structure)
+            run("mysqldump sahana > backup.sql", pty=True)
+            # Step 0: Drop old database 'sahana'
+            run("mysqladmin drop sahana", pty=True)
+        with cd("/home/web2py/applications/eden/models/"):
+            # Step 1: Create a new, empty MySQL database 'sahana' as-normal
+            run("mysqladmin create sahana", pty=True)
+            # Step 2: set deployment_settings.base.prepopulate = False in models/000_config.py
+            run("sed -i 's/deployment_settings.base.prepopulate = True/deployment_settings.base.prepopulate = False/g' 000_config.py", pty=True)
+        # Step 3: Allow web2py to run the Eden model to configure the Database structure
+        migrate()
+        with cd("/root/"):
+            # Step 5: Use this to populate a new table 'old'
+            run("mysqladmin create old", pty=True)
+            run("mysql old < backup.sql", pty=True)
+            # Step 7: Run the script: python dbstruct.py
+            # copy the script to outside the web-readable area so that we can add the passwords safely
+            run("cp -f /home/web2py/applications/eden/static/scripts/tools/dbstruct.py .", pty=True)
+            # read the passwords from /root/.my.cnf
+            # @ToDo
+            # replace the password in the script copy
+            run("sed -i 's/user="sahana", passwd="password"/user="root", passwd="password"/g' dbstruct.py", pty=True)
+        # Run the modified script
+        # use pexpect to allow us to jump in to do manual fixes
+        child = pexpect.spawn("ssh -i /root/.ssh/sahana_release %s@%s" % (env.user, env.host))
+        child.expect(":~#")
+        child.sendline("python dbstruct.py")
+        print child.before
+        # Step 8: Fixup manually anything which couldn't be done automatically
+        # @ToDo List issues as clearly/concisely as possible for us to resolve manually
+        # @ToDo Try to resolve any FK constraint issues automatically
+        child.interact()     # Give control of the child to the user.
+        # Need to exit() w2p shell & also the SSH session
+        with cd("/root/"):
+            # Step 9: Take a dump of the fixed data (no structure, full inserts)
+            run("mysqldump -tc old > old.sql", pty=True)
+            # Step 10: Import it into the empty database
+            run("mysql sahana < old.sql", pty=True)
+            # Cleanup
+            run("rm -f backup.sql", pty=True)
+            run("rm -f old.sql", pty=True)
+            run("rm -f dbstruct.py", pty=True)
+
 def db_sync():
     """
         Synchronise the Database
@@ -77,6 +132,7 @@ def db_sync():
     """
     if not "test" in env.host:
         # Skip for Production sites
+        # (they use db_upgrade instead)
         pass
     else:
         # See dbstruct.py
@@ -91,10 +147,10 @@ def db_sync():
         migrate()
         # Step 4: Export the Live database from the Live server (including structure)
         prod()
-        with cd("/root"):
+        with cd("/root/"):
             run("mysqldump sahana > backup.sql", pty=True)
         test()
-        with cd("/root"):
+        with cd("/root/"):
             # Step 4.5: Copy this dumpfile to the Test server
             run("scp %s/backup.sql ." % prod_host, pty=True)
             # Step 5: Use this to populate a new table 'old'
@@ -111,8 +167,6 @@ def db_sync():
         # use pexpect to allow us to jump in to do manual fixes
         child = pexpect.spawn("ssh -i /root/.ssh/sahana_release %s@%s" % (env.user, env.host))
         child.expect(":~#")
-        child.sendline("cd /root")
-        child.expect("/root#")
         child.sendline("python dbstruct.py")
         print child.before
         # Step 8: Fixup manually anything which couldn't be done automatically
@@ -120,7 +174,7 @@ def db_sync():
         # @ToDo Try to resolve any FK constraint issues automatically
         child.interact()     # Give control of the child to the user.
         # Need to exit() w2p shell & also the SSH session
-        with cd("/root"):
+        with cd("/root/"):
             # Step 9: Take a dump of the fixed data (no structure, full inserts)
             run("mysqldump -tc old > old.sql", pty=True)
             # Step 10: Import it into the empty database

@@ -1,21 +1,21 @@
 from __future__ import with_statement
 from fabric.api import *
 from fabric.colors import red, green
+import os
 import pexpect
-#import urllib2
 
 #
 # http://eden.sahanafoundation.org/wiki/PakistanDeploymentCycle
 #
 # Assumptions:
 # - /root/.my.cnf is configured to allow root access to MySQL without password
+# - root on Prod/Demo can SSH to Test without password
 #
 
 test_host = "test.eden.sahanafoundation.org"
-#prod_host = "pakistan.sahanafoundation.org"
-env.key_filename = ["/home/release/.ssh/sahana_release"]
-
 demo_host = "demo.eden.sahanafoundation.org"
+prod_host = "pakistan.sahanafoundation.org"
+env.key_filename = ["/root/.ssh/sahana_release"]
 
 # Definitions for 'Test' infrastructure
 def test():
@@ -94,8 +94,11 @@ def backup():
         # - should just be 000_config, Views, 00_db & zzz_1st_run prod optimisations
         # - currently still a few controller settings not yet controlled by deployment_settings
         run("bzr diff controllers > /root/custom.diff", pty=True)
+        # Using >> causes an error to be reported even when there's no error
+        env.warn_only = True
         run("bzr diff models >> /root/custom.diff", pty=True)
         run("bzr diff views >> /root/custom.diff", pty=True)
+        env.warn_only = False
         # Backup database
         run("mysqldump sahana > /root/backup.sql", pty=True)
 
@@ -107,6 +110,7 @@ def cleanup():
     print(green("%s: Cleaning up" % env.host))
     with cd("/home/web2py/applications/eden/"):
         # Resolve conflicts
+        # @ToDo deal with .moved files
         run("find . -name *.BASE -print | xargs /bin/rm -f", pty=True)
         run("find . -name *.THIS -print | xargs /bin/rm -f", pty=True)
         run("for i in `find . -name *.OTHER` ; do mv $i ${i/.OTHER/}; done", pty=True)
@@ -130,21 +134,30 @@ def db_upgrade():
     else:
         print(green("%s: Upgrading Database" % env.host))
         # See dbstruct.py
-        with cd("/home/web2py/applications/eden/models/"):
+        with cd("/home/web2py/applications/eden/"):
             # Step 0: Drop old database 'sahana'
             print(green("%s: Dropping old Database" % env.host))
-            run("mysqladmin drop sahana", pty=True)
+            # If database doesn't exist, we don't want to stop
+            env.warn_only = True
+            run("mysqladmin -f drop sahana", pty=True)
+            env.warn_only = False
+            print(green("%s: Cleaning databases folder" % env.host))
+            run("rm -rf databases/*", pty=True)
             # Step 1: Create a new, empty MySQL database 'sahana' as-normal
             print(green("%s: Creating new Database" % env.host))
             run("mysqladmin create sahana", pty=True)
             # Step 2: set deployment_settings.base.prepopulate = False in models/000_config.py
             print(green("%s: Disabling prepopulate" % env.host))
-            run("sed -i 's/deployment_settings.base.prepopulate = True/deployment_settings.base.prepopulate = False/g' 000_config.py", pty=True)
+            run("sed -i 's/deployment_settings.base.prepopulate = True/deployment_settings.base.prepopulate = False/g' models/000_config.py", pty=True)
         # Step 3: Allow web2py to run the Eden model to configure the Database structure
         migrate()
         with cd("/root/"):
             # Step 5: Use the backup to populate a new table 'old'
             print(green("%s: Restoring backup to 'old'" % env.host))
+            # If database doesn't exist, we don't want to stop
+            env.warn_only = True
+            run("mysqladmin -f drop old", pty=True)
+            env.warn_only = False
             run("mysqladmin create old", pty=True)
             run("mysql old < backup.sql", pty=True)
         # Step 7: Run the script: python dbstruct.py
@@ -155,10 +168,13 @@ def db_upgrade():
         child.sendline("cd /home/web2py/applications/eden/static/scripts/tools")
         child.expect(":/home/web2py/applications/eden/static/scripts/tools#")
         child.sendline("python dbstruct.py")
-        print child.before
+        # @ToDo check if we need to interact otherwise automate
+        child.expect(":/home/web2py/applications/eden/static/scripts/tools#")
+        child.sendline("exit")
+        #print child.before
         # Step 8: Fixup manually anything which couldn't be done automatically
-        print (green("Need to exit the SSH session once you have fixed anything which needs fixing"))
-        child.interact()     # Give control of the child to the user.
+        #print (green("Need to exit the SSH session once you have fixed anything which needs fixing"))
+        #child.interact()     # Give control of the child to the user.
         with cd("/root/"):
             # Step 9: Take a dump of the fixed data (no structure, full inserts)
             print(green("%s: Dumping fixed data" % env.host))
@@ -196,7 +212,10 @@ def db_sync():
         with cd("/home/web2py/applications/eden/models/"):
             # Step 0: Drop old database 'sahana'
             print(green("%s: Dropping old Database" % env.host))
-            run("mysqladmin drop sahana", pty=True)
+            # If database doesn't exist, we don't want to stop
+            env.warn_only = True
+            run("mysqladmin -f drop sahana", pty=True)
+            env.warn_only = False
             # Step 1: Create a new, empty MySQL database 'sahana' as-normal
             print(green("%s: Creating new Database" % env.host))
             run("mysqladmin create sahana", pty=True)
@@ -206,19 +225,22 @@ def db_sync():
         # Step 3: Allow web2py to run the Eden model to configure the Database structure
         migrate()
         # Step 4: Export the Live database from the Live server (including structure)
+        child = pexpect.spawn("ssh -i /root/.ssh/sahana_release %s@%s" % (env.user, prod_host))
+        child.expect(":~#")
+        print(green("%s: Dumping live" % env.host))
+        child.sendline("mysqldump sahana > new.sql")
         live = "/root/live.sql"
-        prod()
-        with cd("/root/"):
-            print(green("%s: Dumping live" % env.host))
-            run("mysqldump sahana > new.sql", pty=True)
-        print(green("%s: Downloading live" % env.host))
-        get("/root/new.sql", live)
-        test()
-        print(green("%s: Uploading live" % env.host))
-        put(live, live)
+        print(green("%s: Transferring live" % env.host))
+        child.sendline("scp -i /root/.ssh/sahana_release new.sql %s@%s:%s" % (env.user, env.host, live))
+        child.expect(":~#")
+        child.sendline("exit")
         with cd("/root/"):
             # Step 5: Use this to populate a new table 'old'
             print(green("%s: Restoring live to 'old'" % env.host))
+            # If database doesn't exist, we don't want to stop
+            env.warn_only = True
+            run("mysqladmin -f drop old", pty=True)
+            env.warn_only = False
             run("mysqladmin create old", pty=True)
             run("mysql old < live.sql", pty=True)
         # Step 7: Run the script: python dbstruct.py
@@ -228,10 +250,14 @@ def db_sync():
         child.sendline("cd /home/web2py/applications/eden/static/scripts/tools")
         child.expect(":/home/web2py/applications/eden/static/scripts/tools#")
         child.sendline("python dbstruct.py")
+        # @ToDo check if we need to interact otherwise automate
+        #child.expect(":/home/web2py/applications/eden/static/scripts/tools#")
+        #child.sendline("exit")
         print child.before
         # Step 8: Fixup manually anything which couldn't be done automatically
         print (green("Need to exit the SSH session once you have fixed anything which needs fixing"))
-        child.interact()     # Give control of the child to the user.
+        # Give control of the child to the user.
+        child.interact()
         with cd("/root/"):
             # Step 9: Take a dump of the fixed data (no structure, full inserts)
             print(green("%s: Dumping fixed data" % env.host))
@@ -270,10 +296,17 @@ def migrate():
     child.sendline("cd /home/web2py")
     child.expect("/home/web2py#")
     child.sendline("sudo -H -u web2py python web2py.py -N -S eden -M")
+    # @ToDo check if we need to interact otherwise automate
+    # - not working :/
+    # special characters in regexes matching?
+    #child.expect("]:", timeout=30)
     #child.sendline("exit()")
+    #child.expect("/n)?")
+    #child.sendline("y")
+    #child.expect("/home/web2py#")
     #child.sendline("exit")
     print child.before
-    print (green("Need to exit() w2p shell & also the SSH session once you have fixed anything which needs fixing"))
+    print (green("Need to exit() w2p shell & also exit the SSH session once you have fixed anything which needs fixing"))
     # Give control of the child to the user.
     child.interact()
 
@@ -296,23 +329,19 @@ def pull():
                 print(green("%s: Upgrading to current Trunk" % env.host))
                 run("bzr pull", pty=True)
             else:
-                if "demo" in env.host:
-                    demo = True
-                else:
-                    demo = False
                 # work out the VERSION to pull
-                test()
-                version = "/root/VERSION_test"
-                get("/home/web2py/applications/eden/VERSION", version)
-                if os.access(version, os.R_OK):
-                    f = open(version, "r")
-                    lines = f.readlines()
-                    f.close()
-                    env.revno = lines[0].split(" ")[0].replace("r", "")
-                if demo:
-                    demo()
-                else:
-                    prod()
+                print(green("%s: Getting the version to update to" % env.host))
+                run("scp -i /root/.ssh/sahana_release %s@%s:/home/web2py/applications/eden/VERSION /root/VERSION_test" % (env.user, test_host), pty=True)
+                version = run("cat /root/VERSION_test", pty=True)
+                env.revno = int(version.split(" ")[0].replace("r", ""))
+                #version = "/root/VERSION_test"
+                #print(green("%s: Getting the version to update to" % env.host))
+                #get("/home/web2py/applications/eden/VERSION", version)
+                #if os.access(version, os.R_OK):
+                #    f = open(version, "r")
+                #    lines = f.readlines()
+                #    f.close()
+                #    env.revno = int(lines[0].split(" ")[0].replace("r", ""))
                 print(green("%s: Upgrading to version %i" % (env.host, env.revno)))
                 run("bzr pull -r %i" % env.revno, pty=True)
 
@@ -323,12 +352,15 @@ def rollback():
     """
     print(green("%s: Rolling back" % env.host))
     with cd("/home/web2py/applications/eden/"):
-        version = "/root/VERSION"
-        if os.access(version, os.R_OK):
-            f = open(version, "r")
-            lines = f.readlines()
-            f.close()
-            env.revno = lines[0].split(" ")[0].replace("r", "")
+        version = run("cat /root/VERSION", pty=True)
+        env.revno = int(version.split(" ")[0].replace("r", ""))
+        #version = "/root/VERSION"
+        #get(version, version)
+        #if os.access(version, os.R_OK):
+        #    f = open(version, "r")
+        #    lines = f.readlines()
+        #    f.close()
+        #    env.revno = int(lines[0].split(" ")[0].replace("r", ""))
         print(green("%s: Rolling back to rev %i" % (env.host, env.revno)))
         run("bzr revert -r %i" % env.revno, pty=True)
         # Restore customisations
@@ -336,7 +368,7 @@ def rollback():
         run("patch -p0 < /root/custom.diff", pty=True)
         # Restore database
         print(green("%s: Restoring Database" % env.host))
-        run("mysqladmin drop sahana", pty=True)
+        run("mysqladmin -f drop sahana", pty=True)
         run("mysqladmin create sahana", pty=True)
         run("mysql sahana < backup.sql", pty=True)
         reload()

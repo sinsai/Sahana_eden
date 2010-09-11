@@ -2805,7 +2805,6 @@ class S3ResourceController(object):
         # Method Handlers
         self.__handler = Storage()
 
-
     # -------------------------------------------------------------------------
     def __dbg(self, msg):
 
@@ -3380,6 +3379,10 @@ class S3ResourceController(object):
 
         (rfields, dfields) = self.__fields(resource.table, skip=skip)
 
+        if self.xml.filter_mci and "mci" in table.fields:
+            mci_filter = (table.mci >= 0)
+            resource.add_filter(mci_filter)
+
         # Total number of results
         results = resource.count()
 
@@ -3391,6 +3394,11 @@ class S3ResourceController(object):
         cdfields = Storage()
         for c in resource.components.values():
             cresource = c.resource
+
+            if self.xml.filter_mci and "mci" in cresource.table.fields:
+                mci_filter = (cresource.table.mci >= 0)
+                cresource.add_filter(mci_filter)
+
             cresource.load()
             ctablename = cresource.tablename
             crfields[ctablename], \
@@ -3512,6 +3520,7 @@ class S3ResourceController(object):
                 load_list = load_map[tablename]
                 prefix, name = tablename.split("_", 1)
                 rresource = self.resource(prefix, name, id=load_list, components=[])
+                table = rresource.table
                 rresource.load()
 
                 if self.base_url:
@@ -3519,7 +3528,6 @@ class S3ResourceController(object):
                 else:
                     url = "/%s/%s" % (prefix, name)
 
-                table = rresource.table
                 rfields, dfields = self.__fields(table, skip=skip)
                 for record in rresource:
                     if audit:
@@ -4307,6 +4315,9 @@ class S3XML(object):
         self.gis = gis
         self.cache = cache
 
+        self.filter_mci = False # Set to true to suppress export at MCI<0
+
+
     # XML+XSLT tools ==========================================================
 
     def parse(self, source):
@@ -4580,6 +4591,8 @@ class S3XML(object):
                 query = (ktable.id.belongs(ids))
                 if "deleted" in ktable:
                     query = (ktable.deleted == False) & query
+                if self.filter_mci and "mci" in ktable:
+                    query = (ktable.mci >= 0) & query
                 krecords = self.db(query).select(ktable[self.UID])
                 if krecords:
                     uids = [r[self.UID] for r in krecords if r[self.UID]]
@@ -4591,6 +4604,8 @@ class S3XML(object):
                 query = (ktable.id.belongs(ids))
                 if "deleted" in ktable:
                     query = (ktable.deleted == False) & query
+                if self.filter_mci and "mci" in ktable:
+                    query = (ktable.mci >= 0) & query
                 if not self.db(query).count():
                     continue
 

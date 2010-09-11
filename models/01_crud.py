@@ -808,6 +808,7 @@ def shn_read(r, **attr):
     # Get the callbacks of the target table
     onvalidation = s3xrc.model.get_config(table, "onvalidation")
     onaccept = s3xrc.model.get_config(table, "onaccept")
+    list_fields = s3xrc.model.get_config(table, "list_fields")
 
     # Get the controller attributes
     rheader = attr.get("rheader", None)
@@ -1021,7 +1022,7 @@ def shn_list(r, **attr):
     # Get controller attributes
     rheader = attr.get("rheader", None)
     sticky = attr.get("sticky", rheader is not None)
-    
+
     # Table-specific controller attributes
     _attr = r.component and r.component.attr or attr
     editable = _attr.get("editable", True)

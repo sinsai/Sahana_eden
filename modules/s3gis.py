@@ -2728,7 +2728,8 @@ OpenLayers.Util.extend( selectPdfControl, {
             '""" + name + """',
             {
                 strategies: [ """ + strategy_cluster + """ ],
-                styleMap: featureClusterStyleMap
+                styleMap: featureClusterStyleMap,
+                wrapDateLine: true
             }
         );
         """ + visibility + """

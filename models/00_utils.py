@@ -37,6 +37,9 @@ def s3_sessions():
     # Are we running in debug mode?
     session.s3.debug = request.vars.get("debug", None) or deployment_settings.get_base_debug()
 
+    # Should we use Content-Delivery Networks?
+    session.s3.cdn = deployment_settings.get_base_cdn()
+
     # Security Policy
     #session.s3.self_registration = deployment_settings.get_security_self_registration()
     session.s3.security_policy = deployment_settings.get_security_policy()

@@ -3830,8 +3830,6 @@ class S3ResourceController(object):
                 if filterby:
                     query = (filterby) & (query)
 
-                print query
-
                 records = self.db(query).select(table.id)
                 results = [r.id for r in records]
                 if not results:

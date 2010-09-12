@@ -907,8 +907,9 @@ def shn_read(r, **attr):
         # Add a list button if appropriate
         if not r.component or r.multiple:
             label_list_button = shn_get_crud_string(tablename, "label_list_button")
-            list_btn = A(label_list_button, _href=r.there(), _class="action-btn")
-            output.update(list_btn=list_btn)
+            if label_list_button:
+                list_btn = A(label_list_button, _href=r.there(), _class="action-btn")
+                output.update(list_btn=list_btn)
 
         return output
 
@@ -1457,8 +1458,9 @@ def shn_create(r, **attr):
         # Add a list button if appropriate
         if not r.component or r.multiple:
             label_list_button = shn_get_crud_string(tablename, "label_list_button")
-            list_btn = A(label_list_button, _href=r.there(), _class="action-btn")
-            output.update(list_btn=list_btn)
+            if label_list_button:
+                list_btn = A(label_list_button, _href=r.there(), _class="action-btn")
+                output.update(list_btn=list_btn)
 
         # Custom view
         if representation in ("popup", "iframe"):
@@ -1666,8 +1668,9 @@ def shn_update(r, **attr):
         # Add a list button if appropriate
         if not r.component or r.multiple:
             label_list_button = shn_get_crud_string(tablename, "label_list_button")
-            list_btn = A(label_list_button, _href=r.there(), _class="action-btn")
-            output.update(list_btn=list_btn)
+            if label_list_button:
+                list_btn = A(label_list_button, _href=r.there(), _class="action-btn")
+                output.update(list_btn=list_btn)
 
         if "location_id" in db[tablename].fields and db[tablename].location_id.writable:
             # Allow the Location Selector to take effect

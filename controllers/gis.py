@@ -55,13 +55,18 @@ def define_map(window=False, toolbar=False):
     """
     
     # @ToDo: Make these configurable
-    #config = gis.get_config()
+    config = gis.get_config()
     if not deployment_settings.get_security_map() or shn_has_role("MapAdmin"):
         catalogue_toolbar = True
     else:
         catalogue_toolbar = False
     search = True
     catalogue_overlays = True
+
+    if config.wmsbrowser_url:
+        wms_browser = {"name" : config.wmsbrowser_name, "url" : config.wmsbrowser_url}
+    else:
+        wms_browser = None
 
     # Custom Feature Layers
     # @ToDo: Move these layer definitions into the DB, removing Feature Groups
@@ -127,7 +132,7 @@ def define_map(window=False, toolbar=False):
     map = gis.show_map(
                        window=window,
                        catalogue_toolbar=catalogue_toolbar,
-                       #wms_browser = {"name" : "Sahana ", "url" : "http://geo.eden.sahanafoundation.org/geoserver/ows?service=WMS&request=GetCapabilities"},
+                       wms_browser = wms_browser,
                        toolbar=toolbar,
                        search=search,
                        catalogue_overlays=catalogue_overlays,

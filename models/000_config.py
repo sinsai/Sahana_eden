@@ -59,6 +59,9 @@ deployment_settings.base.migrate = True
 # to create the db structure, then exit and re-import the data.
 deployment_settings.base.prepopulate = True
 
+# Set this to True to use Content Delivery Networks to speed up Internet-facing sites
+deployment_settings.base.cdn = False
+
 # Email settings
 # Outbound server
 deployment_settings.mail.server = "127.0.0.1:25"

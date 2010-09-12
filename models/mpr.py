@@ -39,7 +39,7 @@ if deployment_settings.has_module(module):
                                 ondelete = "RESTRICT"))
 
     # -------------------------------------------------------------------------
-    resource = 'missing_report'
+    resource = "missing_report"
     tablename = "%s_%s" % (module, resource)
     table = db.define_table(tablename,
                             timestamp, uuidstamp, authorstamp, deletion_status,

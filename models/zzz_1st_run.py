@@ -6,7 +6,7 @@
 
 # Deployments can change settings live via appadmin
 
-# Set to False in Production (to save 1x DAL hit every page)
+# Set deployment_settings.base.prepopulate to False in Production (to save 1x DAL hit every page)
 if not deployment_settings.get_base_prepopulate() or db(db["s3_setting"].id > 0).count():
     populate = False
 else:

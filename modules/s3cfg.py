@@ -35,6 +35,8 @@ class S3Config(Storage):
         return self.base.get("prepopulate", True)
     def get_base_public_url(self):
         return self.base.get("public_url", "http://127.0.0.1:8000")
+    def get_base_cdn(self):
+        return self.base.get("cdn", False)
 
     # Database settings
     def get_database_string(self):

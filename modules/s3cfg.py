@@ -126,6 +126,8 @@ class S3Config(Storage):
         return self.mail.get("approver", "useradmin@your.org")
 
     # Security Settings
+    def get_security_archive_not_delete(self):
+        return self.security.get("archive_not_delete", True)
     def get_security_audit_read(self):
         return self.security.get("audit_read", False)
     def get_security_audit_write(self):

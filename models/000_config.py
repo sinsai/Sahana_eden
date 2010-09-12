@@ -50,11 +50,12 @@ deployment_settings.base.debug = False
 deployment_settings.base.migrate = True
 
 # Enable/disable pre-population of the database.
-# Set to False during first run for manual DB migration in case this
-# is explicitly required for a code upgrade, otherwise leave at True
+# Should be True on 1st_run to pre-populate the database
+# - unless doing a manual DB migration
+# Then set to False in Production (to save 1x DAL hit every page)
 # NOTE: the web UI will not be accessible while the DB is empty,
 # instead run:
-#   python web2py.py -S eden -M
+#   python web2py.py -N -S eden -M
 # to create the db structure, then exit and re-import the data.
 deployment_settings.base.prepopulate = True
 
@@ -132,6 +133,8 @@ deployment_settings.gis.geoserver_password = "password"
 #deployment_settings.security.policy = 2 # Editor
 # Should users be allowed to register themselves?
 deployment_settings.security.self_registration = True
+# Use 'soft' deletes
+deployment_settings.security.archive_not_delete = True
 # Audit settings
 # We Audit if either the Global or Module asks us to
 # (ignore gracefully if module author hasn't implemented this)
@@ -243,6 +246,7 @@ deployment_settings.modules = Storage(
             name_nice = Tstr("Disaster Victim Identification"),
             description = Tstr("Disaster Victim Identification"),
             module_type = 10,
+            #access = "|DVI|",      # Only users with the DVI role can see this module in the default menu & access the controller
             #audit_read = True,     # Can enable Audit for just an individual module here
             #audit_write = True,
             resources = Storage(

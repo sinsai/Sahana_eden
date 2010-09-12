@@ -35,8 +35,8 @@ def setting():
     table.utc_offset.label = T("UTC Offset")
     table.theme.label = T("Theme")
     table.theme.comment = DIV(A(T("Add Theme"), _class="colorbox", _href=URL(r=request, c="admin", f="theme", args="create", vars=dict(format="popup")), _target="top", _title=T("Add Theme"))),
-    table.archive_not_delete.label = T("Archive not Delete")
-    table.archive_not_delete.comment = A(SPAN("[Help]"), _class="tooltip", _title=Tstr("Archive not Delete") + "|" + Tstr("If this setting is enabled then all deleted records are just flagged as deleted instead of being really deleted. They will appear in the raw database access but won't be visible to normal users."))
+    #table.archive_not_delete.label = T("Archive not Delete")
+    #table.archive_not_delete.comment = A(SPAN("[Help]"), _class="tooltip", _title=Tstr("Archive not Delete") + "|" + Tstr("If this setting is enabled then all deleted records are just flagged as deleted instead of being really deleted. They will appear in the raw database access but won't be visible to normal users."))
     #table.debug.label = T("Debug")
     #table.debug.comment = A(SPAN("[Help]"), _class="tooltip", _title=Tstr("Debug") + "|" + Tstr("Switch this on to use individual CSS/Javascript files for diagnostics during development."))
     #table.self_registration.label = T("Self Registration")

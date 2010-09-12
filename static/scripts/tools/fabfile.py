@@ -59,36 +59,15 @@ def distribute_keys():
 def deploy():
     """
         Perform the full upgrade cycle
+        - need to prfix with 'demo', 'test' or 'prod'
     """
-    print(green("Upgrading Demo to current Test version"))
-    demo()
-    maintenance_on()
-    backup()
-    pull()
-    cleanup()
-    migrate_on()
-    # @ToDo db_sync
-    db_upgrade()
-    migrate_off()
-    maintenance_off()
-    print(green("Upgrading Production to current Test version"))
-    prod()
+    print(green("Deploying to %s" % env.host))
     maintenance_on()
     backup()
     pull()
     cleanup()
     migrate_on()
     db_upgrade()
-    migrate_off()
-    maintenance_off()
-    print(green("Upgrading Test to current Trunk version"))
-    test()
-    maintenance_on()
-    backup()
-    pull()
-    cleanup()
-    migrate_on()
-    db_sync()
     migrate_off()
     maintenance_off()
 
@@ -109,7 +88,9 @@ def backup():
         env.warn_only = False
         # Backup database
         run("mysqldump sahana > /root/backup.sql", pty=True)
-        # @ToDo: Add databases/ folder
+        # Backup databases folder
+        run("rm -rf /root/databases", pty=True)
+        run("cp -ar /home/web2py/applications/eden/databases /root", pty=True)
 
 def cleanup():
     """
@@ -128,8 +109,8 @@ def cleanup():
         run("chown web2py:web2py languages/*", pty=True)
         # Restore customisations
         print(green("%s: Restoring Customisations" % env.host))
-        # @ToDo: get this to work properly, seems to work but then hangs console?
-        run("patch -p0 < /root/custom.diff", pty=True)
+        # @ToDo: Only apply customisations to files which had conflicts
+        run("patch -f -p0 < /root/custom.diff", pty=True)
 
 def db_upgrade():
     """
@@ -138,9 +119,7 @@ def db_upgrade():
           without needing '-u root -p'
     """
     if "test" in env.host:
-        # Skip for Test sites
-        # (they use db_sync instead)
-        pass
+        db_sync()
     else:
         print(green("%s: Upgrading Database" % env.host))
         # See dbstruct.py
@@ -213,9 +192,7 @@ def db_sync():
           without needing '-u root -p'
     """
     if not "test" in env.host:
-        # Skip for Production sites
-        # (they use db_upgrade instead)
-        pass
+        db_upgrade()
     else:
         print(green("%s: Synchronising Database" % env.host))
         # See dbstruct.py
@@ -381,6 +358,9 @@ def rollback():
         run("mysqladmin -f drop sahana", pty=True)
         run("mysqladmin create sahana", pty=True)
         run("mysql sahana < backup.sql", pty=True)
+        # Restore databases folder
+        run("rm -rf databases/*", pty=True)
+        run("cp -ar /root/databases/* databases", pty=True)
         reload()
 
 def reload():

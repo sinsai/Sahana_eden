@@ -1757,19 +1757,24 @@ def shn_delete(r, **attr):
             try:
                 shn_audit("delete", prefix, name, record=row.id, representation=representation)
                 # Reset session vars if necessary
-                if "deleted" in db[table] and \
-                   db(db.s3_setting.id == 1).select(db.s3_setting.archive_not_delete, limitby=(0, 1)).first().archive_not_delete:
+                if "deleted" in db[table] and deployment_settings.get_security_archive_not_delete():
                     if onvalidation:
                         onvalidation(row)
                     # Avoid collisions of values in unique fields between deleted records and
-                    # later new records => better solution could be: move the deleted data to
-                    # a separate table (e.g. in JSON) and delete from this table (that would
-                    # also eliminate the need for special deletion status awareness throughout
-                    # the system). Should at best be solved in the DAL.
+                    # later new records => better to solve this in shn_create by utilising
+                    # s3xrc.original() to find the original record with that keys and re-use
+                    # it instead of creating a new one.
                     deleted = dict(deleted=True)
                     for f in table.fields:
                         if f not in ("id", "uuid") and table[f].unique:
-                            deleted.update({f:None}) # not good => data loss!
+                            if table[f].notnull and str(table[f].type) in ("string", "text"):
+                                newvalue = "_" + row[f]
+                                deleted.update({f:newvalue})
+                            elif not table[f].notnull:
+                                deleted.update({f:None})
+                            else:
+                                # notnull and not string => cannot be removed
+                                pass
                     db(db[table].id == row.id).update(**deleted)
                     if onaccept:
                         onaccept(row)

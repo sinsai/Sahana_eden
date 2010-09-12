@@ -27,7 +27,9 @@ def index():
 def setting():
     "RESTful CRUD controller"
 
-    table = db.s3_setting
+    resource = request.function
+    tablename = "s3_" + resource
+    table = db[tablename]
 
     table.admin_name.label = T("Admin Name")
     table.admin_email.label = T("Admin Email")
@@ -48,15 +50,18 @@ def setting():
     #table.audit_write.label = T("Audit Write")
     #table.audit_write.comment = A(SPAN("[Help]"), _class="tooltip", _title=Tstr("Audit Write") + "|" + Tstr("If enabled then a log is maintained of all records a user edits. If disabled then it can still be enabled on a per-module basis."))
 
-    s3.crud_strings.setting.title_update = T("Edit Settings")
-    s3.crud_strings.setting.msg_record_modified = T("Settings updated")
-    s3.crud_strings.setting.label_list_button = None
+    s3.crud_strings[tablename] = Storage(
+        title_update = T("Edit Settings"),
+        msg_record_modified = T("Settings updated"),
+        label_list_button = None
+    )
     #crud.settings.update_next = URL(r=request, args=[1, "update"])
 
     s3xrc.model.configure(table,
                           #onvalidation=theme_check,
                           onaccept=theme_apply)
-    return shn_rest_controller("s3", "setting", deletable=False, listadd=False)
+    output = shn_rest_controller("s3", resource, deletable=False, listadd=False)
+    return output
     s3xrc.model.clear_config(table, "onvalidation", "onaccept")
 
 @auth.shn_requires_membership(1)

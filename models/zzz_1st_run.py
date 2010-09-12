@@ -416,6 +416,7 @@ if populate:
             map_height = 600,
             map_width = 800,
             symbology_id = db(db.gis_symbology.name == "US").select(limitby=(0, 1)).first().id,
+            wmsbrowser_url = "http://geo.eden.sahanafoundation.org/geoserver/wms?service=WMS&request=GetCapabilities"
         )
 
     tablename = "gis_feature_class"

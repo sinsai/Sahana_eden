@@ -243,6 +243,7 @@ deployment_settings.modules = Storage(
             name_nice = Tstr("Disaster Victim Identification"),
             description = Tstr("Disaster Victim Identification"),
             module_type = 10,
+            #access = "|DVI|",      # Only users with the DVI role can see this module in the default menu & access the controller
             #audit_read = True,     # Can enable Audit for just an individual module here
             #audit_write = True,
             resources = Storage(

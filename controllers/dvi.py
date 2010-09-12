@@ -11,8 +11,14 @@ if module not in deployment_settings.modules:
     redirect(URL(r=request, c="default", f="index"))
 
 # Only people with the DVI role should be able to access this module
-#if not shn_has_role("DVI"):
-#    unauthorised()
+if deployment_settings.modules[module].access:
+    authorised = False
+    groups = re.split("\|", _module.access)[1:-1]
+    for group in groups:
+        if shn_has_role(group):
+            authorised = True
+    if not authorised:
+        unauthorised()
 
 # Options Menu (available in all Functions" Views)
 def shn_menu():

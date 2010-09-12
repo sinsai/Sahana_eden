@@ -46,9 +46,51 @@ def index():
     try:
         module_name = deployment_settings.modules[module].name_nice
     except:
-        module_name = T("Person Registry")
+        module_name = T("Missing Persons")
 
-    return dict(module_name=module_name)
+    MISSING = T("Missing")
+    FOUND = T("Found")
+
+    s3xrc.model.configure(db.pr_person,
+        list_fields=["id",
+                     "first_name",
+                     "middle_name",
+                     "last_name",
+                     "gender",
+                     "age_group",
+                     "missing"])
+
+    def prep(jr):
+        if jr.representation == "html":
+            if not jr.id:
+                jr.method = "search_simple"
+                jr.custom_action = shn_pr_person_search_simple
+            else:
+               redirect(URL(r=request, f="person", args=[jr.id]))
+        return True
+    response.s3.prep = prep
+
+    def postp(jr, output):
+        if isinstance(output, dict):
+            output.update(module_name=module_name)
+        if jr.representation in shn_interactive_view_formats:
+            if not jr.component:
+                label = READ
+            else:
+                label = UPDATE
+            linkto = shn_linkto(jr, update=True, sticky=True)("[id]")
+            response.s3.actions = [
+                dict(label=str(label), _class="action-btn", url=str(linkto))
+            ]
+        return output
+    response.s3.postp = postp
+
+    response.s3.pagination = True
+    output = shn_rest_controller("pr", "person")
+    response.view = "mpr/index.html"
+
+    shn_menu()
+    return output
 
 
 # -----------------------------------------------------------------------------

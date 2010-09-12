@@ -220,10 +220,7 @@ def shn_org_rheader(r, tabs=[]):
             organisation = r.record
 
             if organisation.sector_id:
-                sectors = re.split("\|", organisation.sector_id)[1:-1]
-                _sectors = TABLE()
-                for sector in sectors:
-                    _sectors.append(TR(db(db.org_sector.id == sector).select(db.org_sector.name, limitby=(0, 1)).first().name))
+                _sectors = shn_sector_represent(organisation.sector_id)
             else:
                 _sectors = None
 

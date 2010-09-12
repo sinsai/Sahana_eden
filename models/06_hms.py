@@ -80,7 +80,7 @@ if deployment_settings.has_module(module):
     tablename = "%s_%s" % (module, resource)
     table = db.define_table(tablename, timestamp, uuidstamp, authorstamp, deletion_status,
                     site_id,
-                    Field("gov_uuid", unique=True, length=128), # UUID assigned by Local Government
+                    Field("gov_uuid", unique=True, length=128), # UID assigned by Local Government
                     Field("name", notnull=True),                # Name of the facility
                     Field("aka1"),                              # Alternate name, or name in local language
                     Field("aka2"),                              # Alternate name, or name in local language
@@ -188,7 +188,7 @@ if deployment_settings.has_module(module):
     table.non_medical_staff.label = T("Number of non-medical staff")
     table.non_medical_staff.requires = IS_NULL_OR(IS_INT_IN_RANGE(0, 99999))
     table.access_status.label = T("Road Conditions")
-    
+
     # Reusable field for other tables to reference
     ADD_HOSPITAL = T("Add Hospital")
     hospital_id = db.Table(None, "hospital_id",
@@ -242,7 +242,7 @@ if deployment_settings.has_module(module):
 
         if "gov_uuid" in db.hms_hospital.fields and HMS_HOSPITAL_USE_GOVUUID:
             if form.vars.gov_uuid is not None and not str(form.vars.gov_uuid).isspace():
-                form.vars.uuid = form.vars.gov_uuid
+                form.vars.uuid = "urn:health-facilty-id:%s" % form.vars.gov_uuid
             else:
                 form.vars.gov_uuid = None
 

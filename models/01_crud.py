@@ -808,6 +808,7 @@ def shn_read(r, **attr):
     # Get the callbacks of the target table
     onvalidation = s3xrc.model.get_config(table, "onvalidation")
     onaccept = s3xrc.model.get_config(table, "onaccept")
+    list_fields = s3xrc.model.get_config(table, "list_fields")
 
     # Get the controller attributes
     rheader = attr.get("rheader", None)
@@ -1021,7 +1022,7 @@ def shn_list(r, **attr):
     # Get controller attributes
     rheader = attr.get("rheader", None)
     sticky = attr.get("sticky", rheader is not None)
-    
+
     # Table-specific controller attributes
     _attr = r.component and r.component.attr or attr
     editable = _attr.get("editable", True)
@@ -1253,7 +1254,7 @@ def shn_list(r, **attr):
 
         else:
             # List only
-            if authorised:
+            if authorised and editable:
                 label_create_button = shn_get_crud_string(tablename, "label_create_button")
                 add_btn = A(label_create_button, _href=href_add, _class="action-btn")
             else:
@@ -2064,7 +2065,7 @@ def shn_barchart (r, **attr):
 
     if r.representation.lower() == "svg":
         r.response.headers["Content-Type"] = "image/svg+xml"
-        
+
         graph = local_import("savage.graph")
         bar = graph.BarGraph(settings=settings)
 
@@ -2083,7 +2084,7 @@ def shn_barchart (r, **attr):
             bar.setYLabel(str(ylabel))
         else:
             bar.setYLabel(valKey)
-        
+
         try:
             records = r.resource.load(start, limit)
             for entry in r.resource:

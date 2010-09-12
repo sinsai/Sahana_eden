@@ -141,26 +141,24 @@ table.name.comment = SPAN("*", _class="req")
 def shn_sector_represent(sector_ids):
     if not sector_ids:
         return NONE
-    elif "|" in str(sector_ids):
-        sectors = [db(db.org_sector.id == id).select(db.org_sector.name, limitby=(0, 1)).first().name for id in sector_ids.split("|") if id]
-        return ", ".join(sectors)
+    elif isinstance(sector_ids, (list, tuple)):
+        sectors = db(db.org_sector.id.belongs(sector_ids)).select(db.org_sector.name)
+        return ", ".join([s.name for s in sectors])
     else:
-        return db(db.org_sector.id == sector_ids).select(db.org_sector.name, limitby=(0, 1)).first().name
+        sector = db(db.org_sector.id == sector_ids).select(db.org_sector.name, limitby=(0, 1)).first()
+        return sector and sector.name or NONE
 
 # Reusable field
 ADD_SECTOR = T("Add Cluster")
 sector_id = db.Table(None, "sector_id",
-                     #FieldS3("sector_id", "list:integer", sortby="name",
-                     FieldS3("sector_id", "string", sortby="name",
-                           requires = IS_NULL_OR(IS_IN_DB(db, "org_sector.id", "%(name)s", multiple=True)),
-                           represent = shn_sector_represent,
-                           label = T("Cluster"),
-                           comment = DIV(A(ADD_SECTOR, _class="colorbox", _href=URL(r=request, c="org", f="sector", args="create", vars=dict(format="popup")), _target="top", _title=ADD_SECTOR),
-                                     DIV( _class="tooltip", _title=Tstr("Add Sector") + "|" + Tstr("The Sector(s) this organization works in. Multiple values can be selected by holding down the 'Control' key."))),
-                           ondelete = "RESTRICT",
-                           # Doesn't re-populate on edit (FF 3.6.8)
-                           # should use list:integer & ...?
-                           #widget = SQLFORM.widgets.checkboxes.widget
+                     FieldS3("sector_id", "list:reference org_sector", sortby="name",
+                             requires = IS_NULL_OR(IS_ONE_OF(db, "org_sector.id", "%(name)s", multiple=True)),
+                             represent = shn_sector_represent,
+                             label = T("Cluster"),
+                             comment = DIV(A(ADD_SECTOR, _class="colorbox", _href=URL(r=request, c="org", f="sector", args="create", vars=dict(format="popup")), _target="top", _title=ADD_SECTOR),
+                                       DIV( _class="tooltip", _title=Tstr("Add Sector") + "|" + Tstr("The Sector(s) this organization works in. Multiple values can be selected by holding down the 'Control' key."))),
+                             ondelete = "RESTRICT",
+                             #widget = SQLFORM.widgets.checkboxes.widget
                           ))
 
 # -----------------------------------------------------------------------------
@@ -298,11 +296,12 @@ def get_organisation_id(name = "organisation_id",
                     )
 
 # Orgs as component of Clusters
-s3xrc.model.add_component(module, resource,
-                          multiple=True,
-                          joinby=dict(org_sector="sector_id"),
-                          deletable=True,
-                          editable=True)
+# doesn't work - component join keys cannot be 1-to-many (=a component record can only belong to one primary record)
+#s3xrc.model.add_component(module, resource,
+                          #multiple=True,
+                          #joinby=dict(org_sector="sector_id"),
+                          #deletable=True,
+                          #editable=True)
 
 s3xrc.model.configure(table,
                       # Ensure that table is substituted when lambda defined not evaluated by using the default value
@@ -413,7 +412,8 @@ office_id = db.Table(None, "office_id",
 # Offices as component of Orgs & Locations
 s3xrc.model.add_component(module, resource,
                           multiple=True,
-                          joinby=dict(org_organisation="organisation_id", gis_location="location_id"),
+                          #joinby=dict(org_organisation="organisation_id", gis_location="location_id"),
+                          joinby=dict(org_organisation="organisation_id"),
                           deletable=True,
                           editable=True)
 
@@ -541,7 +541,8 @@ project_id = db.Table(None, "project_id",
 # Projects as component of Orgs & Locations
 s3xrc.model.add_component(module, resource,
                           multiple=True,
-                          joinby=dict(org_organisation="organisation_id", gis_location="location_id"),
+                          #joinby=dict(org_organisation="organisation_id", gis_location="location_id"),
+                          joinby=dict(org_organisation="organisation_id"),
                           deletable=True,
                           editable=True)
 

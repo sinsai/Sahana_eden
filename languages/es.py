@@ -758,7 +758,7 @@
 'Date of Report': 'Fecha de Informe',
 'Date/Time': 'Fecha / Hora',
 'Date/Time of Find': 'Fecha / Hora de Buscar',
-'Date/Time of disappearence': 'Date/Time of disappearence',
+'Date/Time of disappearance': 'Date/Time of disappearance',
 'Date: ': 'Date: ',
 'De-duplicator': 'De-duplicator',
 'Dead Body Details': 'Detalles de Cuerpo Fallecido',

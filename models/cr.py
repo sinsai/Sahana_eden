@@ -74,12 +74,13 @@ if deployment_settings.has_module(module):
 
     def shn_shelter_service_represent(shelter_service_ids):
         if not shelter_service_ids:
-            return "None"
-        elif "|" in str(shelter_service_ids):
-            shelter_services = [db(db.cr_shelter_service.id == id).select(db.cr_shelter_service.name, limitby=(0, 1)).first().name for id in shelter_service_ids.split("|") if id]
-            return ", ".join(shelter_services)
+            return NONE
+        elif isinstance(shelter_service_ids, (list, tuple)):
+            shelter_services = db(db.cr_shelter_service.id.belongs(shelter_service_ids)).select(db.cr_shelter_service.name)
+            return ", ".join([s.name for s in shelter_services])
         else:
-            return db(db.cr_shelter_service.id == shelter_service_ids).select(db.cr_shelter_service.name, limitby=(0, 1)).first().name
+            shelter_service = db(db.cr_shelter_service.id == shelter_service_ids).select(db.cr_shelter_service.name, limitby=(0, 1)).first()
+            return shelter_service and shelter_service.name or NONE
 
     shelter_service_id = db.Table(None, "shelter_service_id",
                                   FieldS3("shelter_service_id", "list:reference cr_shelter_service", sortby="name", 

@@ -1409,20 +1409,29 @@ def shn_create(r, **attr):
 
         # Get the form
         message = shn_get_crud_string(tablename, "msg_record_created")
-        if original:
+        if "id" in r.request.post_vars:
+            original = r.request.post_vars.id
+            r.request.post_vars.id = str(original)
+            formname = "%s/%s" % (tablename, original)
+            old_form = "%s/None" % (tablename)
+            session["_formkey[%s]" % formname] = session.get("_formkey[%s]" % old_form)
+            if "deleted" in table: # undelete
+                table.deleted.writable = True
+                r.request.post_vars.update(deleted=False)
+            r.request.post_vars.update(_formname = formname, id=r.request.post_vars.id)
+            r.request.vars.update(**r.request.post_vars)
+        elif original:
             original.id = None
-            form = crud.update(table,
-                               original,
-                               message=message,
-                               next=crud.settings.create_next,
-                               deletable=False,
-                               onvalidation=onvalidation,
-                               onaccept=_onaccept)
         else:
-            form = crud.create(table,
-                               message=message,
-                               onvalidation=onvalidation,
-                               onaccept=_onaccept)
+            original = None
+
+        form = crud.update(table,
+                           original,
+                           message=message,
+                           next=crud.settings.create_next,
+                           deletable=False,
+                           onvalidation=onvalidation,
+                           onaccept=_onaccept)
 
         subheadings = attr.get("subheadings", None)
         if subheadings:
@@ -1768,16 +1777,16 @@ def shn_delete(r, **attr):
                     # s3xrc.original() to find the original record with that keys and re-use
                     # it instead of creating a new one.
                     deleted = dict(deleted=True)
-                    for f in table.fields:
-                        if f not in ("id", "uuid") and table[f].unique:
-                            if table[f].notnull and str(table[f].type) in ("string", "text"):
-                                newvalue = "_" + row[f]
-                                deleted.update({f:newvalue})
-                            elif not table[f].notnull:
-                                deleted.update({f:None})
-                            else:
-                                # notnull and not string => cannot be removed
-                                pass
+                    #for f in table.fields:
+                        #if f not in ("id", "uuid") and table[f].unique:
+                            #if table[f].notnull and str(table[f].type) in ("string", "text"):
+                                #newvalue = "_" + row[f]
+                                #deleted.update({f:newvalue})
+                            #elif not table[f].notnull:
+                                #deleted.update({f:None})
+                            #else:
+                                ## notnull and not string => cannot be removed
+                                #pass
                     db(db[table].id == row.id).update(**deleted)
                     if onaccept:
                         onaccept(row)

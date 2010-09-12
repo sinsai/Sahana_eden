@@ -1291,6 +1291,14 @@ class S3Resource(object):
            r.representation in self.__manager.json_import_formats:
             return self.__put(r)
         else:
+            post_vars = r.request.post_vars
+            table = r.target()[2]
+            if "deleted" in table and \
+               "id" not in post_vars and "uuid" not in post_vars:
+                original = self.__manager.original(table, post_vars)
+                if original and original.deleted:
+                    r.request.post_vars.update(id=original.id)
+                    r.request.vars.update(id=original.id)
             return self.__get(r)
 
 
@@ -3821,8 +3829,6 @@ class S3ResourceController(object):
                     query = (table.id.belongs(results)) & query
                 if filterby:
                     query = (filterby) & (query)
-
-                print query
 
                 records = self.db(query).select(table.id)
                 results = [r.id for r in records]

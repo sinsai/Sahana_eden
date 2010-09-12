@@ -63,12 +63,12 @@ if deployment_settings.has_module(module):
 
         """
 
-        if isinstance(opt, basestring):
-            opts = opt.split("|")
-            vals = [str(set.get(int(o), o)) for o in opts if o]
-        elif isinstance(opt, (list, tuple)):
+        if isinstance(opt, (list, tuple)):
             opts = opt
             vals = [str(set.get(o, o)) for o in opts]
+        #elif isinstance(opt, basestring):
+        #    opts = opt.split("|")
+        #    vals = [str(set.get(int(o), o)) for o in opts if o]
         elif isinstance(opt, int):
             opts = [opt]
             vals = str(set.get(opt, opt))
@@ -147,8 +147,8 @@ if deployment_settings.has_module(module):
                             location_id,
                             staff_id,
                             Field("staff2_id", db.org_staff, ondelete = "RESTRICT"),
-                            Field("interview_location"),
-                            Field("interviewee"),
+                            Field("interview_location", "list:integer"),
+                            Field("interviewee", "list:integer"),
                             Field("accessibility", "integer"),
                             comments,
                             document_id,
@@ -169,12 +169,14 @@ if deployment_settings.has_module(module):
     table.interview_location.represent = lambda opt, set=rat_interview_location_opts: \
                                          shn_rat_represent_multiple(set, opt)
     table.interview_location.comment = "(" + Tstr("Select all that apply") + ")"
+    #table.interview_location.widget = SQLFORM.widgets.checkboxes.widget
 
     table.interviewee.label = T("Person interviewed")
     table.interviewee.requires = IS_NULL_OR(IS_IN_SET(rat_interviewee_opts, multiple=True, zero=None))
     table.interviewee.represent = lambda opt, set=rat_interviewee_opts: \
                                          shn_rat_represent_multiple(set, opt)
     table.interviewee.comment = "(" + Tstr("Select all that apply") + ")"
+    #table.interviewee.widget = SQLFORM.widgets.checkboxes.widget
 
     table.accessibility.requires = IS_NULL_OR(IS_IN_SET(rat_accessibility_opts, zero=None))
     table.accessibility.represent = lambda opt: rat_accessibility_opts.get(opt, opt)
@@ -413,10 +415,10 @@ if deployment_settings.has_module(module):
                             Field("houses_total", "integer"),
                             Field("houses_destroyed", "integer"),
                             Field("houses_damaged", "integer"),
-                            Field("houses_salvmat"),
+                            Field("houses_salvmat", "list:integer"),
                             Field("water_containers_available", "boolean"),
                             Field("water_containers_sufficient", "boolean"),
-                            Field("water_containers_types"),
+                            Field("water_containers_types", "list:integer"),
                             Field("water_containers_types_other"),
                             Field("cooking_equipment_available", "boolean"),
                             Field("sanitation_items_available", "boolean"),
@@ -697,14 +699,14 @@ if deployment_settings.has_module(module):
                             Field("health_services_post_disaster", "boolean"),
                             Field("medical_supplies_post_disaster", "boolean"),
                             Field("medical_supplies_reserve", "integer"),
-                            Field("health_services_available_types"),
+                            Field("health_services_available_types", "list:integer"),
                             Field("staff_number_doctors", "integer"),
                             Field("staff_number_nurses", "integer"),
                             Field("staff_number_midwives", "integer"),
                             Field("health_service_walking_time", "integer"),
-                            Field("health_problems_adults"),
+                            Field("health_problems_adults", "list:integer"),
                             Field("health_problems_adults_other"),
-                            Field("health_problems_children"),
+                            Field("health_problems_children", "list:integer"),
                             Field("health_problems_children_other"),
                             Field("chronical_illness_cases", "boolean"),
                             Field("chronical_illness_children", "boolean"),
@@ -714,7 +716,7 @@ if deployment_settings.has_module(module):
                             Field("mmd_present_pre_disaster", "boolean"),
                             Field("breast_milk_substitutes_pre_disaster", "boolean"),
                             Field("breast_milk_substitutes_post_disaster", "boolean"),
-                            Field("infant_nutrition_alternative"),
+                            Field("infant_nutrition_alternative", "list:integer"),
                             Field("infant_nutrition_alternative_other"),
                             Field("u5_diarrhea", "boolean"),
                             Field("u5_diarrhea_rate_48h", "integer"),
@@ -889,11 +891,11 @@ if deployment_settings.has_module(module):
     table = db.define_table(tablename,
                             timestamp, uuidstamp, authorstamp, deletion_status,
                             assessment_id,
-                            Field("food_stocks_main_dishes"),
-                            Field("food_stocks_side_dishes"),
+                            Field("food_stocks_main_dishes", "list:integer"),
+                            Field("food_stocks_side_dishes", "list:integer"),
                             Field("food_stocks_other_side_dishes"),
                             Field("food_stocks_reserve", "integer"),
-                            Field("food_sources"),
+                            Field("food_sources", "list:integer"),
                             Field("food_sources_other"),
                             Field("food_sources_disruption", "boolean"),
                             Field("food_sources_disruption_details"),
@@ -991,14 +993,14 @@ if deployment_settings.has_module(module):
     table = db.define_table(tablename,
                             timestamp, uuidstamp, authorstamp, deletion_status,
                             assessment_id,
-                            Field("income_sources_pre_disaster"),
-                            Field("income_sources_post_disaster"),
-                            Field("main_expenses"),
+                            Field("income_sources_pre_disaster", "list:integer"),
+                            Field("income_sources_post_disaster", "list:integer"),
+                            Field("main_expenses", "list:integer"),
                             Field("main_expenses_other"),
 
                             Field("business_damaged", "boolean"),
                             Field("business_cash_available", "boolean"),
-                            Field("business_cash_source"),
+                            Field("business_cash_source", "list:integer"),
 
                             Field("rank_reconstruction_assistance", "integer"),
                             Field("rank_farmland_fishing_assistance", "integer"),
@@ -1124,11 +1126,11 @@ if deployment_settings.has_module(module):
 
                             Field("schools_destroyed", "integer"),
                             Field("schools_damaged", "integer"),
-                            Field("schools_salvmat"),
+                            Field("schools_salvmat", "list:integer"),
 
                             Field("alternative_study_places_available", "boolean"),
                             Field("alternative_study_places_number", "integer"),
-                            Field("alternative_study_places"),
+                            Field("alternative_study_places", "list:integer"),
                             Field("alternative_study_places_other"),
 
                             Field("schools_open_pre_disaster", "integer"),
@@ -1147,7 +1149,7 @@ if deployment_settings.has_module(module):
                             Field("children_1318_not_in_school_female", "integer"),
                             Field("children_1318_not_in_school_male", "integer"),
 
-                            Field("school_attendance_barriers"),
+                            Field("school_attendance_barriers", "list:integer"),
                             Field("school_attendance_barriers_other"),
 
                             Field("school_assistance_available", "boolean"),
@@ -1352,22 +1354,22 @@ if deployment_settings.has_module(module):
                             Field("staff_in_institutions_present", "boolean"),
                             Field("adequate_food_water_in_institutions", "boolean"),
 
-                            Field("child_activities_u12f_pre_disaster"),
+                            Field("child_activities_u12f_pre_disaster", "list:integer"),
                             Field("child_activities_u12f_pre_disaster_other"),
-                            Field("child_activities_u12m_pre_disaster"),
+                            Field("child_activities_u12m_pre_disaster", "list:integer"),
                             Field("child_activities_u12m_pre_disaster_other"),
-                            Field("child_activities_o12f_pre_disaster"),
+                            Field("child_activities_o12f_pre_disaster", "list:integer"),
                             Field("child_activities_o12f_pre_disaster_other"),
-                            Field("child_activities_o12m_pre_disaster"),
+                            Field("child_activities_o12m_pre_disaster", "list:integer"),
                             Field("child_activities_o12m_pre_disaster_other"),
 
-                            Field("child_activities_u12f_post_disaster"),
+                            Field("child_activities_u12f_post_disaster", "list:integer"),
                             Field("child_activities_u12f_post_disaster_other"),
-                            Field("child_activities_u12m_post_disaster"),
+                            Field("child_activities_u12m_post_disaster", "list:integer"),
                             Field("child_activities_u12m_post_disaster_other"),
-                            Field("child_activities_o12f_post_disaster"),
+                            Field("child_activities_o12f_post_disaster", "list:integer"),
                             Field("child_activities_o12f_post_disaster_other"),
-                            Field("child_activities_o12m_post_disaster"),
+                            Field("child_activities_o12m_post_disaster", "list:integer"),
                             Field("child_activities_o12m_post_disaster_other"),
 
                             Field("coping_activities_elderly", "boolean"),

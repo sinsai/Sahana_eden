@@ -152,7 +152,7 @@ def shn_sector_represent(sector_ids):
 ADD_SECTOR = T("Add Cluster")
 sector_id = db.Table(None, "sector_id",
                      FieldS3("sector_id", "list:reference org_sector", sortby="name",
-                             requires = IS_NULL_OR(IS_IN_DB(db, "org_sector.id", "%(name)s", multiple=True)),
+                             requires = IS_NULL_OR(IS_ONE_OF(db, "org_sector.id", "%(name)s", multiple=True)),
                              represent = shn_sector_represent,
                              label = T("Cluster"),
                              comment = DIV(A(ADD_SECTOR, _class="colorbox", _href=URL(r=request, c="org", f="sector", args="create", vars=dict(format="popup")), _target="top", _title=ADD_SECTOR),
@@ -412,7 +412,8 @@ office_id = db.Table(None, "office_id",
 # Offices as component of Orgs & Locations
 s3xrc.model.add_component(module, resource,
                           multiple=True,
-                          joinby=dict(org_organisation="organisation_id", gis_location="location_id"),
+                          #joinby=dict(org_organisation="organisation_id", gis_location="location_id"),
+                          joinby=dict(org_organisation="organisation_id"),
                           deletable=True,
                           editable=True)
 
@@ -540,7 +541,8 @@ project_id = db.Table(None, "project_id",
 # Projects as component of Orgs & Locations
 s3xrc.model.add_component(module, resource,
                           multiple=True,
-                          joinby=dict(org_organisation="organisation_id", gis_location="location_id"),
+                          #joinby=dict(org_organisation="organisation_id", gis_location="location_id"),
+                          joinby=dict(org_organisation="organisation_id"),
                           deletable=True,
                           editable=True)
 

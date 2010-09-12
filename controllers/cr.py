@@ -58,10 +58,10 @@ def shelter_type():
     resource = request.function
 
     # Post-processor
-    def postp(jr, output):
+    def postp(r, output):
         if r.representation in shn_interactive_view_formats:
             # Don't provide delete button in list view
-            shn_action_buttons(jr, deletable=False)
+            shn_action_buttons(r, deletable=False)
         return output
     response.s3.postp = postp
 
@@ -72,7 +72,6 @@ def shelter_type():
 
     # @ToDo Shelters per type display is broken -- always returns none.
     output = shn_rest_controller(module, resource,
-                                 listadd=False,
                                  rheader=rheader)
     shn_menu()
     return output
@@ -88,10 +87,10 @@ def shelter_service():
     resource = request.function
 
     # Post-processor
-    def postp(jr, output):
+    def postp(r, output):
         if r.representation in shn_interactive_view_formats:
             # Don't provide delete button in list view
-            shn_action_buttons(jr, deletable=False)
+            shn_action_buttons(r, deletable=False)
         return output
     response.s3.postp = postp
 
@@ -100,7 +99,6 @@ def shelter_service():
                                                     (T("Shelters"), "shelter")])
 
     output = shn_rest_controller(module, resource,
-                                 listadd=False,
                                  rheader=rheader)
     shn_menu()
     return output

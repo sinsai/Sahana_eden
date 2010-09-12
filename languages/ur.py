@@ -688,7 +688,7 @@
 'Date of Report': 'Date of Report',
 'Date/Time': 'Date/Time',
 'Date/Time of Find': 'Date/Time of Find',
-'Date/Time of disappearence': 'Date/Time of disappearence',
+'Date/Time of disappearance': 'Date/Time of disappearance',
 'Date: ': 'تاریخ: ',
 'De-duplicator': 'De-duplicator',
 'Dead Body Details': 'Dead Body Details',

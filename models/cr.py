@@ -74,20 +74,22 @@ if deployment_settings.has_module(module):
 
     def shn_shelter_service_represent(shelter_service_ids):
         if not shelter_service_ids:
-            return "None"
-        elif "|" in str(shelter_service_ids):
-            shelter_services = [db(db.cr_shelter_service.id == id).select(db.cr_shelter_service.name, limitby=(0, 1)).first().name for id in shelter_service_ids.split("|") if id]
-            return ", ".join(shelter_services)
+            return NONE
+        elif isinstance(shelter_service_ids, (list, tuple)):
+            shelter_services = db(db.cr_shelter_service.id.belongs(shelter_service_ids)).select(db.cr_shelter_service.name)
+            return ", ".join([s.name for s in shelter_services])
         else:
-            return db(db.cr_shelter_service.id == shelter_service_ids).select(db.cr_shelter_service.name, limitby=(0, 1)).first().name
+            shelter_service = db(db.cr_shelter_service.id == shelter_service_ids).select(db.cr_shelter_service.name, limitby=(0, 1)).first()
+            return shelter_service and shelter_service.name or NONE
 
     shelter_service_id = db.Table(None, "shelter_service_id",
-                                  FieldS3("shelter_service_id", 
+                                  FieldS3("shelter_service_id", "list:reference cr_shelter_service", sortby="name", 
                                           requires = IS_NULL_OR(IS_ONE_OF(db, "cr_shelter_service.id", "%(name)s", multiple=True)),
                                           represent = shn_shelter_service_represent,
+                                          label = T("Shelter Service"),
                                           comment = A(ADD_SHELTER_SERVICE, _class="colorbox", _href=URL(r=request, c="cr", f="shelter_service", args="create", vars=dict(format="popup")), _target="top", _title=ADD_SHELTER_SERVICE),
                                           ondelete = "RESTRICT",
-                                          label = T("Shelter Service")
+                                          #widget = SQLFORM.widgets.checkboxes.widget
                                          )
                                  )
 
@@ -213,7 +215,7 @@ if deployment_settings.has_module(module):
                               multiple=True,
                               joinby=dict(cr_shelter_type="shelter_type_id", 
                                           cr_shelter_service="shelter_service_id", 
-                                          gis_location="location_id",
+                                          #gis_location="location_id",
                                           doc_document="document_id"),
                               deletable=True,
                               editable=True,
@@ -227,3 +229,11 @@ if deployment_settings.has_module(module):
                      "shelter_type_id",
                      "shelter_service_id",
                      "location_id"])
+
+    # Persons as component of Shelters
+    #s3xrc.model.add_component("pr", "person",
+    #                          multiple=False,
+    #                          joinby=dict(cr_shelter="shelter_id"),
+    #                          deletable=True,
+    #                          editable=True)
+

@@ -15,6 +15,7 @@ import pexpect
 test_host = "test.eden.sahanafoundation.org"
 demo_host = "demo.eden.sahanafoundation.org"
 prod_host = "pakistan.sahanafoundation.org"
+all_hosts = [prod_host, demo_host, test_host, "eden.sahanafoundation.org", "humanityroad.sahanafoundation.org", "geo.eden.sahanafoundation.org", "camp.eden.sahanafoundation.org"]
 env.key_filename = ["/root/.ssh/sahana_release"]
 
 # Definitions for 'Test' infrastructure
@@ -34,6 +35,13 @@ def prod():
     """ List of server(s) for Production infrastructure """
     env.user = "root"
     env.hosts = [prod_host]
+
+
+# Definitions for 'All' infrastructure
+def all():
+    """ List of server(s) for All infrastructure """
+    env.user = "root"
+    env.hosts = all_hosts
 
 
 # Key distribution and management
@@ -93,14 +101,15 @@ def backup():
         # Backup customised files
         # - should just be 000_config, Views, 00_db & zzz_1st_run prod optimisations
         # - currently still a few controller settings not yet controlled by deployment_settings
-        run("bzr diff controllers > /root/custom.diff", pty=True)
-        # Using >> causes an error to be reported even when there's no error
+        # Using >, >> causes an error to be reported even when there's no error
         env.warn_only = True
+        run("bzr diff controllers > /root/custom.diff", pty=True)
         run("bzr diff models >> /root/custom.diff", pty=True)
         run("bzr diff views >> /root/custom.diff", pty=True)
         env.warn_only = False
         # Backup database
         run("mysqldump sahana > /root/backup.sql", pty=True)
+        # @ToDo: Add databases/ folder
 
 def cleanup():
     """
@@ -115,11 +124,12 @@ def cleanup():
         run("find . -name *.THIS -print | xargs /bin/rm -f", pty=True)
         run("for i in `find . -name *.OTHER` ; do mv $i ${i/.OTHER/}; done", pty=True)
         run("bzr resolve", pty=True)
-        # Restore customisations
-        print(green("%s: Restoring Customisations" % env.host))
-        run("patch -p0 < /root/custom.diff", pty=True)
         # Fix permissions
         run("chown web2py:web2py languages/*", pty=True)
+        # Restore customisations
+        print(green("%s: Restoring Customisations" % env.host))
+        # @ToDo: get this to work properly, seems to work but then hangs console?
+        run("patch -p0 < /root/custom.diff", pty=True)
 
 def db_upgrade():
     """

@@ -39,7 +39,7 @@ if deployment_settings.has_module(module):
                                 ondelete = "RESTRICT"))
 
     # -------------------------------------------------------------------------
-    resource = 'missing_report'
+    resource = "missing_report"
     tablename = "%s_%s" % (module, resource)
     table = db.define_table(tablename,
                             timestamp, uuidstamp, authorstamp, deletion_status,
@@ -61,7 +61,7 @@ if deployment_settings.has_module(module):
     table.found.comment = DIV(DIV(_class="tooltip",
         _title=Tstr("Person found") + "|" + Tstr("Use this to indicate that the person has been found.")))
 
-    table.since.label = T("Date/Time of disappearence")
+    table.since.label = T("Date/Time of disappearance")
     table.since.requires = IS_UTC_DATETIME(utc_offset=shn_user_utc_offset(), allow_future=False)
     table.since.represent = lambda value: shn_as_local_time(value)
     table.since.comment = SPAN("*", _class="req")

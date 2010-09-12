@@ -3769,6 +3769,9 @@ class S3ResourceController(object):
                 if component:
                     _table = component.table
                     tablename = component.tablename
+                    # Do not add queries for empty component tables
+                    if not self.db(_table.id>0).select(_table.id, limitby=(0,1)).first():
+                        continue
             else:
                 _table = table
                 tablename = table._tablename
@@ -3818,6 +3821,8 @@ class S3ResourceController(object):
                     query = (table.id.belongs(results)) & query
                 if filterby:
                     query = (filterby) & (query)
+
+                print query
 
                 records = self.db(query).select(table.id)
                 results = [r.id for r in records]

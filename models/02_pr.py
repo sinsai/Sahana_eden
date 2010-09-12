@@ -599,10 +599,10 @@ def shn_pr_person_search_simple(r, **attr):
 
         # Select form
         form = FORM(TABLE(
-                TR(Tstr("Name and/or ID Label" + ": "),
+                TR(Tstr("Name and/or ID") + " : ",
                    INPUT(_type="text", _name="label", _size="40"),
                    DIV(DIV(_class="tooltip",
-                           _title=Tstr("Name and/or ID Label") + "|" + Tstr("To search for a person, enter any of the first, middle or last names and/or the ID label of a person, separated by spaces. You may use % as wildcard. Press 'Search' without input to list all persons.")))),
+                           _title=Tstr("Name and/or ID") + "|" + Tstr("To search for a person, enter any of the first, middle or last names and/or an ID number of a person, separated by spaces. You may use % as wildcard. Press 'Search' without input to list all persons.")))),
                 TR("", INPUT(_type="submit", _value="Search"))))
 
         output = dict(form=form, vars=form.vars)
@@ -619,7 +619,8 @@ def shn_pr_person_search_simple(r, **attr):
                         fields = ["pe_label",
                                   "first_name",
                                   "middle_name",
-                                  "last_name"],
+                                  "last_name",
+                                  "identity.value"],
                         label = form.vars.label)
 
             # Get the results

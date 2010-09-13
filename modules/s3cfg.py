@@ -160,13 +160,16 @@ class S3Config(Storage):
                 "cr",           # Camp Registry
                 "delphi",       # Delphi Decision Maker
                 "dvi",          # Disaster Victim Identification
-                "dvr",          # Disaster Victim Registry
+                #"dvr",          # Disaster Victim Registry
                 "hms",          # Hospital Management
+                "importer",     # Spreadsheet Importer
+                "logs",         # Logistics
                 #"lms",          # Logistics
                 "mpr",          # Missing Person Registry
                 "msg",          # Messaging
-                #"nim",          # Nursing Information Manager
+                "rat",          # Rapid Assessment Tool
                 "rms",          # Request Management
+                "survey",       # Surveys
                 "ticket",       # Ticketing
                 "vol"           # Volunteer Management
             ]

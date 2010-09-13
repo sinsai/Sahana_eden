@@ -20,10 +20,6 @@ def s3_sessions():
     session.error = []
     session.confirmation = []
     session.warning = []
-    # Keep all our configuration options in a single pair of global variables
-    # Use session for persistent variables
-    if not session.s3:
-        session.s3 = Storage()
 
     roles = []
     if auth.is_logged_in():

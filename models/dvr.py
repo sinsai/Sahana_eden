@@ -2,6 +2,9 @@
 
 """
     DVR Disaster Victim Registry
+    
+    This module is to provide a view on those Persons who have suffered financial loss & may be eligible for compensation.
+    
     @ToDo (Sahana Legacy)
 """
 

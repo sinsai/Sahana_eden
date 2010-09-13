@@ -88,14 +88,6 @@ def define_map(window=False, toolbar=False):
     marker = "shelter"
     shelters = gis.get_feature_layer(module, resource, layername, popup_label, marker, active=True, polygons=False)
     
-    # Schools
-    #module = "sitrep"
-    #resource = "school_report"
-    #layername = Tstr("Schools")
-    #popup_label = Tstr("School")
-    #marker = "school"
-    #schools = gis.get_feature_layer(module, resource, layername, popup_label, marker, active=True, polygons=False)
-    
     # Requests
     module = "rms"
     resource = "req"
@@ -123,7 +115,6 @@ def define_map(window=False, toolbar=False):
     feature_queries = [
                        incidents,
                        shelters,
-                       #schools,
                        requests,
                        assessments,
                        activities
@@ -136,7 +127,8 @@ def define_map(window=False, toolbar=False):
                        toolbar=toolbar,
                        search=search,
                        catalogue_overlays=catalogue_overlays,
-                       feature_queries=feature_queries
+                       feature_queries=feature_queries,
+                       #mouse_position = "mgrs"
                       )
 
     return map

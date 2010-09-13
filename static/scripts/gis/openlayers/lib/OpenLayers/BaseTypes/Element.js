@@ -1,5 +1,6 @@
-/* Copyright (c) 2006-2008 MetaCarta, Inc., published under the Clear BSD
- * license.  See http://svn.openlayers.org/trunk/openlayers/license.txt for the
+/* Copyright (c) 2006-2010 by OpenLayers Contributors (see authors.txt for 
+ * full list of contributors). Published under the Clear BSD license.  
+ * See http://svn.openlayers.org/trunk/openlayers/license.txt for the
  * full text of the license. */
 
 /**
@@ -47,8 +48,7 @@ OpenLayers.Element = {
     hide: function() {
         for (var i=0, len=arguments.length; i<len; i++) {
             var element = OpenLayers.Util.getElement(arguments[i]);
-            // http://trac.openlayers.org/ticket/2652
-            if (element){
+            if (element) {
                 element.style.display = 'none';
             }
         }
@@ -64,7 +64,9 @@ OpenLayers.Element = {
     show: function() {
         for (var i=0, len=arguments.length; i<len; i++) {
             var element = OpenLayers.Util.getElement(arguments[i]);
-            element.style.display = '';
+            if (element) {
+                element.style.display = '';
+            }
         }
     },
 

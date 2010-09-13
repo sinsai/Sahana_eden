@@ -114,6 +114,11 @@ deployment_settings.gis.locations_hierarchy = {
 # (takes effect only on display)
 deployment_settings.gis.marker_max_height = 35
 deployment_settings.gis.marker_max_width = 30
+# Duplicate Features so that they show wrapped across the Date Line?
+# Points only for now
+# lon<0 have a duplicate at lon+360
+# lon>0 have a duplicate at lon-360
+deployment_settings.gis.duplicate_features = False
 # Do we have a spatial DB available? (currently unused. Will support PostGIS & Spatialite.)
 deployment_settings.gis.spatialdb = False
 # GeoServer (currently unused. Will allow REST control of GeoServer.)

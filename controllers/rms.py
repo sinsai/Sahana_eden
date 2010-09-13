@@ -124,8 +124,11 @@ def ritem():
     #                                             ]
     #                                     )
 
+    s3.crud_strings[tablename].label_create_button = None
+
     return shn_rest_controller(module,
                                resource,
+                               listadd=False,
                                #rheader=rheader
                                )
 

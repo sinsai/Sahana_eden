@@ -1245,21 +1245,23 @@ def shn_list(r, **attr):
             showaddbtn = A(label_create_button,
                            _id = "show-add-btn",
                            _class="action-btn")
+            output.update(showaddbtn=showaddbtn)
 
             shn_custom_view(r, "list_create.html")
 
             if deployment_settings.get_ui_navigate_away_confirm():
                 form.append( SCRIPT ("EnableNavigateAwayConfirm();") )
 
-            output.update(form=form, addtitle=addtitle, showaddbtn=showaddbtn)
+            output.update(form=form, addtitle=addtitle)
 
         else:
             # List only
+            add_btn = ""
             if authorised and editable:
                 label_create_button = shn_get_crud_string(tablename, "label_create_button")
-                add_btn = A(label_create_button, _href=href_add, _class="action-btn")
-            else:
-                add_btn = ""
+                if label_create_button:
+                    add_btn = A(label_create_button, _href=href_add, _class="action-btn")
+                
 
             shn_custom_view(r, "list.html")
             output.update(add_btn=add_btn)

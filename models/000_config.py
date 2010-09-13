@@ -199,11 +199,12 @@ deployment_settings.modules = Storage(
             description = T("Managing, Storing and Distributing Relief Items"),
             module_type = 10
         ),
-    project = Storage(
-            name_nice = T("Project Management"),
-            description = T("Project Activities"),
-            module_type = 10
-        ),
+    # Loaded as part of Org - no separate menu
+    #project = Storage(
+    #        name_nice = T("Project Management"),
+    #        description = T("Project Activities"),
+    #        module_type = 10
+    #    ),
     msg = Storage(
             name_nice = T("Messaging"),
             description = T("Sends & Receives Alerts via Email & SMS"),

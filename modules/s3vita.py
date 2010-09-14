@@ -3,7 +3,7 @@
 """
     VITA Sahana-Eden Person Data Toolkit
 
-    @version: 0.5
+    @version: 0.5.1
 
     @author: nursix
     @copyright: 2010 (c) Sahana Software Foundation
@@ -41,7 +41,6 @@ class S3Vita(object):
 
     """ Toolkit for Person Identification, Tracking and Tracing """
 
-
     # -------------------------------------------------------------------------
     def __init__(self, environment, db=None, T=None):
 
@@ -75,86 +74,116 @@ class S3Vita(object):
 
             # Persistant presence conditions:
             11: self.T("Check-In"),        # arrived at location for accomodation/storage
-            12: self.T("Reconfirmation"),  # reconfirmation of stay/storage at location
-            13: self.T("Placed"),          # permanently at location
+            12: self.T("Confirmation"),    # confirmation of stay/storage at location
+            13: self.T("Lost"),            # Deceased/destroyed/disposed at location
 
-            # Determined absence conditions:
+            # Absence conditions:
             21: self.T("Transfer"),        # Send to another location
-            22: self.T("Lost"),            # Deceased/destroyed/disposed at location (end of track)
+            22: self.T("Check-Out"),       # Left location for unknown destination
 
-            # Undetermined absence conditions:
-            31: self.T("Check-Out"),       # Left location for unknown destination
-            32: self.T("Missing"),         # Missing (from a "last-seen"-location)
+            # Missing condition:
+            99: self.T("Missing"),         # Missing (from a "last-seen"-location)
         }
         self.DEFAULT_PRESENCE = 1
 
 
     # -------------------------------------------------------------------------
+    def presence_accept(self, presence):
+
+        """ Update the presence log of a person entity
+
+            - mandatory to be called as onaccept routine at any creation, update
+              or deletion of pr_presence records
+
+        """
+
+        transitional = (1, 2, 3)
+        persistant = (11, 12, 13)
+        absence = (21, 22)
+        missing = 99
+
+        db = self.db
+        table = db.pr_presence
+
+        if isinstance(presence, (int, long, str)):
+            presence = db(table.id == presence).select(table.ALL, limitby=(0,1)).first()
+        elif hasattr(presence, "vars"):
+            presence = Storage(presence.vars)
+        else:
+            presence = Storage(presence)
+
+        if not presence:
+            return
+
+        id = presence.id
+        try:
+            condition = int(presence.presence_condition)
+        except ValueError:
+            condition = None
+
+        pe_id = presence.pe_id
+        datetime = presence.datetime
+        if not datetime or not pe_id:
+            return
+
+        this_entity = ((table.pe_id == pe_id) & (table.deleted == False))
+        earlier = (table.datetime < datetime)
+        later = (table.datetime > datetime)
+        same_place = ((table.location_id == presence.location_id) |
+                        (table.shelter_id == presence.shelter_id))
+        is_present = (table.presence_condition.belongs(persistant))
+        is_absent = (table.presence_condition.belongs(absence))
+        is_missing = (table.presence_condition == missing)
+
+        if not presence.deleted:
+
+            if condition in transitional:
+                if presence.closed:
+                    db(table.id == id).update(closed=False)
+
+            elif condition in persistant:
+                if not presence.closed:
+                    query = this_entity & earlier & \
+                            (is_present | (is_absent & same_place) | is_missing) & \
+                            (table.closed == False)
+                    db(query).update(closed=True)
+
+                    query = this_entity & later & \
+                            (is_present | (is_absent & same_place))
+                    if db(query).count():
+                        db(table.id == id).update(closed=True)
+
+            elif condition in absence:
+                query = this_entity & earlier & is_present & same_place
+                db(query).update(closed=True)
+
+                if not presence.closed:
+                    db(table.id == id).update(closed=True)
+
+        if not presence.closed:
+            query = this_entity & is_present
+            presence = db(query).select(table.ALL, orderby=~table.datetime, limitby=(0,1)).first()
+            if presence and presence.closed:
+                datetime = presence.datetime
+                query = this_entity & later & is_absent & same_place
+                if not db(query).count():
+                    db(table.id == presence.id).update(closed=False)
+
+        pentity = db(db.pr_pentity.pe_id == pe_id).select(db.pr_pentity.pe_type,
+                                                          limitby=(0,1)).first()
+        if pentity and pentity.pe_type == "pr_person":
+            query = this_entity & is_missing & (table.closed == False)
+            if db(query).count():
+                db(db.pr_person.pe_id == pe_id).update(missing = True)
+            else:
+                db(db.pr_person.pe_id == pe_id).update(missing = False)
+
+        return
+
+    # -------------------------------------------------------------------------
     def trace(self, entity, time=None, conditions=None):
 
         """ Get the presence log of a person entity """
-
-        return None
-
-
-    # -------------------------------------------------------------------------
-    def log(self, entity, condition,
-            datetime=None,
-            observer=None,
-            reporter=None,
-            procedure=None,
-            location=None,
-            origin=None,
-            destination=None,
-            comment=None):
-
-        """ Update the presence log of a person entity """
-
-        table = db.pr_pentity
-
-
-
-        # If datetime is None, defaults to now
-
-        # If reporter is None, defaults to current user
-
-        # observer defaults to None
-
-        # If the last condition before this condition was missing,
-        # then update that record instead of creating a new one
-
-        # If the last condition was "lost", then do not add a new record
-
-        # If the entity is a person, update missing/found status:
-        # Get the missing report, if any
-        # If the modified_date of the missing report is before
-        # the current status:
-        #   If the current status is a "seen"-type:
-        #           - leave at missing
-        #           - notify the reporter
-        #   If the current status is a "check-in"-type:
-        #           - change into "found"
-        #           - notify the reporter
-
-                        #timestamp, authorstamp, uuidstamp, deletion_status,
-                        #pe_id,
-                        #Field("reporter", db.pr_person),
-                        #Field("observer", db.pr_person),
-                        #location_id,
-                        #Field("location_details"),
-                        #Field("datetime", "datetime"), # 'time' is a reserved word in Postgres
-                        #Field("presence_condition", "integer",
-                              #requires = IS_IN_SET(pr_presence_condition_opts,
-                                                   #zero=None),
-                              #default = vita.DEFAULT_PRESENCE,
-                              #label = T("Presence Condition"),
-                              #represent = lambda opt: \
-                                          #pr_presence_condition_opts.get(opt, UNKNOWN_OPT)),
-                        #Field("proc_desc"),
-                        #orig_id,
-                        #dest_id,
-                        #Field("comment"),
-                        #migrate=migrate)
 
         return None
 

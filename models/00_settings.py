@@ -18,11 +18,17 @@ DELETE = T("Delete")
 COPY = T("Copy")
 NOT_APPLICABLE = T("N/A")
 
+# Keep all our configuration options in a single pair of global variables
+
 # Use response for one-off variables which are visible in views without explicit passing
 response.s3 = Storage()
 response.s3.countries = deployment_settings.get_L10n_countries()
 response.s3.formats = Storage()
 response.s3.gis = Storage()
+
+# Use session for persistent per-user variables
+if not session.s3:
+    session.s3 = Storage()
 
 ###########
 # Languages
@@ -34,14 +40,18 @@ s3.l10n_languages = deployment_settings.get_L10n_languages()
 T.current_languages = ["en", "en-us"]
 # Check if user has selected a specific language
 if request.vars._language:
-    session._language = request.vars._language
-if session._language:
-    T.force(session._language)
-else:
-    # Use what browser requests
-    T.force(T.http_accept_language)
+    session.s3.language = request.vars._language
+if session.s3.language:
+    T.force(session.s3.language)
+elif auth.is_logged_in():
+    # Use user preference
+    language = auth.user.language
+    T.force(language)
+#else:
+#    # Use what browser requests (default web2py behaviour)
+#    T.force(T.http_accept_language)
 
-# List of Languages which use a Right-to-Left script (Arabic, Hebrew, Farsi, Ursdu)
+# List of Languages which use a Right-to-Left script (Arabic, Hebrew, Farsi, Urdu)
 s3_rtl_languages = ["ur"]
 
 if T.accepted_language in s3_rtl_languages:
@@ -49,6 +59,14 @@ if T.accepted_language in s3_rtl_languages:
 else:
     response.s3.rtl = False
 
+
+def Tstr(text):
+    """
+       Convenience function for non-Web2Py modules
+       - need to define this *after* T.force
+       (latest web2py no longer needs this)
+    """
+    return str(T(text))
 
 ######
 # Mail

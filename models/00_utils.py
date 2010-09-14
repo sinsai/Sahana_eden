@@ -20,10 +20,6 @@ def s3_sessions():
     session.error = []
     session.confirmation = []
     session.warning = []
-    # Keep all our configuration options in a single pair of global variables
-    # Use session for persistent variables
-    if not session.s3:
-        session.s3 = Storage()
 
     roles = []
     if auth.is_logged_in():
@@ -72,7 +68,7 @@ def s3_debug(message, value=None):
     output = "S3 Debug: " + str(message)
     if value:
         output += ": " + str(value)
-    
+
     print >> sys.stderr, output
 
 # -----------------------------------------------------------------------------
@@ -378,10 +374,21 @@ def shn_represent_file(file_name,
 
 
 # -----------------------------------------------------------------------------
-def shn_reference_field():
+def shn_table_links(reference):
+    """
+        Return a dict of tables & their fields which have references to the specified table
+    """
+    tables = {}
+    for table in db.tables:
+        count = 0
+        for field in db[table].fields:
+            if db[table][field].type == "reference %s" % reference:
+                if count == 0:
+                    tables[table] = {}
+                tables[table][count] = field
+                count += 1
 
-    return
-
+    return tables
 
 # -----------------------------------------------------------------------------
 def shn_insert_subheadings(form, tablename, subheadings):

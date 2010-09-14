@@ -80,8 +80,10 @@ class S3Config(Storage):
         return self.gis.get("display_L0", False)
     def get_gis_display_l1(self):
         return self.gis.get("display_L1", True)
+    def get_gis_duplicate_features(self):
+        return self.gis.get("duplicate_features", False)
     def get_gis_edit_l0(self):
-        return self.gis.get("edit_L0", True)
+        return self.gis.get("edit_L0", False)
     def get_gis_edit_l1(self):
         return self.gis.get("edit_L1", True)
     def get_gis_edit_l2(self):
@@ -160,13 +162,16 @@ class S3Config(Storage):
                 "cr",           # Camp Registry
                 "delphi",       # Delphi Decision Maker
                 "dvi",          # Disaster Victim Identification
-                "dvr",          # Disaster Victim Registry
+                #"dvr",          # Disaster Victim Registry
                 "hms",          # Hospital Management
+                "importer",     # Spreadsheet Importer
+                "logs",         # Logistics
                 #"lms",          # Logistics
                 "mpr",          # Missing Person Registry
                 "msg",          # Messaging
-                #"nim",          # Nursing Information Manager
+                "rat",          # Rapid Assessment Tool
                 "rms",          # Request Management
+                "survey",       # Surveys
                 "ticket",       # Ticketing
                 "vol"           # Volunteer Management
             ]

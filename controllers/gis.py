@@ -88,14 +88,6 @@ def define_map(window=False, toolbar=False):
     marker = "shelter"
     shelters = gis.get_feature_layer(module, resource, layername, popup_label, marker, active=True, polygons=False)
     
-    # Schools
-    #module = "sitrep"
-    #resource = "school_report"
-    #layername = Tstr("Schools")
-    #popup_label = Tstr("School")
-    #marker = "school"
-    #schools = gis.get_feature_layer(module, resource, layername, popup_label, marker, active=True, polygons=False)
-    
     # Requests
     module = "rms"
     resource = "req"
@@ -123,7 +115,6 @@ def define_map(window=False, toolbar=False):
     feature_queries = [
                        incidents,
                        shelters,
-                       #schools,
                        requests,
                        assessments,
                        activities
@@ -136,7 +127,8 @@ def define_map(window=False, toolbar=False):
                        toolbar=toolbar,
                        search=search,
                        catalogue_overlays=catalogue_overlays,
-                       feature_queries=feature_queries
+                       feature_queries=feature_queries,
+                       #mouse_position = "mgrs"
                       )
 
     return map
@@ -319,35 +311,47 @@ def location():
     return output
 
 def location_duplicates():
-
-    """ Handle De-duplication of Locations """
+    """
+        Handle De-duplication of Locations
+    """
 
     if deployment_settings.get_security_map() and not shn_has_role("MapAdmin"):
         unauthorised()
 
     def delete_location(old, new):
         # Find all tables which link to the Locations table
-        tables = []
-        for table in db.tables:
-            # @ToDo: Catch all fields through
-            #for field in db[table].fields:
-            #    if type(field) == "reference gis_location":
-            #        tables[table] = field
-            if "location_id" in db[table]:
-                tables.append(table)
+        tables = shn_table_links("gis_location")
 
         for table in tables:
-            query = db[table].location_id == old
-            db(query).update(location_id=new)
-        db(db.gis_location.id == old).update(deleted=True)
+            for count in range(len(tables[table])):
+                field = tables[str(db[table])][count]
+                query = db[table][field] == old
+                db(query).update(**{field:XXX})
 
-    def open_btn(field):
-        return A(T("Load Details"), _id=field, _href=URL(r=request, f="location"), _class="action-btn", _target="_blank")
+        # Remove the record
+        db(db.gis_location.id == old).update(deleted=True)
+        
+        return
+
+    def open_btn(id):
+        return A(T("Load Details"), _id=id, _href=URL(r=request, f="location"), _class="action-btn", _target="_blank")
     
+    def links_btn(id):
+        return A(T("Linked Records"), _id=id, _href=URL(r=request, f="location_links"), _class="action-btn", _target="_blank")
+    
+    # Unused: we do all filtering client-side using AJAX
+    filter = request.vars.get("filter", None)
+    
+    #repr_select = lambda l: len(l.name) > 48 and "%s..." % l.name[:44] or l.name
+    repr_select = lambda l: l.level and "%s (%s)" % (l.name, response.s3.gis.location_hierarchy[l.level]) or l.name
+    if filter:
+        requires = IS_ONE_OF(db, "gis_location.id", repr_select, filterby="level", filter_opts=(filter,), orderby="gis_location.name", sort=True)
+    else:
+        requires = IS_ONE_OF(db, "gis_location.id", repr_select, orderby="gis_location.name", sort=True, zero=T("Select a location"))
     table = db.gis_location
     form = SQLFORM.factory(
-                           Field("old", table, requires=IS_ONE_OF(db, "gis_location.id", "%(name)s"), label = SPAN(B(T("Old")), " (" + Tstr("To delete") + ")"), comment=open_btn("btn_old")),
-                           Field("new", table, requires=IS_ONE_OF(db, "gis_location.id", "%(name)s"), label = B(T("New")), comment=open_btn("btn_new")),
+                           Field("old", table, requires=requires, label = SPAN(B(T("Old")), " (" + Tstr("To delete") + ")"), comment=DIV(links_btn("linkbtn_old"), open_btn("btn_old"))),
+                           Field("new", table, requires=requires, label = B(T("New")), comment=DIV(links_btn("linkbtn_new"), open_btn("btn_new"))),
                            formstyle = s3_formstyle
                           )
     
@@ -368,7 +372,67 @@ def location_duplicates():
         response.error = T("Need to select 2 Locations")
 
     return dict(form=form)
-    
+
+def location_links():
+    """
+        @arg id - the location record id
+        Returns a JSON array of records which link to the specified location
+    """
+
+    try:
+        record_id = request.args[0]
+    except:
+        item = s3xrc.xml.json_message(False, 400, "Need to specify a record ID!")
+        raise HTTP(400, body=item)
+
+    try:
+        deleted = (db.gis_location.deleted == False)
+        query = (db.gis_location.id == record_id)
+        query = deleted & query
+        record = db(query).select(db.gis_location.id, limitby=(0, 1)).first().id
+    except:
+        item = s3xrc.xml.json_message(False, 404, "Record not found!")
+        raise HTTP(404, body=item)
+
+    import gluon.contrib.simplejson as json
+
+    # Find all tables which link to the Locations table
+    tables = shn_table_links("gis_location")
+
+    results = []
+    for table in tables:
+        for count in range(len(tables[table])):
+            field = tables[str(db[table])][count]
+            query = db[table][field] == record_id
+            _results = db(query).select()
+            module, resource = table.split("_", 1)
+            for result in _results:
+                id = result.id
+                # We currently have no easy way to get the default represent for a table!
+                try:
+                    # Locations & Persons
+                    represent = eval("shn_%s_represent(id)" % table)
+                except:
+                    try:
+                        # Organisations
+                        represent = eval("shn_%s_represent(id)" % resource)
+                    except:
+                        try:
+                            # Many tables have a Name field
+                            represent = (id and [db[table][id].name] or ["None"])[0]
+                        except:
+                            # Fallback
+                            represent = id
+                results.append({
+                    "module" : module,
+                    "resource" : resource,
+                    "id" : id,
+                    "represent" : represent
+                    })
+
+    output = json.dumps(results)
+    return output
+
 # -----------------------------------------------------------------------------
 def map_service_catalogue():
     """

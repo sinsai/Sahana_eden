@@ -154,8 +154,12 @@ def shelter():
                 # Redirect to the Assessments tabs after creation
                 r.next = r.other(method="assessment", record_id=s3xrc.get_session(session, module, resource))
 
-            # Normal Action Buttons
-            shn_action_buttons(r)
+            if r.component and r.component.name == "presence":
+                # No Delete on the Action buttons
+                shn_action_buttons(r, deletable=False)
+            else:
+                # Normal Action Buttons
+                shn_action_buttons(r)
         return output
     response.s3.postp = postp
 
@@ -163,6 +167,7 @@ def shelter():
 
     shelter_tabs = [(T("Basic Details"), None),
                     (T("Assessments"), "assessment"),
+                    (T("People"), "presence"),
                     (T("Requests"), "req"),
                     (T("Inventory"), "store"),  # table is inventory_store
                    ]
@@ -225,11 +230,68 @@ def shn_shelter_prep(r):
         # Remember this is html or popup.
         response.cr_shelter_request_was_html_or_popup = True
 
-        if r.component and r.component.name == "req":
+        if r.component:
+            if r.component.name == "assessment":
                 # Hide the Implied fields
+                db.rat_assessment.location_id.writable = False
+                db.rat_assessment.location_id.default = r.record.location_id
+                db.rat_assessment.location_id.comment = ""
+                # Set defaults
+                if auth.is_logged_in():
+                    staff_id = db((db.pr_person.uuid == session.auth.user.person_uuid) & \
+                                  (db.org_staff.person_id == db.pr_person.id)).select(
+                                   db.org_staff.id, limitby=(0, 1)).first()
+                    if staff_id:
+                        rat_assessment.staff_id.default = staff_id.id
+
+            elif r.component.name == "store":
+                # Hide the Implied fields
+                db.inventory_store.location_id.writable = False
+                db.inventory_store.location_id.default = r.record.location_id
+                db.inventory_store.location_id.comment = ""
+
+            elif r.component.name == "req":
+                # Hide the Implied fields
+                db.rms_req.hospital_id.writable = db.rms_req.hospital_id.readable = False
                 db.rms_req.location_id.writable = False
                 db.rms_req.location_id.default = r.record.location_id
                 db.rms_req.location_id.comment = ""
+                # Set defaults
+                db.rms_req.timestmp.default = request.utcnow
+                if auth.is_logged_in():
+                    requestor = db(db.pr_person.uuid == session.auth.user.person_uuid).select(db.pr_person.id, limitby=(0, 1)).first()
+                    if requestor:
+                        db.rms_req.person_id.default = requestor.id
+
+                
+            elif r.component.name == "presence":
+                # Hide the Implied fields
+                db.pr_presence.location_id.writable = False
+                db.pr_presence.location_id.default = r.record.location_id
+                db.pr_presence.location_id.comment = ""
+                # Set defaults
+                db.pr_presence.datetime.default = request.utcnow
+                if auth.is_logged_in():
+                    reporter = db(db.pr_person.uuid == session.auth.user.person_uuid).select(db.pr_person.id, limitby=(0, 1)).first()
+                    if reporter:
+                        db.pr_presence.reporter.default = reporter.id
+                        db.pr_presence.observer.default = reporter.id
+                # Change the Labels
+                s3.crud_strings.pr_presence = Storage(
+                    title_create = T("Register Person"),
+                    title_display = T("Registration Details"),
+                    title_list = T("Registered People"),
+                    title_update = T("Edit Registration"),
+                    title_search = T("Search Registations"),
+                    subtitle_create = T("Register Person into this Shelter"),
+                    subtitle_list = T("Current Registrations"),
+                    label_list_button = T("List Registrations"),
+                    label_create_button = T("Register Person"),
+                    msg_record_created = T("Registration added"),
+                    msg_record_modified = T("Registration updated"),
+                    msg_record_deleted = T("Registration entry deleted"),
+                    msg_list_empty = T("No People currently registered in this shelter")
+                )
 
         if r.http == "POST":
 

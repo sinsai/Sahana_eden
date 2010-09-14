@@ -10,7 +10,7 @@
 """
 
 module = "project"
-if deployment_settings.has_module("project"):
+if deployment_settings.has_module("org"):
     #==============================================================================
     # Settings
     #

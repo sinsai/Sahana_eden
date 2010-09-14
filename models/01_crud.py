@@ -1245,21 +1245,23 @@ def shn_list(r, **attr):
             showaddbtn = A(label_create_button,
                            _id = "show-add-btn",
                            _class="action-btn")
+            output.update(showaddbtn=showaddbtn)
 
             shn_custom_view(r, "list_create.html")
 
             if deployment_settings.get_ui_navigate_away_confirm():
                 form.append( SCRIPT ("EnableNavigateAwayConfirm();") )
 
-            output.update(form=form, addtitle=addtitle, showaddbtn=showaddbtn)
+            output.update(form=form, addtitle=addtitle)
 
         else:
             # List only
+            add_btn = ""
             if authorised and editable:
                 label_create_button = shn_get_crud_string(tablename, "label_create_button")
-                add_btn = A(label_create_button, _href=href_add, _class="action-btn")
-            else:
-                add_btn = ""
+                if label_create_button:
+                    add_btn = A(label_create_button, _href=href_add, _class="action-btn")
+
 
             shn_custom_view(r, "list.html")
             output.update(add_btn=add_btn)
@@ -1890,7 +1892,10 @@ def shn_map(r, method="create", tablename=None, prefix=None, name=None):
 #
 def shn_search(r, **attr):
 
-    """ Search function responding in JSON """
+    """
+        Search function
+        Mostly used with the JSON representation
+    """
 
     deletable = attr.get("deletable", True)
     main = attr.get("main", None)
@@ -2027,9 +2032,17 @@ def shn_search(r, **attr):
             else:
                 item = s3xrc.xml.json_message(False, 400, "Unsupported filter! Supported filters: ~, =, <, >")
                 raise HTTP(400, body=item)
+
         else:
-            item = s3xrc.xml.json_message(False, 400, "Search requires specifying Field, Filter & Value!")
-            raise HTTP(400, body=item)
+            #item = s3xrc.xml.json_message(False, 400, "Search requires specifying Field, Filter & Value!")
+            #raise HTTP(400, body=item)
+            # Provide a simplified JSON output which is in the same format as the Search one
+            # (easier to parse than S3XRC & means no need for different parser for filtered/unfiltered)
+            if _table == db.gis_location:
+                # Don't return unnecessary fields (WKT is large!)
+                item = db(query).select(_table.id, _table.name, _table.level).json()
+            else:
+                item = db(query).select().json()
 
         response.view = "xml.html"
         output = dict(item=item)

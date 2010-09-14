@@ -227,27 +227,51 @@ def shn_shelter_prep(r):
         response.cr_shelter_request_was_html_or_popup = True
 
         if r.component:
-            if r.component.name == "req":
+            if r.component.name == "assessment":
                 # Hide the Implied fields
+                db.rat_assessment.location_id.writable = False
+                db.rat_assessment.location_id.default = r.record.location_id
+                db.rat_assessment.location_id.comment = ""
+                # Set defaults
+                if auth.is_logged_in():
+                    staff_id = db((db.pr_person.uuid == session.auth.user.person_uuid) & \
+                                  (db.org_staff.person_id == db.pr_person.id)).select(
+                                   db.org_staff.id, limitby=(0, 1)).first()
+                    if staff_id:
+                        rat_assessment.staff_id.default = staff_id.id
+
+            elif r.component.name == "store":
+                # Hide the Implied fields
+                db.inventory_store.location_id.writable = False
+                db.inventory_store.location_id.default = r.record.location_id
+                db.inventory_store.location_id.comment = ""
+
+            elif r.component.name == "req":
+                # Hide the Implied fields
+                db.rms_req.hospital_id.writable = db.rms_req.hospital_id.readable = False
                 db.rms_req.location_id.writable = False
                 db.rms_req.location_id.default = r.record.location_id
                 db.rms_req.location_id.comment = ""
+                # Set defaults
+                db.rms_req.timestmp.default = request.utcnow
+                if auth.is_logged_in():
+                    requestor = db(db.pr_person.uuid == session.auth.user.person_uuid).select(db.pr_person.id, limitby=(0, 1)).first()
+                    if requestor:
+                        db.rms_req.person_id.default = requestor.id
 
+                
             elif r.component.name == "presence":
                 # Hide the Implied fields
                 db.pr_presence.location_id.writable = False
                 db.pr_presence.location_id.default = r.record.location_id
                 db.pr_presence.location_id.comment = ""
-                
                 # Set defaults
                 db.pr_presence.datetime.default = request.utcnow
                 if auth.is_logged_in():
                     reporter = db(db.pr_person.uuid == session.auth.user.person_uuid).select(db.pr_person.id, limitby=(0, 1)).first()
                     if reporter:
-                        # Says 'selected' in HTML but need a view to get dropdown to show it!
                         db.pr_presence.reporter.default = reporter.id
                         db.pr_presence.observer.default = reporter.id
-
                 # Change the Labels
                 s3.crud_strings.pr_presence = Storage(
                     title_create = T("Register Person"),

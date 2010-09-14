@@ -17,7 +17,7 @@ if deployment_settings.has_module(module):
                           comment = SPAN("*", _class="req")),
                     comments,
                     migrate=migrate)
-    
+
     ADD_SHELTER_TYPE = T("Add Shelter Type")
     LIST_SHELTER_TYPES = T("List Shelter Types")
     s3.crud_strings[tablename] = Storage(
@@ -54,7 +54,7 @@ if deployment_settings.has_module(module):
                           comment = SPAN("*", _class="req")),
                     comments,
                     migrate=migrate)
-    
+
     ADD_SHELTER_SERVICE = T("Add Shelter Service")
     LIST_SHELTER_SERVICES = T("List Shelter Services")
     s3.crud_strings[tablename] = Storage(
@@ -83,7 +83,7 @@ if deployment_settings.has_module(module):
             return shelter_service and shelter_service.name or NONE
 
     shelter_service_id = db.Table(None, "shelter_service_id",
-                                  FieldS3("shelter_service_id", "list:reference cr_shelter_service", sortby="name", 
+                                  FieldS3("shelter_service_id", "list:reference cr_shelter_service", sortby="name",
                                           requires = IS_NULL_OR(IS_ONE_OF(db, "cr_shelter_service.id", "%(name)s", multiple=True)),
                                           represent = shn_shelter_service_represent,
                                           label = T("Shelter Service"),
@@ -140,7 +140,7 @@ if deployment_settings.has_module(module):
     # Make a copy of reusable field hospital_id and change its comment to
     # include a *.  # We want it to look required whenever it's visible.
     cr_hospital_id = db.Table(None, "hospital_id", hospital_id)
-    comment_with_star = DIV(SPAN("*", _class="req"), 
+    comment_with_star = DIV(SPAN("*", _class="req"),
                             cr_hospital_id.hospital_id.comment)
     cr_hospital_id.hospital_id.comment = comment_with_star
 
@@ -213,8 +213,8 @@ if deployment_settings.has_module(module):
     # to get reports showing shelters per type, etc.
     s3xrc.model.add_component(module, resource,
                               multiple=True,
-                              joinby=dict(cr_shelter_type="shelter_type_id", 
-                                          cr_shelter_service="shelter_service_id", 
+                              joinby=dict(cr_shelter_type="shelter_type_id",
+                                          cr_shelter_service="shelter_service_id",
                                           #gis_location="location_id",
                                           doc_document="document_id"),
                               deletable=True,
@@ -230,10 +230,20 @@ if deployment_settings.has_module(module):
                      "shelter_service_id",
                      "location_id"])
 
-    # Persons as component of Shelters
-    #s3xrc.model.add_component("pr", "person",
-    #                          multiple=False,
-    #                          joinby=dict(cr_shelter="shelter_id"),
-    #                          deletable=True,
-    #                          editable=True)
+    # Link to shelter from pr_presence
+    table = db.pr_presence
+    table.shelter_id.requires = IS_NULL_OR(IS_ONE_OF(db, "cr_shelter.id", "%(name)s", sort=True))
+    table.shelter_id.represent = lambda id: (id and [db.cr_shelter[id].name] or ["None"])[0]
+    table.shelter_id.ondelete = "RESTRICT"
+    table.shelter_id.comment = DIV(A(ADD_SHELTER, _class="colorbox", _href=URL(r=request, c="cr", f="shelter", args="create", vars=dict(format="popup")), _target="top", _title=ADD_SHELTER),
+                                   DIV( _class="tooltip", _title=Tstr("Shelter") + "|" + Tstr("The Shelter this Request is from (optional).")))
+    table.shelter_id.label = T("Shelter")
+    table.shelter_id.readable = True
+    table.shelter_id.writable = True
 
+    s3xrc.model.add_component("pr", "presence",
+        multiple=True,
+        joinby=dict(cr_shelter="shelter_id"),
+        editable=False,
+        deletable=False,
+        listadd=True)

@@ -110,7 +110,9 @@ def cleanup():
         # Restore customisations
         print(green("%s: Restoring Customisations" % env.host))
         # @ToDo: Only apply customisations to files which had conflicts
+        env.warn_only = True
         run("patch -f -p0 < /root/custom.diff", pty=True)
+        env.warn_only = False
 
 def db_upgrade():
     """
@@ -240,13 +242,12 @@ def db_sync():
         child.expect(":/home/web2py/applications/eden/static/scripts/tools#")
         child.sendline("python dbstruct.py")
         # @ToDo check if we need to interact otherwise automate
-        #child.expect(":/home/web2py/applications/eden/static/scripts/tools#")
-        #child.sendline("exit")
-        print child.before
+        child.expect(":/home/web2py/applications/eden/static/scripts/tools#")
+        child.sendline("exit")
+        #print child.before
         # Step 8: Fixup manually anything which couldn't be done automatically
-        print (green("Need to exit the SSH session once you have fixed anything which needs fixing"))
-        # Give control of the child to the user.
-        child.interact()
+        #print (green("Need to exit the SSH session once you have fixed anything which needs fixing"))
+        #child.interact()     # Give control of the child to the user.
         with cd("/root/"):
             # Step 9: Take a dump of the fixed data (no structure, full inserts)
             print(green("%s: Dumping fixed data" % env.host))
@@ -354,7 +355,9 @@ def rollback():
         run("bzr revert -r %i" % env.revno, pty=True)
         # Restore customisations
         print(green("%s: Restoring Customisations" % env.host))
+        env.warn_only = True
         run("patch -p0 < /root/custom.diff", pty=True)
+        env.warn_only = False
         # Restore database
         print(green("%s: Restoring Database" % env.host))
         run("mysqladmin -f drop sahana", pty=True)

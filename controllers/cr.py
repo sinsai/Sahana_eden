@@ -133,6 +133,12 @@ def shelter():
     tablename = module + "_" + resource
     table = db[tablename]
 
+    db.pr_presence.pe_id.readable = True
+    db.pr_presence.pe_id.writable = True
+    db.pr_presence.pe_id.label = T("Person/Group")
+    s3xrc.model.configure(db.pr_presence,
+        list_fields=["id", "pe_id", "datetime", "presence_condition", "proc_desc"])
+
     # Pre-processor
     response.s3.prep = shn_shelter_prep
 
@@ -224,7 +230,7 @@ def shn_shelter_prep(r):
                 db.rms_req.location_id.writable = False
                 db.rms_req.location_id.default = r.record.location_id
                 db.rms_req.location_id.comment = ""
-                
+
         if r.http == "POST":
 
             if not "is_school" in request.vars:

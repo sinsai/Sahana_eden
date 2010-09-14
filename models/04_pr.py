@@ -325,6 +325,7 @@ table = db.define_table(tablename,
                         Field("proc_desc"),
                         orig_id,
                         dest_id,
+                        Field("shelter_id", "integer"),
                         Field("comment"),
                         migrate=migrate)
 
@@ -352,6 +353,9 @@ table.datetime.label = T("Date/Time")
 table.datetime.comment = SPAN("*", _class="req")
 
 table.proc_desc.label = T("Procedure")
+
+table.shelter_id.readable = False
+table.shelter_id.writable = False
 
 s3xrc.model.add_component(module, resource,
                           multiple=True,

@@ -154,8 +154,12 @@ def shelter():
                 # Redirect to the Assessments tabs after creation
                 r.next = r.other(method="assessment", record_id=s3xrc.get_session(session, module, resource))
 
-            # Normal Action Buttons
-            shn_action_buttons(r)
+            if r.component and r.component.name == "presence":
+                # No Delete on the Action buttons
+                shn_action_buttons(r, deletable=False)
+            else:
+                # Normal Action Buttons
+                shn_action_buttons(r)
         return output
     response.s3.postp = postp
 

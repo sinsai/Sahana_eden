@@ -1892,7 +1892,10 @@ def shn_map(r, method="create", tablename=None, prefix=None, name=None):
 #
 def shn_search(r, **attr):
 
-    """ Search function responding in JSON """
+    """
+        Search function
+        Mostly used with the JSON representation
+    """
 
     deletable = attr.get("deletable", True)
     main = attr.get("main", None)
@@ -2029,9 +2032,17 @@ def shn_search(r, **attr):
             else:
                 item = s3xrc.xml.json_message(False, 400, "Unsupported filter! Supported filters: ~, =, <, >")
                 raise HTTP(400, body=item)
+
         else:
-            item = s3xrc.xml.json_message(False, 400, "Search requires specifying Field, Filter & Value!")
-            raise HTTP(400, body=item)
+            #item = s3xrc.xml.json_message(False, 400, "Search requires specifying Field, Filter & Value!")
+            #raise HTTP(400, body=item)
+            # Provide a simplified JSON output which is in the same format as the Search one
+            # (easier to parse than S3XRC & means no need for different parser for filtered/unfiltered)
+            if _table == db.gis_location:
+                # Don't return unnecessary fields (WKT is large!)
+                item = db(query).select(_table.id, _table.name).json()
+            else:
+                item = db(query).select().json()
 
         response.view = "xml.html"
         output = dict(item=item)

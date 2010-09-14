@@ -343,10 +343,18 @@ def location_duplicates():
     def open_btn(field):
         return A(T("Load Details"), _id=field, _href=URL(r=request, f="location"), _class="action-btn", _target="_blank")
     
+    filter = request.vars.get("filter", None)
+    
+    repr_select = lambda l: len(l.name) > 48 and "%s..." % l.name[:44] or l.name
+    #repr_select = lambda l: l.level and "%s: %s" % (l.level, l.name) or l.name
+    if filter:
+        requires = IS_ONE_OF(db, "gis_location.id", repr_select, filterby="level", filter_opts=(filter,), orderby="gis_location.name", sort=True)
+    else:
+        requires = IS_ONE_OF(db, "gis_location.id", repr_select, orderby="gis_location.name", sort=True, zero=T("Select a location"))
     table = db.gis_location
     form = SQLFORM.factory(
-                           Field("old", table, requires=IS_ONE_OF(db, "gis_location.id", "%(name)s"), label = SPAN(B(T("Old")), " (" + Tstr("To delete") + ")"), comment=open_btn("btn_old")),
-                           Field("new", table, requires=IS_ONE_OF(db, "gis_location.id", "%(name)s"), label = B(T("New")), comment=open_btn("btn_new")),
+                           Field("old", table, requires=requires, label = SPAN(B(T("Old")), " (" + Tstr("To delete") + ")"), comment=open_btn("btn_old")),
+                           Field("new", table, requires=requires, label = B(T("New")), comment=open_btn("btn_new")),
                            formstyle = s3_formstyle
                           )
     

@@ -1,3 +1,4 @@
+{{_gis = response.s3.gis}}
 {{extend "layout.html"}}
 <H2>{{=T("Locations De-duplicator")}}</H2>
 <p>{{=T("This form allows the administrator to remove a duplicate location.")}}</p>
@@ -8,6 +9,43 @@
 <li>{{=T("Save any Changes in the one you wish to keep")}}</li>
 <li>{{=T("Press the 'Delete Old' button to have all records which reference this one be repointed at the new one & then the old record will be deleted.")}}</li>
 </ol>
+<b>{{=T("Filter")}}</b>:
+<select id='filter_level'>
+    <option value='' selected>{{=T("All Locations")}}</option>
+{{if len(_gis.countries) == 1:}}
+{{else:}}
+  {{try:}}
+    {{label = _gis.location_hierarchy["L0"]}}
+    <option value='0'>{{=label}}</option>
+  {{except:}}
+  {{pass}}
+{{pass}}
+  {{try:}}
+    {{label = _gis.location_hierarchy["L1"]}}
+    <option value='1'>{{=label}}</option>
+  {{except:}}
+  {{pass}}
+  {{try:}}
+    {{label = _gis.location_hierarchy["L2"]}}
+    <option value='2'>{{=label}}</option>
+  {{except:}}
+  {{pass}}
+  {{try:}}
+    {{label = _gis.location_hierarchy["L3"]}}
+    <option value='3'>{{=label}}</option>
+  {{except:}}
+  {{pass}}
+  {{try:}}
+    {{label = _gis.location_hierarchy["L4"]}}
+    <option value='4'>{{=label}}</option>
+  {{except:}}
+  {{pass}}
+  {{try:}}
+    {{label = _gis.location_hierarchy["L5"]}}
+    <option value='5'>{{=label}}</option>
+  {{except:}}
+  {{pass}}
+</select>
 {{=form.custom.begin}}
 <div align='center'>{{=form.custom.submit}}</div>
 <p>&nbsp;</p>
@@ -38,6 +76,10 @@ function resizeIframe(height) {
     }
 }
 $(document).ready(function(){
+    var empty_set = '<option value="">' + '{{=T("No locations registered at this level")}}</option>';
+    var loading_locations = '<option value="">' + '{{=T("Loading Locations...")}}</option>';
+    var select_location = '<option value="" selected>' + '{{=T("Select a location")}}' + '...</option>';
+    
     $('a.action-btn').click(function(){
         // Is this Old or New?
         var _id = $(this).attr('id').replace(/btn_/, '');
@@ -54,6 +96,35 @@ $(document).ready(function(){
 
         // Don't open the Tab
         return false;
+    });
+    // If the Filter changes:
+	$('#filter_level').change(function() {
+		// What is the new filter?
+        var level = $(this).val();
+        // Refresh the page with this setting
+        if (level) {
+            url = '{{=URL(r=request, c="gis", f="location", args="search.json", vars={"filter":"=", "field":"level"})}}&value=L' + level;
+        } else {
+            url = '{{=URL(r=request, c="gis", f="location", args="search.json")}}';
+        }
+        load_locations = function(data, status){
+            var options;
+            var v = '';
+            if (data.length == 0) {
+                options = empty_set;
+            } else {
+                options = select_location;
+                for (var i = 0; i < data.length; i++){
+                    v = data[i].id;
+                    options += '<option value="' +  data[i].id + '">' + data[i].name + '</option>';
+                }
+            }
+            $('#no_table_old').html(options);
+            $('#no_table_new').html(options);
+        };
+    $('#no_table_old').html(loading_locations);
+    $('#no_table_new').html(loading_locations);
+    $.getJSONS3(url, load_locations, false);
     });
 });
 //]]></script>

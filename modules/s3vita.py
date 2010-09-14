@@ -41,8 +41,11 @@ class S3Vita(object):
 
     """ Toolkit for Person Identification, Tracking and Tracing """
 
+
     # -------------------------------------------------------------------------
     def __init__(self, environment, db=None, T=None):
+
+        """ Constructor """
 
         self.environment = Storage(environment)
         self.db = db
@@ -52,8 +55,7 @@ class S3Vita(object):
         elif "T" in self.environment:
             self.T = self.environment["T"]
 
-        # -------------------------------------------------------------------------
-        #: Trackable entity types
+        # Trackable types
         self.trackable_types = {
             1:self.T("Person"),          # an individual
             2:self.T("Group"),           # a group
@@ -64,20 +66,98 @@ class S3Vita(object):
         }
         self.DEFAULT_TRACKABLE = 1
 
-        # -------------------------------------------------------------------------
-        #: Presence Conditions
+        # Presence conditions
         self.presence_conditions = {
-            1:self.T("Check-In"),        # Arriving at a location for accommodation/storage
-            2:self.T("Reconfirmation"),  # Reconfirmation of accomodation/storage at a location
-            3:self.T("Check-Out"),       # Leaving from a location after accommodation/storage
-            4:self.T("Found"),           # Temporarily at a location
-            5:self.T("Procedure"),       # Temporarily at a location for a procedure (checkpoint)
-            6:self.T("Transit"),         # Temporarily at a location between two transfers
-            7:self.T("Transfer"),        # On the way from one location to another
-            8:self.T("Missing"),         # Been at a location, and missing from there
-            9:self.T("Lost")             # Been at a location, and destroyed/disposed/deceased there
+            # Transitional presence conditions:
+            1: self.T("Seen"),            # seen (formerly "found") at location
+            2: self.T("Transit"),         # seen at location, between two transfers
+            3: self.T("Procedure"),       # seen at location, undergoing procedure ("Checkpoint")
+
+            # Persistant presence conditions:
+            11: self.T("Check-In"),        # arrived at location for accomodation/storage
+            12: self.T("Reconfirmation"),  # reconfirmation of stay/storage at location
+            13: self.T("Placed"),          # permanently at location
+
+            # Determined absence conditions:
+            21: self.T("Transfer"),        # Send to another location
+            22: self.T("Lost"),            # Deceased/destroyed/disposed at location (end of track)
+
+            # Undetermined absence conditions:
+            31: self.T("Check-Out"),       # Left location for unknown destination
+            32: self.T("Missing"),         # Missing (from a "last-seen"-location)
         }
-        self.DEFAULT_PRESENCE = 4
+        self.DEFAULT_PRESENCE = 1
+
+
+    # -------------------------------------------------------------------------
+    def trace(self, entity, time=None, conditions=None):
+
+        """ Get the presence log of a person entity """
+
+        return None
+
+
+    # -------------------------------------------------------------------------
+    def log(self, entity, condition,
+            datetime=None,
+            observer=None,
+            reporter=None,
+            procedure=None,
+            location=None,
+            origin=None,
+            destination=None,
+            comment=None):
+
+        """ Update the presence log of a person entity """
+
+        table = db.pr_pentity
+
+
+
+        # If datetime is None, defaults to now
+
+        # If reporter is None, defaults to current user
+
+        # observer defaults to None
+
+        # If the last condition before this condition was missing,
+        # then update that record instead of creating a new one
+
+        # If the last condition was "lost", then do not add a new record
+
+        # If the entity is a person, update missing/found status:
+        # Get the missing report, if any
+        # If the modified_date of the missing report is before
+        # the current status:
+        #   If the current status is a "seen"-type:
+        #           - leave at missing
+        #           - notify the reporter
+        #   If the current status is a "check-in"-type:
+        #           - change into "found"
+        #           - notify the reporter
+
+                        #timestamp, authorstamp, uuidstamp, deletion_status,
+                        #pe_id,
+                        #Field("reporter", db.pr_person),
+                        #Field("observer", db.pr_person),
+                        #location_id,
+                        #Field("location_details"),
+                        #Field("datetime", "datetime"), # 'time' is a reserved word in Postgres
+                        #Field("presence_condition", "integer",
+                              #requires = IS_IN_SET(pr_presence_condition_opts,
+                                                   #zero=None),
+                              #default = vita.DEFAULT_PRESENCE,
+                              #label = T("Presence Condition"),
+                              #represent = lambda opt: \
+                                          #pr_presence_condition_opts.get(opt, UNKNOWN_OPT)),
+                        #Field("proc_desc"),
+                        #orig_id,
+                        #dest_id,
+                        #Field("comment"),
+                        #migrate=migrate)
+
+        return None
+
 
     # -------------------------------------------------------------------------
     def pentity(self, entity):
@@ -257,6 +337,7 @@ class S3Vita(object):
                 matrix[i, j] = min(x, y, z)
 
         return float(matrix[l1, l2]) / float(max(l1, l2))
+
 
 #
 # *****************************************************************************

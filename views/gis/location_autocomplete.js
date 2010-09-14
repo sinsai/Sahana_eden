@@ -1045,6 +1045,8 @@ s3_tb_cleanup = function(level){
     // A new location has been created in a Thickbox Popup
     // Which Level?
     var selector = $('#gis_location_' + level.toLowerCase());
+    // Need to repeat here as the previous definition isn't in-scope
+    var select_location = '<option value="" selected>' + '{{=T("Select a location")}}' + '...</option>';
     // Refresh this dropdown so that the new entry is visible
     url = '{{=URL(r=request, c="gis", f="location", args="search.json", vars={"filter":"=", "field":"level"})}}' + '&value=' + level;
     load_locations = function(data, status){

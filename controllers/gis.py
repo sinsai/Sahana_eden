@@ -333,7 +333,7 @@ def location_duplicates():
             for count in range(len(tables[table])):
                 field = tables[str(db[table])][count]
                 query = db[table][field] == old
-                exec "db(query).update(%s=new)" % field
+                db(query).update(**{field:XXX})
 
         # Remove the record
         db(db.gis_location.id == old).update(deleted=True)

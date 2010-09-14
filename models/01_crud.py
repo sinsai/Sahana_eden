@@ -2040,7 +2040,7 @@ def shn_search(r, **attr):
             # (easier to parse than S3XRC & means no need for different parser for filtered/unfiltered)
             if _table == db.gis_location:
                 # Don't return unnecessary fields (WKT is large!)
-                item = db(query).select(_table.id, _table.name).json()
+                item = db(query).select(_table.id, _table.name, _table.level).json()
             else:
                 item = db(query).select().json()
 

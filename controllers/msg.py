@@ -179,15 +179,15 @@ def pe_contact():
 
 def search():
     """
-    Do a search of groups which match a type
-    Used for auto-completion
+        Do a search of groups which match a type
+        Used for auto-completion
     """
     if auth.is_logged_in() or auth.basic():
         pass
     else:
         return
 
-    import gluon.contrib.simplejson as sj
+    import gluon.contrib.simplejson as json
     table1 = db.pr_group
     field1 = "name"
     table2 = db.pr_person
@@ -210,7 +210,7 @@ def search():
 		query = db((table2[field23].like("%" + value + "%")) & (table2.deleted == False)).select(db.pr_person.pe_id)
 		for row in query:
 			item.append({"id":row.pe_id, "name":shn_pentity_represent(row.pe_id, default_label = "")})
-		item = sj.dumps(item)
+		item = json.dumps(item)
 		response.view = "xml.html"
 		return dict(item=item)
     return

@@ -374,10 +374,21 @@ def shn_represent_file(file_name,
 
 
 # -----------------------------------------------------------------------------
-def shn_reference_field():
+def shn_table_links(reference):
+    """
+        Return a dict of tables & their fields which have references to the specified table
+    """
+    tables = {}
+    for table in db.tables:
+        count = 0
+        for field in db[table].fields:
+            if db[table][field].type == "reference %s" % reference:
+                if count == 0:
+                    tables[table] = {}
+                tables[table][count] = field
+                count += 1
 
-    return
-
+    return tables
 
 # -----------------------------------------------------------------------------
 def shn_insert_subheadings(form, tablename, subheadings):

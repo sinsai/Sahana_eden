@@ -53,10 +53,14 @@
 <div class='col2left'>
 {{=form[0][0]}}
 <p>&nbsp;</p>
+<div id='links_old'></div>
+<p>&nbsp;</p>
 <div id='details_old'></div>
 </div>
 <div class='col2right'>
 {{=form[0][1]}}
+<p>&nbsp;</p>
+<div id='links_new'></div>
 <p>&nbsp;</p>
 <div id='details_new'></div>
 </div>
@@ -79,20 +83,82 @@ $(document).ready(function(){
     var empty_set = '<option value="">' + '{{=T("No locations registered at this level")}}</option>';
     var loading_locations = '<option value="">' + '{{=T("Loading Locations...")}}</option>';
     var select_location = '<option value="" selected>' + '{{=T("Select a location")}}' + '...</option>';
-    
+    var locations_hierarchy = new Array();
+  {{try:}}
+    {{label = _gis.location_hierarchy["L0"]}}
+    locations_hierarchy["L0"] = '{{=label}}';
+  {{except:}}
+  {{pass}}
+  {{try:}}
+    {{label = _gis.location_hierarchy["L1"]}}
+    locations_hierarchy["L1"] = '{{=label}}';
+  {{except:}}
+  {{pass}}
+  {{try:}}
+    {{label = _gis.location_hierarchy["L2"]}}
+    locations_hierarchy["L2"] = '{{=label}}';
+  {{except:}}
+  {{pass}}
+  {{try:}}
+    {{label = _gis.location_hierarchy["L3"]}}
+    locations_hierarchy["L3"] = '{{=label}}';
+  {{except:}}
+  {{pass}}
+  {{try:}}
+    {{label = _gis.location_hierarchy["L4"]}}
+    locations_hierarchy["L4"] = '{{=label}}';
+  {{except:}}
+  {{pass}}
+  {{try:}}
+    {{label = _gis.location_hierarchy["L5"]}}
+    locations_hierarchy["L5"] = '{{=label}}';
+  {{except:}}
+  {{pass}}
+
     $('a.action-btn').click(function(){
-        // Is this Old or New?
-        var _id = $(this).attr('id').replace(/btn_/, '');
-        // Which location is selected?
-        var id = $('#no_table_' + _id).val();
-        if (id == '') {
-            // Do nothing if no location selected
-            return false;
+        // Which type is this?
+        if ($(this).attr('id').indexOf('_') == 3) {
+            // Load Details
+            // Is this Old or New?
+            var _id = $(this).attr('id').replace(/btn_/, '');
+            // Which location is selected?
+            var id = $('#no_table_' + _id).val();
+            if (id == '') {
+                // Do nothing if no location selected
+                return false;
+            }
+            // Get a form for the record (allows reading details & also updating)
+            var url = '{{=URL(r=request, c="gis", f="location")}}' + '/' + id + '.iframe/update';
+            var html = "<iframe src='" + url + "' id='iframe_details_" + _id + "' width='100%' frameborder='0'></iframe>";
+            $('#details_' + _id).html(html);
+        } else {
+            // Linked Records
+            // Is this Old or New?
+            var _id = $(this).attr('id').replace(/linkbtn_/, '');
+            // Which location is selected?
+            var id = $('#no_table_' + _id).val();
+            if (id == '') {
+                // Do nothing if no location selected
+                return false;
+            }
+            // Get a list of records which link to this one
+            var url = '{{=URL(r=request, c="gis", f="location_links")}}' + '/' + id;
+            load_links = function(data, status){
+                var html;
+                var v = '';
+                if (data.length == 0) {
+                    html = '{{=T("No linked records")}}';
+                } else {
+                    html = '<table><tr><td><b>{{=T("Linked records")}}:</b></td></tr>';
+                    for (var i = 0; i < data.length; i++){
+                        html += '<tr><td><a href="{{=URL3(r=request)}}' + '/' + data[i].module + '/' + data[i].resource + '/' + data[i].id + '" target="_blank">' + data[i].module + '_' + data[i].resource + ': ' + data[i].represent + '</a></td></tr>';
+                    }
+                    html += '</table>';
+                }
+                 $('#links_' + _id).html(html);
+            };
+        $.getJSONS3(url, load_links, false);
         }
-        // Get a form for the record (allows reading details & also updating)
-        var url = '{{=URL(r=request, c="gis", f="location")}}' + '/' + id + '.iframe/update';
-        var html = "<iframe src='" + url + "' id='iframe_" + _id + "' width='100%' frameborder='0'></iframe>";
-        $('#details_' + _id).html(html);
 
         // Don't open the Tab
         return false;
@@ -116,7 +182,15 @@ $(document).ready(function(){
                 options = select_location;
                 for (var i = 0; i < data.length; i++){
                     v = data[i].id;
-                    options += '<option value="' +  data[i].id + '">' + data[i].name + '</option>';
+                    if (data[i].level) {
+                        if (locations_hierarchy[data[i].level]) {
+                            options += '<option value="' +  data[i].id + '">' + data[i].name + ' (' +locations_hierarchy[data[i].level] + ')</option>';
+                        } else {
+                            options += '<option value="' +  data[i].id + '">' + data[i].name + ' (' + data[i].level + ')</option>';
+                        }
+                    } else {
+                        options += '<option value="' +  data[i].id + '">' + data[i].name + '</option>';
+                    }
                 }
             }
             $('#no_table_old').html(options);

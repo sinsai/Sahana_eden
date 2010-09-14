@@ -319,44 +319,22 @@ def location_duplicates():
 
     def delete_location(old, new):
         # Find all tables which link to the Locations table
-        # via 'location_id'
-        tables = []
-        # via another field (such as 'parent')
-        #tables2 = {}
+        tables = {}
         for table in db.tables:
-            if "location_id" in db[table]:
-                tables.append(table)
-            #else:
-            #    # Danger: 'else' doesn't catch secondary references
-            #    # This would need to be the only routine.
-            #    count = 0
-            #    for field in db[table].fields:
-            #        if db[table][field].type == "reference gis_location":
-            #            if count == 0:
-            #                tables2[table] = {}
-            #            tables2[table][count] = field
-            #            count += 1
+            count = 0
+            for field in db[table].fields:
+                if db[table][field].type == "reference gis_location":
+                    if count == 0:
+                        tables[table] = {}
+                    tables[table][count] = field
+                    count += 1
 
-        # Update all pointers to the record to be removed
         for table in tables:
-            query = db[table].location_id == old
-            db(query).update(location_id=new)
-        
-        #for table in tables2:
-        #    for count in range(len(tables2[table])):
-        #        field = tables2[str(db[table])][count]
-        #        query = db[table][field] == old
-        #        # How to use a variable as the Keyword here?
-        #        db(query).update(eval(field)=new)
-        
-        # Manually update others (until we can do it properly)
-        query = db.gis_location.parent == old
-        db(query).update(parent=new)
-        query = db.pr_presence.orig_id == old
-        db(query).update(orig_id=new)
-        query = db.pr_presence.dest_id == old
-        db(query).update(dest_id=new)
-        
+            for count in range(len(tables[table])):
+                field = tables[str(db[table])][count]
+                query = db[table][field] == old
+                exec "db(query).update(%s=new)" % field
+
         # Remove the record
         db(db.gis_location.id == old).update(deleted=True)
         

@@ -196,19 +196,21 @@ def db_sync():
     else:
         print(green("%s: Synchronising Database" % env.host))
         # See dbstruct.py
-        with cd("/home/web2py/applications/eden/models/"):
+        with cd("/home/web2py/applications/eden/"):
             # Step 0: Drop old database 'sahana'
             print(green("%s: Dropping old Database" % env.host))
             # If database doesn't exist, we don't want to stop
             env.warn_only = True
             run("mysqladmin -f drop sahana", pty=True)
             env.warn_only = False
+            print(green("%s: Cleaning databases folder" % env.host))
+            run("rm -rf databases/*", pty=True)
             # Step 1: Create a new, empty MySQL database 'sahana' as-normal
             print(green("%s: Creating new Database" % env.host))
             run("mysqladmin create sahana", pty=True)
             # Step 2: set deployment_settings.base.prepopulate = False in models/000_config.py
             print(green("%s: Disabling prepopulate" % env.host))
-            run("sed -i 's/deployment_settings.base.prepopulate = True/deployment_settings.base.prepopulate = False/g' 000_config.py", pty=True)
+            run("sed -i 's/deployment_settings.base.prepopulate = True/deployment_settings.base.prepopulate = False/g' models/000_config.py", pty=True)
         # Step 3: Allow web2py to run the Eden model to configure the Database structure
         migrate()
         # Step 4: Export the Live database from the Live server (including structure)

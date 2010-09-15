@@ -73,19 +73,41 @@ def s3_debug(message, value=None):
 
 # -----------------------------------------------------------------------------
 # User Time Zone Operations:
-def shn_user_utc_offset():
-    """
-        returns the UTC offset of the current user or None, if not logged in
-    """
+#
+def s3_get_utc_offset():
+
+    """ Get the current UTC offset for the client """
 
     if auth.is_logged_in():
-        return db(db.auth_user.id == session.auth.user.id).select(db.auth_user.utc_offset, limitby=(0, 1)).first().utc_offset
-    else:
-        try:
-            offset = db().select(db.s3_setting.utc_offset, limitby=(0, 1)).first().utc_offset
-        except:
-            offset = None
-        return offset
+        # 1st choice is the personal preference (useful for GETs if user wishes to see times in their local timezone)
+        offset = session.auth.user.utc_offset
+        if offset:
+            offset = offset.strip()
+
+    if not offset:
+        # 2nd choice is what the client provides in the hidden field (for form POSTs)
+        offset = request.post_vars.get("_utc_offset", None)
+        if offset:
+            offset = int(offset)
+            utcstr = offset < 0 and "UTC +" or "UTC -"
+            hours = abs(int(offset/60))
+            minutes = abs(int(offset % 60))
+            offset = "%s%02d%02d" % (utcstr, hours, minutes)
+
+    if not offset:
+        # 3rd choice is the server default (what most clients should see the timezone as)
+        offset = deployment_settings.L10n.utc_offset
+
+    return offset
+
+# Store last value in session
+session.s3.utc_offset = s3_get_utc_offset()
+
+
+def shn_user_utc_offset():
+
+    """ for backward compatibility """
+    return session.s3.utc_offset
 
 
 def shn_as_local_time(value):
@@ -98,7 +120,7 @@ def shn_as_local_time(value):
 
     format="%Y-%m-%d %H:%M:%S"
 
-    offset = IS_UTC_OFFSET.get_offset_value(shn_user_utc_offset())
+    offset = IS_UTC_OFFSET.get_offset_value(session.s3.utc_offset)
 
     if offset:
         dt = value + datetime.timedelta(seconds=offset)

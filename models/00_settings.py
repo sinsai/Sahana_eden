@@ -176,7 +176,7 @@ def s3_formstyle(id, label, widget, comment):
 
     # Label on the 1st row
     #row.append(TR(TD(label, _class="w2p_fl", _colspan="2"), _id=id + "1", _class="even"))
-    row.append(TR(TD(label, _class="w2p_fl", _colspan="2"), _id=id + "1"))   
+    row.append(TR(TD(label, _class="w2p_fl", _colspan="2"), _id=id + "1"))
 
     # Widget & Comment on the 2nd Row
     row.append(TR(TD(widget, _class="w2p_fw"), TD(comment, _class="w2p_fc"), _id=id))
@@ -207,7 +207,7 @@ auth.settings.table_user.language.requires = IS_IN_SET(s3.l10n_languages, zero=N
 #
 s3_list_of_nations = {
     "AF": "Afghanistan",
-    "AX": "Åland Islands",
+    "AX": "ï¿½land Islands",
     "AL": "Albania",
     "DZ": "Algeria",
     "AS": "American Samoa",
@@ -259,7 +259,7 @@ s3_list_of_nations = {
     "CD": "Congo, The Democratic Republic of the",
     "CK": "Cook Islands",
     "CR": "Costa Rica",
-    "CI": "Côte d'Ivoire",
+    "CI": "Cï¿½te d'Ivoire",
     "HR": "Croatia",
     "CU": "Cuba",
     "CY": "Cyprus",
@@ -385,11 +385,11 @@ s3_list_of_nations = {
     "PT": "Portugal",
     "PR": "Puerto Rico",
     "QA": "Qatar",
-    "RE": "Réunion",
+    "RE": "Rï¿½union",
     "RO": "Romania",
     "RU": "Russian Federation",
     "RW": "Rwanda",
-    "BL": "Saint Barthélemy",
+    "BL": "Saint Barthï¿½lemy",
     "SH": "Saint Helena, Ascension and Tristan da Cunha",
     "KN": "Saint Kitts and Nevis",
     "LC": "Saint Lucia",

@@ -41,6 +41,22 @@ class S3Vita(object):
 
     """ Toolkit for Person Identification, Tracking and Tracing """
 
+    SEEN = 1
+    TRANSIT = 2
+    PROCEDURE = 3
+    TRANSITIONAL_PRESENCE = (1, 2, 3)
+
+    CHECK_IN = 11
+    CONFIRMED = 12
+    LOST = 13
+    PERSISTANT_PRESENCE = (11, 12, 13)
+
+    TRANSFER = 21
+    CHECK_OUT = 22
+    ABSENCE = (21, 22)
+
+    MISSING = 99
+
     # -------------------------------------------------------------------------
     def __init__(self, environment, db=None, T=None):
 
@@ -68,21 +84,21 @@ class S3Vita(object):
         # Presence conditions
         self.presence_conditions = {
             # Transitional presence conditions:
-            1: self.T("Seen"),            # seen (formerly "found") at location
-            2: self.T("Transit"),         # seen at location, between two transfers
-            3: self.T("Procedure"),       # seen at location, undergoing procedure ("Checkpoint")
+            self.SEEN: self.T("Seen"),           # seen (formerly "found") at location
+            self.TRANSIT: self.T("Transit"),     # seen at location, between two transfers
+            self.PROCEDURE: self.T("Procedure"), # seen at location, undergoing procedure ("Checkpoint")
 
             # Persistant presence conditions:
-            11: self.T("Check-In"),        # arrived at location for accomodation/storage
-            12: self.T("Confirmation"),    # confirmation of stay/storage at location
-            13: self.T("Lost"),            # Deceased/destroyed/disposed at location
+            self.CHECK_IN: self.T("Check-In"),   # arrived at location for accomodation/storage
+            self.CONFIRMED: self.T("Confirmed"), # confirmation of stay/storage at location
+            self.LOST: self.T("Lost"),           # Deceased/destroyed/disposed at location
 
             # Absence conditions:
-            21: self.T("Transfer"),        # Send to another location
-            22: self.T("Check-Out"),       # Left location for unknown destination
+            self.TRANSFER: self.T("Transfer"),   # Send to another location
+            self.CHECK_OUT: self.T("Check-Out"), # Left location for unknown destination
 
             # Missing condition:
-            99: self.T("Missing"),         # Missing (from a "last-seen"-location)
+            self.MISSING: self.T("Missing"),     # Missing (from a "last-seen"-location)
         }
         self.DEFAULT_PRESENCE = 1
 
@@ -96,11 +112,6 @@ class S3Vita(object):
               or deletion of pr_presence records
 
         """
-
-        transitional = (1, 2, 3)
-        persistant = (11, 12, 13)
-        absence = (21, 22)
-        missing = 99
 
         db = self.db
         table = db.pr_presence
@@ -131,17 +142,17 @@ class S3Vita(object):
         later = (table.datetime > datetime)
         same_place = ((table.location_id == presence.location_id) |
                         (table.shelter_id == presence.shelter_id))
-        is_present = (table.presence_condition.belongs(persistant))
-        is_absent = (table.presence_condition.belongs(absence))
-        is_missing = (table.presence_condition == missing)
+        is_present = (table.presence_condition.belongs(self.PERSISTANT_PRESENCE))
+        is_absent = (table.presence_condition.belongs(self.ABSENCE))
+        is_missing = (table.presence_condition == self.MISSING)
 
         if not presence.deleted:
 
-            if condition in transitional:
+            if condition in self.TRANSITIONAL_PRESENCE:
                 if presence.closed:
                     db(table.id == id).update(closed=False)
 
-            elif condition in persistant:
+            elif condition in self.PERSISTANT_PRESENCE:
                 if not presence.closed:
                     query = this_entity & earlier & (is_present | is_missing) & \
                             (table.closed == False)
@@ -152,7 +163,7 @@ class S3Vita(object):
                     if db(query).count():
                         db(table.id == id).update(closed=True)
 
-            elif condition in absence:
+            elif condition in self.ABSENCE:
                 query = this_entity & earlier & is_present & same_place
                 db(query).update(closed=True)
 

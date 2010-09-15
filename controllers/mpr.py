@@ -18,7 +18,7 @@ module = request.controller
 # Options Menu (available in all Functions" Views)
 def shn_menu():
     response.menu_options = [
-        [T("Search for a Person"), False, URL(r=request, f="person", args="search_simple")],
+        [T("Search for a Person"), False, URL(r=request, f="index")],
         [T("Missing Persons"), False, URL(r=request, f="person"), [
             [T("List"), False, URL(r=request, f="person")],
             [T("Add"), False, URL(r=request, f="person", args="create")],
@@ -73,12 +73,20 @@ def index():
     def postp(jr, output):
         if isinstance(output, dict):
             output.update(module_name=module_name)
-        if jr.representation in shn_interactive_view_formats:
-            if not jr.component:
-                label = READ
-            else:
-                label = UPDATE
-            linkto = shn_linkto(jr, update=True, sticky=True)("[id]")
+        if not jr.component:
+            report_missing = str(URL(r=request, f="person", args=["[id]", "missing_report"]))
+            report_seen = str(URL(r=request, f="person", args=["[id]", "presence"], vars=dict(condition=vita.SEEN)))
+            report_found = str(URL(r=request, f="person", args=["[id]", "presence"], vars=dict(condition=vita.CONFIRMED)))
+            linkto = shn_linkto(jr, update=True)("[id]")
+            response.s3.actions = [
+                dict(label=str(T("Missing")), _class="action-btn", url=report_missing),
+                dict(label=str(T("Seen")), _class="action-btn", url=report_seen),
+                dict(label=str(T("Found")), _class="action-btn", url=report_found),
+                dict(label=str(T("Details")), _class="action-btn", url=linkto)
+            ]
+        else:
+            label = UPDATE
+            linkto = shn_linkto(jr, update=True)("[id]")
             response.s3.actions = [
                 dict(label=str(label), _class="action-btn", url=str(linkto))
             ]

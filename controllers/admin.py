@@ -277,6 +277,7 @@ def user():
         return True
     response.s3.prep = user_prep
 
+    response.s3.pagination = True
     output = shn_rest_controller(module, resource, main="first_name")
     
     s3xrc.model.clear_config(table, "onvalidation", "onaccept")

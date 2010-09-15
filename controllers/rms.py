@@ -11,7 +11,7 @@ if module not in deployment_settings.modules:
     redirect(URL(r=request, c="default", f="index"))
 
 # Options Menu (available in all Functions' Views)
-response.menu_options = [
+menu = [
     [T("Home"), False, URL(r=request, f="index")],
     [T("Requests"), False, URL(r=request, f="req"), [
         [T("List"), False, URL(r=request, f="req")],
@@ -27,6 +27,27 @@ response.menu_options = [
         #[T("Search"), False, URL(r=request, f="pledge", args="search")],
     ]],
 ]
+if session.rcvars:
+    if "hms_hospital" in session.rcvars:
+        hospital = db.hms_hospital
+        query = (hospital.id == session.rcvars["hms_hospital"])
+        selection = db(query).select(hospital.id, hospital.name, limitby=(0, 1)).first()
+        if selection:
+            menu_hospital = [
+                [selection.name, False, URL(r=request, c="hms", f="hospital", args=[selection.id])]
+            ]
+            menu.extend(menu_hospital)
+    if "cr_shelter" in session.rcvars:
+        shelter = db.cr_shelter
+        query = (shelter.id == session.rcvars["cr_shelter"])
+        selection = db(query).select(shelter.id, shelter.name, limitby=(0, 1)).first()
+        if selection:
+            menu_shelter = [
+                [selection.name, False, URL(r=request, c="cr", f="shelter", args=[selection.id])]
+            ]
+            menu.extend(menu_shelter)
+
+response.menu_options = menu
 
 # S3 framework functions
 def index():

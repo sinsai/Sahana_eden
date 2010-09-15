@@ -140,7 +140,7 @@ class AuthS3(Auth):
                     #   - this could need a nice label and context help
                     #   - entering timezone from a drop-down would be more comfortable
                     #   - automatic DST adjustment could be nice
-                    Field("utc_offset", length=16, default="UTC +0000", readable=False, writable=False),
+                    Field("utc_offset", length=16, readable=False, writable=False),
                     Field("username", length=128, default=""),
                     Field("language", length=16),
                     Field("email", length=512, default="",
@@ -172,7 +172,7 @@ class AuthS3(Auth):
                     #   - this could need a nice label and context help
                     #   - entering timezone from a drop-down would be more comfortable
                     #   - automatic DST adjustment could be nice
-                    Field("utc_offset", length=16, default="UTC +0000", readable=False, writable=False),
+                    Field("utc_offset", length=16, readable=False, writable=False),
                     #Field("username", length=128, default=""),
                     Field("language", length=16),
                     Field("email", length=512, default="",
@@ -200,7 +200,7 @@ class AuthS3(Auth):
                 #from applications.eden.modules.validators import IS_UTC_OFFSET
                 #validators = local_import("validators")
                 exec("from applications.%s.modules.validators import IS_UTC_OFFSET" % request.application)
-                table.utc_offset.requires = IS_UTC_OFFSET()
+                table.utc_offset.requires = IS_EMPTY_OR(IS_UTC_OFFSET())
             except:
                 pass
             table[passfield].requires = [CRYPT(key=self.settings.hmac_key, digest_alg="sha512")]
@@ -459,12 +459,12 @@ class AuthS3(Auth):
             session.error = self.messages.registration_disabled
             redirect(URL(r=request, args=["login"]))
 
-        settings = db(db.s3_setting.id > 0).select(db.s3_setting.utc_offset, limitby=(0, 1)).first()
-        if settings:
-            utc_offset = settings.utc_offset
-        else:
-            # db empty and prepopulate is false
-            utc_offset = self.deployment_settings.get_L10n_utc_offset()
+        #settings = db(db.s3_setting.id > 0).select(db.s3_setting.utc_offset, limitby=(0, 1)).first()
+        #if settings:
+            #utc_offset = settings.utc_offset
+        #else:
+            ## db empty and prepopulate is false
+            #utc_offset = self.deployment_settings.get_L10n_utc_offset()
 
         if self.is_logged_in() and request.function != "index":
             redirect(self.settings.logged_url)
@@ -480,7 +480,7 @@ class AuthS3(Auth):
 
         user = self.settings.table_user
 
-        user.utc_offset.default = utc_offset
+        #user.utc_offset.default = utc_offset
 
         passfield = self.settings.password_field
         form = SQLFORM(user, hidden=dict(_next=request.vars._next),

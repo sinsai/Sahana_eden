@@ -2,7 +2,7 @@
 <div id="home">
 {{=H2(module_name)}}
 <div style="margin:20px auto; width:96%; max-width:1000px;" >
-    <div style="width:65%; float:left;">
+    <div style="width:100%; float:left;">
         {{=H4(T("Search for a Person"))}}
         {{try:}}{{=form}}{{except:pass}}
         <div><br /></div>
@@ -18,9 +18,6 @@
         {{except:}}
         {{pass}}
         {{include 'dataTables.html'}}
-    </div>
-    <div style="width:30%; float:right;">
-        {{=H4(T("Right-hand headline"))}}
     </div>
 </div>
 </div>

@@ -117,20 +117,17 @@ class S3Vita(object):
         table = db.pr_presence
 
         if isinstance(presence, (int, long, str)):
-            presence = db(table.id == presence).select(table.ALL, limitby=(0,1)).first()
+            id = presence
         elif hasattr(presence, "vars"):
-            presence = Storage(presence.vars)
+            id = presence.vars.id
         else:
-            presence = Storage(presence)
+            id = presence.id
 
+        presence = db(table.id == id).select(table.ALL, limitby=(0,1)).first()
         if not presence:
             return
-
-        id = presence.id
-        try:
-            condition = int(presence.presence_condition)
-        except ValueError:
-            condition = None
+        else:
+            condition = presence.presence_condition
 
         pe_id = presence.pe_id
         datetime = presence.datetime

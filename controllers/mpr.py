@@ -48,8 +48,10 @@ def index():
     except:
         module_name = T("Missing Persons")
 
-    MISSING = T("Missing")
-    FOUND = T("Found")
+    MISSING = str(T("Missing"))
+    SEEN = str(T("Seen"))
+    FOUND = str(T("Found"))
+    DETAILS = str(T("Details"))
 
     s3xrc.model.configure(db.pr_person,
         list_fields=["id",
@@ -79,10 +81,10 @@ def index():
             report_found = str(URL(r=request, f="person", args=["[id]", "presence"], vars=dict(condition=vita.CONFIRMED)))
             linkto = shn_linkto(jr, update=True)("[id]")
             response.s3.actions = [
-                dict(label=str(T("Missing")), _class="action-btn", url=report_missing),
-                dict(label=str(T("Seen")), _class="action-btn", url=report_seen),
-                dict(label=str(T("Found")), _class="action-btn", url=report_found),
-                dict(label=str(T("Details")), _class="action-btn", url=linkto)
+                dict(label=MISSING, _class="action-btn", url=report_missing),
+                dict(label=SEEN, _class="action-btn", url=report_seen),
+                dict(label=FOUND, _class="action-btn", url=report_found),
+                dict(label=DETAILS, _class="action-btn", url=linkto)
             ]
         else:
             label = UPDATE
@@ -122,6 +124,32 @@ def person():
             for key in defaults.keys():
                 if key not in ["id", "uuid", "mci", "update_record", "delete_record"]:
                     _config[key].default = defaults[key]
+        elif jr.component_name == "presence":
+            condition = jr.request.vars.get("condition", None)
+            if condition:
+                try:
+                    condition = int(condition)
+                except:
+                    pass
+                else:
+                    table = db.pr_presence
+                    table.presence_condition.default = condition
+                    table.presence_condition.readable = False
+                    table.presence_condition.writable = False
+                    table.orig_id.readable = False
+                    table.orig_id.writable = False
+                    table.dest_id.readable = False
+                    table.dest_id.writable = False
+                    table.observer.readable = False
+                    table.observer.writable = False
+                    if auth.shn_logged_in():
+                        persons = db.pr_person
+                        person = db(persons.uuid == session.auth.user.person_uuid).select(persons.id, limitby=(0,1)).first()
+                        if person:
+                            table.reporter.default = person.id
+                            table.reporter.writable = False
+                            table.reporter.comment = None
+                    table.datetime.default = request.utcnow
         if jr.http == "POST" and jr.method == "create" and not jr.component:
             # Don't know why web2py always adds that,
             # remove it here as we want to manually redirect
@@ -144,7 +172,7 @@ def person():
             else:
                 label = UPDATE
                 report = None
-            linkto = "%s/%s" % (shn_linkto(jr, sticky=True)("[id]"), "missing_report")
+            linkto = shn_linkto(jr, sticky=True)("[id]")
             response.s3.actions = [
                 dict(label=str(label), _class="action-btn", url=str(linkto))]
             if report:

@@ -219,7 +219,7 @@ def export_pdf(table, query, list_fields=None):
                     text = " ".join(text)
             except etree.XMLSyntaxError:
                 pass
-        return text
+        return s3xrc.xml.xml_encode(text)
 
     for field in fields:
         _elements.append(Label(text=s3xrc.xml.xml_encode(str(field.label))[:16], top=0.8*cm, left=LEFTMARGIN*cm))

@@ -108,7 +108,8 @@ deployment_settings.gis.locations_hierarchy = {
     "L1":T("Province"),
     "L2":T("District"),
     "L3":T("Town"),
-    "L4":T("Village")
+    "L4":T("Village"),
+    "XX":T("Imported")
 }
 # Maximum Marker Size
 # (takes effect only on display)

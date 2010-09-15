@@ -222,7 +222,7 @@ def export_pdf(table, query, list_fields=None):
         return text
 
     for field in fields:
-        _elements.append(Label(text=str(field.label)[:16], top=0.8*cm, left=LEFTMARGIN*cm))
+        _elements.append(Label(text=s3xrc.xml.xml_encode(str(field.label))[:16], top=0.8*cm, left=LEFTMARGIN*cm))
         tab, col = str(field).split(".")
         detailElements.append(ObjectValue(
             attribute_name=col,

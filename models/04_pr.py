@@ -210,22 +210,41 @@ table = db.define_table(tablename,
 
 table.uuid.requires = IS_NOT_IN_DB(db, "%s.uuid" % tablename)
 
+table.title.requires = IS_NOT_EMPTY()
+table.title.comment = DIV(SPAN("*", _class="req", _style="padding-right: 5px;"), DIV(_class="tooltip",
+    _title=Tstr("Title") + "|" + Tstr("Specify a descriptive title for the image.")))
+
 table.url.label = T("URL")
 table.url.represent = lambda url: url and DIV(A(IMG(_src=url, _height=60), _href=url)) or T("None")
+table.url.comment =  DIV(SPAN("*", _class="req", _style="padding-right: 5px;"), DIV(_class="tooltip",
+    _title=Tstr("URL") + "|" + Tstr("The URL of the image file. If you don't upload an image file, then you must specify its location here.")))
 
+table.image.comment =  DIV(SPAN("*", _class="req", _style="padding-right: 5px;"), DIV(_class="tooltip",
+    _title=Tstr("Image") + "|" + Tstr("Upload an image file here. If you don't upload an image file, then you must specify its location in the URL field.")))
 table.image.represent = lambda image: image and \
         DIV(A(IMG(_src=URL(r=request, c="default", f="download", args=image),_height=60, _alt=T("View Image")),
               _href=URL(r=request, c="default", f="download", args=image))) or \
         T("No Image")
 
+table.description.comment =  DIV(_class="tooltip",
+    _title=Tstr("Description") + "|" + Tstr("Give a brief description of the image, e.g. what can be seen where on the picture (optional)."))
 
 def shn_pr_image_onvalidation(form):
 
     """ Image form validation """
 
+    table = db.pr_image
     image = form.vars.image
+
+    if not hasattr(image, "file"):
+        id = request.post_vars.id
+        if id:
+            record = db(table.id == id).select(table.image, limitby=(0,1)).first()
+            if record:
+                image = record.image
+
     url = form.vars.url
-    if not hasattr(image, "file") and not url:
+    if not hasattr(image, "file") and not image and not url:
         form.errors.image = \
         form.errors.url = T("Either file upload or image URL required.")
 
@@ -242,10 +261,10 @@ s3xrc.model.configure(table,
     onvalidation=shn_pr_image_onvalidation,
     list_fields=[
         "id",
+        "title",
         "type",
         "image",
         "url",
-        "title",
         "description"
     ])
 

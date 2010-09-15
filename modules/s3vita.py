@@ -143,8 +143,7 @@ class S3Vita(object):
 
             elif condition in persistant:
                 if not presence.closed:
-                    query = this_entity & earlier & \
-                            (is_present | (is_absent & same_place) | is_missing) & \
+                    query = this_entity & earlier & (is_present | is_missing) & \
                             (table.closed == False)
                     db(query).update(closed=True)
 

@@ -208,7 +208,7 @@ def person():
             if not jr.component:
                 label = T("Found")
                 linkto = URL(r=request, f="person",
-                             args=("[id]", "missing_report"),
+                             args=("[id]", "presence"),
                              vars=dict(condition=vita.CONFIRMED))
                 response.s3.actions.append(
                     dict(label=str(label), _class="action-btn", url=str(linkto)))

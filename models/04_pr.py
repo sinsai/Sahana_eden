@@ -327,6 +327,7 @@ table = db.define_table(tablename,
                         dest_id,
                         Field("shelter_id", "integer"),
                         Field("comment"),
+                        Field("closed", "boolean", default=False),
                         migrate=migrate)
 
 
@@ -352,6 +353,10 @@ table.datetime.represent = lambda value: shn_as_local_time(value)
 table.datetime.label = T("Date/Time")
 table.datetime.comment = SPAN("*", _class="req")
 
+table.closed.readable = False
+table.closed.writable = False
+#table.closed.represent = lambda opt: opt and "closed" or ""
+
 table.proc_desc.label = T("Procedure")
 
 table.shelter_id.readable = False
@@ -365,12 +370,15 @@ s3xrc.model.add_component(module, resource,
                           main="time", extra="location_details")
 
 s3xrc.model.configure(table,
+    onaccept = lambda form: vita.presence_accept(form),
+    delete_onaccept = lambda row: vita.presence_accept(row),
     list_fields = [
         "id",
         "datetime",
         "location_id",
-        "location_details",
+        "shelter_id",
         "presence_condition",
+        #"closed",
         "orig_id",
         "dest_id"
     ])
@@ -390,6 +398,7 @@ s3.crud_strings[tablename] = Storage(
     msg_record_modified = T("Log entry updated"),
     msg_record_deleted = T("Log entry deleted"),
     msg_list_empty = T("No Presence Log Entries currently registered"))
+
 
 # *****************************************************************************
 # Subscription (pe_subscription)
@@ -511,54 +520,6 @@ s3.crud_strings[tablename] = Storage(
     msg_record_modified = T("Identity updated"),
     msg_record_deleted = T("Identity deleted"),
     msg_list_empty = T("No Identities currently registered"))
-
-# *****************************************************************************
-# Status
-#
-pr_victim_status_opts = {
-    1: T("injured"),
-    2: T("displaced"),
-    3: T("suffered financial losses")
-}
-
-resource = "status"
-tablename = "%s_%s" % (module, resource)
-table = db.define_table(tablename,
-                        timestamp, authorstamp, uuidstamp, deletion_status,
-                        person_id,
-                        Field("victim_status", "list:integer"),
-                        Field("comment"),
-                        migrate=migrate)
-
-table.victim_status.requires = IS_EMPTY_OR(IS_IN_SET(pr_victim_status_opts, zero=None, multiple=True))
-table.victim_status.represent = lambda opt: opt and \
-                                ", ".join([str(pr_victim_status_opts.get(o, UNKNOWN_OPT)) for o in opt]) or ""
-
-s3xrc.model.add_component(module, resource,
-                          multiple=False,
-                          joinby=dict(pr_person="person_id"),
-                          deletable=False,
-                          editable=True)
-
-s3xrc.model.configure(table,
-    list_fields=[
-        "id",
-        "victim_status"
-    ])
-
-ADD_IDENTITY = T("Add Status")
-s3.crud_strings[tablename] = Storage(
-    title_create = ADD_IDENTITY,
-    title_display = T("Status Details"),
-    title_list = T("Current Status"),
-    title_update = T("Edit Status"),
-    subtitle_create = T("Add Status"),
-    subtitle_list = T("Current Status"),
-    label_create_button = ADD_IDENTITY,
-    msg_record_created = T("Status added"),
-    msg_record_modified = T("Status updated"),
-    msg_record_deleted = T("Status deleted"),
-    msg_list_empty = T("No status information currently available"))
 
 
 # *****************************************************************************

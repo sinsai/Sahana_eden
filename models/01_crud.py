@@ -1261,7 +1261,7 @@ def shn_list(r, **attr):
                 label_create_button = shn_get_crud_string(tablename, "label_create_button")
                 if label_create_button:
                     add_btn = A(label_create_button, _href=href_add, _class="action-btn")
-                
+
 
             shn_custom_view(r, "list.html")
             output.update(add_btn=add_btn)

@@ -136,7 +136,7 @@ def person():
             else:
                 label = UPDATE
                 report = None
-            linkto = shn_linkto(jr, sticky=True)("[id]")
+            linkto = "%s/%s" % (shn_linkto(jr, sticky=True)("[id]"), "missing_report")
             response.s3.actions = [
                 dict(label=str(label), _class="action-btn", url=str(linkto))]
             if report:
@@ -162,8 +162,8 @@ def person():
         response.s3.filter = (db.pr_person.missing == True)
 
     mpr_tabs = [
-                (T("Person Details"), None),
                 (T("Missing Report"), "missing_report"),
+                (T("Person Details"), None),
                 (T("Physical Description"), "physical_description"),
                 (T("Images"), "image"),
                 (T("Identity"), "identity"),

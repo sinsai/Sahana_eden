@@ -68,7 +68,7 @@ def s3_debug(message, value=None):
     output = "S3 Debug: " + str(message)
     if value:
         output += ": " + str(value)
-    
+
     print >> sys.stderr, output
 
 # -----------------------------------------------------------------------------

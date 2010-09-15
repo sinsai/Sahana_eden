@@ -258,6 +258,18 @@ pr_religion = db.Table(None, "religion",
 
 
 # -----------------------------------------------------------------------------
+# Tags for the impact of the disaster on a person (formerly "victim status")
+# NOTE: "Missing" is defined elsewhere, because this doesn't impact the person
+#
+pr_impact_tags = {
+    1: T("injured"),
+    4: T("diseased"),
+    2: T("displaced"),
+    5: T("separated from family"),
+    3: T("suffered financial losses")
+}
+
+# -----------------------------------------------------------------------------
 pr_nations = s3_list_of_nations
 
 pr_nationality = db.Table(None, "nationality",
@@ -315,6 +327,7 @@ table = db.define_table(tablename,
                         pr_religion,
                         pr_marital_status,
                         Field("occupation"),
+                        Field("tags", "list:integer"),
                         comments,
                         migrate=migrate)
 
@@ -344,6 +357,12 @@ table.missing.represent = lambda missing: (missing and ["missing"] or [""])[0]
 table.gender.label = T("Gender")
 table.age_group.label = T("Age group")
 
+table.tags.label = T("Personal impact of disaster")
+table.tags.comment = DIV(DIV(_class="tooltip",
+    _title=Tstr("Personal impact of disaster") + "|" + Tstr("How is this person affected by the disaster? (Select all that apply)")))
+table.tags.requires = IS_EMPTY_OR(IS_IN_SET(pr_impact_tags, zero=None, multiple=True))
+table.tags.represent = lambda opt: opt and \
+                       ", ".join([str(pr_impact_tags.get(o, UNKNOWN_OPT)) for o in opt]) or ""
 
 # -----------------------------------------------------------------------------
 ADD_PERSON = T("Add Person")

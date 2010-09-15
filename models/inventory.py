@@ -29,7 +29,7 @@ if deployment_settings.has_module("logs"):
                             migrate=migrate)
 
     table.location_id.requires = IS_ONE_OF(db, "gis_location.id", repr_select, orderby="gis_location.name", sort=True)
-    table.location_id.comment.append(SPAN("*", _class="req"))
+    table.location_id.comment = DIV(table.location_id.comment, SPAN("*", _class="req"))
 
     # -----------------------------------------------------------------------------
     def inventory_store_represent(id):

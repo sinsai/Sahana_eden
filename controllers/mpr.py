@@ -62,6 +62,7 @@ def index():
                      "age_group",
                      "missing"])
 
+
     def prep(jr):
         if jr.representation == "html":
             if not jr.id:
@@ -75,23 +76,42 @@ def index():
     def postp(jr, output):
         if isinstance(output, dict):
             output.update(module_name=module_name)
+
         if not jr.component:
-            report_missing = str(URL(r=request, f="person", args=["[id]", "missing_report"]))
-            report_seen = str(URL(r=request, f="person", args=["[id]", "presence"], vars=dict(condition=vita.SEEN)))
-            report_found = str(URL(r=request, f="person", args=["[id]", "presence"], vars=dict(condition=vita.CONFIRMED)))
+
+            response.s3.actions = []
+            if auth.shn_logged_in():
+
+                report_missing = str(URL(r=request, f="person", args=["[id]", "missing_report"]))
+                report_seen = str(URL(r=request, f="person", args=["[id]", "presence"], vars=dict(condition=vita.SEEN)))
+                report_found = str(URL(r=request, f="person", args=["[id]", "presence"], vars=dict(condition=vita.CONFIRMED)))
+                response.s3.actions = [
+                    dict(label=MISSING, _class="action-btn", url=report_missing),
+                    #dict(label=SEEN, _class="action-btn", url=report_seen),
+                    dict(label=FOUND, _class="action-btn", url=report_found),
+                ]
+
+                if isinstance(output, dict):
+                    person = db(db.pr_person.uuid == session.auth.user.person_uuid)
+                    person = person.select(db.pr_person.id,
+                                        db.pr_person.missing,
+                                        limitby=(0,1)).first()
+                    if person and person.missing:
+                        myself = URL(r=request, f="person",
+                                    args=[person.id, "presence"],
+                                    vars=dict(condition=vita.CONFIRMED))
+                        output.update(myself=myself)
+
             linkto = shn_linkto(jr, update=True)("[id]")
-            response.s3.actions = [
-                dict(label=MISSING, _class="action-btn", url=report_missing),
-                dict(label=SEEN, _class="action-btn", url=report_seen),
-                dict(label=FOUND, _class="action-btn", url=report_found),
-                dict(label=DETAILS, _class="action-btn", url=linkto)
-            ]
+            response.s3.actions.append(dict(label=DETAILS, _class="action-btn", url=linkto))
+
         else:
             label = UPDATE
             linkto = shn_linkto(jr, update=True)("[id]")
             response.s3.actions = [
                 dict(label=str(label), _class="action-btn", url=str(linkto))
             ]
+
         return output
     response.s3.postp = postp
 
@@ -117,7 +137,32 @@ def person():
         label_list_button = T("List Missing Persons"),
         msg_list_empty = T("No Persons currently reported missing"))
 
+    s3xrc.model.configure(db.pr_group_membership,
+                          list_fields=["id",
+                                       "group_id",
+                                       "group_head",
+                                       "description"])
+
+    s3xrc.model.configure(db.pr_person,
+        list_fields=["id",
+                     "first_name",
+                     "middle_name",
+                     "last_name",
+                     "gender",
+                     "age_group",
+                     "missing"])
+
     def person_prep(jr):
+        if auth.shn_logged_in():
+            persons = db.pr_person
+            person = db(persons.uuid == session.auth.user.person_uuid).select(persons.id, limitby=(0,1)).first()
+            if person:
+                db.pr_presence.reporter.default = person.id
+                db.pr_presence.reporter.writable = False
+                db.pr_presence.reporter.comment = None
+                db.mpr_missing_report.reporter.default = person.id
+                db.mpr_missing_report.reporter.writable = False
+                db.mpr_missing_report.reporter.comment = None
         if jr.component_name == "config":
             _config = db.gis_config
             defaults = db(_config.id == 1).select(limitby=(0, 1)).first()
@@ -142,14 +187,6 @@ def person():
                     table.dest_id.writable = False
                     table.observer.readable = False
                     table.observer.writable = False
-                    if auth.shn_logged_in():
-                        persons = db.pr_person
-                        person = db(persons.uuid == session.auth.user.person_uuid).select(persons.id, limitby=(0,1)).first()
-                        if person:
-                            table.reporter.default = person.id
-                            table.reporter.writable = False
-                            table.reporter.comment = None
-                    table.datetime.default = request.utcnow
         if jr.http == "POST" and jr.method == "create" and not jr.component:
             # Don't know why web2py always adds that,
             # remove it here as we want to manually redirect
@@ -158,26 +195,23 @@ def person():
 
     response.s3.prep = person_prep
 
-    s3xrc.model.configure(db.pr_group_membership,
-                          list_fields=["id",
-                                       "group_id",
-                                       "group_head",
-                                       "description"])
-
     def person_postp(jr, output):
         if jr.representation in shn_interactive_view_formats:
             if not jr.component:
                 label = READ
-                report = URL(r=request, f="person", args=("[id]", "missing_report"))
+                linkto = URL(r=request, f="person", args=("[id]", "missing_report"))
             else:
                 label = UPDATE
-                report = None
-            linkto = shn_linkto(jr, sticky=True)("[id]")
+                linkto = shn_linkto(jr, sticky=True)("[id]")
             response.s3.actions = [
                 dict(label=str(label), _class="action-btn", url=str(linkto))]
-            if report:
+            if not jr.component:
+                label = T("Found")
+                linkto = URL(r=request, f="person",
+                             args=("[id]", "missing_report"),
+                             vars=dict(condition=vita.CONFIRMED))
                 response.s3.actions.append(
-                    dict(label=str(T("Report")), _class="action-btn", url=str(report)))
+                    dict(label=str(label), _class="action-btn", url=str(linkto)))
         if jr.http == "POST" and jr.method == "create" and not jr.component:
             # If a new person gets added, redirect to mpr_next
             if response.s3.mpr_next:

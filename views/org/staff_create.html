@@ -6,12 +6,12 @@
 
 $(function() {
     // Person AutoComplete
-    {{entity_id = "org_staff_person_id"}}
+    {{entity_id = request.controller + "_" + request.function + "_person_id"}}
     {{is_person = True}}
     {{include "auto_input.js"}}
     
     // Organisation AutoComplete
-    {{entity_id = "org_staff_organisation_id"}}
+    {{entity_id = request.controller + "_" + request.function + "_organisation_id"}}
     {{urlpath_c = "org"}}
     {{urlpath_f = "organisation"}}
     {{urlvar_field = "name"}}
@@ -19,7 +19,7 @@ $(function() {
     {{include "auto_input.js"}}
 
     // Office AutoComplete
-    {{entity_id = "org_staff_office_id"}}
+    {{entity_id = request.controller + "_" + request.function + "_office_id"}}
     {{dummy_select = True}}
     {{default_value = T("Select an Organisation to see a list of offices")}}
     {{urlpath_c = "org"}}
@@ -34,7 +34,7 @@ $(function() {
     }
 
     // if we are going to add a new office, and the organisation is pre-selected,
-    // we would auto-assign the new office to that organisation
+    // we auto-assign the new office to that organisation
     set_parent_id = function(href, caller){
         if(caller != 'org_staff_office_id') 
             return href;

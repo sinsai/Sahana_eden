@@ -331,6 +331,7 @@ table = db.define_table(tablename,
                         pe_id,
                         Field("reporter", db.pr_person),
                         Field("observer", db.pr_person),
+                        Field("shelter_id", "integer"),
                         location_id,
                         Field("location_details"),
                         Field("datetime", "datetime"), # 'time' is a reserved word in Postgres
@@ -344,7 +345,6 @@ table = db.define_table(tablename,
                         Field("proc_desc"),
                         orig_id,
                         dest_id,
-                        Field("shelter_id", "integer"),
                         Field("comment"),
                         Field("closed", "boolean", default=False),
                         migrate=migrate)
@@ -381,6 +381,30 @@ table.proc_desc.label = T("Procedure")
 table.shelter_id.readable = False
 table.shelter_id.writable = False
 
+def s3_pr_presence_onvalidation(form):
+
+    condition = form.vars.presence_condition
+    if condition:
+        try:
+            condition = int(condition)
+        except ValueError:
+            condition = None
+    else:
+        condition = db.pr_presence.presence_condition.default
+        form.vars.condition = condition
+
+    if condition:
+        location = form.vars.location_id
+        shelter = form.vars.shelter_id
+
+        if condition in vita.PERSISTANT_PRESENCE or \
+        condition in vita.ABSENCE:
+            if not location and not shelter:
+                form.errors.location_id = \
+                form.errors.shelter_id = T("Either a shelter or a location must be specified")
+
+    return
+
 s3xrc.model.add_component(module, resource,
                           multiple=True,
                           joinby="pe_id",
@@ -389,6 +413,7 @@ s3xrc.model.add_component(module, resource,
                           main="time", extra="location_details")
 
 s3xrc.model.configure(table,
+    onvalidation = lambda form: s3_pr_presence_onvalidation(form),
     onaccept = lambda form: vita.presence_accept(form),
     delete_onaccept = lambda row: vita.presence_accept(row),
     list_fields = [

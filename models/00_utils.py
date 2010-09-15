@@ -79,7 +79,7 @@ def s3_get_utc_offset():
     """ Get the current UTC offset for the client """
 
     offset = None
-    
+
     if auth.is_logged_in():
         # 1st choice is the personal preference (useful for GETs if user wishes to see times in their local timezone)
         offset = session.auth.user.utc_offset

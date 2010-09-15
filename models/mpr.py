@@ -44,27 +44,22 @@ if deployment_settings.has_module(module):
     table = db.define_table(tablename,
                             timestamp, uuidstamp, authorstamp, deletion_status,
                             person_id,
-                            Field("found", "boolean"),
+                            reporter,
                             Field("since", "datetime"),
                             Field("details", "text"),
-                            #Field("found_date", "datetime"),
                             location_id,
                             Field("location_details"),
-                            reporter,
                             Field("contact", "text"),
                             migrate=migrate)
 
     table.person_id.label = T("Person missing")
     table.reporter.label = T("Person reporting")
 
-    table.found.label = T("Person found")
-    table.found.comment = DIV(DIV(_class="tooltip",
-        _title=Tstr("Person found") + "|" + Tstr("Use this to indicate that the person has been found.")))
-
     table.since.label = T("Date/Time of disappearance")
     table.since.requires = IS_UTC_DATETIME(utc_offset=shn_user_utc_offset(), allow_future=False)
     table.since.represent = lambda value: shn_as_local_time(value)
     table.since.comment = SPAN("*", _class="req")
+    table.since.default = request.utcnow
 
     table.location_id.label = T("Last known location")
     table.location_id.comment = DIV(A(ADD_LOCATION,
@@ -96,10 +91,42 @@ if deployment_settings.has_module(module):
         table = db.pr_person
 
         if form.vars.person_id:
-            if form.vars.found:
-                db(table.id == form.vars.person_id).update(missing=False)
+            person = db(table.id == form.vars.person_id).select(table.pe_id, limitby=(0,1)).first()
+            if person:
+                pe_id = person.pe_id
             else:
-                db(table.id == form.vars.person_id).update(missing=True)
+                return
+        else:
+            return
+
+        user = db(table.uuid == session.auth.user.person_uuid).select(table.id, limitby=(0,1)).first()
+        if user:
+            user_id = user.id
+        else:
+            return # no anonymous reports!
+
+        table = db.pr_presence
+        query = (table.pe_id == pe_id) & (table.deleted == False) & \
+                (table.presence_condition == vita.MISSING) & \
+                (table.closed == False) & \
+                (table.reporter == user_id)
+        presence = db(query).select(table.id, orderby=~table.datetime, limitby=(0,1)).first()
+
+        record = dict(pe_id = pe_id,
+                      datetime = request.utcnow,
+                      reporter = user_id,
+                      location_id = form.vars.location_id,
+                      closed = False,
+                      presence_condition = vita.MISSING)
+
+        if presence:
+            record_id = presence.id
+            db(table.id == presence.id).update(**record)
+        else:
+            record_id = table.insert(**record)
+
+        if record_id:
+            vita.presence_accept(record_id)
 
 
     s3xrc.model.configure(table,
@@ -126,5 +153,5 @@ label_delete_button = T("Delete Report"),
 msg_record_created = T("Report added"),
 msg_record_modified = T("Report updated"),
 msg_record_deleted = T("Report deleted"),
-msg_list_empty = T("No Reports currently registered"))
+msg_list_empty = T("No report available."))
 

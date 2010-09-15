@@ -349,7 +349,6 @@ table = db.define_table(tablename,
                         Field("closed", "boolean", default=False),
                         migrate=migrate)
 
-
 table.uuid.requires = IS_NOT_IN_DB(db, "%s.uuid" % tablename)
 
 table.observer.requires = IS_NULL_OR(IS_ONE_OF(db, "pr_person.id", shn_pr_person_represent, orderby="pr_person.first_name"))
@@ -368,9 +367,9 @@ table.reporter.ondelete = "RESTRICT"
 
 table.datetime.requires = IS_UTC_DATETIME(utc_offset=shn_user_utc_offset(), allow_future=False)
 table.datetime.represent = lambda value: shn_as_local_time(value)
-
 table.datetime.label = T("Date/Time")
 table.datetime.comment = SPAN("*", _class="req")
+table.datetime.default = request.utcnow
 
 table.closed.readable = False
 table.closed.writable = False

@@ -377,6 +377,7 @@ def shn_represent_file(file_name,
 def shn_table_links(reference):
     """
         Return a dict of tables & their fields which have references to the specified table
+        - to be replaced by db[tablename]._referenced_by
     """
     tables = {}
     for table in db.tables:

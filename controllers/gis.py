@@ -320,6 +320,7 @@ def location_duplicates():
 
     def delete_location(old, new):
         # Find all tables which link to the Locations table
+        # @ToDo Replace with db.gis_location._referenced_by
         tables = shn_table_links("gis_location")
 
         for table in tables:
@@ -397,8 +398,9 @@ def location_links():
     import gluon.contrib.simplejson as json
 
     # Find all tables which link to the Locations table
+    # @ToDo Replace with db.gis_location._referenced_by
     tables = shn_table_links("gis_location")
-
+    
     results = []
     for table in tables:
         for count in range(len(tables[table])):

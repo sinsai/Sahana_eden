@@ -20,22 +20,6 @@
 <a href='{{=URL(r=request, c="gis", f="map_service_catalogue")}}'>
 {{=T("Layers")}}
 </a></span>
-{{if request.function == "feature_class":}}
-    <span class='rheader_tab_here'>
-{{else:}}
-    <span class='rheader_tab_other'>
-{{pass}}
-<a href='{{=URL(r=request, c="gis", f="feature_class")}}'>
-{{=T("Feature Classes")}}
-</a></span>
-{{if request.function == "feature_group":}}
-    <span class='rheader_tab_here'>
-{{else:}}
-    <span class='rheader_tab_other'>
-{{pass}}
-<a href='{{=URL(r=request, c="gis", f="feature_group")}}'>
-{{=T("Feature Groups")}}
-</a></span>
 {{if request.function == "marker":}}
     <span class='rheader_tab_here'>
 {{else:}}

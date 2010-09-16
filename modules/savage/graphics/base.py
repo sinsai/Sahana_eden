@@ -109,6 +109,8 @@ class PositionableElement (Element):
         matrix = identity (3)
         while not (parent is None):
             matrix = parent.transform * matrix
+            if parent.name == 'svg':
+                break
             parent = parent.parent
         for p in points:
             q = matrix * p.matrix ()

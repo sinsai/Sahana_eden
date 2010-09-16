@@ -1,7 +1,9 @@
-from base import Element
+from base import Element, PositionableElement
 from utils import attributesToSVG, ViewBox
 
-from ..utils.struct import identity
+from ..utils.struct import identity, Vector as V
+
+from copy import deepcopy
 
 class GroupableElement (Element):
     def __init__ (self, **attr):
@@ -121,7 +123,7 @@ class Grouping (GroupableElement):
         return self.childrenSVG (indent)
 
 
-class Group (GroupableElement):
+class Group (GroupableElement, PositionableElement):
     def __init__ (self, **attr):
         GroupableElement.__init__ (self, name = 'g', **attr)
         self.postTransforms = []
@@ -131,7 +133,19 @@ class Group (GroupableElement):
 
     def setSVG (self):
         attr = GroupableElement.setSVG (self)
-        transforms = ' '.join (map (str, self.postTransforms))
+        transList = []
+        for t in self.postTransforms:
+            trans = deepcopy (t)
+            if trans.x is None or trans.y is None:
+                transList.append (trans)
+                continue
+            p = V (trans.x, trans.y)
+            self.applyTransform (p)
+            trans.x = p.x
+            trans.y = p.y
+            transList.append (trans)
+            
+        transforms = ' '.join (map (str, transList))
         if transforms != '':
             attr.update ([('transform', transforms)])
         return attr

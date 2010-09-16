@@ -386,11 +386,28 @@ class S3Resource(object):
                                 elif op == "ge":
                                     v = values[-1]
                                     query = (table[field] >= v)
+                                elif op == "in":
+                                    query = None
+                                    for v in values:
+                                        q = (table[field].contains(v))
+                                        if query:
+                                            query = query | q
+                                        else:
+                                            query = q
+                                    query = (query)
+                                elif op == "ex":
+                                    query = None
+                                    for v in values:
+                                        q = (~(table[field].contains(v)))
+                                        if query:
+                                            query = query & q
+                                        else:
+                                            query = q
+                                    query = (query)
                                 elif op == "like":
                                     query = None
                                     for v in values:
-                                        v = "%%%s%%" % v
-                                        q = (table[field].lower().like(v.lower()))
+                                        q = (table[field].lower().contains(v.lower()))
                                         if query:
                                             query = query | q
                                         else:
@@ -399,8 +416,7 @@ class S3Resource(object):
                                 elif op == "unlike":
                                     query = None
                                     for v in values:
-                                        v = "%%%s%%" % v
-                                        q = (~(table[field].lower().like(v.lower())))
+                                        q = (~(table[field].lower().contains(v.lower())))
                                         if query:
                                             query = query & q
                                         else:
@@ -3248,6 +3264,11 @@ class S3ResourceController(object):
                         values = vlist
                     elif op in ("like", "unlike"):
                         if ftype not in ("string", "text"):
+                            continue
+                        if not isinstance(values, (list, tuple)):
+                            values = [values]
+                    elif op in ("in", "ex"):
+                        if not ftype.startswith("list:"):
                             continue
                         if not isinstance(values, (list, tuple)):
                             values = [values]

@@ -20,6 +20,8 @@ pr_address_type_opts = {
     99:T("other")
 }
 
+
+# -----------------------------------------------------------------------------
 resource = "address"
 tablename = "%s_%s" % (module, resource)
 table = db.define_table(tablename,
@@ -42,6 +44,7 @@ table = db.define_table(tablename,
                         location_id,
                         Field("comment"),
                         migrate=migrate)
+
 
 table.uuid.requires = IS_NOT_IN_DB(db, "%s.uuid" % tablename)
 
@@ -76,7 +79,7 @@ s3.crud_strings[tablename] = Storage(
     msg_record_deleted = T("Address deleted"),
     msg_list_empty = T("No Addresses currently registered"))
 
-
+# Addresses as component of person entities
 s3xrc.model.add_component(module, resource,
                           multiple=True,
                           joinby="pe_id",
@@ -110,6 +113,8 @@ pr_contact_method_opts = {
     99:T("other")
 }
 
+
+# -----------------------------------------------------------------------------
 resource = "pe_contact"
 tablename = "%s_%s" % (module, resource)
 table = db.define_table(tablename,
@@ -145,6 +150,7 @@ pe_contact_id = db.Table(None, "pe_contact_id",
                                  requires = IS_NULL_OR(IS_ONE_OF(db, "pr_pe_contact.id")),
                                  ondelete = "RESTRICT"))
 
+# Contact information as component of person entities
 s3xrc.model.add_component(module, resource,
                           multiple=True,
                           joinby="pe_id",
@@ -191,6 +197,8 @@ pr_image_type_opts = {
     99:T("other")
 }
 
+
+# -----------------------------------------------------------------------------
 resource = "image"
 tablename = "%s_%s" % (module, resource)
 table = db.define_table(tablename,
@@ -229,6 +237,8 @@ table.image.represent = lambda image: image and \
 table.description.comment =  DIV(_class="tooltip",
     _title=Tstr("Description") + "|" + Tstr("Give a brief description of the image, e.g. what can be seen where on the picture (optional)."))
 
+
+# -----------------------------------------------------------------------------
 def shn_pr_image_onvalidation(form):
 
     """ Image form validation """
@@ -251,11 +261,14 @@ def shn_pr_image_onvalidation(form):
     return False
 
 
+# -----------------------------------------------------------------------------
+# Images as component of person entities
 s3xrc.model.add_component(module, resource,
                           multiple=True,
                           joinby="pe_id",
                           deletable=True,
                           editable=True)
+
 
 s3xrc.model.configure(table,
     onvalidation=shn_pr_image_onvalidation,
@@ -267,6 +280,7 @@ s3xrc.model.configure(table,
         "url",
         "description"
     ])
+
 
 LIST_IMAGES = T("List Images")
 s3.crud_strings[tablename] = Storage(
@@ -323,6 +337,7 @@ dest_id = db.Table(None, "dest_id",
                         )
                   )
 
+
 # -----------------------------------------------------------------------------
 resource = "presence"
 tablename = "%s_%s" % (module, resource)
@@ -348,6 +363,7 @@ table = db.define_table(tablename,
                         Field("comment"),
                         Field("closed", "boolean", default=False),
                         migrate=migrate)
+
 
 table.uuid.requires = IS_NOT_IN_DB(db, "%s.uuid" % tablename)
 
@@ -380,7 +396,19 @@ table.proc_desc.label = T("Procedure")
 table.shelter_id.readable = False
 table.shelter_id.writable = False
 
+
+# -----------------------------------------------------------------------------
 def s3_pr_presence_onvalidation(form):
+
+    """ Presence record validation """
+
+    table = db.pr_presence
+
+    location = form.vars.location_id
+    shelter = form.vars.shelter_id
+
+    if location or shelter:
+        return
 
     condition = form.vars.presence_condition
     if condition:
@@ -389,27 +417,42 @@ def s3_pr_presence_onvalidation(form):
         except ValueError:
             condition = None
     else:
-        condition = db.pr_presence.presence_condition.default
+        condition = table.presence_condition.default
         form.vars.condition = condition
 
     if condition:
-        location = form.vars.location_id
-        shelter = form.vars.shelter_id
-
         if condition in vita.PERSISTANT_PRESENCE or \
-        condition in vita.ABSENCE:
-            if not location and not shelter:
-                form.errors.location_id = \
-                form.errors.shelter_id = T("Either a shelter or a location must be specified")
+           condition in vita.ABSENCE:
+            if not form.vars.id:
+                if table.location_id.default or \
+                   table.shelter_id.default:
+                    return
+            else:
+                record = db(table.id == form.vars.id).select(table.location_id,
+                                                             table.shelter_id,
+                                                             limitby=(0,1)).first()
+                if record and \
+                   record.location_id or record.shelter_id:
+                    return
+        else:
+            return
+    else:
+        return
 
+    form.errors.location_id = \
+    form.errors.shelter_id = T("Either a shelter or a location must be specified")
     return
 
+
+# -----------------------------------------------------------------------------
+# Presence as component of person entities
 s3xrc.model.add_component(module, resource,
                           multiple=True,
                           joinby="pe_id",
                           deletable=True,
                           editable=True,
                           main="time", extra="location_details")
+
 
 s3xrc.model.configure(table,
     onvalidation = lambda form: s3_pr_presence_onvalidation(form),
@@ -425,6 +468,7 @@ s3xrc.model.configure(table,
         "orig_id",
         "dest_id"
     ])
+
 
 ADD_LOG_ENTRY = T("Add Log Entry")
 s3.crud_strings[tablename] = Storage(
@@ -466,6 +510,7 @@ table.pe_id.requires = IS_ONE_OF(db, "pr_pentity.id",
 # Moved to zzz_last.py to ensure all tables caught!
 #table.resource.requires = IS_IN_SET(db.tables)
 
+# Subscriptions as component of person entities
 s3xrc.model.add_component(module, resource,
                           multiple=True,
                           joinby="pe_id",
@@ -506,6 +551,8 @@ pr_id_type_opts = {
     99:T("other")
 }
 
+
+# -----------------------------------------------------------------------------
 resource = "identity"
 tablename = "%s_%s" % (module, resource)
 table = db.define_table(tablename,
@@ -532,6 +579,7 @@ table.value.requires = IS_NOT_EMPTY()
 table.value.comment = SPAN("*", _class="req")
 table.ia_name.label = T("Issuing Authority")
 
+# Identity as component of persons
 s3xrc.model.add_component(module, resource,
                           multiple=True,
                           joinby=dict(pr_person="person_id"),
@@ -662,6 +710,8 @@ if deployment_settings.has_module("dvi") or \
         4: T("shaved")
     }
 
+
+# -----------------------------------------------------------------------------
     resource = "physical_description"
     tablename = "%s_%s" % (module, resource)
     table = db.define_table(tablename,
@@ -773,6 +823,7 @@ if deployment_settings.has_module("dvi") or \
     table.pe_id.readable = False
     table.pe_id.writable = False
 
+    # Physical description as component of person entity
     s3xrc.model.add_component(module, resource,
                               multiple=False,
                               joinby="pe_id",

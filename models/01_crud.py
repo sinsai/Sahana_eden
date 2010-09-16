@@ -1165,7 +1165,10 @@ def shn_list(r, **attr):
                             truncate=48, _id="list", _class="display")
 
         if not items:
-            items = shn_get_crud_string(tablename, "msg_list_empty")
+            if db(table.id>0).count():
+                items = shn_get_crud_string(tablename, "msg_no_match")
+            else:
+                items = shn_get_crud_string(tablename, "msg_list_empty")
         output.update(items=items)
 
         authorised = shn_has_permission("create", tablename)

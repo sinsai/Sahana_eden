@@ -129,7 +129,8 @@ s3.crud_strings = Storage(
     msg_record_created = T("Record added"),
     msg_record_modified = T("Record updated"),
     msg_record_deleted = T("Record deleted"),
-    msg_list_empty = T("No Records currently available"))
+    msg_list_empty = T("No Records currently available"),
+    msg_no_match = T("No Records matching the query"))
 
 module = "admin"
 resource = "theme"

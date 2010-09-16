@@ -76,15 +76,18 @@ def s3_debug(message, value=None):
 #
 def s3_get_utc_offset():
 
-    """ Get the current UTC offset of the client, fallback to server settings """
+    """ Get the current UTC offset for the client """
 
     offset = None
+
     if auth.is_logged_in():
+        # 1st choice is the personal preference (useful for GETs if user wishes to see times in their local timezone)
         offset = session.auth.user.utc_offset
         if offset:
             offset = offset.strip()
 
     if not offset:
+        # 2nd choice is what the client provides in the hidden field (for form POSTs)
         offset = request.post_vars.get("_utc_offset", None)
         if offset:
             offset = int(offset)
@@ -94,11 +97,7 @@ def s3_get_utc_offset():
             offset = "%s%02d%02d" % (utcstr, hours, minutes)
 
     if not offset:
-        settings = db().select(db.s3_setting.utc_offset, limitby=(0, 1)).first()
-        if settings:
-            offset = settings.utc_offset
-
-    if not offset:
+        # 3rd choice is the server default (what most clients should see the timezone as)
         offset = deployment_settings.L10n.utc_offset
 
     return offset

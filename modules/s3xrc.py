@@ -3,7 +3,7 @@
 """
     S3XRC Resource Framework
 
-    @version: 2.1.1
+    @version: 2.1.2
     @see: U{B{I{S3XRC-2}} <http://eden.sahanafoundation.org/wiki/S3XRC>} on Eden wiki
 
     @requires: U{B{I{lxml}} <http://codespeak.net/lxml>}

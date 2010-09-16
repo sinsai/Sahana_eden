@@ -34,7 +34,7 @@ def setting():
     table.admin_name.label = T("Admin Name")
     table.admin_email.label = T("Admin Email")
     table.admin_tel.label = T("Admin Tel")
-    table.utc_offset.label = T("UTC Offset")
+    #table.utc_offset.label = T("UTC Offset")
     table.theme.label = T("Theme")
     table.theme.comment = DIV(A(T("Add Theme"), _class="colorbox", _href=URL(r=request, c="admin", f="theme", args="create", vars=dict(format="popup")), _target="top", _title=T("Add Theme"))),
     #table.archive_not_delete.label = T("Archive not Delete")
@@ -277,6 +277,7 @@ def user():
         return True
     response.s3.prep = user_prep
 
+    response.s3.pagination = True
     output = shn_rest_controller(module, resource, main="first_name")
     
     s3xrc.model.clear_config(table, "onvalidation", "onaccept")

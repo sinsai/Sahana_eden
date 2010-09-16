@@ -195,7 +195,7 @@ table = db.define_table(tablename, timestamp, uuidstamp,
                         Field("admin_name"),
                         Field("admin_email"),
                         Field("admin_tel"),
-                        Field("utc_offset", length=16, default=deployment_settings.get_L10n_utc_offset()), # default UTC offset of the instance
+                        #Field("utc_offset", length=16, default=deployment_settings.get_L10n_utc_offset()), # default UTC offset of the instance
                         Field("theme", db.admin_theme),
                         #Field("archive_not_delete", "boolean", default=True),
                         #Field("debug", "boolean", default=False),

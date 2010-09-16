@@ -7,6 +7,8 @@ from copy import deepcopy
 class Axis (Group):
     def __init__ (self, **attr):
         Group.__init__ (self, **attr)
+        self.ticks = []
+        self.labels = []
         self.incr = None
         if attr.has_key ('inf'):
             self.inf = attr['inf']
@@ -60,8 +62,6 @@ class Axis (Group):
     def setText (self, text=None):
         if text:
             self.labels = text
-        else:
-            self.labels = self.ticks
 
     def tickPositions (self, incr):
         current = 0
@@ -75,12 +75,13 @@ class Axis (Group):
             current += incr
         return ticks
 
-    def createTicks (self):
-        if not self.incr:
-            self.incr = self.findIncrement ()
-        ticks = self.tickPositions (self.incr)
-        self.ticks = []
-        self.labels = []
+    def createTicks (self, tickPos = None):
+        if not tickPos:
+            if not self.incr:
+                self.incr = self.findIncrement ()
+            ticks = self.tickPositions (self.incr)
+        else:
+            ticks = tickPos
         for tick in ticks:
             per = ((tick - self.lower) / (self.upper - self.lower))
             val = ((1 - per) * self.inf) + (per * self.sup)
@@ -89,7 +90,7 @@ class Axis (Group):
         return deepcopy (self.ticks)
 
     def drawTicks (self):
-        raise NotImplementedError ()
+        raise RuntimeError ("Abstract base class does not have method")
 
     def move (self, dx, dy):
         for child in self:

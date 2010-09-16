@@ -1,11 +1,13 @@
 from base import BaseGraph, UnifiedGraph
 from canvas import ScatterCanvas, DoubleScatterCanvas, BarCanvas, HorizontalBarCanvas, PieCanvas, LineCanvas
+from axes import YAxis
 
 from ..utils.struct import Vector as V
 
-from ..graphics.utils import ViewBox, Translate, addAttr, blank, boolean
+from ..graphics.utils import ViewBox, Translate, Rotate, addAttr, blank, boolean
 from ..graphics.color import hex_to_color, Color 
-from ..graphics.shapes import Line, Rectangle
+from ..graphics.shapes import Line, Rectangle, Text
+from ..graphics.group import Group
 
 
 class Graph (BaseGraph):
@@ -147,13 +149,24 @@ class BarGraph (UnifiedGraph):
 
         addAttr (settings, 'horizontal', boolean, False)
 
+    def jsChangeTooltipPos (self):
+        if not self.settings.horizontal:
+            return UnifiedGraph.jsChangeTooltipPos (self)
+        else:
+            return """
+      if (target.getAttribute ('width'))
+        targetWidth = parseFloat (target.getAttribute ('width'));
+      else
+        targetWidth = 0;
+      v.x += targetWidth"""
+
     def setProperties (self):
         if self.settings.horizontal:
             self.xaxis = True
-            self.yaxis = False
+            self.yaxis = True
             self.y2axis = False
         else:
-            self.xaxis = False
+            self.xaxis = True
             self.yaxis = True
             self.y2axis = False
 
@@ -164,7 +177,7 @@ class BarGraph (UnifiedGraph):
         self.canvas.addSpace ()
 
     def addBar (self, name, data):
-        self.canvas.addBar (name, None, data)
+        self.canvas.addBar (None, name, data)
         #if self.horizontal:
         #    self.ylabels.append (name)
 
@@ -173,9 +186,69 @@ class BarGraph (UnifiedGraph):
             self.canvas.addBar (name, key, value)
         self.canvas.addSpace ()
 
+    def createXAxisSpace (self):
+        if self.settings.horizontal:
+            UnifiedGraph.createXAxisSpace (self)
+        else:
+            h = self.settings.xAxisTextHeight
+            width = []
+            for child in self.canvas.data:
+                if child.xml.has_key ('data') and not child.xml['data'] is None :
+                    w = Text.textWidth (child.xml['data'], h)
+                    width.append (w)
+            if len (width) > 0:
+                maxWidth = max (width)
+            else:
+                maxWidth = 0
+            delta = self.settings.xAxisSpace + maxWidth
+            self.canvas.move (0, delta)
+            self.canvas.changeSize (0, -delta)
+
+    def createYAxis (self):
+        if not self.settings.horizontal:
+            UnifiedGraph.createYAxis (self)
+        else:
+            for child in self.canvas.data:
+                self.ypositions.append (child.y + (child.height / 2.0))
+                self.ylabels.append (child.xml['data'])
+            UnifiedGraph.createYAxis (self)
+
+    def createXAxis (self):
+        ax = Group ()
+        x = self.canvas.x - self.canvas.height
+        y = self.canvas.y + self.canvas.height
+        ax.appendTransform (Rotate (-90, self.canvas.x, y))
+        if self.settings.horizontal:
+            UnifiedGraph.createXAxis (self)
+        else:
+            textProperties = {'textHeight': self.settings.xAxisTextHeight,
+                              'verticalAnchor': 'middle',
+                              'horizontalAnchor': 'right',
+                              }
+            xaxis = YAxis (id = 'x-axis',
+                           inf = self.canvas.y + self.canvas.height,
+                           sup = self.canvas.y + self.canvas.height - self.canvas.width,
+                           x = self.canvas.x - self.canvas.height - self.settings.xAxisSpace,
+                           lower = self.xbounds[0],
+                           upper = self.xbounds[1],
+                           textProperties = textProperties)
+            ticks = []
+            labels = []
+            for child in self.canvas.data:
+                if child.xml.has_key ('name'):
+                    ticks.append (child.x + child.width / 2.0)
+                    labels.append (child.xml['data'])
+            xaxis.createTicks (ticks)
+            xaxis.setText (map (str, labels))
+            xaxis.drawTicks ()
+            ax.draw (xaxis)
+            self.dataGroup.drawAt (ax, 0)
+        
+
     def setSVG (self):
         attr = UnifiedGraph.setSVG (self)
         return attr
+
 
 class LineChart (UnifiedGraph):
     def __init__ (self, **attr):

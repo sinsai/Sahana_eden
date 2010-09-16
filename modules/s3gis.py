@@ -618,21 +618,25 @@ class GIS(object):
             File is expected to have been generated from a Shapefile as:
             ogr2ogr -f CSV CSV TM_WORLD_BORDERS-0.3.shp -lco GEOMETRY=AS_WKT
 
-            There needs to be a column named 'WKT'
             The Location names should be ADM0_NAME to ADM3_NAME
             - the highest-numbered name will be taken as the name of the current location
             - the previous will be taken as the parent(s)
 
+            @ToDo: It is possible to use the tool purely for Hierarchy, however:
+            If there is a column named 'WKT' then it will be used to provide polygon &/or centroid information.
+            @ToDo: If there is no column named 'WKT' but there are columns named 'Lat' & Lon' then these will be used for Point information.
+
             Currently it expects to be run from the CLI, with the file in the web2py folder
+            Currently it expects L0 data to be pre-imported into the database.
+            - L1 should be imported 1st, then L2, then L3
+            - parents are found though the use of the name columns, so the previous level of hierarchy shouldn't have duplicate names in
+
             @ToDo: Extend to support being run from the webpage
             @ToDo: Write additional function(s) to do the OGR2OGR transformation from an uploaded Shapefile
-            
-            @ToDo: Currently it expects L0 data to be pre-imported into the database.
-                   - L1 should be imported 1st, then L2, then L3
-                   - parents are found though the use of the name columns,
-                     so the previous level of hierarchy shouldn't have duplicate names in
+            @ToDo: Checks for dupliate names in this level upon Import & update these instead
+            -  make optional for speedier imports when there's no need (as we have a blank DB to work with)
         """
-        
+
         import csv
 
         cache = self.cache

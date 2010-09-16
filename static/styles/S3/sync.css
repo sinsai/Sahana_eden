@@ -18,11 +18,30 @@
     font-weight: bold;
 }
 
-#sync_status .failure {
+#sync_status .sync_ok {
+    color: #288D31;
+}
+
+#sync_status .sync_error {
     color: #CE322E;
     font-weight: bold;
 }
 
-#sync_status .success {
+#sync_status .sync_success {
     color: #288D31;
+}
+
+#sync_status .sync_failure {
+    color: #E39921;
+    font-weight: bold;
+}
+
+#sync_status .sync_done {
+    color: #288D31;
+    font-weight: bold;
+}
+
+#sync_status .sync_skipped {
+    color: #E39921;
+    font-weight: bold;
 }

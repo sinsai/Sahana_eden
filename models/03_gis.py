@@ -161,6 +161,8 @@ table = db.define_table(tablename, timestamp, uuidstamp,
                         Field("cluster_distance", "integer", default=5, notnull=True),
                         Field("cluster_threshold", "integer", default=2, notnull=True),
                         opt_gis_layout,
+                        Field("wmsbrowser_name", default="Web Map Service"),
+                        Field("wmsbrowser_url"),
                         migrate=migrate)
 
 table.uuid.requires = IS_NOT_IN_DB(db, "gis_config.uuid")
@@ -187,12 +189,16 @@ table.map_width.label = T("Map Width")
 table.zoom_levels.label = T("Zoom Levels")
 table.cluster_distance.label = T("Cluster Distance")
 table.cluster_threshold.label = T("Cluster Threshold")
+table.wmsbrowser_name.label = T("WMS Browser Name")
+table.wmsbrowser_url.label =  T("WMS Browser URL")
 # Defined here since Component
 table.lat.comment = DIV(SPAN("*", _class="req"), DIV( _class="tooltip", _title=Tstr("Latitude") + "|" + Tstr("Latitude is North-South (Up-Down). Latitude is zero on the equator and positive in the northern hemisphere and negative in the southern hemisphere.")))
 table.lon.comment = DIV(SPAN("*", _class="req"), DIV( _class="tooltip", _title=Tstr("Longitude") + "|" + Tstr("Longitude is West - East (sideways). Longitude is zero on the prime meridian (Greenwich Mean Time) and is positive to the east, across Europe and Asia.  Longitude is negative to the west, across the Atlantic and the Americas.")))
 table.zoom.comment = DIV(SPAN("*", _class="req"), DIV( _class="tooltip", _title=Tstr("Zoom") + "|" + Tstr("How much detail is seen. A high Zoom level means lot of detail, but not a wide area. A low Zoom level means seeing a wide area, but not a high level of detail.")))
 table.map_height.comment = DIV(SPAN("*", _class="req"), DIV( _class="tooltip", _title=Tstr("Height") + "|" + Tstr("Default Height of the map window. In Window layout the map maximises to fill the window, so no need to set a large value here.")))
 table.map_width.comment = DIV(SPAN("*", _class="req"), DIV( _class="tooltip", _title=Tstr("Width") + "|" + Tstr("Default Width of the map window. In Window layout the map maximises to fill the window, so no need to set a large value here.")))
+table.wmsbrowser_name.comment = DIV( _class="tooltip", _title=Tstr("WMS Browser Name") + "|" + Tstr("The title of the WMS Browser panel in the Tools panel."))
+table.wmsbrowser_url.comment = DIV( _class="tooltip", _title=Tstr("WMS Browser URL") + "|" + Tstr("The URL for the GetCapabilities of a WMS Service whose layers you want accessible via the Map."))
 ADD_CONFIG = T("Add Config")
 LIST_CONFIGS = T("List Configs")
 s3.crud_strings[tablename] = Storage(
@@ -540,11 +546,11 @@ def get_location_id (field_name = "location_id",
                     )
 # -----------------------------------------------------------------------------
 # Locations as component of Locations ('Parent')
-s3xrc.model.add_component(module, resource,
-                          multiple=False,
-                          joinby=dict(gis_location="parent"),
-                          deletable=True,
-                          editable=True)
+#s3xrc.model.add_component(module, resource,
+#                          multiple=False,
+#                          joinby=dict(gis_location="parent"),
+#                          deletable=True,
+#                          editable=True)
 
 # -----------------------------------------------------------------------------
 # Local Names

@@ -51,17 +51,13 @@
 
     <!-- ****************************************************************** -->
     <xsl:template match="resource[@name='gis_location']">
-        <xsl:variable name="uid">
-            <xsl:value-of select="@uuid"/>
-        </xsl:variable>
+        <xsl:variable name="uid" select="./@uuid"/>
         <xsl:choose>
             <xsl:when test="//reference[@resource='gis_location' and @uuid=$uid]">
-                <!-- This can render multiple markers for the same point, where
-                     some KML clients (like GoogleEarth) will resolve such stacks
-                     (GE does a nice stack explosion widget here), others won't.
-                -->
                 <xsl:for-each select="//reference[@resource='gis_location' and @uuid=$uid]">
-                    <xsl:apply-templates select=".."/>
+                    <xsl:if test="not(../@name='gis_location')">
+                        <xsl:apply-templates select=".."/>
+                    </xsl:if>
                 </xsl:for-each>
             </xsl:when>
             <xsl:otherwise>
@@ -87,6 +83,7 @@
                 </Placemark>
             </xsl:otherwise>
         </xsl:choose>
+        <xsl:value-of select="$uid"/>
     </xsl:template>
 
     <!-- ****************************************************************** -->

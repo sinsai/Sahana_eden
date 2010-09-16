@@ -219,10 +219,10 @@ def export_pdf(table, query, list_fields=None):
                     text = " ".join(text)
             except etree.XMLSyntaxError:
                 pass
-        return text
+        return s3xrc.xml.xml_encode(text)
 
     for field in fields:
-        _elements.append(Label(text=str(field.label)[:16], top=0.8*cm, left=LEFTMARGIN*cm))
+        _elements.append(Label(text=s3xrc.xml.xml_encode(str(field.label))[:16], top=0.8*cm, left=LEFTMARGIN*cm))
         tab, col = str(field).split(".")
         detailElements.append(ObjectValue(
             attribute_name=col,
@@ -808,6 +808,7 @@ def shn_read(r, **attr):
     # Get the callbacks of the target table
     onvalidation = s3xrc.model.get_config(table, "onvalidation")
     onaccept = s3xrc.model.get_config(table, "onaccept")
+    list_fields = s3xrc.model.get_config(table, "list_fields")
 
     # Get the controller attributes
     rheader = attr.get("rheader", None)
@@ -906,8 +907,9 @@ def shn_read(r, **attr):
         # Add a list button if appropriate
         if not r.component or r.multiple:
             label_list_button = shn_get_crud_string(tablename, "label_list_button")
-            list_btn = A(label_list_button, _href=r.there(), _class="action-btn")
-            output.update(list_btn=list_btn)
+            if label_list_button:
+                list_btn = A(label_list_button, _href=r.there(), _class="action-btn")
+                output.update(list_btn=list_btn)
 
         return output
 
@@ -1032,6 +1034,7 @@ def shn_list(r, **attr):
     orderby = _attr.get("orderby", None)
     sortby = _attr.get("sortby", [[1,'asc']])
     linkto = _attr.get("linkto", None)
+    create_next = _attr.get("create_next")
 
     # Provide the ability to get a subset of records
     start = vars.get("start", 0)
@@ -1168,12 +1171,12 @@ def shn_list(r, **attr):
         authorised = shn_has_permission("create", tablename)
         if authorised and listadd:
 
-            # Block join field
+            # @ToDo: This should share a subroutine with shn_create()
             if r.component:
+                # Block join field
                 _comment = table[r.fkey].comment
                 table[r.fkey].comment = None
                 table[r.fkey].default = r.record[r.pkey]
-
                 # Fix for #447:
                 if r.http == "POST":
                     table[r.fkey].writable = True
@@ -1181,17 +1184,30 @@ def shn_list(r, **attr):
                 else:
                     table[r.fkey].writable = False
 
+                # Neutralize callbacks
+                crud.settings.create_onvalidation = None
+                crud.settings.create_onaccept = None
+                crud.settings.create_next = None
+                r.next = create_next or r.there()
+            else:
+                r.next = crud.settings.create_next or r.there()
+                crud.settings.create_next = None
+                if not onvalidation:
+                    onvalidation = crud.settings.create_onvalidation
+                if not onaccept:
+                    onaccept = crud.settings.create_onaccept
+
             if onaccept:
                 _onaccept = lambda form: \
                             s3xrc.audit("create", prefix, name, form=form,
                                         representation=representation) and \
-                            s3xrc.store_session(session, prefix, name, 0) and \
+                            s3xrc.store_session(session, prefix, name, form.vars.id) and \
                             onaccept(form)
             else:
                 _onaccept = lambda form: \
                             s3xrc.audit("create", prefix, name, form=form,
                                         representation=representation) and \
-                            s3xrc.store_session(session, prefix, name, 0)
+                            s3xrc.store_session(session, prefix, name, form.vars.id)
 
             message = shn_get_crud_string(tablename, "msg_record_created")
 
@@ -1200,7 +1216,9 @@ def shn_list(r, **attr):
                                onvalidation=onvalidation,
                                onaccept=_onaccept,
                                message=message,
-                               next=r.there())
+                               # Return to normal list view after creation
+                               #next=r.there() # Better to use r.next
+                              )
 
             # Cancel button?
             #form[0].append(TR(TD(), TD(INPUT(_type="reset", _value="Reset form"))))
@@ -1210,7 +1228,7 @@ def shn_list(r, **attr):
                                             _onclick="window.location='%s';" %
                                                      response.s3.cancel))
 
-            if "location_id" in db[tablename].fields:
+            if "location_id" in db[tablename].fields and db[tablename].location_id.writable:
                 # Allow the Location Selector to take effect
                 _gis.location_id = True
                 if response.s3.gis.map_selector:
@@ -1227,21 +1245,23 @@ def shn_list(r, **attr):
             showaddbtn = A(label_create_button,
                            _id = "show-add-btn",
                            _class="action-btn")
+            output.update(showaddbtn=showaddbtn)
 
             shn_custom_view(r, "list_create.html")
 
             if deployment_settings.get_ui_navigate_away_confirm():
                 form.append( SCRIPT ("EnableNavigateAwayConfirm();") )
 
-            output.update(form=form, addtitle=addtitle, showaddbtn=showaddbtn)
+            output.update(form=form, addtitle=addtitle)
 
         else:
             # List only
-            if authorised:
+            add_btn = ""
+            if authorised and editable:
                 label_create_button = shn_get_crud_string(tablename, "label_create_button")
-                add_btn = A(label_create_button, _href=href_add, _class="action-btn")
-            else:
-                add_btn = ""
+                if label_create_button:
+                    add_btn = A(label_create_button, _href=href_add, _class="action-btn")
+
 
             shn_custom_view(r, "list.html")
             output.update(add_btn=add_btn)
@@ -1307,7 +1327,7 @@ def shn_create(r, **attr):
                 del r.request.get_vars["from_fields"] # forget it
                 from_fields = from_fields.split(",")
             else:
-                from_fields = [f for f in table.fields if f in source.fields and f!="id"]
+                from_fields = [f for f in table.fields if f in source.fields and f != "id"]
             if source and from_record:
                 copy_fields = [source[f] for f in from_fields if
                                     f in source.fields and
@@ -1327,7 +1347,7 @@ def shn_create(r, **attr):
         # Default components
         output = dict(module=prefix, resource=name, main=main, extra=extra)
 
-        if "location_id" in db[tablename].fields:
+        if "location_id" in db[tablename].fields and db[tablename].location_id.writable:
             # Allow the Location Selector to take effect
             _gis.location_id = True
             if response.s3.gis.map_selector:
@@ -1360,6 +1380,7 @@ def shn_create(r, **attr):
                 request.post_vars.update({r.fkey: str(r.record[r.pkey])})
             else:
                 table[r.fkey].writable = False
+
             # Neutralize callbacks
             crud.settings.create_onvalidation = None
             crud.settings.create_onaccept = None
@@ -1390,20 +1411,29 @@ def shn_create(r, **attr):
 
         # Get the form
         message = shn_get_crud_string(tablename, "msg_record_created")
-        if original:
+        if "id" in r.request.post_vars:
+            original = r.request.post_vars.id
+            r.request.post_vars.id = str(original)
+            formname = "%s/%s" % (tablename, original)
+            old_form = "%s/None" % (tablename)
+            session["_formkey[%s]" % formname] = session.get("_formkey[%s]" % old_form)
+            if "deleted" in table: # undelete
+                table.deleted.writable = True
+                r.request.post_vars.update(deleted=False)
+            r.request.post_vars.update(_formname = formname, id=r.request.post_vars.id)
+            r.request.vars.update(**r.request.post_vars)
+        elif original:
             original.id = None
-            form = crud.update(table,
-                               original,
-                               message=message,
-                               next=crud.settings.create_next,
-                               deletable=False,
-                               onvalidation=onvalidation,
-                               onaccept=_onaccept)
         else:
-            form = crud.create(table,
-                               message=message,
-                               onvalidation=onvalidation,
-                               onaccept=_onaccept)
+            original = None
+
+        form = crud.update(table,
+                           original,
+                           message=message,
+                           next=crud.settings.create_next,
+                           deletable=False,
+                           onvalidation=onvalidation,
+                           onaccept=_onaccept)
 
         subheadings = attr.get("subheadings", None)
         if subheadings:
@@ -1430,8 +1460,9 @@ def shn_create(r, **attr):
         # Add a list button if appropriate
         if not r.component or r.multiple:
             label_list_button = shn_get_crud_string(tablename, "label_list_button")
-            list_btn = A(label_list_button, _href=r.there(), _class="action-btn")
-            output.update(list_btn=list_btn)
+            if label_list_button:
+                list_btn = A(label_list_button, _href=r.there(), _class="action-btn")
+                output.update(list_btn=list_btn)
 
         # Custom view
         if representation in ("popup", "iframe"):
@@ -1639,10 +1670,11 @@ def shn_update(r, **attr):
         # Add a list button if appropriate
         if not r.component or r.multiple:
             label_list_button = shn_get_crud_string(tablename, "label_list_button")
-            list_btn = A(label_list_button, _href=r.there(), _class="action-btn")
-            output.update(list_btn=list_btn)
+            if label_list_button:
+                list_btn = A(label_list_button, _href=r.there(), _class="action-btn")
+                output.update(list_btn=list_btn)
 
-        if "location_id" in db[tablename].fields:
+        if "location_id" in db[tablename].fields and db[tablename].location_id.writable:
             # Allow the Location Selector to take effect
             _gis.location_id = True
             if response.s3.gis.map_selector:
@@ -1739,19 +1771,24 @@ def shn_delete(r, **attr):
             try:
                 shn_audit("delete", prefix, name, record=row.id, representation=representation)
                 # Reset session vars if necessary
-                if "deleted" in db[table] and \
-                   db(db.s3_setting.id == 1).select(db.s3_setting.archive_not_delete, limitby=(0, 1)).first().archive_not_delete:
+                if "deleted" in db[table] and deployment_settings.get_security_archive_not_delete():
                     if onvalidation:
                         onvalidation(row)
                     # Avoid collisions of values in unique fields between deleted records and
-                    # later new records => better solution could be: move the deleted data to
-                    # a separate table (e.g. in JSON) and delete from this table (that would
-                    # also eliminate the need for special deletion status awareness throughout
-                    # the system). Should at best be solved in the DAL.
+                    # later new records => better to solve this in shn_create by utilising
+                    # s3xrc.original() to find the original record with that keys and re-use
+                    # it instead of creating a new one.
                     deleted = dict(deleted=True)
-                    for f in table.fields:
-                        if f not in ("id", "uuid") and table[f].unique:
-                            deleted.update({f:None}) # not good => data loss!
+                    #for f in table.fields:
+                        #if f not in ("id", "uuid") and table[f].unique:
+                            #if table[f].notnull and str(table[f].type) in ("string", "text"):
+                                #newvalue = "_" + row[f]
+                                #deleted.update({f:newvalue})
+                            #elif not table[f].notnull:
+                                #deleted.update({f:None})
+                            #else:
+                                ## notnull and not string => cannot be removed
+                                #pass
                     db(db[table].id == row.id).update(**deleted)
                     if onaccept:
                         onaccept(row)
@@ -1855,7 +1892,10 @@ def shn_map(r, method="create", tablename=None, prefix=None, name=None):
 #
 def shn_search(r, **attr):
 
-    """ Search function responding in JSON """
+    """
+        Search function
+        Mostly used with the JSON representation
+    """
 
     deletable = attr.get("deletable", True)
     main = attr.get("main", None)
@@ -1992,9 +2032,17 @@ def shn_search(r, **attr):
             else:
                 item = s3xrc.xml.json_message(False, 400, "Unsupported filter! Supported filters: ~, =, <, >")
                 raise HTTP(400, body=item)
+
         else:
-            item = s3xrc.xml.json_message(False, 400, "Search requires specifying Field, Filter & Value!")
-            raise HTTP(400, body=item)
+            #item = s3xrc.xml.json_message(False, 400, "Search requires specifying Field, Filter & Value!")
+            #raise HTTP(400, body=item)
+            # Provide a simplified JSON output which is in the same format as the Search one
+            # (easier to parse than S3XRC & means no need for different parser for filtered/unfiltered)
+            if _table == db.gis_location:
+                # Don't return unnecessary fields (WKT is large!)
+                item = db(query).select(_table.id, _table.name, _table.level).json()
+            else:
+                item = db(query).select().json()
 
         response.view = "xml.html"
         output = dict(item=item)
@@ -2047,7 +2095,7 @@ def shn_barchart (r, **attr):
 
     if r.representation.lower() == "svg":
         r.response.headers["Content-Type"] = "image/svg+xml"
-        
+
         graph = local_import("savage.graph")
         bar = graph.BarGraph(settings=settings)
 
@@ -2066,7 +2114,7 @@ def shn_barchart (r, **attr):
             bar.setYLabel(str(ylabel))
         else:
             bar.setYLabel(valKey)
-        
+
         try:
             records = r.resource.load(start, limit)
             for entry in r.resource:

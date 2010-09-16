@@ -3,9 +3,10 @@
 {{else:}}
 <script type="text/javascript">//<![CDATA[
 $(function() {
-    var empty_set = '<option>' + '{{=T("No locations registered at this level")}}</option>';
-    var loading_locations = '<option>' + '{{=T("Loading Locations...")}}</option>';
-    var row, label, widget, comment, parent, url;
+    var empty_set = '<option value="">' + '{{=T("No locations registered at this level")}}</option>';
+    var loading_locations = '<option value="">' + '{{=T("Loading Locations...")}}</option>';
+    var select_location = '<option value="" selected>' + '{{=T("Select a location")}}' + '...</option>';
+    var row, label, widget, comment, _parent, url;
     // Flags to tell us whether the widgets are displayed
     var l1, l2, l3, l4, l5;
 
@@ -17,9 +18,21 @@ $(function() {
     var old_id = '{{=oldlocation.id}}';
     var old_parent = '{{=oldlocation.parent}}';
     var old_name = '{{=oldlocation.name}}';
+    {{if oldlocation.lat:}}
     var old_lat = '{{=oldlocation.lat}}';
+    {{else:}}
+    var old_lat = '';
+    {{pass}}
+    {{if oldlocation.lon:}}
     var old_lon = '{{=oldlocation.lon}}';
+    {{else:}}
+    var old_lon = '';
+    {{pass}}
+    {{if oldlocation.addr_street:}}
     var old_addr_street = '{{=oldlocation.addr_street}}';
+    {{else:}}
+    var old_addr_street = '';
+    {{pass}}
   {{except:}}
     S3.gis.uuid = '';
     S3.gis.level = '';
@@ -96,9 +109,9 @@ $(function() {
         var options;
         var v = '';
         if (data.length == 0) {
-            options = '<option value="">' + '{{=T("No locations registered at this level")}}</option>';
+            options = empty_set;
         } else {
-            options = '<option value="" selected>' + '{{=T("Select a location")}}' + '...</option>';
+            options = select_location;
             for (var i = 0; i < data.length; i++){
                 v = data[i].id;
                 options += '<option value="' +  data[i].id + '">' + data[i].name + '</option>';
@@ -175,8 +188,8 @@ $(function() {
         $('#gis_location_l{{=level}}_tooltip').cluetip({activation: 'hover', sticky: false, splitTitle: '|'});
         // Apply the colorbox which was missed 1st time round
         $('#gis_l{{=level}}_colorbox').click(function(){
-            parent = $('#gis_location_l{{=int(level) - 1}}').val();
-            url = this.href + '&parent=' + parent;
+            _parent = $('#gis_location_l{{=int(level) - 1}}').val();
+            url = this.href + '&parent=' + _parent;
             $.fn.colorbox({iframe:true, width:'99%', height:'99%', href:url, title:this.title});
             return false;
         });
@@ -186,15 +199,15 @@ $(function() {
         $('#gis_location_l{{=level}}').html(options);
     } else {
         // Load locations
-        parent = $('#gis_location_l{{=int(level) - 1}}').val();
-        url = '{{=URL(r=request, c="gis", f="location", args="search.json", vars={"filter":"=", "field":"level", "value":"L" + level})}}&parent=' + parent;
+        _parent = $('#gis_location_l{{=int(level) - 1}}').val();
+        url = '{{=URL(r=request, c="gis", f="location", args="search.json", vars={"filter":"=", "field":"level", "value":"L" + level})}}&parent=' + _parent;
         load_locations = function(data, status){
             var options;
             var v = '';
             if (data.length == 0) {
                 options = empty_set;
             } else {
-                options = '<option value="" selected>' + '{{=T("Select a location")}}' + '...</option>';
+                options = select_location;
                 for (var i = 0; i < data.length; i++){
                     v = data[i].id;
                     options += '<option value="' +  data[i].id + '">' + data[i].name + '</option>';
@@ -255,8 +268,8 @@ $(function() {
         $('#gis_location_l{{=level}}_tooltip').cluetip({activation: 'hover', sticky: false, splitTitle: '|'});
         // Apply the colorbox which was missed 1st time round
         $('#gis_l{{=level}}_colorbox').click(function(){
-            parent = $('#gis_location_l{{=int(level) - 1}}').val();
-            url = this.href + '&parent=' + parent;
+            _parent = $('#gis_location_l{{=int(level) - 1}}').val();
+            url = this.href + '&parent=' + _parent;
             $.fn.colorbox({iframe:true, width:'99%', height:'99%', href:url, title:this.title});
             return false;
         });
@@ -266,15 +279,15 @@ $(function() {
         $('#gis_location_l{{=level}}').html(options);
     } else {
         // Load locations
-        parent = $('#gis_location_l{{=int(level) - 1}}').val();
-        url = '{{=URL(r=request, c="gis", f="location", args="search.json", vars={"filter":"=", "field":"level", "value":"L" + level})}}&parent=' + parent;
+        _parent = $('#gis_location_l{{=int(level) - 1}}').val();
+        url = '{{=URL(r=request, c="gis", f="location", args="search.json", vars={"filter":"=", "field":"level", "value":"L" + level})}}&parent=' + _parent;
         load_locations = function(data, status){
             var options;
             var v = '';
             if (data.length == 0) {
-                options = '<option value="">' + '{{=T("No locations registered at this level")}}</option>';
+                options = empty_set;
             } else {
-                options = '<option value="" selected>' + '{{=T("Select a location")}}' + '...</option>';
+                options = select_location;
                 for (var i = 0; i < data.length; i++){
                     v = data[i].id;
                     options += '<option value="' +  data[i].id + '">' + data[i].name + '</option>';
@@ -332,8 +345,8 @@ $(function() {
         $('#gis_location_l{{=level}}_tooltip').cluetip({activation: 'hover', sticky: false, splitTitle: '|'});
         // Apply the colorbox which was missed 1st time round
         $('#gis_l{{=level}}_colorbox').click(function(){
-            parent = $('#gis_location_l{{=int(level) - 1}}').val();
-            url = this.href + '&parent=' + parent;
+            _parent = $('#gis_location_l{{=int(level) - 1}}').val();
+            url = this.href + '&parent=' + _parent;
             $.fn.colorbox({iframe:true, width:'99%', height:'99%', href:url, title:this.title});
             return false;
         });
@@ -343,15 +356,15 @@ $(function() {
         $('#gis_location_l{{=level}}').html(options);
     } else {
         // Load locations
-        parent = $('#gis_location_l{{=int(level) - 1}}').val();
-        url = '{{=URL(r=request, c="gis", f="location", args="search.json", vars={"filter":"=", "field":"level", "value":"L" + level})}}&parent=' + parent;
+        _parent = $('#gis_location_l{{=int(level) - 1}}').val();
+        url = '{{=URL(r=request, c="gis", f="location", args="search.json", vars={"filter":"=", "field":"level", "value":"L" + level})}}&parent=' + _parent;
         load_locations = function(data, status){
             var options;
             var v = '';
             if (data.length == 0) {
-                options = '<option value="">' + '{{=T("No locations registered at this level")}}</option>';
+                options = empty_set;
             } else {
-                options = '<option value="" selected>' + '{{=T("Select a location")}}' + '...</option>';
+                options = select_location;
                 for (var i = 0; i < data.length; i++){
                     v = data[i].id;
                     options += '<option value="' +  data[i].id + '">' + data[i].name + '</option>';
@@ -409,8 +422,8 @@ $(function() {
         $('#gis_location_l{{=level}}_tooltip').cluetip({activation: 'hover', sticky: false, splitTitle: '|'});
         // Apply the colorbox which was missed 1st time round
         $('#gis_l{{=level}}_colorbox').click(function(){
-            parent = $('#gis_location_l{{=int(level) - 1}}').val();
-            url = this.href + '&parent=' + parent;
+            _parent = $('#gis_location_l{{=int(level) - 1}}').val();
+            url = this.href + '&parent=' + _parent;
             $.fn.colorbox({iframe:true, width:'99%', height:'99%', href:url, title:this.title});
             return false;
         });
@@ -420,15 +433,15 @@ $(function() {
         $('#gis_location_l{{=level}}').html(options);
     } else {
         // Load locations
-        parent = $('#gis_location_l{{=int(level) - 1}}').val();
-        url = '{{=URL(r=request, c="gis", f="location", args="search.json", vars={"filter":"=", "field":"level", "value":"L" + level})}}&parent=' + parent;
+        _parent = $('#gis_location_l{{=int(level) - 1}}').val();
+        url = '{{=URL(r=request, c="gis", f="location", args="search.json", vars={"filter":"=", "field":"level", "value":"L" + level})}}&parent=' + _parent;
         load_locations = function(data, status){
             var options;
             var v = '';
             if (data.length == 0) {
-                options = '<option value="">' + '{{=T("No locations registered at this level")}}</option>';
+                options = empty_set;
             } else {
-                options = '<option value="" selected>' + '{{=T("Select a location")}}' + '...</option>';
+                options = select_location;
                 for (var i = 0; i < data.length; i++){
                     v = data[i].id;
                     options += '<option value="' +  data[i].id + '">' + data[i].name + '</option>';
@@ -486,8 +499,8 @@ $(function() {
         $('#gis_location_l{{=level}}_tooltip').cluetip({activation: 'hover', sticky: false, splitTitle: '|'});
         // Apply the colorbox which was missed 1st time round
         $('#gis_l{{=level}}_colorbox').click(function(){
-            parent = $('#gis_location_l{{=int(level) - 1}}').val();
-            url = this.href + '&parent=' + parent;
+            _parent = $('#gis_location_l{{=int(level) - 1}}').val();
+            url = this.href + '&parent=' + _parent;
             $.fn.colorbox({iframe:true, width:'99%', height:'99%', href:url, title:this.title});
             return false;
         });
@@ -497,15 +510,15 @@ $(function() {
         $('#gis_location_l{{=level}}').html(options);
     } else {
         // Load locations
-        parent = $('#gis_location_l{{=int(level) - 1}}').val();
-        url = '{{=URL(r=request, c="gis", f="location", args="search.json", vars={"filter":"=", "field":"level", "value":"L" + level})}}&parent=' + parent;
+        _parent = $('#gis_location_l{{=int(level) - 1}}').val();
+        url = '{{=URL(r=request, c="gis", f="location", args="search.json", vars={"filter":"=", "field":"level", "value":"L" + level})}}&parent=' + _parent;
         load_locations = function(data, status){
             var options;
             var v = '';
             if (data.length == 0) {
-                options = '<option value="">' + '{{=T("No locations registered at this level")}}</option>';
+                options = empty_set;
             } else {
-                options = '<option value="" selected>' + '{{=T("Select a location")}}' + '...</option>';
+                options = select_location;
                 for (var i = 0; i < data.length; i++){
                     v = data[i].id;
                     options += '<option value="' +  data[i].id + '">' + data[i].name + '</option>';
@@ -556,23 +569,23 @@ $(function() {
             // Read 'parent' field dynamically
             // @ ToDo Disabled temporarily until the bad Lx data is fixed
             //parent: function() {
-            //            var parent = $('#gis_location_l5').val();
-            //            if (undefined == parent || '' == parent) {
-            //                parent = $('#gis_location_l4').val();
-            //                if (undefined == parent || '' == parent) {
-            //                    parent = $('#gis_location_l3').val();
-            //                    if (undefined == parent || '' == parent) {
-            //                        parent = $('#gis_location_l2').val();
-            //                        if (undefined == parent || '' == parent) {
-            //                            parent = $('#gis_location_l1').val();
-            //                            if (undefined == parent || '' == parent) {
-            //                                parent = $('#gis_location_l0').val();
+            //            var _parent = $('#gis_location_l5').val();
+            //            if (undefined == _parent || '' == _parent) {
+            //                _parent = $('#gis_location_l4').val();
+            //                if (undefined == _parent || '' == _parent) {
+            //                    _parent = $('#gis_location_l3').val();
+            //                    if (undefined == _parent || '' == _parent) {
+            //                        _parent = $('#gis_location_l2').val();
+            //                        if (undefined == _parent || '' == _parent) {
+            //                            _parent = $('#gis_location_l1').val();
+            //                            if (undefined == _parent || '' == _parent) {
+            //                                _parent = $('#gis_location_l0').val();
             //                            }
             //                        }
             //                    }
             //                }
             //           }
-            //            return parent
+            //            return _parent
             //        }
         },
         // Don't cache
@@ -954,17 +967,17 @@ $(function() {
                 name = '{{=request.controller + "_" + request.function}}' + Math.floor(Math.random()*1001);
             }
         }
-        parent = $('#gis_location_l5').val();
-        if (undefined == parent || '' == parent){
-            parent = $('#gis_location_l4').val();
-            if (undefined == parent || '' == parent){
-                parent = $('#gis_location_l3').val();
-                if (undefined == parent || '' == parent){
-                    parent = $('#gis_location_l2').val();
-                    if (undefined == parent || '' == parent){
-                        parent = $('#gis_location_l1').val();
-                        if (undefined == parent || '' == parent){
-                            parent = $('#gis_location_l0').val();
+        _parent = $('#gis_location_l5').val();
+        if (undefined == _parent || '' == _parent){
+            _parent = $('#gis_location_l4').val();
+            if (undefined == _parent || '' == _parent){
+                _parent = $('#gis_location_l3').val();
+                if (undefined == _parent || '' == _parent){
+                    _parent = $('#gis_location_l2').val();
+                    if (undefined == _parent || '' == _parent){
+                        _parent = $('#gis_location_l1').val();
+                        if (undefined == _parent || '' == _parent){
+                            _parent = $('#gis_location_l0').val();
                         }
                     }
                 }
@@ -988,10 +1001,10 @@ $(function() {
         } else {
             url = url + '&addr_street=' + addr_street;
         }
-        if (undefined == parent || '' == parent){
+        if (undefined == _parent || '' == _parent){
             // pass
         } else {
-            url = url + '&parent=' + parent;
+            url = url + '&parent=' + _parent;
         }
         // Submit the Location record
         $.ajax({
@@ -1032,15 +1045,17 @@ s3_tb_cleanup = function(level){
     // A new location has been created in a Thickbox Popup
     // Which Level?
     var selector = $('#gis_location_' + level.toLowerCase());
+    // Need to repeat here as the previous definition isn't in-scope
+    var select_location = '<option value="" selected>' + '{{=T("Select a location")}}' + '...</option>';
     // Refresh this dropdown so that the new entry is visible
     url = '{{=URL(r=request, c="gis", f="location", args="search.json", vars={"filter":"=", "field":"level"})}}' + '&value=' + level;
     load_locations = function(data, status){
         var options;
         var v = '';
         if (data.length == 0) {
-            options = '<option value="">' + '{{=T("No locations registered at this level")}}</option>';
+            options = empty_set;
         } else {
-            options = '<option value="" selected>' + '{{=T("Select a location")}}' + '...</option>';
+            options = select_location;
             for (var i = 0; i < data.length; i++){
                 v = data[i].id;
                 options += '<option value="' +  data[i].id + '">' + data[i].name + '</option>';

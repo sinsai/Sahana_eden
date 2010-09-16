@@ -57,15 +57,6 @@ def organisation():
 
     resource = request.function
 
-    def org_prep(jr):
-        if jr.representation == "html":
-            # Redirect to Dashboard after adding/editing an Organisation to add Offices/Staff/Projects
-            crud.settings.create_next = URL(r=request, f="dashboard")
-            crud.settings.update_next = URL(r=request, f="dashboard")
-        return True
-    # Dashboard is deprecated now we have components
-    #response.s3.prep = org_prep
-
     rheader = lambda r: shn_org_rheader(r,
                                         tabs = [(T("Basic Details"), None),
                                                 (T("Offices"), "office"),
@@ -229,10 +220,7 @@ def shn_org_rheader(r, tabs=[]):
             organisation = r.record
 
             if organisation.sector_id:
-                sectors = re.split("\|", organisation.sector_id)[1:-1]
-                _sectors = TABLE()
-                for sector in sectors:
-                    _sectors.append(TR(db(db.org_sector.id == sector).select(db.org_sector.name, limitby=(0, 1)).first().name))
+                _sectors = shn_sector_represent(organisation.sector_id)
             else:
                 _sectors = None
 

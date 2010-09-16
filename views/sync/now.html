@@ -2,7 +2,7 @@
 <h1>{{=T("Manual Synchronization")}}</h1>
 <script type="text/javascript">//<![CDATA[
 function getSyncStatus() {
-    $.get("{{=URL(r=request, c="sync", f="now", vars=dict(sync="status"))}}", function(data) {
+    $.get("{{=URL(r=request, c="sync", f="now", vars=dict(action="status"))}}", function(data) {
 //         alert("Status received.");
         if (!(data === "DONE")) {
             $('#sync_status').append(data);
@@ -13,7 +13,7 @@ function getSyncStatus() {
 function startSync() {
     $.ajax({
         type: "POST",
-        url: '{{=URL(r=request, c="sync", f="now", vars=dict(sync="start"))}}',
+        url: '{{=URL(r=request, c="sync", f="now", vars=dict(action="start"))}}',
         async: true,
         global: false});
     getSyncStatus();
@@ -24,7 +24,7 @@ function startSync() {
 {{if status:}}
     <tr>
         <td nowrap>
-            {{=T("Sync process already started on " + status.started_on.strftime("%x %H:%M:%S") + ", click this button to resume => ")}}&nbsp;&nbsp;&nbsp;
+            {{=T("Sync process already started on " + status.start_time.strftime("%x %H:%M:%S") + ", click this button to resume => ")}}&nbsp;&nbsp;&nbsp;
         </td>
         <td nowrap>
             <a class="action-btn" onclick="startSync();">START</a>

@@ -1,24 +1,29 @@
 #
-# Recommended usage:
+# Recommended usage: fabfile.py
+#
+# - or manually:
+#
+# 0. Configure /root/.my.cnf to allow the root user to access MySQL as root without password
+#
 # 1. Create a new, empty MySQL database 'sahana' as-normal
-#     mysqladmin -u root -p create sahana
-#     mysql -u root -p
+#     mysqladmin create sahana
+#     mysql
 #      GRANT SELECT,INSERT,UPDATE,DELETE,CREATE,INDEX,ALTER,DROP ON sahana.* TO 'sahana'@'localhost' IDENTIFIED BY 'password';
 #
 # 2. set deployment_settings.base.prepopulate = False in models/000_config.py
 #
 # 3. Allow web2py to run the Eden model to configure the Database structure
-#     web2py -S eden -M
+#     web2py -N -S eden -M
 #
 # 4. Export the Live database from the Live server (including structure)
-#     mysqldump -u root -p sahana > backup.sql
+#     mysqldump sahana > backup.sql
 #
 # 5. Use this to populate a new table 'old'
-#     mysqladmin -u root -p create old
-#     mysql -u root -p old < backup.sql
+#     mysqladmin create old
+#     mysql old < backup.sql
 #
-# 6. Change database names/passwords in the script &/or access rights in the table, as-appropriate
-#     mysql -u root -p
+# 6. Change database names/passwords in the script &/or access rights in the table, if not using root & .my.cnf
+#     mysql
 #      GRANT SELECT,INSERT,UPDATE,DELETE,CREATE,INDEX,ALTER,DROP ON old.* TO 'sahana'@'localhost' IDENTIFIED BY 'password';
 #
 # 7. Run the script
@@ -28,7 +33,7 @@
 #     "ALTER TABLE `gis_location` DROP `marker_id` ;
 #      The table -> gis_location has a field -> marker_id that could not be automatically removed"
 #     =>
-#     mysql -u root -p
+#     mysql
 #      \r old
 #      show innodb status;
 #      ALTER TABLE gis_location DROP FOREIGN KEY gis_location_ibfk_2;
@@ -36,18 +41,18 @@
 #      ALTER TABLE gis_location DROP osm_id ;
 #
 # 9. Take a dump of the fixed data (no structure, full inserts)
-#     mysqldump -tc -u root -p old > old.sql
+#     mysqldump -tc old > old.sql
 #
 # 10. Import it into the empty database
-#      mysql -u root -p sahana < old.sql
+#      mysql sahana < old.sql
 #
 # 11. Dump the final database with good structure/data ready to import on the server (including structure)
-#      mysqldump -u root -p sahana > new.sql
+#      mysqldump sahana > new.sql
 #
 # 12. Import it on the Server
-#      mysqladmin -u root -p drop sahana
-#      mysqladmin -u root -p create sahana
-#      mysql -u root -p sahana < new.sql
+#      mysqladmin drop sahana
+#      mysqladmin create sahana
+#      mysql sahana < new.sql
 #
 # 13. Restore indexes
 #      w2p
@@ -63,15 +68,39 @@
 #       db.executesql("CREATE INDEX %s__idx on %s(%s);" % (field, tablename, field))
 #
 
+user = "root"
+# Password can be added to script, if it can't be read from /root/.my.cnf
+passwd = "password"
+
+# An empty database with the new db schema
+new_db = "sahana"
+
+# The old database (structure & data)
+old_db = "old"
+
+# ----------------------------------------------------------------------------------
+
+import os
+import sys
+import subprocess
 import MySQLdb
 
-# DB1 is the db to sync to (Test)
-# a plain structure export of the new db schema
-db1 = MySQLdb.connection(host="localhost", user="sahana", passwd="password", db="sahana")
+# If possible, read the password for root from /root/.my.cnf
+config = "/root/.my.cnf"
+if os.access(config, os.R_OK):
+    f = open(config, "r")
+    lines = f.readlines()
+    f.close()
+    for line in lines:
+        findstring = "password="
+        if findstring in line:
+            passwd = line.replace(findstring, "").strip()
 
-# DB2 is the db to sync from (Live)
-# the complete db (structure & data)
-db2 = MySQLdb.connection(host="localhost", user="sahana", passwd="password", db="old")
+# DB1 is the db to sync to (Test or new Live)
+db1 = MySQLdb.connection(host="localhost", user=user, passwd=passwd, db=new_db)
+
+# DB2 is the db to sync from (backup of Live)
+db2 = MySQLdb.connection(host="localhost", user=user, passwd=passwd, db=old_db)
 
 def tablelist(db):
     db.query("SHOW TABLES;")
@@ -124,12 +153,40 @@ for table in tables_to_delete:
     db2.query("drop table " + table + ";")
     db2.query("SET FOREIGN_KEY_CHECKS = 1;")
 
+problems = ""
+filename = "/root/mysql.status"
 for table in fields_to_delete:
     for field in fields_to_delete[table]:
+        print "ALTER TABLE `" + table + "` DROP `" + field + "` ;"
+        db2.query("SET FOREIGN_KEY_CHECKS = 0;")
         try:
-            db2.query("SET FOREIGN_KEY_CHECKS = 0;")
-            print "ALTER TABLE `" + table + "` DROP `" + field + "` ;"
             db2.query("ALTER TABLE `" + table + "` DROP  `" + field + "` ;")
-            db2.query("SET FOREIGN_KEY_CHECKS = 1;")
         except:
-            print "The table -> " + table + " has a field -> " + field + " that could not be automatically removed"
+            print "Table " + table + " has a field " + field + " with a FK constraint"
+            # Try to resolve any FK constraint issues automatically
+            cmd = 'mysql -e "show innodb status;" > ' + filename
+            subprocess.call(cmd, shell=True)
+            if os.access(filename, os.R_OK):
+                f = open(filename, "r")
+                lines = f.readlines()
+                f.close()
+                fk = lines[1].split("CONSTRAINT")[1].split("FOREIGN")[0].strip()
+                print "ALTER TABLE `" + table + "` DROP FOREIGN KEY `" + fk + "`;"
+                try:
+                    db2.query("ALTER TABLE `" + table + "` DROP FOREIGN KEY `" + fk + "`;")
+                except (MySQLdb.OperationalError,):
+                    e = sys.exc_info()[1]
+                    print "Failed to remove FK %s from table %s" % (fk, table) + e.message
+            # Try again now that FK constraint has been removed
+            print "ALTER TABLE `" + table + "` DROP `" + field + "` ;"
+            try:
+                db2.query("ALTER TABLE `" + table + "` DROP  `" + field + "` ;")
+            except (MySQLdb.OperationalError,):
+                e = sys.exc_info()[1]
+                message = "Failed to drop field %s from table %s" % (field, table) + e.message
+                print message
+                problems += message
+        db2.query("SET FOREIGN_KEY_CHECKS = 1;")
+
+# List any remaining issues as clearly/concisely as possible for us to resolve manually
+print problems

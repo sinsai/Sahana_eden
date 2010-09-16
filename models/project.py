@@ -10,7 +10,7 @@
 """
 
 module = "project"
-if deployment_settings.has_module("project"):
+if deployment_settings.has_module("org"):
     #==============================================================================
     # Settings
     #
@@ -139,7 +139,8 @@ if deployment_settings.has_module("project"):
     # Activities as component of Orgs & Locations
     s3xrc.model.add_component(module, resource,
                               multiple=True,
-                              joinby=dict(org_organisation="organisation_id", gis_location="location_id"),
+                              joinby=dict(org_organisation="organisation_id"),
+                              #joinby=dict(org_organisation="organisation_id", gis_location="location_id"),
                               deletable=True,
                               editable=True)
 

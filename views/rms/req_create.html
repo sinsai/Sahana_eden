@@ -2,46 +2,14 @@
 {{include "_create.html"}}
 <script type="text/javascript">//<![CDATA[
 $(function() {
-    // Shelter AutoComplete
-    {{real_input = request.controller + "_" + request.function + "_shelter_id"}}
-    {{dummy_input = "dummy_" + real_input}}
-    // Hide the real Input Field
-    $('#{{=real_input}}').hide();
-    // Add a dummy field
-    $('#{{=real_input}}').after("<input id='{{=dummy_input}}' class='ac_input' size=50 />");
-    {{include "cr/shelter_autocomplete.js"}}
-    // Populate the Dummy Input from the real one
-    var oldvalue = $('#{{=real_input}} > option[selected="selected"]').html();
-    $('#{{=dummy_input}}').val(oldvalue);
-    // Re-populate the real Input when the Dummy is selected
-    $('#{{=dummy_input}}').result(function(event, data, formatted) {
-        var newvalue = data.id;
-        $('#{{=real_input}}').val(newvalue);
+    var msg_default = '{{=T("Enter a summary of the request here.")}}\n\n{{=T("The next screen will allow you to enter a detailed list of items and quantities, if appropriate...")}}';
+    // Provide some default help text in the Message box
+    $('#rms_req_message').addClass('default-text').attr({ value: msg_default }).focus(function(){
+            if($(this).val() == msg_default){
+                // Clear on click if still default
+                $(this).val('').removeClass('default-text');
+            }
     });
-
-    // Person AutoComplete
-    {{real_input = request.controller + "_" + request.function + "_person_id"}}
-    {{dummy_input = "dummy_" + real_input}}
-    // Hide the real Input Field
-    $('#{{=real_input}}').hide();
-    // Add a dummy field
-    $('#{{=real_input}}').after("<input id='{{=dummy_input}}' class='ac_input' size=50 />");
-    {{include "pr/person_autocomplete.js"}}
-    // Populate the Dummy Input from the real one
-    var oldvalue = $('#{{=real_input}} > option[selected="selected"]').html();
-    $('#{{=dummy_input}}').val(oldvalue);
-    // Re-populate the real Input when the Dummy is selected
-    $('#{{=dummy_input}}').result(function(event, data, formatted) {
-        var newvalue = data.id;
-        $('#{{=real_input}}').val(newvalue);
-    });
-
-    // Reference AutoComplete
-    {{entity_id = "rms_req_document_id"}}
-    {{urlpath_c = "doc"}}
-    {{urlpath_f = "document"}}
-    {{urlvar_field = "name"}}
-    {{include "auto_input.js"}}
 });
 //]]></script>
-{{include "gis/location_autocomplete.js"}}
+{{include "rms/req_autocompletes.html"}}

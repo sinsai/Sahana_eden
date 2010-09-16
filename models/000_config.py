@@ -6,13 +6,6 @@
     Deployers shouldn't typically need to edit any other files.
 """
 
-def Tstr(text):
-    """
-       Convenience function for non-Web2Py modules
-       (latest web2py no longer needs this)
-    """
-    return str(T(text))
-
 s3cfg = local_import("s3cfg")
 deployment_settings = s3cfg.S3Config(T)
 
@@ -50,13 +43,17 @@ deployment_settings.base.debug = False
 deployment_settings.base.migrate = True
 
 # Enable/disable pre-population of the database.
-# Set to False during first run for manual DB migration in case this
-# is explicitly required for a code upgrade, otherwise leave at True
+# Should be True on 1st_run to pre-populate the database
+# - unless doing a manual DB migration
+# Then set to False in Production (to save 1x DAL hit every page)
 # NOTE: the web UI will not be accessible while the DB is empty,
 # instead run:
-#   python web2py.py -S eden -M
+#   python web2py.py -N -S eden -M
 # to create the db structure, then exit and re-import the data.
 deployment_settings.base.prepopulate = True
+
+# Set this to True to use Content Delivery Networks to speed up Internet-facing sites
+deployment_settings.base.cdn = False
 
 # Email settings
 # Outbound server
@@ -78,13 +75,14 @@ deployment_settings.mail.approver = "useradmin@your.org"
 deployment_settings.L10n.languages = {
     "en":T("English"),
     "es":T("Spanish"),
-    "pa":T("Punjabi"),
-    "ps":T("Pashto"),
-    "sd":T("Sindhi"),
+    #"fr":T("French"),
+    #"pa":T("Punjabi"),
+    #"ps":T("Pashto"),
+    #"sd":T("Sindhi"),
     "ur":T("Urdu"),
     "zh-tw":T("Chinese (Taiwan)"),
-    "seraiki":T("Seraiki"),
-    "balochi":T("Balochi"),
+    #"seraiki":T("Seraiki"),
+    #"balochi":T("Balochi"),
 }
 # Default language for Language Toolbar (& GIS Locations in future)
 deployment_settings.L10n.default_language = "en"
@@ -110,12 +108,18 @@ deployment_settings.gis.locations_hierarchy = {
     "L1":T("Province"),
     "L2":T("District"),
     "L3":T("Town"),
-    "L4":T("Village")
+    "L4":T("Village"),
+    "XX":T("Imported")
 }
 # Maximum Marker Size
 # (takes effect only on display)
 deployment_settings.gis.marker_max_height = 35
 deployment_settings.gis.marker_max_width = 30
+# Duplicate Features so that they show wrapped across the Date Line?
+# Points only for now
+# lon<0 have a duplicate at lon+360
+# lon>0 have a duplicate at lon-360
+deployment_settings.gis.duplicate_features = False
 # Do we have a spatial DB available? (currently unused. Will support PostGIS & Spatialite.)
 deployment_settings.gis.spatialdb = False
 # GeoServer (currently unused. Will allow REST control of GeoServer.)
@@ -131,6 +135,8 @@ deployment_settings.gis.geoserver_password = "password"
 #deployment_settings.security.policy = 2 # Editor
 # Should users be allowed to register themselves?
 deployment_settings.security.self_registration = True
+# Use 'soft' deletes
+deployment_settings.security.archive_not_delete = True
 # Audit settings
 # We Audit if either the Global or Module asks us to
 # (ignore gracefully if module author hasn't implemented this)
@@ -150,83 +156,84 @@ deployment_settings.security.self_registration = True
 from gluon.storage import Storage
 deployment_settings.modules = Storage(
     default = Storage(
-            name_nice = Tstr("Home"),
+            name_nice = T("Home"),
             access = None,      # All Users (inc Anonymous) can see this module in the default menu & access the controller
             module_type = 0     # This item is always 1st in the menu
         ),
     admin = Storage(
-            name_nice = Tstr("Administration"),
-            description = Tstr("Site Administration"),
+            name_nice = T("Administration"),
+            description = T("Site Administration"),
             access = "|1|",     # Only Administrators can see this module in the default menu & access the controller
             module_type = 0     # This item is handled separately in the menu
         ),
     gis = Storage(
-            name_nice = Tstr("Map"),
-            description = Tstr("Situation Awareness & Geospatial Analysis"),
+            name_nice = T("Map"),
+            description = T("Situation Awareness & Geospatial Analysis"),
             module_type = 1,     # 1st item in the menu
             resources = Storage(
                 gis_location = {'importer' : True}
              )
         ),
     mpr = Storage(
-            name_nice = Tstr("Missing Persons"),
-            description = Tstr("Helps to report and search for Missing Persons"),
+            name_nice = T("Missing Persons"),
+            description = T("Helps to report and search for Missing Persons"),
             module_type = 2,
         ),
     rms = Storage(
-            name_nice = Tstr("Requests"),
-            description = Tstr("Tracks requests for aid and matches them against donors who have pledged aid"),
+            name_nice = T("Requests"),
+            description = T("Tracks requests for aid and matches them against donors who have pledged aid"),
             module_type = 3,
             resources = Storage(
                 rms_req = {'importer' : True},
             )
         ),
     hms = Storage(
-            name_nice = Tstr("Hospitals"),
-            description = Tstr("Helps to monitor status of hospitals"),
+            name_nice = T("Hospitals"),
+            description = T("Helps to monitor status of hospitals"),
             module_type = 4,
             resources = Storage(
                 hms_hospital = {'importer' : True}
             )
         ),
     vol = Storage(
-            name_nice = Tstr("Volunteers"),
-            description = Tstr("Manage volunteers by capturing their skills, availability and allocation"),
+            name_nice = T("Volunteers"),
+            description = T("Manage volunteers by capturing their skills, availability and allocation"),
             module_type = 5,
         ),
     logs = Storage(
-            name_nice = Tstr("Logistics Management"),
-            description = Tstr("Managing, Storing and Distributing Relief Items"),
+            name_nice = T("Logistics Management"),
+            description = T("Managing, Storing and Distributing Relief Items"),
             module_type = 10
         ),
-    project = Storage(
-            name_nice = Tstr("Project Management"),
-            description = Tstr("Project Activities"),
-            module_type = 10
-        ),
+    # Loaded as part of Org - no separate menu
+    #project = Storage(
+    #        name_nice = T("Project Management"),
+    #        description = T("Project Activities"),
+    #        module_type = 10
+    #    ),
     msg = Storage(
-            name_nice = Tstr("Messaging"),
-            description = Tstr("Sends & Receives Alerts via Email & SMS"),
+            name_nice = T("Messaging"),
+            description = T("Sends & Receives Alerts via Email & SMS"),
             module_type = 10,
         ),
     flood = Storage(
-            name_nice = Tstr("Flood Alerts"),
-            description = Tstr("Flood Alerts show water levels in various parts of the country"),
+            name_nice = T("Flood Alerts"),
+            description = T("Flood Alerts show water levels in various parts of the country"),
             module_type = 10
         ),
     sitrep = Storage(
-            name_nice = Tstr("Assessments"),
-            description = Tstr("Assessments are structured reports done by Professional Organisations - data includes WFP Assessments"),
+            name_nice = T("Assessments"),
+            description = T("Assessments are structured reports done by Professional Organisations - data includes WFP Assessments"),
             module_type = 10
         ),
     rat = Storage(
-            name_nice = Tstr("Rapid Assessments"),
-            description = Tstr("Assessments are structured reports done by Professional Organisations"),
+            name_nice = T("Rapid Assessments"),
+            description = T("Assessments are structured reports done by Professional Organisations"),
             module_type = 10
         ),
     pr = Storage(
-            name_nice = Tstr("Person Registry"),
-            description = Tstr("Central point to record details on People"),
+            name_nice = T("Person Registry"),
+            description = T("Central point to record details on People"),
             module_type = 10,
             resources = Storage(
                 pr_address = {'importer' : True},
@@ -239,9 +246,10 @@ deployment_settings.modules = Storage(
             )
         ),
     dvi = Storage(
-            name_nice = Tstr("Disaster Victim Identification"),
-            description = Tstr("Disaster Victim Identification"),
+            name_nice = T("Disaster Victim Identification"),
+            description = T("Disaster Victim Identification"),
             module_type = 10,
+            #access = "|DVI|",      # Only users with the DVI role can see this module in the default menu & access the controller
             #audit_read = True,     # Can enable Audit for just an individual module here
             #audit_write = True,
             resources = Storage(
@@ -249,13 +257,13 @@ deployment_settings.modules = Storage(
             )
         ),
     #dvr = Storage(
-    #        name_nice = Tstr("Disaster Victim Registry"),
-    #        description = Tstr("Traces internally displaced people (IDPs) and their needs"),
+    #        name_nice = T("Disaster Victim Registry"),
+    #        description = T("Traces internally displaced people (IDPs) and their needs"),
     #        module_type = 10
     #    ),
     budget = Storage(
-            name_nice = Tstr("Budgeting Module"),
-            description = Tstr("Allows a Budget to be drawn up"),
+            name_nice = T("Budgeting Module"),
+            description = T("Allows a Budget to be drawn up"),
             module_type = 10,
             resources = Storage(
                 budget_item = {'importer' : True},
@@ -264,31 +272,31 @@ deployment_settings.modules = Storage(
             )
         ),
     cr = Storage(
-            name_nice = Tstr("Shelter Registry"),
-            description = Tstr("Tracks the location, distibution, capacity and breakdown of victims in Shelters"),
+            name_nice = T("Shelter Registry"),
+            description = T("Tracks the location, distibution, capacity and breakdown of victims in Shelters"),
             module_type = 10,
             resources = Storage(
                 cr_shelter = {'importer' : True }
             )
         ),
     delphi = Storage(
-         name_nice = Tstr("Delphi Decision Maker"),
-            description = Tstr("Supports the decision making of large groups of Crisis Management Experts by helping the groups create ranked list."),
+         name_nice = T("Delphi Decision Maker"),
+            description = T("Supports the decision making of large groups of Crisis Management Experts by helping the groups create ranked list."),
             module_type = 10,
         ),
     doc = Storage(
-            name_nice = Tstr("Documents and Photos"),
-            description = Tstr("A library of digital resources, such as photos, documents and reports"),
+            name_nice = T("Documents and Photos"),
+            description = T("A library of digital resources, such as photos, documents and reports"),
             module_type = 10,
         ),
     irs = Storage(
-        name_nice = Tstr("Incident Reporting"),
-        description = Tstr("Incident Reporting System"),
+        name_nice = T("Incident Reporting"),
+        description = T("Incident Reporting System"),
         module_type = 10
     ),
     org = Storage(
-         name_nice = Tstr("Organization Registry"),
-            description = Tstr('Lists "who is doing what & where". Allows relief agencies to coordinate their activities'),
+         name_nice = T("Organization Registry"),
+            description = T('Lists "who is doing what & where". Allows relief agencies to coordinate their activities'),
             module_type = 10,
             resources = Storage(
                 org_organisation = {'importer' : True},
@@ -299,8 +307,8 @@ deployment_settings.modules = Storage(
             )
         ),
     ticket = Storage(
-            name_nice = Tstr("Ticketing Module"),
-            description = Tstr("Master Message Log to process incoming reports & requests"),
+            name_nice = T("Ticketing Module"),
+            description = T("Master Message Log to process incoming reports & requests"),
             module_type = 10,
         ),
     importer = Storage(
@@ -314,8 +322,8 @@ deployment_settings.modules = Storage(
     	     module_type = 10,
     )
     #lms = Storage(
-    #        name_nice = Tstr("Logistics Management System"),
-    #        description = Tstr("An intake system, a warehouse management system, commodity tracking, supply chain management, procurement and other asset and resource management capabilities."),
+    #        name_nice = T("Logistics Management System"),
+    #        description = T("An intake system, a warehouse management system, commodity tracking, supply chain management, procurement and other asset and resource management capabilities."),
     #        module_type = 10
     #    ),
 )

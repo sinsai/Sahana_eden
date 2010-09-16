@@ -6,7 +6,7 @@
 
 # Deployments can change settings live via appadmin
 
-# Set to False in Production (to save 1x DAL hit every page)
+# Set deployment_settings.base.prepopulate to False in Production (to save 1x DAL hit every page)
 if not deployment_settings.get_base_prepopulate() or db(db["s3_setting"].id > 0).count():
     populate = False
 else:
@@ -23,7 +23,6 @@ if populate:
             logo = "img/sahanapy_logo.png",
             #header_background = "img/header_bg.png",
             #footer = "footer.html",
-            text_direction = "ltr",
             col_background = "336699",
             col_menu = "0066cc",
             col_highlight = "0077aa",
@@ -41,7 +40,6 @@ if populate:
             logo = "img/sahanapy_logo_green.png",
             #header_background = "img/header_bg.png",
             #footer = "footer.html",
-            text_direction = "ltr",
             col_background = "337733",
             col_menu = "cc7722",
             col_highlight = "338833",
@@ -62,7 +60,6 @@ if populate:
             logo = "img/sahanapy_logo_ideamonk.png",
             #header_background = "img/header_bg.png",
             #footer = "footer.html",
-            text_direction = "ltr",
             col_background = "dbdbdb",
             col_menu = "0066cc",
             col_highlight = "0077aa",
@@ -102,7 +99,7 @@ if populate:
         table.insert( name = "Health" )
         table.insert( name = "Protection and Human Rights and Rule of Law" )
         table.insert( name = "Urban Search and Rescue" )
-    
+
     # Person Registry
     tablename = "pr_person"
     table = db[tablename]
@@ -118,9 +115,7 @@ if populate:
     tablename = "sync_setting"
     table = db[tablename]
     if not db(table.id > 0).count():
-       table.insert(
-            uuid = uuid.uuid4()
-        )
+       table.insert(proxy="")
 
     # Logistics (old)
     if "lms" in deployment_settings.modules:
@@ -421,6 +416,7 @@ if populate:
             map_height = 600,
             map_width = 800,
             symbology_id = db(db.gis_symbology.name == "US").select(limitby=(0, 1)).first().id,
+            wmsbrowser_url = "http://geo.eden.sahanafoundation.org/geoserver/wms?service=WMS&request=GetCapabilities"
         )
 
     tablename = "gis_feature_class"

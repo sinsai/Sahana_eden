@@ -3,7 +3,7 @@
 """
     S3XRC Resource Framework
 
-    @version: 2.1
+    @version: 2.1.1
     @see: U{B{I{S3XRC-2}} <http://eden.sahanafoundation.org/wiki/S3XRC>} on Eden wiki
 
     @requires: U{B{I{lxml}} <http://codespeak.net/lxml>}
@@ -1291,6 +1291,14 @@ class S3Resource(object):
            r.representation in self.__manager.json_import_formats:
             return self.__put(r)
         else:
+            post_vars = r.request.post_vars
+            table = r.target()[2]
+            if "deleted" in table and \
+               "id" not in post_vars and "uuid" not in post_vars:
+                original = self.__manager.original(table, post_vars)
+                if original and original.deleted:
+                    r.request.post_vars.update(id=original.id)
+                    r.request.vars.update(id=original.id)
             return self.__get(r)
 
 
@@ -2533,13 +2541,19 @@ class S3ResourceModel(object):
         tablename = "%s_%s" % (prefix, name)
         table = self.db.get(tablename, None)
 
+        h = self.components.get(name, None)
+        if h and h._component and h._component.tablename == tablename:
+            k = h._joinby
+        else:
+            k = None
+
         if table:
             for hook in self.components.values():
                 if tablename in hook:
                     return True
                 else:
                     nkey = hook._joinby
-                    if nkey and nkey in table.fields:
+                    if nkey and nkey in table.fields and nkey != k:
                         return True
 
         return False
@@ -2799,7 +2813,6 @@ class S3ResourceController(object):
         # Method Handlers
         self.__handler = Storage()
 
-
     # -------------------------------------------------------------------------
     def __dbg(self, msg):
 
@@ -2847,14 +2860,20 @@ class S3ResourceController(object):
 
         for i in l:
             if k in i and v in i:
+                if not isinstance(i[v], (list, tuple)):
+                    vals = [i[v]]
+                else:
+                    vals = i[v]
                 c = e.get(i[k], None)
-                if c and i[v] in c:
+                if c:
+                    vals = [x for x in vals if x not in c]
+                if not vals:
                     continue
                 if i[k] in d:
-                    if not i[v] in d[i[k]]:
-                        d[i[k]].append(i[v])
+                    vals = [x for x in vals if x not in d[i[k]]]
+                    d[i[k]] += vals
                 else:
-                    d[i[k]] = [i[v]]
+                    d[i[k]] = vals
         return d
 
 
@@ -2880,7 +2899,8 @@ class S3ResourceController(object):
             fields.insert(0, "id")
 
         rfields = filter(lambda f:
-                         str(table[f].type).startswith("reference") and
+                         (str(table[f].type).startswith("reference") or
+                          str(table[f].type).startswith("list:reference")) and
                          f not in self.xml.FIELDS_TO_ATTRIBUTES,
                          fields)
 
@@ -3013,8 +3033,12 @@ class S3ResourceController(object):
                 if v and v == value:
                     return (value, None)
 
-            value, error = field.validate(value)
-            return (value, error)
+            try:
+                value, error = field.validate(value)
+            except:
+                return (None, None)
+            else:
+                return (value, error)
         else:
             raise AttributeError("No field %s in %s" % (fieldname, table._tablename))
 
@@ -3363,6 +3387,10 @@ class S3ResourceController(object):
 
         (rfields, dfields) = self.__fields(resource.table, skip=skip)
 
+        if self.xml.filter_mci and "mci" in table.fields:
+            mci_filter = (table.mci >= 0)
+            resource.add_filter(mci_filter)
+
         # Total number of results
         results = resource.count()
 
@@ -3374,6 +3402,11 @@ class S3ResourceController(object):
         cdfields = Storage()
         for c in resource.components.values():
             cresource = c.resource
+
+            if self.xml.filter_mci and "mci" in cresource.table.fields:
+                mci_filter = (cresource.table.mci >= 0)
+                cresource.add_filter(mci_filter)
+
             cresource.load()
             ctablename = cresource.tablename
             crfields[ctablename], \
@@ -3422,10 +3455,14 @@ class S3ResourceController(object):
             for c in resource.components.values():
 
                 component = c.component
-                cresource = c.resource
+
                 cprefix = component.prefix
                 cname = component.name
+                if self.model.has_components(cprefix, cname):
+                    continue
+
                 ctable = component.table
+                cresource = c.resource
                 c_url = "%s/%s" % (r_url, cname)
 
                 ctablename = component.tablename
@@ -3491,6 +3528,7 @@ class S3ResourceController(object):
                 load_list = load_map[tablename]
                 prefix, name = tablename.split("_", 1)
                 rresource = self.resource(prefix, name, id=load_list, components=[])
+                table = rresource.table
                 rresource.load()
 
                 if self.base_url:
@@ -3498,7 +3536,6 @@ class S3ResourceController(object):
                 else:
                     url = "/%s/%s" % (prefix, name)
 
-                table = rresource.table
                 rfields, dfields = self.__fields(table, skip=skip)
                 for record in rresource:
                     if audit:
@@ -3740,6 +3777,9 @@ class S3ResourceController(object):
                 if component:
                     _table = component.table
                     tablename = component.tablename
+                    # Do not add queries for empty component tables
+                    if not self.db(_table.id>0).select(_table.id, limitby=(0,1)).first():
+                        continue
             else:
                 _table = table
                 tablename = table._tablename
@@ -4114,6 +4154,10 @@ class S3Vector(object):
 
         if self.rmap:
             for r in self.rmap:
+                fieldtype = str(self.table[r.field].type)
+                multiple = False
+                if fieldtype.startswith("list:reference"):
+                    multiple = True
                 if r.entry:
                     id = r.entry.get("id", None)
                     if not id:
@@ -4124,9 +4168,14 @@ class S3Vector(object):
                         else:
                             continue
                     if id:
-                        self.record[r.field] = id
+                        if multiple:
+                            val = self.record.get(r.field, None) or []
+                            val.append(id)
+                            self.record[r.field] = val
+                        else:
+                            self.record[r.field] = id
                     else:
-                        if r.field in self.record:
+                        if r.field in self.record and not multiple:
                             del self.record[r.field]
                         vector.update.append(dict(vector=self, field=r.field))
 
@@ -4142,7 +4191,15 @@ class S3Vector(object):
         """
 
         if self.id and self.permitted:
-            self.db(self.table.id == self.id).update(**{field:value})
+            fieldtype = str(self.table[field].type)
+            if fieldtype.startswith("list:reference"):
+                record = self.db(self.table.id == self.id).select(self.table[field], limitby=(0,1)).first()
+                if record:
+                    values = record[field]
+                    values.append(value)
+                self.db(self.table.id == self.id).update(**{field:values})
+            else:
+                self.db(self.table.id == self.id).update(**{field:value})
 
 
 # *****************************************************************************
@@ -4268,6 +4325,9 @@ class S3XML(object):
         self.domain_mapping = True
         self.gis = gis
         self.cache = cache
+
+        self.filter_mci = False # Set to true to suppress export at MCI<0
+
 
     # XML+XSLT tools ==========================================================
 
@@ -4518,30 +4578,45 @@ class S3XML(object):
         reference_map = []
 
         for f in fields:
-            id = record.get(f, None)
-            if not id:
-                continue
-            uid = None
 
-            ktablename = str(table[f].type)[10:]
+            ids = record.get(f, None)
+            if not ids:
+                continue
+            if not isinstance(ids, (list, tuple)):
+                ids = [ids]
+
+            multiple = False
+            fieldtype = str(table[f].type)
+            if fieldtype.startswith("reference"):
+                ktablename = fieldtype[10:]
+            elif fieldtype.startswith("list:reference"):
+                ktablename = fieldtype[15:]
+                multiple = True
+            else:
+                continue
+
             ktable = self.db[ktablename]
 
+            uid = None
             if self.UID in ktable.fields:
-                query = (ktable.id == id)
+                query = (ktable.id.belongs(ids))
                 if "deleted" in ktable:
                     query = (ktable.deleted == False) & query
-                krecord = self.db(query).select(ktable[self.UID],
-                                                limitby=(0, 1))
-                if krecord:
-                    uid = krecord[0][self.UID]
+                if self.filter_mci and "mci" in ktable:
+                    query = (ktable.mci >= 0) & query
+                krecords = self.db(query).select(ktable[self.UID])
+                if krecords:
+                    uids = [r[self.UID] for r in krecords if r[self.UID]]
                     if self.domain_mapping:
-                        uid = self.export_uid(uid)
+                        uids = [self.export_uid(u) for u in uids]
                 else:
                     continue
             else:
-                query = (ktable.id == id)
+                query = (ktable.id.belongs(ids))
                 if "deleted" in ktable:
                     query = (ktable.deleted == False) & query
+                if self.filter_mci and "mci" in ktable:
+                    query = (ktable.mci >= 0) & query
                 if not self.db(query).count():
                     continue
 
@@ -4549,12 +4624,13 @@ class S3XML(object):
             value = text = self.xml_encode(str(
                            table[f].formatter(value)).decode("utf-8"))
             if table[f].represent:
-                text = self.represent(table, f, value)
+                text = self.represent(table, f, record[f])
 
             reference_map.append(Storage(field=f,
                                          table=ktablename,
-                                         id=id,
-                                         uid=uid,
+                                         multiple=multiple,
+                                         id=ids,
+                                         uid=uids,
                                          text=text,
                                          value=value))
 
@@ -4578,9 +4654,17 @@ class S3XML(object):
             reference.set(self.ATTRIBUTE.field, r.field)
             reference.set(self.ATTRIBUTE.resource, r.table)
             if show_ids:
-                reference.set(self.ATTRIBUTE.id, self.xml_encode(str(r.id)))
+                if r.multiple:
+                    ids = "|%s|" % "|".join(map(str, r.id))
+                else:
+                    ids = "%s" % r.id[0]
+                reference.set(self.ATTRIBUTE.id, self.xml_encode(ids))
             if r.uid:
-                reference.set(self.UID, r.uid )
+                if r.multiple:
+                    uids = "|%s|" % "|".join(map(str, r.uid))
+                else:
+                    uids = "%s" % r.uid[0]
+                reference.set(self.UID, self.xml_encode(uids))
                 reference.text = r.text
             else:
                 reference.set(self.ATTRIBUTE.value, r.value)
@@ -4612,8 +4696,12 @@ class S3XML(object):
 
         for i in xrange(0, len(references)):
             r = references[i]
+            if len(r.id) == 1:
+                r_id = r.id[0]
+            else:
+                continue # Multi-reference
             ktable = db[r.table]
-            LatLon = db(ktable.id == r.id).select(ktable[self.Lat],
+            LatLon = db(ktable.id == r_id).select(ktable[self.Lat],
                                                   ktable[self.Lon],
                                                   #ktable[self.FeatureClass],
                                                   limitby=(0, 1))
@@ -4708,13 +4796,17 @@ class S3XML(object):
             if f not in table.fields or v is None:
                 continue
 
-            text = value = self.xml_encode(
-                           str(table[f].formatter(v)).decode("utf-8"))
+            fieldtype = str(table[f].type)
+
+            if fieldtype.startswith("list:") and \
+               isinstance(v, (list, tuple)):
+                text = value = self.xml_encode("|%s|" % "|".join(map(str, v)))
+            else:
+                text = value = self.xml_encode(
+                               str(table[f].formatter(v)).decode("utf-8"))
 
             if table[f].represent:
                 text = self.represent(table, f, v)
-
-            fieldtype = str(table[f].type)
 
             if f in self.FIELDS_TO_ATTRIBUTES:
                 if f == self.MCI:
@@ -4742,7 +4834,7 @@ class S3XML(object):
                 data = etree.SubElement(resource, self.TAG.data)
                 data.set(self.ATTRIBUTE.field, f)
                 if table[f].represent:
-                    data.set(self.ATTRIBUTE.value, value )
+                    data.set(self.ATTRIBUTE.value, value)
                 data.text = text
 
         if url:
@@ -4800,72 +4892,86 @@ class S3XML(object):
         references = element.findall("reference")
 
         for r in references:
+
             field = r.get(self.ATTRIBUTE.field, None)
-            if field and field in fields:
-                resource = r.get(self.ATTRIBUTE.resource, None)
-                if not resource:
-                    continue
-                table = self.db.get(resource, None)
-                if not table:
-                    continue
+            if not field or field not in fields:
+                continue
 
-                id = None
-                _uid = uid = r.get(self.UID, None)
-                entry = None
+            multiple = False
+            fieldtype = str(table[field].type)
+            if fieldtype.startswith("reference"):
+                ktablename = fieldtype[10:]
+            elif fieldtype.startswith("list:reference"):
+                ktablename = fieldtype[15:]
+                multiple = True
+            else:
+                continue
 
-                # If no UUID, try to find the reference in-line
-                relement = None
-                if not uid:
-                    expr = './/%s[@%s="%s"]' % (
-                        self.TAG.resource,
-                        self.ATTRIBUTE.name, resource)
-                    relements = r.xpath(expr)
-                    if relements:
-                        relement = relements[0]
-                        _uid = uid = r.get(self.UID, None)
+            resource = r.get(self.ATTRIBUTE.resource, None)
+            if not resource or resource != ktablename:
+                continue
+            ktable = self.db.get(resource, None)
+            if not ktable:
+                continue
 
-                if uid:
-                    if self.domain_mapping:
-                        uid = self.import_uid(uid)
+            uids = r.get(self.UID, None)
+            if uids and multiple:
+                uids = uids.strip("|").split("|")
+            elif uids:
+                uids = [uids]
 
-                    # Check if this resource is already in the directory:
+            relements = []
+
+            if not uids:
+                expr = './/%s[@%s="%s"]' % (
+                    self.TAG.resource,
+                    self.ATTRIBUTE.name, resource)
+                relements = r.xpath(expr)
+                if relements and not multiple:
+                    relements = [relements[0]]
+
+            elif tree and self.UID in ktable:
+                root = tree.getroot()
+
+                for uid in uids:
                     entry = None
                     if directory is not None and resource in directory:
                         entry = directory[resource].get(uid, None)
-
-                    # Otherwise:
                     if not entry:
-                        # Find the corresponding element in the tree
-                        if tree and not relement:
-                            expr = './/%s[@%s="%s" and @%s="%s"]' % (
-                                   self.TAG.resource,
-                                   self.ATTRIBUTE.name, resource,
-                                   self.UID, _uid)
-                            relements = tree.getroot().xpath(expr)
-                            if relements:
-                                relement = relements[0]
+                        expr = './/%s[@%s="%s" and @%s="%s"]' % (
+                                self.TAG.resource,
+                                self.ATTRIBUTE.name, resource,
+                                self.UID, uid)
+                        e = root.xpath(expr)
+                        if e:
+                            relements.append(e[0])
 
-                        # Find the corresponding table record
-                        if self.UID in table:
-                            set = self.db(table[self.UID] == uid)
-                            record = set.select(table.id, limitby=(0, 1)).first()
-                            if record:
-                                id = record.id
+                _uids = uids
+                if self.domain_mapping:
+                    _uids = map(self.import_uid, uids)
+                records = self.db(ktable[self.UID].belongs(_uids)).select(ktable.id, ktable[self.UID])
+                id_map = dict()
+                map(lambda r: id_map.update({r[self.UID]:r.id}), records)
 
-                # Update the entry
-                if not entry:
-                    entry = dict(vector=None)
-                entry.update(resource=resource, element=relement, uid=uid, id=id)
+            for relement in relements:
 
-                if uid:
-                    # Add this entry to the directory
-                    if directory is not None:
-                        if resource not in directory:
-                            directory[resource] = {}
-                        if _uid not in directory[resource]:
-                            directory[resource][uid] = entry
+                uid = _uid = relement.get(self.UID, None)
+                if self.domain_mapping:
+                    _uid = self.import_uid(uid)
+                id = _uid and id_map and id_map.get(_uid, None) or None
 
-                # Add this entry to the reference list
+                entry = dict(vector=None,
+                             resource=resource,
+                             element=relement,
+                             uid=uid,
+                             id=id)
+
+                if uid and directory is not None:
+                    if resource not in directory:
+                        directory[resource] = {}
+                    if _uid not in directory[resource]:
+                        directory[resource][uid] = entry
+
                 reference_list.append(Storage(field=field, entry=entry))
 
         return reference_list
@@ -4947,11 +5053,12 @@ class S3XML(object):
                     value = child.get(self.ATTRIBUTE.value, None)
                     value = self.xml_decode(value)
 
-                if field_type == 'boolean':
+                if field_type == "boolean":
                     if value and value in ["True", "true"]:
                         value = True
                     else:
                         value = False
+
                 if value is None:
                     value = self.xml_decode(child.text)
                 if value == "" and not field_type == "string":
@@ -4962,13 +5069,18 @@ class S3XML(object):
                     value = ""
 
                 if value is not None:
+                    if field_type.startswith("list:"):
+                        value = value.strip("|").split("|")
                     if validate is not None:
-                        if not isinstance(value, basestring):
+                        if not isinstance(value, (basestring, list, tuple)):
                             v = str(value)
                         else:
                             v = value
                         (value, error) = validate(table, original, f, v)
-                        child.set(self.ATTRIBUTE.value, v)
+                        if isinstance(v, (list, tuple)):
+                            child.set(self.ATTRIBUTE.value, str(v))
+                        else:
+                            child.set(self.ATTRIBUTE.value, v)
                         if error:
                             child.set(self.ATTRIBUTE.error, "%s: %s" % (f, error))
                             valid = False

@@ -1597,8 +1597,8 @@ OpenLayers.Util.extend( selectPdfControl, {
 
         # Toolbar
         if toolbar or add_feature:
-            #if 1 in session.s3.roles or auth.shn_has_role("MapAdmin"):
-            if auth.is_logged_in():
+            if 1 in session.s3.roles or auth.shn_has_role("MapAdmin"):
+            #if auth.is_logged_in():
                 # Provide a way to save the viewport
                 # @ToDo Extend to personalised Map Views
                 # @ToDo Extend to choice of Base Layer & Enabled status of Overlays
@@ -2191,28 +2191,23 @@ OpenLayers.Util.extend( selectPdfControl, {
                 return OpenLayers.Util.getImagesLocation() + '404.png';
             } else {
                 x = ((x % limit) + limit) % limit;
-                return this.url + z + '/' + x + '/' + y + '.' + this.type;
+                var path = z + "/" + x + "/" + y + "." + this.type; 
+                var url = this.url;
+                if (url instanceof Array) {
+                    url = this.selectUrl(path, url);
+                }
+                return url + path;
             }
         }
         """
             if openstreetmap.Mapnik:
                 layers_openstreetmap += """
-        //var mapnik = new OpenLayers.Layer.TMS( '""" + openstreetmap.Mapnik + """', 'http://tile.openstreetmap.org/', {type: 'png', getURL: osm_getTileURL, displayOutsideMaxExtent: true, attribution: '<a href="http://www.openstreetmap.org/">OpenStreetMap</a>' } );
-        var mapnik = new OpenLayers.Layer.OSM.Mapnik('""" + openstreetmap.Mapnik + """', {
-                displayOutsideMaxExtent: true,  // Not working! Can revert to TMS, if necessary
-                wrapDateLine: true,
-                layerCode: 'M'
-        });
+        var mapnik = new OpenLayers.Layer.TMS( '""" + openstreetmap.Mapnik + """', ['http://a.tile.openstreetmap.org/', 'http://b.tile.openstreetmap.org/', 'http://c.tile.openstreetmap.org/'], {type: 'png', getURL: osm_getTileURL, displayOutsideMaxExtent: true, attribution: '<a href="http://www.openstreetmap.org/">OpenStreetMap</a>' } );
         map.addLayer(mapnik);
                     """
             if openstreetmap.Osmarender:
                 layers_openstreetmap += """
-        //var osmarender = new OpenLayers.Layer.TMS( '""" + openstreetmap.Osmarender + """', 'http://tah.openstreetmap.org/Tiles/tile/', {type: 'png', getURL: osm_getTileURL, displayOutsideMaxExtent: true, attribution: '<a href="http://www.openstreetmap.org/">OpenStreetMap</a>' } );
-        var osmarender = new OpenLayers.Layer.OSM.Osmarender('""" + openstreetmap.Osmarender + """', {
-            layerCode: 'O',
-            displayOutsideMaxExtent: true,  // Not working! Can revert to TMS, if necessary
-            wrapDateLine: true
-        });
+        var osmarender = new OpenLayers.Layer.TMS( '""" + openstreetmap.Osmarender + """', ['http://a.tah.openstreetmap.org/Tiles/tile/', 'http://b.tah.openstreetmap.org/Tiles/tile/', 'http://c.tah.openstreetmap.org/Tiles/tile/'], {type: 'png', getURL: osm_getTileURL, displayOutsideMaxExtent: true, attribution: '<a href="http://www.openstreetmap.org/">OpenStreetMap</a>' } );
         map.addLayer(osmarender);
                     """
             if openstreetmap.Aerial:
@@ -2750,10 +2745,10 @@ OpenLayers.Util.extend( selectPdfControl, {
                         feature = _feature
                     # Should we use Polygons or Points?
                     if polygons:
-                        # Deal with manually-imported Features which are missing WKT
                         if feature.get("wkt"):
                             wkt = feature.wkt
                         else:
+                            # Deal with manually-imported Features which are missing WKT
                             try:
                                 lat = feature.lat
                                 lon = feature.lon
@@ -2894,6 +2889,20 @@ OpenLayers.Util.extend( selectPdfControl, {
                     layers_features += """
         geom = parser.read('""" + wkt + """').geometry;
         featureVec = addFeature('""" + str(feature.id) + """', '""" + fname + """', geom, styleMarker, i, popup_url)
+        features.push(featureVec);
+        """
+                    if deployment_settings.get_gis_duplicate_features():
+                        # Add an additional Point feature to provide wrapping around the Data Line
+                        # lon<0 have a duplicate at lon+360
+                        if lon < 0:
+                            lon = lon + 360
+                        # lon>0 have a duplicate at lon-360
+                        else:
+                            lon = lon - 360
+                        wkt = self.latlon_to_wkt(lat, lon)
+                        layers_features += """
+        geom = parser.read('""" + wkt + """').geometry;
+        featureVec = addFeature('_""" + str(feature.id) + """', '""" + fname + """', geom, styleMarker, i, popup_url)
         features.push(featureVec);
         """
                 # Append to Features layer
@@ -3282,7 +3291,6 @@ OpenLayers.Util.extend( selectPdfControl, {
     var centerPoint, currentFeature, popupControl, highlightControl;
     var wmsBrowser, printProvider;
     var allLayers = new Array();
-    S3.gis.Images = new Array();
     OpenLayers.ImgPath = '/""" + request.application + """/static/img/gis/openlayers/';
     var ajax_loader = '""" + URL(r=request, c="static", f="img") + """/ajax-loader.gif';
     // avoid pink tiles

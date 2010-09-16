@@ -1,15 +1,27 @@
 # -*- coding: utf-8 -*-
 
-""" Synchronization
+""" Synchronization - model
 
     @author: Amer Tahir
+    @author: nursix
+
+    Resources:
+
+        setting         - Global synchronization settings
+        status          - Status of manual synchronization
+        notification    - Queue for notification messages
+        log             - Synchronization history log
+        peer            - Synchronization peers
+         |
+         +----job       - Synchronization jobs (per peer)
+        conflict        - Queue for synchronization conflicts
 
 """
 
 module = "sync"
 
 # -----------------------------------------------------------------------------
-# Sync Policy
+# Synchronization policy
 #
 sync_policy_opts = {
     0: T("No synchronization"),
@@ -22,42 +34,64 @@ sync_policy_opts = {
     7: T("Import/Master"),      # import master records, do not update existing records
     8: T("Replace/Master"),     # import master records and update existing records to master version
     9: T("Update/Master"),      # update existing records to master version, do not import new records
-    #10: T("Role-based") # not implemented yet
+    #10: T("Role-based")         # not implemented yet
 }
 
-# reusable field
+# Reusable field
 policy = db.Table(None, "policy",
                   Field("policy", "integer", notnull=True,
                         requires = IS_IN_SET(sync_policy_opts),
                         default = 3,
                         represent = lambda opt: sync_policy_opts.get(opt, UNKNOWN_OPT)))
 
+
 # -----------------------------------------------------------------------------
 # Settings
 #
 resource = "setting"
 tablename = "%s_%s" % (module, resource)
-table = db.define_table(tablename,
-                        uuidstamp,
-                        Field("beacon_service_url"),
-                        Field("sync_pools"),
+table = db.define_table(tablename, uuidstamp,
                         Field("proxy"),
-                        #Field("comments", length=128),
                         migrate=migrate)
 
 table.uuid.readable = True
 
-table.beacon_service_url.readable = False
-table.beacon_service_url.writable = False
-table.beacon_service_url.default = "http://sync.eden.sahanafoundation.org/sync/beacon"
-
-table.sync_pools.readable = False
-table.sync_pools.writable = False
-
 table.proxy.label = T("Proxy-server")
 
+
 # -----------------------------------------------------------------------------
-# Sync partners
+# Synchronization status
+#
+resource = "status"
+tablename = "%s_%s" % (module, resource)
+table = db.define_table(tablename,
+                        Field("locked", "boolean"),
+                        Field("halt", "boolean"),
+                        Field("jobs", "text"),
+                        Field("start_time", "datetime"),
+                        Field("done", "text"),
+                        Field("pending", "text"),
+                        Field("errors", "text"),
+                        migrate=migrate)
+
+
+# -----------------------------------------------------------------------------
+# Notifications - notification messages queue
+#
+sync_message_types = ("OK", "ERROR", "SUCCESS", "FAILURE", "DONE", "SKIPPED", "")
+
+resource = "notification"
+tablename = "%s_%s" % (module, resource)
+table = db.define_table(tablename, timestamp,
+                        Field("pid", "integer"),
+                        Field("type", default=""),
+                        Field("message", "text"),
+                        Field("notified", "boolean", default=False),
+                        migrate=migrate)
+
+
+# -----------------------------------------------------------------------------
+# Peers
 #
 sync_peer_types = {
     1: T("Sahana Eden"),
@@ -71,8 +105,7 @@ formats += [f for f in s3xrc.xml_import_formats if f not in formats]
 formats += [f for f in s3xrc.json_export_formats if f not in formats]
 formats += [f for f in s3xrc.json_import_formats if f not in formats]
 
-# Custom settings for sync partners
-resource = "partner"
+resource = "peer"
 tablename = "%s_%s" % (module, resource)
 table = db.define_table(tablename,
                         uuidstamp,
@@ -82,10 +115,8 @@ table = db.define_table(tablename,
                         Field("username"),
                         Field("password", "password"),
                         Field("format"),
-                        Field("sync_pools"),
                         policy,
-                        Field("last_sync_on", "datetime"),
-                        #Field("comments", length=128),
+                        Field("last_sync_time", "datetime"),
                         migrate=migrate)
 
 table.uuid.readable = True
@@ -104,18 +135,19 @@ table.type.default = 1
 table.format.requires = IS_IN_SET(formats, zero=None)
 table.format.default = "xml"
 
-table.sync_pools.readable = False
-table.sync_pools.writable = False
-
 table.policy.label = T("Default synchronization policy")
 
-table.last_sync_on.label = T("Last synchronization on")
-table.last_sync_on.writable = False
+table.last_sync_time.label = T("Last synchronization time")
+table.last_sync_time.writable = False
 
+peer_id = db.Table(None, "peer_id",
+                   Field("peer_id", db.sync_peer, notnull=True,
+                         requires = IS_ONE_OF(db, "sync_peer.id", "%(name)s"),
+                         represent = lambda id: (id and [db.sync_peer(id).name] or [NONE])[0]))
 
-def sync_partner_ondelete(row):
+def s3_sync_peer_ondelete(row):
 
-    """ Delete all jobs with this partner """
+    """ Delete all jobs with this peer """
 
     uuid = row.get("uuid")
     if uuid:
@@ -133,80 +165,146 @@ def sync_partner_ondelete(row):
         db(schedule.id.belongs(jobs_del)).delete()
 
 
-def sync_partner_onaccept(form):
+def s3_sync_peer_oncreate(form):
 
     """ Create default job for Eden peers """
 
-    # @todo: implement this correctly
+    table = db.sync_peer
+    peer = db(table.id == form.id).select(table.uuid,
+                                          table.name,
+                                          table.policy,
+                                          limitby=(0,1)).first()
+    if not peer or not peer.uuid:
+        return
 
-    # create new default scheduled job for this partner, it's a Sahana Eden instance
-    #modules = deployment_settings.modules
-    #_db_tables = db.tables
-    #db_tables = []
-    #for __table in _db_tables:
-    #if "modified_on" in db[__table].fields and "uuid" in db[__table].fields:
-    #db_tables.append(__table)
-    #sch_resources = []
-    #for _module in modules:
-    #for _table in db_tables:
-    #if _table.startswith(_module + "_"):
-    #sch_resources.append(_module + "||" + _table[len(_module)+1:])
+    tablenames = s3_sync_primary_resources()
 
-    ## add job to db
-    #new_partner_uuid = request.vars["uuid"]
-    #new_partner_type = request.vars["type"]
-    #new_partner_policy = int(request.vars["policy"])
-    #new_partner_name = None
-    #if "name" in request.vars and request.vars["name"]:
-    #new_partner_name = request.vars["name"]
-    #sch_comments = "Default manually triggered schedule job for sync partner '"
-    #if new_partner_name:
-    #sch_comments += new_partner_name
-    #else:
-    #sch_comments += new_partner_uuid
-    #sch_comments += "'"
-    #sch_cmd = dict()
-    #sch_cmd["partner_uuid"] = new_partner_uuid
-    #sch_cmd["policy"] = new_partner_policy
-    #sch_cmd["resources"] = sch_resources
-    #sch_cmd["complete"] = False
-    #sch_cmd["mode"] = 3
-    #db["sync_schedule"].insert(
-    #comments = sch_comments,
-    #period = "m",
-    #hours = None,
-    #days_of_week = None,
-    #time_of_day = None,
-    #runonce_datetime = None,
-    #job_type = 1,
-    #job_command = json.dumps(sch_cmd),
-    #last_run = None,
-    #enabled = True,
-    #created_on = datetime.datetime.now(),
-    #modified_on = datetime.datetime.now()
-    #)
-    pass
+    job_command = json.dumps(dict(
+        partner_uuid = uuid,
+        policy = peer.policy,
+        resources = ",".join(tablenames),
+        complete = False,
+        mode = 3
+    ))
+
+    #print job_command
+
+    db.sync_schedule.insert(
+        comments = "auto-generated job for %s" % peer.name,
+        period = "m",
+        job_type = 1,
+        job_command = json.dumps(sch_cmd),
+        last_run = None,
+        enabled = True)
 
 
 s3xrc.model.configure(table,
-    delete_onaccept=sync_partner_ondelete,
-    list_fields = ["id", "name", "uuid", "type", "url", "last_sync_on"])
+    delete_onaccept=s3_sync_peer_ondelete,
+    list_fields = ["id", "name", "uuid", "type", "url", "last_sync_time"])
 
 
 # -----------------------------------------------------------------------------
-# Sync Conflicts Log - record all conflicts here
+# Sync Schedule - scheduled sync jobs
 #
-resource = "conflict"
+#sync_schedule_period_opts = {
+    #"h": T("Hourly"),
+    #"d": T("Daily"),
+    #"w": T("Weekly"),
+    #"o": T("Just Once"),
+    #"m": T("Manual")
+#}
+
+#sync_schedule_job_type_opts = {
+    #1: T("Sahana Eden <=> Sahana Eden"),
+    #2: T("Sahana Eden <=> Other (Sahana Agasti, Ushahidi, etc.)")
+#}
+
+#resource = "schedule"
+#tablename = "%s_%s" % (module, resource)
+#table = db.define_table(tablename, timestamp,
+                        #Field("comments", length=128),              # brief comments about the scheduled job
+                        #Field("period",                             # schedule interval period, either hourly, "h", daily, "d", weekly, "w" or one-time, "o"
+                              #length=10,
+                              #notnull=True,
+                              #default="m",
+                              #requires = IS_IN_SET(sync_schedule_period_opts) ),
+                        #Field("hours", "integer", default=4),   # specifies the number of hours when hourly period is specified in 'period' field
+                        #Field("days_of_week", length=40),       # comma-separated list of the day(s) of the week when job runs on weekly basis.
+                                                                ## A day in a week is represented as a number ranging from 1 to 7 (1 = Sunday, 7 = Saturday)
+                        #Field("time_of_day", "time"),           # the time (at day_of_week) when job runs on a weekly or daily basis
+                        #Field("runonce_datetime", "datetime"),  # the date and time when job runs just once
+                        #Field("job_type", "integer", default=1, # This specifies the type of job: 1 - SahanaEden <=> SahanaEden sync,
+                              #requires = IS_IN_SET(sync_schedule_job_type_opts) ),
+                                                            ## 2 - SahanaEden <= Other sync (could be SahanaAgasti, Ushahidi, etc.)
+                        #Field("job_command", "text", notnull=True), # sync command to execute when this job runs. This command is encoded as a JSON formatted object.
+                                                            ## It contains the UUID of the sync partner, the list of modules along
+                                                            ## with resources within them to sync, whether this would be a complete or partial sync
+                                                            ## (partial sync only retrieves data modified after the last sync, complete sync fetches all),
+                                                            ## whether this sync would be a two-way (both push and pull) or one-way (push or pull),
+                                                            ## and sync policy (default policy is taken from the sync partner's record)
+                        #Field("last_run", "datetime"),      # the date and time of last scheduled run
+                        #Field("enabled", "boolean",         # whether this schedule is enabled or not. Useful in cases when you want to temporarily
+                              #default=True),                # disable a schedule
+                        #migrate=migrate)
+
+sync_job_types = {
+    1: T("Sahana Eden <=> Sahana Eden"),
+    2: T("Sahana Eden <=> Other")
+}
+
+sync_job_intervals = {
+    "h": T("hourly"),
+    "d": T("daily"),
+    "w": T("weekly"),
+    "o": T("once"),
+    "m": T("manual")
+}
+
+sync_modes = {
+    1: T("Import"),
+    2: T("Export"),
+    3: T("Import and Export")
+}
+
+resource = "job"
 tablename = "%s_%s" % (module, resource)
 table = db.define_table(tablename,
-                        Field("uuid", length=36, notnull=True),     # uuid of the conflicting resource
-                        Field("resource_table"),                    # the table name of the conflicting resource
-                        Field("remote_record", "text"),             # String dump of the remote record
-                        Field("remote_modified_by"),                # the user who modified the remote resource, empty if it is None
-                        Field("remote_modified_on", "datetime"),    # the date and time when the remote record was modified
-                        Field("logged_on", "datetime"),             # the date and time when this conflict was logged
-                        Field("resolved", "boolean"),               # whether this conflict has been resolved or not
+                        uuidstamp, timestamp,
+                        Field("last_run", "datetime"),
+                        Field("type", "integer"),
+                        peer_id,
+                        Field("resources", "list:string"),
+                        Field("mode", "integer"),
+                        policy,
+                        Field("complete", "boolean", default=False),
+                        Field("run_interval", default="m"),
+                        Field("hours"),
+                        Field("time_of_day"),
+                        Field("days_of_week"),
+                        Field("runonce_on"),
+                        Field("enabled", "boolean", default=True),
                         migrate=migrate)
+
+table.last_run.represent = lambda value: value and str(value) or T("never")
+
+table.type.requires = IS_IN_SET(sync_job_types, zero=None)
+table.type.represent = lambda opt: sync_job_types.get(opt, UNKNOWN_OPT)
+table.type.default = 1
+
+table.mode.requires = IS_IN_SET(sync_modes, zero=None)
+table.mode.represent = lambda opt: sync_modes.get(opt, UNKNOWN_OPT)
+table.mode.default = 1
+
+table.policy.requires = IS_EMPTY_OR(IS_IN_SET(sync_policy_opts, zero=None))
+
+table.last_run.writable = False
+
+table.run_interval.requires = IS_IN_SET(sync_job_intervals, zero=None)
+table.run_interval.represent = lambda opt: sync_job_intervals.get(opt, UNKNOWN_OPT)
+
+s3xrc.model.add_component(module, resource,
+                          joinby = dict(sync_peer="peer_id"),
+                          multiple = True)
 
 
 # -----------------------------------------------------------------------------
@@ -215,7 +313,9 @@ table = db.define_table(tablename,
 resource = "log"
 tablename = "%s_%s" % (module, resource)
 table = db.define_table(tablename,
-                        Field("partner_uuid", length=36),           # uuid of remote system we synced with
+                        peer_id,
+                        #Field("peer_uuid", length=128),
+                        #Field("partner_uuid", length=36),           # uuid of remote system we synced with
                         Field("timestmp", "datetime"),              # the date and time when sync was performed
                         Field("sync_resources", "text"),            # comma-separated list of resources synced
                         Field("sync_errors", "text"),               # sync errors encountered
@@ -224,81 +324,32 @@ table = db.define_table(tablename,
                         Field("sync_method"),                       # whether this was a Pull only, Push only, Remote Push or a Pull-Push sync operation
                         migrate=migrate)
 
+s3xrc.model.add_component(module, resource,
+                          joinby = dict(sync_peer="peer_id"),
+                          multiple = True,
+                          editable = False,
+                          listadd = False,
+                          deletable = True)
+
 # -----------------------------------------------------------------------------
-# Sync Now - stored state
+# Synchronization conflicts
 #
-resource = "now"
+resource = "conflict"
 tablename = "%s_%s" % (module, resource)
 table = db.define_table(tablename,
-                        Field("sync_jobs", "text"),                 # comma-separated list of sync jobs (partner uuids for now, sync job ids from scheduler in future)
-                        Field("started_on", "datetime"),            # timestamp when the sync now process began
-                        Field("job_resources_done", "text"),        # comma-separated list of resources synced of the currently running job
-                        Field("job_resources_pending", "text"),     # comma-separated list of resources to be synced of the currently running job
-                        Field("job_sync_errors", "text"),           # sync errors encountered while processing the current job
-                        Field("locked", "boolean"),
-                        Field("halt", "boolean"),
-                        migrate=migrate)
-
-# -----------------------------------------------------------------------------
-# Sync Schedule - scheduled sync jobs
-#
-sync_schedule_period_opts = {
-    "h": T("Hourly"),
-    "d": T("Daily"),
-    "w": T("Weekly"),
-    "o": T("Just Once"),
-    "m": T("Manual")
-}
-
-sync_schedule_job_type_opts = {
-    1: T("Sahana Eden <=> Sahana Eden"),
-    2: T("Sahana Eden <=> Other (Sahana Agasti, Ushahidi, etc.)")
-}
-
-resource = "schedule"
-tablename = "%s_%s" % (module, resource)
-table = db.define_table(tablename, timestamp,
-                        Field("comments", length=128),              # brief comments about the scheduled job
-                        Field("period",                             # schedule interval period, either hourly, "h", daily, "d", weekly, "w" or one-time, "o"
-                              length=10,
-                              notnull=True,
-                              default="m",
-                              requires = IS_IN_SET(sync_schedule_period_opts) ),
-                        Field("hours", "integer", default=4),   # specifies the number of hours when hourly period is specified in 'period' field
-                        Field("days_of_week", length=40),       # comma-separated list of the day(s) of the week when job runs on weekly basis.
-                                                                # A day in a week is represented as a number ranging from 1 to 7 (1 = Sunday, 7 = Saturday)
-                        Field("time_of_day", "time"),           # the time (at day_of_week) when job runs on a weekly or daily basis
-                        Field("runonce_datetime", "datetime"),  # the date and time when job runs just once
-                        Field("job_type", "integer", default=1, # This specifies the type of job: 1 - SahanaEden <=> SahanaEden sync,
-                              requires = IS_IN_SET(sync_schedule_job_type_opts) ),
-                                                            # 2 - SahanaEden <= Other sync (could be SahanaAgasti, Ushahidi, etc.)
-                        Field("job_command", "text", notnull=True), # sync command to execute when this job runs. This command is encoded as a JSON formatted object.
-                                                            # It contains the UUID of the sync partner, the list of modules along
-                                                            # with resources within them to sync, whether this would be a complete or partial sync
-                                                            # (partial sync only retrieves data modified after the last sync, complete sync fetches all),
-                                                            # whether this sync would be a two-way (both push and pull) or one-way (push or pull),
-                                                            # and sync policy (default policy is taken from the sync partner's record)
-                        Field("last_run", "datetime"),      # the date and time of last scheduled run
-                        Field("enabled", "boolean",         # whether this schedule is enabled or not. Useful in cases when you want to temporarily
-                              default=True),                # disable a schedule
+                        Field("peer_uuid", length=128),
+                        Field("tablename"),
+                        Field("uuid", length=128),
+                        Field("remote_record", "text"),
+                        Field("remote_modified_by"),
+                        Field("remote_modified_on", "datetime"),
+                        Field("timestmp", "datetime"),
+                        Field("resolved", "boolean"),
                         migrate=migrate)
 
 
 # -----------------------------------------------------------------------------
-# Notifications - notifications queue
-#
-resource = "notification"
-tablename = "%s_%s" % (module, resource)
-table = db.define_table(tablename, timestamp,
-                        Field("pid", "integer"),
-                        Field("notified", "boolean", default=False),
-                        Field("error", "boolean", default=False),
-                        Field("message", length=192),
-                        migrate=migrate)
-
-
-# -----------------------------------------------------------------------------
-def s3_sync_push_message(message, error=False, pid=None):
+def s3_sync_push_message(message, type="", pid=None):
 
     """ Push a notification message to the queue """
 
@@ -306,13 +357,13 @@ def s3_sync_push_message(message, error=False, pid=None):
 
     if message:
         if not pid:
-            status = db().select(db.sync_now.id, limitby=(0,1)).first()
+            status = db().select(db.sync_status.id, limitby=(0,1)).first()
             if status:
                 pid = status.id
             else:
                 pid = 0
 
-        success = table.insert(pid=pid, message=message, error=error)
+        success = table.insert(pid=pid, message=message, type=type)
 
         if success:
             db.commit()
@@ -329,7 +380,7 @@ def s3_sync_get_messages(pid=None):
     table = db.sync_notification
 
     if pid is None:
-        status = db().select(db.sync_now.id, limitby=(0,1)).first()
+        status = db().select(db.sync_status.id, limitby=(0,1)).first()
         if status:
             pid = status.id
 
@@ -339,9 +390,9 @@ def s3_sync_get_messages(pid=None):
     else:
         query = (table.notified == False)
 
-    rows = db(query).select(table.id, table.message, table.error)
+    rows = db(query).select(table.id, table.message, table.type)
     ids = [row.id for row in rows]
-    messages = [dict(error=row.error,
+    messages = [dict(type=row.type,
                      message=row.message) for row in rows]
 
     if ids:
@@ -387,344 +438,23 @@ def s3_sync_primary_resources():
         "modified_on" in table.fields and \
         "uuid" in table.fields:
             is_component = False
-            hook = s3xrc.model.components.get(name, None)
-            if hook:
-                link = hook.get("_component", None)
-                if link and link.tablename == t:
-                    continue
-                for h in hook.values():
-                    if isinstance(h, dict):
-                        link = h.get("_component", None)
-                        if link and link.tablename == t:
-                            is_component = True
-                            break
-                if is_component:
-                    continue
+            if not s3xrc.model.has_components(prefix, name):
+                hook = s3xrc.model.components.get(name, None)
+                if hook:
+                    link = hook.get("_component", None)
+                    if link and link.tablename == t:
+                        continue
+                    for h in hook.values():
+                        if isinstance(h, dict):
+                            link = h.get("_component", None)
+                            if link and link.tablename == t:
+                                is_component = True
+                                break
+                    if is_component:
+                        continue
 
-            # Not a component
             tablenames.append(t)
 
     return tablenames
-
-
-# -----------------------------------------------------------------------------
-def s3_sync_eden_eden(peer, mode, tablenames,
-                      settings=None,
-                      last_sync=None,
-                      complete_sync=False):
-
-    """ Synchronization Eden<->Eden """
-
-    import urllib, urlparse
-    import gluon.contrib.simplejson as json
-
-    output = Storage(
-        success = False,
-        errors = [],
-        messages = [],
-        pending = tablenames,
-        done = []
-    )
-
-    uuid = settings.uuid
-    proxy = settings.proxy or None
-
-    format = peer.format
-
-    if last_sync is not None and complete_sync == False:
-        msince = last_sync.strftime("%Y-%m-%dT%H:%M:%SZ")
-    else:
-        msince = None
-
-    errcount = 0
-    for tablename in tablenames:
-        if tablename not in db.tables or tablename.find("_") == -1:
-            output.pending.remove(tablename)
-            output.done.append(tablename)
-            continue
-
-        if session.s3.sync_stop:
-            return output
-
-        prefix, name = tablename.split("_", 1)
-        resource = s3xrc.resource(prefix, name)
-
-        if format == "json":
-            _get = resource.fetch_json
-            _put = resource.push_json
-        elif format == "xml":
-            _get = resource.fetch_xml
-            _put = resource.push_xml
-        else:
-            output.success = False
-            output.errors.append(s3xrc.ERROR.BAD_FORMAT)
-            return output
-
-        sync_path = "sync/sync/%s/%s.%s" % (prefix, name, format)
-
-        remote_url = urlparse.urlparse(peer.url)
-        if remote_url.path[-1:] != "/":
-            remote_path = "%s/%s" % (remote_url.path, sync_path)
-        else:
-            remote_path = "%s%s" % (remote_url.path, sync_path)
-
-        if mode in [1, 3]: # pull
-
-            if msince:
-                params = "?%s" % urllib.urlencode(dict(msince=msince))
-            else:
-                params = ""
-
-            fetch_url = "%s://%s%s%s" % (remote_url.scheme,
-                                         remote_url.netloc,
-                                         remote_path,
-                                         params)
-            error = None
-            try:
-                result = _get(fetch_url,
-                              username=peer.username,
-                              password=peer.password,
-                              proxy=proxy)
-            except Exception, e:
-                result = str(e)
-            else:
-                try:
-                    result_json = json.loads(result)
-                except:
-                    error = str(result)
-                else:
-                    statuscode = str(result_json.get("statuscode", ""))
-                    message = str(result_json.get("message", "Unknown error"))
-                    if statuscode.startswith("2"):
-                        error = None
-                    else:
-                        error = message
-            if error:
-                errcount += 1
-                msg = "...fetch %s - FAILURE: %s" (tablename, error)
-                output.messages.append(msg)
-                output.errors.append(error)
-                continue
-            else:
-                msg = "...fetch %s - SUCCESS" % tablename
-                output.messages.append(msg)
-
-        if mode in [2, 3]: # push
-
-            if uuid:
-                params = "?%s" % urllib.urlencode(dict(sync_partner_uuid=uuid))
-            else:
-                params = ""
-
-            push_url = "%s://%s%s%s" % (remote_url.scheme,
-                                        remote_url.netloc,
-                                        remote_path,
-                                        params)
-            error = None
-            try:
-                result = _put(push_url,
-                              username=peer.username,
-                              password=peer.password,
-                              proxy=proxy,
-                              msince=last_sync)
-            except Exception, e:
-                result = str(e)
-            else:
-                try:
-                    result_json = json.loads(result)
-                except:
-                    error = str(result)
-                else:
-                    statuscode = str(result_json.get("statuscode", ""))
-                    message = str(result_json.get("message", "Unknown error"))
-                    if statuscode.startswith("2"):
-                        error = None
-                    else:
-                        error = message
-            if error:
-                errcount += 1
-                msg = "...send %s - FAILURE: %s" (tablename, error)
-                output.messages.append(msg)
-                output.errors.append(error)
-                continue
-            else:
-                msg = "...send %s - SUCCESS." % tablename
-                output.messages.append(msg)
-
-        output.done.append(tablename)
-        output.pending.remove(tablename)
-
-    msg = "...synchronize %s - DONE (%s errors)." % (peer.url, errcount)
-    output.messages.append(msg)
-    output.success = True
-    return output
-
-
-# -----------------------------------------------------------------------------
-def s3_sync_eden_other(peer, mode, tablenames, settings=None, pid=None):
-
-    """ Synchronization Eden<->Other """
-
-    import urllib, urlparse
-    import gluon.contrib.simplejson as json
-
-    # Initialize output object
-    output = Storage(
-                success = False,
-                errors = [],
-                errcount = 0,
-                pending = list(tablenames),
-                done = [])
-
-    # Notification helpers
-    notify = lambda message: s3_sync_push_message(message, pid=pid)
-    def error(message, output=output, pid=pid):
-        output.errors.append(message)
-        s3_sync_push_message(message, error=True, pid=pid)
-
-    # Get the proxy setting
-    proxy = settings.proxy or None
-
-    # Analyse requested format
-    format = peer.format
-    is_json = False
-    pull = False
-    push = False
-
-    import_templates = os.path.join(request.folder, s3xrc.XSLT_IMPORT_TEMPLATES)
-    export_templates = os.path.join(request.folder, s3xrc.XSLT_EXPORT_TEMPLATES)
-    template_name = "%s.%s" % (format, s3xrc.XSLT_FILE_EXTENSION)
-    import_template = os.path.join(import_templates, template_name)
-    export_template = os.path.join(export_templates, template_name)
-
-    if format == "xml":
-        pull = True
-        push = True
-        import_template = None
-        export_template = None
-    elif format == "json":
-        pull = True
-        push = True
-        import_template = None
-        export_template = None
-        is_json = True
-    elif format in s3xrc.xml_import_formats and \
-         os.path.exists(import_template):
-            pull = True
-            if format in s3xrc.xml_export_formats and \
-               os.path.exists(export_template):
-                push = True
-    elif format in s3xrc.json_import_formats and \
-         os.path.exists(import_template):
-            pull = True
-            is_json = True
-            if format in s3xrc.json_export_formats and \
-               os.path.exists(export_template):
-                push = True
-    else:
-        error(s3xrc.ERROR.BAD_FORMAT)
-        output.success = False
-        return output
-
-    notify("....Synchronization with %s (%s) - started" % (peer.name, peer.url))
-
-    for tablename in tablenames:
-
-        # Skip invalid tablenames silently
-        if tablename not in db.tables or tablename.find("_") == -1:
-            output.pending.remove(tablename)
-            output.done.append(tablename)
-            continue
-
-        # Reload status
-        now = db.sync_now
-        status = db(now.id==pid).select(db.sync_now.halt, limitby=(0,1)).first()
-
-        # Check for HALT
-        if status and status.halt:
-            notify("HALT command received.")
-            output.success = True
-            return output
-
-        # Create resource
-        prefix, name = tablename.split("_", 1)
-        resource = s3xrc.resource(prefix, name)
-
-        if pull and mode in [1, 3]:
-
-            fetch_url = peer.url
-
-            err = None
-            try:
-                result = resource.fetch(fetch_url,
-                                        username=peer.username,
-                                        password=peer.password,
-                                        json=is_json,
-                                        template=import_template,
-                                        proxy=proxy)
-            except Exception, e:
-                err = str(e)
-            else:
-                try:
-                    result_json = json.loads(str(result))
-                except Exception, e:
-                    err = str(result)
-                else:
-                    statuscode = str(result_json.get("statuscode", ""))
-                    if statuscode.startswith("2"):
-                        err = None
-                    else:
-                        err = str(result_json.get("message", "Unknown error"))
-            if err is not None:
-                output.errcount += 1
-                error("........fetch %s : %s" % (tablename, err))
-                if mode == 1:
-                    continue
-            else:
-                notify("........fetch %s : success" % tablename)
-
-        if push and mode in [2, 3]: # push
-
-            push_url = peer.url
-
-            if is_json:
-                _put = resource.push_json
-            else:
-                _put = resource.push_xml
-
-            err = None
-            try:
-                result = _put(push_url,
-                              username=peer.username,
-                              password=peer.password,
-                              template=export_template,
-                              proxy=proxy)
-            except Exception, e:
-                err = str(e)
-            else:
-                try:
-                    result_json = json.loads(result)
-                except:
-                    err = str(result)
-                else:
-                    statuscode = str(result_json.get("statuscode", ""))
-                    if statuscode.startswith("2"):
-                        err = None
-                    else:
-                        err = str(result_json.get("message", "Unknown error"))
-            if err is not None:
-                output.errcount += 1
-                error("........send %s : %s" % (tablename, err))
-                continue
-            else:
-                notify("........send %s : success" % tablename)
-
-        output.done.append(tablename)
-        output.pending.remove(tablename)
-
-    notify("...Synchronization with %s - done (%s errors)" % (peer.name, output.errcount))
-
-    output.success = True
-    return output
 
 # -----------------------------------------------------------------------------

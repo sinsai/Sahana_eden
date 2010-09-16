@@ -100,7 +100,7 @@ def user():
         register_form = None
 
     if request.args and request.args(0) == "profile" and deployment_settings.get_auth_openid():
-            form = DIV(form, openid_login_form.list_user_openids())
+        form = DIV(form, openid_login_form.list_user_openids())
 
     self_registration = deployment_settings.get_security_self_registration()
 

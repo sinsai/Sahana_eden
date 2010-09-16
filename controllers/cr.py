@@ -23,7 +23,7 @@ def shn_menu():
             #[T("Search"), False, URL(r=request, f="shelter", args="search")],
         ]],
     ]
-    if not deployment_settings.get_security_map() or shn_has_role("Editor"):
+    if shn_has_role("Editor"):
         menu_editor = [
             [T("Shelter Types and Services"), False, URL(r=request, f="#"), [
                 [T("List / Add Services"), False, URL(r=request, f="shelter_service")],
@@ -57,11 +57,13 @@ def shelter_type():
 
     resource = request.function
 
-    # Don't provide delete button in list view
-    def user_postp(jr, output):
-        shn_action_buttons(jr, deletable=False)
+    # Post-processor
+    def postp(r, output):
+        if r.representation in shn_interactive_view_formats:
+            # Don't provide delete button in list view
+            shn_action_buttons(r, deletable=False)
         return output
-    response.s3.postp = user_postp
+    response.s3.postp = postp
 
     rheader = lambda r: shn_shelter_rheader(r,
                                             tabs = [(T("Basic Details"), None),
@@ -70,7 +72,6 @@ def shelter_type():
 
     # @ToDo Shelters per type display is broken -- always returns none.
     output = shn_rest_controller(module, resource,
-                                 listadd=False,
                                  rheader=rheader)
     shn_menu()
     return output
@@ -85,18 +86,19 @@ def shelter_service():
 
     resource = request.function
 
-    # Don't provide delete button in list view
-    def user_postp(jr, output):
-        shn_action_buttons(jr, deletable=False)
+    # Post-processor
+    def postp(r, output):
+        if r.representation in shn_interactive_view_formats:
+            # Don't provide delete button in list view
+            shn_action_buttons(r, deletable=False)
         return output
-    response.s3.postp = user_postp
+    response.s3.postp = postp
 
     rheader = lambda r: shn_shelter_rheader(r,
                                             tabs = [(T("Basic Details"), None),
                                                     (T("Shelters"), "shelter")])
 
     output = shn_rest_controller(module, resource,
-                                 listadd=False,
                                  rheader=rheader)
     shn_menu()
     return output
@@ -131,24 +133,46 @@ def shelter():
     tablename = module + "_" + resource
     table = db[tablename]
 
-    # Don't send the locations list to client (pulled by AJAX instead)
-    table.location_id.requires = IS_NULL_OR(IS_ONE_OF_EMPTY(db, "gis_location.id"))
+    db.pr_presence.pe_id.readable = True
+    db.pr_presence.pe_id.writable = True
+    db.pr_presence.pe_id.label = T("Person/Group")
+    s3xrc.model.configure(db.pr_presence,
+        list_fields=["id", "pe_id", "datetime", "presence_condition", "proc_desc"])
 
+    # Pre-processor
     response.s3.prep = shn_shelter_prep
 
     crud.settings.create_onvalidation = shn_shelter_onvalidation
     crud.settings.update_onvalidation = shn_shelter_onvalidation
 
+    # Post-processor
+    def postp(r, output):
+        if r.representation in shn_interactive_view_formats:
+            #if r.method == "create" and not r.component:
+            # listadd arrives here as method=None
+            if r.method != "delete" and not r.component:
+                # Redirect to the Assessments tabs after creation
+                r.next = r.other(method="assessment", record_id=s3xrc.get_session(session, module, resource))
+
+            if r.component and r.component.name == "presence":
+                # No Delete on the Action buttons
+                shn_action_buttons(r, deletable=False)
+            else:
+                # Normal Action Buttons
+                shn_action_buttons(r)
+        return output
+    response.s3.postp = postp
+
     response.s3.pagination = True
 
     shelter_tabs = [(T("Basic Details"), None),
                     (T("Assessments"), "assessment"),
+                    (T("People"), "presence"),
                     (T("Requests"), "req"),
                     (T("Inventory"), "store"),  # table is inventory_store
                    ]
 
     rheader = lambda r: shn_shelter_rheader(r, tabs=shelter_tabs)
-
 
     output = shn_rest_controller(module, resource,
                                  rheader=rheader)
@@ -200,8 +224,74 @@ def shn_shelter_prep(r):
     # form data.
 
     if r.representation in shn_interactive_view_formats:
+        # Don't send the locations list to client (pulled by AJAX instead)
+        r.table.location_id.requires = IS_NULL_OR(IS_ONE_OF_EMPTY(db, "gis_location.id"))
+
         # Remember this is html or popup.
         response.cr_shelter_request_was_html_or_popup = True
+
+        if r.component:
+            if r.component.name == "assessment":
+                # Hide the Implied fields
+                db.rat_assessment.location_id.writable = False
+                db.rat_assessment.location_id.default = r.record.location_id
+                db.rat_assessment.location_id.comment = ""
+                # Set defaults
+                if auth.is_logged_in():
+                    staff_id = db((db.pr_person.uuid == session.auth.user.person_uuid) & \
+                                  (db.org_staff.person_id == db.pr_person.id)).select(
+                                   db.org_staff.id, limitby=(0, 1)).first()
+                    if staff_id:
+                        rat_assessment.staff_id.default = staff_id.id
+
+            elif r.component.name == "store":
+                # Hide the Implied fields
+                db.inventory_store.location_id.writable = False
+                db.inventory_store.location_id.default = r.record.location_id
+                db.inventory_store.location_id.comment = ""
+
+            elif r.component.name == "req":
+                # Hide the Implied fields
+                db.rms_req.hospital_id.writable = db.rms_req.hospital_id.readable = False
+                db.rms_req.location_id.writable = False
+                db.rms_req.location_id.default = r.record.location_id
+                db.rms_req.location_id.comment = ""
+                # Set defaults
+                db.rms_req.timestmp.default = request.utcnow
+                if auth.is_logged_in():
+                    requestor = db(db.pr_person.uuid == session.auth.user.person_uuid).select(db.pr_person.id, limitby=(0, 1)).first()
+                    if requestor:
+                        db.rms_req.person_id.default = requestor.id
+
+                
+            elif r.component.name == "presence":
+                # Hide the Implied fields
+                db.pr_presence.location_id.writable = False
+                db.pr_presence.location_id.default = r.record.location_id
+                db.pr_presence.location_id.comment = ""
+                # Set defaults
+                db.pr_presence.datetime.default = request.utcnow
+                if auth.is_logged_in():
+                    reporter = db(db.pr_person.uuid == session.auth.user.person_uuid).select(db.pr_person.id, limitby=(0, 1)).first()
+                    if reporter:
+                        db.pr_presence.reporter.default = reporter.id
+                        db.pr_presence.observer.default = reporter.id
+                # Change the Labels
+                s3.crud_strings.pr_presence = Storage(
+                    title_create = T("Register Person"),
+                    title_display = T("Registration Details"),
+                    title_list = T("Registered People"),
+                    title_update = T("Edit Registration"),
+                    title_search = T("Search Registations"),
+                    subtitle_create = T("Register Person into this Shelter"),
+                    subtitle_list = T("Current Registrations"),
+                    label_list_button = T("List Registrations"),
+                    label_create_button = T("Register Person"),
+                    msg_record_created = T("Registration added"),
+                    msg_record_modified = T("Registration updated"),
+                    msg_record_deleted = T("Registration entry deleted"),
+                    msg_list_empty = T("No People currently registered in this shelter")
+                )
 
         if r.http == "POST":
 

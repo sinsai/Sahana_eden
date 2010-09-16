@@ -27,16 +27,18 @@ def index():
 def setting():
     "RESTful CRUD controller"
 
-    table = db.s3_setting
+    resource = request.function
+    tablename = "s3_" + resource
+    table = db[tablename]
 
     table.admin_name.label = T("Admin Name")
     table.admin_email.label = T("Admin Email")
     table.admin_tel.label = T("Admin Tel")
-    table.utc_offset.label = T("UTC Offset")
+    #table.utc_offset.label = T("UTC Offset")
     table.theme.label = T("Theme")
     table.theme.comment = DIV(A(T("Add Theme"), _class="colorbox", _href=URL(r=request, c="admin", f="theme", args="create", vars=dict(format="popup")), _target="top", _title=T("Add Theme"))),
-    table.archive_not_delete.label = T("Archive not Delete")
-    table.archive_not_delete.comment = A(SPAN("[Help]"), _class="tooltip", _title=Tstr("Archive not Delete") + "|" + Tstr("If this setting is enabled then all deleted records are just flagged as deleted instead of being really deleted. They will appear in the raw database access but won't be visible to normal users."))
+    #table.archive_not_delete.label = T("Archive not Delete")
+    #table.archive_not_delete.comment = A(SPAN("[Help]"), _class="tooltip", _title=Tstr("Archive not Delete") + "|" + Tstr("If this setting is enabled then all deleted records are just flagged as deleted instead of being really deleted. They will appear in the raw database access but won't be visible to normal users."))
     #table.debug.label = T("Debug")
     #table.debug.comment = A(SPAN("[Help]"), _class="tooltip", _title=Tstr("Debug") + "|" + Tstr("Switch this on to use individual CSS/Javascript files for diagnostics during development."))
     #table.self_registration.label = T("Self Registration")
@@ -48,15 +50,18 @@ def setting():
     #table.audit_write.label = T("Audit Write")
     #table.audit_write.comment = A(SPAN("[Help]"), _class="tooltip", _title=Tstr("Audit Write") + "|" + Tstr("If enabled then a log is maintained of all records a user edits. If disabled then it can still be enabled on a per-module basis."))
 
-    s3.crud_strings.setting.title_update = T("Edit Settings")
-    s3.crud_strings.setting.msg_record_modified = T("Settings updated")
-    s3.crud_strings.setting.label_list_button = None
+    s3.crud_strings[tablename] = Storage(
+        title_update = T("Edit Settings"),
+        msg_record_modified = T("Settings updated"),
+        label_list_button = None
+    )
     #crud.settings.update_next = URL(r=request, args=[1, "update"])
 
     s3xrc.model.configure(table,
                           #onvalidation=theme_check,
                           onaccept=theme_apply)
-    return shn_rest_controller("s3", "setting", deletable=False, listadd=False)
+    output = shn_rest_controller("s3", resource, deletable=False, listadd=False)
+    return output
     s3xrc.model.clear_config(table, "onvalidation", "onaccept")
 
 @auth.shn_requires_membership(1)
@@ -75,8 +80,6 @@ def theme():
     #table.header_background.comment = A(SPAN("[Help]"), _class="tooltip", _title=Tstr("Header Background") + "|" + Tstr("Name of the file (& optional sub-path) located in static which should be used for the background of the header."))
     #table.footer.label = T("Footer")
     #table.footer.comment = A(SPAN("[Help]"), _class="tooltip", _title=Tstr("Footer") + "|" + Tstr("Name of the file (& optional sub-path) located in views which should be used for footer."))
-    table.text_direction.label = T("Text Direction")
-    table.text_direction.comment = A(SPAN("[Help]"), _class="tooltip", _title=Tstr("Text Direction") + "|" + Tstr("Whilst most languages are read from Left-to-Right, Arabic, Hebrew & Farsi go from Right-to-Left."))
     table.col_background.label = T("Background Colour")
     table.col_txt.label = T("Text Colour for Text blocks")
     table.col_txt_background.label = T("Background Colour for Text blocks")
@@ -153,16 +156,11 @@ def theme_apply(form):
         #    header_background = theme.header_background
         #else:
         #    header_background = default_theme.header_background
-        if theme.text_direction:
-            text_direction = theme.text_direction
-        else:
-            text_direction = "ltr"
         # Write out CSS
         ofile = open(out_file, "w")
         for line in lines:
             #line = line.replace("YOURLOGOHERE", logo)
             #line = line.replace("HEADERBACKGROUND", header_background )
-            line = line.replace("TEXT_DIRECTION", text_direction)
             # Iterate through Colours
             for key in theme.keys():
                 if key[:4] == "col_":
@@ -279,6 +277,7 @@ def user():
         return True
     response.s3.prep = user_prep
 
+    response.s3.pagination = True
     output = shn_rest_controller(module, resource, main="first_name")
     
     s3xrc.model.clear_config(table, "onvalidation", "onaccept")

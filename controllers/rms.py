@@ -11,15 +11,43 @@ if module not in deployment_settings.modules:
     redirect(URL(r=request, c="default", f="index"))
 
 # Options Menu (available in all Functions' Views)
-response.menu_options = [
+menu = [
     [T("Home"), False, URL(r=request, f="index")],
-    [T("Requests"), False, URL(r=request, f="req")],
-#    [T("Requests"), False, URL(r=request, f="req"),
-#     [T("Add"), False, URL(r=request, f="req", args="create")],
-#     ],
+    [T("Requests"), False, URL(r=request, f="req"), [
+        [T("List"), False, URL(r=request, f="req")],
+        [T("Add"), False, URL(r=request, f="req", args="create")],
+        # @ToDo Search by priority, status, location
+        #[T("Search"), False, URL(r=request, f="req", args="search")],
+    ]],
     [T("All Requested Items"), False, URL(r=request, f="ritem")],
-    [T("All Pledges"),False, URL(r=request, f="pledge")]
+    [T("Pledges"), False, URL(r=request, f="pledge"), [
+        [T("List"), False, URL(r=request, f="pledge")],
+        [T("Add"), False, URL(r=request, f="pledge", args="create")],
+        # @ToDo Search by status, location, organisation
+        #[T("Search"), False, URL(r=request, f="pledge", args="search")],
+    ]],
 ]
+if session.rcvars:
+    if "hms_hospital" in session.rcvars:
+        hospital = db.hms_hospital
+        query = (hospital.id == session.rcvars["hms_hospital"])
+        selection = db(query).select(hospital.id, hospital.name, limitby=(0, 1)).first()
+        if selection:
+            menu_hospital = [
+                [selection.name, False, URL(r=request, c="hms", f="hospital", args=[selection.id])]
+            ]
+            menu.extend(menu_hospital)
+    if "cr_shelter" in session.rcvars:
+        shelter = db.cr_shelter
+        query = (shelter.id == session.rcvars["cr_shelter"])
+        selection = db(query).select(shelter.id, shelter.name, limitby=(0, 1)).first()
+        if selection:
+            menu_shelter = [
+                [selection.name, False, URL(r=request, c="cr", f="shelter", args=[selection.id])]
+            ]
+            menu.extend(menu_shelter)
+
+response.menu_options = menu
 
 # S3 framework functions
 def index():
@@ -42,44 +70,59 @@ def req():
     tablename = module + "_" + resource
     table = db[tablename]
 
-    # Don't send the locations list to client (pulled by AJAX instead)
-    table.location_id.requires = IS_NULL_OR(IS_ONE_OF_EMPTY(db, "gis_location.id"))
-
     # Pre-processor
     def prep(r):
-        if r.representation in shn_interactive_view_formats:
-            if r.method == "create":
+        if r.representation in shn_interactive_view_formats and r.method != "delete":
+            # Don't send the locations list to client (pulled by AJAX instead)
+            r.table.location_id.requires = IS_NULL_OR(IS_ONE_OF_EMPTY(db, "gis_location.id"))
+
+            #if r.method == "create" and not r.component:
+            # listadd arrives here as method=None
+            if not r.component:
                 table.timestmp.default = request.utcnow
                 person = session.auth.user.id if auth.is_logged_in() else None
                 if person:
                     person_uuid = db(db.auth_user.id == person).select(db.auth_user.person_uuid, limitby=(0, 1)).first().person_uuid
                     person = db(db.pr_person.uuid == person_uuid).select(db.pr_person.id, limitby=(0, 1)).first().id
-                table.person_id.default = person
-                table.pledge_status.readable = False
-            elif r.method == "update":
-                table.pledge_status.readable = False
-            shn_action_buttons(r)
+                    table.person_id.default = person
+                # If we hide this field then the dataTables columns don't match up
+                #table.pledge_status.readable = False
+
+            elif r.component.name == "pledge":
+                db.rms_pledge.submitted_on.default = request.utcnow
+                person = session.auth.user.id if auth.is_logged_in() else None
+                if person:
+                    person_uuid = db(db.auth_user.id == person).select(db.auth_user.person_uuid, limitby=(0, 1)).first().person_uuid
+                    person = db(db.pr_person.uuid == person_uuid).select(db.pr_person.id, limitby=(0, 1)).first().id
+                    db.rms_pledge.person_id.default = person
+                # @ToDo Default the Organisation too
+            
         return True
     response.s3.prep = prep
 
-    # Filter out non-actionable SMS requests:
-    #response.s3.filter = (db.rms_req.actionable == True) | (db.rms_req.source_type != 2) # disabled b/c Ushahidi no longer updating actionaable fielde
-
     # Post-processor
-    def req_postp(jr, output):
-        if jr.representation in shn_interactive_view_formats:
-            if not jr.component:
+    def postp(r, output):
+        if r.representation in shn_interactive_view_formats:
+            #if r.method == "create" and not r.component:
+            # listadd arrives here as method=None
+            if r.method != "delete" and not r.component:
+                # Redirect to the Assessments tabs after creation
+                r.next = r.other(method="ritem", record_id=s3xrc.get_session(session, module, resource))
+
+            # Custom Action Buttons
+            if not r.component:
                 response.s3.actions = [
-                    dict(label=str(T("Open")), _class="action-btn", url=str(URL(r=request, args=["update", "[id]"]))),
+                    dict(label=str(T("Open")), _class="action-btn", url=str(URL(r=request, args=["[id]", "update"]))),
                     dict(label=str(T("Items")), _class="action-btn", url=str(URL(r=request, args=["[id]", "ritem"]))),
                     dict(label=str(T("Pledge")), _class="action-btn", url=str(URL(r=request, args=["[id]", "pledge"])))
                 ]
-            elif jr.component_name == "pledge":
+            elif r.component_name == "pledge":
                 response.s3.actions = [
-                    dict(label=str(T("Details")), _class="action-btn", url=str(URL(r=request, args=["pledge", "[id]"])))
+                    dict(label=str(T("Details")), _class="action-btn", url=str(URL(r=request, args=["[id]", "pledge"])))
                 ]
+
         return output
-    response.s3.postp = req_postp
+    response.s3.postp = postp
 
     response.s3.pagination = True
     output = shn_rest_controller(module, resource,
@@ -95,11 +138,6 @@ def ritem():
     tablename = "%s_%s" % (module, resource)
     table = db[tablename]
 
-    def postp(jr, output):
-        shn_action_buttons(jr)
-        return output
-    response.s3.postp = postp
-
     #rheader = lambda jr: shn_item_rheader(jr,
     #                                      tabs = [(T("Requests for Item"), None),
     #                                              (T("Inventories with Item"), "location_item"),
@@ -107,8 +145,11 @@ def ritem():
     #                                             ]
     #                                     )
 
+    s3.crud_strings[tablename].label_create_button = None
+
     return shn_rest_controller(module,
                                resource,
+                               listadd=False,
                                #rheader=rheader
                                )
 
@@ -142,14 +183,14 @@ def pledge():
     #    req = db(db.rms_req.id == pledge.req_id).update(completion_status = True)
     #db.commit()
 
-    def pledge_postp(jr, output):
-        if jr.representation in shn_interactive_view_formats:
-            if not jr.component:
+    def postp(r, output):
+        if r.representation in shn_interactive_view_formats:
+            if not r.component:
                 response.s3.actions = [
                     dict(label=str(READ), _class="action-btn", url=str(URL(r=request, args=["[id]", "read"])))
                 ]
         return output
-    response.s3.postp = pledge_postp
+    response.s3.postp = postp
 
     response.s3.pagination = True
     return shn_rest_controller(module,
@@ -204,36 +245,3 @@ def shn_rms_rheader(jr):
                 return rheader
 
     return None
-
-
-# Unused: Was done for Haiti
-def sms_complete(): #contributes to RSS feed for closing the loop with Ushahidi
-
-    def t(record):
-        return "Sahana Record Number: " + str(record.id)
-
-    def d(record):
-        ush_id = db(db.rms_sms_request.id == record.id).select("ush_id")[0]["ush_id"]
-        smsrec = db(db.rms_sms_request.id == record.id).select("smsrec")[0]["smsrec"]
-
-        return \
-            "Ushahidi Link: " + A(ush_id, _href=ush_id).xml() + "<br>" + \
-            "SMS Record: " + str(smsrec)
-
-    rss = { "title" : t , "description" : d }
-    response.s3.filter = (db.rms_req.completion_status == True) & (db.rms_req.source_type == 2)
-    return shn_rest_controller(module, "req", editable=False, listadd=False, rss=rss)
-
-# Unused: Was done for Haiti
-def tweet_complete(): #contributes to RSS feed for closing the loop with TtT
-
-    def t(record):
-        return "Sahana Record Number: " + str(record.id)
-
-    def d(record):
-        ttt_id = db(db.rms_tweet_request.id == record.id).select("ttt_id")[0]["ttt_id"]
-        return "Twitter: " + ttt_id
-
-    rss = { "title" : t , "description" : d }
-    response.s3.filter = (db.rms_req.completion_status == True) & (db.rms_req.source_type == 3)
-    return shn_rest_controller(module, "req", editable=False, listadd=False, rss = rss)

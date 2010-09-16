@@ -138,7 +138,6 @@ table = db.define_table(tablename,
                         Field("name"),
                         Field("logo"),
                         Field("header_background"),
-                        Field("text_direction"),
                         Field("col_background"),
                         Field("col_txt"),
                         Field("col_txt_background"),
@@ -153,7 +152,6 @@ table = db.define_table(tablename,
                         migrate=migrate)
 
 table.name.requires = [IS_NOT_EMPTY(), IS_NOT_IN_DB(db, "%s.name" % tablename)]
-table.text_direction.requires = IS_IN_SET({"ltr":T("Left-to-Right"), "rtl":T("Right-to-Left")}, zero=None)
 table.col_background.requires = IS_HTML_COLOUR()
 table.col_txt.requires = IS_HTML_COLOUR()
 table.col_txt_background.requires = IS_HTML_COLOUR()
@@ -197,9 +195,9 @@ table = db.define_table(tablename, timestamp, uuidstamp,
                         Field("admin_name"),
                         Field("admin_email"),
                         Field("admin_tel"),
-                        Field("utc_offset", length=16, default=deployment_settings.get_L10n_utc_offset()), # default UTC offset of the instance
+                        #Field("utc_offset", length=16, default=deployment_settings.get_L10n_utc_offset()), # default UTC offset of the instance
                         Field("theme", db.admin_theme),
-                        Field("archive_not_delete", "boolean", default=True),
+                        #Field("archive_not_delete", "boolean", default=True),
                         #Field("debug", "boolean", default=False),
                         #Field("self_registration", "boolean", default=True),
                         #Field("security_policy", "integer", default=1),

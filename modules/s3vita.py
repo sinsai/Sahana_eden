@@ -3,7 +3,7 @@
 """
     VITA Sahana-Eden Person Data Toolkit
 
-    @version: 0.5
+    @version: 0.5.1
 
     @author: nursix
     @copyright: 2010 (c) Sahana Software Foundation
@@ -41,8 +41,26 @@ class S3Vita(object):
 
     """ Toolkit for Person Identification, Tracking and Tracing """
 
+    SEEN = 1
+    TRANSIT = 2
+    PROCEDURE = 3
+    TRANSITIONAL_PRESENCE = (1, 2, 3)
+
+    CHECK_IN = 11
+    CONFIRMED = 12
+    LOST = 13
+    PERSISTANT_PRESENCE = (11, 12, 13)
+
+    TRANSFER = 21
+    CHECK_OUT = 22
+    ABSENCE = (21, 22)
+
+    MISSING = 99
+
     # -------------------------------------------------------------------------
     def __init__(self, environment, db=None, T=None):
+
+        """ Constructor """
 
         self.environment = Storage(environment)
         self.db = db
@@ -52,8 +70,7 @@ class S3Vita(object):
         elif "T" in self.environment:
             self.T = self.environment["T"]
 
-        # -------------------------------------------------------------------------
-        #: Trackable entity types
+        # Trackable types
         self.trackable_types = {
             1:self.T("Person"),          # an individual
             2:self.T("Group"),           # a group
@@ -64,20 +81,119 @@ class S3Vita(object):
         }
         self.DEFAULT_TRACKABLE = 1
 
-        # -------------------------------------------------------------------------
-        #: Presence Conditions
+        # Presence conditions
         self.presence_conditions = {
-            1:self.T("Check-In"),        # Arriving at a location for accommodation/storage
-            2:self.T("Reconfirmation"),  # Reconfirmation of accomodation/storage at a location
-            3:self.T("Check-Out"),       # Leaving from a location after accommodation/storage
-            4:self.T("Found"),           # Temporarily at a location
-            5:self.T("Procedure"),       # Temporarily at a location for a procedure (checkpoint)
-            6:self.T("Transit"),         # Temporarily at a location between two transfers
-            7:self.T("Transfer"),        # On the way from one location to another
-            8:self.T("Missing"),         # Been at a location, and missing from there
-            9:self.T("Lost")             # Been at a location, and destroyed/disposed/deceased there
+            # Transitional presence conditions:
+            self.SEEN: self.T("Seen"),           # seen (formerly "found") at location
+            self.TRANSIT: self.T("Transit"),     # seen at location, between two transfers
+            self.PROCEDURE: self.T("Procedure"), # seen at location, undergoing procedure ("Checkpoint")
+
+            # Persistant presence conditions:
+            self.CHECK_IN: self.T("Check-In"),   # arrived at location for accomodation/storage
+            self.CONFIRMED: self.T("Confirmed"), # confirmation of stay/storage at location
+            self.LOST: self.T("Lost"),           # Deceased/destroyed/disposed at location
+
+            # Absence conditions:
+            self.TRANSFER: self.T("Transfer"),   # Send to another location
+            self.CHECK_OUT: self.T("Check-Out"), # Left location for unknown destination
+
+            # Missing condition:
+            self.MISSING: self.T("Missing"),     # Missing (from a "last-seen"-location)
         }
-        self.DEFAULT_PRESENCE = 4
+        self.DEFAULT_PRESENCE = 1
+
+
+    # -------------------------------------------------------------------------
+    def presence_accept(self, presence):
+
+        """ Update the presence log of a person entity
+
+            - mandatory to be called as onaccept routine at any creation, update
+              or deletion of pr_presence records
+
+        """
+
+        db = self.db
+        table = db.pr_presence
+
+        if isinstance(presence, (int, long, str)):
+            id = presence
+        elif hasattr(presence, "vars"):
+            id = presence.vars.id
+        else:
+            id = presence.id
+
+        presence = db(table.id == id).select(table.ALL, limitby=(0,1)).first()
+        if not presence:
+            return
+        else:
+            condition = presence.presence_condition
+
+        pe_id = presence.pe_id
+        datetime = presence.datetime
+        if not datetime or not pe_id:
+            return
+
+        this_entity = ((table.pe_id == pe_id) & (table.deleted == False))
+        earlier = (table.datetime < datetime)
+        later = (table.datetime > datetime)
+        same_place = ((table.location_id == presence.location_id) |
+                        (table.shelter_id == presence.shelter_id))
+        is_present = (table.presence_condition.belongs(self.PERSISTANT_PRESENCE))
+        is_absent = (table.presence_condition.belongs(self.ABSENCE))
+        is_missing = (table.presence_condition == self.MISSING)
+
+        if not presence.deleted:
+
+            if condition in self.TRANSITIONAL_PRESENCE:
+                if presence.closed:
+                    db(table.id == id).update(closed=False)
+
+            elif condition in self.PERSISTANT_PRESENCE:
+                if not presence.closed:
+                    query = this_entity & earlier & (is_present | is_missing) & \
+                            (table.closed == False)
+                    db(query).update(closed=True)
+
+                    query = this_entity & later & \
+                            (is_present | (is_absent & same_place))
+                    if db(query).count():
+                        db(table.id == id).update(closed=True)
+
+            elif condition in self.ABSENCE:
+                query = this_entity & earlier & is_present & same_place
+                db(query).update(closed=True)
+
+                if not presence.closed:
+                    db(table.id == id).update(closed=True)
+
+        if not presence.closed:
+            query = this_entity & is_present
+            presence = db(query).select(table.ALL, orderby=~table.datetime, limitby=(0,1)).first()
+            if presence and presence.closed:
+                datetime = presence.datetime
+                query = this_entity & later & is_absent & same_place
+                if not db(query).count():
+                    db(table.id == presence.id).update(closed=False)
+
+        pentity = db(db.pr_pentity.pe_id == pe_id).select(db.pr_pentity.pe_type,
+                                                          limitby=(0,1)).first()
+        if pentity and pentity.pe_type == "pr_person":
+            query = this_entity & is_missing & (table.closed == False)
+            if db(query).count():
+                db(db.pr_person.pe_id == pe_id).update(missing = True)
+            else:
+                db(db.pr_person.pe_id == pe_id).update(missing = False)
+
+        return
+
+    # -------------------------------------------------------------------------
+    def trace(self, entity, time=None, conditions=None):
+
+        """ Get the presence log of a person entity """
+
+        return None
+
 
     # -------------------------------------------------------------------------
     def pentity(self, entity):
@@ -257,6 +373,7 @@ class S3Vita(object):
                 matrix[i, j] = min(x, y, z)
 
         return float(matrix[l1, l2]) / float(max(l1, l2))
+
 
 #
 # *****************************************************************************

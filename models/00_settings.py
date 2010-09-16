@@ -18,18 +18,55 @@ DELETE = T("Delete")
 COPY = T("Copy")
 NOT_APPLICABLE = T("N/A")
 
+# Keep all our configuration options in a single pair of global variables
+
+# Use response for one-off variables which are visible in views without explicit passing
+response.s3 = Storage()
+response.s3.countries = deployment_settings.get_L10n_countries()
+response.s3.formats = Storage()
+response.s3.gis = Storage()
+
+# Use session for persistent per-user variables
+if not session.s3:
+    session.s3 = Storage()
+
+###########
+# Languages
+###########
+
 s3.l10n_languages = deployment_settings.get_L10n_languages()
 
 # Default strings are in US English
 T.current_languages = ["en", "en-us"]
 # Check if user has selected a specific language
 if request.vars._language:
-    session._language = request.vars._language
-if session._language:
-    T.force(session._language)
+    session.s3.language = request.vars._language
+if session.s3.language:
+    T.force(session.s3.language)
+elif auth.is_logged_in():
+    # Use user preference
+    language = auth.user.language
+    T.force(language)
+#else:
+#    # Use what browser requests (default web2py behaviour)
+#    T.force(T.http_accept_language)
+
+# List of Languages which use a Right-to-Left script (Arabic, Hebrew, Farsi, Urdu)
+s3_rtl_languages = ["ur"]
+
+if T.accepted_language in s3_rtl_languages:
+    response.s3.rtl = True
 else:
-    # Use what browser requests
-    T.force(T.http_accept_language)
+    response.s3.rtl = False
+
+
+def Tstr(text):
+    """
+       Convenience function for non-Web2Py modules
+       - need to define this *after* T.force
+       (latest web2py no longer needs this)
+    """
+    return str(T(text))
 
 ######
 # Mail
@@ -139,10 +176,9 @@ def s3_formstyle(id, label, widget, comment):
 
     # Label on the 1st row
     #row.append(TR(TD(label, _class="w2p_fl", _colspan="2"), _id=id + "1", _class="even"))
-    row.append(TR(TD(label, _class="w2p_fl", _colspan="2"), _id=id + "1"))   
+    row.append(TR(TD(label, _class="w2p_fl", _colspan="2"), _id=id + "1"))
 
     # Widget & Comment on the 2nd Row
-    #row.append(TR(TD(widget, _class="w2p_fw"), TD(comment, _class="w2p_fc"), _id=id + "2", _class="odd"))
     row.append(TR(TD(widget, _class="w2p_fw"), TD(comment, _class="w2p_fc"), _id=id))
 
     return row
@@ -162,16 +198,7 @@ s3.messages = Messages(T)
 s3.messages.confirmation_email_subject = T("Sahana access granted")
 s3.messages.confirmation_email = Tstr("Welcome to the Sahana Portal at ") + deployment_settings.get_base_public_url() + Tstr(". Thanks for your assistance.")
 
-# -----------------------------------------------------------------------------
-# List of supported languages
-#
-s3_languages = {
-    "en": T("English"),
-    "fr": T("French"),
-    "es": T("Spanish"),
-    "zh-tw": T("Chinese")
-}
-auth.settings.table_user.language.requires = IS_IN_SET(s3_languages, zero=None)
+auth.settings.table_user.language.requires = IS_IN_SET(s3.l10n_languages, zero=None)
 
 
 # -----------------------------------------------------------------------------
@@ -180,7 +207,7 @@ auth.settings.table_user.language.requires = IS_IN_SET(s3_languages, zero=None)
 #
 s3_list_of_nations = {
     "AF": "Afghanistan",
-    "AX": "Åland Islands",
+    "AX": "ï¿½land Islands",
     "AL": "Albania",
     "DZ": "Algeria",
     "AS": "American Samoa",
@@ -232,7 +259,7 @@ s3_list_of_nations = {
     "CD": "Congo, The Democratic Republic of the",
     "CK": "Cook Islands",
     "CR": "Costa Rica",
-    "CI": "Côte d'Ivoire",
+    "CI": "Cï¿½te d'Ivoire",
     "HR": "Croatia",
     "CU": "Cuba",
     "CY": "Cyprus",
@@ -358,11 +385,11 @@ s3_list_of_nations = {
     "PT": "Portugal",
     "PR": "Puerto Rico",
     "QA": "Qatar",
-    "RE": "Réunion",
+    "RE": "Rï¿½union",
     "RO": "Romania",
     "RU": "Russian Federation",
     "RW": "Rwanda",
-    "BL": "Saint Barthélemy",
+    "BL": "Saint Barthï¿½lemy",
     "SH": "Saint Helena, Ascension and Tristan da Cunha",
     "KN": "Saint Kitts and Nevis",
     "LC": "Saint Lucia",

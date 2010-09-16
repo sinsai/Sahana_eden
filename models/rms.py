@@ -55,7 +55,8 @@ if deployment_settings.has_module(module):
     tablename = "%s_%s" % (module, resource)
     table = db.define_table(tablename, timestamp, uuidstamp, deletion_status,
         person_id,
-        shelter_id,
+        hospital_id,    # @ToDo Check if the module is enabled for adding FK: check CR for an example
+        shelter_id,     # @ToDo Check if the module is enabled for adding FK: check CR for an example
         organisation_id,
         Field("type", "integer"),
         Field("priority", "integer"),
@@ -151,7 +152,7 @@ if deployment_settings.has_module(module):
     # rms_req as component of doc_documents
     s3xrc.model.add_component(module, resource,
                               multiple=True,
-                              joinby=dict(doc_document="document_id", cr_shelter = "shelter_id"),
+                              joinby=dict(doc_document="document_id", cr_shelter = "shelter_id", hms_hospital = "hospital_id"),
                               deletable=True,
                               editable=True)
 

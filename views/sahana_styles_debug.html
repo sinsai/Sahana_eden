@@ -10,12 +10,14 @@
 -->
 
 <!--S3 Layer-->
+{{if session.s3.cdn:}}
+<!-- For Sites Hosted on the Public Internet, using Cachefly CDN's version of ExtJS may provide better performance -->
+<link href="http://extjs.cachefly.net/ext-3.2.1/resources/css/ext-all.css" rel="stylesheet" type="text/css" charset="utf-8" />
+{{else:}}
 <!--Ext Stylesheet would need it's images moving if compressed up & relocated-->
 <link href="/{{=request.application}}/static/scripts/ext/resources/css/ext-all.css" rel="stylesheet" type="text/css" charset="utf-8" />
+{{pass}}
 <link href="/{{=request.application}}/static/scripts/ext/resources/css/xtheme-gray.css" rel="stylesheet" type="text/css" charset="utf-8" />
-<!-- For Sites Hosted on the Public Internet, using Cachefly CDN's version of ExtJS may provide better performance
-<link href="http://extjs.cachefly.net/ext-3.2.1/resources/css/ext-all.css" rel="stylesheet" type="text/css" charset="utf-8" />
--->
 <link href="/{{=request.application}}/static/styles/S3/sahana.css" rel="stylesheet" type="text/css" charset="utf-8" />
 <link href="/{{=request.application}}/static/styles/S3/print.css" rel="stylesheet" type="text/css" media="print" charset="utf-8" />
 <link href="/{{=request.application}}/static/styles/S3/jquery.autocomplete.css" rel="stylesheet" type="text/css" media="screen" charset="utf-8" />

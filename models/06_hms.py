@@ -264,7 +264,7 @@ if deployment_settings.has_module(module):
                                        "name",
                                        "organisation_id",
                                        "location_id",
-                                       "phone_business",
+                                       "phone_exchange",
                                        "ems_status",
                                        "facility_status",
                                        "clinical_status",

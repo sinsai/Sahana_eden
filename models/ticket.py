@@ -46,7 +46,7 @@ if deployment_settings.has_module(module):
                             Field("source_id", "integer"),
                             Field("source_time", "datetime", default=request.utcnow),
                             location_id,
-                            Field("categories"),
+                            Field("categories", "list:reference ticket_category"),
                             Field("verified", "boolean"),
                             Field("verified_details", "text"),
                             Field("actionable", "boolean"),
@@ -58,10 +58,12 @@ if deployment_settings.has_module(module):
     table.message.requires = IS_NOT_EMPTY()
     table.priority.requires = IS_NULL_OR(IS_IN_SET(ticket_priority_opts))
     table.categories.requires = IS_NULL_OR(IS_IN_DB(db, db.ticket_category.id, "%(name)s", multiple=True))
+    table.categories.represent = lambda opt: opt and s3_represent_multiref(db.ticket_category, opt) or UNKNOWN_OPT
 
     s3xrc.model.configure(table,
                           list_fields=["id",
                                        "subject",
+                                       "categories",
                                        "attachment",
                                        "priority",
                                        "source",

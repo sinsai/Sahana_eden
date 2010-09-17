@@ -398,6 +398,32 @@ def shn_represent_file(file_name,
 
 
 # -----------------------------------------------------------------------------
+def s3_represent_multiref(table, opt, represent=None):
+
+    if represent is None:
+        if "name" in table.fields:
+            represent = lambda r: r and r.name or UNKNOWN_OPT
+
+    if isinstance(opt, (int, long, str)):
+        query = (table.id == opt)
+    else:
+        query = (table.id.belongs(opt))
+    if "deleted" in table.fields:
+        query = query & (table.deleted == False)
+
+    records = db(query).select()
+    try:
+        options = [represent(r) for r in records]
+    except TypeError:
+        options = [represent % r for r in records]
+
+    if options:
+        return ", ".join(options)
+    else:
+        return UNKNOWN_OPT
+
+
+# -----------------------------------------------------------------------------
 def shn_table_links(reference):
     """
         Return a dict of tables & their fields which have references to the specified table

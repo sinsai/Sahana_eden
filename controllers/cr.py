@@ -263,7 +263,7 @@ def shn_shelter_prep(r):
                     if requestor:
                         db.rms_req.person_id.default = requestor.id
 
-                
+
             elif r.component.name == "presence":
                 # Hide the Implied fields
                 db.pr_presence.location_id.writable = False
@@ -276,6 +276,11 @@ def shn_shelter_prep(r):
                     if reporter:
                         db.pr_presence.reporter.default = reporter.id
                         db.pr_presence.observer.default = reporter.id
+                db.pr_presence.presence_condition.requires = IS_IN_SET(
+                        (vita.presence_conditions[vita.CHECK_IN],
+                         vita.presence_conditions[vita.CHECK_OUT]), zero=None)
+                db.pr_presence.presence_condition.default = vita.CHECK_IN
+                r.resource.add_filter(db.pr_presence.closed == False)
                 # Change the Labels
                 s3.crud_strings.pr_presence = Storage(
                     title_create = T("Register Person"),

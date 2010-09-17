@@ -48,8 +48,9 @@ class S3Vita(object):
 
     CHECK_IN = 11
     CONFIRMED = 12
-    LOST = 13
-    PERSISTANT_PRESENCE = (11, 12, 13)
+    DECEASED = 13
+    LOST = 14
+    PERSISTANT_PRESENCE = (11, 12, 13, 14)
 
     TRANSFER = 21
     CHECK_OUT = 22
@@ -91,7 +92,8 @@ class S3Vita(object):
             # Persistant presence conditions:
             self.CHECK_IN: self.T("Check-In"),   # arrived at location for accomodation/storage
             self.CONFIRMED: self.T("Confirmed"), # confirmation of stay/storage at location
-            self.LOST: self.T("Lost"),           # Deceased/destroyed/disposed at location
+            self.DECEASED: self.T("Deceased"),   # deceased
+            self.LOST: self.T("Lost"),           # destroyed/disposed at location
 
             # Absence conditions:
             self.TRANSFER: self.T("Transfer"),   # Send to another location

@@ -3664,6 +3664,7 @@ OpenLayers.Util.extend( selectPdfControl, {
                     title: '""" + str(T("Tools")) + """',
                     border: true,
                     width: 250,
+                    autoScroll: true,
                     collapsible: true,
                     collapseMode: 'mini',
                     collapsed: """ + collapsed + """,

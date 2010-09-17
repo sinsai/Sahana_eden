@@ -46,8 +46,6 @@ def log():
             DIV(IMG(_src="/%s/static/img/priority/priority_4.gif" % request.application), _height=12)
         ][0].xml())
     table.priority.label = T("Priority")
-    #FixMe: represent for multiple=True
-    #table.categories.represent = lambda id: (id and [db(db.ticket_category.id == id).select(db.ticket_category.name, limitby=(0, 1)).first().name] or ["None"])[0]
     table.source.label = T("Source")
     table.source_id.label = T("Source ID")
     table.source_time.label = T("Source Time")

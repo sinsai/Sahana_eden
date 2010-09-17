@@ -153,9 +153,6 @@ if deployment_settings.has_module(module):
 
     table.uuid.requires = IS_NOT_IN_DB(db, "%s.uuid" % tablename)
 
-    table.organisation_id.represent = lambda id: \
-        (id and [db(db.org_organisation.id == id).select(db.org_organisation.acronym, limitby=(0, 1)).first().acronym] or ["None"])[0]
-
     table.gov_uuid.label = T("Government UID")
     table.gov_uuid.requires = IS_NULL_OR(IS_NOT_IN_DB(db, "%s.gov_uuid" % tablename))
     table.name.label = T("Name")

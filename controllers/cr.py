@@ -317,8 +317,8 @@ def shn_shelter_onvalidation(form):
         response.cr_shelter_request_was_html_or_popup = None
 
         if "is_school" in request.vars and not form.vars.school_code:
-            form.errors.school_code = T(
-                "Please enter a school code or don't check 'Is this a school?'")
+            # Indicate that this is a school by setting a value that no school uses.
+            form.vars.school_code = 1
 
         # Note the form is defective if there's an is_hospital checkbox
         # but no hospital_id field...

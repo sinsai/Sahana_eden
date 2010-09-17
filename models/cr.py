@@ -130,8 +130,7 @@ if deployment_settings.has_module(module):
                     # are for Pakistan flood response.  It is simpler
                     # to keep this info in the shelter table and hide it if
                     # the shelter is not a school.
-                    Field("school_code", "integer",
-                          comment = SPAN("*", _class="req")),
+                    Field("school_code", "integer"),
                     Field("school_pf", "integer"),
                     )
 

@@ -316,7 +316,7 @@ class S3Vita(object):
 
 
     # -------------------------------------------------------------------------
-    def fullname(self, record):
+    def fullname(self, record, truncate=True):
 
         """ Returns the full name of a person
 
@@ -325,11 +325,23 @@ class S3Vita(object):
         if record:
             fname, mname, lname = "", "", ""
             if record.first_name:
-                fname = "%s " % record.first_name.strip()
+                fname = record.first_name.strip()
+                if len(fname) > 24 and truncate:
+                    fname = "%s... " % fname[:21].rsplit(" ", 1)[0][:21]
+                else:
+                    fname = "%s " % fname
             if record.middle_name:
-                mname = "%s " % record.middle_name.strip()
+                mname = record.middle_name.strip()
+                if len(mname) > 16 and truncate:
+                    mname = "%s... " % mname[:13].rsplit(" ", 1)[0][:13]
+                else:
+                    mname = "%s " % mname
             if record.last_name:
                 lname = record.last_name.strip()
+                if len(lname) > 24 and truncate:
+                    lname = "%s..." % lname[:21]
+                else:
+                    lname = "%s" % lname
 
             if mname.isspace():
                 return "%s%s" % (fname, lname)

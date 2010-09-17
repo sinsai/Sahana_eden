@@ -325,23 +325,11 @@ class S3Vita(object):
         if record:
             fname, mname, lname = "", "", ""
             if record.first_name:
-                fname = record.first_name.strip()
-                if len(fname) > 24 and truncate:
-                    fname = "%s... " % fname[:21].rsplit(" ", 1)[0][:21]
-                else:
-                    fname = "%s " % fname
+                fname = "%s " % self.truncate(record.first_name.strip(), 24)
             if record.middle_name:
-                mname = record.middle_name.strip()
-                if len(mname) > 16 and truncate:
-                    mname = "%s... " % mname[:13].rsplit(" ", 1)[0][:13]
-                else:
-                    mname = "%s " % mname
+                mname = "%s " % self.truncate(record.middle_name.strip(), 16)
             if record.last_name:
-                lname = record.last_name.strip()
-                if len(lname) > 24 and truncate:
-                    lname = "%s..." % lname[:21]
-                else:
-                    lname = "%s" % lname
+                lname = self.truncate(record.last_name.strip(), 24, nice = False)
 
             if mname.isspace():
                 return "%s%s" % (fname, lname)
@@ -349,6 +337,19 @@ class S3Vita(object):
                 return "%s%s%s" % (fname, mname, lname)
         else:
             return ""
+
+    # -------------------------------------------------------------------------
+    def truncate(self, text, length=48, nice=True):
+
+        """ Nice truncating of text """
+
+        if len(text) > length:
+            if nice:
+                return "%s..." % text[:length].rsplit(" ", 1)[0][:45]
+            else:
+                return "%s..." % text[:45]
+        else:
+            return text
 
     # -------------------------------------------------------------------------
     def rlevenshtein(self, str1, str2):

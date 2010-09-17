@@ -168,11 +168,22 @@ class S3Vita(object):
                     db(table.id == id).update(closed=True)
 
         if not presence.closed:
+
+            # Re-open the last persistant presence if no closing event
             query = this_entity & is_present
             presence = db(query).select(table.ALL, orderby=~table.datetime, limitby=(0,1)).first()
             if presence and presence.closed:
-                datetime = presence.datetime
+                later = (table.datetime > presence.datetime)
                 query = this_entity & later & is_absent & same_place
+                if not db(query).count():
+                    db(table.id == presence.id).update(closed=False)
+
+            # Re-open the last missing if no later persistant presence
+            query = this_entity & is_missing
+            presence = db(query).select(table.ALL, orderby=~table.datetime, limitby=(0,1)).first()
+            if presence and presence.closed:
+                later = (table.datetime > presence.datetime)
+                query = this_entity & later & is_present
                 if not db(query).count():
                     db(table.id == presence.id).update(closed=False)
 
@@ -318,9 +329,7 @@ class S3Vita(object):
     # -------------------------------------------------------------------------
     def fullname(self, record, truncate=True):
 
-        """ Returns the full name of a person
-
-        """
+        """ Returns the full name of a person """
 
         if record:
             fname, mname, lname = "", "", ""
@@ -338,6 +347,7 @@ class S3Vita(object):
         else:
             return ""
 
+
     # -------------------------------------------------------------------------
     def truncate(self, text, length=48, nice=True):
 
@@ -350,6 +360,7 @@ class S3Vita(object):
                 return "%s..." % text[:45]
         else:
             return text
+
 
     # -------------------------------------------------------------------------
     def rlevenshtein(self, str1, str2):

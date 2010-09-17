@@ -480,7 +480,7 @@ if deployment_settings.has_module(module):
                     reporter = reporter,
                     datetime = request.utcnow,
                     location_id = location_id,
-                    presence_condition = vita.LOST,
+                    presence_condition = vita.DECEASED,
                 )
                 if presence_id:
                     db(table.id == record_id).update(presence=presence_id)

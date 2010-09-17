@@ -63,7 +63,7 @@ if deployment_settings.has_module(module):
     s3xrc.model.configure(table,
                           list_fields=["id",
                                        "subject",
-                                       "categories",
+                                       #"categories",
                                        "attachment",
                                        "priority",
                                        "source",

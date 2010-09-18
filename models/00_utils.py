@@ -328,7 +328,7 @@ def shn_import_table(table_name,
     """
 
     table = db[table_name]
-    if not db(table.id).count() or import_if_not_empty:
+    if not db(table.id > 0).count() or import_if_not_empty:
         import_file = os.path.join(request.folder,
                                    "private", "import", "tables",
                                    table_name + ".csv")

@@ -961,122 +961,139 @@ gis_layer_openstreetmap_subtypes = gis.layer_subtypes("openstreetmap")
 gis_layer_google_subtypes = gis.layer_subtypes("google")
 gis_layer_yahoo_subtypes = gis.layer_subtypes("yahoo")
 gis_layer_bing_subtypes = gis.layer_subtypes("bing")
+gis_layer_wms_img_formats = ["image/jpeg", "image/png", "image/bmp", "image/tiff", "image/gif", "image/svg+xml"]
 # Base table from which the rest inherit
 gis_layer = db.Table(db, "gis_layer", timestamp,
-            #uuidstamp, # Layers like OpenStreetMap, Google, etc shouldn't sync
-            Field("name", notnull=True, label=T("Name"), requires=IS_NOT_EMPTY(), comment=SPAN("*", _class="req")),
-            Field("description", label=T("Description")),
-            #Field("priority", "integer", label=T("Priority")),    # System default priority is set in ol_layers_all.js. User priorities are set in WMC.
-            Field("enabled", "boolean", default=True, label=T("Available in Viewer?")))
+                     #uuidstamp, # Layers like OpenStreetMap, Google, etc shouldn't sync
+                     Field("name", notnull=True, label=T("Name"), requires=IS_NOT_EMPTY(), comment=SPAN("*", _class="req")),
+                     Field("description", label=T("Description")),
+                     # System default priority is set in s3gis. User priorities will be set in WMC.
+                     #Field("priority", "integer", label=T("Priority")),
+                     Field("enabled", "boolean", default=True, label=T("Available in Viewer?"))
+                    )
 for layertype in gis_layer_types:
     resource = "layer_" + layertype
     tablename = "%s_%s" % (module, resource)
     # Create Type-specific Layer tables
     if layertype == "openstreetmap":
         t = db.Table(db, table,
-            gis_layer,
-            Field("subtype", label=T("Sub-type"), requires = IS_IN_SET(gis_layer_openstreetmap_subtypes, zero=None)))
+                     gis_layer,
+                     Field("subtype", label=T("Sub-type"), requires = IS_IN_SET(gis_layer_openstreetmap_subtypes, zero=None))
+                    )
         table = db.define_table(tablename, t, migrate=migrate)
     elif layertype == "georss":
         t = db.Table(db, table,
-            gis_layer,
-            Field("visible", "boolean", default=False, label=T("On by default?")),
-            Field("url", label=T("Location"), requires = IS_NOT_EMPTY()),
-            projection_id,
-            marker_id)
+                     gis_layer,
+                     Field("visible", "boolean", default=False, label=T("On by default?")),
+                     Field("url", label=T("Location"), requires = IS_NOT_EMPTY()),
+                     projection_id,
+                     marker_id
+                    )
         table = db.define_table(tablename, t, migrate=migrate)
         table.projection_id.requires = IS_ONE_OF(db, "gis_projection.id", "%(name)s")
         table.projection_id.default = 2
     elif layertype == "google":
         t = db.Table(db, table,
-            gis_layer,
-            Field("subtype", label=T("Sub-type"), requires = IS_IN_SET(gis_layer_google_subtypes, zero=None)))
+                     gis_layer,
+                     Field("subtype", label=T("Sub-type"), requires = IS_IN_SET(gis_layer_google_subtypes, zero=None))
+                    )
         table = db.define_table(tablename, t, migrate=migrate)
     elif layertype == "gpx":
         t = db.Table(db, table,
-            gis_layer,
-            Field("visible", "boolean", default=False, label=T("On by default?")),
-            #Field("url", label=T("Location")),
-            track_id,
-            marker_id)
+                     gis_layer,
+                     Field("visible", "boolean", default=False, label=T("On by default?")),
+                     #Field("url", label=T("Location")),
+                     track_id,
+                     marker_id
+                    )
         table = db.define_table(tablename, t, migrate=migrate)
     elif layertype == "kml":
         t = db.Table(db, table,
-            gis_layer,
-            Field("visible", "boolean", default=False, label=T("On by default?")),
-            Field("url", label=T("Location"), requires=IS_NOT_EMPTY()),
-            Field("title", label=T("Title"), default="name", comment=T("The attribute within the KML which is used for the title of popups.")),
-            Field("body", label=T("Body"), default="description", comment=T("The attribute(s) within the KML which are used for the body of popups. (Use a space between attributes)")))
+                     gis_layer,
+                     Field("visible", "boolean", default=False, label=T("On by default?")),
+                     Field("url", label=T("Location"), requires=IS_NOT_EMPTY()),
+                     Field("title", label=T("Title"), default="name",
+                           comment=T("The attribute within the KML which is used for the title of popups.")),
+                     Field("body", label=T("Body"), default="description",
+                           comment=T("The attribute(s) within the KML which are used for the body of popups. (Use a space between attributes)"))
+                    )
         table = db.define_table(tablename, t, migrate=migrate)
     elif layertype == "js":
         t = db.Table(db, table,
-            gis_layer,
-            Field("code", "text", label=T("Code"), default="var myNewLayer = new OpenLayers.Layer.XYZ();\nmap.addLayer(myNewLayer);"))
+                     gis_layer,
+                     Field("code", "text", label=T("Code"),
+                           default="var myNewLayer = new OpenLayers.Layer.XYZ();\nmap.addLayer(myNewLayer);")
+                    )
         table = db.define_table(tablename, t, migrate=migrate)
     elif layertype == "mgrs":
         t = db.Table(db, table,
-            gis_layer,
-            Field("url", label=T("Location")))
+                     gis_layer,
+                     Field("url", label=T("Location"))
+                    )
         table = db.define_table(tablename, t, migrate=migrate)
     elif layertype == "tms":
         t = db.Table(db, table,
-            gis_layer,
-            Field("url", label=T("Location"), requires = IS_NOT_EMPTY()),
-            Field("layers", label=T("Layers"), requires = IS_NOT_EMPTY()),
-            Field("format", label=T("Format")))
+                     gis_layer,
+                     Field("url", label=T("Location"), requires = IS_NOT_EMPTY()),
+                     Field("layers", label=T("Layers"), requires = IS_NOT_EMPTY()),
+                     Field("format", label=T("Format"))
+                    )
         table = db.define_table(tablename, t, migrate=migrate)
     elif layertype == "wfs":
         t = db.Table(db, table,
-            gis_layer,
-            Field("visible", "boolean", default=False, label=T("On by default?")),
-            Field("url", label=T("Location"), requires = IS_NOT_EMPTY()),
-            Field("version", label=T("Version"), default="1.1.0", requires = IS_IN_SET(["1.0.0", "1.1.0"], zero=None)),
-            Field("featureNS", requires=IS_NOT_EMPTY(), label=T("Feature Namespace"), comment=DIV(SPAN("*", _class="req"), DIV( _class="tooltip", _title="Feature Namespace" + "|" + Tstr("In GeoServer, this is the Workspace Name. Within the WFS getCapabilities, this is the FeatureType Name part before the colon(:).")))),
-            Field("featureType", requires=IS_NOT_EMPTY(), label=T("Feature Type"), comment=DIV(SPAN("*", _class="req"), DIV( _class="tooltip", _title="Feature Type" + "|" + Tstr("In GeoServer, this is the Layer Name. Within the WFS getCapabilities, this is the FeatureType Name part after the colon(:).")))),
-            projection_id,
-            #Field("editable", "boolean", default=False, label=T("Editable?")),
-            )
+                     gis_layer,
+                     Field("visible", "boolean", default=False, label=T("On by default?")),
+                     Field("url", label=T("Location"), requires = IS_NOT_EMPTY()),
+                     Field("version", label=T("Version"), default="1.1.0", requires = IS_IN_SET(["1.0.0", "1.1.0"], zero=None)),
+                     Field("featureNS", requires=IS_NOT_EMPTY(), label=T("Feature Namespace"),
+                           comment=DIV(SPAN("*", _class="req"), DIV( _class="tooltip", _title="Feature Namespace" + "|" + Tstr("In GeoServer, this is the Workspace Name. Within the WFS getCapabilities, this is the FeatureType Name part before the colon(:).")))),
+                     Field("featureType", requires=IS_NOT_EMPTY(), label=T("Feature Type"), comment=DIV(SPAN("*", _class="req"), DIV( _class="tooltip", _title="Feature Type" + "|" + Tstr("In GeoServer, this is the Layer Name. Within the WFS getCapabilities, this is the FeatureType Name part after the colon(:).")))),
+                     projection_id,
+                     #Field("editable", "boolean", default=False, label=T("Editable?")),
+                    )
         table = db.define_table(tablename, t, migrate=migrate)
         #table.url.requires = [IS_URL, IS_NOT_EMPTY()]
     elif layertype == "wms":
         t = db.Table(db, table,
-            gis_layer,
-            Field("visible", "boolean", default=False, label=T("On by default?")),
-            Field("url", label=T("Location"), requires = IS_NOT_EMPTY()),
-            Field("version", label=T("Version"), default="1.1.1", requires = IS_IN_SET(["1.1.1", "1.3.0"], zero=None)),
-            Field("base", "boolean", default=True, label=T("Base Layer?")),
-            Field("map", label=T("Map")),
-            Field("layers", label=T("Layers"), requires = IS_NOT_EMPTY()),
-            Field("format", label=T("Format"), requires = IS_NULL_OR(IS_IN_SET(["image/jpeg", "image/png", "image/bmp", "image/tiff", "image/gif", "image/svg+xml"]))),
-            Field("transparent", "boolean", default=False, label=T("Transparent?")),
-            #Field("queryable", "boolean", default=False, label=T("Queryable?")),
-            #Field("legend_url", label=T("legend URL")),
-            #Field("legend_format", label=T("Legend Format"), requires = IS_NULL_OR(IS_IN_SET(["image/jpeg", "image/png", "image/bmp", "image/tiff", "image/gif", "image/svg+xml"]))),
-            )
+                     gis_layer,
+                     Field("visible", "boolean", default=False, label=T("On by default?")),
+                     Field("url", label=T("Location"), requires = IS_NOT_EMPTY()),
+                     Field("version", label=T("Version"), default="1.1.1", requires = IS_IN_SET(["1.1.1", "1.3.0"], zero=None)),
+                     Field("base", "boolean", default=True, label=T("Base Layer?")),
+                     Field("map", label=T("Map")),
+                     Field("layers", label=T("Layers"), requires = IS_NOT_EMPTY()),
+                     Field("format", label=T("Format"), requires = IS_NULL_OR(IS_IN_SET(gis_layer_wms_img_formats))),
+                     Field("transparent", "boolean", default=False, label=T("Transparent?")),
+                     #Field("queryable", "boolean", default=False, label=T("Queryable?")),
+                     #Field("legend_url", label=T("legend URL")),
+                     #Field("legend_format", label=T("Legend Format"), requires = IS_NULL_OR(IS_IN_SET(gis_layer_wms_img_formats))),
+                    )
         table = db.define_table(tablename, t, migrate=migrate)
         #table.url.requires = [IS_URL, IS_NOT_EMPTY()]
     elif layertype == "xyz":
         t = db.Table(db, table,
-            gis_layer,
-            Field("url", label=T("Location"), requires = IS_NOT_EMPTY()),
-            Field("base", "boolean", default=True, label=T("Base Layer?")),
-            Field("sphericalMercator", "boolean", default=False, label=T("Spherical Mercator?")),
-            Field("transitionEffect", requires=IS_NULL_OR(IS_IN_SET(["resize"])), label=T("Transition Effect")),
-            Field("numZoomLevels", "integer", label=T("num Zoom Levels")),
-            Field("transparent", "boolean", default=False, label=T("Transparent?")),
-            Field("visible", "boolean", default=True, label=T("Visible?")),
-            Field("opacity", "double", default=0.0, label=T("Transparent?"))
+                     gis_layer,
+                     Field("url", label=T("Location"), requires = IS_NOT_EMPTY()),
+                     Field("base", "boolean", default=True, label=T("Base Layer?")),
+                     Field("sphericalMercator", "boolean", default=False, label=T("Spherical Mercator?")),
+                     Field("transitionEffect", requires=IS_NULL_OR(IS_IN_SET(["resize"])), label=T("Transition Effect")),
+                     Field("numZoomLevels", "integer", label=T("num Zoom Levels")),
+                     Field("transparent", "boolean", default=False, label=T("Transparent?")),
+                     Field("visible", "boolean", default=True, label=T("Visible?")),
+                     Field("opacity", "double", default=0.0, label=T("Transparent?"))
             )
         table = db.define_table(tablename, t, migrate=migrate)
     elif layertype == "yahoo":
         t = db.Table(db, table,
-            gis_layer,
-            Field("subtype", label=T("Sub-type"), requires = IS_IN_SET(gis_layer_yahoo_subtypes, zero=None)))
+                     gis_layer,
+                     Field("subtype", label=T("Sub-type"), requires = IS_IN_SET(gis_layer_yahoo_subtypes, zero=None))
+                    )
         table = db.define_table(tablename, t, migrate=migrate)
     elif layertype == "bing":
         t = db.Table(db, table,
-            gis_layer,
-            Field("subtype", label=T("Sub-type"), requires = IS_IN_SET(gis_layer_bing_subtypes, zero=None)))
+                     gis_layer,
+                     Field("subtype", label=T("Sub-type"), requires = IS_IN_SET(gis_layer_bing_subtypes, zero=None))
+                    )
         table = db.define_table(tablename, t, migrate=migrate)
 
 # -----------------------------------------------------------------------------

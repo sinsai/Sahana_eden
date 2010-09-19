@@ -14,7 +14,12 @@
          First row = attribute/field names
          Other rows = attribute/field values
 
-         Version 0.1 / 2010-09-19 / by nursix
+         References:
+            Column-name = reference:<fieldname>:<referenced_table>
+                e.g. "reference:organisation_id:org_organisation"
+            Column value = UUID
+
+         Version 0.1.1 / 2010-09-19 / by nursix
 
          Copyright (c) 2010 Sahana Software Foundation
 
@@ -92,12 +97,29 @@
         <xsl:variable name="fieldindex" select="position()"/>
         <xsl:variable name="fieldname" select="../../table:table-row[1]/table:table-cell[$fieldindex]/text:p/text()"/>
         <xsl:if test="$fieldname!='uuid'">
-            <data>
-                <xsl:attribute name="field">
-                    <xsl:value-of select="$fieldname"/>
-                </xsl:attribute>
-                <xsl:value-of select="./text:p/text()"/>
-            </data>
+            <xsl:choose>
+                <xsl:when test="starts-with($fieldname, 'reference:')">
+                    <reference>
+                        <xsl:attribute name="field">
+                            <xsl:value-of select="substring-before(substring-after($fieldname, 'reference:'), ':')"/>
+                        </xsl:attribute>
+                        <xsl:attribute name="resource">
+                            <xsl:value-of select="substring-after(substring-after($fieldname, 'reference:'), ':')"/>
+                        </xsl:attribute>
+                        <xsl:attribute name="uuid">
+                            <xsl:value-of select="./text:p/text()"/>
+                        </xsl:attribute>
+                    </reference>
+                </xsl:when>
+                <xsl:otherwise>
+                    <data>
+                        <xsl:attribute name="field">
+                            <xsl:value-of select="$fieldname"/>
+                        </xsl:attribute>
+                        <xsl:value-of select="./text:p/text()"/>
+                    </data>
+                </xsl:otherwise>
+            </xsl:choose>
         </xsl:if>
     </xsl:template>
 

@@ -18,8 +18,16 @@
             Column-name = reference:<fieldname>:<referenced_table>
                 e.g. "reference:organisation_id:org_organisation"
             Column value = UUID
+            Sheet name = name of the referenced table
 
-         Version 0.1.1 / 2010-09-19 / by nursix
+         Components:
+             Column-name = component:<component_tablename>
+                e.g. "component:pr_address"
+             Column-value = a cell reference to the respective row/rows in the
+                            component sheet
+             Sheet name for the component: "component+<component_tablename>"
+
+         Version 0.1.2 / 2010-09-19 / by nursix
 
          Copyright (c) 2010 Sahana Software Foundation
 
@@ -63,16 +71,24 @@
     <!-- ****************************************************************** -->
     <!-- Tables -->
     <xsl:template match="table:table">
-        <xsl:apply-templates select="./table:table-row[position()>1]"/>
+        <xsl:if test="not(starts-with(@table:name, 'component+'))">
+            <xsl:apply-templates select="./table:table-row[position()>1]"/>
+        </xsl:if>
     </xsl:template>
 
     <!-- ****************************************************************** -->
     <!-- Rows -->
     <xsl:template match="table:table-row">
-        <xsl:variable name="resource_name" select="../@table:name"/>
         <resource>
             <xsl:attribute name="name">
-                <xsl:value-of select="$resource_name"/>
+                <xsl:choose>
+                    <xsl:when test="starts-with(../@table:name, 'component+')">
+                        <xsl:value-of select="substring-after(../@table:name, 'component+')"/>
+                    </xsl:when>
+                    <xsl:otherwise>
+                        <xsl:value-of select="../@table:name"/>
+                    </xsl:otherwise>
+                </xsl:choose>
             </xsl:attribute>
             <xsl:apply-templates select="./table:table-cell" mode="attributes"/>
             <xsl:apply-templates select="./table:table-cell" mode="fields"/>
@@ -98,6 +114,31 @@
         <xsl:variable name="fieldname" select="../../table:table-row[1]/table:table-cell[$fieldindex]/text:p/text()"/>
         <xsl:if test="$fieldname!='uuid'">
             <xsl:choose>
+
+                <!-- resolve components -->
+                <xsl:when test="starts-with($fieldname, 'component:')">
+                    <xsl:if test="starts-with(@table:formula, 'of:=')">
+                        <xsl:variable name="sheet" select="substring-before(substring-after(@table:formula, 'of:=['), ']')"/>
+                        <xsl:variable name='component' select='substring-after(substring-before($sheet, "&apos;."), "component+")'/>
+                        <xsl:variable name="rows" select="substring-after($sheet, $component)"/>
+                        <xsl:choose>
+                            <xsl:when test="contains($rows, ':')">
+                                <xsl:variable name="startrow" select="substring-after(substring-before($rows, ':'), '.')"/>
+                                <xsl:variable name="endrow" select="substring-after(substring-after($rows, ':'), '.')"/>
+                                <xsl:variable name="start" select="substring-after($startrow, substring-before(translate($startrow, '0123456789', '**********'), '*'))"/>
+                                <xsl:variable name="end" select="substring-after($endrow, substring-before(translate($endrow, '0123456789', '**********'), '*'))"/>
+                                <xsl:apply-templates select="../../../table:table[@table:name=concat('component+', $component)]/table:table-row[position()&gt;=$start and position()&lt;=$end]"/>
+                            </xsl:when>
+                            <xsl:otherwise>
+                                <xsl:variable name="startrow" select="substring-after($rows, '.')"/>
+                                <xsl:variable name="start" select="substring-after($startrow, substring-before(translate($startrow, '0123456789', '**********'), '*'))"/>
+                                <xsl:apply-templates select="../../../table:table[@table:name=concat('component+', $component)]/table:table-row[position()=$start]"/>
+                            </xsl:otherwise>
+                        </xsl:choose>
+                    </xsl:if>
+                </xsl:when>
+
+                <!-- resolve references -->
                 <xsl:when test="starts-with($fieldname, 'reference:')">
                     <reference>
                         <xsl:attribute name="field">
@@ -111,6 +152,12 @@
                         </xsl:attribute>
                     </reference>
                 </xsl:when>
+
+                <!-- ignore all other columns with ":" in the title -->
+                <xsl:when test="contains($fieldname, ':')">
+                </xsl:when>
+
+                <!-- data -->
                 <xsl:otherwise>
                     <data>
                         <xsl:attribute name="field">
@@ -119,6 +166,7 @@
                         <xsl:value-of select="./text:p/text()"/>
                     </data>
                 </xsl:otherwise>
+
             </xsl:choose>
         </xsl:if>
     </xsl:template>

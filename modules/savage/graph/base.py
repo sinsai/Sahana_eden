@@ -14,7 +14,7 @@ from re import match
 
 class BaseGraph (PrintableCanvas):
     def __init__ (self, canvasType, **attr):
-        if attr.has_key ('settings'):
+        if attr.has_key ('settings') and attr['settings']:
             self.applySettings (attr['settings'])
         else:
             self.formatSettings (blank ())
@@ -182,10 +182,10 @@ class BaseGraph (PrintableCanvas):
         addAttr (settings, 'height', float, 200.0)
         addAttr (settings, 'fixedWidth', float, None)
 
-        addAttr (settings, 'titleSize', float, 15.0)
-        addAttr (settings, 'xLabelSize', float, 10.0)
-        addAttr (settings, 'yLabelSize', float, 10.0)
-        addAttr (settings, 'y2LabelSize', float, 10.0)
+        addAttr (settings, 'titleSize', float, 10.0)
+        addAttr (settings, 'xLabelSize', float, 8.0)
+        addAttr (settings, 'yLabelSize', float, 8.0)
+        addAttr (settings, 'y2LabelSize', float, 8.0)
 
         addAttr (settings, 'leftMargin', float, 10.0)
         addAttr (settings, 'rightMargin', float, 10.0)
@@ -314,6 +314,7 @@ class UnifiedGraph (BaseGraph):
         self.setProperties ()
         self.xlabels = []
         self.ylabels = []
+        self.ypositions = []
         self.y2labels = []
 
     def formatSettings (self, settings):
@@ -323,9 +324,9 @@ class UnifiedGraph (BaseGraph):
         addAttr (settings, 'yAxisSpace', float, 2.0)
         addAttr (settings, 'y2AxisSpace', float, 2.0)
 
-        addAttr (settings, 'xAxisTextHeight', float, 8.0)
-        addAttr (settings, 'yAxisTextHeight', float, 8.0)
-        addAttr (settings, 'y2AxisTextHeight', float, 8.0) 
+        addAttr (settings, 'xAxisTextHeight', float, 6.0)
+        addAttr (settings, 'yAxisTextHeight', float, 6.0)
+        addAttr (settings, 'y2AxisTextHeight', float, 6.0) 
 
         addAttr (settings, 'bg', boolean, True)
         addAttr (settings, 'bgBarDir', str, 'horizontal')
@@ -382,6 +383,7 @@ class UnifiedGraph (BaseGraph):
 
     this.move = function (target) {
       var v = pos (target)
+""" + self.jsChangeTooltipPos () + """   
       var o = getOffset (target);
       var transform = 'translate(' + (v.x + o.x) + ' ' + (v.y + o.y) + ')'
       tooltipGroup.setAttribute ('transform', transform);
@@ -418,11 +420,8 @@ class UnifiedGraph (BaseGraph):
     var getOffset = function (target) {
       var v = pos (target);
       var x, y;
-      var targetWidth;
-      if (target.getAttribute ('width'))
-        targetWidth = parseFloat (target.getAttribute ('width'));
-      else
-        targetWidth = 0;
+      targetWidth;
+""" + self.jsChangeTooltipPos () + """   
       var width = parseFloat (tooltipTextNode.getBBox().width);
       var height = parseFloat (tooltipTextNode.getBBox ().height);
       quad = getView (canvasRoot).quadrant (v);
@@ -432,11 +431,11 @@ class UnifiedGraph (BaseGraph):
         y = yOffset;
         break;
       case 2:
-        x = xOffset + targetWidth;
+        x = xOffset;
         y = yOffset;
         break;
       case 3:
-        x = xOffset + targetWidth;
+        x = xOffset;
         y = -(height + yPadding + yOffset);
         break;
       case 4:
@@ -502,6 +501,15 @@ class UnifiedGraph (BaseGraph):
                                  });
 """
 
+    def jsChangeTooltipPos (self):
+        return """
+      if (target.getAttribute ('width'))
+        targetWidth = parseFloat (target.getAttribute ('width'));
+      else
+        targetWidth = 0;
+      targetWidth /= 2.0;
+      v.x += targetWidth """
+    
     def setProperties (self):
         self.xaxis = False
         self.yaxis = False
@@ -552,13 +560,13 @@ class UnifiedGraph (BaseGraph):
             self.dataGroup.drawAt (rect, 0)
 
     def setXBounds (self):
-        return (self.canvas.minX, self.canvas.maxX)
+        self.xbounds = (self.canvas.minX, self.canvas.maxX)
 
     def setYBounds (self):
-        return (self.canvas.minY, self.canvas.maxY)
+        self.ybounds = (self.canvas.minY, self.canvas.maxY)
 
     def setY2Bounds (self):
-        return (self.canvas.minY2, self.canvas.maxY2)
+        self.y2bounds = (self.canvas.minY2, self.canvas.maxY2)
 
     def createXAxisSpace (self):
         self.canvas.move (0, self.settings.xAxisTextHeight)
@@ -568,7 +576,6 @@ class UnifiedGraph (BaseGraph):
         self.canvas.changeSize (0, -self.settings.xAxisSpace)
 
     def createXAxis (self):
-        xbounds = self.setXBounds ()
         textProperties = {'textHeight': self.settings.xAxisTextHeight,
                           'horizontalAnchor': 'center',
                           }
@@ -576,8 +583,8 @@ class UnifiedGraph (BaseGraph):
                        inf = self.canvas.x,
                        sup = self.canvas.x + self.canvas.width,
                        y = self.xAxisPos,
-                       lower = xbounds[0],
-                       upper = xbounds[1],
+                       lower = self.xbounds[0],
+                       upper = self.xbounds[1],
                        textProperties = textProperties)
         xaxis.createTicks ()
         if self.xlabels:
@@ -586,7 +593,6 @@ class UnifiedGraph (BaseGraph):
         self.dataGroup.drawAt (xaxis, 0)
 
     def createYAxis (self):
-        ybounds = self.setYBounds ()
         textProperties = {'textHeight': self.settings.yAxisTextHeight,
                           'horizontalAnchor': 'right',
                           'verticalAnchor': 'middle',
@@ -594,12 +600,11 @@ class UnifiedGraph (BaseGraph):
         yaxis = YAxis (inf = self.canvas.y,
                        sup = self.canvas.y + self.canvas.height,
                        x = 0,
-                       lower = ybounds[0],
-                       upper = ybounds[1],
+                       lower = self.ybounds[0],
+                       upper = self.ybounds[1],
                        textProperties = textProperties)
-        yaxis.createTicks ()
-        if self.ylabels:
-            yaxis.setText (self.ylabels)
+        yaxis.createTicks (self.ypositions)
+        yaxis.setText (self.ylabels)
         yaxis.drawTicks ()
         yaxis.move (self.canvas.x + yaxis.width, 0)
         self.canvas.changeSize (-yaxis.width - self.settings.yAxisSpace, 0)
@@ -607,7 +612,7 @@ class UnifiedGraph (BaseGraph):
         self.dataGroup.drawAt (yaxis, 0)
 
     def createY2Axis (self):
-        ybounds = self.setY2Bounds ()
+        ybounds = self.y2bounds
         textProperties = {'textHeight': self.settings.y2AxisTextHeight,
                           'horizontalAnchor': 'left',
                           'verticalAnchor': 'middle',
@@ -615,8 +620,8 @@ class UnifiedGraph (BaseGraph):
         yaxis = YAxis (inf = self.canvas.y,
                        sup = self.canvas.y + self.canvas.height,
                        x = 0,
-                       lower = ybounds[0],
-                       upper = ybounds[1],
+                       lower = self.y2bounds[0],
+                       upper = self.y2bounds[1],
                        textProperties = textProperties)
         yaxis.createTicks ()
         if self.y2labels:
@@ -629,10 +634,13 @@ class UnifiedGraph (BaseGraph):
     def finalize (self):
         self.canvas.setBounds ()
         if self.xaxis:
+            self.setXBounds ()
             self.createXAxisSpace ()
         if self.yaxis:
+            self.setYBounds ()
             self.createYAxis ()
         if self.y2axis:
+            self.setY2Bounds ()
             self.createY2Axis ()
         if self.xaxis:
             self.createXAxis ()

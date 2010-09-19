@@ -76,6 +76,8 @@ if populate:
     # Global Settings
     tablename = "s3_setting"
     table = db[tablename]
+    # Ensure that the theme we defined is in the DB ready to be used as a FK
+    db.commit()
     if not db(table.id > 0).count():
         table.insert(
             admin_name = T("Sahana Administrator"),
@@ -200,8 +202,8 @@ if populate:
     # Can't do sub-folders :/
     # need a script to read in the list of default markers from the filesystem, copy/rename & populate the DB 1 by 1
     if not db(table.id > 0).count():
-        # We want to start at ID 1
-        table.truncate()
+        # We want to start at ID 1, but postgres won't let us truncate() & not needed anyway this is only run on 1st_run.
+        #table.truncate()
         table.insert(
             name = "marker_red",
             height = 34,
@@ -379,9 +381,9 @@ if populate:
     tablename = "gis_projection"
     table = db[tablename]
     if not db(table.id > 0).count():
-       # We want to start at ID 1
-       table.truncate()
-       table.insert(
+        # We want to start at ID 1, but postgres won't let us truncate() & not needed anyway this is only run on 1st_run.
+        #table.truncate()
+        table.insert(
             uuid = "www.sahanafoundation.org/GIS-PROJECTION-900913",
             name = "Spherical Mercator",
             epsg = 900913,
@@ -389,7 +391,7 @@ if populate:
             maxResolution = 156543.0339,
             units = "m"
         )
-       table.insert(
+        table.insert(
             uuid = "www.sahanafoundation.org/GIS-PROJECTION-4326",
             name = "WGS84",
             epsg = 4326,
@@ -403,14 +405,15 @@ if populate:
 
     tablename = "gis_config"
     table = db[tablename]
+    # Ensure that the projection/marker we defined are in the DB ready to be used as FKs
+    db.commit()
     if not db(table.id > 0).count():
-       # We want to start at ID 1
-       table.truncate()
-       table.insert(
+        # We want to start at ID 1
+        table.truncate()
+        table.insert(
             lat = "51.8",
             lon = "-1.3",
             zoom = 7,
-            # Doesn't work on Postgres! (db.commit() the previous step?)
             projection_id = 1,
             marker_id = 1,
             map_height = 600,
@@ -554,17 +557,17 @@ if populate:
     tablename = "gis_apikey"
     table = db[tablename]
     if not db(table.id > 0).count():
-       table.insert(
+        table.insert(
             name = "google",
             apikey = "ABQIAAAAgB-1pyZu7pKAZrMGv3nksRRi_j0U6kJrkFvY4-OX2XYmEAa76BSH6SJQ1KrBv-RzS5vygeQosHsnNw",
             description = "localhost"
         )
-       table.insert(
+        table.insert(
             name = "yahoo",
             apikey = "euzuro-openlayers",
             description = "trial - replace for Production use"
         )
-       table.insert(
+        table.insert(
             name = "multimap",
             apikey = "metacarta_04",
             description = "trial - replace for Production use"

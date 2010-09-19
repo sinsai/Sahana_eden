@@ -611,28 +611,31 @@ class GIS(object):
             return ""
 
     # -----------------------------------------------------------------------------
-    def import_csv(self, filename, domain=None):
+    def import_csv(self, filename, domain=None, check_duplicates=True):
         """
             Import a CSV file of Admin Boundaries into the Locations table
 
-            File is expected to have been generated from a Shapefile as:
-            ogr2ogr -f CSV CSV TM_WORLD_BORDERS-0.3.shp -lco GEOMETRY=AS_WKT
-
-            There needs to be a column named 'WKT'
-            The Location names should be ADM0_NAME to ADM3_NAME
+            The Location names should be ADM0_NAME to ADM5_NAME
             - the highest-numbered name will be taken as the name of the current location
             - the previous will be taken as the parent(s)
+            - any other name is ignored
 
-            Currently it expects to be run from the CLI, with the file in the web2py folder
+            It is possible to use the tool purely for Hierarchy, however:
+            If there is a column named 'WKT' then it will be used to provide polygon &/or centroid information.
+            If there is no column named 'WKT' but there are columns named 'Lat' & Lon' then these will be used for Point information.
+
+            WKT columns can be generated from a Shapefile using:
+            ogr2ogr -f CSV CSV myshapefile.shp -lco GEOMETRY=AS_WKT
+
+            Currently this function expects to be run from the CLI, with the CSV file in the web2py folder
+            Currently it expects L0 data to be pre-imported into the database.
+            - L1 should be imported 1st, then L2, then L3
+            - parents are found though the use of the name columns, so the previous level of hierarchy shouldn't have duplicate names in
+
             @ToDo: Extend to support being run from the webpage
             @ToDo: Write additional function(s) to do the OGR2OGR transformation from an uploaded Shapefile
-            
-            @ToDo: Currently it expects L0 data to be pre-imported into the database.
-                   - L1 should be imported 1st, then L2, then L3
-                   - parents are found though the use of the name columns,
-                     so the previous level of hierarchy shouldn't have duplicate names in
         """
-        
+
         import csv
 
         cache = self.cache
@@ -657,11 +660,6 @@ class GIS(object):
         for row in latin_dict_reader(open(filename)):
             current_row += 1
             try:
-                wkt = row.pop("WKT")
-            except:
-                s3_debug("No WKT column!")
-                continue
-            try:
                 name0 = row.pop("ADM0_NAME")
             except:
                 name0 = ""
@@ -677,12 +675,31 @@ class GIS(object):
                 name3 = row.pop("ADM3_NAME")
             except:
                 name3 = ""
+            try:
+                name4 = row.pop("ADM4_NAME")
+            except:
+                name4 = ""
+            try:
+                name5 = row.pop("ADM5_NAME")
+            except:
+                name5 = ""
 
-            if not name3 and not name2 and not name1:
+            if not name5 and not name4 and not name3 and not name2 and not name1:
                 # We need a name! (L0's are already in DB)
                 s3_debug("No name provided", current_row)
                 continue
 
+            try:
+                wkt = row.pop("WKT")
+            except:
+                wkt = None
+                try:
+                    lat = row.pop("LAT")
+                    lon = row.pop("LON")
+                except:
+                    lat = None
+                    lon = None
+            
             if domain:
                 try:
                     uuid = domain + "/" + row.pop("UUID")
@@ -692,7 +709,15 @@ class GIS(object):
                 uuid = ""
 
             # What level are we?
-            if name3:
+            if name5:
+                level = "L5"
+                name = name5
+                parent = name4
+            elif name4:
+                level = "L4"
+                name = name4
+                parent = name3
+            elif name3:
                 level = "L3"
                 name = name3
                 parent = name2
@@ -710,25 +735,29 @@ class GIS(object):
                 continue
             
             # Calculate Centroid & Bounds
-            try:
-                shape = wkt_loads(wkt)
-            except:
-                # Invalid WKT
-                s3_debug("Invalid WKT", name)
-                continue
-            centroid_point = shape.centroid
-            lon = centroid_point.x
-            lat = centroid_point.y
-            bounds = shape.bounds
-            lon_min = bounds[0]
-            lat_min = bounds[1]
-            lon_max = bounds[2]
-            lat_max = bounds[3]
-            
-            if lon_min == lon:
-                feature_type = 1 # Point
+            if wkt:
+                try:
+                    # Valid WKT
+                    shape = wkt_loads(wkt)
+                    centroid_point = shape.centroid
+                    lon = centroid_point.x
+                    lat = centroid_point.y
+                    bounds = shape.bounds
+                    lon_min = bounds[0]
+                    lat_min = bounds[1]
+                    lon_max = bounds[2]
+                    lat_max = bounds[3]
+                    if lon_min == lon:
+                        feature_type = 1 # Point
+                    else:
+                        feature_type = 3 # Polygon
+                except:
+                    s3_debug("Invalid WKT", name)
+                    continue
             else:
-                feature_type = 3 # Polygon
+                lon_min = lon_max = lon
+                lat_min = lat_max = lat
+                feature_type = 1 # Point
 
             # Locate Parent
             # @ToDo: Extend to search alternate names
@@ -736,6 +765,7 @@ class GIS(object):
                 # Hack for Pakistan
                 if parent == "Jammu Kashmir":
                     parent = "Pakistan"
+                
                 _parent = db(_locations.name == parent).select(_locations.id, limitby=(0, 1), cache=cache).first()
                 if _parent:
                     parent = _parent.id
@@ -744,12 +774,24 @@ class GIS(object):
                     s3_debug("Parent cannot be found", parent)
                     parent = ""
             
-            # Add entry to database
-            if uuid:
-                _locations.insert(name=name, level=level, parent=parent, lat=lat, lon=lon, wkt=wkt, lon_min=lon_min, lon_max=lon_max, lat_min=lat_min, lat_max=lat_max, gis_feature_type=feature_type, uuid=uuid)
+            # Check for duplicates
+            query = (_locations.name == name) & (_locations.level == level) & (_locations.parent == parent)
+            duplicate = db(query).select()
+            if duplicate:
+                s3_debug("Location", name)
+                s3_debug("Duplicate - updating...")
+                # Update with any new information
+                if uuid:
+                    db(query).update(lat=lat, lon=lon, wkt=wkt, lon_min=lon_min, lon_max=lon_max, lat_min=lat_min, lat_max=lat_max, gis_feature_type=feature_type, uuid=uuid)
+                else:
+                    db(query).update(lat=lat, lon=lon, wkt=wkt, lon_min=lon_min, lon_max=lon_max, lat_min=lat_min, lat_max=lat_max, gis_feature_type=feature_type)
             else:
-                _locations.insert(name=name, level=level, parent=parent, lat=lat, lon=lon, wkt=wkt, lon_min=lon_min, lon_max=lon_max, lat_min=lat_min, lat_max=lat_max, gis_feature_type=feature_type)
-        
+                # Create new entry in database
+                if uuid:
+                    _locations.insert(name=name, level=level, parent=parent, lat=lat, lon=lon, wkt=wkt, lon_min=lon_min, lon_max=lon_max, lat_min=lat_min, lat_max=lat_max, gis_feature_type=feature_type, uuid=uuid)
+                else:
+                    _locations.insert(name=name, level=level, parent=parent, lat=lat, lon=lon, wkt=wkt, lon_min=lon_min, lon_max=lon_max, lat_min=lat_min, lat_max=lat_max, gis_feature_type=feature_type)
+
         # Better to give user control, can then dry-run
         #db.commit()
         return
@@ -3622,6 +3664,7 @@ OpenLayers.Util.extend( selectPdfControl, {
                     title: '""" + str(T("Tools")) + """',
                     border: true,
                     width: 250,
+                    autoScroll: true,
                     collapsible: true,
                     collapseMode: 'mini',
                     collapsed: """ + collapsed + """,

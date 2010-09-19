@@ -189,11 +189,11 @@ def export_pdf(table, query, list_fields=None):
     if not fields:
         fields = [table[f] for f in table.fields if table[f].readable]
     _elements = [ SystemField(
-                        expression="%(report_title)s",
-                        top=0.1*cm,
-                        left=0,
-                        width=BAND_WIDTH,
-                        style={
+                        expression = "%(report_title)s",
+                        top = 0.1 * cm,
+                        left = 0,
+                        width = BAND_WIDTH,
+                        style = {
                             "fontName": "Helvetica-Bold",
                             "fontSize": 14,
                             "alignment": TA_CENTER
@@ -204,7 +204,7 @@ def export_pdf(table, query, list_fields=None):
     LEFTMARGIN = 0.2
 
     def _represent(field, data):
-        if data == None:
+        if data is None:
             return ""
         represent = table[field].represent
         if not represent:
@@ -225,11 +225,13 @@ def export_pdf(table, query, list_fields=None):
         _elements.append(Label(text=s3xrc.xml.xml_encode(str(field.label))[:16], top=0.8*cm, left=LEFTMARGIN*cm))
         tab, col = str(field).split(".")
         detailElements.append(ObjectValue(
-            attribute_name=col,
-            left=LEFTMARGIN * cm,
-            width=COLWIDTH * cm,
+            attribute_name = col,
+            left = LEFTMARGIN * cm,
+            width = COLWIDTH * cm,
             # Ensure that col is substituted when lambda defined not evaluated by using the default value
-            get_value=lambda instance, column=col: _represent(column, instance[column])))
+            get_value = lambda instance,
+            column = col: _represent(column, instance[column])
+            ))
         LEFTMARGIN += COLWIDTH
 
     mod, res = str(table).split("_", 1)
@@ -1165,7 +1167,10 @@ def shn_list(r, **attr):
                             truncate=48, _id="list", _class="display")
 
         if not items:
-            items = shn_get_crud_string(tablename, "msg_list_empty")
+            if db(table.id > 0).count():
+                items = shn_get_crud_string(tablename, "msg_no_match")
+            else:
+                items = shn_get_crud_string(tablename, "msg_list_empty")
         output.update(items=items)
 
         authorised = shn_has_permission("create", tablename)

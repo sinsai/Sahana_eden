@@ -265,7 +265,7 @@ def upload(module, resource, table, tablename, onvalidation=None, onaccept=None)
             fieldname = var
             f = request.vars[fieldname]
             fd = fieldname + "__delete"
-            if f == "" or f == None:
+            if f == "" or f is None:
                 #if request.vars.get(fd, False) or not self.record:
                 if request.vars.get(fd, False):
                     record[fieldname] = ""

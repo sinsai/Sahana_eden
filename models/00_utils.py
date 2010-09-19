@@ -328,7 +328,7 @@ def shn_import_table(table_name,
     """
 
     table = db[table_name]
-    if not db(table.id).count() or import_if_not_empty:
+    if not db(table.id > 0).count() or import_if_not_empty:
         import_file = os.path.join(request.folder,
                                    "private", "import", "tables",
                                    table_name + ".csv")
@@ -395,6 +395,32 @@ def shn_represent_file(file_name,
         filename = file_name
 
     return A(filename, _href = url_file)
+
+
+# -----------------------------------------------------------------------------
+def s3_represent_multiref(table, opt, represent=None):
+
+    if represent is None:
+        if "name" in table.fields:
+            represent = lambda r: r and r.name or UNKNOWN_OPT
+
+    if isinstance(opt, (int, long, str)):
+        query = (table.id == opt)
+    else:
+        query = (table.id.belongs(opt))
+    if "deleted" in table.fields:
+        query = query & (table.deleted == False)
+
+    records = db(query).select()
+    try:
+        options = [represent(r) for r in records]
+    except TypeError:
+        options = [represent % r for r in records]
+
+    if options:
+        return ", ".join(options)
+    else:
+        return UNKNOWN_OPT
 
 
 # -----------------------------------------------------------------------------

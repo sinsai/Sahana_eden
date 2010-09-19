@@ -263,7 +263,7 @@ def shn_shelter_prep(r):
                     if requestor:
                         db.rms_req.person_id.default = requestor.id
 
-                
+
             elif r.component.name == "presence":
                 # Hide the Implied fields
                 db.pr_presence.location_id.writable = False
@@ -276,6 +276,11 @@ def shn_shelter_prep(r):
                     if reporter:
                         db.pr_presence.reporter.default = reporter.id
                         db.pr_presence.observer.default = reporter.id
+                db.pr_presence.presence_condition.requires = IS_IN_SET(
+                        (vita.presence_conditions[vita.CHECK_IN],
+                         vita.presence_conditions[vita.CHECK_OUT]), zero=None)
+                db.pr_presence.presence_condition.default = vita.CHECK_IN
+                r.resource.add_filter(db.pr_presence.closed == False)
                 # Change the Labels
                 s3.crud_strings.pr_presence = Storage(
                     title_create = T("Register Person"),
@@ -317,8 +322,8 @@ def shn_shelter_onvalidation(form):
         response.cr_shelter_request_was_html_or_popup = None
 
         if "is_school" in request.vars and not form.vars.school_code:
-            form.errors.school_code = T(
-                "Please enter a school code or don't check 'Is this a school?'")
+            # Indicate that this is a school by setting a value that no school uses.
+            form.vars.school_code = 1
 
         # Note the form is defective if there's an is_hospital checkbox
         # but no hospital_id field...

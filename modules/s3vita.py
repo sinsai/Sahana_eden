@@ -48,8 +48,9 @@ class S3Vita(object):
 
     CHECK_IN = 11
     CONFIRMED = 12
-    LOST = 13
-    PERSISTANT_PRESENCE = (11, 12, 13)
+    DECEASED = 13
+    LOST = 14
+    PERSISTANT_PRESENCE = (11, 12, 13, 14)
 
     TRANSFER = 21
     CHECK_OUT = 22
@@ -91,7 +92,8 @@ class S3Vita(object):
             # Persistant presence conditions:
             self.CHECK_IN: self.T("Check-In"),   # arrived at location for accomodation/storage
             self.CONFIRMED: self.T("Confirmed"), # confirmation of stay/storage at location
-            self.LOST: self.T("Lost"),           # Deceased/destroyed/disposed at location
+            self.DECEASED: self.T("Deceased"),   # deceased
+            self.LOST: self.T("Lost"),           # destroyed/disposed at location
 
             # Absence conditions:
             self.TRANSFER: self.T("Transfer"),   # Send to another location
@@ -168,11 +170,22 @@ class S3Vita(object):
                     db(table.id == id).update(closed=True)
 
         if not presence.closed:
+
+            # Re-open the last persistant presence if no closing event
             query = this_entity & is_present
             presence = db(query).select(table.ALL, orderby=~table.datetime, limitby=(0,1)).first()
             if presence and presence.closed:
-                datetime = presence.datetime
+                later = (table.datetime > presence.datetime)
                 query = this_entity & later & is_absent & same_place
+                if not db(query).count():
+                    db(table.id == presence.id).update(closed=False)
+
+            # Re-open the last missing if no later persistant presence
+            query = this_entity & is_missing
+            presence = db(query).select(table.ALL, orderby=~table.datetime, limitby=(0,1)).first()
+            if presence and presence.closed:
+                later = (table.datetime > presence.datetime)
+                query = this_entity & later & is_present
                 if not db(query).count():
                     db(table.id == presence.id).update(closed=False)
 
@@ -316,20 +329,18 @@ class S3Vita(object):
 
 
     # -------------------------------------------------------------------------
-    def fullname(self, record):
+    def fullname(self, record, truncate=True):
 
-        """ Returns the full name of a person
-
-        """
+        """ Returns the full name of a person """
 
         if record:
             fname, mname, lname = "", "", ""
             if record.first_name:
-                fname = "%s " % record.first_name.strip()
+                fname = "%s " % self.truncate(record.first_name.strip(), 24)
             if record.middle_name:
-                mname = "%s " % record.middle_name.strip()
+                mname = "%s " % self.truncate(record.middle_name.strip(), 16)
             if record.last_name:
-                lname = record.last_name.strip()
+                lname = self.truncate(record.last_name.strip(), 24, nice = False)
 
             if mname.isspace():
                 return "%s%s" % (fname, lname)
@@ -337,6 +348,21 @@ class S3Vita(object):
                 return "%s%s%s" % (fname, mname, lname)
         else:
             return ""
+
+
+    # -------------------------------------------------------------------------
+    def truncate(self, text, length=48, nice=True):
+
+        """ Nice truncating of text """
+
+        if len(text) > length:
+            if nice:
+                return "%s..." % text[:length].rsplit(" ", 1)[0][:45]
+            else:
+                return "%s..." % text[:45]
+        else:
+            return text
+
 
     # -------------------------------------------------------------------------
     def rlevenshtein(self, str1, str2):

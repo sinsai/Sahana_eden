@@ -277,6 +277,7 @@ if deployment_settings.has_module(module):
     table.source_id.label = T("Source ID")
 
     table.verified.label = T("Verified?")
+    table.verified.represent = lambda verified: (T("No"), T("Yes"))[verified == True] 
 
     # CRUD strings
     ADD_INC_REPORT = T("Add Incident Report")

@@ -1,10 +1,10 @@
 # -*- coding: utf-8 -*-
 
-"""
-    DVI - Management of Dead Bodies and Disaster Victim Identification
+""" DVI - Management of Dead Bodies and Disaster Victim Identification
 
     @author: khushbu
     @author: nursix
+
 """
 
 module = "dvi"
@@ -311,7 +311,8 @@ if deployment_settings.has_module(module):
         1:T("Unidentified"),
         2:T("Preliminary"),
         3:T("Confirmed"),
-        }
+    }
+
 
     opt_dvi_id_status = db.Table(None, "opt_dvi_id_status",
                         Field("opt_dvi_id_status","integer",
@@ -319,6 +320,7 @@ if deployment_settings.has_module(module):
                         default = 1,
                         label = T("Identification Status"),
                         represent = lambda opt: dvi_id_status_opts.get(opt, UNKNOWN_OPT)))
+
 
     dvi_id_method_opts = {
         1:T("Visual Recognition"),
@@ -328,7 +330,8 @@ if deployment_settings.has_module(module):
         5:T("DNA Profile"),
         6:T("Combined Method"),
         99:T("Other Evidence")
-        }
+    }
+
 
     opt_dvi_id_method = db.Table(None, "opt_dvi_id_method",
                         Field("opt_dvi_id_method","integer",
@@ -337,17 +340,20 @@ if deployment_settings.has_module(module):
                         label = T("Method used"),
                         represent = lambda opt: dvi_id_method_opts.get(opt, UNKNOWN_OPT)))
 
+
     resource = "identification"
     tablename = "%s_%s" % (module, resource)
     table = db.define_table(tablename, timestamp, uuidstamp, deletion_status,
-                    pe_id,
-                    Field("identified_by", db.pr_person),  # Person identifying the body
-                    Field("reported_by", db.pr_person),    # Person reporting
-                    opt_dvi_id_status,                     # Identity status
-                    opt_dvi_id_method,                     # Method used
-                    Field("identity", db.pr_person),       # Identity of the body
-                    Field("comment", "text"),              # Comment (optional)
-                    migrate = migrate)
+                            pe_id,
+                            Field("identified_by", db.pr_person),  # Person identifying the body
+                            Field("reported_by", db.pr_person),    # Person reporting
+                            opt_dvi_id_status,                     # Identity status
+                            opt_dvi_id_method,                     # Method used
+                            Field("identity", db.pr_person),       # Identity of the body
+                            Field("presence", db.pr_presence),     # Related presence record of the identified person
+                            Field("comment", "text"),              # Comment (optional)
+                            migrate = migrate)
+
 
     # Settings and Restrictions
     table.identified_by.requires = IS_NULL_OR(IS_ONE_OF(db, "pr_person.id", shn_pr_person_represent, orderby="pr_person.first_name"))
@@ -365,7 +371,9 @@ if deployment_settings.has_module(module):
     table.identity.comment = shn_person_id_comment
     table.identity.ondelete = "RESTRICT"
 
-    # Labels
+    table.presence.readable = None
+    table.presence.writable = None
+
 
     # CRUD Strings
     s3.crud_strings[tablename] = Storage(
@@ -383,14 +391,109 @@ if deployment_settings.has_module(module):
         msg_record_deleted = T("Report deleted"),
         msg_list_empty = T("No Identification Report Available"))
 
-    # Joined Resource
+
+    # Identification reports as component of person entities
     s3xrc.model.add_component(module, resource,
                               multiple = False,
                               joinby = "pe_id",
                               deletable = True,
                               editable = True)
 
-    s3xrc.model.configure(table, list_fields = ["id"])
+
+    # -----------------------------------------------------------------------------
+    def dvi_identification_onvalidation(form):
+
+        """ Remove attached presence records upon identity change """
+
+        table = db.dvi_identification
+
+        record_id = form.vars.id
+        identity = form.vars.identity
+        if record_id:
+            record = db(table.id == record_id).select(table.identity,
+                                                      table.presence,
+                                                      limitby=(0,1)).first()
+            if record:
+                if str(identity) != str(record.identity):
+                    db(db.pr_presence.id == record.presence).update(deleted=True)
+                    vita.presence_accept(record.presence)
+        return
+
+
+    # -----------------------------------------------------------------------------
+    def dvi_identification_onaccept(form):
+
+        """ Attach presence record for the identified person """
+
+        table = db.dvi_identification
+
+        if isinstance(form, Row):
+            record_id = form.id
+        else:
+            record_id = form.vars.id
+
+        if record_id:
+            record = db(table.id == record_id).select(table.pe_id,
+                                                      table.deleted,
+                                                      table.identity,
+                                                      table.presence,
+                                                      table.opt_dvi_id_status,
+                                                      limitby=(0,1)).first()
+
+            if not record:
+                return
+
+            if record.presence and \
+               (record.deleted or record.opt_dvi_id_status != 3):
+
+                # Remove prior attached presence records
+                db(db.pr_presence.id == record.presence).update(deleted=True)
+                vita.presence_accept(record.presence)
+                db(table.id == record_id).update(presence=None)
+
+            elif not record.presence and record.opt_dvi_id_status == 3:
+
+                # Get the identified person:
+                person = db(db.pr_person.id == record.identity).select(db.pr_person.pe_id,
+                                                                       limitby=(0,1)).first()
+                if not person:
+                    return
+
+                # Get the recovery location and time of the body
+                location_id = None
+                body = db(db.dvi_body.pe_id == record.pe_id).select(db.dvi_body.location_id,
+                                                                    db.dvi_body.date_of_recovery,
+                                                                    limitby=(0,1)).first()
+                if body:
+                    location_id = body.location_id
+
+                # Get the current user
+                reporter = None
+                query = db.pr_person.uuid == session.auth.user.person_uuid
+                user = db(query).select(db.pr_person.id, limitby=(0,1)).first()
+                if user:
+                    report_id = user.id
+
+                # Insert new presence record
+                presence_id = db.pr_presence.insert(
+                    pe_id = person.pe_id,
+                    reporter = reporter,
+                    datetime = request.utcnow,
+                    location_id = location_id,
+                    presence_condition = vita.DECEASED,
+                )
+                if presence_id:
+                    db(table.id == record_id).update(presence=presence_id)
+                    vita.presence_accept(presence_id)
+
+
+    # -----------------------------------------------------------------------------
+    s3xrc.model.configure(table,
+        onvalidation = lambda form: dvi_identification_onvalidation(form),
+        onaccept = lambda form: dvi_identification_onaccept(form),
+        delete_onaccept = lambda row: dvi_identification_onaccept(row),
+        list_fields = ["id"])
+
 
     # -----------------------------------------------------------------------------
     #

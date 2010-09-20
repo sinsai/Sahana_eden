@@ -486,7 +486,6 @@ if deployment_settings.has_module(module):
                     db(table.id == record_id).update(presence=presence_id)
                     vita.presence_accept(presence_id)
 
-
     # -----------------------------------------------------------------------------
     s3xrc.model.configure(table,
         onvalidation = lambda form: dvi_identification_onvalidation(form),

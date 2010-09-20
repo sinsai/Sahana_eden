@@ -65,9 +65,14 @@ def s3_debug(message, value=None):
         Provide an easy, safe, systematic way of handling Debug output
         (print to stdout doesn't work with WSGI deployments)
     """
-    output = "S3 Debug: " + str(message)
-    if value:
-        output += ": " + str(value)
+    try:
+        output = "S3 Debug: " + str(message)
+        if value:
+            output += ": " + str(value)
+    except:
+        output = "S3 Debug: " + unicode(message)
+        if value:
+            output += ": " + unicode(value)
     
     print >> sys.stderr, output
 

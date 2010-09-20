@@ -65,9 +65,14 @@ def s3_debug(message, value=None):
         (print to stdout doesn't work with WSGI deployments)
     """
     import sys
-    output = "S3 Debug: " + str(message)
-    if value:
-        output += ": " + str(value)
+    try:
+        output = "S3 Debug: " + str(message)
+        if value:
+            output += ": " + str(value)
+    except:
+        output = "S3 Debug: " + unicode(message)
+        if value:
+            output += ": " + unicode(value)
 
     print >> sys.stderr, output
 

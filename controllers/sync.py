@@ -36,6 +36,9 @@ def peer():
     primary_resources = s3_sync_primary_resources()
     db.sync_job.resources.requires = IS_NULL_OR(IS_IN_SET(primary_resources, multiple=True, zero=None))
 
+    db.sync_log.peer_id.readable = False
+    db.sync_log.peer_id.writable = False
+
     table = db.sync_peer
     table.uuid.label = T("UID")
     table.url.label = T("URL")
@@ -594,6 +597,11 @@ def job():
     prefix = module
     name = "job"
 
+    primary_resources = s3_sync_primary_resources()
+    db.sync_job.resources.requires = IS_NULL_OR(IS_IN_SET(primary_resources, multiple=True, zero=None))
+
+    response.s3.pagination = True
+
     return shn_rest_controller(prefix, name)
 
 
@@ -603,6 +611,8 @@ def log():
 
     prefix = module
     name = "log"
+
+    response.s3.pagination = True
 
     return shn_rest_controller(prefix, name,
                 listadd = False,
@@ -954,19 +964,22 @@ def sync_cron():
     """ Run all due jobs from the schedule """
 
     # Get settings
-    settings = db().select(sync_setting.ALL, limitby=(0,1)).first()
+    settings = db().select(db.sync_setting.ALL, limitby=(0,1)).first()
     if not settings:
         return
 
     # Get all enabled jobs
-    jobs = db((db.sync_job.enabled == True) &
-              (db.sync_job.interval != "m")).select(db.sync_job.ALL)
+    #jobs = db((db.sync_job.enabled == True) &
+              #(db.sync_job.run_interval != "m")).select(db.sync_job.ALL)
+    jobs = db((db.sync_job.enabled == True)).select(db.sync_job.ALL)
 
     now = datetime.datetime.now()
 
+    jobs_done = 0
+    error_count = 0
     for job in jobs:
         due = False
-        interval = job.interval
+        interval = job.run_interval
         last_run = job.last_run
         if not last_run:
             due = True
@@ -985,11 +998,22 @@ def sync_cron():
             continue
 
         if due:
-            sync_run_job(job,
-                         settings=setting,
-                         pid=None,
-                         tables=None,
-                         silent=True)
+            result = sync_run_job(job,
+                                  settings=settings,
+                                  pid=None,
+                                  tables=job.resources,
+                                  silent=True)
+            if result.success:
+                db(db.sync_job.id == job.id).update(last_run=now)
+                jobs_done += 1
+            else:
+                error_count +=1
+
+
+    response.view = "xml.html"
+    item = s3xrc.xml.json_message(True, 200, message="%s jobs done, %s errors." % (jobs_done, error_count))
+
+    return dict(item=item)
 
 
 # -----------------------------------------------------------------------------
@@ -1040,6 +1064,17 @@ def sync_run_job(job, settings=None, pid=None, tables=[], silent=False):
             result = s3_sync_eden_other(peer, mode, tablenames,
                                         pid=pid,
                                         settings=settings)
+
+        if result:
+            db.sync_log.insert(
+                peer_id = peer.id,
+                timestmp = datetime.datetime.now(),
+                resources = ", ".join(result.done),
+                errors = ", ".join(result.errors),
+                mode = job.mode,
+                run_interval = job.run_interval,
+                complete = job.complete
+            )
 
     return result
 
@@ -1094,6 +1129,14 @@ def s3_sync_eden_eden(peer, mode, tablenames,
     else:
         msince = None
 
+    # Ignore errors?
+    ignore_errors = peer.ignore_errors
+
+    notify("....Synchronization with %s (%s) - started %s" % (
+            peer.name,
+            peer.url,
+            ignore_errors and "(ignoring invalid records)" or ""))
+
     for tablename in tablenames:
 
         # Skip invalid tablenames silently
@@ -1118,7 +1161,7 @@ def s3_sync_eden_eden(peer, mode, tablenames,
 
         if is_json:
             _get = resource.fetch_json
-            _put = resource.psuh_json
+            _put = resource.push_json
         else:
             _get = resource.fetch_xml
             _put = resource.push_xml
@@ -1148,7 +1191,8 @@ def s3_sync_eden_eden(peer, mode, tablenames,
                 result = _get(fetch_url,
                               username=peer.username,
                               password=peer.password,
-                              proxy=proxy)
+                              proxy=proxy,
+                              ignore_errors=ignore_errors)
             except Exception, e:
                 err = str(e)
             else:
@@ -1164,6 +1208,7 @@ def s3_sync_eden_eden(peer, mode, tablenames,
                         err = str(result_json.get("message", "Unknown error"))
             if err is not None:
                 output.errcount += 1
+                output.errors.append("%s: %s" % (tablename, err))
                 error("........fetch %s : %s" % (tablename, err))
                 if mode == 1:
                     continue
@@ -1204,6 +1249,7 @@ def s3_sync_eden_eden(peer, mode, tablenames,
                         err = str(result_json.get("message", "Unknown error"))
             if err is not None:
                 output.errcount += 1
+                output.errors.append("%s: %s" % (tablename, err))
                 error("........send %s : %s" % (tablename, err))
                 continue
             else:
@@ -1289,7 +1335,13 @@ def s3_sync_eden_other(peer, mode, tablenames,
         output.success = False
         return output
 
-    notify("....Synchronization with %s (%s) - started" % (peer.name, peer.url))
+    # Ignore errors?
+    ignore_errors = peer.ignore_errors
+
+    notify("....Synchronization with %s (%s) - started %s" % (
+            peer.name,
+            peer.url,
+            ignore_errors and "(ignoring invalid records)" or ""))
 
     for tablename in tablenames:
 
@@ -1318,28 +1370,30 @@ def s3_sync_eden_other(peer, mode, tablenames,
             fetch_url = peer.url
 
             err = None
-            #try:
-            result = resource.fetch(fetch_url,
-                                    username=peer.username,
-                                    password=peer.password,
-                                    json=is_json,
-                                    template=import_template,
-                                    proxy=proxy)
-            #except Exception, e:
-                #err = str(e)
-            #else:
             try:
-                result_json = json.loads(str(result))
-            except:
-                err = str(result)
+                result = resource.fetch(fetch_url,
+                                        username=peer.username,
+                                        password=peer.password,
+                                        json=is_json,
+                                        template=import_template,
+                                        proxy=proxy,
+                                        ignore_errors=ignore_errors)
+            except Exception, e:
+                err = str(e)
             else:
-                statuscode = str(result_json.get("statuscode", ""))
-                if statuscode.startswith("2"):
-                    err = None
+                try:
+                    result_json = json.loads(str(result))
+                except:
+                    err = str(result)
                 else:
-                    err = str(result_json.get("message", "Unknown error"))
+                    statuscode = str(result_json.get("statuscode", ""))
+                    if statuscode.startswith("2"):
+                        err = None
+                    else:
+                        err = str(result_json.get("message", "Unknown error"))
             if err is not None:
                 output.errcount += 1
+                output.errors.append("%s: %s" % (tablename, err))
                 error("........fetch %s : %s" % (tablename, err))
                 if mode == 1:
                     continue
@@ -1377,6 +1431,7 @@ def s3_sync_eden_other(peer, mode, tablenames,
                         err = str(result_json.get("message", "Unknown error"))
             if err is not None:
                 output.errcount += 1
+                output.errors.append("%s: %s" % (tablename, err))
                 error("........send %s : %s" % (tablename, err))
                 continue
             else:

@@ -73,7 +73,7 @@ def s3_debug(message, value=None):
         output = "S3 Debug: " + unicode(message)
         if value:
             output += ": " + unicode(value)
-    
+
     print >> sys.stderr, output
 
 SHAPELY = False
@@ -240,7 +240,13 @@ class GIS(object):
         """
             Utility function: returns minimal argument that is not None.
         """
-        return min(*(a for a in args if a is not None))
+        l = [a for a in args if a is not None]
+        if len(l) > 1:
+            return min(*l)
+        elif l:
+            return l[0]
+        else:
+            return None
 
     # -----------------------------------------------------------------------------
     def get_bounds(self, features=[]):
@@ -317,31 +323,31 @@ class GIS(object):
 
         auth = self.auth
         db = self.db
-        
+
         _config = db.gis_config
         _projection = db.gis_projection
-        
+
         # Default config is the 1st
-        config = 1 
+        config = 1
         if auth.is_logged_in():
             # Read personalised config, if available
             personalised = db((db.pr_person.uuid == auth.user.person_uuid) & (_config.pe_id == db.pr_person.pe_id)).select(_config.id, limitby=(0, 1)).first()
             if personalised:
                 config = personalised.id
-            
+
         query = (_config.id == config)
-        
+
         query = query & (_projection.id == _config.projection_id)
         config = db(query).select(limitby=(0, 1)).first()
-        
+
         output = Storage()
         for item in config["gis_config"]:
             output[item] = config["gis_config"][item]
-        
+
         for item in config["gis_projection"]:
             if item in ["epsg", "units", "maxResolution", "maxExtent"]:
                 output[item] = config["gis_projection"][item]
-        
+
         return output
 
     # -----------------------------------------------------------------------------
@@ -369,17 +375,17 @@ class GIS(object):
         cache = self.cache
         deployment_settings = self.deployment_settings
         request = self.request
-        
+
         # Hide deleted Resources
         query = (db.gis_location.deleted == False)
-            
+
         if filter:
             query = query & (db[filter.tablename].id == filter.id)
-        
+
         # Hide Resources recorded to Country Locations on the map?
         if not deployment_settings.get_gis_display_l0():
             query = query & ((db.gis_location.level != "L0") | (db.gis_location.level == None))
-            
+
         query = query & (db.gis_location.id == db["%s_%s" % (module, resource)].location_id)
         if polygons:
             # Only retrieve the bulky polygons if-required
@@ -396,7 +402,7 @@ class GIS(object):
             layer = {"name":layername, "query":locations, "active":active, "popup_url": popup_url, "polygons": polygons}
 
         return layer
-    
+
     # -----------------------------------------------------------------------------
     def get_features_in_radius(self, lat, lon, radius):
         """
@@ -409,7 +415,7 @@ class GIS(object):
         """
 
         import math
-        
+
         db = self.db
 
         # km
@@ -441,18 +447,18 @@ class GIS(object):
 
     # -----------------------------------------------------------------------------
     def get_latlon(self, feature_id, filter=False):
-    
+
         """ Returns the Lat/Lon for a Feature (using recursion where necessary)
 
             @param feature_id: the feature ID (int) or UUID (str)
             @param filter: Filter out results based on deployment_settings
             @ToDo Rewrite to use self.get_parents()
         """
-        
+
         db = self.db
         deployment_settings = self.deployment_settings
         table_feature = db.gis_location
-        
+
         if isinstance(feature_id, int):
             query = (table_feature.id == feature_id)
         elif isinstance(feature_id, str):
@@ -460,9 +466,9 @@ class GIS(object):
         else:
             # What else could feature_id be?
             return None
-        
+
         feature = db(query).select(table_feature.lat, table_feature.lon, table_feature.parent, limitby=(0, 1)).first()
-        
+
         query = (table_feature.deleted == False)
         if filter and not deployment_settings.get_gis_display_l0():
             query = query & ((table_feature.level != "L0") | (table_feature.level == None))
@@ -538,7 +544,7 @@ class GIS(object):
         except:
             # Invalid feature_id
             pass
-        
+
         return None
 
     # -----------------------------------------------------------------------------
@@ -558,7 +564,7 @@ class GIS(object):
         db = self.db
         table_feature = db.gis_location
         table_marker = db.gis_marker
-        
+
         #table_fclass = db.gis_feature_class
         #table_symbology = db.gis_symbology_to_feature_class
 
@@ -608,7 +614,7 @@ class GIS(object):
         query = (table_marker.id == config.marker_id)
         marker = db(query).select(table_marker.image, table_marker.height, table_marker.width, limitby=(0, 1),
                                   cache=cache)
-        
+
         if marker:
             marker = marker.first()
             return marker
@@ -646,7 +652,7 @@ class GIS(object):
         cache = self.cache
         db = self.db
         _locations = db.gis_location
-        
+
         csv.field_size_limit(2**20 * 10)  # 10 megs
 
         # from http://docs.python.org/library/csv.html#csv-examples
@@ -704,7 +710,7 @@ class GIS(object):
                 except:
                     lat = None
                     lon = None
-            
+
             if domain:
                 try:
                     uuid = domain + "/" + row.pop("UUID")
@@ -738,7 +744,7 @@ class GIS(object):
             if name == "Name Unknown" or parent == "Name Unknown":
                 # Skip these locations
                 continue
-            
+
             # Calculate Centroid & Bounds
             if wkt:
                 try:
@@ -770,7 +776,7 @@ class GIS(object):
                 # Hack for Pakistan
                 if parent == "Jammu Kashmir":
                     parent = "Pakistan"
-                
+
                 _parent = db(_locations.name == parent).select(_locations.id, limitby=(0, 1), cache=cache).first()
                 if _parent:
                     parent = _parent.id
@@ -778,7 +784,7 @@ class GIS(object):
                     s3_debug("Location", name)
                     s3_debug("Parent cannot be found", parent)
                     parent = ""
-            
+
             # Check for duplicates
             query = (_locations.name == name) & (_locations.level == level) & (_locations.parent == parent)
             duplicate = db(query).select()
@@ -805,7 +811,7 @@ class GIS(object):
     def import_geonames(self, country, level=None):
         """
             Import Locations from the Geonames database
-            
+
             @param country: the 2-letter country code
             @param level: the ADM level to import
 
@@ -836,7 +842,7 @@ class GIS(object):
             if not os.access(cachepath, os.W_OK):
                 s3_debug("Folder not writable", cachepath)
                 return
-        
+
         if not cached:
             # Download File
             try:
@@ -913,7 +919,7 @@ class GIS(object):
             current_row += 1
             # Format of file: http://download.geonames.org/export/dump/readme.txt
             geonameid, name, asciiname, alternatenames, lat, lon, feature_class, feature_code, country_code, cc2, admin1_code, admin2_code, admin3_code, admin4_code, population, elevation, gtopo30, timezone, modification_date = line.split("\t")
-            
+
             if feature_code == fc:
                 # @ToDo: Agree on a global repository for UUIDs:
                 # http://eden.sahanafoundation.org/wiki/UserGuidelinesGISData#UUIDs
@@ -923,9 +929,9 @@ class GIS(object):
                 lat = float(lat)
                 lon = float(lon)
                 wkt = self.latlon_to_wkt(lat, lon)
-                
+
                 shape = shapely.geometry.point.Point(lon, lat)
-                
+
                 # Add Bounds
                 lon_min = lon_max = lon
                 lat_min = lat_max = lat
@@ -939,7 +945,7 @@ class GIS(object):
                     # Search within this subset with a full geometry check
                     # Uses Shapely.
                     # @ToDo provide option to use PostGIS/Spatialite
-                    try: 
+                    try:
                         parent_shape = wkt_loads(row.wkt)
                         if parent_shape.intersects(shape):
                             parent = row.id
@@ -956,7 +962,7 @@ class GIS(object):
 
             else:
                 continue
-                
+
         s3_debug("All done!")
         return
 
@@ -1040,11 +1046,11 @@ class GIS(object):
         """
             OnValidation callback:
             If a Point has LonLat defined: calculate the WKT.
-            If a Line/Polygon has WKT defined: validate the format, 
+            If a Line/Polygon has WKT defined: validate the format,
                 calculate the LonLat of the Centroid, and set bounds
             Centroid and bounds calculation is done using Shapely, which wraps Geos.
             A nice description of the algorithm is provided here: http://www.jennessent.com/arcgis/shapes_poster.htm
-            
+
             Relies on Shapely.
             @ToDo provide an option to use PostGIS/Spatialite
         """
@@ -1118,7 +1124,7 @@ class GIS(object):
     def _get_features_by_shape(self, shape):
         """
             Returns Rows of locations which intersect the given shape.
-            
+
             Relies on Shapely for wkt parsing and intersection.
             @ToDo provide an option to use PostGIS/Spatialite
         """
@@ -1128,7 +1134,7 @@ class GIS(object):
         has_wkt = (db.gis_location.wkt != None) & (db.gis_location.wkt != '')
 
         for loc in db(in_bbox & has_wkt).select():
-            try: 
+            try:
                 location_shape = wkt_loads(loc.wkt)
                 if location_shape.intersects(shape):
                     yield loc
@@ -1139,7 +1145,7 @@ class GIS(object):
     def _get_features_by_latlon(self, lat, lon):
         """
         Returns a generator of locations whose shape intersects the given LatLon.
-        
+
         Relies on Shapely.
         @ToDo provide an option to use PostGIS/Spatialite
         """
@@ -1151,7 +1157,7 @@ class GIS(object):
     def _get_features_by_feature(self, feature):
         """
         Returns all Locations whose geometry intersects the given feature.
-        
+
         Relies on Shapely.
         @ToDo provide an option to use PostGIS/Spatialite
         """
@@ -1163,13 +1169,13 @@ class GIS(object):
         get_features_by_shape = _get_features_by_shape
         get_features_by_latlon = _get_features_by_latlon
         get_features_by_feature = _get_features_by_feature
-        
+
     # -----------------------------------------------------------------------------
     def set_all_bounds(self):
         """
         Sets bounds for all locations without them.
-        
-        If shapely is present, and a location has wkt, bounds of the geometry 
+
+        If shapely is present, and a location has wkt, bounds of the geometry
         are used.  Otherwise, the (lat, lon) are used as bounds.
         """
         db = self.db
@@ -1190,7 +1196,7 @@ class GIS(object):
                     lon_max = bounds[2],
                     lat_max = bounds[3],
                 )
-                    
+
         db(no_bounds).update(lon_min=_location.lon, lat_min=_location.lat, lon_max=_location.lon, lat_max=_location.lat)
 
     # -----------------------------------------------------------------------------
@@ -1221,7 +1227,7 @@ class GIS(object):
                 ):
         """
             Returns the HTML to display a map
-            
+
             Normally called in the controller as: map = gis.show_map()
             In the view, put: {{=XML(map)}}
 
@@ -1325,7 +1331,7 @@ class GIS(object):
         cluster_threshold = config.cluster_threshold
 
         markers = {}
-        
+
         html = DIV(_id="map_wrapper")
 
         #####
@@ -1568,7 +1574,7 @@ OpenLayers.Util.extend( selectPdfControl, {
             enableToggle: true,
             pressed: """ + draw_depress + """
         });
-        
+
         //var lineButton = new GeoExt.Action({
         //    control: new OpenLayers.Control.DrawFeature(draftLayer, OpenLayers.Handler.Path),
         //    map: map,
@@ -1687,12 +1693,12 @@ OpenLayers.Util.extend( selectPdfControl, {
                 pan_depress = "false"
             else:
                 pan_depress = "true"
-            
+
             toolbar = """
         toolbar = mapPanel.getTopToolbar();
-        
+
         // OpenLayers controls
-        
+
         // Measure Controls
         var measureSymbolizers = {
             'Point': {
@@ -1723,7 +1729,7 @@ OpenLayers.Util.extend( selectPdfControl, {
             new OpenLayers.Rule({symbolizer: measureSymbolizers})
         ]);
         var styleMapMeasure = new OpenLayers.StyleMap({'default': styleMeasure});
-        
+
         var length = new OpenLayers.Control.Measure(
             OpenLayers.Handler.Path, {
                 geodesic: true,
@@ -1945,7 +1951,7 @@ OpenLayers.Util.extend( selectPdfControl, {
             mouse_position = "map.addControl(new OpenLayers.Control.MGRSMousePosition());"
         else:
             mouse_position = ""
-        
+
         # Print
         # NB This isn't too-flexible a method. We're now focussing on print.css
         if print_tool:
@@ -1981,7 +1987,7 @@ OpenLayers.Util.extend( selectPdfControl, {
             printPage = new GeoExt.data.PrintPage({
                 printProvider: printProvider
             });
-            
+
             //var printExtent = new GeoExt.plugins.PrintExtent({
             //    printProvider: printProvider
             //});
@@ -1991,7 +1997,7 @@ OpenLayers.Util.extend( selectPdfControl, {
             //pageLayer.setVisibility(false);
             //map.addLayer(pageLayer);
             //var pageControl = new OpenLayers.Control.TransformFeature();
-            //map.addControl(pageControl);                                
+            //map.addControl(pageControl);
             //map.setOptions({
             //    eventListeners: {
                     // recenter/resize page extent after pan/zoom
@@ -2133,7 +2139,7 @@ OpenLayers.Util.extend( selectPdfControl, {
         else:
             print_tool1 = ""
             print_tool2 = ""
-            
+
         ##########
         # Settings
         ##########
@@ -2176,7 +2182,7 @@ OpenLayers.Util.extend( selectPdfControl, {
             collapsed = "true"
         else:
             collapsed = "false"
-            
+
         # Bounding Box
         if bbox:
             # Calculate from Bounds
@@ -2203,7 +2209,7 @@ OpenLayers.Util.extend( selectPdfControl, {
     center.transform(proj4326, projection_current);
     """
             zoomToExtent = ""
-            
+
         ########
         # Layers
         ########
@@ -2238,7 +2244,7 @@ OpenLayers.Util.extend( selectPdfControl, {
                 return OpenLayers.Util.getImagesLocation() + '404.png';
             } else {
                 x = ((x % limit) + limit) % limit;
-                var path = z + "/" + x + "/" + y + "." + this.type; 
+                var path = z + "/" + x + "/" + y + "." + this.type;
                 var url = this.url;
                 if (url instanceof Array) {
                     url = this.selectUrl(path, url);
@@ -2594,7 +2600,7 @@ OpenLayers.Util.extend( selectPdfControl, {
                 }
             }
         };
-        
+
         function addFeature(feature_id, name, geom, styleMarker, image, popup_url) {
             geom = geom.transform(proj4326, projection_current);
             // Needs to be uniquely instantiated
@@ -2725,7 +2731,7 @@ OpenLayers.Util.extend( selectPdfControl, {
         //    }
         //}
         """
-            
+
             # Feature Queries
             for layer in feature_queries:
                 # Features passed as Query
@@ -2906,7 +2912,7 @@ OpenLayers.Util.extend( selectPdfControl, {
                         # Faster to bypass the download handler
                         #marker_url = URL(r=request, c="default", f="download", args=[marker.image])
                         marker_url = URL(r=request, c="static", f="img", args=["markers", marker.image])
-                        
+
                     try:
                         # Has a per-feature popup_label been added to the query?
                         popup_label = feature.popup_label
@@ -2915,7 +2921,7 @@ OpenLayers.Util.extend( selectPdfControl, {
 
                     # Deal with apostrophes in Feature Names
                     fname = re.sub("'", "\\'", popup_label)
-                    
+
                     if marker_url:
                         layers_features += """
         styleMarker.iconURL = '""" + marker_url + """';
@@ -3216,7 +3222,7 @@ OpenLayers.Util.extend( selectPdfControl, {
                 content = 'Content contained Javascript! Escaped content below.<br />' + content.replace(/</g, '<');
             }
             var contents = '<h2>' + _title + '</h2>' + content;
-            
+
             var popup = new OpenLayers.Popup.FramedCloud('kmlpopup',
                 centerPoint,
                 new OpenLayers.Size(200, 200),
@@ -3386,7 +3392,7 @@ OpenLayers.Util.extend( selectPdfControl, {
             map.removePopup(map.popups[i]);
         }
     }
-    
+
     function addLayers(map) {
         // Base Layers
         // OSM
@@ -3431,7 +3437,7 @@ OpenLayers.Util.extend( selectPdfControl, {
             //s3_debug('post height', i.height);
             //s3_debug('post width', i.width);
         }
-        
+
         // Features
         """ + layers_features + """
 
@@ -3655,7 +3661,7 @@ OpenLayers.Util.extend( selectPdfControl, {
         });
 
         """ + legend1 + """
-        
+
         """ + layout + """
             autoScroll: true,
             maximizable: true,
@@ -3738,7 +3744,7 @@ class YahooGeocoder(Geocoder):
         Geocoder.__init__(self, db)
         params = {"location": location, "appid": self.api_key}
         self.url = "http://local.yahooapis.com/MapsService/V1/geocode?%s" % urllib.urlencode(params)
-        
+
     def get_api_key(self):
         " Acquire API key from the database "
         db = self.db

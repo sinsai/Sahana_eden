@@ -77,18 +77,18 @@ if deployment_settings.has_module(module):
     s3.crud_strings[tablename] = Storage(
         title_create = T("Body Recovery Request"),
         title_display = T("Request Details"),
-        title_list = T("List of Requests"),
+        title_list = T("Body Recovery Requests"),
         title_update = T("Update Request"),
         title_search = T("Search Request"),
         subtitle_create = T("Add New Request"),
-        subtitle_list = T("Body Recovery Requests"),
+        subtitle_list = T("List of Requests"),
         label_list_button = T("List of Requests"),
         label_create_button = T("Add Request"),
         label_delete_button = T("Delete Request"),
         msg_record_created = T("Recovery Request added"),
         msg_record_modified = T("Recovery Request updated"),
         msg_record_deleted = T("Recovery Request deleted"),
-        msg_list_empty = T("No requests currently registered"))
+        msg_list_empty = T("No requests found"))
 
     dvi_recreq_id = db.Table(None, "dvi_recreq_id",
                              Field("dvi_recreq_id", table,

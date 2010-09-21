@@ -5136,10 +5136,12 @@ class S3XML(object):
         if requires:
             r = requires[0]
             options = []
-            if isinstance(r, (IS_NULL_OR, IS_EMPTY_OR)) and hasattr(r.other, "options"):
-                options = r.other.options()
-            elif hasattr(r, "options"):
+            if isinstance(r, IS_EMPTY_OR):
+                r = r.other
+            try:
                 options = r.options()
+            except:
+                pass
             for (value, text) in options:
                 value = self.xml_encode(str(value).decode("utf-8"))
                 text = self.xml_encode(str(text).decode("utf-8"))

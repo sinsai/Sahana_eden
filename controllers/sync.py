@@ -302,7 +302,8 @@ def sync():
         remote_push = True
         # Must be registered partner for push:
         if not peer:
-            raise HTTP(501, body=s3xrc.ERROR.NOT_PERMITTED)
+            raise HTTP(501, body="%s: %s" %
+                      (s3xrc.ERROR.NOT_PERMITTED, T("Unknown Peer")))
         else:
             # Set the sync resolver with no policy (defaults to peer policy)
             s3xrc.sync_resolve = lambda vector, peer=peer: sync_res(vector, peer, None)
@@ -333,22 +334,22 @@ def sync():
                 resource = r.resource
                 sr = [c.component.tablename for c in resource.components.values()]
                 sr.insert(0, resource.tablename)
-                sync_resources = ",".join(sr)
+                sync_resources = ", ".join(sr)
 
                 if str(output_json["statuscode"]) != "200":
-                    sync_resources += " (error)"
                     sync_errors = str(output)
                 else:
                     sync_errors = ""
 
-                db[log_table].insert(
-                    partner_uuid = peer.peer_uid,
-                    timestmp = datetime.datetime.utcnow(),
-                    sync_resources = sync_resources,
-                    sync_errors = sync_errors,
-                    sync_mode = "online",
-                    sync_method = "Remote Push",
-                    complete_sync = False)
+                db.sync_log.insert(
+                    peer_id = peer.id,
+                    timestmp = datetime.datetime.now(),
+                    resources = sync_resources,
+                    errors = sync_errors,
+                    mode = 1,
+                    run_interval = "o",
+                    complete = False
+                )
 
         return output
     response.s3.postp = postp
@@ -963,15 +964,18 @@ def sync_cron():
 
     """ Run all due jobs from the schedule """
 
+    import sys
+    print >> sys.stderr, "Synchronization CRON process"
+
     # Get settings
     settings = db().select(db.sync_setting.ALL, limitby=(0,1)).first()
     if not settings:
         return
 
     # Get all enabled jobs
-    #jobs = db((db.sync_job.enabled == True) &
-              #(db.sync_job.run_interval != "m")).select(db.sync_job.ALL)
-    jobs = db((db.sync_job.enabled == True)).select(db.sync_job.ALL)
+    jobs = db((db.sync_job.enabled == True) &
+              (db.sync_job.run_interval != "m")).select(db.sync_job.ALL)
+    #jobs = db((db.sync_job.enabled == True)).select(db.sync_job.ALL)
 
     now = datetime.datetime.now()
 

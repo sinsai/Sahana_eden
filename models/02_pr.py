@@ -239,19 +239,10 @@ pr_marital_status = db.Table(None, "marital_status",
 
 
 # -----------------------------------------------------------------------------
-pr_religion_opts = {
-    1:T("none"),
-    2:T("Christian"),
-    3:T("Muslim"),
-    4:T("Jew"),
-    5:T("Buddhist"),
-    6:T("Hindu"),
-    99:T("other")
-}
-
+pr_religion_opts = deployment_settings.get_L10n_religions()
 pr_religion = db.Table(None, "religion",
-                       Field("religion", "integer",
-                             requires = IS_NULL_OR(IS_IN_SET(pr_religion_opts)),
+                       Field("religion",
+                             requires = IS_EMPTY_OR(IS_IN_SET(pr_religion_opts)),
                              label = T("Religion"),
                              represent = lambda opt: opt and \
                                          pr_religion_opts.get(opt, UNKNOWN_OPT)))

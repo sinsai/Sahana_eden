@@ -1,15 +1,42 @@
 {{extend 'layout.html'}}
 <div id="home">
-{{=H2(T(module_name))}}
-<p>
-{{=T("This module assists the management of fatalities and the identification of the deceased.")}}
-</p>
-<h3>{{=T("Features Include")}}:</h3>
-<ul>
-<li>Reporting of body finds and management of recovery</li>
-<li>Tracking and Tracing of bodies</li>
-<li>Capturing of identification-relevant information</li>
-<li>Management of identification process</li>
-<li>Matching of ID information with Missing Reports (not yet implemented)</li>
-</ul>
+{{=H2(module_name)}}
+<div style="margin:20px auto; width:96%; max-width:1000px;" >
+    <div style="width:65%; float:left;">
+        {{=H4(T("About this module"))}}
+        <p>
+            This module assists the management of the recovery of
+            dead bodies and the identification of the deceased.
+        </p>
+    </div>
+    <div style="width:30%; float:right;">
+        {{=H4("%s: %s" % (T("Bodies recovered"), total))}}
+        <div id='charts' style="padding-top: 10px;">
+            <table>
+                <tr>
+                    <td>
+                        <div id='chart1' style='width:260px; height:200px;'></div>
+                    </td>
+                </tr>
+            </table>
+        </div>
+    </div>
 </div>
+</div><!-- home -->
+{{if session.s3.debug:}}
+ <script language="javascript" type="text/javascript" src="/{{=request.application}}/static/scripts/S3/jquery.jqplot.js"></script>
+{{else:}}
+ <script language="javascript" type="text/javascript" src="/{{=request.application}}/static/scripts/S3/jquery.jqplot.min.js"></script>
+{{pass}}
+<script language="javascript" type="text/javascript" src="/{{=request.application}}/static/scripts/S3/jqplot_plugins/jqplot.pieRenderer.js"></script>
+<script type="text/javascript" language="javascript">//<![CDATA[
+$(document).ready(function(){
+    status = {{try:}}{{=XML(status)}}{{except:}}{{pass}};
+
+    plot1 = $.jqplot('chart1', [status], {
+      title: 'Identification Progress',
+      seriesDefaults:{renderer:$.jqplot.PieRenderer, rendererOptions:{diameter:100}},
+      legend:{show:true, escapeHtml:true}
+    });
+});
+//]]></script>

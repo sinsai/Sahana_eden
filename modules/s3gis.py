@@ -240,13 +240,7 @@ class GIS(object):
         """
             Utility function: returns minimal argument that is not None.
         """
-        l = [a for a in args if a is not None]
-        if len(l) > 1:
-            return min(*l)
-        elif l:
-            return l[0]
-        else:
-            return None
+        return min([a for a in args if a is not None])
 
     # -----------------------------------------------------------------------------
     def get_bounds(self, features=[]):

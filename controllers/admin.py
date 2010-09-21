@@ -312,7 +312,7 @@ def usergroup():
     user = request.vars.user
 
     # redirect to the user list if user id is not given
-    if (user == None):
+    if user is None:
         redirect(URL(r=request, f="user"))
         return
 

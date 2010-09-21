@@ -65,9 +65,14 @@ def s3_debug(message, value=None):
         (print to stdout doesn't work with WSGI deployments)
     """
     import sys
-    output = "S3 Debug: " + str(message)
-    if value:
-        output += ": " + str(value)
+    try:
+        output = "S3 Debug: " + str(message)
+        if value:
+            output += ": " + str(value)
+    except:
+        output = "S3 Debug: " + unicode(message)
+        if value:
+            output += ": " + unicode(value)
 
     print >> sys.stderr, output
 
@@ -328,7 +333,7 @@ def shn_import_table(table_name,
     """
 
     table = db[table_name]
-    if not db(table.id).count() or import_if_not_empty:
+    if not db(table.id > 0).count() or import_if_not_empty:
         import_file = os.path.join(request.folder,
                                    "private", "import", "tables",
                                    table_name + ".csv")

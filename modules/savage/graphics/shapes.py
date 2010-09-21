@@ -238,7 +238,7 @@ class Text (Grouping, PositionableElement):
     def createText (self):
         xpos = self.x
         for char in self.text:
-            if char != ' ':
+            if LetterDict.has_key (char):
                 letter = LetterDict[char]
                 id = char
                 s = Symbol (id = id, viewBox = ViewBox (0, -800, letter[0], 250))
@@ -289,6 +289,19 @@ class Text (Grouping, PositionableElement):
         self.clear ()
         self.text = text
         self.createText ()
+
+    @staticmethod
+    def textWidth (text, height):
+        width = 0.0
+        for char in text:
+            if LetterDict.has_key (char):
+                w = LetterDict[char][0]
+                letterWidth = height * (w / 1050.0)
+                width += letterWidth
+            else:
+                width += height * (300.0 / 1050.0)
+        return width
+
 
 class Letter (Use):
     def __init__ (self, **attr):

@@ -10,6 +10,8 @@ from ..graphics.color import white
 from ..utils.struct import Vector as V, Matrix
 from ..utils.dictionary import DefaultDictionary
 
+from re import match
+
 from copy import deepcopy
 from math import pi
 
@@ -49,17 +51,14 @@ class GraphCanvas (Canvas):
         matrix2.set (self.height / currentRangeY, 1, 1)
         
         matrix3 = Matrix (3, 3)
-        matrix3.set (self.x, 0, 2)
-        matrix3.set (self.y, 1, 2)
+        matrix3.set (self.height, 1, 2)
+        matrix3.set (-1.0, 1, 1)
+
         return (matrix3 * (matrix2 * matrix1))
 
     def setSVG (self):
         attr = Canvas.setSVG (self)
-        if not attr['viewBox']:
-            attr['viewBox'] = ViewBox (attr['x'],
-                                       attr['y'], 
-                                       attr['x'] + attr['width'],
-                                       attr['y'] + attr['height'])
+        attr['viewBox'] = ViewBox (0, 0, attr['width'], attr['height'])
         return attr
 
 
@@ -323,18 +322,20 @@ class BarCanvas (GraphCanvas):
         settings = self.graph ().settings
         rect = Rectangle (x = self.counter, y = 0, height = val, width = 1)
         self.data.draw (rect)
-        rect.xml['group'] = group
-        rect.xml['name'] = name
-        rect.xml['data'] = str(group) + ' ' + str(name) + ': ' + str (val)
         rect.xml['has-tooltip'] = True
+        rect.xml['name'] = name
+        rect.xml['group'] = group
         if group and name:
-            rect.xml['tooltip-text'] = str(group) + ': ' + str(name)
+            rect.xml['data'] = str(group) + ': ' + str(name)
         elif group:
-            rect.xml['tooltip-text'] = str(group)
+            rect.xml['data'] = str(group)
         elif name:
-            rect.xml['tooltip-text'] = str(name)
+            rect.xml['data'] = str(name)
         else:
-            rect.xml['has-tooltip'] = False
+            rect.xml['data'] = None
+        rounded = match ('-?\d*(\.\d{2})?', str (val))
+        strVal = rounded.group (0);
+        rect.xml['tooltip-text'] = 'Value: ' + strVal
         self.lastBar = self.counter + settings.barWidth
         self.counter += (settings.barWidth + settings.barSpacing)
         
@@ -412,18 +413,18 @@ class HorizontalBarCanvas (BarCanvas):
         settings = self.graph ().settings
         rect = Rectangle (y = self.counter, x = 0, height = 1, width = val)
         self.data.draw (rect)
-        rect.xml['group'] = group
-        rect.xml['name'] = name
-        rect.xml['data'] = str(group) + ' ' + str(name) + ': ' + str (val)
         rect.xml['has-tooltip'] = True
+        rect.xml['name'] = name
+        rect.xml['group'] = group
         if group and name:
-            rect.xml['tooltip-text'] = str(group) + ': ' + str(name)
-        elif not name:
-            rect.xml['tooltip-text'] = str(group)
-        elif not group:
-            rect.xml['tooltip-text'] = str(name)
+            rect.xml['data'] = str(group) + ': ' + str(name)
+        elif group:
+            rect.xml['data'] = str(group)
+        elif name:
+            rect.xml['data'] = str(name)
         else:
-            rect.xml['has-tooltip'] = False
+            rect.xml['data'] = None
+        rect.xml['tooltip-text'] = 'Value: ' + str (val)
         self.lastBar = self.counter + settings.barWidth
         self.counter += (settings.barWidth + settings.barSpacing)
 

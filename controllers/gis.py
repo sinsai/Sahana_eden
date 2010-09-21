@@ -212,7 +212,7 @@ def location():
                 msg_record_deleted = T("Location deleted"),
                 msg_list_empty = T("No Locations currently available"))
 
-            if r.method in (None, "list") and r.record == None:
+            if r.method in (None, "list") and r.record is None:
                 # List
                 pass
             elif r.method in ("delete", "search_simple"):

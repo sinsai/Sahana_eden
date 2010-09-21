@@ -90,6 +90,18 @@ deployment_settings.L10n.default_language = "en"
 deployment_settings.L10n.display_toolbar = True
 # Default timezone for users
 deployment_settings.L10n.utc_offset = "UTC +0000"
+# Religions used in Personn Registry
+# @todo: find a better code
+deployment_settings.L10n.religions = {
+    "none":T("none"),
+    "christian":T("Christian"),
+    "muslim":T("Muslim"),
+    "jew":T("Jew"),
+    "buddhist":T("Buddhist"),
+    "hindu":T("Hindu"),
+    "bahai":T("Bahai"),
+    "other":T("other")
+}
 
 # GIS (Map) settings
 # Provide a tool to select locations via a map on all forms with location_id

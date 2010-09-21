@@ -85,19 +85,21 @@ def shn_field_represent(field, row, col):
            .aaData representation for dataTables' Server-side pagination
     """
 
-    # TODO: put this function into XRequest
-
+    val = row[col]
     try:
-        represent = str(field.represent(row[col]))
+        represent = str(cache.ram("%s_repr_%s" % (field, val),
+                                  lambda: field.represent(val),
+                                  time_expire=5))
     except:
-        if row[col] is None:
+        if val is None:
             represent = NONE
         else:
-            represent = row[col]
+            represent = val
             if col == "comments":
                 ur = unicode(represent, "utf8")
                 if len(ur) > 48:
-                    represent = ur[:48 - 3].encode("utf8") + "..."
+                    represent = ur[:45].encode("utf8") + "..."
+
     return represent
 
 
@@ -128,7 +130,7 @@ def shn_field_represent_sspage(field, row, col, linkto=None):
         except TypeError:
             href = linkto % id
         href = shn_strip_aadata_extension(href)
-        return A( shn_field_represent(field, row, col), _href=href).xml()
+        return A(shn_field_represent(field, row, col), _href=href).xml()
     else:
         return shn_field_represent(field, row, col)
 
@@ -698,7 +700,7 @@ def shn_custom_view(r, default_name, format=None):
         _custom_view = os.path.join(request.folder, "views", prefix, custom_view)
 
     if os.path.exists(_custom_view):
-        response.view = prefix + "/" + custom_view
+        response.view = "%s/%s" % (prefix, custom_view)
     else:
         if format:
             response.view = default_name.replace(".html", "_%s.html" % format)
@@ -712,21 +714,23 @@ def shn_get_columns(table):
     return [f for f in table.fields if table[f].readable]
 
 def shn_convert_orderby(table, request, fields=None):
+
+    tablename = table._tablename
+
     cols = fields or shn_get_columns(table)
+    iSortingCols = int(request.vars["iSortingCols"])
 
-    def colname(i):
-        return table._tablename + "." + cols[int(request.vars["iSortCol_" + str(i)])]
-
-    def rng():
-        return xrange(0, int(request.vars["iSortingCols"]))
+    colname = lambda i: \
+              "%s.%s" % (tablename,
+              cols[int(request.vars["iSortCol_%s" % str(i)])])
 
     def direction(i):
-        dir = "sSortDir_" + str(i)
-        if request.vars.get(dir, None):
-            return " " + request.vars[dir]
-        return ""
+        dir = request.vars["sSortDir_%s" % str(i)]
+        return dir and " %s" % dir or ""
 
-    return ", ".join([colname(i) + direction(i) for i in rng()])
+    return ", ".join(["%s%s" %
+                     (colname(i), direction(i))
+                     for i in xrange(iSortingCols)])
 
 #
 # shn_build_ssp_filter --------------------------------------------------------
@@ -736,34 +740,36 @@ def shn_build_ssp_filter(table, request, fields=None):
     cols = fields or shn_get_columns(table)
     searchq = None
 
+    context = str(request.vars.sSearch).lower()
+    wildcard = "%%%s%%" % context
+
     # TODO: use FieldS3 (with representation_field)
     for i in xrange(0, int(request.vars.iColumns)):
         field = table[cols[i]]
         query = None
         if str(field.type) == "integer":
-            context = str(request.vars.sSearch).lower()
             requires = field.requires
             if not isinstance(requires, (list, tuple)):
                 requires = [requires]
             if requires:
                 r = requires[0]
-                options = []
-                if isinstance(r, (IS_NULL_OR, IS_EMPTY_OR)) and hasattr(r.other, "options"):
-                    options = r.other.options()
-                elif hasattr(r, "options"):
+                if isinstance(r, IS_EMPTY_OR):
+                    r = r.other
+                try:
                     options = r.options()
+                except:
+                    continue
                 vlist = []
                 for (value, text) in options:
-                    if str(text).lower().find(context.lower()) != -1:
+                    if str(text).lower().find(context) != -1:
                         vlist.append(value)
                 if vlist:
                     query = field.belongs(vlist)
             else:
                 continue
+
         elif str(field.type) in ("string", "text"):
-            context = "%" + request.vars.sSearch + "%"
-            context = context.lower()
-            query = table[cols[i]].lower().like(context)
+            query = table[cols[i]].lower().like(wildcard)
 
         if searchq is None and query:
             searchq = query
@@ -1118,13 +1124,16 @@ def shn_list(r, **attr):
             rows = db(query).select(table.ALL,
                                     orderby = orderby)
 
+        aaData = [[shn_field_represent_sspage(table[f], row, f, linkto=linkto)
+                   for f in fields]
+                   for row in rows]
+
         result = dict(sEcho = sEcho,
                       iTotalRecords = len(rows),
                       iTotalDisplayRecords = totalrows,
-                      aaData = [[shn_field_represent_sspage(table[f], row, f, linkto=linkto)
-                                for f in fields] for row in rows])
+                      aaData = aaData)
 
-        from gluon.serializers import json
+        #from gluon.serializers import json
         return json(result)
 
     elif representation in shn_interactive_view_formats:

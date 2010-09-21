@@ -3630,6 +3630,7 @@
 'WMS Browser URL': 'WMS Browser URL',
 'Walking Only': 'Walking Only',
 'Warehouse': 'Almacén',
+'Warehouses': 'Centro de acopio',
 'Warehouse Management': 'Gestión de almacenes',
 'Warehouse/Sites Registry': 'Galería / Sitios de Registro',
 'WatSan': 'WatSan',

@@ -613,7 +613,7 @@ def shn_pr_person_search_simple(r, **attr):
                    INPUT(_type="text", _name="label", _size="40"),
                    DIV(DIV(_class="tooltip",
                            _title=Tstr("Name and/or ID") + "|" + Tstr("To search for a person, enter any of the first, middle or last names and/or an ID number of a person, separated by spaces. You may use % as wildcard. Press 'Search' without input to list all persons.")))),
-                TR("", INPUT(_type="submit", _value="Search"))))
+                TR("", INPUT(_type="submit", _value=T("Search")))))
 
         output = dict(form=form, vars=form.vars)
 

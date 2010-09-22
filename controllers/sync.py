@@ -63,6 +63,8 @@ def now():
 
     import gluon.contrib.simplejson as json
 
+    pid = None
+
     # Notification helpers
     error = lambda message, type="ERROR": \
             s3_sync_push_message(message, pid=pid, type=type)
@@ -75,7 +77,6 @@ def now():
         response.flash = T("Synchronization not configured.")
         return dict(module_name=module_name, action=None, status=None)
 
-    pid = None
     status = db().select(db.sync_status.ALL, limitby=(0, 1)).first()
     if status:
         pid = status.id
@@ -113,20 +114,20 @@ def now():
                 db.commit()
 
             status = db(db.sync_status.id == sync_pid).select(db.sync_status.ALL, limitby=(0, 1)).first()
+            s3_sync_init_messages()
             notify("Starting new synchronization process (started on %s)" % \
                     status.start_time.strftime("%x %H:%M:%S"))
         else:
-            notify("Resuming prior synchronization process (originally started on %s)" % \
-                    status.start_time.strftime("%x %H:%M:%S"))
+            if status.locked:
+                error("Manual synchronization already activated.")
+                return dict(item="SYNC NOW: already active")
+            else:
+                notify("Resuming prior synchronization process (originally started on %s)" % \
+                       status.start_time.strftime("%x %H:%M:%S"))
 
-        if status and status.locked:
-            error("Manual synchronization already activated.")
-            return dict(item="SYNC NOW: already active")
-        else:
-            pid = status.id
-            db(db.sync_status.id==pid).update(locked=True)
-            s3_sync_init_messages()
-            db.commit()
+        pid = status.id
+        db(db.sync_status.id==pid).update(locked=True)
+        db.commit()
 
         session._unlock(response)
         session.s3.roles.append(1)
@@ -151,18 +152,25 @@ def now():
             if result:
                 errors = ",".join(result.errors)
                 done = ",".join(result.done)
+                pending = ",".join(result.pending)
                 total_errors += result.errcount
                 notify("Job %s done." % job_id, type="DONE")
             else:
                 errors = ""
                 done = ""
+                pending = ""
 
-            if jobs:
-                job_id = jobs[0]
-                job = db(db.sync_job.id == job_id).select(db.sync_job.ALL, limitby=(0, 1)).first()
-                res_list = ",".join(map(str, job.resources))
+            if not pending:
+                if jobs:
+                    job_id = jobs[0]
+                    job = db(db.sync_job.id == job_id).select(db.sync_job.ALL, limitby=(0, 1)).first()
+                    res_list = ",".join(map(str, job.resources))
+                else:
+                    res_list = ""
             else:
-                res_list = ""
+                # Restore job
+                jobs.insert(0, job_id)
+                res_list = pending
 
             db(db.sync_status.id==status.id).update(
                     jobs = ",".join(jobs),
@@ -193,8 +201,10 @@ def now():
         if status:
             pid = status.id
             db(table.id == pid).update(halt=True)
+        else:
+            return dict(item="HALT: No synchronization process found.")
 
-        return dict(item="SYNC HALT: done")
+        return dict(item="HALT: Halting current synchronization - please wait...")
 
     elif action == "stop":
 
@@ -214,7 +224,7 @@ def now():
         else:
             item = "No synchronization process found."
 
-        return dict(item="SYNC STOP: %s" % item)
+        return dict(item="STOP: %s" % item)
 
     elif action == "unlock":
 
@@ -227,7 +237,7 @@ def now():
             pid = status.id
             db(table.id == pid).update(locked=False, halt=True)
 
-        return dict(item="SYNC UNLOCK: done")
+        return dict(item="UNLOCK: done")
 
     elif action == "status":
 
@@ -237,13 +247,10 @@ def now():
 
         s3_sync_clear_messages()
 
-        if status:
-            messages = s3_sync_get_messages(pid=status.id)
-            if not messages:
-                if status.locked:
-                    return dict(item="")
-        else:
-            messages = s3_sync_get_messages()
+        messages = s3_sync_get_messages()
+        if not messages:
+            if status.locked:
+                return dict(item="")
 
         msg_list = []
         for i in xrange(len(messages)):
@@ -254,7 +261,8 @@ def now():
                                     SPAN(msg.type, _class="sync_status"),
                                     _class=_class))
             else:
-                msg_list.append(DIV(SPAN(msg.message, _class="sync_message"), _class="sync_ok"))
+                msg_list.append(DIV(SPAN(msg.message, _class="sync_message"),
+                                    _class="sync_ok"))
 
         if msg_list:
             item = DIV(msg_list).xml()
@@ -965,7 +973,6 @@ def sync_cron():
     """ Run all due jobs from the schedule """
 
     import sys
-    print >> sys.stderr, "Synchronization CRON process"
 
     # Get settings
     settings = db().select(db.sync_setting.ALL, limitby=(0,1)).first()
@@ -1145,7 +1152,6 @@ def s3_sync_eden_eden(peer, mode, tablenames,
 
         # Skip invalid tablenames silently
         if tablename not in db.tables or tablename.find("_") == -1:
-            output.pending.remove(tablename)
             output.done.append(tablename)
             continue
 
@@ -1158,6 +1164,8 @@ def s3_sync_eden_eden(peer, mode, tablenames,
             notify("HALT command received.")
             output.success = True
             return output
+
+        output.pending.remove(tablename)
 
         # Create resource
         prefix, name = tablename.split("_", 1)
@@ -1260,7 +1268,6 @@ def s3_sync_eden_eden(peer, mode, tablenames,
                 notify("........send %s : success" % tablename)
 
         output.done.append(tablename)
-        output.pending.remove(tablename)
 
     notify("...Synchronization with %s - done (%s errors)" % (peer.name, output.errcount))
 
@@ -1365,6 +1372,8 @@ def s3_sync_eden_other(peer, mode, tablenames,
             output.success = True
             return output
 
+        output.pending.remove(tablename)
+
         # Create resource
         prefix, name = tablename.split("_", 1)
         resource = s3xrc.resource(prefix, name)
@@ -1442,7 +1451,6 @@ def s3_sync_eden_other(peer, mode, tablenames,
                 notify("........send %s : success" % tablename)
 
         output.done.append(tablename)
-        output.pending.remove(tablename)
 
     notify("...Synchronization with %s - done (%s errors)" % (peer.name, output.errcount))
 

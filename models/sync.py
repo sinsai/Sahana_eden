@@ -20,6 +20,8 @@
 
 module = "sync"
 
+import sys
+
 # -----------------------------------------------------------------------------
 # Synchronization policy
 #
@@ -187,8 +189,6 @@ def s3_sync_peer_oncreate(form):
         complete = False,
         mode = 3
     ))
-
-    #print job_command
 
     db.sync_schedule.insert(
         comments = "auto-generated job for %s" % peer.name,
@@ -398,6 +398,7 @@ def s3_sync_push_message(message, type="", pid=None):
         success = table.insert(pid=pid, message=message, type=type)
 
         if success:
+            #print >> sys.stderr, "[%s] %s: %s" % (pid, type or "OK", message)
             db.commit()
             return True
 

@@ -366,7 +366,7 @@ if deployment_settings.has_module(module):
             form = FORM(TABLE(
                     TR(T("Location: "),
                     SELECT(_name="location", *l_opts, **dict(name="location", requires=IS_NULL_OR(IS_IN_DB(db, "gis_location.id"))))),
-                    TR("", INPUT(_type="submit", _value="Search"))
+                    TR("", INPUT(_type="submit", _value=T("Search")))
                     ))
 
             output = dict(title=title, subtitle=subtitle, form=form, vars=form.vars)

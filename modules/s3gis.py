@@ -2742,7 +2742,7 @@ OpenLayers.Util.extend( selectPdfControl, {
                         markerLayer = marker
                     except:
                         # integer (marker_id)
-                        markerLayer = db(db.gis_marker.id == layer["marker"]).select(db.gis_marker.image, limitby=(0, 1), cache=cache).first()
+                        markerLayer = db(db.gis_marker.id == layer["marker"]).select(db.gis_marker.image, db.gis_marker.height, db.gis_marker.width, limitby=(0, 1), cache=cache).first()
                 else:
                     markerLayer = ""
 

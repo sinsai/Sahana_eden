@@ -1135,7 +1135,7 @@ def shn_list(r, **attr):
                       iTotalDisplayRecords = totalrows,
                       aaData = aaData)
 
-        #from gluon.serializers import json
+        from gluon.serializers import json
         return json(result)
 
     elif representation in shn_interactive_view_formats:
@@ -1235,10 +1235,10 @@ def shn_list(r, **attr):
                               )
 
             # Cancel button?
-            #form[0].append(TR(TD(), TD(INPUT(_type="reset", _value="Reset form"))))
+            #form[0].append(TR(TD(), TD(INPUT(_type="reset", _value=T("Reset form")))))
             if response.s3.cancel:
                 form[0][-1][1].append(INPUT(_type="button",
-                                            _value="Cancel",
+                                            _value=T("Cancel"),
                                             _onclick="window.location='%s';" %
                                                      response.s3.cancel))
 
@@ -1454,10 +1454,10 @@ def shn_create(r, **attr):
             shn_insert_subheadings(form, tablename, subheadings)
 
         # Cancel button?
-        #form[0].append(TR(TD(), TD(INPUT(_type="reset", _value="Reset form"))))
+        #form[0].append(TR(TD(), TD(INPUT(_type="reset", _value=T("Reset form")))))
         if response.s3.cancel:
             form[0][-1][1].append(INPUT(_type="button",
-                                        _value="Cancel",
+                                        _value=T("Cancel"),
                                         _onclick="window.location='%s';" %
                                                  response.s3.cancel))
 
@@ -1665,10 +1665,10 @@ def shn_update(r, **attr):
             shn_insert_subheadings(form, tablename, subheadings)
 
         # Cancel button?
-        #form[0].append(TR(TD(), TD(INPUT(_type="reset", _value="Reset form"))))
+        #form[0].append(TR(TD(), TD(INPUT(_type="reset", _value=T("Reset form")))))
         if response.s3.cancel:
             form[0][-1][1].append(INPUT(_type="button",
-                                        _value="Cancel",
+                                        _value=T("Cancel"),
                                         _onclick="window.location='%s';" %
                                                  response.s3.cancel))
 

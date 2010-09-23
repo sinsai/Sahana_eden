@@ -768,7 +768,7 @@ if deployment_settings.has_module(module):
                     INPUT(_type="text", _name="label", _size="40"),
                     DIV(DIV(_class="tooltip",
                             _title=T("Name") + "|" + T("To search for a hospital, enter any part of the name or ID. You may use % as wildcard. Press 'Search' without input to list all hospitals.")))),
-                    TR("", INPUT(_type="submit", _value="Search"))))
+                    TR("", INPUT(_type="submit", _value=T("Search")))))
 
             output = dict(form=form, vars=form.vars)
 

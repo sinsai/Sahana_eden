@@ -748,7 +748,7 @@ def s3_gis_location_search_simple(r, **attr):
                    INPUT(_type="text", _name="label", _size="40"),
                    DIV(DIV(_class="tooltip",
                            _title=T("Name") + "|" + T("To search for a location, enter the name. You may use % as wildcard. Press 'Search' without input to list all locations.")))),
-                TR("", INPUT(_type="submit", _value="Search"))))
+                TR("", INPUT(_type="submit", _value=T("Search")))))
 
         output = dict(form=form, vars=form.vars)
 

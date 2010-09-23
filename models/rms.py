@@ -243,7 +243,7 @@ if deployment_settings.has_module(module):
                     TR(T("Text in Message: "),
                     INPUT(_type="text", _name="label", _size="40"),
                     DIV( _class="tooltip", _title=T("Text in Message") + "|" + T("To search for a request, enter some of the text that you are looking for. You may use % as wildcard. Press 'Search' without input to list all requests."))),
-                    TR("", INPUT(_type="submit", _value="Search"))
+                    TR("", INPUT(_type="submit", _value=T("Search")))
                     ))
 
             output = dict(title=title, subtitle=subtitle, form=form, vars=form.vars)

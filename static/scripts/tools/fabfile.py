@@ -105,8 +105,6 @@ def cleanup():
         run("find . -name *.THIS -print | xargs /bin/rm -f", pty=True)
         run("for i in `find . -name *.OTHER` ; do mv $i ${i/.OTHER/}; done", pty=True)
         run("bzr resolve", pty=True)
-        # Fix permissions
-        run("chown web2py:web2py languages/*", pty=True)
         # Restore customisations
         print(green("%s: Restoring Customisations" % env.host))
         # @ToDo: Only apply customisations to files which had conflicts

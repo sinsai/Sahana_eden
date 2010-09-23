@@ -52,7 +52,7 @@ table.image.label = T("Image")
 ADD_MARKER = T("Add") + " " + MARKER
 marker_id = db.Table(None, "marker_id",
                      FieldS3("marker_id", db.gis_marker, sortby="name",
-                             requires = IS_NULL_OR(IS_ONE_OF(db, "gis_marker.id", "%(name)s", zero=T("Use default from feature class"))),
+                             requires = IS_NULL_OR(IS_ONE_OF(db, "gis_marker.id", "%(name)s", zero=T("Use default"))),
                              represent = lambda id: (id and [DIV(IMG(_src=URL(r=request, c="default", f="download", args=db(db.gis_marker.id == id).select(db.gis_marker.image, limitby=(0, 1)).first().image), _height=40))] or [""])[0],
                              label = T("Marker"),
                              comment = DIV(A(ADD_MARKER, _class="colorbox", _href=URL(r=request, c="gis", f="marker", args="create", vars=dict(format="popup")), _target="top", _title=ADD_MARKER),
@@ -1041,7 +1041,8 @@ for layertype in gis_layer_types:
                      Field("title", label=T("Title"), default="name",
                            comment=T("The attribute within the KML which is used for the title of popups.")),
                      Field("body", label=T("Body"), default="description",
-                           comment=T("The attribute(s) within the KML which are used for the body of popups. (Use a space between attributes)"))
+                           comment=T("The attribute(s) within the KML which are used for the body of popups. (Use a space between attributes)")),
+                     marker_id
                     )
         table = db.define_table(tablename, t, migrate=migrate)
     elif layertype == "js":

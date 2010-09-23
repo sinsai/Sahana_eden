@@ -371,7 +371,7 @@ class GIS(object):
         request = self.request
 
         # Hide deleted Resources
-        query = (db.gis_location.deleted == False)
+        query = (db["%s_%s" % (module, resource)].deleted == False)
 
         if filter:
             query = query & (db[filter.tablename].id == filter.id)

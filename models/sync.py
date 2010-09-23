@@ -29,11 +29,11 @@ sync_policy_opts = {
     2: T("Import"),             # import new records, do not update existing records
     3: T("Replace"),            # import new records and update existing records to peer version
     4: T("Update"),             # update existing records to peer version, do not import new records
-    5: T("Replace/Newer"),      # import new records, update existing records to newer version
-    6: T("Update/Newer"),       # do not import new records, only update existing records to newer version
-    7: T("Import/Master"),      # import master records, do not update existing records
-    8: T("Replace/Master"),     # import master records and update existing records to master version
-    9: T("Update/Master"),      # update existing records to master version, do not import new records
+    5: T("Replace if Newer"),   # import new records, update existing records to newer version
+    6: T("Update if Newer"),    # do not import new records, only update existing records to newer version
+    7: T("Import if Master"),   # import master records, do not update existing records
+    8: T("Replace if Master"),  # import master records and update existing records to master version
+    9: T("Update if Master"),   # update existing records to master version, do not import new records
     #10: T("Role-based")         # not implemented yet
 }
 
@@ -41,7 +41,7 @@ sync_policy_opts = {
 policy = db.Table(None, "policy",
                   Field("policy", "integer", notnull=True,
                         requires = IS_IN_SET(sync_policy_opts),
-                        default = 3,
+                        default = 5,
                         represent = lambda opt: sync_policy_opts.get(opt, UNKNOWN_OPT)))
 
 
@@ -116,6 +116,7 @@ table = db.define_table(tablename,
                         Field("password", "password"),
                         Field("format"),
                         policy,
+                        Field("ignore_errors", "boolean", default=False),
                         Field("last_sync_time", "datetime"),
                         migrate=migrate)
 
@@ -266,6 +267,16 @@ sync_modes = {
     3: T("Import and Export")
 }
 
+sync_weekdays = {
+    1: T("Monday"),
+    2: T("Tuesday"),
+    3: T("Wednesday"),
+    4: T("Thursday"),
+    5: T("Friday"),
+    6: T("Saturday"),
+    7: T("Sunday"),
+}
+
 resource = "job"
 tablename = "%s_%s" % (module, resource)
 table = db.define_table(tablename,
@@ -279,8 +290,7 @@ table = db.define_table(tablename,
                         Field("complete", "boolean", default=False),
                         Field("run_interval", default="m"),
                         Field("hours"),
-                        Field("time_of_day"),
-                        Field("days_of_week"),
+                        Field("days", "list:integer"),
                         Field("runonce_on"),
                         Field("enabled", "boolean", default=True),
                         migrate=migrate)
@@ -302,6 +312,9 @@ table.last_run.writable = False
 table.run_interval.requires = IS_IN_SET(sync_job_intervals, zero=None)
 table.run_interval.represent = lambda opt: sync_job_intervals.get(opt, UNKNOWN_OPT)
 
+table.days.requires = IS_EMPTY_OR(IS_IN_SET(sync_weekdays, zero=None, multiple=True))
+table.days.default = sync_weekdays.keys()
+
 s3xrc.model.add_component(module, resource,
                           joinby = dict(sync_peer="peer_id"),
                           multiple = True)
@@ -314,15 +327,24 @@ resource = "log"
 tablename = "%s_%s" % (module, resource)
 table = db.define_table(tablename,
                         peer_id,
-                        #Field("peer_uuid", length=128),
-                        #Field("partner_uuid", length=36),           # uuid of remote system we synced with
-                        Field("timestmp", "datetime"),              # the date and time when sync was performed
-                        Field("sync_resources", "text"),            # comma-separated list of resources synced
-                        Field("sync_errors", "text"),               # sync errors encountered
-                        Field("sync_mode"),                         # whether this was an "online" sync (standard sync mode) or "offline" sync (USB/File based)
-                        Field("complete_sync", "boolean"),          # whether all resources were synced (complete sync) or only those modified since the last sync (partial sync)
-                        Field("sync_method"),                       # whether this was a Pull only, Push only, Remote Push or a Pull-Push sync operation
+                        Field("timestmp", "datetime"),
+                        Field("resources", "text"),
+                        Field("errors", "text"),
+                        Field("mode", "integer"),
+                        Field("complete", "boolean"),
+                        Field("run_interval"),
                         migrate=migrate)
+
+table.peer_id.label = T("Peer")
+table.timestmp.label = T("Date/Time")
+table.resources.label = T("Resources")
+table.errors.label = T("Errors")
+table.mode.label = T("Mode")
+table.mode.represent = lambda opt: sync_modes.get(opt, UNKNOWN_OPT)
+table.complete.label = T("Records")
+table.complete.represent = lambda val: val and T("all records") or T("updates only")
+table.run_interval.label = T("Run Interval")
+table.run_interval.represent = lambda opt: sync_job_intervals.get(opt, UNKNOWN_OPT)
 
 s3xrc.model.add_component(module, resource,
                           joinby = dict(sync_peer="peer_id"),
@@ -330,6 +352,16 @@ s3xrc.model.add_component(module, resource,
                           editable = False,
                           listadd = False,
                           deletable = True)
+
+s3xrc.model.configure(table,
+    list_fields = ["id",
+        "timestmp",
+        "peer_id",
+        "mode",
+        "resources",
+        "complete",
+        "run_interval",
+        "errors"])
 
 # -----------------------------------------------------------------------------
 # Synchronization conflicts

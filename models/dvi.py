@@ -77,18 +77,18 @@ if deployment_settings.has_module(module):
     s3.crud_strings[tablename] = Storage(
         title_create = T("Body Recovery Request"),
         title_display = T("Request Details"),
-        title_list = T("List of Requests"),
+        title_list = T("Body Recovery Requests"),
         title_update = T("Update Request"),
         title_search = T("Search Request"),
         subtitle_create = T("Add New Request"),
-        subtitle_list = T("Body Recovery Requests"),
+        subtitle_list = T("List of Requests"),
         label_list_button = T("List of Requests"),
         label_create_button = T("Add Request"),
         label_delete_button = T("Delete Request"),
         msg_record_created = T("Recovery Request added"),
         msg_record_modified = T("Recovery Request updated"),
         msg_record_deleted = T("Recovery Request deleted"),
-        msg_list_empty = T("No requests currently registered"))
+        msg_list_empty = T("No requests found"))
 
     dvi_recreq_id = db.Table(None, "dvi_recreq_id",
                              Field("dvi_recreq_id", table,
@@ -486,7 +486,6 @@ if deployment_settings.has_module(module):
                     db(table.id == record_id).update(presence=presence_id)
                     vita.presence_accept(presence_id)
 
-
     # -----------------------------------------------------------------------------
     s3xrc.model.configure(table,
         onvalidation = lambda form: dvi_identification_onvalidation(form),
@@ -562,7 +561,7 @@ if deployment_settings.has_module(module):
                     INPUT(_type="text", _name="label", _size="40"),
                     DIV(DIV(_class="tooltip",
                             _title=Tstr("ID Tag") + "|" + Tstr("To search for a body, enter the ID label of the body. You may use % as wildcard. Press 'Search' without input to list all bodies.")))),
-                    TR("", INPUT(_type="submit", _value="Search"))))
+                    TR("", INPUT(_type="submit", _value=T("Search")))))
 
             output = dict(form=form, vars=form.vars)
 

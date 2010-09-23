@@ -164,7 +164,7 @@ if deployment_settings.has_module(module):
     table = db.define_table(tablename,
                             timestamp, uuidstamp, authorstamp, deletion_status,
                             Field("name"),
-                            Field("category", "integer"),
+                            Field("category"),
                             Field("contact"),
                             location_id,
                             Field("datetime", "datetime"),
@@ -230,7 +230,7 @@ if deployment_settings.has_module(module):
                             incident_id,
                             Field("name"),
                             Field("message", "text"),
-                            Field("category", "integer"),
+                            Field("category"),
                             person_id,
                             Field("contact"),
                             Field("datetime", "datetime"),
@@ -516,7 +516,7 @@ if deployment_settings.has_module(module):
                         TH(DIV(SPAN("*", _class="req", _style="padding-right: 5px;")))),
                         TR(TD("Ignore Errors?: "),
                         TD(INPUT(_type="checkbox", _name="ignore_errors", _id="ignore_errors"))),
-                        TR("", INPUT(_type="submit", _value="Import"))))
+                        TR("", INPUT(_type="submit", _value=T("Import")))))
 
             label_list_btn = shn_get_crud_string(r.tablename, "title_list")
             list_btn = A(label_list_btn,

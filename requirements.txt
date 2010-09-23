@@ -1,0 +1,4 @@
+lxml==2.2.8
+xlwt==0.7.2
+Shapely==1.2.5
+reportlab==2.4

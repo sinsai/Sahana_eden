@@ -97,7 +97,7 @@ def define_map(window=False, toolbar=False):
     requests = gis.get_feature_layer(module, resource, layername, popup_label, marker, active=True, polygons=False)
     
     # Assessments
-    module = "sitrep"
+    module = "rat"
     resource = "assessment"
     layername = Tstr("Assessments")
     popup_label = Tstr("Assessment")
@@ -111,10 +111,19 @@ def define_map(window=False, toolbar=False):
     popup_label = Tstr("Activity")
     marker = "activity"
     activities = gis.get_feature_layer(module, resource, layername, popup_label, marker, active=True, polygons=False)
-    
+   
+    # Distribution Centers
+    module = "inventory"
+    resource = "store"
+    layername = Tstr("Warehouses")
+    popup_label = Tstr("Warehouse")
+    marker = "office"
+    warehouses = gis.get_feature_layer(module, resource, layername, popup_label, marker, active=True, polygons=False)
+ 
     feature_queries = [
                        incidents,
                        shelters,
+                       warehouses,
                        requests,
                        assessments,
                        activities

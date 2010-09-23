@@ -90,6 +90,19 @@ deployment_settings.L10n.default_language = "en"
 deployment_settings.L10n.display_toolbar = True
 # Default timezone for users
 deployment_settings.L10n.utc_offset = "UTC +0000"
+# Religions used in Person Registry
+# @ToDo: find a better code
+# http://eden.sahanafoundation.org/ticket/594
+deployment_settings.L10n.religions = {
+    "none":T("none"),
+    "christian":T("Christian"),
+    "muslim":T("Muslim"),
+    "jew":T("Jew"),
+    "buddhist":T("Buddhist"),
+    "hindu":T("Hindu"),
+    "bahai":T("Bahai"),
+    "other":T("other")
+}
 
 # GIS (Map) settings
 # Provide a tool to select locations via a map on all forms with location_id
@@ -171,7 +184,7 @@ deployment_settings.modules = Storage(
             description = T("Situation Awareness & Geospatial Analysis"),
             module_type = 1,     # 1st item in the menu
             resources = Storage(
-                gis_location = {'importer' : True}
+                gis_location = {"importer" : True}
              )
         ),
     mpr = Storage(
@@ -184,7 +197,7 @@ deployment_settings.modules = Storage(
             description = T("Tracks requests for aid and matches them against donors who have pledged aid"),
             module_type = 3,
             resources = Storage(
-                rms_req = {'importer' : True},
+                rms_req = {"importer" : True},
             )
         ),
     hms = Storage(
@@ -192,7 +205,7 @@ deployment_settings.modules = Storage(
             description = T("Helps to monitor status of hospitals"),
             module_type = 4,
             resources = Storage(
-                hms_hospital = {'importer' : True}
+                hms_hospital = {"importer" : True}
             )
         ),
     vol = Storage(
@@ -236,13 +249,13 @@ deployment_settings.modules = Storage(
             description = T("Central point to record details on People"),
             module_type = 10,
             resources = Storage(
-                pr_address = {'importer' : True},
-                pr_pe_contact = {'importer' : True},
-                pr_presence = {'importer' : True},
-	 	        pr_identity = {'importer' : True},
-                pr_person = {'importer' : True},
-                pr_group = {'importer' : True},
-                pr_group_membership = {'importer' : True},
+                pr_address = {"importer" : True},
+                pr_pe_contact = {"importer" : True},
+                pr_presence = {"importer" : True},
+	 	        pr_identity = {"importer" : True},
+                pr_person = {"importer" : True},
+                pr_group = {"importer" : True},
+                pr_group_membership = {"importer" : True},
             )
         ),
     dvi = Storage(
@@ -253,7 +266,7 @@ deployment_settings.modules = Storage(
             #audit_read = True,     # Can enable Audit for just an individual module here
             #audit_write = True,
             resources = Storage(
-                dvi_recreq = {'importer' : True},
+                dvi_recreq = {"importer" : True},
             )
         ),
     #dvr = Storage(
@@ -266,9 +279,9 @@ deployment_settings.modules = Storage(
             description = T("Allows a Budget to be drawn up"),
             module_type = 10,
             resources = Storage(
-                budget_item = {'importer' : True},
-                budget_kit = {'importer' : True},
-                budget_bundle = {'importer' : True},
+                budget_item = {"importer" : True},
+                budget_kit = {"importer" : True},
+                budget_bundle = {"importer" : True},
             )
         ),
     cr = Storage(
@@ -276,7 +289,7 @@ deployment_settings.modules = Storage(
             description = T("Tracks the location, distibution, capacity and breakdown of victims in Shelters"),
             module_type = 10,
             resources = Storage(
-                cr_shelter = {'importer' : True }
+                cr_shelter = {"importer" : True }
             )
         ),
     delphi = Storage(
@@ -299,11 +312,11 @@ deployment_settings.modules = Storage(
             description = T('Lists "who is doing what & where". Allows relief agencies to coordinate their activities'),
             module_type = 10,
             resources = Storage(
-                org_organisation = {'importer' : True},
-                org_office = {'importer' : True},
-                org_project = {'importer' : True},
-                org_staff = {'importer' : True},
-                org_task = {'importer' : True}
+                org_organisation = {"importer" : True},
+                org_office = {"importer" : True},
+                org_project = {"importer" : True},
+                org_staff = {"importer" : True},
+                org_task = {"importer" : True}
             )
         ),
     ticket = Storage(

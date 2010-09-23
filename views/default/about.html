@@ -1,4 +1,4 @@
-{{extend 'layout.html'}}
+{{extend "layout.html"}}
 <h2>{{=T("About Sahana Eden")}}</h2>
 <div class='item-container'>
 <table>
@@ -69,5 +69,5 @@ xlwt
 </div>
 <p>&nbsp;</p>
 {{if auth.has_membership(1):}}
-<strong>{{=A(T("Internal State"),_href=URL(r=request,c='appadmin',f='state'))}}</strong>: {{=T("Request, Response & Session")}}
+<strong>{{=A(T("Internal State"), _href=URL(r=request, c="appadmin", f="state"))}}</strong>: {{=T("Request, Response & Session")}}
 {{pass}}

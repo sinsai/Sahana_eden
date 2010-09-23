@@ -3235,6 +3235,12 @@ OpenLayers.Util.extend( selectPdfControl, {
                     title = layer["title"] or "name"
                     body = layer["body"] or "description"
                     projection_str = "projection: proj4326,"
+                    marker_id = layer["marker_id"]
+                    if marker_id:
+                        marker = db(db.gis_marker.id == marker_id).select(db.gis_marker.image, limitby=(0, 1)).first().image
+                    else:
+                        marker = db(db.gis_marker.id == marker_default).select(db.gis_marker.image, limitby=(0, 1)).first().image
+                    marker_url = URL(r=request, c="static", f="img", args=["markers", marker])
                     if cacheable:
                         # Download file
                         file, warning = self.download_kml(url, public_url)

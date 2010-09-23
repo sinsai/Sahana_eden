@@ -153,7 +153,7 @@ def table():
     output = shn_rest_controller("survey", resource, listadd=False)
     authorised = shn_has_permission("create", table)
     if authorised:
-        output.update(add_btn=A(Tstr("Add Survey Answer"),
+        output.update(add_btn=A(T("Add Survey Answer"),
                                 _href=URL(r=request, f="table", args=["create"], vars={"series_id":request.vars.series_id}),
                                 _class="action-btn"))
     else:

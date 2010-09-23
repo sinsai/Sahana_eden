@@ -362,7 +362,7 @@ class S3Resource(object):
                             for op in url_query[rname][field]:
                                 values = url_query[rname][field][op]
                                 if field == xml.UID and xml.domain_mapping:
-                                    uids = [xml.import_uid(v) for v in values]
+                                    uids = map(xml.import_uid, values)
                                     values = uids
                                 if op == "eq":
                                     if len(values) == 1:
@@ -4619,6 +4619,7 @@ class S3XML(object):
             ktable = self.db[ktablename]
 
             uid = None
+            uids = None
             if self.UID in ktable.fields:
                 query = (ktable.id.belongs(ids))
                 if "deleted" in ktable:

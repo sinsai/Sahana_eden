@@ -2,25 +2,20 @@
 
 """
     Master Message Log to record/route all Inbound messages
+    
+    @Deprecated. Incident Reports are where unknown messages are initially deposited for onward routing.
 """
 
 module = "ticket"
 if deployment_settings.has_module(module):
 
-    # Settings
-    resource = "setting"
-    table = module + "_" + resource
-    db.define_table(table,
-                    Field("audit_read", "boolean"),
-                    Field("audit_write", "boolean"),
-                    migrate=migrate)
-
     # -----------------
     # Categories table
     resource = "category"
     tablename = "%s_%s" % (module, resource)
-    table = db.define_table(tablename, timestamp, uuidstamp, deletion_status,
+    table = db.define_table(tablename,
                             Field("name"),
+                            *s3_meta_fields(),
                             migrate=migrate)
 
     table.uuid.requires = IS_NOT_IN_DB(db, "%s.uuid" % tablename)
@@ -36,22 +31,23 @@ if deployment_settings.has_module(module):
 
     resource = "log"
     tablename = "%s_%s" % (module, resource)
-    table = db.define_table(tablename, timestamp, uuidstamp, deletion_status,
+    table = db.define_table(tablename,
                             Field("subject"),
                             Field("message", "text"),
-                            person_id,
+                            person_id(),
                             Field("attachment", "upload", autodelete = True),
                             Field("priority", "integer"),
                             Field("source", default="local"),
                             Field("source_id", "integer"),
                             Field("source_time", "datetime", default=request.utcnow),
-                            location_id,
+                            location_id(),
                             Field("categories", "list:reference ticket_category"),
                             Field("verified", "boolean"),
                             Field("verified_details", "text"),
                             Field("actionable", "boolean"),
                             Field("actioned", "boolean"),
                             Field("actioned_details", "text"),
+                            *s3_meta_fields(),
                             migrate=migrate)
 
     table.uuid.requires = IS_NOT_IN_DB(db, "%s.uuid" % tablename)

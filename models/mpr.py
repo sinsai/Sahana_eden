@@ -21,35 +21,33 @@ if deployment_settings.has_module(module):
             _target="top",
             _title=ADD_PERSON),
         DIV(DIV(_class="tooltip",
-            _title=Tstr("Reporter") + "|" + Tstr("The person reporting about the missing person."))))
+            _title=T("Reporter") + "|" + T("The person reporting about the missing person."))))
 
-    reporter = db.Table(None, "reporter",
-                        FieldS3("reporter",
-                                db.pr_person,
-                                sortby=["first_name", "middle_name", "last_name"],
-                                requires = IS_NULL_OR(IS_ONE_OF(db,
-                                                "pr_person.id",
-                                                shn_pr_person_represent,
-                                                orderby="pr_person.first_name")),
-                                represent = lambda id: \
-                                            (id and
-                                            [shn_pr_person_represent(id)] or
-                                            ["None"])[0],
-                                comment = shn_mpr_reporter_comment,
-                                ondelete = "RESTRICT"))
+    reporter = S3ReusableField("reporter",
+                               db.pr_person,
+                               sortby=["first_name", "middle_name", "last_name"],
+                               requires = IS_NULL_OR(IS_ONE_OF(db,
+                                                               "pr_person.id",
+                                                               shn_pr_person_represent,
+                                                               orderby="pr_person.first_name")),
+                               represent = lambda id: (id and
+                                                       [shn_pr_person_represent(id)] or
+                                                       ["None"])[0],
+                               comment = shn_mpr_reporter_comment,
+                               ondelete = "RESTRICT")
 
     # -------------------------------------------------------------------------
     resource = "missing_report"
     tablename = "%s_%s" % (module, resource)
     table = db.define_table(tablename,
-                            timestamp, uuidstamp, authorstamp, deletion_status,
-                            person_id,
-                            reporter,
+                            person_id(),
+                            reporter(),
                             Field("since", "datetime"),
                             Field("details", "text"),
-                            location_id,
+                            location_id(),
                             Field("location_details"),
                             Field("contact", "text"),
+                            *s3_meta_fields(),
                             migrate=migrate)
 
     table.person_id.label = T("Person missing")
@@ -68,16 +66,16 @@ if deployment_settings.has_module(module):
             _target="top",
             _title=ADD_LOCATION),
         DIV( _class="tooltip",
-            _title=Tstr("Last known location") + "|" + Tstr("The last known location of the missing person before disappearance."))),
+            _title=T("Last known location") + "|" + T("The last known location of the missing person before disappearance."))),
     table.location_details.label = T("Location details")
 
     table.details.label = T("Details")
     table.details.comment = DIV(DIV(_class="tooltip",
-        _title=Tstr("Details") + "|" + Tstr("Circumstances of disappearance, other victims/witnesses who last saw the missing person alive.")))
+        _title=T("Details") + "|" + T("Circumstances of disappearance, other victims/witnesses who last saw the missing person alive.")))
 
     table.contact.label = T("Contact")
     table.contact.comment =  DIV(DIV(_class="tooltip",
-        _title=Tstr("Contact") + "|" + Tstr("Contact person in case of news or further questions (if different from reporting person). Include telephone number, address and email as available.")))
+        _title=T("Contact") + "|" + T("Contact person in case of news or further questions (if different from reporting person). Include telephone number, address and email as available.")))
 
     s3xrc.model.add_component(module, resource,
                               multiple=False,

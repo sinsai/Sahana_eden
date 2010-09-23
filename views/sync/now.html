@@ -19,6 +19,30 @@ function startSync() {
     getSyncStatus();
     $('#sync_status').append("<div class=\"success\">Synchronization started.</div>");
 };
+function haltSync() {
+    $.ajax({
+        type: "POST",
+        url: '{{=URL(r=request, c="sync", f="now", vars=dict(action="halt"))}}',
+        async: true,
+        global: false,
+        success: function(data) {
+            $('#sync_status').append("<div class=\"sync_skipped\">" + data + "</div>");
+            getSyncStatus();
+        }
+    });
+};
+function stopSync() {
+    $.ajax({
+        type: "POST",
+        url: '{{=URL(r=request, c="sync", f="now", vars=dict(action="stop", force="true"))}}',
+        async: true,
+        global: false,
+        success: function(data) {
+            $('#sync_status').append("<div class=\"sync_skipped\">" + data + "</div>");
+            getSyncStatus();
+        }
+    });
+};
 //]]></script>
 <table border="0" cellpadding="0" cellspacing="0" style="font-size: small">
 {{if status:}}
@@ -41,6 +65,21 @@ function startSync() {
     </tr>
 {{pass}}
 </table>
+<div style="float: right;">
+    <table>
+        <tr>
+            <td nowrap="nowrap" id="start-btn" style="padding: 5px;">
+                <a class="action-btn" onclick="startSync();">START</a>
+            </td>
+            <td nowrap="nowrap" id="halt-btn" style="padding: 5px;">
+                <a class="action-btn" onclick="haltSync();">HALT</a>
+            </td>
+            <td nowrap="nowrap" id="stop-btn" style="padding: 5px;">
+                <a class="action-btn" onclick="stopSync();">STOP</a>
+            </td>
+        </tr>
+    </table>
+</div>
 <h4>Message Log</h4>
 <div id="sync_status">
 </div>

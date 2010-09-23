@@ -1,22 +1,14 @@
 # -*- coding: utf-8 -*-
 
-"""
-    Volunteer Management System
+""" Volunteer Management System
 
     @author: zubair assad
-    @author: nursix
+    @author: Pat Tressel
+
 """
 
 module = "vol"
 if deployment_settings.has_module(module):
-
-    # Settings
-    resource = "setting"
-    tablename = module + "_" + resource
-    table = db.define_table(tablename,
-                    Field("audit_read", "boolean"),
-                    Field("audit_write", "boolean"),
-                    migrate=migrate)
 
     # -------------------------------------------------------------------------
     # pr_volunteer (Component of pr_person)
@@ -29,12 +21,12 @@ if deployment_settings.has_module(module):
 
     resource = "volunteer"
     tablename = module + "_" + resource
-    table = db.define_table(tablename, timestamp, uuidstamp,
-                            person_id,
+    table = db.define_table(tablename,
+                            person_id(),
                             # TODO: A person may volunteer for more than one org.
                             # Remove this -- the org can be inferred from the project
                             # or team in which the person participates.
-                            organisation_id,
+                            organisation_id(),
                             Field("date_avail_start", "date"),
                             Field("date_avail_end", "date"),
                             Field("hrs_avail_start", "time"),
@@ -45,6 +37,7 @@ if deployment_settings.has_module(module):
                                 label = T("Status"),
                                 represent = lambda opt: pr_volunteer_status_opts.get(opt, UNKNOWN_OPT)),
                             Field("special_needs", "text"),
+                            *s3_meta_fields(),
                             migrate=migrate)
 
     # Settings and Restrictions
@@ -69,7 +62,7 @@ if deployment_settings.has_module(module):
             return None
 
     # CRUD Strings
-    ADD_VOLUNTEER = Tstr("Add Volunteer Registration")
+    ADD_VOLUNTEER = T("Add Volunteer Registration")
     VOLUNTEERS = T("Volunteer Registrations")
     s3.crud_strings[tablename] = Storage(
         title_create = ADD_VOLUNTEER,
@@ -85,18 +78,6 @@ if deployment_settings.has_module(module):
         msg_record_modified = T("Volunteer registration updated"),
         msg_record_deleted = T("Volunteer registration deleted"),
         msg_list_empty = T("No volunteer information registered"))
-
-    # Reusable field
-    vol_volunteer_id = db.Table(None, "vol_volunteer_id",
-        FieldS3("vol_volunteer_id", db.vol_volunteer, sortby=["first_name", "middle_name", "last_name"],
-        requires = IS_NULL_OR(IS_ONE_OF(db(db.vol_volunteer.status == 1), "vol_volunteer.id", shn_vol_volunteer_represent, orderby="vol_volunteer.person_id")),
-        represent = lambda id: (id and [shn_vol_volunteer_represent(id)] or ["None"])[0],
-        # TODO: Creating a vol_volunteer entry requires a person, so does this
-        # make sense?  For now, turn this into add person.  Could add _next
-        # to go edit form for vol components.  How would we get the new person id?
-        comment = DIV(A(ADD_VOLUNTEER, _class="colorbox", _href=URL(r=request, c="pr", f="person", args="create", vars=dict(format="popup")), _target="top", _title=ADD_VOLUNTEER), DIV( _class="tooltip", _title=ADD_VOLUNTEER + "|" + Tstr("Add new person."))),
-        ondelete = "RESTRICT",
-        ))
 
     s3xrc.model.add_component(module, resource,
                               multiple=False,
@@ -143,8 +124,8 @@ if deployment_settings.has_module(module):
 
     resource = "resource"
     tablename = module + "_" + resource
-    table = db.define_table(tablename, timestamp, uuidstamp,
-                            person_id,
+    table = db.define_table(tablename,
+                            person_id(),
                             Field("type", "integer",
                                 requires = IS_IN_SET(vol_resource_type_opts, zero=None),
                                 # default = 99,
@@ -165,6 +146,7 @@ if deployment_settings.has_module(module):
                                 # default = 2,
                                 label = T("Status"),
                                 represent = lambda opt: vol_resource_status_opts.get(opt, UNKNOWN_OPT)),
+                            *s3_meta_fields(),
                             migrate=migrate)
 
     s3xrc.model.add_component(module, resource,
@@ -205,10 +187,11 @@ if deployment_settings.has_module(module):
 
     resource = "skill_types"
     tablename = module + "_" + resource
-    table = db.define_table(tablename, timestamp, uuidstamp, deletion_status,
+    table = db.define_table(tablename,
                             Field("name",  length=128,notnull=True),
                             Field("category", "string", length=50),
                             Field("description"),
+                            *s3_meta_fields(),
                             migrate=migrate)
 
     # Field settings
@@ -263,14 +246,15 @@ if deployment_settings.has_module(module):
 
     resource = "skill"
     tablename = module + "_" + resource
-    table = db.define_table(tablename, timestamp, uuidstamp, deletion_status,
-                            person_id,
+    table = db.define_table(tablename,
+                            person_id(),
                             skill_types_id,
                             Field("status",
                                   requires=IS_IN_SET(["approved","unapproved","denied"]),
                                   label=T("Status"),
                                   notnull=True,
                                   default="unapproved"),
+                            *s3_meta_fields(),
                             migrate=migrate)
 
     s3xrc.model.add_component(module, resource,

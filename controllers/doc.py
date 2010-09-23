@@ -87,14 +87,14 @@ def shn_document_rheader(r):
         rheader_tabs = shn_rheader_tabs(r, shn_document_tabs(r))
         doc_document = r.record
         table = db.doc_document
-        rheader = DIV(B(Tstr("Name") + ": "),doc_document.name,
+        rheader = DIV(B(T("Name") + ": "),doc_document.name,
                       TABLE(TR(
-                               TH(Tstr("File") + ": "), table.file.represent( doc_document.file ),
-                               TH(Tstr("URL") + ": "), table.url.represent( doc_document.url ),
+                               TH(T("File") + ": "), table.file.represent( doc_document.file ),
+                               TH(T("URL") + ": "), table.url.represent( doc_document.url ),
                                ),
                             TR(
-                               TH(Tstr("Organisation") + ": "), table.organisation_id.represent( doc_document.organisation_id ),
-                               TH(Tstr("Person") + ": "), table.person_id.represent( doc_document.organisation_id ),
+                               TH(T("Organisation") + ": "), table.organisation_id.represent( doc_document.organisation_id ),
+                               TH(T("Person") + ": "), table.person_id.represent( doc_document.organisation_id ),
                                ),
                            ),
                       rheader_tabs
@@ -110,14 +110,6 @@ def document():
 
     # Model options
     # used in multiple controllers, so in the model
-
-    #Disable legacy fields in components, unless updating, so the data can be manually transferred to new fields
-    if "update" not in request.args:
-        db.sitrep_assessment.source.readable = db.sitrep_assessment.source.writable = False
-        #db.sitrep_school_district.document.readable = db.sitrep_school_district.document.writable = False
-        db.irs_ireport.source.readable = db.irs_ireport.source.writable = False
-        db.irs_ireport.source_id.readable = db.irs_ireport.source_id.writable = False
-        #db.flood_freport.document.readable = db.flood_freport.document.writable = False
 
     rheader = lambda r: shn_document_rheader(r)
 

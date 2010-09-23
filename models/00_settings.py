@@ -60,13 +60,13 @@ else:
     response.s3.rtl = False
 
 
-def Tstr(text):
-    """
-       Convenience function for non-Web2Py modules
-       - need to define this *after* T.force
-       (latest web2py no longer needs this)
-    """
-    return str(T(text))
+#def Tstr(text):
+    #"""
+       #Convenience function for non-Web2Py modules
+       #- need to define this *after* T.force
+       #(latest web2py no longer needs this)
+    #"""
+    #return str(T(text))
 
 ######
 # Mail
@@ -107,10 +107,10 @@ auth.settings.expiration = 14400  # seconds
 auth.settings.registration_requires_verification = deployment_settings.get_auth_registration_requires_verification()
 # Email settings for registration verification
 auth.settings.mailer = mail
-auth.messages.verify_email = Tstr("Click on the link ") + deployment_settings.get_base_public_url() + "/" + request.application + "/default/user/verify_email/%(key)s " + Tstr("to verify your email")
+auth.messages.verify_email = T("Click on the link ") + deployment_settings.get_base_public_url() + "/" + request.application + "/default/user/verify_email/%(key)s " + T("to verify your email")
 auth.settings.on_failed_authorization = URL(r=request, c="default", f="user", args="not_authorized")
 auth.settings.reset_password_requires_verification = True
-auth.messages.reset_password = Tstr("Click on the link ") + deployment_settings.get_base_public_url() + "/" + request.application + "/default/user/reset_password/%(key)s " + Tstr("to reset your password")
+auth.messages.reset_password = T("Click on the link ") + deployment_settings.get_base_public_url() + "/" + request.application + "/default/user/reset_password/%(key)s " + T("to reset your password")
 # Require Admin approval for self-registered users
 auth.settings.registration_requires_approval = deployment_settings.get_auth_registration_requires_approval()
 auth.messages.registration_pending = T("Email address verified, however registration is still pending approval - please wait until confirmation received.")
@@ -119,7 +119,7 @@ if deployment_settings.get_auth_registration_requires_approval():
     auth.settings.verify_email_onaccept = lambda form: \
         auth.settings.mailer.send(to=deployment_settings.get_mail_approver(),
                                   subject=T("Sahana Login Approval Pending"),
-                                  message=Tstr("Your action is required. Please approve user %s asap: " % form.email) +
+                                  message=T("Your action is required. Please approve user %s asap: " % form.email) +
                                   deployment_settings.get_base_public_url() + "/" + request.application + "/admin/user")
 
 # Allow use of LDAP accounts for login
@@ -196,7 +196,7 @@ def s3_formstyle(id, label, widget, comment):
 from gluon.storage import Messages
 s3.messages = Messages(T)
 s3.messages.confirmation_email_subject = T("Sahana access granted")
-s3.messages.confirmation_email = Tstr("Welcome to the Sahana Portal at ") + deployment_settings.get_base_public_url() + Tstr(". Thanks for your assistance.")
+s3.messages.confirmation_email = T("Welcome to the Sahana Portal at ") + deployment_settings.get_base_public_url() + T(". Thanks for your assistance.")
 
 auth.settings.table_user.language.requires = IS_IN_SET(s3.l10n_languages, zero=None)
 

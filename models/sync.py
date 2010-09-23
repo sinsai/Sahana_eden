@@ -20,6 +20,8 @@
 
 module = "sync"
 
+import sys
+
 # -----------------------------------------------------------------------------
 # Synchronization policy
 #
@@ -38,12 +40,10 @@ sync_policy_opts = {
 }
 
 # Reusable field
-policy = db.Table(None, "policy",
-                  Field("policy", "integer", notnull=True,
+policy = S3ReusableField("policy", "integer", notnull=True,
                         requires = IS_IN_SET(sync_policy_opts),
                         default = 5,
-                        represent = lambda opt: sync_policy_opts.get(opt, UNKNOWN_OPT)))
-
+                        represent = lambda opt: sync_policy_opts.get(opt, UNKNOWN_OPT))
 
 # -----------------------------------------------------------------------------
 # Settings
@@ -115,7 +115,7 @@ table = db.define_table(tablename,
                         Field("username"),
                         Field("password", "password"),
                         Field("format"),
-                        policy,
+                        policy(),
                         Field("ignore_errors", "boolean", default=False),
                         Field("last_sync_time", "datetime"),
                         migrate=migrate)
@@ -187,8 +187,6 @@ def s3_sync_peer_oncreate(form):
         complete = False,
         mode = 3
     ))
-
-    #print job_command
 
     db.sync_schedule.insert(
         comments = "auto-generated job for %s" % peer.name,
@@ -286,7 +284,7 @@ table = db.define_table(tablename,
                         peer_id,
                         Field("resources", "list:string"),
                         Field("mode", "integer"),
-                        policy,
+                        policy(),
                         Field("complete", "boolean", default=False),
                         Field("run_interval", default="m"),
                         Field("hours"),
@@ -398,6 +396,7 @@ def s3_sync_push_message(message, type="", pid=None):
         success = table.insert(pid=pid, message=message, type=type)
 
         if success:
+            #print >> sys.stderr, "[%s] %s: %s" % (pid, type or "OK", message)
             db.commit()
             return True
 

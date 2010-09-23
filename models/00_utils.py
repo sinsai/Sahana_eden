@@ -26,8 +26,7 @@ def s3_sessions():
         user_id = auth.user.id
         _memberships = db.auth_membership
         memberships = db(_memberships.user_id == user_id).select(_memberships.group_id) # Cache this & invalidate when memberships are changed?
-        for membership in memberships:
-            roles.append(membership.group_id)
+        roles = [m.group_id for m in memberships]
     session.s3.roles = roles
 
     # Are we running in debug mode?

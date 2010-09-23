@@ -35,16 +35,17 @@ if deployment_settings.has_module(module):
     #
     resource = "recreq"
     tablename = "%s_%s" % (module, resource)
-    table = db.define_table(tablename, timestamp, uuidstamp, deletion_status,
+    table = db.define_table(tablename,
                             Field("date", "datetime"),
                             Field("site_id", length=64),
-                            location_id,
+                            location_id(),
                             Field("location_details"),
-                            person_id, # Finder
+                            person_id(), # Finder
                             Field("description"),
                             Field("bodies_est", "integer"), # Number of bodies found
                             opt_dvi_task_status,
                             Field("bodies_rec", "integer"), # Number of bodies recovered
+                            *s3_meta_fields(),
                             migrate=migrate)
 
     # Settings and Restrictions
@@ -114,12 +115,12 @@ if deployment_settings.has_module(module):
     #
     resource = "body"
     tablename = "%s_%s" % (module, resource)
-    table = db.define_table(tablename, timestamp, deletion_status, uuidstamp,
+    table = db.define_table(tablename,
                             pe_id,
                             pe_label,
                             dvi_recreq_id,
                             Field("date_of_recovery", "datetime"),
-                            location_id,
+                            location_id(),
                             Field("recovery_details","text"),
                             Field("has_major_outward_damage","boolean"),
                             Field("is_burned_or_charred","boolean"),
@@ -127,6 +128,7 @@ if deployment_settings.has_module(module):
                             Field("is_incomplete","boolean"),
                             pr_gender,
                             pr_age_group,
+                            *s3_meta_fields(),
                             migrate = migrate)
 
     # Settings and Restrictions
@@ -186,7 +188,7 @@ if deployment_settings.has_module(module):
     #
     resource = "checklist"
     tablename = "%s_%s" % (module, resource)
-    table = db.define_table(tablename, timestamp, uuidstamp, deletion_status,
+    table = db.define_table(tablename,
                     pe_id,
                     Field("personal_effects","integer",
                         requires = IS_IN_SET(dvi_task_status_opts, zero=None),
@@ -228,6 +230,7 @@ if deployment_settings.has_module(module):
                         default = 1,
                         label = T("Dental Examination"),
                         represent = lambda opt: dvi_task_status_opts.get(opt, T("not specified"))),
+                    *s3_meta_fields(),
                     migrate = migrate)
 
     # Setting and restrictions
@@ -263,14 +266,15 @@ if deployment_settings.has_module(module):
     #
     resource = "effects"
     tablename = "%s_%s" % (module, resource)
-    table = db.define_table(tablename, timestamp, uuidstamp, deletion_status,
+    table = db.define_table(tablename,
                     pe_id,
-    #                person_id,
+    #                person_id(),
                     Field("clothing", "text"),    #TODO: elaborate
                     Field("jewellery", "text"),   #TODO: elaborate
                     Field("footwear", "text"),    #TODO: elaborate
                     Field("watch", "text"),       #TODO: elaborate
                     Field("other", "text"),
+                    *s3_meta_fields(),
                     migrate = migrate)
 
     # Settings and Restrictions
@@ -343,7 +347,7 @@ if deployment_settings.has_module(module):
 
     resource = "identification"
     tablename = "%s_%s" % (module, resource)
-    table = db.define_table(tablename, timestamp, uuidstamp, deletion_status,
+    table = db.define_table(tablename,
                             pe_id,
                             Field("identified_by", db.pr_person),  # Person identifying the body
                             Field("reported_by", db.pr_person),    # Person reporting
@@ -352,6 +356,7 @@ if deployment_settings.has_module(module):
                             Field("identity", db.pr_person),       # Identity of the body
                             Field("presence", db.pr_presence),     # Related presence record of the identified person
                             Field("comment", "text"),              # Comment (optional)
+                            *s3_meta_fields(),
                             migrate = migrate)
 
 
@@ -560,7 +565,7 @@ if deployment_settings.has_module(module):
                     TR(T("ID Tag: "),
                     INPUT(_type="text", _name="label", _size="40"),
                     DIV(DIV(_class="tooltip",
-                            _title=Tstr("ID Tag") + "|" + Tstr("To search for a body, enter the ID label of the body. You may use % as wildcard. Press 'Search' without input to list all bodies.")))),
+                            _title=T("ID Tag") + "|" + T("To search for a body, enter the ID label of the body. You may use % as wildcard. Press 'Search' without input to list all bodies.")))),
                     TR("", INPUT(_type="submit", _value=T("Search")))))
 
             output = dict(form=form, vars=form.vars)

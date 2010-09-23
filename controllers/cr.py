@@ -348,7 +348,7 @@ def shn_shelter_rheader(r, tabs=[]):
         record = r.record
         rheader = DIV(TABLE(
                         TR(
-                            TH(Tstr("Name") + ": "), record.name
+                            TH(T("Name") + ": "), record.name
                           ),
                         ),
                       rheader_tabs)

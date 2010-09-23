@@ -1788,21 +1788,7 @@ def shn_delete(r, **attr):
                 if "deleted" in db[table] and deployment_settings.get_security_archive_not_delete():
                     if onvalidation:
                         onvalidation(row)
-                    # Avoid collisions of values in unique fields between deleted records and
-                    # later new records => better to solve this in shn_create by utilising
-                    # s3xrc.original() to find the original record with that keys and re-use
-                    # it instead of creating a new one.
                     deleted = dict(deleted=True)
-                    #for f in table.fields:
-                        #if f not in ("id", "uuid") and table[f].unique:
-                            #if table[f].notnull and str(table[f].type) in ("string", "text"):
-                                #newvalue = "_" + row[f]
-                                #deleted.update({f:newvalue})
-                            #elif not table[f].notnull:
-                                #deleted.update({f:None})
-                            #else:
-                                ## notnull and not string => cannot be removed
-                                #pass
                     db(db[table].id == row.id).update(**deleted)
                     if onaccept:
                         onaccept(row)
@@ -1867,7 +1853,7 @@ def shn_map(r, method="create", tablename=None, prefix=None, name=None):
         else:
             lat = config.lat
             lon = config.lon
-        layername = Tstr("Location")
+        layername = T("Location")
         popup_label = ""
         filter = Storage(tablename = tablename,
                          id = r.id

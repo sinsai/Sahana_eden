@@ -174,3 +174,4 @@ def shn_get_db_field_value(db,
         return row[field]
     else:
         return None
+

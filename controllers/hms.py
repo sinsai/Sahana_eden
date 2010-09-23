@@ -118,10 +118,11 @@ def hospital():
                 db.rms_req.location_id.writable = False
                 db.rms_req.location_id.default = r.record.location_id
                 db.rms_req.location_id.comment = ""
+
         elif r.representation == "aadata":
             # Hide the Implied fields here too to make columns match
-            db.rms_req.shelter_id.writable = db.rms_req.shelter_id.readable = False
-            db.rms_req.organisation_id.writable = db.rms_req.organisation_id.readable = False
+            db.rms_req.shelter_id.readable = False
+            db.rms_req.organisation_id.readable = False
             
         return True
     response.s3.prep = prep

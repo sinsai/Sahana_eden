@@ -102,7 +102,7 @@ if deployment_settings.has_module(module):
     # Message Log - This is where all the messages / logs go into
     resource = "log"
     tablename = "%s_%s" % (module, resource)
-    table = db.define_table(tablename, timestamp, uuidstamp, deletion_status,
+    table = db.define_table(tablename, #timestamp, uuidstamp, deletion_status,
         pe_id,#Sender
         Field("sender"), #The name to go out incase of the email, if set used
         Field("fromaddress"), #From address if set changes sender to this
@@ -116,6 +116,7 @@ if deployment_settings.has_module(module):
         Field("actioned_comments", "text"),
         Field("priority", "integer", default = 1),
         Field("inbound", "boolean", default = False),
+        *(s3_timestamp()+s3_uid()+s3_deletion_status()),
         migrate=migrate)
 
     table.uuid.requires = IS_NOT_IN_DB(db, "%s.uuid" % tablename)
@@ -143,12 +144,13 @@ if deployment_settings.has_module(module):
     # Message Tag - Used to tag a message to a resource
     resource = "tag"
     tablename = "%s_%s" % (module, resource)
-    table = db.define_table(tablename, timestamp, uuidstamp, deletion_status,
+    table = db.define_table(tablename, #timestamp, uuidstamp, deletion_status,
         message_id,
         Field("resource"),
         Field("record_uuid", # null in this field implies subscription to the entire resource
             type=s3uuid,
             length=128),
+        *(s3_timestamp()+s3_uid()+s3_deletion_status()),
         migrate=migrate)
 
     table.uuid.requires = IS_NOT_IN_DB(db, "%s.uuid" % tablename)
@@ -169,19 +171,20 @@ if deployment_settings.has_module(module):
     # Channel - For inbound messages this tells which channel the message came in from.
     resource = "channel"
     tablename = "%s_%s" % (module, resource)
-    table = db.define_table(tablename, timestamp, uuidstamp, deletion_status,
+    table = db.define_table(tablename, #timestamp, uuidstamp, deletion_status,
                             message_id,
                             Field("pr_message_method", "integer",
                                     requires = IS_IN_SET(msg_contact_method_opts, zero=None),
                                     default = 1),
                             Field("log"),
+                            *(s3_timestamp()+s3_uid()+s3_deletion_status()),
                             migrate=migrate)
 
 
     # Outbox - needs to be separate to Log since a single message sent needs different outbox entries for each recipient
     resource = "outbox"
     tablename = "%s_%s" % (module, resource)
-    table = db.define_table(tablename, timestamp, uuidstamp, deletion_status,
+    table = db.define_table(tablename, #timestamp, uuidstamp, deletion_status,
         message_id,
         pe_id, # Person/Group to send the message out to
         Field("address"), # If set used instead of picking up from pe_id
@@ -193,6 +196,7 @@ if deployment_settings.has_module(module):
         opt_msg_status,
         Field("system_generated", "boolean", default = False),
         Field("log"),
+        *(s3_timestamp()+s3_uid()+s3_deletion_status()),
         migrate=migrate)
 
     s3xrc.model.add_component(module, resource,
@@ -213,9 +217,10 @@ if deployment_settings.has_module(module):
     # Message Read Status - To replace Message Outbox #TODO
     resource = "read_status"
     tablename = "%s_%s" % (module, resource)
-    table = db.define_table(tablename, timestamp, uuidstamp, deletion_status,
+    table = db.define_table(tablename, #timestamp, uuidstamp, deletion_status,
         message_id,
-        person_id,
+        person_id(),
+        *(s3_timestamp()+s3_uid()+s3_deletion_status()),
         migrate=migrate)
 
     table.uuid.requires = IS_NOT_IN_DB(db, "%s.uuid" % tablename)
@@ -278,20 +283,21 @@ if deployment_settings.has_module(module):
     }
     resource = "report"
     tablename = "%s_%s" % (module, resource)
-    table = db.define_table(tablename, timestamp, uuidstamp, deletion_status,
+    table = db.define_table(tablename, #timestamp, uuidstamp, deletion_status,
                     message_id,
-                    location_id,
+                    location_id(),
                     Field("image", "upload", autodelete = True),
                     Field("url", requires=IS_NULL_OR(IS_URL())),
+                    *(s3_timestamp()+s3_uid()+s3_deletion_status()),
                     migrate=migrate)
     table.uuid.requires = IS_NOT_IN_DB(db, "%s.uuid" % tablename)
 
-def shn_msg_compose( redirect_module = "msg", 
-                     redirect_function = "compose", 
+def shn_msg_compose( redirect_module = "msg",
+                     redirect_function = "compose",
                      redirect_vars = None,
                      title_name = "Send Message" ):
-    """ 
-        Form to Compose a Message 
+    """
+        Form to Compose a Message
 
         @param redirect_module: Redirect to the specified module's url after login.
         @param redirect_function: Redirect to the specified function
@@ -321,11 +327,11 @@ def shn_msg_compose( redirect_module = "msg",
     table1.actioned.writable = table1.actioned.readable = False
     table1.actionable.writable = table1.actionable.readable = False
     table1.actioned_comments.writable = table1.actioned_comments.readable = False
-    
+
     table1.subject.label = T("Subject")
     table1.message.label = T("Message")
     table1.priority.label = T("Priority")
-    
+
     table2.pe_id.writable = table2.pe_id.readable = True
     table2.pe_id.label = T("Recipients")
 
@@ -349,5 +355,5 @@ def shn_msg_compose( redirect_module = "msg",
     logform = crud.create(table1,
                           onvalidation = compose_onvalidation)
     outboxform = crud.create(table2)
-    
+
     return dict(logform = logform, outboxform = outboxform, title = T(title_name))

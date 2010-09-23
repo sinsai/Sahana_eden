@@ -18,14 +18,11 @@ if deployment_settings.has_module("logs"):
     resource = "store"
     tablename = "%s_%s" % (module, resource)
     table = db.define_table(tablename,
-                            timestamp,
-                            uuidstamp,
-                            authorstamp,
-                            deletion_status,
-                            location_id,
+                            location_id(),
                             document_id,
                             site_id,
                             comments,
+                            *s3_meta_fields(),
                             migrate=migrate)
 
     table.location_id.requires = IS_ONE_OF(db, "gis_location.id", repr_select, orderby="gis_location.name", sort=True)
@@ -65,7 +62,7 @@ if deployment_settings.has_module("logs"):
                 represent = lambda id: shn_gis_location_represent(shn_get_db_field_value(db=db, table="inventory_store", field="location_id", look_up=id)),
                 label = T("Inventory Store"),
                 comment = DIV(A(ADD_INVENTORY_STORE, _class="colorbox", _href=URL(r=request, c="inventory", f="store", args="create", vars=dict(format="popup")), _target="top", _title=ADD_INVENTORY_STORE),
-                          DIV( _class="tooltip", _title=Tstr("Inventory Store") + "|" + Tstr("An Inventory Store is a physical place which contains Relief Items available to be Distributed."))),
+                          DIV( _class="tooltip", _title=T("Inventory Store") + "|" + T("An Inventory Store is a physical place which contains Relief Items available to be Distributed."))),
                 ondelete = "RESTRICT"
                 ))
 
@@ -92,14 +89,11 @@ if deployment_settings.has_module("logs"):
     resource = "store_item"
     tablename = "%s_%s" % (module, resource)
     table = db.define_table(tablename,
-                            timestamp,
-                            uuidstamp,
-                            authorstamp,
-                            deletion_status,
                             inventory_store_id,
                             item_id,
                             Field("quantity", "double"),
                             comments,
+                            *s3_meta_fields(),
                             migrate=migrate)
 
     # CRUD strings

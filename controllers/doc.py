@@ -87,14 +87,14 @@ def shn_document_rheader(r):
         rheader_tabs = shn_rheader_tabs(r, shn_document_tabs(r))
         doc_document = r.record
         table = db.doc_document
-        rheader = DIV(B(Tstr("Name") + ": "),doc_document.name,
+        rheader = DIV(B(T("Name") + ": "),doc_document.name,
                       TABLE(TR(
-                               TH(Tstr("File") + ": "), table.file.represent( doc_document.file ),
-                               TH(Tstr("URL") + ": "), table.url.represent( doc_document.url ),
+                               TH(T("File") + ": "), table.file.represent( doc_document.file ),
+                               TH(T("URL") + ": "), table.url.represent( doc_document.url ),
                                ),
                             TR(
-                               TH(Tstr("Organisation") + ": "), table.organisation_id.represent( doc_document.organisation_id ),
-                               TH(Tstr("Person") + ": "), table.person_id.represent( doc_document.organisation_id ),
+                               TH(T("Organisation") + ": "), table.organisation_id.represent( doc_document.organisation_id ),
+                               TH(T("Person") + ": "), table.person_id.represent( doc_document.organisation_id ),
                                ),
                            ),
                       rheader_tabs

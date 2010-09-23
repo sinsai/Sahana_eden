@@ -15,9 +15,10 @@ if deployment_settings.has_module(module):
     resource = "river"
     tablename = "%s_%s" % (module, resource)
     table = db.define_table(tablename,
-                            timestamp, uuidstamp, authorstamp, deletion_status,
+                            #timestamp, uuidstamp, authorstamp, deletion_status,
                             Field("name"),
                             comments,
+                            *s3_meta_fields(),
                             migrate=migrate)
 
     table.name.requires = IS_NOT_EMPTY()
@@ -54,12 +55,13 @@ if deployment_settings.has_module(module):
     resource = "freport"
     tablename = "%s_%s" % (module, resource)
     table = db.define_table(tablename,
-                            timestamp, uuidstamp, authorstamp, deletion_status,
-                            location_id,
+                            #timestamp, uuidstamp, authorstamp, deletion_status,
+                            location_id(),
                             Field("datetime", "datetime"),
                             document_id,
                             #document,  # Deprecated
                             comments,
+                            *s3_meta_fields(),
                             migrate=migrate)
 
     #table.document.represent = lambda document, table=table: A(table.document.retrieve(document)[0], _href=URL(r=request, f="download", args=[document]))
@@ -90,7 +92,7 @@ if deployment_settings.has_module(module):
                                 represent = lambda id: (id and [db(db.flood_freport.id == id).select(db.flood_freport.datetime, limitby=(0, 1)).first().datetime] or ["None"])[0],
                                 label = T("Flood Report"),
                                 ondelete = "RESTRICT"))
-    
+
     #freport as component of doc_documents
     s3xrc.model.add_component(module, resource,
                           multiple = True,
@@ -109,13 +111,14 @@ if deployment_settings.has_module(module):
     resource = "freport_location"
     tablename = "%s_%s" % (module, resource)
     table = db.define_table(tablename,
-                            timestamp, uuidstamp, authorstamp, deletion_status,
+                            #timestamp, uuidstamp, authorstamp, deletion_status,
                             freport_id,
                             river_id,
-                            location_id,
+                            location_id(),
                             Field("discharge", "integer"),
                             Field("flowstatus", "integer"),
                             comments,
+                            *s3_meta_fields(),
                             migrate=migrate)
 
     table.discharge.label = T("Discharge (cusecs)")

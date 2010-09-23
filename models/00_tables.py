@@ -4,6 +4,101 @@
     Global tables and re-usable fields
 """
 
+# -----------------------------------------------------------------------------
+# Reusable Author fields to include in other table definitions
+def shn_user_represent(id):
+    table = db.auth_user
+    user = db(table.id == id).select(table.email, limitby=(0, 1), cache=(cache.ram, 10)).first()
+    if user:
+        return user.email
+    return None
+
+# -----------------------------------------------------------------------------
+# "Reusable" fields for table meta-data
+#
+# Reusable UUID field to include in other table definitions
+# Uses URNs according to http://tools.ietf.org/html/rfc4122
+s3uuid = SQLCustomType(
+                type = "string",
+                native = "VARCHAR(128)",
+                encoder = (lambda x: "'%s'" % (uuid.uuid4().urn if x == "" else str(x).replace("'", "''"))),
+                decoder = (lambda x: x)
+            )
+
+meta_uuidstamp = S3ReusableField("uuid",
+                                 type=s3uuid,
+                                 length=128,
+                                 notnull=True,
+                                 unique=True,
+                                 readable=False,
+                                 writable=False,
+                                 default="")
+
+meta_mci = S3ReusableField("mci", "integer", # Master-Copy-Index
+                           default=0,
+                           readable=False,
+                           writable=False)
+
+def s3_uid():
+    return (meta_uuidstamp(), meta_mci())
+
+meta_deletion_status = S3ReusableField("deleted", "boolean",
+                                       readable=False,
+                                       writable=False,
+                                       default=False)
+
+def s3_deletion_status():
+    return (meta_deletion_status(),)
+
+meta_created_on = S3ReusableField("created_on", "datetime",
+                                  readable=False,
+                                  writable=False,
+                                  default=request.utcnow)
+
+meta_modified_on = S3ReusableField("modified_on", "datetime",
+                                   readable=False,
+                                   writable=False,
+                                   default=request.utcnow,
+                                   update=request.utcnow)
+
+def s3_timestamp():
+    return (meta_created_on(), meta_modified_on())
+
+meta_created_by = S3ReusableField("created_by", db.auth_user,
+                                  readable=False, # Enable when needed, not by default
+                                  writable=False,
+                                  requires=None,
+                                  default=session.auth.user.id if auth.is_logged_in() else None,
+                                  represent = lambda id: id and shn_user_represent(id) or UNKNOWN_OPT,
+                                  ondelete="RESTRICT")
+
+meta_modified_by = S3ReusableField("modified_by", db.auth_user,
+                                   readable=False, # Enable when needed, not by default
+                                   writable=False,
+                                   requires=None,
+                                   default=session.auth.user.id if auth.is_logged_in() else None,
+                                   update=session.auth.user.id if auth.is_logged_in() else None,
+                                   represent = lambda id: id and shn_user_represent(id) or UNKNOWN_OPT,
+                                   ondelete="RESTRICT")
+
+def s3_authorstamp():
+    return (meta_created_by(),meta_modified_by())
+
+def s3_meta_fields():
+
+    fields = (
+        meta_uuidstamp(),
+        meta_mci(),
+        meta_deletion_status(),
+        meta_created_on(),
+        meta_modified_on(),
+        meta_created_by(),
+        meta_modified_by()
+    )
+
+    return fields
+
+# -----------------------------------------------------------------------------
 # Reusable timestamp fields to include in other table definitions
 timestamp = db.Table(None, "timestamp",
             Field("created_on", "datetime",
@@ -16,19 +111,6 @@ timestamp = db.Table(None, "timestamp",
                   default=request.utcnow,
                   update=request.utcnow)
             )
-
-# Reusable Author fields to include in other table definitions
-# TODO: make a better represent!
-def shn_user_represent(id):
-    def user_represent(id):
-        table = db.auth_user
-        user = db(table.id == id).select(table.email, limitby=(0, 1))
-        if user:
-            user = user.first()
-            return user.email
-        return None
-    return cache.ram("repr_user_%s" % id,
-                     lambda: user_represent(id), time_expire=10)
 
 authorstamp = db.Table(None, "authorstamp",
             Field("created_by", db.auth_user,
@@ -49,16 +131,7 @@ authorstamp = db.Table(None, "authorstamp",
 comments = db.Table(None, "comments",
                     Field("comments", "text",
                           comment = DIV(_class="tooltip",
-                                        _title=Tstr("Comments") + "|" +Tstr("Please use this field to record any additional information, including a history of the record if it is updated."))))
-
-# Reusable UUID field to include in other table definitions
-# Uses URNs according to http://tools.ietf.org/html/rfc4122
-s3uuid = SQLCustomType(
-                type = "string",
-                native = "VARCHAR(128)",
-                encoder = (lambda x: "'%s'" % (uuid.uuid4().urn if x == "" else str(x).replace("'", "''"))),
-                decoder = (lambda x: x)
-            )
+                                        _title=T("Comments") + "|" +T("Please use this field to record any additional information, including a history of the record if it is updated."))))
 
 uuidstamp = db.Table(None, "uuidstamp",
             Field("uuid",

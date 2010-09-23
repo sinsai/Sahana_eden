@@ -2730,7 +2730,7 @@ OpenLayers.Util.extend( selectPdfControl, {
             for layer in feature_queries:
                 # Features passed as Query
                 if "name" in layer:
-                    name = layer["name"]
+                    name = str(layer["name"])
                 else:
                     name = "Query" + str(int(random.random()*1000))
 

@@ -11,12 +11,13 @@ if deployment_settings.has_module(module):
     # Shelter types
     resource = "shelter_type"
     tablename = module + "_" + resource
-    table = db.define_table(tablename, timestamp, uuidstamp, deletion_status,
-                    Field("name",
-                          notnull=True,
-                          comment = SPAN("*", _class="req")),
-                    comments,
-                    migrate=migrate)
+    table = db.define_table(tablename, #timestamp, uuidstamp, deletion_status,
+                            Field("name",
+                                  notnull=True,
+                                  comment = SPAN("*", _class="req")),
+                            comments,
+                            *(s3_timestamp()+s3_uid()+s3_deletion_status()),
+                            migrate=migrate)
 
     ADD_SHELTER_TYPE = T("Add Shelter Type")
     LIST_SHELTER_TYPES = T("List Shelter Types")
@@ -48,11 +49,12 @@ if deployment_settings.has_module(module):
     # -------------------------------------------------------------------------
     resource = "shelter_service"
     tablename = module + "_" + resource
-    table = db.define_table(tablename, timestamp, uuidstamp, deletion_status,
+    table = db.define_table(tablename, #timestamp, uuidstamp, deletion_status,
                     Field("name",
                           notnull=True,
                           comment = SPAN("*", _class="req")),
                     comments,
+                    *(s3_timestamp()+s3_uid()+s3_deletion_status()),
                     migrate=migrate)
 
     ADD_SHELTER_SERVICE = T("Add Shelter Service")
@@ -112,9 +114,9 @@ if deployment_settings.has_module(module):
                     Field("name", notnull=True),
                     shelter_type_id,
                     shelter_service_id,
-                    location_id,
+                    location_id(),
                     Field("phone"),
-                    person_id,
+                    person_id(),
                     # Don't show this field -- it will be going away in favor of
                     # location -- but preserve it for converting to a location.
                     # @ToDo This address field is free format.  If we don't
@@ -203,7 +205,7 @@ if deployment_settings.has_module(module):
                                 represent = lambda id: (id and [db.cr_shelter[id].name] or ["None"])[0],
                                 ondelete = "RESTRICT",
                                 comment = DIV(A(ADD_SHELTER, _class="colorbox", _href=URL(r=request, c="cr", f="shelter", args="create", vars=dict(format="popup")), _target="top", _title=ADD_SHELTER),
-                                          DIV( _class="tooltip", _title=Tstr("Shelter") + "|" + Tstr("The Shelter this Request is from (optional)."))),
+                                          DIV( _class="tooltip", _title=T("Shelter") + "|" + T("The Shelter this Request is from (optional)."))),
                                 label = T("Shelter")
                                )
                          )
@@ -235,7 +237,7 @@ if deployment_settings.has_module(module):
     table.shelter_id.represent = lambda id: (id and [db.cr_shelter[id].name] or ["None"])[0]
     table.shelter_id.ondelete = "RESTRICT"
     table.shelter_id.comment = DIV(A(ADD_SHELTER, _class="colorbox", _href=URL(r=request, c="cr", f="shelter", args="create", vars=dict(format="popup")), _target="top", _title=ADD_SHELTER),
-                                   DIV( _class="tooltip", _title=Tstr("Shelter") + "|" + Tstr("The Shelter this Request is from (optional).")))
+                                   DIV( _class="tooltip", _title=T("Shelter") + "|" + T("The Shelter this Request is from (optional).")))
     table.shelter_id.label = T("Shelter")
     table.shelter_id.readable = True
     table.shelter_id.writable = True

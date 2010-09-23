@@ -8,18 +8,18 @@ module = "doc"
 #==============================================================================
 resource = "document"
 tablename = "%s_%s" % (module, resource)
-table = db.define_table(tablename, timestamp, uuidstamp, authorstamp, deletion_status,
+table = db.define_table(tablename, #timestamp, uuidstamp, authorstamp, deletion_status,
                         Field("name", length=128, notnull=True, unique=True),
                         Field("file", "upload", autodelete = True,),
                         Field("url"),
-                        person_id,
+                        person_id(),
                         organisation_id,
-                        location_id,
+                        location_id(),
                         Field("date", "date"),
                         comments,
                         Field("entered", "boolean"),
-                        migrate=migrate
-                        )
+                        *s3_meta_fields(),
+                        migrate=migrate)
 
 table.name.requires = [IS_NOT_EMPTY(), IS_NOT_IN_DB(db, "%s.name" % tablename)]
 #table.name.label = T("Name")
@@ -44,7 +44,7 @@ table.person_id.comment = shn_person_comment(T("Author"), T("The Author of this 
 table.location_id.readable = table.location_id.writable = False
 
 table.entered.comment = DIV( _class="tooltip",
-                             _title="Entered" + "|" + Tstr("Has data from this Reference Document been entered into Sahana?")
+                             _title="Entered" + "|" + T("Has data from this Reference Document been entered into Sahana?")
                              )
 # -----------------------------------------------------------------------------
 def document_represent(id):
@@ -62,19 +62,19 @@ def document_represent(id):
                _target = "blank"
                )
 
-DOCUMENT = Tstr("Reference Document")
-ADD_DOCUMENT = Tstr("Add Reference Document")
+DOCUMENT = T("Reference Document")
+ADD_DOCUMENT = T("Add Reference Document")
 
 document_comment = DIV( A( ADD_DOCUMENT,
                            _class="colorbox",
                            _href=URL(r=request, c="doc", f="document", args="create", vars=dict(format="popup")),
                            _target="top",
-                           _title=Tstr("If you need to add a new document then you can click here to attach one."),
+                           _title=T("If you need to add a new document then you can click here to attach one."),
                            ),
                         DIV( _class="tooltip",
                              _title=DOCUMENT + "|" + \
-                             Tstr("A Reference Document such as a file, URL or contact person to verify this data. You can type the 1st few characters of the document name to link to an existing document."),
-                             #Tstr("Add a Reference Document such as a file, URL or contact person to verify this data. If you do not enter a Reference Document, your email will be displayed instead."),
+                             T("A Reference Document such as a file, URL or contact person to verify this data. You can type the 1st few characters of the document name to link to an existing document."),
+                             #T("Add a Reference Document such as a file, URL or contact person to verify this data. If you do not enter a Reference Document, your email will be displayed instead."),
                              ),
                         #SPAN( I( T("If you do not enter a Reference Document, your email will be displayed to allow this data to be verified.") ),
                         #     _style = "color:red"
@@ -113,16 +113,17 @@ document_id = db.Table(None,
 #==============================================================================
 resource = "image"
 tablename = "%s_%s" % (module, resource)
-table = db.define_table(tablename, timestamp, uuidstamp, authorstamp, deletion_status,
+table = db.define_table(tablename, #timestamp, uuidstamp, authorstamp, deletion_status,
                         Field("name", length=128, notnull=True, unique=True),
                         Field("image", "upload"),
                         #metadata_id,
                         Field("url"),
-                        person_id,
+                        person_id(),
                         organisation_id,
-                        location_id,
+                        location_id(),
                         Field("date", "date"),
                         comments,
+                        *s3_meta_fields(),
                         migrate=migrate)
 
 table.name.requires = [IS_NOT_EMPTY(), IS_NOT_IN_DB(db, "%s.name" % tablename)]
@@ -136,14 +137,14 @@ table.image.uploadfolder = os.path.join(request.folder, "uploads/images")
 IMAGE_EXTENSIONS = ["png", "PNG", "jpg", "JPG", "jpeg", "JPEG", "gif", "GIF", "tif", "TIF", "tiff", "TIFF", "bmp", "BMP", "raw", "RAW"]
 table.image.requires = IS_IMAGE(extensions=(IMAGE_EXTENSIONS))
 
-ADD_IMAGE = Tstr("Add Photo")
+ADD_IMAGE = T("Add Photo")
 image_id = db.Table(None, "image_id",
             Field("image_id", db.doc_image,
                 requires = IS_NULL_OR(IS_ONE_OF(db, "doc_image.id", "%(name)s")),
                 represent = lambda id: (id and [DIV(A(IMG(_src=URL(r=request, c="default", f="download", args=db(db.doc_image.id == id).select(db.doc_image.image, limitby=(0, 1)).first().image), _height=40), _class="zoom", _href="#zoom-media_image-%s" % id), DIV(IMG(_src=URL(r=request, c="default", f="download", args=db(db.doc_image.id == id).select(db.doc_image.image, limitby=(0, 1)).first().image),_width=600), _id="zoom-media_image-%s" % id, _class="hidden"))] or [""])[0],
                 label = T("Image"),
                 comment = DIV(A(ADD_IMAGE, _class="colorbox", _href=URL(r=request, c="doc", f="image", args="create", vars=dict(format="popup")), _target="top", _title=ADD_IMAGE),
-                          DIV( _class="tooltip", _title=ADD_IMAGE + "|" + Tstr("Add an Photo."))),
+                          DIV( _class="tooltip", _title=ADD_IMAGE + "|" + T("Add an Photo."))),
                 ondelete = "RESTRICT"
                 ))
 
@@ -169,22 +170,23 @@ s3.crud_strings[tablename] = Storage(
 # END - Following code is not utilised
 resource = "metadata"
 tablename = "%s_%s" % (module, resource)
-table = db.define_table(tablename, timestamp, uuidstamp, authorstamp, deletion_status,
-                location_id,
+table = db.define_table(tablename, #timestamp, uuidstamp, authorstamp, deletion_status,
+                location_id(),
                 Field("description"),
-                person_id,
+                person_id(),
                 #Field("organisation.id", "reference org_organisation"),
                 Field("source"),
                 Field("sensitivity"),    # Should be turned into a drop-down by referring to AAA's sensitivity table
                 Field("event_time", "datetime"),
                 Field("expiry_time", "datetime"),
                 Field("url"),
+                *s3_meta_fields(),
                 migrate=migrate)
 table.uuid.requires = IS_NOT_IN_DB(db, "%s.uuid" % tablename)
 table.event_time.requires = IS_NULL_OR(IS_DATETIME())
 table.expiry_time.requires = IS_NULL_OR(IS_DATETIME())
 table.url.requires = IS_NULL_OR(IS_URL())
-ADD_METADATA = Tstr("Add Metadata")
+ADD_METADATA = T("Add Metadata")
 metadata_id = db.Table(None, "metadata_id",
             Field("metadata_id", db.doc_metadata,
                 requires = IS_NULL_OR(IS_ONE_OF(db, "doc_metadata.id", "%(id)s")),

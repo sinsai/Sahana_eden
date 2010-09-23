@@ -43,7 +43,7 @@ if shn_has_role(1):
         ]]
     )
     response.menu_options.append(
-        ["Ushahidi " + Tstr("Import"), False, URL(r=request, f="ireport", args="ushahidi")],
+        ["Ushahidi " + T("Import"), False, URL(r=request, f="ireport", args="ushahidi")],
     )
 
 # -----------------------------------------------------------------------------
@@ -62,7 +62,7 @@ def maps():
 
     reports = db(db.gis_location.id == db.irs_ireport.location_id).select()
     popup_url = URL(r=request, f="ireport", args="read.popup?ireport.location_id=")
-    incidents = {"name":Tstr("Incident Reports"), "query":reports, "active":True, "popup_url": popup_url}
+    incidents = {"name":T("Incident Reports"), "query":reports, "active":True, "popup_url": popup_url}
     feature_queries = [incidents]
     
     map = gis.show_map(feature_queries=feature_queries, window=True)

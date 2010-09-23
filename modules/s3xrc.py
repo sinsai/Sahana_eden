@@ -4619,6 +4619,7 @@ class S3XML(object):
             ktable = self.db[ktablename]
 
             uid = None
+            uids = None
             if self.UID in ktable.fields:
                 query = (ktable.id.belongs(ids))
                 if "deleted" in ktable:

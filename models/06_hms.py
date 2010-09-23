@@ -78,7 +78,7 @@ if deployment_settings.has_module(module):
 
     resource = "hospital"
     tablename = "%s_%s" % (module, resource)
-    table = db.define_table(tablename, timestamp, uuidstamp, authorstamp, deletion_status,
+    table = db.define_table(tablename, #timestamp, uuidstamp, authorstamp, deletion_status,
                     site_id,
                     Field("gov_uuid", unique=True, length=128), # UID assigned by Local Government
                     Field("name", notnull=True),                # Name of the facility
@@ -89,7 +89,7 @@ if deployment_settings.has_module(module):
                           label = T("Facility Type"),
                           represent = lambda opt: hms_facility_type_opts.get(opt, T("not specified"))),
                     organisation_id,
-                    location_id,
+                    location_id(),
                     Field("address"),      # @ToDo: Deprecate these & use location_id in HAVE exporter
                     Field("postcode"),     # @ToDo: Deprecate these & use location_id in HAVE exporter
                     Field("city"),         # @ToDo: Deprecate these & use location_id in HAVE exporter
@@ -148,6 +148,7 @@ if deployment_settings.has_module(module):
                     Field("access_status"),                     # Access Status
                     document_id,                                # Information Source
                     comments,
+                    *s3_meta_fields(),
                     migrate=migrate)
 
 
@@ -204,35 +205,35 @@ if deployment_settings.has_module(module):
                                                          vars=dict(format="popup")),
                                                _target="top", _title=ADD_HOSPITAL),
                                               DIV(DIV(_class="tooltip",
-                                                      _title=Tstr("Hospital") + "|" + Tstr("The hospital this record is associated with.")))),
+                                                      _title=T("Hospital") + "|" + T("The hospital this record is associated with.")))),
                                 ondelete = "RESTRICT"))
 
     # -----------------------------------------------------------------------------
-    def shn_hms_hospital_rss(record):
+    #def shn_hms_hospital_rss(record):
 
-        """ Hospital RSS Feed """
+        #""" Hospital RSS Feed """
 
-        if record:
-            lat = lon = T("unknown")
-            location_name = T("unknown")
-            if record.location_id:
-                location = db.gis_location[record.location_id]
-                if location:
-                    lat = "%.6f" % location.lat
-                    lon = "%.6f" % location.lon
-                    location_name = location.name
-            return "<b>%s</b>: <br/>Location: %s [Lat: %s Lon: %s]<br/>Facility Status: %s<br/>Clinical Status: %s<br/>Morgue Status: %s<br/>Security Status: %s<br/>Beds available: %s" % (
-                record.name,
-                location_name,
-                lat,
-                lon,
-                db.hms_hospital.facility_status.represent(record.facility_status),
-                db.hms_hospital.clinical_status.represent(record.clinical_status),
-                db.hms_hospital.morgue_status.represent(record.morgue_status),
-                db.hms_hospital.security_status.represent(record.security_status),
-                (record.available_beds is not None) and record.available_beds or T("unknown"))
-        else:
-            return None
+        #if record:
+            #lat = lon = T("unknown")
+            #location_name = T("unknown")
+            #if record.location_id:
+                #location = db.gis_location[record.location_id]
+                #if location:
+                    #lat = "%.6f" % location.lat
+                    #lon = "%.6f" % location.lon
+                    #location_name = location.name
+            #return "<b>%s</b>: <br/>Location: %s [Lat: %s Lon: %s]<br/>Facility Status: %s<br/>Clinical Status: %s<br/>Morgue Status: %s<br/>Security Status: %s<br/>Beds available: %s" % (
+                #record.name,
+                #location_name,
+                #lat,
+                #lon,
+                #db.hms_hospital.facility_status.represent(record.facility_status),
+                #db.hms_hospital.clinical_status.represent(record.clinical_status),
+                #db.hms_hospital.morgue_status.represent(record.morgue_status),
+                #db.hms_hospital.security_status.represent(record.security_status),
+                #(record.available_beds is not None) and record.available_beds or T("unknown"))
+        #else:
+            #return None
 
     # -----------------------------------------------------------------------------
     def shn_hms_hospital_onvalidation(form):
@@ -277,9 +278,9 @@ if deployment_settings.has_module(module):
     #
     resource = "hcontact"
     tablename = "%s_%s" % (module, resource)
-    table = db.define_table(tablename, timestamp, deletion_status,
+    table = db.define_table(tablename, #timestamp, deletion_status,
                     hospital_id,
-                    person_id,
+                    person_id(),
                     Field("title"),
                     Field("phone"),
                     Field("mobile"),
@@ -287,12 +288,13 @@ if deployment_settings.has_module(module):
                     Field("fax"),
                     Field("skype"),
                     Field("website"),
+                    *(s3_timestamp()+s3_deletion_status()),
                     migrate=migrate)
 
     table.person_id.label = T("Contact")
     table.title.label = T("Job Title")
     table.title.comment = DIV(DIV(_class="tooltip",
-        _title=Tstr("Title") + "|" + Tstr("The Role this person plays within this hospital.")))
+        _title=T("Title") + "|" + T("The Role this person plays within this hospital.")))
 
     table.phone.label = T("Phone")
     table.phone.requires = shn_phone_requires
@@ -342,7 +344,7 @@ if deployment_settings.has_module(module):
     #
     resource = "hactivity"
     tablename = "%s_%s" % (module, resource)
-    table = db.define_table(tablename, timestamp, uuidstamp, authorstamp, deletion_status,
+    table = db.define_table(tablename, #timestamp, uuidstamp, authorstamp, deletion_status,
                     hospital_id,
                     Field("date", "datetime"),              # Date&Time the entry applies to
                     Field("patients", "integer"),           # Current Number of Patients
@@ -350,6 +352,7 @@ if deployment_settings.has_module(module):
                     Field("discharges24", "integer"),       # Discharges in the past 24 hours
                     Field("deaths24", "integer"),           # Deaths in the past 24 hours
                     Field("comment", length=128),
+                    *s3_meta_fields(),
                     migrate=migrate)
 
     table.date.label = T("Date & Time")
@@ -357,31 +360,31 @@ if deployment_settings.has_module(module):
                                           allow_future=False)
     table.date.represent = lambda value: shn_as_local_time(value)
     table.date.comment = DIV(DIV(_class="tooltip",
-        _title=Tstr("Date & Time") + "|" + Tstr("Date and time this report relates to.")))
+        _title=T("Date & Time") + "|" + T("Date and time this report relates to.")))
 
     table.patients.requires = IS_NULL_OR(IS_INT_IN_RANGE(0, 9999))
     table.patients.default = 0
     table.patients.label = T("Number of Patients")
     table.patients.comment = DIV(DIV(_class="tooltip",
-        _title=Tstr("Patients") + "|" + Tstr("Number of in-patients at the time of reporting.")))
+        _title=T("Patients") + "|" + T("Number of in-patients at the time of reporting.")))
 
     table.admissions24.requires = IS_NULL_OR(IS_INT_IN_RANGE(0, 9999))
     table.admissions24.default = 0
     table.admissions24.label = T("Admissions/24hrs")
     table.admissions24.comment = DIV(DIV(_class="tooltip",
-        _title=Tstr("Admissions/24hrs") + "|" + Tstr("Number of newly admitted patients during the past 24 hours.")))
+        _title=T("Admissions/24hrs") + "|" + T("Number of newly admitted patients during the past 24 hours.")))
 
     table.discharges24.requires = IS_NULL_OR(IS_INT_IN_RANGE(0, 9999))
     table.discharges24.default = 0
     table.discharges24.label = T("Discharges/24hrs")
     table.discharges24.comment = DIV(DIV(_class="tooltip",
-        _title=Tstr("Discharges/24hrs") + "|" + Tstr("Number of discharged patients during the past 24 hours.")))
+        _title=T("Discharges/24hrs") + "|" + T("Number of discharged patients during the past 24 hours.")))
 
     table.deaths24.requires = IS_NULL_OR(IS_INT_IN_RANGE(0, 9999))
     table.deaths24.default = 0
     table.deaths24.label = T("Deaths/24hrs")
     table.deaths24.comment = DIV(DIV(_class="tooltip",
-        _title=Tstr("Deaths/24hrs") + "|" + Tstr("Number of deaths during the past 24 hours.")))
+        _title=T("Deaths/24hrs") + "|" + T("Number of deaths during the past 24 hours.")))
 
     s3xrc.model.add_component(module, resource,
                               multiple=True,
@@ -438,7 +441,7 @@ if deployment_settings.has_module(module):
 
     resource = "bed_capacity"
     tablename = "%s_%s" % (module, resource)
-    table = db.define_table(tablename, timestamp, uuidstamp, authorstamp, deletion_status,
+    table = db.define_table(tablename, #timestamp, uuidstamp, authorstamp, deletion_status,
                     hospital_id,
                     Field("unit_name", length=64),
                     Field("bed_type", "integer",
@@ -451,15 +454,16 @@ if deployment_settings.has_module(module):
                     Field("beds_available", "integer"),
                     Field("beds_add24", "integer"),
                     Field("comment", length=128),
+                    *s3_meta_fields(),
                     migrate=migrate)
 
     table.unit_name.label = T("Department/Unit Name")
     table.unit_name.requires = IS_NULL_OR(IS_NOT_IN_DB(db(table.deleted==False), table.unit_name))
     table.unit_name.comment = DIV(DIV(_class="tooltip",
-        _title=Tstr("Unit Name") + "|" + Tstr("Name of the unit or department this report refers to. Leave empty if your hospital has no subdivisions.")))
+        _title=T("Unit Name") + "|" + T("Name of the unit or department this report refers to. Leave empty if your hospital has no subdivisions.")))
 
     table.bed_type.comment =  DIV(DIV(_class="tooltip",
-        _title=Tstr("Bed Type") + "|" + Tstr("Specify the bed type of this unit.")))
+        _title=T("Bed Type") + "|" + T("Specify the bed type of this unit.")))
 
     table.date.label = T("Date of Report")
     table.date.requires = IS_UTC_DATETIME(utc_offset=shn_user_utc_offset(),
@@ -477,11 +481,11 @@ if deployment_settings.has_module(module):
     table.beds_add24.label = T("Additional Beds / 24hrs")
 
     table.beds_baseline.comment = DIV(DIV(_class="tooltip",
-        _title=Tstr("Baseline Number of Beds") + "|" + Tstr("Baseline number of beds of that type in this unit.")))
+        _title=T("Baseline Number of Beds") + "|" + T("Baseline number of beds of that type in this unit.")))
     table.beds_available.comment = DIV(DIV(_class="tooltip",
-        _title=Tstr("Available Beds") + "|" + Tstr("Number of available/vacant beds of that type in this unit at the time of reporting.")))
+        _title=T("Available Beds") + "|" + T("Number of available/vacant beds of that type in this unit at the time of reporting.")))
     table.beds_add24.comment = DIV(DIV(_class="tooltip",
-        _title=Tstr("Additional Beds / 24hrs") + "|" + Tstr("Number of additional beds of that type expected to become available in this unit within the next 24 hours.")))
+        _title=T("Additional Beds / 24hrs") + "|" + T("Number of additional beds of that type expected to become available in this unit within the next 24 hours.")))
 
     # -----------------------------------------------------------------------------
     #
@@ -556,7 +560,7 @@ if deployment_settings.has_module(module):
     #
     resource = "services"
     tablename = "%s_%s" % (module, resource)
-    table = db.define_table(tablename, timestamp, uuidstamp, authorstamp, deletion_status,
+    table = db.define_table(tablename, #timestamp, uuidstamp, authorstamp, deletion_status,
                     hospital_id,
                     Field("burn", "boolean", default=False),
                     Field("card", "boolean", default=False),
@@ -574,6 +578,7 @@ if deployment_settings.has_module(module):
                     Field("psya", "boolean", default=False),
                     Field("psyp", "boolean", default=False),
                     Field("obgy", "boolean", default=False),
+                    *s3_meta_fields(),
                     migrate=migrate)
 
     table.burn.label = T("Burn")
@@ -630,7 +635,7 @@ if deployment_settings.has_module(module):
 
     resource = "himage"
     tablename = "%s_%s" % (module, resource)
-    table = db.define_table(tablename, timestamp, uuidstamp, authorstamp, deletion_status,
+    table = db.define_table(tablename, #timestamp, uuidstamp, authorstamp, deletion_status,
                     hospital_id,
                     #Field("title"),
                     Field("type", "integer",
@@ -642,6 +647,7 @@ if deployment_settings.has_module(module):
                     Field("url"),
                     Field("description"),
                     Field("tags"),
+                    *s3_meta_fields(),
                     migrate=migrate)
 
     # Field validation
@@ -658,7 +664,7 @@ if deployment_settings.has_module(module):
 
     table.tags.label = T("Tags")
     table.tags.comment = DIV(DIV(_class="tooltip",
-                            _title=Tstr("Image Tags") + "|" + Tstr("Enter tags separated by commas.")))
+                            _title=T("Image Tags") + "|" + T("Enter tags separated by commas.")))
 
     # CRUD Strings
     s3.crud_strings[tablename] = Storage(
@@ -697,12 +703,13 @@ if deployment_settings.has_module(module):
     #
     resource = "resources"
     tablename = "%s_%s" % (module, resource)
-    table = db.define_table(tablename, timestamp, uuidstamp, authorstamp, deletion_status,
+    table = db.define_table(tablename, #timestamp, uuidstamp, authorstamp, deletion_status,
                     hospital_id,
                     Field("type"),
                     Field("description"),
                     Field("quantity"),
                     Field("comment"),
+                    *s3_meta_fields(),
                     migrate=migrate)
 
     # CRUD Strings
@@ -757,10 +764,10 @@ if deployment_settings.has_module(module):
 
             # Select form
             form = FORM(TABLE(
-                    TR(Tstr("Name and/or ID Label" + ": "),
+                    TR(T("Name and/or ID Label" + ": "),
                     INPUT(_type="text", _name="label", _size="40"),
                     DIV(DIV(_class="tooltip",
-                            _title=Tstr("Name") + "|" + Tstr("To search for a hospital, enter any part of the name or ID. You may use % as wildcard. Press 'Search' without input to list all hospitals.")))),
+                            _title=T("Name") + "|" + T("To search for a hospital, enter any part of the name or ID. You may use % as wildcard. Press 'Search' without input to list all hospitals.")))),
                     TR("", INPUT(_type="submit", _value="Search"))))
 
             output = dict(form=form, vars=form.vars)

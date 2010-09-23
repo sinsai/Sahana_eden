@@ -503,35 +503,35 @@ def sync_res(vector, peer, policy):
 
     #table.uuid.label = "UUID"
     #table.uuid.comment = DIV(SPAN("*", _class="req"), DIV(_class="tooltip",
-        #_title="UUID|" + Tstr("The unique identifier of the peer. Leave blank if the peer is no Sahana Eden instance, it will be auto-assigned in that case.")))
+        #_title="UUID|" + T("The unique identifier of the peer. Leave blank if the peer is no Sahana Eden instance, it will be auto-assigned in that case.")))
 
     #table.name.label = T("Name")
     #table.name.comment = DIV(_class="tooltip",
-        #_title=Tstr("Name") + "|" + Tstr("The descriptive name of the peer."))
+        #_title=T("Name") + "|" + T("The descriptive name of the peer."))
 
     #table.url.label = T("URL")
     #table.url.comment = DIV(SPAN("*", _class="req"), DIV(_class="tooltip",
-        #_title=Tstr("URL") + "|" + Tstr("For Eden instances enter the application base URL, e.g. http://sync.sahanfoundation.org/eden, for other peers the URL of the synchronization interface.")))
+        #_title=T("URL") + "|" + T("For Eden instances enter the application base URL, e.g. http://sync.sahanfoundation.org/eden, for other peers the URL of the synchronization interface.")))
 
     ##table.type.label = T("Instance Type")
     ##table.type.comment = DIV(SPAN("*", _class="req"), DIV(_class="tooltip",
-        ##_title=Tstr("Instance Type") + "|" + Tstr("Whether this is a Sahana Eden, Sahana Agasti, Ushahidi or Other instance.")))
+        ##_title=T("Instance Type") + "|" + T("Whether this is a Sahana Eden, Sahana Agasti, Ushahidi or Other instance.")))
 
     #table.username.label = T("Username")
     #table.username.comment = DIV(_class="tooltip",
-        #_title=Tstr("Username") + "|" + Tstr("Username for authentication at the peer. Note that only HTTP Basic authentication is supported."))
+        #_title=T("Username") + "|" + T("Username for authentication at the peer. Note that only HTTP Basic authentication is supported."))
 
     #table.password.label = T("Password")
     #table.password.comment = DIV(_class="tooltip",
-        #_title=Tstr("Password") + "|" + Tstr("Password for authentication at the peer. Note that only HTTP Basic authentication is supported."))
+        #_title=T("Password") + "|" + T("Password for authentication at the peer. Note that only HTTP Basic authentication is supported."))
 
     ##table.comments.label = T("Comments")
     ##table.comments.comment = DIV(_class="tooltip",
-        ##_title=Tstr("Comments") + "|" + Tstr("Any comments about this sync partner."))
+        ##_title=T("Comments") + "|" + T("Any comments about this sync partner."))
 
     #table.policy.label = T("Data import policy")
     #table.policy.comment = DIV(SPAN("*", _class="req"), DIV(_class="tooltip",
-        #_title=Tstr("Data import policy") + "|" + Tstr("The default policy for data import from this peer.")))
+        #_title=T("Data import policy") + "|" + T("The default policy for data import from this peer.")))
 
     ## CRUD Strings
     #s3.crud_strings["sync_partner"] = Storage(
@@ -574,7 +574,7 @@ def setting():
 
     table.uuid.label = "UUID"
     table.uuid.comment = DIV(_class="tooltip",
-        _title="UUID|" + Tstr("The unique identifier which identifies this instance to other instances."))
+        _title="UUID|" + T("The unique identifier which identifies this instance to other instances."))
 
     # CRUD strings
     s3.crud_strings.sync_setting = Storage(
@@ -973,6 +973,7 @@ def sync_cron():
     """ Run all due jobs from the schedule """
 
     import sys
+    #print >> sys.stderr, "Synchronization CRON process"
 
     # Get settings
     settings = db().select(db.sync_setting.ALL, limitby=(0,1)).first()

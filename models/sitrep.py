@@ -26,9 +26,9 @@ if deployment_settings.has_module(module):
     resource = "assessment"
     tablename = "%s_%s" % (module, resource)
     table = db.define_table(tablename,
-                            timestamp, uuidstamp, authorstamp, deletion_status,
+                            #timestamp, uuidstamp, authorstamp, deletion_status,
                             Field("title"),
-                            location_id,
+                            location_id(),
                             organisation_id,
                             Field("date", "date"),
                             Field("households", "integer"),
@@ -44,6 +44,7 @@ if deployment_settings.has_module(module):
                             Field("source"), # Legacy field: will be removed
                             document_id,
                             comments,
+                            *s3_meta_fields(),
                             migrate=migrate)
 
     table.households.label = T("Total Households")
@@ -59,18 +60,18 @@ if deployment_settings.has_module(module):
     table.persons_deceased.label = T("# of People Deceased")
     table.houses_destroyed.label = T("# of Houses Destroyed")
     table.houses_damaged.label = T("# of Houses Damaged")
-    
+
     table.persons_affected.requires = IS_NULL_OR( IS_INT_IN_RANGE(0,99999999) )
     table.persons_injured.requires = IS_NULL_OR( IS_INT_IN_RANGE(0,99999999) )
     table.persons_deceased.requires = IS_NULL_OR( IS_INT_IN_RANGE(0,99999999) )
     table.houses_destroyed.requires = IS_NULL_OR( IS_INT_IN_RANGE(0,99999999) )
-    table.houses_damaged.requires = IS_NULL_OR( IS_INT_IN_RANGE(0,99999999) ) 
-    
+    table.houses_damaged.requires = IS_NULL_OR( IS_INT_IN_RANGE(0,99999999) )
+
     table.persons_affected.comment = T("Numbers Only")
     table.persons_injured.comment = T("Numbers Only")
     table.persons_deceased.comment = T("Numbers Only")
     table.houses_destroyed.comment = T("Numbers Only")
-    table.houses_damaged.comment = T("Numbers Only")  
+    table.houses_damaged.comment = T("Numbers Only")
 
     #table.houses_destroyed.requires = IS_NULL_OR( IS_INT_IN_RANGE(0,99999999) )
     #table.houses_destroyed.default = 0
@@ -80,7 +81,7 @@ if deployment_settings.has_module(module):
     table.crop_losses.requires = IS_NULL_OR(IS_INT_IN_RANGE(0, 100))
 
     table.source.comment = DIV(DIV(_class="tooltip",
-                              _title=Tstr("Source") + "|" + Tstr("Ideally a full URL to the source file, otherwise just a note on where data came from.")))
+                              _title=T("Source") + "|" + T("Ideally a full URL to the source file, otherwise just a note on where data came from.")))
 
     # CRUD strings
     #ADD_ASSESSMENT = T("Add Assessment")
@@ -115,7 +116,7 @@ if deployment_settings.has_module(module):
     #table = db.define_table(tablename,
     #                        timestamp, uuidstamp, authorstamp, deletion_status,
     #                        Field("name"),
-    #                        location_id,
+    #                        location_id(),
     #                        Field("reported_by"),
     #                        Field("date", "date"),
     #                        document_id,
@@ -173,7 +174,7 @@ if deployment_settings.has_module(module):
     #                        Field("pf", "integer"),
     #                        Field("rooms_occupied", "integer"),
     #                        Field("families_settled", "integer"),
-    #                        location_id,
+    #                        location_id(),
     #                        Field("facilities_food", "integer"),
     #                        Field("facilities_nfi", "integer"),
     #                        Field("facilities_hygiene", "integer"),
@@ -253,7 +254,7 @@ if deployment_settings.has_module(module):
     #                          editable = True)
 
     def shn_sitrep_school_report_onvalidation(form):
-    
+
         """ School report validation """
 
         def validate_total(total, female, male):

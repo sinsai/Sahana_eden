@@ -22,7 +22,7 @@ if deployment_settings.has_module(module):
     template = db.define_table(tablename, name_desc,
                                Field("table_name", "string", readable=False, writable=False),
                                Field("locked", "boolean", readable=False, writable=False),
-                               person_id,
+                               person_id(),
                                organisation_id,
                                migrate=migrate)
 
@@ -33,7 +33,7 @@ if deployment_settings.has_module(module):
                              Field("survey_template_id", db.survey_template),
                              Field("from_date", "date", default=None),
                              Field("to_date", "date", default=None),
-                             location_id,
+                             location_id(),
                              migrate=migrate)
 
     # Survey Section

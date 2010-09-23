@@ -18,14 +18,11 @@ if deployment_settings.has_module(module):
     resource = "distrib"
     tablename = "%s_%s" % (module, resource)
     table = db.define_table(tablename,
-                            timestamp,
-                            uuidstamp,
-                            authorstamp,
-                            deletion_status,
                             Field("date", "date"),
-                            location_id,
+                            location_id(),
                             #site_id,
                             comments,
+                            *s3_meta_fields(),
                             migrate=migrate)
 
     # -----------------------------------------------------------------------------
@@ -67,7 +64,7 @@ if deployment_settings.has_module(module):
                 represent = distrib_represent,
                 label = T("Distribution"),
                 #comment = DIV(A(ADD_DISTRIBUTION, _class="colorbox", _href=URL(r=request, c="logs", f="distrib", args="create", vars=dict(format="popup")), _target="top", _title=ADD_DISTRIBUTION),
-                #          DIV( _class="tooltip", _title=Tstr("Distribution") + "|" + Tstr("Add Distribution."))),
+                #          DIV( _class="tooltip", _title=T("Distribution") + "|" + T("Add Distribution."))),
                 ondelete = "RESTRICT"
                 ))
 
@@ -77,14 +74,11 @@ if deployment_settings.has_module(module):
     resource = "distrib_item"
     tablename = "%s_%s" % (module, resource)
     table = db.define_table(tablename,
-                            timestamp,
-                            uuidstamp,
-                            authorstamp,
-                            deletion_status,
                             distrib_id,
                             item_id,
                             Field("quantity", "double"),
                             comments,
+                            *s3_meta_fields(),
                             migrate=migrate)
 
     # CRUD strings

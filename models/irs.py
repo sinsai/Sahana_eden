@@ -162,16 +162,17 @@ if deployment_settings.has_module(module):
     resource = "incident"
     tablename = "%s_%s" % (module, resource)
     table = db.define_table(tablename,
-                            timestamp, uuidstamp, authorstamp, deletion_status,
+                            #timestamp, uuidstamp, authorstamp, deletion_status,
                             Field("name"),
                             Field("category"),
                             Field("contact"),
-                            location_id,
+                            location_id(),
                             Field("datetime", "datetime"),
                             Field("persons_affected", "integer"),
                             Field("persons_injured", "integer"),
                             Field("persons_deceased", "integer"),
                             comments,
+                            *s3_meta_fields(),
                             migrate=migrate)
 
     table.name.requires = IS_NOT_EMPTY()
@@ -226,15 +227,15 @@ if deployment_settings.has_module(module):
     resource = "ireport"
     tablename = "%s_%s" % (module, resource)
     table = db.define_table(tablename,
-                            timestamp, uuidstamp, authorstamp, deletion_status,
+                            #timestamp, uuidstamp, authorstamp, deletion_status,
                             incident_id,
                             Field("name"),
                             Field("message", "text"),
                             Field("category"),
-                            person_id,
+                            person_id(),
                             Field("contact"),
                             Field("datetime", "datetime"),
-                            location_id,
+                            location_id(),
                             Field("persons_affected", "integer"),
                             Field("persons_injured", "integer"),
                             Field("persons_deceased", "integer"),
@@ -243,6 +244,7 @@ if deployment_settings.has_module(module):
                             document_id,
                             Field("verified", "boolean"),
                             comments,
+                            *s3_meta_fields(),
                             migrate=migrate)
 
     table.category.label = T("Category")
@@ -277,7 +279,7 @@ if deployment_settings.has_module(module):
     table.source_id.label = T("Source ID")
 
     table.verified.label = T("Verified?")
-    table.verified.represent = lambda verified: (T("No"), T("Yes"))[verified == True] 
+    table.verified.represent = lambda verified: (T("No"), T("Yes"))[verified == True]
 
     # CRUD strings
     ADD_INC_REPORT = T("Add Incident Report")
@@ -337,7 +339,7 @@ if deployment_settings.has_module(module):
     resource = "iassessment"
     tablename = "%s_%s" % (module, resource)
     table = db.define_table(tablename,
-                            timestamp, uuidstamp, authorstamp, deletion_status,
+                            #timestamp, uuidstamp, authorstamp, deletion_status,
                             incident_id,
                             Field("datetime", "datetime"),
                             Field("itype", "integer",
@@ -359,6 +361,7 @@ if deployment_settings.has_module(module):
                             Field("persons_affected", "integer"),
                             Field("persons_injured", "integer"),
                             Field("persons_deceased", "integer"),
+                            *s3_meta_fields(),
                             migrate=migrate)
 
     table.modified_by.label = T("Reporter")
@@ -410,7 +413,7 @@ if deployment_settings.has_module(module):
     resource = "iimage"
     tablename = "%s_%s" % (module, resource)
     table = db.define_table(tablename,
-                            timestamp, uuidstamp, authorstamp, deletion_status,
+                            #timestamp, uuidstamp, authorstamp, deletion_status,
                             Field("report_id", db.irs_ireport),
                             incident_id,
                             Field("assessment_id", db.irs_iassessment),
@@ -423,6 +426,7 @@ if deployment_settings.has_module(module):
                             #Field("url"),
                             Field("description"),
                             #Field("tags"),
+                            *s3_meta_fields(),
                             migrate=migrate)
 
     # CRUD strings
@@ -462,7 +466,7 @@ if deployment_settings.has_module(module):
     resource = "iresponse"
     tablename = "%s_%s" % (module, resource)
     table = db.define_table(tablename,
-                            timestamp, uuidstamp, authorstamp, deletion_status,
+                            #timestamp, uuidstamp, authorstamp, deletion_status,
                             incident_id,
                             Field("datetime", "datetime"),
                             Field("itype", "integer",
@@ -471,6 +475,7 @@ if deployment_settings.has_module(module):
                                   label = T("Type"),
                                   represent = lambda opt: irs_response_type_opts.get(opt, UNKNOWN_OPT)),
                             Field("report", "text"),
+                            *s3_meta_fields(),
                             migrate=migrate)
 
     # CRUD strings
@@ -523,8 +528,8 @@ if deployment_settings.has_module(module):
                          _href=r.other(method="", vars=None),
                          _class="action-btn")
 
-            rheader = DIV(P(Tstr("API is documented here") + ": http://wiki.ushahidi.com/doku.php?id=ushahidi_api"), P(Tstr("Example") + " URL: http://ushahidi.my.domain/api?task=incidents&by=all&resp=xml&limit=1000"))
-            
+            rheader = DIV(P(T("API is documented here") + ": http://wiki.ushahidi.com/doku.php?id=ushahidi_api"), P(T("Example") + " URL: http://ushahidi.my.domain/api?task=incidents&by=all&resp=xml&limit=1000"))
+
             output = dict(title=title, form=form, subtitle=subtitle, list_btn=list_btn, rheader=rheader)
 
             if form.accepts(request.vars, session):

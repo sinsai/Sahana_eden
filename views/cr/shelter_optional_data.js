@@ -5,13 +5,13 @@
                         _name="is_school", _id="is_school")),
                TD(DIV(_id="is_school_tooltip",
                   _class="tooltip",
-                  _title=Tstr("School Information") + "|" +
-                         Tstr("If this is a school that has a school code, " +
-                              "please check the school checkbox, then enter " +
-                              "the code. If the school code is not " +
-                              "available, do not check the school checkbox. " +
-                              "Instead include the school name in the " +
-                              "shelter name or in the comments."))))}}');
+                  _title=T("School Information") + "|" +
+                         T("If this is a school that has a school code, " +
+                           "please check the school checkbox, then enter " +
+                           "the code. If the school code is not " +
+                           "available, do not check the school checkbox. " +
+                           "Instead include the school name in the " +
+                           "shelter name or in the comments."))))}}');
     // Adding tooltip here is too late to get proper decorations, so add them.
     $('#is_school_tooltip').cluetip(
         {activation: 'hover', sticky: false, splitTitle: '|'});
@@ -51,13 +51,13 @@
                             _name="is_hospital", _id="is_hospital")),
                    TD(DIV(_id="is_hospital_tooltip",
                       _class="tooltip",
-                      _title=Tstr("Hospital Information") + "|" +
-                             Tstr("If this is a hospital, please check the " +
-                                  "hospital checkbox, then select the " +
-                                  "hospital. If there is no record for " +
-                                  "this hospital, you can create one and " +
-                                  "enter just the name if no other " +
-                                  "information is available."))))}}');
+                      _title=T("Hospital Information") + "|" +
+                             T("If this is a hospital, please check the " +
+                               "hospital checkbox, then select the " +
+                               "hospital. If there is no record for " +
+                               "this hospital, you can create one and " +
+                               "enter just the name if no other " +
+                               "information is available."))))}}');
         // Add tooltip decorations.
         $('#is_hospital_tooltip').cluetip(
             {activation: 'hover', sticky: false, splitTitle: '|'});

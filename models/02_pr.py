@@ -301,7 +301,6 @@ def shn_pr_person_represent(id):
 resource = "person"
 tablename = "%s_%s" % (module, resource)
 table = db.define_table(tablename,
-                        timestamp, uuidstamp, authorstamp, deletion_status,
                         pe_id,
                         pe_label,
                         Field("missing", "boolean", default=False),
@@ -320,8 +319,8 @@ table = db.define_table(tablename,
                         Field("occupation"),
                         Field("tags", "list:integer"),
                         comments,
+                        *s3_meta_fields(),
                         migrate=migrate)
-
 
 table.date_of_birth.requires = IS_NULL_OR(IS_DATE_IN_RANGE(
                                maximum=request.utcnow.date(),
@@ -331,17 +330,17 @@ table.first_name.requires = IS_NOT_EMPTY()
 table.first_name.requires.error_message = T("Please enter a First Name")
 
 table.pe_label.comment = DIV(DIV(_class="tooltip",
-    _title=Tstr("ID Label") + "|" + Tstr("Number or Label on the identification tag this person is wearing (if any).")))
+    _title=T("ID Label") + "|" + T("Number or Label on the identification tag this person is wearing (if any).")))
 table.first_name.comment =  DIV(SPAN("*", _class="req", _style="padding-right: 5px;"), DIV(_class="tooltip",
-    _title=Tstr("First name") + "|" + Tstr("The first or only name of the person (mandatory).")))
+    _title=T("First name") + "|" + T("The first or only name of the person (mandatory).")))
 table.preferred_name.comment = DIV(DIV(_class="tooltip",
-    _title=Tstr("Preferred Name") + "|" + Tstr("The name to be used when calling for or directly addressing the person (optional).")))
+    _title=T("Preferred Name") + "|" + T("The name to be used when calling for or directly addressing the person (optional).")))
 table.local_name.comment = DIV(DIV(_class="tooltip",
-    _title=Tstr("Local Name") + "|" + Tstr("Name of the person in local language and script (optional).")))
+    _title=T("Local Name") + "|" + T("Name of the person in local language and script (optional).")))
 table.nationality.comment = DIV(DIV(_class="tooltip",
-    _title=Tstr("Nationality") + "|" + Tstr("Nationality of the person.")))
+    _title=T("Nationality") + "|" + T("Nationality of the person.")))
 table.country.comment = DIV(DIV(_class="tooltip",
-    _title=Tstr("Country of Residence") + "|" + Tstr("The country the person usually lives in.")))
+    _title=T("Country of Residence") + "|" + T("The country the person usually lives in.")))
 
 table.missing.represent = lambda missing: (missing and ["missing"] or [""])[0]
 
@@ -350,7 +349,7 @@ table.age_group.label = T("Age group")
 
 table.tags.label = T("Personal impact of disaster")
 table.tags.comment = DIV(DIV(_class="tooltip",
-    _title=Tstr("Personal impact of disaster") + "|" + Tstr("How is this person affected by the disaster? (Select all that apply)")))
+    _title=T("Personal impact of disaster") + "|" + T("How is this person affected by the disaster? (Select all that apply)")))
 table.tags.requires = IS_EMPTY_OR(IS_IN_SET(pr_impact_tags, zero=None, multiple=True))
 table.tags.represent = lambda opt: opt and \
                        ", ".join([str(pr_impact_tags.get(o, UNKNOWN_OPT)) for o in opt]) or ""
@@ -386,22 +385,33 @@ shn_person_comment = lambda title, comment: \
         _title="%s|%s" % (title, comment))))
 
 shn_person_id_comment = shn_person_comment(
-    Tstr("Person"),
-    Tstr("Select the person associated with this scenario."))
+    T("Person"),
+    T("Select the person associated with this scenario."))
 
-person_id = db.Table(None, "person_id",
-                     FieldS3("person_id", db.pr_person,
-                             sortby = ["first_name", "middle_name", "last_name"],
-                             requires = IS_NULL_OR(IS_ONE_OF(db, "pr_person.id",
-                                                             shn_pr_person_represent,
-                                                             orderby="pr_person.first_name",
-                                                             sort=True)),
-                             represent = lambda id: (id and \
-                                         [shn_pr_person_represent(id)] or [NONE])[0],
-                             label = T("Person"),
-                             comment = shn_person_id_comment,
-                             ondelete = "RESTRICT"))
+#person_id = db.Table(None, "person_id",
+                     #FieldS3("person_id", db.pr_person,
+                             #sortby = ["first_name", "middle_name", "last_name"],
+                             #requires = IS_NULL_OR(IS_ONE_OF(db, "pr_person.id",
+                                                             #shn_pr_person_represent,
+                                                             #orderby="pr_person.first_name",
+                                                             #sort=True)),
+                             #represent = lambda id: (id and \
+                                         #[shn_pr_person_represent(id)] or [NONE])[0],
+                             #label = T("Person"),
+                             #comment = shn_person_id_comment,
+                             #ondelete = "RESTRICT"))
 
+person_id = S3ReusableField("person_id", db.pr_person,
+                            sortby = ["first_name", "middle_name", "last_name"],
+                            requires = IS_NULL_OR(IS_ONE_OF(db, "pr_person.id",
+                                                            shn_pr_person_represent,
+                                                            orderby="pr_person.first_name",
+                                                            sort=True)),
+                            represent = lambda id: (id and \
+                                        [shn_pr_person_represent(id)] or [NONE])[0],
+                            label = T("Person"),
+                            comment = shn_person_id_comment,
+                            ondelete = "RESTRICT")
 
 # -----------------------------------------------------------------------------
 s3xrc.model.configure(table,
@@ -461,7 +471,7 @@ table.name.comment = DIV(SPAN("*", _class="req", _style="padding-right: 5px;"))
 
 table.description.label = T("Group description")
 table.description.comment = DIV(DIV(_class="tooltip",
-    _title=Tstr("Group description") + "|" + Tstr("A brief description of the group (optional)")))
+    _title=T("Group description") + "|" + T("A brief description of the group (optional)")))
 
 # -----------------------------------------------------------------------------
 ADD_GROUP = T("Add Group")
@@ -502,7 +512,7 @@ group_id.group_id.comment = \
         _target="top",
         _title=s3.crud_strings.pr_group.label_create_button),
     DIV(DIV(_class="tooltip",
-        _title=Tstr("Create Group Entry") + "|" + Tstr("Create a group entry in the registry.")))),
+        _title=T("Create Group Entry") + "|" + T("Create a group entry in the registry.")))),
 
 
 # -----------------------------------------------------------------------------
@@ -519,7 +529,7 @@ tablename = "%s_%s" % (module, resource)
 table = db.define_table(tablename,
                         timestamp, uuidstamp, authorstamp, deletion_status,
                         group_id,
-                        person_id,
+                        person_id(),
                         Field("group_head", "boolean", default=False),
                         Field("description"),
                         comments,
@@ -609,10 +619,10 @@ def shn_pr_person_search_simple(r, **attr):
 
         # Select form
         form = FORM(TABLE(
-                TR(Tstr("Name and/or ID") + " : ",
+                TR(T("Name and/or ID") + " : ",
                    INPUT(_type="text", _name="label", _size="40"),
                    DIV(DIV(_class="tooltip",
-                           _title=Tstr("Name and/or ID") + "|" + Tstr("To search for a person, enter any of the first, middle or last names and/or an ID number of a person, separated by spaces. You may use % as wildcard. Press 'Search' without input to list all persons.")))),
+                           _title=T("Name and/or ID") + "|" + T("To search for a person, enter any of the first, middle or last names and/or an ID number of a person, separated by spaces. You may use % as wildcard. Press 'Search' without input to list all persons.")))),
                 TR("", INPUT(_type="submit", _value="Search"))))
 
         output = dict(form=form, vars=form.vars)

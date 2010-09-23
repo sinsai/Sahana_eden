@@ -1853,7 +1853,7 @@ def shn_map(r, method="create", tablename=None, prefix=None, name=None):
         else:
             lat = config.lat
             lon = config.lon
-        layername = Tstr("Location")
+        layername = T("Location")
         popup_label = ""
         filter = Storage(tablename = tablename,
                          id = r.id

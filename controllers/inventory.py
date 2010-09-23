@@ -19,8 +19,8 @@ def shn_store_rheader(r, tabs=[]):
         rheader_tabs = shn_rheader_tabs(r, tabs)
         inventory_store = r.record
         rheader = DIV(TABLE(TR(
-                               TH(Tstr("Location") + ": "), shn_gis_location_represent(inventory_store.location_id),
-                               TH(Tstr("Description") + ": "), inventory_store.comments,
+                               TH(T("Location") + ": "), shn_gis_location_represent(inventory_store.location_id),
+                               TH(T("Description") + ": "), inventory_store.comments,
                                ),
                            ),
                       rheader_tabs

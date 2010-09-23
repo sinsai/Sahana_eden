@@ -53,8 +53,8 @@ if deployment_settings.has_module(module):
 
     resource = "req"
     tablename = "%s_%s" % (module, resource)
-    table = db.define_table(tablename, timestamp, uuidstamp, deletion_status,
-        person_id,
+    table = db.define_table(tablename, #timestamp, uuidstamp, deletion_status,
+        person_id(),
         hospital_id,    # @ToDo Check if the module is enabled for adding FK: check CR for an example
         shelter_id,     # @ToDo Check if the module is enabled for adding FK: check CR for an example
         organisation_id,
@@ -62,7 +62,7 @@ if deployment_settings.has_module(module):
         Field("priority", "integer"),
         Field("message", "text"),
         Field("timestmp", "datetime"),  # 'timestamp' is a reserved word in Postgres
-        location_id,
+        location_id(),
         Field("source_type", "integer"),
         Field("source_id", "integer"),
         Field("verified", "boolean"),
@@ -72,6 +72,7 @@ if deployment_settings.has_module(module):
         Field("actioned_details"),
         Field("pledge_status", "string"),
         document_id,
+        *s3_meta_fields(),
         migrate=migrate)
 
     db.rms_req.pledge_status.writable = False
@@ -143,7 +144,7 @@ if deployment_settings.has_module(module):
                     requires = IS_NULL_OR(IS_ONE_OF(db, "rms_req.id", "%(message)s")),
                     represent = lambda id: (id and [db(db.rms_req.id == id).select(limitby=(0, 1)).first().message] or ["None"])[0],
                     label = T("Aid Request"),
-                    comment = DIV(A(ADD_AID_REQUEST, _class="colorbox", _href=URL(r=request, c="rms", f="req", args="create", vars=dict(format="popup")), _target="top", _title=ADD_AID_REQUEST), DIV( _class="tooltip", _title=Tstr("Add Request") + "|" + Tstr("The Request this record is associated with."))),
+                    comment = DIV(A(ADD_AID_REQUEST, _class="colorbox", _href=URL(r=request, c="rms", f="req", args="create", vars=dict(format="popup")), _target="top", _title=ADD_AID_REQUEST), DIV( _class="tooltip", _title=T("Add Request") + "|" + T("The Request this record is associated with."))),
                     ondelete = "RESTRICT"
                     ))
 
@@ -241,7 +242,7 @@ if deployment_settings.has_module(module):
             form = FORM(TABLE(
                     TR(T("Text in Message: "),
                     INPUT(_type="text", _name="label", _size="40"),
-                    DIV( _class="tooltip", _title=Tstr("Text in Message") + "|" + Tstr("To search for a request, enter some of the text that you are looking for. You may use % as wildcard. Press 'Search' without input to list all requests."))),
+                    DIV( _class="tooltip", _title=T("Text in Message") + "|" + T("To search for a request, enter some of the text that you are looking for. You may use % as wildcard. Press 'Search' without input to list all requests."))),
                     TR("", INPUT(_type="submit", _value="Search"))
                     ))
 
@@ -305,14 +306,11 @@ if deployment_settings.has_module(module):
     resource = "ritem"
     tablename = "%s_%s" % (module, resource)
     table = db.define_table(tablename,
-                            timestamp,
-                            uuidstamp,
-                            authorstamp,
-                            deletion_status,
                             req_id,
                             item_id,
                             Field("quantity", "double"),
                             comments,
+                            *s3_meta_fields(),
                             migrate=migrate)
 
     # CRUD strings
@@ -349,13 +347,14 @@ if deployment_settings.has_module(module):
 
     resource = "pledge"
     tablename = "%s_%s" % (module, resource)
-    table = db.define_table(tablename, timestamp, authorstamp, uuidstamp, deletion_status,
+    table = db.define_table(tablename, #timestamp, authorstamp, uuidstamp, deletion_status,
         Field("submitted_on", "datetime"),
         Field("req_id", db.rms_req),
         Field("status", "integer"),
         organisation_id,
-        person_id,
+        person_id(),
         comments,
+        *s3_meta_fields(),
         migrate=migrate)
 
     # hide unnecessary fields
@@ -429,10 +428,11 @@ if deployment_settings.has_module(module):
     # Create the table for request_detail for requests with arbitrary keys
     resource = "req_detail"
     tablename = "%s_%s" % (module, resource)
-    table = db.define_table(tablename, timestamp, uuidstamp, deletion_status,
+    table = db.define_table(tablename, #timestamp, uuidstamp, deletion_status,
         req_id,
         Field("request_key", "string"),
         Field("value", "string"),
+        *s3_meta_fields(),
         migrate=migrate)
 
     s3xrc.model.add_component(module, resource,
@@ -478,6 +478,6 @@ if deployment_settings.has_module(module):
                     requires = IS_NULL_OR(IS_ONE_OF(db, "rms_req_detail.id", "%(request_key)s")),
                     represent = lambda id: (id and [db(db.rms_req_detail.id == id).select(limitby=(0, 1)).first().updated] or ["None"])[0],
                     label = T("Request Detail"),
-                    comment = DIV(A(ADD_REQUEST_DETAIL, _class="colorbox", _href=URL(r=request, c="rms", f="req_detail", args="create", vars=dict(format="popup")), _target="top", _title=ADD_REQUEST_DETAIL), DIV( _class="tooltip", _title=Tstr("Add Request") + "|" + Tstr("The Request this record is associated with."))),
+                    comment = DIV(A(ADD_REQUEST_DETAIL, _class="colorbox", _href=URL(r=request, c="rms", f="req_detail", args="create", vars=dict(format="popup")), _target="top", _title=ADD_REQUEST_DETAIL), DIV( _class="tooltip", _title=T("Add Request") + "|" + T("The Request this record is associated with."))),
                     ondelete = "RESTRICT"
                     ))

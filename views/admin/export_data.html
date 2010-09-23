@@ -3,7 +3,7 @@
  {{=H2(title)}}
 {{except:}}
 {{pass}}
-<a href='{{=URL(r=request, f='export_csv')}}'>Export entire Database as CSV</a>{{=DIV( _class="tooltip", _title=Tstr("Export Database as CSV") + "|" + Tstr("This is the way to transfer data between machines as it maintains referential integrity."))}}
+<a href='{{=URL(r=request, f='export_csv')}}'>Export entire Database as CSV</a>{{=DIV( _class="tooltip", _title=T("Export Database as CSV") + "|" + T("This is the way to transfer data between machines as it maintains referential integrity."))}}
 <p>&nbsp;</p>
 <div class='form-container'>
 Selective export:

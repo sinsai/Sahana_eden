@@ -142,9 +142,9 @@ if deployment_settings.has_module(module):
     resource = "assessment"
     tablename = "%s_%s" % (module, resource)
     table = db.define_table(tablename,
-                            timestamp, uuidstamp, authorstamp, deletion_status,
+                            #timestamp, uuidstamp, authorstamp, deletion_status,
                             Field("date", "date"),
-                            location_id,
+                            location_id(),
                             staff_id,
                             Field("staff2_id", db.org_staff, ondelete = "RESTRICT"),
                             Field("interview_location", "list:integer"),
@@ -153,6 +153,7 @@ if deployment_settings.has_module(module):
                             comments,
                             document_id,
                             shelter_id,
+                            *s3_meta_fields(),
                             migrate=migrate)
 
     table.date.requires = [IS_DATE(), IS_NOT_EMPTY()]
@@ -168,14 +169,14 @@ if deployment_settings.has_module(module):
     table.interview_location.requires = IS_NULL_OR(IS_IN_SET(rat_interview_location_opts, multiple=True, zero=None))
     table.interview_location.represent = lambda opt, set=rat_interview_location_opts: \
                                          shn_rat_represent_multiple(set, opt)
-    table.interview_location.comment = "(" + Tstr("Select all that apply") + ")"
+    table.interview_location.comment = "(" + T("Select all that apply") + ")"
     #table.interview_location.widget = SQLFORM.widgets.checkboxes.widget
 
     table.interviewee.label = T("Person interviewed")
     table.interviewee.requires = IS_NULL_OR(IS_IN_SET(rat_interviewee_opts, multiple=True, zero=None))
     table.interviewee.represent = lambda opt, set=rat_interviewee_opts: \
                                          shn_rat_represent_multiple(set, opt)
-    table.interviewee.comment = "(" + Tstr("Select all that apply") + ")"
+    table.interviewee.comment = "(" + T("Select all that apply") + ")"
     #table.interviewee.widget = SQLFORM.widgets.checkboxes.widget
 
     table.accessibility.requires = IS_NULL_OR(IS_IN_SET(rat_accessibility_opts, zero=None))
@@ -264,7 +265,7 @@ if deployment_settings.has_module(module):
     resource = "section2"
     tablename = "%s_%s" % (module, resource)
     table = db.define_table(tablename,
-                            timestamp, uuidstamp, authorstamp, deletion_status,
+                            #timestamp, uuidstamp, authorstamp, deletion_status,
                             assessment_id,
                             Field("population_total", "integer"),
                             Field("households_total", "integer"),
@@ -303,6 +304,7 @@ if deployment_settings.has_module(module):
                             Field("lactating", "integer"),
                             Field("minorities", "integer"),
                             comments,
+                            *s3_meta_fields(),
                             migrate=migrate)
 
     table.assessment_id.readable = False
@@ -410,7 +412,7 @@ if deployment_settings.has_module(module):
     resource = "section3"
     tablename = "%s_%s" % (module, resource)
     table = db.define_table(tablename,
-                            timestamp, uuidstamp, authorstamp, deletion_status,
+                            #timestamp, uuidstamp, authorstamp, deletion_status,
                             assessment_id,
                             Field("houses_total", "integer"),
                             Field("houses_destroyed", "integer"),
@@ -433,6 +435,7 @@ if deployment_settings.has_module(module):
                             Field("kits_dwelling_received", "boolean"),
                             Field("kits_dwelling_source"),
                             comments,
+                            *s3_meta_fields(),
                             migrate=migrate)
 
     table.assessment_id.readable = False
@@ -550,7 +553,7 @@ if deployment_settings.has_module(module):
     resource = "section4"
     tablename = "%s_%s" % (module, resource)
     table = db.define_table(tablename,
-                            timestamp, uuidstamp, authorstamp, deletion_status,
+                            #timestamp, uuidstamp, authorstamp, deletion_status,
                             assessment_id,
                             Field("water_source_pre_disaster_type", "integer"),
                             Field("water_source_pre_disaster_description"),
@@ -575,6 +578,7 @@ if deployment_settings.has_module(module):
                             Field("latrines_separation", "boolean"),
                             Field("latrines_distance", "integer"),
                             comments,
+                            *s3_meta_fields(),
                             migrate=migrate)
 
     table.assessment_id.readable = False
@@ -692,7 +696,7 @@ if deployment_settings.has_module(module):
     resource = "section5"
     tablename = "%s_%s" % (module, resource)
     table = db.define_table(tablename,
-                            timestamp, uuidstamp, authorstamp, deletion_status,
+                            #timestamp, uuidstamp, authorstamp, deletion_status,
                             assessment_id,
                             Field("health_services_pre_disaster", "boolean"),
                             Field("medical_supplies_pre_disaster", "boolean"),
@@ -721,6 +725,7 @@ if deployment_settings.has_module(module):
                             Field("u5_diarrhea", "boolean"),
                             Field("u5_diarrhea_rate_48h", "integer"),
                             comments,
+                            *s3_meta_fields(),
                             migrate=migrate)
 
     table.assessment_id.readable = False
@@ -889,7 +894,7 @@ if deployment_settings.has_module(module):
     resource = "section6"
     tablename = "%s_%s" % (module, resource)
     table = db.define_table(tablename,
-                            timestamp, uuidstamp, authorstamp, deletion_status,
+                            #timestamp, uuidstamp, authorstamp, deletion_status,
                             assessment_id,
                             Field("food_stocks_main_dishes", "list:integer"),
                             Field("food_stocks_side_dishes", "list:integer"),
@@ -902,6 +907,7 @@ if deployment_settings.has_module(module):
                             Field("food_assistance_available", "boolean"),
                             Field("food_assistance_details", "text"),
                             comments,
+                            *s3_meta_fields(),
                             migrate=migrate)
 
     table.assessment_id.readable = False
@@ -991,7 +997,7 @@ if deployment_settings.has_module(module):
     resource = "section7"
     tablename = "%s_%s" % (module, resource)
     table = db.define_table(tablename,
-                            timestamp, uuidstamp, authorstamp, deletion_status,
+                            #timestamp, uuidstamp, authorstamp, deletion_status,
                             assessment_id,
                             Field("income_sources_pre_disaster", "list:integer"),
                             Field("income_sources_post_disaster", "list:integer"),
@@ -1011,6 +1017,7 @@ if deployment_settings.has_module(module):
                             Field("rank_other_assistance", "integer"),
 
                             comments,
+                            *s3_meta_fields(),
                             migrate=migrate)
 
     table.assessment_id.readable = False
@@ -1117,7 +1124,7 @@ if deployment_settings.has_module(module):
     resource = "section8"
     tablename = "%s_%s" % (module, resource)
     table = db.define_table(tablename,
-                            timestamp, uuidstamp, authorstamp, deletion_status,
+                            #timestamp, uuidstamp, authorstamp, deletion_status,
                             assessment_id,
                             Field("schools_total", "integer"),
                             Field("schools_public", "integer"),
@@ -1162,6 +1169,7 @@ if deployment_settings.has_module(module):
                             Field("school_assistance_other_source"),
 
                             comments,
+                            *s3_meta_fields(),
                             migrate=migrate)
 
     table.assessment_id.readable = False
@@ -1324,7 +1332,7 @@ if deployment_settings.has_module(module):
     resource = "section9"
     tablename = "%s_%s" % (module, resource)
     table = db.define_table(tablename,
-                            timestamp, uuidstamp, authorstamp, deletion_status,
+                            #timestamp, uuidstamp, authorstamp, deletion_status,
                             assessment_id,
                             Field("vulnerable_groups_safe_env", "boolean"),
                             Field("safety_children_women_affected", "boolean"),
@@ -1381,6 +1389,7 @@ if deployment_settings.has_module(module):
                             Field("current_general_needs", "text"),
 
                             comments,
+                            *s3_meta_fields(),
                             migrate=migrate)
 
     table.assessment_id.readable = False

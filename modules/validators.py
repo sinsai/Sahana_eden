@@ -1,7 +1,35 @@
 # -*- coding: utf-8 -*-
 
 """
-This file was developed by Fran Boon as a web2py extension.
+    Sahana Eden Custom Validators
+
+    @requires: U{B{I{gluon}} <http://web2py.com>}
+
+    @author: Fran Boon <fran@aidiq.com>
+    @copyright: (c) 2010 Sahana Software Foundation
+    @license: MIT
+
+    Permission is hereby granted, free of charge, to any person
+    obtaining a copy of this software and associated documentation
+    files (the "Software"), to deal in the Software without
+    restriction, including without limitation the rights to use,
+    copy, modify, merge, publish, distribute, sublicense, and/or sell
+    copies of the Software, and to permit persons to whom the
+    Software is furnished to do so, subject to the following
+    conditions:
+
+    The above copyright notice and this permission notice shall be
+    included in all copies or substantial portions of the Software.
+
+    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+    EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES
+    OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+    NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT
+    HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY,
+    WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+    FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
+    OTHER DEALINGS IN THE SOFTWARE.
+
 """
 
 import time
@@ -191,12 +219,12 @@ class IS_ONE_OF_EMPTY(Validator):
                 groupby = self.groupby
                 dd = dict(orderby=orderby, groupby=groupby, cache=self.cache)
                 if "deleted" in _table:
-                    query = ((_table["deleted"] == False) | (_table["deleted"] == None))
+                    query = (_table["deleted"] == False)
                 else:
-                    query = (_table["id"])
+                    query = (_table["id"] > 0)
                 if self.filterby and self.filterby in _table:
                     if self.filter_opts:
-                        query = (_table[self.filterby].belongs(self.filter_opts)) & query
+                        query = query & (_table[self.filterby].belongs(self.filter_opts))
                     dd.update(orderby=_table[self.filterby])
                 records = self.dbset(query).select(*self.fields, **dd)
             else:
@@ -208,26 +236,21 @@ class IS_ONE_OF_EMPTY(Validator):
                 records = \
                     self.dbset.select(self.dbset._db[self.ktable].ALL, **dd)
             self.theset = [str(r[self.kfield]) for r in records]
-            labels = []
+            #labels = []
             label = self.label
-            for r in records:
-                try:
-                    # Lambda
-                    labels.append(label(r))
-                except TypeError:
-                    if isinstance(label, str):
-                        labels.append(label % dict(r))
-                    elif isinstance(label, (list, tuple)):
-                        _label = ""
-                        for l in label:
-                            if l in r:
-                                _label = "%s %s" % (_label, r[l])
-                        labels.append(_label)
-                    elif "name" in _table:
-                        labels.append(r.name)
-                    else:
-                        # Default to raw ID
-                        labels.append(r[self.kfield])
+            try:
+                labels = map(label, records)
+            except TypeError:
+                if isinstance(label, str):
+                    labels = map(lambda r: label % dict(r), records)
+                elif isinstance(label, (list, tuple)):
+                    labels = map(lambda r: \
+                                 " ".join([r[l] for l in label if l in r]),
+                                 records)
+                elif "name" in _table:
+                    labels = map(lambda r: r.name, records)
+                else:
+                    labels = map(lambda r: r[self.kfield], records)
             self.labels = labels
         else:
             self.theset = None
@@ -264,15 +287,17 @@ class IS_ONE_OF_EMPTY(Validator):
                         return (value, self.error_message)
                 else:
                     for v in values:
-                        query = (_table[self.kfield] == v)
-                        if deleted_q != False:
-                            query = deleted_q & query
-                        if filter_opts_q != False:
-                            query = filter_opts_q & query
-                        if self.dbset(query).count() < 1:
-                            return (value, self.error_message)
+                        q = (_table[self.kfield] == v)
+                        query = query is not None and query | q or q
+                    if filter_opts_q != False:
+                        query = query is not None and \
+                                (filter_opts_q & (query)) or filter_opts_q
+                    if deleted_q != False:
+                        query = query is not None and \
+                                (deleted_q & (query)) or deleted_q
+                    if self.dbset(query).count() < 1:
+                        return (value, self.error_message)
                     return ("|%s|" % "|".join(values), None)
-
             elif self.theset:
                 if value in self.theset:
                     if self._and:
@@ -281,19 +306,21 @@ class IS_ONE_OF_EMPTY(Validator):
                         return (value, None)
             else:
                 values = [value]
+                query = None
                 for v in values:
-                    query = (_table[self.kfield] == v)
-                    if deleted_q != False:
-                        query = deleted_q & query
-                    if filter_opts_q != False:
-                        query = filter_opts_q & query
-
-                    if self.dbset(query).count():
-                        if self._and:
-                            return self._and(value)
-                        else:
-                            return (value, None)
-
+                    q = (_table[self.kfield] == v)
+                    query = query is not None and query | q or q
+                if filter_opts_q != False:
+                    query = query is not None and \
+                            (filter_opts_q & (query)) or filter_opts_q
+                if deleted_q != False:
+                    query = query is not None and \
+                            (deleted_q & (query)) or deleted_q
+                if self.dbset(query).count():
+                    if self._and:
+                        return self._and(value)
+                    else:
+                        return (value, None)
         except:
             pass
 

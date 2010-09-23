@@ -13,12 +13,12 @@ if deployment_settings.has_module(module):
     # Only record 1 is used
     resource = "parameter"
     tablename = "%s_%s" % (module, resource)
-    table = db.define_table(tablename, #timestamp, uuidstamp,
+    table = db.define_table(tablename,
                             Field("shipping", "double", default=15.00, notnull=True),
                             Field("logistics", "double", default=0.00, notnull=True),
                             Field("admin", "double", default=0.00, notnull=True),
                             Field("indirect", "double", default=7.00, notnull=True),
-                            *(s3_timestamp()+s3_uid()),
+                            *(s3_timestamp() + s3_uid()),
                             migrate=migrate)
 
     table.shipping.requires = IS_FLOAT_IN_RANGE(0, 100)
@@ -37,6 +37,7 @@ if deployment_settings.has_module(module):
                                 # default = 1,
                                 label = T("Cost Type"),
                                 represent = lambda opt: budget_cost_type_opts.get(opt, UNKNOWN_OPT)))
+
     budget_category_type_opts = {
         1:T("Consumable"),
         2:T("Satellite"),
@@ -66,7 +67,7 @@ if deployment_settings.has_module(module):
                                     represent = lambda opt: budget_category_type_opts.get(opt, UNKNOWN_OPT)))
     resource = "item"
     tablename = "%s_%s" % (module, resource)
-    table = db.define_table(tablename, #timestamp, uuidstamp, deletion_status,
+    table = db.define_table(tablename,
                             opt_budget_category_type,
                             Field("code", length=128, notnull=True, unique=True),
                             Field("description", notnull=True),
@@ -75,7 +76,7 @@ if deployment_settings.has_module(module):
                             Field("monthly_cost", "double", default=0.00),
                             Field("minute_cost", "double", default=0.00),
                             Field("megabyte_cost", "double", default=0.00),
-                            comments,
+                            comments(),
                             *(s3_timestamp()+s3_uid()+s3_deletion_status()),
                             migrate=migrate)
 
@@ -120,14 +121,14 @@ if deployment_settings.has_module(module):
     # Kits
     resource = "kit"
     tablename = "%s_%s" % (module, resource)
-    table = db.define_table(tablename, #timestamp, uuidstamp, deletion_status,
+    table = db.define_table(tablename,
                             Field("code", length=128, notnull=True, unique=True),
                             Field("description"),
                             Field("total_unit_cost", "double", writable=False),
                             Field("total_monthly_cost", "double", writable=False),
                             Field("total_minute_cost", "double", writable=False),
                             Field("total_megabyte_cost", "double", writable=False),
-                            comments,
+                            comments(),
                             *(s3_timestamp()+s3_uid()+s3_deletion_status()),
                             migrate=migrate)
 
@@ -169,11 +170,11 @@ if deployment_settings.has_module(module):
     # Kit<>Item Many2Many
     resource = "kit_item"
     tablename = "%s_%s" % (module, resource)
-    table = db.define_table(tablename, #timestamp, uuidstamp, deletion_status,
+    table = db.define_table(tablename,
                             Field("kit_id", db.budget_kit),
                             Field("item_id", db.budget_item, ondelete="RESTRICT"),
                             Field("quantity", "integer", default=1, notnull=True),
-                            *(s3_timestamp()+s3_uid()+s3_deletion_status()),
+                            *(s3_timestamp() + s3_uid() + s3_deletion_status()),
                             migrate=migrate)
 
     table.kit_id.requires = IS_ONE_OF(db, "budget_kit.id", "%(code)s")
@@ -183,13 +184,13 @@ if deployment_settings.has_module(module):
     # Bundles
     resource = "bundle"
     tablename = "%s_%s" % (module, resource)
-    table = db.define_table(tablename, #timestamp, uuidstamp, deletion_status,
+    table = db.define_table(tablename,
                             Field("name", length=128, notnull=True, unique=True),
                             Field("description"),
                             Field("total_unit_cost", "double", writable=False),
                             Field("total_monthly_cost", "double", writable=False),
-                            comments,
-                            *(s3_timestamp()+s3_uid()+s3_deletion_status()),
+                            comments(),
+                            *(s3_timestamp() + s3_uid() + s3_deletion_status()),
                             migrate=migrate)
 
     table.name.requires = [IS_NOT_EMPTY(), IS_NOT_IN_DB(db, "%s.name" % table)]
@@ -243,13 +244,13 @@ if deployment_settings.has_module(module):
     # Bundle<>Kit Many2Many
     resource = "bundle_kit"
     tablename = "%s_%s" % (module, resource)
-    table = db.define_table(tablename,# timestamp, deletion_status,
+    table = db.define_table(tablename,
                             Field("bundle_id", db.budget_bundle),
                             Field("kit_id", db.budget_kit, ondelete="RESTRICT"),
                             Field("quantity", "integer", default=1, notnull=True),
                             Field("minutes", "integer", default=0, notnull=True),
                             Field("megabytes", "integer", default=0, notnull=True),
-                            *(s3_timestamp()+s3_deletion_status()),
+                            *(s3_timestamp() + s3_deletion_status()),
                             migrate=migrate)
 
     table.bundle_id.requires = IS_ONE_OF(db, "budget_bundle.id", "%(description)s")
@@ -261,13 +262,13 @@ if deployment_settings.has_module(module):
     # Bundle<>Item Many2Many
     resource = "bundle_item"
     tablename = "%s_%s" % (module, resource)
-    table = db.define_table(tablename, #timestamp, deletion_status,
+    table = db.define_table(tablename,
                             Field("bundle_id", db.budget_bundle),
                             Field("item_id", db.budget_item, ondelete="RESTRICT"),
                             Field("quantity", "integer", default=1, notnull=True),
                             Field("minutes", "integer", default=0, notnull=True),
                             Field("megabytes", "integer", default=0, notnull=True),
-                            *(s3_timestamp()+s3_deletion_status()),
+                            *(s3_timestamp() + s3_deletion_status()),
                             migrate=migrate)
 
     table.bundle_id.requires = IS_ONE_OF(db, "budget_bundle.id", "%(description)s")
@@ -279,7 +280,7 @@ if deployment_settings.has_module(module):
     # Staff Types
     resource = "staff"
     tablename = "%s_%s" % (module, resource)
-    table = db.define_table(tablename, #timestamp, uuidstamp, deletion_status,
+    table = db.define_table(tablename,
                             Field("name", length=128, notnull=True, unique=True),
                             Field("grade", notnull=True),
                             Field("salary", "integer", notnull=True),
@@ -289,8 +290,8 @@ if deployment_settings.has_module(module):
                             #Field("subsistence", "double", default=0.00),
                             # Location-dependent
                             #Field("hazard_pay", "double", default=0.00),
-                            comments,
-                            *(s3_timestamp()+s3_uid()+s3_deletion_status()),
+                            comments(),
+                            *(s3_timestamp() + s3_uid() + s3_deletion_status()),
                             migrate=migrate)
 
     table.name.requires = [IS_NOT_EMPTY(), IS_NOT_IN_DB(db, "%s.name" % table)]
@@ -300,13 +301,13 @@ if deployment_settings.has_module(module):
     # Locations
     resource = "location"
     tablename = "%s_%s" % (module, resource)
-    table = db.define_table(tablename, #timestamp, uuidstamp, deletion_status,
+    table = db.define_table(tablename,
                             Field("code", length=3, notnull=True, unique=True),
                             Field("description"),
                             Field("subsistence", "double", default=0.00),
                             Field("hazard_pay", "double", default=0.00),
-                            comments,
-                            *(s3_timestamp()+s3_uid()+s3_deletion_status()),
+                            comments(),
+                            *(s3_timestamp() + s3_uid() + s3_deletion_status()),
                             migrate=migrate)
 
     table.code.requires = [IS_NOT_EMPTY(), IS_NOT_IN_DB(db, "%s.code" % table)]
@@ -314,13 +315,13 @@ if deployment_settings.has_module(module):
     # Budgets
     resource = "budget"
     tablename = "%s_%s" % (module, resource)
-    table = db.define_table(tablename, #timestamp, uuidstamp, deletion_status,
+    table = db.define_table(tablename,
                             Field("name", length=128, notnull=True, unique=True),
                             Field("description"),
                             Field("total_onetime_costs", "double", writable=False),
                             Field("total_recurring_costs", "double", writable=False),
-                            comments,
-                            *(s3_timestamp()+s3_uid()+s3_deletion_status()),
+                            comments(),
+                            *(s3_timestamp() + s3_uid() + s3_deletion_status()),
                             migrate=migrate)
 
     table.name.requires = [IS_NOT_EMPTY(), IS_NOT_IN_DB(db, "%s.name" % table)]
@@ -328,14 +329,14 @@ if deployment_settings.has_module(module):
     # Budget<>Bundle Many2Many
     resource = "budget_bundle"
     tablename = "%s_%s" % (module, resource)
-    table = db.define_table(tablename, #timestamp, deletion_status,
+    table = db.define_table(tablename,
                             Field("budget_id", db.budget_budget),
-                            project_id,
+                            project_id(),
                             Field("location_id", db.budget_location),
                             Field("bundle_id", db.budget_bundle, ondelete="RESTRICT"),
                             Field("quantity", "integer", default=1, notnull=True),
                             Field("months", "integer", default=3, notnull=True),
-                            *(s3_timestamp()+s3_deletion_status()),
+                            *(s3_timestamp() + s3_deletion_status()),
                             migrate=migrate)
 
     table.budget_id.requires = IS_ONE_OF(db, "budget_budget.id", "%(name)s")
@@ -347,14 +348,14 @@ if deployment_settings.has_module(module):
     # Budget<>Staff Many2Many
     resource = "budget_staff"
     tablename = "%s_%s" % (module, resource)
-    table = db.define_table(tablename, #timestamp, deletion_status,
+    table = db.define_table(tablename,
                             Field("budget_id", db.budget_budget),
-                            project_id,
+                            project_id(),
                             Field("location_id", db.budget_location),
                             Field("staff_id", db.budget_staff, ondelete="RESTRICT"),
                             Field("quantity", "integer", default=1, notnull=True),
                             Field("months", "integer", default=3, notnull=True),
-                            *(s3_timestamp()+s3_deletion_status()),
+                            *(s3_timestamp() + s3_deletion_status()),
                             migrate=migrate)
 
     table.budget_id.requires = IS_ONE_OF(db, "budget_budget.id", "%(name)s")

@@ -33,22 +33,21 @@ if deployment_settings.has_module("org"):
 
     ADD_ACTIVITY_TYPE = T("Add Activity Type")
 
-    activity_type_id = db.Table(None, "activity_type_id",
-                                FieldS3("activity_type_id", db.project_activity_type, sortby="name",
-                                        requires = IS_NULL_OR(IS_ONE_OF(db, "project_activity_type.id","%(name)s", sort=True)),
-                                        represent = lambda id: shn_get_db_field_value(db = db,
-                                                      table = "project_activity_type",
-                                                      field = "name",
-                                                      look_up = id),
-                                        label = T("Activity Type"),
-                                        comment = DIV(A(ADD_ACTIVITY_TYPE,
-                                                        _class="colorbox",
-                                                        _href=URL(r=request, c="project", f="activity_type", args="create", vars=dict(format="popup")),
-                                                        _target="top",
-                                                        _title=ADD_ACTIVITY_TYPE)
+    activity_type_id = S3ReusableField("activity_type_id", db.project_activity_type, sortby="name",
+                                       requires = IS_NULL_OR(IS_ONE_OF(db, "project_activity_type.id","%(name)s", sort=True)),
+                                       represent = lambda id: shn_get_db_field_value(db = db,
+                                                                                     table = "project_activity_type",
+                                                                                     field = "name",
+                                                                                     look_up = id),
+                                       label = T("Activity Type"),
+                                       comment = DIV(A(ADD_ACTIVITY_TYPE,
+                                                       _class="colorbox",
+                                                       _href=URL(r=request, c="project", f="activity_type", args="create", vars=dict(format="popup")),
+                                                       _target="top",
+                                                       _title=ADD_ACTIVITY_TYPE)
                                                       ),
-                                        ondelete = "RESTRICT"
-                                        ))
+                                       ondelete = "RESTRICT"
+                                       )
 
     #==============================================================================
     # Activity
@@ -60,20 +59,25 @@ if deployment_settings.has_module("org"):
     resource = "activity"
     tablename = "%s_%s" % (module, resource)
     table = db.define_table(tablename,
-                            #@TODO Replace Function with Class
-                            get_organisation_id(name = "donor_id",
-                                                 label = T("Funding Organisation"),
-                                                 help_str = T("The Organisation which is funding this Activity."),
-                                                 ),
-                            organisation_id,
-                            activity_type_id,
+                            organisation_id("donor_id",
+                                            label = T("Funding Organisation"),
+                                            comment = DIV(A(ADD_ORGANIZATION,
+                                                            _class="colorbox",
+                                                            _href=organisation_popup_url,
+                                                            _target="top",
+                                                            _title=ADD_ORGANIZATION),
+                                                          DIV(DIV(_class="tooltip",
+                                                                  _title=ADD_ORGANIZATION + "|" + T("The Organization which is funding this Activity."))))
+                                           ),
+                            organisation_id(),
+                            activity_type_id(),
                             Field("description"),
                             Field("quantity"),
                             Field("unit"), # Change to link to supply
                             Field("start_date","date"),
                             Field("end_date","date"),
                             location_id(),
-                            shelter_id,
+                            shelter_id(),
                             Field("total_bnf_reach","integer"),
                             Field("bnf_type","integer"),
                             Field("bnf_date","date"),
@@ -86,7 +90,7 @@ if deployment_settings.has_module("org"):
                             Field("cba_women","integer"),
                             Field("pl_women","integer"),
                             person_id(),
-                            comments,
+                            comments(),
                             *s3_meta_fields(),
                             migrate=migrate)
 

@@ -111,14 +111,6 @@ def document():
     # Model options
     # used in multiple controllers, so in the model
 
-    #Disable legacy fields in components, unless updating, so the data can be manually transferred to new fields
-    if "update" not in request.args:
-        db.sitrep_assessment.source.readable = db.sitrep_assessment.source.writable = False
-        #db.sitrep_school_district.document.readable = db.sitrep_school_district.document.writable = False
-        db.irs_ireport.source.readable = db.irs_ireport.source.writable = False
-        db.irs_ireport.source_id.readable = db.irs_ireport.source_id.writable = False
-        #db.flood_freport.document.readable = db.flood_freport.document.writable = False
-
     rheader = lambda r: shn_document_rheader(r)
 
     response.s3.pagination = True

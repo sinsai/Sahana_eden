@@ -18,7 +18,7 @@ if deployment_settings.has_module("logs"):
     tablename = "%s_%s" % (module, resource)
     table = db.define_table(tablename,
                             Field("name", length=128, notnull=True, unique=True),
-                            comments,
+                            comments(),
                             *s3_meta_fields(),
                             migrate=migrate)
 
@@ -44,8 +44,7 @@ if deployment_settings.has_module("logs"):
         msg_list_empty = T("No Item Categories currently registered"))
 
     # Reusable Field
-    item_category_id = db.Table(None, "item_category_id",
-            FieldS3("item_category_id", db.supply_item_category, sortby="name",
+    item_category_id = S3ReusableField("item_category_id", db.supply_item_category, sortby="name",
                 requires = IS_NULL_OR(IS_ONE_OF(db, "supply_item_category.id", "%(name)s", sort=True)),
                 represent = lambda id: shn_get_db_field_value(db=db, table="supply_item_category", field="name", look_up=id),
                 label = T("Category"),
@@ -53,7 +52,7 @@ if deployment_settings.has_module("logs"):
                 #comment = DIV(A(ADD_ITEM_CATEGORY, _class="colorbox", _href=URL(r=request, c="supply", f="item_category", args="create", vars=dict(format="popup")), _target="top", _title=ADD_ITEM_CATEGORY),
                 #          DIV( _class="tooltip", _title=T("Item Category") + "|" + T("The category of the Item."))),
                 ondelete = "RESTRICT"
-                ))
+                )
 
     #==============================================================================
     # Item
@@ -61,9 +60,9 @@ if deployment_settings.has_module("logs"):
     resource = "item"
     tablename = "%s_%s" % (module, resource)
     table = db.define_table(tablename,
-                            item_category_id,
+                            item_category_id(),
                             Field("name", length=128, notnull=True, unique=True),
-                            comments,
+                            comments(),
                             *s3_meta_fields(),
                             migrate=migrate)
 
@@ -89,12 +88,11 @@ if deployment_settings.has_module("logs"):
         msg_list_empty = T("No Items currently registered"))
 
     # Reusable Field
-    item_id = db.Table(None, "item_id",
-            FieldS3("item_id", db.supply_item, sortby="name",
+    item_id = S3ReusableField("item_id", db.supply_item, sortby="name",
                 requires = IS_NULL_OR(IS_ONE_OF(db, "supply_item.id", "%(name)s", sort=True)),
                 represent = lambda id: shn_get_db_field_value(db=db, table="supply_item", field="name", look_up=id),
                 label = T("Item"),
                 comment = DIV(A(ADD_ITEM, _class="colorbox", _href=URL(r=request, c="supply", f="item", args="create", vars=dict(format="popup")), _target="top", _title=ADD_ITEM),
                           DIV( _class="tooltip", _title=T("Relief Item") + "|" + T("Add a new Relief Item."))),
                 ondelete = "RESTRICT"
-                ))
+                )

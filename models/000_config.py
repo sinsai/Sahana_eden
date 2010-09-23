@@ -319,11 +319,11 @@ deployment_settings.modules = Storage(
                 org_task = {"importer" : True}
             )
         ),
-    ticket = Storage(
-            name_nice = T("Ticketing Module"),
-            description = T("Master Message Log to process incoming reports & requests"),
-            module_type = 10,
-        ),
+    #ticket = Storage(
+    #        name_nice = T("Ticketing Module"),
+    #        description = T("Master Message Log to process incoming reports & requests"),
+    #        module_type = 10,
+    #    ),
     importer = Storage(
     	     name_nice = "Spreadsheet Importer",
     	     description = "Used to import data from spreadsheets into the database",

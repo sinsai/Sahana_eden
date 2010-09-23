@@ -35,7 +35,7 @@ if deployment_settings.has_module(module):
     #
     resource = "recreq"
     tablename = "%s_%s" % (module, resource)
-    table = db.define_table(tablename, #timestamp, uuidstamp, deletion_status,
+    table = db.define_table(tablename,
                             Field("date", "datetime"),
                             Field("site_id", length=64),
                             location_id(),
@@ -115,7 +115,7 @@ if deployment_settings.has_module(module):
     #
     resource = "body"
     tablename = "%s_%s" % (module, resource)
-    table = db.define_table(tablename, #timestamp, deletion_status, uuidstamp,
+    table = db.define_table(tablename,
                             pe_id,
                             pe_label,
                             dvi_recreq_id,
@@ -188,7 +188,7 @@ if deployment_settings.has_module(module):
     #
     resource = "checklist"
     tablename = "%s_%s" % (module, resource)
-    table = db.define_table(tablename, #timestamp, uuidstamp, deletion_status,
+    table = db.define_table(tablename,
                     pe_id,
                     Field("personal_effects","integer",
                         requires = IS_IN_SET(dvi_task_status_opts, zero=None),
@@ -266,7 +266,7 @@ if deployment_settings.has_module(module):
     #
     resource = "effects"
     tablename = "%s_%s" % (module, resource)
-    table = db.define_table(tablename, #timestamp, uuidstamp, deletion_status,
+    table = db.define_table(tablename,
                     pe_id,
     #                person_id(),
                     Field("clothing", "text"),    #TODO: elaborate
@@ -347,7 +347,7 @@ if deployment_settings.has_module(module):
 
     resource = "identification"
     tablename = "%s_%s" % (module, resource)
-    table = db.define_table(tablename, #timestamp, uuidstamp, deletion_status,
+    table = db.define_table(tablename,
                             pe_id,
                             Field("identified_by", db.pr_person),  # Person identifying the body
                             Field("reported_by", db.pr_person),    # Person reporting

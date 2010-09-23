@@ -78,8 +78,8 @@ if deployment_settings.has_module(module):
 
     resource = "hospital"
     tablename = "%s_%s" % (module, resource)
-    table = db.define_table(tablename, #timestamp, uuidstamp, authorstamp, deletion_status,
-                    site_id,
+    table = db.define_table(tablename,
+                    site_id(),
                     Field("gov_uuid", unique=True, length=128), # UID assigned by Local Government
                     Field("name", notnull=True),                # Name of the facility
                     Field("aka1"),                              # Alternate name, or name in local language
@@ -88,7 +88,7 @@ if deployment_settings.has_module(module):
                           requires = IS_NULL_OR(IS_IN_SET(hms_facility_type_opts)),
                           label = T("Facility Type"),
                           represent = lambda opt: hms_facility_type_opts.get(opt, T("not specified"))),
-                    organisation_id,
+                    organisation_id(),
                     location_id(),
                     Field("address"),      # @ToDo: Deprecate these & use location_id in HAVE exporter
                     Field("postcode"),     # @ToDo: Deprecate these & use location_id in HAVE exporter
@@ -146,8 +146,8 @@ if deployment_settings.has_module(module):
                           label = T("Clinical Operations"),
                           represent = lambda opt: hms_resource_status_opts.get(opt, UNKNOWN_OPT)),
                     Field("access_status"),                     # Access Status
-                    document_id,                                # Information Source
-                    comments,
+                    document_id(),                              # Information Source
+                    comments(),
                     *s3_meta_fields(),
                     migrate=migrate)
 
@@ -189,24 +189,23 @@ if deployment_settings.has_module(module):
 
     # Reusable field for other tables to reference
     ADD_HOSPITAL = T("Add Hospital")
-    hospital_id = db.Table(None, "hospital_id",
-                        FieldS3("hospital_id", db.hms_hospital, sortby="name",
-                                requires = IS_NULL_OR(IS_ONE_OF(db, "hms_hospital.id", "%(name)s")),
-                                represent = lambda id: (id and
-                                            [db(db.hms_hospital.id == id).select(db.hms_hospital.name, limitby=(0, 1)).first().name] or
-                                            ["None"])[0],
-                                label = T("Hospital"),
-                                comment = DIV(A(ADD_HOSPITAL,
-                                               _class="colorbox",
-                                               _href=URL(r=request,
-                                                         c="hms",
-                                                         f="hospital",
-                                                         args="create",
-                                                         vars=dict(format="popup")),
-                                               _target="top", _title=ADD_HOSPITAL),
-                                              DIV(DIV(_class="tooltip",
-                                                      _title=T("Hospital") + "|" + T("The hospital this record is associated with.")))),
-                                ondelete = "RESTRICT"))
+    hospital_id = S3ReusableField("hospital_id", db.hms_hospital, sortby="name",
+                                  requires = IS_NULL_OR(IS_ONE_OF(db, "hms_hospital.id", "%(name)s")),
+                                  represent = lambda id: (id and
+                                              [db(db.hms_hospital.id == id).select(db.hms_hospital.name, limitby=(0, 1)).first().name] or
+                                              ["None"])[0],
+                                  label = T("Hospital"),
+                                  comment = DIV(A(ADD_HOSPITAL,
+                                                  _class="colorbox",
+                                                  _href=URL(r=request,
+                                                            c="hms",
+                                                            f="hospital",
+                                                            args="create",
+                                                            vars=dict(format="popup")),
+                                                  _target="top", _title=ADD_HOSPITAL),
+                                                DIV(DIV(_class="tooltip",
+                                                        _title=T("Hospital") + "|" + T("The hospital this record is associated with.")))),
+                                  ondelete = "RESTRICT")
 
     # -----------------------------------------------------------------------------
     #def shn_hms_hospital_rss(record):
@@ -278,18 +277,18 @@ if deployment_settings.has_module(module):
     #
     resource = "hcontact"
     tablename = "%s_%s" % (module, resource)
-    table = db.define_table(tablename, #timestamp, deletion_status,
-                    hospital_id,
-                    person_id(),
-                    Field("title"),
-                    Field("phone"),
-                    Field("mobile"),
-                    Field("email"),
-                    Field("fax"),
-                    Field("skype"),
-                    Field("website"),
-                    *(s3_timestamp()+s3_deletion_status()),
-                    migrate=migrate)
+    table = db.define_table(tablename,
+                            hospital_id(),
+                            person_id(),
+                            Field("title"),
+                            Field("phone"),
+                            Field("mobile"),
+                            Field("email"),
+                            Field("fax"),
+                            Field("skype"),
+                            Field("website"),
+                            *(s3_timestamp() + s3_deletion_status()),
+                            migrate=migrate)
 
     table.person_id.label = T("Contact")
     table.title.label = T("Job Title")
@@ -344,16 +343,16 @@ if deployment_settings.has_module(module):
     #
     resource = "hactivity"
     tablename = "%s_%s" % (module, resource)
-    table = db.define_table(tablename, #timestamp, uuidstamp, authorstamp, deletion_status,
-                    hospital_id,
-                    Field("date", "datetime"),              # Date&Time the entry applies to
-                    Field("patients", "integer"),           # Current Number of Patients
-                    Field("admissions24", "integer"),       # Admissions in the past 24 hours
-                    Field("discharges24", "integer"),       # Discharges in the past 24 hours
-                    Field("deaths24", "integer"),           # Deaths in the past 24 hours
-                    Field("comment", length=128),
-                    *s3_meta_fields(),
-                    migrate=migrate)
+    table = db.define_table(tablename,
+                            hospital_id(),
+                            Field("date", "datetime"),              # Date&Time the entry applies to
+                            Field("patients", "integer"),           # Current Number of Patients
+                            Field("admissions24", "integer"),       # Admissions in the past 24 hours
+                            Field("discharges24", "integer"),       # Discharges in the past 24 hours
+                            Field("deaths24", "integer"),           # Deaths in the past 24 hours
+                            Field("comment", length=128),
+                            *s3_meta_fields(),
+                            migrate=migrate)
 
     table.date.label = T("Date & Time")
     table.date.requires = IS_UTC_DATETIME(utc_offset=shn_user_utc_offset(),
@@ -441,21 +440,21 @@ if deployment_settings.has_module(module):
 
     resource = "bed_capacity"
     tablename = "%s_%s" % (module, resource)
-    table = db.define_table(tablename, #timestamp, uuidstamp, authorstamp, deletion_status,
-                    hospital_id,
-                    Field("unit_name", length=64),
-                    Field("bed_type", "integer",
-                        requires = IS_IN_SET(hms_bed_type_opts, zero=None),
-                        default = 6,
-                        label = T("Bed Type"),
-                        represent = lambda opt: hms_bed_type_opts.get(opt, UNKNOWN_OPT)),
-                    Field("date", "datetime"),
-                    Field("beds_baseline", "integer"),
-                    Field("beds_available", "integer"),
-                    Field("beds_add24", "integer"),
-                    Field("comment", length=128),
-                    *s3_meta_fields(),
-                    migrate=migrate)
+    table = db.define_table(tablename,
+                            hospital_id(),
+                            Field("unit_name", length=64),
+                            Field("bed_type", "integer",
+                                requires = IS_IN_SET(hms_bed_type_opts, zero=None),
+                                default = 6,
+                                label = T("Bed Type"),
+                                represent = lambda opt: hms_bed_type_opts.get(opt, UNKNOWN_OPT)),
+                            Field("date", "datetime"),
+                            Field("beds_baseline", "integer"),
+                            Field("beds_available", "integer"),
+                            Field("beds_add24", "integer"),
+                            Field("comment", length=128),
+                            *s3_meta_fields(),
+                            migrate=migrate)
 
     table.unit_name.label = T("Department/Unit Name")
     table.unit_name.requires = IS_NULL_OR(IS_NOT_IN_DB(db(table.deleted==False), table.unit_name))
@@ -560,26 +559,26 @@ if deployment_settings.has_module(module):
     #
     resource = "services"
     tablename = "%s_%s" % (module, resource)
-    table = db.define_table(tablename, #timestamp, uuidstamp, authorstamp, deletion_status,
-                    hospital_id,
-                    Field("burn", "boolean", default=False),
-                    Field("card", "boolean", default=False),
-                    Field("dial", "boolean", default=False),
-                    Field("emsd", "boolean", default=False),
-                    Field("infd", "boolean", default=False),
-                    Field("neon", "boolean", default=False),
-                    Field("neur", "boolean", default=False),
-                    Field("pedi", "boolean", default=False),
-                    Field("surg", "boolean", default=False),
-                    Field("labs", "boolean", default=False),
-                    Field("tran", "boolean", default=False),
-                    Field("tair", "boolean", default=False),
-                    Field("trac", "boolean", default=False),
-                    Field("psya", "boolean", default=False),
-                    Field("psyp", "boolean", default=False),
-                    Field("obgy", "boolean", default=False),
-                    *s3_meta_fields(),
-                    migrate=migrate)
+    table = db.define_table(tablename,
+                            hospital_id(),
+                            Field("burn", "boolean", default=False),
+                            Field("card", "boolean", default=False),
+                            Field("dial", "boolean", default=False),
+                            Field("emsd", "boolean", default=False),
+                            Field("infd", "boolean", default=False),
+                            Field("neon", "boolean", default=False),
+                            Field("neur", "boolean", default=False),
+                            Field("pedi", "boolean", default=False),
+                            Field("surg", "boolean", default=False),
+                            Field("labs", "boolean", default=False),
+                            Field("tran", "boolean", default=False),
+                            Field("tair", "boolean", default=False),
+                            Field("trac", "boolean", default=False),
+                            Field("psya", "boolean", default=False),
+                            Field("psyp", "boolean", default=False),
+                            Field("obgy", "boolean", default=False),
+                            *s3_meta_fields(),
+                            migrate=migrate)
 
     table.burn.label = T("Burn")
     table.card.label = T("Cardiology")
@@ -635,20 +634,20 @@ if deployment_settings.has_module(module):
 
     resource = "himage"
     tablename = "%s_%s" % (module, resource)
-    table = db.define_table(tablename, #timestamp, uuidstamp, authorstamp, deletion_status,
-                    hospital_id,
-                    #Field("title"),
-                    Field("type", "integer",
-                        requires = IS_IN_SET(hms_image_type_opts, zero=None),
-                        default = 1,
-                        label = T("Image Type"),
-                        represent = lambda opt: hms_image_type_opts.get(opt, T("not specified"))),
-                    Field("image", "upload", autodelete=True),
-                    Field("url"),
-                    Field("description"),
-                    Field("tags"),
-                    *s3_meta_fields(),
-                    migrate=migrate)
+    table = db.define_table(tablename,
+                            hospital_id(),
+                            #Field("title"),
+                            Field("type", "integer",
+                                requires = IS_IN_SET(hms_image_type_opts, zero=None),
+                                default = 1,
+                                label = T("Image Type"),
+                                represent = lambda opt: hms_image_type_opts.get(opt, T("not specified"))),
+                            Field("image", "upload", autodelete=True),
+                            Field("url"),
+                            Field("description"),
+                            Field("tags"),
+                            *s3_meta_fields(),
+                            migrate=migrate)
 
     # Field validation
     table.uuid.requires = IS_NOT_IN_DB(db, "%s.uuid" % tablename)
@@ -703,14 +702,14 @@ if deployment_settings.has_module(module):
     #
     resource = "resources"
     tablename = "%s_%s" % (module, resource)
-    table = db.define_table(tablename, #timestamp, uuidstamp, authorstamp, deletion_status,
-                    hospital_id,
-                    Field("type"),
-                    Field("description"),
-                    Field("quantity"),
-                    Field("comment"),
-                    *s3_meta_fields(),
-                    migrate=migrate)
+    table = db.define_table(tablename,
+                            hospital_id(),
+                            Field("type"),
+                            Field("description"),
+                            Field("quantity"),
+                            Field("comment"),   # ToDo: Change to comments()
+                            *s3_meta_fields(),
+                            migrate=migrate)
 
     # CRUD Strings
     s3.crud_strings[tablename] = Storage(

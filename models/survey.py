@@ -12,9 +12,11 @@ if deployment_settings.has_module(module):
     #from gluon.sqlhtml import *
 
     # Reusable table
-    name_desc = db.Table(db, timestamp, uuidstamp, deletion_status, authorstamp,
+    name_desc = db.Table(db,
                          Field("name", "string", default="", length=120),
-                         Field("description", "text", default="", length=500))
+                         Field("description", "text", default="", length=500),
+                         *s3_meta_fields()
+                        )
 
     # Survey Template
     resource = "template"
@@ -23,7 +25,7 @@ if deployment_settings.has_module(module):
                                Field("table_name", "string", readable=False, writable=False),
                                Field("locked", "boolean", readable=False, writable=False),
                                person_id(),
-                               organisation_id,
+                               organisation_id(),
                                migrate=migrate)
 
     # Survey Series

@@ -40,12 +40,10 @@ sync_policy_opts = {
 }
 
 # Reusable field
-policy = db.Table(None, "policy",
-                  Field("policy", "integer", notnull=True,
+policy = S3ReusableField("policy", "integer", notnull=True,
                         requires = IS_IN_SET(sync_policy_opts),
                         default = 5,
-                        represent = lambda opt: sync_policy_opts.get(opt, UNKNOWN_OPT)))
-
+                        represent = lambda opt: sync_policy_opts.get(opt, UNKNOWN_OPT))
 
 # -----------------------------------------------------------------------------
 # Settings
@@ -117,7 +115,7 @@ table = db.define_table(tablename,
                         Field("username"),
                         Field("password", "password"),
                         Field("format"),
-                        policy,
+                        policy(),
                         Field("ignore_errors", "boolean", default=False),
                         Field("last_sync_time", "datetime"),
                         migrate=migrate)
@@ -286,7 +284,7 @@ table = db.define_table(tablename,
                         peer_id,
                         Field("resources", "list:string"),
                         Field("mode", "integer"),
-                        policy,
+                        policy(),
                         Field("complete", "boolean", default=False),
                         Field("run_interval", default="m"),
                         Field("hours"),

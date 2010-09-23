@@ -137,10 +137,6 @@ def ireport():
     def prep(r):
         if r.method == "ushahidi":
             auth.settings.on_failed_authorization = r.other(method="", vars=None)
-        elif r.method == "update":
-            # Disable legacy fields, unless updating, so the data can be manually transferred to new fields
-            table.source.readable = table.source.writable = False        
-            table.source_id.readable = table.source_id.writable = False         
         elif r.representation in shn_interactive_view_formats and r.method == "create":
             table.datetime.default = request.utcnow
             person = session.auth.user.id if auth.is_logged_in() else None

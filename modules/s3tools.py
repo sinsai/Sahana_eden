@@ -6,6 +6,7 @@
     @requires: U{B{I{gluon}} <http://web2py.com>}
 
     @author: Fran Boon <francisboon@gmail.com>
+    @author: nursix
     @author: sunneach
     @copyright: (c) 2010 Sahana Software Foundation
     @license: MIT
@@ -1241,8 +1242,8 @@ class S3ReusableField(object):
 
     """ Helper for DRY reusable fields:
 
-        This does neither create a Table nor a Field, but just
-        an argument store. The field is created with the field()
+        This creates neither a Table nor a Field, but just
+        an argument store. The field is created with the __call__
         method, which is faster than copying an existing field.
 
     """

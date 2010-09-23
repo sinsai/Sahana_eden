@@ -23,28 +23,25 @@ if deployment_settings.has_module(module):
         DIV(DIV(_class="tooltip",
             _title=T("Reporter") + "|" + T("The person reporting about the missing person."))))
 
-    reporter = db.Table(None, "reporter",
-                        FieldS3("reporter",
-                                db.pr_person,
-                                sortby=["first_name", "middle_name", "last_name"],
-                                requires = IS_NULL_OR(IS_ONE_OF(db,
-                                                "pr_person.id",
-                                                shn_pr_person_represent,
-                                                orderby="pr_person.first_name")),
-                                represent = lambda id: \
-                                            (id and
-                                            [shn_pr_person_represent(id)] or
-                                            ["None"])[0],
-                                comment = shn_mpr_reporter_comment,
-                                ondelete = "RESTRICT"))
+    reporter = S3ReusableField("reporter",
+                               db.pr_person,
+                               sortby=["first_name", "middle_name", "last_name"],
+                               requires = IS_NULL_OR(IS_ONE_OF(db,
+                                                               "pr_person.id",
+                                                               shn_pr_person_represent,
+                                                               orderby="pr_person.first_name")),
+                               represent = lambda id: (id and
+                                                       [shn_pr_person_represent(id)] or
+                                                       ["None"])[0],
+                               comment = shn_mpr_reporter_comment,
+                               ondelete = "RESTRICT")
 
     # -------------------------------------------------------------------------
     resource = "missing_report"
     tablename = "%s_%s" % (module, resource)
     table = db.define_table(tablename,
-                            #timestamp, uuidstamp, authorstamp, deletion_status,
                             person_id(),
-                            reporter,
+                            reporter(),
                             Field("since", "datetime"),
                             Field("details", "text"),
                             location_id(),

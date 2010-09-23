@@ -30,7 +30,7 @@ org_site_types = Storage(
 
 resource = "site"
 tablename = "%s_%s" % (module, resource)
-table = db.define_table(tablename, #deletion_status,
+table = db.define_table(tablename,
                         Field("site_type"),
                         Field("uuid", length=128),
                         Field("site_id", "integer"),
@@ -115,13 +115,13 @@ def shn_site_onaccept(form, table=None):
     else:
         return False
 
-site_id = db.Table(None, "site_id",
-    Field("site_id", db.org_site,
-          requires = IS_NULL_OR(IS_ONE_OF(db, "org_site.id", shn_site_represent, orderby="org_site.id")),
-          represent = lambda id: (id and [shn_site_represent(id)] or [NONE])[0],
-          readable = False,
-          writable = False,
-          ondelete = "RESTRICT"))
+site_id = S3ReusableField("site_id", db.org_site,
+                          requires = IS_NULL_OR(IS_ONE_OF(db, "org_site.id", shn_site_represent, orderby="org_site.id")),
+                          represent = lambda id: (id and [shn_site_represent(id)] or [NONE])[0],
+                          readable = False,
+                          writable = False,
+                          ondelete = "RESTRICT"
+                         )
 
 # -----------------------------------------------------------------------------
 # Sectors (to be renamed as Clusters)
@@ -129,9 +129,9 @@ site_id = db.Table(None, "site_id",
 resource = "sector"
 tablename = "%s_%s" % (module, resource)
 table = db.define_table(tablename, #timestamp, uuidstamp, authorstamp, deletion_status,
-                Field("name", length=128, notnull=True, unique=True),
-                *s3_meta_fields(),
-                migrate=migrate)
+                        Field("name", length=128, notnull=True, unique=True),
+                        *s3_meta_fields(),
+                        migrate=migrate)
 
 # Field settings
 table.uuid.requires = IS_NOT_IN_DB(db, "%s.uuid" % tablename)
@@ -152,16 +152,15 @@ def shn_sector_represent(sector_ids):
 
 # Reusable field
 ADD_SECTOR = T("Add Cluster")
-sector_id = db.Table(None, "sector_id",
-                     FieldS3("sector_id", "list:reference org_sector", sortby="name",
-                             requires = IS_NULL_OR(IS_ONE_OF(db, "org_sector.id", "%(name)s", multiple=True)),
-                             represent = shn_sector_represent,
-                             label = T("Cluster"),
-                             comment = DIV(A(ADD_SECTOR, _class="colorbox", _href=URL(r=request, c="org", f="sector", args="create", vars=dict(format="popup")), _target="top", _title=ADD_SECTOR),
-                                       DIV( _class="tooltip", _title=T("Add Sector") + "|" + T("The Sector(s) this organization works in. Multiple values can be selected by holding down the 'Control' key."))),
-                             ondelete = "RESTRICT",
-                             #widget = SQLFORM.widgets.checkboxes.widget
-                          ))
+sector_id = S3ReusableField("sector_id", "list:reference org_sector", sortby="name",
+                            requires = IS_NULL_OR(IS_ONE_OF(db, "org_sector.id", "%(name)s", multiple=True)),
+                            represent = shn_sector_represent,
+                            label = T("Cluster"),
+                            comment = DIV(A(ADD_SECTOR, _class="colorbox", _href=URL(r=request, c="org", f="sector", args="create", vars=dict(format="popup")), _target="top", _title=ADD_SECTOR),
+                                      DIV( _class="tooltip", _title=T("Add Sector") + "|" + T("The Sector(s) this organization works in. Multiple values can be selected by holding down the 'Control' key."))),
+                            ondelete = "RESTRICT",
+                            #widget = SQLFORM.widgets.checkboxes.widget
+                           )
 
 # -----------------------------------------------------------------------------
 # Organizations
@@ -188,14 +187,14 @@ table = db.define_table(tablename, #timestamp, uuidstamp, authorstamp, deletion_
                         Field("name", length=128, notnull=True, unique=True),
                         Field("acronym", length=8),
                         Field("type", "integer"),
-                        sector_id,
+                        sector_id(),
                         #Field("registration", label=T("Registration")),    # Registration Number
                         Field("country", "string", length=2),
                         Field("website"),
                         Field("twitter"),   # deprecated by pe_contact component
                         Field("donation_phone"),
-                        comments,
-                        source_id,
+                        comments(),
+                        #document_id(), # Not yet defined
                         *s3_meta_fields(),
                         migrate=migrate)
 
@@ -263,40 +262,13 @@ shn_organisation_comment = DIV(A(ADD_ORGANIZATION,
                          DIV(DIV(_class="tooltip",
                                  _title=ADD_ORGANIZATION + "|" + T("The Organization this record is associated with."))))
 
-organisation_id = db.Table(None, "organisation_id",
-                           FieldS3("organisation_id", db.org_organisation, sortby="name",
+organisation_id = S3ReusableField("organisation_id", db.org_organisation, sortby="name",
                            requires = IS_NULL_OR(IS_ONE_OF(db, "org_organisation.id", shn_organisation_represent, orderby="org_organisation.name", sort=True)),
                            represent = shn_organisation_represent,
                            label = T("Organization"),
                            comment = shn_organisation_comment,
                            ondelete = "RESTRICT"
-                          ))
-
-#@TODO Replace Function with Class
-def get_organisation_id(name = "organisation_id",
-                         label = T("Organization"),
-                         add_label = ADD_ORGANIZATION,
-                         help_str = T("The Organization this record is associated with."),
-                         ):
-    return db.Table(None,
-                    name,
-                    FieldS3(name, db.org_organisation, sortby="name",
-                            requires = IS_NULL_OR(IS_ONE_OF(db, "org_organisation.id", shn_organisation_represent, orderby="org_organisation.name", sort=True)),
-                            represent = shn_organisation_represent,
-                            label = label,
-                            comment = DIV(A(add_label,
-                                            _class="colorbox",
-                                            _href=organisation_popup_url,
-                                            _target="top",
-                                            _title=add_label),
-                                          DIV(DIV(_class="tooltip",
-                                                  _title=add_label + "|" + help_str
-                                                  )
-                                              )
-                                          ),
-                            ondelete = "RESTRICT"
-                            )
-                    )
+                          )
 
 # Orgs as component of Clusters
 # doesn't work - component join keys cannot be 1-to-many (=a component record can only belong to one primary record)
@@ -331,9 +303,9 @@ resource = "office"
 tablename = module + "_" + resource
 table = db.define_table(tablename, #timestamp, uuidstamp, authorstamp, deletion_status,
                         pe_id,
-                        site_id,
+                        site_id(),
                         Field("name", notnull=True),
-                        organisation_id,
+                        organisation_id(),
                         Field("type", "integer"),
                         location_id(),
                         Field("parent", "reference org_office"),   # This form of hierarchy may not work on all Databases
@@ -348,8 +320,8 @@ table = db.define_table(tablename, #timestamp, uuidstamp, authorstamp, deletion_
                         Field("number_of_vehicles", "integer"),
                         Field("vehicle_types"),
                         Field("equipment"),
-                        source_id,
-                        comments,
+                        #document_id,   # Not yet defined
+                        comments(),
                         *s3_meta_fields(),
                         migrate=migrate)
 
@@ -403,15 +375,14 @@ s3.crud_strings[tablename] = Storage(
     msg_list_empty = T("No Offices currently registered"))
 
 # Reusable field for other tables to reference
-office_id = db.Table(None, "office_id",
-            FieldS3("office_id", db.org_office, sortby="default/indexname",
+office_id = S3ReusableField("office_id", db.org_office, sortby="default/indexname",
                 requires = IS_NULL_OR(IS_ONE_OF(db, "org_office.id", "%(name)s")),
                 represent = lambda id: (id and [db(db.org_office.id == id).select(db.org_office.name, limitby=(0, 1)).first().name] or [NONE])[0],
                 label = T("Office"),
                 comment = DIV(A(ADD_OFFICE, _class="colorbox", _href=URL(r=request, c="org", f="office", args="create", vars=dict(format="popup")), _target="top", _title=ADD_OFFICE),
                           DIV( _class="tooltip", _title=ADD_OFFICE + "|" + T("The Office this record is associated with."))),
                 ondelete = "RESTRICT"
-                ))
+                )
 
 # Offices as component of Orgs & Locations
 s3xrc.model.add_component(module, resource,
@@ -454,15 +425,14 @@ def shn_donor_represent(donor_ids):
         return db(db.org_organisation.id == donor_ids).select(db.org_organisation.name, limitby=(0, 1)).first().name
 
 ADD_DONOR = T("Add Donor")
-donor_id = db.Table(None, "donor_id",
-                    FieldS3("donor_id", sortby="name",
+donor_id = S3ReusableField("donor_id", db.org_organisation, sortby="name",
                     requires = IS_NULL_OR(IS_ONE_OF(db, "org_organisation.id", "%(name)s", multiple=True, filterby="type", filter_opts=[4])),
                     represent = shn_donor_represent,
                     label = T("Donor"),
                     comment = DIV(A(ADD_DONOR, _class="colorbox", _href=URL(r=request, c="org", f="organisation", args="create", vars=dict(format="popup", child="donor_id")), _target="top", _title=ADD_DONOR),
                               DIV( _class="tooltip", _title=ADD_DONOR + "|" + T("The Donor(s) for this project. Multiple values can be selected by holding down the 'Control' key."))),
                     ondelete = "RESTRICT"
-                   ))
+                   )
 
 # -----------------------------------------------------------------------------
 # Projects:
@@ -475,12 +445,12 @@ org_project_status_opts = {
     }
 resource = "project"
 tablename = module + "_" + resource
-table = db.define_table(tablename, #timestamp, uuidstamp, authorstamp, deletion_status,
+table = db.define_table(tablename,
                         Field("code"),
                         Field("name"),
-                        organisation_id,
+                        organisation_id(),
                         location_id(),
-                        sector_id,
+                        sector_id(),
                         Field('status', 'integer',
                                 requires = IS_IN_SET(org_project_status_opts, zero=None),
                                 # default = 99,
@@ -491,7 +461,7 @@ table = db.define_table(tablename, #timestamp, uuidstamp, authorstamp, deletion_
                         Field("start_date", "date"),
                         Field("end_date", "date"),
                         Field("funded", "boolean"),
-                        donor_id,
+                        donor_id(),
                         Field("budgeted_cost", "double"),
                         *s3_meta_fields(),
                         migrate=migrate)
@@ -533,15 +503,14 @@ s3.crud_strings[tablename] = Storage(
     msg_list_empty = T("No Projects currently registered"))
 
 # Reusable field
-project_id = db.Table(None, "project_id",
-                        FieldS3("project_id", db.org_project, sortby="name",
+project_id = S3ReusableField("project_id", db.org_project, sortby="name",
                         requires = IS_NULL_OR(IS_ONE_OF(db, "org_project.id", "%(code)s")),
                         represent = lambda id: (id and [db.org_project[id].code] or [NONE])[0],
                         comment = DIV(A(ADD_PROJECT, _class="colorbox", _href=URL(r=request, c="org", f="project", args="create", vars=dict(format="popup")), _target="top", _title=ADD_PROJECT),
                                   DIV( _class="tooltip", _title=ADD_PROJECT + "|" + T("Add new project."))),
                         label = "Project",
                         ondelete = "RESTRICT"
-                        ))
+                        )
 
 # Projects as component of Orgs & Locations
 s3xrc.model.add_component(module, resource,
@@ -570,17 +539,17 @@ s3xrc.model.configure(table,
 #
 resource = "staff"
 tablename = module + "_" + resource
-table = db.define_table(tablename, #timestamp, uuidstamp, authorstamp, deletion_status,
+table = db.define_table(tablename,
                         person_id(),
-                        organisation_id,
-                        office_id,
-                        project_id,
+                        organisation_id(),
+                        office_id(),
+                        project_id(),
                         Field("title"),
                         Field("manager_id", db.pr_person),
                         Field("focal_point", "boolean"),
                         #Field("slots", "integer", default=1),
                         #Field("payrate", "double", default=0.0), # Wait for Bugeting integration
-                        comments,
+                        comments(),
                         *s3_meta_fields(),
                         migrate=migrate)
 
@@ -646,15 +615,14 @@ def shn_orgs_to_person(person_id):
     return orgs
 
 # Reusable field
-staff_id = db.Table(None, "staff_id",
-                        FieldS3("staff_id", db.org_staff, sortby="name",
+staff_id = S3ReusableField("staff_id", db.org_staff, sortby="name",
                         requires = IS_NULL_OR(IS_ONE_OF(db, "org_staff.id", shn_org_staff_represent, orderby="org_staff.id")),
                         represent = lambda id: shn_org_staff_represent(id),
                         comment = DIV(A(ADD_STAFF, _class="colorbox", _href=URL(r=request, c="org", f="staff", args="create", vars=dict(format="popup")), _target="top", _title=ADD_STAFF),
                                   DIV( _class="tooltip", _title=ADD_STAFF + "|" + T("Add new staff role."))),
                         label = T("Staff"),
                         ondelete = "RESTRICT"
-                        ))
+                        )
 
 # Staff as component of Orgs, Offices & Projects
 s3xrc.model.add_component(module, resource,
@@ -692,7 +660,7 @@ s3xrc.model.configure(table,
 #resource = "position"
 #tablename = module + "_" + resource
 #table = db.define_table(tablename, timestamp, uuidstamp, deletion_status,
-#                project_id,
+#                project_id(),
 #                Field("type", "integer",
 #                    requires = IS_IN_SET(org_position_type_opts, zero=None),
 #                    # default = 99,
@@ -724,14 +692,13 @@ s3xrc.model.configure(table,
 #    msg_list_empty = T("No positions currently registered"))
 
 # Reusable field
-#org_position_id = db.Table(None, "org_position_id",
-#                        FieldS3("org_position_id", db.org_position, sortby="title",
+#org_position_id = S3ReusableField("org_position_id", db.org_position, sortby="title",
 #                        requires = IS_NULL_OR(IS_ONE_OF(db, "org_position.id", "%(title)s")),
 #                        represent = lambda id: lambda id: (id and [db.org_position[id].title] or [NONE])[0],
 #                        comment = DIV(A(ADD_POSITION, _class="colorbox", _href=URL(r=request, c="org", f="project", args="create", vars=dict(format="popup")), _target="top", _title=ADD_POSITION),
 #                                  DIV( _class="tooltip", _title=ADD_POSITION + "|" + T("Add new position."))),
 #                        ondelete = "RESTRICT"
-#                        ))
+#                        )
 
 # -----------------------------------------------------------------------------
 # org_task:
@@ -765,8 +732,8 @@ table = db.define_table(tablename, #timestamp, uuidstamp, authorstamp, deletion_
                             represent = lambda opt: org_task_priority_opts.get(opt, UNKNOWN_OPT)),
                         Field("subject", length=80, notnull=True),
                         Field("description", "text"),
-                        project_id,
-                        office_id,
+                        project_id(),
+                        office_id(),
                         person_id(),
                         Field("status", "integer",
                             requires = IS_IN_SET(org_task_status_opts, zero=None),
@@ -977,7 +944,6 @@ def shn_project_rheader(jr, tabs=[]):
 # -----------------------------------------------------------------------------
 
 org_menu = [
-    #[T("Dashboard"), False, URL(r=request, f="dashboard")],
     [T("Organizations"), False, URL(r=request, c="org", f="organisation"),[
         [T("List"), False, URL(r=request, c="org", f="organisation")],
         [T("Add"), False, URL(r=request, c="org", f="organisation", args="create")],

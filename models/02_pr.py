@@ -318,7 +318,7 @@ table = db.define_table(tablename,
                         pr_marital_status,
                         Field("occupation"),
                         Field("tags", "list:integer"),
-                        comments,
+                        comments(),
                         *s3_meta_fields(),
                         migrate=migrate)
 
@@ -388,19 +388,6 @@ shn_person_id_comment = shn_person_comment(
     T("Person"),
     T("Select the person associated with this scenario."))
 
-#person_id = db.Table(None, "person_id",
-                     #FieldS3("person_id", db.pr_person,
-                             #sortby = ["first_name", "middle_name", "last_name"],
-                             #requires = IS_NULL_OR(IS_ONE_OF(db, "pr_person.id",
-                                                             #shn_pr_person_represent,
-                                                             #orderby="pr_person.first_name",
-                                                             #sort=True)),
-                             #represent = lambda id: (id and \
-                                         #[shn_pr_person_represent(id)] or [NONE])[0],
-                             #label = T("Person"),
-                             #comment = shn_person_id_comment,
-                             #ondelete = "RESTRICT"))
-
 person_id = S3ReusableField("person_id", db.pr_person,
                             sortby = ["first_name", "middle_name", "last_name"],
                             requires = IS_NULL_OR(IS_ONE_OF(db, "pr_person.id",
@@ -452,13 +439,13 @@ pr_group_type = db.Table(None, "group_type",
 resource = "group"
 tablename = "%s_%s" % (module, resource)
 table = db.define_table(tablename,
-                        timestamp, uuidstamp, authorstamp, deletion_status,
                         pe_id,
                         pr_group_type,
                         Field("system","boolean",default=False),
                         Field("name"),
                         Field("description"),
-                        comments,
+                        comments(),
+                        *s3_meta_fields(),
                         migrate=migrate)
 
 
@@ -494,26 +481,23 @@ s3.crud_strings[tablename] = Storage(
 
 
 # -----------------------------------------------------------------------------
-group_id = db.Table(None, "group_id",
-                    FieldS3("group_id", db.pr_group,
-                            sortby="name",
-                            requires = IS_NULL_OR(IS_ONE_OF(db, "pr_group.id",
-                                        "%(id)s: %(name)s",
-                                        filterby="system",
-                                        filter_opts=(False,))),
-                            represent = lambda id: (id and \
-                                        [db(db.pr_group.id == id).select(db.pr_group.name, limitby=(0, 1)).first().name] or [NONE])[0],
-                            ondelete = "RESTRICT"))
-
-group_id.group_id.comment = \
-    DIV(A(s3.crud_strings.pr_group.label_create_button,
-        _class="colorbox",
-        _href=URL(r=request, c="pr", f="group", args="create", vars=dict(format="popup")),
-        _target="top",
-        _title=s3.crud_strings.pr_group.label_create_button),
-    DIV(DIV(_class="tooltip",
-        _title=T("Create Group Entry") + "|" + T("Create a group entry in the registry.")))),
-
+group_id = S3ReusableField("group_id", db.pr_group,
+                           sortby="name",
+                           requires = IS_NULL_OR(IS_ONE_OF(db, "pr_group.id",
+                                                           "%(id)s: %(name)s",
+                                                           filterby="system",
+                                                           filter_opts=(False,))),
+                           represent = lambda id: (id and \
+                                       [db(db.pr_group.id == id).select(db.pr_group.name, limitby=(0, 1)).first().name] or [NONE])[0],
+                           comment = \
+                                DIV(A(s3.crud_strings.pr_group.label_create_button,
+                                    _class="colorbox",
+                                    _href=URL(r=request, c="pr", f="group", args="create", vars=dict(format="popup")),
+                                    _target="top",
+                                    _title=s3.crud_strings.pr_group.label_create_button),
+                                DIV(DIV(_class="tooltip",
+                                    _title=T("Create Group Entry") + "|" + T("Create a group entry in the registry.")))),
+                           ondelete = "RESTRICT")
 
 # -----------------------------------------------------------------------------
 s3xrc.model.configure(table,
@@ -527,12 +511,12 @@ s3xrc.model.configure(table,
 resource = "group_membership"
 tablename = "%s_%s" % (module, resource)
 table = db.define_table(tablename,
-                        timestamp, uuidstamp, authorstamp, deletion_status,
-                        group_id,
+                        group_id(),
                         person_id(),
                         Field("group_head", "boolean", default=False),
                         Field("description"),
-                        comments,
+                        comments(),
+                        *s3_meta_fields(),
                         migrate=migrate)
 
 table.group_head.represent = lambda group_head: (group_head and [T("yes")] or [""])[0]

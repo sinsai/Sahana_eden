@@ -25,7 +25,6 @@ pr_address_type_opts = {
 resource = "address"
 tablename = "%s_%s" % (module, resource)
 table = db.define_table(tablename,
-                        #timestamp, authorstamp, uuidstamp, deletion_status,
                         pe_id,
                         Field("type",
                               "integer",
@@ -42,7 +41,7 @@ table = db.define_table(tablename,
                         Field("state"),
                         pr_country,
                         location_id(),
-                        Field("comment"),
+                        comments(),
                         *s3_meta_fields(),
                         migrate=migrate)
 
@@ -119,7 +118,6 @@ pr_contact_method_opts = {
 resource = "pe_contact"
 tablename = "%s_%s" % (module, resource)
 table = db.define_table(tablename,
-                        #timestamp, authorstamp, uuidstamp, deletion_status,
                         pe_id,
                         Field("name"),
                         Field("contact_method",
@@ -132,7 +130,7 @@ table = db.define_table(tablename,
                         Field("contact_person"),
                         Field("priority"),
                         Field("value", notnull=True),
-                        Field("comment"),
+                        comments(),
                         *s3_meta_fields(),
                         migrate=migrate)
 
@@ -204,7 +202,6 @@ pr_image_type_opts = {
 resource = "image"
 tablename = "%s_%s" % (module, resource)
 table = db.define_table(tablename,
-                        #timestamp, authorstamp, uuidstamp, deletion_status,
                         pe_id,
                         Field("type", "integer",
                               requires = IS_IN_SET(pr_image_type_opts, zero=None),
@@ -215,7 +212,7 @@ table = db.define_table(tablename,
                         Field("image", "upload", autodelete=True),
                         Field("url"),
                         Field("description"),
-                        Field("comment"),
+                        comments(),
                         *s3_meta_fields(),
                         migrate=migrate)
 
@@ -308,51 +305,17 @@ s3.crud_strings[tablename] = Storage(
 #
 pr_presence_condition_opts = vita.presence_conditions
 
-#orig_id = db.Table(None, "orig_id",
-                   #Field("orig_id", db.gis_location,
-                         #requires = IS_NULL_OR(IS_ONE_OF(db, "gis_location.id", "%(name)s")),
-                         #represent = lambda id: (id and [A(db(db.gis_location.id==id).select(db.gis_location.name, limitby=(0, 1)).first().name, _href="#", _onclick="s3_viewMap(" + str(id) +");return false")] or [""])[0],
-                         #label = T("Origin"),
-                         #comment = DIV(A(ADD_LOCATION,
-                                         #_class="colorbox",
-                                         #_href=URL(r=request, c="gis", f="location", args="create", vars=dict(format="popup")),
-                                         #_target="top",
-                                         #_title=ADD_LOCATION),
-                                       #DIV(DIV(_class="tooltip",
-                                               #_title=T("Location") + "|" + T("The Location of this Site, which can be general (for Reporting) or precise (for displaying on a Map).")))),
-                         #ondelete = "RESTRICT"
-                        #)
-                  #)
-
-#dest_id = db.Table(None, "dest_id",
-                   #Field("dest_id", db.gis_location,
-                         #requires = IS_NULL_OR(IS_ONE_OF(db, "gis_location.id", "%(name)s")),
-                         #represent = lambda id: (id and [A(db(db.gis_location.id == id).select(db.gis_location.name, limitby=(0, 1)).first().name, _href="#", _onclick="s3_viewMap(" + str(id) +");return false")] or [""])[0],
-                         #label = T("Destination"),
-                         #comment = DIV(A(ADD_LOCATION,
-                                         #_class="colorbox",
-                                         #_href=URL(r=request, c="gis", f="location", args="create", vars=dict(format="popup")),
-                                         #_target="top",
-                                         #_title=ADD_LOCATION),
-                                       #DIV(DIV(_class="tooltip",
-                                               #_title=T("Location") + "|" + T("The Location of this Site, which can be general (for Reporting) or precise (for displaying on a Map).")))),
-                         #ondelete = "RESTRICT"
-                        #)
-                  #)
-
-
 # -----------------------------------------------------------------------------
 resource = "presence"
 tablename = "%s_%s" % (module, resource)
 table = db.define_table(tablename,
-                        #timestamp, authorstamp, uuidstamp, deletion_status,
                         pe_id,
                         Field("reporter", db.pr_person),
                         Field("observer", db.pr_person),
                         Field("shelter_id", "integer"),
                         location_id(),
                         Field("location_details"),
-                        Field("datetime", "datetime"), # 'time' is a reserved word in Postgres
+                        Field("datetime", "datetime"),
                         Field("presence_condition", "integer",
                               requires = IS_IN_SET(pr_presence_condition_opts,
                                                    zero=None),
@@ -496,11 +459,11 @@ s3.crud_strings[tablename] = Storage(
 #
 resource = "pe_subscription"
 tablename = "%s_%s" % (module, resource)
-table = db.define_table(tablename, #timestamp, uuidstamp, deletion_status,
+table = db.define_table(tablename,
                         pe_id,
                         Field("resource"),
                         Field("record"), # type="s3uuid"
-                        Field("comment"),
+                        comments(),
                         *s3_meta_fields(),
                         migrate=migrate)
 
@@ -561,7 +524,6 @@ pr_id_type_opts = {
 resource = "identity"
 tablename = "%s_%s" % (module, resource)
 table = db.define_table(tablename,
-                        #timestamp, authorstamp, uuidstamp, deletion_status,
                         person_id(),
                         Field("type", "integer",
                               requires = IS_IN_SET(pr_id_type_opts, zero=None),
@@ -575,7 +537,7 @@ table = db.define_table(tablename,
                         Field("ia_name"), # Name of issuing authority
                         #Field("ia_subdivision"), # Name of issuing authority subdivision
                         #Field("ia_code"), # Code of issuing authority (if any)
-                        Field("comment"),
+                        comments(),
                         *s3_meta_fields(),
                         migrate=migrate)
 
@@ -721,7 +683,6 @@ if deployment_settings.has_module("dvi") or \
     resource = "physical_description"
     tablename = "%s_%s" % (module, resource)
     table = db.define_table(tablename,
-                            #timestamp, authorstamp, uuidstamp, deletion_status,
                             pe_id,
 
                             # Race and complexion
@@ -818,7 +779,7 @@ if deployment_settings.has_module("dvi") or \
                             # Other details
                             Field("other_details", "text"),
 
-                            Field("comment"),
+                            comments(),
                             *s3_meta_fields(),
                             migrate=migrate)
 

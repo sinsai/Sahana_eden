@@ -22,7 +22,7 @@ table = db.define_table(tablename,
                         Field("status", "string", default="new", writable=False),
                         Field("column_map", "blob", writable=False, readable=False),
                         Field("failure_reason", "string", writable=False),
-                        *(s3_timestamp()+s3_authorstamp()),
+                        *(s3_timestamp() + s3_authorstamp()),
                         migrate=migrate)
 
 table.status.requires = IS_IN_SET(["new", "failed", "processing", "completed"])

@@ -158,11 +158,10 @@ if deployment_settings.has_module(module):
     # ---------------------------------------------------------------------
     # Incidents
     # This is the current status of an Incident
-    # @ToDo
+    # @ToDo Change this so that there is a 'lead' ireport updated in the case of duplicates
     resource = "incident"
     tablename = "%s_%s" % (module, resource)
     table = db.define_table(tablename,
-                            #timestamp, uuidstamp, authorstamp, deletion_status,
                             Field("name"),
                             Field("category"),
                             Field("contact"),
@@ -171,7 +170,7 @@ if deployment_settings.has_module(module):
                             Field("persons_affected", "integer"),
                             Field("persons_injured", "integer"),
                             Field("persons_deceased", "integer"),
-                            comments,
+                            comments(),
                             *s3_meta_fields(),
                             migrate=migrate)
 
@@ -207,19 +206,18 @@ if deployment_settings.has_module(module):
         msg_record_deleted = T("Incident deleted"),
         msg_list_empty = T("No Incidents currently registered"))
 
-    incident_id = db.Table(None, "incident_id",
-                           Field("incident_id", table,
-                                 requires = IS_NULL_OR(IS_ONE_OF(db, "irs_incident.id", "%(id)s")),
-                                 represent = lambda id: id,
-                                 label = T("Incident"),
-                                 ondelete = "RESTRICT"))
+    incident_id = S3ReusableField("incident_id", table,
+                                  requires = IS_NULL_OR(IS_ONE_OF(db, "irs_incident.id", "%(id)s")),
+                                  represent = lambda id: id,
+                                  label = T("Incident"),
+                                  ondelete = "RESTRICT")
     s3xrc.model.configure(table,
-                        list_fields = [
+                          list_fields = [
                             "id",
                             "category",
                             "datetime",
                             "location_id"
-                        ])
+                          ])
     # -----------------------------------------------------------------------------
     # Reports
     # This is a report of an Incident
@@ -227,8 +225,7 @@ if deployment_settings.has_module(module):
     resource = "ireport"
     tablename = "%s_%s" % (module, resource)
     table = db.define_table(tablename,
-                            #timestamp, uuidstamp, authorstamp, deletion_status,
-                            incident_id,
+                            incident_id(),
                             Field("name"),
                             Field("message", "text"),
                             Field("category"),
@@ -239,11 +236,9 @@ if deployment_settings.has_module(module):
                             Field("persons_affected", "integer"),
                             Field("persons_injured", "integer"),
                             Field("persons_deceased", "integer"),
-                            Field("source"),    # Legacy field: will be removed
-                            Field("source_id"), # Legacy field: will be removed
-                            document_id,
+                            document_id(),
                             Field("verified", "boolean"),
-                            comments,
+                            comments(),
                             *s3_meta_fields(),
                             migrate=migrate)
 
@@ -274,9 +269,6 @@ if deployment_settings.has_module(module):
     table.persons_affected.label = T("# of People Affected")
     table.persons_injured.label = T("# of People Injured")
     table.persons_deceased.label = T("# of People Deceased")
-
-    table.source.label = T("Source")
-    table.source_id.label = T("Source ID")
 
     table.verified.label = T("Verified?")
     table.verified.represent = lambda verified: (T("No"), T("Yes"))[verified == True]
@@ -339,8 +331,7 @@ if deployment_settings.has_module(module):
     resource = "iassessment"
     tablename = "%s_%s" % (module, resource)
     table = db.define_table(tablename,
-                            #timestamp, uuidstamp, authorstamp, deletion_status,
-                            incident_id,
+                            incident_id(),
                             Field("datetime", "datetime"),
                             Field("itype", "integer",
                                   requires = IS_IN_SET(irs_assessment_type_opts, zero=None),
@@ -413,16 +404,15 @@ if deployment_settings.has_module(module):
     resource = "iimage"
     tablename = "%s_%s" % (module, resource)
     table = db.define_table(tablename,
-                            #timestamp, uuidstamp, authorstamp, deletion_status,
                             Field("report_id", db.irs_ireport),
-                            incident_id,
+                            incident_id(),
                             Field("assessment_id", db.irs_iassessment),
                             Field("type", "integer",
                                   requires = IS_IN_SET(irs_image_type_opts, zero=None),
                                   default = 1,
                                   label = T("Image Type"),
                                   represent = lambda opt: irs_image_type_opts.get(opt, UNKNOWN_OPT)),
-                            Field("image", "upload", autodelete=True),
+                            Field("image", "upload", autodelete=True),  # Replace by image_id?
                             #Field("url"),
                             Field("description"),
                             #Field("tags"),
@@ -466,8 +456,7 @@ if deployment_settings.has_module(module):
     resource = "iresponse"
     tablename = "%s_%s" % (module, resource)
     table = db.define_table(tablename,
-                            #timestamp, uuidstamp, authorstamp, deletion_status,
-                            incident_id,
+                            incident_id(),
                             Field("datetime", "datetime"),
                             Field("itype", "integer",
                                   requires = IS_IN_SET(irs_response_type_opts, zero=None),

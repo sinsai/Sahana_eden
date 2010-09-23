@@ -11,12 +11,12 @@ if deployment_settings.has_module(module):
 
     resource = "spreadsheet"
     tablename = module + "_" + resource
-    table = db.define_table(tablename, #timestamp, uuidstamp,
+    table = db.define_table(tablename,
                             Field("name", required=True, notnull=True),
                             Field("path", type="upload", uploadfield=True, required=True, notnull=True),
-                            comments,
+                            comments(),
                             Field("json", writable=False, readable=False),
-                            *(s3_timestamp()+s3_uid()),
+                            *(s3_timestamp() + s3_uid()),
                             migrate=migrate)
 
     table.name.comment = DIV(SPAN("*",

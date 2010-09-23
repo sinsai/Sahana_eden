@@ -39,8 +39,8 @@ if deployment_settings.has_module(module):
     resource = "email_inbound_status"
     tablename = "%s_%s" % (module, resource)
     table = db.define_table(tablename,
-                    Field("status"),
-                    migrate=migrate)
+                            Field("status"),
+                            migrate=migrate)
 
 
     # Valid message outbox statuses
@@ -52,46 +52,45 @@ if deployment_settings.has_module(module):
         }
 
     opt_msg_status = db.Table(None, "opt_msg_status",
-                        Field("status", "integer", notnull=True,
-                        requires = IS_IN_SET(msg_status_type_opts, zero=None),
-                        default = 1,
-                        label = T("Status"),
-                        represent = lambda opt: msg_status_type_opts.get(opt, UNKNOWN_OPT)))
+                              Field("status", "integer", notnull=True,
+                              requires = IS_IN_SET(msg_status_type_opts, zero=None),
+                              default = 1,
+                              label = T("Status"),
+                              represent = lambda opt: msg_status_type_opts.get(opt, UNKNOWN_OPT)))
 
     # SMS store for persistence and scratch pad for combining incoming xform chunks
     resource = "xforms_store"
     tablename = "%s_%s" % (module, resource)
     table = db.define_table(tablename,
-                Field("sender", "string", length = 20),
-                Field("fileno", "integer"),
-                Field("totalno", "integer"),
-                Field("partno", "integer"),
-                Field("message", "string", length = 160),
-            migrate=migrate)
+                            Field("sender", "string", length = 20),
+                            Field("fileno", "integer"),
+                            Field("totalno", "integer"),
+                            Field("partno", "integer"),
+                            Field("message", "string", length = 160),
+                            migrate=migrate)
 
     # Settings for modem.
     resource = "modem_settings"
     tablename = "%s_%s" % (module, resource)
     table = db.define_table(tablename,
-                #Field("account_name"), # Nametag to remember account - To be used later
-                Field("modem_port"),
-                Field("modem_baud", "integer", default = 115200),
-                Field("enabled", "boolean", default = False),
-                #Field("preference", "integer", default = 5), To be used later
-                migrate=migrate)
-
+                            #Field("account_name"), # Nametag to remember account - To be used later
+                            Field("modem_port"),
+                            Field("modem_baud", "integer", default = 115200),
+                            Field("enabled", "boolean", default = False),
+                            #Field("preference", "integer", default = 5), To be used later
+                            migrate=migrate)
 
     # Settings for modem.
     resource = "gateway_settings"
     tablename = "%s_%s" % (module, resource)
     table = db.define_table(tablename,
-                Field("url", default = "https://api.clickatell.com/http/sendmsg"),
-                Field("parameters", default = "user=yourusername&password=yourpassword&api_id=yourapiid"),
-                Field("message_variable", "string", default = "text"),
-                Field("to_variable", "string", default = "to"),
-                Field("enabled", "boolean", default = False),
-                #Field("preference", "integer", default = 5), To be used later
-                migrate=migrate)
+                            Field("url", default = "https://api.clickatell.com/http/sendmsg"),
+                            Field("parameters", default = "user=yourusername&password=yourpassword&api_id=yourapiid"),
+                            Field("message_variable", "string", default = "text"),
+                            Field("to_variable", "string", default = "to"),
+                            Field("enabled", "boolean", default = False),
+                            #Field("preference", "integer", default = 5), To be used later
+                            migrate=migrate)
     # Message priority
     msg_priority_opts = {
         3:T("High"),
@@ -102,22 +101,22 @@ if deployment_settings.has_module(module):
     # Message Log - This is where all the messages / logs go into
     resource = "log"
     tablename = "%s_%s" % (module, resource)
-    table = db.define_table(tablename, #timestamp, uuidstamp, deletion_status,
-        pe_id,#Sender
-        Field("sender"), #The name to go out incase of the email, if set used
-        Field("fromaddress"), #From address if set changes sender to this
-        Field("subject", length=78),
-        Field("message", "text"),
-   #     Field("attachment", "upload", autodelete = True), #TODO
-        Field("verified", "boolean", default = False),
-        Field("verified_comments", "text"),
-        Field("actionable", "boolean", default = True),
-        Field("actioned", "boolean", default = False),
-        Field("actioned_comments", "text"),
-        Field("priority", "integer", default = 1),
-        Field("inbound", "boolean", default = False),
-        *(s3_timestamp()+s3_uid()+s3_deletion_status()),
-        migrate=migrate)
+    table = db.define_table(tablename,
+                            pe_id,                  # Sender
+                            Field("sender"),        # The name to go out incase of the email, if set used
+                            Field("fromaddress"),   # From address if set changes sender to this
+                            Field("subject", length=78),
+                            Field("message", "text"),
+                            #Field("attachment", "upload", autodelete = True), #TODO
+                            Field("verified", "boolean", default = False),
+                            Field("verified_comments", "text"),
+                            Field("actionable", "boolean", default = True),
+                            Field("actioned", "boolean", default = False),
+                            Field("actioned_comments", "text"),
+                            Field("priority", "integer", default = 1),
+                            Field("inbound", "boolean", default = False),
+                            *(s3_timestamp() + s3_uid() + s3_deletion_status()),
+                            migrate=migrate)
 
     table.uuid.requires = IS_NOT_IN_DB(db, "%s.uuid" % tablename)
     table.priority.requires = IS_NULL_OR(IS_IN_SET(msg_priority_opts))
@@ -133,25 +132,24 @@ if deployment_settings.has_module(module):
                                        "priority"])
 
     # Reusable Message ID
-    message_id = db.Table(None, "message_id",
-                FieldS3("message_id", db.msg_log,
-                    requires = IS_NULL_OR(IS_ONE_OF(db, "msg_log.id")),
-                    # FIXME: Subject works for Email but not SMS
-                    represent = lambda id: db(db.msg_log.id == id).select(db.msg_log.subject, limitby=(0, 1)).first().subject,
-                    ondelete = "RESTRICT"
-                ))
+    message_id = S3ReusableField("message_id", db.msg_log,
+                                 requires = IS_NULL_OR(IS_ONE_OF(db, "msg_log.id")),
+                                 # FIXME: Subject works for Email but not SMS
+                                 represent = lambda id: db(db.msg_log.id == id).select(db.msg_log.subject, limitby=(0, 1)).first().subject,
+                                 ondelete = "RESTRICT"
+                                )
 
     # Message Tag - Used to tag a message to a resource
     resource = "tag"
     tablename = "%s_%s" % (module, resource)
-    table = db.define_table(tablename, #timestamp, uuidstamp, deletion_status,
-        message_id,
-        Field("resource"),
-        Field("record_uuid", # null in this field implies subscription to the entire resource
-            type=s3uuid,
-            length=128),
-        *(s3_timestamp()+s3_uid()+s3_deletion_status()),
-        migrate=migrate)
+    table = db.define_table(tablename,
+                            message_id(),
+                            Field("resource"),
+                            Field("record_uuid", # null in this field implies subscription to the entire resource
+                                  type=s3uuid,
+                                  length=128),
+                            *(s3_timestamp() + s3_uid() + s3_deletion_status()),
+                            migrate=migrate)
 
     table.uuid.requires = IS_NOT_IN_DB(db, "%s.uuid" % tablename)
     s3xrc.model.configure(table,
@@ -171,33 +169,33 @@ if deployment_settings.has_module(module):
     # Channel - For inbound messages this tells which channel the message came in from.
     resource = "channel"
     tablename = "%s_%s" % (module, resource)
-    table = db.define_table(tablename, #timestamp, uuidstamp, deletion_status,
-                            message_id,
+    table = db.define_table(tablename,
+                            message_id(),
                             Field("pr_message_method", "integer",
-                                    requires = IS_IN_SET(msg_contact_method_opts, zero=None),
-                                    default = 1),
+                                  requires = IS_IN_SET(msg_contact_method_opts, zero=None),
+                                  default = 1),
                             Field("log"),
-                            *(s3_timestamp()+s3_uid()+s3_deletion_status()),
+                            *(s3_timestamp() + s3_uid() + s3_deletion_status()),
                             migrate=migrate)
 
 
     # Outbox - needs to be separate to Log since a single message sent needs different outbox entries for each recipient
     resource = "outbox"
     tablename = "%s_%s" % (module, resource)
-    table = db.define_table(tablename, #timestamp, uuidstamp, deletion_status,
-        message_id,
-        pe_id, # Person/Group to send the message out to
-        Field("address"), # If set used instead of picking up from pe_id
-        Field("pr_message_method", "integer",
-              requires = IS_IN_SET(msg_contact_method_opts, zero=None),
-              default = 1,
-              label = T("Contact Method"),
-              represent = lambda opt: msg_contact_method_opts.get(opt, UNKNOWN_OPT)),
-        opt_msg_status,
-        Field("system_generated", "boolean", default = False),
-        Field("log"),
-        *(s3_timestamp()+s3_uid()+s3_deletion_status()),
-        migrate=migrate)
+    table = db.define_table(tablename,
+                            message_id(),
+                            pe_id,              # Person/Group to send the message out to
+                            Field("address"),   # If set used instead of picking up from pe_id
+                            Field("pr_message_method", "integer",
+                                  requires = IS_IN_SET(msg_contact_method_opts, zero=None),
+                                  default = 1,
+                                  label = T("Contact Method"),
+                                  represent = lambda opt: msg_contact_method_opts.get(opt, UNKNOWN_OPT)),
+                            opt_msg_status,
+                            Field("system_generated", "boolean", default = False),
+                            Field("log"),
+                            *(s3_timestamp() + s3_uid() + s3_deletion_status()),
+                            migrate=migrate)
 
     s3xrc.model.add_component(module, resource,
                               multiple=True,
@@ -217,11 +215,11 @@ if deployment_settings.has_module(module):
     # Message Read Status - To replace Message Outbox #TODO
     resource = "read_status"
     tablename = "%s_%s" % (module, resource)
-    table = db.define_table(tablename, #timestamp, uuidstamp, deletion_status,
-        message_id,
-        person_id(),
-        *(s3_timestamp()+s3_uid()+s3_deletion_status()),
-        migrate=migrate)
+    table = db.define_table(tablename,
+                            message_id(),
+                            person_id(),
+                            *(s3_timestamp() + s3_uid() + s3_deletion_status()),
+                            migrate=migrate)
 
     table.uuid.requires = IS_NOT_IN_DB(db, "%s.uuid" % tablename)
     s3xrc.model.configure(table,
@@ -283,13 +281,13 @@ if deployment_settings.has_module(module):
     }
     resource = "report"
     tablename = "%s_%s" % (module, resource)
-    table = db.define_table(tablename, #timestamp, uuidstamp, deletion_status,
-                    message_id,
-                    location_id(),
-                    Field("image", "upload", autodelete = True),
-                    Field("url", requires=IS_NULL_OR(IS_URL())),
-                    *(s3_timestamp()+s3_uid()+s3_deletion_status()),
-                    migrate=migrate)
+    table = db.define_table(tablename,
+                            message_id(),
+                            location_id(),
+                            Field("image", "upload", autodelete = True),
+                            Field("url", requires=IS_NULL_OR(IS_URL())),
+                            *(s3_timestamp() + s3_uid() + s3_deletion_status()),
+                            migrate=migrate)
     table.uuid.requires = IS_NOT_IN_DB(db, "%s.uuid" % tablename)
 
 def shn_msg_compose( redirect_module = "msg",

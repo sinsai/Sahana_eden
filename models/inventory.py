@@ -79,7 +79,7 @@ if deployment_settings.has_module("logs"):
     s3xrc.model.add_component(module, resource,
                               multiple=False,
                               joinby="site_id",
-                              deletable=True,
+                              deletable=False,
                               editable=True)
 
     #==============================================================================

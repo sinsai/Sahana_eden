@@ -1248,7 +1248,7 @@ class S3ReusableField(object):
 
     """
 
-    def __init__(self, name, type, **attr):
+    def __init__(self, name, type="string", **attr):
 
         self.name = name
         self.__type = type

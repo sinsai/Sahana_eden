@@ -181,7 +181,7 @@ org_organisation_type_opts = {
 resource = "organisation"
 tablename = module + "_" + resource
 table = db.define_table(tablename, #timestamp, uuidstamp, authorstamp, deletion_status,
-                        pe_id,
+                        pe_id(),
                         #Field("privacy", "integer", default=0),
                         #Field("archived", "boolean", default=False),
                         Field("name", length=128, notnull=True, unique=True),
@@ -302,7 +302,7 @@ org_office_type_opts = {
 resource = "office"
 tablename = module + "_" + resource
 table = db.define_table(tablename, #timestamp, uuidstamp, authorstamp, deletion_status,
-                        pe_id,
+                        pe_id(),
                         site_id(),
                         Field("name", notnull=True),
                         organisation_id(),

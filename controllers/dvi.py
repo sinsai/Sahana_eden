@@ -96,6 +96,8 @@ def recreq():
 
     resource = request.function
 
+    db.dvi_recreq.person_id.default = s3_logged_in_person()
+
     def recreq_postp(jr, output):
         if jr.representation in shn_interactive_view_formats:
             label = UPDATE
@@ -119,6 +121,8 @@ def body():
     """ RESTful CRUD controller """
 
     resource = request.function
+
+    db.pr_presence.presence_condition.default = vita.CHECK_IN
 
     status = request.get_vars.get("status", None)
     if status == "unidentified":

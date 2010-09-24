@@ -22,13 +22,13 @@ if deployment_settings.has_module(module):
         6:T("Not Possible")
     }
 
-    opt_dvi_task_status = db.Table(None, "opt_dvi_task_status",
-                                   Field("opt_dvi_task_status","integer",
-                                   requires = IS_IN_SET(dvi_task_status_opts, zero=None),
-                                   default = 1,
-                                   label = T("Task Status"),
-                                   represent = lambda opt: \
-                                               dvi_task_status_opts.get(opt, UNKNOWN_OPT)))
+    dvi_task_status = S3ReusableField("opt_dvi_task_status","integer",
+                            requires = IS_IN_SET(dvi_task_status_opts, zero=None),
+                            default = 1,
+                            label = T("Task Status"),
+                            represent = lambda opt: \
+                                        dvi_task_status_opts.get(opt, UNKNOWN_OPT))
+
 
     # -----------------------------------------------------------------------------
     # Recovery Request
@@ -43,7 +43,7 @@ if deployment_settings.has_module(module):
                             person_id(), # Finder
                             Field("description"),
                             Field("bodies_est", "integer"), # Number of bodies found
-                            opt_dvi_task_status,
+                            dvi_task_status(),
                             Field("bodies_rec", "integer"), # Number of bodies recovered
                             *s3_meta_fields(),
                             migrate=migrate)
@@ -53,6 +53,7 @@ if deployment_settings.has_module(module):
 
     table.date.label = T("Date/Time of Find")
     table.date.comment = SPAN("*", _class="req")
+    table.date.default = request.utcnow
     table.date.requires = IS_UTC_DATETIME(utc_offset=shn_user_utc_offset(),
                                           allow_future=False)
     table.date.represent = lambda value: shn_as_local_time(value)
@@ -91,13 +92,14 @@ if deployment_settings.has_module(module):
         msg_record_deleted = T("Recovery Request deleted"),
         msg_list_empty = T("No requests found"))
 
-    dvi_recreq_id = db.Table(None, "dvi_recreq_id",
-                             Field("dvi_recreq_id", table,
-                                   requires = IS_NULL_OR(IS_ONE_OF(db,
-                                                  "dvi_recreq.id",
-                                                  "[%(site_id)s] %(date)s: %(bodies_est)s bodies")),
-                                   represent = lambda id: id,
-                                   ondelete = "RESTRICT"))
+
+    dvi_recreq_id = S3ReusableField("dvi_recreq_id", table,
+                                    requires = IS_NULL_OR(IS_ONE_OF(db,
+                                               "dvi_recreq.id",
+                                               "[%(site_id)s] %(date)s: %(bodies_est)s bodies")),
+                                    represent = lambda id: id,
+                                    ondelete = "RESTRICT")
+
 
     s3xrc.model.configure(table,
                           list_fields = ["id",
@@ -116,29 +118,26 @@ if deployment_settings.has_module(module):
     resource = "body"
     tablename = "%s_%s" % (module, resource)
     table = db.define_table(tablename,
-                            pe_id,
-                            pe_label,
-                            dvi_recreq_id,
+                            pe_id(),
+                            pe_label(),
+                            dvi_recreq_id(),
                             Field("date_of_recovery", "datetime"),
                             location_id(),
                             Field("recovery_details","text"),
-                            Field("has_major_outward_damage","boolean"),
-                            Field("is_burned_or_charred","boolean"),
-                            Field("is_decayed","boolean"),
-                            Field("is_incomplete","boolean"),
-                            pr_gender,
-                            pr_age_group,
+                            Field("incomplete","boolean"),
+                            Field("major_outward_damage","boolean"),
+                            Field("burned_or_charred","boolean"),
+                            Field("decomposed","boolean"),
+                            pr_gender(),
+                            pr_age_group(),
                             *s3_meta_fields(),
                             migrate = migrate)
-
-    # Settings and Restrictions
-    #table.pr_pe_parent.readable = True         # not visible in body registration form
-    #table.pr_pe_parent.writable = True         # not visible in body registration form
-    #table.pr_pe_parent.requires = IS_NULL_OR(IS_ONE_OF(db,"pr_pentity.id",shn_pentity_represent,filterby="type",filter_opts=("dvi_body",)))
 
     table.pe_label.comment = SPAN("*", _class="req")
     table.pe_label.requires = [IS_NOT_EMPTY(error_message=T("Enter a unique label!")),
                                IS_NOT_IN_DB(db, "dvi_body.pe_label")]
+
+    table.date_of_recovery.default = request.utcnow
     table.date_of_recovery.comment = SPAN("*", _class="req")
     table.date_of_recovery.requires = IS_UTC_DATETIME(utc_offset=shn_user_utc_offset(),
                                                       allow_future=False)
@@ -150,11 +149,16 @@ if deployment_settings.has_module(module):
     table.age_group.label=T("Apparent Age")
     table.location_id.label=T("Place of Recovery")
 
+    table.incomplete.label = T("Incomplete")
+    table.major_outward_damage.label = T("Major outward damage")
+    table.burned_or_charred.label = T("Burned/charred")
+    table.decomposed.label = T("Decomposed")
+
     # Representations
-    table.has_major_outward_damage.represent = lambda opt: (opt and ["yes"] or [""])[0]
-    table.is_burned_or_charred.represent =  lambda opt: (opt and ["yes"] or [""])[0]
-    table.is_decayed.represent =  lambda opt: (opt and ["yes"] or [""])[0]
-    table.is_incomplete.represent =  lambda opt: (opt and ["yes"] or [""])[0]
+    table.major_outward_damage.represent = lambda opt: (opt and ["yes"] or [""])[0]
+    table.burned_or_charred.represent =  lambda opt: (opt and ["yes"] or [""])[0]
+    table.decomposed.represent =  lambda opt: (opt and ["yes"] or [""])[0]
+    table.incomplete.represent =  lambda opt: (opt and ["yes"] or [""])[0]
 
     # CRUD Strings
     s3.crud_strings[tablename] = Storage(
@@ -180,6 +184,7 @@ if deployment_settings.has_module(module):
                                        "pe_label",
                                        "gender",
                                        "age_group",
+                                       "incomplete",
                                        "date_of_recovery",
                                        "location_id"])
 
@@ -189,7 +194,7 @@ if deployment_settings.has_module(module):
     resource = "checklist"
     tablename = "%s_%s" % (module, resource)
     table = db.define_table(tablename,
-                    pe_id,
+                    pe_id(),
                     Field("personal_effects","integer",
                         requires = IS_IN_SET(dvi_task_status_opts, zero=None),
                         default = 1,
@@ -267,7 +272,7 @@ if deployment_settings.has_module(module):
     resource = "effects"
     tablename = "%s_%s" % (module, resource)
     table = db.define_table(tablename,
-                    pe_id,
+                    pe_id(),
     #                person_id(),
                     Field("clothing", "text"),    #TODO: elaborate
                     Field("jewellery", "text"),   #TODO: elaborate
@@ -317,13 +322,11 @@ if deployment_settings.has_module(module):
         3:T("Confirmed"),
     }
 
-
-    opt_dvi_id_status = db.Table(None, "opt_dvi_id_status",
-                        Field("opt_dvi_id_status","integer",
+    dvi_id_status = S3ReusableField("opt_dvi_id_status","integer",
                         requires = IS_IN_SET(dvi_id_status_opts, zero=None),
                         default = 1,
                         label = T("Identification Status"),
-                        represent = lambda opt: dvi_id_status_opts.get(opt, UNKNOWN_OPT)))
+                        represent = lambda opt: dvi_id_status_opts.get(opt, UNKNOWN_OPT))
 
 
     dvi_id_method_opts = {
@@ -336,23 +339,21 @@ if deployment_settings.has_module(module):
         99:T("Other Evidence")
     }
 
-
-    opt_dvi_id_method = db.Table(None, "opt_dvi_id_method",
-                        Field("opt_dvi_id_method","integer",
+    dvi_id_method = S3ReusableField("opt_dvi_id_method","integer",
                         requires = IS_IN_SET(dvi_id_method_opts, zero=None),
                         default = 99,
                         label = T("Method used"),
-                        represent = lambda opt: dvi_id_method_opts.get(opt, UNKNOWN_OPT)))
+                        represent = lambda opt: dvi_id_method_opts.get(opt, UNKNOWN_OPT))
 
 
     resource = "identification"
     tablename = "%s_%s" % (module, resource)
     table = db.define_table(tablename,
-                            pe_id,
+                            pe_id(),
                             Field("identified_by", db.pr_person),  # Person identifying the body
                             Field("reported_by", db.pr_person),    # Person reporting
-                            opt_dvi_id_status,                     # Identity status
-                            opt_dvi_id_method,                     # Method used
+                            dvi_id_status(),                       # Identity status
+                            dvi_id_method(),                       # Method used
                             Field("identity", db.pr_person),       # Identity of the body
                             Field("presence", db.pr_presence),     # Related presence record of the identified person
                             Field("comment", "text"),              # Comment (optional)

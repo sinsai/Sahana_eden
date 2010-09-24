@@ -18,7 +18,7 @@ if deployment_settings.has_module(module):
                                   notnull=True,
                                   comment = SPAN("*", _class="req")),
                             comments(),
-                            *(s3_timestamp()+s3_uid()+s3_deletion_status()),
+                            *(s3_timestamp() + s3_uid() + s3_deletion_status()),
                             migrate=migrate)
 
     ADD_SHELTER_TYPE = T("Add Shelter Type")
@@ -102,12 +102,11 @@ if deployment_settings.has_module(module):
     # To get the fields in the correct order in the table, get the fields
     # before and after where hospital_id should go.
     #
-    # Caution:  If you start with HMS enabled, and# fill in hospital info, then disable HMS,
+    # Caution:  If you start with HMS enabled, and fill in hospital info, then disable HMS,
     # the hospital_id column will get dropped.  If HMS is re-enabled, the hospital_id links will be gone.
     # If this is a production site, do not disable HMS unless you really mean it...
 
     fields_before_hospital = db.Table(None, None,
-                                      #timestamp, uuidstamp, deletion_status,
                                       site_id(),
                                       Field("name", notnull=True),
                                       shelter_type_id(),
@@ -130,8 +129,9 @@ if deployment_settings.has_module(module):
                                       # are for Pakistan flood response.  It is simpler
                                       # to keep this info in the shelter table and hide it if
                                       # the shelter is not a school.
-                                      Field("school_code", "integer"),
-                                      Field("school_pf", "integer"))
+                                      #Field("school_code", "integer"),
+                                      #Field("school_pf", "integer")
+                                     )
 
     fields_after_hospital = db.Table(None, None,
                                      comments())
@@ -141,7 +141,7 @@ if deployment_settings.has_module(module):
         table = db.define_table(tablename,
                                 fields_before_hospital,
                                 hospital_id(comment = DIV(SPAN("*", _class="req"),
-                                                          db.hms_hcontact.hospital_id.comment)),   # @ToDo Cleaner method
+                                                          shn_hospital_id_comment)),
                                 fields_after_hospital,
                                 *s3_meta_fields(),
                                 migrate=migrate)
@@ -169,8 +169,8 @@ if deployment_settings.has_module(module):
     table.persons_per_dwelling.requires = IS_NULL_OR(IS_INT_IN_RANGE(0, 999))
     table.persons_per_dwelling.label = T("Max Persons per Dwelling")
     table.area.label = T("Area")
-    table.school_code.label = T("School Code")
-    table.school_pf.label = T("PF Number")
+    #table.school_code.label = T("School Code")
+    #table.school_pf.label = T("PF Number")
     table.phone.label = T("Phone")
     table.phone.requires = shn_phone_requires
 

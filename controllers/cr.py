@@ -300,9 +300,9 @@ def shn_shelter_prep(r):
 
         if r.http == "POST":
 
-            if not "is_school" in request.vars:
-                request.post_vars.school_code = None
-                request.post_vars.school_pf = None
+            #if not "is_school" in request.vars:
+            #    request.post_vars.school_code = None
+            #    request.post_vars.school_pf = None
 
             if not "is_hospital" in request.vars and "hospital_id" in request.post_vars:
                 request.post_vars.hospital_id = None
@@ -325,9 +325,9 @@ def shn_shelter_onvalidation(form):
         # Get rid of that before anyone else sees it...
         response.cr_shelter_request_was_html_or_popup = None
 
-        if "is_school" in request.vars and not form.vars.school_code:
-            # Indicate that this is a school by setting a value that no school uses.
-            form.vars.school_code = 1
+        #if "is_school" in request.vars and not form.vars.school_code:
+        #    # Indicate that this is a school by setting a value that no school uses.
+        #    form.vars.school_code = 1
 
         # Note the form is defective if there's an is_hospital checkbox
         # but no hospital_id field...

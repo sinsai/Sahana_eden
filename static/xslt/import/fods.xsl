@@ -15,11 +15,29 @@
          Other rows = attribute/field values
 
          References:
-            Column-name = reference:<fieldname>:<referenced_table>
+            1) Insert another sheet with the entries of the referenced table,
+               this sheet must have the same name as the referenced table and
+               a column "uuid"
+            2) Insert a column in the main sheet with a column title like:
+                    reference:<fieldname>:<referenced_table>
                 e.g. "reference:organisation_id:org_organisation"
-            Column value = UUID
+            3) fill in this column with the UUIDs of the respective entries
+               in the referenced table
 
-         Version 0.1.1 / 2010-09-19 / by nursix
+         Components:
+            1) Insert another sheet with the entries of the component table,
+               this sheet must have a name like:
+                   <main-table-name>+<component-table-name>
+               e.g. "hms_hospital+hms_hactivity"
+            2) Insert a column into the component sheet with a name like:
+                   <main-table-name>.<key-field>
+               e.g. "hms_hospital.gov_uuid"
+               => the key field must be present in the main table
+               => the key field must be unique (primary key) in the main table
+            3) Fill in this column with the respective values of the key field
+               in the parent entry of the main table
+
+         Version 0.1.4 / 2010-09-19 / by nursix
 
          Copyright (c) 2010 Sahana Software Foundation
 
@@ -63,41 +81,61 @@
     <!-- ****************************************************************** -->
     <!-- Tables -->
     <xsl:template match="table:table">
-        <xsl:apply-templates select="./table:table-row[position()>1]"/>
+        <xsl:if test="not(contains(@table:name, '+'))">
+            <xsl:apply-templates select="./table:table-row[position()>1]"/>
+        </xsl:if>
     </xsl:template>
 
     <!-- ****************************************************************** -->
     <!-- Rows -->
     <xsl:template match="table:table-row">
-        <xsl:variable name="resource_name" select="../@table:name"/>
         <resource>
             <xsl:attribute name="name">
-                <xsl:value-of select="$resource_name"/>
+                <xsl:choose>
+                    <xsl:when test="starts-with(../@table:name, '+')">
+                        <xsl:value-of select="substring-after(../@table:name, '+')"/>
+                    </xsl:when>
+                    <xsl:otherwise>
+                        <xsl:value-of select="../@table:name"/>
+                    </xsl:otherwise>
+                </xsl:choose>
             </xsl:attribute>
+            <xsl:attribute name="mci">1</xsl:attribute>
             <xsl:apply-templates select="./table:table-cell" mode="attributes"/>
             <xsl:apply-templates select="./table:table-cell" mode="fields"/>
+            <xsl:call-template name="components">
+                <xsl:with-param name="row" select="."/>
+                <xsl:with-param name="table" select=".."/>
+            </xsl:call-template>
         </resource>
     </xsl:template>
 
     <!-- ****************************************************************** -->
     <!-- Attribute cells -->
     <xsl:template match="table:table-cell" mode="attributes">
+
         <xsl:variable name="fieldindex" select="position()"/>
         <xsl:variable name="fieldname" select="../../table:table-row[1]/table:table-cell[$fieldindex]/text:p/text()"/>
+
         <xsl:if test="$fieldname='uuid'">
             <xsl:attribute name="uuid">
                 <xsl:value-of select="./text:p/text()"/>
             </xsl:attribute>
         </xsl:if>
+
     </xsl:template>
 
     <!-- ****************************************************************** -->
     <!-- Field cells -->
     <xsl:template match="table:table-cell" mode="fields">
+
         <xsl:variable name="fieldindex" select="position()"/>
         <xsl:variable name="fieldname" select="../../table:table-row[1]/table:table-cell[$fieldindex]/text:p/text()"/>
+
         <xsl:if test="$fieldname!='uuid'">
             <xsl:choose>
+
+                <!-- resolve references -->
                 <xsl:when test="starts-with($fieldname, 'reference:')">
                     <reference>
                         <xsl:attribute name="field">
@@ -111,6 +149,12 @@
                         </xsl:attribute>
                     </reference>
                 </xsl:when>
+
+                <xsl:when test="contains($fieldname, ':') or contains($fieldname, '.')">
+                    <!-- ignore -->
+                </xsl:when>
+
+                <!-- data -->
                 <xsl:otherwise>
                     <data>
                         <xsl:attribute name="field">
@@ -119,8 +163,48 @@
                         <xsl:value-of select="./text:p/text()"/>
                     </data>
                 </xsl:otherwise>
+
             </xsl:choose>
         </xsl:if>
+    </xsl:template>
+
+    <!-- ****************************************************************** -->
+    <xsl:template name="components">
+        <xsl:param name="table"/>
+        <xsl:param name="row"/>
+
+        <xsl:variable name="tablename" select="$table/@table:name"/>
+        <xsl:variable name="prefix" select="substring-before($tablename, '_')"/>
+
+        <xsl:for-each select="$table/../table:table[starts-with(@table:name, concat($tablename, '+'))]">
+            <xsl:variable name="componentname" select="substring-after(@table:name, '+')"/>
+            <xsl:variable name="join" select="./table:table-row[1]/table:table-cell[starts-with(text:p/text(), $tablename)][1]/text:p/text()"/>
+            <xsl:variable name="join-position">
+                <xsl:for-each select="./table:table-row[1]/table:table-cell">
+                    <xsl:if test="text:p/text()=$join">
+                        <xsl:value-of select="position()"/>
+                    </xsl:if>
+                </xsl:for-each>
+            </xsl:variable>
+            <xsl:variable name="from-position">
+                <xsl:for-each select="$table/table:table-row[1]/table:table-cell">
+                    <xsl:if test="text:p/text()=substring-after($join, '.')">
+                        <xsl:value-of select="position()"/>
+                    </xsl:if>
+                </xsl:for-each>
+            </xsl:variable>
+            <xsl:if test="$join-position and $from-position">
+                <xsl:for-each select="./table:table-row[position()>1 and table:table-cell[$join-position]/text:p/text()=$row/table:table-cell[$from-position]/text:p/text()]">
+                    <resource>
+                        <xsl:attribute name="name">
+                            <xsl:value-of select="$componentname"/>
+                        </xsl:attribute>
+                        <xsl:apply-templates select="./table:table-cell" mode="attributes"/>
+                        <xsl:apply-templates select="./table:table-cell" mode="fields" />
+                    </resource>
+                </xsl:for-each>
+            </xsl:if>
+        </xsl:for-each>
     </xsl:template>
 
     <!-- ****************************************************************** -->

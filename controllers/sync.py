@@ -36,6 +36,9 @@ def peer():
     primary_resources = s3_sync_primary_resources()
     db.sync_job.resources.requires = IS_NULL_OR(IS_IN_SET(primary_resources, multiple=True, zero=None))
 
+    db.sync_log.peer_id.readable = False
+    db.sync_log.peer_id.writable = False
+
     table = db.sync_peer
     table.uuid.label = T("UID")
     table.url.label = T("URL")
@@ -60,6 +63,8 @@ def now():
 
     import gluon.contrib.simplejson as json
 
+    pid = None
+
     # Notification helpers
     error = lambda message, type="ERROR": \
             s3_sync_push_message(message, pid=pid, type=type)
@@ -72,7 +77,6 @@ def now():
         response.flash = T("Synchronization not configured.")
         return dict(module_name=module_name, action=None, status=None)
 
-    pid = None
     status = db().select(db.sync_status.ALL, limitby=(0, 1)).first()
     if status:
         pid = status.id
@@ -110,20 +114,20 @@ def now():
                 db.commit()
 
             status = db(db.sync_status.id == sync_pid).select(db.sync_status.ALL, limitby=(0, 1)).first()
+            s3_sync_init_messages()
             notify("Starting new synchronization process (started on %s)" % \
                     status.start_time.strftime("%x %H:%M:%S"))
         else:
-            notify("Resuming prior synchronization process (originally started on %s)" % \
-                    status.start_time.strftime("%x %H:%M:%S"))
+            if status.locked:
+                error("Manual synchronization already activated.")
+                return dict(item="SYNC NOW: already active")
+            else:
+                notify("Resuming prior synchronization process (originally started on %s)" % \
+                       status.start_time.strftime("%x %H:%M:%S"))
 
-        if status and status.locked:
-            error("Manual synchronization already activated.")
-            return dict(item="SYNC NOW: already active")
-        else:
-            pid = status.id
-            db(db.sync_status.id==pid).update(locked=True)
-            s3_sync_init_messages()
-            db.commit()
+        pid = status.id
+        db(db.sync_status.id==pid).update(locked=True)
+        db.commit()
 
         session._unlock(response)
         session.s3.roles.append(1)
@@ -148,18 +152,25 @@ def now():
             if result:
                 errors = ",".join(result.errors)
                 done = ",".join(result.done)
+                pending = ",".join(result.pending)
                 total_errors += result.errcount
                 notify("Job %s done." % job_id, type="DONE")
             else:
                 errors = ""
                 done = ""
+                pending = ""
 
-            if jobs:
-                job_id = jobs[0]
-                job = db(db.sync_job.id == job_id).select(db.sync_job.ALL, limitby=(0, 1)).first()
-                res_list = ",".join(map(str, job.resources))
+            if not pending:
+                if jobs:
+                    job_id = jobs[0]
+                    job = db(db.sync_job.id == job_id).select(db.sync_job.ALL, limitby=(0, 1)).first()
+                    res_list = ",".join(map(str, job.resources))
+                else:
+                    res_list = ""
             else:
-                res_list = ""
+                # Restore job
+                jobs.insert(0, job_id)
+                res_list = pending
 
             db(db.sync_status.id==status.id).update(
                     jobs = ",".join(jobs),
@@ -190,8 +201,10 @@ def now():
         if status:
             pid = status.id
             db(table.id == pid).update(halt=True)
+        else:
+            return dict(item="HALT: No synchronization process found.")
 
-        return dict(item="SYNC HALT: done")
+        return dict(item="HALT: Halting current synchronization - please wait...")
 
     elif action == "stop":
 
@@ -211,7 +224,7 @@ def now():
         else:
             item = "No synchronization process found."
 
-        return dict(item="SYNC STOP: %s" % item)
+        return dict(item="STOP: %s" % item)
 
     elif action == "unlock":
 
@@ -224,7 +237,7 @@ def now():
             pid = status.id
             db(table.id == pid).update(locked=False, halt=True)
 
-        return dict(item="SYNC UNLOCK: done")
+        return dict(item="UNLOCK: done")
 
     elif action == "status":
 
@@ -234,13 +247,10 @@ def now():
 
         s3_sync_clear_messages()
 
-        if status:
-            messages = s3_sync_get_messages(pid=status.id)
-            if not messages:
-                if status.locked:
-                    return dict(item="")
-        else:
-            messages = s3_sync_get_messages()
+        messages = s3_sync_get_messages()
+        if not messages:
+            if status.locked:
+                return dict(item="")
 
         msg_list = []
         for i in xrange(len(messages)):
@@ -251,7 +261,8 @@ def now():
                                     SPAN(msg.type, _class="sync_status"),
                                     _class=_class))
             else:
-                msg_list.append(DIV(SPAN(msg.message, _class="sync_message"), _class="sync_ok"))
+                msg_list.append(DIV(SPAN(msg.message, _class="sync_message"),
+                                    _class="sync_ok"))
 
         if msg_list:
             item = DIV(msg_list).xml()
@@ -299,7 +310,8 @@ def sync():
         remote_push = True
         # Must be registered partner for push:
         if not peer:
-            raise HTTP(501, body=s3xrc.ERROR.NOT_PERMITTED)
+            raise HTTP(501, body="%s: %s" %
+                      (s3xrc.ERROR.NOT_PERMITTED, T("Unknown Peer")))
         else:
             # Set the sync resolver with no policy (defaults to peer policy)
             s3xrc.sync_resolve = lambda vector, peer=peer: sync_res(vector, peer, None)
@@ -330,22 +342,22 @@ def sync():
                 resource = r.resource
                 sr = [c.component.tablename for c in resource.components.values()]
                 sr.insert(0, resource.tablename)
-                sync_resources = ",".join(sr)
+                sync_resources = ", ".join(sr)
 
                 if str(output_json["statuscode"]) != "200":
-                    sync_resources += " (error)"
                     sync_errors = str(output)
                 else:
                     sync_errors = ""
 
-                db[log_table].insert(
-                    partner_uuid = peer.peer_uid,
-                    timestmp = datetime.datetime.utcnow(),
-                    sync_resources = sync_resources,
-                    sync_errors = sync_errors,
-                    sync_mode = "online",
-                    sync_method = "Remote Push",
-                    complete_sync = False)
+                db.sync_log.insert(
+                    peer_id = peer.id,
+                    timestmp = datetime.datetime.now(),
+                    resources = sync_resources,
+                    errors = sync_errors,
+                    mode = 1,
+                    run_interval = "o",
+                    complete = False
+                )
 
         return output
     response.s3.postp = postp
@@ -491,35 +503,35 @@ def sync_res(vector, peer, policy):
 
     #table.uuid.label = "UUID"
     #table.uuid.comment = DIV(SPAN("*", _class="req"), DIV(_class="tooltip",
-        #_title="UUID|" + Tstr("The unique identifier of the peer. Leave blank if the peer is no Sahana Eden instance, it will be auto-assigned in that case.")))
+        #_title="UUID|" + T("The unique identifier of the peer. Leave blank if the peer is no Sahana Eden instance, it will be auto-assigned in that case.")))
 
     #table.name.label = T("Name")
     #table.name.comment = DIV(_class="tooltip",
-        #_title=Tstr("Name") + "|" + Tstr("The descriptive name of the peer."))
+        #_title=T("Name") + "|" + T("The descriptive name of the peer."))
 
     #table.url.label = T("URL")
     #table.url.comment = DIV(SPAN("*", _class="req"), DIV(_class="tooltip",
-        #_title=Tstr("URL") + "|" + Tstr("For Eden instances enter the application base URL, e.g. http://sync.sahanfoundation.org/eden, for other peers the URL of the synchronization interface.")))
+        #_title=T("URL") + "|" + T("For Eden instances enter the application base URL, e.g. http://sync.sahanfoundation.org/eden, for other peers the URL of the synchronization interface.")))
 
     ##table.type.label = T("Instance Type")
     ##table.type.comment = DIV(SPAN("*", _class="req"), DIV(_class="tooltip",
-        ##_title=Tstr("Instance Type") + "|" + Tstr("Whether this is a Sahana Eden, Sahana Agasti, Ushahidi or Other instance.")))
+        ##_title=T("Instance Type") + "|" + T("Whether this is a Sahana Eden, Sahana Agasti, Ushahidi or Other instance.")))
 
     #table.username.label = T("Username")
     #table.username.comment = DIV(_class="tooltip",
-        #_title=Tstr("Username") + "|" + Tstr("Username for authentication at the peer. Note that only HTTP Basic authentication is supported."))
+        #_title=T("Username") + "|" + T("Username for authentication at the peer. Note that only HTTP Basic authentication is supported."))
 
     #table.password.label = T("Password")
     #table.password.comment = DIV(_class="tooltip",
-        #_title=Tstr("Password") + "|" + Tstr("Password for authentication at the peer. Note that only HTTP Basic authentication is supported."))
+        #_title=T("Password") + "|" + T("Password for authentication at the peer. Note that only HTTP Basic authentication is supported."))
 
     ##table.comments.label = T("Comments")
     ##table.comments.comment = DIV(_class="tooltip",
-        ##_title=Tstr("Comments") + "|" + Tstr("Any comments about this sync partner."))
+        ##_title=T("Comments") + "|" + T("Any comments about this sync partner."))
 
     #table.policy.label = T("Data import policy")
     #table.policy.comment = DIV(SPAN("*", _class="req"), DIV(_class="tooltip",
-        #_title=Tstr("Data import policy") + "|" + Tstr("The default policy for data import from this peer.")))
+        #_title=T("Data import policy") + "|" + T("The default policy for data import from this peer.")))
 
     ## CRUD Strings
     #s3.crud_strings["sync_partner"] = Storage(
@@ -562,7 +574,7 @@ def setting():
 
     table.uuid.label = "UUID"
     table.uuid.comment = DIV(_class="tooltip",
-        _title="UUID|" + Tstr("The unique identifier which identifies this instance to other instances."))
+        _title="UUID|" + T("The unique identifier which identifies this instance to other instances."))
 
     # CRUD strings
     s3.crud_strings.sync_setting = Storage(
@@ -594,6 +606,11 @@ def job():
     prefix = module
     name = "job"
 
+    primary_resources = s3_sync_primary_resources()
+    db.sync_job.resources.requires = IS_NULL_OR(IS_IN_SET(primary_resources, multiple=True, zero=None))
+
+    response.s3.pagination = True
+
     return shn_rest_controller(prefix, name)
 
 
@@ -603,6 +620,8 @@ def log():
 
     prefix = module
     name = "log"
+
+    response.s3.pagination = True
 
     return shn_rest_controller(prefix, name,
                 listadd = False,
@@ -953,20 +972,26 @@ def sync_cron():
 
     """ Run all due jobs from the schedule """
 
+    import sys
+    #print >> sys.stderr, "Synchronization CRON process"
+
     # Get settings
-    settings = db().select(sync_setting.ALL, limitby=(0,1)).first()
+    settings = db().select(db.sync_setting.ALL, limitby=(0,1)).first()
     if not settings:
         return
 
     # Get all enabled jobs
     jobs = db((db.sync_job.enabled == True) &
-              (db.sync_job.interval != "m")).select(db.sync_job.ALL)
+              (db.sync_job.run_interval != "m")).select(db.sync_job.ALL)
+    #jobs = db((db.sync_job.enabled == True)).select(db.sync_job.ALL)
 
     now = datetime.datetime.now()
 
+    jobs_done = 0
+    error_count = 0
     for job in jobs:
         due = False
-        interval = job.interval
+        interval = job.run_interval
         last_run = job.last_run
         if not last_run:
             due = True
@@ -985,11 +1010,22 @@ def sync_cron():
             continue
 
         if due:
-            sync_run_job(job,
-                         settings=setting,
-                         pid=None,
-                         tables=None,
-                         silent=True)
+            result = sync_run_job(job,
+                                  settings=settings,
+                                  pid=None,
+                                  tables=job.resources,
+                                  silent=True)
+            if result.success:
+                db(db.sync_job.id == job.id).update(last_run=now)
+                jobs_done += 1
+            else:
+                error_count +=1
+
+
+    response.view = "xml.html"
+    item = s3xrc.xml.json_message(True, 200, message="%s jobs done, %s errors." % (jobs_done, error_count))
+
+    return dict(item=item)
 
 
 # -----------------------------------------------------------------------------
@@ -1040,6 +1076,17 @@ def sync_run_job(job, settings=None, pid=None, tables=[], silent=False):
             result = s3_sync_eden_other(peer, mode, tablenames,
                                         pid=pid,
                                         settings=settings)
+
+        if result:
+            db.sync_log.insert(
+                peer_id = peer.id,
+                timestmp = datetime.datetime.now(),
+                resources = ", ".join(result.done),
+                errors = ", ".join(result.errors),
+                mode = job.mode,
+                run_interval = job.run_interval,
+                complete = job.complete
+            )
 
     return result
 
@@ -1094,11 +1141,18 @@ def s3_sync_eden_eden(peer, mode, tablenames,
     else:
         msince = None
 
+    # Ignore errors?
+    ignore_errors = peer.ignore_errors
+
+    notify("....Synchronization with %s (%s) - started %s" % (
+            peer.name,
+            peer.url,
+            ignore_errors and "(ignoring invalid records)" or ""))
+
     for tablename in tablenames:
 
         # Skip invalid tablenames silently
         if tablename not in db.tables or tablename.find("_") == -1:
-            output.pending.remove(tablename)
             output.done.append(tablename)
             continue
 
@@ -1112,13 +1166,15 @@ def s3_sync_eden_eden(peer, mode, tablenames,
             output.success = True
             return output
 
+        output.pending.remove(tablename)
+
         # Create resource
         prefix, name = tablename.split("_", 1)
         resource = s3xrc.resource(prefix, name)
 
         if is_json:
             _get = resource.fetch_json
-            _put = resource.psuh_json
+            _put = resource.push_json
         else:
             _get = resource.fetch_xml
             _put = resource.push_xml
@@ -1148,7 +1204,8 @@ def s3_sync_eden_eden(peer, mode, tablenames,
                 result = _get(fetch_url,
                               username=peer.username,
                               password=peer.password,
-                              proxy=proxy)
+                              proxy=proxy,
+                              ignore_errors=ignore_errors)
             except Exception, e:
                 err = str(e)
             else:
@@ -1164,6 +1221,7 @@ def s3_sync_eden_eden(peer, mode, tablenames,
                         err = str(result_json.get("message", "Unknown error"))
             if err is not None:
                 output.errcount += 1
+                output.errors.append("%s: %s" % (tablename, err))
                 error("........fetch %s : %s" % (tablename, err))
                 if mode == 1:
                     continue
@@ -1204,13 +1262,13 @@ def s3_sync_eden_eden(peer, mode, tablenames,
                         err = str(result_json.get("message", "Unknown error"))
             if err is not None:
                 output.errcount += 1
+                output.errors.append("%s: %s" % (tablename, err))
                 error("........send %s : %s" % (tablename, err))
                 continue
             else:
                 notify("........send %s : success" % tablename)
 
         output.done.append(tablename)
-        output.pending.remove(tablename)
 
     notify("...Synchronization with %s - done (%s errors)" % (peer.name, output.errcount))
 
@@ -1289,7 +1347,13 @@ def s3_sync_eden_other(peer, mode, tablenames,
         output.success = False
         return output
 
-    notify("....Synchronization with %s (%s) - started" % (peer.name, peer.url))
+    # Ignore errors?
+    ignore_errors = peer.ignore_errors
+
+    notify("....Synchronization with %s (%s) - started %s" % (
+            peer.name,
+            peer.url,
+            ignore_errors and "(ignoring invalid records)" or ""))
 
     for tablename in tablenames:
 
@@ -1309,6 +1373,8 @@ def s3_sync_eden_other(peer, mode, tablenames,
             output.success = True
             return output
 
+        output.pending.remove(tablename)
+
         # Create resource
         prefix, name = tablename.split("_", 1)
         resource = s3xrc.resource(prefix, name)
@@ -1318,28 +1384,30 @@ def s3_sync_eden_other(peer, mode, tablenames,
             fetch_url = peer.url
 
             err = None
-            #try:
-            result = resource.fetch(fetch_url,
-                                    username=peer.username,
-                                    password=peer.password,
-                                    json=is_json,
-                                    template=import_template,
-                                    proxy=proxy)
-            #except Exception, e:
-                #err = str(e)
-            #else:
             try:
-                result_json = json.loads(str(result))
-            except:
-                err = str(result)
+                result = resource.fetch(fetch_url,
+                                        username=peer.username,
+                                        password=peer.password,
+                                        json=is_json,
+                                        template=import_template,
+                                        proxy=proxy,
+                                        ignore_errors=ignore_errors)
+            except Exception, e:
+                err = str(e)
             else:
-                statuscode = str(result_json.get("statuscode", ""))
-                if statuscode.startswith("2"):
-                    err = None
+                try:
+                    result_json = json.loads(str(result))
+                except:
+                    err = str(result)
                 else:
-                    err = str(result_json.get("message", "Unknown error"))
+                    statuscode = str(result_json.get("statuscode", ""))
+                    if statuscode.startswith("2"):
+                        err = None
+                    else:
+                        err = str(result_json.get("message", "Unknown error"))
             if err is not None:
                 output.errcount += 1
+                output.errors.append("%s: %s" % (tablename, err))
                 error("........fetch %s : %s" % (tablename, err))
                 if mode == 1:
                     continue
@@ -1377,13 +1445,13 @@ def s3_sync_eden_other(peer, mode, tablenames,
                         err = str(result_json.get("message", "Unknown error"))
             if err is not None:
                 output.errcount += 1
+                output.errors.append("%s: %s" % (tablename, err))
                 error("........send %s : %s" % (tablename, err))
                 continue
             else:
                 notify("........send %s : success" % tablename)
 
         output.done.append(tablename)
-        output.pending.remove(tablename)
 
     notify("...Synchronization with %s - done (%s errors)" % (peer.name, output.errcount))
 

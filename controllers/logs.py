@@ -19,8 +19,8 @@ def shn_distrib_rheader(r, tabs=[]):
         rheader_tabs = shn_rheader_tabs(r, tabs)
         logs_distrib = r.record
         rheader = DIV(TABLE(TR(
-                               TH(Tstr("Location") + ": "), shn_gis_location_represent(logs_distrib.location_id),
-                               TH(Tstr("Date") + ": "), logs_distrib.date,
+                               TH(T("Location") + ": "), shn_gis_location_represent(logs_distrib.location_id),
+                               TH(T("Date") + ": "), logs_distrib.date,
                                ),
                            ),
                       rheader_tabs

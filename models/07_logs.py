@@ -18,14 +18,11 @@ if deployment_settings.has_module(module):
     resource = "distrib"
     tablename = "%s_%s" % (module, resource)
     table = db.define_table(tablename,
-                            timestamp,
-                            uuidstamp,
-                            authorstamp,
-                            deletion_status,
                             Field("date", "date"),
-                            location_id,
-                            #site_id,
-                            comments,
+                            location_id(),
+                            #site_id(),
+                            comments(),
+                            *s3_meta_fields(),
                             migrate=migrate)
 
     # -----------------------------------------------------------------------------
@@ -61,15 +58,14 @@ if deployment_settings.has_module(module):
         msg_list_empty = T("No Distributions currently registered"))
 
     # Reusable Field
-    distrib_id = db.Table(None, "distrib_id",
-            FieldS3("distrib_id", db.logs_distrib, sortby="name",
-                requires = IS_NULL_OR(IS_ONE_OF(db, "logs_distrib.id", distrib_represent, orderby="logs_distrib.date", sort=True)),
-                represent = distrib_represent,
-                label = T("Distribution"),
-                #comment = DIV(A(ADD_DISTRIBUTION, _class="colorbox", _href=URL(r=request, c="logs", f="distrib", args="create", vars=dict(format="popup")), _target="top", _title=ADD_DISTRIBUTION),
-                #          DIV( _class="tooltip", _title=Tstr("Distribution") + "|" + Tstr("Add Distribution."))),
-                ondelete = "RESTRICT"
-                ))
+    distrib_id = S3ReusableField("distrib_id", db.logs_distrib, sortby="name",
+                                 requires = IS_NULL_OR(IS_ONE_OF(db, "logs_distrib.id", distrib_represent, orderby="logs_distrib.date", sort=True)),
+                                 represent = distrib_represent,
+                                 label = T("Distribution"),
+                                 #comment = DIV(A(ADD_DISTRIBUTION, _class="colorbox", _href=URL(r=request, c="logs", f="distrib", args="create", vars=dict(format="popup")), _target="top", _title=ADD_DISTRIBUTION),
+                                 #          DIV( _class="tooltip", _title=T("Distribution") + "|" + T("Add Distribution."))),
+                                 ondelete = "RESTRICT"
+                                 )
 
     #==============================================================================
     # Distribution Item
@@ -77,14 +73,11 @@ if deployment_settings.has_module(module):
     resource = "distrib_item"
     tablename = "%s_%s" % (module, resource)
     table = db.define_table(tablename,
-                            timestamp,
-                            uuidstamp,
-                            authorstamp,
-                            deletion_status,
-                            distrib_id,
-                            item_id,
+                            distrib_id(),
+                            item_id(),
                             Field("quantity", "double"),
-                            comments,
+                            comments(),
+                            *s3_meta_fields(),
                             migrate=migrate)
 
     # CRUD strings

@@ -103,13 +103,13 @@ admin_menu_options = [
 s3.menu_modules = []
 # Home always 1st
 _module = deployment_settings.modules["default"]
-s3.menu_modules.append([T(_module.name_nice), False, URL(r=request, c="default", f="index")])
+s3.menu_modules.append([_module.name_nice, False, URL(r=request, c="default", f="index")])
 # The Modules to display at the top level
 for module in deployment_settings.modules:
     _module = deployment_settings.modules[module]
     if (_module.module_type == 1):
         if not _module.access:
-            s3.menu_modules.append([T(_module.name_nice), False, URL(r=request, c=module, f="index")])
+            s3.menu_modules.append([_module.name_nice, False, URL(r=request, c=module, f="index")])
         else:
             authorised = False
             groups = re.split("\|", _module.access)[1:-1]
@@ -117,12 +117,12 @@ for module in deployment_settings.modules:
                 if shn_has_role(group):
                     authorised = True
             if authorised == True:
-                s3.menu_modules.append([T(_module.name_nice), False, URL(r=request, c=module, f="index")])
+                s3.menu_modules.append([_module.name_nice, False, URL(r=request, c=module, f="index")])
 for module in deployment_settings.modules:
     _module = deployment_settings.modules[module]
     if (_module.module_type == 2):
         if not _module.access:
-            s3.menu_modules.append([T(_module.name_nice), False, URL(r=request, c=module, f="index")])
+            s3.menu_modules.append([_module.name_nice, False, URL(r=request, c=module, f="index")])
         else:
             authorised = False
             groups = re.split("\|", _module.access)[1:-1]
@@ -130,12 +130,12 @@ for module in deployment_settings.modules:
                 if shn_has_role(group):
                     authorised = True
             if authorised == True:
-                s3.menu_modules.append([T(_module.name_nice), False, URL(r=request, c=module, f="index")])
+                s3.menu_modules.append([_module.name_nice, False, URL(r=request, c=module, f="index")])
 for module in deployment_settings.modules:
     _module = deployment_settings.modules[module]
     if (_module.module_type == 3):
         if not _module.access:
-            s3.menu_modules.append([T(_module.name_nice), False, URL(r=request, c=module, f="index")])
+            s3.menu_modules.append([_module.name_nice, False, URL(r=request, c=module, f="index")])
         else:
             authorised = False
             groups = re.split("\|", _module.access)[1:-1]
@@ -143,12 +143,12 @@ for module in deployment_settings.modules:
                 if shn_has_role(group):
                     authorised = True
             if authorised == True:
-                s3.menu_modules.append([T(_module.name_nice), False, URL(r=request, c=module, f="index")])
+                s3.menu_modules.append([_module.name_nice, False, URL(r=request, c=module, f="index")])
 for module in deployment_settings.modules:
     _module = deployment_settings.modules[module]
     if (_module.module_type == 4):
         if not _module.access:
-            s3.menu_modules.append([T(_module.name_nice), False, URL(r=request, c=module, f="index")])
+            s3.menu_modules.append([_module.name_nice, False, URL(r=request, c=module, f="index")])
         else:
             authorised = False
             groups = re.split("\|", _module.access)[1:-1]
@@ -156,12 +156,12 @@ for module in deployment_settings.modules:
                 if shn_has_role(group):
                     authorised = True
             if authorised == True:
-                s3.menu_modules.append([T(_module.name_nice), False, URL(r=request, c=module, f="index")])
+                s3.menu_modules.append([_module.name_nice, False, URL(r=request, c=module, f="index")])
 for module in deployment_settings.modules:
     _module = deployment_settings.modules[module]
     if (_module.module_type == 5):
         if not _module.access:
-            s3.menu_modules.append([T(_module.name_nice), False, URL(r=request, c=module, f="index")])
+            s3.menu_modules.append([_module.name_nice, False, URL(r=request, c=module, f="index")])
         else:
             authorised = False
             groups = re.split("\|", _module.access)[1:-1]
@@ -169,7 +169,7 @@ for module in deployment_settings.modules:
                 if shn_has_role(group):
                     authorised = True
             if authorised == True:
-                s3.menu_modules.append([T(_module.name_nice), False, URL(r=request, c=module, f="index")])
+                s3.menu_modules.append([_module.name_nice, False, URL(r=request, c=module, f="index")])
 
 # Modules to display off the 'more' menu
 module_more_menu = ([T("more"), False, "#"])
@@ -178,7 +178,7 @@ for module in deployment_settings.modules:
     _module = deployment_settings.modules[module]
     if (_module.module_type == 10):
         if not _module.access:
-            modules_submenu.append([T(_module.name_nice), False, URL(r=request, c=module, f="index")])
+            modules_submenu.append([_module.name_nice, False, URL(r=request, c=module, f="index")])
         else:
             authorised = False
             groups = re.split("\|", _module.access)[1:-1]
@@ -186,7 +186,7 @@ for module in deployment_settings.modules:
                 if shn_has_role(group):
                     authorised = True
             if authorised == True:
-                modules_submenu.append([T(_module.name_nice), False, URL(r=request, c=module, f="index")])
+                modules_submenu.append([_module.name_nice, False, URL(r=request, c=module, f="index")])
 module_more_menu.append(modules_submenu)
 s3.menu_modules.append(module_more_menu)
 
@@ -198,7 +198,7 @@ for group in groups:
     if int(group) in session.s3.roles:
         authorised = True
 if authorised == True:
-    s3.menu_admin = [T(_module.name_nice), True, URL(r=request, c="admin", f="index")]
+    s3.menu_admin = [_module.name_nice, True, URL(r=request, c="admin", f="index")]
 else:
     s3.menu_admin = []
 

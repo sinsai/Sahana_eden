@@ -53,16 +53,16 @@ if deployment_settings.has_module(module):
 
     resource = "req"
     tablename = "%s_%s" % (module, resource)
-    table = db.define_table(tablename, timestamp, uuidstamp, deletion_status,
-        person_id,
-        hospital_id,    # @ToDo Check if the module is enabled for adding FK: check CR for an example
-        shelter_id,     # @ToDo Check if the module is enabled for adding FK: check CR for an example
-        organisation_id,
+    table = db.define_table(tablename, #timestamp, uuidstamp, deletion_status,
+        person_id(),
+        hospital_id(),    # @ToDo Check if the module is enabled for adding FK: check CR for an example
+        shelter_id(),     # @ToDo Check if the module is enabled for adding FK: check CR for an example
+        organisation_id(),
         Field("type", "integer"),
         Field("priority", "integer"),
         Field("message", "text"),
         Field("timestmp", "datetime"),  # 'timestamp' is a reserved word in Postgres
-        location_id,
+        location_id(),
         Field("source_type", "integer"),
         Field("source_id", "integer"),
         Field("verified", "boolean"),
@@ -71,7 +71,8 @@ if deployment_settings.has_module(module):
         Field("actioned", "boolean"),
         Field("actioned_details"),
         Field("pledge_status", "string"),
-        document_id,
+        document_id(),
+        *s3_meta_fields(),
         migrate=migrate)
 
     db.rms_req.pledge_status.writable = False
@@ -138,14 +139,13 @@ if deployment_settings.has_module(module):
         msg_list_empty = T("No Aid Requests currently registered"))
 
     # Reusable Field
-    req_id = db.Table(None, "req_id",
-                FieldS3("req_id", db.rms_req, sortby="message",
+    req_id = S3ReusableField("req_id", db.rms_req, sortby="message",
                     requires = IS_NULL_OR(IS_ONE_OF(db, "rms_req.id", "%(message)s")),
                     represent = lambda id: (id and [db(db.rms_req.id == id).select(limitby=(0, 1)).first().message] or ["None"])[0],
                     label = T("Aid Request"),
-                    comment = DIV(A(ADD_AID_REQUEST, _class="colorbox", _href=URL(r=request, c="rms", f="req", args="create", vars=dict(format="popup")), _target="top", _title=ADD_AID_REQUEST), DIV( _class="tooltip", _title=Tstr("Add Request") + "|" + Tstr("The Request this record is associated with."))),
+                    comment = DIV(A(ADD_AID_REQUEST, _class="colorbox", _href=URL(r=request, c="rms", f="req", args="create", vars=dict(format="popup")), _target="top", _title=ADD_AID_REQUEST), DIV( _class="tooltip", _title=T("Add Request") + "|" + T("The Request this record is associated with."))),
                     ondelete = "RESTRICT"
-                    ))
+                    )
 
     request_id = req_id #only for other models - this should be replaced!
 
@@ -241,8 +241,8 @@ if deployment_settings.has_module(module):
             form = FORM(TABLE(
                     TR(T("Text in Message: "),
                     INPUT(_type="text", _name="label", _size="40"),
-                    DIV( _class="tooltip", _title=Tstr("Text in Message") + "|" + Tstr("To search for a request, enter some of the text that you are looking for. You may use % as wildcard. Press 'Search' without input to list all requests."))),
-                    TR("", INPUT(_type="submit", _value="Search"))
+                    DIV( _class="tooltip", _title=T("Text in Message") + "|" + T("To search for a request, enter some of the text that you are looking for. You may use % as wildcard. Press 'Search' without input to list all requests."))),
+                    TR("", INPUT(_type="submit", _value=T("Search")))
                     ))
 
             output = dict(title=title, subtitle=subtitle, form=form, vars=form.vars)
@@ -305,14 +305,11 @@ if deployment_settings.has_module(module):
     resource = "ritem"
     tablename = "%s_%s" % (module, resource)
     table = db.define_table(tablename,
-                            timestamp,
-                            uuidstamp,
-                            authorstamp,
-                            deletion_status,
-                            req_id,
-                            item_id,
+                            req_id(),
+                            item_id(),
                             Field("quantity", "double"),
-                            comments,
+                            comments(),
+                            *s3_meta_fields(),
                             migrate=migrate)
 
     # CRUD strings
@@ -349,14 +346,15 @@ if deployment_settings.has_module(module):
 
     resource = "pledge"
     tablename = "%s_%s" % (module, resource)
-    table = db.define_table(tablename, timestamp, authorstamp, uuidstamp, deletion_status,
-        Field("submitted_on", "datetime"),
-        Field("req_id", db.rms_req),
-        Field("status", "integer"),
-        organisation_id,
-        person_id,
-        comments,
-        migrate=migrate)
+    table = db.define_table(tablename,
+                            Field("submitted_on", "datetime"),
+                            Field("req_id", db.rms_req),
+                            Field("status", "integer"),
+                            organisation_id(),
+                            person_id(),
+                            comments(),
+                            *s3_meta_fields(),
+                            migrate=migrate)
 
     # hide unnecessary fields
     table.req_id.readable = table.req_id.writable = False
@@ -405,7 +403,7 @@ if deployment_settings.has_module(module):
         req_id = session.rcvars.rms_req #db(db.rms_pledge.id == pledge_id).select(db.rms_pledge.req_id).first().req_id
 
         if req_id:
-            #This could be done as a join
+            # This could be done as a join
             pledges = db(db.rms_pledge.req_id == req_id).select(db.rms_pledge.status)
             num_status = {}
             for pledge in pledges:
@@ -429,11 +427,12 @@ if deployment_settings.has_module(module):
     # Create the table for request_detail for requests with arbitrary keys
     resource = "req_detail"
     tablename = "%s_%s" % (module, resource)
-    table = db.define_table(tablename, timestamp, uuidstamp, deletion_status,
-        req_id,
-        Field("request_key", "string"),
-        Field("value", "string"),
-        migrate=migrate)
+    table = db.define_table(tablename,
+                            req_id(),
+                            Field("request_key", "string"),
+                            Field("value", "string"),
+                            *s3_meta_fields(),
+                            migrate=migrate)
 
     s3xrc.model.add_component(module, resource,
                               multiple=True,
@@ -457,27 +456,18 @@ if deployment_settings.has_module(module):
     #table.value.writable = False
 
     ADD_REQUEST_DETAIL = T("Add Request Detail")
-    s3.crud_strings[tablename] = Storage( title_create        = ADD_REQUEST_DETAIL,
-                                    title_display       = "Request Detail",
-                                    title_list          = "List Request Details",
-                                    title_update        = "Edit Request Details",
-                                    title_search        = "Search Request Details",
-                                    subtitle_create     = "Add New Request Detail",
-                                    subtitle_list       = "Request Details",
-                                    label_list_button   = "List Request Details",
-                                    label_create_button = ADD_REQUEST_DETAIL,
-                                    msg_record_created  = "Request detail added",
-                                    msg_record_modified = "Request detail updated",
-                                    msg_record_deleted  = "Request detail deleted",
-                                    msg_list_empty      = "No request details currently available")
-
-
-    #Reusable field for other tables
-    req_detail_id = db.Table(None, "req_detail_id",
-                FieldS3("req_detail_id", db.rms_req_detail, sortby="request_key",
-                    requires = IS_NULL_OR(IS_ONE_OF(db, "rms_req_detail.id", "%(request_key)s")),
-                    represent = lambda id: (id and [db(db.rms_req_detail.id == id).select(limitby=(0, 1)).first().updated] or ["None"])[0],
-                    label = T("Request Detail"),
-                    comment = DIV(A(ADD_REQUEST_DETAIL, _class="colorbox", _href=URL(r=request, c="rms", f="req_detail", args="create", vars=dict(format="popup")), _target="top", _title=ADD_REQUEST_DETAIL), DIV( _class="tooltip", _title=Tstr("Add Request") + "|" + Tstr("The Request this record is associated with."))),
-                    ondelete = "RESTRICT"
-                    ))
+    s3.crud_strings[tablename] = Storage(
+                                         title_create        = ADD_REQUEST_DETAIL,
+                                         title_display       = "Request Detail",
+                                         title_list          = "List Request Details",
+                                         title_update        = "Edit Request Details",
+                                         title_search        = "Search Request Details",
+                                         subtitle_create     = "Add New Request Detail",
+                                         subtitle_list       = "Request Details",
+                                         label_list_button   = "List Request Details",
+                                         label_create_button = ADD_REQUEST_DETAIL,
+                                         msg_record_created  = "Request detail added",
+                                         msg_record_modified = "Request detail updated",
+                                         msg_record_deleted  = "Request detail deleted",
+                                         msg_list_empty      = "No request details currently available"
+                                        )

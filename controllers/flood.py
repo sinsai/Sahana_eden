@@ -37,7 +37,7 @@ def maps():
 
     freports = db(db.gis_location.id == db.flood_freport.location_id).select()
     freport_popup_url = URL(r=request, f="freport", args="read.popup?freport.location_id=")
-    map = gis.show_map(feature_queries = [{"name":Tstr("Flood Reports"), "query":freports, "active":True, "popup_url": freport_popup_url}], window=True)
+    map = gis.show_map(feature_queries = [{"name":T("Flood Reports"), "query":freports, "active":True, "popup_url": freport_popup_url}], window=True)
 
     return dict(map=map)
 
@@ -126,11 +126,11 @@ def shn_flood_rheader(r, tabs=[]):
                 #    doc_name = document.name
             rheader = DIV(TABLE(
                             TR(
-                                TH(Tstr("Location") + ": "), location,
-                                TH(Tstr("Date") + ": "), report.datetime
+                                TH(T("Location") + ": "), location,
+                                TH(T("Date") + ": "), report.datetime
                               ),
                             TR(
-                                TH(Tstr("Document") + ": "), A(doc_name, _href=doc_url)
+                                TH(T("Document") + ": "), A(doc_name, _href=doc_url)
                               )
                             ),
                           rheader_tabs)

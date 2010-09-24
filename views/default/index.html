@@ -13,7 +13,7 @@
         {{_module = modules[module]}}
         {{if module == "default":}}
         {{elif not _module.access:}}
-            <li><strong>{{=A(T(_module.name_nice), _href=URL(r=request, c=module, f="index"))}}</strong> - {{=_module.description}}.</li>
+            <li><strong>{{=A(_module.name_nice, _href=URL(r=request, c=module, f="index"))}}</strong> - {{=_module.description}}.</li>
         {{else:}}
             {{authorised = False}}
             {{groups = re.split('\|', _module.access)[1:-1]}}
@@ -23,7 +23,7 @@
                 {{pass}}
             {{pass}}
             {{if authorised == True:}}
-                <li><strong>{{=A(T(_module.name_nice), _href=URL(r=request, c=module, f="index"))}}</strong> - {{=_module.description}}.</li>
+                <li><strong>{{=A(_module.name_nice, _href=URL(r=request, c=module, f="index"))}}</strong> - {{=_module.description}}.</li>
             {{pass}}
         {{pass}}
     {{pass}}
@@ -44,7 +44,7 @@
     {{=T("Sahana Eden is a family of applications that provide solutions to coordination and collaboration for organisations working in disaster management.")}}
     </p>
     <p>
-    {{=XML(Tstr("Registered users can") + " <b>" + Tstr("login") + "</b> " + Tstr("to access the system"))}}:
+    {{=XML(T("Registered users can") + " <b>" + T("login") + "</b> " + T("to access the system"))}}:
     </p>
     {{=H3(T("Login"))}}
     {{include "auth/_login.html"}}
@@ -52,7 +52,7 @@
 {{if self_registration:}}
   <div id='register_form' class='hide'>
     <p>
-    {{=XML(Tstr("If you would like to help, then please") + " <b>" + Tstr("sign-up now") + "</b>")}}:
+    {{=XML(T("If you would like to help, then please") + " <b>" + T("sign-up now") + "</b>")}}:
     </p>
     {{=H3(T("Register"))}}
     {{include "auth/_register.html"}}

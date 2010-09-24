@@ -307,6 +307,10 @@ def shn_shelter_prep(r):
             if not "is_hospital" in request.vars and "hospital_id" in request.post_vars:
                 request.post_vars.hospital_id = None
 
+    elif r.representation == "aadata" and r.component and r.component.name == "req":
+        # Hide the Implied fields here too to make columns match
+        db.rms_req.hospital_id.readable = False
+    
     return True
 
 # -----------------------------------------------------------------------------
@@ -344,7 +348,7 @@ def shn_shelter_rheader(r, tabs=[]):
         record = r.record
         rheader = DIV(TABLE(
                         TR(
-                            TH(Tstr("Name") + ": "), record.name
+                            TH(T("Name") + ": "), record.name
                           ),
                         ),
                       rheader_tabs)

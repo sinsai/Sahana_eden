@@ -29,8 +29,8 @@ def shn_item_rheader(jr, tabs=[]):
         item = jr.record
         category = db(db.supply_item_category.id == item.item_category_id).select(db.supply_item_category.name, limitby=(0, 1)).first().name
         rheader = DIV(TABLE(TR(
-                               TH(Tstr("Category") + ": "),   category,
-                               TH(Tstr("Name") + ": "), item.name,
+                               TH(T("Category") + ": "),   category,
+                               TH(T("Name") + ": "), item.name,
                               ),
                            ),
                       rheader_tabs

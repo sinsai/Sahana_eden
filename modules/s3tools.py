@@ -1243,12 +1243,12 @@ class S3ReusableField(object):
     """ Helper for DRY reusable fields:
 
         This creates neither a Table nor a Field, but just
-        an argument store. The field is created with the field()
+        an argument store. The field is created with the __call__
         method, which is faster than copying an existing field.
 
     """
 
-    def __init__(self, name, type, **attr):
+    def __init__(self, name, type="string", **attr):
 
         self.name = name
         self.__type = type

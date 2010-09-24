@@ -14,30 +14,28 @@ if module not in deployment_settings.modules:
 
 # -----------------------------------------------------------------------------
 def shn_menu():
-    menu = [
+    response.menu_options = [
         [T("Home"), False, URL(r=request, f="index")],
         [T("Hospitals"), False, URL(r=request, f="hospital"), [
             [T("List All"), False, URL(r=request, f="hospital")],
             [T("Find by Name"), False, URL(r=request, f="hospital", args="search_simple")],
             [T("Add Hospital"), False, URL(r=request, f="hospital", args="create")]
         ]],
-    ]
-    if session.rcvars and "hms_hospital" in session.rcvars:
-        hospital = db.hms_hospital
-        query = (hospital.id == session.rcvars["hms_hospital"])
-        selection = db(query).select(hospital.id, hospital.name, limitby=(0, 1)).first()
-        if selection:
-            menu_hospital = [
-                [selection.name, False, URL(r=request, f="hospital", args=[selection.id])],
-                [T("Add Request"), False, URL(r=request, f="hospital", args=[selection.id, "req", "create"])],
-            ]
-            menu.extend(menu_hospital)
-    menu2 = [
         [T("Requests"), False, URL(r=request, c="rms", f="req")],
         [T("Pledges"), False, URL(r=request, c="rms", f="pledge")],
     ]
-    menu.extend(menu2)
-    response.menu_options = menu
+    menu_selected = []
+    if session.rcvars and "hms_hospital" in session.rcvars:
+        hospital = db.hms_hospital
+        query = (hospital.id == session.rcvars["hms_hospital"])
+        record = db(query).select(hospital.id, hospital.name, limitby=(0, 1)).first()
+        if record:
+            name = record.name
+            menu_selected.append(["%s: %s" % (T("Hospital"), name), False,
+                                 URL(r=request, f="hospital", args=[record.id])])
+    if menu_selected:
+        menu_selected = [T("Open recent"), True, None, menu_selected]
+        response.menu_options.append(menu_selected)
 
 shn_menu()
 
@@ -110,7 +108,7 @@ def hospital():
                 msg_record_modified = T("Hospital information updated"),
                 msg_record_deleted = T("Hospital information deleted"),
                 msg_list_empty = T("No Hospitals currently registered"))
-            
+
             if r.component and r.component.name == "req":
                 # Hide the Implied fields
                 db.rms_req.shelter_id.writable = db.rms_req.shelter_id.readable = False
@@ -123,7 +121,7 @@ def hospital():
             # Hide the Implied fields here too to make columns match
             db.rms_req.shelter_id.readable = False
             db.rms_req.organisation_id.readable = False
-            
+
         return True
     response.s3.prep = prep
 

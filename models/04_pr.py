@@ -25,7 +25,7 @@ pr_address_type_opts = {
 resource = "address"
 tablename = "%s_%s" % (module, resource)
 table = db.define_table(tablename,
-                        pe_id,
+                        pe_id(),
                         Field("type",
                               "integer",
                               requires = IS_IN_SET(pr_address_type_opts, zero=None),
@@ -39,7 +39,7 @@ table = db.define_table(tablename,
                         Field("postcode"),
                         Field("city"),
                         Field("state"),
-                        pr_country,
+                        pr_country(),
                         location_id(),
                         comments(),
                         *s3_meta_fields(),
@@ -118,7 +118,7 @@ pr_contact_method_opts = {
 resource = "pe_contact"
 tablename = "%s_%s" % (module, resource)
 table = db.define_table(tablename,
-                        pe_id,
+                        pe_id(),
                         Field("name"),
                         Field("contact_method",
                               "integer",
@@ -136,19 +136,20 @@ table = db.define_table(tablename,
 
 table.uuid.requires = IS_NOT_IN_DB(db, "%s.uuid" % tablename)
 table.pe_id.requires = IS_ONE_OF(db, "pr_pentity.id",
-                                    shn_pentity_represent,
-                                    orderby="pe_type",
-                                    filterby="pe_type",
-                                    filter_opts=("pr_person", "pr_group"))
+                                 shn_pentity_represent,
+                                 orderby="pe_type",
+                                 filterby="pe_type",
+                                 filter_opts=("pr_person", "pr_group"))
 
 table.value.requires = IS_NOT_EMPTY()
 table.value.comment = SPAN("*", _class="req")
 table.priority.requires = IS_IN_SET(range(1,10), zero=None)
 
-pe_contact_id = db.Table(None, "pe_contact_id",
-                         FieldS3("pe_contact_id", db.pr_pe_contact,
-                                 requires = IS_NULL_OR(IS_ONE_OF(db, "pr_pe_contact.id")),
-                                 ondelete = "RESTRICT"))
+
+pe_contact_id = S3ReusableField("pe_contact_id", db.pr_pe_contact,
+                                requires = IS_NULL_OR(IS_ONE_OF(db, "pr_pe_contact.id")),
+                                ondelete = "RESTRICT")
+
 
 # Contact information as component of person entities
 s3xrc.model.add_component(module, resource,
@@ -202,7 +203,7 @@ pr_image_type_opts = {
 resource = "image"
 tablename = "%s_%s" % (module, resource)
 table = db.define_table(tablename,
-                        pe_id,
+                        pe_id(),
                         Field("type", "integer",
                               requires = IS_IN_SET(pr_image_type_opts, zero=None),
                               default = 1,
@@ -309,7 +310,7 @@ pr_presence_condition_opts = vita.presence_conditions
 resource = "presence"
 tablename = "%s_%s" % (module, resource)
 table = db.define_table(tablename,
-                        pe_id,
+                        pe_id(),
                         Field("reporter", db.pr_person),
                         Field("observer", db.pr_person),
                         Field("shelter_id", "integer"),
@@ -347,6 +348,7 @@ table.reporter.comment = shn_person_comment(
         T("Reporter"),
         T("Person who is reporting about the presence."))
 table.reporter.ondelete = "RESTRICT"
+table.reporter.default = s3_logged_in_person()
 
 table.datetime.requires = IS_UTC_DATETIME(utc_offset=shn_user_utc_offset(), allow_future=False)
 table.datetime.represent = lambda value: shn_as_local_time(value)
@@ -460,7 +462,7 @@ s3.crud_strings[tablename] = Storage(
 resource = "pe_subscription"
 tablename = "%s_%s" % (module, resource)
 table = db.define_table(tablename,
-                        pe_id,
+                        pe_id(),
                         Field("resource"),
                         Field("record"), # type="s3uuid"
                         comments(),
@@ -683,7 +685,7 @@ if deployment_settings.has_module("dvi") or \
     resource = "physical_description"
     tablename = "%s_%s" % (module, resource)
     table = db.define_table(tablename,
-                            pe_id,
+                            pe_id(),
 
                             # Race and complexion
                             Field("race", "integer",

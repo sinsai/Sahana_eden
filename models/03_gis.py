@@ -144,7 +144,7 @@ opt_gis_layout = db.Table(None, "opt_gis_layout",
 resource = "config"
 tablename = "%s_%s" % (module, resource)
 table = db.define_table(tablename,
-                        pe_id,                           # Personal Entity Reference
+                        pe_id(),                           # Personal Entity Reference
                         Field("lat", "double"),
                         Field("lon", "double"),
                         Field("zoom", "integer"),

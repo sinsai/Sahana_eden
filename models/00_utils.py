@@ -151,6 +151,20 @@ def myname(user_id):
 
 
 # -----------------------------------------------------------------------------
+def s3_logged_in_person():
+
+    """ Get the person ID of the current user """
+
+    if auth.shn_logged_in():
+        person = db.pr_person
+        record = db(person.uuid == session.auth.user.person_uuid).select(
+                    person.id, limitby=(0,1)).first()
+        if record:
+            return record.id
+
+    return None
+
+# -----------------------------------------------------------------------------
 def unauthorised():
     session.error = T("Not Authorised!")
     redirect(URL(r=request, c="default", f="user", args="login"))

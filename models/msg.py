@@ -102,7 +102,7 @@ if deployment_settings.has_module(module):
     resource = "log"
     tablename = "%s_%s" % (module, resource)
     table = db.define_table(tablename,
-                            pe_id,                  # Sender
+                            pe_id(),                # Sender
                             Field("sender"),        # The name to go out incase of the email, if set used
                             Field("fromaddress"),   # From address if set changes sender to this
                             Field("subject", length=78),
@@ -184,7 +184,7 @@ if deployment_settings.has_module(module):
     tablename = "%s_%s" % (module, resource)
     table = db.define_table(tablename,
                             message_id(),
-                            pe_id,              # Person/Group to send the message out to
+                            pe_id(),            # Person/Group to send the message out to
                             Field("address"),   # If set used instead of picking up from pe_id
                             Field("pr_message_method", "integer",
                                   requires = IS_IN_SET(msg_contact_method_opts, zero=None),

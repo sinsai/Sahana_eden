@@ -230,13 +230,12 @@ if deployment_settings.has_module(module):
         else:
             return None
 
-    skill_types_id = db.Table(None, "skill_types_id",
-                              FieldS3("skill_types_id", db.vol_skill_types,
-                                      sortby = ["category", "name"],
-                                      requires = IS_ONE_OF(db, "vol_skill_types.id", vol_skill_types_represent, orderby="vol_skill_types.name"),
-                                      represent = vol_skill_types_represent,
-                                      label = T("Skill"),
-                                      ondelete = "RESTRICT"))
+    skill_types_id = S3ReusableField("skill_types_id", db.vol_skill_types,
+                                     sortby = ["category", "name"],
+                                     requires = IS_ONE_OF(db, "vol_skill_types.id", vol_skill_types_represent, orderby="vol_skill_types.name"),
+                                     represent = vol_skill_types_represent,
+                                     label = T("Skill"),
+                                     ondelete = "RESTRICT")
 
 
     # -------------------------------------------------------------------------
@@ -248,7 +247,7 @@ if deployment_settings.has_module(module):
     tablename = module + "_" + resource
     table = db.define_table(tablename,
                             person_id(),
-                            skill_types_id,
+                            skill_types_id(),
                             Field("status",
                                   requires=IS_IN_SET(["approved","unapproved","denied"]),
                                   label=T("Status"),

@@ -59,15 +59,6 @@ if T.accepted_language in s3_rtl_languages:
 else:
     response.s3.rtl = False
 
-
-#def Tstr(text):
-    #"""
-       #Convenience function for non-Web2Py modules
-       #- need to define this *after* T.force
-       #(latest web2py no longer needs this)
-    #"""
-    #return str(T(text))
-
 ######
 # Mail
 ######
@@ -187,7 +178,6 @@ def s3_formstyle(id, label, widget, comment):
 # (1) Reworking the Location Selector from 3 cols to 2 cols
 # (2) Lookign at all Autocompletes which hide the original __row (need to also hide __row1)
 #crud.settings.formstyle = s3_formstyle
-
 
 ##########
 # Messages

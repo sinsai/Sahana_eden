@@ -1,7 +1,9 @@
 # -*- coding: utf-8 -*-
 
-"""
-    Camp Registry
+""" Camp Registry, model
+
+    @author: Pat Tressel
+
 """
 
 module = "cr"
@@ -105,7 +107,7 @@ if deployment_settings.has_module(module):
     # If this is a production site, do not disable HMS unless you really mean it...
 
     fields_before_hospital = db.Table(None, None,
-                                      timestamp, uuidstamp, deletion_status,
+                                      #timestamp, uuidstamp, deletion_status,
                                       site_id(),
                                       Field("name", notnull=True),
                                       shelter_type_id(),
@@ -129,12 +131,10 @@ if deployment_settings.has_module(module):
                                       # to keep this info in the shelter table and hide it if
                                       # the shelter is not a school.
                                       Field("school_code", "integer"),
-                                      Field("school_pf", "integer"),
-                                     )
+                                      Field("school_pf", "integer"))
 
     fields_after_hospital = db.Table(None, None,
-                                     comments()
-                                    )
+                                     comments())
 
     # Only include hospital_id if the hms module is enabled.
     if deployment_settings.has_module("hms"):
@@ -143,11 +143,13 @@ if deployment_settings.has_module(module):
                                 hospital_id(comment = DIV(SPAN("*", _class="req"),
                                                           db.hms_hcontact.hospital_id.comment)),   # @ToDo Cleaner method
                                 fields_after_hospital,
+                                *s3_meta_fields(),
                                 migrate=migrate)
     else:
         table = db.define_table(tablename,
                                 fields_before_hospital,
                                 fields_after_hospital,
+                                *s3_meta_fields(),
                                 migrate=migrate)
 
     table.uuid.requires = IS_NOT_IN_DB(db, "%s.uuid" % tablename)

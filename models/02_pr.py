@@ -106,19 +106,18 @@ def shn_pentity_represent(id, default_label="[no label]"):
 
 
 # -----------------------------------------------------------------------------
-pe_label = db.Table(None, "pe_label",
-                    Field("pe_label", length=128,
-                          label = T("ID Label"),
-                          requires = IS_NULL_OR(IS_NOT_IN_DB(db,
-                                     "pr_pentity.pe_label"))))
+pe_label = S3ReusableField("pe_label", length=128,
+                           label = T("ID Label"),
+                           requires = IS_NULL_OR(IS_NOT_IN_DB(db,
+                                      "pr_pentity.pe_label")))
 
-pe_id = db.Table(None, "pe_id",
-                 Field("pe_id", db.pr_pentity,
-                       requires = IS_NULL_OR(IS_ONE_OF(db, "pr_pentity.id", shn_pentity_represent, orderby="pr_pentity.id")),
-                       represent = lambda id: (id and [shn_pentity_represent(id)] or [NONE])[0],
-                       readable = False,
-                       writable = False,
-                       ondelete = "RESTRICT"))
+pe_id = S3ReusableField("pe_id", db.pr_pentity,
+                        requires = IS_NULL_OR(IS_ONE_OF(db, "pr_pentity.id", shn_pentity_represent, orderby="pr_pentity.id")),
+                        represent = lambda id: (id and [shn_pentity_represent(id)] or [NONE])[0],
+                        readable = False,
+                        writable = False,
+                        ondelete = "RESTRICT")
+
 
 # -----------------------------------------------------------------------------
 def shn_pentity_ondelete(record):
@@ -190,13 +189,12 @@ pr_gender_opts = {
     3:T("male")
 }
 
-pr_gender = db.Table(None, "gender",
-                     Field("gender", "integer",
-                           requires = IS_IN_SET(pr_gender_opts, zero=None),
-                           default = 1,
-                           label = T("Gender"),
-                           represent = lambda opt: \
-                                       pr_gender_opts.get(opt, UNKNOWN_OPT)))
+pr_gender = S3ReusableField("gender", "integer",
+                            requires = IS_IN_SET(pr_gender_opts, zero=None),
+                            default = 1,
+                            label = T("Gender"),
+                            represent = lambda opt: \
+                                        pr_gender_opts.get(opt, UNKNOWN_OPT))
 
 
 # -----------------------------------------------------------------------------
@@ -209,13 +207,12 @@ pr_age_group_opts = {
     6:T("Senior (50+)")
 }
 
-pr_age_group = db.Table(None, "age_group",
-                        Field("age_group", "integer",
-                              requires = IS_IN_SET(pr_age_group_opts, zero=None),
-                              default = 1,
-                              label = T("Age Group"),
-                              represent = lambda opt: \
-                                          pr_age_group_opts.get(opt, UNKNOWN_OPT)))
+pr_age_group = S3ReusableField("age_group", "integer",
+                               requires = IS_IN_SET(pr_age_group_opts, zero=None),
+                               default = 1,
+                               label = T("Age Group"),
+                               represent = lambda opt: \
+                                           pr_age_group_opts.get(opt, UNKNOWN_OPT))
 
 
 # -----------------------------------------------------------------------------
@@ -229,23 +226,22 @@ pr_marital_status_opts = {
     99:T("other")
 }
 
-pr_marital_status = db.Table(None, "marital_status",
-                             Field("marital_status", "integer",
-                                   requires = IS_NULL_OR(IS_IN_SET(pr_marital_status_opts)),
-                                   default = 1,
-                                   label = T("Marital Status"),
-                                   represent = lambda opt: opt and \
-                                               pr_marital_status_opts.get(opt, UNKNOWN_OPT)))
+pr_marital_status = S3ReusableField("marital_status", "integer",
+                                    requires = IS_NULL_OR(IS_IN_SET(pr_marital_status_opts)),
+                                    default = 1,
+                                    label = T("Marital Status"),
+                                    represent = lambda opt: opt and \
+                                                pr_marital_status_opts.get(opt, UNKNOWN_OPT))
 
 
 # -----------------------------------------------------------------------------
 pr_religion_opts = deployment_settings.get_L10n_religions()
-pr_religion = db.Table(None, "religion",
-                       Field("religion",
-                             requires = IS_EMPTY_OR(IS_IN_SET(pr_religion_opts)),
-                             label = T("Religion"),
-                             represent = lambda opt: opt and \
-                                         pr_religion_opts.get(opt, UNKNOWN_OPT)))
+
+pr_religion = S3ReusableField("religion",
+                              requires = IS_EMPTY_OR(IS_IN_SET(pr_religion_opts)),
+                              label = T("Religion"),
+                              represent = lambda opt: opt and \
+                                          pr_religion_opts.get(opt, UNKNOWN_OPT))
 
 
 # -----------------------------------------------------------------------------
@@ -263,19 +259,11 @@ pr_impact_tags = {
 # -----------------------------------------------------------------------------
 pr_nations = s3_list_of_nations
 
-pr_nationality = db.Table(None, "nationality",
-                          Field("nationality", "string", length=2,
-                                requires = IS_NULL_OR(IS_IN_SET(pr_nations, sort=True)),
-                                label = T("Nationality"),
-                                represent = lambda opt: \
-                                            pr_nations.get(opt, UNKNOWN_OPT)))
-
-pr_country = db.Table(None, "country",
-                      Field("country", "string", length=2,
-                            requires = IS_NULL_OR(IS_IN_SET(pr_nations, sort=True)),
-                            label = T("Country of Residence"),
-                            represent = lambda opt: \
-                                        pr_nations.get(opt, UNKNOWN_OPT)))
+pr_country = S3ReusableField("country", "string", length=2,
+                             requires = IS_NULL_OR(IS_IN_SET(pr_nations, sort=True)),
+                             label = T("Country of Residence"),
+                             represent = lambda opt: \
+                                         pr_nations.get(opt, UNKNOWN_OPT))
 
 
 # -----------------------------------------------------------------------------
@@ -301,21 +289,21 @@ def shn_pr_person_represent(id):
 resource = "person"
 tablename = "%s_%s" % (module, resource)
 table = db.define_table(tablename,
-                        pe_id,
-                        pe_label,
+                        pe_id(),
+                        pe_label(),
                         Field("missing", "boolean", default=False),
                         Field("first_name", notnull=True),
                         Field("middle_name"),
                         Field("last_name"),
                         Field("preferred_name"),
                         Field("local_name"),
-                        pr_gender,
-                        pr_age_group,
+                        pr_gender(),
+                        pr_age_group(),
                         Field("date_of_birth", "date"),
-                        pr_nationality,
-                        pr_country,
-                        pr_religion,
-                        pr_marital_status,
+                        pr_country("nationality"),
+                        pr_country("country"),
+                        pr_religion(),
+                        pr_marital_status(),
                         Field("occupation"),
                         Field("tags", "list:integer"),
                         comments(),
@@ -426,21 +414,20 @@ pr_group_type_opts = {
     4:T("other")
 }
 
-pr_group_type = db.Table(None, "group_type",
-                         Field("group_type", "integer",
-                               requires = IS_IN_SET(pr_group_type_opts, zero=None),
-                               default = 4,
-                               label = T("Group Type"),
-                               represent = lambda opt: \
-                                           pr_group_type_opts.get(opt, UNKNOWN_OPT)))
+pr_group_type = S3ReusableField("group_type", "integer",
+                                requires = IS_IN_SET(pr_group_type_opts, zero=None),
+                                default = 4,
+                                label = T("Group Type"),
+                                represent = lambda opt: \
+                                            pr_group_type_opts.get(opt, UNKNOWN_OPT))
 
 
 # -----------------------------------------------------------------------------
 resource = "group"
 tablename = "%s_%s" % (module, resource)
 table = db.define_table(tablename,
-                        pe_id,
-                        pr_group_type,
+                        pe_id(),
+                        pr_group_type(),
                         Field("system","boolean",default=False),
                         Field("name"),
                         Field("description"),

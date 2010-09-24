@@ -2525,7 +2525,7 @@ OpenLayers.Util.extend( selectPdfControl, {
 
         # JS
         layers_js = ""
-        js_enabled = db(db.gis_layer_tms.enabled == True).select()
+        js_enabled = db(db.gis_layer_js.enabled == True).select()
         for layer in js_enabled:
             layers_js  += layer.code
 

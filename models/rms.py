@@ -54,6 +54,7 @@ if deployment_settings.has_module(module):
     resource = "req"
     tablename = "%s_%s" % (module, resource)
     table = db.define_table(tablename, #timestamp, uuidstamp, deletion_status,
+        sit_id(),
         person_id(),
         hospital_id(),    # @ToDo Check if the module is enabled for adding FK: check CR for an example
         shelter_id(),     # @ToDo Check if the module is enabled for adding FK: check CR for an example
@@ -148,6 +149,10 @@ if deployment_settings.has_module(module):
                     )
 
     request_id = req_id #only for other models - this should be replaced!
+
+    s3xrc.model.configure(table,
+        onaccept=lambda form, table=table: s3_situation_onaccept(form, table=table),
+        delete_onaccept=lambda row: s3_situation_ondelete(row))
 
     # rms_req as component of doc_documents
     s3xrc.model.add_component(module, resource,

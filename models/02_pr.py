@@ -22,11 +22,13 @@ pr_pe_types = Storage(
 
 resource = "pentity"
 tablename = "%s_%s" % (module, resource)
-table = db.define_table(tablename, deletion_status,
+table = db.define_table(tablename,
+                        Field("pe_id", "id"),
                         Field("pe_type"),
                         Field("uuid", length=128),
-                        Field("pe_id", "integer"),
+                        #Field("pe_id", "integer"),
                         Field("pe_label", length=128),
+                        *s3_deletion_status(),
                         migrate=migrate)
 
 table.pe_type.writable = False
@@ -45,9 +47,9 @@ def shn_pentity_represent(id, default_label="[no label]"):
     pe_str = T("None (no such record)")
 
     pe_table = db.pr_pentity
-    pe = db(pe_table.id == id).select(pe_table.pe_type,
-                                     pe_table.pe_label,
-                                     limitby=(0, 1)).first()
+    pe = db(pe_table.pe_id == id).select(pe_table.pe_type,
+                                         pe_table.pe_label,
+                                         limitby=(0, 1)).first()
     if not pe:
         return pe_str
 
@@ -112,7 +114,7 @@ pe_label = S3ReusableField("pe_label", length=128,
                                       "pr_pentity.pe_label")))
 
 pe_id = S3ReusableField("pe_id", db.pr_pentity,
-                        requires = IS_NULL_OR(IS_ONE_OF(db, "pr_pentity.id", shn_pentity_represent, orderby="pr_pentity.id")),
+                        requires = IS_NULL_OR(IS_ONE_OF(db, "pr_pentity.pe_id", shn_pentity_represent, orderby="pr_pentity.pe_id")),
                         represent = lambda id: (id and [shn_pentity_represent(id)] or [NONE])[0],
                         readable = False,
                         writable = False,
@@ -153,9 +155,9 @@ def shn_pentity_onaccept(form, table=None):
         pentity = db.pr_pentity
         uid = record.uuid
 
-        pe = db(pentity.uuid == uid).select(pentity.id, limitby=(0,1)).first()
+        pe = db(pentity.uuid == uid).select(pentity.pe_id, limitby=(0,1)).first()
         if pe:
-            values = dict(pe_id = pe.id)
+            values = dict(pe_id = pe.pe_id)
             if "pe_label" in record:
                 values.update(pe_label = record.pe_label)
             db(pentity.uuid == uid).update(**values)
@@ -163,7 +165,7 @@ def shn_pentity_onaccept(form, table=None):
             pe_type = table._tablename
             pe_label = record.get("pe_label", None)
             pe_id = pentity.insert(uuid=uid, pe_label=pe_label, pe_type=pe_type)
-            db(pentity.id == pe_id).update(pe_id=pe_id, deleted=False)
+            #db(pentity.id == pe_id).update(pe_id=pe_id, deleted=False)
             db(table.id == id).update(pe_id=pe_id)
 
         # If a person gets added in MPR, then redirect to missing report

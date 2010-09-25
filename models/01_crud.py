@@ -1131,8 +1131,8 @@ def shn_list(r, **attr):
                    for row in rows]
 
         result = dict(sEcho = sEcho,
-                      iTotalRecords = len(rows),
-                      iTotalDisplayRecords = totalrows,
+                      iTotalRecords = totalrows,
+                      iTotalDisplayRecords = len(rows),
                       aaData = aaData)
 
         from gluon.serializers import json

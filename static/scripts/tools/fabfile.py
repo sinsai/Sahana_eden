@@ -68,6 +68,7 @@ def deploy():
     cleanup()
     migrate_on()
     db_upgrade()
+    optimise()
     migrate_off()
     maintenance_off()
 
@@ -171,19 +172,6 @@ def db_upgrade():
             # Step 10: Import it into the empty database
             print(green("%s: Importing fixed data" % env.host))
             run("mysql sahana < old.sql", pty=True)
-        #@ ToDo
-        # Restore indexes
-        #      w2p
-        #       tablename = "pr_person"
-        #       field = "first_name"
-        #       db.executesql("CREATE INDEX %s__idx on %s(%s);" % (field, tablename, field))
-        #       field = "middle_name"
-        #       db.executesql("CREATE INDEX %s__idx on %s(%s);" % (field, tablename, field))
-        #       field = "last_name"
-        #       db.executesql("CREATE INDEX %s__idx on %s(%s);" % (field, tablename, field))
-        #       tablename = "gis_location"
-        #       field = "name"
-        #       db.executesql("CREATE INDEX %s__idx on %s(%s);" % (field, tablename, field))
 
 def db_sync():
     """
@@ -303,6 +291,25 @@ def migrate_off():
     print(green("%s: Disabling Migrations" % env.host))
     with cd("/home/web2py/applications/eden/models/"):
         run("sed -i 's/deployment_settings.base.migrate = True/deployment_settings.base.migrate = False/g' 000_config.py", pty=True)
+
+def optimise():
+    """ Apply Optimisation """
+    #@ ToDo
+    # Restore indexes via Python script run in Web2Py environment
+    #      w2p
+    #       tablename = "pr_person"
+    #       field = "first_name"
+    #       db.executesql("CREATE INDEX %s__idx on %s(%s);" % (field, tablename, field))
+    #       field = "middle_name"
+    #       db.executesql("CREATE INDEX %s__idx on %s(%s);" % (field, tablename, field))
+    #       field = "last_name"
+    #       db.executesql("CREATE INDEX %s__idx on %s(%s);" % (field, tablename, field))
+    #       tablename = "gis_location"
+    #       field = "name"
+    #       db.executesql("CREATE INDEX %s__idx on %s(%s);" % (field, tablename, field))
+    # Compile application via Python script run in Web2Py environment
+    with cd("/home/web2py/"):
+        run("python web2py.py -S eden -M -R applications/eden/static/scripts/tools/compile.py", pty=True)
 
 def pull():
     """ Upgrade the Eden code """

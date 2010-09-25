@@ -167,7 +167,7 @@ table = db.define_table(tablename,
                         migrate=migrate)
 
 table.uuid.requires = IS_NOT_IN_DB(db, "gis_config.uuid")
-table.pe_id.requires = IS_NULL_OR(IS_ONE_OF(db, "pr_pentity.id", shn_pentity_represent))
+table.pe_id.requires = IS_NULL_OR(IS_ONE_OF(db, "pr_pentity.pe_id", shn_pentity_represent))
 table.pe_id.readable = table.pe_id.writable = False
 table.lat.requires = IS_LAT()
 table.lon.requires = IS_LON()

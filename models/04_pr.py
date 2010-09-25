@@ -48,7 +48,7 @@ table = db.define_table(tablename,
 
 table.uuid.requires = IS_NOT_IN_DB(db, "%s.uuid" % tablename)
 
-table.pe_id.requires = IS_ONE_OF(db, "pr_pentity.id", shn_pentity_represent,
+table.pe_id.requires = IS_ONE_OF(db, "pr_pentity.pe_id", shn_pentity_represent,
                                  orderby="pe_type",
                                  filterby="pe_type",
                                  filter_opts=("pr_person", "pr_group"))
@@ -135,7 +135,7 @@ table = db.define_table(tablename,
                         migrate=migrate)
 
 table.uuid.requires = IS_NOT_IN_DB(db, "%s.uuid" % tablename)
-table.pe_id.requires = IS_ONE_OF(db, "pr_pentity.id",
+table.pe_id.requires = IS_ONE_OF(db, "pr_pentity.pe_id",
                                  shn_pentity_represent,
                                  orderby="pe_type",
                                  filterby="pe_type",
@@ -471,7 +471,7 @@ table = db.define_table(tablename,
 
 
 table.uuid.requires = IS_NOT_IN_DB(db, "%s.uuid" % tablename)
-table.pe_id.requires = IS_ONE_OF(db, "pr_pentity.id",
+table.pe_id.requires = IS_ONE_OF(db, "pr_pentity.pe_id",
                                     shn_pentity_represent,
                                     filterby="pe_type",
                                     orderby="pe_type",

@@ -1,12 +1,12 @@
-{{extend 'layout.html'}}
-<div id="home">
-{{=H2(T(module_name))}}
+{{extend "layout.html"}}
+<div id='home'>
+{{=H2(module_name)}}
 {{if groups_problems:}}
   {{for group, latest_problems, actions in groups_problems:}}
     {{if actions:}}
-      <div id="delphi_problem_header">
+      <div id='delphi_problem_header'>
       {{for action in actions:}}
-        <a href="{{= URL(r=request, f=action[0]) }}">{{=T(action[1])}}</a>
+        <a href='{{= URL(r=request, f=action[0]) }}'>{{=T(action[1])}}</a>
       {{pass}}
       </div>
     {{pass}}
@@ -15,10 +15,10 @@
         <p>{{=group.description}}</p>
     {{pass}}
     {{if latest_problems:}}
-    <ul style="margin: 5px 30px 10px;">
+    <ul style='margin: 5px 30px 10px;'>
         {{for pr in latest_problems:}}
           {{ k = pr.delphi_solution.select() and len(pr.delphi_solution.select()[0].delphi_vote.select(db.delphi_vote.user_id, distinct=True)) or 0 }}
-            <li><a href="{{=URL(r=request, f='summary', args=pr.id) }}"><b>{{=T(pr.name)}}</b> ({{=k}} {{=T("Vote") if k == 1 else T("Votes")}})</a>
+            <li><a href='{{=URL(r=request, f="summary", args=pr.id) }}'><b>{{=pr.name}}</b> ({{=k}} {{=T("Vote") if k == 1 else T("Votes")}})</a>
             {{if pr.description:}}
                 <p>{{=pr.description}}</p>
             {{pass}}

@@ -12,9 +12,10 @@ if deployment_settings.has_module(module):
     #from gluon.sqlhtml import *
 
     # Reusable table
-    name_desc = db.Table(db, timestamp, uuidstamp, deletion_status, authorstamp,
+    name_desc = db.Table(db,
                          Field("name", "string", default="", length=120),
-                         Field("description", "text", default="", length=500))
+                         Field("description", "text", default="", length=500),
+                         *s3_meta_fields())
 
     # Survey Template
     resource = "template"
@@ -22,8 +23,8 @@ if deployment_settings.has_module(module):
     template = db.define_table(tablename, name_desc,
                                Field("table_name", "string", readable=False, writable=False),
                                Field("locked", "boolean", readable=False, writable=False),
-                               person_id,
-                               organisation_id,
+                               person_id(),
+                               organisation_id(),
                                migrate=migrate)
 
     # Survey Series
@@ -33,21 +34,26 @@ if deployment_settings.has_module(module):
                              Field("survey_template_id", db.survey_template),
                              Field("from_date", "date", default=None),
                              Field("to_date", "date", default=None),
-                             location_id,
+                             location_id(),
                              migrate=migrate)
 
     # Survey Section
     resource = "questions"
     tablename = module + "_" + resource
-    section = db.define_table(tablename, uuidstamp, deletion_status, authorstamp)
+    section = db.define_table(tablename,
+                              #uuidstamp, deletion_status, authorstamp,
+                              *s3_meta_fields(),
+                              migrate=migrate)
 
     # Survey Question
     resource = "question"
     tablename = module +"_" + resource
-    question = db.define_table(tablename,timestamp, uuidstamp, deletion_status, authorstamp,                               
+    question = db.define_table(tablename,
+                                #timestamp, uuidstamp, deletion_status, authorstamp,
                                 Field("name", "string", default="", length=120),
                                 Field("question_type", "integer"),
                                 Field("description", "text", default="", length=500),
+                                *s3_meta_fields(),
                                 migrate=migrate)
 
                                 #Field("options_id", db.survey_question_options),
@@ -62,16 +68,18 @@ if deployment_settings.has_module(module):
     # Link table
     resource = "template_link"
     tablename = module +"_" + resource
-    link_table = db.define_table(tablename,timestamp, uuidstamp, deletion_status, authorstamp,
+    link_table = db.define_table(tablename,
+                                 #timestamp, uuidstamp, deletion_status, authorstamp,
                                  Field("survey_question_id", db.survey_question),
                                  Field("survey_template_id", db.survey_template),
                                  Field("survey_questions_id", db.survey_questions),
+                                 *s3_meta_fields(),
                                  migrate=migrate)
     link_table.survey_question_id.requires = IS_NULL_OR(IS_ONE_OF(db, "survey_question.id", "%(name)s"))
 
 
     # Unused code below here
-    
+
 #    # Survey Instance
 #    resource = "instance"
 #    tablename = module + "_" + resource

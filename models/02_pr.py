@@ -106,19 +106,18 @@ def shn_pentity_represent(id, default_label="[no label]"):
 
 
 # -----------------------------------------------------------------------------
-pe_label = db.Table(None, "pe_label",
-                    Field("pe_label", length=128,
-                          label = T("ID Label"),
-                          requires = IS_NULL_OR(IS_NOT_IN_DB(db,
-                                     "pr_pentity.pe_label"))))
+pe_label = S3ReusableField("pe_label", length=128,
+                           label = T("ID Label"),
+                           requires = IS_NULL_OR(IS_NOT_IN_DB(db,
+                                      "pr_pentity.pe_label")))
 
-pe_id = db.Table(None, "pe_id",
-                 Field("pe_id", db.pr_pentity,
-                       requires = IS_NULL_OR(IS_ONE_OF(db, "pr_pentity.id", shn_pentity_represent, orderby="pr_pentity.id")),
-                       represent = lambda id: (id and [shn_pentity_represent(id)] or [NONE])[0],
-                       readable = False,
-                       writable = False,
-                       ondelete = "RESTRICT"))
+pe_id = S3ReusableField("pe_id", db.pr_pentity,
+                        requires = IS_NULL_OR(IS_ONE_OF(db, "pr_pentity.id", shn_pentity_represent, orderby="pr_pentity.id")),
+                        represent = lambda id: (id and [shn_pentity_represent(id)] or [NONE])[0],
+                        readable = False,
+                        writable = False,
+                        ondelete = "RESTRICT")
+
 
 # -----------------------------------------------------------------------------
 def shn_pentity_ondelete(record):
@@ -190,13 +189,12 @@ pr_gender_opts = {
     3:T("male")
 }
 
-pr_gender = db.Table(None, "gender",
-                     Field("gender", "integer",
-                           requires = IS_IN_SET(pr_gender_opts, zero=None),
-                           default = 1,
-                           label = T("Gender"),
-                           represent = lambda opt: \
-                                       pr_gender_opts.get(opt, UNKNOWN_OPT)))
+pr_gender = S3ReusableField("gender", "integer",
+                            requires = IS_IN_SET(pr_gender_opts, zero=None),
+                            default = 1,
+                            label = T("Gender"),
+                            represent = lambda opt: \
+                                        pr_gender_opts.get(opt, UNKNOWN_OPT))
 
 
 # -----------------------------------------------------------------------------
@@ -209,13 +207,12 @@ pr_age_group_opts = {
     6:T("Senior (50+)")
 }
 
-pr_age_group = db.Table(None, "age_group",
-                        Field("age_group", "integer",
-                              requires = IS_IN_SET(pr_age_group_opts, zero=None),
-                              default = 1,
-                              label = T("Age Group"),
-                              represent = lambda opt: \
-                                          pr_age_group_opts.get(opt, UNKNOWN_OPT)))
+pr_age_group = S3ReusableField("age_group", "integer",
+                               requires = IS_IN_SET(pr_age_group_opts, zero=None),
+                               default = 1,
+                               label = T("Age Group"),
+                               represent = lambda opt: \
+                                           pr_age_group_opts.get(opt, UNKNOWN_OPT))
 
 
 # -----------------------------------------------------------------------------
@@ -229,23 +226,22 @@ pr_marital_status_opts = {
     99:T("other")
 }
 
-pr_marital_status = db.Table(None, "marital_status",
-                             Field("marital_status", "integer",
-                                   requires = IS_NULL_OR(IS_IN_SET(pr_marital_status_opts)),
-                                   default = 1,
-                                   label = T("Marital Status"),
-                                   represent = lambda opt: opt and \
-                                               pr_marital_status_opts.get(opt, UNKNOWN_OPT)))
+pr_marital_status = S3ReusableField("marital_status", "integer",
+                                    requires = IS_NULL_OR(IS_IN_SET(pr_marital_status_opts)),
+                                    default = 1,
+                                    label = T("Marital Status"),
+                                    represent = lambda opt: opt and \
+                                                pr_marital_status_opts.get(opt, UNKNOWN_OPT))
 
 
 # -----------------------------------------------------------------------------
 pr_religion_opts = deployment_settings.get_L10n_religions()
-pr_religion = db.Table(None, "religion",
-                       Field("religion",
-                             requires = IS_EMPTY_OR(IS_IN_SET(pr_religion_opts)),
-                             label = T("Religion"),
-                             represent = lambda opt: opt and \
-                                         pr_religion_opts.get(opt, UNKNOWN_OPT)))
+
+pr_religion = S3ReusableField("religion",
+                              requires = IS_EMPTY_OR(IS_IN_SET(pr_religion_opts)),
+                              label = T("Religion"),
+                              represent = lambda opt: opt and \
+                                          pr_religion_opts.get(opt, UNKNOWN_OPT))
 
 
 # -----------------------------------------------------------------------------
@@ -263,19 +259,11 @@ pr_impact_tags = {
 # -----------------------------------------------------------------------------
 pr_nations = s3_list_of_nations
 
-pr_nationality = db.Table(None, "nationality",
-                          Field("nationality", "string", length=2,
-                                requires = IS_NULL_OR(IS_IN_SET(pr_nations, sort=True)),
-                                label = T("Nationality"),
-                                represent = lambda opt: \
-                                            pr_nations.get(opt, UNKNOWN_OPT)))
-
-pr_country = db.Table(None, "country",
-                      Field("country", "string", length=2,
-                            requires = IS_NULL_OR(IS_IN_SET(pr_nations, sort=True)),
-                            label = T("Country of Residence"),
-                            represent = lambda opt: \
-                                        pr_nations.get(opt, UNKNOWN_OPT)))
+pr_country = S3ReusableField("country", "string", length=2,
+                             requires = IS_NULL_OR(IS_IN_SET(pr_nations, sort=True)),
+                             label = T("Country of Residence"),
+                             represent = lambda opt: \
+                                         pr_nations.get(opt, UNKNOWN_OPT))
 
 
 # -----------------------------------------------------------------------------
@@ -301,27 +289,26 @@ def shn_pr_person_represent(id):
 resource = "person"
 tablename = "%s_%s" % (module, resource)
 table = db.define_table(tablename,
-                        timestamp, uuidstamp, authorstamp, deletion_status,
-                        pe_id,
-                        pe_label,
+                        pe_id(),
+                        pe_label(),
                         Field("missing", "boolean", default=False),
                         Field("first_name", notnull=True),
                         Field("middle_name"),
                         Field("last_name"),
                         Field("preferred_name"),
                         Field("local_name"),
-                        pr_gender,
-                        pr_age_group,
+                        pr_gender(),
+                        pr_age_group(),
                         Field("date_of_birth", "date"),
-                        pr_nationality,
-                        pr_country,
-                        pr_religion,
-                        pr_marital_status,
+                        pr_country("nationality"),
+                        pr_country("country"),
+                        pr_religion(),
+                        pr_marital_status(),
                         Field("occupation"),
                         Field("tags", "list:integer"),
-                        comments,
+                        comments(),
+                        *s3_meta_fields(),
                         migrate=migrate)
-
 
 table.date_of_birth.requires = IS_NULL_OR(IS_DATE_IN_RANGE(
                                maximum=request.utcnow.date(),
@@ -331,17 +318,17 @@ table.first_name.requires = IS_NOT_EMPTY()
 table.first_name.requires.error_message = T("Please enter a First Name")
 
 table.pe_label.comment = DIV(DIV(_class="tooltip",
-    _title=Tstr("ID Label") + "|" + Tstr("Number or Label on the identification tag this person is wearing (if any).")))
+    _title=T("ID Label") + "|" + T("Number or Label on the identification tag this person is wearing (if any).")))
 table.first_name.comment =  DIV(SPAN("*", _class="req", _style="padding-right: 5px;"), DIV(_class="tooltip",
-    _title=Tstr("First name") + "|" + Tstr("The first or only name of the person (mandatory).")))
+    _title=T("First name") + "|" + T("The first or only name of the person (mandatory).")))
 table.preferred_name.comment = DIV(DIV(_class="tooltip",
-    _title=Tstr("Preferred Name") + "|" + Tstr("The name to be used when calling for or directly addressing the person (optional).")))
+    _title=T("Preferred Name") + "|" + T("The name to be used when calling for or directly addressing the person (optional).")))
 table.local_name.comment = DIV(DIV(_class="tooltip",
-    _title=Tstr("Local Name") + "|" + Tstr("Name of the person in local language and script (optional).")))
+    _title=T("Local Name") + "|" + T("Name of the person in local language and script (optional).")))
 table.nationality.comment = DIV(DIV(_class="tooltip",
-    _title=Tstr("Nationality") + "|" + Tstr("Nationality of the person.")))
+    _title=T("Nationality") + "|" + T("Nationality of the person.")))
 table.country.comment = DIV(DIV(_class="tooltip",
-    _title=Tstr("Country of Residence") + "|" + Tstr("The country the person usually lives in.")))
+    _title=T("Country of Residence") + "|" + T("The country the person usually lives in.")))
 
 table.missing.represent = lambda missing: (missing and ["missing"] or [""])[0]
 
@@ -350,7 +337,7 @@ table.age_group.label = T("Age group")
 
 table.tags.label = T("Personal impact of disaster")
 table.tags.comment = DIV(DIV(_class="tooltip",
-    _title=Tstr("Personal impact of disaster") + "|" + Tstr("How is this person affected by the disaster? (Select all that apply)")))
+    _title=T("Personal impact of disaster") + "|" + T("How is this person affected by the disaster? (Select all that apply)")))
 table.tags.requires = IS_EMPTY_OR(IS_IN_SET(pr_impact_tags, zero=None, multiple=True))
 table.tags.represent = lambda opt: opt and \
                        ", ".join([str(pr_impact_tags.get(o, UNKNOWN_OPT)) for o in opt]) or ""
@@ -386,22 +373,20 @@ shn_person_comment = lambda title, comment: \
         _title="%s|%s" % (title, comment))))
 
 shn_person_id_comment = shn_person_comment(
-    Tstr("Person"),
-    Tstr("Select the person associated with this scenario."))
+    T("Person"),
+    T("Select the person associated with this scenario."))
 
-person_id = db.Table(None, "person_id",
-                     FieldS3("person_id", db.pr_person,
-                             sortby = ["first_name", "middle_name", "last_name"],
-                             requires = IS_NULL_OR(IS_ONE_OF(db, "pr_person.id",
-                                                             shn_pr_person_represent,
-                                                             orderby="pr_person.first_name",
-                                                             sort=True)),
-                             represent = lambda id: (id and \
-                                         [shn_pr_person_represent(id)] or [NONE])[0],
-                             label = T("Person"),
-                             comment = shn_person_id_comment,
-                             ondelete = "RESTRICT"))
-
+person_id = S3ReusableField("person_id", db.pr_person,
+                            sortby = ["first_name", "middle_name", "last_name"],
+                            requires = IS_NULL_OR(IS_ONE_OF(db, "pr_person.id",
+                                                            shn_pr_person_represent,
+                                                            orderby="pr_person.first_name",
+                                                            sort=True)),
+                            represent = lambda id: (id and \
+                                        [shn_pr_person_represent(id)] or [NONE])[0],
+                            label = T("Person"),
+                            comment = shn_person_id_comment,
+                            ondelete = "RESTRICT")
 
 # -----------------------------------------------------------------------------
 s3xrc.model.configure(table,
@@ -429,26 +414,25 @@ pr_group_type_opts = {
     4:T("other")
 }
 
-pr_group_type = db.Table(None, "group_type",
-                         Field("group_type", "integer",
-                               requires = IS_IN_SET(pr_group_type_opts, zero=None),
-                               default = 4,
-                               label = T("Group Type"),
-                               represent = lambda opt: \
-                                           pr_group_type_opts.get(opt, UNKNOWN_OPT)))
+pr_group_type = S3ReusableField("group_type", "integer",
+                                requires = IS_IN_SET(pr_group_type_opts, zero=None),
+                                default = 4,
+                                label = T("Group Type"),
+                                represent = lambda opt: \
+                                            pr_group_type_opts.get(opt, UNKNOWN_OPT))
 
 
 # -----------------------------------------------------------------------------
 resource = "group"
 tablename = "%s_%s" % (module, resource)
 table = db.define_table(tablename,
-                        timestamp, uuidstamp, authorstamp, deletion_status,
-                        pe_id,
-                        pr_group_type,
+                        pe_id(),
+                        pr_group_type(),
                         Field("system","boolean",default=False),
                         Field("name"),
                         Field("description"),
-                        comments,
+                        comments(),
+                        *s3_meta_fields(),
                         migrate=migrate)
 
 
@@ -461,7 +445,7 @@ table.name.comment = DIV(SPAN("*", _class="req", _style="padding-right: 5px;"))
 
 table.description.label = T("Group description")
 table.description.comment = DIV(DIV(_class="tooltip",
-    _title=Tstr("Group description") + "|" + Tstr("A brief description of the group (optional)")))
+    _title=T("Group description") + "|" + T("A brief description of the group (optional)")))
 
 # -----------------------------------------------------------------------------
 ADD_GROUP = T("Add Group")
@@ -484,26 +468,23 @@ s3.crud_strings[tablename] = Storage(
 
 
 # -----------------------------------------------------------------------------
-group_id = db.Table(None, "group_id",
-                    FieldS3("group_id", db.pr_group,
-                            sortby="name",
-                            requires = IS_NULL_OR(IS_ONE_OF(db, "pr_group.id",
-                                        "%(id)s: %(name)s",
-                                        filterby="system",
-                                        filter_opts=(False,))),
-                            represent = lambda id: (id and \
-                                        [db(db.pr_group.id == id).select(db.pr_group.name, limitby=(0, 1)).first().name] or [NONE])[0],
-                            ondelete = "RESTRICT"))
-
-group_id.group_id.comment = \
-    DIV(A(s3.crud_strings.pr_group.label_create_button,
-        _class="colorbox",
-        _href=URL(r=request, c="pr", f="group", args="create", vars=dict(format="popup")),
-        _target="top",
-        _title=s3.crud_strings.pr_group.label_create_button),
-    DIV(DIV(_class="tooltip",
-        _title=Tstr("Create Group Entry") + "|" + Tstr("Create a group entry in the registry.")))),
-
+group_id = S3ReusableField("group_id", db.pr_group,
+                           sortby="name",
+                           requires = IS_NULL_OR(IS_ONE_OF(db, "pr_group.id",
+                                                           "%(id)s: %(name)s",
+                                                           filterby="system",
+                                                           filter_opts=(False,))),
+                           represent = lambda id: (id and \
+                                       [db(db.pr_group.id == id).select(db.pr_group.name, limitby=(0, 1)).first().name] or [NONE])[0],
+                           comment = \
+                                DIV(A(s3.crud_strings.pr_group.label_create_button,
+                                    _class="colorbox",
+                                    _href=URL(r=request, c="pr", f="group", args="create", vars=dict(format="popup")),
+                                    _target="top",
+                                    _title=s3.crud_strings.pr_group.label_create_button),
+                                DIV(DIV(_class="tooltip",
+                                    _title=T("Create Group Entry") + "|" + T("Create a group entry in the registry.")))),
+                           ondelete = "RESTRICT")
 
 # -----------------------------------------------------------------------------
 s3xrc.model.configure(table,
@@ -517,12 +498,12 @@ s3xrc.model.configure(table,
 resource = "group_membership"
 tablename = "%s_%s" % (module, resource)
 table = db.define_table(tablename,
-                        timestamp, uuidstamp, authorstamp, deletion_status,
-                        group_id,
-                        person_id,
+                        group_id(),
+                        person_id(),
                         Field("group_head", "boolean", default=False),
                         Field("description"),
-                        comments,
+                        comments(),
+                        *s3_meta_fields(),
                         migrate=migrate)
 
 table.group_head.represent = lambda group_head: (group_head and [T("yes")] or [""])[0]
@@ -609,10 +590,10 @@ def shn_pr_person_search_simple(r, **attr):
 
         # Select form
         form = FORM(TABLE(
-                TR(Tstr("Name and/or ID") + " : ",
+                TR(T("Name and/or ID") + " : ",
                    INPUT(_type="text", _name="label", _size="40"),
                    DIV(DIV(_class="tooltip",
-                           _title=Tstr("Name and/or ID") + "|" + Tstr("To search for a person, enter any of the first, middle or last names and/or an ID number of a person, separated by spaces. You may use % as wildcard. Press 'Search' without input to list all persons.")))),
+                           _title=T("Name and/or ID") + "|" + T("To search for a person, enter any of the first, middle or last names and/or an ID number of a person, separated by spaces. You may use % as wildcard. Press 'Search' without input to list all persons.")))),
                 TR("", INPUT(_type="submit", _value=T("Search")))))
 
         output = dict(form=form, vars=form.vars)

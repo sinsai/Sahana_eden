@@ -48,9 +48,9 @@ def email_settings():
     table.inbound_mail_password.label = T("Password")
     table.inbound_mail_delete.label = T("Delete from Server?")
     table.inbound_mail_port.comment = DIV(DIV(_class="tooltip",
-        _title=Tstr("Port") + "|" + Tstr("For POP-3 this is usually 110 (995 for SSL), for IMAP this is usually 143 (993 for IMAP).")))
+        _title=T("Port") + "|" + T("For POP-3 this is usually 110 (995 for SSL), for IMAP this is usually 143 (993 for IMAP).")))
     table.inbound_mail_delete.comment = DIV(DIV(_class="tooltip",
-            _title=Tstr("Delete") + "|" + Tstr("If this is set to True then mails will be deleted from the server after downloading.")))
+            _title=T("Delete") + "|" + T("If this is set to True then mails will be deleted from the server after downloading.")))
 
     if not auth.has_membership(auth.id_group("Administrator")):
 		session.error = UNAUTHORISED
@@ -246,11 +246,11 @@ def modem_settings():
     table.modem_port.label = T("Port")
     table.modem_baud.label = T("Baud")
     table.modem_port.comment = DIV(DIV(_class="tooltip",
-        _title=Tstr("Port") + "|" + Tstr("The serial port at which the modem is connected - /dev/ttyUSB0, etc on linux and com1, com2, etc on Windows")))
+        _title=T("Port") + "|" + T("The serial port at which the modem is connected - /dev/ttyUSB0, etc on linux and com1, com2, etc on Windows")))
     table.modem_baud.comment = DIV(DIV(_class="tooltip",
-        _title=Tstr("Baud") + "|" + Tstr("Baud rate to use for your modem - The default is safe for most cases")))
+        _title=T("Baud") + "|" + T("Baud rate to use for your modem - The default is safe for most cases")))
     table.enabled.comment = DIV(DIV(_class="tooltip",
-        _title=Tstr("Enabled") + "|" + Tstr("Unselect to disable the modem")))
+        _title=T("Enabled") + "|" + T("Unselect to disable the modem")))
     
     # CRUD Strings
     ADD_SETTING = T("Add Setting")
@@ -287,15 +287,15 @@ def gateway_settings():
     table.to_variable.label = T("To variable")
     table.message_variable.label = T("Message variable")
     table.url.comment = DIV(DIV(_class="tooltip",
-        _title="URL|" + Tstr("The URL of your web gateway without the post parameters")))
+        _title="URL|" + T("The URL of your web gateway without the post parameters")))
     table.parameters.comment = DIV(DIV(_class="tooltip",
-        _title=Tstr("Parameters") + "|" + Tstr("The post variables other than the ones containing the message and the phone number")))
+        _title=T("Parameters") + "|" + T("The post variables other than the ones containing the message and the phone number")))
     table.message_variable.comment = DIV(DIV(_class="tooltip",
-        _title=Tstr("Message Variable") + "|" + Tstr("The post variable on the URL used for sending messages")))
+        _title=T("Message Variable") + "|" + T("The post variable on the URL used for sending messages")))
     table.to_variable.comment = DIV(DIV(_class="tooltip",
-        _title=Tstr("To variable") + "|" + Tstr("The post variable containing the phone number")))
+        _title=T("To variable") + "|" + T("The post variable containing the phone number")))
     table.enabled.comment = DIV(DIV(_class="tooltip",
-        _title=Tstr("Enabled") + "|" + Tstr("Unselect to disable the modem")))
+        _title=T("Enabled") + "|" + T("Unselect to disable the modem")))
 
     # CRUD Strings
     ADD_SETTING = T("Add Setting")
@@ -328,7 +328,7 @@ def setting():
     table = db[tablename]
     table.outgoing_sms_handler.label = T("Outgoing SMS handler")
     table.outgoing_sms_handler.comment = DIV(DIV(_class="tooltip",
-    _title=Tstr("Outgoing SMS handler") + "|" + Tstr("Selects whether to use the gateway or the Modem for sending out SMS")))
+    _title=T("Outgoing SMS handler") + "|" + T("Selects whether to use the gateway or the Modem for sending out SMS")))
     # CRUD Strings
     ADD_SETTING = T("Add Setting")
     VIEW_SETTINGS = T("View Settings")

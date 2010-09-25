@@ -1,11 +1,11 @@
 # -*- coding: utf-8 -*-
 
 """
-    Supply 
-    
+    Supply
+
     @author: Michael Howden (michael@sahanafoundation.org)
-    @date-created: 2010-08-16    
-    
+    @date-created: 2010-08-16
+
     Generic Supply functionality such as catalogs and items that will be used across multiple modules
 """
 
@@ -16,13 +16,10 @@ if deployment_settings.has_module("logs"):
     #
     resource = "item_category"
     tablename = "%s_%s" % (module, resource)
-    table = db.define_table(tablename, 
-                            timestamp, 
-                            uuidstamp, 
-                            authorstamp, 
-                            deletion_status,
+    table = db.define_table(tablename,
                             Field("name", length=128, notnull=True, unique=True),
-                            comments,
+                            comments(),
+                            *s3_meta_fields(),
                             migrate=migrate)
 
     table.name.comment = SPAN("*", _class="req")
@@ -45,32 +42,28 @@ if deployment_settings.has_module("logs"):
         msg_record_modified = T("Item Category updated"),
         msg_record_deleted = T("Item Category deleted"),
         msg_list_empty = T("No Item Categories currently registered"))
-    
+
     # Reusable Field
-    item_category_id = db.Table(None, "item_category_id",
-            FieldS3("item_category_id", db.supply_item_category, sortby="name",
+    item_category_id = S3ReusableField("item_category_id", db.supply_item_category, sortby="name",
                 requires = IS_NULL_OR(IS_ONE_OF(db, "supply_item_category.id", "%(name)s", sort=True)),
                 represent = lambda id: shn_get_db_field_value(db=db, table="supply_item_category", field="name", look_up=id),
                 label = T("Category"),
-                comment = DIV( _class="tooltip", _title=Tstr("Item Category") + "|" + Tstr("The list of Item categories are maintained by the Administrators.")),
+                comment = DIV( _class="tooltip", _title=T("Item Category") + "|" + T("The list of Item categories are maintained by the Administrators.")),
                 #comment = DIV(A(ADD_ITEM_CATEGORY, _class="colorbox", _href=URL(r=request, c="supply", f="item_category", args="create", vars=dict(format="popup")), _target="top", _title=ADD_ITEM_CATEGORY),
-                #          DIV( _class="tooltip", _title=Tstr("Item Category") + "|" + Tstr("The category of the Item."))),
+                #          DIV( _class="tooltip", _title=T("Item Category") + "|" + T("The category of the Item."))),
                 ondelete = "RESTRICT"
-                ))
-    
+                )
+
     #==============================================================================
     # Item
     #
     resource = "item"
     tablename = "%s_%s" % (module, resource)
-    table = db.define_table(tablename, 
-                            timestamp, 
-                            uuidstamp, 
-                            authorstamp, 
-                            deletion_status,                        
-                            item_category_id,
+    table = db.define_table(tablename,
+                            item_category_id(),
                             Field("name", length=128, notnull=True, unique=True),
-                            comments,
+                            comments(),
+                            *s3_meta_fields(),
                             migrate=migrate)
 
     table.name.comment = SPAN("*", _class="req")
@@ -93,14 +86,13 @@ if deployment_settings.has_module("logs"):
         msg_record_modified = T("Item updated"),
         msg_record_deleted = T("Item deleted"),
         msg_list_empty = T("No Items currently registered"))
-    
+
     # Reusable Field
-    item_id = db.Table(None, "item_id",
-            FieldS3("item_id", db.supply_item, sortby="name",
+    item_id = S3ReusableField("item_id", db.supply_item, sortby="name",
                 requires = IS_NULL_OR(IS_ONE_OF(db, "supply_item.id", "%(name)s", sort=True)),
                 represent = lambda id: shn_get_db_field_value(db=db, table="supply_item", field="name", look_up=id),
                 label = T("Item"),
                 comment = DIV(A(ADD_ITEM, _class="colorbox", _href=URL(r=request, c="supply", f="item", args="create", vars=dict(format="popup")), _target="top", _title=ADD_ITEM),
-                          DIV( _class="tooltip", _title=Tstr("Relief Item") + "|" + Tstr("Add a new Relief Item."))),
+                          DIV( _class="tooltip", _title=T("Relief Item") + "|" + T("Add a new Relief Item."))),
                 ondelete = "RESTRICT"
-                ))
+                )

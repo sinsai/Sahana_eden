@@ -371,7 +371,7 @@ class GIS(object):
         request = self.request
 
         # Hide deleted Resources
-        query = (db.gis_location.deleted == False)
+        query = (db["%s_%s" % (module, resource)].deleted == False)
 
         if filter:
             query = query & (db[filter.tablename].id == filter.id)
@@ -1290,10 +1290,14 @@ class GIS(object):
 
         # Read configuration
         config = self.get_config()
-        if not height:
-            height = config.map_height
-        if not width:
-            width = config.map_width
+        if height:
+            map_height = height
+        else:
+            map_height = config.map_height
+        if width:
+            map_width = width
+        else:
+            map_width = config.map_width
         if bbox and (-90 < bbox["max_lat"] < 90) and (-90 < bbox["min_lat"] < 90) and (-180 < bbox["max_lon"] < 180) and (-180 < bbox["min_lon"] < 180):
             # We have sane Bounds provided, so we should use them
             pass
@@ -2521,7 +2525,7 @@ OpenLayers.Util.extend( selectPdfControl, {
 
         # JS
         layers_js = ""
-        js_enabled = db(db.gis_layer_tms.enabled == True).select()
+        js_enabled = db(db.gis_layer_js.enabled == True).select()
         for layer in js_enabled:
             layers_js  += layer.code
 
@@ -2730,7 +2734,7 @@ OpenLayers.Util.extend( selectPdfControl, {
             for layer in feature_queries:
                 # Features passed as Query
                 if "name" in layer:
-                    name = layer["name"]
+                    name = str(layer["name"])
                 else:
                     name = "Query" + str(int(random.random()*1000))
 
@@ -2742,7 +2746,7 @@ OpenLayers.Util.extend( selectPdfControl, {
                         markerLayer = marker
                     except:
                         # integer (marker_id)
-                        markerLayer = db(db.gis_marker.id == layer["marker"]).select(db.gis_marker.image, limitby=(0, 1), cache=cache).first()
+                        markerLayer = db(db.gis_marker.id == layer["marker"]).select(db.gis_marker.image, db.gis_marker.height, db.gis_marker.width, limitby=(0, 1), cache=cache).first()
                 else:
                     markerLayer = ""
 
@@ -3011,10 +3015,12 @@ OpenLayers.Util.extend( selectPdfControl, {
                         projection_str = "projection: new OpenLayers.Projection('EPSG:" + georss_projection + "'),"
                     marker_id = layer["marker_id"]
                     if marker_id:
-                        marker = db(db.gis_marker.id == marker_id).select(db.gis_marker.image, limitby=(0, 1)).first().image
+                        marker = db(db.gis_marker.id == marker_id).select(db.gis_marker.image, db.gis_marker.height, db.gis_marker.width, limitby=(0, 1)).first()
                     else:
-                        marker = db(db.gis_marker.id == marker_default).select(db.gis_marker.image, limitby=(0, 1)).first().image
-                    marker_url = URL(r=request, c="static", f="img", args=["markers", marker])
+                        marker = db(db.gis_marker.id == marker_default).select(db.gis_marker.image, db.gis_marker.height, db.gis_marker.width, limitby=(0, 1)).first()
+                    marker_url = URL(r=request, c="static", f="img", args=["markers", marker.image])
+                    height = marker.height
+                    width = marker.width
 
                     if cacheable:
                         # Download file
@@ -3235,6 +3241,14 @@ OpenLayers.Util.extend( selectPdfControl, {
                     title = layer["title"] or "name"
                     body = layer["body"] or "description"
                     projection_str = "projection: proj4326,"
+                    marker_id = layer["marker_id"]
+                    if marker_id:
+                        marker = db(db.gis_marker.id == marker_id).select(db.gis_marker.image, db.gis_marker.height, db.gis_marker.width, limitby=(0, 1)).first()
+                    else:
+                        marker = db(db.gis_marker.id == marker_default).select(db.gis_marker.image, db.gis_marker.height, db.gis_marker.width, limitby=(0, 1)).first()
+                    marker_url = URL(r=request, c="static", f="img", args=["markers", marker.image])
+                    height = marker.height
+                    width = marker.width
                     if cacheable:
                         # Download file
                         file, warning = self.download_kml(url, public_url)
@@ -3589,8 +3603,8 @@ OpenLayers.Util.extend( selectPdfControl, {
 
         mapPanel = new GeoExt.MapPanel({
             region: 'center',
-            height: """ + str(height) + """,
-            width: """ + str(width) + """,
+            height: """ + str(map_height) + """,
+            width: """ + str(map_width) + """,
             id: 'mappanel',
             xtype: 'gx_mappanel',
             map: map,
@@ -3660,8 +3674,8 @@ OpenLayers.Util.extend( selectPdfControl, {
             autoScroll: true,
             maximizable: true,
             titleCollapse: true,
-            height: """ + str(height) + """,
-            width: """ + str(width) + """,
+            height: """ + str(map_height) + """,
+            width: """ + str(map_width) + """,
             layout: 'border',
             items: [{
                     region: 'west',

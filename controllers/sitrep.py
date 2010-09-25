@@ -43,7 +43,7 @@ def maps():
 
     freports = db(db.gis_location.id == db.sitrep_freport.location_id).select()
     freport_popup_url = URL(r=request, f="freport", args="read.popup?freport.location_id=")
-    map = gis.show_map(feature_queries = [{"name":Tstr("Flood Reports"), "query":freports, "active":True, "popup_url": freport_popup_url}], window=True)
+    map = gis.show_map(feature_queries = [{"name":T("Flood Reports"), "query":freports, "active":True, "popup_url": freport_popup_url}], window=True)
 
     return dict(map=map)
 
@@ -100,7 +100,7 @@ def school_district():
                                        _target="top",
                                        _title=ADD_LOCATION),
                                      DIV( _class="tooltip",
-                                       _title=Tstr("District") + "|" + Tstr("The District for this Report."))),
+                                       _title=T("District") + "|" + T("The District for this Report."))),
 
     # Pre-processor
     def prep(r):
@@ -177,10 +177,10 @@ def shn_sitrep_rheader(r, tabs=[]):
 
             rheader = DIV(TABLE(
                             TR(
-                                TH(Tstr("Date") + ": "), report.date
+                                TH(T("Date") + ": "), report.date
                               ),
                             TR(
-                                TH(Tstr("Document") + ": "), A(doc_name, _href=doc_url)
+                                TH(T("Document") + ": "), A(doc_name, _href=doc_url)
                               )
                             ),
                           rheader_tabs)

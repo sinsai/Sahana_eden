@@ -4,6 +4,101 @@
     Global tables and re-usable fields
 """
 
+# -----------------------------------------------------------------------------
+# Reusable Author fields to include in other table definitions
+def shn_user_represent(id):
+    table = db.auth_user
+    user = db(table.id == id).select(table.email, limitby=(0, 1), cache=(cache.ram, 10)).first()
+    if user:
+        return user.email
+    return None
+
+# -----------------------------------------------------------------------------
+# "Reusable" fields for table meta-data
+#
+# Reusable UUID field to include in other table definitions
+# Uses URNs according to http://tools.ietf.org/html/rfc4122
+s3uuid = SQLCustomType(
+                type = "string",
+                native = "VARCHAR(128)",
+                encoder = (lambda x: "'%s'" % (uuid.uuid4().urn if x == "" else str(x).replace("'", "''"))),
+                decoder = (lambda x: x)
+            )
+
+meta_uuidstamp = S3ReusableField("uuid",
+                                 type=s3uuid,
+                                 length=128,
+                                 notnull=True,
+                                 unique=True,
+                                 readable=False,
+                                 writable=False,
+                                 default="")
+
+meta_mci = S3ReusableField("mci", "integer", # Master-Copy-Index
+                           default=0,
+                           readable=False,
+                           writable=False)
+
+def s3_uid():
+    return (meta_uuidstamp(), meta_mci())
+
+meta_deletion_status = S3ReusableField("deleted", "boolean",
+                                       readable=False,
+                                       writable=False,
+                                       default=False)
+
+def s3_deletion_status():
+    return (meta_deletion_status(),)
+
+meta_created_on = S3ReusableField("created_on", "datetime",
+                                  readable=False,
+                                  writable=False,
+                                  default=request.utcnow)
+
+meta_modified_on = S3ReusableField("modified_on", "datetime",
+                                   readable=False,
+                                   writable=False,
+                                   default=request.utcnow,
+                                   update=request.utcnow)
+
+def s3_timestamp():
+    return (meta_created_on(), meta_modified_on())
+
+meta_created_by = S3ReusableField("created_by", db.auth_user,
+                                  readable=False, # Enable when needed, not by default
+                                  writable=False,
+                                  requires=None,
+                                  default=session.auth.user.id if auth.is_logged_in() else None,
+                                  represent = lambda id: id and shn_user_represent(id) or UNKNOWN_OPT,
+                                  ondelete="RESTRICT")
+
+meta_modified_by = S3ReusableField("modified_by", db.auth_user,
+                                   readable=False, # Enable when needed, not by default
+                                   writable=False,
+                                   requires=None,
+                                   default=session.auth.user.id if auth.is_logged_in() else None,
+                                   update=session.auth.user.id if auth.is_logged_in() else None,
+                                   represent = lambda id: id and shn_user_represent(id) or UNKNOWN_OPT,
+                                   ondelete="RESTRICT")
+
+def s3_authorstamp():
+    return (meta_created_by(),meta_modified_by())
+
+def s3_meta_fields():
+
+    fields = (
+        meta_uuidstamp(),
+        meta_mci(),
+        meta_deletion_status(),
+        meta_created_on(),
+        meta_modified_on(),
+        meta_created_by(),
+        meta_modified_by()
+    )
+
+    return fields
+
+# -----------------------------------------------------------------------------
 # Reusable timestamp fields to include in other table definitions
 timestamp = db.Table(None, "timestamp",
             Field("created_on", "datetime",
@@ -16,19 +111,6 @@ timestamp = db.Table(None, "timestamp",
                   default=request.utcnow,
                   update=request.utcnow)
             )
-
-# Reusable Author fields to include in other table definitions
-# TODO: make a better represent!
-def shn_user_represent(id):
-    def user_represent(id):
-        table = db.auth_user
-        user = db(table.id == id).select(table.email, limitby=(0, 1))
-        if user:
-            user = user.first()
-            return user.email
-        return None
-    return cache.ram("repr_user_%s" % id,
-                     lambda: user_represent(id), time_expire=10)
 
 authorstamp = db.Table(None, "authorstamp",
             Field("created_by", db.auth_user,
@@ -46,19 +128,9 @@ authorstamp = db.Table(None, "authorstamp",
                   ondelete="RESTRICT")
             )
 
-comments = db.Table(None, "comments",
-                    Field("comments", "text",
-                          comment = DIV(_class="tooltip",
-                                        _title=Tstr("Comments") + "|" +Tstr("Please use this field to record any additional information, including a history of the record if it is updated."))))
-
-# Reusable UUID field to include in other table definitions
-# Uses URNs according to http://tools.ietf.org/html/rfc4122
-s3uuid = SQLCustomType(
-                type = "string",
-                native = "VARCHAR(128)",
-                encoder = (lambda x: "'%s'" % (uuid.uuid4().urn if x == "" else str(x).replace("'", "''"))),
-                decoder = (lambda x: x)
-            )
+comments = S3ReusableField("comments", "text",
+                           comment = DIV(_class="tooltip",
+                                         _title=T("Comments") + "|" + T("Please use this field to record any additional information, including a history of the record if it is updated.")))
 
 uuidstamp = db.Table(None, "uuidstamp",
             Field("uuid",
@@ -90,14 +162,6 @@ deletion_status = db.Table(None, "deletion_status",
 #                comment = DIV(A(T("Add Role"), _class="colorbox", _href=URL(r=request, c="admin", f="group", args="create", vars=dict(format="popup")), _target="top", _title=T("Add Role")), DIV( _class="tooltip", _title=str(T("Admin")) + "|" + str(T("The Group whose members can edit data in this record.")))),
 #                ondelete="RESTRICT"
 #                ))
-
-# Reusable Document field to include in other table definitions
-# @ToDo Deprecate: replace by source_id which links to central Document Library
-document = db.Table(None, "document",
-                    Field("document", "upload", autodelete = True,
-                          label=T("Scanned File"),
-                          #comment = DIV( _class="tooltip", _title=str(T("Scanned File")) + "|" + str(T("The scanned copy of this document."))),
-                          ))
 
 # Reusable Currency field to include in other table definitions
 currency_type_opts = {
@@ -196,18 +260,9 @@ table = db.define_table(tablename, timestamp, uuidstamp,
                         Field("admin_name"),
                         Field("admin_email"),
                         Field("admin_tel"),
-                        #Field("utc_offset", length=16, default=deployment_settings.get_L10n_utc_offset()), # default UTC offset of the instance
                         Field("theme", db.admin_theme),
-                        #Field("archive_not_delete", "boolean", default=True),
-                        #Field("debug", "boolean", default=False),
-                        #Field("self_registration", "boolean", default=True),
-                        #Field("security_policy", "integer", default=1),
-                        #Field("audit_read", "boolean", default=False),
-                        #Field("audit_write", "boolean", default=False),
                         migrate=migrate)
 
-#table.security_policy.requires = IS_IN_SET(s3_setting_security_policy_opts, zero=None)
-#table.security_policy.represent = lambda opt: s3_setting_security_policy_opts.get(opt, UNKNOWN_OPT)
 table.theme.requires = IS_IN_DB(db, "admin_theme.id", "admin_theme.name", zero=None)
 table.theme.represent = lambda name: db(db.admin_theme.id == name).select(db.admin_theme.name, limitby=(0, 1)).first().name
 # Define CRUD strings (NB These apply to all Modules' "settings" too)
@@ -227,44 +282,3 @@ s3.crud_strings[resource] = Storage(
     msg_record_modified = T("Setting updated"),
     msg_record_deleted = T("Setting deleted"),
     msg_list_empty = T("No Settings currently defined"))
-
-# Common Source table
-resource = "source"
-tablename = "%s_%s" % (module, resource)
-table = db.define_table(tablename, timestamp, uuidstamp,
-                        Field("name"),
-                        Field("description"),
-                        Field("url"),
-                        migrate=migrate)
-
-table.uuid.requires = IS_NOT_IN_DB(db, "%s.uuid" % tablename)
-table.name.requires = [IS_NOT_EMPTY(), IS_NOT_IN_DB(db, "%s.name" % tablename)]
-table.name.label = T("Source of Information")
-table.name.comment = SPAN("*", _class="req")
-table.url.requires = IS_NULL_OR(IS_URL())
-table.url.label = T("URL")
-ADD_SOURCE = T("Add Source")
-LIST_SOURCES = T("List Sources")
-s3.crud_strings[tablename] = Storage(
-    title_create = ADD_SOURCE,
-    title_display = T("Source Details"),
-    title_list = LIST_SOURCES,
-    title_update = T("Edit Source"),
-    title_search = T("Search Sources"),
-    subtitle_create = T("Add New Source"),
-    subtitle_list = T("Sources"),
-    label_list_button = LIST_SOURCES,
-    label_create_button = ADD_SOURCE,
-    msg_record_created = T("Source added"),
-    msg_record_modified = T("Source updated"),
-    msg_record_deleted = T("Source deleted"),
-    msg_list_empty = T("No Sources currently registered"))
-# Reusable field to include in other table definitions
-source_id = db.Table(None, "source_id",
-            FieldS3("source_id", db.s3_source, sortby="name",
-                requires = IS_NULL_OR(IS_ONE_OF(db, "s3_source.id", "%(name)s")),
-                represent = lambda id: (id and [db(db.s3_source.id == id).select(db.s3_source.name, limitby=(0, 1)).first().name] or [NONE])[0],
-                label = T("Source of Information"),
-                comment = DIV(A(ADD_SOURCE, _class="colorbox", _href=URL(r=request, c="default", f="source", args="create", vars=dict(format="popup")), _target="top", _title=ADD_SOURCE), DIV( _class="tooltip", _title=str(T("Add Source")) + "|" + str(T("The Source this information came from.")))),
-                ondelete = "RESTRICT"
-                ))

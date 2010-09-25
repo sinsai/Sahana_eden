@@ -122,6 +122,7 @@ deployment_settings.gis.locations_hierarchy = {
     "L2":T("District"),
     "L3":T("Town"),
     "L4":T("Village"),
+    "L5":T("Location"), # Street Address
     "XX":T("Imported")
 }
 # Maximum Marker Size
@@ -247,6 +248,7 @@ deployment_settings.modules = Storage(
     pr = Storage(
             name_nice = T("Person Registry"),
             description = T("Central point to record details on People"),
+            access = "|1|",     # Only Administrators can see this module in the default menu (access to controller is possible to all still)
             module_type = 10,
             resources = Storage(
                 pr_address = {"importer" : True},
@@ -319,11 +321,11 @@ deployment_settings.modules = Storage(
                 org_task = {"importer" : True}
             )
         ),
-    ticket = Storage(
-            name_nice = T("Ticketing Module"),
-            description = T("Master Message Log to process incoming reports & requests"),
-            module_type = 10,
-        ),
+    #ticket = Storage(
+    #        name_nice = T("Ticketing Module"),
+    #        description = T("Master Message Log to process incoming reports & requests"),
+    #        module_type = 10,
+    #    ),
     importer = Storage(
     	     name_nice = "Spreadsheet Importer",
     	     description = "Used to import data from spreadsheets into the database",

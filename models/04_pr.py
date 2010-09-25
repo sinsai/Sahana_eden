@@ -25,8 +25,7 @@ pr_address_type_opts = {
 resource = "address"
 tablename = "%s_%s" % (module, resource)
 table = db.define_table(tablename,
-                        timestamp, authorstamp, uuidstamp, deletion_status,
-                        pe_id,
+                        pe_id(),
                         Field("type",
                               "integer",
                               requires = IS_IN_SET(pr_address_type_opts, zero=None),
@@ -40,9 +39,10 @@ table = db.define_table(tablename,
                         Field("postcode"),
                         Field("city"),
                         Field("state"),
-                        pr_country,
-                        location_id,
-                        Field("comment"),
+                        pr_country(),
+                        location_id(),
+                        comments(),
+                        *s3_meta_fields(),
                         migrate=migrate)
 
 
@@ -118,8 +118,7 @@ pr_contact_method_opts = {
 resource = "pe_contact"
 tablename = "%s_%s" % (module, resource)
 table = db.define_table(tablename,
-                        timestamp, authorstamp, uuidstamp, deletion_status,
-                        pe_id,
+                        pe_id(),
                         Field("name"),
                         Field("contact_method",
                               "integer",
@@ -131,24 +130,26 @@ table = db.define_table(tablename,
                         Field("contact_person"),
                         Field("priority"),
                         Field("value", notnull=True),
-                        Field("comment"),
+                        comments(),
+                        *s3_meta_fields(),
                         migrate=migrate)
 
 table.uuid.requires = IS_NOT_IN_DB(db, "%s.uuid" % tablename)
 table.pe_id.requires = IS_ONE_OF(db, "pr_pentity.id",
-                                    shn_pentity_represent,
-                                    orderby="pe_type",
-                                    filterby="pe_type",
-                                    filter_opts=("pr_person", "pr_group"))
+                                 shn_pentity_represent,
+                                 orderby="pe_type",
+                                 filterby="pe_type",
+                                 filter_opts=("pr_person", "pr_group"))
 
 table.value.requires = IS_NOT_EMPTY()
 table.value.comment = SPAN("*", _class="req")
 table.priority.requires = IS_IN_SET(range(1,10), zero=None)
 
-pe_contact_id = db.Table(None, "pe_contact_id",
-                         FieldS3("pe_contact_id", db.pr_pe_contact,
-                                 requires = IS_NULL_OR(IS_ONE_OF(db, "pr_pe_contact.id")),
-                                 ondelete = "RESTRICT"))
+
+pe_contact_id = S3ReusableField("pe_contact_id", db.pr_pe_contact,
+                                requires = IS_NULL_OR(IS_ONE_OF(db, "pr_pe_contact.id")),
+                                ondelete = "RESTRICT")
+
 
 # Contact information as component of person entities
 s3xrc.model.add_component(module, resource,
@@ -202,8 +203,7 @@ pr_image_type_opts = {
 resource = "image"
 tablename = "%s_%s" % (module, resource)
 table = db.define_table(tablename,
-                        timestamp, authorstamp, uuidstamp, deletion_status,
-                        pe_id,
+                        pe_id(),
                         Field("type", "integer",
                               requires = IS_IN_SET(pr_image_type_opts, zero=None),
                               default = 1,
@@ -213,29 +213,30 @@ table = db.define_table(tablename,
                         Field("image", "upload", autodelete=True),
                         Field("url"),
                         Field("description"),
-                        Field("comment"),
+                        comments(),
+                        *s3_meta_fields(),
                         migrate=migrate)
 
 table.uuid.requires = IS_NOT_IN_DB(db, "%s.uuid" % tablename)
 
 table.title.requires = IS_NOT_EMPTY()
 table.title.comment = DIV(SPAN("*", _class="req", _style="padding-right: 5px;"), DIV(_class="tooltip",
-    _title=Tstr("Title") + "|" + Tstr("Specify a descriptive title for the image.")))
+    _title=T("Title") + "|" + T("Specify a descriptive title for the image.")))
 
 table.url.label = T("URL")
 table.url.represent = lambda url: url and DIV(A(IMG(_src=url, _height=60), _href=url)) or T("None")
 table.url.comment =  DIV(SPAN("*", _class="req", _style="padding-right: 5px;"), DIV(_class="tooltip",
-    _title=Tstr("URL") + "|" + Tstr("The URL of the image file. If you don't upload an image file, then you must specify its location here.")))
+    _title=T("URL") + "|" + T("The URL of the image file. If you don't upload an image file, then you must specify its location here.")))
 
 table.image.comment =  DIV(SPAN("*", _class="req", _style="padding-right: 5px;"), DIV(_class="tooltip",
-    _title=Tstr("Image") + "|" + Tstr("Upload an image file here. If you don't upload an image file, then you must specify its location in the URL field.")))
+    _title=T("Image") + "|" + T("Upload an image file here. If you don't upload an image file, then you must specify its location in the URL field.")))
 table.image.represent = lambda image: image and \
         DIV(A(IMG(_src=URL(r=request, c="default", f="download", args=image),_height=60, _alt=T("View Image")),
               _href=URL(r=request, c="default", f="download", args=image))) or \
         T("No Image")
 
 table.description.comment =  DIV(_class="tooltip",
-    _title=Tstr("Description") + "|" + Tstr("Give a brief description of the image, e.g. what can be seen where on the picture (optional)."))
+    _title=T("Description") + "|" + T("Give a brief description of the image, e.g. what can be seen where on the picture (optional)."))
 
 
 # -----------------------------------------------------------------------------
@@ -305,51 +306,17 @@ s3.crud_strings[tablename] = Storage(
 #
 pr_presence_condition_opts = vita.presence_conditions
 
-orig_id = db.Table(None, "orig_id",
-                   Field("orig_id", db.gis_location,
-                         requires = IS_NULL_OR(IS_ONE_OF(db, "gis_location.id", "%(name)s")),
-                         represent = lambda id: (id and [A(db(db.gis_location.id==id).select(db.gis_location.name, limitby=(0, 1)).first().name, _href="#", _onclick="s3_viewMap(" + str(id) +");return false")] or [""])[0],
-                         label = T("Origin"),
-                         comment = DIV(A(ADD_LOCATION,
-                                         _class="colorbox",
-                                         _href=URL(r=request, c="gis", f="location", args="create", vars=dict(format="popup")),
-                                         _target="top",
-                                         _title=ADD_LOCATION),
-                                       DIV(DIV(_class="tooltip",
-                                               _title=Tstr("Location") + "|" + Tstr("The Location of this Site, which can be general (for Reporting) or precise (for displaying on a Map).")))),
-                         ondelete = "RESTRICT"
-                        )
-                  )
-
-dest_id = db.Table(None, "dest_id",
-                   Field("dest_id", db.gis_location,
-                         requires = IS_NULL_OR(IS_ONE_OF(db, "gis_location.id", "%(name)s")),
-                         represent = lambda id: (id and [A(db(db.gis_location.id == id).select(db.gis_location.name, limitby=(0, 1)).first().name, _href="#", _onclick="s3_viewMap(" + str(id) +");return false")] or [""])[0],
-                         label = T("Destination"),
-                         comment = DIV(A(ADD_LOCATION,
-                                         _class="colorbox",
-                                         _href=URL(r=request, c="gis", f="location", args="create", vars=dict(format="popup")),
-                                         _target="top",
-                                         _title=ADD_LOCATION),
-                                       DIV(DIV(_class="tooltip",
-                                               _title=Tstr("Location") + "|" + Tstr("The Location of this Site, which can be general (for Reporting) or precise (for displaying on a Map).")))),
-                         ondelete = "RESTRICT"
-                        )
-                  )
-
-
 # -----------------------------------------------------------------------------
 resource = "presence"
 tablename = "%s_%s" % (module, resource)
 table = db.define_table(tablename,
-                        timestamp, authorstamp, uuidstamp, deletion_status,
-                        pe_id,
+                        pe_id(),
                         Field("reporter", db.pr_person),
                         Field("observer", db.pr_person),
                         Field("shelter_id", "integer"),
-                        location_id,
+                        location_id(),
                         Field("location_details"),
-                        Field("datetime", "datetime"), # 'time' is a reserved word in Postgres
+                        Field("datetime", "datetime"),
                         Field("presence_condition", "integer",
                               requires = IS_IN_SET(pr_presence_condition_opts,
                                                    zero=None),
@@ -358,10 +325,11 @@ table = db.define_table(tablename,
                               represent = lambda opt: \
                                           pr_presence_condition_opts.get(opt, UNKNOWN_OPT)),
                         Field("proc_desc"),
-                        orig_id,
-                        dest_id,
+                        location_id("orig_id", label=T("Origin")),
+                        location_id("dest_id", label=T("Destination")),
                         Field("comment"),
                         Field("closed", "boolean", default=False),
+                        *s3_meta_fields(),
                         migrate=migrate)
 
 
@@ -370,16 +338,17 @@ table.uuid.requires = IS_NOT_IN_DB(db, "%s.uuid" % tablename)
 table.observer.requires = IS_NULL_OR(IS_ONE_OF(db, "pr_person.id", shn_pr_person_represent, orderby="pr_person.first_name"))
 table.observer.represent = lambda id: (id and [shn_pr_person_represent(id)] or ["None"])[0]
 table.observer.comment = shn_person_comment(
-        Tstr("Observer"),
-        Tstr("Person who observed the presence (if different from reporter)."))
+        T("Observer"),
+        T("Person who observed the presence (if different from reporter)."))
 table.observer.ondelete = "RESTRICT"
 
 table.reporter.requires = IS_NULL_OR(IS_ONE_OF(db, "pr_person.id", shn_pr_person_represent, orderby="pr_person.first_name"))
 table.reporter.represent = lambda id: (id and [shn_pr_person_represent(id)] or ["None"])[0]
 table.reporter.comment = shn_person_comment(
-        Tstr("Reporter"),
-        Tstr("Person who is reporting about the presence."))
+        T("Reporter"),
+        T("Person who is reporting about the presence."))
 table.reporter.ondelete = "RESTRICT"
+table.reporter.default = s3_logged_in_person()
 
 table.datetime.requires = IS_UTC_DATETIME(utc_offset=shn_user_utc_offset(), allow_future=False)
 table.datetime.represent = lambda value: shn_as_local_time(value)
@@ -492,12 +461,13 @@ s3.crud_strings[tablename] = Storage(
 #
 resource = "pe_subscription"
 tablename = "%s_%s" % (module, resource)
-table = db.define_table(tablename, timestamp, uuidstamp, deletion_status,
-                pe_id,
-                Field("resource"),
-                Field("record"), # type="s3uuid"
-                Field("comment"),
-                migrate=migrate)
+table = db.define_table(tablename,
+                        pe_id(),
+                        Field("resource"),
+                        Field("record"), # type="s3uuid"
+                        comments(),
+                        *s3_meta_fields(),
+                        migrate=migrate)
 
 
 table.uuid.requires = IS_NOT_IN_DB(db, "%s.uuid" % tablename)
@@ -556,8 +526,7 @@ pr_id_type_opts = {
 resource = "identity"
 tablename = "%s_%s" % (module, resource)
 table = db.define_table(tablename,
-                        timestamp, authorstamp, uuidstamp, deletion_status,
-                        person_id,
+                        person_id(),
                         Field("type", "integer",
                               requires = IS_IN_SET(pr_id_type_opts, zero=None),
                               default = 1,
@@ -570,7 +539,8 @@ table = db.define_table(tablename,
                         Field("ia_name"), # Name of issuing authority
                         #Field("ia_subdivision"), # Name of issuing authority subdivision
                         #Field("ia_code"), # Code of issuing authority (if any)
-                        Field("comment"),
+                        comments(),
+                        *s3_meta_fields(),
                         migrate=migrate)
 
 table.uuid.requires = IS_NOT_IN_DB(db, "%s.uuid" % tablename)
@@ -715,8 +685,7 @@ if deployment_settings.has_module("dvi") or \
     resource = "physical_description"
     tablename = "%s_%s" % (module, resource)
     table = db.define_table(tablename,
-                            timestamp, authorstamp, uuidstamp, deletion_status,
-                            pe_id,
+                            pe_id(),
 
                             # Race and complexion
                             Field("race", "integer",
@@ -812,13 +781,14 @@ if deployment_settings.has_module("dvi") or \
                             # Other details
                             Field("other_details", "text"),
 
-                            Field("comment"),
+                            comments(),
+                            *s3_meta_fields(),
                             migrate=migrate)
 
     table.height_cm.comment = DIV(DIV(_class="tooltip",
-        _title=Tstr("Height") + "|" + Tstr("The body height (crown to heel) in cm.")))
+        _title=T("Height") + "|" + T("The body height (crown to heel) in cm.")))
     table.weight_kg.comment = DIV(DIV(_class="tooltip",
-        _title=Tstr("Weight") + "|" + Tstr("The weight in kg.")))
+        _title=T("Weight") + "|" + T("The weight in kg.")))
 
     table.pe_id.readable = False
     table.pe_id.writable = False

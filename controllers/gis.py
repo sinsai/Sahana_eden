@@ -24,7 +24,7 @@ response.menu_options = [
 if not deployment_settings.get_security_map() or shn_has_role("MapAdmin"):
     response.menu_options.append([T("Service Catalogue"), False, URL(r=request, f="map_service_catalogue")])
     response.menu_options.append([T("De-duplicator"), False, URL(r=request, f="location_duplicates")])
- 
+
 # -----------------------------------------------------------------------------
 # Web2Py Tools functions
 def download():
@@ -38,11 +38,11 @@ def index():
     """
 
     module_name = deployment_settings.modules[module].name_nice
-    
+
     # Include an embedded Overview Map on the index page
     window = False
     toolbar = False
-    
+
     map = define_map(window=window, toolbar=toolbar)
 
     return dict(module_name=module_name, map=map)
@@ -53,7 +53,7 @@ def define_map(window=False, toolbar=False):
         Define the main Situation Map
         This can then be called from both the Index page (embedded) & the Map_Viewing_Client (fullscreen)
     """
-    
+
     # @ToDo: Make these configurable
     config = gis.get_config()
     if not deployment_settings.get_security_map() or shn_has_role("MapAdmin"):
@@ -74,52 +74,52 @@ def define_map(window=False, toolbar=False):
     # Incidents
     module = "irs"
     resource = "ireport"
-    layername = Tstr("Incident Reports")
-    popup_label = Tstr("Incident")
+    layername = T("Incident Reports")
+    popup_label = T("Incident")
     # Default (but still better to define here as otherwise each feature needs to check it's feature_class)
     marker = "marker_red"
     incidents = gis.get_feature_layer(module, resource, layername, popup_label, marker, active=True, polygons=False)
-    
+
     # Shelters
     module = "cr"
     resource = "shelter"
-    layername = Tstr("Shelters")
-    popup_label = Tstr("Shelter")
+    layername = T("Shelters")
+    popup_label = T("Shelter")
     marker = "shelter"
     shelters = gis.get_feature_layer(module, resource, layername, popup_label, marker, active=True, polygons=False)
-    
+
     # Requests
     module = "rms"
     resource = "req"
-    layername = Tstr("Requests")
-    popup_label = Tstr("Request")
+    layername = T("Requests")
+    popup_label = T("Request")
     marker = "marker_yellow"
     requests = gis.get_feature_layer(module, resource, layername, popup_label, marker, active=True, polygons=False)
-    
+
     # Assessments
     module = "rat"
     resource = "assessment"
-    layername = Tstr("Assessments")
-    popup_label = Tstr("Assessment")
+    layername = T("Assessments")
+    popup_label = T("Assessment")
     marker = "marker_green"
     assessments = gis.get_feature_layer(module, resource, layername, popup_label, marker, active=True, polygons=False)
-    
+
     # Activities
     module = "project"
     resource = "activity"
-    layername = Tstr("Activities")
-    popup_label = Tstr("Activity")
+    layername = T("Activities")
+    popup_label = T("Activity")
     marker = "activity"
     activities = gis.get_feature_layer(module, resource, layername, popup_label, marker, active=True, polygons=False)
-   
+
     # Distribution Centers
     module = "inventory"
     resource = "store"
-    layername = Tstr("Warehouses")
-    popup_label = Tstr("Warehouse")
+    layername = T("Warehouses")
+    popup_label = T("Warehouse")
     marker = "office"
     warehouses = gis.get_feature_layer(module, resource, layername, popup_label, marker, active=True, polygons=False)
- 
+
     feature_queries = [
                        incidents,
                        shelters,
@@ -128,7 +128,7 @@ def define_map(window=False, toolbar=False):
                        assessments,
                        activities
                        ]
-    
+
     map = gis.show_map(
                        window=window,
                        catalogue_toolbar=catalogue_toolbar,
@@ -141,7 +141,7 @@ def define_map(window=False, toolbar=False):
                       )
 
     return map
-    
+
 # -----------------------------------------------------------------------------
 def location():
 
@@ -153,7 +153,7 @@ def location():
 
     # Allow prep to pass vars back to the controller
     vars = {}
-    
+
     # Pre-processor
     def prep(r, vars):
 
@@ -166,19 +166,19 @@ def location():
             table.wkt.writable = table.wkt.readable = False
         else:
             table.code.comment = DIV(_class="tooltip",
-                                     _title=Tstr("Code") + "|" + Tstr("For a country this would be the ISO2 code, for a Town, it would be the Airport Locode."))
+                                     _title=T("Code") + "|" + T("For a country this would be the ISO2 code, for a Town, it would be the Airport Locode."))
             table.wkt.comment = DIV(SPAN("*", _class="req"),
                                     DIV(_class="stickytip",
-                                        _title="WKT|" + Tstr("The" + " <a href='http://en.wikipedia.org/wiki/Well-known_text' target=_blank>" + Tstr("Well-Known Text") + "</a> " + "representation of the Polygon/Line.")))
+                                        _title="WKT|" + T("The" + " <a href='http://en.wikipedia.org/wiki/Well-known_text' target=_blank>" + T("Well-Known Text") + "</a> " + "representation of the Polygon/Line.")))
 
         if r.http in ("GET", "POST") and r.representation in shn_interactive_view_formats:
             # Options which are only required in interactive HTML views
             table.level.comment = DIV(_class="tooltip",
-                                      _title=Tstr("Level") + "|" + Tstr("If the location is a geographic area, then state at what level here."))
+                                      _title=T("Level") + "|" + T("If the location is a geographic area, then state at what level here."))
             if r.representation == "popup":
                 # No 'Add Location' button
                 table.parent.comment = DIV(_class="tooltip",
-                                           _title=Tstr("Parent") + "|" + Tstr("The Area which this Site is located within."))
+                                           _title=T("Parent") + "|" + T("The Area which this Site is located within."))
             else:
                 table.parent.comment = DIV(A(ADD_LOCATION,
                                                _class="colorbox",
@@ -187,22 +187,22 @@ def location():
                                                _title=ADD_LOCATION),
                                              DIV(
                                                _class="tooltip",
-                                               _title=Tstr("Parent") + "|" + Tstr("The Area which this Site is located within."))),
+                                               _title=T("Parent") + "|" + T("The Area which this Site is located within."))),
             table.name.comment = SPAN("*", _class="req")
             table.osm_id.comment = DIV(_class="stickytip",
-                                       _title="OpenStreetMap ID|" + Tstr("The") + " <a href='http://openstreetmap.org' target=_blank>OpenStreetMap</a> ID. " + Tstr("If you know what the OSM ID of this location is then you can enter it here."))
+                                       _title="OpenStreetMap ID|" + T("The") + " <a href='http://openstreetmap.org' target=_blank>OpenStreetMap</a> ID. " + T("If you know what the OSM ID of this location is then you can enter it here."))
             table.geonames_id.comment = DIV(_class="stickytip",
-                                            _title="Geonames ID|" + Tstr("The") + " <a href='http://geonames.org' target=_blank>Geonames</a> ID. " + Tstr("If you know what the Geonames ID of this location is then you can enter it here."))
+                                            _title="Geonames ID|" + T("The") + " <a href='http://geonames.org' target=_blank>Geonames</a> ID. " + T("If you know what the Geonames ID of this location is then you can enter it here."))
             table.comments.comment = DIV(_class="tooltip",
-                                         _title=Tstr("Comments") + "|" + Tstr("Please use this field to record any additional information, such as Ushahidi instance IDs. Include a history of the record if it is updated."))
+                                         _title=T("Comments") + "|" + T("Please use this field to record any additional information, such as Ushahidi instance IDs. Include a history of the record if it is updated."))
 
             if r.representation == "iframe":
                 # De-duplicator needs to be able to access UUID fields
                 table.uuid.readable = table.uuid.writable = True
                 table.uuid.label = "UUID"
                 table.uuid.comment = DIV(_class="stickytip",
-                                         _title="UUID|" + Tstr("The") + " <a href='http://eden.sahanafoundation.org/wiki/UUID#Mapping' target=_blank>Universally Unique ID</a>. " + Tstr("Suggest not changing this field unless you know what you are doing."))
-                
+                                         _title="UUID|" + T("The") + " <a href='http://eden.sahanafoundation.org/wiki/UUID#Mapping' target=_blank>Universally Unique ID</a>. " + T("Suggest not changing this field unless you know what you are doing."))
+
             # CRUD Strings
             LIST_LOCATIONS = T("List Locations")
             s3.crud_strings[tablename] = Storage(
@@ -245,14 +245,14 @@ def location():
                         # Read
                         add_feature = False
                         add_feature_active = False
-                    
+
                     location = db(db.gis_location.id == r.id).select(db.gis_location.lat, db.gis_location.lon, limitby=(0, 1)).first()
                     if location and location.lat is not None and location.lon is not None:
                         lat = location.lat
                         lon = location.lon
                     # Same as a single zoom on a cluster
                     zoom = zoom + 2
-                    
+
                 _map = gis.show_map(lat = lat,
                                     lon = lon,
                                     zoom = zoom,
@@ -266,7 +266,7 @@ def location():
                 vars.update(_map=_map)
         return True
     response.s3.prep = lambda r, vars=vars: prep(r, vars)
-    
+
     # Options
     _vars = request.vars
     filters = []
@@ -309,7 +309,7 @@ def location():
     if level:
         # We've been called from the Location Selector widget
         table.addr_street.readable = table.addr_street.writable = False
-    
+
     response.s3.pagination = True
     output = shn_rest_controller(module, resource, listadd=False)
 
@@ -340,18 +340,18 @@ def location_duplicates():
 
         # Remove the record
         db(db.gis_location.id == old).update(deleted=True)
-        
+
         return
 
     def open_btn(id):
         return A(T("Load Details"), _id=id, _href=URL(r=request, f="location"), _class="action-btn", _target="_blank")
-    
+
     def links_btn(id):
         return A(T("Linked Records"), _id=id, _href=URL(r=request, f="location_links"), _class="action-btn", _target="_blank")
-    
+
     # Unused: we do all filtering client-side using AJAX
     filter = request.vars.get("filter", None)
-    
+
     #repr_select = lambda l: len(l.name) > 48 and "%s..." % l.name[:44] or l.name
     repr_select = lambda l: l.level and "%s (%s)" % (l.name, response.s3.gis.location_hierarchy[l.level]) or l.name
     if filter:
@@ -360,16 +360,16 @@ def location_duplicates():
         requires = IS_ONE_OF(db, "gis_location.id", repr_select, orderby="gis_location.name", sort=True, zero=T("Select a location"))
     table = db.gis_location
     form = SQLFORM.factory(
-                           Field("old", table, requires=requires, label = SPAN(B(T("Old")), " (" + Tstr("To delete") + ")"), comment=DIV(links_btn("linkbtn_old"), open_btn("btn_old"))),
+                           Field("old", table, requires=requires, label = SPAN(B(T("Old")), " (" + T("To delete") + ")"), comment=DIV(links_btn("linkbtn_old"), open_btn("btn_old"))),
                            Field("new", table, requires=requires, label = B(T("New")), comment=DIV(links_btn("linkbtn_new"), open_btn("btn_new"))),
                            formstyle = s3_formstyle
                           )
-    
+
     form.custom.submit.attributes['_value'] = T("Delete Old")
-    
+
     if form.accepts(request.vars, session):
         _vars = form.vars
-        
+
         if not _vars.old == _vars.new:
             # Take Action
             delete_location(_vars.old, _vars.new)
@@ -409,7 +409,7 @@ def location_links():
     # Find all tables which link to the Locations table
     # @ToDo Replace with db.gis_location._referenced_by
     tables = shn_table_links("gis_location")
-    
+
     results = []
     for table in tables:
         for count in range(len(tables[table])):
@@ -653,7 +653,7 @@ def feature_class():
 
     # Model options
     table.name.comment = SPAN("*", _class="req")
-    table.gps_marker.comment = DIV( _class="tooltip", _title=Tstr("GPS Marker") + "|" + Tstr("Defines the icon used for display of features on handheld GPS."))
+    table.gps_marker.comment = DIV( _class="tooltip", _title=T("GPS Marker") + "|" + T("Defines the icon used for display of features on handheld GPS."))
 
     # CRUD Strings
     LIST_FEATURE_CLASS = T("List Feature Classes")
@@ -691,7 +691,7 @@ def feature_layer():
 
     # Model options
     table.name.comment = SPAN("*", _class="req")
-    table.query.comment = SPAN("*", _class="req")
+    #table.query.comment = SPAN("*", _class="req")
 
     # CRUD Strings
     ADD_FEATURE_LAYER = T("Add Feature Layer")
@@ -1405,7 +1405,7 @@ def map_viewing_client():
 
     # @ToDo Make Configurable
     toolbar = True
-    
+
     map = define_map(window=window, toolbar=toolbar)
 
     return dict(map=map)
@@ -1430,7 +1430,7 @@ def display_feature():
     feature = query.first()
 
     config = gis.get_config()
-    
+
     try:
         # Centre on Feature
         lat = feature.lat
@@ -1456,7 +1456,7 @@ def display_feature():
 
     # Calculate an appropriate BBox
     #bounds = gis.get_bounds(features=query)
-    
+
     # Default zoom +2 (same as a single zoom on a cluster)
     zoom = config.zoom + 2
 
@@ -1532,7 +1532,7 @@ def geolocate():
     """
         Call a Geocoder service
     """
-    
+
     if "location" in request.vars:
         location = request.vars.location
     else:

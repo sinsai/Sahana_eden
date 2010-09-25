@@ -10,15 +10,17 @@
         setting         - Global synchronization settings
         status          - Status of manual synchronization
         notification    - Queue for notification messages
-        log             - Synchronization history log
         peer            - Synchronization peers
          |
          +----job       - Synchronization jobs (per peer)
+         +----log       - Synchronization history log
         conflict        - Queue for synchronization conflicts
 
 """
 
 module = "sync"
+
+import sys
 
 # -----------------------------------------------------------------------------
 # Synchronization policy
@@ -38,20 +40,19 @@ sync_policy_opts = {
 }
 
 # Reusable field
-policy = db.Table(None, "policy",
-                  Field("policy", "integer", notnull=True,
-                        requires = IS_IN_SET(sync_policy_opts),
-                        default = 5,
-                        represent = lambda opt: sync_policy_opts.get(opt, UNKNOWN_OPT)))
-
+policy = S3ReusableField("policy", "integer", notnull=True,
+                         requires = IS_IN_SET(sync_policy_opts),
+                         default = 5,
+                         represent = lambda opt: sync_policy_opts.get(opt, UNKNOWN_OPT))
 
 # -----------------------------------------------------------------------------
 # Settings
 #
 resource = "setting"
 tablename = "%s_%s" % (module, resource)
-table = db.define_table(tablename, uuidstamp,
+table = db.define_table(tablename, #uuidstamp,
                         Field("proxy"),
+                        *s3_uid(),
                         migrate=migrate)
 
 table.uuid.readable = True
@@ -108,16 +109,17 @@ formats += [f for f in s3xrc.json_import_formats if f not in formats]
 resource = "peer"
 tablename = "%s_%s" % (module, resource)
 table = db.define_table(tablename,
-                        uuidstamp,
+                        #uuidstamp,
                         Field("name"),
                         Field("url", notnull=True),
                         Field("type", "integer"),
                         Field("username"),
                         Field("password", "password"),
                         Field("format"),
-                        policy,
+                        policy(),
                         Field("ignore_errors", "boolean", default=False),
                         Field("last_sync_time", "datetime"),
+                        *s3_uid(),
                         migrate=migrate)
 
 table.uuid.readable = True
@@ -141,10 +143,13 @@ table.policy.label = T("Default synchronization policy")
 table.last_sync_time.label = T("Last synchronization time")
 table.last_sync_time.writable = False
 
-peer_id = db.Table(None, "peer_id",
-                   Field("peer_id", db.sync_peer, notnull=True,
-                         requires = IS_ONE_OF(db, "sync_peer.id", "%(name)s"),
-                         represent = lambda id: (id and [db.sync_peer(id).name] or [NONE])[0]))
+peer_id = S3ReusableField("peer_id", db.sync_peer, notnull=True,
+                          requires = IS_ONE_OF(db, "sync_peer.id", "%(name)s"),
+                          represent = lambda id: (id and [db.sync_peer(id).name] or [NONE])[0])
+#peer_id = db.Table(None, "peer_id",
+                   #Field("peer_id", db.sync_peer, notnull=True,
+                         #requires = IS_ONE_OF(db, "sync_peer.id", "%(name)s"),
+                         #represent = lambda id: (id and [db.sync_peer(id).name] or [NONE])[0]))
 
 def s3_sync_peer_ondelete(row):
 
@@ -187,8 +192,6 @@ def s3_sync_peer_oncreate(form):
         complete = False,
         mode = 3
     ))
-
-    #print job_command
 
     db.sync_schedule.insert(
         comments = "auto-generated job for %s" % peer.name,
@@ -280,19 +283,20 @@ sync_weekdays = {
 resource = "job"
 tablename = "%s_%s" % (module, resource)
 table = db.define_table(tablename,
-                        uuidstamp, timestamp,
+                        #uuidstamp, timestamp,
                         Field("last_run", "datetime"),
                         Field("type", "integer"),
-                        peer_id,
+                        peer_id(),
                         Field("resources", "list:string"),
                         Field("mode", "integer"),
-                        policy,
+                        policy(),
                         Field("complete", "boolean", default=False),
                         Field("run_interval", default="m"),
                         Field("hours"),
                         Field("days", "list:integer"),
                         Field("runonce_on"),
                         Field("enabled", "boolean", default=True),
+                        *(s3_uid()+s3_timestamp()),
                         migrate=migrate)
 
 table.last_run.represent = lambda value: value and str(value) or T("never")
@@ -326,7 +330,7 @@ s3xrc.model.add_component(module, resource,
 resource = "log"
 tablename = "%s_%s" % (module, resource)
 table = db.define_table(tablename,
-                        peer_id,
+                        peer_id(),
                         Field("timestmp", "datetime"),
                         Field("resources", "text"),
                         Field("errors", "text"),
@@ -398,6 +402,7 @@ def s3_sync_push_message(message, type="", pid=None):
         success = table.insert(pid=pid, message=message, type=type)
 
         if success:
+            #print >> sys.stderr, "[%s] %s: %s" % (pid, type or "OK", message)
             db.commit()
             return True
 

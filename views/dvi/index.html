@@ -1,17 +1,17 @@
-{{extend 'layout.html'}}
-<div id="home">
+{{extend "layout.html"}}
+<div id='home'>
 {{=H2(module_name)}}
-<div style="margin:20px auto; width:96%; max-width:1000px;" >
-    <div style="width:65%; float:left;">
+<div style='margin:20px auto; width:96%; max-width:1000px;'>
+    <div style='width:65%; float:left;'>
         {{=H4(T("About this module"))}}
         <p>
             This module assists the management of the recovery of
             dead bodies and the identification of the deceased.
         </p>
     </div>
-    <div style="width:30%; float:right;">
+    <div style='width:30%; float:right;'>
         {{=H4("%s: %s" % (T("Bodies recovered"), total))}}
-        <div id='charts' style="padding-top: 10px;">
+        <div id='charts' style='padding-top: 10px;'>
             <table>
                 <tr>
                     <td>

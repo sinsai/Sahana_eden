@@ -14,30 +14,28 @@ if module not in deployment_settings.modules:
 
 # -----------------------------------------------------------------------------
 def shn_menu():
-    menu = [
+    response.menu_options = [
         [T("Home"), False, URL(r=request, f="index")],
         [T("Hospitals"), False, URL(r=request, f="hospital"), [
             [T("List All"), False, URL(r=request, f="hospital")],
             [T("Find by Name"), False, URL(r=request, f="hospital", args="search_simple")],
             [T("Add Hospital"), False, URL(r=request, f="hospital", args="create")]
         ]],
-    ]
-    if session.rcvars and "hms_hospital" in session.rcvars:
-        hospital = db.hms_hospital
-        query = (hospital.id == session.rcvars["hms_hospital"])
-        selection = db(query).select(hospital.id, hospital.name, limitby=(0, 1)).first()
-        if selection:
-            menu_hospital = [
-                [selection.name, False, URL(r=request, f="hospital", args=[selection.id])],
-                [T("Add Request"), False, URL(r=request, f="hospital", args=[selection.id, "req", "create"])],
-            ]
-            menu.extend(menu_hospital)
-    menu2 = [
         [T("Requests"), False, URL(r=request, c="rms", f="req")],
         [T("Pledges"), False, URL(r=request, c="rms", f="pledge")],
     ]
-    menu.extend(menu2)
-    response.menu_options = menu
+    menu_selected = []
+    if session.rcvars and "hms_hospital" in session.rcvars:
+        hospital = db.hms_hospital
+        query = (hospital.id == session.rcvars["hms_hospital"])
+        record = db(query).select(hospital.id, hospital.name, limitby=(0, 1)).first()
+        if record:
+            name = record.name
+            menu_selected.append(["%s: %s" % (T("Hospital"), name), False,
+                                 URL(r=request, f="hospital", args=[record.id])])
+    if menu_selected:
+        menu_selected = [T("Open recent"), True, None, menu_selected]
+        response.menu_options.append(menu_selected)
 
 shn_menu()
 
@@ -66,32 +64,32 @@ def hospital():
 
             # Add comments
             table.gov_uuid.comment = DIV(DIV(_class="tooltip",
-                _title=Tstr("Government UID") + "|" + Tstr("The Unique Identifier (UUID) as assigned to this facility by the government.")))
+                _title=T("Government UID") + "|" + T("The Unique Identifier (UUID) as assigned to this facility by the government.")))
             table.name.comment = SPAN("*", _class="req")
             table.total_beds.comment = DIV(DIV(_class="tooltip",
-                _title=Tstr("Total Beds") + "|" + Tstr("Total number of beds in this hospital. Automatically updated from daily reports.")))
+                _title=T("Total Beds") + "|" + T("Total number of beds in this hospital. Automatically updated from daily reports.")))
             table.available_beds.comment = DIV(DIV(_class="tooltip",
-                _title=Tstr("Available Beds") + "|" + Tstr("Number of vacant/available beds in this hospital. Automatically updated from daily reports.")))
+                _title=T("Available Beds") + "|" + T("Number of vacant/available beds in this hospital. Automatically updated from daily reports.")))
             table.ems_status.comment = DIV(DIV(_class="tooltip",
-                _title=Tstr("EMS Status") + "|" + Tstr("Status of operations of the emergency department of this hospital.")))
+                _title=T("EMS Status") + "|" + T("Status of operations of the emergency department of this hospital.")))
             table.ems_reason.comment = DIV(DIV(_class="tooltip",
-                _title=Tstr("EMS Reason") + "|" + Tstr("Report the contributing factors for the current EMS status.")))
+                _title=T("EMS Reason") + "|" + T("Report the contributing factors for the current EMS status.")))
             table.or_status.comment = DIV(DIV(_class="tooltip",
-                _title=Tstr("OR Status") + "|" + Tstr("Status of the operating rooms of this hospital.")))
+                _title=T("OR Status") + "|" + T("Status of the operating rooms of this hospital.")))
             table.or_reason.comment = DIV(DIV(_class="tooltip",
-                _title=Tstr("OR Reason") + "|" + Tstr("Report the contributing factors for the current OR status.")))
+                _title=T("OR Reason") + "|" + T("Report the contributing factors for the current OR status.")))
             table.facility_status.comment = DIV(DIV(_class="tooltip",
-                _title=Tstr("Facility Status") + "|" + Tstr("Status of general operation of the facility.")))
+                _title=T("Facility Status") + "|" + T("Status of general operation of the facility.")))
             table.clinical_status.comment = DIV(DIV(_class="tooltip",
-                _title=Tstr("Clinical Status") + "|" + Tstr("Status of clinical operation of the facility.")))
+                _title=T("Clinical Status") + "|" + T("Status of clinical operation of the facility.")))
             table.morgue_status.comment = DIV(DIV(_class="tooltip",
-                _title=Tstr("Morgue Status") + "|" + Tstr("Status of morgue capacity.")))
+                _title=T("Morgue Status") + "|" + T("Status of morgue capacity.")))
             table.security_status.comment = DIV(DIV(_class="tooltip",
-                _title=Tstr("Security Status") + "|" + Tstr("Status of security procedures/access restrictions in the hospital.")))
+                _title=T("Security Status") + "|" + T("Status of security procedures/access restrictions in the hospital.")))
             table.morgue_units.comment =  DIV(DIV(_class="tooltip",
-                _title=Tstr("Morgue Units Available") + "|" + Tstr("Number of vacant/available units to which victims can be transported immediately.")))
+                _title=T("Morgue Units Available") + "|" + T("Number of vacant/available units to which victims can be transported immediately.")))
             table.access_status.comment =  DIV(DIV(_class="tooltip",
-                _title=Tstr("Road Conditions") + "|" + Tstr("Describe the condition of the roads to your hospital.")))
+                _title=T("Road Conditions") + "|" + T("Describe the condition of the roads to your hospital.")))
 
             # CRUD Strings
             LIST_HOSPITALS = T("List Hospitals")
@@ -110,7 +108,7 @@ def hospital():
                 msg_record_modified = T("Hospital information updated"),
                 msg_record_deleted = T("Hospital information deleted"),
                 msg_list_empty = T("No Hospitals currently registered"))
-            
+
             if r.component and r.component.name == "req":
                 # Hide the Implied fields
                 db.rms_req.shelter_id.writable = db.rms_req.shelter_id.readable = False
@@ -118,11 +116,12 @@ def hospital():
                 db.rms_req.location_id.writable = False
                 db.rms_req.location_id.default = r.record.location_id
                 db.rms_req.location_id.comment = ""
+
         elif r.representation == "aadata":
             # Hide the Implied fields here too to make columns match
-            db.rms_req.shelter_id.writable = db.rms_req.shelter_id.readable = False
-            db.rms_req.organisation_id.writable = db.rms_req.organisation_id.readable = False
-            
+            db.rms_req.shelter_id.readable = False
+            db.rms_req.organisation_id.readable = False
+
         return True
     response.s3.prep = prep
 
@@ -154,8 +153,6 @@ def hospital():
     response.s3.pagination = True
     output = shn_rest_controller(module, resource,
                                  rheader=rheader,
-                                 rss=dict(title="%(name)s",
-                                          description=shn_hms_hospital_rss),
                                  #listadd=False
                                 )
 

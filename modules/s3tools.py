@@ -6,6 +6,7 @@
     @requires: U{B{I{gluon}} <http://web2py.com>}
 
     @author: Fran Boon <francisboon@gmail.com>
+    @author: nursix
     @author: sunneach
     @copyright: (c) 2010 Sahana Software Foundation
     @license: MIT
@@ -35,7 +36,7 @@
 
 __name__ = "S3TOOLS"
 
-__all__ = ["AuthS3", "CrudS3", "FieldS3"]
+__all__ = ["AuthS3", "CrudS3", "FieldS3", "S3ReusableField"]
 
 #import datetime
 import re
@@ -1235,3 +1236,37 @@ class FieldS3(Field):
             return Query(self, "=", value)
         else:
             return QueryS3(self, "join_via", value)
+
+# -----------------------------------------------------------------------------
+class S3ReusableField(object):
+
+    """ Helper for DRY reusable fields:
+
+        This creates neither a Table nor a Field, but just
+        an argument store. The field is created with the __call__
+        method, which is faster than copying an existing field.
+
+    """
+
+    def __init__(self, name, type="string", **attr):
+
+        self.name = name
+        self.__type = type
+        self.attr = Storage(attr)
+
+    def __call__(self, name=None, **attr):
+
+        if not name:
+            name = self.name
+
+        ia = Storage(self.attr)
+        if attr:
+            ia.update(**attr)
+
+        if ia.sortby is not None:
+            return FieldS3(name, self.__type, **ia)
+        else:
+            return Field(name, self.__type, **ia)
+
+
+# -----------------------------------------------------------------------------

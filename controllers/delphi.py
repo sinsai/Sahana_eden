@@ -292,13 +292,13 @@ def new_problem():
     return problem()
 
 def group():
-    if not shn_has_role(1)
+    if not shn_has_role(1):
         raise HTTP(403)
 
     return shn_rest_controller(module, "group")
 
 def user_to_group():
-    if not shn_has_role(1)
+    if not shn_has_role(1):
         raise HTTP(403)
 
     return shn_rest_controller(module, "user_to_group")

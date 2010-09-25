@@ -120,8 +120,8 @@ def create():
     title = string.capitalize(title.rpartition('_')[2])
     form.set_title(title)
     form.print_text([title], fontsize = 20, style = "center", seek = -100)
-    form.print_text(["",Tstr("1. Fill the necessary fields in BLOCK letters."),
-		        Tstr("2. Always use one box per letter and leave one box space to seperate words.")], fontsize = 13, gray = 0)
+    form.print_text(["",T("1. Fill the necessary fields in BLOCK letters."),
+		        T("2. Always use one box per letter and leave one box space to seperate words.")], fontsize = 13, gray = 0)
     form.draw_line()
     form.print_text([""])
     for field in table.fields:
@@ -141,7 +141,7 @@ def create():
 	      except:
 		break
 	    form.print_text([""]) # leave a space
-	    form.print_text([Tstr("Put a choice in the box")], fontsize = 13, gray = 0)
+	    form.print_text([T("Put a choice in the box")], fontsize = 13, gray = 0)
 	    form.draw_check_boxes(boxes = 2, continuetext=1, gray = 0.9, fontsize = 20, seek = 10)
 	    form.print_text([""]) # leave a space
 	  else:

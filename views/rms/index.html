@@ -1,7 +1,7 @@
 {{extend "layout.html"}}
 <div id='home'>
 
-{{=H2(T(module_name))}}
+{{=H2(module_name)}}
 
     <div class='col2left'>
       <div class='question-container' style='float:right;'>
@@ -27,8 +27,8 @@
 
     <div style='position:relative;'>
         <div class='col2left'>
-            <h4>{{=("ABOUT")}}</H4>
-            {{=T("The")}} {{=T(module_name)}} {{=T("System is a central online repository where all relief organizations, relief workers, government agents and camp sites for displaced personnel can coordinate the supply of aid with their demand. It allows users to allocate the available resources to fulfill the demands effectively and efficiently.")}} 
+            <h4>{{=T("ABOUT")}}</H4>
+            {{=T("The")}} {{=module_name}} {{=T("System is a central online repository where all relief organizations, relief workers, government agents and camp sites for displaced personnel can coordinate the supply of aid with their demand. It allows users to allocate the available resources to fulfill the demands effectively and efficiently.")}} 
         </div>
     
         <div class='col2right'>
@@ -37,17 +37,17 @@
             </h3>
             <ul>
                 <li>
-                    <a href='{{=URL(r=request, f="req")}}'>View Requests for Aid</a>
+                    <a href='{{=URL(r=request, f="req")}}'>{{=T("View Requests for Aid")}}</a>
                 </li>
             
                 <li>
-                    Pledge Aid to match these Requests
+                    {{=T("Pledge Aid to match these Requests")}}
                     {{if not auth.is_logged_in():}}
                     (requires a login - please <a href='{{=URL(r=request, c="default", f="user", args="register")}}'>register</a>)
                     {{pass}}
                 </li>
                 <li>
-                    Make a Request for Aid</a></li>
+                    {{=T("Make a Request for Aid")}}</a></li>
                     <!--
                     <li>{{=T("Basic information on the requests and donations, such as category, the units, contact details and the status.")}}</li>
                     <li>{{=T("Customisable category of aid")}}</li>

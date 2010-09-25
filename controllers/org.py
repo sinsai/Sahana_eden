@@ -173,7 +173,7 @@ def project():
     table = db[tablename]
 
     db.org_staff.person_id.comment[1] = DIV(DIV(_class="tooltip",
-                              _title=Tstr("Person") + "|" + Tstr("Select the person assigned to this role for this project.")))
+                              _title=T("Person") + "|" + T("Select the person assigned to this role for this project.")))
 
     rheader = lambda r: shn_project_rheader(r,
                                             tabs = [(T("Basic Details"), None),

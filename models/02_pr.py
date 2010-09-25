@@ -22,11 +22,12 @@ pr_pe_types = Storage(
 
 resource = "pentity"
 tablename = "%s_%s" % (module, resource)
-table = db.define_table(tablename, deletion_status,
+table = db.define_table(tablename,
                         Field("pe_type"),
                         Field("uuid", length=128),
                         Field("pe_id", "integer"),
                         Field("pe_label", length=128),
+                        *s3_deletion_status(),
                         migrate=migrate)
 
 table.pe_type.writable = False

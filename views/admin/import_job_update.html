@@ -22,4 +22,16 @@
      </table>
  </div>
  <p>&nbsp;</p>
-{{include "admin/_import_job_status_%s.html" % job.status}}
+{{if job.status=="import":}}
+{{include "admin/_import_job_status_import.html"}}
+{{elif job.status=="imported":}}
+{{include "admin/_import_job_status_imported.html"}}
+{{elif job.status=="new":}}
+{{include "admin/_import_job_status_new.html"}}
+{{elif job.status=="processed":}}
+{{include "admin/_import_job_status_processed.html"}}
+{{elif job.status=="processing":}}
+{{include "admin/_import_job_status_processing.html"}}
+{{else:}}
+{{include "admin/_import_job_status_failed.html"}}
+{{pass}}

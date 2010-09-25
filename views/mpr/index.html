@@ -1,5 +1,5 @@
-{{extend 'layout.html'}}
-<div id="home">
+{{extend "layout.html"}}
+<div id='home'>
 {{=H2(module_name)}}
 {{if auth.shn_logged_in():}}
 <div>
@@ -49,7 +49,7 @@
         {{except:}}
         {{pass}}
 {{pass}}
-        {{include 'dataTables.html'}}
+        {{include "dataTables.html"}}
     </div>
 </div>
 </div>

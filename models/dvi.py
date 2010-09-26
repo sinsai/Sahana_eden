@@ -45,8 +45,8 @@ if deployment_settings.has_module(module):
                             Field("bodies_est", "integer"), # Number of bodies found
                             dvi_task_status(),
                             Field("bodies_rec", "integer"), # Number of bodies recovered
-                            *s3_meta_fields(),
-                            migrate=migrate)
+                            migrate=migrate, *s3_meta_fields())
+
 
     # Settings and Restrictions
     table.uuid.requires = IS_NOT_IN_DB(db, "%s.uuid" % table)
@@ -130,8 +130,7 @@ if deployment_settings.has_module(module):
                             Field("decomposed","boolean"),
                             pr_gender(),
                             pr_age_group(),
-                            *s3_meta_fields(),
-                            migrate = migrate)
+                            migrate=migrate, *s3_meta_fields())
 
     table.pe_label.comment = SPAN("*", _class="req")
     table.pe_label.requires = [IS_NOT_EMPTY(error_message=T("Enter a unique label!")),
@@ -235,8 +234,7 @@ if deployment_settings.has_module(module):
                         default = 1,
                         label = T("Dental Examination"),
                         represent = lambda opt: dvi_task_status_opts.get(opt, T("not specified"))),
-                    *s3_meta_fields(),
-                    migrate = migrate)
+                    migrate=migrate, *s3_meta_fields())
 
     # Setting and restrictions
 
@@ -279,8 +277,7 @@ if deployment_settings.has_module(module):
                     Field("footwear", "text"),    #TODO: elaborate
                     Field("watch", "text"),       #TODO: elaborate
                     Field("other", "text"),
-                    *s3_meta_fields(),
-                    migrate = migrate)
+                    migrate=migrate, *s3_meta_fields())
 
     # Settings and Restrictions
 
@@ -357,8 +354,7 @@ if deployment_settings.has_module(module):
                             Field("identity", db.pr_person),       # Identity of the body
                             Field("presence", db.pr_presence),     # Related presence record of the identified person
                             Field("comment", "text"),              # Comment (optional)
-                            *s3_meta_fields(),
-                            migrate = migrate)
+                            migrate=migrate, *s3_meta_fields())
 
 
     # Settings and Restrictions

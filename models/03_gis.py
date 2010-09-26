@@ -39,8 +39,8 @@ table = db.define_table(tablename,
                         Field("image", "upload", autodelete=True),
                         Field("height", "integer", writable=False), # In Pixels, for display purposes
                         Field("width", "integer", writable=False),  # We could get size client-side using Javascript's Image() class, although this is unreliable!
-                        *s3_timestamp(),
-                        migrate=migrate)
+                        migrate=migrate, *s3_timestamp())
+
 table.name.requires = [IS_NOT_EMPTY(), IS_NOT_IN_DB(db, "%s.name" % tablename)]
 # upload folder needs to be visible to the download() function as well as the upload
 table.image.uploadfolder = os.path.join(request.folder, "static/img/markers")
@@ -89,8 +89,8 @@ table = db.define_table(tablename,
                         Field("maxExtent", length=64, notnull=True),
                         Field("maxResolution", "double", notnull=True),
                         Field("units", notnull=True),
-                        *(s3_timestamp() + s3_uid()),
-                        migrate=migrate)
+                        migrate=migrate,
+                        *(s3_timestamp() + s3_uid()))
 table.uuid.requires = IS_NOT_IN_DB(db, "%s.uuid" % tablename)
 table.name.requires = [IS_NOT_EMPTY(), IS_NOT_IN_DB(db, "%s.name" % tablename)]
 table.epsg.requires = IS_NOT_EMPTY()
@@ -117,8 +117,8 @@ resource = "symbology"
 tablename = "%s_%s" % (module, resource)
 table = db.define_table(tablename,
                         Field("name", length=128, notnull=True, unique=True),
-                        *(s3_timestamp() + s3_uid()),
-                        migrate=migrate)
+                        migrate=migrate,
+                        *(s3_timestamp() + s3_uid()))
 # Reusable field to include in other table definitions
 symbology_id = S3ReusableField("symbology_id", db.gis_symbology, sortby="name",
                                 requires = IS_NULL_OR(IS_ONE_OF(db, "gis_symbology.id", "%(name)s")),
@@ -163,9 +163,8 @@ table = db.define_table(tablename,
                         opt_gis_layout,
                         Field("wmsbrowser_name", default="Web Map Service"),
                         Field("wmsbrowser_url"),
-                        *(s3_timestamp() + s3_uid()),
-                        migrate=migrate)
-
+                        migrate=migrate,
+                        *(s3_timestamp() + s3_uid()))
 table.uuid.requires = IS_NOT_IN_DB(db, "gis_config.uuid")
 table.pe_id.requires = IS_NULL_OR(IS_ONE_OF(db, "pr_pentity.pe_id", shn_pentity_represent))
 table.pe_id.readable = table.pe_id.writable = False
@@ -368,8 +367,8 @@ table = db.define_table(tablename,
                         marker_id(),
                         Field("gps_marker"),
                         Field("resource"),  # Used for Web Service Feeds
-                        *(s3_timestamp() + s3_uid() + s3_deletion_status()),
-                        migrate=migrate)
+                        migrate=migrate,
+                        *(s3_timestamp() + s3_uid() + s3_deletion_status()))
 
 table.uuid.requires = IS_NOT_IN_DB(db, "%s.uuid" % tablename)
 table.name.requires = [IS_NOT_EMPTY(), IS_NOT_IN_DB(db, "%s.name" % tablename)]
@@ -439,9 +438,8 @@ table = db.define_table(tablename,
                         Field("le", "integer", writable=False, readable=False), # Linear 'Error' for the Elevation (in m). Needed for CoT.
                         Field("source", requires=IS_NULL_OR(IS_IN_SET(gis_source_opts))),
                         comments(),
-                        *(s3_timestamp() + s3_uid() + s3_deletion_status()),
-                        migrate=migrate)
-
+                        migrate=migrate,
+                        *(s3_timestamp() + s3_uid() + s3_deletion_status()))
 table.uuid.requires = IS_NOT_IN_DB(db, "%s.uuid" % table)
 table.name.requires = IS_NOT_EMPTY()    # Placenames don't have to be unique
 
@@ -528,8 +526,8 @@ table = db.define_table(tablename,
                         location_id(),
                         Field("language"),
                         Field("name_l10n"),
-                        *(s3_timestamp() + s3_uid() + s3_deletion_status()),
-                        migrate=migrate)
+                        migrate=migrate,
+                        *(s3_timestamp() + s3_uid() + s3_deletion_status()))
 
 table.uuid.requires = IS_NOT_IN_DB(db, '%s.uuid' % tablename)
 table.language.requires = IS_IN_SET(s3.l10n_languages)
@@ -846,8 +844,7 @@ table = db.define_table(tablename,
                         #Field("filter_value"),     # Used to build a simple query
                         #Field("query", notnull=True),
                         comments(),
-                        *s3_timestamp(),
-                        migrate=migrate)
+                        migrate=migrate, )
 
 table.name.requires = [IS_NOT_EMPTY(), IS_NOT_IN_DB(db, "%s.name" % tablename)]
 table.name.label = T("Name")
@@ -866,8 +863,8 @@ table = db.define_table(tablename,
                         Field("name", notnull=True),
                         Field("apikey", length=128, notnull=True),
                         Field("description"),
-                        *s3_timestamp(),
-                        migrate=migrate)
+                        migrate=migrate, *s3_timestamp())
+
 # FIXME
 # We want a THIS_NOT_IN_DB here: http://groups.google.com/group/web2py/browse_thread/thread/27b14433976c0540/fc129fd476558944?lnk=gst&q=THIS_NOT_IN_DB#fc129fd476558944
 table.name.requires = IS_IN_SET(["google", "multimap", "yahoo"], zero=None)
@@ -880,13 +877,13 @@ table.apikey.label = T("Key")
 # GPS Tracks (files in GPX format)
 resource = "track"
 tablename = "%s_%s" % (module, resource)
-table = db.define_table(tablename,
+table = db.define_table(tablename, #timestamp,
                         #uuidstamp, # Tracks don't sync
                         Field("name", length=128, notnull=True, unique=True),
                         Field("description", length=128),
                         Field("track", "upload", autodelete = True),
-                        *s3_timestamp(),
-                        migrate=migrate)
+                        migrate=migrate, *s3_timestamp())
+
 
 # upload folder needs to be visible to the download() function as well as the upload
 table.track.uploadfolder = os.path.join(request.folder, "uploads/tracks")
@@ -1075,8 +1072,7 @@ tablename = "%s_%s" % (module, resource)
 table = db.define_table(tablename,
                 Field("name", length=128, notnull=True, unique=True),
                 Field("file", "upload", autodelete = True),
-                *s3_timestamp(),
-                migrate=migrate)
+                migrate=migrate, *s3_timestamp())
 # upload folder needs to be visible to the download() function as well as the upload
 table.file.uploadfolder = os.path.join(request.folder, "uploads/gis_cache")
 

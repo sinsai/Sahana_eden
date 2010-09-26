@@ -52,8 +52,8 @@ resource = "setting"
 tablename = "%s_%s" % (module, resource)
 table = db.define_table(tablename, #uuidstamp,
                         Field("proxy"),
-                        *s3_uid(),
-                        migrate=migrate)
+                        migrate=migrate, *s3_uid())
+
 
 table.uuid.readable = True
 
@@ -119,8 +119,8 @@ table = db.define_table(tablename,
                         policy(),
                         Field("ignore_errors", "boolean", default=False),
                         Field("last_sync_time", "datetime"),
-                        *s3_uid(),
-                        migrate=migrate)
+                        migrate=migrate, *s3_uid())
+
 
 table.uuid.readable = True
 table.uuid.writable = True
@@ -296,8 +296,8 @@ table = db.define_table(tablename,
                         Field("days", "list:integer"),
                         Field("runonce_on"),
                         Field("enabled", "boolean", default=True),
-                        *(s3_uid()+s3_timestamp()),
-                        migrate=migrate)
+                        migrate=migrate,
+                        *(s3_uid()+s3_timestamp()))
 
 table.last_run.represent = lambda value: value and str(value) or T("never")
 

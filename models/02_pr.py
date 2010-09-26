@@ -28,8 +28,8 @@ table = db.define_table(tablename,
                         Field("uuid", length=128),
                         #Field("pe_id", "integer"),
                         Field("pe_label", length=128),
-                        *s3_deletion_status(),
-                        migrate=migrate)
+                        migrate=migrate, *s3_deletion_status())
+
 
 table.pe_type.writable = False
 table.pe_type.represent = lambda opt: pr_pe_types.get(opt, opt)
@@ -309,8 +309,8 @@ table = db.define_table(tablename,
                         Field("occupation"),
                         Field("tags", "list:integer"),
                         comments(),
-                        *s3_meta_fields(),
-                        migrate=migrate)
+                        migrate=migrate, *s3_meta_fields())
+
 
 table.date_of_birth.requires = IS_NULL_OR(IS_DATE_IN_RANGE(
                                maximum=request.utcnow.date(),
@@ -434,8 +434,8 @@ table = db.define_table(tablename,
                         Field("name"),
                         Field("description"),
                         comments(),
-                        *s3_meta_fields(),
-                        migrate=migrate)
+                        migrate=migrate, *s3_meta_fields())
+
 
 
 table.system.readable = False
@@ -505,8 +505,8 @@ table = db.define_table(tablename,
                         Field("group_head", "boolean", default=False),
                         Field("description"),
                         comments(),
-                        *s3_meta_fields(),
-                        migrate=migrate)
+                        migrate=migrate, *s3_meta_fields())
+
 
 table.group_head.represent = lambda group_head: (group_head and [T("yes")] or [""])[0]
 

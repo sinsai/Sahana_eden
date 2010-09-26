@@ -34,8 +34,8 @@ if deployment_settings.has_module(module):
                             Field("source"), # Legacy field: will be removed
                             document_id(),
                             comments(),
-                            *s3_meta_fields(),
-                            migrate=migrate)
+                            migrate=migrate, *s3_meta_fields())
+
 
     table.households.label = T("Total Households")
     table.households.requires = IS_NULL_OR( IS_INT_IN_RANGE(0,99999999) )
@@ -97,12 +97,12 @@ if deployment_settings.has_module(module):
     #                          joinby=dict(doc_document="document_id"),
     #                          deletable=True,
     #                          editable=True)
-    
+
     def shn_sitrep_school_report_onvalidation(form):
 
         """
             School report validation
-            
+
             Deprecated, but left for now as a good example to be used in RAT
         """
 

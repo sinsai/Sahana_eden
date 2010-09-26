@@ -22,8 +22,8 @@ if deployment_settings.has_module(module):
                             location_id(),
                             #site_id(),
                             comments(),
-                            *s3_meta_fields(),
-                            migrate=migrate)
+                            migrate=migrate, *s3_meta_fields())
+
 
     # -----------------------------------------------------------------------------
     def distrib_represent(id):
@@ -77,8 +77,8 @@ if deployment_settings.has_module(module):
                             item_id(),
                             Field("quantity", "double"),
                             comments(),
-                            *s3_meta_fields(),
-                            migrate=migrate)
+                            migrate=migrate, *s3_meta_fields())
+
 
     # CRUD strings
     ADD_DISTRIBUTION_ITEM = T("Distribution Item")

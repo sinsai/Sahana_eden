@@ -42,8 +42,8 @@ Section "Python 2.6" Section1
 	Goto done
 python:
 	; The Python installation stuff goes here - We enter this function if python isn't already present.
-	File "python-2.6.5.msi"
-	ExecWait '"msiexec" /i "${DEPSTORE}\python-2.6.5.msi"'
+	File "python-2.6.6.msi"
+	ExecWait '"msiexec" /i "${DEPSTORE}\python-2.6.6.msi"'
 	RMDir /r ${DEPSTORE}
 done:
 SectionEnd
@@ -62,16 +62,16 @@ libraries:
 	ExecWait '${DEPSTORE}\lxml-2.2.2.win32-py2.6.exe'
 	RMDir /r ${DEPSTORE}
 	
-	File "Shapely-1.2.2.win32.exe"
-	ExecWait '${DEPSTORE}\Shapely-1.2.2.win32.exe'
+	File "Shapely-1.2.3.win32.exe"
+	ExecWait '${DEPSTORE}\Shapely-1.2.3.win32.exe'
 	RMDir /r ${DEPSTORE}
 
 	File "pywin32-214.win32-py2.6.exe"
 	ExecWait '${DEPSTORE}\pywin32-214.win32-py2.6.exe'
 	RMDir /r ${DEPSTORE}
 	
-	File "PIL-1.1.6.win32-py2.6.exe"
-	ExecWait '${DEPSTORE}\PIL-1.1.6.win32-py2.6.exe'
+	File "PIL-1.1.7.win32-py2.6.exe"
+	ExecWait '${DEPSTORE}\PIL-1.1.7.win32-py2.6.exe'
 	RMDir /r ${DEPSTORE}
 	
 	File "reportlab-2.4.win32-py2.6.exe"
@@ -82,6 +82,10 @@ libraries:
 	ExecWait '${DEPSTORE}\Geraldo-0.4-final.win32.exe'
 	RMDir /r ${DEPSTORE}
 	
+	File "xlrd-0.7.1.win32.exe"
+	ExecWait '${DEPSTORE}\xlrd-0.7.1.win32.exe'
+	RMDir /r ${DEPSTORE}
+
 	File "xlwt-0.7.2.win32.exe"
 	ExecWait '${DEPSTORE}\xlwt-0.7.2.win32.exe'
 	RMDir /r ${DEPSTORE}

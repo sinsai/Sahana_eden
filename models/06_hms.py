@@ -207,32 +207,6 @@ if deployment_settings.has_module(module):
                                                         _title=T("Hospital") + "|" + T("The hospital this record is associated with.")))),
                                   ondelete = "RESTRICT")
 
-    # -----------------------------------------------------------------------------
-    #def shn_hms_hospital_rss(record):
-
-        #""" Hospital RSS Feed """
-
-        #if record:
-            #lat = lon = T("unknown")
-            #location_name = T("unknown")
-            #if record.location_id:
-                #location = db.gis_location[record.location_id]
-                #if location:
-                    #lat = "%.6f" % location.lat
-                    #lon = "%.6f" % location.lon
-                    #location_name = location.name
-            #return "<b>%s</b>: <br/>Location: %s [Lat: %s Lon: %s]<br/>Facility Status: %s<br/>Clinical Status: %s<br/>Morgue Status: %s<br/>Security Status: %s<br/>Beds available: %s" % (
-                #record.name,
-                #location_name,
-                #lat,
-                #lon,
-                #db.hms_hospital.facility_status.represent(record.facility_status),
-                #db.hms_hospital.clinical_status.represent(record.clinical_status),
-                #db.hms_hospital.morgue_status.represent(record.morgue_status),
-                #db.hms_hospital.security_status.represent(record.security_status),
-                #(record.available_beds is not None) and record.available_beds or T("unknown"))
-        #else:
-            #return None
 
     # -----------------------------------------------------------------------------
     def shn_hms_hospital_onvalidation(form):
@@ -245,11 +219,6 @@ if deployment_settings.has_module(module):
 
 
     def shn_hms_hospital_onaccept(form, table=None):
-
-        # Update requests
-        #hospital = db.hms_hospital[form.vars.id]
-        #if hospital:
-        #    db(db.hms_hrequest.hospital_id == hospital.id).update(city=hospital.city)
 
         shn_site_onaccept(form, table=table)
 

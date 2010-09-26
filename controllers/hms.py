@@ -125,21 +125,6 @@ def hospital():
         return True
     response.s3.prep = prep
 
-    #s3xrc.sync_resolve = shn_hospital_resolver
-
-    def hospital_postp(jr, output):
-        if jr.representation in shn_interactive_view_formats:
-            if jr.component and jr.component.name == "bed_capacity":
-                label = UPDATE
-            else:
-                label = READ
-            linkto = shn_linkto(jr, sticky=True)("[id]")
-            response.s3.actions = [
-                dict(label=str(label), _class="action-btn", url=str(linkto))
-            ]
-        return output
-    response.s3.postp = hospital_postp
-
     rheader = lambda r: shn_hms_hospital_rheader(r,
                                                  tabs=[(T("Status Report"), ""),
                                                        (T("Bed Capacity"), "bed_capacity"),
@@ -160,25 +145,6 @@ def hospital():
 
     return output
 
-
-def shn_hospital_resolver(vector):
-
-    """ Example for a simple Sync resolver - not for production use """
-
-    # Default resolution: import data from peer if newer
-    vector.default_resolution = vector.RESOLUTION.NEWER
-
-    if vector.tablename == "hms_hospital":
-        # Do not update hospital Gov-UUIDs or names
-        vector.resolution = dict(
-            gov_uuid = vector.RESOLUTION.THIS,
-            name = vector.RESOLUTION.THIS
-        )
-    else:
-        vector.resolution = vector.RESOLUTION.NEWER
-
-    # Allow both, update of existing and create of new records:
-    vector.strategy = [vector.METHOD.UPDATE, vector.METHOD.CREATE]
 
 # -----------------------------------------------------------------------------
 #

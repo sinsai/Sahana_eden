@@ -615,6 +615,7 @@ div#rheader_tabs span.rheader_tab_here a { color: #col_txt;
 .delphi_post_text {	display: none; }
 .delphi_post_dbtitle { font-weight: bold;}
 
+.delete-btn,
 .action-btn { text-decoration: none;
               color: #col_txt;
               /*background-color: #col_txt_background;*/
@@ -625,6 +626,7 @@ div#rheader_tabs span.rheader_tab_here a { color: #col_txt;
               border-top: 1px solid #col_txt_border;
               padding: 2px 4px 2px 4px; }
 
+.delete-btn:hover,
 .action-btn:hover { text-decoration: none;
                     color: #fff;
                     background-color: #col_btn_hover;

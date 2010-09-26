@@ -75,20 +75,20 @@
 
         if (deg == ''){
             deg = 0;
-        } else if (deg > 180 || deg < -180){
-            alert('{{=T("Degrees must be between -180 and 180")}}.');
+        } else if (isNaN(deg) || deg > 180 || deg < -180){
+            alert('{{=T("Degrees must be a number between -180 and 180")}}.');
             invalid = true;
         }
         if (min == ''){
             min = 0;
-        } else if (min > 60 || min < 0){
-            alert('{{=T("Minutes must be between 0 and 60")}}.');
+        } else if (isNaN(min) || min > 60 || min < 0){
+            alert('{{=T("Minutes must be a number between 0 and 60")}}.');
             invalid = true;
         }
         if (sec == ''){
             sec = 0;
-        } else if (sec > 60 || sec < 0){
-            alert('{{=T("Seconds must be between 0 and 60")}}.');
+        } else if (isNaN(sec) || sec > 60 || sec < 0){
+            alert('{{=T("Seconds must be a number between 0 and 60")}}.');
             invalid = true;
         }
         if (invalid == false) {
@@ -114,14 +114,14 @@
 
         if (deg == ''){
             deg = 0;
-        } else if (deg > 180 || deg < -180){
-            alert('{{=T("Degrees must be between -180 and 180")}}.');
+        } else if (isNaN(deg) || deg > 180 || deg < -180){
+            alert('{{=T("Degrees must be a number between -180 and 180")}}.');
             invalid = true;
         }
         if (min == ''){
             min = 0;
-        } else if (min > 60 || min < 0){
-            alert('{{=T("Minutes should be greater than 0 and less than 60")}}.');
+        } else if (isNaN(min) || min > 60 || min < 0){
+            alert('{{=T("Minutes should be a number greater than 0 and less than 60")}}.');
             invalid = true;
         }
         if (invalid == false) {

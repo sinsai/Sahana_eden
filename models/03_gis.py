@@ -33,7 +33,7 @@ else:
 # GIS Markers (Icons)
 resource = "marker"
 tablename = "%s_%s" % (module, resource)
-table = db.define_table(tablename, #timestamp,
+table = db.define_table(tablename,
                         #uuidstamp, # Markers don't sync
                         Field("name", length=128, notnull=True, unique=True),
                         Field("image", "upload", autodelete=True),
@@ -90,8 +90,7 @@ table = db.define_table(tablename,
                         Field("maxResolution", "double", notnull=True),
                         Field("units", notnull=True),
                         migrate=migrate,
-                        *(s3_timestamp()+s3_uid()))
-
+                        *(s3_timestamp() + s3_uid()))
 table.uuid.requires = IS_NOT_IN_DB(db, "%s.uuid" % tablename)
 table.name.requires = [IS_NOT_EMPTY(), IS_NOT_IN_DB(db, "%s.name" % tablename)]
 table.epsg.requires = IS_NOT_EMPTY()
@@ -119,7 +118,7 @@ tablename = "%s_%s" % (module, resource)
 table = db.define_table(tablename,
                         Field("name", length=128, notnull=True, unique=True),
                         migrate=migrate,
-                        *(s3_timestamp()+s3_uid()))
+                        *(s3_timestamp() + s3_uid()))
 # Reusable field to include in other table definitions
 symbology_id = S3ReusableField("symbology_id", db.gis_symbology, sortby="name",
                                 requires = IS_NULL_OR(IS_ONE_OF(db, "gis_symbology.id", "%(name)s")),
@@ -165,8 +164,7 @@ table = db.define_table(tablename,
                         Field("wmsbrowser_name", default="Web Map Service"),
                         Field("wmsbrowser_url"),
                         migrate=migrate,
-                        *(s3_timestamp()+s3_uid()))
-
+                        *(s3_timestamp() + s3_uid()))
 table.uuid.requires = IS_NOT_IN_DB(db, "gis_config.uuid")
 table.pe_id.requires = IS_NULL_OR(IS_ONE_OF(db, "pr_pentity.pe_id", shn_pentity_represent))
 table.pe_id.readable = table.pe_id.writable = False
@@ -370,7 +368,7 @@ table = db.define_table(tablename,
                         Field("gps_marker"),
                         Field("resource"),  # Used for Web Service Feeds
                         migrate=migrate,
-                        *(s3_timestamp()+s3_uid()+s3_deletion_status()))
+                        *(s3_timestamp() + s3_uid() + s3_deletion_status()))
 
 table.uuid.requires = IS_NOT_IN_DB(db, "%s.uuid" % tablename)
 table.name.requires = [IS_NOT_EMPTY(), IS_NOT_IN_DB(db, "%s.name" % tablename)]
@@ -411,7 +409,7 @@ gis_source_opts = {
     }
 resource = "location"
 tablename = "%s_%s" % (module, resource)
-table = db.define_table(tablename,# timestamp, uuidstamp, deletion_status,
+table = db.define_table(tablename,
                         Field("name", notnull=True),    # Primary name
                         Field("name_dummy"),            # Dummy field to provide Widget (real data is stored in the separate table which links back to this one)
                         Field("code"),
@@ -441,8 +439,7 @@ table = db.define_table(tablename,# timestamp, uuidstamp, deletion_status,
                         Field("source", requires=IS_NULL_OR(IS_IN_SET(gis_source_opts))),
                         comments(),
                         migrate=migrate,
-                        *(s3_timestamp()+s3_uid()+s3_deletion_status()))
-
+                        *(s3_timestamp() + s3_uid() + s3_deletion_status()))
 table.uuid.requires = IS_NOT_IN_DB(db, "%s.uuid" % table)
 table.name.requires = IS_NOT_EMPTY()    # Placenames don't have to be unique
 
@@ -525,12 +522,12 @@ if response.s3.countries:
 # Local Names
 resource = "location_name"
 tablename = module + "_" + resource
-table = db.define_table(tablename, #timestamp, uuidstamp, deletion_status,
+table = db.define_table(tablename,
                         location_id(),
                         Field("language"),
                         Field("name_l10n"),
                         migrate=migrate,
-                        *(s3_timestamp()+s3_uid()+s3_deletion_status()))
+                        *(s3_timestamp() + s3_uid() + s3_deletion_status()))
 
 table.uuid.requires = IS_NOT_IN_DB(db, '%s.uuid' % tablename)
 table.language.requires = IS_IN_SET(s3.l10n_languages)
@@ -829,16 +826,17 @@ def shn_gis_location_represent(id):
 # Feature Layers
 # Used to select a set of Features for either Display or Export
 # (replaces feature_group)
-resource = "feature_layer"
+resource = "layer_feature"
 tablename = "%s_%s" % (module, resource)
-table = db.define_table(tablename, #timestamp, uuidstamp, authorstamp, deletion_status,
+table = db.define_table(tablename,
                         Field("name", length=128, notnull=True, unique=True),
                         Field("module"),
                         Field("resource"),
                         Field("popup_label"),       # Replace with s3.crud_strings[tablename]
                         marker_id(),                # Optional Marker to over-ride the values from the Feature Classes
+                        Field("polygons", "boolean", default=False, label=T("Display Polygons?")),
                         Field("enabled", "boolean", default=True, label=T("Available in Viewer?")),
-                        Field("visible", "boolean", default=False, label=T("On by default?")),
+                        Field("visible", "boolean", default=True, label=T("On by default?")),
                         # ToDo Expose the Graphic options
                         # ToDo Allow defining more complex queries
                         # e.g. L1 for Provinces, L2 for Districts, etc
@@ -846,11 +844,8 @@ table = db.define_table(tablename, #timestamp, uuidstamp, authorstamp, deletion_
                         #Field("filter_value"),     # Used to build a simple query
                         #Field("query", notnull=True),
                         comments(),
-                        migrate=migrate, *s3_meta_fields())
+                        migrate=migrate, )
 
-
-table.uuid.requires = IS_NOT_IN_DB(db, "%s.uuid" % tablename)
-#table.author.requires = IS_ONE_OF(db, "auth_user.id","%(id)s: %(first_name)s %(last_name)s")
 table.name.requires = [IS_NOT_EMPTY(), IS_NOT_IN_DB(db, "%s.name" % tablename)]
 table.name.label = T("Name")
 table.resource.label = T("Resource")
@@ -864,7 +859,7 @@ table.resource.label = T("Resource")
 # GIS Keys - needed for commercial mapping services
 resource = "apikey" # Can't use 'key' as this has other meanings for dicts!
 tablename = "%s_%s" % (module, resource)
-table = db.define_table(tablename,# timestamp,
+table = db.define_table(tablename,
                         Field("name", notnull=True),
                         Field("apikey", length=128, notnull=True),
                         Field("description"),
@@ -1074,11 +1069,10 @@ for layertype in gis_layer_types:
 # (Store downloaded KML & GeoRSS feeds)
 resource = "cache"
 tablename = "%s_%s" % (module, resource)
-table = db.define_table(tablename, #timestamp,
+table = db.define_table(tablename,
                 Field("name", length=128, notnull=True, unique=True),
                 Field("file", "upload", autodelete = True),
                 migrate=migrate, *s3_timestamp())
-
 # upload folder needs to be visible to the download() function as well as the upload
 table.file.uploadfolder = os.path.join(request.folder, "uploads/gis_cache")
 

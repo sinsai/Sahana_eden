@@ -1,6 +1,6 @@
     // Add checkbox to hide/unhide optional school fields.
-    $('#cr_shelter_school_code__row').before(
-        '{{=TR(TD(LABEL(T("Is this a School?"))),
+    //$('#cr_shelter_school_code__row').before(
+    //    '{{=TR(TD(LABEL(T("Is this a School?"))),
                TD(INPUT(_type="checkbox",
                         _name="is_school", _id="is_school")),
                TD(DIV(_id="is_school_tooltip",
@@ -13,34 +13,34 @@
                            "Instead include the school name in the " +
                            "shelter name or in the comments."))))}}');
     // Adding tooltip here is too late to get proper decorations, so add them.
-    $('#is_school_tooltip').cluetip(
-        {activation: 'hover', sticky: false, splitTitle: '|'});
+    //$('#is_school_tooltip').cluetip(
+    //    {activation: 'hover', sticky: false, splitTitle: '|'});
     // If data is present (on update), or if there's a validation error
     // (meaning box was checked but no school code filled in on create),
     // set checked and do not hide.  (The jQuery selector with two terms
     // tests within the set selected by the first selector, for a child
     // matching the second.)
-    if ($('#cr_shelter_school_code').val() != "" ||
-        $('#cr_shelter_school_code__row #school_code__error').length != 0) {
-        $('#is_school').attr('checked','on');
-    } else {
-        $('#cr_shelter_school_code__row').hide();
-        $('#cr_shelter_school_pf__row').hide();
-    }
-    $('#is_school').change(function() {
-        if ($(this).attr('checked')) {
-            $('#cr_shelter_school_code__row').show();
-            $('#cr_shelter_school_pf__row').show();
-        } else {
+    //if ($('#cr_shelter_school_code').val() != "" ||
+    //    $('#cr_shelter_school_code__row #school_code__error').length != 0) {
+    //    $('#is_school').attr('checked','on');
+    //} else {
+    //    $('#cr_shelter_school_code__row').hide();
+    //    $('#cr_shelter_school_pf__row').hide();
+    //}
+    //$('#is_school').change(function() {
+    //    if ($(this).attr('checked')) {
+    //        $('#cr_shelter_school_code__row').show();
+    //        $('#cr_shelter_school_pf__row').show();
+    //    } else {
             // Clear values if user unchecks? Nicer for user if the values
             // are left in, in case user accidentally unchecks.  If values not
             // cleared, either no values should be sent on submit if unchecked,
             // or checkbox setting should be tested on server and values not
             // stored if unchecked.
-            $('#cr_shelter_school_code__row').hide();
-            $('#cr_shelter_school_pf__row').hide();
-        }
-    })
+    //        $('#cr_shelter_school_code__row').hide();
+    //        $('#cr_shelter_school_pf__row').hide();
+    //    }
+    //})
 
     // If the optional hospital_id field is present, add checkbox to
     // hide/unhide it.

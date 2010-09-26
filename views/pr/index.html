@@ -1,8 +1,8 @@
-{{extend 'layout.html'}}
-<div id="home">
+{{extend "layout.html"}}
+<div id='home'>
 {{=H2(module_name)}}
-<div style="margin:20px auto; width:96%; max-width:1000px;" >
-    <div style="width:65%; float:left;">
+<div style='margin:20px auto; width:96%; max-width:1000px;'>
+    <div style='width:65%; float:left;'>
         {{=H4(T("Search for a Person"))}}
         {{try:}}{{=form}}{{except:pass}}
         <div><br /></div>
@@ -17,9 +17,9 @@
         {{=add_btn}}
         {{except:}}
         {{pass}}
-        {{include 'dataTables.html'}}
+        {{include "dataTables.html"}}
     </div>
-    <div style="width:30%; float:right;">
+    <div style='width:30%; float:right;'>
         {{=H4("%s: %s" % (T("Total Persons"), total and total or "?"))}}
         <div id='charts'>
             <table>

@@ -4,32 +4,7 @@
 
     {{=XML(map)}}
 
-    <div id='legend'>
-        <table align='center'>
-            <tr>
-                <!--@ToDo Have these pulled from Feature Class, not hard-coded (& display inside Ext window) -->
-                <td style='padding:1px; text-align:center;'>{{=IMG(_src="/%s/static/img/markers/gis_marker.image.Emergency_Teams_S1.png" % request.application, _height="30", _width="30")}}</td>
-                <!--<td style='padding:1px; text-align:center;'>{{=IMG(_src="/%s/static/img/markers/gis_marker.image.Edu_Schools_S1.png" % request.application, _height="25", _width="31")}}</td>-->
-                <td style='padding:1px; text-align:center;'>{{=IMG(_src="/%s/static/img/markers/gis_marker.image.Emergency_Shelters_S1.png" % request.application, _height="30", _width="30")}}</td>
-                <td style='padding:1px; text-align:center;'>{{=IMG(_src="/%s/static/img/markers/gis_marker.image.Emergency_Operations_Center_S1.png" % request.application, _height="30", _width="30")}}</td>
-                <td style='padding:1px; text-align:center;'>{{=IMG(_src="/%s/static/img/markers/gis_marker.image.marker_red.png" % request.application)}}</td>
-                <td style='padding:1px; text-align:center;'>{{=IMG(_src="/%s/static/img/markers/gis_marker.image.marker_yellow.png" % request.application)}}</td>
-                <td style='padding:1px; text-align:center;'>{{=IMG(_src="/%s/static/img/markers/gis_marker.image.marker_green.png" % request.application)}}</td>
-o
-                <td style='padding:1px; text-align:center;'>{{=IMG(_src="/%s/static/img/Cluster.png" % request.application)}}</td>
-            </tr>
-            <tr>
-                <td style='padding:5px;'>{{=T("Activities")}}</td>
-                <!--<td style='padding:5px;'>{{=T("Schools")}}</td>-->
-                <td style='padding:5px;'>{{=T("Shelters")}}</td>
-                <td style='padding:5px;'>{{=T("Warehouses")}}</td>
-                <td style='padding:5px;'>{{=T("Incidents")}}</td>
-                <td style='padding:5px;'>{{=T("Requests")}}</td>
-                <td style='padding:5px;'>{{=T("Assessments")}}</td>
-                <td style='padding:5px;' align='center'>{{=T("Multiple")}}<br />({{=T("click for more details")}})</td>
-            </tr>
-        </table>
-    </div>
+    {{include "gis/legend.html"}}
 
     <div class='col3left' style='font-size:large;'>
     {{if 1 in session.s3.roles or shn_has_role("MapAdmin"):}}
@@ -59,7 +34,7 @@ o
 
   <div class='col3right'>
     <h4>{{=T("ABOUT THIS MODULE")}}</h4>
-    {{=T("The")}} {{=T(module_name)}} {{=T("module provides a mechanism to collaboratively provide an overview of the developing disaster, using online mapping (GIS).")}}
+    {{=T("The")}} {{=module_name}} {{=T("module provides a mechanism to collaboratively provide an overview of the developing disaster, using online mapping (GIS).")}}
     <h4>{{=T("LICENSE")}}</h4>
     {{=T("All data provided by the Sahana Software Foundation from this site is licenced under a Creative Commons Attribution licence. However, not all data originates here. Please consult the source field of each entry.")}}
   </div>

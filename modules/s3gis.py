@@ -2525,7 +2525,7 @@ OpenLayers.Util.extend( selectPdfControl, {
 
         # JS
         layers_js = ""
-        js_enabled = db(db.gis_layer_tms.enabled == True).select()
+        js_enabled = db(db.gis_layer_js.enabled == True).select()
         for layer in js_enabled:
             layers_js  += layer.code
 
@@ -3080,10 +3080,10 @@ OpenLayers.Util.extend( selectPdfControl, {
         // Needs to be uniquely instantiated
         var style_marker = OpenLayers.Util.extend({}, OpenLayers.Feature.Vector.style['default']);
         style_marker.graphicOpacity = 1;
-        style_marker.graphicWidth = width;
-        style_marker.graphicHeight = height;
-        style_marker.graphicXOffset = -(width / 2);
-        style_marker.graphicYOffset = -height;
+        style_marker.graphicWidth = i.width;
+        style_marker.graphicHeight = i.height;
+        style_marker.graphicXOffset = -(i.width / 2);
+        style_marker.graphicYOffset = -i.height;
         style_marker.externalGraphic = iconURL;
         var georssLayer""" + name_safe + """ = new OpenLayers.Layer.Vector(
             '""" + name_safe + """',
@@ -3150,10 +3150,10 @@ OpenLayers.Util.extend( selectPdfControl, {
         // Needs to be uniquely instantiated
         var style_marker = OpenLayers.Util.extend({}, OpenLayers.Feature.Vector.style['default']);
         style_marker.graphicOpacity = 1;
-        style_marker.graphicWidth = width;
-        style_marker.graphicHeight = height;
-        style_marker.graphicXOffset = -(width / 2);
-        style_marker.graphicYOffset = -height;
+        style_marker.graphicWidth = i.width;
+        style_marker.graphicHeight = i.height;
+        style_marker.graphicXOffset = -(i.width / 2);
+        style_marker.graphicYOffset = -i.height;
         style_marker.externalGraphic = iconURL;
         var gpxLayer""" + name_safe + """ = new OpenLayers.Layer.Vector(
             '""" + name_safe + """',
@@ -3314,10 +3314,10 @@ OpenLayers.Util.extend( selectPdfControl, {
         // Needs to be uniquely instantiated
         var style_marker = OpenLayers.Util.extend({}, OpenLayers.Feature.Vector.style['default']);
         style_marker.graphicOpacity = 1;
-        style_marker.graphicWidth = width;
-        style_marker.graphicHeight = height;
-        style_marker.graphicXOffset = -(width / 2);
-        style_marker.graphicYOffset = -height;
+        style_marker.graphicWidth = i.width;
+        style_marker.graphicHeight = i.height;
+        style_marker.graphicXOffset = -(i.width / 2);
+        style_marker.graphicYOffset = -i.height;
         style_marker.externalGraphic = iconURL;
         var kmlLayer""" + name_safe + """ = new OpenLayers.Layer.Vector(
             '""" + name + """',

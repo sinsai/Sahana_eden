@@ -248,6 +248,7 @@ deployment_settings.modules = Storage(
     pr = Storage(
             name_nice = T("Person Registry"),
             description = T("Central point to record details on People"),
+            access = "|1|",     # Only Administrators can see this module in the default menu (access to controller is possible to all still)
             module_type = 10,
             resources = Storage(
                 pr_address = {"importer" : True},

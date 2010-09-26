@@ -189,43 +189,34 @@ if deployment_settings.has_module(module):
 
     # Reusable field for other tables to reference
     ADD_HOSPITAL = T("Add Hospital")
+    shn_hospital_id_comment = DIV(A(ADD_HOSPITAL,
+                                    _class="colorbox",
+                                    _href=URL(r=request,
+                                              c="hms",
+                                              f="hospital",
+                                              args="create",
+                                              vars=dict(format="popup")),
+                                    _target="top",
+                                    _title=ADD_HOSPITAL),
+                                  DIV(DIV(_class="tooltip",
+                                          _title=T("Hospital") + "|" + T("The hospital this record is associated with."))))
     hospital_id = S3ReusableField("hospital_id", db.hms_hospital, sortby="name",
                                   requires = IS_NULL_OR(IS_ONE_OF(db, "hms_hospital.id", "%(name)s")),
                                   represent = lambda id: (id and
                                               [db(db.hms_hospital.id == id).select(db.hms_hospital.name, limitby=(0, 1)).first().name] or
                                               ["None"])[0],
                                   label = T("Hospital"),
-                                  comment = DIV(A(ADD_HOSPITAL,
-                                                  _class="colorbox",
-                                                  _href=URL(r=request,
-                                                            c="hms",
-                                                            f="hospital",
-                                                            args="create",
-                                                            vars=dict(format="popup")),
-                                                  _target="top", _title=ADD_HOSPITAL),
-                                                DIV(DIV(_class="tooltip",
-                                                        _title=T("Hospital") + "|" + T("The hospital this record is associated with.")))),
+                                  comment = shn_hospital_id_comment,
                                   ondelete = "RESTRICT")
 
 
     # -----------------------------------------------------------------------------
-    def shn_hms_hospital_onvalidation(form):
-
-        if "gov_uuid" in db.hms_hospital.fields and HMS_HOSPITAL_USE_GOVUUID:
-            if form.vars.gov_uuid is not None and not str(form.vars.gov_uuid).isspace():
-                form.vars.uuid = "urn:health-facilty-id:%s" % form.vars.gov_uuid
-            else:
-                form.vars.gov_uuid = None
-
-
     def shn_hms_hospital_onaccept(form, table=None):
 
         shn_site_onaccept(form, table=table)
 
 
     s3xrc.model.configure(table,
-                          onvalidation=lambda form: \
-                          shn_hms_hospital_onvalidation(form),
                           onaccept=lambda form, tab=table: \
                           shn_hms_hospital_onaccept(form, table=tab),
                           list_fields=["id",

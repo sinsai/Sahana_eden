@@ -404,6 +404,7 @@ if deployment_settings.has_module(module):
         99:T("other")
     }
 
+    # Replace by image_id?
     resource = "iimage"
     tablename = "%s_%s" % (module, resource)
     table = db.define_table(tablename,
@@ -415,7 +416,7 @@ if deployment_settings.has_module(module):
                                   default = 1,
                                   label = T("Image Type"),
                                   represent = lambda opt: irs_image_type_opts.get(opt, UNKNOWN_OPT)),
-                            Field("image", "upload", autodelete=True),  # Replace by image_id?
+                            Field("image", "upload", autodelete=True),
                             #Field("url"),
                             Field("description"),
                             #Field("tags"),

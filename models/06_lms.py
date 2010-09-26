@@ -36,8 +36,8 @@ if deployment_settings.has_module(module):
                     Field('name'),  #complete Unit - "meter" for "m"
                     Field('base_unit'), #links to which unit
                     Field('multiplicator', 'double', default=1.0), #by default 1 thisi s what links
-                    *(s3_timestamp()+s3_deletion_status()),
-                    migrate=migrate)
+                    migrate=migrate,
+                    *(s3_timestamp()+s3_deletion_status()))
 
     if not db(table.id > 0).count():
         table.insert(
@@ -119,8 +119,8 @@ if deployment_settings.has_module(module):
                     location_id(),
                     Field('attachment', 'upload', autodelete=True),
                     comments,
-                    *(s3_timestamp()+s3_uid()+s3_deletion_status()),
-                    migrate=migrate)
+                    migrate=migrate,
+                    *(s3_timestamp()+s3_uid()+s3_deletion_status()))
     table.uuid.requires = IS_NOT_IN_DB(db,'%s.uuid' % tablename)
     table.name.requires = IS_NOT_EMPTY()   # Sites don't have to have unique names
     table.name.label = T("Site Name")
@@ -161,8 +161,8 @@ if deployment_settings.has_module(module):
                     Field('max_weight'),
                                     Field('weight_unit'),
                                     Field('attachment', 'upload', autodelete=True),
-                    *(s3_timestamp()+s3_uid()+s3_deletion_status()),
-                    migrate=migrate)
+                    migrate=migrate,
+                    *(s3_timestamp()+s3_uid()+s3_deletion_status()))
     table.uuid.requires = IS_NOT_IN_DB(db,'%s.uuid' % tablename)
     table.name.requires = IS_NOT_EMPTY()   # Storage Locations don't have to have unique names
     table.site_id.label = T("Site")
@@ -203,8 +203,8 @@ if deployment_settings.has_module(module):
     table = db.define_table(tablename, #timestamp, uuidstamp, deletion_status,
                     Field('name', notnull=True),
                     Field('description'),
-                    *(s3_timestamp()+s3_uid()+s3_deletion_status()),
-                    migrate=migrate)
+                    migrate=migrate,
+                    *(s3_timestamp()+s3_uid()+s3_deletion_status()))
     table.uuid.requires = IS_NOT_IN_DB(db,'%s.uuid' % tablename)
     table.name.requires = IS_NOT_EMPTY()
     table.name.comment = SPAN("*", _class="req"), DIV( _class="tooltip", _title=T("Storage Bin Type") + "|" + T("Name of Storage Bin Type."))
@@ -240,8 +240,8 @@ if deployment_settings.has_module(module):
                                     Field('weight_unit'),
                                     Field('attachment', 'upload', autodelete=True),
                                     comments,
-                    *(s3_timestamp()+s3_uid()+s3_deletion_status()),
-                    migrate=migrate)
+                    migrate=migrate,
+                    *(s3_timestamp()+s3_uid()+s3_deletion_status()))
     table.uuid.requires = IS_NOT_IN_DB(db,'%s.uuid' % tablename)
     table.site_id.requires = IS_IN_DB(db, 'lms_site.id', 'lms_storage_loc.name')
     table.site_id.label = T("Site/Warehouse")
@@ -291,8 +291,8 @@ if deployment_settings.has_module(module):
                                     Field('name'),
                     Field('description'),
                                     comments,
-                    *(s3_timestamp()+s3_uid()+s3_deletion_status()),
-                    migrate=migrate)
+                    migrate=migrate,
+                    *(s3_timestamp()+s3_uid()+s3_deletion_status()))
     table.uuid.requires = IS_NOT_IN_DB(db, '%s.uuid' % tablename)
     table.name.requires = IS_NOT_EMPTY()
     table.name.label = T("Catalog Name")
@@ -321,8 +321,8 @@ if deployment_settings.has_module(module):
                     Field('name'),
                     Field('description'),
                                     comments,
-                    *(s3_timestamp()+s3_uid()+s3_deletion_status()),
-                    migrate=migrate)
+                    migrate=migrate,
+                    *(s3_timestamp()+s3_uid()+s3_deletion_status()))
     table.uuid.requires = IS_NOT_IN_DB(db,'%s.uuid' % tablename)
     table.name.requires = IS_NOT_EMPTY()
     table.name.label = T("Item Catalog Category")
@@ -352,8 +352,8 @@ if deployment_settings.has_module(module):
                                     Field('name'),
                     Field('description'),
                                     comments,
-                    *(s3_timestamp()+s3_uid()+s3_deletion_status()),
-                    migrate=migrate)
+                    migrate=migrate,
+                    *(s3_timestamp()+s3_uid()+s3_deletion_status()))
     table.uuid.requires = IS_NOT_IN_DB(db,'%s.uuid' % tablename)
     table.name.requires = IS_NOT_EMPTY()
     table.name.label = T("Item Sub-Category")
@@ -385,8 +385,8 @@ if deployment_settings.has_module(module):
                     Field('category_id', db.lms_catalog_cat),
                     Field('subcategory_id', db.lms_catalog_subcat),
                     Field('catalog_id', db.lms_catalog),
-                    *(s3_timestamp()+s3_uid()+s3_deletion_status()),
-                    migrate=migrate)
+                    migrate=migrate,
+                    *(s3_timestamp()+s3_uid()+s3_deletion_status()))
     table.category_id.requires = IS_IN_DB(db, 'lms_catalog_cat.id', 'lms_catalog_cat.name')
     table.category_id.label = T('Category')
     table.category_id.represent = lambda category_id: db(db.lms_catalog_cat.id==category_id).select()[0].name
@@ -430,8 +430,8 @@ if deployment_settings.has_module(module):
                             Field('cost', 'double', default=0.00),
                             Field('currency'),
                             Field('track_status', readable='False'), #Linked to Shipment Transit Log table
-                            *(s3_timestamp()+s3_uid()+s3_deletion_status()),
-                            migrate=migrate)
+                            migrate=migrate,
+                            *(s3_timestamp()+s3_uid()+s3_deletion_status()))
     table.uuid.requires = IS_NOT_IN_DB(db,'%s.uuid' % tablename)
     table.way_bill.requires = IS_NOT_EMPTY()
     table.way_bill.label = T("Shipment/Way Bills")
@@ -489,8 +489,8 @@ if deployment_settings.has_module(module):
                                     comments,
                                     Field('attachment', 'upload', autodelete=True),
                     Field('unit_cost', 'double', default=0.00),
-                    *(s3_timestamp()+s3_uid()+s3_deletion_status()),
-                    migrate=migrate)
+                    migrate=migrate,
+                    *(s3_timestamp()+s3_uid()+s3_deletion_status()))
     table.uuid.requires = IS_NOT_IN_DB(db,'%s.uuid' % tablename)
     table.site_id.requires = IS_IN_DB(db, 'lms_site.id', 'lms_storage_loc.name') #this should be automatically done. Using LMS User Preferences
     table.site_id.label = T("Site/Warehouse")
@@ -545,8 +545,8 @@ if deployment_settings.has_module(module):
     table = db.define_table(tablename, #timestamp, uuidstamp, deletion_status,
                                     Field('shipment_id', db.lms_shipment),
                                     Field('item_id', db.lms_item),
-                    *(s3_timestamp()+s3_uid()+s3_deletion_status()),
-                    migrate=migrate)
+                    migrate=migrate,
+                    *(s3_timestamp()+s3_uid()+s3_deletion_status()))
     table.uuid.requires = IS_NOT_IN_DB(db,'%s.uuid' % tablename)
     table.shipment_id.requires = IS_IN_DB(db, 'lms_shipment.id', 'lms_shipment.way_bill')
     table.item_id.requires = IS_IN_DB(db, 'lms_item.id', 'lms_item.name') #This needs to be represented as Name+Brand+Model+Description+Size
@@ -573,8 +573,8 @@ if deployment_settings.has_module(module):
     table = db.define_table(tablename, #timestamp, uuidstamp, deletion_status,
                                     Field('shipment_id', db.lms_shipment),
                                     Field('item_id', db.lms_item),
-                    *(s3_timestamp()+s3_uid()+s3_deletion_status()),
-                    migrate=migrate)
+                    migrate=migrate,
+                    *(s3_timestamp()+s3_uid()+s3_deletion_status()))
     table.uuid.requires = IS_NOT_IN_DB(db,'%s.uuid' % tablename)
     table.shipment_id.requires = IS_IN_DB(db, 'lms_shipment.id', 'lms_shipment.way_bill')
     table.item_id.requires = IS_IN_DB(db, 'lms_item.id', 'lms_item.name') #This needs to be represented as Name+Brand+Model+Description+Size
@@ -606,8 +606,8 @@ if deployment_settings.has_module(module):
                     Field('total_minute_cost', 'double', writable=False),
                     Field('total_megabyte_cost', 'double', writable=False),
                     comments,
-                    *(s3_timestamp()+s3_uid()+s3_deletion_status()),
-                    migrate=migrate)
+                    migrate=migrate,
+                    *(s3_timestamp()+s3_uid()+s3_deletion_status()))
     table.code.requires = [IS_NOT_EMPTY(), IS_NOT_IN_DB(db, '%s.code' % tablename)]
     table.code.label = T('Code')
     table.code.comment = SPAN("*", _class="req")
@@ -641,8 +641,8 @@ if deployment_settings.has_module(module):
                     Field('kit_id', db.lms_kit),
                     Field('item_id', db.lms_item, ondelete='RESTRICT'),
                     Field('quantity', 'integer', default=1, notnull=True),
-                    *(s3_timestamp()+s3_uid()+s3_deletion_status()),
-                    migrate=migrate)
+                    migrate=migrate,
+                    *(s3_timestamp()+s3_uid()+s3_deletion_status()))
     table.kit_id.requires = IS_IN_DB(db, 'lms_kit.id', 'lms_kit.code')
     table.kit_id.label = T('Kit')
     table.kit_id.represent = lambda kit_id: db(db.budget_kit.id == kit_id).select(db.budget_kit.code, limitby=(0, 1)).first().code

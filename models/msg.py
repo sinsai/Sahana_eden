@@ -115,8 +115,8 @@ if deployment_settings.has_module(module):
                             Field("actioned_comments", "text"),
                             Field("priority", "integer", default = 1),
                             Field("inbound", "boolean", default = False),
-                            *(s3_timestamp() + s3_uid() + s3_deletion_status()),
-                            migrate=migrate)
+                            migrate=migrate,
+                            *(s3_timestamp() + s3_uid() + s3_deletion_status()))
 
     table.uuid.requires = IS_NOT_IN_DB(db, "%s.uuid" % tablename)
     table.priority.requires = IS_NULL_OR(IS_IN_SET(msg_priority_opts))
@@ -148,8 +148,8 @@ if deployment_settings.has_module(module):
                             Field("record_uuid", # null in this field implies subscription to the entire resource
                                   type=s3uuid,
                                   length=128),
-                            *(s3_timestamp() + s3_uid() + s3_deletion_status()),
-                            migrate=migrate)
+                            migrate=migrate,
+                            *(s3_timestamp() + s3_uid() + s3_deletion_status()))
 
     table.uuid.requires = IS_NOT_IN_DB(db, "%s.uuid" % tablename)
     s3xrc.model.configure(table,
@@ -175,8 +175,8 @@ if deployment_settings.has_module(module):
                                   requires = IS_IN_SET(msg_contact_method_opts, zero=None),
                                   default = 1),
                             Field("log"),
-                            *(s3_timestamp() + s3_uid() + s3_deletion_status()),
-                            migrate=migrate)
+                            migrate=migrate,
+                            *(s3_timestamp() + s3_uid() + s3_deletion_status()))
 
 
     # Outbox - needs to be separate to Log since a single message sent needs different outbox entries for each recipient
@@ -194,8 +194,8 @@ if deployment_settings.has_module(module):
                             opt_msg_status,
                             Field("system_generated", "boolean", default = False),
                             Field("log"),
-                            *(s3_timestamp() + s3_uid() + s3_deletion_status()),
-                            migrate=migrate)
+                            migrate=migrate,
+                            *(s3_timestamp() + s3_uid() + s3_deletion_status()))
 
     s3xrc.model.add_component(module, resource,
                               multiple=True,
@@ -218,8 +218,8 @@ if deployment_settings.has_module(module):
     table = db.define_table(tablename,
                             message_id(),
                             person_id(),
-                            *(s3_timestamp() + s3_uid() + s3_deletion_status()),
-                            migrate=migrate)
+                            migrate=migrate,
+                            *(s3_timestamp() + s3_uid() + s3_deletion_status()))
 
     table.uuid.requires = IS_NOT_IN_DB(db, "%s.uuid" % tablename)
     s3xrc.model.configure(table,
@@ -286,8 +286,8 @@ if deployment_settings.has_module(module):
                             location_id(),
                             Field("image", "upload", autodelete = True),
                             Field("url", requires=IS_NULL_OR(IS_URL())),
-                            *(s3_timestamp() + s3_uid() + s3_deletion_status()),
-                            migrate=migrate)
+                            migrate=migrate,
+                            *(s3_timestamp() + s3_uid() + s3_deletion_status()))
     table.uuid.requires = IS_NOT_IN_DB(db, "%s.uuid" % tablename)
 
 def shn_msg_compose( redirect_module = "msg",

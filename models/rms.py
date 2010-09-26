@@ -73,8 +73,8 @@ if deployment_settings.has_module(module):
         Field("actioned_details"),
         Field("pledge_status", "string"),
         document_id(),
-        *s3_meta_fields(),
-        migrate=migrate)
+        migrate=migrate, *s3_meta_fields())
+
 
     db.rms_req.pledge_status.writable = False
 
@@ -314,8 +314,8 @@ if deployment_settings.has_module(module):
                             item_id(),
                             Field("quantity", "double"),
                             comments(),
-                            *s3_meta_fields(),
-                            migrate=migrate)
+                            migrate=migrate, *s3_meta_fields())
+
 
     # CRUD strings
     ADD_REQUEST_ITEM = T("Add Request Item")
@@ -358,8 +358,8 @@ if deployment_settings.has_module(module):
                             organisation_id(),
                             person_id(),
                             comments(),
-                            *s3_meta_fields(),
-                            migrate=migrate)
+                            migrate=migrate, *s3_meta_fields())
+
 
     # hide unnecessary fields
     table.req_id.readable = table.req_id.writable = False
@@ -436,8 +436,8 @@ if deployment_settings.has_module(module):
                             req_id(),
                             Field("request_key", "string"),
                             Field("value", "string"),
-                            *s3_meta_fields(),
-                            migrate=migrate)
+                            migrate=migrate, *s3_meta_fields())
+
 
     s3xrc.model.add_component(module, resource,
                               multiple=True,

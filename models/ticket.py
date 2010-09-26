@@ -2,7 +2,7 @@
 
 """
     Master Message Log to record/route all Inbound messages
-    
+
     @Deprecated. Incident Reports are where unknown messages are initially deposited for onward routing.
 """
 
@@ -15,8 +15,8 @@ if deployment_settings.has_module(module):
     tablename = "%s_%s" % (module, resource)
     table = db.define_table(tablename,
                             Field("name"),
-                            *s3_meta_fields(),
-                            migrate=migrate)
+                            migrate=migrate, *s3_meta_fields())
+
 
     table.uuid.requires = IS_NOT_IN_DB(db, "%s.uuid" % tablename)
 
@@ -47,8 +47,8 @@ if deployment_settings.has_module(module):
                             Field("actionable", "boolean"),
                             Field("actioned", "boolean"),
                             Field("actioned_details", "text"),
-                            *s3_meta_fields(),
-                            migrate=migrate)
+                            migrate=migrate, *s3_meta_fields())
+
 
     table.uuid.requires = IS_NOT_IN_DB(db, "%s.uuid" % tablename)
     table.message.requires = IS_NOT_EMPTY()

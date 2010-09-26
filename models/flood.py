@@ -17,8 +17,8 @@ if deployment_settings.has_module(module):
     table = db.define_table(tablename,
                             Field("name"),
                             comments(),
-                            *s3_meta_fields(),
-                            migrate=migrate)
+                            migrate=migrate, *s3_meta_fields())
+
 
     table.name.requires = IS_NOT_EMPTY()
     table.name.comment = SPAN("*", _class="req")
@@ -57,8 +57,8 @@ if deployment_settings.has_module(module):
                             Field("datetime", "datetime"),
                             document_id(),
                             comments(),
-                            *s3_meta_fields(),
-                            migrate=migrate)
+                            migrate=migrate, *s3_meta_fields())
+
 
     #table.document.represent = lambda document, table=table: A(table.document.retrieve(document)[0], _href=URL(r=request, f="download", args=[document]))
     table.datetime.requires = IS_DATETIME()
@@ -112,8 +112,8 @@ if deployment_settings.has_module(module):
                             Field("discharge", "integer"),
                             Field("flowstatus", "integer"),
                             comments(),
-                            *s3_meta_fields(),
-                            migrate=migrate)
+                            migrate=migrate, *s3_meta_fields())
+
 
     table.discharge.label = T("Discharge (cusecs)")
     table.flowstatus.label = T("Flow Status")

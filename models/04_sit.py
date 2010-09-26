@@ -22,8 +22,8 @@ table = db.define_table(tablename,
                         Field("uuid", length=128),
                         Field("datetime", "datetime"),
                         location_id(),
-                        *s3_deletion_status(),
-                        migrate=migrate)
+                        migrate=migrate, *s3_deletion_status())
+
 
 table.sit_type.writable = False
 table.sit_type.represent = lambda opt: situation_types.get(opt, opt)

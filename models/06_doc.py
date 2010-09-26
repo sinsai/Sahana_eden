@@ -18,8 +18,8 @@ table = db.define_table(tablename,
                         Field("date", "date"),
                         comments(),
                         Field("entered", "boolean"),
-                        *s3_meta_fields(),
-                        migrate=migrate)
+                        migrate=migrate, *s3_meta_fields())
+
 
 table.name.requires = [IS_NOT_EMPTY(), IS_NOT_IN_DB(db, "%s.name" % tablename)]
 #table.name.label = T("Name")
@@ -119,8 +119,8 @@ table = db.define_table(tablename,
                         location_id(),
                         Field("date", "date"),
                         comments(),
-                        *s3_meta_fields(),
-                        migrate=migrate)
+                        migrate=migrate, *s3_meta_fields())
+
 
 table.name.requires = [IS_NOT_EMPTY(), IS_NOT_IN_DB(db, "%s.name" % tablename)]
 #table.name.label = T("Name")

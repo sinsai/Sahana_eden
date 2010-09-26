@@ -42,8 +42,8 @@ if deployment_settings.has_module(module):
     tablename = module + "_" + resource
     section = db.define_table(tablename,
                               #uuidstamp, deletion_status, authorstamp,
-                              *s3_meta_fields(),
-                              migrate=migrate)
+                              migrate=migrate, *s3_meta_fields())
+
 
     # Survey Question
     resource = "question"
@@ -53,8 +53,8 @@ if deployment_settings.has_module(module):
                                 Field("name", "string", default="", length=120),
                                 Field("question_type", "integer"),
                                 Field("description", "text", default="", length=500),
-                                *s3_meta_fields(),
-                                migrate=migrate)
+                                migrate=migrate, *s3_meta_fields())
+
 
                                 #Field("options_id", db.survey_question_options),
                                 #Field("tf_ta_columns", "integer"), # number of columns for TF/TA
@@ -73,8 +73,8 @@ if deployment_settings.has_module(module):
                                  Field("survey_question_id", db.survey_question),
                                  Field("survey_template_id", db.survey_template),
                                  Field("survey_questions_id", db.survey_questions),
-                                 *s3_meta_fields(),
-                                 migrate=migrate)
+                                 migrate=migrate, *s3_meta_fields())
+
     link_table.survey_question_id.requires = IS_NULL_OR(IS_ONE_OF(db, "survey_question.id", "%(name)s"))
 
 

@@ -148,8 +148,8 @@ if deployment_settings.has_module(module):
                     Field("access_status"),                     # Access Status
                     document_id(),                              # Information Source
                     comments(),
-                    *s3_meta_fields(),
-                    migrate=migrate)
+                    migrate=migrate, *s3_meta_fields())
+
 
 
     table.uuid.requires = IS_NOT_IN_DB(db, "%s.uuid" % tablename)
@@ -287,8 +287,8 @@ if deployment_settings.has_module(module):
                             Field("fax"),
                             Field("skype"),
                             Field("website"),
-                            *(s3_timestamp() + s3_deletion_status()),
-                            migrate=migrate)
+                            migrate=migrate,
+                            *(s3_timestamp() + s3_deletion_status()))
 
     table.person_id.label = T("Contact")
     table.title.label = T("Job Title")
@@ -351,8 +351,8 @@ if deployment_settings.has_module(module):
                             Field("discharges24", "integer"),       # Discharges in the past 24 hours
                             Field("deaths24", "integer"),           # Deaths in the past 24 hours
                             Field("comment", length=128),
-                            *s3_meta_fields(),
-                            migrate=migrate)
+                            migrate=migrate, *s3_meta_fields())
+
 
     table.date.label = T("Date & Time")
     table.date.requires = IS_UTC_DATETIME(utc_offset=shn_user_utc_offset(),
@@ -453,8 +453,8 @@ if deployment_settings.has_module(module):
                             Field("beds_available", "integer"),
                             Field("beds_add24", "integer"),
                             Field("comment", length=128),
-                            *s3_meta_fields(),
-                            migrate=migrate)
+                            migrate=migrate, *s3_meta_fields())
+
 
     table.unit_name.label = T("Department/Unit Name")
     table.unit_name.requires = IS_NULL_OR(IS_NOT_IN_DB(db(table.deleted==False), table.unit_name))
@@ -577,8 +577,8 @@ if deployment_settings.has_module(module):
                             Field("psya", "boolean", default=False),
                             Field("psyp", "boolean", default=False),
                             Field("obgy", "boolean", default=False),
-                            *s3_meta_fields(),
-                            migrate=migrate)
+                            migrate=migrate, *s3_meta_fields())
+
 
     table.burn.label = T("Burn")
     table.card.label = T("Cardiology")
@@ -646,8 +646,8 @@ if deployment_settings.has_module(module):
                             Field("url"),
                             Field("description"),
                             Field("tags"),
-                            *s3_meta_fields(),
-                            migrate=migrate)
+                            migrate=migrate, *s3_meta_fields())
+
 
     # Field validation
     table.uuid.requires = IS_NOT_IN_DB(db, "%s.uuid" % tablename)
@@ -708,8 +708,8 @@ if deployment_settings.has_module(module):
                             Field("description"),
                             Field("quantity"),
                             Field("comment"),   # ToDo: Change to comments()
-                            *s3_meta_fields(),
-                            migrate=migrate)
+                            migrate=migrate, *s3_meta_fields())
+
 
     # CRUD Strings
     s3.crud_strings[tablename] = Storage(

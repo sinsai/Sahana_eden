@@ -22,8 +22,8 @@ if deployment_settings.has_module("logs"):
                             document_id(),
                             site_id(),
                             comments(),
-                            *s3_meta_fields(),
-                            migrate=migrate)
+                            migrate=migrate, *s3_meta_fields())
+
 
     table.location_id.requires = IS_ONE_OF(db, "gis_location.id", repr_select, orderby="gis_location.name", sort=True)
     table.location_id.comment = DIV(table.location_id.comment, SPAN("*", _class="req"))
@@ -92,8 +92,8 @@ if deployment_settings.has_module("logs"):
                             item_id(),
                             Field("quantity", "double"),
                             comments(),
-                            *s3_meta_fields(),
-                            migrate=migrate)
+                            migrate=migrate, *s3_meta_fields())
+
 
     # CRUD strings
     ADD_INVENTORY_ITEM = T("Add Inventory Item")

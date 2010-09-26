@@ -172,8 +172,8 @@ if deployment_settings.has_module(module):
                             Field("persons_injured", "integer"),
                             Field("persons_deceased", "integer"),
                             comments(),
-                            *s3_meta_fields(),
-                            migrate=migrate)
+                            migrate=migrate, *s3_meta_fields())
+
 
     table.name.requires = IS_NOT_EMPTY()
     table.name.comment = SPAN("*", _class="req")
@@ -242,8 +242,8 @@ if deployment_settings.has_module(module):
                             document_id(),
                             Field("verified", "boolean"),
                             comments(),
-                            *s3_meta_fields(),
-                            migrate=migrate)
+                            migrate=migrate, *s3_meta_fields())
+
 
     table.category.label = T("Category")
     # The full set available to Admins & Imports/Exports
@@ -355,8 +355,8 @@ if deployment_settings.has_module(module):
                             Field("persons_affected", "integer"),
                             Field("persons_injured", "integer"),
                             Field("persons_deceased", "integer"),
-                            *s3_meta_fields(),
-                            migrate=migrate)
+                            migrate=migrate, *s3_meta_fields())
+
 
     table.modified_by.label = T("Reporter")
     table.modified_by.readable = True
@@ -419,8 +419,8 @@ if deployment_settings.has_module(module):
                             #Field("url"),
                             Field("description"),
                             #Field("tags"),
-                            *s3_meta_fields(),
-                            migrate=migrate)
+                            migrate=migrate, *s3_meta_fields())
+
 
     # CRUD strings
     ADD_IMAGE = T("Add Image")
@@ -467,8 +467,8 @@ if deployment_settings.has_module(module):
                                   label = T("Type"),
                                   represent = lambda opt: irs_response_type_opts.get(opt, UNKNOWN_OPT)),
                             Field("report", "text"),
-                            *s3_meta_fields(),
-                            migrate=migrate)
+                            migrate=migrate, *s3_meta_fields())
+
 
     # CRUD strings
     ADD_RESPONSE = T("Add Response")

@@ -18,8 +18,8 @@ if deployment_settings.has_module(module):
                                   notnull=True,
                                   comment = SPAN("*", _class="req")),
                             comments(),
-                            *(s3_timestamp()+s3_uid()+s3_deletion_status()),
-                            migrate=migrate)
+                            migrate=migrate,
+                            *(s3_timestamp()+s3_uid()+s3_deletion_status()))
 
     ADD_SHELTER_TYPE = T("Add Shelter Type")
     LIST_SHELTER_TYPES = T("List Shelter Types")
@@ -54,8 +54,8 @@ if deployment_settings.has_module(module):
                                   notnull=True,
                                   comment = SPAN("*", _class="req")),
                             comments(),
-                            *(s3_timestamp()+s3_uid()+s3_deletion_status()),
-                            migrate=migrate)
+                            migrate=migrate,
+                            *(s3_timestamp()+s3_uid()+s3_deletion_status()))
 
     ADD_SHELTER_SERVICE = T("Add Shelter Service")
     LIST_SHELTER_SERVICES = T("List Shelter Services")
@@ -143,14 +143,14 @@ if deployment_settings.has_module(module):
                                 hospital_id(comment = DIV(SPAN("*", _class="req"),
                                                           db.hms_hcontact.hospital_id.comment)),   # @ToDo Cleaner method
                                 fields_after_hospital,
-                                *s3_meta_fields(),
-                                migrate=migrate)
+                                migrate=migrate, *s3_meta_fields())
+
     else:
         table = db.define_table(tablename,
                                 fields_before_hospital,
                                 fields_after_hospital,
-                                *s3_meta_fields(),
-                                migrate=migrate)
+                                migrate=migrate, *s3_meta_fields())
+
 
     table.uuid.requires = IS_NOT_IN_DB(db, "%s.uuid" % tablename)
     # Shelters don't have to have unique names

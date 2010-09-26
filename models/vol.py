@@ -37,8 +37,8 @@ if deployment_settings.has_module(module):
                                 label = T("Status"),
                                 represent = lambda opt: pr_volunteer_status_opts.get(opt, UNKNOWN_OPT)),
                             Field("special_needs", "text"),
-                            *s3_meta_fields(),
-                            migrate=migrate)
+                            migrate=migrate, *s3_meta_fields())
+
 
     # Settings and Restrictions
 
@@ -146,8 +146,8 @@ if deployment_settings.has_module(module):
                                 # default = 2,
                                 label = T("Status"),
                                 represent = lambda opt: vol_resource_status_opts.get(opt, UNKNOWN_OPT)),
-                            *s3_meta_fields(),
-                            migrate=migrate)
+                            migrate=migrate, *s3_meta_fields())
+
 
     s3xrc.model.add_component(module, resource,
                               multiple=True,
@@ -191,8 +191,8 @@ if deployment_settings.has_module(module):
                             Field("name",  length=128,notnull=True),
                             Field("category", "string", length=50),
                             Field("description"),
-                            *s3_meta_fields(),
-                            migrate=migrate)
+                            migrate=migrate, *s3_meta_fields())
+
 
     # Field settings
     table.uuid.requires = IS_NOT_IN_DB(db, "%s.uuid" % tablename)
@@ -253,8 +253,8 @@ if deployment_settings.has_module(module):
                                   label=T("Status"),
                                   notnull=True,
                                   default="unapproved"),
-                            *s3_meta_fields(),
-                            migrate=migrate)
+                            migrate=migrate, *s3_meta_fields())
+
 
     s3xrc.model.add_component(module, resource,
         multiple=True,

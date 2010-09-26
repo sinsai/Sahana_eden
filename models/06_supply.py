@@ -19,8 +19,8 @@ if deployment_settings.has_module("logs"):
     table = db.define_table(tablename,
                             Field("name", length=128, notnull=True, unique=True),
                             comments(),
-                            *s3_meta_fields(),
-                            migrate=migrate)
+                            migrate=migrate, *s3_meta_fields())
+
 
     table.name.comment = SPAN("*", _class="req")
 
@@ -63,8 +63,8 @@ if deployment_settings.has_module("logs"):
                             item_category_id(),
                             Field("name", length=128, notnull=True, unique=True),
                             comments(),
-                            *s3_meta_fields(),
-                            migrate=migrate)
+                            migrate=migrate, *s3_meta_fields())
+
 
     table.name.comment = SPAN("*", _class="req")
 

@@ -47,8 +47,8 @@ if deployment_settings.has_module(module):
                             location_id(),
                             Field("location_details"),
                             Field("contact", "text"),
-                            *s3_meta_fields(),
-                            migrate=migrate)
+                            migrate=migrate, *s3_meta_fields())
+
 
     table.person_id.label = T("Person missing")
     table.reporter.label = T("Person reporting")

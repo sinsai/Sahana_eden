@@ -329,6 +329,39 @@ class S3Vita(object):
 
 
     # -------------------------------------------------------------------------
+    def match_query(self, body_id):
+
+        person = self.db.pr_person
+        missing_report = self.db.mpr_missing_report
+        query = ((person.deleted == False) &
+                 (person.missing == True) &
+                 (missing_report.person_id == person.id))
+
+        table = self.db.dvi_body
+        body = self.db(table.id == body_id).select(table.ALL, limitby=(0,1)).first()
+        if not body:
+            return query
+
+        if body.date_of_recovery:
+            q = ((missing_report.since <= body.date_of_recovery) |
+                 (missing_report.since == None))
+            query = query & q
+
+        if body.age_group and body.age_group != 1:
+            q = ((person.age_group == None) |
+                 (person.age_group == 1) |
+                 (person.age_group == body.age_group))
+            query = query & q
+
+        if body.gender and body.gender != 1:
+            q = ((person.gender == None) |
+                 (person.gender == 1) |
+                 (person.gender == body.gender))
+
+        return query
+
+
+    # -------------------------------------------------------------------------
     def fullname(self, record, truncate=True):
 
         """ Returns the full name of a person """

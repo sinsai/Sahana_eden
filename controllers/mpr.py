@@ -48,10 +48,10 @@ def index():
     except:
         module_name = T("Missing Persons")
 
-    MISSING = str(T("Missing"))
-    SEEN = str(T("Seen"))
-    FOUND = str(T("Found"))
-    DETAILS = str(T("Details"))
+    MISSING = T("Missing")
+    SEEN = T("Seen")
+    FOUND = T("Found")
+    DETAILS = T("Details")
 
     s3xrc.model.configure(db.pr_person,
         list_fields=["id",
@@ -95,7 +95,7 @@ def index():
                     person = db(db.pr_person.uuid == session.auth.user.person_uuid)
                     person = person.select(db.pr_person.id,
                                         db.pr_person.missing,
-                                        limitby=(0,1)).first()
+                                        limitby=(0, 1)).first()
                     if person and person.missing:
                         myself = URL(r=request, f="person",
                                     args=[person.id, "presence"],

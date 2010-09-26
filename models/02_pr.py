@@ -391,7 +391,39 @@ person_id = S3ReusableField("person_id", db.pr_person,
                             ondelete = "RESTRICT")
 
 # -----------------------------------------------------------------------------
+def pr_person_onvalidation(form):
+
+    try:
+        age = int(form.vars.get("age_group", None))
+    except ValueError:
+        age = None
+    dob = form.vars.get("date_of_birth", None)
+
+    if age and age != 1 and dob:
+        now = request.utcnow
+        dy = int((now.date() - dob).days / 365.25)
+        if dy < 1:
+            ag = 1
+        elif dy < 2:
+            ag = 2
+        elif dy < 12:
+            ag = 3
+        elif dy < 21:
+            ag = 4
+        elif dy < 51:
+            ag = 5
+        else:
+            ag = 6
+
+        if age != ag:
+            form.errors.age_group = T("Age group does not match actual age.")
+            return False
+
+    return True
+
+# -----------------------------------------------------------------------------
 s3xrc.model.configure(table,
+    onvalidation=lambda form: pr_person_onvalidation(form),
     onaccept=lambda form, table=table: shn_pentity_onaccept(form, table=table),
     delete_onaccept=lambda form: shn_pentity_ondelete(form),
     list_fields = [

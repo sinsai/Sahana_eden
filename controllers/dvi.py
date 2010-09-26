@@ -47,6 +47,9 @@ def shn_menu():
         record = db(query).select(body.id, body.pe_label, limitby=(0,1)).first()
         if record:
             label = record.pe_label
+            response.menu_options[-1].append(
+                [[T("Candidate matches for body %s" % label), False, URL(r=request, f="person", vars=dict(match=record.id))]]
+            )
             menu_selected.append(["%s: %s" % (T("Body"), label), False,
                                  URL(r=request, f="body", args=[record.id])])
     if session.rcvars and "pr_person" in session.rcvars:
@@ -182,6 +185,18 @@ def person():
                      "age_group"])
 
     def prep(jr):
+        if not jr.id and not jr.method and not jr.component:
+            body_id = jr.request.get_vars.get("match", None)
+            if body_id:
+                query = vita.match_query(body_id)
+                jr.resource.add_filter(query)
+                s3.crud_strings["pr_person"].update(
+                    title_display = T("Missing Person Details"),
+                    title_list = T("Missing Persons"),
+                    subtitle_list = T("Candidate Matches"),
+                    label_list_button = T("List Missing Persons"),
+                    msg_list_empty = T("No Persons found"),
+                    msg_no_match = T("No records matching the query"))
         if auth.shn_logged_in():
             persons = db.pr_person
             person = db(persons.uuid == session.auth.user.person_uuid).select(persons.id, limitby=(0,1)).first()

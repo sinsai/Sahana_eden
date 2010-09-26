@@ -148,8 +148,8 @@ if deployment_settings.has_module(module):
                     Field("access_status"),                     # Access Status
                     document_id(),                              # Information Source
                     comments(),
-                    *s3_meta_fields(),
-                    migrate=migrate)
+                    migrate=migrate, *s3_meta_fields())
+
 
 
     table.uuid.requires = IS_NOT_IN_DB(db, "%s.uuid" % tablename)
@@ -209,32 +209,6 @@ if deployment_settings.has_module(module):
                                   comment = shn_hospital_id_comment,
                                   ondelete = "RESTRICT")
 
-    # -----------------------------------------------------------------------------
-    #def shn_hms_hospital_rss(record):
-
-        #""" Hospital RSS Feed """
-
-        #if record:
-            #lat = lon = T("unknown")
-            #location_name = T("unknown")
-            #if record.location_id:
-                #location = db.gis_location[record.location_id]
-                #if location:
-                    #lat = "%.6f" % location.lat
-                    #lon = "%.6f" % location.lon
-                    #location_name = location.name
-            #return "<b>%s</b>: <br/>Location: %s [Lat: %s Lon: %s]<br/>Facility Status: %s<br/>Clinical Status: %s<br/>Morgue Status: %s<br/>Security Status: %s<br/>Beds available: %s" % (
-                #record.name,
-                #location_name,
-                #lat,
-                #lon,
-                #db.hms_hospital.facility_status.represent(record.facility_status),
-                #db.hms_hospital.clinical_status.represent(record.clinical_status),
-                #db.hms_hospital.morgue_status.represent(record.morgue_status),
-                #db.hms_hospital.security_status.represent(record.security_status),
-                #(record.available_beds is not None) and record.available_beds or T("unknown"))
-        #else:
-            #return None
 
     # -----------------------------------------------------------------------------
     def shn_hms_hospital_onvalidation(form):
@@ -247,11 +221,6 @@ if deployment_settings.has_module(module):
 
 
     def shn_hms_hospital_onaccept(form, table=None):
-
-        # Update requests
-        #hospital = db.hms_hospital[form.vars.id]
-        #if hospital:
-        #    db(db.hms_hrequest.hospital_id == hospital.id).update(city=hospital.city)
 
         shn_site_onaccept(form, table=table)
 
@@ -289,8 +258,8 @@ if deployment_settings.has_module(module):
                             Field("fax"),
                             Field("skype"),
                             Field("website"),
-                            *(s3_timestamp() + s3_deletion_status()),
-                            migrate=migrate)
+                            migrate=migrate,
+                            *(s3_timestamp() + s3_deletion_status()))
 
     table.person_id.label = T("Contact")
     table.title.label = T("Job Title")
@@ -353,8 +322,8 @@ if deployment_settings.has_module(module):
                             Field("discharges24", "integer"),       # Discharges in the past 24 hours
                             Field("deaths24", "integer"),           # Deaths in the past 24 hours
                             Field("comment", length=128),
-                            *s3_meta_fields(),
-                            migrate=migrate)
+                            migrate=migrate, *s3_meta_fields())
+
 
     table.date.label = T("Date & Time")
     table.date.requires = IS_UTC_DATETIME(utc_offset=shn_user_utc_offset(),
@@ -455,8 +424,8 @@ if deployment_settings.has_module(module):
                             Field("beds_available", "integer"),
                             Field("beds_add24", "integer"),
                             Field("comment", length=128),
-                            *s3_meta_fields(),
-                            migrate=migrate)
+                            migrate=migrate, *s3_meta_fields())
+
 
     table.unit_name.label = T("Department/Unit Name")
     table.unit_name.requires = IS_NULL_OR(IS_NOT_IN_DB(db(table.deleted==False), table.unit_name))
@@ -579,8 +548,8 @@ if deployment_settings.has_module(module):
                             Field("psya", "boolean", default=False),
                             Field("psyp", "boolean", default=False),
                             Field("obgy", "boolean", default=False),
-                            *s3_meta_fields(),
-                            migrate=migrate)
+                            migrate=migrate, *s3_meta_fields())
+
 
     table.burn.label = T("Burn")
     table.card.label = T("Cardiology")
@@ -648,8 +617,8 @@ if deployment_settings.has_module(module):
                             Field("url"),
                             Field("description"),
                             Field("tags"),
-                            *s3_meta_fields(),
-                            migrate=migrate)
+                            migrate=migrate, *s3_meta_fields())
+
 
     # Field validation
     table.uuid.requires = IS_NOT_IN_DB(db, "%s.uuid" % tablename)
@@ -710,8 +679,8 @@ if deployment_settings.has_module(module):
                             Field("description"),
                             Field("quantity"),
                             Field("comment"),   # ToDo: Change to comments()
-                            *s3_meta_fields(),
-                            migrate=migrate)
+                            migrate=migrate, *s3_meta_fields())
+
 
     # CRUD Strings
     s3.crud_strings[tablename] = Storage(

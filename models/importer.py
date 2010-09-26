@@ -16,8 +16,8 @@ if deployment_settings.has_module(module):
                             Field("path", type="upload", uploadfield=True, required=True, notnull=True),
                             comments(),
                             Field("json", writable=False, readable=False),
-                            *(s3_timestamp() + s3_uid()),
-                            migrate=migrate)
+                            migrate=migrate,
+                            *(s3_timestamp() + s3_uid()))
 
     table.name.comment = DIV(SPAN("*",
                                   _class="req",

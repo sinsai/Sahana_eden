@@ -6,7 +6,7 @@
     @author: Dominic König
 
     @see: U{<http://www.ecbproject.org/page/48>}
-    
+
     @ToDo Validation similar to shn_sitrep_school_report_onvalidation()
 
 """
@@ -145,8 +145,8 @@ if deployment_settings.has_module(module):
                             comments(),
                             document_id(),
                             shelter_id(),
-                            *s3_meta_fields(),
-                            migrate=migrate)
+                            migrate=migrate, *s3_meta_fields())
+
 
     table.date.requires = [IS_DATE(), IS_NOT_EMPTY()]
     table.date.comment = SPAN("*", _class="req")
@@ -293,8 +293,8 @@ if deployment_settings.has_module(module):
                             Field("lactating", "integer"),
                             Field("minorities", "integer"),
                             comments(),
-                            *s3_meta_fields(),
-                            migrate=migrate)
+                            migrate=migrate, *s3_meta_fields())
+
 
     table.assessment_id.readable = False
     table.assessment_id.writable = False
@@ -423,8 +423,8 @@ if deployment_settings.has_module(module):
                             Field("kits_dwelling_received", "boolean"),
                             Field("kits_dwelling_source"),
                             comments(),
-                            *s3_meta_fields(),
-                            migrate=migrate)
+                            migrate=migrate, *s3_meta_fields())
+
 
     table.assessment_id.readable = False
     table.assessment_id.writable = False
@@ -565,8 +565,8 @@ if deployment_settings.has_module(module):
                             Field("latrines_separation", "boolean"),
                             Field("latrines_distance", "integer"),
                             comments(),
-                            *s3_meta_fields(),
-                            migrate=migrate)
+                            migrate=migrate, *s3_meta_fields())
+
 
     table.assessment_id.readable = False
     table.assessment_id.writable = False
@@ -711,8 +711,8 @@ if deployment_settings.has_module(module):
                             Field("u5_diarrhea", "boolean"),
                             Field("u5_diarrhea_rate_48h", "integer"),
                             comments(),
-                            *s3_meta_fields(),
-                            migrate=migrate)
+                            migrate=migrate, *s3_meta_fields())
+
 
     table.assessment_id.readable = False
     table.assessment_id.writable = False
@@ -892,8 +892,8 @@ if deployment_settings.has_module(module):
                             Field("food_assistance_available", "boolean"),
                             Field("food_assistance_details", "text"),
                             comments(),
-                            *s3_meta_fields(),
-                            migrate=migrate)
+                            migrate=migrate, *s3_meta_fields())
+
 
     table.assessment_id.readable = False
     table.assessment_id.writable = False
@@ -1001,8 +1001,8 @@ if deployment_settings.has_module(module):
                             Field("rank_other_assistance", "integer"),
 
                             comments(),
-                            *s3_meta_fields(),
-                            migrate=migrate)
+                            migrate=migrate, *s3_meta_fields())
+
 
     table.assessment_id.readable = False
     table.assessment_id.writable = False
@@ -1152,8 +1152,8 @@ if deployment_settings.has_module(module):
                             Field("school_assistance_other_source"),
 
                             comments(),
-                            *s3_meta_fields(),
-                            migrate=migrate)
+                            migrate=migrate, *s3_meta_fields())
+
 
     table.assessment_id.readable = False
     table.assessment_id.writable = False
@@ -1371,8 +1371,8 @@ if deployment_settings.has_module(module):
                             Field("current_general_needs", "text"),
 
                             comments(),
-                            *s3_meta_fields(),
-                            migrate=migrate)
+                            migrate=migrate, *s3_meta_fields())
+
 
     table.assessment_id.readable = False
     table.assessment_id.writable = False

@@ -223,7 +223,7 @@ def shn_action_buttons(r,
             if not delete_url:
                 delete_url = str(URL(r=request, args = args + ["delete"]))
             response.s3.actions.append(
-                dict(label=str(DELETE), _class="action-btn", url=delete_url)
+                dict(label=str(DELETE), _class="delete-btn", url=delete_url)
             )
         if copyable:
             if not copy_url:

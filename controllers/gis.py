@@ -69,65 +69,11 @@ def define_map(window=False, toolbar=False):
         wms_browser = None
 
     # Custom Feature Layers
-    # @ToDo: Move these layer definitions into the DB, removing Feature Groups
-    # Feature Classes to be removed from Locations, although we still want the symbology mappings
-    # Incidents
-    module = "irs"
-    resource = "ireport"
-    layername = T("Incident Reports")
-    popup_label = T("Incident")
-    # Default (but still better to define here as otherwise each feature needs to check it's feature_class)
-    marker = "marker_red"
-    incidents = gis.get_feature_layer(module, resource, layername, popup_label, marker, active=True, polygons=False)
-
-    # Shelters
-    module = "cr"
-    resource = "shelter"
-    layername = T("Shelters")
-    popup_label = T("Shelter")
-    marker = "shelter"
-    shelters = gis.get_feature_layer(module, resource, layername, popup_label, marker, active=True, polygons=False)
-
-    # Requests
-    module = "rms"
-    resource = "req"
-    layername = T("Requests")
-    popup_label = T("Request")
-    marker = "marker_yellow"
-    requests = gis.get_feature_layer(module, resource, layername, popup_label, marker, active=True, polygons=False)
-
-    # Assessments
-    module = "rat"
-    resource = "assessment"
-    layername = T("Assessments")
-    popup_label = T("Assessment")
-    marker = "marker_green"
-    assessments = gis.get_feature_layer(module, resource, layername, popup_label, marker, active=True, polygons=False)
-
-    # Activities
-    module = "project"
-    resource = "activity"
-    layername = T("Activities")
-    popup_label = T("Activity")
-    marker = "activity"
-    activities = gis.get_feature_layer(module, resource, layername, popup_label, marker, active=True, polygons=False)
-
-    # Distribution Centers
-    module = "inventory"
-    resource = "store"
-    layername = T("Warehouses")
-    popup_label = T("Warehouse")
-    marker = "office"
-    warehouses = gis.get_feature_layer(module, resource, layername, popup_label, marker, active=True, polygons=False)
-
-    feature_queries = [
-                       incidents,
-                       shelters,
-                       warehouses,
-                       requests,
-                       assessments,
-                       activities
-                       ]
+    feature_queries = []
+    feature_layers = db(db.gis_layer_feature.enabled == True).select()
+    for layer in feature_layers:
+        _layer = gis.get_feature_layer(layer.module, layer.resource, layer.name, layer.popup_label, layer.marker_id, active=layer.visible, polygons=layer.polygons)
+        feature_queries.append(_layer)
 
     map = gis.show_map(
                        window=window,
@@ -484,7 +430,26 @@ def map_service_catalogue():
                     enabled = INPUT(_type="checkbox", value=True, _name=label)
                 else:
                     enabled = INPUT(_type="checkbox", _name=label)
-                item_list.append(TR(TD(row.name), TD(description), TD(enabled), _class=theclass))
+                item_list.append(TR(TD(A(row.name, _href=URL(r=request, f="layer_%s" % type, args=row.id))), TD(description), TD(enabled), _class=theclass))
+        # Feature Layers
+        type = "feature"
+        for row in db(db.gis_layer_feature.id > 0).select():
+            if even:
+                theclass = "even"
+                even = False
+            else:
+                theclass = "odd"
+                even = True
+            if row.comments:
+                    description = row.comments
+            else:
+                description = ""
+            label = type + "_" + str(row.id)
+            if row.enabled:
+                enabled = INPUT(_type="checkbox", value=True, _name=label)
+            else:
+                enabled = INPUT(_type="checkbox", _name=label)
+            item_list.append(TR(TD(A(row.name, _href=URL(r=request, f="layer_feature", args=row.id))), TD(description), TD(enabled), _class=theclass))
 
         table_header = THEAD(TR(TH("Layer"), TH("Description"), TH("Enabled?")))
         table_footer = TFOOT(TR(TD(INPUT(_id="submit_button", _type="submit", _value=T("Update")), _colspan=3)), _align="right")
@@ -511,8 +476,29 @@ def map_service_catalogue():
                     enabled = INPUT(_type="checkbox", value="on", _disabled="disabled")
                 else:
                     enabled = INPUT(_type="checkbox", _disabled="disabled")
-                item_list.append(TR(TD(row.name), TD(description), TD(enabled), _class=theclass))
-
+                item_list.append(TR(TD(A(row.name, _href=URL(r=request, f="layer_%s" % type, args=row.id))), TD(description), TD(enabled), _class=theclass))
+        # Feature Layers
+        type = "feature"
+        table = db["gis_layer_%s" % type]
+        query = table.id > 0
+        sqlrows = db(query).select()
+        for row in sqlrows:
+            if even:
+                theclass = "even"
+                even = False
+            else:
+                theclass = "odd"
+                even = True
+            if row.comments:
+                description = row.comments
+            else:
+                description = ""
+            if row.enabled:
+                enabled = INPUT(_type="checkbox", value="on", _disabled="disabled")
+            else:
+                enabled = INPUT(_type="checkbox", _disabled="disabled")
+            item_list.append(TR(TD(A(row.name, _href=URL(r=request, f="layer_feature", args=row.id))), TD(description), TD(enabled), _class=theclass))
+        
         table_header = THEAD(TR(TH("Layer"), TH("Description"), TH("Enabled?")))
         items = DIV(TABLE(table_header, TBODY(item_list), _id="table-container"))
 
@@ -558,9 +544,41 @@ def layers_enable():
                     else:
                         # Do nothing
                         pass
+        resource = "gis_layer_feature"
+        table = db[resource]
+        query = table.id > 0
+        sqlrows = db(query).select()
+        for row in sqlrows:
+            query_inner = (table.id == row.id)
+            var = "feature_%i" % (row.id)
+            # Read current state
+            if db(query_inner).select(table.enabled, limitby=(0, 1)).first().enabled:
+                # Old state: Enabled
+                if var in request.vars:
+                    # Do nothing
+                    pass
+                else:
+                    # Disable
+                    db(query_inner).update(enabled=False)
+                    # Audit
+                    #shn_audit_update_m2m(resource=resource, record=row.id, representation="html")
+                    shn_audit_update_m2m(resource, row.id, "html")
+            else:
+                # Old state: Disabled
+                if var in request.vars:
+                    # Enable
+                    db(query_inner).update(enabled=True)
+                    # Audit
+                    shn_audit_update_m2m(resource, row.id, "html")
+                else:
+                    # Do nothing
+                    pass
+
         session.flash = T("Layers updated")
+
     else:
         session.error = T("Not authorised!")
+
     redirect(URL(r=request, f="map_service_catalogue"))
 
 # -----------------------------------------------------------------------------
@@ -680,7 +698,7 @@ def feature_class():
 
     return output
 
-def feature_layer():
+def layer_feature():
     """ RESTful CRUD controller """
     if deployment_settings.get_security_map() and not shn_has_role("MapAdmin"):
         unauthorised()

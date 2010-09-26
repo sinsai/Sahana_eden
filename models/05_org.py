@@ -34,8 +34,8 @@ table = db.define_table(tablename,
                         Field("site_type"),
                         Field("uuid", length=128),
                         Field("site_id", "integer"),
-                        *s3_deletion_status(),
-                        migrate=migrate)
+                        migrate=migrate, *s3_deletion_status())
+
 
 table.site_type.writable = False
 table.site_type.represent = lambda opt: org_site_types.get(opt, opt)
@@ -130,8 +130,8 @@ resource = "sector"
 tablename = "%s_%s" % (module, resource)
 table = db.define_table(tablename, #timestamp, uuidstamp, authorstamp, deletion_status,
                         Field("name", length=128, notnull=True, unique=True),
-                        *s3_meta_fields(),
-                        migrate=migrate)
+                        migrate=migrate, *s3_meta_fields())
+
 
 # Field settings
 table.uuid.requires = IS_NOT_IN_DB(db, "%s.uuid" % tablename)
@@ -195,8 +195,8 @@ table = db.define_table(tablename, #timestamp, uuidstamp, authorstamp, deletion_
                         Field("donation_phone"),
                         comments(),
                         #document_id(), # Not yet defined
-                        *s3_meta_fields(),
-                        migrate=migrate)
+                        migrate=migrate, *s3_meta_fields())
+
 
 # Field settings
 table.uuid.requires = IS_NOT_IN_DB(db, "%s.uuid" % tablename)
@@ -322,8 +322,8 @@ table = db.define_table(tablename, #timestamp, uuidstamp, authorstamp, deletion_
                         Field("equipment"),
                         #document_id,   # Not yet defined
                         comments(),
-                        *s3_meta_fields(),
-                        migrate=migrate)
+                        migrate=migrate, *s3_meta_fields())
+
 
 # Field settings
 table.uuid.requires = IS_NOT_IN_DB(db, "%s.uuid" % tablename)
@@ -463,8 +463,8 @@ table = db.define_table(tablename,
                         Field("funded", "boolean"),
                         donor_id(),
                         Field("budgeted_cost", "double"),
-                        *s3_meta_fields(),
-                        migrate=migrate)
+                        migrate=migrate, *s3_meta_fields())
+
 
 # Field settings
 table.code.requires = [IS_NOT_EMPTY(error_message=T("Please fill this!")),
@@ -550,8 +550,8 @@ table = db.define_table(tablename,
                         #Field("slots", "integer", default=1),
                         #Field("payrate", "double", default=0.0), # Wait for Bugeting integration
                         comments(),
-                        *s3_meta_fields(),
-                        migrate=migrate)
+                        migrate=migrate, *s3_meta_fields())
+
 
 # Field settings
 # Over-ride the default IS_NULL_OR as Staff doesn't make sense without an associated Organisation
@@ -740,8 +740,8 @@ table = db.define_table(tablename, #timestamp, uuidstamp, authorstamp, deletion_
                             # default = 1,
                             label = T("Status"),
                             represent = lambda opt: org_task_status_opts.get(opt, UNKNOWN_OPT)),
-                        *s3_meta_fields(),
-                        migrate=migrate)
+                        migrate=migrate, *s3_meta_fields())
+
 
 # Task Resource called from multiple controllers
 # - so we define strings in the model

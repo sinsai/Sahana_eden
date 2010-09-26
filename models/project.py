@@ -28,8 +28,8 @@ if deployment_settings.has_module("org"):
     tablename = "%s_%s" % (module, resource)
     table = db.define_table(tablename,
                             Field("name", length=128, notnull=True, unique=True),
-                            *s3_meta_fields(),
-                            migrate=migrate)
+                            migrate=migrate, *s3_meta_fields())
+
 
     ADD_ACTIVITY_TYPE = T("Add Activity Type")
 
@@ -91,8 +91,8 @@ if deployment_settings.has_module("org"):
                             Field("pl_women","integer"),
                             person_id(),
                             comments(),
-                            *s3_meta_fields(),
-                            migrate=migrate)
+                            migrate=migrate, *s3_meta_fields())
+
 
     table.total_bnf_reach.label = T("Total # of Beneficiaries Reached ")
     table.bnf_type.label = T("Beneficiary Type")

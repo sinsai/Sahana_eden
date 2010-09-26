@@ -572,6 +572,52 @@ if populate:
             apikey = "metacarta_04",
             description = "trial - replace for Production use"
         )
+    tablename = "gis_layer_feature"
+    table = db[tablename]
+    if not db(table.id > 0).count():
+        table.insert(
+            name = "Incident Reports",
+            module = "irs",
+            resource = "ireport",
+            popup_label = "Incident",
+            # Default (but still better to define here as otherwise each feature needs to check it's feature_class)
+            marker_id = db(db.gis_marker.name == "marker_red").select(limitby=(0, 1)).first().id
+        )
+        table.insert(
+            name = "Shelters",
+            module = "cr",
+            resource = "shelter",
+            popup_label = "Shelter",
+            marker_id = db(db.gis_marker.name == "shelter").select(limitby=(0, 1)).first().id
+        )
+        table.insert(
+            name = "Requests",
+            module = "rms",
+            resource = "req",
+            popup_label = "Request",
+            marker_id = db(db.gis_marker.name == "marker_yellow").select(limitby=(0, 1)).first().id
+        )
+        table.insert(
+            name = "Assessments",
+            module = "rat",
+            resource = "assessment",
+            popup_label = "Assessment",
+            marker_id = db(db.gis_marker.name == "marker_green").select(limitby=(0, 1)).first().id
+        )
+        table.insert(
+            name = "Activities",
+            module = "project",
+            resource = "activity",
+            popup_label = "Activity",
+            marker_id = db(db.gis_marker.name == "activity").select(limitby=(0, 1)).first().id
+        )
+        table.insert(
+            name = "Warehouses",
+            module = "inventory",
+            resource = "store",
+            popup_label = "Warehouse",
+            marker_id = db(db.gis_marker.name == "office").select(limitby=(0, 1)).first().id
+        )
     tablename = "gis_layer_openstreetmap"
     table = db[tablename]
     if not db(table.id > 0).count():

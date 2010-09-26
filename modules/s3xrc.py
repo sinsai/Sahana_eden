@@ -2908,7 +2908,8 @@ class S3ResourceController(object):
         fields = filter(lambda f:
                         f != self.xml.UID and
                         f not in skip and
-                        f not in self.xml.IGNORE_FIELDS,
+                        f not in self.xml.IGNORE_FIELDS and
+                        str(table[f].type) != "id",
                         table.fields)
 
         if self.show_ids and "id" not in fields:
@@ -3623,6 +3624,10 @@ class S3ResourceController(object):
 
         tablename = resource.tablename
         table = resource.table
+
+        if "id" not in table:
+            self.error = self.ERROR.BAD_RESOURCE
+            return False
 
         elements = self.xml.select_resources(tree, tablename)
         if not elements:
@@ -4617,6 +4622,8 @@ class S3XML(object):
                 continue
 
             ktable = self.db[ktablename]
+            if "id" not in ktable.fields:
+                continue
 
             uid = None
             uids = None
@@ -4933,7 +4940,7 @@ class S3XML(object):
             if not resource or resource != ktablename:
                 continue
             ktable = self.db.get(resource, None)
-            if not ktable:
+            if not ktable or "id" not in ktable.fields:
                 continue
 
             uids = r.get(self.UID, None)
@@ -4967,6 +4974,9 @@ class S3XML(object):
                         e = root.xpath(expr)
                         if e:
                             relements.append(e[0])
+
+                    else:
+                        reference_list.append(Storage(field=field, entry=entry))
 
                 _uids = uids
                 if self.domain_mapping:

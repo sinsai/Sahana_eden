@@ -42,13 +42,13 @@ table = db.define_table(tablename,
                         pr_country(),
                         location_id(),
                         comments(),
-                        *s3_meta_fields(),
-                        migrate=migrate)
+                        migrate=migrate, *s3_meta_fields())
+
 
 
 table.uuid.requires = IS_NOT_IN_DB(db, "%s.uuid" % tablename)
 
-table.pe_id.requires = IS_ONE_OF(db, "pr_pentity.id", shn_pentity_represent,
+table.pe_id.requires = IS_ONE_OF(db, "pr_pentity.pe_id", shn_pentity_represent,
                                  orderby="pe_type",
                                  filterby="pe_type",
                                  filter_opts=("pr_person", "pr_group"))
@@ -131,11 +131,11 @@ table = db.define_table(tablename,
                         Field("priority"),
                         Field("value", notnull=True),
                         comments(),
-                        *s3_meta_fields(),
-                        migrate=migrate)
+                        migrate=migrate, *s3_meta_fields())
+
 
 table.uuid.requires = IS_NOT_IN_DB(db, "%s.uuid" % tablename)
-table.pe_id.requires = IS_ONE_OF(db, "pr_pentity.id",
+table.pe_id.requires = IS_ONE_OF(db, "pr_pentity.pe_id",
                                  shn_pentity_represent,
                                  orderby="pe_type",
                                  filterby="pe_type",
@@ -214,8 +214,8 @@ table = db.define_table(tablename,
                         Field("url"),
                         Field("description"),
                         comments(),
-                        *s3_meta_fields(),
-                        migrate=migrate)
+                        migrate=migrate, *s3_meta_fields())
+
 
 table.uuid.requires = IS_NOT_IN_DB(db, "%s.uuid" % tablename)
 
@@ -329,8 +329,8 @@ table = db.define_table(tablename,
                         location_id("dest_id", label=T("Destination")),
                         Field("comment"),
                         Field("closed", "boolean", default=False),
-                        *s3_meta_fields(),
-                        migrate=migrate)
+                        migrate=migrate, *s3_meta_fields())
+
 
 
 table.uuid.requires = IS_NOT_IN_DB(db, "%s.uuid" % tablename)
@@ -466,12 +466,12 @@ table = db.define_table(tablename,
                         Field("resource"),
                         Field("record"), # type="s3uuid"
                         comments(),
-                        *s3_meta_fields(),
-                        migrate=migrate)
+                        migrate=migrate, *s3_meta_fields())
+
 
 
 table.uuid.requires = IS_NOT_IN_DB(db, "%s.uuid" % tablename)
-table.pe_id.requires = IS_ONE_OF(db, "pr_pentity.id",
+table.pe_id.requires = IS_ONE_OF(db, "pr_pentity.pe_id",
                                     shn_pentity_represent,
                                     filterby="pe_type",
                                     orderby="pe_type",
@@ -540,8 +540,8 @@ table = db.define_table(tablename,
                         #Field("ia_subdivision"), # Name of issuing authority subdivision
                         #Field("ia_code"), # Code of issuing authority (if any)
                         comments(),
-                        *s3_meta_fields(),
-                        migrate=migrate)
+                        migrate=migrate, *s3_meta_fields())
+
 
 table.uuid.requires = IS_NOT_IN_DB(db, "%s.uuid" % tablename)
 table.person_id.label = T("Person")
@@ -782,8 +782,8 @@ if deployment_settings.has_module("dvi") or \
                             Field("other_details", "text"),
 
                             comments(),
-                            *s3_meta_fields(),
-                            migrate=migrate)
+                            migrate=migrate, *s3_meta_fields())
+
 
     table.height_cm.comment = DIV(DIV(_class="tooltip",
         _title=T("Height") + "|" + T("The body height (crown to heel) in cm.")))

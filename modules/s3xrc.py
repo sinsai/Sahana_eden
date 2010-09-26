@@ -1820,8 +1820,8 @@ class S3Resource(object):
         url_split = url.split("://", 1)
         if len(url_split) == 2:
             protocol, path = url_split
-            if username and password:
-                url = "%s://%s:%s@%s" % (protocol, username, password, path)
+            #if username and password:
+                #url = "%s://%s:%s@%s" % (protocol, username, password, path)
         else:
             protocol, path = http, None
         import urllib2
@@ -4693,7 +4693,7 @@ class S3XML(object):
                     uids = "|%s|" % "|".join(map(str, r.uid))
                 else:
                     uids = "%s" % r.uid[0]
-                reference.set(self.UID, self.xml_encode(uids))
+                reference.set(self.UID, self.xml_encode(str(uids).decode("utf-8")))
                 reference.text = r.text
             else:
                 reference.set(self.ATTRIBUTE.value, r.value)
@@ -4794,7 +4794,7 @@ class S3XML(object):
         resource.set(self.ATTRIBUTE.name, table._tablename)
 
         if self.UID in table.fields and self.UID in record:
-            _value = str(table[self.UID].formatter(record[self.UID]))
+            _value = str(table[self.UID].formatter(record[self.UID])).decode("utf-8")
             if self.domain_mapping:
                 value = self.export_uid(_value)
             resource.set(self.UID, self.xml_encode(value))

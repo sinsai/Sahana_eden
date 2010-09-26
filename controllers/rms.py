@@ -112,13 +112,13 @@ def req():
             # Custom Action Buttons
             if not r.component:
                 response.s3.actions = [
-                    dict(label=str(T("Open")), _class="action-btn", url=str(URL(r=request, args=["[id]", "update"]))),
-                    dict(label=str(T("Items")), _class="action-btn", url=str(URL(r=request, args=["[id]", "ritem"]))),
-                    dict(label=str(T("Pledge")), _class="action-btn", url=str(URL(r=request, args=["[id]", "pledge"])))
+                    dict(label=T("Open"), _class="action-btn", url=str(URL(r=request, args=["[id]", "update"]))),
+                    dict(label=T("Items"), _class="action-btn", url=str(URL(r=request, args=["[id]", "ritem"]))),
+                    dict(label=T("Pledge"), _class="action-btn", url=str(URL(r=request, args=["[id]", "pledge"])))
                 ]
             elif r.component_name == "pledge":
                 response.s3.actions = [
-                    dict(label=str(T("Details")), _class="action-btn", url=str(URL(r=request, args=["[id]", "pledge"])))
+                    dict(label=T("Details"), _class="action-btn", url=str(URL(r=request, args=["[id]", "pledge"])))
                 ]
 
         return output

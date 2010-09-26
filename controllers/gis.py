@@ -1441,7 +1441,7 @@ def display_feature():
 
     # Check user is authorised to access record
     if not shn_has_permission("read", db.gis_location, feature_id):
-        session.error = str(T("No access to this record!"))
+        session.error = T("No access to this record!")
         raise HTTP(401, body=s3xrc.xml.json_message(False, 401, session.error))
 
     query = db(db.gis_location.id == feature_id).select(limitby=(0, 1))
@@ -1515,7 +1515,7 @@ def display_features():
         jresource = request.vars.jresource
         ok +=1
     if ok != 4:
-        session.error = str(T("Insufficient vars: Need module, resource, jresource, instance"))
+        session.error = T("Insufficient vars: Need module, resource, jresource, instance")
         raise HTTP(400, body=s3xrc.xml.json_message(False, 400, session.error))
 
     component, pkey, fkey = s3xrc.model.get_component(res_module, resource, jresource)
@@ -1614,7 +1614,7 @@ def proxy():
         if "url" in request.vars:
             url = request.vars.url
         else:
-            session.error = str(T("Need a 'url' argument!"))
+            session.error = T("Need a 'url' argument!")
             raise HTTP(400, body=s3xrc.xml.json_message(False, 400, session.error))
 
     try:

@@ -449,7 +449,7 @@ def users():
 
     table = db.auth_membership
     query = table.group_id == group
-    title = str(T("Role")) + ": " + db.auth_group[group].role
+    title = T("Role") + ": " + db.auth_group[group].role
     description = db.auth_group[group].description
     # Start building the Return
     output = dict(title=title, description=description, group=group)

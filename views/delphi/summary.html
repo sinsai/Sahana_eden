@@ -14,7 +14,7 @@
 <p><b>{{=T("Description")}}:</b> {{=problem.description}}</p>
 <p><b>{{=T("Criteria")}}:</b> {{=problem.criteria}}</p>
 {{ if items: }}
-    <h4>{{= T("List of Items:")}}</h4>
+    <h4>{{= T("List of Items") + ":"}}</h4>
     <dl class="delphi_wide">
     {{ for item in items: }}
         <dt><strong>{{= item.name }}</strong> <a href="{{=URL(r=request, f='discuss', args=[item.id]) }}">({{=T("Discussion Forum")}})</a>

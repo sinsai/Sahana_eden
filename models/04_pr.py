@@ -250,7 +250,7 @@ def shn_pr_image_onvalidation(form):
     if not hasattr(image, "file"):
         id = request.post_vars.id
         if id:
-            record = db(table.id == id).select(table.image, limitby=(0,1)).first()
+            record = db(table.id == id).select(table.image, limitby=(0, 1)).first()
             if record:
                 image = record.image
 
@@ -399,7 +399,7 @@ def s3_pr_presence_onvalidation(form):
             else:
                 record = db(table.id == form.vars.id).select(table.location_id,
                                                              table.shelter_id,
-                                                             limitby=(0,1)).first()
+                                                             limitby=(0, 1)).first()
                 if record and \
                    record.location_id or record.shelter_id:
                     return

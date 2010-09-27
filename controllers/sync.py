@@ -1479,17 +1479,17 @@ def sync_rheader(r, tabs=[]):
             if peer:
                 rheader = DIV(TABLE(
 
-                    TR(TH(T("Name: ")),
+                    TR(TH(T("Name") + ": "),
                        peer.name,
                        TH(""),
                        ""),
 
-                    TR(TH(T("Type: ")),
+                    TR(TH(T("Type") + ": "),
                        sync_peer_types.get(peer.type, UNKNOWN_OPT),
                        TH(""),
                        ""),
 
-                    TR(TH(T("URL: ")),
+                    TR(TH(T("URL") + ": "),
                        peer.url,
                        TH(""),
                        "")),

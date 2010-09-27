@@ -412,7 +412,7 @@ def log():
     LIST_MESSAGES = T("List Messages")
     s3.crud_strings[tablename] = Storage(
         title_create = ADD_MESSAGE,
-        title_display = T("Message Ddetails"),
+        title_display = T("Message Details"),
         title_list = LIST_MESSAGES,
         title_update = T("Edit message"),
         title_search = T("Search messages"),

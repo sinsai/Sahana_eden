@@ -25,7 +25,7 @@ def shn_menu():
         selection = db.org_project[project_id]
         if selection:
             menu_project = [
-                    ["%s %s" % (T("Project:"), selection.code), False, URL(r=request, f="project", args=[project_id]),[
+                    ["%s %s" % (T("Project") + ":", selection.code), False, URL(r=request, f="project", args=[project_id]),[
                         [T("Tasks"), False, URL(r=request, f="project", args=[project_id, "task"])],
                         [T("Staff"), False, URL(r=request, f="project", args=[project_id, "staff"])],
                     ]]
@@ -45,7 +45,7 @@ def shn_menu():
         if selection:
             team_name = shn_pr_group_represent(group_id)
             menu_teams = [
-                ["%s %s" % (T("Team:"), team_name), False, URL(r=request, f="group", args=[group_id, "read"]),[
+                ["%s %s" % (T("Team") + ":", team_name), False, URL(r=request, f="group", args=[group_id, "read"]),[
                     [T("View On Map"), False, URL(r=request, f="view_team_map", args=[group_id])],
                     [T("Send Mail"), False, URL(r=request, f="compose_group", vars={"group_id":group_id})],
                 ]],
@@ -67,7 +67,7 @@ def shn_menu():
             # ?vol_tabs=person and ?vol_tabs=volunteer are used by the person
             # controller to select which set of tabs to display.
             menu_person = [
-                ["%s %s" % (T("Person:"), person_name), False, URL(r=request, f="person", args=[person_id, "read"]),[
+                ["%s %s" % (T("Person") + ":", person_name), False, URL(r=request, f="person", args=[person_id, "read"]),[
                     # The arg "volunteer" causes this to display the
                     # vol_volunteer tab initially.
                     [T("Volunteer Data"), False, URL(r=request, f="person", args=[person_id, "volunteer"], vars={"vol_tabs":"volunteer"})],

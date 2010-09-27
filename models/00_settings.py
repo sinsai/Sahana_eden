@@ -186,7 +186,7 @@ def s3_formstyle(id, label, widget, comment):
 from gluon.storage import Messages
 s3.messages = Messages(T)
 s3.messages.confirmation_email_subject = T("Sahana access granted")
-s3.messages.confirmation_email = T("Welcome to the Sahana Portal at ") + deployment_settings.get_base_public_url() + T(". Thanks for your assistance.")
+s3.messages.confirmation_email = T("Welcome to the Sahana Portal at ") + deployment_settings.get_base_public_url() + ". " + T("Thanks for your assistance") + "."
 
 auth.settings.table_user.language.requires = IS_IN_SET(s3.l10n_languages, zero=None)
 

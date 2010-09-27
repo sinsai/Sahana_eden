@@ -241,7 +241,7 @@ def question():
 #        12:T("Image"),
 #        13:T("Descriptive Text (e.g., Prose, etc)"),
 #        14:T("Location"),
-#        15:T("Organisation"),
+#        15:T("Organization"),
 #        16:T("Person"),
 ##        16:T("Custom Database Resource (e.g., anything defined as a resource in Sahana)")
     }

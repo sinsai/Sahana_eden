@@ -89,11 +89,11 @@ def shn_document_rheader(r):
         table = db.doc_document
         rheader = DIV(B(T("Name") + ": "),doc_document.name,
                       TABLE(TR(
-                               TH(T("File") + ": "), table.file.represent( doc_document.file ),
-                               TH(T("URL") + ": "), table.url.represent( doc_document.url ),
+                               TH("%s: " % T("File")), table.file.represent( doc_document.file ),
+                               TH("%s: " % T("URL")), table.url.represent( doc_document.url ),
                                ),
                             TR(
-                               TH(T("Organisation") + ": "), table.organisation_id.represent( doc_document.organisation_id ),
+                               TH(T("Organization") + ": "), table.organisation_id.represent( doc_document.organisation_id ),
                                TH(T("Person") + ": "), table.person_id.represent( doc_document.organisation_id ),
                                ),
                            ),

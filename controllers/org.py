@@ -239,7 +239,7 @@ def shn_org_rheader(r, tabs=[]):
                 TR(
                     #TH(A(T("Edit Organization"),
                     #    _href=URL(r=request, c="org", f="organisation", args=[r.id, "update"], vars={"_next": _next})))
-                    TH(T("Type: ")),
+                    TH(T("Type") + ": "),
                     _type,
                     )
             ), rheader_tabs)

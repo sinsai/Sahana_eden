@@ -84,8 +84,8 @@ def index():
             (db.dvi_identification.opt_dvi_id_status == 3)
     identified = db(query).count()
 
-    status = [[T("identified"), int(identified)],
-              [T("unidentified"), int(total-identified)]]
+    status = [[str(T("identified")), int(identified)],
+              [str(T("unidentified")), int(total-identified)]]
 
     return dict(module_name=module_name,
                 total=total,

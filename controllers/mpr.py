@@ -48,10 +48,10 @@ def index():
     except:
         module_name = T("Missing Persons")
 
-    MISSING = T("Missing")
-    SEEN = T("Seen")
-    FOUND = T("Found")
-    DETAILS = T("Details")
+    MISSING = str(T("Missing"))
+    SEEN = str(T("Seen"))
+    FOUND = str(T("Found"))
+    DETAILS = str(T("Details"))
 
     s3xrc.model.configure(db.pr_person,
         list_fields=["id",

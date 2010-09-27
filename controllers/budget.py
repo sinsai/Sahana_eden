@@ -889,9 +889,9 @@ def bundle_kit_item():
         crud.settings.create_onaccept = lambda form: bundle_total(form)
         crud.messages.record_created = T("Bundle Updated")
         form1 = crud.create(tables[0], next=URL(r=request, args=[bundle]))
-        form1[0][0].append(TR(TD(T("Type:")), TD(LABEL(T("Kit"), INPUT(_type="radio", _name="kit_item1", _value="Kit", value="Kit")), LABEL(T("Item"), INPUT(_type="radio", _name="kit_item1", _value="Item", value="Kit")))))
+        form1[0][0].append(TR(TD(T("Type") + ":"), TD(LABEL(T("Kit"), INPUT(_type="radio", _name="kit_item1", _value="Kit", value="Kit")), LABEL(T("Item"), INPUT(_type="radio", _name="kit_item1", _value="Item", value="Kit")))))
         form2 = crud.create(tables[1], next=URL(r=request, args=[bundle]))
-        form2[0][0].append(TR(TD(T("Type:")), TD(LABEL(T("Kit"), INPUT(_type="radio", _name="kit_item2", _value="Kit", value="Item")), LABEL(T("Item"), INPUT(_type="radio", _name="kit_item2", _value="Item", value="Item")))))
+        form2[0][0].append(TR(TD(T("Type") + ":"), TD(LABEL(T("Kit"), INPUT(_type="radio", _name="kit_item2", _value="Kit", value="Item")), LABEL(T("Item"), INPUT(_type="radio", _name="kit_item2", _value="Item", value="Item")))))
         addtitle = T("Add to Bundle")
         response.view = "%s/bundle_kit_item_list_create.html" % module
         output.update(dict(subtitle=subtitle, items=items, addtitle=addtitle, form1=form1, form2=form2, bundle=bundle))
@@ -1258,9 +1258,9 @@ def budget_staff_bundle():
         crud.settings.create_onaccept = lambda form: budget_total(form)
         crud.messages.record_created = T("Budget Updated")
         form1 = crud.create(tables[0], next=URL(r=request, args=[budget]))
-        form1[0][0].append(TR(TD(T("Type:")), TD(LABEL(T("Staff"), INPUT(_type="radio", _name="staff_bundle1", _value="Staff", value="Staff")), LABEL(T("Bundle"), INPUT(_type="radio", _name="staff_bundle1", _value="Bundle", value="Staff")))))
+        form1[0][0].append(TR(TD(T("Type") + ":"), TD(LABEL(T("Staff"), INPUT(_type="radio", _name="staff_bundle1", _value="Staff", value="Staff")), LABEL(T("Bundle"), INPUT(_type="radio", _name="staff_bundle1", _value="Bundle", value="Staff")))))
         form2 = crud.create(tables[1], next=URL(r=request, args=[budget]))
-        form2[0][0].append(TR(TD(T("Type:")), TD(LABEL(T("Staff"), INPUT(_type="radio", _name="staff_bundle2", _value="Staff", value="Bundle")), LABEL(T("Bundle"), INPUT(_type="radio", _name="staff_bundle2", _value="Bundle", value="Bundle")))))
+        form2[0][0].append(TR(TD(T("Type") + ":"), TD(LABEL(T("Staff"), INPUT(_type="radio", _name="staff_bundle2", _value="Staff", value="Bundle")), LABEL(T("Bundle"), INPUT(_type="radio", _name="staff_bundle2", _value="Bundle", value="Bundle")))))
         addtitle = T("Add to budget")
         response.view = "%s/budget_staff_bundle_list_create.html" % module
         output.update(dict(subtitle=subtitle, items=items, addtitle=addtitle, form1=form1, form2=form2, budget=budget))

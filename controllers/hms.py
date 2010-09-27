@@ -164,24 +164,24 @@ def shn_hms_hospital_rheader(jr, tabs=[]):
             if hospital:
                 rheader = DIV(TABLE(
 
-                    TR(TH(T("Name: ")),
+                    TR(TH("%s: " % T("Name")),
                         hospital.name,
-                        TH(T("EMS Status: ")),
+                        TH("%s: " % T("EMS Status")),
                         "%s" % db.hms_hospital.ems_status.represent(hospital.ems_status)),
 
-                    TR(TH(T("Location: ")),
+                    TR(TH("%s: " % T("Location")),
                         db.gis_location[hospital.location_id] and db.gis_location[hospital.location_id].name or "unknown",
-                        TH(T("Facility Status: ")),
+                        TH("%s: " % T("Facility Status")),
                         "%s" % db.hms_hospital.facility_status.represent(hospital.facility_status)),
 
-                    TR(TH(T("Total Beds: ")),
+                    TR(TH("%s: " % T("Total Beds")),
                         hospital.total_beds,
-                        TH(T("Clinical Status: ")),
+                        TH("%s: " % T("Clinical Status")),
                         "%s" % db.hms_hospital.clinical_status.represent(hospital.clinical_status)),
 
-                    TR(TH(T("Available Beds: ")),
+                    TR(TH("%s: " % T("Available Beds")),
                         hospital.available_beds,
-                        TH(T("Security Status: ")),
+                        TH("%s: " % T("Security Status")),
                         "%s" % db.hms_hospital.security_status.represent(hospital.security_status))
 
                         ), rheader_tabs)

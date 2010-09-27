@@ -188,7 +188,7 @@ def person():
         if not jr.id and not jr.method and not jr.component:
             body_id = jr.request.get_vars.get("match", None)
             body = db(db.dvi_body.id == body_id).select(
-                      db.dvi_body.pe_label, limitby=(0,1)).first()
+                      db.dvi_body.pe_label, limitby=(0, 1)).first()
             label = body and body.pe_label or "#%s" % body_id
             if body_id:
                 query = vita.match_query(body_id)
@@ -198,7 +198,7 @@ def person():
                     msg_no_match = T("No records matching the query"))
         if auth.shn_logged_in():
             persons = db.pr_person
-            person = db(persons.uuid == session.auth.user.person_uuid).select(persons.id, limitby=(0,1)).first()
+            person = db(persons.uuid == session.auth.user.person_uuid).select(persons.id, limitby=(0, 1)).first()
             if person:
                 db.pr_presence.reporter.default = person.id
                 db.pr_presence.reporter.writable = False

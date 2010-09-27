@@ -67,14 +67,14 @@ def s3_situation_onaccept(form, table=None):
         fields.append(table.location_id)
     if "deleted" in table.fields:
         fields.append(table.deleted)
-    record = db(table.id == id).select(limitby=(0,1), *fields).first()
+    record = db(table.id == id).select(limitby=(0, 1), *fields).first()
 
     if record:
 
         situation = db.sit_situation
         uid = record.uuid
 
-        sit = db(situation.uuid == uid).select(situation.sit_id, limitby=(0,1)).first()
+        sit = db(situation.uuid == uid).select(situation.sit_id, limitby=(0, 1)).first()
         if sit:
             values = dict(sit_type=table._tablename,
                           uuid=record.uuid,

@@ -112,13 +112,13 @@ def req():
             # Custom Action Buttons
             if not r.component:
                 response.s3.actions = [
-                    dict(label=str(T("Open")), _class="action-btn", url=str(URL(r=request, args=["[id]", "update"]))),
-                    dict(label=str(T("Items")), _class="action-btn", url=str(URL(r=request, args=["[id]", "ritem"]))),
-                    dict(label=str(T("Pledge")), _class="action-btn", url=str(URL(r=request, args=["[id]", "pledge"])))
+                    dict(label=T("Open"), _class="action-btn", url=str(URL(r=request, args=["[id]", "update"]))),
+                    dict(label=T("Items"), _class="action-btn", url=str(URL(r=request, args=["[id]", "ritem"]))),
+                    dict(label=T("Pledge"), _class="action-btn", url=str(URL(r=request, args=["[id]", "pledge"])))
                 ]
             elif r.component_name == "pledge":
                 response.s3.actions = [
-                    dict(label=str(T("Details")), _class="action-btn", url=str(URL(r=request, args=["[id]", "pledge"])))
+                    dict(label=T("Details"), _class="action-btn", url=str(URL(r=request, args=["[id]", "pledge"])))
                 ]
 
         return output
@@ -223,21 +223,21 @@ def shn_rms_rheader(jr):
                                                   ]
                                                  )
 
-                rheader = DIV( TABLE(TR(TH(T("Message: ")),
+                rheader = DIV( TABLE(TR(TH(T("Message") + ": "),
                                 TD(aid_request.message, _colspan=3)),
-                                TR(TH(T("Priority: ")),
+                                TR(TH(T("Priority") + ": "),
                                 aid_request.priority,
-                                #TH(T("Source Type: ")),
+                                #TH(T("Source Type") + ": "),
                                 #rms_req_source_type.get(aid_request.source_type, T("unknown"))),
-                                TH(T("Document: ")),
+                                TH(T("Document") + ": "),
                                 document_represent(aid_request.document_id)),
-                                TR(TH(T("Time of Request: ")),
+                                TR(TH(T("Time of Request") + ": "),
                                 aid_request.timestmp,
-                                TH(T("Verified: ")),
+                                TH(T("Verified") + ": "),
                                 aid_request.verified),
-                                TR(TH(T("Location: ")),
+                                TR(TH(T("Location") + ": "),
                                 location_represent,
-                                TH(T("Actionable: ")),
+                                TH(T("Actionable") + ": "),
                                 aid_request.actionable)),
                                 rheader_tabs
                                 )

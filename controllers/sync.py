@@ -41,7 +41,7 @@ def peer():
 
     table = db.sync_peer
     table.uuid.label = T("UID")
-    table.url.label = T("URL")
+    table.url.label = "URL"
 
     response.s3.pagination = True
 
@@ -509,9 +509,9 @@ def sync_res(vector, peer, policy):
     #table.name.comment = DIV(_class="tooltip",
         #_title=T("Name") + "|" + T("The descriptive name of the peer."))
 
-    #table.url.label = T("URL")
+    #table.url.label = "URL"
     #table.url.comment = DIV(SPAN("*", _class="req"), DIV(_class="tooltip",
-        #_title=T("URL") + "|" + T("For Eden instances enter the application base URL, e.g. http://sync.sahanfoundation.org/eden, for other peers the URL of the synchronization interface.")))
+        #_title="URL" + "|" + T("For Eden instances enter the application base URL, e.g. http://sync.sahanfoundation.org/eden, for other peers the URL of the synchronization interface.")))
 
     ##table.type.label = T("Instance Type")
     ##table.type.comment = DIV(SPAN("*", _class="req"), DIV(_class="tooltip",
@@ -1489,7 +1489,7 @@ def sync_rheader(r, tabs=[]):
                        TH(""),
                        ""),
 
-                    TR(TH(T("URL") + ": "),
+                    TR(TH("URL: "),
                        peer.url,
                        TH(""),
                        "")),

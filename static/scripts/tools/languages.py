@@ -1,12 +1,15 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-# Needs to be run in the web2py environment
-# python web2py.py -S eden -R applications/eden/static/scripts/tools/compile.py
+# Use this script to update the language files
+# e.g. tie into a Bzr pre-commit hook
+# python web2py.py -S eden -R applications/eden/static/scripts/tools/languages.py
+
+# Based on web2py/scripts/sync_languages.py
 
 import os
 
-from gluon.compileapp import compile_application, remove_compiled_application
+from gluon.languages import update_all_languages
 from gluon.fileutils import up
 
 app = request.application
@@ -29,6 +32,6 @@ def apath(path="", r=None):
         (opath, path) = (up(opath), path[3:])
     return os.path.join(opath, path).replace("\\", "/")
 
-folder = apath(app, request)
-compile_application(folder)
-
+    
+path = apath(app, request)
+update_all_languages(path)

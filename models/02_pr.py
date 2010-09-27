@@ -15,7 +15,7 @@ module = "pr"
 pr_pe_types = Storage(
     pr_person = T("Person"),
     pr_group = T("Group"),
-    org_organisation = T("Organisation"),
+    org_organisation = T("Organization"),
     org_office = T("Office"),
     dvi_body = T("Body")
 )

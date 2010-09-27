@@ -618,7 +618,7 @@ if deployment_settings.has_module(module):
                 _href=URL(r=request, c="default", f="download", args=image))) or \
             T("No Image")
 
-    table.url.label = T("URL")
+    table.url.label = "URL"
     table.url.represent = lambda url: len(url) and DIV(A(IMG(_src=url, _height=60), _href=url)) or T("None")
 
     table.tags.label = T("Tags")

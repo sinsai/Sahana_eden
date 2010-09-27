@@ -60,7 +60,7 @@ if deployment_settings.has_module("org"):
     tablename = "%s_%s" % (module, resource)
     table = db.define_table(tablename,
                             organisation_id("donor_id",
-                                            label = T("Funding Organisation"),
+                                            label = T("Funding Organization"),
                                             comment = DIV(A(ADD_ORGANIZATION,
                                                             _class="colorbox",
                                                             _href=organisation_popup_url,

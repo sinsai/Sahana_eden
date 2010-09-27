@@ -294,26 +294,27 @@ def shn_crud_strings(table_name,
     if not table_name_plural:
         table_name_plural = table_name + "s"
 
-    ADD = T("Add " + table_name)
-    LIST = T("List "+ table_name_plural)
+    ADD = T("Add") + " " + T(table_name)
+    LIST = T("List") + " " + T(table_name_plural)
 
     table_strings = Storage(
-    title = T(table_name),
-    title_plural = T(table_name_plural),
-    title_create = ADD,
-    title_display = T(table_name + " Details"),
-    title_list = LIST,
-    title_update = T("Edit "+ table_name),
-    title_search = T("Search " + table_name_plural),
-    subtitle_create = T("Add New " + table_name),
-    subtitle_list = T(table_name_plural),
-    label_list_button = LIST,
-    label_create_button = ADD,
-    label_delete_button = T("Delete " + table_name),
-    msg_record_created =  T(table_name +" added"),
-    msg_record_modified =  T(table_name + " updated"),
-    msg_record_deleted = T( table_name + " deleted"),
-    msg_list_empty = T("No " + table_name_plural + " currently registered"))
+        title = T(table_name),
+        title_plural = T(table_name_plural),
+        title_create = ADD,
+        title_display = T(table_name) + " " + T("Details"),
+        title_list = LIST,
+        title_update = T("Edit") + " " + T(table_name),
+        title_search = T("Search") + " " + T(table_name_plural),
+        subtitle_create = T("Add New") + " " + T(table_name),
+        subtitle_list = T(table_name_plural),
+        label_list_button = LIST,
+        label_create_button = ADD,
+        label_delete_button = T("Delete") + " " + T(table_name),
+        msg_record_created =  T(table_name) + " " + T("added"),
+        msg_record_modified =  T(table_name) + " " + T("updated"),
+        msg_record_deleted = T(table_name) + " " + T("deleted"),
+        msg_list_empty = T("No") + " " + T(table_name_plural) + " " + T("currently registered")
+    )
 
     return table_strings
 

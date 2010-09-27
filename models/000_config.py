@@ -237,12 +237,12 @@ deployment_settings.modules = Storage(
         ),
     sitrep = Storage(
             name_nice = T("Assessments"),
-            description = T("Assessments are structured reports done by Professional Organisations - data includes WFP Assessments"),
+            description = T("Assessments are structured reports done by Professional Organizations - data includes WFP Assessments"),
             module_type = 10
         ),
     rat = Storage(
             name_nice = T("Rapid Assessments"),
-            description = T("Assessments are structured reports done by Professional Organisations"),
+            description = T("Assessments are structured reports done by Professional Organizations"),
             module_type = 10
         ),
     pr = Storage(

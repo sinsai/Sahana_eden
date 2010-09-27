@@ -223,10 +223,10 @@ table.title.requires = IS_NOT_EMPTY()
 table.title.comment = DIV(SPAN("*", _class="req", _style="padding-right: 5px;"), DIV(_class="tooltip",
     _title=T("Title") + "|" + T("Specify a descriptive title for the image.")))
 
-table.url.label = T("URL")
+table.url.label = "URL"
 table.url.represent = lambda url: url and DIV(A(IMG(_src=url, _height=60), _href=url)) or T("None")
 table.url.comment =  DIV(SPAN("*", _class="req", _style="padding-right: 5px;"), DIV(_class="tooltip",
-    _title=T("URL") + "|" + T("The URL of the image file. If you don't upload an image file, then you must specify its location here.")))
+    _title="URL" + "|" + T("The URL of the image file. If you don't upload an image file, then you must specify its location here.")))
 
 table.image.comment =  DIV(SPAN("*", _class="req", _style="padding-right: 5px;"), DIV(_class="tooltip",
     _title=T("Image") + "|" + T("Upload an image file here. If you don't upload an image file, then you must specify its location in the URL field.")))

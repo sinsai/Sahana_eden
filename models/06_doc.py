@@ -33,7 +33,7 @@ def shn_file_represent( file, table):
         return NONE
 
 table.file.represent = lambda file, table=table: shn_file_represent(file, table)
-table.url.label = T("URL")
+table.url.label = "URL"
 table.url.represent = lambda url: url and A(url,_href=url) or NONE
 
 table.url.requires = [IS_NULL_OR(IS_URL()),IS_NULL_OR(IS_NOT_IN_DB(db, "%s.url" % tablename))]

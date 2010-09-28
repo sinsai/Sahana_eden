@@ -129,6 +129,7 @@ authorstamp = db.Table(None, "authorstamp",
             )
 
 comments = S3ReusableField("comments", "text",
+                           label = T("Comments"),
                            comment = DIV(_class="tooltip",
                                          _title=T("Comments") + "|" + T("Please use this field to record any additional information, including a history of the record if it is updated.")))
 

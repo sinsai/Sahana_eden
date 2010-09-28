@@ -311,7 +311,12 @@ table = db.define_table(tablename,
                         comments(),
                         migrate=migrate, *s3_meta_fields())
 
+table.first_name.label = T("First Name")
+table.middle_name.label = T("Middle Name")
+table.last_name.label = T("Last Name")
+table.local_name.label = T("Local Name")
 
+table.date_of_birth.label = T("Date of Birth")
 table.date_of_birth.requires = IS_NULL_OR(IS_DATE_IN_RANGE(
                                maximum=request.utcnow.date(),
                                error_message="%s " % T("Enter a date before") + "%(max)s!"))

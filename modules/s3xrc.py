@@ -3,7 +3,7 @@
 """
     S3XRC Resource Framework
 
-    @version: 2.1.2
+    @version: 2.1.3
     @see: U{B{I{S3XRC-2}} <http://eden.sahanafoundation.org/wiki/S3XRC>} on Eden wiki
 
     @requires: U{B{I{lxml}} <http://codespeak.net/lxml>}
@@ -340,10 +340,44 @@ class S3Resource(object):
                         url_query[self.name][self.manager.__UID] = uid_queries
 
                 # URL Queries
+                contexts = url_query.context
                 for rname in url_query:
 
-                    if rname == self.name:
+                    if rname == "context":
+                        continue
+
+                    elif contexts and rname in contexts:
+                        context = contexts[rname]
+
+                        cname = context.rname
+                        if cname != self.name and \
+                           cname in self.components:
+                            component = self.components[cname]
+                            rtable = component.resource.table
+                            pkey = component.pkey
+                            fkey = component.fkey
+                            cjoin = (self.table[pkey]==rtable[fkey])
+                        else:
+                            rtable = self.table
+                            cjoin = None
+
+                        table = self.__db[context.table]
+                        if context.multiple:
+                            join = (rtable[context.field].contains(table.id))
+                        else:
+                            join = (rtable[context.field] == table.id)
+                        if cjoin:
+                            join = (cjoin & join)
+
+                        self.__query = self.__query & join
+
+                        if deletion_status in table.fields:
+                            remaining = (table[deletion_status] == False)
+                            self.__query = self.__query & remaining
+
+                    elif rname == self.name:
                         table = self.table
+
                     elif rname in self.components:
                         component = self.components[rname]
                         table = component.resource.table
@@ -3208,18 +3242,72 @@ class S3ResourceController(object):
 
 
     # -------------------------------------------------------------------------
+    def parse_context(self, resource, url_vars):
+
+        c = Storage()
+        for k in url_vars:
+            if k[:8] == "context.":
+                context_name = k[8:]
+                context = url_vars[k]
+                if not isinstance(context, str):
+                    continue
+
+                if context.find(".") > 0:
+                    rname, field = context.split(".", 1)
+                    if rname in resource.components:
+                        table = resource.components[rname].component.table
+                    else:
+                        continue
+                else:
+                    rname = resource.name
+                    table = resource.table
+                    field = context
+
+                if field in table.fields:
+                    fieldtype = str(table[field].type)
+                else:
+                    continue
+
+                multiple = False
+                if fieldtype.startswith("reference"):
+                    ktablename = fieldtype[10:]
+                elif fieldtype.startswith("list:reference"):
+                    ktablename = fieldtype[15:]
+                    multiple = True
+                else:
+                    continue
+
+                c[context_name] = Storage(
+                    rname = rname,
+                    field = field,
+                    table = ktablename,
+                    multiple = multiple)
+            else:
+                continue
+
+        return c
+
+
+    # -------------------------------------------------------------------------
     def url_query(self, resource, url_vars):
 
         """ URL query parser """
 
-        q = Storage()
+        c = self.parse_context(resource, url_vars)
+        q = Storage(context=c)
         for k in url_vars:
             if k.find(".") > 0:
                 rname, field = k.split(".", 1)
-                if rname == resource.name:
+                if rname == "context":
+                    continue
+                elif rname == resource.name:
                     table = resource.table
                 elif rname in resource.components:
                     table = resource.components[rname].component.table
+                elif rname in c.keys():
+                    table = self.db.get(c[rname].table, None)
+                    if not table:
+                        continue
                 else:
                     continue
                 if field.find("__") > 0:

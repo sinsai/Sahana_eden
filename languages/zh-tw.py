@@ -3436,6 +3436,7 @@
 'Types of health services available': 'Types of health services available',
 'Types of water storage containers available': 'Types of water storage containers available',
 'UID': 'UID',
+'URL': 'URL',
 'URL of the Ushahidi instance': 'URL of the Ushahidi instance',
 'UTC Offset': 'UTC Offset',
 'UUID of foreign Sahana server': 'UUID of foreign Sahana server',

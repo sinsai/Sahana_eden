@@ -33,7 +33,7 @@ def shn_file_represent( file, table):
         return NONE
 
 table.file.represent = lambda file, table=table: shn_file_represent(file, table)
-table.url.label = "URL"
+table.url.label = T("URL")
 table.url.represent = lambda url: url and A(url,_href=url) or NONE
 
 table.url.requires = [IS_NULL_OR(IS_URL()),IS_NULL_OR(IS_NOT_IN_DB(db, "%s.url" % tablename))]
@@ -125,7 +125,7 @@ table = db.define_table(tablename,
 table.name.requires = [IS_NOT_EMPTY(), IS_NOT_IN_DB(db, "%s.name" % tablename)]
 #table.name.label = T("Name")
 table.name.comment = SPAN("*", _class="req")
-table.url.label = "URL"
+table.url.label = T("URL")
 table.person_id.label = T("Person")
 
 # upload folder needs to be visible to the download() function as well as the upload

@@ -3091,6 +3091,7 @@
 'Types of health services available': 'Types of health services available',
 'Types of water storage containers available': 'Types of water storage containers available',
 'UID': 'UID',
+'URL': 'URL',
 'UTC Offset': 'UTC Offset',
 'Unable to parse CSV file!': 'Unable to parse CSV file!',
 'Unidentified': 'Unidentified',

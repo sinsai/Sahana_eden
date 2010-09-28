@@ -11,7 +11,8 @@ module = "sit"
 # Situation super-entity
 situation_types = Storage(
     irs_incident = T("Incident"),
-    rms_req = T("Request")
+    rms_req = T("Request"),
+    pr_presence = T("Presence")
 )
 
 resource = "situation"

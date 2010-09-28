@@ -275,7 +275,7 @@ def now():
     return dict(module_name=module_name, action=action, status=status)
 
 # -----------------------------------------------------------------------------
-@auth.requires_login()
+#@auth.requires_login()
 def sync():
 
     """ Sync interface
@@ -292,6 +292,10 @@ def sync():
     else:
         prefix = request.args.pop(0)
         name = request.args.pop(0)
+
+        if prefix in s3xrc.PROTECTED:
+            raise HTTP(501, body="%s: %s" %
+                      (s3xrc.ERROR.NOT_PERMITTED, T("Protected resource")))
 
         if name.find(".") != -1:
             name, extension = name.rsplit(".", 1)

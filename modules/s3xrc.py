@@ -3,7 +3,7 @@
 """
     S3XRC Resource Framework
 
-    @version: 2.1.3
+    @version: 2.1.4
     @see: U{B{I{S3XRC-2}} <http://eden.sahanafoundation.org/wiki/S3XRC>} on Eden wiki
 
     @requires: U{B{I{lxml}} <http://codespeak.net/lxml>}
@@ -1700,8 +1700,6 @@ class S3Resource(object):
             url_split = url.split("://", 1)
             if len(url_split) == 2:
                 protocol, path = url_split
-                if username and password:
-                    url = "%s://%s:%s@%s" % (protocol, username, password, path)
             else:
                 protocol, path = http, None
             import urllib2
@@ -1713,6 +1711,11 @@ class S3Resource(object):
                 proxy_handler = urllib2.ProxyHandler({protocol:proxy})
                 handlers.append(proxy_handler)
             if username and password:
+                # Send auth data unsolicitedly (the only way with Eden instances):
+                import base64
+                base64string = base64.encodestring('%s:%s' % (username, password))[:-1]
+                req.add_header("Authorization", "Basic %s" % base64string)
+                # Just in case the peer does not accept that, add a 401 handler:
                 passwd_manager = urllib2.HTTPPasswordMgrWithDefaultRealm()
                 passwd_manager.add_password(realm=None,
                                             uri=url,
@@ -1864,8 +1867,6 @@ class S3Resource(object):
         url_split = url.split("://", 1)
         if len(url_split) == 2:
             protocol, path = url_split
-            #if username and password:
-                #url = "%s://%s:%s@%s" % (protocol, username, password, path)
         else:
             protocol, path = http, None
         import urllib2
@@ -1875,6 +1876,11 @@ class S3Resource(object):
             proxy_handler = urllib2.ProxyHandler({protocol:proxy})
             handlers.append(proxy_handler)
         if username and password:
+            # Send auth data unsolicitedly (the only way with Eden instances):
+            import base64
+            base64string = base64.encodestring('%s:%s' % (username, password))[:-1]
+            req.add_header("Authorization", "Basic %s" % base64string)
+            # Just in case the peer does not accept that, add a 401 handler:
             passwd_manager = urllib2.HTTPPasswordMgrWithDefaultRealm()
             passwd_manager.add_password(realm=None,
                                         uri=url,
@@ -2779,22 +2785,25 @@ class S3ResourceController(object):
     ROWSPERPAGE = 10
     MAX_DEPTH = 10
 
+    # Prefixes of resources that must not be manipulated from remote
+    PROTECTED = ("auth", "admin", "s3")
+
     # Error messages
     ERROR = Storage(
         BAD_RECORD = "Record not found",
         BAD_METHOD = "Invalid method",
         BAD_FORMAT = "Invalid data format",
         BAD_REQUEST = "Invalid request",
-        BAD_TEMPLATE = "XSLT Template not found",
-        BAD_RESOURCE = "Invalid Resource",
-        PARSE_ERROR = "XML Parse Error",
-        TRANSFORMATION_ERROR = "XSLT Transformation Error",
-        BAD_SOURCE = "Invalid XML Source",
+        BAD_TEMPLATE = "XSLT template not found",
+        BAD_RESOURCE = "Invalid resource",
+        PARSE_ERROR = "XML parse error",
+        TRANSFORMATION_ERROR = "XSLT transformation error",
+        BAD_SOURCE = "Invalid XML source",
         NO_MATCH = "No matching element found in the data source",
-        VALIDATION_ERROR = "Validation Error",
-        DATA_IMPORT_ERROR = "Data Import Error",
-        NOT_PERMITTED = "Operation Not Permitted",
-        NOT_IMPLEMENTED = "Not Implemented"
+        VALIDATION_ERROR = "Validation error",
+        DATA_IMPORT_ERROR = "Data import error",
+        NOT_PERMITTED = "Operation not permitted",
+        NOT_IMPLEMENTED = "Not implemented"
     )
 
     # -------------------------------------------------------------------------
@@ -4077,7 +4086,7 @@ class S3Vector(object):
                 self.method = permission = self.METHOD.CREATE
 
         # Do allow import to tables with these prefixes:
-        if self.prefix in ("auth", "admin", "s3"):
+        if self.prefix in self.__manager.PROTECTED:
             self.permitted = False
 
         # ...or check permission explicitly:

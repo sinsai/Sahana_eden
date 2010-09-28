@@ -143,14 +143,13 @@ table.policy.label = T("Default synchronization policy")
 table.last_sync_time.label = T("Last synchronization time")
 table.last_sync_time.writable = False
 
+# -----------------------------------------------------------------------------
 peer_id = S3ReusableField("peer_id", db.sync_peer, notnull=True,
                           requires = IS_ONE_OF(db, "sync_peer.id", "%(name)s"),
                           represent = lambda id: (id and [db.sync_peer(id).name] or [NONE])[0])
-#peer_id = db.Table(None, "peer_id",
-                   #Field("peer_id", db.sync_peer, notnull=True,
-                         #requires = IS_ONE_OF(db, "sync_peer.id", "%(name)s"),
-                         #represent = lambda id: (id and [db.sync_peer(id).name] or [NONE])[0]))
 
+
+# -----------------------------------------------------------------------------
 def s3_sync_peer_ondelete(row):
 
     """ Delete all jobs with this peer """
@@ -171,6 +170,7 @@ def s3_sync_peer_ondelete(row):
         db(schedule.id.belongs(jobs_del)).delete()
 
 
+# -----------------------------------------------------------------------------
 def s3_sync_peer_oncreate(form):
 
     """ Create default job for Eden peers """
@@ -202,6 +202,7 @@ def s3_sync_peer_oncreate(form):
         enabled = True)
 
 
+# -----------------------------------------------------------------------------
 s3xrc.model.configure(table,
     delete_onaccept=s3_sync_peer_ondelete,
     list_fields = ["id", "name", "uuid", "type", "url", "last_sync_time"])

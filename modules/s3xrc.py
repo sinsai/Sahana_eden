@@ -400,12 +400,22 @@ class S3Resource(object):
                                     values = uids
                                 if op == "eq":
                                     if len(values) == 1:
-                                        query = (table[field] == values[0])
+                                        if values[0] == "NONE":
+                                            query = (table[field] == None)
+                                        elif values[0] == "EMPTY":
+                                            query = ((table[field] == None) | (table[field] == ""))
+                                        else:
+                                            query = (table[field] == values[0])
                                     elif len(values):
                                         query = (table[field].belongs(values))
                                 elif op == "ne":
                                     if len(values) == 1:
-                                        query = (table[field] != values[0])
+                                        if values[0] == "NONE":
+                                            query = (table[field] != None)
+                                        elif values[0] == "EMPTY":
+                                            query = ((table[field] != None) & (table[field] != ""))
+                                        else:
+                                            query = (table[field] != values[0])
                                     elif len(values):
                                         query = (~(table[field].belongs(values)))
                                 elif op == "lt":

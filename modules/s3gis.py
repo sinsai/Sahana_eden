@@ -370,9 +370,12 @@ class GIS(object):
         deployment_settings = self.deployment_settings
         request = self.request
 
-        # Hide deleted Resources
-        query = (db["%s_%s" % (module, resource)].deleted == False)
-
+        if "deleted" in db["%s_%s" % (module, resource)].fields:
+            # Hide deleted Resources
+            query = (db["%s_%s" % (module, resource)].deleted == False)
+        else:
+            query = (db["%s_%s" % (module, resource)].id > 0)
+        
         if filter:
             query = query & (db[filter.tablename].id == filter.id)
 

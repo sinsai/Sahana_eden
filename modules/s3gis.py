@@ -3,7 +3,7 @@
 """
     Sahana Eden GIS Module
 
-    @version: 0.0.8
+    @version: 0.0.9
     @requires: U{B{I{shapely}} <http://trac.gispython.org/lab/wiki/Shapely>}
 
     @author: Fran Boon <francisboon@gmail.com>
@@ -54,6 +54,8 @@ except:
 import zipfile          # Needed to unzip KMZ files
 from lxml import etree  # Needed to follow NetworkLinks
 KML_NAMESPACE = "http://earth.google.com/kml/2.2"
+# Which resources have a different icon per-category
+gis_categorised_resources = ["irs_ireport"]
 
 from gluon.storage import Storage, Messages
 from gluon.html import *
@@ -384,14 +386,36 @@ class GIS(object):
             query = query & ((db.gis_location.level != "L0") | (db.gis_location.level == None))
 
         query = query & (db.gis_location.id == db["%s_%s" % (module, resource)].location_id)
-        if polygons:
+        if not polygons and not resource in gis_categorised_resources:
             # Only retrieve the bulky polygons if-required
+            locations = db(query).select(db.gis_location.id, db.gis_location.uuid, db.gis_location.parent, db.gis_location.name, db.gis_location.lat, db.gis_location.lon)
+        elif not polygons and resource in gis_categorised_resources:
+            locations = db(query).select(db.gis_location.id, db.gis_location.uuid, db.gis_location.parent, db.gis_location.name, db.gis_location.lat, db.gis_location.lon, db["%s_%s" % (module, resource)].category)
+        elif polygons and not resource in gis_categorised_resources:
             locations = db(query).select(db.gis_location.id, db.gis_location.uuid, db.gis_location.parent, db.gis_location.name, db.gis_location.wkt, db.gis_location.lat, db.gis_location.lon)
         else:
-            locations = db(query).select(db.gis_location.id, db.gis_location.uuid, db.gis_location.parent, db.gis_location.name, db.gis_location.lat, db.gis_location.lon)
-        for i in range(0, len(locations)):
-            locations[i].popup_label = locations[i].name + "-" + popup_label
+            # Polygons & Categorised resources
+            locations = db(query).select(db.gis_location.id, db.gis_location.uuid, db.gis_location.parent, db.gis_location.name, db.gis_location.wkt, db.gis_location.lat, db.gis_location.lon, db["%s_%s" % (module, resource)].category)
+            
+        if resource in gis_categorised_resources:
+            for i in range(0, len(locations)):
+                locations[i].popup_label = locations[i].name + "-" + popup_label
+                locations[i].marker = self._get_marker(resource, locations[i]["%s_%s" % (module, resource)].category)
+        else:
+            for i in range(0, len(locations)):
+                locations[i].popup_label = locations[i].name + "-" + popup_label
+        
         popup_url = URL(r=request, c=module, f=resource, args="read.plain?%s.location_id=" % resource)
+        
+        if not marker and not resource in gis_categorised_resources:
+            # Add the marker here so that we calculate once/layer not once/feature
+            table_fclass = db.gis_feature_class
+            config = self.get_config()
+            query = (table_fclass.deleted == False) & (table_fclass.symbology_id == config.symbology_id) & (table_fclass.resource == resource)
+            marker = db(query).select(db.gis_feature_class.id, limitby=(0, 1), cache=cache).first()
+            if marker:
+                marker = marker.id
+        
         try:
             marker = db(db.gis_marker.name == marker).select(db.gis_marker.image, db.gis_marker.height, db.gis_marker.width, db.gis_marker.id, limitby=(0, 1), cache=cache).first()
             layer = {"name":layername, "query":locations, "active":active, "marker":marker, "popup_url": popup_url, "polygons": polygons}
@@ -545,7 +569,7 @@ class GIS(object):
         return None
 
     # -----------------------------------------------------------------------------
-    def get_marker(self, feature_id):
+    def _get_marker(self, resource, category=None):
 
         """
             Returns the Marker for a Feature
@@ -553,17 +577,60 @@ class GIS(object):
                 marker.height
                 marker.width
 
+            Used by s3xrc for Feeds export and by get_feature_layer for Categorised Resources
+
+            @param resource
+            @param category
+        """
+
+        cache = self.cache
+        db = self.db
+        table_marker = db.gis_marker
+        table_fclass = db.gis_feature_class
+
+        config = self.get_config()
+        symbology = config.symbology_id
+
+        query = None
+
+        # 1st choice for a Marker is the Feature Class's
+        query = (table_fclass.resource == resource) & (table_fclass.symbology_id == symbology)
+        if category:
+            query = query & (table_fclass.category == category)
+        marker_id = db(query).select(table_fclass.marker_id, limitby=(0, 1), cache=cache).first()
+        if marker_id:
+            marker = db(table_marker.id == marker_id.id).select(table_marker.image, table_marker.height,
+                        table_marker.width, limitby=(0, 1), cache=cache).first()
+            return marker
+
+        # 2nd choice for a Marker is the default
+        query = (table_marker.id == config.marker_id)
+        marker = db(query).select(table_marker.image, table_marker.height, table_marker.width, limitby=(0, 1),
+                                  cache=cache).first()
+        if marker:
+            return marker
+        else:
+            return ""
+
+    def get_marker(self, feature_id, category=None):
+
+        """
+            Returns the Marker for a Feature
+                marker.image = filename
+                marker.height
+                marker.width
+
+            Used by s3xrc for Feeds export
+
             @param feature_id: the feature ID (int) or UUID (str)
-            @ToDo: Update for new FeatureClass/Symbology
+            @ToDo: Lookup should be done by resource/category not by feature_id
         """
 
         cache = self.cache
         db = self.db
         table_feature = db.gis_location
         table_marker = db.gis_marker
-
-        #table_fclass = db.gis_feature_class
-        #table_symbology = db.gis_symbology_to_feature_class
+        table_fclass = db.gis_feature_class
 
         config = self.get_config()
         symbology = config.symbology_id
@@ -575,39 +642,17 @@ class GIS(object):
         elif isinstance(feature_id, str):
             query = (table_feature.uuid == feature_id)
 
-        #feature = db(query).select(table_feature.marker_id,
-        #                           table_feature.feature_class_id,
-        #                           limitby=(0, 1)).first()
-        #if feature:
-        #    feature_class =  feature.feature_class_id
-        #    marker_id =  feature.marker_id
+        # 1st choice for a Marker is the Feature Class's
+        #query = (table_fclass.resource == resource) & \
+        #        (table_fclass.symbology_id == symbology)
+        #if category:
+        #   query = query & (table_fclass.category == category)
+        #marker_id = db(query).select(table_fclass.marker_id, limitby=(0, 1), cache=cache).first()
+        #if marker_id:
+        #   marker = db(table_marker.id == marker_id.id).select(table_marker.image, table_marker.height, table_marker.width, limitby=(0, 1), cache=cache).first()
+        #   return marker.first()
 
-            # 1st choice for a Marker is the Feature's
-        #    if marker_id:
-        #        query = (table_marker.id == marker_id)
-        #        marker = db(query).select(table_marker.image, limitby=(0, 1),
-        #                                  cache=cache)
-        #        if marker:
-        #            return marker.first().image
-
-            # 2nd choice for a Marker is the Symbology for the Feature Class
-            #query = (table_symbology.feature_class_id == feature_class) & \
-            #        (table_symbology.symbology_id == symbology) & \
-            #        (table_marker.id == table_symbology.marker_id)
-            #marker = db(query).select(table_marker.image, limitby=(0, 1),
-            #                          cache=cache)
-            #if marker:
-            #    return marker.first().image
-
-            # 3rd choice for a Marker is the Feature Class's
-            #query = (table_fclass.id == feature_class) & \
-            #        (table_marker.id == table_fclass.marker_id)
-            #marker = db(query).select(table_marker.image, limitby=(0, 1),
-            #                          cache=cache)
-            #if marker:
-            #    return marker.first().image
-
-        # 4th choice for a Marker is the default
+        # 2nd choice for a Marker is the default
         query = (table_marker.id == config.marker_id)
         marker = db(query).select(table_marker.image, table_marker.height, table_marker.width, limitby=(0, 1),
                                   cache=cache)
@@ -1327,7 +1372,9 @@ class GIS(object):
         maxResolution = config.maxResolution
         maxExtent = config.maxExtent
         numZoomLevels = config.zoom_levels
-        marker_default = config.marker_id
+        marker_id_default = config.marker_id
+        marker_default = db(db.gis_marker.id == marker_id_default).select(db.gis_marker.image, db.gis_marker.height, db.gis_marker.width, limitby=(0, 1), cache=cache).first()
+        symbology = config.symbology_id
         cluster_distance = config.cluster_distance
         cluster_threshold = config.cluster_threshold
 
@@ -2397,7 +2444,14 @@ OpenLayers.Util.extend( selectPdfControl, {
                 wfs_visibility = "wfsLayer" + name_safe + ".setVisibility(false);"
             #if layer.editable:
             #    wfs_strategy = "strategies: [new OpenLayers.Strategy.BBOX(), new OpenLayers.Strategy.Save()],"
-            wfs_strategy = "new OpenLayers.Strategy.BBOX()"
+            wfs_strategy = """
+                            new OpenLayers.Strategy.BBOX({
+                                // only load features for the visible extent
+                                ratio: 1,
+                                // fetch features after every resolution change
+                                resFactor: 1
+                                })
+            """
             layers_wfs  += """
         var wfsLayer""" + name_safe + """ = new OpenLayers.Layer.Vector( '""" + name + """', {
                 strategies: [""" + wfs_strategy + """],
@@ -2904,12 +2958,12 @@ OpenLayers.Util.extend( selectPdfControl, {
                             if _marker:
                                 marker = _marker
                             else:
-                                marker = self.get_marker(feature.id)
+                                marker = marker_default
                         except (AttributeError, KeyError):
                             if markerLayer:
                                 marker = markerLayer
                             else:
-                                marker = self.get_marker(feature.id)
+                                marker = marker_default
                         # Faster to bypass the download handler
                         #marker_url = URL(r=request, c="default", f="download", args=[marker.image])
                         marker_url = URL(r=request, c="static", f="img", args=["markers", marker.image])
@@ -3020,7 +3074,7 @@ OpenLayers.Util.extend( selectPdfControl, {
                     if marker_id:
                         marker = db(db.gis_marker.id == marker_id).select(db.gis_marker.image, db.gis_marker.height, db.gis_marker.width, limitby=(0, 1)).first()
                     else:
-                        marker = db(db.gis_marker.id == marker_default).select(db.gis_marker.image, db.gis_marker.height, db.gis_marker.width, limitby=(0, 1)).first()
+                        marker = db(db.gis_marker.id == marker__id_default).select(db.gis_marker.image, db.gis_marker.height, db.gis_marker.width, limitby=(0, 1)).first()
                     marker_url = URL(r=request, c="static", f="img", args=["markers", marker.image])
                     height = marker.height
                     width = marker.width
@@ -3134,7 +3188,7 @@ OpenLayers.Util.extend( selectPdfControl, {
                     if marker_id:
                         marker = db(db.gis_marker.id == marker_id).select(db.gis_marker.image, limitby=(0, 1)).first().image
                     else:
-                        marker = db(db.gis_marker.id == marker_default).select(db.gis_marker.image, limitby=(0, 1)).first().image
+                        marker = marker_default.image
                     marker_url = URL(r=request, c="static", f="img", args=["markers", marker])
 
                     # Generate HTML snippet
@@ -3248,7 +3302,7 @@ OpenLayers.Util.extend( selectPdfControl, {
                     if marker_id:
                         marker = db(db.gis_marker.id == marker_id).select(db.gis_marker.image, db.gis_marker.height, db.gis_marker.width, limitby=(0, 1)).first()
                     else:
-                        marker = db(db.gis_marker.id == marker_default).select(db.gis_marker.image, db.gis_marker.height, db.gis_marker.width, limitby=(0, 1)).first()
+                        marker = marker_default
                     marker_url = URL(r=request, c="static", f="img", args=["markers", marker.image])
                     height = marker.height
                     width = marker.width

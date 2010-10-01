@@ -2352,6 +2352,7 @@
 'Registration added': 'Registration added',
 'Registration entry deleted': 'Registration entry deleted',
 'Registration key': 'Registration key',
+'Registration successful': 'Registration successful',
 'Registration updated': 'Registration updated',
 'Registry keeps track of all the relief organizations working in the disaster region. It captures not only the places where they are active, but also captures information on the range of projects they are providing in each area.': 'Registry keeps track of all the relief organisations working in the disaster region. It captures not only the places where they are active, but also captures information on the range of projects they are providing in each area.',
 'Rehabilitation/Long Term Care': 'Rehabilitation/Long Term Care',

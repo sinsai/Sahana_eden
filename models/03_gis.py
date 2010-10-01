@@ -367,6 +367,7 @@ table = db.define_table(tablename,
                         marker_id(),
                         Field("gps_marker"),
                         Field("resource"),  # Used for Web Service Feeds
+                        Field("category"),  # Used for Web Service Feeds & also interactive maps' get_marker()
                         migrate=migrate,
                         *(s3_timestamp() + s3_uid() + s3_deletion_status()))
 
@@ -379,6 +380,7 @@ table.name.label = T("Name")
 table.gps_marker.label = T("GPS Marker")
 table.description.label = T("Description")
 table.resource.label = T("Resource")
+table.category.label = T("Category")
 
 # Reusable field to include in other table definitions
 ADD_FEATURE_CLASS = T("Add Feature Class")

@@ -91,7 +91,7 @@ def theme():
     table.col_border_btn_out.label = T("Colour of bottom of Buttons when not pressed")
     table.col_border_btn_in.label = T("Colour of bottom of Buttons when pressed")
     table.col_btn_hover.label = T("Colour of Buttons when hovering")
-    
+
     # CRUD Strings
     ADD_THEME = T("Add Theme")
     LIST_THEMES = T("List Themes")
@@ -279,9 +279,9 @@ def user():
 
     response.s3.pagination = True
     output = shn_rest_controller(module, resource, main="first_name")
-    
+
     s3xrc.model.clear_config(table, "onvalidation", "onaccept")
-    
+
     return output
 
 def user_approve(form):
@@ -460,7 +460,9 @@ def users():
         username = "email"
 
     # Audit
-    crud.settings.create_onaccept = lambda form: shn_audit_create(form, module, "membership", "html")
+    crud.settings.create_onaccept = lambda form: s3_audit("create", module, "membership",
+                                                          form=form,
+                                                          representation="html")
     # Many<>Many selection (Deletable, no Quantity)
     item_list = []
     sqlrows = db(query).select()
@@ -532,7 +534,9 @@ def groups():
     output = dict(title=title, description=description, user=user)
 
     # Audit
-    crud.settings.create_onaccept = lambda form: shn_audit_create(form, module, "membership", "html")
+    crud.settings.create_onaccept = lambda form: s3_audit("create", module, "membership",
+                                                          form=form,
+                                                          representation="html")
     # Many<>Many selection (Deletable, no Quantity)
     item_list = []
     sqlrows = db(query).select()
@@ -587,14 +591,14 @@ def import_data():
     "Import data via POST upload to CRUD controller. Old - being replaced by Sync/Importer."
     title = T("Import Data")
     crud.messages.submit_button = "Upload"
-    
+
     # Deprecated
     import_job_form = crud.create(db.admin_import_job)
     # Tell the CRUD create form to post to a different location
     import_job_form.custom.begin.text = str(import_job_form.custom.begin).replace(
             'action=""',
             'action="%s"' % URL(r=request, f="import_job", args=["create"]))
-    
+
     return dict(title=title,
                 import_job_form=import_job_form)
 
@@ -632,7 +636,7 @@ def export_csv():
     response.headers["Content-disposition"] = "attachment; filename=%s" % filename
     return output.read()
 
-    
+
 
 # Unstructured Data Import
 # Deprecated - being replaced by Importer

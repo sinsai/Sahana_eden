@@ -2454,8 +2454,12 @@ OpenLayers.Util.extend( selectPdfControl, {
             """
             layers_wfs  += """
         var wfsLayer""" + name_safe + """ = new OpenLayers.Layer.Vector( '""" + name + """', {
+                // limit the number of features to avoid browser freezes
+                maxFeatures: 1000,
                 strategies: [""" + wfs_strategy + """],
                 projection: projection_current,
+                //outputFormat: "json",
+                //readFormat: new OpenLayers.Format.GeoJSON(),
                 protocol: new OpenLayers.Protocol.WFS({
                     version: '""" + wfs_version + """',
                     """ + wfs_projection + """
@@ -2501,6 +2505,12 @@ OpenLayers.Util.extend( selectPdfControl, {
                 if not layer.visible:
                     options += """,
                     visibility: false"""
+                if layer.buffer:
+                    options += """,
+                    buffer: """ + layer.buffer
+                else:
+                    options += """,
+                    buffer: 0"""
 
             layers_wms  += """
         var wmsLayer""" + name_safe + """ = new OpenLayers.Layer.WMS(

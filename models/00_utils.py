@@ -483,8 +483,8 @@ def shn_insert_subheadings(form, tablename, subheadings):
         done = []
         while tr:
             f = tr.attributes.get("_id", None)
-            if f.startswith(tablename) and f[-5:] == "__row":
-                f = f[len(tablename)+1:-5]
+            if f.startswith(tablename) and f[-6:] == "__row1":
+                f = f[len(tablename)+1:-6]
                 for k in subheadings.keys():
                     if k in done:
                         continue

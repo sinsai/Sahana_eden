@@ -485,6 +485,9 @@ table.lon.comment = A(CONVERSION_TOOL,
                       _title=T("You can use the Conversion Tool to convert from either GPS coordinates or Degrees/Minutes/Seconds."),
                       _id="btnConvert")
 
+#s3xrc.model.configure(table,
+    #list_fields=["id", "name", "level", "parent", "lat", "lon"])
+
 # Reusable field to include in other table definitions
 ADD_LOCATION = T("Add Location")
 repr_select = lambda l: len(l.name) > 48 and "%s..." % l.name[:44] or l.name

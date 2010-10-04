@@ -45,6 +45,7 @@ from gluon.html import URL
 from gluon.http import HTTP, redirect
 
 from lxml import etree
+from s3crud import S3CRUDHandler
 
 # *****************************************************************************
 class S3Resource(object):
@@ -115,6 +116,7 @@ class S3Resource(object):
 
         self.__files = Storage()
 
+        self.crud = S3CRUDHandler(self.__db, self.__manager)
         self.__handler = Storage(options=self.__get_options,
                                  fields=self.__get_fields,
                                  export_tree=self.__get_tree,
@@ -435,6 +437,11 @@ class S3Resource(object):
 
             self.__query = master_query
 
+            # Deletion status
+            if deletion_status in self.table.fields:
+                remaining = (self.table[deletion_status] == False)
+                self.__query = remaining & self.__query
+
             # Component Query
             if self.parent:
 
@@ -450,10 +457,6 @@ class S3Resource(object):
                     join = self.parent.table[pkey] == self.table[fkey]
                     if str(self.__query).find(str(join)) == -1:
                         self.__query = self.__query & (join)
-
-                if deletion_status in self.table.fields:
-                    remaining = (self.table[deletion_status] == False)
-                    self.__query = self.__query & remaining
 
             # Primary Resource Query
             else:
@@ -634,11 +637,6 @@ class S3Resource(object):
                 # Filter
                 if filter:
                     self.__query = self.__query & filter
-
-                # Deletion status
-                if deletion_status in self.table.fields:
-                    remaining = (self.table[deletion_status] == False)
-                    self.__query = self.__query & remaining
 
         else:
             raise NotImplementedError
@@ -1090,7 +1088,8 @@ class S3Resource(object):
                 self.__dbg("method handler found - executing request")
                 output = handler(r, **attr)
             else:
-                self.__dbg("no method handler - finalizing request")
+                output = self.crud(r, **attr)
+                #self.__dbg("no method handler - finalizing request")
 
         # Post-process
         if hooks is not None:

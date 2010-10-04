@@ -156,7 +156,8 @@ if deployment_settings.has_module(module):
 
     table.gov_uuid.label = T("Government UID")
     table.gov_uuid.requires = IS_NULL_OR(IS_NOT_IN_DB(db, "%s.gov_uuid" % tablename))
-    table.name.label = T("Name")
+    #table.name.label = T("Name")
+    table.name.label = DIV(SPAN("* ", _class="req"), T("Name"), _style="float: left;")
     table.name.requires = [IS_NOT_EMPTY(), IS_NOT_IN_DB(db, "%s.name" % tablename)]
     table.aka1.label = T("Other Name")
     table.aka2.label = T("Other Name")

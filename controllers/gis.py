@@ -815,7 +815,7 @@ def projection():
     table.maxResolution.comment = SPAN("*", _class="req")
 
     # CRUD Strings
-    ADD_PROJECTION = T("Add Projections")
+    ADD_PROJECTION = T("Add Projection")
     LIST_PROJECTIONS = T("List Projections")
     s3.crud_strings[tablename] = Storage(
         title_create = ADD_PROJECTION,

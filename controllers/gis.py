@@ -498,7 +498,7 @@ def map_service_catalogue():
             else:
                 enabled = INPUT(_type="checkbox", _disabled="disabled")
             item_list.append(TR(TD(A(row.name, _href=URL(r=request, f="layer_feature", args=row.id))), TD(description), TD(enabled), _class=theclass))
-        
+
         table_header = THEAD(TR(TH("Layer"), TH("Description"), TH("Enabled?")))
         items = DIV(TABLE(table_header, TBODY(item_list), _id="table-container"))
 
@@ -532,15 +532,14 @@ def layers_enable():
                         # Disable
                         db(query_inner).update(enabled=False)
                         # Audit
-                        #shn_audit_update_m2m(resource=resource, record=row.id, representation="html")
-                        shn_audit_update_m2m(resource, row.id, "html")
+                        s3_audit("update", module, resource, record=row.id, representation="html")
                 else:
                     # Old state: Disabled
                     if var in request.vars:
                         # Enable
                         db(query_inner).update(enabled=True)
                         # Audit
-                        shn_audit_update_m2m(resource, row.id, "html")
+                        s3_audit("update", module, resource, record=row.id, representation="html")
                     else:
                         # Do nothing
                         pass
@@ -561,15 +560,14 @@ def layers_enable():
                     # Disable
                     db(query_inner).update(enabled=False)
                     # Audit
-                    #shn_audit_update_m2m(resource=resource, record=row.id, representation="html")
-                    shn_audit_update_m2m(resource, row.id, "html")
+                    s3_audit("update", module, resource, record=row.id, representation="html")
             else:
                 # Old state: Disabled
                 if var in request.vars:
                     # Enable
                     db(query_inner).update(enabled=True)
                     # Audit
-                    shn_audit_update_m2m(resource, row.id, "html")
+                    s3_audit("update", module, resource, record=row.id, representation="html")
                 else:
                     # Do nothing
                     pass

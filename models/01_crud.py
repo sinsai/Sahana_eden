@@ -57,7 +57,7 @@ ROWSPERPAGE = 20
 PRETTY_PRINT = True
 
 # *****************************************************************************
-# Resource Controller
+# Resource Manager
 _s3xrc = local_import("s3xrc")
 
 s3xrc = _s3xrc.S3ResourceController(db,
@@ -460,164 +460,8 @@ def import_url(r):
 # These functions should always return True in order to be chainable
 # by "and" for lambda's as onaccept-callbacks. -- nursix --
 
-#
-# shn_audit -------------------------------------------------------------------
-#
-def shn_audit(operation, prefix, name,
-              form=None,
-              record=None,
-              representation=None):
-
-    #print "Audit: %s on %s_%s #%s" % (operation, prefix, name, record or 0)
-
-    if operation in ("list", "read"):
-        return shn_audit_read(operation, prefix, name,
-                              record=record, representation=representation)
-
-    elif operation == "create":
-        return shn_audit_create(form, prefix, name,
-                                representation=representation)
-
-    elif operation == "update":
-        return shn_audit_update(form, prefix, name,
-                                representation=representation)
-
-    elif operation == "delete":
-        return shn_audit_delete(prefix, name, record,
-                                representation=representation)
-
-    return True
-
-# Set shn_audit as audit function for the resource controller
-s3xrc.audit = shn_audit
-
-#
-# shn_audit_read --------------------------------------------------------------
-#
-def shn_audit_read(operation, module, resource, record=None, representation=None):
-
-    """ Called during Read operations to enable optional Auditing """
-
-    if session.s3.audit_read:
-        db.s3_audit.insert(
-                person = auth.user_id,
-                operation = operation,
-                module = module,
-                resource = resource,
-                record = record,
-                representation = representation,
-            )
-    return True
-
-#
-# shn_audit_create ------------------------------------------------------------
-#
-def shn_audit_create(form, module, resource, representation=None):
-
-    """
-        Called during Create operations to enable optional Auditing
-
-        Called as an onaccept so that it only takes effect when
-        saved & can read the new values in::
-            onaccept = lambda form: shn_audit_create(form, module, resource, representation)
-
-    """
-
-    if session.s3.audit_write:
-        record =  form.vars.id
-        new_value = []
-        for var in form.vars:
-            new_value.append(var + ":" + str(form.vars[var]))
-        db.s3_audit.insert(
-                person = auth.user_id,
-                operation = "create",
-                module = module,
-                resource = resource,
-                record = record,
-                representation = representation,
-                new_value = new_value
-            )
-    return True
-
-#
-# shn_audit_update ------------------------------------------------------------
-#
-def shn_audit_update(form, module, resource, representation=None):
-
-    """
-        Called during Create operations to enable optional Auditing
-
-        Called as an onaccept so that it only takes effect when
-        saved & can read the new values in::
-            onaccept = lambda form: shn_audit_update(form, module, resource, representation)
-
-    """
-
-    if session.s3.audit_write:
-        record =  form.vars.id
-        new_value = []
-        for var in form.vars:
-            new_value.append(var + ":" + str(form.vars[var]))
-        db.s3_audit.insert(
-                person = auth.user_id,
-                operation = "update",
-                module = module,
-                resource = resource,
-                record = record,
-                representation = representation,
-                #old_value = old_value, # Need to store these beforehand if we want them
-                new_value = new_value
-            )
-    return True
-
-#
-# shn_audit_update_m2m --------------------------------------------------------
-#
-def shn_audit_update_m2m(module, resource, record, representation=None):
-
-    """
-        Called during Update operations to enable optional Auditing
-        Designed for use in M2M "Update Qty/Delete" (which can't use crud.settings.update_onaccept)
-        shn_audit_update_m2m(resource, record, representation)
-    """
-
-    if session.s3.audit_write:
-        db.s3_audit.insert(
-                person = auth.user_id,
-                operation = "update",
-                module = module,
-                resource = resource,
-                record = record,
-                representation = representation,
-                #old_value = old_value, # Need to store these beforehand if we want them
-                #new_value = new_value  # Various changes can happen, so would need to store dict of {item_id: qty}
-            )
-    return True
-
-#
-# shn_audit_delete ------------------------------------------------------------
-#
-def shn_audit_delete(module, resource, record, representation=None):
-
-    """ Called during Delete operations to enable optional Auditing """
-
-    if session.s3.audit_write:
-        module = module
-        table = "%s_%s" % (module, resource)
-        old_value = []
-        _old_value = db(db[table].id == record).select(limitby=(0, 1)).first()
-        for field in _old_value:
-            old_value.append(field + ":" + str(_old_value[field]))
-        db.s3_audit.insert(
-                person = auth.user_id,
-                operation = "delete",
-                module = module,
-                resource = resource,
-                record = record,
-                representation = representation,
-                old_value = old_value
-            )
-    return True
+s3_audit = _s3xrc.S3Audit(db, session, migrate=migrate)
+s3xrc.audit = s3_audit
 
 # *****************************************************************************
 # Display Representations
@@ -1783,7 +1627,7 @@ def shn_delete(r, **attr):
             if s3xrc.get_session(session, prefix=prefix, name=name) == row.id:
                 s3xrc.clear_session(session, prefix=prefix, name=name)
             try:
-                shn_audit("delete", prefix, name, record=row.id, representation=representation)
+                s3xrc.audit("delete", prefix, name, record=row.id, representation=representation)
                 # Reset session vars if necessary
                 if "deleted" in db[table] and deployment_settings.get_security_archive_not_delete():
                     if onvalidation:

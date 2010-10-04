@@ -1668,6 +1668,7 @@
 'List Tracks': 'List Tracks',
 'List Units': 'List Units',
 'List Users': 'List Users',
+'List WMS Layers': 'List WMS Layers',
 'List all': 'List all',
 'List of Items': 'List of Items',
 'List of Missing Persons': 'List of Missing Persons',

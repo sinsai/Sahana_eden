@@ -1088,7 +1088,8 @@ class S3Resource(object):
                 self.__dbg("method handler found - executing request")
                 output = handler(r, **attr)
             else:
-                self.__dbg("no method handler - finalizing request")
+                output = self.crud(r, **attr)
+                #self.__dbg("no method handler - finalizing request")
 
         # Post-process
         if hooks is not None:

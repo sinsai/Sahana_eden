@@ -2067,9 +2067,6 @@ def shn_rest_controller(module, resource, **attr):
 
     """
 
-    #method_handler = _s3xrc.S3CRUDHandler(db, s3xrc)
-    #s3xrc.set_handler("list", method_handler)
-
     s3xrc.set_handler("list", shn_list)
     s3xrc.set_handler("read", shn_read)
     s3xrc.set_handler("create", shn_create)

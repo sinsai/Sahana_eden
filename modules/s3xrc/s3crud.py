@@ -904,7 +904,8 @@ class S3CRUDHandler(S3MethodHandler):
 
             # Get the master query for SSPag
             if self.session.s3.filter is not None:
-                self.resource.build_query(id=self.record, url_vars = self.session.s3.filter)
+                self.resource.build_query(id=self.record,
+                                          url_vars=self.session.s3.filter)
 
             displayrows = totalrows = self.resource.count()
 
@@ -927,20 +928,20 @@ class S3CRUDHandler(S3MethodHandler):
                                  limit=limit,
                                  orderby=orderby,
                                  linkto=linkto,
-                                 as_list=True)
+                                 ssp=True)
 
             result = dict(sEcho = sEcho,
                           iTotalRecords = totalrows,
                           iTotalDisplayRecords = displayrows,
                           aaData = items)
 
-            return json(result)
+            output = json(result)
 
 
-        #elif representation == "plain":
-            #items = crud.select(table, query, truncate=24)
-            #response.view = "plain.html"
-            #return dict(item=items)
+        elif representation == "plain":
+            items = self._select(self.resource, fields, as_list=True)
+            self.response.view = "plain.html"
+            return dict(item=items)
 
         elif representation == "csv":
             exporter = S3Exporter(self.manager)
@@ -1099,6 +1100,7 @@ class S3CRUDHandler(S3MethodHandler):
                 limit=None,
                 orderby=None,
                 linkto=None,
+                ssp=False,
                 as_list=False):
 
         """ Provide an interactive list of records in the resource """
@@ -1120,16 +1122,19 @@ class S3CRUDHandler(S3MethodHandler):
         if not rows:
             return None
 
-        if as_list:
+        if ssp:
 
             items = [[self.ssp_represent_field(f, row, f.name, linkto=linkto)
                     for f in fields]
                     for row in rows]
 
+        elif as_list:
+
+            items = rows.as_list()
+
         else:
 
             headers = dict(map(lambda f: (str(f), f.label), fields))
-
             items= S3SQLTable(rows,
                               headers=headers,
                               linkto=linkto,
@@ -1320,7 +1325,7 @@ class S3CRUDHandler(S3MethodHandler):
     # -------------------------------------------------------------------------
     def ssp_represent_field(self, field, row, col, linkto=None):
 
-        if col == "id":
+        if col == "id" and linkto:
             id = str(row[col])
             # Remove SSPag variables, but keep "next":
             next = self.request.vars.next

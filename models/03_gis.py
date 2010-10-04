@@ -644,7 +644,17 @@ def gis_location_onvalidation(form):
 
 s3xrc.model.configure(table,
                       onvalidation=gis_location_onvalidation,
-                      onaccept=gis_location_onaccept)
+                      onaccept=gis_location_onaccept,
+                      list_fields = [
+                        "id",
+                        "name",
+                        "name_dummy",
+                        "level",
+                        "parent",
+                        "gis_feature_type",
+                        "lat",
+                        "lon"
+                      ])
 
 # -----------------------------------------------------------------------------
 def s3_gis_location_simple(r, **attr):

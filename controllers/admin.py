@@ -306,8 +306,8 @@ def user_approve(form):
 @auth.shn_requires_membership(1)
 def usergroup():
     """
-    User update form with groups
-    - NB This is currently unused & has no custom view
+        User update form with groups
+        - NB This is currently unused & has no custom view
     """
     user = request.vars.user
 
@@ -406,7 +406,6 @@ def group():
 
     return shn_rest_controller(module, resource, main="role")
 
-# Unused as poor UI
 @auth.shn_requires_membership(1)
 def membership():
     "RESTful CRUD controller"
@@ -439,7 +438,9 @@ def membership():
 
 @auth.shn_requires_membership(1)
 def users():
-    "List/amend which users are in a Group"
+    """
+        List/amend which users are in a Group
+    """
 
     try:
         group = int(request.args(0))
@@ -501,7 +502,9 @@ def users():
 
 @auth.shn_requires_membership(1)
 def group_remove_users():
-    "Remove users from a group"
+    """
+        Remove users from a group
+    """
     if len(request.args) == 0:
         session.error = T("Need to specify a group!")
         redirect(URL(r=request, f="group"))
@@ -518,7 +521,9 @@ def group_remove_users():
 
 @auth.shn_requires_membership(1)
 def groups():
-    "List/amend which groups a User is in"
+    """
+        List/amend which groups a User is in
+    """
 
     try:
         user = int(request.args(0))
@@ -570,7 +575,7 @@ def groups():
 
 @auth.shn_requires_membership(1)
 def user_remove_groups():
-    "Remove groups from a user"
+    """ Remove groups from a user """
     if len(request.args) == 0:
         session.error = T("Need to specify a user!")
         redirect(URL(r=request, f="user"))
@@ -588,7 +593,9 @@ def user_remove_groups():
 # Import Data
 @auth.shn_requires_membership(1)
 def import_data():
-    "Import data via POST upload to CRUD controller. Old - being replaced by Sync/Importer."
+    """
+        Import data via POST upload to CRUD controller. Old - being replaced by Sync/Importer.
+    """
     title = T("Import Data")
     crud.messages.submit_button = "Upload"
 
@@ -604,7 +611,9 @@ def import_data():
 
 @auth.shn_requires_membership(1)
 def import_csv_data():
-    "Import CSV data via POST upload to Database."
+    """
+        Import CSV data via POST upload to Database.
+    """
     file = request.vars.multifile.file
     try:
         # Assumes that it is a concatenation of tables
@@ -617,13 +626,17 @@ def import_csv_data():
 # Export Data
 @auth.requires_login()
 def export_data():
-    "Export data via CRUD controller. Old - being replaced by Sync."
+    """
+        Export data via CRUD controller. Old - being replaced by Sync.
+    """
     title = T("Export Data")
     return dict(title=title)
 
 @auth.shn_requires_membership(1)
 def export_csv():
-    "Export entire database as CSV. Old - being replaced by Sync."
+    """
+        Export entire database as CSV. Old - being replaced by Sync.
+    """
     import StringIO
     output = StringIO.StringIO()
 
@@ -824,10 +837,11 @@ def get_matchable_fields(module, resource):
 
 # Functional Testing
 def handleResults():
-    """Process the POST data returned from Selenium TestRunner.
-    The data is written out to 2 files.  The overall results are written to
-    date-time-browserName-metadata.txt as a list of key: value, one per line.  The
-    suiteTable and testTables are written to date-time-browserName-results.html.
+    """
+        Process the POST data returned from Selenium TestRunner.
+        The data is written out to 2 files.  The overall results are written to
+        date-time-browserName-metadata.txt as a list of key: value, one per line.  The
+        suiteTable and testTables are written to date-time-browserName-results.html.
     """
 
     if not request.vars.result:

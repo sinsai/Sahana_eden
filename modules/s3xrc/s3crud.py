@@ -746,10 +746,15 @@ class S3CRUDHandler(S3MethodHandler):
 
     def respond(self, r, **attr):
 
+        settings = self.manager.s3.crud
+        if settings:
+            self.formstyle = settings.formstyle
+        else:
+            self.formstyle = "table3cols"
+
         self.INTERACTIVE_FORMATS = ("html", "popup", "iframe")
 
         # Page elements configuration
-        self.formstyle = "table3cols"
         self.download_url = None
 
         vars = self.request.get_vars

@@ -65,7 +65,7 @@ def hospital():
             # Add comments
             table.gov_uuid.comment = DIV(DIV(_class="tooltip",
                 _title=T("Government UID") + "|" + T("The Unique Identifier (UUID) as assigned to this facility by the government.")))
-            table.name.comment = SPAN("*", _class="req")
+            #table.name.comment = SPAN("*", _class="req")
             table.total_beds.comment = DIV(DIV(_class="tooltip",
                 _title=T("Total Beds") + "|" + T("Total number of beds in this hospital. Automatically updated from daily reports.")))
             table.available_beds.comment = DIV(DIV(_class="tooltip",

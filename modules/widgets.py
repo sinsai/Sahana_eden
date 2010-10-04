@@ -10,8 +10,7 @@
 from gluon.sqlhtml import *
 from s3utils import *
 
-# Custom widgets
-# shnCheckboxesWidget --------------------------------------------------------
+# -----------------------------------------------------------------------------
 class S3CheckboxesWidget(OptionsWidget):
     """
     @author: Michael Howden (michael@aidiq.com)
@@ -149,6 +148,7 @@ class S3CheckboxesWidget(OptionsWidget):
         else:
             return None
 
+# -----------------------------------------------------------------------------
 class JSON(INPUT):
     """
     @author: Michael Howden (michael@aidiq.com)

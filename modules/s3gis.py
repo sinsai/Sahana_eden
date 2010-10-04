@@ -2734,7 +2734,7 @@ OpenLayers.Util.extend( selectPdfControl, {
                     id,
                     centerPoint,
                     new OpenLayers.Size(200, 200),
-                    "Loading...<img src='" + ajax_loader + "' border=0>",
+                    "Loading...<img src='""" + URL(r=request, c="static", f="img", args="ajax-loader.gif") + """' border=0>",
                     null,
                     true,
                     onPopupClose
@@ -3420,7 +3420,6 @@ OpenLayers.Util.extend( selectPdfControl, {
     var wmsBrowser, printProvider;
     var allLayers = new Array();
     OpenLayers.ImgPath = '/""" + request.application + """/static/img/gis/openlayers/';
-    var ajax_loader = '""" + URL(r=request, c="static", f="img") + """/ajax-loader.gif';
     // avoid pink tiles
     OpenLayers.IMAGE_RELOAD_ATTEMPTS = 3;
     OpenLayers.Util.onImageLoadErrorColor = "transparent";

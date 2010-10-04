@@ -93,14 +93,16 @@ class S3ResourceController(object):
     )
 
     # -------------------------------------------------------------------------
-    def __init__(self, db,
+    def __init__(self,
+                 #db,
+                 environment,
                  domain=None,
                  base_url=None,
-                 cache=None,
-                 auth=None,
-                 audit=None,
+                 #cache=None,
+                 #auth=None,
+                 #audit=None,
                  rpp=None,
-                 gis=None,
+                 #gis=None,
                  messages=None,
                  debug=False,
                  **attr):
@@ -117,11 +119,13 @@ class S3ResourceController(object):
 
         """
 
-        assert db is not None, "Database must not be None."
+        #assert db is not None, "Database must not be None."
+
+        environment = Storage(environment)
 
         # Settings
-        self.db = db
-        self.cache = cache
+        self.db = environment.db
+        self.cache = environment.cache
 
         self.domain = domain
         self.base_url = base_url
@@ -137,22 +141,23 @@ class S3ResourceController(object):
         self.debug = debug
 
         # Toolkits
-        self.auth = auth    # Auth
-        self.gis = gis      # GIS
+        self.auth = environment.auth    # Auth
+        self.gis = environment.gis      # GIS
 
         self.model = S3ResourceModel(self.db)
         self.xml = S3XML(self.db,
                          domain=domain,
                          base_url=base_url,
                          gis=self.gis,
-                         cache=cache)
+                         cache=self.cache)
 
         # Hooks
-        self.audit = audit              # Audit
-        self.messages = None            # Messages Finder
-        self.tree_resolve = None        # Tree Resolver
-        self.sync_resolve = None        # Sync Resolver
-        self.sync_log = None            # Sync Logger
+        self.s3 = environment.s3
+        self.audit = environment.s3_audit   # Audit
+        self.messages = None                # Messages Finder
+        self.tree_resolve = None            # Tree Resolver
+        self.sync_resolve = None            # Sync Resolver
+        self.sync_log = None                # Sync Logger
 
         # Import/Export formats
         attr = Storage(attr)
@@ -178,7 +183,7 @@ class S3ResourceController(object):
 
 
     # -------------------------------------------------------------------------
-    def invoke_hook(self, hook, *args, **vars):
+    def callback(self, hook, *args, **vars):
 
         """ Invoke a hook or a list of hooks """
 
@@ -837,7 +842,7 @@ class S3ResourceController(object):
         if self.tree_resolve:
             if not isinstance(tree, etree._ElementTree):
                 tree = etree.ElementTree(tree)
-            self.invoke_hook(self.tree_resolve, tree)
+            self.callback(self.tree_resolve, tree)
 
         permit = self.auth.shn_has_permission
         audit = self.audit
@@ -1257,7 +1262,7 @@ class S3Vector(object):
 
                 # Validate
                 if self.onvalidation:
-                    self.__manager.invoke_hook(self.onvalidation, form, name=self.tablename)
+                    self.__manager.callback(self.onvalidation, form, name=self.tablename)
                 if form.errors:
                     #print >> sys.stderr, form.errors
                     if self.element:
@@ -1365,7 +1370,7 @@ class S3Vector(object):
                         self.audit(self.method, self.prefix, self.name,
                                    form=form, record=self.id, representation="xml")
                     if self.onaccept:
-                        self.__manager.invoke_hook(self.onaccept, form, name=self.tablename)
+                        self.__manager.callback(self.onaccept, form, name=self.tablename)
 
         # Load record if components pending
         if self.id and self.components and not skip_components:

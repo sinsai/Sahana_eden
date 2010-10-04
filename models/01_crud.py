@@ -60,13 +60,15 @@ PRETTY_PRINT = True
 # Resource Manager
 _s3xrc = local_import("s3xrc")
 
-s3xrc = _s3xrc.S3ResourceController(db,
+s3xrc = _s3xrc.S3ResourceController(
+            #db,
+            globals(),
             domain=request.env.server_name,
             base_url="%s/%s" % (deployment_settings.get_base_public_url(),
                                 request.application),
-            cache=cache,
-            auth=auth,
-            gis=gis,
+            #cache=cache,
+            #auth=auth,
+            #gis=gis,
             rpp=ROWSPERPAGE,
             xml_import_formats = shn_xml_import_formats,
             xml_export_formats = shn_xml_export_formats,
@@ -2065,7 +2067,9 @@ def shn_rest_controller(module, resource, **attr):
 
     """
 
-    s3xrc.set_handler("list", shn_list)
+    method_handler = _s3xrc.S3CRUDHandler(db, s3xrc)
+    s3xrc.set_handler("list", method_handler)
+    #s3xrc.set_handler("list", shn_list)
     s3xrc.set_handler("read", shn_read)
     s3xrc.set_handler("create", shn_create)
     s3xrc.set_handler("update", shn_update)

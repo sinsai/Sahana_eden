@@ -45,6 +45,7 @@ from gluon.html import URL
 from gluon.http import HTTP, redirect
 
 from lxml import etree
+from s3crud import S3CRUDHandler
 
 # *****************************************************************************
 class S3Resource(object):
@@ -115,6 +116,7 @@ class S3Resource(object):
 
         self.__files = Storage()
 
+        self.crud = S3CRUDHandler(self.__db, self.__manager)
         self.__handler = Storage(options=self.__get_options,
                                  fields=self.__get_fields,
                                  export_tree=self.__get_tree,

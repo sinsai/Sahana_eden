@@ -367,6 +367,7 @@ table = db.define_table(tablename,
                         marker_id(),
                         Field("gps_marker"),
                         Field("resource"),  # Used for Web Service Feeds
+                        Field("category"),  # Used for Web Service Feeds & also interactive maps' get_marker()
                         migrate=migrate,
                         *(s3_timestamp() + s3_uid() + s3_deletion_status()))
 
@@ -379,6 +380,7 @@ table.name.label = T("Name")
 table.gps_marker.label = T("GPS Marker")
 table.description.label = T("Description")
 table.resource.label = T("Resource")
+table.category.label = T("Category")
 
 # Reusable field to include in other table definitions
 ADD_FEATURE_CLASS = T("Add Feature Class")
@@ -483,8 +485,8 @@ table.lon.comment = A(CONVERSION_TOOL,
                       _title=T("You can use the Conversion Tool to convert from either GPS coordinates or Degrees/Minutes/Seconds."),
                       _id="btnConvert")
 
-s3xrc.model.configure(table,
-    list_fields=["id", "name", "level", "parent", "lat", "lon"])
+#s3xrc.model.configure(table,
+    #list_fields=["id", "name", "level", "parent", "lat", "lon"])
 
 # Reusable field to include in other table definitions
 ADD_LOCATION = T("Add Location")
@@ -1018,7 +1020,7 @@ for layertype in gis_layer_types:
                      Field("version", label=T("Version"), default="1.1.0", requires = IS_IN_SET(["1.0.0", "1.1.0"], zero=None)),
                      Field("featureNS", requires=IS_NOT_EMPTY(), label=T("Feature Namespace"),
                            comment=DIV(SPAN("*", _class="req"), DIV( _class="tooltip", _title="Feature Namespace" + "|" + T("In GeoServer, this is the Workspace Name. Within the WFS getCapabilities, this is the FeatureType Name part before the colon(:).")))),
-                     Field("featureType", requires=IS_NOT_EMPTY(), label=T("Feature Type"), comment=DIV(SPAN("*", _class="req"), DIV( _class="tooltip", _title="Feature Type" + "|" + T("In GeoServer, this is the Layer Name. Within the WFS getCapabilities, this is the FeatureType Name part after the colon(:).")))),
+                     Field("featureType", requires=IS_NOT_EMPTY(), label=T("Feature Type"), comment=DIV(SPAN("*", _class="req"), DIV( _class="tooltip", _title=T("Feature Type") + "|" + T("In GeoServer, this is the Layer Name. Within the WFS getCapabilities, this is the FeatureType Name part after the colon(:).")))),
                      projection_id(),
                      #Field("editable", "boolean", default=False, label=T("Editable?")),
                     )
@@ -1031,10 +1033,11 @@ for layertype in gis_layer_types:
                      Field("url", label=T("Location"), requires = IS_NOT_EMPTY()),
                      Field("version", label=T("Version"), default="1.1.1", requires = IS_IN_SET(["1.1.1", "1.3.0"], zero=None)),
                      Field("base", "boolean", default=True, label=T("Base Layer?")),
+                     Field("transparent", "boolean", default=False, label=T("Transparent?")),
                      Field("map", label=T("Map")),
                      Field("layers", label=T("Layers"), requires = IS_NOT_EMPTY()),
                      Field("format", label=T("Format"), requires = IS_NULL_OR(IS_IN_SET(gis_layer_wms_img_formats))),
-                     Field("transparent", "boolean", default=False, label=T("Transparent?")),
+                     Field("buffer", "integer", label=T("Buffer"), default=0, requires=IS_INT_IN_RANGE(0, 10), comment=DIV( _class="tooltip", _title=T("Buffer") + "|" + T("The number of tiles around the visible map to download. Zero means that the 1st page loads faster, higher numbers mean subsequent panning is faster."))),
                      #Field("queryable", "boolean", default=False, label=T("Queryable?")),
                      #Field("legend_url", label=T("legend URL")),
                      #Field("legend_format", label=T("Legend Format"), requires = IS_NULL_OR(IS_IN_SET(gis_layer_wms_img_formats))),

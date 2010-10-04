@@ -540,8 +540,8 @@ table = db.define_table(tablename,
                               label = T("ID type"),
                               represent = lambda opt: \
                                           pr_id_type_opts.get(opt, UNKNOWN_OPT)),
-                        Field("description"),
                         Field("value"),
+                        Field("description"),
                         Field("country_code", length=4),
                         Field("ia_name"), # Name of issuing authority
                         #Field("ia_subdivision"), # Name of issuing authority subdivision
@@ -552,7 +552,7 @@ table = db.define_table(tablename,
 
 table.uuid.requires = IS_NOT_IN_DB(db, "%s.uuid" % tablename)
 table.person_id.label = T("Person")
-table.value.requires = IS_NOT_EMPTY()
+table.value.requires = [IS_NOT_EMPTY(), IS_NOT_IN_DB(db, "%s.value" % tablename)]
 table.value.comment = SPAN("*", _class="req")
 table.ia_name.label = T("Issuing Authority")
 

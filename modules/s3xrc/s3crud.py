@@ -884,7 +884,7 @@ class S3CRUDHandler(S3MethodHandler):
                 limit = 1
 
             # Store the query for SSPag
-            self.session.s3.filter = self.resource.get_query()
+            self.session.s3.filter = self.request.get_vars
 
             items = self._select(self.resource,
                                  fields=fields,
@@ -902,20 +902,18 @@ class S3CRUDHandler(S3MethodHandler):
 
         elif representation == "aadata":
 
-            # Get the query for SSPag
+            # Get the master query for SSPag
             if self.session.s3.filter is not None:
-                self.resource.build_query(filter=self.session.s3.filter)
+                self.resource.build_query(id=self.record, url_vars = self.session.s3.filter)
 
-            totalrows = self.resource.count()
+            displayrows = totalrows = self.resource.count()
 
-            # SSPag search filter
+            # SSPag dynamic filter?
             if vars.sSearch:
                 squery = self.ssp_filter(table, fields)
                 if squery is not None:
                     self.resource.add_filter(squery)
-
-            # This is correct, but extremely slow:
-            #displayrows = self.resource.count()
+                    displayrows = self.resource.count()
 
             # SSPag sorting
             if vars.iSortingCols and orderby is None:
@@ -933,8 +931,7 @@ class S3CRUDHandler(S3MethodHandler):
 
             result = dict(sEcho = sEcho,
                           iTotalRecords = totalrows,
-                          #iTotalDisplayRecords = displayrows,
-                          iTotalDisplayRecords = len(items),
+                          iTotalDisplayRecords = displayrows,
                           aaData = items)
 
             return json(result)

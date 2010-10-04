@@ -437,6 +437,11 @@ class S3Resource(object):
 
             self.__query = master_query
 
+            # Deletion status
+            if deletion_status in self.table.fields:
+                remaining = (self.table[deletion_status] == False)
+                self.__query = remaining & self.__query
+
             # Component Query
             if self.parent:
 
@@ -452,10 +457,6 @@ class S3Resource(object):
                     join = self.parent.table[pkey] == self.table[fkey]
                     if str(self.__query).find(str(join)) == -1:
                         self.__query = self.__query & (join)
-
-                if deletion_status in self.table.fields:
-                    remaining = (self.table[deletion_status] == False)
-                    self.__query = self.__query & remaining
 
             # Primary Resource Query
             else:
@@ -636,11 +637,6 @@ class S3Resource(object):
                 # Filter
                 if filter:
                     self.__query = self.__query & filter
-
-                # Deletion status
-                if deletion_status in self.table.fields:
-                    remaining = (self.table[deletion_status] == False)
-                    self.__query = self.__query & remaining
 
         else:
             raise NotImplementedError

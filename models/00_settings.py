@@ -180,9 +180,9 @@ def s3_formstyle(id, label, widget, comment):
         # Strip the '__row'
         field = field[:len(field) - 5]
         tablename = "%s_%s" % (module, resource)
-        if not tablename == "submit_record_":
+        try:
             requires = str(db[tablename][field].requires)
-        else:
+        except:
             requires = ""
 
     # Label on the 1st row

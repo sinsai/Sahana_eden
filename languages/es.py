@@ -2345,7 +2345,7 @@
 'No ': 'No ',
 'No Activities Found': 'No Activities Found',
 'No Addresses currently registered': 'No hay direcciones registradas en la actualidad',
-'No Aid Requests currently registered': 'No Auxilio Requerimientos currently registered',
+'No Aid Requests have been made yet': 'No Auxilio Requerimientos currently registered',
 'No Assessments currently registered': 'No Evaluaciones currently registered',
 'No Budgets currently registered': 'No Presupuestos actualmente registrados',
 'No Bundles currently registered': 'N Paquetes actualmente registrados',

@@ -43,7 +43,7 @@ __all__ = ["S3Audit",
 import datetime, re, os
 
 from gluon.storage import Storage
-from gluon.html import URL, TABLE, TR, TH, TD, THEAD, TBODY, A
+from gluon.html import URL
 from gluon.http import HTTP, redirect
 from gluon.serializers import json
 from gluon.sql import Field, Row
@@ -168,7 +168,7 @@ class S3Exporter(object):
 
 
     # -------------------------------------------------------------------------
-    def csv(resource, filter=None, request=None, response=None):
+    def csv(self, resource, filter=None, request=None, response=None):
 
         """ Export record(s) as CSV """
 
@@ -191,11 +191,17 @@ class S3Exporter(object):
 
 
     # -------------------------------------------------------------------------
-    def pdf(resource, filter=None, request=None, response=None, list_fields=None):
+    def pdf(self, resource,
+            #filter=None,
+            request=None,
+            response=None,
+            list_fields=None):
 
         """ Export record(s) as Adobe PDF """
 
         db = self.db
+
+        xml = self.manager.xml
 
         # Import ReportLab
         try:
@@ -203,22 +209,26 @@ class S3Exporter(object):
             from reportlab.lib.pagesizes import A4
             from reportlab.lib.enums import TA_CENTER, TA_RIGHT
         except ImportError:
+            print "REPORTLAB_ERROR"
             #session.error = REPORTLAB_ERROR
-            redirect(URL(r=request))
+            redirect(URL(r=request, f="index", extension=""))
 
         # Import Geraldo
         try:
             from geraldo import Report, ReportBand, Label, ObjectValue, SystemField, landscape, BAND_WIDTH
             from geraldo.generators import PDFGenerator
         except ImportError:
+            print "GERALDO_ERROR"
             #session.error = GERALDO_ERROR
-            redirect(URL(r=request))
+            redirect(URL(r=request, f="index", extension=""))
 
         # Get records
+        query = resource.get_query()
         records = db(query).select(table.ALL)
         if not records:
+            print "NO_RECORDS"
             #session.warning = T("No data in this table - cannot create PDF!")
-            redirect(URL(r=request))
+            redirect(URL(r=request, f="index", extension=""))
 
         # Create output stream
         import StringIO
@@ -226,12 +236,13 @@ class S3Exporter(object):
 
         # Find fields
         fields = None
+        table = resource.table
         if list_fields:
             fields = [table[f] for f in list_fields if table[f].readable]
-        if fields and len(fields) == 0:
-            fields.append(table.id)
         if not fields:
             fields = [table[f] for f in table.fields if table[f].readable]
+        if not fields:
+            fields = [table.id]
 
         # Export
         _elements = [ SystemField(
@@ -265,22 +276,28 @@ class S3Exporter(object):
                         text = " ".join(text)
                 except etree.XMLSyntaxError:
                     pass
-            return s3xrc.xml.xml_encode(text)
+            return xml.xml_encode(text)
 
         for field in fields:
-            _elements.append(Label(text=s3xrc.xml.xml_encode(str(field.label))[:16], top=0.8*cm, left=LEFTMARGIN*cm))
-            tab, col = str(field).split(".")
-            detailElements.append(ObjectValue(
-                attribute_name = col,
-                left = LEFTMARGIN * cm,
-                width = COLWIDTH * cm,
-                # Ensure that col is substituted when lambda defined not evaluated by using the default value
-                get_value = lambda instance,
-                column = col: _represent(column, instance[column])
-                ))
+            # Append label
+            label = Label(text=xml.xml_encode(str(field.label))[:16],
+                          top=0.8*cm, left=LEFTMARGIN*cm)
+            _elements.append(label)
+
+            # Append value
+            value = ObjectValue(attribute_name = field.name,
+                                left = LEFTMARGIN * cm,
+                                width = COLWIDTH * cm,
+                                get_value = lambda instance, column = col: \
+                                            _represent(column, instance[column]))
+            detailElements.append(value)
+
+            # Increase left margin
             LEFTMARGIN += COLWIDTH
 
-        mod, res = str(table).split("_", 1)
+        #mod, res = str(table).split("_", 1)
+        mod = resource.prefix
+        res = resource.name
         try:
             mod_nice = deployment_settings.modules[mod]["name_nice"]
         except:
@@ -323,16 +340,21 @@ class S3Exporter(object):
 
 
     # -------------------------------------------------------------------------
-    def xls(resource, filter=None, request=None, response=None, list_fields=None):
+    def xls(self, resource,
+            #filter=None,
+            request=None,
+            response=None,
+            list_fields=None):
 
         """ Export record(s) as Microsoft XLS """
 
         db = self.db
+
         table = resource.table
         query = resource.get_query()
 
-        if filter:
-            query = query & filter
+        #if filter:
+            #query = query & filter
 
         try:
             import xlwt
@@ -381,7 +403,7 @@ class S3Exporter(object):
                     style.num_format_str = "h:mm:ss"
 
                 # Check for a custom.represent (e.g. for ref fields)
-                represent = shn_field_represent(field, item, col)
+                represent = resource._represent(item, field.name)
                 # Filter out markup from text
                 if isinstance(represent, basestring) and "<" in represent:
                     try:
@@ -421,24 +443,18 @@ class S3Importer(object):
 
 
     # -------------------------------------------------------------------------
-    def csv(file, table=None):
+    def csv(self, file):
 
         """ Import CSV file into database """
 
-        if table:
-            table.import_from_csv_file(file)
+        db = self.db
 
-        else:
-            # This is the preferred method as it updates reference fields
-
-            db = self.db
-
-            db.import_from_csv_file(file)
-            db.commit()
+        db.import_from_csv_file(file)
+        db.commit()
 
 
     # -------------------------------------------------------------------------
-    def url(r):
+    def url(self, r):
 
         """ Import data from URL query
 
@@ -523,118 +539,6 @@ class S3Importer(object):
 
 
 # *****************************************************************************
-class S3SQLTable(SQLTABLE):
-
-    """ Custom version of gluon.sqlhtml.SQLTABLE """
-
-    def __init__(self, sqlrows,
-                 linkto=None,
-                 upload=None,
-                 orderby=None,
-                 headers={},
-                 truncate=16,
-                 columns=None,
-                 th_link='',
-                 **attributes):
-
-        table_field = re.compile('[\w_]+\.[\w_]+')
-
-        TABLE.__init__(self, **attributes)
-        self.components = []
-        self.attributes = attributes
-        self.sqlrows = sqlrows
-        (components, row) = (self.components, [])
-        if not columns:
-            columns = sqlrows.colnames
-        if headers=="fieldname:capitalize":
-            headers = {}
-            for c in columns:
-                headers[c] = " ".join([w.capitalize() for w in c.split(".")[-1].split("_")])
-
-        for c in columns:
-            if orderby:
-                row.append(TH(A(headers.get(c, c),
-                                _href=th_link+"?orderby=" + c)))
-            else:
-                row.append(TH(headers.get(c, c)))
-
-        components.append(THEAD(TR(*row)))
-        tbody = []
-        for (rc, record) in enumerate(sqlrows):
-            row = []
-            if rc % 2 == 0:
-                _class = "even"
-            else:
-                _class = "odd"
-            for colname in columns:
-                if not table_field.match(colname):
-                    r = record._extra[colname]
-                    row.append(TD(r))
-                    continue
-                (tablename, fieldname) = colname.split(".")
-                field = sqlrows.db[tablename][fieldname]
-                if tablename in record \
-                        and isinstance(record,Row) \
-                        and isinstance(record[tablename],Row):
-                    r = record[tablename][fieldname]
-                elif fieldname in record:
-                    r = record[fieldname]
-                else:
-                    raise SyntaxError, "something wrong in Rows object"
-                r_old = r
-                if field.represent:
-                    r = field.represent(r)
-                elif field.type == "blob" and r:
-                    r = "DATA"
-                elif field.type == "upload":
-                    if upload and r:
-                        r = A("file", _href="%s/%s" % (upload, r))
-                    elif r:
-                        r = "file"
-                    else:
-                        r = ""
-                elif field.type in ["string","text"]:
-                    r = str(field.formatter(r))
-                    ur = unicode(r, "utf8")
-                    if truncate!=None and len(ur) > truncate:
-                        r = ur[:truncate - 3].encode("utf8") + "..."
-                elif linkto and field.type == "id":
-                    #try:
-                        #href = linkto(r, "table", tablename)
-                    #except TypeError:
-                        #href = "%s/%s/%s" % (linkto, tablename, r_old)
-                    #r = A(r, _href=href)
-                    try:
-                        href = linkto(r)
-                    except TypeError:
-                        href = "%s/%s" % (linkto, r)
-                    r = A(r, _href=href)
-                #elif linkto and str(field.type).startswith("reference"):
-                    #ref = field.type[10:]
-                    #try:
-                        #href = linkto(r, "reference", ref)
-                    #except TypeError:
-                        #href = "%s/%s/%s" % (linkto, ref, r_old)
-                        #if ref.find(".") >= 0:
-                            #tref,fref = ref.split(".")
-                            #if hasattr(sqlrows.db[tref],"_primarykey"):
-                                #href = "%s/%s?%s" % (linkto, tref, urllib.urlencode({fref:ur}))
-                    #r = A(r, _href=href)
-                elif linkto and hasattr(field._table,"_primarykey") and fieldname in field._table._primarykey:
-                    # have to test this with multi-key tables
-                    key = urllib.urlencode(dict( [ \
-                                ((tablename in record \
-                                      and isinstance(record, Row) \
-                                      and isinstance(record[tablename], Row)) and
-                                 (k, record[tablename][k])) or (k, record[k]) \
-                                    for k in field._table._primarykey ] ))
-                    r = A(r, _href="%s/%s?%s" % (linkto, tablename, key))
-                row.append(TD(r))
-            tbody.append(TR(_class=_class, *row))
-        components.append(TBODY(*tbody))
-
-
-# *****************************************************************************
 class S3MethodHandler(object):
 
     """ REST Method Handler Base Class """
@@ -709,34 +613,11 @@ class S3MethodHandler(object):
         """ Get a list of all readable fields in a table """
 
         if subset:
-            return [table[f] for f in subset if f in table.fields and table[f].readable]
+            return [table[f] for f in subset
+                    if f in table.fields and table[f].readable]
         else:
-            return [table[f] for f in table.fields if table[f].readable]
-
-
-    # -------------------------------------------------------------------------
-    def represent_field(self, field, row, col):
-
-        """ Get the representation for a field value """
-
-        cache = self.manager.cache
-
-        val = row[col]
-        try:
-            represent = str(cache.ram("%s_repr_%s" % (field, val),
-                            lambda: field.represent(val),
-                            time_expire=5))
-        except:
-            if val is None:
-                represent = "None"
-            else:
-                represent = val
-                if col == "comments":
-                    ur = unicode(represent, "utf8")
-                    if len(ur) > 48:
-                        represent = ur[:45].encode("utf8") + "..."
-
-        return represent
+            return [table[f] for f in table.fields
+                    if table[f].readable]
 
 
 # *****************************************************************************
@@ -752,6 +633,7 @@ class S3CRUDHandler(S3MethodHandler):
         else:
             self.formstyle = "table3cols"
 
+        self.representation = r.representation.lower()
         self.INTERACTIVE_FORMATS = ("html", "popup", "iframe")
 
         # Page elements configuration
@@ -809,12 +691,14 @@ class S3CRUDHandler(S3MethodHandler):
 
         return dict()
 
+
     # -------------------------------------------------------------------------
     def read(self, r, **attr):
 
         """ Read a single record. """
 
         return dict()
+
 
     # -------------------------------------------------------------------------
     def update(self, r, **attr):
@@ -823,6 +707,7 @@ class S3CRUDHandler(S3MethodHandler):
 
         return dict()
 
+
     # -------------------------------------------------------------------------
     def delete(self, r, **attr):
 
@@ -830,8 +715,11 @@ class S3CRUDHandler(S3MethodHandler):
 
         return dict()
 
+
     # -------------------------------------------------------------------------
     def select(self, r, **attr):
+
+        """ Get a list view of the requested resource """
 
         # Initialize output
         output = dict()
@@ -839,7 +727,7 @@ class S3CRUDHandler(S3MethodHandler):
         model = self.manager.model
         representation = r.representation.lower()
 
-        # Table specific parameters
+        # Table-specific parameters
         _attr = r.component and r.component.attr or attr
         orderby = _attr.get("orderby", None)
         sortby = _attr.get("sortby", [[1,'asc']])
@@ -891,16 +779,18 @@ class S3CRUDHandler(S3MethodHandler):
             # Store the query for SSPag
             self.session.s3.filter = self.request.get_vars
 
-            items = self._select(self.resource,
-                                 fields=fields,
-                                 start=start,
-                                 limit=limit,
-                                 orderby=orderby,
-                                 linkto=linkto,
-                                 as_list=False)
+            items = self.resource.select(fields=fields,
+                                         start=start,
+                                         limit=limit,
+                                         orderby=orderby,
+                                         linkto=linkto,
+                                         download_url=self.download_url)
 
             if not items:
-                items = "empty set"
+                if self.db(self.table.id > 0).count():
+                    items = self.crud_string(self.tablename, "msg_no_match")
+                else:
+                    items = self.crud_string(self.tablename, "msg_list_empty")
 
             self.response.view = self._view(r, "list.html")
             output.update(items=items)
@@ -927,13 +817,13 @@ class S3CRUDHandler(S3MethodHandler):
 
             sEcho = int(vars.sEcho or 0)
 
-            items = self._select(self.resource,
-                                 fields=fields,
-                                 start=start,
-                                 limit=limit,
-                                 orderby=orderby,
-                                 linkto=linkto,
-                                 ssp=True)
+            items = self.resource.select(fields=fields,
+                                         start=start,
+                                         limit=limit,
+                                         orderby=orderby,
+                                         linkto=linkto,
+                                         download_url=self.download_url,
+                                         as_page=True) or []
 
             result = dict(sEcho = sEcho,
                           iTotalRecords = totalrows,
@@ -944,7 +834,7 @@ class S3CRUDHandler(S3MethodHandler):
 
 
         elif representation == "plain":
-            items = self._select(self.resource, fields, as_list=True)
+            items = self.resource.select(fields, as_list=True)
             self.response.view = "plain.html"
             return dict(item=items)
 
@@ -969,185 +859,9 @@ class S3CRUDHandler(S3MethodHandler):
                                 list_fields=list_fields)
 
         else:
-            # Unsupported format
-            pass
+            raise HTTP(501, body=self.manager.ERROR.BAD_FORMAT)
 
         return output
-
-    # -------------------------------------------------------------------------
-    def _create(self, resource):
-
-        """ Provide and process a create form for a resource """
-
-        # Get onvalidation callback
-        onvalidation = model.get_config(table, "create_onvalidation")
-        if onvalidation is None:
-            onvalidation = model.get_config(table, "onvalidation") or []
-
-        # Get onaccept callback
-        onaccept = model.get_config(table, "create_onaccept")
-        if onaccept is None:
-            onaccept =  model.get_config(table, "onaccept") or []
-
-        # Get CRUD message
-        #if message == DEFAULT:
-            #message = self.messages.record_created
-        message = "Record created"
-
-        return self.update(resource, None,
-                           onvalidation=onvalidation,
-                           onaccept=onaccept,
-                           message=message)
-
-
-    # -------------------------------------------------------------------------
-    def _read(self, resource, id):
-
-        """ Provide a read view of a record
-
-            @param resource: the resource
-            @param id: the record id
-
-        """
-
-        table = resource.table
-
-        form = SQLFORM(table, id,
-                       readonly=True,
-                       comments=False,
-                       upload=self.download_url,
-                       showid=False,
-                       formstyle=self.formstyle)
-
-        return form
-
-    # -------------------------------------------------------------------------
-    def _update(self, resource, id,
-                onvalidation=None,
-                onaccept=None,
-                message=None):
-
-        table = resource.table
-        model = self.manager.model
-
-        if onvalidation is None:
-            onvalidation = model.get_config(table, "update_onvalidation")
-            if onvalidation is None:
-                onvalidation = model.get_config(table, "onvalidation")
-
-        if onaccept is None:
-            onaccept = model.get_config(table, "update_onaccept")
-            if onaccept is None:
-                onaccept = model.get_config(table, "onaccept")
-
-        if not onvalidation:
-            onvalidation = None
-
-        # Get environment
-        request = self.request
-        response = self.response
-        session = self.session
-
-        # Get the message
-        #if message == DEFAULT:
-            #message = self.messages.record_updated
-        if message is None:
-            message = "Record updated"
-
-        # Get the form
-        form = SQLFORM(table, record,
-            #hidden=dict(_next=next),
-
-            showid=False,
-
-            submit_button=self.messages.submit_button,
-            delete_label=self.messages.delete_label,
-
-            deletable=False,
-
-            upload=self.download_url,
-            formstyle=self.formstyle)
-
-        formname = "%s/%s" % (table._tablename, form.record_id)
-
-        keepvalues = self.settings.keepvalues
-        if request.vars.delete_this_record:
-            keepvalues = False
-
-        # Process the form
-        if form.accepts(request.post_vars,
-                        session,
-                        formname=formname,
-                        onvalidation=onvalidation,
-                        keepvalues=keepvalues,
-                        hideerror=False):
-
-            # Update message
-            response.flash = message
-
-            # Audit
-            # not implemented yet
-
-            # Execute onaccept
-            if onaccept:
-                self.callback(onaccept, form, table._tablename)
-
-        return form
-
-
-    # -------------------------------------------------------------------------
-    #def _delete(self, table, record):
-
-    # -------------------------------------------------------------------------
-    def _select(self, resource,
-                fields=None,
-                start=0,
-                limit=None,
-                orderby=None,
-                linkto=None,
-                ssp=False,
-                as_list=False):
-
-        """ Provide an interactive list of records in the resource """
-
-        table = resource.table
-        query = resource.get_query()
-
-        if not fields:
-            fields = [table.id]
-
-        if limit is not None:
-            limitby = (start, start + limit)
-        else:
-            limitby = None
-
-        rows = self.db(query).select(*fields, **dict(orderby=orderby,
-                                                     limitby=limitby))
-
-        if not rows:
-            return None
-
-        if ssp:
-
-            items = [[self.ssp_represent_field(f, row, f.name, linkto=linkto)
-                    for f in fields]
-                    for row in rows]
-
-        elif as_list:
-
-            items = rows.as_list()
-
-        else:
-
-            headers = dict(map(lambda f: (str(f), f.label), fields))
-            items= S3SQLTable(rows,
-                              headers=headers,
-                              linkto=linkto,
-                              upload=self.download_url,
-                              _id="list", _class="display")
-
-        return items
-
 
     # -------------------------------------------------------------------------
     def _view(self, r, default, format=None):
@@ -1185,10 +899,24 @@ class S3CRUDHandler(S3MethodHandler):
             else:
                 return default
 
+
+    # -------------------------------------------------------------------------
+    def crud_string(self, tablename, name):
+
+        """ Get a CRUD info string for interactive pages """
+
+        s3 = self.manager.s3
+
+        crud_strings = s3.crud_strings.get(tablename, s3.crud_strings)
+        not_found = s3.crud_strings.get(name, None)
+
+        return crud_strings.get(name, not_found)
+
+
     # -------------------------------------------------------------------------
     def _linkto(self, r, authorised=None, update=None, native=False):
 
-        """ Linker for the record ID column in lists """
+        """ Linker for the record ID column in list views """
 
         c = None
         f = None
@@ -1247,18 +975,9 @@ class S3CRUDHandler(S3MethodHandler):
 
 
     # -------------------------------------------------------------------------
-    def crud_string(self, tablename, name):
-
-        s3 = self.manager.s3
-
-        crud_strings = s3.crud_strings.get(tablename, s3.crud_strings)
-        not_found = s3.crud_strings.get(name, None)
-
-        return crud_strings.get(name, not_found)
-
-
-    # -------------------------------------------------------------------------
     def ssp_filter(self, table, fields):
+
+        """ Convert the SSPag GET vars into a filter query """
 
         vars = self.request.get_vars
 
@@ -1307,6 +1026,8 @@ class S3CRUDHandler(S3MethodHandler):
     # -------------------------------------------------------------------------
     def ssp_orderby(self, table, fields):
 
+        """ Convert the SSPag GET vars into a sorting query """
+
         vars = self.request.get_vars
 
         tablename = table._tablename
@@ -1326,25 +1047,6 @@ class S3CRUDHandler(S3MethodHandler):
         return ", ".join(["%s%s" %
                         (colname(i), direction(i))
                         for i in xrange(iSortingCols)])
-
-    # -------------------------------------------------------------------------
-    def ssp_represent_field(self, field, row, col, linkto=None):
-
-        if col == "id" and linkto:
-            id = str(row[col])
-            # Remove SSPag variables, but keep "next":
-            next = self.request.vars.next
-            self.request.vars = Storage(next=next)
-            # use linkto to produce ID column links:
-            try:
-                href = linkto(id)
-            except TypeError:
-                href = linkto % id
-            href = str(href).replace(".aadata", "")
-            href = str(href).replace(".aaData", "")
-            return A(self.represent_field(field, row, col), _href=href).xml()
-        else:
-            return self.represent_field(field, row, col)
 
 
 # *****************************************************************************

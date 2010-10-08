@@ -122,6 +122,9 @@ class S3ResourceController(object):
         #assert db is not None, "Database must not be None."
 
         environment = Storage(environment)
+        self.s3 = environment.s3 #: Global settings
+
+        self.T = environment.T #: Global translator object
 
         # Settings
         self.db = environment.db
@@ -152,7 +155,6 @@ class S3ResourceController(object):
                          cache=self.cache)
 
         # Hooks
-        self.s3 = environment.s3
         self.audit = environment.s3_audit   # Audit
         self.messages = None                # Messages Finder
         self.tree_resolve = None            # Tree Resolver

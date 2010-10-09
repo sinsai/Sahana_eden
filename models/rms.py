@@ -7,14 +7,6 @@
 module = "rms"
 if deployment_settings.has_module(module):
 
-    # Settings
-    resource = "setting"
-    table = module + "_" + resource
-    db.define_table(table,
-                    Field("audit_read", "boolean"),
-                    Field("audit_write", "boolean"),
-                    migrate=migrate)
-
     # -------------------------------
     # Load lists/dictionaries for drop down menus
 

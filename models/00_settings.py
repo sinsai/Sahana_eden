@@ -163,21 +163,48 @@ def s3_formstyle(id, label, widget, comment):
         http://uxmovement.com/design-articles/faster-with-top-aligned-labels
     """
 
-    row = TAG['']()
+    row = []
+
+    try:
+        # Resource doesn't include a hyphen
+        module, resource, field = id.split("_", 2)
+        # Strip the '__row'
+        field = field[:len(field) - 5]
+        tablename = "%s_%s" % (module, resource)
+        requires = str(db[tablename][field].requires)
+    except:
+        # Resource does include a hyphen
+        module, resource1, resource2, field = id.split("_", 3)
+        # Recombine the resource
+        resource = "%s_%s" % (resource1, resource2)
+        # Strip the '__row'
+        field = field[:len(field) - 5]
+        tablename = "%s_%s" % (module, resource)
+        try:
+            requires = str(db[tablename][field].requires)
+        except:
+            requires = ""
 
     # Label on the 1st row
-    #row.append(TR(TD(label, _class="w2p_fl", _colspan="2"), _id=id + "1", _class="even"))
-    row.append(TR(TD(label, _class="w2p_fl", _colspan="2"), _id=id + "1"))
+    if "IS_NOT_EMPTY" in requires:
+        row.append(TR(TD(DIV(SPAN("* ", _class="req"), label), _class="w2p_fl", _colspan="2"), _id=id + "1"))
+    else:
+        row.append(TR(TD(label, _class="w2p_fl", _colspan="2"), _id=id + "1"))
 
     # Widget & Comment on the 2nd Row
-    row.append(TR(TD(widget, _class="w2p_fw"), TD(comment, _class="w2p_fc"), _id=id))
+    row.append(TR(widget, TD(comment, _class="w2p_fc"), _id=id))
 
-    return row
+    return tuple(row)
 
-# Enabling this means:
-# (1) Reworking the Location Selector from 3 cols to 2 cols
-# (2) Lookign at all Autocompletes which hide the original __row (need to also hide __row1)
-#crud.settings.formstyle = s3_formstyle
+crud.settings.formstyle = s3_formstyle
+
+########
+# S3CRUD
+########
+
+s3.crud = Storage()
+s3.crud.formstyle = s3_formstyle
+s3.crud.submit_buttom = T("Save")
 
 ##########
 # Messages
@@ -186,7 +213,7 @@ def s3_formstyle(id, label, widget, comment):
 from gluon.storage import Messages
 s3.messages = Messages(T)
 s3.messages.confirmation_email_subject = T("Sahana access granted")
-s3.messages.confirmation_email = T("Welcome to the Sahana Portal at ") + deployment_settings.get_base_public_url() + T(". Thanks for your assistance.")
+s3.messages.confirmation_email = T("Welcome to the Sahana Portal at ") + deployment_settings.get_base_public_url() + ". " + T("Thanks for your assistance") + "."
 
 auth.settings.table_user.language.requires = IS_IN_SET(s3.l10n_languages, zero=None)
 

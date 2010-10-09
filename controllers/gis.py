@@ -498,7 +498,7 @@ def map_service_catalogue():
             else:
                 enabled = INPUT(_type="checkbox", _disabled="disabled")
             item_list.append(TR(TD(A(row.name, _href=URL(r=request, f="layer_feature", args=row.id))), TD(description), TD(enabled), _class=theclass))
-        
+
         table_header = THEAD(TR(TH("Layer"), TH("Description"), TH("Enabled?")))
         items = DIV(TABLE(table_header, TBODY(item_list), _id="table-container"))
 
@@ -532,15 +532,14 @@ def layers_enable():
                         # Disable
                         db(query_inner).update(enabled=False)
                         # Audit
-                        #shn_audit_update_m2m(resource=resource, record=row.id, representation="html")
-                        shn_audit_update_m2m(resource, row.id, "html")
+                        s3_audit("update", module, resource, record=row.id, representation="html")
                 else:
                     # Old state: Disabled
                     if var in request.vars:
                         # Enable
                         db(query_inner).update(enabled=True)
                         # Audit
-                        shn_audit_update_m2m(resource, row.id, "html")
+                        s3_audit("update", module, resource, record=row.id, representation="html")
                     else:
                         # Do nothing
                         pass
@@ -561,15 +560,14 @@ def layers_enable():
                     # Disable
                     db(query_inner).update(enabled=False)
                     # Audit
-                    #shn_audit_update_m2m(resource=resource, record=row.id, representation="html")
-                    shn_audit_update_m2m(resource, row.id, "html")
+                    s3_audit("update", module, resource, record=row.id, representation="html")
             else:
                 # Old state: Disabled
                 if var in request.vars:
                     # Enable
                     db(query_inner).update(enabled=True)
                     # Audit
-                    shn_audit_update_m2m(resource, row.id, "html")
+                    s3_audit("update", module, resource, record=row.id, representation="html")
                 else:
                     # Do nothing
                     pass
@@ -817,7 +815,7 @@ def projection():
     table.maxResolution.comment = SPAN("*", _class="req")
 
     # CRUD Strings
-    ADD_PROJECTION = T("Add Projections")
+    ADD_PROJECTION = T("Add Projection")
     LIST_PROJECTIONS = T("List Projections")
     s3.crud_strings[tablename] = Storage(
         title_create = ADD_PROJECTION,
@@ -1441,7 +1439,7 @@ def display_feature():
 
     # Check user is authorised to access record
     if not shn_has_permission("read", db.gis_location, feature_id):
-        session.error = str(T("No access to this record!"))
+        session.error = T("No access to this record!")
         raise HTTP(401, body=s3xrc.xml.json_message(False, 401, session.error))
 
     query = db(db.gis_location.id == feature_id).select(limitby=(0, 1))
@@ -1515,7 +1513,7 @@ def display_features():
         jresource = request.vars.jresource
         ok +=1
     if ok != 4:
-        session.error = str(T("Insufficient vars: Need module, resource, jresource, instance"))
+        session.error = T("Insufficient vars: Need module, resource, jresource, instance")
         raise HTTP(400, body=s3xrc.xml.json_message(False, 400, session.error))
 
     component, pkey, fkey = s3xrc.model.get_component(res_module, resource, jresource)
@@ -1614,7 +1612,7 @@ def proxy():
         if "url" in request.vars:
             url = request.vars.url
         else:
-            session.error = str(T("Need a 'url' argument!"))
+            session.error = T("Need a 'url' argument!")
             raise HTTP(400, body=s3xrc.xml.json_message(False, 400, session.error))
 
     try:

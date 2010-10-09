@@ -116,6 +116,7 @@ table = db.define_table(tablename,
                         Field("username"),
                         Field("password", "password"),
                         Field("format"),
+                        Field("allow_push", "boolean", default=True),
                         policy(),
                         Field("ignore_errors", "boolean", default=False),
                         Field("last_sync_time", "datetime"),
@@ -138,19 +139,20 @@ table.type.default = 1
 table.format.requires = IS_IN_SET(formats, zero=None)
 table.format.default = "xml"
 
+table.allow_push.label = T("Allowed to push")
+
 table.policy.label = T("Default synchronization policy")
 
 table.last_sync_time.label = T("Last synchronization time")
 table.last_sync_time.writable = False
 
+# -----------------------------------------------------------------------------
 peer_id = S3ReusableField("peer_id", db.sync_peer, notnull=True,
                           requires = IS_ONE_OF(db, "sync_peer.id", "%(name)s"),
                           represent = lambda id: (id and [db.sync_peer(id).name] or [NONE])[0])
-#peer_id = db.Table(None, "peer_id",
-                   #Field("peer_id", db.sync_peer, notnull=True,
-                         #requires = IS_ONE_OF(db, "sync_peer.id", "%(name)s"),
-                         #represent = lambda id: (id and [db.sync_peer(id).name] or [NONE])[0]))
 
+
+# -----------------------------------------------------------------------------
 def s3_sync_peer_ondelete(row):
 
     """ Delete all jobs with this peer """
@@ -171,37 +173,33 @@ def s3_sync_peer_ondelete(row):
         db(schedule.id.belongs(jobs_del)).delete()
 
 
+# -----------------------------------------------------------------------------
 def s3_sync_peer_oncreate(form):
 
     """ Create default job for Eden peers """
 
     table = db.sync_peer
-    peer = db(table.id == form.id).select(table.uuid,
-                                          table.name,
-                                          table.policy,
-                                          limitby=(0,1)).first()
-    if not peer or not peer.uuid:
-        return
+    peer = db(table.id == form.vars.id).select(table.type,
+                                               table.name,
+                                               table.policy,
+                                               table.ignore_errors,
+                                               limitby=(0,1)).first()
+    if peer and peer.type == 1:
 
-    tablenames = s3_sync_primary_resources()
+        resources = s3_sync_primary_resources()
 
-    job_command = json.dumps(dict(
-        partner_uuid = uuid,
-        policy = peer.policy,
-        resources = ",".join(tablenames),
-        complete = False,
-        mode = 3
-    ))
+        jobtype = 1 # Eden<->Eden
+        jobmode = 1 # Pull
 
-    db.sync_schedule.insert(
-        comments = "auto-generated job for %s" % peer.name,
-        period = "m",
-        job_type = 1,
-        job_command = json.dumps(sch_cmd),
-        last_run = None,
-        enabled = True)
+        db.sync_job.insert(type = jobtype,
+                           mode = jobmode,
+                           peer_id = peer.id,
+                           resources = resources,
+                           policy = peer.policy,
+                           ignore_errors = peer.ignore_errors)
 
 
+# -----------------------------------------------------------------------------
 s3xrc.model.configure(table,
     delete_onaccept=s3_sync_peer_ondelete,
     list_fields = ["id", "name", "uuid", "type", "url", "last_sync_time"])
@@ -283,7 +281,6 @@ sync_weekdays = {
 resource = "job"
 tablename = "%s_%s" % (module, resource)
 table = db.define_table(tablename,
-                        #uuidstamp, timestamp,
                         Field("last_run", "datetime"),
                         Field("type", "integer"),
                         peer_id(),
@@ -291,6 +288,7 @@ table = db.define_table(tablename,
                         Field("mode", "integer"),
                         policy(),
                         Field("complete", "boolean", default=False),
+                        Field("ignore_errors", "boolean", default=True),
                         Field("run_interval", default="m"),
                         Field("hours"),
                         Field("days", "list:integer"),
@@ -382,6 +380,54 @@ table = db.define_table(tablename,
                         Field("timestmp", "datetime"),
                         Field("resolved", "boolean"),
                         migrate=migrate)
+
+
+# -----------------------------------------------------------------------------
+# Peer registrations
+#
+resource = "registration"
+tablename = "%s_%s" % (module, resource)
+table = db.define_table(tablename,
+                        Field("name"),
+                        Field("uuid", length=128),
+                        Field("type"),
+                        migrate=migrate,
+                        *(s3_authorstamp()+s3_timestamp()))
+
+table.created_by.label = T("Requested by")
+table.created_by.readable = True
+table.created_by.writable = False
+
+table.created_on.label = T("Requested on")
+table.created_on.readable = True
+table.created_on.writable = False
+
+table.uuid.label = T("Peer UID")
+
+table.type.label = T("Peer Type")
+table.type.requires = IS_IN_SET(sync_peer_types, zero=None)
+table.type.represent = lambda opt: sync_peer_types.get(opt, UNKNOWN_OPT)
+table.type.default = 1
+
+s3xrc.model.configure(table,
+    list_fields = ["id", "name", "type", "uuid", "created_by", "created_on"])
+
+s3.crud_strings[tablename] = Storage(
+    title_create = T("Peer Registration Request"),
+    title_display = T("Peer Registration Details"),
+    title_list = T("Peer Registration"),
+    title_update = T("Edit Registration Details"),
+    title_search = T("Search Registration Request"),
+    subtitle_create = T("New Request"),
+    subtitle_list = T("Pending Requests"),
+    label_list_button = T("List Requests"),
+    label_create_button = T("Add Request"),
+    label_delete_button = T("Delete Request"),
+    msg_record_created = T("Peer registration request added"),
+    msg_record_modified = T("Peer registration request updated"),
+    msg_record_deleted = T("Peer registration request deleted"),
+    msg_list_empty = T("No pending registrations found"),
+    msg_no_match = T("No pending registrations matching the query"))
 
 
 # -----------------------------------------------------------------------------

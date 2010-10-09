@@ -91,7 +91,7 @@ def theme():
     table.col_border_btn_out.label = T("Colour of bottom of Buttons when not pressed")
     table.col_border_btn_in.label = T("Colour of bottom of Buttons when pressed")
     table.col_btn_hover.label = T("Colour of Buttons when hovering")
-    
+
     # CRUD Strings
     ADD_THEME = T("Add Theme")
     LIST_THEMES = T("List Themes")
@@ -279,9 +279,9 @@ def user():
 
     response.s3.pagination = True
     output = shn_rest_controller(module, resource, main="first_name")
-    
+
     s3xrc.model.clear_config(table, "onvalidation", "onaccept")
-    
+
     return output
 
 def user_approve(form):
@@ -306,8 +306,8 @@ def user_approve(form):
 @auth.shn_requires_membership(1)
 def usergroup():
     """
-    User update form with groups
-    - NB This is currently unused & has no custom view
+        User update form with groups
+        - NB This is currently unused & has no custom view
     """
     user = request.vars.user
 
@@ -406,7 +406,6 @@ def group():
 
     return shn_rest_controller(module, resource, main="role")
 
-# Unused as poor UI
 @auth.shn_requires_membership(1)
 def membership():
     "RESTful CRUD controller"
@@ -439,7 +438,9 @@ def membership():
 
 @auth.shn_requires_membership(1)
 def users():
-    "List/amend which users are in a Group"
+    """
+        List/amend which users are in a Group
+    """
 
     try:
         group = int(request.args(0))
@@ -449,7 +450,7 @@ def users():
 
     table = db.auth_membership
     query = table.group_id == group
-    title = str(T("Role")) + ": " + db.auth_group[group].role
+    title = T("Role") + ": " + db.auth_group[group].role
     description = db.auth_group[group].description
     # Start building the Return
     output = dict(title=title, description=description, group=group)
@@ -460,7 +461,9 @@ def users():
         username = "email"
 
     # Audit
-    crud.settings.create_onaccept = lambda form: shn_audit_create(form, module, "membership", "html")
+    crud.settings.create_onaccept = lambda form: s3_audit("create", module, "membership",
+                                                          form=form,
+                                                          representation="html")
     # Many<>Many selection (Deletable, no Quantity)
     item_list = []
     sqlrows = db(query).select()
@@ -499,7 +502,9 @@ def users():
 
 @auth.shn_requires_membership(1)
 def group_remove_users():
-    "Remove users from a group"
+    """
+        Remove users from a group
+    """
     if len(request.args) == 0:
         session.error = T("Need to specify a group!")
         redirect(URL(r=request, f="group"))
@@ -516,7 +521,9 @@ def group_remove_users():
 
 @auth.shn_requires_membership(1)
 def groups():
-    "List/amend which groups a User is in"
+    """
+        List/amend which groups a User is in
+    """
 
     try:
         user = int(request.args(0))
@@ -532,7 +539,9 @@ def groups():
     output = dict(title=title, description=description, user=user)
 
     # Audit
-    crud.settings.create_onaccept = lambda form: shn_audit_create(form, module, "membership", "html")
+    crud.settings.create_onaccept = lambda form: s3_audit("create", module, "membership",
+                                                          form=form,
+                                                          representation="html")
     # Many<>Many selection (Deletable, no Quantity)
     item_list = []
     sqlrows = db(query).select()
@@ -566,7 +575,7 @@ def groups():
 
 @auth.shn_requires_membership(1)
 def user_remove_groups():
-    "Remove groups from a user"
+    """ Remove groups from a user """
     if len(request.args) == 0:
         session.error = T("Need to specify a user!")
         redirect(URL(r=request, f="user"))
@@ -584,23 +593,27 @@ def user_remove_groups():
 # Import Data
 @auth.shn_requires_membership(1)
 def import_data():
-    "Import data via POST upload to CRUD controller. Old - being replaced by Sync/Importer."
+    """
+        Import data via POST upload to CRUD controller. Old - being replaced by Sync/Importer.
+    """
     title = T("Import Data")
     crud.messages.submit_button = "Upload"
-    
+
     # Deprecated
     import_job_form = crud.create(db.admin_import_job)
     # Tell the CRUD create form to post to a different location
     import_job_form.custom.begin.text = str(import_job_form.custom.begin).replace(
             'action=""',
             'action="%s"' % URL(r=request, f="import_job", args=["create"]))
-    
+
     return dict(title=title,
                 import_job_form=import_job_form)
 
 @auth.shn_requires_membership(1)
 def import_csv_data():
-    "Import CSV data via POST upload to Database."
+    """
+        Import CSV data via POST upload to Database.
+    """
     file = request.vars.multifile.file
     try:
         # Assumes that it is a concatenation of tables
@@ -613,13 +626,17 @@ def import_csv_data():
 # Export Data
 @auth.requires_login()
 def export_data():
-    "Export data via CRUD controller. Old - being replaced by Sync."
+    """
+        Export data via CRUD controller. Old - being replaced by Sync.
+    """
     title = T("Export Data")
     return dict(title=title)
 
 @auth.shn_requires_membership(1)
 def export_csv():
-    "Export entire database as CSV. Old - being replaced by Sync."
+    """
+        Export entire database as CSV. Old - being replaced by Sync.
+    """
     import StringIO
     output = StringIO.StringIO()
 
@@ -632,7 +649,7 @@ def export_csv():
     response.headers["Content-disposition"] = "attachment; filename=%s" % filename
     return output.read()
 
-    
+
 
 # Unstructured Data Import
 # Deprecated - being replaced by Importer
@@ -820,10 +837,11 @@ def get_matchable_fields(module, resource):
 
 # Functional Testing
 def handleResults():
-    """Process the POST data returned from Selenium TestRunner.
-    The data is written out to 2 files.  The overall results are written to
-    date-time-browserName-metadata.txt as a list of key: value, one per line.  The
-    suiteTable and testTables are written to date-time-browserName-results.html.
+    """
+        Process the POST data returned from Selenium TestRunner.
+        The data is written out to 2 files.  The overall results are written to
+        date-time-browserName-metadata.txt as a list of key: value, one per line.  The
+        suiteTable and testTables are written to date-time-browserName-results.html.
     """
 
     if not request.vars.result:

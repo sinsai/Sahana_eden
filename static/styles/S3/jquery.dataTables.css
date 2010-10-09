@@ -49,6 +49,7 @@
  * DataTables display
  */
 
+
 table.display thead th {
 	padding: 3px 18px 3px 10px;
 	border-bottom: 1px solid black;
@@ -102,17 +103,6 @@ table.display td.center {
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
  * DataTables row classes
  */
-table.display tr.odd.gradeA {
-	background-color: #ddffdd;
-}
-
-table.display tr.even.gradeA {
-	background-color: #eeffee;
-}
-
-
-
-
 table.display tr.odd.gradeA {
 	background-color: #ddffdd;
 }
@@ -376,16 +366,4 @@ tr.even.gradeU td.sorting_2 {
 
 tr.even.gradeU td.sorting_3 {
 	background-color: #e2e2e2;
-}
-
-
-/*
- * Row highlighting example
- */
-.ex_highlight #example tbody tr.even:hover, #example tbody tr.even td.highlighted {
-	background-color: #ECFFB3;
-}
-
-.ex_highlight #example tbody tr.odd:hover, #example tbody tr.odd td.highlighted {
-	background-color: #E6FF99;
 }

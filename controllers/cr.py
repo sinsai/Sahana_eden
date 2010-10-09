@@ -375,13 +375,13 @@ def call():
 @service.jsonrpc
 @service.xmlrpc
 @service.amfrpc
-def rpc(method,id=0):
+def rpc(method, id=0):
     if method == "list":
         return db().select(db.cr_shelter.ALL).as_list()
     if method == "read":
-        return db(db.cr_shelter.id==id).select().as_list()
+        return db(db.cr_shelter.id == id).select().as_list()
     if method == "delete":
-        status=db(db.cr_shelter.id==id).delete()
+        status=db(db.cr_shelter.id == id).delete()
         if status:
             return "Success - record %d deleted!" % id
         else:

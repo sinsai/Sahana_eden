@@ -247,7 +247,7 @@ def shn_rat_rheader(r, tabs=[]):
                                 TH(T("Date") + ": "), report.date
                               ),
                             TR(
-                                TH(T("Organisations") + ": "), orgs,
+                                TH(T("Organizations") + ": "), orgs,
                                 TH(T("Document") + ": "), A(doc_name, _href=doc_url)
                               )
                             ),

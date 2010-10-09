@@ -219,11 +219,11 @@ def shn_irs_rheader(r, tabs=[]):
             create_request = DIV(P(), A(T("Create Request"), _class="action-btn colorbox", _href=URL(r=request, c="rms", f="req", args="create", vars={"format":"popup", "caller":"irs_ireport"}), _title=T("Add Request")), P())
             rheader = DIV(TABLE(
                             TR(
-                                TH(T("Short Description: ")), report.name,
-                                TH(T("Reporter: ")), reporter),
+                                TH(T("Short Description") + ": "), report.name,
+                                TH(T("Reporter") + ": "), reporter),
                             TR(
-                                TH(T("Contacts: ")), report.contact,
-                                TH(T("Location: ")), location)
+                                TH(T("Contacts") + ": "), report.contact,
+                                TH(T("Location") + ": "), location)
                             ),
                           create_request,
                           rheader_tabs)
@@ -236,11 +236,11 @@ def shn_irs_rheader(r, tabs=[]):
             category = irs_incident_type_opts.get(incident.category, incident.category)
             rheader = DIV(TABLE(
                             TR(
-                                TH(T("Short Description: ")), incident.name,
-                                TH(T("Category: ")), category),
+                                TH(T("Short Description") + ": "), incident.name,
+                                TH(T("Category") + ": "), category),
                             TR(
-                                TH(T("Contacts: ")), incident.contact,
-                                TH(T("Location: ")), location)
+                                TH(T("Contacts") + ": "), incident.contact,
+                                TH(T("Location") + ": "), location)
                             ),
                       rheader_tabs)
 
@@ -251,11 +251,11 @@ def shn_irs_rheader(r, tabs=[]):
             etype = irs_event_type_opts.get(assessment.event_type, UNKNOWN_OPT)
             rheader = DIV(TABLE(
                             TR(
-                                TH(T("Assessment Type: ")), itype,
-                                TH(T("Author: ")), author),
+                                TH(T("Assessment Type") + ": "), itype,
+                                TH(T("Author") + ": "), author),
                             TR(
-                                TH("Event type: "), etype,
-                                TH(T("Date: ")), assessment.datetime)
+                                TH(T("Event Type") + ": "), etype,
+                                TH(T("Date") + ": "), assessment.datetime)
                             ),
                       rheader_tabs)
 

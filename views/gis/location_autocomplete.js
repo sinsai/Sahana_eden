@@ -6,7 +6,7 @@ $(function() {
     var empty_set = '<option value="">' + '{{=T("No locations registered at this level")}}</option>';
     var loading_locations = '<option value="">' + '{{=T("Loading Locations...")}}</option>';
     var select_location = '<option value="" selected>' + '{{=T("Select a location")}}' + '...</option>';
-    var row, label, widget, comment, _parent, url;
+    var row1, row2, label, widget, comment, _parent, url;
     // Flags to tell us whether the widgets are displayed
     var l1, l2, l3, l4, l5;
 
@@ -48,25 +48,27 @@ $(function() {
         // If the calling view hasn't provided a value then use the default
         var location_id = '{{=request.controller + "_" + request.function + "_location_id"}}';
     }
+    var location_id_row1 = '#' + location_id + '__row1';
     var location_id_row = '#' + location_id + '__row';
 
     // Hide the real Input row
+    $(location_id_row1).hide();
     $(location_id_row).hide();
     
     // Section delimiter
     widget = '------------------------------------------------------------------------------------------------------------------------'
-    row = "<tr id='gis_location_start__row'><td colspan='3' align='left'>" + widget + '</td></tr>';
-    $(location_id_row).before(row);
+    row1 = "<tr id='gis_location_start__row'><td colspan='2' align='left'>" + widget + '</td></tr>';
+    $(location_id_row).before(row1);
 
     // Section header
     label = '{{=B(T("Location"))}}';
-    row = "<tr id='gis_location_header__row'><td><label>" + label + '</label></td><td></td><td></td></tr>';
-    $(location_id_row).before(row);
+    row1 = "<tr id='gis_location_header__row'><td colspan='2'><label>" + label + '</label></td></tr>';
+    $(location_id_row).before(row1);
 
     // Help section
     //label = '{{=T("Select an existing Location")}}:'
-    //row = "<tr id='gis_location_help__row'><td colspan='2'><label>" + label + '</label></td><td></td></tr>';
-    //$(location_id_row).before(row);
+    //row1 = "<tr id='gis_location_help__row'><td colspan='2'><label>" + label + '</label></td></tr>';
+    //$(location_id_row).before(row1);
 
   {{level = "0"}}
   S3.gis.locations_l{{=level}} = function(){
@@ -78,10 +80,13 @@ $(function() {
     // Country is hardcoded
     var country_id = {{=_gis.countries[response.s3.countries[0]].id}};
     widget = "<input id='gis_location_l{{=level}}' />";
-    row = "<tr id='gis_location_l{{=level}}__row'><td><label>" + label + ':' + '</label></td><td>' + widget + '</td><td></td></tr>';
-    $(location_id_row).before(row);
+    row1 = "<tr id='gis_location_l{{=level}}__row1'><td colspan='2'><label>" + label + ':' + '</label></td></tr>';
+    row2 = "<tr id='gis_location_l{{=level}}__row'><td>" + widget + '</td><td></td></tr>';
+    $(location_id_row).before(row1);
+    $(location_id_row).before(row2);
     $('#gis_location_l{{=level}}').val(country_id);
     // Hide
+    $('#gis_location_l{{=level}}__row1').hide();
     $('#gis_location_l{{=level}}__row').hide();
     // Show the next level of hierarchy
     // (called after it has been defined)
@@ -93,8 +98,10 @@ $(function() {
   {{else:}}
     comment = "<div title='" + label + '|' + '{{=T("Select to see a list of subdivisions.")}}' + "' id='gis_location_l{{=level}}_tooltip' class='tooltip'></div>";
   {{pass}}
-    row = "<tr id='gis_location_l{{=level}}__row'><td><label>" + label + ':' + '</label></td><td>' + widget + '</td><td>' + comment + '</td></tr>';
-    $('#gis_location_header__row').after(row);
+    row1 = "<tr id='gis_location_l{{=level}}__row1'><td colspan='2'><label>" + label + ':' + '</label></td></tr>';
+    row2 = "<tr id='gis_location_l{{=level}}__row'><td>" + widget + '</td><td>' + comment + '</td></tr>';
+    $('#gis_location_header__row').after(row2);
+    $('#gis_location_header__row').after(row1);
     // Apply the tooltip which was missed 1st time round
     $('#gis_location_l{{=level}}_tooltip').cluetip({activation: 'hover', sticky: false, splitTitle: '|'});
     // Apply the colorbox which was missed 1st time round
@@ -181,8 +188,10 @@ $(function() {
       {{else:}}
         comment = "<div title='" + label + '|' + '{{=T("Select to see a list of subdivisions.")}}' + "' id='gis_location_l{{=level}}_tooltip' class='tooltip'></div>";
       {{pass}}
-        row = "<tr id='gis_location_l{{=level}}__row'><td><label>" + label + ':' + '</label></td><td>' + widget + '</td><td>' + comment + '</td></tr>';
-        $('#gis_location_addr_street__row').before(row);
+        row1 = "<tr id='gis_location_l{{=level}}__row1'><td colspan='2'><label>" + label + ':' + '</label></td></tr>';
+        row2 = "<tr id='gis_location_l{{=level}}__row'><td>" + widget + '</td><td>' + comment + '</td></tr>';
+        $('#gis_location_name__row1').before(row1);
+        $('#gis_location_name__row1').before(row2);
         l{{=level}} = true;
         // Apply the tooltip which was missed 1st time round
         $('#gis_location_l{{=level}}_tooltip').cluetip({activation: 'hover', sticky: false, splitTitle: '|'});
@@ -261,8 +270,10 @@ $(function() {
       {{else:}}
         comment = "<div title='" + label + '|' + '{{=T("Select to see a list of subdivisions.")}}' + "' id='gis_location_l{{=level}}_tooltip' class='tooltip'></div>";
       {{pass}}
-        row = "<tr id='gis_location_l{{=level}}__row'><td><label>" + label + '</label></td><td>' + widget + '</td><td>' + comment + '</td></tr>';
-        $('#gis_location_addr_street__row').before(row);
+        row1 = "<tr id='gis_location_l{{=level}}__row1'><td colspan='2'><label>" + label + '</label></td></tr>';
+        row2 = "<tr id='gis_location_l{{=level}}__row'><td>" + widget + '</td><td>' + comment + '</td></tr>';
+        $('#gis_location_name__row1').before(row1);
+        $('#gis_location_name__row1').before(row2);
         l{{=level}} = true;
         // Apply the tooltip which was missed 1st time round
         $('#gis_location_l{{=level}}_tooltip').cluetip({activation: 'hover', sticky: false, splitTitle: '|'});
@@ -338,8 +349,10 @@ $(function() {
       {{else:}}
         comment = "<div title='" + label + '|' + '{{=T("Select to see a list of subdivisions.")}}' + "' id='gis_location_l{{=level}}_tooltip' class='tooltip'></div>";
       {{pass}}
-        row = "<tr id='gis_location_l{{=level}}__row'><td><label>" + label + '</label></td><td>' + widget + '</td><td>' + comment + '</td></tr>';
-        $('#gis_location_addr_street__row').before(row);
+        row1 = "<tr id='gis_location_l{{=level}}__row1'><td colspan='2'><label>" + label + '</label></td></tr>';
+        row2 = "<tr id='gis_location_l{{=level}}__row'><td>" + widget + '</td><td>' + comment + '</td></tr>';
+        $('#gis_location_name__row1').before(row1);
+        $('#gis_location_name__row1').before(row2);
         l{{=level}} = true;
         // Apply the tooltip which was missed 1st time round
         $('#gis_location_l{{=level}}_tooltip').cluetip({activation: 'hover', sticky: false, splitTitle: '|'});
@@ -415,8 +428,10 @@ $(function() {
       {{else:}}
         comment = "<div title='" + label + '|' + '{{=T("Select to see a list of subdivisions.")}}' + "' id='gis_location_l{{=level}}_tooltip' class='tooltip'></div>";
       {{pass}}
-        row = "<tr id='gis_location_l{{=level}}__row'><td><label>" + label + '</label></td><td>' + widget + '</td><td>' + comment + '</td></tr>';
-        $('#gis_location_addr_street__row').before(row);
+        row1 = "<tr id='gis_location_l{{=level}}__row1'><td colspan='2'><label>" + label + '</label></td></tr>';
+        row2 = "<tr id='gis_location_l{{=level}}__row'><td>" + widget + '</td><td>' + comment + '</td></tr>';
+        $('#gis_location_name__row1').before(row1);
+        $('#gis_location_name__row1').before(row2);
         l{{=level}} = true;
         // Apply the tooltip which was missed 1st time round
         $('#gis_location_l{{=level}}_tooltip').cluetip({activation: 'hover', sticky: false, splitTitle: '|'});
@@ -492,8 +507,10 @@ $(function() {
       {{else:}}
         comment = "<div title='" + label + '|' + '{{=T("Select to see a list of subdivisions.")}}' + "' id='gis_location_l{{=level}}_tooltip' class='tooltip'></div>";
       {{pass}}
-        row = "<tr id='gis_location_l{{=level}}__row'><td><label>" + label + '</label></td><td>' + widget + '</td><td>' + comment + '</td></tr>';
-        $('#gis_location_addr_street__row').before(row);
+        row1 = "<tr id='gis_location_l{{=level}}__row1'><td colspan='2'><label>" + label + '</label></td></tr>';
+        row2 = "<tr id='gis_location_l{{=level}}__row'><td>" + widget + '</td><td>' + comment + '</td></tr>';
+        $('#gis_location_name__row1').before(row1);
+        $('#gis_location_name__row1').before(row2);
         l{{=level}} = true;
         // Apply the tooltip which was missed 1st time round
         $('#gis_location_l{{=level}}_tooltip').cluetip({activation: 'hover', sticky: false, splitTitle: '|'});
@@ -558,8 +575,10 @@ $(function() {
     label = '{{=T("Name")}}:';
     widget = "<input id='gis_location_name' class='ac_input string' size='50' value='" + old_name + "' />";
     comment = "<div title='" + label + '|' + '{{=T("Enter a few characters of the name to select an existing Location or else simply type the name of the new Location.")}}' + "' id='gis_location_name_tooltip' class='tooltip'></div>";
-    row = "<tr id='gis_location_addr_street__row'><td><label>" + label + '</label></td><td>' + widget + '</td><td>' + comment + '</td></tr>';
-    $(location_id_row).before(row);
+    row1 = "<tr id='gis_location_name__row1'><td colspan='2'><label>" + label + '</label></td></tr>';
+    row2 = "<tr id='gis_location_name__row'><td>" + widget + '</td><td>' + comment + '</td></tr>';
+    $(location_id_row).before(row1);
+    $(location_id_row).before(row2);
     // Apply the tooltip which was missed 1st time round
     $('#gis_location_name_tooltip').cluetip({activation: 'hover', sticky: false, splitTitle: '|'});
 
@@ -873,8 +892,10 @@ $(function() {
     widget = "<textarea id='gis_location_addr_street' class='text' rows='5' cols='46'>" + old_addr_street + '</textarea>';
     // ToDo: GeoCoder widget here
     comment = "<div title='" + label + '|' + "{{=T("This can either be the postal address or a simpler description (such as `Next to the Fuel Station`).")}}" + "' id='gis_location_add_street_tooltip' class='tooltip'></div>";
-    row = "<tr id='gis_location_addr_street__row'><td><label>" + label + '</label></td><td>' + widget + '</td><td>' + comment + '</td></tr>';
-    $(location_id_row).before(row);
+    row1 = "<tr id='gis_location_addr_street__row1'><td colspan='2'><label>" + label + '</label></td></tr>';
+    row2 = "<tr id='gis_location_addr_street__row'><td>" + widget + '</td><td>' + comment + '</td></tr>';
+    $(location_id_row).before(row1);
+    $(location_id_row).before(row2);
     // Apply the tooltip which was missed 1st time round
     $('#gis_location_add_street_tooltip').cluetip({activation: 'hover', sticky: false, splitTitle: '|'});
 
@@ -916,8 +937,10 @@ $(function() {
     // Map-based selector
     label = '';
     widget = "<a id='openMap' href='#'>{{=T("Open Map")}}</a> ({{=T("can use this to identify the Location")}})";
-    row = "<tr id='gis_location_map__row'><td><label>" + label + '</label></td><td>' + widget + '</td><td></td></tr>';
-    $(location_id_row).before(row);
+    row1 = "<tr id='gis_location_map__row1'><td colspan='2'><label>" + label + '</label></td></tr>';
+    row2 = "<tr id='gis_location_map__row'><td>" + widget + '</td><td></td></tr>';
+    $(location_id_row).before(row1);
+    $(location_id_row).before(row2);
     var mapButton = Ext.get('openMap');
     mapButton.on('click', function(){
         win.show(this);
@@ -929,21 +952,25 @@ $(function() {
     label = '{{=db.gis_location.lat.label}}:';
     widget = "<input id='gis_location_lat' value='" + old_lat + "' />";
     comment = '{{=db.gis_location.lat.comment}}';
-    row = "<tr id='gis_location_lat__row'><td><label>" + label + '</label></td><td>' + widget + '</td><td>' + comment + '</td></tr>';
-    $(location_id_row).before(row);
+    row1 = "<tr id='gis_location_lat__row'><td colspan='2'><label>" + label + '</label></td></tr>';
+    row2 = "<tr id='gis_location_lat__row'><td>" + widget + '</td><td>' + comment + '</td></tr>';
+    $(location_id_row).before(row1);
+    $(location_id_row).before(row2);
     // Apply the tooltip which was missed 1st time round
     $('#gis_location_lat_tooltip').cluetip({activation: 'hover', sticky: false, splitTitle: '|'});
     
     label = '{{=db.gis_location.lon.label}}:';
     widget = "<input id='gis_location_lon' value='" + old_lon + "' />";
     comment = '{{=db.gis_location.lon.comment}}';
-    row = "<tr id='gis_location_lon__row'><td><label>" + label + '</label></td><td>' + widget + '</td><td>' + comment + '</td></tr>';
-    $(location_id_row).before(row);
+    row1 = "<tr id='gis_location_lon__row'><td colspan='2'><label>" + label + '</label></td></tr>';
+    row2 = "<tr id='gis_location_lon__row'><td>" + widget + '</td><td>' + comment + '</td></tr>';
+    $(location_id_row).before(row1);
+    $(location_id_row).before(row2);
     
     // Section delimiter
     widget = '------------------------------------------------------------------------------------------------------------------------'
-    row = "<tr id='gis_location_end__row'><td colspan='3' align='left'>" + widget + '</td></tr>';
-    $(location_id_row).after(row);
+    row1 = "<tr id='gis_location_end__row'><td colspan='2' align='left'>" + widget + '</td></tr>';
+    $(location_id_row).after(row1);
 
         
     // Over-ride the Form's Save Button

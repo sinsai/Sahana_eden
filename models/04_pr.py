@@ -250,7 +250,7 @@ def shn_pr_image_onvalidation(form):
     if not hasattr(image, "file"):
         id = request.post_vars.id
         if id:
-            record = db(table.id == id).select(table.image, limitby=(0,1)).first()
+            record = db(table.id == id).select(table.image, limitby=(0, 1)).first()
             if record:
                 image = record.image
 
@@ -311,6 +311,7 @@ resource = "presence"
 tablename = "%s_%s" % (module, resource)
 table = db.define_table(tablename,
                         pe_id(),
+                        sit_id(),
                         Field("reporter", db.pr_person),
                         Field("observer", db.pr_person),
                         Field("shelter_id", "integer"),
@@ -399,7 +400,7 @@ def s3_pr_presence_onvalidation(form):
             else:
                 record = db(table.id == form.vars.id).select(table.location_id,
                                                              table.shelter_id,
-                                                             limitby=(0,1)).first()
+                                                             limitby=(0, 1)).first()
                 if record and \
                    record.location_id or record.shelter_id:
                     return
@@ -422,18 +423,24 @@ s3xrc.model.add_component(module, resource,
                           editable=True,
                           main="time", extra="location_details")
 
+def s3_pr_presence_onaccept(form):
+    vita.presence_accept(form)
+    s3_situation_onaccept(form, table=db.pr_presence)
+
+def s3_pr_presence_ondelete(row):
+    vita.presence_accept(row)
+    s3_situation_ondelete(row)
 
 s3xrc.model.configure(table,
     onvalidation = lambda form: s3_pr_presence_onvalidation(form),
-    onaccept = lambda form: vita.presence_accept(form),
-    delete_onaccept = lambda row: vita.presence_accept(row),
+    onaccept = lambda form: s3_pr_presence_onaccept(form),
+    delete_onaccept = lambda row: s3_pr_presence_ondelete(row),
     list_fields = [
         "id",
         "datetime",
         "location_id",
         "shelter_id",
         "presence_condition",
-        #"closed",
         "orig_id",
         "dest_id"
     ])
@@ -533,8 +540,8 @@ table = db.define_table(tablename,
                               label = T("ID type"),
                               represent = lambda opt: \
                                           pr_id_type_opts.get(opt, UNKNOWN_OPT)),
-                        Field("description"),
                         Field("value"),
+                        Field("description"),
                         Field("country_code", length=4),
                         Field("ia_name"), # Name of issuing authority
                         #Field("ia_subdivision"), # Name of issuing authority subdivision
@@ -545,7 +552,7 @@ table = db.define_table(tablename,
 
 table.uuid.requires = IS_NOT_IN_DB(db, "%s.uuid" % tablename)
 table.person_id.label = T("Person")
-table.value.requires = IS_NOT_EMPTY()
+table.value.requires = [IS_NOT_EMPTY(), IS_NOT_IN_DB(db, "%s.value" % tablename)]
 table.value.comment = SPAN("*", _class="req")
 table.ia_name.label = T("Issuing Authority")
 

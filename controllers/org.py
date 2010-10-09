@@ -231,15 +231,15 @@ def shn_org_rheader(r, tabs=[]):
             
             rheader = DIV(TABLE(
                 TR(
-                    TH(T("Organization: ")),
+                    TH(T("Organization") + ": "),
                     organisation.name,
-                    TH(T("Sector(s): ")),
+                    TH(T("Cluster(s)") + ": "),
                     _sectors
                     ),
                 TR(
                     #TH(A(T("Edit Organization"),
                     #    _href=URL(r=request, c="org", f="organisation", args=[r.id, "update"], vars={"_next": _next})))
-                    TH(T("Type: ")),
+                    TH(T("Type") + ": "),
                     _type,
                     )
             ), rheader_tabs)
@@ -260,15 +260,15 @@ def shn_org_rheader(r, tabs=[]):
 
             rheader = DIV(TABLE(
                     TR(
-                        TH(T("Name: ")),
+                        TH(T("Name") + ": "),
                         office.name,
-                        TH(T("Type: ")),
+                        TH(T("Type") + ": "),
                         org_office_type_opts.get(office.type, UNKNOWN_OPT),
                         ),
                     TR(
-                        TH(T("Organization: ")),
+                        TH(T("Organization") + ": "),
                         org_name,
-                        TH(T("Location: ")),
+                        TH(T("Location") + ": "),
                         shn_gis_location_represent(office.location_id),
                         ),
                     TR(

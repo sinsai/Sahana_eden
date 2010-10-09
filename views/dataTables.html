@@ -1,67 +1,158 @@
 {{if session.s3.debug:}}
- <script src="/{{=request.application}}/static/scripts/S3/jquery.dataTables.fixed.js" type="text/javascript" charset="utf-8"></script>
+ <script src="/{{=request.application}}/static/scripts/S3/jquery.dataTables.js" type="text/javascript" charset="utf-8"></script>
 {{else:}}
- <script src="/{{=request.application}}/static/scripts/S3/jquery.dataTables.fixed.min.js" type="text/javascript" charset="utf-8"></script>
+ <script src="/{{=request.application}}/static/scripts/S3/jquery.dataTables.min.js" type="text/javascript" charset="utf-8"></script>
 {{pass}}
 <script type="text/javascript">//<![CDATA[
 $(document).ready(function() {
-    //Create an array for the column settings (this is required, otherwise the column widths don't autosize)a
+    // Create an array for the column settings (this is required, otherwise the column widths don't autosize)
     var myList = document.getElementById('list');
-    if (myList!=null) {
+    if (myList != null) {
         var ColumnCount = myList.getElementsByTagName('th').length;
     } else {
         var ColumnCount = 0;
     }
     var ColumnSettings = new Array();
-    ColumnSettings[0] = { "sTitle": " ", "bSortable": false  }
-    // buffer the array so that the default settings are preserved for the rest of the columns
-    for (i=1; i<ColumnCount; i++)
+    ColumnSettings[0] = { 'sTitle': ' ', 'bSortable': false  }
+    // Buffer the array so that the default settings are preserved for the rest of the columns
+    for (i=1; i < ColumnCount; i++)
         {
         ColumnSettings[i] = null;
         }
-    $('#list').dataTable({
-    {{try:}}
-        {{if sortby:}}
-            "aaSorting": {{=XML(sortby)}},
-        {{else:}}
-        {{pass}}
-    {{except:}}
-    {{pass}}
-    {{if response.s3.pagination:}}
-            // Disable Dynamic Search (until support for this fixed)
-            "bFilter": true,
-            // Disable Dynamic Sorting (until support for this fixed - works by value not representation)
-            "bSort": true,
-            "sPaginationType": "full_numbers",
-            "iDisplayLength": 10,
-            "bProcessing": true,
-            "bServerSide": true,
-            "sAjaxSource": "{{=jr.there(representation='aaData')}}",
-    {{pass}}
-    {{if response.s3.actions:}}
-        "aoColumns": ColumnSettings,
-        // Set the action buttons in the id (first) column for each row
-        "fnRowCallback": function( nRow, aData, iDisplayIndex )
+    
+  {{if response.s3.pagination:}}
+    // Cache the pages to reduce server-side calls
+    var oCache = {
+        iCacheLower: -1
+    };
+    function fnSetKey( aoData, sKey, mValue ) {
+        for ( var i=0, iLen=aoData.length ; i < iLen ; i++ ) {
+            if ( aoData[i].name == sKey ) {
+                aoData[i].value = mValue;
+            }
+        }
+    }
+    function fnGetKey( aoData, sKey ) {
+        for ( var i=0, iLen=aoData.length ; i < iLen ; i++ ) {
+            if ( aoData[i].name == sKey ) {
+                return aoData[i].value;
+            }
+        }
+        return null;
+    }
+    function fnDataTablesPipeline ( sSource, aoData, fnCallback ) {
+        var iRequestLength = fnGetKey(aoData, 'iDisplayLength');
+        // Adjust the pipe size depending on the page size
+        if (iRequestLength == 10) {
+            var iPipe = 6;
+        } else if (iRequestLength > 49) {
+            var iPipe = 2;
+        } else {
+            // iRequestLength == 25
+            var iPipe = 4;
+        }
+        var bNeedServer = false;
+        var sEcho = fnGetKey(aoData, 'sEcho');
+        var iRequestStart = fnGetKey(aoData, 'iDisplayStart');
+        var iRequestEnd = iRequestStart + iRequestLength;
+        oCache.iDisplayStart = iRequestStart;
+        /* outside pipeline? */
+        if ( oCache.iCacheLower < 0 || iRequestStart < oCache.iCacheLower || iRequestEnd > oCache.iCacheUpper ) {
+            bNeedServer = true;
+        }
+        
+        /* sorting etc changed? */
+        if ( oCache.lastRequest && !bNeedServer ) {
+            for( var i=0, iLen=aoData.length ; i < iLen ; i++ )
             {
+                if ( aoData[i].name != 'iDisplayStart' && aoData[i].name != 'iDisplayLength' && aoData[i].name != 'sEcho' ) {
+                    if ( aoData[i].value != oCache.lastRequest[i].value ) {
+                        bNeedServer = true;
+                        break;
+                    }
+                }
+            }
+        }
+        
+        /* Store the request for checking next time around */
+        oCache.lastRequest = aoData.slice();
+        
+        if ( bNeedServer ) {
+            if ( iRequestStart < oCache.iCacheLower ) {
+                iRequestStart = iRequestStart - (iRequestLength * (iPipe - 1));
+                if ( iRequestStart < 0 ) {
+                    iRequestStart = 0;
+                }
+            }
+            
+            oCache.iCacheLower = iRequestStart;
+            oCache.iCacheUpper = iRequestStart + (iRequestLength * iPipe);
+            oCache.iDisplayLength = fnGetKey( aoData, 'iDisplayLength' );
+            fnSetKey( aoData, 'iDisplayStart', iRequestStart );
+            fnSetKey( aoData, 'iDisplayLength', iRequestLength * iPipe );
+            
+            $.getJSON( sSource, aoData, function (json) { 
+                /* Callback processing */
+                oCache.lastJson = jQuery.extend(true, {}, json);
+                if ( oCache.iCacheLower != oCache.iDisplayStart ) {
+                    json.aaData.splice( 0, oCache.iDisplayStart - oCache.iCacheLower );
+                }
+                json.aaData.splice( oCache.iDisplayLength, json.aaData.length );
+                fnCallback(json)
+            } );
+        } else {
+            json = jQuery.extend(true, {}, oCache.lastJson);
+            json.sEcho = sEcho; /* Update the echo for each response */
+            json.aaData.splice( 0, iRequestStart - oCache.iCacheLower );
+            json.aaData.splice( iRequestLength, json.aaData.length );
+            fnCallback(json);
+            return;
+        }
+    }
+  {{pass}}
+    
+    $('#list').dataTable({
+        'bStateSave': true,
+  {{try:}}
+    {{if sortby:}}
+        'aaSorting': {{=XML(sortby)}},
+    {{else:}}
+    {{pass}}
+  {{except:}}
+  {{pass}}
+  {{if response.s3.pagination:}}
+        'bFilter': true,
+        'bSort': true,
+        'sPaginationType': 'full_numbers',
+        'iDisplayLength': 10,
+        'bProcessing': true,
+        'bServerSide': true,
+        'sAjaxSource': '{{=jr.there(representation="aaData")}}',
+        'fnServerData': fnDataTablesPipeline,
+  {{pass}}
+  {{if response.s3.actions:}}
+        'aoColumns': ColumnSettings,
+    // Set the action buttons in the id (first) column for each row
+        'fnRowCallback': function( nRow, aData, iDisplayIndex ) {
             Actions = {{=XML(response.s3.actions)}};
             Buttons = '';
-            // loop through each action to build the button
-            for (i=0;i<Actions.length;i++)
-                {
+            // Loop through each action to build the button
+            for (i=0; i < Actions.length; i++) {
                 // Extract the id # from the link
                 var re = />(.*)</i;
                 id = re.exec(aData[0])[1];
                 c = Actions[i]._class
                 re = /%5Bid%5D/g;
-                Buttons = Buttons + '<a class="'+ c +'" href="' + Actions[i].url.replace(re,id) + '">' + Actions[i].label + '</a>' + '&nbsp;';
-                }
+                Buttons = Buttons + '<a class="'+ c +'" href="' + Actions[i].url.replace(re, id) + '">' + Actions[i].label + '</a>' + '&nbsp;';
+            }
             // Set the first column to the action buttons
             $('td:eq(0)', nRow).html( Buttons );
             return nRow;
-            }
-    {{pass}}
+        }
+  {{pass}}
     });
-    jQuery('.delete-btn').live('click', function(event){ if(confirm("{{=T("Sure you want to delete this object?")}}")) {
+    jQuery('.delete-btn').live('click', function(event) {
+        if(confirm('{{=T("Sure you want to delete this object?")}}')) {
             return true;
         } else {
             event.preventDefault();

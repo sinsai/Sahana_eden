@@ -129,6 +129,7 @@ authorstamp = db.Table(None, "authorstamp",
             )
 
 comments = S3ReusableField("comments", "text",
+                           label = T("Comments"),
                            comment = DIV(_class="tooltip",
                                          _title=T("Comments") + "|" + T("Please use this field to record any additional information, including a history of the record if it is updated.")))
 
@@ -230,23 +231,6 @@ table.col_border_btn_in.requires = IS_HTML_COLOUR()
 table.col_btn_hover.requires = IS_HTML_COLOUR()
 
 module = "s3"
-# Auditing
-# ToDo: consider using native Web2Py log to auth_events
-resource = "audit"
-tablename = "%s_%s" % (module, resource)
-table = db.define_table(tablename,timestamp,
-                        Field("person", db.auth_user, ondelete="RESTRICT"),
-                        Field("operation"),
-                        Field("representation"),
-                        Field("module"),
-                        Field("resource"),
-                        Field("record", "integer"),
-                        Field("old_value"),
-                        Field("new_value"),
-                        migrate=migrate)
-
-table.operation.requires = IS_IN_SET(["create", "read", "update", "delete", "list", "search"])
-
 # Settings - systemwide
 s3_setting_security_policy_opts = {
     1:T("simple"),

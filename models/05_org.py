@@ -910,6 +910,7 @@ def shn_project_rheader(jr, tabs=[]):
 
             sectors = TABLE()
             if project.sector_id:
+                # @ToDo@ Fix for list: type
                 _sectors = re.split("\|", project.sector_id)[1:-1]
                 for sector in _sectors:
                     sectors.append(TR(db(db.org_sector.id == sector).select(db.org_sector.name, limitby=(0, 1)).first().name))
@@ -917,21 +918,21 @@ def shn_project_rheader(jr, tabs=[]):
             if project:
                 rheader = DIV(TABLE(
                     TR(
-                        TH(T("Code: ")),
+                        TH(T("Code") + ": "),
                         project.code,
                         TH(A(T("Clear Selection"),
                             _href=URL(r=request, f="project", args="clear", vars={"_next": _same})))
                         ),
                     TR(
-                        TH(T("Name: ")),
+                        TH(T("Name") + ": "),
                         project.name,
-                        TH(T("Location: ")),
+                        TH(T("Location") + ": "),
                         location_id.location_id.represent(project.location_id),
                         ),
                     TR(
-                        TH(T("Status: ")),
+                        TH(T("Status") + ": "),
                         "%s" % org_project_status_opts[project.status],
-                        TH(T("Sector(s): ")),
+                        TH(T("Cluster(s)") + ": "),
                         sectors,
                         #TH(A(T("Edit Project"),
                         #    _href=URL(r=request, f="project", args=[jr.id, "update"], vars={"_next": _next})))

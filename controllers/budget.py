@@ -151,9 +151,9 @@ table.months.comment = SPAN("*", _class="req")
 # S3 framework functions
 def index():
     "Module's Home Page"
-    
+
     module_name = deployment_settings.modules[module].name_nice
-    
+
     return dict(module_name=module_name)
 
 def parameters():
@@ -373,13 +373,13 @@ def kit_item():
         else:
             session.error = BADFORMAT
             redirect(URL(r=request))
-    
+
     try:
         kit = int(request.args(0))
     except TypeError, ValueError:
         session.error = T("Need to specify a Kit!")
         redirect(URL(r=request, f="kit"))
-    
+
     table = db.budget_kit_item
     authorised = shn_has_permission("update", table)
 
@@ -392,13 +392,15 @@ def kit_item():
     # Start building the Return with the common items
     output = dict(title=title, description=kit_description, total_cost=kit_total_cost, monthly_cost=kit_monthly_cost)
     # Audit
-    shn_audit_read(operation="list", module=module, resource="kit_item", record=kit, representation="html")
+    s3_audit("list", module, "kit_item", record=kit, representation="html")
     item_list = []
     sqlrows = db(query).select()
     even = True
     if authorised:
         # Audit
-        crud.settings.create_onaccept = lambda form: shn_audit_create(form, module, "kit_item", "html")
+        crud.settings.create_onaccept = lambda form: s3_audit("create", module, "kit_item",
+                                                              form=form,
+                                                              representation="html")
         # Display a List_Create page with editable Quantities
         for row in sqlrows:
             if even:
@@ -481,13 +483,13 @@ def kit_dupes(form):
 
 def kit_update_items():
     "Update a Kit's items (Quantity & Delete)"
-    
+
     try:
         kit = int(request.args(0))
     except TypeError, ValueError:
         session.error = T("Need to specify a Kit!")
         redirect(URL(r=request, f="kit"))
-    
+
     table = db.budget_kit_item
     authorised = shn_has_permission("update", table)
     if authorised:
@@ -505,7 +507,7 @@ def kit_update_items():
         # Update the Total values
         kit_totals(kit)
         # Audit
-        shn_audit_update_m2m(resource="kit_item", record=kit, representation="html")
+        s3_audit("update", module, "kit_item", record=kit, representation="html")
         session.flash = T("Kit updated")
     else:
         session.error = T("Not authorised!")
@@ -783,13 +785,13 @@ def bundle():
 
 def bundle_kit_item():
     "Many to Many CRUD Controller"
-    
+
     try:
         bundle = int(request.args(0))
     except TypeError, ValueError:
         session.error = T("Need to specify a bundle!")
         redirect(URL(r=request, f="bundle"))
-    
+
     tables = [db.budget_bundle_kit, db.budget_bundle_item]
     authorised = shn_has_permission("update", tables[0]) and shn_has_permission("update", tables[1])
 
@@ -801,12 +803,14 @@ def bundle_kit_item():
     # Start building the Return with the common items
     output = dict(title=title, description=bundle_description, total_cost=bundle_total_cost, monthly_cost=bundle_monthly_cost)
     # Audit
-    shn_audit_read(operation="list", module=module, resource="bundle_kit_item", record=bundle, representation="html")
+    s3_audit("list", module, "bundle_kit_item", record=bundle, representation="html")
     item_list = []
     even = True
     if authorised:
         # Audit
-        crud.settings.create_onaccept = lambda form: shn_audit_create(form, module, "bundle_kit_item", "html")
+        crud.settings.create_onaccept = lambda form: s3_audit(module, "bundle_kit_item",
+                                                              form=form,
+                                                              representation="html")
         # Display a List_Create page with editable Quantities, Minutes & Megabytes
 
         # Kits
@@ -889,9 +893,9 @@ def bundle_kit_item():
         crud.settings.create_onaccept = lambda form: bundle_total(form)
         crud.messages.record_created = T("Bundle Updated")
         form1 = crud.create(tables[0], next=URL(r=request, args=[bundle]))
-        form1[0][0].append(TR(TD(T("Type:")), TD(LABEL(T("Kit"), INPUT(_type="radio", _name="kit_item1", _value="Kit", value="Kit")), LABEL(T("Item"), INPUT(_type="radio", _name="kit_item1", _value="Item", value="Kit")))))
+        form1[0][0].append(TR(TD(T("Type") + ":"), TD(LABEL(T("Kit"), INPUT(_type="radio", _name="kit_item1", _value="Kit", value="Kit")), LABEL(T("Item"), INPUT(_type="radio", _name="kit_item1", _value="Item", value="Kit")))))
         form2 = crud.create(tables[1], next=URL(r=request, args=[bundle]))
-        form2[0][0].append(TR(TD(T("Type:")), TD(LABEL(T("Kit"), INPUT(_type="radio", _name="kit_item2", _value="Kit", value="Item")), LABEL(T("Item"), INPUT(_type="radio", _name="kit_item2", _value="Item", value="Item")))))
+        form2[0][0].append(TR(TD(T("Type") + ":"), TD(LABEL(T("Kit"), INPUT(_type="radio", _name="kit_item2", _value="Kit", value="Item")), LABEL(T("Item"), INPUT(_type="radio", _name="kit_item2", _value="Item", value="Item")))))
         addtitle = T("Add to Bundle")
         response.view = "%s/bundle_kit_item_list_create.html" % module
         output.update(dict(subtitle=subtitle, items=items, addtitle=addtitle, form1=form1, form2=form2, bundle=bundle))
@@ -990,13 +994,13 @@ def bundle_dupes(form):
 
 def bundle_update_items():
     "Update a Bundle's items (Quantity, Minutes, Megabytes & Delete)"
-    
+
     try:
         bundle = int(request.args(0))
     except TypeError, ValueError:
         session.error = T("Need to specify a bundle!")
         redirect(URL(r=request, f="bundle"))
-    
+
     tables = [db.budget_bundle_kit, db.budget_bundle_item]
     authorised = shn_has_permission("update", tables[0]) and shn_has_permission("update", tables[1])
     if authorised:
@@ -1046,7 +1050,7 @@ def bundle_update_items():
         # Update the Total values
         bundle_totals(bundle)
         # Audit
-        shn_audit_update_m2m(resource="bundle_kit_item", record=bundle, representation="html")
+        s3_audit("update", module, "bundle_kit_item", record=bundle, representation="html")
         session.flash = T("Bundle updated")
     else:
         session.error = T("Not authorised!")
@@ -1114,7 +1118,7 @@ def project():
     resource = request.function
     tablename = "org_%s" % (resource)
     table = db[tablename]
-    
+
     # ServerSidePagination
     response.s3.pagination = True
 
@@ -1164,13 +1168,13 @@ def budget():
 
 def budget_staff_bundle():
     "Many to Many CRUD Controller"
-    
+
     try:
         budget = int(request.args(0))
     except TypeError, ValueError:
         session.error = T("Need to specify a Budget!")
         redirect(URL(r=request, f="budget"))
-    
+
     tables = [db.budget_budget_staff, db.budget_budget_bundle]
     authorised = shn_has_permission("update", tables[0]) and shn_has_permission("update", tables[1])
 
@@ -1182,12 +1186,14 @@ def budget_staff_bundle():
     # Start building the Return with the common items
     output = dict(title=title, description=budget_description, onetime_cost=budget_onetime_cost, recurring_cost=budget_recurring_cost)
     # Audit
-    shn_audit_read(operation="list", module=module, resource="budget_staff_bundle", record=budget, representation="html")
+    s3_audit("list", module, "budget_staff_bundle", record=budget, representation="html")
     item_list = []
     even = True
     if authorised:
         # Audit
-        crud.settings.create_onaccept = lambda form: shn_audit_create(form, module, "budget_staff_bundle", "html")
+        crud.settings.create_onaccept = lambda form: s3_audit("create", module, "budget_staff_bundle",
+                                                              form=form,
+                                                              representation="html")
         # Display a List_Create page with editable Quantities & Months
 
         # Staff
@@ -1258,9 +1264,9 @@ def budget_staff_bundle():
         crud.settings.create_onaccept = lambda form: budget_total(form)
         crud.messages.record_created = T("Budget Updated")
         form1 = crud.create(tables[0], next=URL(r=request, args=[budget]))
-        form1[0][0].append(TR(TD(T("Type:")), TD(LABEL(T("Staff"), INPUT(_type="radio", _name="staff_bundle1", _value="Staff", value="Staff")), LABEL(T("Bundle"), INPUT(_type="radio", _name="staff_bundle1", _value="Bundle", value="Staff")))))
+        form1[0][0].append(TR(TD(T("Type") + ":"), TD(LABEL(T("Staff"), INPUT(_type="radio", _name="staff_bundle1", _value="Staff", value="Staff")), LABEL(T("Bundle"), INPUT(_type="radio", _name="staff_bundle1", _value="Bundle", value="Staff")))))
         form2 = crud.create(tables[1], next=URL(r=request, args=[budget]))
-        form2[0][0].append(TR(TD(T("Type:")), TD(LABEL(T("Staff"), INPUT(_type="radio", _name="staff_bundle2", _value="Staff", value="Bundle")), LABEL(T("Bundle"), INPUT(_type="radio", _name="staff_bundle2", _value="Bundle", value="Bundle")))))
+        form2[0][0].append(TR(TD(T("Type") + ":"), TD(LABEL(T("Staff"), INPUT(_type="radio", _name="staff_bundle2", _value="Staff", value="Bundle")), LABEL(T("Bundle"), INPUT(_type="radio", _name="staff_bundle2", _value="Bundle", value="Bundle")))))
         addtitle = T("Add to budget")
         response.view = "%s/budget_staff_bundle_list_create.html" % module
         output.update(dict(subtitle=subtitle, items=items, addtitle=addtitle, form1=form1, form2=form2, budget=budget))
@@ -1408,13 +1414,13 @@ def budget_totals(budget):
 
 def budget_update_items():
     "Update a Budget's items (Quantity, Months & Delete)"
-    
+
     try:
         budget = int(request.args(0))
     except TypeError, ValueError:
         session.error = T("Need to specify a Budget!")
         redirect(URL(r=request, f="budget"))
-    
+
     tables = [db.budget_budget_staff, db.budget_budget_bundle]
     authorised = shn_has_permission("update", tables[0]) and shn_has_permission("update", tables[1])
     if authorised:
@@ -1454,7 +1460,7 @@ def budget_update_items():
         # Update the Total values
         budget_totals(budget)
         # Audit
-        shn_audit_update_m2m(resource="budget_staff_bundle", record=budget, representation="html")
+        s3_audit("update", module, "staff_bundle", record=budget, representation="html")
         session.flash = T("Budget updated")
     else:
         session.error = T("Not authorised!")

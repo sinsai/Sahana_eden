@@ -211,23 +211,12 @@ if deployment_settings.has_module(module):
 
 
     # -----------------------------------------------------------------------------
-    def shn_hms_hospital_onvalidation(form):
-
-        if "gov_uuid" in db.hms_hospital.fields and HMS_HOSPITAL_USE_GOVUUID:
-            if form.vars.gov_uuid is not None and not str(form.vars.gov_uuid).isspace():
-                form.vars.uuid = "urn:health-facilty-id:%s" % form.vars.gov_uuid
-            else:
-                form.vars.gov_uuid = None
-
-
     def shn_hms_hospital_onaccept(form, table=None):
 
         shn_site_onaccept(form, table=table)
 
 
     s3xrc.model.configure(table,
-                          onvalidation=lambda form: \
-                          shn_hms_hospital_onvalidation(form),
                           onaccept=lambda form, tab=table: \
                           shn_hms_hospital_onaccept(form, table=tab),
                           list_fields=["id",

@@ -512,7 +512,7 @@ if deployment_settings.has_module(module):
     table.sub_category.requires = IS_IN_DB(db, "lms_catalog_subcat.id", "lms_catalog_subcat.name")
     table.sub_category.comment = DIV(A(T("Add Item Sub-Category"), _class="colorbox", _href=URL(r=request, c="lms", f="catalog_subcat", args="create", vars=dict(format="popup")), _target="top"), DIV( _class="tooltip", _title=T("Add main Item Sub-Category.")))
     table.sender_site.requires = IS_IN_DB(db, "lms_site.id", "lms_site.name")
-    table.sender_site.comment = DIV(A(T("Add Sender Organisation"), _class="colorbox", _href=URL(r=request, c="lms", f="site", args="create", vars=dict(format="popup")), _target="top"), DIV( _class="tooltip", _title=T("Add Sender Site.")))
+    table.sender_site.comment = DIV(A(T("Add Sender Organization"), _class="colorbox", _href=URL(r=request, c="lms", f="site", args="create", vars=dict(format="popup")), _target="top"), DIV( _class="tooltip", _title=T("Add Sender Site.")))
     table.recipient_site.requires = IS_IN_DB(db, "lms_site.id", "lms_site.name")
     table.recipient_site.comment = DIV(A(T("Add Recipient Site"), _class="colorbox", _href=URL(r=request, c="lms", f="site", args="create", vars=dict(format="popup")), _target="top"), DIV( _class="tooltip", _title=T("Add Recipient Site.")))
     table.designated.label = T("Designated for")

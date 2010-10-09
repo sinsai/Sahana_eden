@@ -6,132 +6,132 @@
 }
 
 /* Toolbar */
-.zoomfull {
+#mappanel .zoomfull {
     background-image: url(../../img/gis/mapfish/icon_zoomfull.png) !important;
     height: 20px !important;
     width: 20px !important;
 }
-.zoomin {
+#mappanel .zoomin {
     background-image: url(../../img/gis/mapfish/icon_zoomin.png) !important;
     height: 20px !important;
     width: 20px !important;
 }
-.zoomout {
+#mappanel .zoomout {
     background-image: url(../../img/gis/mapfish/icon_zoomout.png) !important;
     height: 20px !important;
     width: 20px !important;
 }
-.pan-off {
+#mappanel .pan-off {
     background-image: url(../../img/gis/mapfish/icon_pan.png) !important;
     height: 20px !important;
     width: 20px !important;
 }
-.measure-off {
+#mappanel .measure-off {
   background-image: url(../../img/gis/measuring-stick-off.png) !important;
   height: 20px !important;
   width: 20px !important;
 }
-.measure-area {
+#mappanel .measure-area {
   background-image: url(../../img/gis/measure-area-off.png) !important;
   height: 20px !important;
   width: 20px !important;
 }
-.modifyfeature {
+#mappanel .modifyfeature {
     background-image: url(../../img/gis/mapfish/move_vertex_off.png) !important;
     height: 20px !important;
     width: 20px !important;
 }
-.drawpoint-off {
+#mappanel .drawpoint-off {
   background-image: url(../../img/gis/add_point_off.png) !important;
   height: 20px !important;
   width: 20px !important;
 }
-.drawline-off {
+#mappanel .drawline-off {
   background-image: url(../../img/gis/mapfish/draw_line_off.png) !important;
   height: 20px !important;
   width: 20px !important;
 }
-.drawpolygon-off {
+#mappanel .drawpolygon-off {
   background-image: url(../../img/gis/mapfish/draw_polygon_off.png) !important;
   height: 20px !important;
   width: 20px !important;
 }
-.info {
+#mappanel .info {
   background-image: url(../../img/gis/mapfish/info.png) !important;
   height: 20px !important;
   width: 20px !important;
 }
-.searchclick {
+#mappanel .searchclick {
     background-image: url(../../img/ext/information.png) !important;
     height: 20px !important;
     width: 20px !important;
 }
-.searchbox {
+#mappanel .searchbox {
     background-image: url(../../img/ext/information-box.png) !important;
     height: 20px !important;
     width: 20px !important;
 }
-.back {
+#mappanel .back {
     background-image: url(../../img/gis/mapfish/resultset_previous.png) !important;
     height: 20px !important;
     width: 20px !important;
 }
-.next {
+#mappanel .next {
     background-image: url(../../img/gis/mapfish/resultset_next.png) !important;
     height: 20px !important;
     width: 20px !important;
 }
-.save {
+#mappanel .save {
     background-image: url(../../img/ext/save.gif) !important;
     height: 20px !important;
     width: 20px !important;
 }
-.movefeature {
+#mappanel .movefeature {
     background-image: url(../../img/gis/arrow_refresh.png) !important;
     height: 20px !important;
     width: 20px !important;
 }
-.removefeature {
+#mappanel .removefeature {
     background-image: url(../../img/gis/remove_point_off.png) !important;
     height: 20px !important;
     width: 20px !important;
 }
-.resizefeature {
+#mappanel .resizefeature {
     background-image: url(../../img/gis/resize.png) !important;
     height: 20px !important;
     width: 20px !important;
 }
-.rotatefeature {
+#mappanel .rotatefeature {
     background-image: url(../../img/gis/arrow_rotate_clockwise.png) !important;
     height: 20px !important;
     width: 20px !important;
 }
 
 /*
-.mf-print-action {
+#mappanel .mf-print-action {
     background-image: url(../../img/gis/mapfish/printer.png) !important;
 }
-.pan-on{
+#mappanel .pan-on{
     background-image: url(../../img/gis/openlayers/theme_default/pan_on.png) !important;
     height: 20px !important;
     width: 20px !important;
 }
-.drawpoint-on {
+#mappanel .drawpoint-on {
   background-image: url(../../img/gis/openlayers/theme_default/add_point_on.png) !important;
   height: 20px !important;
   width: 20px !important;
 }
-.drawline-on {
+#mappanel .drawline-on {
   background-image: url(../../img/gis/openlayers/theme_default/draw_line_on.png) !important;
   height: 20px !important;
   width: 20px !important;
 }
-.drawpolygon-on{
+#mappanel .drawpolygon-on{
   background-image: url(../../img/gis/openlayers/theme_default/draw_polygon_on.png) !important;
   height: 20px !important;
   width: 20px !important;
 }
-.measure-on {
+#mappanel .measure-on {
   background-image: url(../../img/gis/measuring-stick-on.png) !important;
   height: 20px !important;
   width: 20px !important;

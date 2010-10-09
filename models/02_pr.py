@@ -15,7 +15,7 @@ module = "pr"
 pr_pe_types = Storage(
     pr_person = T("Person"),
     pr_group = T("Group"),
-    org_organisation = T("Organisation"),
+    org_organisation = T("Organization"),
     org_office = T("Office"),
     dvi_body = T("Body")
 )
@@ -311,7 +311,12 @@ table = db.define_table(tablename,
                         comments(),
                         migrate=migrate, *s3_meta_fields())
 
+table.first_name.label = T("First Name")
+table.middle_name.label = T("Middle Name")
+table.last_name.label = T("Last Name")
+table.local_name.label = T("Local Name")
 
+table.date_of_birth.label = T("Date of Birth")
 table.date_of_birth.requires = IS_NULL_OR(IS_DATE_IN_RANGE(
                                maximum=request.utcnow.date(),
                                error_message="%s " % T("Enter a date before") + "%(max)s!"))
@@ -391,7 +396,39 @@ person_id = S3ReusableField("person_id", db.pr_person,
                             ondelete = "RESTRICT")
 
 # -----------------------------------------------------------------------------
+def pr_person_onvalidation(form):
+
+    try:
+        age = int(form.vars.get("age_group", None))
+    except ValueError:
+        age = None
+    dob = form.vars.get("date_of_birth", None)
+
+    if age and age != 1 and dob:
+        now = request.utcnow
+        dy = int((now.date() - dob).days / 365.25)
+        if dy < 1:
+            ag = 1
+        elif dy < 2:
+            ag = 2
+        elif dy < 12:
+            ag = 3
+        elif dy < 21:
+            ag = 4
+        elif dy < 51:
+            ag = 5
+        else:
+            ag = 6
+
+        if age != ag:
+            form.errors.age_group = T("Age group does not match actual age.")
+            return False
+
+    return True
+
+# -----------------------------------------------------------------------------
 s3xrc.model.configure(table,
+    onvalidation=lambda form: pr_person_onvalidation(form),
     onaccept=lambda form, table=table: shn_pentity_onaccept(form, table=table),
     delete_onaccept=lambda form: shn_pentity_ondelete(form),
     list_fields = [
@@ -592,7 +629,7 @@ def shn_pr_person_search_simple(r, **attr):
 
         # Select form
         form = FORM(TABLE(
-                TR(T("Name and/or ID") + " : ",
+                TR("%s: " % T("Name and/or ID"),
                    INPUT(_type="text", _name="label", _size="40"),
                    DIV(DIV(_class="tooltip",
                            _title=T("Name and/or ID") + "|" + T("To search for a person, enter any of the first, middle or last names and/or an ID number of a person, separated by spaces. You may use % as wildcard. Press 'Search' without input to list all persons.")))),
@@ -665,19 +702,19 @@ def shn_pr_rheader(jr, tabs=[]):
             if person:
                 rheader = DIV(TABLE(
 
-                    TR(TH(T("Name: ")),
+                    TR(TH("%s: " % T("Name")),
                        vita.fullname(person),
-                       TH(T("ID Label: ")),
+                       TH("%s: " % T("ID Label")),
                        "%(pe_label)s" % person),
 
-                    TR(TH(T("Date of Birth: ")),
+                    TR(TH("%s: " % T("Date of Birth")),
                        "%s" % (person.date_of_birth or T("unknown")),
-                       TH(T("Gender: ")),
+                       TH("%s: " % T("Gender")),
                        "%s" % pr_gender_opts.get(person.gender, T("unknown"))),
 
-                    TR(TH(T("Nationality: ")),
+                    TR(TH("%s: " % T("Nationality")),
                        "%s" % pr_nations.get(person.nationality, T("unknown")),
-                       TH(T("Age Group: ")),
+                       TH("%s: " % T("Age Group")),
                        "%s" % pr_age_group_opts.get(person.age_group, T("unknown"))),
 
                     #))
@@ -695,11 +732,11 @@ def shn_pr_rheader(jr, tabs=[]):
             if group:
                 rheader = DIV(TABLE(
 
-                    TR(TH(T("Name: ")),
+                    TR(TH("%s: " % T("Name")),
                        group.name,
                        TH(""),
                        ""),
-                    TR(TH(T("Description: ")),
+                    TR(TH("%s: " % T("Description")),
                        group.description,
                        TH(""),
                        "")

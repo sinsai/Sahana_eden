@@ -109,7 +109,6 @@ def getBrowserName(userAgent):
     else:
         return "Unknown"
 
-# shn_get_db_field_value -----------------------------------------------------
 def shn_split_multi_value(value):
     """
     @author: Michael Howden (michael@aidiq.com)
@@ -134,7 +133,7 @@ def shn_split_multi_value(value):
             return re.compile('[\w\-:]+').findall(str(value))  
     else:
         return [str(value)]
-# shn_get_db_field_value -----------------------------------------------------
+
 def shn_get_db_field_value(db,
                            table,
                            field,

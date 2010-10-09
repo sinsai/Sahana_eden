@@ -95,7 +95,7 @@ def index():
                     person = db(db.pr_person.uuid == session.auth.user.person_uuid)
                     person = person.select(db.pr_person.id,
                                         db.pr_person.missing,
-                                        limitby=(0,1)).first()
+                                        limitby=(0, 1)).first()
                     if person and person.missing:
                         myself = URL(r=request, f="person",
                                     args=[person.id, "presence"],

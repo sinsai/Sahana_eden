@@ -71,10 +71,6 @@ def get():
     #return db.test_get.insert(**json.loads(request.vars.fields))
     return db.test_get.insert(**dict (request.vars))
 
-def feature():
-    row = TR(TD(T('Type:')), TD(LABEL(T('Feature Class'), INPUT(_type="radio", _name="fg1", _value="FeatureClass", value="FeatureClass")), LABEL(T('Feature'), INPUT(_type="radio", _name="fg1", _value="Feature", value="FeatureClass"))))
-    return dict(row=row)
-
 def refresh():
     response.refresh = '<noscript><meta http-equiv="refresh" content="2; url=' + URL(r=request, c='budget', f='item') + '" /></noscript>'
     return dict()

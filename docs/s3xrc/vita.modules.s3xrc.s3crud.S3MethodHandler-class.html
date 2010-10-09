@@ -3,7 +3,7 @@
           "DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
 <head>
-  <title>vita.modules.s3xrc.S3ResourceComponent</title>
+  <title>vita.modules.s3xrc.s3crud.S3MethodHandler</title>
   <link rel="stylesheet" href="epydoc.css" type="text/css" />
   <script type="text/javascript" src="epydoc.js"></script>
 </head>
@@ -44,8 +44,9 @@
       <span class="breadcrumbs">
         Package&nbsp;vita ::
         Package&nbsp;modules ::
-        <a href="vita.modules.s3xrc-module.html">Module&nbsp;s3xrc</a> ::
-        Class&nbsp;S3ResourceComponent
+        <a href="vita.modules.s3xrc-module.html">Package&nbsp;s3xrc</a> ::
+        <a href="vita.modules.s3xrc.s3crud-module.html">Module&nbsp;s3crud</a> ::
+        Class&nbsp;S3MethodHandler
       </span>
     </td>
     <td>
@@ -55,22 +56,22 @@
     onclick="toggle_private();">hide&nbsp;private</a>]</span></td></tr>
         <tr><td align="right"><span class="options"
             >[<a href="frames.html" target="_top">frames</a
-            >]&nbsp;|&nbsp;<a href="vita.modules.s3xrc.S3ResourceComponent-class.html"
+            >]&nbsp;|&nbsp;<a href="vita.modules.s3xrc.s3crud.S3MethodHandler-class.html"
             target="_top">no&nbsp;frames</a>]</span></td></tr>
       </table>
     </td>
   </tr>
 </table>
 <!-- ==================== CLASS DESCRIPTION ==================== -->
-<h1 class="epydoc">Class S3ResourceComponent</h1><p class="nomargin-top"><span class="codelink"><a href="vita.modules.s3xrc-pysrc.html#S3ResourceComponent">source&nbsp;code</a></span></p>
+<h1 class="epydoc">Class S3MethodHandler</h1><p class="nomargin-top"><span class="codelink"><a href="vita.modules.s3xrc.s3crud-pysrc.html#S3MethodHandler">source&nbsp;code</a></span></p>
 <pre class="base-tree">
 object --+
          |
-        <strong class="uidshort">S3ResourceComponent</strong>
+        <strong class="uidshort">S3MethodHandler</strong>
 </pre>
 
 <hr />
-<p>Class to represent component relations between resources</p>
+<p>REST Method Handler Base Class</p>
 
 <!-- ==================== INSTANCE METHODS ==================== -->
 <a name="section-InstanceMethods"></a>
@@ -95,14 +96,11 @@ object --+
     </td><td class="summary">
       <table width="100%" cellpadding="0" cellspacing="0" border="0">
         <tr>
-          <td><span class="summary-sig"><a href="vita.modules.s3xrc.S3ResourceComponent-class.html#__init__" class="summary-sig-name">__init__</a>(<span class="summary-sig-arg">self</span>,
-        <span class="summary-sig-arg">db</span>,
-        <span class="summary-sig-arg">prefix</span>,
-        <span class="summary-sig-arg">name</span>,
-        <span class="summary-sig-arg">**attr</span>)</span><br />
+          <td><span class="summary-sig"><a href="vita.modules.s3xrc.s3crud.S3MethodHandler-class.html#__init__" class="summary-sig-name">__init__</a>(<span class="summary-sig-arg">self</span>,
+        <span class="summary-sig-arg">db</span>)</span><br />
       Constructor</td>
           <td align="right" valign="top">
-            <span class="codelink"><a href="vita.modules.s3xrc-pysrc.html#S3ResourceComponent.__init__">source&nbsp;code</a></span>
+            <span class="codelink"><a href="vita.modules.s3xrc.s3crud-pysrc.html#S3MethodHandler.__init__">source&nbsp;code</a></span>
             
           </td>
         </tr>
@@ -116,12 +114,12 @@ object --+
     </td><td class="summary">
       <table width="100%" cellpadding="0" cellspacing="0" border="0">
         <tr>
-          <td><span class="summary-sig"><a href="vita.modules.s3xrc.S3ResourceComponent-class.html#set_attr" class="summary-sig-name">set_attr</a>(<span class="summary-sig-arg">self</span>,
-        <span class="summary-sig-arg">name</span>,
-        <span class="summary-sig-arg">value</span>)</span><br />
-      Sets an attribute for a component</td>
+          <td><span class="summary-sig"><a href="vita.modules.s3xrc.s3crud.S3MethodHandler-class.html#__call__" class="summary-sig-name">__call__</a>(<span class="summary-sig-arg">self</span>,
+        <span class="summary-sig-arg">r</span>,
+        <span class="summary-sig-arg">**attr</span>)</span><br />
+      Caller, invoked by REST interface</td>
           <td align="right" valign="top">
-            <span class="codelink"><a href="vita.modules.s3xrc-pysrc.html#S3ResourceComponent.set_attr">source&nbsp;code</a></span>
+            <span class="codelink"><a href="vita.modules.s3xrc.s3crud-pysrc.html#S3MethodHandler.__call__">source&nbsp;code</a></span>
             
           </td>
         </tr>
@@ -135,11 +133,31 @@ object --+
     </td><td class="summary">
       <table width="100%" cellpadding="0" cellspacing="0" border="0">
         <tr>
-          <td><span class="summary-sig"><a href="vita.modules.s3xrc.S3ResourceComponent-class.html#get_attr" class="summary-sig-name">get_attr</a>(<span class="summary-sig-arg">self</span>,
-        <span class="summary-sig-arg">name</span>)</span><br />
-      Reads an attribute of the component</td>
+          <td><span class="summary-sig"><a href="vita.modules.s3xrc.s3crud.S3MethodHandler-class.html#respond" class="summary-sig-name">respond</a>(<span class="summary-sig-arg">self</span>,
+        <span class="summary-sig-arg">r</span>,
+        <span class="summary-sig-arg">**attr</span>)</span><br />
+      Responder, to be implemented in subclass</td>
           <td align="right" valign="top">
-            <span class="codelink"><a href="vita.modules.s3xrc-pysrc.html#S3ResourceComponent.get_attr">source&nbsp;code</a></span>
+            <span class="codelink"><a href="vita.modules.s3xrc.s3crud-pysrc.html#S3MethodHandler.respond">source&nbsp;code</a></span>
+            
+          </td>
+        </tr>
+      </table>
+      
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a href="vita.modules.s3xrc.s3crud.S3MethodHandler-class.html#callback" class="summary-sig-name">callback</a>(<span class="summary-sig-arg">self</span>,
+        <span class="summary-sig-arg">hook</span>,
+        <span class="summary-sig-arg">*args</span>,
+        <span class="summary-sig-arg">**vars</span>)</span></td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="vita.modules.s3xrc.s3crud-pysrc.html#S3MethodHandler.callback">source&nbsp;code</a></span>
             
           </td>
         </tr>
@@ -217,79 +235,84 @@ object --+
   <table width="100%" cellpadding="0" cellspacing="0" border="0">
   <tr valign="top"><td>
   <h3 class="epydoc"><span class="sig"><span class="sig-name">__init__</span>(<span class="sig-arg">self</span>,
-        <span class="sig-arg">db</span>,
-        <span class="sig-arg">prefix</span>,
-        <span class="sig-arg">name</span>,
-        <span class="sig-arg">**attr</span>)</span>
+        <span class="sig-arg">db</span>)</span>
     <br /><em class="fname">(Constructor)</em>
   </h3>
   </td><td align="right" valign="top"
-    ><span class="codelink"><a href="vita.modules.s3xrc-pysrc.html#S3ResourceComponent.__init__">source&nbsp;code</a></span>&nbsp;
+    ><span class="codelink"><a href="vita.modules.s3xrc.s3crud-pysrc.html#S3MethodHandler.__init__">source&nbsp;code</a></span>&nbsp;
     </td>
   </tr></table>
   
   <p>Constructor</p>
   <dl class="fields">
-    <dt>Parameters:</dt>
-    <dd><ul class="nomargin-top">
-        <li><strong class="pname"><code>db</code></strong> - the database (DAL)</li>
-        <li><strong class="pname"><code>prefix</code></strong> - prefix of the resource name (=module name)</li>
-        <li><strong class="pname"><code>name</code></strong> - name of the resource (=without prefix)</li>
-        <li><strong class="pname"><code>attr</code></strong> - attributes</li>
-    </ul></dd>
     <dt>Overrides:
         object.__init__
     </dt>
   </dl>
 </td></tr></table>
 </div>
-<a name="set_attr"></a>
+<a name="__call__"></a>
 <div>
 <table class="details" border="1" cellpadding="3"
        cellspacing="0" width="100%" bgcolor="white">
 <tr><td>
   <table width="100%" cellpadding="0" cellspacing="0" border="0">
   <tr valign="top"><td>
-  <h3 class="epydoc"><span class="sig"><span class="sig-name">set_attr</span>(<span class="sig-arg">self</span>,
-        <span class="sig-arg">name</span>,
-        <span class="sig-arg">value</span>)</span>
+  <h3 class="epydoc"><span class="sig"><span class="sig-name">__call__</span>(<span class="sig-arg">self</span>,
+        <span class="sig-arg">r</span>,
+        <span class="sig-arg">**attr</span>)</span>
+    <br /><em class="fname">(Call operator)</em>
   </h3>
   </td><td align="right" valign="top"
-    ><span class="codelink"><a href="vita.modules.s3xrc-pysrc.html#S3ResourceComponent.set_attr">source&nbsp;code</a></span>&nbsp;
+    ><span class="codelink"><a href="vita.modules.s3xrc.s3crud-pysrc.html#S3MethodHandler.__call__">source&nbsp;code</a></span>&nbsp;
     </td>
   </tr></table>
   
-  <p>Sets an attribute for a component</p>
+  <p>Caller, invoked by REST interface</p>
   <dl class="fields">
-    <dt>Parameters:</dt>
-    <dd><ul class="nomargin-top">
-        <li><strong class="pname"><code>name</code></strong> - attribute name</li>
-        <li><strong class="pname"><code>value</code></strong> - attribute value</li>
-    </ul></dd>
   </dl>
 </td></tr></table>
 </div>
-<a name="get_attr"></a>
+<a name="respond"></a>
 <div>
 <table class="details" border="1" cellpadding="3"
        cellspacing="0" width="100%" bgcolor="white">
 <tr><td>
   <table width="100%" cellpadding="0" cellspacing="0" border="0">
   <tr valign="top"><td>
-  <h3 class="epydoc"><span class="sig"><span class="sig-name">get_attr</span>(<span class="sig-arg">self</span>,
-        <span class="sig-arg">name</span>)</span>
+  <h3 class="epydoc"><span class="sig"><span class="sig-name">respond</span>(<span class="sig-arg">self</span>,
+        <span class="sig-arg">r</span>,
+        <span class="sig-arg">**attr</span>)</span>
   </h3>
   </td><td align="right" valign="top"
-    ><span class="codelink"><a href="vita.modules.s3xrc-pysrc.html#S3ResourceComponent.get_attr">source&nbsp;code</a></span>&nbsp;
+    ><span class="codelink"><a href="vita.modules.s3xrc.s3crud-pysrc.html#S3MethodHandler.respond">source&nbsp;code</a></span>&nbsp;
     </td>
   </tr></table>
   
-  <p>Reads an attribute of the component</p>
+  <p>Responder, to be implemented in subclass</p>
   <dl class="fields">
-    <dt>Parameters:</dt>
-    <dd><ul class="nomargin-top">
-        <li><strong class="pname"><code>name</code></strong> - attribute name</li>
-    </ul></dd>
+  </dl>
+</td></tr></table>
+</div>
+<a name="callback"></a>
+<div>
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr><td>
+  <table width="100%" cellpadding="0" cellspacing="0" border="0">
+  <tr valign="top"><td>
+  <h3 class="epydoc"><span class="sig"><span class="sig-name">callback</span>(<span class="sig-arg">self</span>,
+        <span class="sig-arg">hook</span>,
+        <span class="sig-arg">*args</span>,
+        <span class="sig-arg">**vars</span>)</span>
+  </h3>
+  </td><td align="right" valign="top"
+    ><span class="codelink"><a href="vita.modules.s3xrc.s3crud-pysrc.html#S3MethodHandler.callback">source&nbsp;code</a></span>&nbsp;
+    </td>
+  </tr></table>
+  
+  
+  <dl class="fields">
   </dl>
 </td></tr></table>
 </div>
@@ -325,7 +348,7 @@ object --+
 <table border="0" cellpadding="0" cellspacing="0" width="100%%">
   <tr>
     <td align="left" class="footer">
-    Generated by Epydoc 3.0.1 on Thu Sep 16 21:00:23 2010
+    Generated by Epydoc 3.0.1 on Sun Oct  3 11:44:08 2010
     </td>
     <td align="right" class="footer">
       <a target="mainFrame" href="http://epydoc.sourceforge.net"

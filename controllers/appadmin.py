@@ -179,13 +179,13 @@ def select():
                 orderby = '~' + orderby
     session.last_orderby = orderby
     session.last_query = request.vars.query
-    form = FORM(TABLE(TR(T('Query:'), '', INPUT(_style='width:400px',
+    form = FORM(TABLE(TR(T('Query') + ':', '', INPUT(_style='width:400px',
                 _name='query', _value=request.vars.query or '',
-                requires=IS_NOT_EMPTY(error_message=T("Cannot be empty")))), TR(T('Update:'),
+                requires=IS_NOT_EMPTY(error_message=T("Cannot be empty")))), TR(T('Update') + ':',
                 INPUT(_name='update_check', _type='checkbox',
                 value=False), INPUT(_style='width:400px',
                 _name='update_fields', _value=request.vars.update_fields
-                 or '')), TR(T('Delete:'), INPUT(_name='delete_check',
+                 or '')), TR(T('Delete') + ":", INPUT(_name='delete_check',
                 _class='delete', _type='checkbox', value=False), ''),
                 TR('', '', INPUT(_type='submit', _value='submit'))),
                 _action=URL(r=request,args=request.args))

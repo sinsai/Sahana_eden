@@ -248,7 +248,7 @@ def group_summary():
                                    })
             ret = form.accepts(request.post_vars, session, dbio=True)
             if form.errors:
-                session.error = str(T("There are errors"))
+                session.error = T("There are errors")
 
             forms.append(form)
 
@@ -262,7 +262,7 @@ def group_summary():
                             })
         ret = form.accepts(request.post_vars, session, dbio=True)
         if form.errors:
-            session.error = str(T("There are errors"))
+            session.error = T("There are errors")
 
         forms.append(form)
 
@@ -495,9 +495,9 @@ def discuss():
         if k > 0:
             post_html += "</blockquote>"
         db.delphi_forum_post.insert(title=title, solution_id=item, post=post, post_html=post_html)
-        session.flash = str(T("Your post was added successfully."))
+        session.flash = T("Your post was added successfully.")
     elif form and form.errors:
-        session.error = str(T("There are errors"))
+        session.error = T("There are errors")
 
     return dict(item=item, problem=item.problem_id, duser=duser,
                 form=form, title=T("Discussion Forum"), authorised=False)

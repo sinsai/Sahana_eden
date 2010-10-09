@@ -513,17 +513,17 @@ if deployment_settings.has_module(module):
                 if body:
                     rheader = DIV(TABLE(
 
-                        TR(TH(T("ID Label: ")),
+                        TR(TH("%s: " % T("ID Label")),
                            "%(pe_label)s" % body,
                            TH(""),
                            ""),
 
-                        TR(TH(T("Gender: ")),
+                        TR(TH("%s: " % T("Gender")),
                            "%s" % pr_gender_opts[body.gender],
                            TH(""),
                            ""),
 
-                        TR(TH(T("Age Group: ")),
+                        TR(TH("%s: " % T("Age Group")),
                            "%s" % pr_age_group_opts[body.age_group],
                            TH(""),
                            ""),
@@ -559,7 +559,7 @@ if deployment_settings.has_module(module):
 
             # Select form
             form = FORM(TABLE(
-                    TR(T("ID Tag: "),
+                    TR("%s: " % T("ID Tag"),
                     INPUT(_type="text", _name="label", _size="40"),
                     DIV(DIV(_class="tooltip",
                             _title=T("ID Tag") + "|" + T("To search for a body, enter the ID label of the body. You may use % as wildcard. Press 'Search' without input to list all bodies.")))),

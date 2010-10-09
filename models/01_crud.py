@@ -57,16 +57,18 @@ ROWSPERPAGE = 20
 PRETTY_PRINT = True
 
 # *****************************************************************************
-# Resource Controller
+# Resource Manager
 _s3xrc = local_import("s3xrc")
 
-s3xrc = _s3xrc.S3ResourceController(db,
+s3xrc = _s3xrc.S3ResourceController(
+            #db,
+            globals(),
             domain=request.env.server_name,
             base_url="%s/%s" % (deployment_settings.get_base_public_url(),
                                 request.application),
-            cache=cache,
-            auth=auth,
-            gis=gis,
+            #cache=cache,
+            #auth=auth,
+            #gis=gis,
             rpp=ROWSPERPAGE,
             xml_import_formats = shn_xml_import_formats,
             xml_export_formats = shn_xml_export_formats,
@@ -460,164 +462,8 @@ def import_url(r):
 # These functions should always return True in order to be chainable
 # by "and" for lambda's as onaccept-callbacks. -- nursix --
 
-#
-# shn_audit -------------------------------------------------------------------
-#
-def shn_audit(operation, prefix, name,
-              form=None,
-              record=None,
-              representation=None):
-
-    #print "Audit: %s on %s_%s #%s" % (operation, prefix, name, record or 0)
-
-    if operation in ("list", "read"):
-        return shn_audit_read(operation, prefix, name,
-                              record=record, representation=representation)
-
-    elif operation == "create":
-        return shn_audit_create(form, prefix, name,
-                                representation=representation)
-
-    elif operation == "update":
-        return shn_audit_update(form, prefix, name,
-                                representation=representation)
-
-    elif operation == "delete":
-        return shn_audit_delete(prefix, name, record,
-                                representation=representation)
-
-    return True
-
-# Set shn_audit as audit function for the resource controller
-s3xrc.audit = shn_audit
-
-#
-# shn_audit_read --------------------------------------------------------------
-#
-def shn_audit_read(operation, module, resource, record=None, representation=None):
-
-    """ Called during Read operations to enable optional Auditing """
-
-    if session.s3.audit_read:
-        db.s3_audit.insert(
-                person = auth.user_id,
-                operation = operation,
-                module = module,
-                resource = resource,
-                record = record,
-                representation = representation,
-            )
-    return True
-
-#
-# shn_audit_create ------------------------------------------------------------
-#
-def shn_audit_create(form, module, resource, representation=None):
-
-    """
-        Called during Create operations to enable optional Auditing
-
-        Called as an onaccept so that it only takes effect when
-        saved & can read the new values in::
-            onaccept = lambda form: shn_audit_create(form, module, resource, representation)
-
-    """
-
-    if session.s3.audit_write:
-        record =  form.vars.id
-        new_value = []
-        for var in form.vars:
-            new_value.append(var + ":" + str(form.vars[var]))
-        db.s3_audit.insert(
-                person = auth.user_id,
-                operation = "create",
-                module = module,
-                resource = resource,
-                record = record,
-                representation = representation,
-                new_value = new_value
-            )
-    return True
-
-#
-# shn_audit_update ------------------------------------------------------------
-#
-def shn_audit_update(form, module, resource, representation=None):
-
-    """
-        Called during Create operations to enable optional Auditing
-
-        Called as an onaccept so that it only takes effect when
-        saved & can read the new values in::
-            onaccept = lambda form: shn_audit_update(form, module, resource, representation)
-
-    """
-
-    if session.s3.audit_write:
-        record =  form.vars.id
-        new_value = []
-        for var in form.vars:
-            new_value.append(var + ":" + str(form.vars[var]))
-        db.s3_audit.insert(
-                person = auth.user_id,
-                operation = "update",
-                module = module,
-                resource = resource,
-                record = record,
-                representation = representation,
-                #old_value = old_value, # Need to store these beforehand if we want them
-                new_value = new_value
-            )
-    return True
-
-#
-# shn_audit_update_m2m --------------------------------------------------------
-#
-def shn_audit_update_m2m(module, resource, record, representation=None):
-
-    """
-        Called during Update operations to enable optional Auditing
-        Designed for use in M2M "Update Qty/Delete" (which can't use crud.settings.update_onaccept)
-        shn_audit_update_m2m(resource, record, representation)
-    """
-
-    if session.s3.audit_write:
-        db.s3_audit.insert(
-                person = auth.user_id,
-                operation = "update",
-                module = module,
-                resource = resource,
-                record = record,
-                representation = representation,
-                #old_value = old_value, # Need to store these beforehand if we want them
-                #new_value = new_value  # Various changes can happen, so would need to store dict of {item_id: qty}
-            )
-    return True
-
-#
-# shn_audit_delete ------------------------------------------------------------
-#
-def shn_audit_delete(module, resource, record, representation=None):
-
-    """ Called during Delete operations to enable optional Auditing """
-
-    if session.s3.audit_write:
-        module = module
-        table = "%s_%s" % (module, resource)
-        old_value = []
-        _old_value = db(db[table].id == record).select(limitby=(0, 1)).first()
-        for field in _old_value:
-            old_value.append(field + ":" + str(_old_value[field]))
-        db.s3_audit.insert(
-                person = auth.user_id,
-                operation = "delete",
-                module = module,
-                resource = resource,
-                record = record,
-                representation = representation,
-                old_value = old_value
-            )
-    return True
+s3_audit = _s3xrc.S3Audit(db, session, migrate=migrate)
+s3xrc.audit = s3_audit
 
 # *****************************************************************************
 # Display Representations
@@ -1247,7 +1093,7 @@ def shn_list(r, **attr):
                 _gis.location_id = True
                 if response.s3.gis.map_selector:
                     # Include a map
-                    _map = shn_map(r, method="create")
+                    _map = gis.form_map(r, method="create")
                     output.update(_map=_map)
 
             if r.component:
@@ -1366,7 +1212,7 @@ def shn_create(r, **attr):
             _gis.location_id = True
             if response.s3.gis.map_selector:
                 # Include a map
-                _map = shn_map(r, method="create")
+                _map = gis.form_map(r, method="create")
                 output.update(_map=_map)
 
         # Title, subtitle and resource header
@@ -1693,7 +1539,7 @@ def shn_update(r, **attr):
             _gis.location_id = True
             if response.s3.gis.map_selector:
                 # Include a map
-                _map = shn_map(r, method="update", tablename=tablename, prefix=prefix, name=name)
+                _map = gis.form_map(r, method="update", tablename=tablename, prefix=prefix, name=name)
                 oldlocation = _map["oldlocation"]
                 _map = _map["_map"]
                 output.update(_map=_map, oldlocation=oldlocation)
@@ -1783,7 +1629,7 @@ def shn_delete(r, **attr):
             if s3xrc.get_session(session, prefix=prefix, name=name) == row.id:
                 s3xrc.clear_session(session, prefix=prefix, name=name)
             try:
-                shn_audit("delete", prefix, name, record=row.id, representation=representation)
+                s3xrc.audit("delete", prefix, name, record=row.id, representation=representation)
                 # Reset session vars if necessary
                 if "deleted" in db[table] and deployment_settings.get_security_archive_not_delete():
                     if onvalidation:
@@ -1825,67 +1671,6 @@ def shn_delete(r, **attr):
 #
 def shn_copy(r, **attr):
     redirect(URL(r=request, args="create", vars={"from_record":r.id}))
-
-#
-# shn_map ------------------------------------------------------------------
-#
-def shn_map(r, method="create", tablename=None, prefix=None, name=None):
-    """ Prepare a Map to include in forms"""
-
-    if method == "create":
-        _map = gis.show_map(add_feature = True,
-                            add_feature_active = True,
-                            toolbar = True,
-                            collapsed = True,
-                            window = True,
-                            window_hide = True)
-        return _map
-
-    elif method == "update" and tablename and prefix and name:
-        config = gis.get_config()
-        zoom = config.zoom
-        _locations = db.gis_location
-        fields = [_locations.id, _locations.uuid, _locations.name, _locations.lat, _locations.lon, _locations.level, _locations.parent, _locations.addr_street]
-        location = db((db[tablename].id == r.id) & (_locations.id == db[tablename].location_id)).select(limitby=(0, 1), *fields).first()
-        if location and location.lat is not None and location.lon is not None:
-            lat = location.lat
-            lon = location.lon
-        else:
-            lat = config.lat
-            lon = config.lon
-        layername = T("Location")
-        popup_label = ""
-        filter = Storage(tablename = tablename,
-                         id = r.id
-                        )
-        layer = gis.get_feature_layer(prefix, name, layername, popup_label, filter=filter)
-        feature_queries = [layer]
-        _map = gis.show_map(lat = lat,
-                            lon = lon,
-                            # Same as a single zoom on a cluster
-                            zoom = zoom + 2,
-                            feature_queries = feature_queries,
-                            add_feature = True,
-                            add_feature_active = False,
-                            toolbar = True,
-                            collapsed = True,
-                            window = True,
-                            window_hide = True)
-        if location and location.id:
-            _location = Storage(id = location.id,
-                                uuid = location.uuid,
-                                name = location.name,
-                                lat = location.lat,
-                                lon = location.lon,
-                                level = location.level,
-                                parent = location.parent,
-                                addr_street = location.addr_street
-                                )
-        else:
-            _location = None
-        return dict(_map=_map, oldlocation=_location)
-
-    return dict(None, None)
 
 #
 # shn_search ------------------------------------------------------------------

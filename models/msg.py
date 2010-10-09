@@ -13,11 +13,9 @@ if deployment_settings.has_module(module):
     table = db.define_table(tablename,
                             Field("outgoing_sms_handler"),
                             Field("default_country_code", "integer", default=44),
-                            Field("tropo_token_voice"),
-                            Field("tropo_token_messaging"),
                             migrate=migrate)
 
-    table.outgoing_sms_handler.requires = IS_IN_SET(["Modem", "Gateway"], zero=None)
+    table.outgoing_sms_handler.requires = IS_IN_SET(["Modem","Gateway","Tropo"], zero=None)
 
     #------------------------------------------------------------------------
     resource = "email_settings"
@@ -93,6 +91,16 @@ if deployment_settings.has_module(module):
                             Field("enabled", "boolean", default = False),
                             #Field("preference", "integer", default = 5), To be used later
                             migrate=migrate)
+    
+    # Settings for Tropo
+    resource = "tropo_settings"
+    tablename = "%s_%s" % (module, resource)
+    table = db.define_table(tablename,
+                            Field("token_messaging"),
+                            #Field("token_voice"),
+                            migrate=migrate)
+    
+                            
     # Message priority
     msg_priority_opts = {
         3:T("High"),
@@ -230,7 +238,7 @@ if deployment_settings.has_module(module):
                                         "person_id",
                                        ])
 
-    # Tropo
+    # Tropo for inbound messaging
     # - probably temp...will be merged into the rest of Messaging
     resource = "tropo"
     tablename = "%s_%s" % (module, resource)
@@ -242,6 +250,21 @@ if deployment_settings.has_module(module):
                             *(s3_timestamp() + s3_uid() + s3_deletion_status()))
 
     table.uuid.requires = IS_NOT_IN_DB(db, "%s.uuid" % tablename)
+
+    # Tropo Scratch pad for outbound messaging
+    resource = "tropo_scratch"
+    tablename = "%s_%s" % (module, resource)
+    table = db.define_table(tablename,
+                            Field("row_id","integer"),
+                            Field("message_id","integer"),
+                            Field("recipient"),
+                            Field("message"),
+                            Field("network"),
+                            migrate=migrate,
+                            *(s3_timestamp() + s3_uid() + s3_deletion_status()))
+
+    table.uuid.requires = IS_NOT_IN_DB(db, "%s.uuid" % tablename)
+
 
 
     # CAP: Common Alerting Protocol

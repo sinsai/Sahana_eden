@@ -1783,6 +1783,7 @@
 'Memberships': 'Memberships',
 'Message': 'Message',
 'Message Details': 'Message Details',
+'Message Sent': 'Message Sent',
 'Message Variable': 'Message Variable',
 'Message added': 'Message added',
 'Message deleted': 'Message deleted',

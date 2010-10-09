@@ -40,13 +40,27 @@ def tropo():
     #from applications.eden.modules.tropo import Tropo, Session
     t = Tropo()
     
-    if request.env.request_method == "post":
+    if request.env.request_method == "POST":
         # This is their service contacting us, so parse their request
-        s = Session(request.body)
-        db.msg_tropo.insert(json=s)
-        t.say(["Received!"])
-        output = t.RenderJson()
-        return output
+        s = Session(request.body.read())
+        
+        # If this is a response to a session request then send back the message again
+        if "numberToDial" in s.parameters:
+            t.call(to=s.parameters["numberToDial"], network=s.parameters["network"])
+            t.say(s.parameters["message"])
+            return t.RenderJson()
+        else:
+            # Otherwise place it in the InBox
+            # @ToDo: For now dumping in a separate table
+            uuid = s.parameters["id"]
+            callerid = s.parameters["from"]
+            destination = s.parameters["to"]
+            message = s.parameters["initialText"]
+            db.msg_tropo.insert(uuid=uuid, callerid=callerid, destination=destination, message=message)
+            # Return a '200 OK'
+            t.say(["Received!"])
+            output = t.RenderJson()
+            return output
     else:
         # This is us initiating an outbound request to their service, so parse our request
         try:
@@ -77,7 +91,8 @@ def tropo():
             # Send the voice call
             pass
         else:
-            token = db(db.msg_setting.id == 1).select(db.msg_setting.tropo_token_messaging, limitby=(0, 1)).first().tropo_token_messaging
+            #token = db(db.msg_setting.id == 1).select(db.msg_setting.tropo_token_messaging, limitby=(0, 1)).first().tropo_token_messaging
+            token = db(db.msg_setting.id == 1).select(db.msg_setting.tropo_token_voice, limitby=(0, 1)).first().tropo_token_voice
             if not token:
                 session.error = T("Need to configure a Messaging Token!")
                 redirect(URL(r=request, f="setting"))
@@ -87,7 +102,8 @@ def tropo():
                 network = "SMS"
                 try:
                     # @ToDo: Handle multiple phone numbers
-                    number = db((db.pr_pe_contact.pe_id == pe_id) & (db.pr_pe_contact.contact_method == 2)).select(db.pr_pe_contact.value, limitby=(0, 1)).first().value
+                    mobile = db((db.pr_pe_contact.pe_id == pe_id) & (db.pr_pe_contact.contact_method == 2)).select(db.pr_pe_contact.value, limitby=(0, 1)).first().value
+                    number = msg.sanitise_phone(mobile)
                 except:
                     session.error = T("No Mobile Phone set for this person entity!")
                     # @ToDo handle Groups
@@ -105,9 +121,18 @@ def tropo():
                 session.error = T("Unknown Service!")
                 redirect(URL(r=request, f="index"))
             params = urlencode([("action", action), ("token", token), ("network", network), ("numberToDial", number), ("message", message)])
-            data = urlopen("%s?%s" % (base_url, params)).read()
-            session.flash = T("Message Sent")
-            redirect(URL(r=request, f="index"))
+            # Request Session
+            # https://www.tropo.com/docs/webapi/sessionapi.htm
+            xml = urlopen("%s?%s" % (base_url, params)).read()
+            # Parse Response (actual message is sent as a response to the POST which will happen in parallel)
+            root = etree.fromstring(xml)
+            elements = root.getchildren()
+            if elements[0].text == "false":
+                session.error = T("Message sending failed! Reason:") + " " + elements[2].text
+                redirect(URL(r=request, f="index"))
+            else:
+                session.flash = T("Message Sent")
+                redirect(URL(r=request, f="index"))
 
 @auth.shn_requires_membership(1)
 def setting():

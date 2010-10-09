@@ -235,7 +235,9 @@ if deployment_settings.has_module(module):
     resource = "tropo"
     tablename = "%s_%s" % (module, resource)
     table = db.define_table(tablename,
-                            Field("json"),
+                            Field("callerid"),
+                            Field("destination"),
+                            Field("message"),
                             migrate=migrate,
                             *(s3_timestamp() + s3_uid() + s3_deletion_status()))
 

@@ -176,6 +176,10 @@ if populate:
         table = db[tablename]
         if not db(table.id > 0).count():
             table.insert(to_variable = "to")
+        tablename = "msg_tropo_settings"
+        table = db[tablename]
+        if not db(table.id > 0).count():
+            table.insert(token_voice = "")
         tablename = "msg_setting"
         table = db[tablename]
         if not db(table.id > 0).count():

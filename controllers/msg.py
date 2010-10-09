@@ -52,8 +52,8 @@ def tropo():
             query = (table.row_id == row_id)
             row = db(query).select().first() 
             # Send the message
-            t.call(to=row.recipient, network=row.network)
-            t.say(row.message)
+            #t.message(say_obj={"say":{"value":"Message "+ row.message +  " to " + row.recipient + " via "+row.network}},to='lifeeth@gmail.com',network='JABBER')
+            t.message(say_obj={"say":{"value":row.message}},to=row.recipient,network=row.network)
             # Update status to sent in Outbox
             db(db.msg_outbox.id == row.row_id).update(status=2)
             # Set message log to actioned

@@ -96,8 +96,8 @@ if deployment_settings.has_module(module):
     resource = "tropo_settings"
     tablename = "%s_%s" % (module, resource)
     table = db.define_table(tablename,
-                            Field("token_voice"),
                             Field("token_messaging"),
+                            #Field("token_voice"),
                             migrate=migrate)
     
                             
@@ -238,19 +238,20 @@ if deployment_settings.has_module(module):
                                         "person_id",
                                        ])
 
-    # Tropo
+    # Tropo for inbound messaging
     # - probably temp...will be merged into the rest of Messaging
     resource = "tropo"
     tablename = "%s_%s" % (module, resource)
     table = db.define_table(tablename,
-                            Field("json"),
+                            Field("callerid"),
+                            Field("destination"),
+                            Field("message"),
                             migrate=migrate,
                             *(s3_timestamp() + s3_uid() + s3_deletion_status()))
 
     table.uuid.requires = IS_NOT_IN_DB(db, "%s.uuid" % tablename)
 
-    # Tropo Scratch pad for secure messaging
-    # - probably temp...will be merged into the rest of Messaging
+    # Tropo Scratch pad for outbound messaging
     resource = "tropo_scratch"
     tablename = "%s_%s" % (module, resource)
     table = db.define_table(tablename,

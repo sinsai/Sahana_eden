@@ -62,7 +62,7 @@ def assessment():
 
     # Don't send the locations list to client (pulled by AJAX instead)
     table.location_id.requires = IS_NULL_OR(IS_ONE_OF_EMPTY(db, "gis_location.id"))
-    
+
     # Villages only
     #table.location_id.requires = IS_NULL_OR(IS_ONE_OF(db(db.gis_location.level == "L5"),
     #                                                  "gis_location.id",
@@ -171,7 +171,7 @@ def assessment():
         # Redirect to read/edit view rather than list view
         if r.representation == "html" and r.method == "create":
             r.next = r.other(method="",
-                             record_id=s3xrc.get_session(session, "rat", "assessment"))
+                             record_id=s3xrc.get_session("rat", "assessment"))
         return output
     response.s3.postp = postp
 

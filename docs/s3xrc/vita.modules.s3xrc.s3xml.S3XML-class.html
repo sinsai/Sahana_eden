@@ -236,7 +236,7 @@ object --+
         <tr>
           <td><span class="summary-sig"><a href="vita.modules.s3xrc.s3xml.S3XML-class.html#export_uid" class="summary-sig-name">export_uid</a>(<span class="summary-sig-arg">self</span>,
         <span class="summary-sig-arg">uid</span>)</span><br />
-      Exports UUIDs with domain prefix</td>
+      Exports UIDs with domain prefix</td>
           <td align="right" valign="top">
             <span class="codelink"><a href="vita.modules.s3xrc.s3xml-pysrc.html#S3XML.export_uid">source&nbsp;code</a></span>
             
@@ -254,7 +254,7 @@ object --+
         <tr>
           <td><span class="summary-sig"><a href="vita.modules.s3xrc.s3xml.S3XML-class.html#import_uid" class="summary-sig-name">import_uid</a>(<span class="summary-sig-arg">self</span>,
         <span class="summary-sig-arg">uid</span>)</span><br />
-      Imports UUIDs with domain prefixes</td>
+      Imports UIDs with domain prefixes</td>
           <td align="right" valign="top">
             <span class="codelink"><a href="vita.modules.s3xrc.s3xml-pysrc.html#S3XML.import_uid">source&nbsp;code</a></span>
             
@@ -871,12 +871,16 @@ ete&quot;)">Storage(create= &quot;create&quot;, read= &quot;read&quot;, update= 
         <li><strong class="pname"><code>domain</code></strong> - name of the current domain</li>
         <li><strong class="pname"><code>base_url</code></strong> - base URL of the current instance</li>
         <li><strong class="pname"><code>gis</code></strong> - GIS toolkit to use</li>
+        <li><strong class="pname"><code>cache</code></strong> - the cache</li>
     </ul></dd>
     <dt>Overrides:
         object.__init__
     </dt>
   </dl>
-</td></tr></table>
+<div class="fields">      <p><strong>To Do (2.2):</strong>
+        pass resource controller?
+      </p>
+</div></td></tr></table>
 </div>
 <a name="parse"></a>
 <div>
@@ -925,7 +929,7 @@ ete&quot;)">Storage(create= &quot;create&quot;, read= &quot;read&quot;, update= 
     <dd><ul class="nomargin-top">
         <li><strong class="pname"><code>tree</code></strong> - the element tree</li>
         <li><strong class="pname"><code>template_path</code></strong> - pathname of the XSLT stylesheet</li>
-        <li><strong class="pname"><code>args</code></strong> - dict of arguments to pass to the transformer</li>
+        <li><strong class="pname"><code>args</code></strong> - dict of arguments to pass to the stylesheet</li>
     </ul></dd>
   </dl>
 </td></tr></table>
@@ -1053,11 +1057,11 @@ ete&quot;)">Storage(create= &quot;create&quot;, read= &quot;read&quot;, update= 
     </td>
   </tr></table>
   
-  <p>Exports UUIDs with domain prefix</p>
+  <p>Exports UIDs with domain prefix</p>
   <dl class="fields">
     <dt>Parameters:</dt>
     <dd><ul class="nomargin-top">
-        <li><strong class="pname"><code>uid</code></strong> - the UUID</li>
+        <li><strong class="pname"><code>uid</code></strong> - the UID</li>
     </ul></dd>
   </dl>
 </td></tr></table>
@@ -1077,11 +1081,11 @@ ete&quot;)">Storage(create= &quot;create&quot;, read= &quot;read&quot;, update= 
     </td>
   </tr></table>
   
-  <p>Imports UUIDs with domain prefixes</p>
+  <p>Imports UIDs with domain prefixes</p>
   <dl class="fields">
     <dt>Parameters:</dt>
     <dd><ul class="nomargin-top">
-        <li><strong class="pname"><code>uid</code></strong> - the UUID</li>
+        <li><strong class="pname"><code>uid</code></strong> - the UID</li>
     </ul></dd>
   </dl>
 </td></tr></table>
@@ -1112,7 +1116,10 @@ ete&quot;)">Storage(create= &quot;create&quot;, read= &quot;read&quot;, update= 
         <li><strong class="pname"><code>v</code></strong> - the value</li>
     </ul></dd>
   </dl>
-</td></tr></table>
+<div class="fields">      <p><strong>To Do (2.2):</strong>
+        use S3ResourceManager.represent()
+      </p>
+</div></td></tr></table>
 </div>
 <a name="rmap"></a>
 <div>
@@ -1342,7 +1349,10 @@ ete&quot;)">Storage(create= &quot;create&quot;, read= &quot;read&quot;, update= 
   <p>Get options of a field as &lt;select&gt;</p>
   <dl class="fields">
   </dl>
-</td></tr></table>
+<div class="fields">      <p><strong>To Do (2.2):</strong>
+        fix docstring
+      </p>
+</div></td></tr></table>
 </div>
 <a name="get_options"></a>
 <div>
@@ -1364,7 +1374,10 @@ ete&quot;)">Storage(create= &quot;create&quot;, read= &quot;read&quot;, update= 
   <p>Get options of option fields in a table as &lt;select&gt;s</p>
   <dl class="fields">
   </dl>
-</td></tr></table>
+<div class="fields">      <p><strong>To Do (2.2):</strong>
+        fix docstring
+      </p>
+</div></td></tr></table>
 </div>
 <a name="get_fields"></a>
 <div>
@@ -1385,7 +1398,10 @@ ete&quot;)">Storage(create= &quot;create&quot;, read= &quot;read&quot;, update= 
   <p>Get fields in a table as &lt;fields&gt; element</p>
   <dl class="fields">
   </dl>
-</td></tr></table>
+<div class="fields">      <p><strong>To Do (2.2):</strong>
+        fix docstring
+      </p>
+</div></td></tr></table>
 </div>
 <a name="__json2element"></a>
 <div class="private">
@@ -1549,7 +1565,10 @@ ete&quot;)">Storage(create= &quot;create&quot;, read= &quot;read&quot;, update= 
         <li><strong class="pname"><code>tree</code></strong> - result tree to enclose</li>
     </ul></dd>
   </dl>
-</td></tr></table>
+<div class="fields">      <p><strong>To Do (2.2):</strong>
+        extend to report number of results/successful imports
+      </p>
+</div></td></tr></table>
 </div>
 <br />
 <!-- ==================== CLASS VARIABLE DETAILS ==================== -->
@@ -1976,7 +1995,7 @@ Storage(resource= &quot;$&quot;, options= &quot;$o&quot;, reference= &quot;$k&qu
 <table border="0" cellpadding="0" cellspacing="0" width="100%%">
   <tr>
     <td align="left" class="footer">
-    Generated by Epydoc 3.0.1 on Sun Oct  3 11:44:08 2010
+    Generated by Epydoc 3.0.1 on Sat Oct  9 08:00:03 2010
     </td>
     <td align="right" class="footer">
       <a target="mainFrame" href="http://epydoc.sourceforge.net"

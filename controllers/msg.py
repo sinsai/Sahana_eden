@@ -34,41 +34,55 @@ def tbc():
     return dict()
 
 def tropo():
-    """ https://www.tropo.com/docs/webapi/newhowitworks.htm """
+    """
+        Receive a JSON POST from the Tropo WebAPI
+        https://www.tropo.com/docs/webapi/newhowitworks.htm
+    """
     exec("from applications.%s.modules.tropo import Tropo, Session" % request.application)
     # Faster for Production (where app-name won't change):
     #from applications.eden.modules.tropo import Tropo, Session
-
     try:
         s = Session(request.body.read())
-        # This is us requesting Tropo to pick a message from US
         t = Tropo()
-        table = db.msg_tropo_scratch
+        # This is their service contacting us, so parse their request
         try:
-            query = (table.row_id == s.parameters['row_id'])
+            row_id = s.parameters["row_id"]
+            # This is an Outbound message which we've requested Tropo to send for us
+            table = db.msg_tropo_scratch
+            query = (table.row_id == row_id)
             row = db(query).select().first() 
-            #t.message(say_obj={"say":{"value":"Message "+ row.message +  " to " + row.recipient + " via "+row.network}},to='lifeeth@gmail.com',network='JABBER')
-            t.message(say_obj={"say":{"value":row.message}},to=row.recipient,network=row.network)
+            # Send the message
+            t.call(to=row.recipient, network=row.network)
+            t.say(row.message)
             # Update status to sent in Outbox
             db(db.msg_outbox.id == row.row_id).update(status=2)
             # Set message log to actioned
             db(db.msg_log.id == row.message_id).update(actioned=True)
+            # Clear the Scratchpad
             db(query).delete()
-            return t.RenderJson()
         except:
-            pass
-            #Put in the parser here
-            #db.msg_tropo.insert(json=s) # DUMMY
-            #t.say(["Received!"])
-            #output = t.RenderJson()
-            #return output
+            # This is an Inbound message
+            try:
+                message = s.initialText
+                # This is an SMS/IM
+                # Place it in the InBox
+                # @ToDo: For now dumping in a separate table
+                uuid = s.id
+                destination = s.to["id"]
+                # SyntaxError: invalid syntax (why!?)
+                #callerid = s.from["id"]
+                #db.msg_tropo.insert(uuid=uuid, callerid=callerid, destination=destination, message=message)
+                db.msg_tropo.insert(uuid=uuid, destination=destination, message=message)
+                # Return a '200 OK'
+                t.say(["Received!"])
+                return t.RenderJson()
+            except:
+                # This is a Voice call
+                # - we can't handle these yet
+                raise HTTP(501)
     except:
+        # GET request or some random POST
         pass
-        #t = Tropo()
-        #t.message(say_obj={"say":{"value":'Error'}},to='lifeeth@gmail.com',network='JABBER')
-        #return t.RenderJson()
-        
-
 
 @auth.shn_requires_membership(1)
 def setting():
@@ -79,7 +93,7 @@ def setting():
     table = db[tablename]
     table.outgoing_sms_handler.label = T("Outgoing SMS handler")
     table.outgoing_sms_handler.comment = DIV(DIV(_class="tooltip",
-        _title=T("Outgoing SMS Handler") + "|" + T("Selects whether to use the gateway or the Modem for sending out SMS")))
+        _title=T("Outgoing SMS Handler") + "|" + T("Selects whether to use a Modem, Tropo or other Gateway for sending out SMS")))
     # CRUD Strings
     ADD_SETTING = T("Add Setting")
     VIEW_SETTINGS = T("View Settings")
@@ -310,11 +324,11 @@ def tropo_settings():
     resource = request.function
     tablename = module + "_" + resource
     table = db[tablename]
-    table.token_voice.label = T("Tropo Voice Token")
     table.token_messaging.label = T("Tropo Messaging Token")
-    table.token_voice.comment = DIV(DIV(_class="stickytip",_title=T("Tropo Voice Token") + "|" + T("The token associated with this application on") + " <a href='https://www.tropo.com/docs/scripting/troposessionapi.htm' target=_blank>Tropo.com</a>"))
     table.token_messaging.comment = DIV(DIV(_class="stickytip",_title=T("Tropo Messaging Token") + "|" + T("The token associated with this application on") + " <a href='https://www.tropo.com/docs/scripting/troposessionapi.htm' target=_blank>Tropo.com</a>"))
-        # CRUD Strings
+    #table.token_voice.label = T("Tropo Voice Token")
+    #table.token_voice.comment = DIV(DIV(_class="stickytip",_title=T("Tropo Voice Token") + "|" + T("The token associated with this application on") + " <a href='https://www.tropo.com/docs/scripting/troposessionapi.htm' target=_blank>Tropo.com</a>"))
+    # CRUD Strings
     ADD_SETTING = T("Add Setting")
     VIEW_SETTINGS = T("View Settings")
     s3.crud_strings[tablename] = Storage(

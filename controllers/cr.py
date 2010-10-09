@@ -152,7 +152,7 @@ def shelter():
             # listadd arrives here as method=None
             if r.method != "delete" and not r.component:
                 # Redirect to the Assessments tabs after creation
-                r.next = r.other(method="assessment", record_id=s3xrc.get_session(session, module, resource))
+                r.next = r.other(method="assessment", record_id=s3xrc.get_session(module, resource))
 
             if r.component and r.component.name == "presence":
                 # No Delete on the Action buttons
@@ -310,7 +310,7 @@ def shn_shelter_prep(r):
     elif r.representation == "aadata" and r.component and r.component.name == "req":
         # Hide the Implied fields here too to make columns match
         db.rms_req.hospital_id.readable = False
-    
+
     return True
 
 # -----------------------------------------------------------------------------

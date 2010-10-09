@@ -1,8 +1,8 @@
-﻿# -*- coding: utf-8 -*-
+# -*- coding: utf-8 -*-
 
 """
-    Importer 
-    
+    Importer
+
     @author: Shikhar Kohli
 """
 module = request.controller
@@ -31,7 +31,7 @@ def index():
 def spreadsheet():
     """ RESTful Controller """
     resource = request.function
-    crud.settings.create_onaccept = lambda form: redirect(URL(r=request, c="importer", f="spreadsheetview")) 
+    crud.settings.create_onaccept = lambda form: redirect(URL(r=request, c="importer", f="spreadsheetview"))
     return shn_rest_controller(module, resource, listadd=False)
 
 def spreadsheetview():
@@ -44,7 +44,7 @@ def spreadsheetview():
     v = importer.json(str, request.folder)
     #fields = shn_get_writecolumns(
     return dict(ss=v)
-    
+
 def import_spreadsheet():
     spreadsheet = request.body.read()
     from StringIO import StringIO
@@ -68,7 +68,7 @@ def import_spreadsheet():
 	           similar_rows.append(j["spreadsheet"][x])
 	           similar_rows.append(j["spreadsheet"][y])
 	        else:
-	           pass 
+	           pass
 	for k in similar_rows:
 	    for l in k:
 	       l = l.encode("ascii")
@@ -90,9 +90,9 @@ def import_spreadsheet():
 		field = "$k_" + field
 		nr = nested_resource
 		nested_resource= "$_" + nested_resource
-		if res.has_key(field) is False: 
+		if res.has_key(field) is False:
 		   res[field] = {}
-		   res[field]["@resource"] = nr 
+		   res[field]["@resource"] = nr
 		   res[field][nested_resource] = [{}]
 		res[field][nested_resource][0][nested_field] = j["spreadsheet"][i][k].encode("ascii")
 		k += 1
@@ -108,7 +108,7 @@ def import_spreadsheet():
 	    k += 1
 	send_dict[resource].append(res)
 	i += 1
-	
+
     word = json.dumps(send_dict[resource])
     # Remove all white spaces and newlines in the JSON
     new_word = ""
@@ -123,14 +123,14 @@ def import_spreadsheet():
            if word[i] == " " or word[i] == "\n":
 	      continue
            else:
-    	      new_word += word[i] 
-    # new_word is without newlines and whitespaces	  
+    	      new_word += word[i]
+    # new_word is without newlines and whitespaces
     new_word  = "{\"$_" + resource + "\":"+ new_word + "}"
     # added resource name
     send = StringIO(new_word)
     tree = s3xrc.xml.json2tree(send)
     prefix, name = resource.split("_")
-    res = s3xrc.resource(prefix, name)
+    res = s3xrc._resource(prefix, name)
     res.import_xml(source = tree, ignore_errors = True)
     returned_json = s3xrc.xml.tree2json(tree)
     if "@error" not in repr(returned_json):
@@ -148,7 +148,7 @@ def import_spreadsheet():
 		    if "@error" in record[field][nest_res][0][nested_fields]:
 		       	wrong_dict[field + " --> " + nest_res + " --> " + nested_fields] = "*_error_*" + record[field][nest_res][0][nested_fields.encode("ascii")]["@error"] + " You entered " + record[field][nest_res][0][nested_fields.encode("ascii")]["@value"]
 		    else:
-			    try:	    
+			    try:
 			        wrong_dict[field + " --> " + nest_res + " --> " + nested_fields] = record[field][nest_res][0][nested_fields.encode("ascii")]["@value"]
 			    except:
 				    wrong_dict[field + " --> " + nest_res + " --> " + nested_fields] = record[field][nest_res][0][nested_fields.encode("ascii")]
@@ -164,9 +164,9 @@ def import_spreadsheet():
         for l in k.values():
 	    if "*_error_*" in l:
 	        temp.append(k)
-    invalid_rows = temp 
+    invalid_rows = temp
     '''f.write("\n\nInvalid rows " + repr(invalid_rows))
-    session.import_success = len(invalid_rows) 
+    session.import_success = len(invalid_rows)
     incorrect_rows = []
     correct_rows = []
     returned_tree = tree
@@ -205,7 +205,7 @@ def import_spreadsheet():
  	        for m in k[l]["$_"+nest_res][0].keys():
 	            session.fields.append(l[3:].encode('ascii') + ' --> ' + nest_res.encode('ascii') + ' --> ' + m.encode('ascii'))
     '''
-    ''' 
+    '''
 	for i in range(0,len(session.fields)):
        	    session.fields[i]=session.fields[i].encode('ascii')
     	f.write("Session fields \n" + repr(session.fields)+"\n\n\n")
@@ -217,15 +217,15 @@ def import_spreadsheet():
 		  record[field] = '*_error_*' + record[field]['@error'] + '. You entered ' + record[field]['@value']
 	       else:
 	          f.write("in else " + repr(record[field]))
-	          record[field] = record[field]['@value'] 
+	          record[field] = record[field]['@value']
     	f.write("These rows are incorrect "+repr(incorrect_rows))
-    	
+
 	incorrect_rows = json.dumps(incorrect_rows,ensure_ascii=True)
     	'''
     session.invalid_rows = invalid_rows
     session.import_columns = j["columns"]
     session.import_map = json.dumps(j["map"], ensure_ascii=True)
-    session.import_resource = resource.encode("ascii") 
+    session.import_resource = resource.encode("ascii")
     return dict()
 
 def re_import():

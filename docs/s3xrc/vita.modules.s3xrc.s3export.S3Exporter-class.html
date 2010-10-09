@@ -3,7 +3,7 @@
           "DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
 <head>
-  <title>vita.modules.s3xrc.s3crud.S3MethodHandler</title>
+  <title>vita.modules.s3xrc.s3export.S3Exporter</title>
   <link rel="stylesheet" href="epydoc.css" type="text/css" />
   <script type="text/javascript" src="epydoc.js"></script>
 </head>
@@ -45,8 +45,8 @@
         Package&nbsp;vita ::
         Package&nbsp;modules ::
         <a href="vita.modules.s3xrc-module.html">Package&nbsp;s3xrc</a> ::
-        <a href="vita.modules.s3xrc.s3crud-module.html">Module&nbsp;s3crud</a> ::
-        Class&nbsp;S3MethodHandler
+        <a href="vita.modules.s3xrc.s3export-module.html">Module&nbsp;s3export</a> ::
+        Class&nbsp;S3Exporter
       </span>
     </td>
     <td>
@@ -56,24 +56,40 @@
     onclick="toggle_private();">hide&nbsp;private</a>]</span></td></tr>
         <tr><td align="right"><span class="options"
             >[<a href="frames.html" target="_top">frames</a
-            >]&nbsp;|&nbsp;<a href="vita.modules.s3xrc.s3crud.S3MethodHandler-class.html"
+            >]&nbsp;|&nbsp;<a href="vita.modules.s3xrc.s3export.S3Exporter-class.html"
             target="_top">no&nbsp;frames</a>]</span></td></tr>
       </table>
     </td>
   </tr>
 </table>
 <!-- ==================== CLASS DESCRIPTION ==================== -->
-<h1 class="epydoc">Class S3MethodHandler</h1><p class="nomargin-top"><span class="codelink"><a href="vita.modules.s3xrc.s3crud-pysrc.html#S3MethodHandler">source&nbsp;code</a></span></p>
+<h1 class="epydoc">Class S3Exporter</h1><p class="nomargin-top"><span class="codelink"><a href="vita.modules.s3xrc.s3export-pysrc.html#S3Exporter">source&nbsp;code</a></span></p>
 <pre class="base-tree">
 object --+
          |
-        <strong class="uidshort">S3MethodHandler</strong>
+        <strong class="uidshort">S3Exporter</strong>
 </pre>
 
 <hr />
-<p>REST Method Handler Base Class</p>
+<p>Exporter toolkit</p>
 
-<!-- ==================== INSTANCE METHODS ==================== -->
+<hr />
+<div class="fields">      <strong>Requires:</strong>
+      <ul class="nomargin-top">
+        <li>
+        <a href="http://www.reportlab.com/software/opensource" 
+        target="_top"><b><i>ReportLab</i></b></a>
+        </li>
+        <li>
+        <a href="http://www.geraldoreports.org" 
+        target="_top"><b><i>Geraldo</i></b></a>
+        </li>
+        <li>
+        <a href="http://pypi.python.org/pypi/xlwt" 
+        target="_top"><b><i>Xlwt</i></b></a>
+        </li>
+      </ul>
+</div><!-- ==================== INSTANCE METHODS ==================== -->
 <a name="section-InstanceMethods"></a>
 <table class="summary" border="1" cellpadding="3"
        cellspacing="0" width="100%" bgcolor="white">
@@ -96,11 +112,11 @@ object --+
     </td><td class="summary">
       <table width="100%" cellpadding="0" cellspacing="0" border="0">
         <tr>
-          <td><span class="summary-sig"><a href="vita.modules.s3xrc.s3crud.S3MethodHandler-class.html#__init__" class="summary-sig-name">__init__</a>(<span class="summary-sig-arg">self</span>,
+          <td><span class="summary-sig"><a href="vita.modules.s3xrc.s3export.S3Exporter-class.html#__init__" class="summary-sig-name">__init__</a>(<span class="summary-sig-arg">self</span>,
         <span class="summary-sig-arg">manager</span>)</span><br />
       Constructor</td>
           <td align="right" valign="top">
-            <span class="codelink"><a href="vita.modules.s3xrc.s3crud-pysrc.html#S3MethodHandler.__init__">source&nbsp;code</a></span>
+            <span class="codelink"><a href="vita.modules.s3xrc.s3export-pysrc.html#S3Exporter.__init__">source&nbsp;code</a></span>
             
           </td>
         </tr>
@@ -114,13 +130,11 @@ object --+
     </td><td class="summary">
       <table width="100%" cellpadding="0" cellspacing="0" border="0">
         <tr>
-          <td><span class="summary-sig"><a href="vita.modules.s3xrc.s3crud.S3MethodHandler-class.html#__call__" class="summary-sig-name">__call__</a>(<span class="summary-sig-arg">self</span>,
-        <span class="summary-sig-arg">r</span>,
-        <span class="summary-sig-arg">method</span>=<span class="summary-sig-default">None</span>,
-        <span class="summary-sig-arg">**attr</span>)</span><br />
-      Caller, invoked by REST interface</td>
+          <td><span class="summary-sig"><a href="vita.modules.s3xrc.s3export.S3Exporter-class.html#csv" class="summary-sig-name">csv</a>(<span class="summary-sig-arg">self</span>,
+        <span class="summary-sig-arg">resource</span>)</span><br />
+      Export record(s) as CSV</td>
           <td align="right" valign="top">
-            <span class="codelink"><a href="vita.modules.s3xrc.s3crud-pysrc.html#S3MethodHandler.__call__">source&nbsp;code</a></span>
+            <span class="codelink"><a href="vita.modules.s3xrc.s3export-pysrc.html#S3Exporter.csv">source&nbsp;code</a></span>
             
           </td>
         </tr>
@@ -134,12 +148,12 @@ object --+
     </td><td class="summary">
       <table width="100%" cellpadding="0" cellspacing="0" border="0">
         <tr>
-          <td><span class="summary-sig"><a href="vita.modules.s3xrc.s3crud.S3MethodHandler-class.html#respond" class="summary-sig-name">respond</a>(<span class="summary-sig-arg">self</span>,
-        <span class="summary-sig-arg">r</span>,
-        <span class="summary-sig-arg">**attr</span>)</span><br />
-      Responder, to be implemented in subclass</td>
+          <td><span class="summary-sig"><a href="vita.modules.s3xrc.s3export.S3Exporter-class.html#pdf" class="summary-sig-name">pdf</a>(<span class="summary-sig-arg">self</span>,
+        <span class="summary-sig-arg">resource</span>,
+        <span class="summary-sig-arg">list_fields</span>=<span class="summary-sig-default">None</span>)</span><br />
+      Export record(s) as Adobe PDF</td>
           <td align="right" valign="top">
-            <span class="codelink"><a href="vita.modules.s3xrc.s3crud-pysrc.html#S3MethodHandler.respond">source&nbsp;code</a></span>
+            <span class="codelink"><a href="vita.modules.s3xrc.s3export-pysrc.html#S3Exporter.pdf">source&nbsp;code</a></span>
             
           </td>
         </tr>
@@ -153,12 +167,12 @@ object --+
     </td><td class="summary">
       <table width="100%" cellpadding="0" cellspacing="0" border="0">
         <tr>
-          <td><span class="summary-sig"><a href="vita.modules.s3xrc.s3crud.S3MethodHandler-class.html#readable_fields" class="summary-sig-name">readable_fields</a>(<span class="summary-sig-arg">self</span>,
-        <span class="summary-sig-arg">table</span>,
-        <span class="summary-sig-arg">subset</span>=<span class="summary-sig-default">None</span>)</span><br />
-      Get a list of all readable fields in a table</td>
+          <td><span class="summary-sig"><a href="vita.modules.s3xrc.s3export.S3Exporter-class.html#xls" class="summary-sig-name">xls</a>(<span class="summary-sig-arg">self</span>,
+        <span class="summary-sig-arg">resource</span>,
+        <span class="summary-sig-arg">list_fields</span>=<span class="summary-sig-default">None</span>)</span><br />
+      Export record(s) as Microsoft Excel spreadsheet</td>
           <td align="right" valign="top">
-            <span class="codelink"><a href="vita.modules.s3xrc.s3crud-pysrc.html#S3MethodHandler.readable_fields">source&nbsp;code</a></span>
+            <span class="codelink"><a href="vita.modules.s3xrc.s3export-pysrc.html#S3Exporter.xls">source&nbsp;code</a></span>
             
           </td>
         </tr>
@@ -240,97 +254,122 @@ object --+
     <br /><em class="fname">(Constructor)</em>
   </h3>
   </td><td align="right" valign="top"
-    ><span class="codelink"><a href="vita.modules.s3xrc.s3crud-pysrc.html#S3MethodHandler.__init__">source&nbsp;code</a></span>&nbsp;
+    ><span class="codelink"><a href="vita.modules.s3xrc.s3export-pysrc.html#S3Exporter.__init__">source&nbsp;code</a></span>&nbsp;
     </td>
   </tr></table>
   
   <p>Constructor</p>
   <dl class="fields">
+    <dt>Parameters:</dt>
+    <dd><ul class="nomargin-top">
+        <li><strong class="pname"><code>manager</code></strong> - the resource controller</li>
+    </ul></dd>
     <dt>Overrides:
         object.__init__
     </dt>
   </dl>
-<div class="fields">      <p><strong>To Do (2.2):</strong>
-        fix docstring
-      </p>
-</div></td></tr></table>
-</div>
-<a name="__call__"></a>
-<div>
-<table class="details" border="1" cellpadding="3"
-       cellspacing="0" width="100%" bgcolor="white">
-<tr><td>
-  <table width="100%" cellpadding="0" cellspacing="0" border="0">
-  <tr valign="top"><td>
-  <h3 class="epydoc"><span class="sig"><span class="sig-name">__call__</span>(<span class="sig-arg">self</span>,
-        <span class="sig-arg">r</span>,
-        <span class="sig-arg">method</span>=<span class="sig-default">None</span>,
-        <span class="sig-arg">**attr</span>)</span>
-    <br /><em class="fname">(Call operator)</em>
-  </h3>
-  </td><td align="right" valign="top"
-    ><span class="codelink"><a href="vita.modules.s3xrc.s3crud-pysrc.html#S3MethodHandler.__call__">source&nbsp;code</a></span>&nbsp;
-    </td>
-  </tr></table>
-  
-  <p>Caller, invoked by REST interface</p>
-  <dl class="fields">
-  </dl>
-<div class="fields">      <p><strong>To Do (2.2):</strong>
-        fix docstring
-      </p>
-</div></td></tr></table>
-</div>
-<a name="respond"></a>
-<div>
-<table class="details" border="1" cellpadding="3"
-       cellspacing="0" width="100%" bgcolor="white">
-<tr><td>
-  <table width="100%" cellpadding="0" cellspacing="0" border="0">
-  <tr valign="top"><td>
-  <h3 class="epydoc"><span class="sig"><span class="sig-name">respond</span>(<span class="sig-arg">self</span>,
-        <span class="sig-arg">r</span>,
-        <span class="sig-arg">**attr</span>)</span>
-  </h3>
-  </td><td align="right" valign="top"
-    ><span class="codelink"><a href="vita.modules.s3xrc.s3crud-pysrc.html#S3MethodHandler.respond">source&nbsp;code</a></span>&nbsp;
-    </td>
-  </tr></table>
-  
-  <p>Responder, to be implemented in subclass</p>
-  <dl class="fields">
-  </dl>
 <div class="fields">      <p><strong>To Do:</strong>
-        fix docstring
+        error message completion/internationalization
       </p>
 </div></td></tr></table>
 </div>
-<a name="readable_fields"></a>
+<a name="csv"></a>
 <div>
 <table class="details" border="1" cellpadding="3"
        cellspacing="0" width="100%" bgcolor="white">
 <tr><td>
   <table width="100%" cellpadding="0" cellspacing="0" border="0">
   <tr valign="top"><td>
-  <h3 class="epydoc"><span class="sig"><span class="sig-name">readable_fields</span>(<span class="sig-arg">self</span>,
-        <span class="sig-arg">table</span>,
-        <span class="sig-arg">subset</span>=<span class="sig-default">None</span>)</span>
+  <h3 class="epydoc"><span class="sig"><span class="sig-name">csv</span>(<span class="sig-arg">self</span>,
+        <span class="sig-arg">resource</span>)</span>
   </h3>
   </td><td align="right" valign="top"
-    ><span class="codelink"><a href="vita.modules.s3xrc.s3crud-pysrc.html#S3MethodHandler.readable_fields">source&nbsp;code</a></span>&nbsp;
+    ><span class="codelink"><a href="vita.modules.s3xrc.s3export-pysrc.html#S3Exporter.csv">source&nbsp;code</a></span>&nbsp;
     </td>
   </tr></table>
   
-  <p>Get a list of all readable fields in a table</p>
+  <p>Export record(s) as CSV</p>
   <dl class="fields">
+    <dt>Parameters:</dt>
+    <dd><ul class="nomargin-top">
+        <li><strong class="pname"><code>resource</code></strong> - the resource to export</li>
+    </ul></dd>
   </dl>
-<div class="fields">      <strong>To Do:</strong>
+</td></tr></table>
+</div>
+<a name="pdf"></a>
+<div>
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr><td>
+  <table width="100%" cellpadding="0" cellspacing="0" border="0">
+  <tr valign="top"><td>
+  <h3 class="epydoc"><span class="sig"><span class="sig-name">pdf</span>(<span class="sig-arg">self</span>,
+        <span class="sig-arg">resource</span>,
+        <span class="sig-arg">list_fields</span>=<span class="sig-default">None</span>)</span>
+  </h3>
+  </td><td align="right" valign="top"
+    ><span class="codelink"><a href="vita.modules.s3xrc.s3export-pysrc.html#S3Exporter.pdf">source&nbsp;code</a></span>&nbsp;
+    </td>
+  </tr></table>
+  
+  <p>Export record(s) as Adobe PDF</p>
+  <dl class="fields">
+    <dt>Parameters:</dt>
+    <dd><ul class="nomargin-top">
+        <li><strong class="pname"><code>resource</code></strong> - the resource</li>
+        <li><strong class="pname"><code>list_fields</code></strong> - fields to include in list views</li>
+    </ul></dd>
+  </dl>
+<div class="fields">      <strong>To Do (2.2):</strong>
       <ul class="nomargin-top">
         <li>
-        fix docstring
+        fix error messages
         </li>
         <li>
-        move into S3Resource
+        replace _represent subfunction
+        </li>
+        <li>
+        do not redirect
+        </li>
+        <li>
+        PEP-8
+        </li>
+        <li>
+        use S3Resource.readable_fields (once it gets moved there from CRUD)
+        </li>
+      </ul>
+</div></td></tr></table>
+</div>
+<a name="xls"></a>
+<div>
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr><td>
+  <table width="100%" cellpadding="0" cellspacing="0" border="0">
+  <tr valign="top"><td>
+  <h3 class="epydoc"><span class="sig"><span class="sig-name">xls</span>(<span class="sig-arg">self</span>,
+        <span class="sig-arg">resource</span>,
+        <span class="sig-arg">list_fields</span>=<span class="sig-default">None</span>)</span>
+  </h3>
+  </td><td align="right" valign="top"
+    ><span class="codelink"><a href="vita.modules.s3xrc.s3export-pysrc.html#S3Exporter.xls">source&nbsp;code</a></span>&nbsp;
+    </td>
+  </tr></table>
+  
+  <p>Export record(s) as Microsoft Excel spreadsheet</p>
+  <dl class="fields">
+  </dl>
+<div class="fields">      <strong>To Do (2.2):</strong>
+      <ul class="nomargin-top">
+        <li>
+        complete docstring
+        </li>
+        <li>
+        PEP-8
+        </li>
+        <li>
+        use S3Resource.readable_fields (once it gets moved there from CRUD)
         </li>
       </ul>
 </div></td></tr></table>

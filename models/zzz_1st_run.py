@@ -179,7 +179,8 @@ if populate:
         tablename = "msg_tropo_settings"
         table = db[tablename]
         if not db(table.id > 0).count():
-            table.insert(token_voice = "")
+            # Need an entry for the Settings/1/Update URL to work
+            table.insert(token_messaging = "")
         tablename = "msg_setting"
         table = db[tablename]
         if not db(table.id > 0).count():

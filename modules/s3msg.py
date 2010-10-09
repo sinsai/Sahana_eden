@@ -112,24 +112,37 @@ class Msg(object):
         except:
             return False
     
-    def send_text_via_tropo(self, row_id, message_id,recipient, message, network = "SMS"):
+    def send_text_via_tropo(self, row_id, message_id, recipient, message, network = "SMS"):
         """
             Send a URL request to Tropo to pick a message up
         """
 
-        base_url = 'http://api.tropo.com/1.0/sessions'
-        action = 'create'
+        base_url = "http://api.tropo.com/1.0/sessions"
+        action = "create"
+
+        if network == "SMS":
+            recipient = self.sanitise_phone(recipient)
+
         try:
             self.db.msg_tropo_scratch.insert(row_id = row_id,
-                                            message_id = message_id,
-                                            recipient = recipient,
-                                            message = message,
-                                            network = network)
-            params = urllib.urlencode([('action', action), ('token', self.tropo_token_messaging), ('outgoing','1') ,('row_id', row_id)])
-            data = urlopen('%s?%s' % (base_url, params)).read()
+                                             message_id = message_id,
+                                             recipient = recipient,
+                                             message = message,
+                                             network = network)
+            params = urllib.urlencode([("action", action), ("token", self.tropo_token_messaging), ("outgoing", "1"), ("row_id", row_id)])
+            xml = urlopen("%s?%s" % (base_url, params)).read()
+            # Parse Response (actual message is sent as a response to the POST which will happen in parallel)
+            #root = etree.fromstring(xml)
+            #elements = root.getchildren()
+            #if elements[0].text == "false":
+            #    session.error = T("Message sending failed! Reason:") + " " + elements[2].text
+            #    redirect(URL(r=request, f="index"))
+            #else:
+            #    session.flash = T("Message Sent")
+            #    redirect(URL(r=request, f="index"))
         except:
             pass
-        return False # Returning False because the api needs to ask us for the messsage again.
+        return False # Returning False because the API needs to ask us for the messsage again.
 
 
     def send_email_via_api(self, to, subject, message):
@@ -257,7 +270,7 @@ class Msg(object):
                             return False
                     if (contact_method == 2 and option == 3):
                         if self.outgoing_sms_handler == "Tropo":
-                            return self.send_text_via_tropo(row.id, message_id,recipient.value, message) # This does not mean the message is sent
+                            return self.send_text_via_tropo(row.id, message_id, recipient.value, message) # This does not mean the message is sent
                         else:
                             return False
                     if (contact_method == 1):

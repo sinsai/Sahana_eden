@@ -9,7 +9,6 @@
 module = "survey"
 
 if deployment_settings.has_module(module):
-    #from gluon.sqlhtml import *
 
     # Reusable table
     name_desc = db.Table(db,
@@ -41,20 +40,17 @@ if deployment_settings.has_module(module):
     resource = "questions"
     tablename = module + "_" + resource
     section = db.define_table(tablename,
-                              #uuidstamp, deletion_status, authorstamp,
                               migrate=migrate, *s3_meta_fields())
 
 
     # Survey Question
     resource = "question"
-    tablename = module +"_" + resource
+    tablename = module + "_" + resource
     question = db.define_table(tablename,
-                                #timestamp, uuidstamp, deletion_status, authorstamp,
                                 Field("name", "string", default="", length=120),
                                 Field("question_type", "integer"),
                                 Field("description", "text", default="", length=500),
                                 migrate=migrate, *s3_meta_fields())
-
 
                                 #Field("options_id", db.survey_question_options),
                                 #Field("tf_ta_columns", "integer"), # number of columns for TF/TA
@@ -64,12 +60,10 @@ if deployment_settings.has_module(module):
                                 #Field("required", "boolean"), # marks the question as required
                                 #Field("aggregation_type", "string"))
 
-
     # Link table
     resource = "template_link"
-    tablename = module +"_" + resource
+    tablename = module + "_" + resource
     link_table = db.define_table(tablename,
-                                 #timestamp, uuidstamp, deletion_status, authorstamp,
                                  Field("survey_question_id", db.survey_question),
                                  Field("survey_template_id", db.survey_template),
                                  Field("survey_questions_id", db.survey_questions),

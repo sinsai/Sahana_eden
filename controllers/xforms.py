@@ -286,7 +286,7 @@ def submission():
     resource = tree.getroot().tag
 
     prefix, name = resource.split("_")
-    res = s3xrc.resource(prefix, name)
+    res = s3xrc._resource(prefix, name)
 
     try:
         success = res.import_xml(source=tree, template=os.path.join(request.folder, "static", "xslt", "import", "odk.xsl"))

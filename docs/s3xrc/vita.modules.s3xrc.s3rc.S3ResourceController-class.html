@@ -73,7 +73,20 @@ object --+
 <hr />
 <p>S3 Resource Controller</p>
 
-<!-- ==================== INSTANCE METHODS ==================== -->
+<hr />
+<div class="fields">      <strong>To Do (2.2):</strong>
+      <ul class="nomargin-top">
+        <li>
+        move formats into settings
+        </li>
+        <li>
+        remove __dbg
+        </li>
+        <li>
+        error messages internationalization?
+        </li>
+      </ul>
+</div><!-- ==================== INSTANCE METHODS ==================== -->
 <a name="section-InstanceMethods"></a>
 <table class="summary" border="1" cellpadding="3"
        cellspacing="0" width="100%" bgcolor="white">
@@ -97,14 +110,10 @@ object --+
       <table width="100%" cellpadding="0" cellspacing="0" border="0">
         <tr>
           <td><span class="summary-sig"><a href="vita.modules.s3xrc.s3rc.S3ResourceController-class.html#__init__" class="summary-sig-name">__init__</a>(<span class="summary-sig-arg">self</span>,
-        <span class="summary-sig-arg">db</span>,
+        <span class="summary-sig-arg">environment</span>,
         <span class="summary-sig-arg">domain</span>=<span class="summary-sig-default">None</span>,
         <span class="summary-sig-arg">base_url</span>=<span class="summary-sig-default">None</span>,
-        <span class="summary-sig-arg">cache</span>=<span class="summary-sig-default">None</span>,
-        <span class="summary-sig-arg">auth</span>=<span class="summary-sig-default">None</span>,
-        <span class="summary-sig-arg">audit</span>=<span class="summary-sig-default">None</span>,
         <span class="summary-sig-arg">rpp</span>=<span class="summary-sig-default">None</span>,
-        <span class="summary-sig-arg">gis</span>=<span class="summary-sig-default">None</span>,
         <span class="summary-sig-arg">messages</span>=<span class="summary-sig-default">None</span>,
         <span class="summary-sig-arg">debug</span>=<span class="summary-sig-default">False</span>,
         <span class="summary-sig-arg">**attr</span>)</span><br />
@@ -142,13 +151,13 @@ object --+
     </td><td class="summary">
       <table width="100%" cellpadding="0" cellspacing="0" border="0">
         <tr>
-          <td><span class="summary-sig"><a href="vita.modules.s3xrc.s3rc.S3ResourceController-class.html#invoke_hook" class="summary-sig-name">invoke_hook</a>(<span class="summary-sig-arg">self</span>,
+          <td><span class="summary-sig"><a href="vita.modules.s3xrc.s3rc.S3ResourceController-class.html#callback" class="summary-sig-name">callback</a>(<span class="summary-sig-arg">self</span>,
         <span class="summary-sig-arg">hook</span>,
         <span class="summary-sig-arg">*args</span>,
         <span class="summary-sig-arg">**vars</span>)</span><br />
       Invoke a hook or a list of hooks</td>
           <td align="right" valign="top">
-            <span class="codelink"><a href="vita.modules.s3xrc.s3rc-pysrc.html#S3ResourceController.invoke_hook">source&nbsp;code</a></span>
+            <span class="codelink"><a href="vita.modules.s3xrc.s3rc-pysrc.html#S3ResourceController.callback">source&nbsp;code</a></span>
             
           </td>
         </tr>
@@ -255,8 +264,30 @@ object --+
     </td><td class="summary">
       <table width="100%" cellpadding="0" cellspacing="0" border="0">
         <tr>
+          <td><span class="summary-sig"><a href="vita.modules.s3xrc.s3rc.S3ResourceController-class.html#represent" class="summary-sig-name">represent</a>(<span class="summary-sig-arg">self</span>,
+        <span class="summary-sig-arg">field</span>,
+        <span class="summary-sig-arg">value</span>=<span class="summary-sig-default">None</span>,
+        <span class="summary-sig-arg">record</span>=<span class="summary-sig-default">None</span>,
+        <span class="summary-sig-arg">linkto</span>=<span class="summary-sig-default">None</span>,
+        <span class="summary-sig-arg">strip_markup</span>=<span class="summary-sig-default">False</span>,
+        <span class="summary-sig-arg">xml_escape</span>=<span class="summary-sig-default">False</span>)</span><br />
+      Represent a field value</td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="vita.modules.s3xrc.s3rc-pysrc.html#S3ResourceController.represent">source&nbsp;code</a></span>
+            
+          </td>
+        </tr>
+      </table>
+      
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
           <td><span class="summary-sig"><a href="vita.modules.s3xrc.s3rc.S3ResourceController-class.html#get_session" class="summary-sig-name">get_session</a>(<span class="summary-sig-arg">self</span>,
-        <span class="summary-sig-arg">session</span>,
         <span class="summary-sig-arg">prefix</span>,
         <span class="summary-sig-arg">name</span>)</span><br />
       Reads the last record ID for a resource from a session</td>
@@ -276,7 +307,6 @@ object --+
       <table width="100%" cellpadding="0" cellspacing="0" border="0">
         <tr>
           <td><span class="summary-sig"><a href="vita.modules.s3xrc.s3rc.S3ResourceController-class.html#store_session" class="summary-sig-name">store_session</a>(<span class="summary-sig-arg">self</span>,
-        <span class="summary-sig-arg">session</span>,
         <span class="summary-sig-arg">prefix</span>,
         <span class="summary-sig-arg">name</span>,
         <span class="summary-sig-arg">id</span>)</span><br />
@@ -297,7 +327,6 @@ object --+
       <table width="100%" cellpadding="0" cellspacing="0" border="0">
         <tr>
           <td><span class="summary-sig"><a href="vita.modules.s3xrc.s3rc.S3ResourceController-class.html#clear_session" class="summary-sig-name">clear_session</a>(<span class="summary-sig-arg">self</span>,
-        <span class="summary-sig-arg">session</span>,
         <span class="summary-sig-arg">prefix</span>=<span class="summary-sig-default">None</span>,
         <span class="summary-sig-arg">name</span>=<span class="summary-sig-default">None</span>)</span><br />
       Clears one or all record IDs stored in a session</td>
@@ -347,13 +376,13 @@ object --+
       
     </td>
   </tr>
-<tr>
+<tr class="private">
     <td width="15%" align="right" valign="top" class="summary">
       <span class="summary-type">&nbsp;</span>
     </td><td class="summary">
       <table width="100%" cellpadding="0" cellspacing="0" border="0">
         <tr>
-          <td><span class="summary-sig"><a href="vita.modules.s3xrc.s3rc.S3ResourceController-class.html#resource" class="summary-sig-name">resource</a>(<span class="summary-sig-arg">self</span>,
+          <td><span class="summary-sig"><a href="vita.modules.s3xrc.s3rc.S3ResourceController-class.html#_resource" class="summary-sig-name" onclick="show_private();">_resource</a>(<span class="summary-sig-arg">self</span>,
         <span class="summary-sig-arg">prefix</span>,
         <span class="summary-sig-arg">name</span>,
         <span class="summary-sig-arg">id</span>=<span class="summary-sig-default">None</span>,
@@ -366,7 +395,7 @@ object --+
         <span class="summary-sig-arg">debug</span>=<span class="summary-sig-default">None</span>)</span><br />
       Wrapper function for S3Resource</td>
           <td align="right" valign="top">
-            <span class="codelink"><a href="vita.modules.s3xrc.s3rc-pysrc.html#S3ResourceController.resource">source&nbsp;code</a></span>
+            <span class="codelink"><a href="vita.modules.s3xrc.s3rc-pysrc.html#S3ResourceController._resource">source&nbsp;code</a></span>
             
           </td>
         </tr>
@@ -374,22 +403,19 @@ object --+
       
     </td>
   </tr>
-<tr>
+<tr class="private">
     <td width="15%" align="right" valign="top" class="summary">
       <span class="summary-type">&nbsp;</span>
     </td><td class="summary">
       <table width="100%" cellpadding="0" cellspacing="0" border="0">
         <tr>
-          <td><span class="summary-sig"><a href="vita.modules.s3xrc.s3rc.S3ResourceController-class.html#request" class="summary-sig-name">request</a>(<span class="summary-sig-arg">self</span>,
+          <td><span class="summary-sig"><a href="vita.modules.s3xrc.s3rc.S3ResourceController-class.html#_request" class="summary-sig-name" onclick="show_private();">_request</a>(<span class="summary-sig-arg">self</span>,
         <span class="summary-sig-arg">prefix</span>,
         <span class="summary-sig-arg">name</span>,
-        <span class="summary-sig-arg">request</span>=<span class="summary-sig-default">None</span>,
-        <span class="summary-sig-arg">session</span>=<span class="summary-sig-default">None</span>,
-        <span class="summary-sig-arg">response</span>=<span class="summary-sig-default">None</span>,
         <span class="summary-sig-arg">debug</span>=<span class="summary-sig-default">None</span>)</span><br />
       Wrapper function for S3Request</td>
           <td align="right" valign="top">
-            <span class="codelink"><a href="vita.modules.s3xrc.s3rc-pysrc.html#S3ResourceController.request">source&nbsp;code</a></span>
+            <span class="codelink"><a href="vita.modules.s3xrc.s3rc-pysrc.html#S3ResourceController._request">source&nbsp;code</a></span>
             
           </td>
         </tr>
@@ -405,10 +431,7 @@ object --+
         <tr>
           <td><span class="summary-sig"><a href="vita.modules.s3xrc.s3rc.S3ResourceController-class.html#parse_request" class="summary-sig-name">parse_request</a>(<span class="summary-sig-arg">self</span>,
         <span class="summary-sig-arg">prefix</span>,
-        <span class="summary-sig-arg">name</span>,
-        <span class="summary-sig-arg">session</span>,
-        <span class="summary-sig-arg">request</span>,
-        <span class="summary-sig-arg">response</span>)</span><br />
+        <span class="summary-sig-arg">name</span>)</span><br />
       Parse an HTTP request and generate the corresponding S3Request and 
       S3Resource objects.</td>
           <td align="right" valign="top">
@@ -595,8 +618,8 @@ object --+
     <td width="15%" align="right" valign="top" class="summary">
       <span class="summary-type">&nbsp;</span>
     </td><td class="summary">
-        <a href="vita.modules.s3xrc.s3rc.S3ResourceController-class.html#ACTION" class="summary-name">ACTION</a> = <code title="dict(create= &quot;create&quot;, read= &quot;read&quot;, update= &quot;update&quot;, delete= &quot;delete\
-&quot;)">dict(create= &quot;create&quot;, read= &quot;read&quot;, update= &quot;update&quot;<code class="variable-ellipsis">...</code></code>
+        <a href="vita.modules.s3xrc.s3rc.S3ResourceController-class.html#ACTION" class="summary-name">ACTION</a> = <code title="Storage(create= &quot;create&quot;, read= &quot;read&quot;, update= &quot;update&quot;, delete= &quot;del\
+ete&quot;)">Storage(create= &quot;create&quot;, read= &quot;read&quot;, update= &quot;upda<code class="variable-ellipsis">...</code></code>
     </td>
   </tr>
 <tr>
@@ -632,6 +655,32 @@ mation error&quot;, BAD_SOURCE= &quot;Invalid XML source&quot;, NO_MATCH= &quot;
 g element found in the data source&quot;, VALIDATION_ERROR= &quot;Validation err\
 or&quot;, DATA_IMPORT_ERROR= &quot;Data import error&quot;, NOT_PERMITTED= &quot;Operation\
  not permitted&quot;, NOT_IMPLEMENTED= &quot;Not implemented&quot;)">Storage(BAD_RECORD= &quot;Record not found&quot;, BAD_METHOD= &quot;I<code class="variable-ellipsis">...</code></code>
+    </td>
+  </tr>
+</table>
+<!-- ==================== INSTANCE VARIABLES ==================== -->
+<a name="section-InstanceVariables"></a>
+<table class="summary" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr bgcolor="#70b0f0" class="table-header">
+  <td colspan="2" class="table-header">
+    <table border="0" cellpadding="0" cellspacing="0" width="100%">
+      <tr valign="top">
+        <td align="left"><span class="table-header">Instance Variables</span></td>
+        <td align="right" valign="top"
+         ><span class="options">[<a href="#section-InstanceVariables"
+         class="privatelink" onclick="toggle_private();"
+         >hide private</a>]</span></td>
+      </tr>
+    </table>
+  </td>
+</tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+        <a href="vita.modules.s3xrc.s3rc.S3ResourceController-class.html#T" class="summary-name">T</a><br />
+      Global translator object
     </td>
   </tr>
 </table>
@@ -686,14 +735,10 @@ or&quot;, DATA_IMPORT_ERROR= &quot;Data import error&quot;, NOT_PERMITTED= &quot
   <table width="100%" cellpadding="0" cellspacing="0" border="0">
   <tr valign="top"><td>
   <h3 class="epydoc"><span class="sig"><span class="sig-name">__init__</span>(<span class="sig-arg">self</span>,
-        <span class="sig-arg">db</span>,
+        <span class="sig-arg">environment</span>,
         <span class="sig-arg">domain</span>=<span class="sig-default">None</span>,
         <span class="sig-arg">base_url</span>=<span class="sig-default">None</span>,
-        <span class="sig-arg">cache</span>=<span class="sig-default">None</span>,
-        <span class="sig-arg">auth</span>=<span class="sig-default">None</span>,
-        <span class="sig-arg">audit</span>=<span class="sig-default">None</span>,
         <span class="sig-arg">rpp</span>=<span class="sig-default">None</span>,
-        <span class="sig-arg">gis</span>=<span class="sig-default">None</span>,
         <span class="sig-arg">messages</span>=<span class="sig-default">None</span>,
         <span class="sig-arg">debug</span>=<span class="sig-default">False</span>,
         <span class="sig-arg">**attr</span>)</span>
@@ -720,7 +765,16 @@ or&quot;, DATA_IMPORT_ERROR= &quot;Data import error&quot;, NOT_PERMITTED= &quot
         object.__init__
     </dt>
   </dl>
-</td></tr></table>
+<div class="fields">      <strong>To Do (2.2):</strong>
+      <ul class="nomargin-top">
+        <li>
+        fix docstring/parameters
+        </li>
+        <li>
+        remove assertions
+        </li>
+      </ul>
+</div></td></tr></table>
 </div>
 <a name="__dbg"></a>
 <div class="private">
@@ -740,29 +794,35 @@ or&quot;, DATA_IMPORT_ERROR= &quot;Data import error&quot;, NOT_PERMITTED= &quot
   <p>Print out debug messages.</p>
   <dl class="fields">
   </dl>
-</td></tr></table>
+<div class="fields">      <p><strong>To Do (2.2):</strong>
+        remove this
+      </p>
+</div></td></tr></table>
 </div>
-<a name="invoke_hook"></a>
+<a name="callback"></a>
 <div>
 <table class="details" border="1" cellpadding="3"
        cellspacing="0" width="100%" bgcolor="white">
 <tr><td>
   <table width="100%" cellpadding="0" cellspacing="0" border="0">
   <tr valign="top"><td>
-  <h3 class="epydoc"><span class="sig"><span class="sig-name">invoke_hook</span>(<span class="sig-arg">self</span>,
+  <h3 class="epydoc"><span class="sig"><span class="sig-name">callback</span>(<span class="sig-arg">self</span>,
         <span class="sig-arg">hook</span>,
         <span class="sig-arg">*args</span>,
         <span class="sig-arg">**vars</span>)</span>
   </h3>
   </td><td align="right" valign="top"
-    ><span class="codelink"><a href="vita.modules.s3xrc.s3rc-pysrc.html#S3ResourceController.invoke_hook">source&nbsp;code</a></span>&nbsp;
+    ><span class="codelink"><a href="vita.modules.s3xrc.s3rc-pysrc.html#S3ResourceController.callback">source&nbsp;code</a></span>&nbsp;
     </td>
   </tr></table>
   
   <p>Invoke a hook or a list of hooks</p>
   <dl class="fields">
   </dl>
-</td></tr></table>
+<div class="fields">      <p><strong>To Do (2.2):</strong>
+        fix docstring
+      </p>
+</div></td></tr></table>
 </div>
 <a name="__directory"></a>
 <div class="private">
@@ -900,6 +960,40 @@ or&quot;, DATA_IMPORT_ERROR= &quot;Data import error&quot;, NOT_PERMITTED= &quot
   </dl>
 </td></tr></table>
 </div>
+<a name="represent"></a>
+<div>
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr><td>
+  <table width="100%" cellpadding="0" cellspacing="0" border="0">
+  <tr valign="top"><td>
+  <h3 class="epydoc"><span class="sig"><span class="sig-name">represent</span>(<span class="sig-arg">self</span>,
+        <span class="sig-arg">field</span>,
+        <span class="sig-arg">value</span>=<span class="sig-default">None</span>,
+        <span class="sig-arg">record</span>=<span class="sig-default">None</span>,
+        <span class="sig-arg">linkto</span>=<span class="sig-default">None</span>,
+        <span class="sig-arg">strip_markup</span>=<span class="sig-default">False</span>,
+        <span class="sig-arg">xml_escape</span>=<span class="sig-default">False</span>)</span>
+  </h3>
+  </td><td align="right" valign="top"
+    ><span class="codelink"><a href="vita.modules.s3xrc.s3rc-pysrc.html#S3ResourceController.represent">source&nbsp;code</a></span>&nbsp;
+    </td>
+  </tr></table>
+  
+  <p>Represent a field value</p>
+  <dl class="fields">
+    <dt>Parameters:</dt>
+    <dd><ul class="nomargin-top">
+        <li><strong class="pname"><code>field</code></strong> - the field (Field)</li>
+        <li><strong class="pname"><code>value</code></strong> - the value</li>
+        <li><strong class="pname"><code>record</code></strong> - record to retrieve the value from</li>
+        <li><strong class="pname"><code>linkto</code></strong> - function or format string to link an ID column</li>
+        <li><strong class="pname"><code>strip_markup</code></strong> - strip away markup from representation</li>
+        <li><strong class="pname"><code>xml_escape</code></strong> - XML-escape the output</li>
+    </ul></dd>
+  </dl>
+</td></tr></table>
+</div>
 <a name="get_session"></a>
 <div>
 <table class="details" border="1" cellpadding="3"
@@ -908,7 +1002,6 @@ or&quot;, DATA_IMPORT_ERROR= &quot;Data import error&quot;, NOT_PERMITTED= &quot
   <table width="100%" cellpadding="0" cellspacing="0" border="0">
   <tr valign="top"><td>
   <h3 class="epydoc"><span class="sig"><span class="sig-name">get_session</span>(<span class="sig-arg">self</span>,
-        <span class="sig-arg">session</span>,
         <span class="sig-arg">prefix</span>,
         <span class="sig-arg">name</span>)</span>
   </h3>
@@ -921,7 +1014,6 @@ or&quot;, DATA_IMPORT_ERROR= &quot;Data import error&quot;, NOT_PERMITTED= &quot
   <dl class="fields">
     <dt>Parameters:</dt>
     <dd><ul class="nomargin-top">
-        <li><strong class="pname"><code>session</code></strong> - the session store</li>
         <li><strong class="pname"><code>prefix</code></strong> - the prefix of the resource name (=module name)</li>
         <li><strong class="pname"><code>name</code></strong> - the name of the resource (=without prefix)</li>
     </ul></dd>
@@ -936,7 +1028,6 @@ or&quot;, DATA_IMPORT_ERROR= &quot;Data import error&quot;, NOT_PERMITTED= &quot
   <table width="100%" cellpadding="0" cellspacing="0" border="0">
   <tr valign="top"><td>
   <h3 class="epydoc"><span class="sig"><span class="sig-name">store_session</span>(<span class="sig-arg">self</span>,
-        <span class="sig-arg">session</span>,
         <span class="sig-arg">prefix</span>,
         <span class="sig-arg">name</span>,
         <span class="sig-arg">id</span>)</span>
@@ -950,7 +1041,6 @@ or&quot;, DATA_IMPORT_ERROR= &quot;Data import error&quot;, NOT_PERMITTED= &quot
   <dl class="fields">
     <dt>Parameters:</dt>
     <dd><ul class="nomargin-top">
-        <li><strong class="pname"><code>session</code></strong> - the session store</li>
         <li><strong class="pname"><code>prefix</code></strong> - the prefix of the resource name (=module name)</li>
         <li><strong class="pname"><code>name</code></strong> - the name of the resource (=without prefix)</li>
         <li><strong class="pname"><code>id</code></strong> - the ID to store</li>
@@ -966,7 +1056,6 @@ or&quot;, DATA_IMPORT_ERROR= &quot;Data import error&quot;, NOT_PERMITTED= &quot
   <table width="100%" cellpadding="0" cellspacing="0" border="0">
   <tr valign="top"><td>
   <h3 class="epydoc"><span class="sig"><span class="sig-name">clear_session</span>(<span class="sig-arg">self</span>,
-        <span class="sig-arg">session</span>,
         <span class="sig-arg">prefix</span>=<span class="sig-default">None</span>,
         <span class="sig-arg">name</span>=<span class="sig-default">None</span>)</span>
   </h3>
@@ -979,7 +1068,6 @@ or&quot;, DATA_IMPORT_ERROR= &quot;Data import error&quot;, NOT_PERMITTED= &quot
   <dl class="fields">
     <dt>Parameters:</dt>
     <dd><ul class="nomargin-top">
-        <li><strong class="pname"><code>session</code></strong> - the session store</li>
         <li><strong class="pname"><code>prefix</code></strong> - the prefix of the resource name (=module name)</li>
         <li><strong class="pname"><code>name</code></strong> - the name of the resource (=without prefix)</li>
     </ul></dd>
@@ -1005,7 +1093,10 @@ or&quot;, DATA_IMPORT_ERROR= &quot;Data import error&quot;, NOT_PERMITTED= &quot
   <p>Set the default handler for a resource method</p>
   <dl class="fields">
   </dl>
-</td></tr></table>
+<div class="fields">      <p><strong>To Do (2.2):</strong>
+        fix docstring
+      </p>
+</div></td></tr></table>
 </div>
 <a name="get_handler"></a>
 <div>
@@ -1025,16 +1116,19 @@ or&quot;, DATA_IMPORT_ERROR= &quot;Data import error&quot;, NOT_PERMITTED= &quot
   <p>Get the default handler for a resource method</p>
   <dl class="fields">
   </dl>
-</td></tr></table>
+<div class="fields">      <p><strong>To Do (2.2):</strong>
+        fix docstring
+      </p>
+</div></td></tr></table>
 </div>
-<a name="resource"></a>
-<div>
+<a name="_resource"></a>
+<div class="private">
 <table class="details" border="1" cellpadding="3"
        cellspacing="0" width="100%" bgcolor="white">
 <tr><td>
   <table width="100%" cellpadding="0" cellspacing="0" border="0">
   <tr valign="top"><td>
-  <h3 class="epydoc"><span class="sig"><span class="sig-name">resource</span>(<span class="sig-arg">self</span>,
+  <h3 class="epydoc"><span class="sig"><span class="sig-name">_resource</span>(<span class="sig-arg">self</span>,
         <span class="sig-arg">prefix</span>,
         <span class="sig-arg">name</span>,
         <span class="sig-arg">id</span>=<span class="sig-default">None</span>,
@@ -1047,39 +1141,42 @@ or&quot;, DATA_IMPORT_ERROR= &quot;Data import error&quot;, NOT_PERMITTED= &quot
         <span class="sig-arg">debug</span>=<span class="sig-default">None</span>)</span>
   </h3>
   </td><td align="right" valign="top"
-    ><span class="codelink"><a href="vita.modules.s3xrc.s3rc-pysrc.html#S3ResourceController.resource">source&nbsp;code</a></span>&nbsp;
+    ><span class="codelink"><a href="vita.modules.s3xrc.s3rc-pysrc.html#S3ResourceController._resource">source&nbsp;code</a></span>&nbsp;
     </td>
   </tr></table>
   
   <p>Wrapper function for S3Resource</p>
   <dl class="fields">
   </dl>
-</td></tr></table>
+<div class="fields">      <p><strong>To Do (2.2):</strong>
+        fix docstring
+      </p>
+</div></td></tr></table>
 </div>
-<a name="request"></a>
-<div>
+<a name="_request"></a>
+<div class="private">
 <table class="details" border="1" cellpadding="3"
        cellspacing="0" width="100%" bgcolor="white">
 <tr><td>
   <table width="100%" cellpadding="0" cellspacing="0" border="0">
   <tr valign="top"><td>
-  <h3 class="epydoc"><span class="sig"><span class="sig-name">request</span>(<span class="sig-arg">self</span>,
+  <h3 class="epydoc"><span class="sig"><span class="sig-name">_request</span>(<span class="sig-arg">self</span>,
         <span class="sig-arg">prefix</span>,
         <span class="sig-arg">name</span>,
-        <span class="sig-arg">request</span>=<span class="sig-default">None</span>,
-        <span class="sig-arg">session</span>=<span class="sig-default">None</span>,
-        <span class="sig-arg">response</span>=<span class="sig-default">None</span>,
         <span class="sig-arg">debug</span>=<span class="sig-default">None</span>)</span>
   </h3>
   </td><td align="right" valign="top"
-    ><span class="codelink"><a href="vita.modules.s3xrc.s3rc-pysrc.html#S3ResourceController.request">source&nbsp;code</a></span>&nbsp;
+    ><span class="codelink"><a href="vita.modules.s3xrc.s3rc-pysrc.html#S3ResourceController._request">source&nbsp;code</a></span>&nbsp;
     </td>
   </tr></table>
   
   <p>Wrapper function for S3Request</p>
   <dl class="fields">
   </dl>
-</td></tr></table>
+<div class="fields">      <p><strong>To Do (2.2):</strong>
+        fix docstring
+      </p>
+</div></td></tr></table>
 </div>
 <a name="parse_request"></a>
 <div>
@@ -1090,10 +1187,7 @@ or&quot;, DATA_IMPORT_ERROR= &quot;Data import error&quot;, NOT_PERMITTED= &quot
   <tr valign="top"><td>
   <h3 class="epydoc"><span class="sig"><span class="sig-name">parse_request</span>(<span class="sig-arg">self</span>,
         <span class="sig-arg">prefix</span>,
-        <span class="sig-arg">name</span>,
-        <span class="sig-arg">session</span>,
-        <span class="sig-arg">request</span>,
-        <span class="sig-arg">response</span>)</span>
+        <span class="sig-arg">name</span>)</span>
   </h3>
   </td><td align="right" valign="top"
     ><span class="codelink"><a href="vita.modules.s3xrc.s3rc-pysrc.html#S3ResourceController.parse_request">source&nbsp;code</a></span>&nbsp;
@@ -1104,7 +1198,10 @@ or&quot;, DATA_IMPORT_ERROR= &quot;Data import error&quot;, NOT_PERMITTED= &quot
   S3Resource objects.</p>
   <dl class="fields">
   </dl>
-</td></tr></table>
+<div class="fields">      <p><strong>To Do (2.2):</strong>
+        fix docstring
+      </p>
+</div></td></tr></table>
 </div>
 <a name="original"></a>
 <div>
@@ -1130,6 +1227,8 @@ Find the original record for a possible duplicate:
 
 - otherwise, if the record contains some values for unique fields,
   all of them must match the same existing DB record
+
+@todo 2.2: fix docstring
 
 </pre>
   <dl class="fields">
@@ -1162,7 +1261,10 @@ Find the original record for a possible duplicate:
   
   <dl class="fields">
   </dl>
-</td></tr></table>
+<div class="fields">      <p><strong>To Do (2.2):</strong>
+        fix docstring
+      </p>
+</div></td></tr></table>
 </div>
 <a name="import_tree"></a>
 <div>
@@ -1381,8 +1483,8 @@ Find the original record for a possible duplicate:
   <dl class="fields">
     <dt>Value:</dt>
       <dd><table><tr><td><pre class="variable">
-dict(create= &quot;create&quot;, read= &quot;read&quot;, update= &quot;update&quot;, delete= &quot;delete<span class="variable-linewrap"><img src="crarr.png" alt="\" /></span>
-&quot;)
+Storage(create= &quot;create&quot;, read= &quot;read&quot;, update= &quot;update&quot;, delete= &quot;del<span class="variable-linewrap"><img src="crarr.png" alt="\" /></span>
+ete&quot;)
 </pre></td></tr></table>
 </dd>
   </dl>
@@ -1468,6 +1570,36 @@ or&quot;, DATA_IMPORT_ERROR= &quot;Data import error&quot;, NOT_PERMITTED= &quot
 </td></tr></table>
 </div>
 <br />
+<!-- ==================== INSTANCE VARIABLE DETAILS ==================== -->
+<a name="section-InstanceVariableDetails"></a>
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr bgcolor="#70b0f0" class="table-header">
+  <td colspan="2" class="table-header">
+    <table border="0" cellpadding="0" cellspacing="0" width="100%">
+      <tr valign="top">
+        <td align="left"><span class="table-header">Instance Variable Details</span></td>
+        <td align="right" valign="top"
+         ><span class="options">[<a href="#section-InstanceVariableDetails"
+         class="privatelink" onclick="toggle_private();"
+         >hide private</a>]</span></td>
+      </tr>
+    </table>
+  </td>
+</tr>
+</table>
+<a name="T"></a>
+<div>
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr><td>
+  <h3 class="epydoc">T</h3>
+  <p>Global translator object</p>
+  <dl class="fields">
+  </dl>
+</td></tr></table>
+</div>
+<br />
 <!-- ==================== NAVIGATION BAR ==================== -->
 <table class="navbar" border="0" width="100%" cellpadding="0"
        bgcolor="#a0c0ff" cellspacing="0">
@@ -1499,7 +1631,7 @@ or&quot;, DATA_IMPORT_ERROR= &quot;Data import error&quot;, NOT_PERMITTED= &quot
 <table border="0" cellpadding="0" cellspacing="0" width="100%%">
   <tr>
     <td align="left" class="footer">
-    Generated by Epydoc 3.0.1 on Sun Oct  3 11:44:08 2010
+    Generated by Epydoc 3.0.1 on Sat Oct  9 08:00:03 2010
     </td>
     <td align="right" class="footer">
       <a target="mainFrame" href="http://epydoc.sourceforge.net"

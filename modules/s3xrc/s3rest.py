@@ -2,7 +2,7 @@
 
 """ S3XRC Resource Framework - RESTful API
 
-    @see: U{B{I{S3XRC-2}} <http://eden.sahanafoundation.org/wiki/S3XRC>} on Eden wiki
+    @see: U{B{I{S3XRC}} <http://eden.sahanafoundation.org/wiki/S3XRC>} on Eden wiki
 
     @requires: U{B{I{lxml}} <http://codespeak.net/lxml>}
 
@@ -36,16 +36,137 @@
 
 __all__ = ["S3Resource", "S3Request"]
 
-import os, sys, cgi, uuid, datetime, time, urllib, StringIO
+import os, sys, cgi, uuid, datetime, time, urllib, StringIO, re
 import gluon.contrib.simplejson as json
 
 from gluon.storage import Storage
 from gluon.sql import Row
-from gluon.html import URL
+from gluon.html import URL, TABLE, TR, TH, TD, THEAD, TBODY, A
 from gluon.http import HTTP, redirect
+from gluon.sqlhtml import SQLTABLE, SQLFORM
 
 from lxml import etree
 from s3crud import S3CRUDHandler
+
+
+# *****************************************************************************
+class S3SQLTable(SQLTABLE):
+
+    """ Custom version of gluon.sqlhtml.SQLTABLE """
+
+    def __init__(self, sqlrows,
+                 linkto=None,
+                 upload=None,
+                 orderby=None,
+                 headers={},
+                 truncate=16,
+                 columns=None,
+                 th_link='',
+                 **attributes):
+
+        """ Constructor
+
+            @todo 2.2: fix docstring
+            @todo 2.2: PEP8
+            
+        """
+
+        table_field = re.compile('[\w_]+\.[\w_]+')
+
+        TABLE.__init__(self, **attributes)
+        self.components = []
+        self.attributes = attributes
+        self.sqlrows = sqlrows
+        (components, row) = (self.components, [])
+        if not columns:
+            columns = sqlrows.colnames
+        if headers=="fieldname:capitalize":
+            headers = {}
+            for c in columns:
+                headers[c] = " ".join([w.capitalize() for w in c.split(".")[-1].split("_")])
+
+        for c in columns:
+            if orderby:
+                row.append(TH(A(headers.get(c, c),
+                                _href=th_link+"?orderby=" + c)))
+            else:
+                row.append(TH(headers.get(c, c)))
+
+        components.append(THEAD(TR(*row)))
+        tbody = []
+        for (rc, record) in enumerate(sqlrows):
+            row = []
+            if rc % 2 == 0:
+                _class = "even"
+            else:
+                _class = "odd"
+            for colname in columns:
+                if not table_field.match(colname):
+                    r = record._extra[colname]
+                    row.append(TD(r))
+                    continue
+                (tablename, fieldname) = colname.split(".")
+                field = sqlrows.db[tablename][fieldname]
+                if tablename in record \
+                        and isinstance(record,Row) \
+                        and isinstance(record[tablename],Row):
+                    r = record[tablename][fieldname]
+                elif fieldname in record:
+                    r = record[fieldname]
+                else:
+                    raise SyntaxError, "something wrong in Rows object"
+                r_old = r
+                if field.represent:
+                    r = field.represent(r)
+                elif field.type == "blob" and r:
+                    r = "DATA"
+                elif field.type == "upload":
+                    if upload and r:
+                        r = A("file", _href="%s/%s" % (upload, r))
+                    elif r:
+                        r = "file"
+                    else:
+                        r = ""
+                elif field.type in ["string","text"]:
+                    r = str(field.formatter(r))
+                    ur = unicode(r, "utf8")
+                    if truncate!=None and len(ur) > truncate:
+                        r = ur[:truncate - 3].encode("utf8") + "..."
+                elif linkto and field.type == "id":
+                    #try:
+                        #href = linkto(r, "table", tablename)
+                    #except TypeError:
+                        #href = "%s/%s/%s" % (linkto, tablename, r_old)
+                    #r = A(r, _href=href)
+                    try:
+                        href = linkto(r)
+                    except TypeError:
+                        href = "%s/%s" % (linkto, r)
+                    r = A(r, _href=href)
+                #elif linkto and str(field.type).startswith("reference"):
+                    #ref = field.type[10:]
+                    #try:
+                        #href = linkto(r, "reference", ref)
+                    #except TypeError:
+                        #href = "%s/%s/%s" % (linkto, ref, r_old)
+                        #if ref.find(".") >= 0:
+                            #tref,fref = ref.split(".")
+                            #if hasattr(sqlrows.db[tref],"_primarykey"):
+                                #href = "%s/%s?%s" % (linkto, tref, urllib.urlencode({fref:ur}))
+                    #r = A(r, _href=href)
+                elif linkto and hasattr(field._table,"_primarykey") and fieldname in field._table._primarykey:
+                    # have to test this with multi-key tables
+                    key = urllib.urlencode(dict( [ \
+                                ((tablename in record \
+                                      and isinstance(record, Row) \
+                                      and isinstance(record[tablename], Row)) and
+                                 (k, record[tablename][k])) or (k, record[k]) \
+                                    for k in field._table._primarykey ] ))
+                    r = A(r, _href="%s/%s?%s" % (linkto, tablename, key))
+                row.append(TD(r))
+            tbody.append(TR(_class=_class, *row))
+        components.append(TBODY(*tbody))
+
 
 # *****************************************************************************
 class S3Resource(object):
@@ -77,6 +198,8 @@ class S3Resource(object):
             @param storage: URL of the data store, None for DAL
             @param debug: whether to write debug messages to stderr or not
             @type debug: bool
+
+            @todo 2.2: remove assertions
 
         """
 
@@ -116,7 +239,7 @@ class S3Resource(object):
 
         self.__files = Storage()
 
-        self.crud = S3CRUDHandler(self.__db, self.__manager)
+        self.crud = self.__manager.crud
         self.__handler = Storage(options=self.__get_options,
                                  fields=self.__get_fields,
                                  export_tree=self.__get_tree,
@@ -129,6 +252,8 @@ class S3Resource(object):
         """ Write debug messages to stderr.
 
             @param msg: the debug message
+
+            @todo 2.2: remove this
 
         """
 
@@ -228,6 +353,12 @@ class S3Resource(object):
     # -------------------------------------------------------------------------
     def parse_context(self, resource, url_vars):
 
+        """ Parse URL context queries
+
+            @todo 2.2: fix docstring
+
+        """
+
         c = Storage()
         for k in url_vars:
             if k[:8] == "context.":
@@ -275,7 +406,11 @@ class S3Resource(object):
     # -------------------------------------------------------------------------
     def url_query(self, resource, url_vars):
 
-        """ URL query parser """
+        """ URL query parser
+
+            @todo 2.2: fix docstring
+            
+        """
 
         c = self.parse_context(resource, url_vars)
         q = Storage(context=c)
@@ -647,7 +782,11 @@ class S3Resource(object):
     # -------------------------------------------------------------------------
     def add_filter(self, filter=None):
 
-        """ Add a filter to the current query """
+        """ Add a filter to the current query
+
+            @todo 2.2: fix docstring
+            
+        """
 
         if filter is not None:
 
@@ -805,18 +944,6 @@ class S3Resource(object):
 
         else:
             raise NotImplementedError
-
-
-    # -------------------------------------------------------------------------
-    def save(self):
-
-        """ Write the current set to the data store (not implemented yet)
-
-            @todo 2.1: implement this.
-        """
-
-        # Not implemented yet
-        raise NotImplementedError
 
 
     # -------------------------------------------------------------------------
@@ -978,7 +1105,7 @@ class S3Resource(object):
 
         """ URL of this resource (not implemented yet)
 
-            @todo 2.1: implement this.
+            @todo 2.2: implement this.
 
         """
 
@@ -1085,7 +1212,7 @@ class S3Resource(object):
             else:
                 raise HTTP(501, body=self.ERROR.BAD_METHOD)
             if handler is not None:
-                self.__dbg("method handler found - executing request")
+                #self.__dbg("method handler found - executing request")
                 output = handler(r, **attr)
             else:
                 output = self.crud(r, **attr)
@@ -1095,7 +1222,7 @@ class S3Resource(object):
         if hooks is not None:
             postprocess = hooks.get("postp", None)
         if postprocess is not None:
-            self.__dbg("post-processing")
+            #self.__dbg("post-processing")
             output = postprocess(r, output)
 
         if output is not None and isinstance(output, dict):
@@ -1167,7 +1294,7 @@ class S3Resource(object):
 
         elif method in ("create", "update"):
             authorised = permit(method, tablename)
-            # TODO: Add user confirmation here:
+            # @todo: Add user confirmation here:
             if r.representation in xml_import_formats or \
                r.representation in json_import_formats:
                 method = "import_tree"
@@ -1182,7 +1309,7 @@ class S3Resource(object):
             authorised = permit("read", tablename)
 
         elif method == "clear" and not r.component:
-            self.__manager.clear_session(r.session, self.prefix, self.name)
+            self.__manager.clear_session(self.prefix, self.name)
             if "_next" in r.request.vars:
                 request_vars = dict(_next=r.request.vars._next)
             else:
@@ -1244,6 +1371,7 @@ class S3Resource(object):
 
             @param r: the request
             @param attr: the request attributes
+
         """
 
         if r.representation == "xml":
@@ -1382,7 +1510,11 @@ class S3Resource(object):
     # -------------------------------------------------------------------------
     def __read_body(self, r):
 
-        """ Read data from request body """
+        """ Read data from request body
+
+            @todo 2.2: fix docstring
+            
+        """
 
         self.__files = Storage()
         content_type = r.request.env.get("content_type", None)
@@ -1417,7 +1549,11 @@ class S3Resource(object):
     # -------------------------------------------------------------------------
     def __put_tree(self, r, **attr):
 
-        """ Import XML/JSON data """
+        """ Import XML/JSON data
+
+            @todo 2.2: fix docstring
+            
+        """
 
         xml = self.__manager.xml
         xml_formats = self.__manager.xml_import_formats
@@ -1560,7 +1696,11 @@ class S3Resource(object):
                       show_urls=True,
                       dereference=True):
 
-        """ Export this resource as element tree """
+        """ Export this resource as element tree
+
+            @todo 2.2: fix docstring
+            
+        """
 
         return self.__manager.export_tree(self,
                                           audit=self.__manager.audit,
@@ -1575,7 +1715,11 @@ class S3Resource(object):
     # -------------------------------------------------------------------------
     def export_xml(self, template=None, pretty_print=False, **args):
 
-        """ Export this resource as XML """
+        """ Export this resource as XML
+
+            @todo 2.2: fix docstring
+            
+        """
 
         tree = self.__export_tree()
 
@@ -1598,7 +1742,11 @@ class S3Resource(object):
     # -------------------------------------------------------------------------
     def export_json(self, template=None, pretty_print=False, **args):
 
-        """ Export this resource as JSON """
+        """ Export this resource as JSON
+
+            @todo 2.2: fix docstring
+            
+        """
 
         tree = self.__export_tree()
 
@@ -1628,6 +1776,9 @@ class S3Resource(object):
             @param files: file attachments as {filename:file}
 
             @raise IOError: at insufficient permissions
+
+            @todo 2.2: fix docstring
+            
         """
 
         json_message = self.__manager.xml.json_message
@@ -1741,7 +1892,11 @@ class S3Resource(object):
     # -------------------------------------------------------------------------
     def options_tree(self, component=None, fields=None):
 
-        """ Export field options of this resource as element tree """
+        """ Export field options of this resource as element tree
+
+            @todo 2.2: fix docstring
+            
+        """
 
         if component is not None:
             c = self.components.get(component, None)
@@ -1760,7 +1915,11 @@ class S3Resource(object):
     # -------------------------------------------------------------------------
     def options_xml(self, component=None, fields=None):
 
-        """ Export field options of this resource as XML """
+        """ Export field options of this resource as XML
+
+            @todo 2.2: fix docstring
+            
+        """
 
         tree = self.options_tree(component=component, fields=fields)
         return self.__manager.xml.tostring(tree, pretty_print=True)
@@ -1769,7 +1928,11 @@ class S3Resource(object):
     # -------------------------------------------------------------------------
     def options_json(self, component=None, fields=None):
 
-        """ Export field options of this resource as JSON """
+        """ Export field options of this resource as JSON
+
+            @todo 2.2: fix docstring
+            
+        """
 
         tree = etree.ElementTree(self.options_tree(component=component,
                                                    fields=fields))
@@ -1779,7 +1942,11 @@ class S3Resource(object):
     # -------------------------------------------------------------------------
     def fields_tree(self, component=None):
 
-        """ Export a list of fields in the primary table as element tree """
+        """ Export a list of fields in the primary table as element tree
+
+            @todo 2.2: fix docstring
+            
+        """
 
         if component is not None:
             c = self.components.get(component, None)
@@ -1796,7 +1963,11 @@ class S3Resource(object):
     # -------------------------------------------------------------------------
     def fields_xml(self, component=None):
 
-        """ Export a list of fields in the primary table as XML """
+        """ Export a list of fields in the primary table as XML
+
+            @todo 2.2: fix docstring
+            
+        """
 
         tree = self.fields_tree(component=component)
         return self.__manager.xml.tostring(tree, pretty_print=True)
@@ -1805,7 +1976,11 @@ class S3Resource(object):
     # -------------------------------------------------------------------------
     def fields_json(self, component=None):
 
-        """ Export a list of fields in the primary table as JSON """
+        """ Export a list of fields in the primary table as JSON
+
+            @todo 2.2: fix docstring
+            
+        """
 
         tree = etree.ElementTree(self.fields_tree(component=component))
         return self.__manager.xml.tree2json(tree, pretty_print=True)
@@ -1827,7 +2002,11 @@ class S3Resource(object):
                     show_urls=True,
                     dereference=True):
 
-        """ Push (=POST) the current resource to a target URL """
+        """ Push (=POST) the current resource to a target URL
+
+            @todo 2.2: fix docstring
+            
+        """
 
         if not converter:
             raise SyntaxError
@@ -2019,7 +2198,11 @@ class S3Resource(object):
               template=None,
               ignore_errors=False, **args):
 
-        """ Fetch data to the current resource from a remote URL """
+        """ Fetch data to the current resource from a remote URL
+
+            @todo 2.2: fix docstring
+            
+        """
 
         xml = self.__manager.xml
 
@@ -2104,6 +2287,8 @@ class S3Resource(object):
                   template=None,
                   ignore_errors=False, **args):
 
+        """ @todo 2.2: add docstring """
+
         return self.fetch(url,
                           username=username,
                           password=password,
@@ -2121,6 +2306,8 @@ class S3Resource(object):
                    template=None,
                    ignore_errors=False, **args):
 
+        """ @todo 2.2: add docstring """
+
         return self.fetch(url,
                           username=username,
                           password=password,
@@ -2129,6 +2316,191 @@ class S3Resource(object):
                           template=template,
                           ignore_errors=ignore_errors, **args)
 
+
+    # CRUD functions ==========================================================
+
+    def create(self):
+
+        """ Add a record to this resource
+
+            @todo 2.2: implement this
+            
+        """
+
+        return None
+
+    # -------------------------------------------------------------------------
+    def read(self, record_id):
+
+        """ View a record of this resource
+
+            @todo 2.2: implement this
+            
+        """
+
+        return None
+
+
+    # -------------------------------------------------------------------------
+    def update(self, record,
+               record_id=None,
+               onvalidation=None,
+               onaccept=None,
+               message="Record updated",
+               download_url=None):
+
+        """ Update a record in this resource
+
+            @todo 2.2: complete implementation
+            
+        """
+
+        # Environment
+        session = self.__manager.session
+        request = self.__manager.request
+        response = self.__manager.response
+
+        # Get the CRUD settings
+        s3 = self.__manager.s3
+        settings = s3.crud
+
+        # Table and callbacks
+        table = self.table
+        model = self.__manager.model
+
+        onvalidation = model.get_config(table, "onvalidation")
+        onaccept = model.get_config(table, "onaccept")
+
+        # Get the form
+
+        #table,
+        #record = None,
+        #deletable = False,
+        #linkto = None,
+        #upload = None,
+        #fields = None,
+        #col3 = {},
+        #submit_button = 'Submit',
+        #delete_label = 'Check to delete:',
+        #showid = True,
+        #readonly = False,
+        #comments = True,
+        #keepopts = [],
+        #ignore_rw = False,
+        #record_id = None,
+        #formstyle = 'table3cols',
+        #**attributes
+
+        form = SQLFORM(table, record,
+                       record_id=record_id,
+                       #labels = None,
+                       showid=False,
+                       deletable=False,
+                       upload=download_url,
+                       submit_button=settings.submit_button,
+                       formstyle=settings.formstyle)
+
+        formname = "%s/%s" % (self.tablename, form.record_id)
+
+        # Keep values in form?
+        #keepvalues = self.settings.keepvalues
+        #if request.vars.delete_this_record:
+            #keepvalues = False
+
+        # Get the onvalidation
+        if isinstance(onvalidation, dict):
+            onvalidation = onvalidation.get(self.tablename, [])
+
+        # Run the form
+        if form.accepts(request.post_vars,
+                        session,
+                        formname=formname,
+                        onvalidation=onvalidation,
+                        keepvalues=False,
+                        hideerror=False):
+
+            # Update message
+            response.flash = message
+
+            # Spool delete message if delete
+            #if request.vars.delete_this_record:
+                #message = self.messages.record_deleted
+                #callback(ondelete,form,table._tablename)
+            #response.flash = message
+
+            # Execute onaccept
+            self.__manager.callback(onaccept, form, name=self.tablename)
+
+        return form
+
+
+    # -------------------------------------------------------------------------
+    def delete(self,
+               ondelete=None):
+
+        """ Delete all records in this resource
+
+            @todo 2.2: implement this
+            
+        """
+
+        return None
+
+    # -------------------------------------------------------------------------
+    def select(self,
+               fields=None,
+               start=0,
+               limit=None,
+               orderby=None,
+               linkto=None,
+               download_url=None,
+               as_page=False,
+               as_list=False):
+
+        """ List of all records of this resource """
+
+        db = self.__db
+
+        table = self.table
+        query = self.get_query()
+
+
+        if not fields:
+            fields = [table.id]
+
+        if limit is not None:
+            limitby = (start, start + limit)
+        else:
+            limitby = None
+
+        rows = db(query).select(*fields, **dict(orderby=orderby,
+                                                limitby=limitby))
+
+        if not rows:
+            return None
+
+        if as_page:
+
+            represent = self.__manager.represent
+
+            items = [[represent(f, record=row, linkto=linkto)
+                    for f in fields]
+                    for row in rows]
+
+        elif as_list:
+
+            items = rows.as_list()
+
+        else:
+
+            headers = dict(map(lambda f: (str(f), f.label), fields))
+            items= S3SQLTable(rows,
+                              headers=headers,
+                              linkto=linkto,
+                              upload=download_url,
+                              _id="list", _class="display")
+
+        return items
 
 
 # *****************************************************************************
@@ -2140,26 +2512,25 @@ class S3Request(object):
     UNAUTHORISED = "Not Authorised"
 
     # -------------------------------------------------------------------------
-    def __init__(self, manager, prefix, name,
-                 request=None,
-                 session=None,
-                 response=None,
-                 debug=None):
+    def __init__(self, manager, prefix, name, debug=None):
 
         """ Constructor
 
             @param manager: the resource controller
             @param prefix: prefix of the resource name (=module name)
             @param name: name of the resource (=without prefix)
-            @param request: the web2py request object
-            @param session: the session store
-            @param response: the web2py response object
             @param debug: whether to print debug messages or not
+
+            @todo 2.2: remove assertions
 
         """
 
         assert manager is not None, "Undefined Resource Manager"
         self.__manager = manager
+
+        self.request = manager.request
+        self.response = manager.response
+        self.session = manager.session or Storage()
 
         if debug is None:
             self.debug = self.__manager.debug
@@ -2168,16 +2539,12 @@ class S3Request(object):
 
         self.error = None
 
-        self.prefix = prefix or request.controller
-        self.name = name or request.function
-
-        self.request = request
-        self.response = response
-        self.session = session or Storage()
+        self.prefix = prefix or self.request.controller
+        self.name = name or self.request.function
 
         # Prepare parsing
-        self.representation = request.extension
-        self.http = request.env.request_method
+        self.representation = self.request.extension
+        self.http = self.request.env.request_method
         self.extension = False
 
         self.args = []
@@ -2203,11 +2570,11 @@ class S3Request(object):
                 self.request.vars[varname] = self.component_id
 
         # Create the resource
-        self.resource = manager.resource(self.prefix, self.name,
-                                         id=self.id,
-                                         filter=self.response[manager.HOOKS].filter,
-                                         url_vars=self.request.vars,
-                                         components=self.component_name)
+        self.resource = manager._resource(self.prefix, self.name,
+                                          id=self.id,
+                                          filter=self.response[manager.HOOKS].filter,
+                                          url_vars=self.request.vars,
+                                          components=self.component_name)
 
         self.tablename = self.resource.tablename
         self.table = self.resource.table
@@ -2244,8 +2611,7 @@ class S3Request(object):
             if len(self.resource) == 1:
                 self.record = self.resource.records().first()
                 self.id = self.record.id
-                self.__manager.store_session(self.session,
-                                             self.resource.prefix,
+                self.__manager.store_session(self.resource.prefix,
                                              self.resource.name,
                                              self.id)
             else:
@@ -2279,11 +2645,15 @@ class S3Request(object):
     # -------------------------------------------------------------------------
     def _bind(self, resource):
 
+        """ @todo 2.2: add docstring """
+
         self.resource = resource
 
 
     # -------------------------------------------------------------------------
     def __dbg(self, msg):
+
+        """ @todo 2.2: remove this """
 
         if self.debug:
             print >> sys.stderr, "S3Request: %s" % msg
@@ -2361,6 +2731,8 @@ class S3Request(object):
             @param method: an explicit method for the URL
             @param representation: the representation for the URL
 
+            @todo 2.2: make this based on S3Resource.url()
+
         """
 
         if vars is None:
@@ -2434,6 +2806,8 @@ class S3Request(object):
 
             @param representation: the representation for the URL
 
+            @todo 2.2: fix docstring
+
         """
 
         return self.__next(id=self.id, representation=representation, vars=vars)
@@ -2449,6 +2823,8 @@ class S3Request(object):
             @param record_id: the record ID for the URL
             @param representation: the representation for the URL
 
+            @todo 2.2: fix docstring
+
         """
 
         return self.__next(method=method, id=record_id,
@@ -2462,6 +2838,8 @@ class S3Request(object):
 
             @param representation: the representation for the URL
 
+            @todo 2.2: fix docstring
+
         """
 
         return self.__next(method="", representation=representation, vars=vars)
@@ -2473,6 +2851,8 @@ class S3Request(object):
         """ URL of the same request with neutralized primary record ID
 
             @param representation: the representation for the URL
+
+            @todo 2.2: fix docstring
 
         """
 
@@ -2498,4 +2878,3 @@ class S3Request(object):
 
 
 # *****************************************************************************
-

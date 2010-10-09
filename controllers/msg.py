@@ -44,6 +44,9 @@ def tropo():
         # This is their service contacting us, so parse their request
         s = Session(request.body)
         db.msg_tropo.insert(json=s)
+        t.say(["Received!"])
+        output = t.RenderJson()
+        return output
     else:
         # This is us initiating an outbound request to their service, so parse our request
         try:
@@ -51,8 +54,21 @@ def tropo():
         except:
             session.error = T("Need to specify a service!")
             redirect(URL(r=request, f="index"))
+        try:
+            pe = request.args[1]
+        except:
+            session.error = T("Need to specify a person entity to send to!")
+            redirect(URL(r=request, f="index"))
+        try:
+            # @ToDo We don't really need to redefine this again, as it's the same value...is there a more efficient way to check?
+            pe_id = db(db.pr_pentity.pe_id == pe).select(db.pr_pentity.pe_id, limitby=(0, 1)).first().pe_id
+        except:
+            session.error = T("Person entity not found!")
+            redirect(URL(r=request, f="index"))
         from urllib import urlencode
         from urllib2 import urlopen
+        base_url = "http://api.tropo.com/1.0/sessions"
+        action = "create"
         if tropo_service == "voice":
             token = db(db.msg_setting.id == 1).select(db.msg_setting.tropo_token_voice, limitby=(0, 1)).first().tropo_token_voice
             if not token:
@@ -65,20 +81,33 @@ def tropo():
             if not token:
                 session.error = T("Need to configure a Messaging Token!")
                 redirect(URL(r=request, f="setting"))
+            # @ToDo Pull the message body from the msg_outbox
+            message = "hello from the session API!"
             if tropo_service == "sms":
-                # tbc
-                pass
+                network = "SMS"
+                try:
+                    # @ToDo: Handle multiple phone numbers
+                    number = db((db.pr_pe_contact.pe_id == pe_id) & (db.pr_pe_contact.contact_method == 2)).select(db.pr_pe_contact.value, limitby=(0, 1)).first().value
+                except:
+                    session.error = T("No Mobile Phone set for this person entity!")
+                    # @ToDo handle Groups
+                    redirect(URL(r=request, c="pr", f="person", args=[pe_id, "pe_contact"]))
             elif tropo_service == "twitter":
                 # tbc
-                pass
-            elif tropo_service == "test":
-                t.say(["test worked!"])
-                output = t.RenderJson()
-                return output
+                session.error = T("Unsupported Service!")
+                redirect(URL(r=request, f="index"))
+            elif tropo_service == "jabber":
+                network = "JABBER"
+                # tbc
+                session.error = T("Unsupported Service!")
+                redirect(URL(r=request, f="index"))
             else:
                 session.error = T("Unknown Service!")
                 redirect(URL(r=request, f="index"))
-        return "Passed"
+            params = urlencode([("action", action), ("token", token), ("network", network), ("numberToDial", number), ("message", message)])
+            data = urlopen("%s?%s" % (base_url, params)).read()
+            session.flash = T("Message Sent")
+            redirect(URL(r=request, f="index"))
 
 @auth.shn_requires_membership(1)
 def setting():

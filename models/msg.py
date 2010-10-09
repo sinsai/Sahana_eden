@@ -12,7 +12,9 @@ if deployment_settings.has_module(module):
     tablename = "%s_%s" % (module, resource)
     table = db.define_table(tablename,
                             Field("outgoing_sms_handler"),
-                            Field("default_country_code", "integer", default = 44),
+                            Field("default_country_code", "integer", default=44),
+                            Field("tropo_token_voice"),
+                            Field("tropo_token_messaging"),
                             migrate=migrate)
 
     table.outgoing_sms_handler.requires = IS_IN_SET(["Modem", "Gateway"], zero=None)
@@ -227,6 +229,18 @@ if deployment_settings.has_module(module):
                                         "message_id",
                                         "person_id",
                                        ])
+
+    # Tropo
+    # - probably temp...will be merged into the rest of Messaging
+    resource = "tropo"
+    tablename = "%s_%s" % (module, resource)
+    table = db.define_table(tablename,
+                            Field("json"),
+                            migrate=migrate,
+                            *(s3_timestamp() + s3_uid() + s3_deletion_status()))
+
+    table.uuid.requires = IS_NOT_IN_DB(db, "%s.uuid" % tablename)
+
 
     # CAP: Common Alerting Protocol
     # http://docs.oasis-open.org/emergency/cap/v1.2/CAP-v1.2.html

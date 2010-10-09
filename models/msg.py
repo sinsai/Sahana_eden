@@ -115,6 +115,7 @@ if deployment_settings.has_module(module):
                             pe_id(),                # Sender
                             Field("sender"),        # The name to go out incase of the email, if set used
                             Field("fromaddress"),   # From address if set changes sender to this
+                            Field("recipient"),
                             Field("subject", length=78),
                             Field("message", "text"),
                             #Field("attachment", "upload", autodelete = True), #TODO
@@ -130,15 +131,21 @@ if deployment_settings.has_module(module):
 
     table.uuid.requires = IS_NOT_IN_DB(db, "%s.uuid" % tablename)
     table.priority.requires = IS_NULL_OR(IS_IN_SET(msg_priority_opts))
+    table.priority.label = T("Priority")
+    #@ToDo More Labels for i18n
+
     s3xrc.model.configure(table,
                           list_fields=["id",
                                        "pe_id",
+                                       "fromaddress",
+                                       "recipient",
                                        "subject",
+                                       "message",
                                        "verified",
-                                       "verified_comments",
+                                       #"verified_comments",
                                        "actionable",
                                        "actioned",
-                                       "actioned_comments",
+                                       #"actioned_comments",
                                        "priority"])
 
     # Reusable Message ID
@@ -237,19 +244,6 @@ if deployment_settings.has_module(module):
                                         "message_id",
                                         "person_id",
                                        ])
-
-    # Tropo for inbound messaging
-    # - probably temp...will be merged into the rest of Messaging
-    resource = "tropo"
-    tablename = "%s_%s" % (module, resource)
-    table = db.define_table(tablename,
-                            Field("callerid"),
-                            Field("destination"),
-                            Field("message"),
-                            migrate=migrate,
-                            *(s3_timestamp() + s3_uid() + s3_deletion_status()))
-
-    table.uuid.requires = IS_NOT_IN_DB(db, "%s.uuid" % tablename)
 
     # Tropo Scratch pad for outbound messaging
     resource = "tropo_scratch"

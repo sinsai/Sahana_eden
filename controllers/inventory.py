@@ -1,11 +1,11 @@
 # -*- coding: utf-8 -*-
 
 """
-    Inventory 
-    
+    Inventory
+
     @author: Michael Howden (michael@sahanafoundation.org)
-    @date-created: 2010-08-16    
-    
+    @date-created: 2010-08-16
+
     A module to record inventories of items at a location (store)
 """
 
@@ -35,7 +35,7 @@ def store():
     resource = request.function
     tablename = "%s_%s" % (module, resource)
     table = db[tablename]
-    
+
     # Don't send the locations list to client (pulled by AJAX instead)
     table.location_id.requires = IS_NULL_OR(IS_ONE_OF_EMPTY(db, "gis_location.id"))
 
@@ -46,7 +46,7 @@ def store():
             # listadd arrives here as method=None
             if r.method != "delete" and not r.component:
                 # Redirect to the Items tabs after creation
-                r.next = r.other(method="store_item", record_id=s3xrc.get_session(session, module, resource))
+                r.next = r.other(method="store_item", record_id=s3xrc.get_session(module, resource))
 
             # Normal Action Buttons
             shn_action_buttons(r)
@@ -84,5 +84,5 @@ def store_item():
     resource = request.function
     tablename = "%s_%s" % (module, resource)
     table = db[tablename]
-       
+
     return shn_rest_controller(module, resource)

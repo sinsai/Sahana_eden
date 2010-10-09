@@ -2,7 +2,7 @@
 
 """ S3XRC Resource Framework - Resource Controller
 
-    @see: U{B{I{S3XRC-2}} <http://eden.sahanafoundation.org/wiki/S3XRC>} on Eden wiki
+    @see: U{B{I{S3XRC}} <http://eden.sahanafoundation.org/wiki/S3XRC>} on Eden wiki
 
     @requires: U{B{I{lxml}} <http://codespeak.net/lxml>}
 
@@ -39,18 +39,27 @@ __all__ = ["S3ResourceController"]
 import sys, datetime, time
 
 from gluon.storage import Storage
-from gluon.html import URL
+from gluon.html import URL, A
 from gluon.http import HTTP, redirect
 from gluon.validators import IS_DATE, IS_TIME
 from lxml import etree
 
 from s3xml import S3XML
 from s3rest import S3Resource, S3Request
+from s3model import S3ResourceModel
+from s3crud import S3CRUDHandler
+
 
 # *****************************************************************************
 class S3ResourceController(object):
 
-    """ S3 Resource Controller """
+    """ S3 Resource Controller
+
+        @todo 2.2: move formats into settings
+        @todo 2.2: remove __dbg
+        @todo 2.2: error messages internationalization?
+
+    """
 
     UID = "uuid"
     DELETED = "deleted"
@@ -59,15 +68,16 @@ class S3ResourceController(object):
     RCVARS = "rcvars"
 
     XSLT_FILE_EXTENSION = "xsl"
-    XSLT_IMPORT_TEMPLATES = "static/xslt/import"
-    XSLT_EXPORT_TEMPLATES = "static/xslt/export"
+    XSLT_IMPORT_TEMPLATES = "static/xslt/import" #@todo 2.2: move into settings
+    XSLT_EXPORT_TEMPLATES = "static/xslt/export" #@todo 2.2: move into settings
 
-    ACTION = dict(
+    ACTION = Storage(
         create="create",
         read="read",
         update="update",
         delete="delete"
     )
+
     ROWSPERPAGE = 10
     MAX_DEPTH = 10
 
@@ -94,15 +104,10 @@ class S3ResourceController(object):
 
     # -------------------------------------------------------------------------
     def __init__(self,
-                 #db,
                  environment,
                  domain=None,
                  base_url=None,
-                 #cache=None,
-                 #auth=None,
-                 #audit=None,
-                 rpp=None,
-                 #gis=None,
+                 rpp=None, # @todo 2.2: remove this parameter, move into settings
                  messages=None,
                  debug=False,
                  **attr):
@@ -117,19 +122,32 @@ class S3ResourceController(object):
             @param messages: a function to retrieve message URLs tagged for a resource
             @param cache: the cache object
 
+            @todo 2.2: fix docstring/parameters
+            @todo 2.2: remove assertions
+
         """
 
+        # Remove this?
         #assert db is not None, "Database must not be None."
 
+        # Environment
         environment = Storage(environment)
-        self.s3 = environment.s3 #: Global settings
+
+        self.db = environment.db
+        self.cache = environment.cache
+
+        self.auth = environment.auth
+        self.gis = environment.gis
+
+        self.s3 = environment.s3
+
+        self.session = environment.session
+        self.request = environment.request
+        self.response = environment.response
 
         self.T = environment.T #: Global translator object
 
         # Settings
-        self.db = environment.db
-        self.cache = environment.cache
-
         self.domain = domain
         self.base_url = base_url
         self.download_url = "%s/default/download" % base_url
@@ -144,10 +162,8 @@ class S3ResourceController(object):
         self.debug = debug
 
         # Toolkits
-        self.auth = environment.auth    # Auth
-        self.gis = environment.gis      # GIS
-
         self.model = S3ResourceModel(self.db)
+        self.crud = S3CRUDHandler(self)
         self.xml = S3XML(self.db,
                          domain=domain,
                          base_url=base_url,
@@ -178,7 +194,11 @@ class S3ResourceController(object):
     # -------------------------------------------------------------------------
     def __dbg(self, msg):
 
-        """ Print out debug messages. """
+        """ Print out debug messages.
+
+            @todo 2.2: remove this
+            
+        """
 
         if self.debug:
             print >> sys.stderr, "S3ResourceController: %s" % msg
@@ -187,7 +207,11 @@ class S3ResourceController(object):
     # -------------------------------------------------------------------------
     def callback(self, hook, *args, **vars):
 
-        """ Invoke a hook or a list of hooks """
+        """ Invoke a hook or a list of hooks
+
+            @todo 2.2: fix docstring
+            
+        """
 
         name = vars.pop("name", None)
 
@@ -242,8 +266,7 @@ class S3ResourceController(object):
     # -------------------------------------------------------------------------
     def __fields(self, table, skip=[]):
 
-        """
-            Finds all readable fields in a table and splits
+        """ Finds all readable fields in a table and splits
             them into reference and non-reference fields
 
             @param table: the DB table
@@ -407,15 +430,92 @@ class S3ResourceController(object):
 
 
     # -------------------------------------------------------------------------
-    def get_session(self, session, prefix, name):
+    def represent(self, field,
+                  value=None,
+                  record=None,
+                  linkto=None,
+                  strip_markup=False,
+                  xml_escape=False):
+
+        """ Represent a field value
+
+            @param field: the field (Field)
+            @param value: the value
+            @param record: record to retrieve the value from
+            @param linkto: function or format string to link an ID column
+            @param strip_markup: strip away markup from representation
+            @param xml_escape: XML-escape the output
+            
+        """
+
+        NONE = str(self.T("None")).decode("utf-8")
+
+        cache = self.cache
+
+        fname = field.name
+
+        # Get the value
+        if record is not None:
+            text = val = record[fname]
+        else:
+            text = val = value
+
+        # Get text representation
+        if field.represent:
+            text = str(cache.ram("%s_repr_%s" % (field, val),
+                                 lambda: field.represent(val),
+                                 time_expire=5)).decode("utf-8")
+        else:
+            if val is None:
+                text = NONE
+            elif fname == "comments":
+                ur = unicode(text, "utf8")
+                if len(ur) > 48:
+                    text = "%s..." % ur[:45].encode("utf8")
+            else:
+                text = str(text)
+
+        # Strip away markup from text
+        if strip_markup and "<" in text:
+            try:
+                markup = etree.XML(text)
+                text = markup.xpath(".//text()")
+                if text:
+                    text = " ".join(text)
+                else:
+                    text = ""
+            except etree.XMLSyntaxError:
+                pass
+
+        # Link ID field
+        if fname == "id" and linkto:
+            id = str(val)
+            try:
+                href = linkto(id)
+            except TypeError:
+                href = linkto % id
+            href = str(href).replace(".aadata", "")
+            #href = str(href).replace(".aaData", "")
+            return A(text, _href=href).xml()
+
+        # XML-escape text
+        elif xml_escape:
+            text = self.xml.xml_encode(text)
+
+        return text
+
+
+    # -------------------------------------------------------------------------
+    def get_session(self, prefix, name):
 
         """ Reads the last record ID for a resource from a session
 
-            @param session: the session store
             @param prefix: the prefix of the resource name (=module name)
             @param name: the name of the resource (=without prefix)
 
         """
+
+        session = self.session
 
         tablename = "%s_%s" % (prefix, name)
         if self.RCVARS in session and tablename in session[self.RCVARS]:
@@ -425,16 +525,17 @@ class S3ResourceController(object):
 
 
     # -------------------------------------------------------------------------
-    def store_session(self, session, prefix, name, id):
+    def store_session(self, prefix, name, id):
 
         """ Stores a record ID for a resource in a session
 
-            @param session: the session store
             @param prefix: the prefix of the resource name (=module name)
             @param name: the name of the resource (=without prefix)
             @param id: the ID to store
 
         """
+
+        session = self.session
 
         if self.RCVARS not in session:
             session[self.RCVARS] = Storage()
@@ -446,15 +547,16 @@ class S3ResourceController(object):
 
 
     # -------------------------------------------------------------------------
-    def clear_session(self, session, prefix=None, name=None):
+    def clear_session(self, prefix=None, name=None):
 
         """ Clears one or all record IDs stored in a session
 
-            @param session: the session store
             @param prefix: the prefix of the resource name (=module name)
             @param name: the name of the resource (=without prefix)
 
         """
+
+        session = self.session
 
         if prefix and name:
             tablename = "%s_%s" % (prefix, name)
@@ -470,7 +572,11 @@ class S3ResourceController(object):
     # -------------------------------------------------------------------------
     def set_handler(self, method, handler):
 
-        """ Set the default handler for a resource method """
+        """ Set the default handler for a resource method
+
+            @todo 2.2: fix docstring
+            
+        """
 
         self.__handler[method] = handler
 
@@ -478,24 +584,32 @@ class S3ResourceController(object):
     # -------------------------------------------------------------------------
     def get_handler(self, method):
 
-        """ Get the default handler for a resource method """
+        """ Get the default handler for a resource method
+
+            @todo 2.2: fix docstring
+
+        """
 
         return self.__handler.get(method, None)
 
 
     # REST Interface ==========================================================
 
-    def resource(self, prefix, name,
-                 id=None,
-                 uid=None,
-                 filter=None,
-                 url_vars=None,
-                 parent=None,
-                 components=None,
-                 storage=None,
-                 debug=None):
+    def _resource(self, prefix, name,
+                  id=None,
+                  uid=None,
+                  filter=None,
+                  url_vars=None,
+                  parent=None,
+                  components=None,
+                  storage=None,
+                  debug=None):
 
-        """ Wrapper function for S3Resource """
+        """ Wrapper function for S3Resource
+
+            @todo 2.2: fix docstring
+
+        """
 
         resource = S3Resource(self, prefix, name,
                               id=id,
@@ -515,34 +629,34 @@ class S3ResourceController(object):
 
 
     # -------------------------------------------------------------------------
-    def request(self, prefix, name,
-                request=None, session=None, response=None, debug=None):
+    def _request(self, prefix, name, debug=None):
 
-        """ Wrapper function for S3Request """
+        """ Wrapper function for S3Request
 
-        return S3Request(self, prefix, name,
-                         request=request,
-                         session=session,
-                         response=response,
-                         debug=self.debug)
+            @todo 2.2: fix docstring
+
+        """
+
+        if debug is None:
+            debug = self.debug
+
+        return S3Request(self, prefix, name, debug=debug)
 
 
     # -------------------------------------------------------------------------
-    def parse_request(self, prefix, name, session, request, response):
+    def parse_request(self, prefix, name):
 
         """ Parse an HTTP request and generate the corresponding
             S3Request and S3Resource objects.
+
+            @todo 2.2: fix docstring
 
         """
 
         self.error = None
 
         try:
-            req = self.request(prefix, name,
-                               request=request,
-                               session=session,
-                               response=response,
-                               debug=self.debug)
+            req = self._request(prefix, name, debug=self.debug)
         except SyntaxError:
             raise HTTP(400, body=self.error)
         except KeyError:
@@ -564,6 +678,8 @@ class S3ResourceController(object):
 
             - otherwise, if the record contains some values for unique fields,
               all of them must match the same existing DB record
+
+            @todo 2.2: fix docstring
 
         """
 
@@ -628,6 +744,8 @@ class S3ResourceController(object):
                     msince=None,
                     show_urls=True,
                     dereference=True):
+
+        """ @todo 2.2: fix docstring """
 
         prefix = resource.prefix
         name = resource.name
@@ -1453,403 +1571,6 @@ class S3Vector(object):
                 self.db(self.table.id == self.id).update(**{field:values})
             else:
                 self.db(self.table.id == self.id).update(**{field:value})
-
-
-# *****************************************************************************
-class S3ResourceComponent(object):
-
-    """ Class to represent component relations between resources """
-
-    # -------------------------------------------------------------------------
-    def __init__(self, db, prefix, name, **attr):
-
-        """ Constructor
-
-            @param db: the database (DAL)
-            @param prefix: prefix of the resource name (=module name)
-            @param name: name of the resource (=without prefix)
-            @param attr: attributes
-
-        """
-
-        self.db = db
-        self.prefix = prefix
-        self.name = name
-
-        self.tablename = "%s_%s" % (prefix, name)
-        self.table = self.db.get(self.tablename, None)
-        if not self.table:
-            raise SyntaxError("Table must exist in the database.")
-
-        self.attr = Storage(attr)
-        if not "multiple" in self.attr:
-            self.attr.multiple = True
-        if not "deletable" in self.attr:
-            self.attr.deletable = True
-        if not "editable" in self.attr:
-            self.attr.editable = True
-
-
-    # Configuration ===========================================================
-
-    def set_attr(self, name, value):
-
-        """ Sets an attribute for a component
-
-            @param name: attribute name
-            @param value: attribute value
-
-        """
-
-        self.attr[name] = value
-
-
-    # -------------------------------------------------------------------------
-    def get_attr(self, name):
-
-        """ Reads an attribute of the component
-
-            @param name: attribute name
-
-        """
-
-        if name in self.attr:
-            return self.attr[name]
-        else:
-            return None
-
-
-# *****************************************************************************
-class S3ResourceModel(object):
-
-
-    """ Class to handle the compound resources model """
-
-
-    # -------------------------------------------------------------------------
-    def __init__(self, db):
-
-        """ Constructor
-
-            @param db: the database (DAL)
-
-        """
-
-        self.db = db
-        self.components = {}
-        self.config = Storage()
-        self.methods = {}
-        self.cmethods = {}
-
-
-    # Configuration ===========================================================
-
-    def configure(self, table, **attr):
-
-        """ Updates the configuration of a resource
-
-            @param table: the resource DB table
-            @param attr: dict of attributes to update
-
-        """
-
-        cfg = self.config.get(table._tablename, Storage())
-        cfg.update(attr)
-        self.config[table._tablename] = cfg
-
-
-    # -------------------------------------------------------------------------
-    def get_config(self, table, key):
-
-        """ Reads a configuration attribute of a resource
-
-            @param table: the resource DB table
-            @param key: the key (name) of the attribute
-
-        """
-
-        if table._tablename in self.config:
-            return self.config[table._tablename].get(key, None)
-        else:
-            return None
-
-
-    # -------------------------------------------------------------------------
-    def clear_config(self, table, *keys):
-
-        """ Removes configuration attributes of a resource
-
-            @param table: the resource DB table
-            @param keys: keys of attributes to remove (maybe multiple)
-
-        """
-
-        if not keys:
-            if table._tablename in self.config:
-                del self.config[table._tablename]
-        else:
-            if table._tablename in self.config:
-                for k in keys:
-                    if k in self.config[table._tablename]:
-                        del self.config[table._tablename][k]
-
-
-    # -------------------------------------------------------------------------
-    def add_component(self, prefix, name, **attr):
-
-        """ Adds a component to the model
-
-            @param prefix: prefix of the component name (=module name)
-            @param name: name of the component (=without prefix)
-
-        """
-
-        joinby = attr.get("joinby", None)
-        if joinby:
-            component = S3ResourceComponent(self.db, prefix, name, **attr)
-            hook = self.components.get(name, Storage())
-            if isinstance(joinby, dict):
-                for tablename in joinby:
-                    hook[tablename] = Storage(
-                        _joinby = ("id", joinby[tablename]),
-                        _component = component)
-            elif isinstance(joinby, str):
-                hook._joinby=joinby
-                hook._component=component
-            else:
-                raise SyntaxError("Invalid join key(s)")
-            self.components[name] = hook
-            return component
-        else:
-            raise SyntaxError("Join key(s) must be defined.")
-
-
-    # -------------------------------------------------------------------------
-    def get_component(self, prefix, name, component_name):
-
-        """ Retrieves a component of a resource
-
-            @param prefix: prefix of the resource name (=module name)
-            @param name: name of the resource (=without prefix)
-            @param component_name: name of the component (=without prefix)
-
-        """
-
-        tablename = "%s_%s" % (prefix, name)
-        table = self.db.get(tablename, None)
-
-        hook = self.components.get(component_name, None)
-        if table and hook:
-            h = hook.get(tablename, None)
-            if h:
-                pkey, fkey = h._joinby
-                component = h._component
-                return (hook[tablename]._component, pkey, fkey)
-            else:
-                nkey = hook._joinby
-                component = hook._component
-                if nkey and nkey in table.fields:
-                    return (component, nkey, nkey)
-
-        return (None, None, None)
-
-
-    # -------------------------------------------------------------------------
-    def get_components(self, prefix, name):
-
-        """ Retrieves all components related to a resource
-
-            @param prefix: prefix of the resource name (=module name)
-            @param name: name of the resource (=without prefix)
-
-        """
-
-        tablename = "%s_%s" % (prefix, name)
-        table = self.db.get(tablename, None)
-
-        components = []
-        if table:
-            for hook in self.components.values():
-                if tablename in hook:
-                    h = hook[tablename]
-                    pkey, fkey = h._joinby
-                    component = h._component
-                    components.append((component, pkey, fkey))
-                else:
-                    nkey = hook._joinby
-                    component = hook._component
-                    if nkey and nkey in table.fields:
-                        components.append((component, nkey, nkey))
-
-        return components
-
-
-    # -------------------------------------------------------------------------
-    def has_components(self, prefix, name):
-
-        """ Check whether the specified resource has components
-
-            @param prefix: prefix of the resource name (=module name)
-            @param name: name of the resource (=without prefix)
-
-        """
-
-        # Like get_components, except quits on first match.
-        tablename = "%s_%s" % (prefix, name)
-        table = self.db.get(tablename, None)
-
-        h = self.components.get(name, None)
-        if h and h._component and h._component.tablename == tablename:
-            k = h._joinby
-        else:
-            k = None
-
-        if table:
-            for hook in self.components.values():
-                if tablename in hook:
-                    return True
-                else:
-                    nkey = hook._joinby
-                    if nkey and nkey in table.fields and nkey != k:
-                        return True
-
-        return False
-
-    # -------------------------------------------------------------------------
-    def get_many2many(self, prefix, name):
-
-        """ Finds all many-to-many links of a resource (introspective)
-
-            This requires that the link references the respective
-            tables <prefix>_<name> by fields '<name>_id', e.g.
-            'pr_group' by field 'group_id', 'gis_location' by
-            'location_id' etc.
-
-        """
-
-        m2m = dict()
-
-        tablename = "%s_%s" % (prefix, name)
-        if tablename not in self.db:
-            return m2m
-        else:
-            table = self.db[tablename]
-
-        this_id = "%s_id" % name
-        for (ln, lf) in table._referenced_by:
-
-            if lf == this_id:
-                if ln not in self.db:
-                    continue
-                lt = self.db[ln]
-
-                fields = filter(lambda f: f != lf and f[-3:] == "_id", lt.fields)
-                for f in fields:
-                    ftype = str(lt[f].type)
-                    if ftype.startswith("reference"):
-                        tn = ftype[10:]
-                        tprefix, tname = tn.split("_", 1)
-                        if f[:-3] == tname:
-                            lprefix, lname = ln.split("_",1)
-                            m2m[tname] = m2m.get(tname, dict())
-                            m2m[tname][lname] = dict(linkto=tn, linkby=ln)
-
-        return m2m
-
-
-    # -------------------------------------------------------------------------
-    def set_method(self, prefix, name,
-                   component_name=None,
-                   method=None,
-                   action=None):
-
-        """ Adds a custom method for a resource or component
-
-            @param prefix: prefix of the resource name (=module name)
-            @param name: name of the resource (=without prefix)
-            @param component_name: name of the component (=without prefix)
-            @param method: name of the method
-            @param action: function to invoke for this method
-
-        """
-
-        assert method is not None, "Method must be specified."
-        tablename = "%s_%s" % (prefix, name)
-
-        if not component_name:
-            if method not in self.methods:
-                self.methods[method] = {}
-            self.methods[method][tablename] = action
-        else:
-            component = self.get_component(prefix, name, component_name)[0]
-            if component:
-                if method not in self.cmethods:
-                    self.cmethods[method] = {}
-                if component.tablename not in self.cmethods[method]:
-                    self.cmethods[method][component.tablename] = {}
-                self.cmethods[method][component.tablename][tablename] = action
-
-        return True
-
-
-    # -------------------------------------------------------------------------
-    def get_method(self, prefix, name, component_name=None, method=None):
-
-        """ Retrieves a custom method for a resource or component
-
-            @param prefix: prefix of the resource name (=module name)
-            @param name: name of the resource (=without prefix)
-            @param component_name: name of the component (=without prefix)
-            @param method: name of the method
-
-        """
-
-        if not method:
-            return None
-
-        tablename = "%s_%s" % (prefix, name)
-
-        if not component_name:
-            if method in self.methods and tablename in self.methods[method]:
-                return self.methods[method][tablename]
-            else:
-                return None
-        else:
-            component = self.get_component(prefix, name, component_name)[0]
-            if component and \
-               method in self.cmethods and \
-               component.tablename in self.cmethods[method] and \
-               tablename in self.cmethods[method][component.tablename]:
-                return self.cmethods[method][component.tablename][tablename]
-            else:
-                return None
-
-
-    # -------------------------------------------------------------------------
-    def set_attr(self, component_name, name, value):
-
-        """ Sets an attribute for a component
-
-            @param component_name: name of the component (without prefix)
-            @param name: name of the attribute
-            @param value: value for the attribute
-
-        """
-
-        return self.components[component_name].set_attr(name, value)
-
-
-    # -------------------------------------------------------------------------
-    def get_attr(self, component_name, name):
-
-        """ Retrieves an attribute value of a component
-
-            @param component_name: name of the component (without prefix)
-            @param name: name of the attribute
-
-        """
-
-        return self.components[component_name].get_attr(name)
 
 
 # *****************************************************************************

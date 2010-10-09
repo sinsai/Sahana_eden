@@ -2,7 +2,7 @@
 
 """ S3XRC Resource Framework - XML/JSON toolkit
 
-    @see: U{B{I{S3XRC-2}} <http://eden.sahanafoundation.org/wiki/S3XRC>} on Eden wiki
+    @see: U{B{I{S3XRC}} <http://eden.sahanafoundation.org/wiki/S3XRC>} on Eden wiki
 
     @requires: U{B{I{lxml}} <http://codespeak.net/lxml>}
 
@@ -160,7 +160,10 @@ class S3XML(object):
             @param domain: name of the current domain
             @param base_url: base URL of the current instance
             @param gis: GIS toolkit to use
+            @param cache: the cache
 
+            @todo 2.2: pass resource controller?
+            
         """
 
         self.db = db
@@ -204,7 +207,7 @@ class S3XML(object):
 
             @param tree: the element tree
             @param template_path: pathname of the XSLT stylesheet
-            @param args: dict of arguments to pass to the transformer
+            @param args: dict of arguments to pass to the stylesheet
 
         """
 
@@ -252,8 +255,12 @@ class S3XML(object):
 
 
     # -------------------------------------------------------------------------
-    def tree(self, resources, domain=None, url=None,
-             start=None, limit=None, results=None):
+    def tree(self, resources,
+             domain=None,
+             url=None,
+             start=None,
+             limit=None,
+             results=None):
 
         """ Builds a tree from a list of elements
 
@@ -336,9 +343,9 @@ class S3XML(object):
     # -------------------------------------------------------------------------
     def export_uid(self, uid):
 
-        """ Exports UUIDs with domain prefix
+        """ Exports UIDs with domain prefix
 
-            @param uid: the UUID
+            @param uid: the UID
 
         """
 
@@ -358,9 +365,9 @@ class S3XML(object):
     # -------------------------------------------------------------------------
     def import_uid(self, uid):
 
-        """ Imports UUIDs with domain prefixes
+        """ Imports UIDs with domain prefixes
 
-            @param uid: the UUID
+            @param uid: the UID
 
         """
 
@@ -390,6 +397,8 @@ class S3XML(object):
             @param table: the database table
             @param f: the field name
             @param v: the value
+
+            @todo 2.2: use S3ResourceManager.represent()
 
         """
 
@@ -948,7 +957,11 @@ class S3XML(object):
 
     def get_field_options(self, table, fieldname):
 
-        """ Get options of a field as <select> """
+        """ Get options of a field as <select>
+
+            @todo 2.2: fix docstring
+            
+        """
 
         select = etree.Element(self.TAG.select)
 
@@ -985,7 +998,11 @@ class S3XML(object):
     # -------------------------------------------------------------------------
     def get_options(self, prefix, name, fields=None):
 
-        """ Get options of option fields in a table as <select>s """
+        """ Get options of option fields in a table as <select>s
+
+            @todo 2.2: fix docstring
+            
+        """
 
         db = self.db
         tablename = "%s_%s" % (prefix, name)
@@ -1014,7 +1031,11 @@ class S3XML(object):
     # -------------------------------------------------------------------------
     def get_fields(self, prefix, name):
 
-        """ Get fields in a table as <fields> element """
+        """ Get fields in a table as <fields> element
+
+            @todo 2.2: fix docstring
+            
+        """
 
         db = self.db
         tablename = "%s_%s" % (prefix, name)
@@ -1291,6 +1312,8 @@ class S3XML(object):
             @param message: the message text
             @param tree: result tree to enclose
 
+            @todo 2.2: extend to report number of results/successful imports
+
         """
 
         if success:
@@ -1309,5 +1332,6 @@ class S3XML(object):
             output = '%s, "tree": "%s"' % (output, tree)
 
         return "%s}" % output
+
 
 # *****************************************************************************

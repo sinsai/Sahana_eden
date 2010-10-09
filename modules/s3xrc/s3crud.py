@@ -2,7 +2,7 @@
 
 """ S3XRC Resource Framework - CRUD method handlers
 
-    @see: U{B{I{S3XRC-2}} <http://eden.sahanafoundation.org/wiki/S3XRC>} on Eden wiki
+    @see: U{B{I{S3XRC}} <http://eden.sahanafoundation.org/wiki/S3XRC>} on Eden wiki
 
     @requires: U{B{I{lxml}} <http://codespeak.net/lxml>}
 
@@ -35,20 +35,20 @@
 """
 
 __all__ = ["S3Audit",
-           "S3Exporter",
-           "S3Importer",
            "S3MethodHandler",
            "S3CRUDHandler"]
 
-import datetime, re, os
+import datetime, os
 
 from gluon.storage import Storage
-from gluon.html import URL
+from gluon.html import URL, A
 from gluon.http import HTTP, redirect
 from gluon.serializers import json
 from gluon.sql import Field, Row
-from gluon.sqlhtml import SQLTABLE, SQLFORM
 from gluon.validators import IS_EMPTY_OR
+
+from s3import import S3Importer
+from s3export import S3Exporter
 
 from lxml import etree
 
@@ -61,6 +61,15 @@ class S3Audit(object):
     def __init__(self, db, session,
                  tablename="s3_audit",
                  migrate=True):
+
+        """ Constructor
+
+            @param db: the database
+            @param session: the current session
+            @param tablename: the name of the audit table
+            @param migrate: migration setting
+
+        """
 
         self.db = db
         self.table = db.get(tablename, None)
@@ -89,6 +98,21 @@ class S3Audit(object):
                  form=None,
                  record=None,
                  representation=None):
+
+        """ Caller
+
+            @param operation: Operation to log, one of
+                "create", "update", "read", "list" or "delete"
+            @param prefix: the module prefix of the resource
+            @param name: the name of the resource (without prefix)
+            @param form: the form
+            @param record: the record ID
+            @param representation: the representation format
+
+            @todo 2.2: correct parameter naming for record ID
+            @todo 2.2: default for representation, HTML?
+
+        """
 
         now = datetime.datetime.utcnow()
 
@@ -155,408 +179,34 @@ class S3Audit(object):
 
 
 # *****************************************************************************
-class S3Exporter(object):
+class S3MethodHandler(object):
 
-    def __init__(self, manager):
-
-        """ Constructor """
-
-        self.manager = manager
-
-        self.db = self.manager.db
-        self.s3 = self.manager.s3
-
-
-    # -------------------------------------------------------------------------
-    def csv(self, resource, filter=None, request=None, response=None):
-
-        """ Export record(s) as CSV """
-
-        db = self.db
-
-        tablename = resource.tablename
-        query = resource.get_query()
-
-        if filter:
-            query = query & filter
-
-        if response:
-            servername = request and "%s_" % request.env.server_name or ""
-            filename = "%s%s.csv" % (servername, tablename)
-            from gluon.contenttype import contenttype
-            response.headers["Content-Type"] = contenttype(".csv")
-            response.headers["Content-disposition"] = "attachment; filename=%s" % filename
-
-        return str(db(query).select())
-
-
-    # -------------------------------------------------------------------------
-    def pdf(self, resource,
-            #filter=None,
-            request=None,
-            response=None,
-            list_fields=None):
-
-        """ Export record(s) as Adobe PDF """
-
-        db = self.db
-
-        xml = self.manager.xml
-
-        # Import ReportLab
-        try:
-            from reportlab.lib.units import cm
-            from reportlab.lib.pagesizes import A4
-            from reportlab.lib.enums import TA_CENTER, TA_RIGHT
-        except ImportError:
-            print "REPORTLAB_ERROR"
-            #session.error = REPORTLAB_ERROR
-            redirect(URL(r=request, f="index", extension=""))
-
-        # Import Geraldo
-        try:
-            from geraldo import Report, ReportBand, Label, ObjectValue, SystemField, landscape, BAND_WIDTH
-            from geraldo.generators import PDFGenerator
-        except ImportError:
-            print "GERALDO_ERROR"
-            #session.error = GERALDO_ERROR
-            redirect(URL(r=request, f="index", extension=""))
-
-        # Get records
-        query = resource.get_query()
-        records = db(query).select(table.ALL)
-        if not records:
-            print "NO_RECORDS"
-            #session.warning = T("No data in this table - cannot create PDF!")
-            redirect(URL(r=request, f="index", extension=""))
-
-        # Create output stream
-        import StringIO
-        output = StringIO.StringIO()
-
-        # Find fields
-        fields = None
-        table = resource.table
-        if list_fields:
-            fields = [table[f] for f in list_fields if table[f].readable]
-        if not fields:
-            fields = [table[f] for f in table.fields if table[f].readable]
-        if not fields:
-            fields = [table.id]
-
-        # Export
-        _elements = [ SystemField(
-                            expression = "%(report_title)s",
-                            top = 0.1 * cm,
-                            left = 0,
-                            width = BAND_WIDTH,
-                            style = {
-                                "fontName": "Helvetica-Bold",
-                                "fontSize": 14,
-                                "alignment": TA_CENTER
-                                }
-                            )]
-        detailElements = []
-        COLWIDTH = 2.5
-        LEFTMARGIN = 0.2
-
-        def _represent(field, data):
-            if data is None:
-                return ""
-            represent = table[field].represent
-            if not represent:
-                represent = lambda v: str(v)
-            text = str(represent(data)).decode("utf-8")
-            # Filter out markup from text
-            if "<" in text:
-                try:
-                    markup = etree.XML(text)
-                    text = markup.xpath(".//text()")
-                    if text:
-                        text = " ".join(text)
-                except etree.XMLSyntaxError:
-                    pass
-            return xml.xml_encode(text)
-
-        for field in fields:
-            # Append label
-            label = Label(text=xml.xml_encode(str(field.label))[:16],
-                          top=0.8*cm, left=LEFTMARGIN*cm)
-            _elements.append(label)
-
-            # Append value
-            value = ObjectValue(attribute_name = field.name,
-                                left = LEFTMARGIN * cm,
-                                width = COLWIDTH * cm,
-                                get_value = lambda instance, column = col: \
-                                            _represent(column, instance[column]))
-            detailElements.append(value)
-
-            # Increase left margin
-            LEFTMARGIN += COLWIDTH
-
-        #mod, res = str(table).split("_", 1)
-        mod = resource.prefix
-        res = resource.name
-        try:
-            mod_nice = deployment_settings.modules[mod]["name_nice"]
-        except:
-            mod_nice = mod
-        _title = mod_nice + ": " + res.capitalize()
-
-        class MyReport(Report):
-            title = _title
-            page_size = landscape(A4)
-            class band_page_header(ReportBand):
-                height = 1.3*cm
-                auto_expand_height = True
-                elements = _elements
-                borders = {"bottom": True}
-            class band_page_footer(ReportBand):
-                height = 0.5*cm
-                elements = [
-                    Label(text="%s" % request.utcnow.date(), top=0.1*cm, left=0),
-                    SystemField(expression="Page # %(page_number)d of %(page_count)d", top=0.1*cm,
-                        width=BAND_WIDTH, style={"alignment": TA_RIGHT}),
-                ]
-                borders = {"top": True}
-            class band_detail(ReportBand):
-                height = 0.5*cm
-                auto_expand_height = True
-                elements = tuple(detailElements)
-        report = MyReport(queryset=records)
-        report.generate_by(PDFGenerator, filename=output)
-
-        # Set content type and disposition headers
-        if response:
-            filename = "%s_%s.pdf" % (request.env.server_name, str(table))
-            from gluon.contenttype import contenttype
-            response.headers["Content-Type"] = contenttype.contenttype(".pdf")
-            response.headers["Content-disposition"] = "attachment; filename=\"%s\"" % filename
-
-        # Return the stream
-        output.seek(0)
-        return output.read()
-
-
-    # -------------------------------------------------------------------------
-    def xls(self, resource,
-            #filter=None,
-            request=None,
-            response=None,
-            list_fields=None):
-
-        """ Export record(s) as Microsoft XLS """
-
-        db = self.db
-
-        table = resource.table
-        query = resource.get_query()
-
-        #if filter:
-            #query = query & filter
-
-        try:
-            import xlwt
-        except ImportError:
-            #session.error = XLWT_ERROR
-            redirect(URL(r=request))
-
-        import StringIO
-        output = StringIO.StringIO()
-
-        items = db(query).select(table.ALL)
-
-        book = xlwt.Workbook(encoding="utf-8")
-        sheet1 = book.add_sheet(str(table))
-        # Header row
-        row0 = sheet1.row(0)
-        cell = 0
-
-        fields = None
-        if list_fields:
-            fields = [table[f] for f in list_fields if table[f].readable]
-        if fields and len(fields) == 0:
-            fields.append(table.id)
-        if not fields:
-            fields = [table[f] for f in table.fields if table[f].readable]
-
-        for field in fields:
-            row0.write(cell, str(field.label), xlwt.easyxf("font: bold True;"))
-            cell += 1
-        row = 1
-        style = xlwt.XFStyle()
-        for item in items:
-            # Item details
-            rowx = sheet1.row(row)
-            row += 1
-            cell1 = 0
-            for field in fields:
-                tab, col = str(field).split(".")
-                # Check for Date formats
-                coltype = db[tab][col].type
-                if coltype == "date":
-                    style.num_format_str = "D-MMM-YY"
-                elif coltype == "datetime":
-                    style.num_format_str = "M/D/YY h:mm"
-                elif coltype == "time":
-                    style.num_format_str = "h:mm:ss"
-
-                # Check for a custom.represent (e.g. for ref fields)
-                represent = resource._represent(item, field.name)
-                # Filter out markup from text
-                if isinstance(represent, basestring) and "<" in represent:
-                    try:
-                        markup = etree.XML(represent)
-                        represent = markup.xpath(".//text()")
-                        if represent:
-                            represent = " ".join(represent)
-                    except etree.XMLSyntaxError:
-                        pass
-
-                rowx.write(cell1, str(represent), style)
-                cell1 += 1
-        book.save(output)
-        output.seek(0)
-        import gluon.contenttype
-        response.headers["Content-Type"] = gluon.contenttype.contenttype(".xls")
-        filename = "%s_%s.xls" % (request.env.server_name, str(table))
-        response.headers["Content-disposition"] = "attachment; filename=\"%s\"" % filename
-        return output.read()
-
-
-# *****************************************************************************
-class S3Importer(object):
-
+    """ REST Method Handler Base Class """
 
     # -------------------------------------------------------------------------
     def __init__(self, manager):
 
         """ Constructor
 
-            @param manager: the resource manager (S3ResourceController)
+            @todo 2.2: fix docstring
 
         """
 
         self.manager = manager
         self.db = self.manager.db
 
-
-    # -------------------------------------------------------------------------
-    def csv(self, file):
-
-        """ Import CSV file into database """
-
-        db = self.db
-
-        db.import_from_csv_file(file)
-        db.commit()
-
-
-    # -------------------------------------------------------------------------
-    def url(self, r):
-
-        """ Import data from URL query
-
-            Restriction: can only update single records (no mass-update)
-
-        """
-
-        xml = self.manager.xml
-
-        prefix, name, table, tablename = r.target()
-
-        record = r.record
-        resource = r.resource
-
-        # Handle components
-        if record and r.component:
-            component = resource.components[r.component_name]
-            resource = component.resource
-            resource.load()
-            if len(resource) == 1:
-                record = resource.records()[0]
-            else:
-                record = None
-            r.request.vars.update({component.fkey:r.record[component.pkey]})
-        elif not record and r.component:
-            item = xml.json_message(False, 400, "Invalid Request!")
-            return dict(item=item)
-
-        # Check for update
-        if record and xml.UID in table.fields:
-            r.request.vars.update({xml.UID:record[xml.UID]})
-
-        # Build tree
-        element = etree.Element(xml.TAG.resource)
-        element.set(xml.ATTRIBUTE.name, resource.tablename)
-        for var in r.request.vars:
-            if var.find(".") != -1:
-                continue
-            elif var in table.fields:
-                field = table[var]
-                value = xml.xml_encode(str(r.request.vars[var]).decode("utf-8"))
-                if var in xml.FIELDS_TO_ATTRIBUTES:
-                    element.set(var, value)
-                else:
-                    data = etree.Element(xml.TAG.data)
-                    data.set(xml.ATTRIBUTE.field, var)
-                    if field.type == "upload":
-                        data.set(xml.ATTRIBUTE.filename, value)
-                    else:
-                        data.text = value
-                    element.append(data)
-        tree = xml.tree([element], domain=s3xrc.domain)
-
-        # Import data
-        result = Storage(committed=False)
-        s3xrc.sync_resolve = lambda vector, result=result: result.update(vector=vector)
-        try:
-            success = resource.import_xml(tree)
-        except SyntaxError:
-            pass
-
-        # Check result
-        if result.vector:
-            result = result.vector
-
-        # Build response
-        if success and result.committed:
-            id = result.id
-            method = result.method
-            if method == result.METHOD.CREATE:
-                item = xml.json_message(True, 201, "Created as %s?%s.id=%s" %
-                                        (str(r.there(representation="html", vars=dict())),
-                                        result.name, result.id))
-            else:
-                item = xml.json_message(True, 200, "Record updated")
-        else:
-            item = xml.json_message(False, 403, "Could not create/update record: %s" %
-                                    s3xrc.error or xml.error,
-                                    tree=xml.tree2json(tree))
-
-        return dict(item=item)
-
-
-# *****************************************************************************
-class S3MethodHandler(object):
-
-    """ REST Method Handler Base Class """
-
-    # -------------------------------------------------------------------------
-    def __init__(self, db, manager):
-
-        """ Constructor """
-
-        self.db = db
-        self.manager = manager
+        self.permit = self.manager.auth.shn_has_permission
 
         self.next = None
 
     # -------------------------------------------------------------------------
-    def __call__(self, r, **attr):
+    def __call__(self, r, method=None, **attr):
 
-        """ Caller, invoked by REST interface """
+        """ Caller, invoked by REST interface
+
+            @todo 2.2: fix docstring
+
+        """
 
         # Get the environment
         self.request = r.request
@@ -568,7 +218,13 @@ class S3MethodHandler(object):
 
         # Get the right table and method
         self.prefix, self.name, self.table, self.tablename = r.target()
-        self.method = r.method
+
+        # Override request method
+        if method is not None:
+            self.method = method
+        else:
+            self.method = r.method
+
         if r.component:
             self.record = r.component_id
             component = r.resource.components.get(r.component_name, None)
@@ -600,7 +256,11 @@ class S3MethodHandler(object):
     # -------------------------------------------------------------------------
     def respond(self, r, **attr):
 
-        """ Responder, to be implemented in subclass """
+        """ Responder, to be implemented in subclass
+
+            @todo: fix docstring
+
+        """
 
         output = dict()
 
@@ -610,7 +270,12 @@ class S3MethodHandler(object):
     # -------------------------------------------------------------------------
     def readable_fields(self, table, subset=None):
 
-        """ Get a list of all readable fields in a table """
+        """ Get a list of all readable fields in a table
+
+            @todo: fix docstring
+            @todo: move into S3Resource
+
+        """
 
         if subset:
             return [table[f] for f in subset
@@ -626,6 +291,13 @@ class S3CRUDHandler(S3MethodHandler):
     """ Interactive CRUD Method Handler Base Class """
 
     def respond(self, r, **attr):
+
+        """ Responder
+
+            @todo 2.2: fix docstring
+            @todo 2.2: complete this
+
+        """
 
         settings = self.manager.s3.crud
         if settings:
@@ -687,7 +359,12 @@ class S3CRUDHandler(S3MethodHandler):
     # -------------------------------------------------------------------------
     def create(self, r, **attr):
 
-        """ Create new records """
+        """ Create new records
+
+            @todo 2.2: implement this
+            @todo 2.2: fix docstring
+            
+        """
 
         return dict()
 
@@ -695,31 +372,51 @@ class S3CRUDHandler(S3MethodHandler):
     # -------------------------------------------------------------------------
     def read(self, r, **attr):
 
-        """ Read a single record. """
+        """ Read a single record
 
+            @todo 2.2: implement this
+            @todo 2.2: fix docstring
+            
+        """
+        
         return dict()
 
 
     # -------------------------------------------------------------------------
     def update(self, r, **attr):
 
-        """ Update a record """
+        """ Update a record
 
+            @todo 2.2: implement this
+            @todo 2.2: fix docstring
+            
+        """
+        
         return dict()
 
 
     # -------------------------------------------------------------------------
     def delete(self, r, **attr):
 
-        """ Delete record(s) """
+        """ Delete record(s)
 
+            @todo 2.2: implement this
+            @todo 2.2: fix docstring
+            
+        """
+        
         return dict()
 
 
     # -------------------------------------------------------------------------
     def select(self, r, **attr):
 
-        """ Get a list view of the requested resource """
+        """ Get a list view of the requested resource
+
+            @todo 2.2: complete this
+            @todo 2.2: fix docstring
+
+        """
 
         # Initialize output
         output = dict()
@@ -732,6 +429,11 @@ class S3CRUDHandler(S3MethodHandler):
         orderby = _attr.get("orderby", None)
         sortby = _attr.get("sortby", [[1,'asc']])
         linkto = _attr.get("linkto", None)
+        listadd = _attr.get("listadd", True)
+
+        # main and extra for searchbox
+        main = _attr.get("main", None)
+        extra = _attr.get("extra", None)
 
         # GET vars
         vars = self.request.get_vars
@@ -779,6 +481,7 @@ class S3CRUDHandler(S3MethodHandler):
             # Store the query for SSPag
             self.session.s3.filter = self.request.get_vars
 
+            # Get the list
             items = self.resource.select(fields=fields,
                                          start=start,
                                          limit=limit,
@@ -792,8 +495,33 @@ class S3CRUDHandler(S3MethodHandler):
                 else:
                     items = self.crud_string(self.tablename, "msg_list_empty")
 
-            self.response.view = self._view(r, "list.html")
             output.update(items=items)
+
+            # Title and subtitle
+            if r.component:
+                title = self.crud_string(r.tablename, "title_display")
+            else:
+                title = self.crud_string(self.tablename, "title_list")
+            subtitle = self.crud_string(self.tablename, "subtitle_list")
+            output.update(title=title, subtitle=subtitle)
+
+            # Add add-form
+            if listadd:
+                form = self.resource.create()
+                output.update(form=form)
+                addtitle = self.crud_string(self.tablename, "subtitle_create")
+                output.update(addtitle=addtitle)
+                showaddbtn = self.crud_button(self.tablename,
+                                              "label_create_button",
+                                              _id="show-add-btn")
+                output.update(showaddbtn=showaddbtn)
+                self.response.view = self._view(r, "list_create.html")
+
+            else:
+                self.response.view = self._view(r, "list.html")
+
+            #output.update(_map=_map)
+            output.update(main=main, extra=extra, sortby=sortby)
 
         elif representation == "aadata":
 
@@ -815,8 +543,10 @@ class S3CRUDHandler(S3MethodHandler):
             if vars.iSortingCols and orderby is None:
                 orderby = self.ssp_orderby(table, fields)
 
+            # Echo
             sEcho = int(vars.sEcho or 0)
 
+            # Get the list
             items = self.resource.select(fields=fields,
                                          start=start,
                                          limit=limit,
@@ -832,7 +562,6 @@ class S3CRUDHandler(S3MethodHandler):
 
             output = json(result)
 
-
         elif representation == "plain":
             items = self.resource.select(fields, as_list=True)
             self.response.view = "plain.html"
@@ -840,22 +569,16 @@ class S3CRUDHandler(S3MethodHandler):
 
         elif representation == "csv":
             exporter = S3Exporter(self.manager)
-            return exporter.csv(self.resource,
-                                request=self.request,
-                                response=self.response)
+            return exporter.csv(self.resource)
 
         elif representation == "pdf":
             exporter = S3Exporter(self.manager)
             return exporter.pdf(self.resource,
-                                request=self.request,
-                                response=self.response,
                                 list_fields=list_fields)
 
         elif representation == "xls":
             exporter = S3Exporter(self.manager)
             return exporter.xls(self.resource,
-                                request=self.request,
-                                response=self.response,
                                 list_fields=list_fields)
 
         else:
@@ -866,7 +589,11 @@ class S3CRUDHandler(S3MethodHandler):
     # -------------------------------------------------------------------------
     def _view(self, r, default, format=None):
 
-        """ Get the target view path """
+        """ Get the target view path
+
+            @todo 2.2: fix docstring
+            
+        """
 
         request = r.request
 
@@ -901,9 +628,35 @@ class S3CRUDHandler(S3MethodHandler):
 
 
     # -------------------------------------------------------------------------
+    def crud_button(self, tablename, label,
+                    _href=None,
+                    _id=None,
+                    _class="action-btn"):
+
+        """ Generate a link button
+
+            @todo 2.2: fix docstring
+            
+        """
+
+        labelstr = self.crud_string(tablename, label)
+
+        if not _href:
+            button = A(labelstr, _id=_id, _class=_class)
+        else:
+            button = A(labelstr, _href=href, _id=_id, _class=_class)
+
+        return button
+
+
+    # -------------------------------------------------------------------------
     def crud_string(self, tablename, name):
 
-        """ Get a CRUD info string for interactive pages """
+        """ Get a CRUD info string for interactive pages
+
+            @todo 2.2: fix docstring
+            
+        """
 
         s3 = self.manager.s3
 
@@ -916,7 +669,11 @@ class S3CRUDHandler(S3MethodHandler):
     # -------------------------------------------------------------------------
     def _linkto(self, r, authorised=None, update=None, native=False):
 
-        """ Linker for the record ID column in list views """
+        """ Linker for the record ID column in list views
+
+            @todo 2.2: fix docstring
+            
+        """
 
         c = None
         f = None
@@ -977,7 +734,11 @@ class S3CRUDHandler(S3MethodHandler):
     # -------------------------------------------------------------------------
     def ssp_filter(self, table, fields):
 
-        """ Convert the SSPag GET vars into a filter query """
+        """ Convert the SSPag GET vars into a filter query
+
+            @todo 2.2: fix docstring
+            
+        """
 
         vars = self.request.get_vars
 
@@ -1026,7 +787,11 @@ class S3CRUDHandler(S3MethodHandler):
     # -------------------------------------------------------------------------
     def ssp_orderby(self, table, fields):
 
-        """ Convert the SSPag GET vars into a sorting query """
+        """ Convert the SSPag GET vars into a sorting query
+
+            @todo 2.2: fix docstring
+            
+        """
 
         vars = self.request.get_vars
 

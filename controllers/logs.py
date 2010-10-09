@@ -1,11 +1,11 @@
 # -*- coding: utf-8 -*-
 
 """
-    Logistics Management 
-    
+    Logistics Management
+
     @author: Michael Howden (michael@sahanafoundation.org)
-    @date-created: 2010-09-02    
-    
+    @date-created: 2010-09-02
+
     Distribution, Shipments
 """
 
@@ -35,7 +35,7 @@ def distrib():
     resource = request.function
     tablename = "%s_%s" % (module, resource)
     table = db[tablename]
-    
+
     # Don't send the locations list to client (pulled by AJAX instead)
     table.location_id.requires = IS_NULL_OR(IS_ONE_OF_EMPTY(db, "gis_location.id"))
 
@@ -46,7 +46,7 @@ def distrib():
             # listadd arrives here as method=None
             if r.method != "delete" and not r.component:
                 # Redirect to the Items tabs after creation
-                r.next = r.other(method="distrib_item", record_id=s3xrc.get_session(session, module, resource))
+                r.next = r.other(method="distrib_item", record_id=s3xrc.get_session(module, resource))
 
             # Normal Action Buttons
             shn_action_buttons(r)
@@ -84,6 +84,6 @@ def distrib_item():
     resource = request.function
     tablename = "%s_%s" % (module, resource)
     table = db[tablename]
-       
+
     output = shn_rest_controller(module, resource)
     return output

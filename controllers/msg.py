@@ -44,23 +44,31 @@ def tropo():
         # This is their service contacting us, so parse their request
         s = Session(request.body.read())
         
-        # If this is a response to a session request then send back the message again
-        if "numberToDial" in s.parameters:
+        try:
+            # This is a response to a session request, so send back the message again
             t.call(to=s.parameters["numberToDial"], network=s.parameters["network"])
             t.say(s.parameters["message"])
             return t.RenderJson()
-        else:
-            # Otherwise place it in the InBox
-            # @ToDo: For now dumping in a separate table
-            uuid = s.parameters["id"]
-            callerid = s.parameters["from"]
-            destination = s.parameters["to"]
-            message = s.parameters["initialText"]
-            db.msg_tropo.insert(uuid=uuid, callerid=callerid, destination=destination, message=message)
-            # Return a '200 OK'
-            t.say(["Received!"])
-            output = t.RenderJson()
-            return output
+        except:
+            try:
+                # This is an SMS/IM
+                message = s.initialText
+                # Place it in the InBox
+                # @ToDo: For now dumping in a separate table
+                uuid = s.id
+                destination = s.to["id"]
+                # SyntaxError: invalid syntax (why!?)
+                #callerid = s.from["id"]
+                #db.msg_tropo.insert(uuid=uuid, callerid=callerid, destination=destination, message=message)
+                db.msg_tropo.insert(uuid=uuid, destination=destination, message=message)
+                # Return a '200 OK'
+                t.say(["Received!"])
+                output = t.RenderJson()
+                return output
+            except:
+                # This is a Voice call
+                # - we can't handle these yet
+                raise HTTP(501)
     else:
         # This is us initiating an outbound request to their service, so parse our request
         try:
@@ -91,8 +99,7 @@ def tropo():
             # Send the voice call
             pass
         else:
-            #token = db(db.msg_setting.id == 1).select(db.msg_setting.tropo_token_messaging, limitby=(0, 1)).first().tropo_token_messaging
-            token = db(db.msg_setting.id == 1).select(db.msg_setting.tropo_token_voice, limitby=(0, 1)).first().tropo_token_voice
+            token = db(db.msg_setting.id == 1).select(db.msg_setting.tropo_token_messaging, limitby=(0, 1)).first().tropo_token_messaging
             if not token:
                 session.error = T("Need to configure a Messaging Token!")
                 redirect(URL(r=request, f="setting"))

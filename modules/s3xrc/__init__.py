@@ -2,10 +2,13 @@
 
 """ S3XRC Resource Framework
 
-    @version: 2.1.5
-    @see: U{B{I{S3XRC-2}} <http://eden.sahanafoundation.org/wiki/S3XRC>} on Eden wiki
+    @version: 2.1.6
+    @see: U{B{I{S3XRC}} <http://eden.sahanafoundation.org/wiki/S3XRC>} on Eden wiki
 
     @requires: U{B{I{lxml}} <http://codespeak.net/lxml>}
+    @requires: U{B{I{ReportLab}} <http://www.reportlab.com/software/opensource>}
+    @requires: U{B{I{Geraldo}} <http://www.geraldoreports.org>}
+    @requires: U{B{I{Xlwt}} <http://pypi.python.org/pypi/xlwt>}
 
     @author: nursix
     @contact: dominic AT nursix DOT org

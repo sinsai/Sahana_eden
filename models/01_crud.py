@@ -1061,13 +1061,13 @@ def shn_list(r, **attr):
                 _onaccept = lambda form: \
                             s3xrc.audit("create", prefix, name, form=form,
                                         representation=representation) and \
-                            s3xrc.store_session(session, prefix, name, form.vars.id) and \
+                            s3xrc.store_session(prefix, name, form.vars.id) and \
                             onaccept(form)
             else:
                 _onaccept = lambda form: \
                             s3xrc.audit("create", prefix, name, form=form,
                                         representation=representation) and \
-                            s3xrc.store_session(session, prefix, name, form.vars.id)
+                            s3xrc.store_session(prefix, name, form.vars.id)
 
             message = shn_get_crud_string(tablename, "msg_record_created")
 
@@ -1258,16 +1258,14 @@ def shn_create(r, **attr):
             _onaccept = lambda form: \
                         s3xrc.audit("create", prefix, name, form=form,
                                     representation=representation) and \
-                        s3xrc.store_session(session,
-                                            prefix, name, form.vars.id) and \
+                        s3xrc.store_session(prefix, name, form.vars.id) and \
                         onaccept(form)
 
         else:
             _onaccept = lambda form: \
                         s3xrc.audit("create", prefix, name, form=form,
                                     representation=representation) and \
-                        s3xrc.store_session(session,
-                                            prefix, name, form.vars.id)
+                        s3xrc.store_session(prefix, name, form.vars.id)
 
         # Get the form
         message = shn_get_crud_string(tablename, "msg_record_created")
@@ -1489,13 +1487,13 @@ def shn_update(r, **attr):
             _onaccept = lambda form: \
                         s3xrc.audit("update", prefix, name, form=form,
                                     representation=representation) and \
-                        s3xrc.store_session(session, prefix, name, form.vars.id) and \
+                        s3xrc.store_session(prefix, name, form.vars.id) and \
                         onaccept(form)
         else:
             _onaccept = lambda form: \
                         s3xrc.audit("update", prefix, name, form=form,
                                     representation=representation) and \
-                        s3xrc.store_session(session, prefix, name, form.vars.id)
+                        s3xrc.store_session(prefix, name, form.vars.id)
 
         crud.settings.update_deletable = deletable
         message = shn_get_crud_string(tablename, "msg_record_modified")
@@ -1626,8 +1624,8 @@ def shn_delete(r, **attr):
     for row in rows:
         if shn_has_permission("delete", tablename, row.id):
             numrows += 1
-            if s3xrc.get_session(session, prefix=prefix, name=name) == row.id:
-                s3xrc.clear_session(session, prefix=prefix, name=name)
+            if s3xrc.get_session(prefix=prefix, name=name) == row.id:
+                s3xrc.clear_session(prefix=prefix, name=name)
             try:
                 s3xrc.audit("delete", prefix, name, record=row.id, representation=representation)
                 # Reset session vars if necessary
@@ -2015,7 +2013,7 @@ def shn_rest_controller(module, resource, **attr):
     s3xrc.set_handler("copy", shn_copy)
     s3xrc.set_handler("barchart", shn_barchart)
 
-    res, r = s3xrc.parse_request(module, resource, session, request, response)
+    res, r = s3xrc.parse_request(module, resource)
     output = res.execute_request(r, **attr)
 
     # Add default action buttons in list views:

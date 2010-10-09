@@ -217,7 +217,8 @@ object --+
         <tr>
           <td><span class="summary-sig"><a href="vita.modules.s3xrc.s3rest.S3Resource-class.html#parse_context" class="summary-sig-name">parse_context</a>(<span class="summary-sig-arg">self</span>,
         <span class="summary-sig-arg">resource</span>,
-        <span class="summary-sig-arg">url_vars</span>)</span></td>
+        <span class="summary-sig-arg">url_vars</span>)</span><br />
+      Parse URL context queries</td>
           <td align="right" valign="top">
             <span class="codelink"><a href="vita.modules.s3xrc.s3rest-pysrc.html#S3Resource.parse_context">source&nbsp;code</a></span>
             
@@ -386,23 +387,6 @@ object --+
       slice (for pagination) or all records</td>
           <td align="right" valign="top">
             <span class="codelink"><a href="vita.modules.s3xrc.s3rest-pysrc.html#S3Resource.load">source&nbsp;code</a></span>
-            
-          </td>
-        </tr>
-      </table>
-      
-    </td>
-  </tr>
-<tr>
-    <td width="15%" align="right" valign="top" class="summary">
-      <span class="summary-type">&nbsp;</span>
-    </td><td class="summary">
-      <table width="100%" cellpadding="0" cellspacing="0" border="0">
-        <tr>
-          <td><span class="summary-sig"><a href="vita.modules.s3xrc.s3rest.S3Resource-class.html#save" class="summary-sig-name">save</a>(<span class="summary-sig-arg">self</span>)</span><br />
-      Write the current set to the data store (not implemented yet)</td>
-          <td align="right" valign="top">
-            <span class="codelink"><a href="vita.modules.s3xrc.s3rest-pysrc.html#S3Resource.save">source&nbsp;code</a></span>
             
           </td>
         </tr>
@@ -1204,6 +1188,107 @@ object --+
       
     </td>
   </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a href="vita.modules.s3xrc.s3rest.S3Resource-class.html#create" class="summary-sig-name">create</a>(<span class="summary-sig-arg">self</span>)</span><br />
+      Add a record to this resource</td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="vita.modules.s3xrc.s3rest-pysrc.html#S3Resource.create">source&nbsp;code</a></span>
+            
+          </td>
+        </tr>
+      </table>
+      
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a href="vita.modules.s3xrc.s3rest.S3Resource-class.html#read" class="summary-sig-name">read</a>(<span class="summary-sig-arg">self</span>,
+        <span class="summary-sig-arg">record_id</span>)</span><br />
+      View a record of this resource</td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="vita.modules.s3xrc.s3rest-pysrc.html#S3Resource.read">source&nbsp;code</a></span>
+            
+          </td>
+        </tr>
+      </table>
+      
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a href="vita.modules.s3xrc.s3rest.S3Resource-class.html#update" class="summary-sig-name">update</a>(<span class="summary-sig-arg">self</span>,
+        <span class="summary-sig-arg">record</span>,
+        <span class="summary-sig-arg">record_id</span>=<span class="summary-sig-default">None</span>,
+        <span class="summary-sig-arg">onvalidation</span>=<span class="summary-sig-default">None</span>,
+        <span class="summary-sig-arg">onaccept</span>=<span class="summary-sig-default">None</span>,
+        <span class="summary-sig-arg">message</span>=<span class="summary-sig-default">&quot;Record updated&quot;</span>,
+        <span class="summary-sig-arg">download_url</span>=<span class="summary-sig-default">None</span>)</span><br />
+      Update a record in this resource</td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="vita.modules.s3xrc.s3rest-pysrc.html#S3Resource.update">source&nbsp;code</a></span>
+            
+          </td>
+        </tr>
+      </table>
+      
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a href="vita.modules.s3xrc.s3rest.S3Resource-class.html#delete" class="summary-sig-name">delete</a>(<span class="summary-sig-arg">self</span>,
+        <span class="summary-sig-arg">ondelete</span>=<span class="summary-sig-default">None</span>)</span><br />
+      Delete all records in this resource</td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="vita.modules.s3xrc.s3rest-pysrc.html#S3Resource.delete">source&nbsp;code</a></span>
+            
+          </td>
+        </tr>
+      </table>
+      
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a href="vita.modules.s3xrc.s3rest.S3Resource-class.html#select" class="summary-sig-name">select</a>(<span class="summary-sig-arg">self</span>,
+        <span class="summary-sig-arg">fields</span>=<span class="summary-sig-default">None</span>,
+        <span class="summary-sig-arg">start</span>=<span class="summary-sig-default">0</span>,
+        <span class="summary-sig-arg">limit</span>=<span class="summary-sig-default">None</span>,
+        <span class="summary-sig-arg">orderby</span>=<span class="summary-sig-default">None</span>,
+        <span class="summary-sig-arg">linkto</span>=<span class="summary-sig-default">None</span>,
+        <span class="summary-sig-arg">download_url</span>=<span class="summary-sig-default">None</span>,
+        <span class="summary-sig-arg">as_page</span>=<span class="summary-sig-default">False</span>,
+        <span class="summary-sig-arg">as_list</span>=<span class="summary-sig-default">False</span>)</span><br />
+      List of all records of this resource</td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="vita.modules.s3xrc.s3rest-pysrc.html#S3Resource.select">source&nbsp;code</a></span>
+            
+          </td>
+        </tr>
+      </table>
+      
+    </td>
+  </tr>
   <tr>
     <td colspan="2" class="summary">
     <p class="indent-wrapped-lines"><b>Inherited from <code>object</code></b>:
@@ -1311,7 +1396,10 @@ object --+
         object.__init__
     </dt>
   </dl>
-</td></tr></table>
+<div class="fields">      <p><strong>To Do (2.2):</strong>
+        remove assertions
+      </p>
+</div></td></tr></table>
 </div>
 <a name="__dbg"></a>
 <div class="private">
@@ -1335,7 +1423,10 @@ object --+
         <li><strong class="pname"><code>msg</code></strong> - the debug message</li>
     </ul></dd>
   </dl>
-</td></tr></table>
+<div class="fields">      <p><strong>To Do (2.2):</strong>
+        remove this
+      </p>
+</div></td></tr></table>
 </div>
 <a name="set_handler"></a>
 <div>
@@ -1456,10 +1547,13 @@ object --+
     </td>
   </tr></table>
   
-  
+  <p>Parse URL context queries</p>
   <dl class="fields">
   </dl>
-</td></tr></table>
+<div class="fields">      <p><strong>To Do (2.2):</strong>
+        fix docstring
+      </p>
+</div></td></tr></table>
 </div>
 <a name="url_query"></a>
 <div>
@@ -1480,7 +1574,10 @@ object --+
   <p>URL query parser</p>
   <dl class="fields">
   </dl>
-</td></tr></table>
+<div class="fields">      <p><strong>To Do (2.2):</strong>
+        fix docstring
+      </p>
+</div></td></tr></table>
 </div>
 <a name="build_query"></a>
 <div>
@@ -1530,7 +1627,10 @@ object --+
   <p>Add a filter to the current query</p>
   <dl class="fields">
   </dl>
-</td></tr></table>
+<div class="fields">      <p><strong>To Do (2.2):</strong>
+        fix docstring
+      </p>
+</div></td></tr></table>
 </div>
 <a name="get_query"></a>
 <div>
@@ -1656,28 +1756,6 @@ object --+
     </ul></dd>
   </dl>
 </td></tr></table>
-</div>
-<a name="save"></a>
-<div>
-<table class="details" border="1" cellpadding="3"
-       cellspacing="0" width="100%" bgcolor="white">
-<tr><td>
-  <table width="100%" cellpadding="0" cellspacing="0" border="0">
-  <tr valign="top"><td>
-  <h3 class="epydoc"><span class="sig"><span class="sig-name">save</span>(<span class="sig-arg">self</span>)</span>
-  </h3>
-  </td><td align="right" valign="top"
-    ><span class="codelink"><a href="vita.modules.s3xrc.s3rest-pysrc.html#S3Resource.save">source&nbsp;code</a></span>&nbsp;
-    </td>
-  </tr></table>
-  
-  <p>Write the current set to the data store (not implemented yet)</p>
-  <dl class="fields">
-  </dl>
-<div class="fields">      <p><strong>To Do (2.1):</strong>
-        implement this.
-      </p>
-</div></td></tr></table>
 </div>
 <a name="clear"></a>
 <div>
@@ -1908,7 +1986,7 @@ object --+
   <p>URL of this resource (not implemented yet)</p>
   <dl class="fields">
   </dl>
-<div class="fields">      <p><strong>To Do (2.1):</strong>
+<div class="fields">      <p><strong>To Do (2.2):</strong>
         implement this.
       </p>
 </div></td></tr></table>
@@ -2102,7 +2180,10 @@ object --+
   <p>Read data from request body</p>
   <dl class="fields">
   </dl>
-</td></tr></table>
+<div class="fields">      <p><strong>To Do (2.2):</strong>
+        fix docstring
+      </p>
+</div></td></tr></table>
 </div>
 <a name="__put_tree"></a>
 <div class="private">
@@ -2123,7 +2204,10 @@ object --+
   <p>Import XML/JSON data</p>
   <dl class="fields">
   </dl>
-</td></tr></table>
+<div class="fields">      <p><strong>To Do (2.2):</strong>
+        fix docstring
+      </p>
+</div></td></tr></table>
 </div>
 <a name="__post"></a>
 <div class="private">
@@ -2196,7 +2280,10 @@ object --+
   <p>Export this resource as element tree</p>
   <dl class="fields">
   </dl>
-</td></tr></table>
+<div class="fields">      <p><strong>To Do (2.2):</strong>
+        fix docstring
+      </p>
+</div></td></tr></table>
 </div>
 <a name="export_xml"></a>
 <div>
@@ -2218,7 +2305,10 @@ object --+
   <p>Export this resource as XML</p>
   <dl class="fields">
   </dl>
-</td></tr></table>
+<div class="fields">      <p><strong>To Do (2.2):</strong>
+        fix docstring
+      </p>
+</div></td></tr></table>
 </div>
 <a name="export_json"></a>
 <div>
@@ -2240,7 +2330,10 @@ object --+
   <p>Export this resource as JSON</p>
   <dl class="fields">
   </dl>
-</td></tr></table>
+<div class="fields">      <p><strong>To Do (2.2):</strong>
+        fix docstring
+      </p>
+</div></td></tr></table>
 </div>
 <a name="__import_tree"></a>
 <div class="private">
@@ -2271,7 +2364,10 @@ object --+
         <li><code><strong class='fraise'>IOError</strong></code> - at insufficient permissions</li>
     </ul></dd>
   </dl>
-</td></tr></table>
+<div class="fields">      <p><strong>To Do (2.2):</strong>
+        fix docstring
+      </p>
+</div></td></tr></table>
 </div>
 <a name="import_xml"></a>
 <div>
@@ -2370,7 +2466,10 @@ object --+
   <p>Export field options of this resource as element tree</p>
   <dl class="fields">
   </dl>
-</td></tr></table>
+<div class="fields">      <p><strong>To Do (2.2):</strong>
+        fix docstring
+      </p>
+</div></td></tr></table>
 </div>
 <a name="options_xml"></a>
 <div>
@@ -2391,7 +2490,10 @@ object --+
   <p>Export field options of this resource as XML</p>
   <dl class="fields">
   </dl>
-</td></tr></table>
+<div class="fields">      <p><strong>To Do (2.2):</strong>
+        fix docstring
+      </p>
+</div></td></tr></table>
 </div>
 <a name="options_json"></a>
 <div>
@@ -2412,7 +2514,10 @@ object --+
   <p>Export field options of this resource as JSON</p>
   <dl class="fields">
   </dl>
-</td></tr></table>
+<div class="fields">      <p><strong>To Do (2.2):</strong>
+        fix docstring
+      </p>
+</div></td></tr></table>
 </div>
 <a name="fields_tree"></a>
 <div>
@@ -2432,7 +2537,10 @@ object --+
   <p>Export a list of fields in the primary table as element tree</p>
   <dl class="fields">
   </dl>
-</td></tr></table>
+<div class="fields">      <p><strong>To Do (2.2):</strong>
+        fix docstring
+      </p>
+</div></td></tr></table>
 </div>
 <a name="fields_xml"></a>
 <div>
@@ -2452,7 +2560,10 @@ object --+
   <p>Export a list of fields in the primary table as XML</p>
   <dl class="fields">
   </dl>
-</td></tr></table>
+<div class="fields">      <p><strong>To Do (2.2):</strong>
+        fix docstring
+      </p>
+</div></td></tr></table>
 </div>
 <a name="fields_json"></a>
 <div>
@@ -2472,7 +2583,10 @@ object --+
   <p>Export a list of fields in the primary table as JSON</p>
   <dl class="fields">
   </dl>
-</td></tr></table>
+<div class="fields">      <p><strong>To Do (2.2):</strong>
+        fix docstring
+      </p>
+</div></td></tr></table>
 </div>
 <a name="__push_tree"></a>
 <div class="private">
@@ -2505,7 +2619,10 @@ object --+
   <p>Push (=POST) the current resource to a target URL</p>
   <dl class="fields">
   </dl>
-</td></tr></table>
+<div class="fields">      <p><strong>To Do (2.2):</strong>
+        fix docstring
+      </p>
+</div></td></tr></table>
 </div>
 <a name="push_xml"></a>
 <div>
@@ -2628,7 +2745,10 @@ object --+
   <p>Fetch data to the current resource from a remote URL</p>
   <dl class="fields">
   </dl>
-</td></tr></table>
+<div class="fields">      <p><strong>To Do (2.2):</strong>
+        fix docstring
+      </p>
+</div></td></tr></table>
 </div>
 <a name="fetch_xml"></a>
 <div>
@@ -2654,7 +2774,10 @@ object --+
   
   <dl class="fields">
   </dl>
-</td></tr></table>
+<div class="fields">      <p><strong>To Do (2.2):</strong>
+        add docstring
+      </p>
+</div></td></tr></table>
 </div>
 <a name="fetch_json"></a>
 <div>
@@ -2678,6 +2801,132 @@ object --+
   </tr></table>
   
   
+  <dl class="fields">
+  </dl>
+<div class="fields">      <p><strong>To Do (2.2):</strong>
+        add docstring
+      </p>
+</div></td></tr></table>
+</div>
+<a name="create"></a>
+<div>
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr><td>
+  <table width="100%" cellpadding="0" cellspacing="0" border="0">
+  <tr valign="top"><td>
+  <h3 class="epydoc"><span class="sig"><span class="sig-name">create</span>(<span class="sig-arg">self</span>)</span>
+  </h3>
+  </td><td align="right" valign="top"
+    ><span class="codelink"><a href="vita.modules.s3xrc.s3rest-pysrc.html#S3Resource.create">source&nbsp;code</a></span>&nbsp;
+    </td>
+  </tr></table>
+  
+  <p>Add a record to this resource</p>
+  <dl class="fields">
+  </dl>
+<div class="fields">      <p><strong>To Do (2.2):</strong>
+        implement this
+      </p>
+</div></td></tr></table>
+</div>
+<a name="read"></a>
+<div>
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr><td>
+  <table width="100%" cellpadding="0" cellspacing="0" border="0">
+  <tr valign="top"><td>
+  <h3 class="epydoc"><span class="sig"><span class="sig-name">read</span>(<span class="sig-arg">self</span>,
+        <span class="sig-arg">record_id</span>)</span>
+  </h3>
+  </td><td align="right" valign="top"
+    ><span class="codelink"><a href="vita.modules.s3xrc.s3rest-pysrc.html#S3Resource.read">source&nbsp;code</a></span>&nbsp;
+    </td>
+  </tr></table>
+  
+  <p>View a record of this resource</p>
+  <dl class="fields">
+  </dl>
+<div class="fields">      <p><strong>To Do (2.2):</strong>
+        implement this
+      </p>
+</div></td></tr></table>
+</div>
+<a name="update"></a>
+<div>
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr><td>
+  <table width="100%" cellpadding="0" cellspacing="0" border="0">
+  <tr valign="top"><td>
+  <h3 class="epydoc"><span class="sig"><span class="sig-name">update</span>(<span class="sig-arg">self</span>,
+        <span class="sig-arg">record</span>,
+        <span class="sig-arg">record_id</span>=<span class="sig-default">None</span>,
+        <span class="sig-arg">onvalidation</span>=<span class="sig-default">None</span>,
+        <span class="sig-arg">onaccept</span>=<span class="sig-default">None</span>,
+        <span class="sig-arg">message</span>=<span class="sig-default">&quot;Record updated&quot;</span>,
+        <span class="sig-arg">download_url</span>=<span class="sig-default">None</span>)</span>
+  </h3>
+  </td><td align="right" valign="top"
+    ><span class="codelink"><a href="vita.modules.s3xrc.s3rest-pysrc.html#S3Resource.update">source&nbsp;code</a></span>&nbsp;
+    </td>
+  </tr></table>
+  
+  <p>Update a record in this resource</p>
+  <dl class="fields">
+  </dl>
+<div class="fields">      <p><strong>To Do (2.2):</strong>
+        complete implementation
+      </p>
+</div></td></tr></table>
+</div>
+<a name="delete"></a>
+<div>
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr><td>
+  <table width="100%" cellpadding="0" cellspacing="0" border="0">
+  <tr valign="top"><td>
+  <h3 class="epydoc"><span class="sig"><span class="sig-name">delete</span>(<span class="sig-arg">self</span>,
+        <span class="sig-arg">ondelete</span>=<span class="sig-default">None</span>)</span>
+  </h3>
+  </td><td align="right" valign="top"
+    ><span class="codelink"><a href="vita.modules.s3xrc.s3rest-pysrc.html#S3Resource.delete">source&nbsp;code</a></span>&nbsp;
+    </td>
+  </tr></table>
+  
+  <p>Delete all records in this resource</p>
+  <dl class="fields">
+  </dl>
+<div class="fields">      <p><strong>To Do (2.2):</strong>
+        implement this
+      </p>
+</div></td></tr></table>
+</div>
+<a name="select"></a>
+<div>
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr><td>
+  <table width="100%" cellpadding="0" cellspacing="0" border="0">
+  <tr valign="top"><td>
+  <h3 class="epydoc"><span class="sig"><span class="sig-name">select</span>(<span class="sig-arg">self</span>,
+        <span class="sig-arg">fields</span>=<span class="sig-default">None</span>,
+        <span class="sig-arg">start</span>=<span class="sig-default">0</span>,
+        <span class="sig-arg">limit</span>=<span class="sig-default">None</span>,
+        <span class="sig-arg">orderby</span>=<span class="sig-default">None</span>,
+        <span class="sig-arg">linkto</span>=<span class="sig-default">None</span>,
+        <span class="sig-arg">download_url</span>=<span class="sig-default">None</span>,
+        <span class="sig-arg">as_page</span>=<span class="sig-default">False</span>,
+        <span class="sig-arg">as_list</span>=<span class="sig-default">False</span>)</span>
+  </h3>
+  </td><td align="right" valign="top"
+    ><span class="codelink"><a href="vita.modules.s3xrc.s3rest-pysrc.html#S3Resource.select">source&nbsp;code</a></span>&nbsp;
+    </td>
+  </tr></table>
+  
+  <p>List of all records of this resource</p>
   <dl class="fields">
   </dl>
 </td></tr></table>
@@ -2714,7 +2963,7 @@ object --+
 <table border="0" cellpadding="0" cellspacing="0" width="100%%">
   <tr>
     <td align="left" class="footer">
-    Generated by Epydoc 3.0.1 on Sun Oct  3 11:44:08 2010
+    Generated by Epydoc 3.0.1 on Sat Oct  9 08:00:03 2010
     </td>
     <td align="right" class="footer">
       <a target="mainFrame" href="http://epydoc.sourceforge.net"

@@ -96,7 +96,7 @@ def req():
                     person = db(db.pr_person.uuid == person_uuid).select(db.pr_person.id, limitby=(0, 1)).first().id
                     db.rms_pledge.person_id.default = person
                 # @ToDo Default the Organisation too
-            
+
         return True
     response.s3.prep = prep
 
@@ -107,7 +107,7 @@ def req():
             # listadd arrives here as method=None
             if r.method != "delete" and not r.component:
                 # Redirect to the Assessments tabs after creation
-                r.next = r.other(method="ritem", record_id=s3xrc.get_session(session, module, resource))
+                r.next = r.other(method="ritem", record_id=s3xrc.get_session(module, resource))
 
             # Custom Action Buttons
             if not r.component:

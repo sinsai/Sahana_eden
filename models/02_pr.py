@@ -656,7 +656,7 @@ def shn_pr_person_search_simple(r, **attr):
             # Get the results
             if results:
                 resource.build_query(id=results)
-                report = shn_list(r, listadd=False)
+                report = resource.crud(r, method="list", **attr)
             else:
                 report = dict(items=T("No matching records found."))
 

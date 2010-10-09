@@ -1878,6 +1878,7 @@
 'Need to specify a group!': 'Need to specify a group!',
 'Need to specify a location to search for.': 'Need to specify a location to search for.',
 'Need to specify a role!': 'Need to specify a role!',
+'Need to specify a service!': 'Need to specify a service!',
 'Need to specify a table!': 'Need to specify a table!',
 'Need to specify a user!': 'Need to specify a user!',
 'Needs to reduce vulnerability to violence': 'Needs to reduce vulnerability to violence',

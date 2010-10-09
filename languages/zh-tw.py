@@ -2067,7 +2067,7 @@
 'No': 'No',
 'No Activities Found': 'No Activities Found',
 'No Addresses currently registered': 'No Addresses currently registered',
-'No Aid Requests currently registered': 'No Aid Requests currently registered',
+'No Aid Requests have been made yet': 'No Aid Requests have been made yet',
 'No Assessments currently registered': 'No Assessments currently registered',
 'No Budgets currently registered': 'No Budgets currently registered',
 'No Bundles currently registered': 'No Bundles currently registered',

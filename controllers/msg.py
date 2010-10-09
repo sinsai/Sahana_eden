@@ -33,6 +33,92 @@ def tbc():
     """ Coming soon... """
     return dict()
 
+def tropo():
+    """ https://www.tropo.com/docs/webapi/newhowitworks.htm """
+    exec("from applications.%s.modules.tropo import Tropo, Session" % request.application)
+    # Faster for Production (where app-name won't change):
+    #from applications.eden.modules.tropo import Tropo, Session
+    t = Tropo()
+    
+    if request.env.request_method == "post":
+        # This is their service contacting us, so parse their request
+        s = Session(request.body)
+        db.msg_tropo.insert(json=s)
+    else:
+        # This is us initiating an outbound request to their service, so parse our request
+        try:
+            tropo_service = request.args[0]
+        except:
+            session.error = T("Need to specify a service!")
+            redirect(URL(r=request, f="index"))
+        from urllib import urlencode
+        from urllib2 import urlopen
+        if tropo_service == "voice":
+            token = db(db.msg_setting.id == 1).select(db.msg_setting.tropo_token_voice, limitby=(0, 1)).first().tropo_token_voice
+            if not token:
+                session.error = T("Need to configure a Voice Token!")
+                redirect(URL(r=request, f="setting"))
+            # Send the voice call
+            pass
+        else:
+            token = db(db.msg_setting.id == 1).select(db.msg_setting.tropo_token_messaging, limitby=(0, 1)).first().tropo_token_messaging
+            if not token:
+                session.error = T("Need to configure a Messaging Token!")
+                redirect(URL(r=request, f="setting"))
+            if tropo_service == "sms":
+                # tbc
+                pass
+            elif tropo_service == "twitter":
+                # tbc
+                pass
+            elif tropo_service == "test":
+                t.say(["test worked!"])
+                output = t.RenderJson()
+                return output
+            else:
+                session.error = T("Unknown Service!")
+                redirect(URL(r=request, f="index"))
+        return "Passed"
+
+@auth.shn_requires_membership(1)
+def setting():
+    """ Overall settings for the messaging framework """
+
+    resource = request.function
+    tablename = module + "_" + resource
+    table = db[tablename]
+    table.outgoing_sms_handler.label = T("Outgoing SMS handler")
+    table.tropo_token_voice.label = T("Tropo Voice Token")
+    table.tropo_token_messaging.label = T("Tropo Messaging Token")
+    table.outgoing_sms_handler.comment = DIV(DIV(_class="tooltip",
+        _title=T("Outgoing SMS Handler") + "|" + T("Selects whether to use the gateway or the Modem for sending out SMS")))
+    table.tropo_token_voice.comment = DIV(DIV(_class="stickytip",
+        _title=T("Tropo Voice Token") + "|" + T("The token associated with this application on") + " <a href='https://www.tropo.com/docs/scripting/troposessionapi.htm' target=_blank>Tropo.com</a>"))
+    table.tropo_token_messaging.comment = DIV(DIV(_class="stickytip",
+        _title=T("Tropo Messaging Token") + "|" + T("The token associated with this application on") + " <a href='https://www.tropo.com/docs/scripting/troposessionapi.htm' target=_blank>Tropo.com</a>"))
+    # CRUD Strings
+    ADD_SETTING = T("Add Setting")
+    VIEW_SETTINGS = T("View Settings")
+    s3.crud_strings[tablename] = Storage(
+        title_create = ADD_SETTING,
+        title_display = T("Setting Details"),
+        title_list = VIEW_SETTINGS,
+        title_update = T("Edit Messaging Settings"),
+        title_search = T("Search Settings"),
+        subtitle_list = T("Settings"),
+        label_list_button = VIEW_SETTINGS,
+        label_create_button = ADD_SETTING,
+        label_delete_button = T("Delete Setting"),
+        msg_record_created = T("Setting added"),
+        msg_record_modified = T("Messaging settings updated"),
+        msg_record_deleted = T("Setting deleted"),
+        msg_list_empty = T("No Settings currently defined")
+    )
+
+    crud.settings.update_next = URL(r=request, args=[1, "update"])
+    response.menu_options = admin_menu_options
+    return shn_rest_controller(module, resource, deletable=False, listadd=False)
+
 def email_settings():
     """ RESTful CRUD controller for email settings - appears in the administration menu """
 
@@ -311,39 +397,6 @@ def gateway_settings():
         label_create_button = ADD_SETTING,
         msg_record_created = T("Setting added"),
         msg_record_modified = T("Gateway settings updated"),
-        msg_record_deleted = T("Setting deleted"),
-        msg_list_empty = T("No Settings currently defined")
-    )
-
-    crud.settings.update_next = URL(r=request, args=[1, "update"])
-    response.menu_options = admin_menu_options
-    return shn_rest_controller(module, resource, deletable=False, listadd=False)
-
-@auth.shn_requires_membership(1)
-def setting():
-    """ Overall settings for the messaging framework """
-
-    resource = request.function
-    tablename = module + "_" + resource
-    table = db[tablename]
-    table.outgoing_sms_handler.label = T("Outgoing SMS handler")
-    table.outgoing_sms_handler.comment = DIV(DIV(_class="tooltip",
-    _title=T("Outgoing SMS handler") + "|" + T("Selects whether to use the gateway or the Modem for sending out SMS")))
-    # CRUD Strings
-    ADD_SETTING = T("Add Setting")
-    VIEW_SETTINGS = T("View Settings")
-    s3.crud_strings[tablename] = Storage(
-        title_create = ADD_SETTING,
-        title_display = T("Setting Details"),
-        title_list = VIEW_SETTINGS,
-        title_update = T("Edit Messaging Settings"),
-        title_search = T("Search Settings"),
-        subtitle_list = T("Settings"),
-        label_list_button = VIEW_SETTINGS,
-        label_create_button = ADD_SETTING,
-        label_delete_button = T("Delete Setting"),
-        msg_record_created = T("Setting added"),
-        msg_record_modified = T("Messaging settings updated"),
         msg_record_deleted = T("Setting deleted"),
         msg_list_empty = T("No Settings currently defined")
     )

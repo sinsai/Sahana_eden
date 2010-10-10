@@ -2,6 +2,8 @@
 
 """ S3XRC Resource Framework - Resource Controller
 
+    @version: 2.1.7
+
     @see: U{B{I{S3XRC}} <http://eden.sahanafoundation.org/wiki/S3XRC>} on Eden wiki
 
     @requires: U{B{I{lxml}} <http://codespeak.net/lxml>}
@@ -34,7 +36,8 @@
 
 """
 
-__all__ = ["S3ResourceController"]
+__all__ = ["S3ResourceController",
+           "S3Vector"]
 
 import sys, datetime, time
 
@@ -49,14 +52,12 @@ from s3rest import S3Resource, S3Request
 from s3model import S3ResourceModel
 from s3crud import S3CRUDHandler
 
-
 # *****************************************************************************
 class S3ResourceController(object):
 
     """ S3 Resource Controller
 
         @todo 2.2: move formats into settings
-        @todo 2.2: remove __dbg
         @todo 2.2: error messages internationalization?
 
     """
@@ -102,14 +103,14 @@ class S3ResourceController(object):
         NOT_IMPLEMENTED = "Not implemented"
     )
 
-    # -------------------------------------------------------------------------
+    # =========================================================================
+
     def __init__(self,
                  environment,
-                 domain=None,
-                 base_url=None,
-                 rpp=None, # @todo 2.2: remove this parameter, move into settings
-                 messages=None,
-                 debug=False,
+                 domain=None, # @todo 2.2: read fromm environment
+                 base_url=None, # @todo 2.2: read from environment
+                 rpp=None, # @todo 2.2: move into settings
+                 messages=None, # @todo 2.2: move into settings
                  **attr):
 
         """ Constructor
@@ -126,9 +127,6 @@ class S3ResourceController(object):
             @todo 2.2: remove assertions
 
         """
-
-        # Remove this?
-        #assert db is not None, "Database must not be None."
 
         # Environment
         environment = Storage(environment)
@@ -157,9 +155,8 @@ class S3ResourceController(object):
 
         self.show_ids = False
 
-        # Errors and Debug messages
+        # Errors
         self.error = None
-        self.debug = debug
 
         # Toolkits
         self.model = S3ResourceModel(self.db)
@@ -177,7 +174,7 @@ class S3ResourceController(object):
         self.sync_resolve = None            # Sync Resolver
         self.sync_log = None                # Sync Logger
 
-        # Import/Export formats
+        # Import/Export formats: move into settings
         attr = Storage(attr)
 
         self.xml_import_formats = attr.get("xml_import_formats", ["xml"])
@@ -191,79 +188,9 @@ class S3ResourceController(object):
         # Method Handlers
         self.__handler = Storage()
 
-    # -------------------------------------------------------------------------
-    def __dbg(self, msg):
 
-        """ Print out debug messages.
-
-            @todo 2.2: remove this
-            
-        """
-
-        if self.debug:
-            print >> sys.stderr, "S3ResourceController: %s" % msg
-
-
-    # -------------------------------------------------------------------------
-    def callback(self, hook, *args, **vars):
-
-        """ Invoke a hook or a list of hooks
-
-            @todo 2.2: fix docstring
-            
-        """
-
-        name = vars.pop("name", None)
-
-        if name and isinstance(hook, dict):
-            hook = hook.get(name, None)
-
-        if hook:
-            if isinstance(hook, (list, tuple)):
-                result = [f(*args, **vars) for f in hook]
-            else:
-                result = hook(*args, **vars)
-            return result
-        else:
-            return None
-
-
-    # -------------------------------------------------------------------------
-    def __directory(self, d, l, k, v, e={}):
-
-        """ Converts a list of dicts into a directory
-
-            @param d: the directory
-            @param l: the list
-            @param k: the key field
-            @param v: the value field
-            @param e: directory of elements to exclude
-
-        """
-
-        if not d:
-            d = {}
-
-        for i in l:
-            if k in i and v in i:
-                if not isinstance(i[v], (list, tuple)):
-                    vals = [i[v]]
-                else:
-                    vals = i[v]
-                c = e.get(i[k], None)
-                if c:
-                    vals = [x for x in vals if x not in c]
-                if not vals:
-                    continue
-                if i[k] in d:
-                    vals = [x for x in vals if x not in d[i[k]]]
-                    d[i[k]] += vals
-                else:
-                    d[i[k]] = vals
-        return d
-
-
-    # -------------------------------------------------------------------------
+    # Utilities ===============================================================
+    
     def __fields(self, table, skip=[]):
 
         """ Finds all readable fields in a table and splits
@@ -401,111 +328,73 @@ class S3ResourceController(object):
 
 
     # -------------------------------------------------------------------------
-    def validate(self, table, record, fieldname, value):
+    def __directory(self, d, l, k, v, e={}):
 
-        """ Validates a single value
+        """ Converts a list of dicts into a directory
 
-            @param table: the DB table
-            @param record: the existing DB record
-            @param fieldname: name of the field
-            @param value: value to check
+            @param d: the directory
+            @param l: the list
+            @param k: the key field
+            @param v: the value field
+            @param e: directory of elements to exclude
 
         """
 
-        field = table.get(fieldname, None)
-        if field:
-            if record:
-                v = record.get(fieldname, None)
-                if v and v == value:
-                    return (value, None)
+        if not d:
+            d = {}
 
-            try:
-                value, error = field.validate(value)
-            except:
-                return (None, None)
-            else:
-                return (value, error)
-        else:
-            raise AttributeError("No field %s in %s" % (fieldname, table._tablename))
-
-
-    # -------------------------------------------------------------------------
-    def represent(self, field,
-                  value=None,
-                  record=None,
-                  linkto=None,
-                  strip_markup=False,
-                  xml_escape=False):
-
-        """ Represent a field value
-
-            @param field: the field (Field)
-            @param value: the value
-            @param record: record to retrieve the value from
-            @param linkto: function or format string to link an ID column
-            @param strip_markup: strip away markup from representation
-            @param xml_escape: XML-escape the output
-            
-        """
-
-        NONE = str(self.T("None")).decode("utf-8")
-
-        cache = self.cache
-
-        fname = field.name
-
-        # Get the value
-        if record is not None:
-            text = val = record[fname]
-        else:
-            text = val = value
-
-        # Get text representation
-        if field.represent:
-            text = str(cache.ram("%s_repr_%s" % (field, val),
-                                 lambda: field.represent(val),
-                                 time_expire=5)).decode("utf-8")
-        else:
-            if val is None:
-                text = NONE
-            elif fname == "comments":
-                ur = unicode(text, "utf8")
-                if len(ur) > 48:
-                    text = "%s..." % ur[:45].encode("utf8")
-            else:
-                text = str(text)
-
-        # Strip away markup from text
-        if strip_markup and "<" in text:
-            try:
-                markup = etree.XML(text)
-                text = markup.xpath(".//text()")
-                if text:
-                    text = " ".join(text)
+        for i in l:
+            if k in i and v in i:
+                if not isinstance(i[v], (list, tuple)):
+                    vals = [i[v]]
                 else:
-                    text = ""
-            except etree.XMLSyntaxError:
-                pass
-
-        # Link ID field
-        if fname == "id" and linkto:
-            id = str(val)
-            try:
-                href = linkto(id)
-            except TypeError:
-                href = linkto % id
-            href = str(href).replace(".aadata", "")
-            #href = str(href).replace(".aaData", "")
-            return A(text, _href=href).xml()
-
-        # XML-escape text
-        elif xml_escape:
-            text = self.xml.xml_encode(text)
-
-        return text
+                    vals = i[v]
+                c = e.get(i[k], None)
+                if c:
+                    vals = [x for x in vals if x not in c]
+                if not vals:
+                    continue
+                if i[k] in d:
+                    vals = [x for x in vals if x not in d[i[k]]]
+                    d[i[k]] += vals
+                else:
+                    d[i[k]] = vals
+        return d
 
 
     # -------------------------------------------------------------------------
+    def callback(self, hook, *args, **vars):
+
+        """ Invoke a hook or a list of hooks
+
+            @param hook: the hook function, a list or tuple of hook
+                functions, or a tablename-keyed dict of hook functions
+            @param args: args (position arguments) to pass to the hook
+                function(s)
+            @param vars: vars (named arguments) to pass to the hook
+                function(s), may contain a name=tablename which is used
+                to select a function from the dict (the "name" argument
+                will not be passed to the functions)
+
+        """
+
+        name = vars.pop("name", None)
+
+        if name and isinstance(hook, dict):
+            hook = hook.get(name, None)
+
+        if hook:
+            if isinstance(hook, (list, tuple)):
+                result = [f(*args, **vars) for f in hook]
+            else:
+                result = hook(*args, **vars)
+            return result
+        else:
+            return None
+
+
+    # REST Functions ==========================================================
+
     def get_session(self, prefix, name):
 
         """ Reads the last record ID for a resource from a session
@@ -574,8 +463,8 @@ class S3ResourceController(object):
 
         """ Set the default handler for a resource method
 
-            @todo 2.2: fix docstring
-            
+            @todo 2.2: remove this
+
         """
 
         self.__handler[method] = handler
@@ -586,24 +475,22 @@ class S3ResourceController(object):
 
         """ Get the default handler for a resource method
 
-            @todo 2.2: fix docstring
+            @todo 2.2: remove this
 
         """
 
         return self.__handler.get(method, None)
 
 
-    # REST Interface ==========================================================
-
+    # -------------------------------------------------------------------------
     def _resource(self, prefix, name,
                   id=None,
                   uid=None,
                   filter=None,
-                  url_vars=None,
+                  vars=None,
                   parent=None,
                   components=None,
-                  storage=None,
-                  debug=None):
+                  storage=None):
 
         """ Wrapper function for S3Resource
 
@@ -615,11 +502,10 @@ class S3ResourceController(object):
                               id=id,
                               uid=uid,
                               filter=filter,
-                              url_vars=url_vars,
+                              vars=vars,
                               parent=parent,
                               components=components,
-                              storage=storage,
-                              debug=debug)
+                              storage=storage)
 
         # Set default handlers
         for method in self.__handler:
@@ -629,18 +515,16 @@ class S3ResourceController(object):
 
 
     # -------------------------------------------------------------------------
-    def _request(self, prefix, name, debug=None):
+    def _request(self, prefix, name):
 
         """ Wrapper function for S3Request
 
-            @todo 2.2: fix docstring
+            @param prefix: the module prefix of the resource
+            @param name: the resource name (without prefix)
 
         """
 
-        if debug is None:
-            debug = self.debug
-
-        return S3Request(self, prefix, name, debug=debug)
+        return S3Request(self, prefix, name)
 
 
     # -------------------------------------------------------------------------
@@ -649,18 +533,21 @@ class S3ResourceController(object):
         """ Parse an HTTP request and generate the corresponding
             S3Request and S3Resource objects.
 
-            @todo 2.2: fix docstring
+            @param prefix: the module prefix of the resource
+            @param name: the resource name (without prefix)
 
         """
 
         self.error = None
 
         try:
-            req = self._request(prefix, name, debug=self.debug)
+            req = self._request(prefix, name)
         except SyntaxError:
             raise HTTP(400, body=self.error)
         except KeyError:
             raise HTTP(404, body=self.error)
+        except:
+            raise
 
         res = req.resource
 
@@ -669,17 +556,124 @@ class S3ResourceController(object):
 
     # Resource functions ======================================================
 
+    # -------------------------------------------------------------------------
+    def validate(self, table, record, fieldname, value):
+
+        """ Validates a single value
+
+            @param table: the DB table
+            @param record: the existing DB record
+            @param fieldname: name of the field
+            @param value: value to check
+
+        """
+
+        field = table.get(fieldname, None)
+        if field:
+            if record:
+                v = record.get(fieldname, None)
+                if v and v == value:
+                    return (value, None)
+
+            try:
+                value, error = field.validate(value)
+            except:
+                return (None, None)
+            else:
+                return (value, error)
+        else:
+            raise AttributeError("No field %s in %s" % (fieldname, table._tablename))
+
+
+    # -------------------------------------------------------------------------
+    def represent(self, field,
+                  value=None,
+                  record=None,
+                  linkto=None,
+                  strip_markup=False,
+                  xml_escape=False):
+
+        """ Represent a field value
+
+            @param field: the field (Field)
+            @param value: the value
+            @param record: record to retrieve the value from
+            @param linkto: function or format string to link an ID column
+            @param strip_markup: strip away markup from representation
+            @param xml_escape: XML-escape the output
+
+        """
+
+        NONE = str(self.T("None")).decode("utf-8")
+
+        cache = self.cache
+
+        fname = field.name
+
+        # Get the value
+        if record is not None:
+            text = val = record[fname]
+        else:
+            text = val = value
+
+        # Get text representation
+        if field.represent:
+            text = str(cache.ram("%s_repr_%s" % (field, val),
+                                 lambda: field.represent(val),
+                                 time_expire=5)).decode("utf-8")
+        else:
+            if val is None:
+                text = NONE
+            elif fname == "comments":
+                ur = unicode(text, "utf8")
+                if len(ur) > 48:
+                    text = "%s..." % ur[:45].encode("utf8")
+            else:
+                text = str(text)
+
+        # Strip away markup from text
+        if strip_markup and "<" in text:
+            try:
+                markup = etree.XML(text)
+                text = markup.xpath(".//text()")
+                if text:
+                    text = " ".join(text)
+                else:
+                    text = ""
+            except etree.XMLSyntaxError:
+                pass
+
+        # Link ID field
+        if fname == "id" and linkto:
+            id = str(val)
+            try:
+                href = linkto(id)
+            except TypeError:
+                href = linkto % id
+            href = str(href).replace(".aadata", "")
+            #href = str(href).replace(".aaData", "")
+            return A(text, _href=href).xml()
+
+        # XML-escape text
+        elif xml_escape:
+            text = self.xml.xml_encode(text)
+
+        return text
+
+
+    # -------------------------------------------------------------------------
     def original(self, table, record):
 
         """ Find the original record for a possible duplicate:
 
             - if the record contains a UUID, then only that UUID is used
-              to match the record with an existing DB record
+                to match the record with an existing DB record
 
             - otherwise, if the record contains some values for unique fields,
-              all of them must match the same existing DB record
+                all of them must match the same existing DB record
 
-            @todo 2.2: fix docstring
+            @param table: the table
+            @param record: the record as dict or S3XML Element
 
         """
 
@@ -735,17 +729,48 @@ class S3ResourceController(object):
 
 
     # -------------------------------------------------------------------------
+    def match(self, tree, table, id):
+
+        """ Find the matching element for a record
+
+            @param tree: the S3XML element tree
+            @param table: the table
+            @param id: the record ID or a list of record IDs
+
+            @returns: a list of matching elements
+
+            @todo 2.2: implement this and use in import_tree()
+            
+        """
+
+        raise NotImplementedError
+        
+
+    # -------------------------------------------------------------------------
     def export_tree(self, resource,
                     skip=[],
                     audit=None,
-                    start=None,
+                    start=0,
                     limit=None,
                     marker=None,
                     msince=None,
                     show_urls=True,
                     dereference=True):
 
-        """ @todo 2.2: fix docstring """
+        """ Export a resource as S3XML element tree
+
+            @param resource: the resource
+            @param skip: list of fieldnames to skip
+            @param audit: audit hook function
+            @param start: index of the first record to export
+            @param limit: maximum number of records to export
+            @param marker: URL of the GIS default marker
+            @param msince: to export only records which have been modified
+                after that date/time (minimum modification date/time)
+            @param show_urls: show URLs in resource elements
+            @param dereference: export referenced resources in the tree
+
+        """
 
         prefix = resource.prefix
         name = resource.name
@@ -948,7 +973,7 @@ class S3ResourceController(object):
     def import_tree(self, resource, id, tree,
                     ignore_errors=False):
 
-        """ Imports data from an element tree to a resource
+        """ Imports data from an S3XML element tree into a resource
 
             @param resource: the resource
             @param id: record ID or list of record IDs to update
@@ -1362,7 +1387,12 @@ class S3Vector(object):
     # -------------------------------------------------------------------------
     def commit(self):
 
-        """ Commits the vector to the database """
+        """ Commits the vector to the database
+
+            @todo 2.2: propagate onvalidation errors properly to the element
+            @todo 2.2: propagate import errors properly to the importer
+
+        """
 
         self.resolve() # Resolve references
 

@@ -103,32 +103,13 @@ object --+
         <span class="summary-sig-arg">id</span>=<span class="summary-sig-default">None</span>,
         <span class="summary-sig-arg">uid</span>=<span class="summary-sig-default">None</span>,
         <span class="summary-sig-arg">filter</span>=<span class="summary-sig-default">None</span>,
-        <span class="summary-sig-arg">url_vars</span>=<span class="summary-sig-default">None</span>,
+        <span class="summary-sig-arg">vars</span>=<span class="summary-sig-default">None</span>,
         <span class="summary-sig-arg">parent</span>=<span class="summary-sig-default">None</span>,
         <span class="summary-sig-arg">components</span>=<span class="summary-sig-default">None</span>,
-        <span class="summary-sig-arg">storage</span>=<span class="summary-sig-default">None</span>,
-        <span class="summary-sig-arg">debug</span>=<span class="summary-sig-default">None</span>)</span><br />
+        <span class="summary-sig-arg">storage</span>=<span class="summary-sig-default">None</span>)</span><br />
       Constructor</td>
           <td align="right" valign="top">
             <span class="codelink"><a href="vita.modules.s3xrc.s3rest-pysrc.html#S3Resource.__init__">source&nbsp;code</a></span>
-            
-          </td>
-        </tr>
-      </table>
-      
-    </td>
-  </tr>
-<tr class="private">
-    <td width="15%" align="right" valign="top" class="summary">
-      <span class="summary-type">&nbsp;</span>
-    </td><td class="summary">
-      <table width="100%" cellpadding="0" cellspacing="0" border="0">
-        <tr>
-          <td><span class="summary-sig"><a href="vita.modules.s3xrc.s3rest.S3Resource-class.html#__dbg" class="summary-sig-name" onclick="show_private();">__dbg</a>(<span class="summary-sig-arg">self</span>,
-        <span class="summary-sig-arg">msg</span>)</span><br />
-      Write debug messages to stderr.</td>
-          <td align="right" valign="top">
-            <span class="codelink"><a href="vita.modules.s3xrc.s3rest-pysrc.html#S3Resource.__dbg">source&nbsp;code</a></span>
             
           </td>
         </tr>
@@ -217,7 +198,7 @@ object --+
         <tr>
           <td><span class="summary-sig"><a href="vita.modules.s3xrc.s3rest.S3Resource-class.html#parse_context" class="summary-sig-name">parse_context</a>(<span class="summary-sig-arg">self</span>,
         <span class="summary-sig-arg">resource</span>,
-        <span class="summary-sig-arg">url_vars</span>)</span><br />
+        <span class="summary-sig-arg">vars</span>)</span><br />
       Parse URL context queries</td>
           <td align="right" valign="top">
             <span class="codelink"><a href="vita.modules.s3xrc.s3rest-pysrc.html#S3Resource.parse_context">source&nbsp;code</a></span>
@@ -236,7 +217,7 @@ object --+
         <tr>
           <td><span class="summary-sig"><a href="vita.modules.s3xrc.s3rest.S3Resource-class.html#url_query" class="summary-sig-name">url_query</a>(<span class="summary-sig-arg">self</span>,
         <span class="summary-sig-arg">resource</span>,
-        <span class="summary-sig-arg">url_vars</span>)</span><br />
+        <span class="summary-sig-arg">vars</span>)</span><br />
       URL query parser</td>
           <td align="right" valign="top">
             <span class="codelink"><a href="vita.modules.s3xrc.s3rest-pysrc.html#S3Resource.url_query">source&nbsp;code</a></span>
@@ -257,7 +238,7 @@ object --+
         <span class="summary-sig-arg">id</span>=<span class="summary-sig-default">None</span>,
         <span class="summary-sig-arg">uid</span>=<span class="summary-sig-default">None</span>,
         <span class="summary-sig-arg">filter</span>=<span class="summary-sig-default">None</span>,
-        <span class="summary-sig-arg">url_vars</span>=<span class="summary-sig-default">None</span>)</span><br />
+        <span class="summary-sig-arg">vars</span>=<span class="summary-sig-default">None</span>)</span><br />
       Query builder</td>
           <td align="right" valign="top">
             <span class="codelink"><a href="vita.modules.s3xrc.s3rest-pysrc.html#S3Resource.build_query">source&nbsp;code</a></span>
@@ -296,6 +277,24 @@ object --+
       Get the current query for this resource</td>
           <td align="right" valign="top">
             <span class="codelink"><a href="vita.modules.s3xrc.s3rest-pysrc.html#S3Resource.get_query">source&nbsp;code</a></span>
+            
+          </td>
+        </tr>
+      </table>
+      
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a href="vita.modules.s3xrc.s3rest.S3Resource-class.html#readable_fields" class="summary-sig-name">readable_fields</a>(<span class="summary-sig-arg">self</span>,
+        <span class="summary-sig-arg">subset</span>=<span class="summary-sig-default">None</span>)</span><br />
+      Get a list of all readable fields in the resource table</td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="vita.modules.s3xrc.s3rest-pysrc.html#S3Resource.readable_fields">source&nbsp;code</a></span>
             
           </td>
         </tr>
@@ -1364,11 +1363,10 @@ object --+
         <span class="sig-arg">id</span>=<span class="sig-default">None</span>,
         <span class="sig-arg">uid</span>=<span class="sig-default">None</span>,
         <span class="sig-arg">filter</span>=<span class="sig-default">None</span>,
-        <span class="sig-arg">url_vars</span>=<span class="sig-default">None</span>,
+        <span class="sig-arg">vars</span>=<span class="sig-default">None</span>,
         <span class="sig-arg">parent</span>=<span class="sig-default">None</span>,
         <span class="sig-arg">components</span>=<span class="sig-default">None</span>,
-        <span class="sig-arg">storage</span>=<span class="sig-default">None</span>,
-        <span class="sig-arg">debug</span>=<span class="sig-default">None</span>)</span>
+        <span class="sig-arg">storage</span>=<span class="sig-default">None</span>)</span>
     <br /><em class="fname">(Constructor)</em>
   </h3>
   </td><td align="right" valign="top"
@@ -1386,47 +1384,16 @@ object --+
         <li><strong class="pname"><code>id</code></strong> - record ID (or list of record IDs)</li>
         <li><strong class="pname"><code>uid</code></strong> - record UID (or list of record UIDs)</li>
         <li><strong class="pname"><code>filter</code></strong> - filter query (DAL resources only)</li>
-        <li><strong class="pname"><code>url_vars</code></strong> - dictionary of URL query variables</li>
+        <li><strong class="pname"><code>vars</code></strong> - dictionary of URL query variables</li>
         <li><strong class="pname"><code>parent</code></strong> - the parent resource</li>
         <li><strong class="pname"><code>components</code></strong> - component name (or list of component names)</li>
         <li><strong class="pname"><code>storage</code></strong> - URL of the data store, None for DAL</li>
-        <li><strong class="pname"><code>debug</code></strong> (bool) - whether to write debug messages to stderr or not</li>
     </ul></dd>
     <dt>Overrides:
         object.__init__
     </dt>
   </dl>
-<div class="fields">      <p><strong>To Do (2.2):</strong>
-        remove assertions
-      </p>
-</div></td></tr></table>
-</div>
-<a name="__dbg"></a>
-<div class="private">
-<table class="details" border="1" cellpadding="3"
-       cellspacing="0" width="100%" bgcolor="white">
-<tr><td>
-  <table width="100%" cellpadding="0" cellspacing="0" border="0">
-  <tr valign="top"><td>
-  <h3 class="epydoc"><span class="sig"><span class="sig-name">__dbg</span>(<span class="sig-arg">self</span>,
-        <span class="sig-arg">msg</span>)</span>
-  </h3>
-  </td><td align="right" valign="top"
-    ><span class="codelink"><a href="vita.modules.s3xrc.s3rest-pysrc.html#S3Resource.__dbg">source&nbsp;code</a></span>&nbsp;
-    </td>
-  </tr></table>
-  
-  <p>Write debug messages to stderr.</p>
-  <dl class="fields">
-    <dt>Parameters:</dt>
-    <dd><ul class="nomargin-top">
-        <li><strong class="pname"><code>msg</code></strong> - the debug message</li>
-    </ul></dd>
-  </dl>
-<div class="fields">      <p><strong>To Do (2.2):</strong>
-        remove this
-      </p>
-</div></td></tr></table>
+</td></tr></table>
 </div>
 <a name="set_handler"></a>
 <div>
@@ -1540,7 +1507,7 @@ object --+
   <tr valign="top"><td>
   <h3 class="epydoc"><span class="sig"><span class="sig-name">parse_context</span>(<span class="sig-arg">self</span>,
         <span class="sig-arg">resource</span>,
-        <span class="sig-arg">url_vars</span>)</span>
+        <span class="sig-arg">vars</span>)</span>
   </h3>
   </td><td align="right" valign="top"
     ><span class="codelink"><a href="vita.modules.s3xrc.s3rest-pysrc.html#S3Resource.parse_context">source&nbsp;code</a></span>&nbsp;
@@ -1564,7 +1531,7 @@ object --+
   <tr valign="top"><td>
   <h3 class="epydoc"><span class="sig"><span class="sig-name">url_query</span>(<span class="sig-arg">self</span>,
         <span class="sig-arg">resource</span>,
-        <span class="sig-arg">url_vars</span>)</span>
+        <span class="sig-arg">vars</span>)</span>
   </h3>
   </td><td align="right" valign="top"
     ><span class="codelink"><a href="vita.modules.s3xrc.s3rest-pysrc.html#S3Resource.url_query">source&nbsp;code</a></span>&nbsp;
@@ -1590,7 +1557,7 @@ object --+
         <span class="sig-arg">id</span>=<span class="sig-default">None</span>,
         <span class="sig-arg">uid</span>=<span class="sig-default">None</span>,
         <span class="sig-arg">filter</span>=<span class="sig-default">None</span>,
-        <span class="sig-arg">url_vars</span>=<span class="sig-default">None</span>)</span>
+        <span class="sig-arg">vars</span>=<span class="sig-default">None</span>)</span>
   </h3>
   </td><td align="right" valign="top"
     ><span class="codelink"><a href="vita.modules.s3xrc.s3rest-pysrc.html#S3Resource.build_query">source&nbsp;code</a></span>&nbsp;
@@ -1604,7 +1571,7 @@ object --+
         <li><strong class="pname"><code>id</code></strong> - record ID or list of record IDs to include</li>
         <li><strong class="pname"><code>uid</code></strong> - record UID or list of record UIDs to include</li>
         <li><strong class="pname"><code>filter</code></strong> - filtering query (DAL only)</li>
-        <li><strong class="pname"><code>url_vars</code></strong> - dict of URL query variables</li>
+        <li><strong class="pname"><code>vars</code></strong> - dict of URL query variables</li>
     </ul></dd>
   </dl>
 </td></tr></table>
@@ -1650,6 +1617,29 @@ object --+
   <dl class="fields">
   </dl>
 </td></tr></table>
+</div>
+<a name="readable_fields"></a>
+<div>
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr><td>
+  <table width="100%" cellpadding="0" cellspacing="0" border="0">
+  <tr valign="top"><td>
+  <h3 class="epydoc"><span class="sig"><span class="sig-name">readable_fields</span>(<span class="sig-arg">self</span>,
+        <span class="sig-arg">subset</span>=<span class="sig-default">None</span>)</span>
+  </h3>
+  </td><td align="right" valign="top"
+    ><span class="codelink"><a href="vita.modules.s3xrc.s3rest-pysrc.html#S3Resource.readable_fields">source&nbsp;code</a></span>&nbsp;
+    </td>
+  </tr></table>
+  
+  <p>Get a list of all readable fields in the resource table</p>
+  <dl class="fields">
+  </dl>
+<div class="fields">      <p><strong>To Do:</strong>
+        fix docstring
+      </p>
+</div></td></tr></table>
 </div>
 <a name="count"></a>
 <div>
@@ -2963,7 +2953,7 @@ object --+
 <table border="0" cellpadding="0" cellspacing="0" width="100%%">
   <tr>
     <td align="left" class="footer">
-    Generated by Epydoc 3.0.1 on Sat Oct  9 08:00:03 2010
+    Generated by Epydoc 3.0.1 on Sun Oct 10 08:09:08 2010
     </td>
     <td align="right" class="footer">
       <a target="mainFrame" href="http://epydoc.sourceforge.net"

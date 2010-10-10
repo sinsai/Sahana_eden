@@ -2,6 +2,8 @@
 
 """ S3XRC Resource Framework - Model Extensions
 
+    @version: 2.1.7
+
     @see: U{B{I{S3XRC}} <http://eden.sahanafoundation.org/wiki/S3XRC>} on Eden wiki
 
     @author: nursix
@@ -32,7 +34,10 @@
 
 """
 
-__all__ = ["S3ResourceModel"]
+__all__ = ["S3SuperEntity",
+           "S3ResourceComponent",
+           "S3ResourceModel",
+           "S3ResourceLinker"]
 
 from gluon.storage import Storage
 
@@ -40,20 +45,6 @@ from gluon.storage import Storage
 class S3SuperEntity(object):
 
     """ Super Entity class
-
-        @todo 2.2: implement
-
-    """
-
-    def __init__(self):
-
-        pass
-
-
-# *****************************************************************************
-class S3ResourceLink(object):
-
-    """ Resource Linker
 
         @todo 2.2: implement
 
@@ -150,14 +141,17 @@ class S3ResourceModel(object):
         self.methods = {}
         self.cmethods = {}
 
+        # Initialize super entities
+        self.super_entity = Storage()
+
 
     # Configuration ===========================================================
 
     def configure(self, table, **attr):
 
-        """ Updates the configuration of a resource
+        """ Update the extra configuration of a table
 
-            @param table: the resource DB table
+            @param table: the table
             @param attr: dict of attributes to update
 
         """
@@ -301,11 +295,8 @@ class S3ResourceModel(object):
             @param prefix: prefix of the resource name (=module name)
             @param name: name of the resource (=without prefix)
 
-            @todo 2.2: fix docstring
-
         """
 
-        # Like get_components, except quits on first match.
         tablename = "%s_%s" % (prefix, name)
         table = self.db.get(tablename, None)
 
@@ -326,49 +317,6 @@ class S3ResourceModel(object):
 
         return False
 
-    # -------------------------------------------------------------------------
-    def get_many2many(self, prefix, name):
-
-        """ Finds all many-to-many links of a resource (introspective)
-
-            This requires that the link references the respective
-            tables <prefix>_<name> by fields '<name>_id', e.g.
-            'pr_group' by field 'group_id', 'gis_location' by
-            'location_id' etc.
-
-            @todo 2.2: remove?
-
-        """
-
-        m2m = dict()
-
-        tablename = "%s_%s" % (prefix, name)
-        if tablename not in self.db:
-            return m2m
-        else:
-            table = self.db[tablename]
-
-        this_id = "%s_id" % name
-        for (ln, lf) in table._referenced_by:
-
-            if lf == this_id:
-                if ln not in self.db:
-                    continue
-                lt = self.db[ln]
-
-                fields = filter(lambda f: f != lf and f[-3:] == "_id", lt.fields)
-                for f in fields:
-                    ftype = str(lt[f].type)
-                    if ftype.startswith("reference"):
-                        tn = ftype[10:]
-                        tprefix, tname = tn.split("_", 1)
-                        if f[:-3] == tname:
-                            lprefix, lname = ln.split("_",1)
-                            m2m[tname] = m2m.get(tname, dict())
-                            m2m[tname][lname] = dict(linkto=tn, linkby=ln)
-
-        return m2m
-
 
     # -------------------------------------------------------------------------
     def set_method(self, prefix, name,
@@ -384,11 +332,11 @@ class S3ResourceModel(object):
             @param method: name of the method
             @param action: function to invoke for this method
 
-            @todo 2.2: remove assertions
-
         """
 
-        assert method is not None, "Method must be specified."
+        if not method:
+            raise SyntaxError("No method specified")
+
         tablename = "%s_%s" % (prefix, name)
 
         if not component_name:
@@ -403,8 +351,6 @@ class S3ResourceModel(object):
                 if component.tablename not in self.cmethods[method]:
                     self.cmethods[method][component.tablename] = {}
                 self.cmethods[method][component.tablename][tablename] = action
-
-        return True
 
 
     # -------------------------------------------------------------------------
@@ -469,6 +415,20 @@ class S3ResourceModel(object):
         """
 
         return self.components[component_name].get_attr(name)
+
+
+# *****************************************************************************
+class S3ResourceLinker(object):
+
+    """ Resource Linker
+
+        @todo 2.2: implement
+
+    """
+
+    def __init__(self):
+
+        pass
 
 
 # *****************************************************************************

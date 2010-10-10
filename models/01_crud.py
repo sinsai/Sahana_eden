@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 
-"""
-    CRUD+LS Method Handlers (Frontend for S3REST)
+""" CRUD+LS Method Handlers (Frontend for S3REST)
 
     @author: Fran Boon <fran@aidiq.com>
     @author: nursix
@@ -9,6 +8,7 @@
     @see: U{http://eden.sahanafoundation.org/wiki/RESTController}
 
     HTTP Status Codes: http://www.w3.org/Protocols/rfc2616/rfc2616-sec10.html
+
 """
 
 # *****************************************************************************

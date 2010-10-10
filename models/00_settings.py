@@ -157,37 +157,36 @@ auth.settings.lock_keys = True
 crud.messages.submit_button = T("Save")
 
 def s3_formstyle(id, label, widget, comment):
-    """
-        Provide the Sahana Eden Form Style
+
+    """ Provide the Sahana Eden Form Style
         Label above the Inputs:
         http://uxmovement.com/design-articles/faster-with-top-aligned-labels
+
     """
 
     row = []
 
-    try:
-        # Resource doesn't include a hyphen
-        module, resource, field = id.split("_", 2)
-        # Strip the '__row'
-        field = field[:len(field) - 5]
-        tablename = "%s_%s" % (module, resource)
-        requires = str(db[tablename][field].requires)
-    except:
-        # Resource does include a hyphen
-        module, resource1, resource2, field = id.split("_", 3)
-        # Recombine the resource
-        resource = "%s_%s" % (resource1, resource2)
-        # Strip the '__row'
-        field = field[:len(field) - 5]
-        tablename = "%s_%s" % (module, resource)
-        try:
-            requires = str(db[tablename][field].requires)
-        except:
-            requires = ""
+    tn, rowname = id.split("_", 1)
+    s = rowname.split("__", 1)[0].split("_")
+
+    table = field = None
+    while len(s) > 1:
+        tn = "%s_%s" % (tn, s.pop(0))
+        table = db.get(tn, None)
+        if table:
+            f = "_".join(s)
+            field = table.get(f, None)
+            break
+
+    if field:
+        requires = str(field.requires)
+    else:
+        requires = ""
 
     # Label on the 1st row
-    if "IS_NOT_EMPTY" in requires:
-        row.append(TR(TD(DIV(SPAN("* ", _class="req"), label), _class="w2p_fl", _colspan="2"), _id=id + "1"))
+    if "IS_NOT_EMPTY" in requires or \
+       field and field.required:
+        row.append(TR(TD(DIV(label, SPAN("* ", _class="req")), _class="w2p_fl", _colspan="2"), _id=id + "1"))
     else:
         row.append(TR(TD(label, _class="w2p_fl", _colspan="2"), _id=id + "1"))
 

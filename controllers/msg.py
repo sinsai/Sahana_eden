@@ -52,7 +52,7 @@ def tropo():
             query = (table.row_id == row_id)
             row = db(query).select().first() 
             # Send the message
-            #t.message(say_obj={"say":{"value":"Message "+ row.message +  " to " + row.recipient + " via "+row.network}},to='lifeeth@gmail.com',network='JABBER')
+            #t.message(say_obj={"say":{"value":"Message "+ row.message +  " to " + row.recipient + " via "+row.network}},to='putyourgmailidhere',network='JABBER')
             t.message(say_obj={"say":{"value":row.message}},to=row.recipient,network=row.network)
             # Update status to sent in Outbox
             db(db.msg_outbox.id == row.row_id).update(status=2)
@@ -60,6 +60,7 @@ def tropo():
             db(db.msg_log.id == row.message_id).update(actioned=True)
             # Clear the Scratchpad
             db(query).delete()
+            return t.RenderJson()
         except:
             # This is an Inbound message
             try:
@@ -74,7 +75,8 @@ def tropo():
                 #db.msg_tropo.insert(uuid=uuid, callerid=callerid, destination=destination, message=message)
                 db.msg_tropo.insert(uuid=uuid, destination=destination, message=message)
                 # Return a '200 OK'
-                t.say(["Received!"])
+                reply = parserdooth(message)
+                t.say([reply])
                 return t.RenderJson()
             except:
                 # This is a Voice call
@@ -84,6 +86,47 @@ def tropo():
         # GET request or some random POST
         pass
 
+#--------------------------------------
+# Parser
+def parserdooth(message):
+    """ 
+    This function hopes to grow into a full fledged page that offers customizable routing with keywords
+    Dooth = Messenger 
+    """
+    import difflib
+    import string
+    primary_keywords=["get","give","show"] # Equivalent keywords in one list
+    contact_keywords=["email","mobile"]
+    keywords = string.split(message)
+    query = []
+    name = ''
+    for word in keywords:
+        match = difflib.get_close_matches(word, primary_keywords + contact_keywords)
+        if match:
+            query.append(match[0])
+        else:
+            name = word
+    result = person_search(name)
+    if len(result) > 1:
+        return "Multiple Matches"
+    if len(result) == 0:
+        return "No Match"
+    
+    if 'Person' in result[0]['name']:
+        reply = result[0]['name'].rstrip("(Person)")
+        table3 = db.pr_pe_contact
+        if "email" in query:
+            query = (table3.pe_id == result[0]['id']) & (table3.contact_method == 1)
+            recipient = db(query).select(table3.value, orderby = table3.priority, limitby=(0, 1)).first()
+            reply = reply + " Email -> " + recipient.value
+        if "mobile" in query:
+            query = (table3.pe_id == result[0]['id']) & (table3.contact_method == 2)
+            recipient = db(query).select(table3.value, orderby = table3.priority, limitby=(0, 1)).first()
+            reply = reply + " Mobile -> " + recipient.value
+        return reply
+
+
+#--------------------------------------
 @auth.shn_requires_membership(1)
 def setting():
     """ Overall settings for the messaging framework """
@@ -270,34 +313,38 @@ def search():
         pass
     else:
         return
-
     import gluon.contrib.simplejson as json
+    # JQuery Autocomplete uses 'q' instead of 'value'
+    value = request.vars.q
+    if value:
+        item = person_search(value)
+        item = json.dumps(item)
+        response.view = "xml.html"
+        return dict(item=item)
+    return
+
+def person_search(value):
+    """Generic function to do the search of groups which match a type"""
     table1 = db.pr_group
     field1 = "name"
     table2 = db.pr_person
     field21 = "first_name"
     field22 = "middle_name"
     field23 = "last_name"
-    # JQuery Autocomplete uses 'q' instead of 'value'
-    value = request.vars.q
-    if value:
-		item = []
-		query = db((table1[field1].like("%" + value + "%")) & (table1.deleted == False)).select(db.pr_group.pe_id)
-		for row in query:
-			item.append({"id":row.pe_id, "name":shn_pentity_represent(row.pe_id, default_label = "")})
-		query = db((table2[field21].like("%" + value + "%")) & (table2.deleted == False)).select(db.pr_person.pe_id)
-		for row in query:
-			item.append({"id":row.pe_id, "name":shn_pentity_represent(row.pe_id, default_label = "")})
-		query = db((table2[field22].like("%" + value + "%")) & (table2.deleted == False)).select(db.pr_person.pe_id)
-		for row in query:
-			item.append({"id":row.pe_id, "name":shn_pentity_represent(row.pe_id, default_label = "")})
-		query = db((table2[field23].like("%" + value + "%")) & (table2.deleted == False)).select(db.pr_person.pe_id)
-		for row in query:
-			item.append({"id":row.pe_id, "name":shn_pentity_represent(row.pe_id, default_label = "")})
-		item = json.dumps(item)
-		response.view = "xml.html"
-		return dict(item=item)
-    return
+    item = []
+    query = db((table1[field1].like("%" + value + "%")) & (table1.deleted == False)).select(db.pr_group.pe_id)
+    for row in query:
+        item.append({"id":row.pe_id, "name":shn_pentity_represent(row.pe_id, default_label = "")})
+    query = db((table2[field21].like("%" + value + "%")) & (table2.deleted == False)).select(db.pr_person.pe_id)
+    for row in query:
+        item.append({"id":row.pe_id, "name":shn_pentity_represent(row.pe_id, default_label = "")})
+    query = db((table2[field22].like("%" + value + "%")) & (table2.deleted == False)).select(db.pr_person.pe_id)
+    for row in query:
+        item.append({"id":row.pe_id, "name":shn_pentity_represent(row.pe_id, default_label = "")})
+    query = db((table2[field23].like("%" + value + "%")) & (table2.deleted == False)).select(db.pr_person.pe_id)
+    for row in query:
+        item.append({"id":row.pe_id, "name":shn_pentity_represent(row.pe_id, default_label = "")})
+    return item
 
 def process_sms_via_api():
 	"Controller for SMS api processing - to be called via cron"

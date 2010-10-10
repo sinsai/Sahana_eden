@@ -2,6 +2,8 @@
 
 """ S3XRC Resource Framework - Data Import Toolkit
 
+    @version: 2.1.7
+
     @see: U{B{I{S3XRC}} <http://eden.sahanafoundation.org/wiki/S3XRC>} on Eden wiki
 
     @requires: U{B{I{lxml}} <http://codespeak.net/lxml>}
@@ -38,7 +40,6 @@ __all__ = ["S3Importer"]
 
 from gluon.storage import Storage
 from lxml import etree
-
 
 # *****************************************************************************
 class S3Importer(object):

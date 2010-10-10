@@ -2,6 +2,8 @@
 
 """ S3XRC Resource Framework - Data Export Toolkit
 
+    @version: 2.1.7
+
     @see: U{B{I{S3XRC}} <http://eden.sahanafoundation.org/wiki/S3XRC>} on Eden wiki
 
     @requires: U{B{I{lxml}} <http://codespeak.net/lxml>}
@@ -51,13 +53,7 @@ from lxml import etree
 # *****************************************************************************
 class S3Exporter(object):
 
-    """ Exporter toolkit
-
-        @requires: U{B{I{ReportLab}} <http://www.reportlab.com/software/opensource>}
-        @requires: U{B{I{Geraldo}} <http://www.geraldoreports.org>}
-        @requires: U{B{I{Xlwt}} <http://pypi.python.org/pypi/xlwt>}
-
-    """
+    """ Exporter toolkit """
 
     def __init__(self, manager):
 
@@ -65,7 +61,7 @@ class S3Exporter(object):
 
             @param manager: the resource controller
 
-            @todo: error message completion/internationalization
+            @todo 2.2: error message completion/internationalization
 
         """
 
@@ -119,8 +115,7 @@ class S3Exporter(object):
             @todo 2.2: replace _represent subfunction
             @todo 2.2: do not redirect
             @todo 2.2: PEP-8
-            @todo 2.2: use S3Resource.readable_fields
-                (once it gets moved there from CRUD)
+            @todo 2.2: test this!
 
         """
 
@@ -162,10 +157,10 @@ class S3Exporter(object):
         # Find fields
         fields = None
         table = resource.table
-        if list_fields:
-            fields = [table[f] for f in list_fields if table[f].readable]
-        if not fields:
-            fields = [table[f] for f in table.fields if table[f].readable]
+        if not list_fields:
+            fields = resource.readable_fields()
+        else:
+            fields = resource.readable_fields(subset=list_fields)
         if not fields:
             fields = [table.id]
 

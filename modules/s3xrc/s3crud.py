@@ -2,6 +2,8 @@
 
 """ S3XRC Resource Framework - CRUD method handlers
 
+    @version: 2.1.7
+
     @see: U{B{I{S3XRC}} <http://eden.sahanafoundation.org/wiki/S3XRC>} on Eden wiki
 
     @requires: U{B{I{lxml}} <http://codespeak.net/lxml>}
@@ -181,7 +183,11 @@ class S3Audit(object):
 # *****************************************************************************
 class S3MethodHandler(object):
 
-    """ REST Method Handler Base Class """
+    """ REST Method Handler Base Class
+
+        @todo 2.2: implement parent class S3Responder
+        
+    """
 
     # -------------------------------------------------------------------------
     def __init__(self, manager):
@@ -265,24 +271,6 @@ class S3MethodHandler(object):
         output = dict()
 
         return output
-
-
-    # -------------------------------------------------------------------------
-    def readable_fields(self, table, subset=None):
-
-        """ Get a list of all readable fields in a table
-
-            @todo: fix docstring
-            @todo: move into S3Resource
-
-        """
-
-        if subset:
-            return [table[f] for f in subset
-                    if f in table.fields and table[f].readable]
-        else:
-            return [table[f] for f in table.fields
-                    if table[f].readable]
 
 
 # *****************************************************************************
@@ -466,9 +454,9 @@ class S3CRUDHandler(S3MethodHandler):
         table = self.resource.table
         list_fields = model.get_config(table, "list_fields")
         if not list_fields:
-            fields = self.readable_fields(table)
+            fields = resource.readable_fields()
         else:
-            fields = self.readable_fields(table, subset=list_fields)
+            fields = resource.readable_fields(subset=list_fields)
         if not fields:
             fields = [table.id]
 
@@ -528,7 +516,7 @@ class S3CRUDHandler(S3MethodHandler):
             # Get the master query for SSPag
             if self.session.s3.filter is not None:
                 self.resource.build_query(id=self.record,
-                                          url_vars=self.session.s3.filter)
+                                          vars=self.session.s3.filter)
 
             displayrows = totalrows = self.resource.count()
 

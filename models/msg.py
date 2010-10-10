@@ -132,10 +132,13 @@ if deployment_settings.has_module(module):
     table.uuid.requires = IS_NOT_IN_DB(db, "%s.uuid" % tablename)
     table.priority.requires = IS_NULL_OR(IS_IN_SET(msg_priority_opts))
     table.priority.label = T("Priority")
+    table.inbound.label = T("Direction")
+    table.inbound.represent = lambda direction: (direction and ["In"] or ["Out"])[0]
     #@ToDo More Labels for i18n
 
     s3xrc.model.configure(table,
                           list_fields=["id",
+                                       "inbound",
                                        "pe_id",
                                        "fromaddress",
                                        "recipient",

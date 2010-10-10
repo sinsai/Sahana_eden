@@ -109,15 +109,13 @@ def parserdooth(message):
             query.append(match[0])
         else:
             name = word
+
 #    ------------ Person Search [get name person phone email]------------
-    if "hospital" in query or  "organisation" in query:
-        pass
-    else:
+    if "person" in query:
         result = person_search(name)
     
         if len(result) > 1:
             return "Multiple Matches"
-    
         if len(result) == 1:
             if 'Person' in result[0]['name']:
                 reply = result[0]['name']
@@ -125,17 +123,18 @@ def parserdooth(message):
                 if "email" in query:
                     query = (table3.pe_id == result[0]['id']) & (table3.contact_method == 1)
                     recipient = db(query).select(table3.value, orderby = table3.priority, limitby=(0, 1)).first()
-                    reply = reply + " Email->" + str(recipient.value)
+                    reply = reply + " Email->" + recipient.value
                 if "mobile" in query:
                     query = (table3.pe_id == result[0]['id']) & (table3.contact_method == 2)
                     recipient = db(query).select(table3.value, orderby = table3.priority, limitby=(0, 1)).first()
                     reply = reply + " Mobile->" + str(recipient.value)
+        if len(reply) == 0:
+            return "No Match"
+
+        return reply
 
 #   -------------Hospital Search [example: get name hospital facility status ] --------------
-    if "person" in query or  "organisation" in query:
-        pass
-    else:
-        reply = reply + "\n"
+    if "hospital" in query:
         table = db.hms_hospital
         result = s3xrc.search_simple(table,fields=["name"],label = str(name))
         if len(result) > 1:
@@ -152,12 +151,13 @@ def parserdooth(message):
                 reply = reply + "Clinical status " + str(table.facility_status.represent(hospital.clinical_status))
             if "security" in query:
                 reply = reply + "Security status " + str(table.facility_status.represent(hospital.security_status))
+        if len(reply) == 0:
+            return "No Match"
+
+        return reply
 
 #-----------------Organisation search [example: get name organisation phone]------------------------------
-    if "hospital" in query or  "person" in query:
-        pass
-    else:
-        reply = reply + "\n"
+    if "organisation" in query:
         table = db.org_organisation
         result = s3xrc.search_simple(table,fields=["name"],label = str(name))
         if len(result) > 1:
@@ -168,13 +168,12 @@ def parserdooth(message):
             reply = reply + " " + organisation.name + "(Organisation) "
             if "phone" in query:
                 reply = reply + "Phone->" + str(organisation.donation_phone)
+        if len(reply) == 0:
+            return "No Match"
 
-#-----------------------------------------------
-    if len(reply) == 0:
-        return "No Match"
+        return reply
 
-    return reply
-
+    return "Please provide one of the keywords - person, hospital, organisation"
 #--------------------------------------
 @auth.shn_requires_membership(1)
 def setting():

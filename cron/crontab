@@ -10,6 +10,8 @@
 #*/5   *       *       *       *       root *msg/process_email_via_api
 # Send outgoing SMS every 5 minutes
 #*/5   *       *       *       *       root *msg/process_sms_via_api
+# Send outgoing Tropo SMS every 5 minutes
+#*/5   *       *       *       *       root *msg/process_sms_via_tropo
 # Collect incoming emails every 15 minutes
 #*/15  *       *       *       *       root *applications/eden/cron/email_receive.py
 # Process Import Jobs (deprecated)

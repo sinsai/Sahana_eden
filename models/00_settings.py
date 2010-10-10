@@ -166,12 +166,12 @@ def s3_formstyle(id, label, widget, comment):
 
     row = []
 
-    prefix, rowname = id.split("_", 1)
+    tn, rowname = id.split("_", 1)
     s = rowname.split("__", 1)[0].split("_")
 
-    table = tn = field = None
+    table = field = None
     while len(s) > 1:
-        tn = "%s_%s" % (tn and (tn, s.pop(0)) or (prefix, s.pop(0)))
+        tn = "%s_%s" % (tn, s.pop(0))
         table = db.get(tn, None)
         if table:
             f = "_".join(s)

@@ -13,11 +13,12 @@ if module not in deployment_settings.modules:
 # Options Menu (available in all Functions' Views)
 response.menu_options = [
 	[T("Compose"), False, URL(r=request, c="msg", f="compose")],
-	[T("Outbox"), False, URL(r=request, f="outbox")],#TODO
 	[T("Distribution groups"), False, URL(r=request, f="group"), [
 		[T("List/Add"), False, URL(r=request, f="group")],
 		[T("Group Memberships"), False, URL(r=request, f="group_membership")],
 	]],
+	[T("Log"), False, URL(r=request, f="log")],
+	[T("Outbox"), False, URL(r=request, f="outbox")],
     #["CAP", False, URL(r=request, f="tbc")]
 ]
 
@@ -52,8 +53,9 @@ def tropo():
             query = (table.row_id == row_id)
             row = db(query).select().first() 
             # Send the message
-            #t.message(say_obj={"say":{"value":"Message "+ row.message +  " to " + row.recipient + " via "+row.network}},to='putyourgmailidhere',network='JABBER')
-            t.message(say_obj={"say":{"value":row.message}},to=row.recipient,network=row.network)
+            #t.message(say_obj={"say":{"value":row.message}},to=row.recipient,network=row.network)
+            t.call(to=row.recipient, network=row.network)
+            t.say(row.message)
             # Update status to sent in Outbox
             db(db.msg_outbox.id == row.row_id).update(status=2)
             # Set message log to actioned
@@ -69,11 +71,11 @@ def tropo():
                 # Place it in the InBox
                 # @ToDo: For now dumping in a separate table
                 uuid = s.id
-                destination = s.to["id"]
+                recipient = s.to["id"]
                 # SyntaxError: invalid syntax (why!?)
-                #callerid = s.from["id"]
-                #db.msg_tropo.insert(uuid=uuid, callerid=callerid, destination=destination, message=message)
-                db.msg_tropo.insert(uuid=uuid, destination=destination, message=message)
+                #from = s.from["id"]
+                #db.msg_log.insert(uuid=uuid, fromaddress=from, recipient=recipient, message=message, inbound=True)
+                db.msg_log.insert(uuid=uuid, recipient=recipient, message=message, inbound=True)
                 # Return a '200 OK'
                 reply = parserdooth(message)
                 t.say([reply])
@@ -452,11 +454,11 @@ def gateway_settings():
     tablename = module + "_" + resource
     table = db[tablename]
     
-    table.url.label = "URL"
+    table.url.label = T("URL")
     table.to_variable.label = T("To variable")
     table.message_variable.label = T("Message variable")
     table.url.comment = DIV(DIV(_class="tooltip",
-        _title="URL|" + T("The URL of your web gateway without the post parameters")))
+        _title=T("URL") + "|" + T("The URL of your web gateway without the post parameters")))
     table.parameters.comment = DIV(DIV(_class="tooltip",
         _title=T("Parameters") + "|" + T("The post variables other than the ones containing the message and the phone number")))
     table.message_variable.comment = DIV(DIV(_class="tooltip",
@@ -495,6 +497,10 @@ def compose():
 def outbox():
     "View the contents of the Outbox"
 
+    if not auth.shn_logged_in():
+        session.error = T("Requires Login!")
+        redirect(URL(r=request, c="default", f="user", args="login"))
+
     resource = request.function
     tablename = module + "_" + resource
     table = db[tablename]
@@ -524,11 +530,13 @@ def outbox():
 
     return shn_rest_controller(module, resource, listadd=False)
 
-# Enabled only for testing - the ticketing module should be the normal interface
-# - although we should provide a menu item to that here...
-@auth.shn_requires_membership(1)
 def log():
     " RESTful CRUD controller "
+
+    if not auth.shn_logged_in():
+        session.error = T("Requires Login!")
+        redirect(URL(r=request, c="default", f="user", args="login"))
+
     resource = request.function
     tablename = "%s_%s" % (module, resource)
     table = db[tablename]
@@ -540,7 +548,6 @@ def log():
             DIV(IMG(_src="/%s/static/img/priority/priority_%d.gif" % (request.application,id,), _height=12)) or
             DIV(IMG(_src="/%s/static/img/priority/priority_4.gif" % request.application), _height=12)
         ][0].xml())
-    table.priority.label = T("Priority")
     # Add Auth Restrictions
 
     # CRUD Strings
@@ -561,10 +568,12 @@ def log():
         msg_record_deleted = T("Message deleted"),
         msg_list_empty = T("No messages in the system"))
 
+    rheader = DIV(B(T("Master Message Log")), ": ", T("All Inbound & Outbound Messages are stored here"))
+
     # Server-side Pagination
     response.s3.pagination = True
 
-    return shn_rest_controller(module, resource, listadd=False)
+    return shn_rest_controller(module, resource, listadd=False, rheader=rheader)
 
 # Enabled only for testing
 @auth.shn_requires_membership(1)

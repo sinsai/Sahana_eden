@@ -31,6 +31,7 @@ __author__ = "Praneeth Bodduluri <lifeeth[at]gmail.com>"
 
 import string
 import urllib
+from urllib2 import urlopen
 
 DELETECHARS = string.translate(string.printable, string.maketrans(string.printable, string.printable), string.digits)
 
@@ -45,7 +46,7 @@ class Msg(object):
             self.db = db
             settings = db(db.msg_setting.id > 0).select(limitby=(0, 1)).first()
             self.default_country_code = settings.default_country_code
-            self.outgoing_is_gateway = settings.outgoing_sms_handler == "Gateway"
+            self.outgoing_sms_handler = settings.outgoing_sms_handler
             self.sms_api = db(db.msg_gateway_settings.enabled == True).select(limitby=(0, 1)).first()
             if self.sms_api:
                 tmp_parameters = self.sms_api.parameters.split("&")
@@ -54,6 +55,8 @@ class Msg(object):
                     self.sms_api_post_config[tmp_parameter.split("=")[0]] = tmp_parameter.split("=")[1]
             self.mail = mail
             self.modem = modem
+            self.tropo_token_messaging = db(db.msg_tropo_settings.id == 1).select(db.msg_tropo_settings.token_messaging, limitby=(0, 1)).first().token_messaging
+            self.tropo_token_voice = db(db.msg_tropo_settings.id == 1).select(db.msg_tropo_settings.token_voice, limitby=(0, 1)).first().token_voice
         except:
             pass
 
@@ -108,6 +111,39 @@ class Msg(object):
             return True
         except:
             return False
+    
+    def send_text_via_tropo(self, row_id, message_id, recipient, message, network = "SMS"):
+        """
+            Send a URL request to Tropo to pick a message up
+        """
+
+        base_url = "http://api.tropo.com/1.0/sessions"
+        action = "create"
+
+        if network == "SMS":
+            recipient = self.sanitise_phone(recipient)
+
+        try:
+            self.db.msg_tropo_scratch.insert(row_id = row_id,
+                                             message_id = message_id,
+                                             recipient = recipient,
+                                             message = message,
+                                             network = network)
+            params = urllib.urlencode([("action", action), ("token", self.tropo_token_messaging), ("outgoing", "1"), ("row_id", row_id)])
+            xml = urlopen("%s?%s" % (base_url, params)).read()
+            # Parse Response (actual message is sent as a response to the POST which will happen in parallel)
+            #root = etree.fromstring(xml)
+            #elements = root.getchildren()
+            #if elements[0].text == "false":
+            #    session.error = T("Message sending failed! Reason:") + " " + elements[2].text
+            #    redirect(URL(r=request, f="index"))
+            #else:
+            #    session.flash = T("Message Sent")
+            #    redirect(URL(r=request, f="index"))
+        except:
+            pass
+        return False # Returning False because the API needs to ask us for the messsage again.
+
 
     def send_email_via_api(self, to, subject, message):
         """
@@ -223,13 +259,18 @@ class Msg(object):
                 recipient = db(query).select(table3.value, orderby = table3.priority, limitby=(0, 1)).first()
                 if recipient:
                     if (contact_method == 2 and option == 2):
-                        if self.outgoing_is_gateway:
-                            return False
-                        else:
+                        if self.outgoing_sms_handler == "Modem":
                             return self.send_sms_via_modem(recipient.value, message)
+                        else:
+                            return False
                     if (contact_method == 2 and option == 1):
-                        if self.outgoing_is_gateway:
+                        if self.outgoing_sms_handler == "Gateway":
                             return self.send_sms_via_api(recipient.value, message)
+                        else:
+                            return False
+                    if (contact_method == 2 and option == 3):
+                        if self.outgoing_sms_handler == "Tropo":
+                            return self.send_text_via_tropo(row.id, message_id, recipient.value, message) # This does not mean the message is sent
                         else:
                             return False
                     if (contact_method == 1):

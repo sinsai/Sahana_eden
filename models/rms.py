@@ -7,14 +7,6 @@
 module = "rms"
 if deployment_settings.has_module(module):
 
-    # Settings
-    resource = "setting"
-    table = module + "_" + resource
-    db.define_table(table,
-                    Field("audit_read", "boolean"),
-                    Field("audit_write", "boolean"),
-                    migrate=migrate)
-
     # -------------------------------
     # Load lists/dictionaries for drop down menus
 
@@ -137,7 +129,7 @@ if deployment_settings.has_module(module):
         msg_record_created = T("Aid Request added"),
         msg_record_modified = T("Aid Request updated"),
         msg_record_deleted = T("Aid Request deleted"),
-        msg_list_empty = T("No Aid Requests currently registered"))
+        msg_list_empty = T("No Aid Requests have been made yet"))
 
     # Reusable Field
     req_id = S3ReusableField("req_id", db.rms_req, sortby="message",

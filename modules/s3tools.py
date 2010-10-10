@@ -68,6 +68,7 @@ class AuthS3(Auth):
         - add
             shn_has_role()
             shn_has_permission()
+            shn_logged_in()
             shn_accessible_query()
             shn_register() callback
             shn_link_to_person()

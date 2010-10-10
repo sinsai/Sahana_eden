@@ -119,7 +119,6 @@ resource = "pe_contact"
 tablename = "%s_%s" % (module, resource)
 table = db.define_table(tablename,
                         pe_id(),
-                        Field("name"),
                         Field("contact_method",
                               "integer",
                               requires = IS_IN_SET(pr_contact_method_opts, zero=None),
@@ -127,10 +126,11 @@ table = db.define_table(tablename,
                               label = T("Contact Method"),
                               represent = lambda opt: \
                                           pr_contact_method_opts.get(opt, UNKNOWN_OPT)),
-                        Field("contact_person"),
-                        Field("priority"),
                         Field("value", notnull=True),
+                        Field("priority"),
+                        Field("contact_person"),
                         comments(),
+                        #Field("name"),
                         migrate=migrate, *s3_meta_fields())
 
 
@@ -162,11 +162,11 @@ s3xrc.model.configure(table,
     list_fields=[
         "id",
         "pe_id",
-        "name",
-        "contact_person",
         "contact_method",
         "value",
-        "priority"
+        "priority",
+        #"contact_person",
+        #"name",
     ])
 
 s3.crud_strings[tablename] = Storage(

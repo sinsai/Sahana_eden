@@ -12,16 +12,6 @@
 module = "project"
 if deployment_settings.has_module("org"):
     #==============================================================================
-    # Settings
-    #
-    resource = "setting"
-    tablename = "%s_%s" % (module, resource)
-    table = db.define_table(tablename,
-                            Field("audit_read", "boolean"),
-                            Field("audit_write", "boolean"),
-                            migrate=migrate)
-
-    #==============================================================================
     # Activity Type
     #
     resource = "activity_type"

@@ -13,11 +13,12 @@ if module not in deployment_settings.modules:
 # Options Menu (available in all Functions' Views)
 response.menu_options = [
 	[T("Compose"), False, URL(r=request, c="msg", f="compose")],
-	[T("Outbox"), False, URL(r=request, f="outbox")],#TODO
 	[T("Distribution groups"), False, URL(r=request, f="group"), [
 		[T("List/Add"), False, URL(r=request, f="group")],
 		[T("Group Memberships"), False, URL(r=request, f="group_membership")],
 	]],
+	[T("Log"), False, URL(r=request, f="log")],
+	[T("Outbox"), False, URL(r=request, f="outbox")],
     #["CAP", False, URL(r=request, f="tbc")]
 ]
 
@@ -32,6 +33,134 @@ def index():
 def tbc():
     """ Coming soon... """
     return dict()
+
+def tropo():
+    """
+        Receive a JSON POST from the Tropo WebAPI
+        https://www.tropo.com/docs/webapi/newhowitworks.htm
+    """
+    exec("from applications.%s.modules.tropo import Tropo, Session" % request.application)
+    # Faster for Production (where app-name won't change):
+    #from applications.eden.modules.tropo import Tropo, Session
+    try:
+        s = Session(request.body.read())
+        t = Tropo()
+        # This is their service contacting us, so parse their request
+        try:
+            row_id = s.parameters["row_id"]
+            # This is an Outbound message which we've requested Tropo to send for us
+            table = db.msg_tropo_scratch
+            query = (table.row_id == row_id)
+            row = db(query).select().first() 
+            # Send the message
+            #t.message(say_obj={"say":{"value":row.message}},to=row.recipient,network=row.network)
+            t.call(to=row.recipient, network=row.network)
+            t.say(row.message)
+            # Update status to sent in Outbox
+            db(db.msg_outbox.id == row.row_id).update(status=2)
+            # Set message log to actioned
+            db(db.msg_log.id == row.message_id).update(actioned=True)
+            # Clear the Scratchpad
+            db(query).delete()
+            return t.RenderJson()
+        except:
+            # This is an Inbound message
+            try:
+                message = s.initialText
+                # This is an SMS/IM
+                # Place it in the InBox
+                # @ToDo: For now dumping in a separate table
+                uuid = s.id
+                recipient = s.to["id"]
+                # SyntaxError: invalid syntax (why!?)
+                #from = s.from["id"]
+                #db.msg_log.insert(uuid=uuid, fromaddress=from, recipient=recipient, message=message, inbound=True)
+                db.msg_log.insert(uuid=uuid, recipient=recipient, message=message, inbound=True)
+                # Return a '200 OK'
+                reply = parserdooth(message)
+                t.say([reply])
+                return t.RenderJson()
+            except:
+                # This is a Voice call
+                # - we can't handle these yet
+                raise HTTP(501)
+    except:
+        # GET request or some random POST
+        pass
+
+#--------------------------------------
+# Parser
+def parserdooth(message):
+    """ 
+    This function hopes to grow into a full fledged page that offers customizable routing with keywords
+    Dooth = Messenger 
+    """
+    import difflib
+    import string
+    primary_keywords=["get","give","show"] # Equivalent keywords in one list
+    contact_keywords=["email","mobile"]
+    keywords = string.split(message)
+    query = []
+    name = ''
+    for word in keywords:
+        match = difflib.get_close_matches(word, primary_keywords + contact_keywords)
+        if match:
+            query.append(match[0])
+        else:
+            name = word
+    result = person_search(name)
+    if len(result) > 1:
+        return "Multiple Matches"
+    if len(result) == 0:
+        return "No Match"
+    
+    if 'Person' in result[0]['name']:
+        reply = result[0]['name'].rstrip("(Person)")
+        table3 = db.pr_pe_contact
+        if "email" in query:
+            query = (table3.pe_id == result[0]['id']) & (table3.contact_method == 1)
+            recipient = db(query).select(table3.value, orderby = table3.priority, limitby=(0, 1)).first()
+            reply = reply + " Email -> " + recipient.value
+        if "mobile" in query:
+            query = (table3.pe_id == result[0]['id']) & (table3.contact_method == 2)
+            recipient = db(query).select(table3.value, orderby = table3.priority, limitby=(0, 1)).first()
+            reply = reply + " Mobile -> " + recipient.value
+        return reply
+
+
+#--------------------------------------
+@auth.shn_requires_membership(1)
+def setting():
+    """ Overall settings for the messaging framework """
+
+    resource = request.function
+    tablename = module + "_" + resource
+    table = db[tablename]
+    table.outgoing_sms_handler.label = T("Outgoing SMS handler")
+    table.outgoing_sms_handler.comment = DIV(DIV(_class="tooltip",
+        _title=T("Outgoing SMS Handler") + "|" + T("Selects whether to use a Modem, Tropo or other Gateway for sending out SMS")))
+    # CRUD Strings
+    ADD_SETTING = T("Add Setting")
+    VIEW_SETTINGS = T("View Settings")
+    s3.crud_strings[tablename] = Storage(
+        title_create = ADD_SETTING,
+        title_display = T("Setting Details"),
+        title_list = VIEW_SETTINGS,
+        title_update = T("Edit Messaging Settings"),
+        title_search = T("Search Settings"),
+        subtitle_list = T("Settings"),
+        label_list_button = VIEW_SETTINGS,
+        label_create_button = ADD_SETTING,
+        label_delete_button = T("Delete Setting"),
+        msg_record_created = T("Setting added"),
+        msg_record_modified = T("Messaging settings updated"),
+        msg_record_deleted = T("Setting deleted"),
+        msg_list_empty = T("No Settings currently defined")
+    )
+
+    crud.settings.update_next = URL(r=request, args=[1, "update"])
+    response.menu_options = admin_menu_options
+    return shn_rest_controller(module, resource, deletable=False, listadd=False)
 
 def email_settings():
     """ RESTful CRUD controller for email settings - appears in the administration menu """
@@ -186,34 +315,38 @@ def search():
         pass
     else:
         return
-
     import gluon.contrib.simplejson as json
+    # JQuery Autocomplete uses 'q' instead of 'value'
+    value = request.vars.q
+    if value:
+        item = person_search(value)
+        item = json.dumps(item)
+        response.view = "xml.html"
+        return dict(item=item)
+    return
+
+def person_search(value):
+    """Generic function to do the search of groups which match a type"""
     table1 = db.pr_group
     field1 = "name"
     table2 = db.pr_person
     field21 = "first_name"
     field22 = "middle_name"
     field23 = "last_name"
-    # JQuery Autocomplete uses 'q' instead of 'value'
-    value = request.vars.q
-    if value:
-		item = []
-		query = db((table1[field1].like("%" + value + "%")) & (table1.deleted == False)).select(db.pr_group.pe_id)
-		for row in query:
-			item.append({"id":row.pe_id, "name":shn_pentity_represent(row.pe_id, default_label = "")})
-		query = db((table2[field21].like("%" + value + "%")) & (table2.deleted == False)).select(db.pr_person.pe_id)
-		for row in query:
-			item.append({"id":row.pe_id, "name":shn_pentity_represent(row.pe_id, default_label = "")})
-		query = db((table2[field22].like("%" + value + "%")) & (table2.deleted == False)).select(db.pr_person.pe_id)
-		for row in query:
-			item.append({"id":row.pe_id, "name":shn_pentity_represent(row.pe_id, default_label = "")})
-		query = db((table2[field23].like("%" + value + "%")) & (table2.deleted == False)).select(db.pr_person.pe_id)
-		for row in query:
-			item.append({"id":row.pe_id, "name":shn_pentity_represent(row.pe_id, default_label = "")})
-		item = json.dumps(item)
-		response.view = "xml.html"
-		return dict(item=item)
-    return
+    item = []
+    query = db((table1[field1].like("%" + value + "%")) & (table1.deleted == False)).select(db.pr_group.pe_id)
+    for row in query:
+        item.append({"id":row.pe_id, "name":shn_pentity_represent(row.pe_id, default_label = "")})
+    query = db((table2[field21].like("%" + value + "%")) & (table2.deleted == False)).select(db.pr_person.pe_id)
+    for row in query:
+        item.append({"id":row.pe_id, "name":shn_pentity_represent(row.pe_id, default_label = "")})
+    query = db((table2[field22].like("%" + value + "%")) & (table2.deleted == False)).select(db.pr_person.pe_id)
+    for row in query:
+        item.append({"id":row.pe_id, "name":shn_pentity_represent(row.pe_id, default_label = "")})
+    query = db((table2[field23].like("%" + value + "%")) & (table2.deleted == False)).select(db.pr_person.pe_id)
+    for row in query:
+        item.append({"id":row.pe_id, "name":shn_pentity_represent(row.pe_id, default_label = "")})
+    return item
 
 def process_sms_via_api():
 	"Controller for SMS api processing - to be called via cron"
@@ -227,8 +360,46 @@ def process_email_via_api():
 	msg.process_outbox(contact_method = 1)
 	return
 
-#-------------------------------------------------------------------------------
+def process_sms_via_tropo():
+    "Controller for SMS tropo processing - to be called via cron"
 
+    msg.process_outbox(contact_method = 2,option = 3)
+    return
+
+#-------------------------------------------------------------------------------
+@auth.shn_requires_membership(1)
+def tropo_settings():
+    """ Tropo settings """
+    resource = request.function
+    tablename = module + "_" + resource
+    table = db[tablename]
+    table.token_messaging.label = T("Tropo Messaging Token")
+    table.token_messaging.comment = DIV(DIV(_class="stickytip",_title=T("Tropo Messaging Token") + "|" + T("The token associated with this application on") + " <a href='https://www.tropo.com/docs/scripting/troposessionapi.htm' target=_blank>Tropo.com</a>"))
+    #table.token_voice.label = T("Tropo Voice Token")
+    #table.token_voice.comment = DIV(DIV(_class="stickytip",_title=T("Tropo Voice Token") + "|" + T("The token associated with this application on") + " <a href='https://www.tropo.com/docs/scripting/troposessionapi.htm' target=_blank>Tropo.com</a>"))
+    # CRUD Strings
+    ADD_SETTING = T("Add Setting")
+    VIEW_SETTINGS = T("View Settings")
+    s3.crud_strings[tablename] = Storage(
+        title_create = ADD_SETTING,
+        title_display = T("Setting Details"),
+        title_list = VIEW_SETTINGS,
+        title_update = T("Edit Tropo Settings"),
+        title_search = T("Search Settings"),
+        subtitle_list = T("Settings"),
+        label_list_button = VIEW_SETTINGS,
+        label_create_button = ADD_SETTING,
+        msg_record_created = T("Setting added"),
+        msg_record_modified = T("Tropo settings updated"),
+        msg_record_deleted = T("Setting deleted"),
+        msg_list_empty = T("No Settings currently defined")
+    )
+
+    crud.settings.update_next = URL(r=request, args=[1, "update"])
+    response.menu_options = admin_menu_options
+    return shn_rest_controller(module, resource, deletable=False, listadd=False)
+
+#-------------------------------------------------------------------------------
 @auth.shn_requires_membership(1)
 def modem_settings():
     """ Modem settings """
@@ -283,11 +454,11 @@ def gateway_settings():
     tablename = module + "_" + resource
     table = db[tablename]
     
-    table.url.label = "URL"
+    table.url.label = T("URL")
     table.to_variable.label = T("To variable")
     table.message_variable.label = T("Message variable")
     table.url.comment = DIV(DIV(_class="tooltip",
-        _title="URL|" + T("The URL of your web gateway without the post parameters")))
+        _title=T("URL") + "|" + T("The URL of your web gateway without the post parameters")))
     table.parameters.comment = DIV(DIV(_class="tooltip",
         _title=T("Parameters") + "|" + T("The post variables other than the ones containing the message and the phone number")))
     table.message_variable.comment = DIV(DIV(_class="tooltip",
@@ -319,45 +490,16 @@ def gateway_settings():
     response.menu_options = admin_menu_options
     return shn_rest_controller(module, resource, deletable=False, listadd=False)
 
-@auth.shn_requires_membership(1)
-def setting():
-    """ Overall settings for the messaging framework """
-
-    resource = request.function
-    tablename = module + "_" + resource
-    table = db[tablename]
-    table.outgoing_sms_handler.label = T("Outgoing SMS handler")
-    table.outgoing_sms_handler.comment = DIV(DIV(_class="tooltip",
-    _title=T("Outgoing SMS handler") + "|" + T("Selects whether to use the gateway or the Modem for sending out SMS")))
-    # CRUD Strings
-    ADD_SETTING = T("Add Setting")
-    VIEW_SETTINGS = T("View Settings")
-    s3.crud_strings[tablename] = Storage(
-        title_create = ADD_SETTING,
-        title_display = T("Setting Details"),
-        title_list = VIEW_SETTINGS,
-        title_update = T("Edit Messaging Settings"),
-        title_search = T("Search Settings"),
-        subtitle_list = T("Settings"),
-        label_list_button = VIEW_SETTINGS,
-        label_create_button = ADD_SETTING,
-        label_delete_button = T("Delete Setting"),
-        msg_record_created = T("Setting added"),
-        msg_record_modified = T("Messaging settings updated"),
-        msg_record_deleted = T("Setting deleted"),
-        msg_list_empty = T("No Settings currently defined")
-    )
-
-    crud.settings.update_next = URL(r=request, args=[1, "update"])
-    response.menu_options = admin_menu_options
-    return shn_rest_controller(module, resource, deletable=False, listadd=False)
-
 def compose():
 
     return shn_msg_compose()
 
 def outbox():
     "View the contents of the Outbox"
+
+    if not auth.shn_logged_in():
+        session.error = T("Requires Login!")
+        redirect(URL(r=request, c="default", f="user", args="login"))
 
     resource = request.function
     tablename = module + "_" + resource
@@ -388,11 +530,13 @@ def outbox():
 
     return shn_rest_controller(module, resource, listadd=False)
 
-# Enabled only for testing - the ticketing module should be the normal interface
-# - although we should provide a menu item to that here...
-@auth.shn_requires_membership(1)
 def log():
     " RESTful CRUD controller "
+
+    if not auth.shn_logged_in():
+        session.error = T("Requires Login!")
+        redirect(URL(r=request, c="default", f="user", args="login"))
+
     resource = request.function
     tablename = "%s_%s" % (module, resource)
     table = db[tablename]
@@ -404,7 +548,6 @@ def log():
             DIV(IMG(_src="/%s/static/img/priority/priority_%d.gif" % (request.application,id,), _height=12)) or
             DIV(IMG(_src="/%s/static/img/priority/priority_4.gif" % request.application), _height=12)
         ][0].xml())
-    table.priority.label = T("Priority")
     # Add Auth Restrictions
 
     # CRUD Strings
@@ -425,10 +568,12 @@ def log():
         msg_record_deleted = T("Message deleted"),
         msg_list_empty = T("No messages in the system"))
 
+    rheader = DIV(B(T("Master Message Log")), ": ", T("All Inbound & Outbound Messages are stored here"))
+
     # Server-side Pagination
     response.s3.pagination = True
 
-    return shn_rest_controller(module, resource, listadd=False)
+    return shn_rest_controller(module, resource, listadd=False, rheader=rheader)
 
 # Enabled only for testing
 @auth.shn_requires_membership(1)

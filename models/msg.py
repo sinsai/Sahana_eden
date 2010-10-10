@@ -12,10 +12,10 @@ if deployment_settings.has_module(module):
     tablename = "%s_%s" % (module, resource)
     table = db.define_table(tablename,
                             Field("outgoing_sms_handler"),
-                            Field("default_country_code", "integer", default = 44),
+                            Field("default_country_code", "integer", default=44),
                             migrate=migrate)
 
-    table.outgoing_sms_handler.requires = IS_IN_SET(["Modem", "Gateway"], zero=None)
+    table.outgoing_sms_handler.requires = IS_IN_SET(["Modem","Gateway","Tropo"], zero=None)
 
     #------------------------------------------------------------------------
     resource = "email_settings"
@@ -91,6 +91,16 @@ if deployment_settings.has_module(module):
                             Field("enabled", "boolean", default = False),
                             #Field("preference", "integer", default = 5), To be used later
                             migrate=migrate)
+    
+    # Settings for Tropo
+    resource = "tropo_settings"
+    tablename = "%s_%s" % (module, resource)
+    table = db.define_table(tablename,
+                            Field("token_messaging"),
+                            #Field("token_voice"),
+                            migrate=migrate)
+    
+                            
     # Message priority
     msg_priority_opts = {
         3:T("High"),
@@ -105,6 +115,7 @@ if deployment_settings.has_module(module):
                             pe_id(),                # Sender
                             Field("sender"),        # The name to go out incase of the email, if set used
                             Field("fromaddress"),   # From address if set changes sender to this
+                            Field("recipient"),
                             Field("subject", length=78),
                             Field("message", "text"),
                             #Field("attachment", "upload", autodelete = True), #TODO
@@ -120,15 +131,21 @@ if deployment_settings.has_module(module):
 
     table.uuid.requires = IS_NOT_IN_DB(db, "%s.uuid" % tablename)
     table.priority.requires = IS_NULL_OR(IS_IN_SET(msg_priority_opts))
+    table.priority.label = T("Priority")
+    #@ToDo More Labels for i18n
+
     s3xrc.model.configure(table,
                           list_fields=["id",
                                        "pe_id",
+                                       "fromaddress",
+                                       "recipient",
                                        "subject",
+                                       "message",
                                        "verified",
-                                       "verified_comments",
+                                       #"verified_comments",
                                        "actionable",
                                        "actioned",
-                                       "actioned_comments",
+                                       #"actioned_comments",
                                        "priority"])
 
     # Reusable Message ID
@@ -227,6 +244,22 @@ if deployment_settings.has_module(module):
                                         "message_id",
                                         "person_id",
                                        ])
+
+    # Tropo Scratch pad for outbound messaging
+    resource = "tropo_scratch"
+    tablename = "%s_%s" % (module, resource)
+    table = db.define_table(tablename,
+                            Field("row_id","integer"),
+                            Field("message_id","integer"),
+                            Field("recipient"),
+                            Field("message"),
+                            Field("network"),
+                            migrate=migrate,
+                            *(s3_timestamp() + s3_uid() + s3_deletion_status()))
+
+    table.uuid.requires = IS_NOT_IN_DB(db, "%s.uuid" % tablename)
+
+
 
     # CAP: Common Alerting Protocol
     # http://docs.oasis-open.org/emergency/cap/v1.2/CAP-v1.2.html

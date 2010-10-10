@@ -92,7 +92,8 @@ admin_menu_options = [
             [T("Global Messaging Settings"), False, URL(r=request, c="msg", f="setting", args=[1, "update"])],
             [T("Email Settings"), False, URL(r=request, c="msg", f="email_settings", args=[1, "update"])],
             [T("Modem Settings"), False, URL(r=request, c="msg", f="modem_settings", args=[1, "update"])],
-            [T("Gateway Settings"), False, URL(r=request, c="msg", f="gateway_settings", args=[1, "update"])]
+            [T("Gateway Settings"), False, URL(r=request, c="msg", f="gateway_settings", args=[1, "update"])],
+            [T("Tropo Settings"), False, URL(r=request, c="msg", f="tropo_settings", args=[1, "update"])],
     ]],
     [T("Edit Application"), False, URL(r=request, a="admin", c="default", f="design", args=[request.application])],
     [T("Tickets"), False, URL(r=request, c="admin", f="errors")],

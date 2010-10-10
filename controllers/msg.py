@@ -53,6 +53,7 @@ def tropo():
             query = (table.row_id == row_id)
             row = db(query).select().first() 
             # Send the message
+            #t.message(say_obj={"say":{"value":row.message}},to=row.recipient,network=row.network)
             t.call(to=row.recipient, network=row.network)
             t.say(row.message)
             # Update status to sent in Outbox
@@ -61,6 +62,7 @@ def tropo():
             db(db.msg_log.id == row.message_id).update(actioned=True)
             # Clear the Scratchpad
             db(query).delete()
+            return t.RenderJson()
         except:
             # This is an Inbound message
             try:

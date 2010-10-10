@@ -98,35 +98,82 @@ def parserdooth(message):
     import difflib
     import string
     primary_keywords=["get","give","show"] # Equivalent keywords in one list
-    contact_keywords=["email","mobile"]
+    contact_keywords=["email","mobile","facility","clinical","security","phone","status","hospital","person","organisation"]
     keywords = string.split(message)
     query = []
     name = ''
+    reply = ''
     for word in keywords:
         match = difflib.get_close_matches(word, primary_keywords + contact_keywords)
         if match:
             query.append(match[0])
         else:
             name = word
-    result = person_search(name)
-    if len(result) > 1:
-        return "Multiple Matches"
-    if len(result) == 0:
-        return "No Match"
+#    ------------ Person Search [get name person phone email]------------
+    if "hospital" in query or  "organisation" in query:
+        pass
+    else:
+        result = person_search(name)
     
-    if 'Person' in result[0]['name']:
-        reply = result[0]['name'].rstrip("(Person)")
-        table3 = db.pr_pe_contact
-        if "email" in query:
-            query = (table3.pe_id == result[0]['id']) & (table3.contact_method == 1)
-            recipient = db(query).select(table3.value, orderby = table3.priority, limitby=(0, 1)).first()
-            reply = reply + " Email -> " + recipient.value
-        if "mobile" in query:
-            query = (table3.pe_id == result[0]['id']) & (table3.contact_method == 2)
-            recipient = db(query).select(table3.value, orderby = table3.priority, limitby=(0, 1)).first()
-            reply = reply + " Mobile -> " + recipient.value
-        return reply
+        if len(result) > 1:
+            return "Multiple Matches"
+    
+        if len(result) == 1:
+            if 'Person' in result[0]['name']:
+                reply = result[0]['name']
+                table3 = db.pr_pe_contact
+                if "email" in query:
+                    query = (table3.pe_id == result[0]['id']) & (table3.contact_method == 1)
+                    recipient = db(query).select(table3.value, orderby = table3.priority, limitby=(0, 1)).first()
+                    reply = reply + " Email->" + str(recipient.value)
+                if "mobile" in query:
+                    query = (table3.pe_id == result[0]['id']) & (table3.contact_method == 2)
+                    recipient = db(query).select(table3.value, orderby = table3.priority, limitby=(0, 1)).first()
+                    reply = reply + " Mobile->" + str(recipient.value)
 
+#   -------------Hospital Search [example: get name hospital facility status ] --------------
+    if "person" in query or  "organisation" in query:
+        pass
+    else:
+        reply = reply + "\n"
+        table = db.hms_hospital
+        result = s3xrc.search_simple(table,fields=["name"],label = str(name))
+        if len(result) > 1:
+            return "Multiple Matches"
+    
+        if len(result) == 1:
+            hospital = db(table.id == result[0]).select().first()
+            reply = reply + " " + hospital.name + "(Hospital) "
+            if "phone" in query:
+                reply = reply + "Phone->" + str(hospital.phone_emergency)
+            if "facility" in query:
+                reply = reply + "Facility status " + str(table.facility_status.represent(hospital.facility_status))
+            if "clinical" in query:
+                reply = reply + "Clinical status " + str(table.facility_status.represent(hospital.clinical_status))
+            if "security" in query:
+                reply = reply + "Security status " + str(table.facility_status.represent(hospital.security_status))
+
+#-----------------Organisation search [example: get name organisation phone]------------------------------
+    if "hospital" in query or  "person" in query:
+        pass
+    else:
+        reply = reply + "\n"
+        table = db.org_organisation
+        result = s3xrc.search_simple(table,fields=["name"],label = str(name))
+        if len(result) > 1:
+            return "Multiple Matches"
+
+        if len(result) == 1:
+            organisation = db(table.id == result[0]).select().first()
+            reply = reply + " " + organisation.name + "(Organisation) "
+            if "phone" in query:
+                reply = reply + "Phone->" + str(organisation.donation_phone)
+
+#-----------------------------------------------
+    if len(reply) == 0:
+        return "No Match"
+
+    return reply
 
 #--------------------------------------
 @auth.shn_requires_membership(1)

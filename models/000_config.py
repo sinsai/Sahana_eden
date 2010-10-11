@@ -20,12 +20,20 @@ deployment_settings.database.pool_size = 30
 
 # Authentication settings
 # This setting should be changed _before_ registering the 1st user
-deployment_settings.auth.hmac_key = "akeytochange"
+deployment_settings.auth.hmac_key = "mmmmysahana"
 # These settings should be changed _after_ the 1st (admin) user is
 # registered in order to secure the deployment
 deployment_settings.auth.registration_requires_verification = False
 deployment_settings.auth.registration_requires_approval = False
 deployment_settings.auth.openid = False
+
+# Twitter OAuth settings:
+# Register an app at http://twitter.com/apps
+# (select Aplication Type: Client)
+# You'll get your consumer_key and consumer_secret from twitter
+# Keep these empty if you don't need twitter integration
+deployment_settings.oauth.consumer_key="2jcgMA9EbMM9kRu2TTQKmQ"
+deployment_settings.oauth.consumer_secret="VqGmNaY4e73f7u2cTmWkbGxNzOUXDgELlC8bPclQiE"
 
 # Base settings
 # Set this to the Public URL of the instance
@@ -57,14 +65,14 @@ deployment_settings.base.cdn = False
 
 # Email settings
 # Outbound server
-deployment_settings.mail.server = "127.0.0.1:25"
+#deployment_settings.mail.server = "127.0.0.1:25"
 # Useful for Windows Laptops:
-#deployment_settings.mail.server = "smtp.gmail.com:587"
-#deployment_settings.mail.login = "username:password"
+deployment_settings.mail.server = "smtp.gmail.com:587"
+deployment_settings.mail.login = "gravitatz@gmail.com:"+"rganiyh,qnevz".encode('rot13') # protection from *honest* folks :)
 # From Address
-deployment_settings.mail.sender = "'Sahana' <sahana@your.org>"
+deployment_settings.mail.sender = "'Sahana bot' <gravitatz@gmail.com>"
 # Address to which mails get sent to approve new users
-deployment_settings.mail.approver = "useradmin@your.org"
+deployment_settings.mail.approver = "gravitatz@gmail.com"
 
 # L10n settings
 # Uncomment this if the deployment is just in a few countries
@@ -254,7 +262,7 @@ deployment_settings.modules = Storage(
                 pr_address = {"importer" : True},
                 pr_pe_contact = {"importer" : True},
                 pr_presence = {"importer" : True},
-	 	        pr_identity = {"importer" : True},
+                pr_identity = {"importer" : True},
                 pr_person = {"importer" : True},
                 pr_group = {"importer" : True},
                 pr_group_membership = {"importer" : True},
@@ -327,14 +335,14 @@ deployment_settings.modules = Storage(
     #        module_type = 10,
     #    ),
     importer = Storage(
-    	     name_nice = "Spreadsheet Importer",
-    	     description = "Used to import data from spreadsheets into the database",
-    	     module_type = 10,
+             name_nice = "Spreadsheet Importer",
+             description = "Used to import data from spreadsheets into the database",
+             module_type = 10,
     ),
     survey = Storage(
-    	     name_nice = "Survey Module",
-    	     description = "Create, enter, and manage surveys.",
-    	     module_type = 10,
+             name_nice = "Survey Module",
+             description = "Create, enter, and manage surveys.",
+             module_type = 10,
     )
     #lms = Storage(
     #        name_nice = T("Logistics Management System"),

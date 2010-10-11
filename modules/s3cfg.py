@@ -11,6 +11,7 @@ class S3Config(Storage):
         self.database = Storage()
         self.gis = Storage()
         self.mail = Storage()
+        self.oauth = Storage()
         self.L10n = Storage()
         self.security = Storage()
         self.ui = Storage()
@@ -106,6 +107,12 @@ class S3Config(Storage):
         return self.gis.get("geoserver_password", "password")
     def get_gis_spatialdb(self):
         return self.gis.get("spatialdb", False)
+    
+    # OAuth settings
+    def get_oauth_consumer_key(self):
+        return self.oauth.get("consumer_key","")
+    def get_oauth_consumer_secret(self):
+        return self.oauth.get("consumer_secret","")
     
     # L10N Settings
     def get_L10n_countries(self):

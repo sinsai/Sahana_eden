@@ -6,7 +6,6 @@
 
 module = "msg"
 if deployment_settings.has_module(module):
-
     # Settings
     resource = "setting"
     tablename = "%s_%s" % (module, resource)
@@ -16,6 +15,53 @@ if deployment_settings.has_module(module):
                             migrate=migrate)
 
     table.outgoing_sms_handler.requires = IS_IN_SET(["Modem","Gateway","Tropo"], zero=None)
+
+    #------------------------------------------------------------------------
+    resource="twitter_settings"
+    tablename = "%s_%s" % (module, resource)
+    table = db.define_table(tablename,
+                            Field("pin"),
+                            Field("oauth_key"),
+                            Field("oauth_secret"),
+                            Field("twitter_account"),
+                            migrate=migrate)
+    table.oauth_key.writable = False
+    table.oauth_secret.writable = False
+
+    ### comment these 2 when debugging
+    table.oauth_key.readable = False
+    table.oauth_secret.readable = False
+    
+    table.twitter_account.writable = False
+    
+    def twitter_settings_onvalidation(form):
+        """ Complete oauth: take tokens from session + pin from form, and do the 2nd API call to twitter """
+        if form.vars.pin and session.s3.twitter_request_key and session.s3.twitter_request_secret:
+            try:
+                import tweepy
+            except:
+                raise HTTP(501,body="can't import tweepy")
+                          
+            oauth = tweepy.OAuthHandler(deployment_settings.oauth.consumer_key,
+                deployment_settings.oauth.consumer_secret)
+            oauth.set_request_token(session.s3.twitter_request_key,session.s3.twitter_request_secret)
+            try:
+                oauth.get_access_token(form.vars.pin)
+                form.vars.oauth_key = oauth.access_token.key
+                form.vars.oauth_secret = oauth.access_token.secret
+                twitter = tweepy.API(oauth)
+                form.vars.twitter_account = twitter.me().screen_name
+                form.vars.pin = "" # we won't need it anymore
+                return
+            except tweepy.TweepError:
+                session.error=T("Settings were reset because authenticating with twitter failed")
+        # Either user asked to reset, or error - clear everything
+        for k in ['oauth_key','oauth_secret','twitter_account']:
+            form.vars[k] = ""
+        for k in ['twitter_request_key','twitter_request_secret']:
+            session.s3[k] = ""
+        
+    s3xrc.model.configure(table, onvalidation=twitter_settings_onvalidation) 
 
     #------------------------------------------------------------------------
     resource = "email_settings"

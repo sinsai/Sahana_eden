@@ -12,13 +12,13 @@ if module not in deployment_settings.modules:
 
 # Options Menu (available in all Functions' Views)
 response.menu_options = [
-	[T("Compose"), False, URL(r=request, c="msg", f="compose")],
-	[T("Distribution groups"), False, URL(r=request, f="group"), [
-		[T("List/Add"), False, URL(r=request, f="group")],
-		[T("Group Memberships"), False, URL(r=request, f="group_membership")],
-	]],
-	[T("Log"), False, URL(r=request, f="log")],
-	[T("Outbox"), False, URL(r=request, f="outbox")],
+    [T("Compose"), False, URL(r=request, c="msg", f="compose")],
+    [T("Distribution groups"), False, URL(r=request, f="group"), [
+        [T("List/Add"), False, URL(r=request, f="group")],
+        [T("Group Memberships"), False, URL(r=request, f="group_membership")],
+    ]],
+    [T("Log"), False, URL(r=request, f="log")],
+    [T("Outbox"), False, URL(r=request, f="outbox")],
     #["CAP", False, URL(r=request, f="tbc")]
 ]
 
@@ -182,8 +182,8 @@ def email_settings():
             _title=T("Delete") + "|" + T("If this is set to True then mails will be deleted from the server after downloading.")))
 
     if not auth.has_membership(auth.id_group("Administrator")):
-		session.error = UNAUTHORISED
-		redirect(URL(r=request, f="index"))
+        session.error = UNAUTHORISED
+        redirect(URL(r=request, f="index"))
     # CRUD Strings
     ADD_SETTING = T("Add Setting")
     VIEW_SETTINGS = T("View Settings")
@@ -204,6 +204,69 @@ def email_settings():
     
     response.menu_options = admin_menu_options
     return shn_rest_controller(module, "email_settings", listadd=False, deletable=False)
+
+@auth.shn_requires_membership(1)
+def twitter_settings():
+    """ RESTful CRUD controller for twitter settings - appears in the administration menu """
+
+    # CRUD Strings
+    ADD_SETTING = T("Add Setting")
+    VIEW_SETTINGS = T("View Settings")
+    s3.crud_strings[tablename] = Storage(
+        title_create = ADD_SETTING,
+        title_display = T("Setting Details"),
+        title_list = VIEW_SETTINGS,
+        title_update = T("Authenticate system's Twitter account"),
+        title_search = T("Search Settings"),
+        subtitle_list = T("Settings"),
+        label_list_button = VIEW_SETTINGS,
+        label_create_button = ADD_SETTING,
+        msg_record_created = T("Setting added"),
+        msg_record_modified = T("System's Twitter account updated"),
+        msg_record_deleted = T("Setting deleted"),
+        msg_list_empty = T("No Settings currently defined")
+    )
+    
+    def prep(jr):
+        if not (deployment_settings.oauth.consumer_key and deployment_settings.oauth.consumer_secret):
+            session.error=T("You should edit oauth_settings at models/000_config.py")
+            return True
+        try:
+            import tweepy
+        except:
+            session.error=T("Couldn't import tweepy library")
+            return True
+        oauth = tweepy.OAuthHandler(deployment_settings.oauth.consumer_key,
+            deployment_settings.oauth.consumer_secret)
+
+        resource = request.function
+        tablename = module + "_" + resource
+        table = db[tablename]
+
+        if jr.http == "GET":
+            try:
+                session.s3.twitter_oauth_url = oauth.get_authorization_url()
+                session.s3.twitter_request_key = oauth.request_token.key
+                session.s3.twitter_request_secret = oauth.request_token.secret
+            except tweepy.TweepError:
+                session.error=T("problem connecting to twitter.com")
+                return True
+            table.pin.label = SPAN(T("PIN number "),
+                A(T("from Twitter"), _href=T(session.s3.twitter_oauth_url), _target="_blank"),
+                T(" (leave empty to detach account)"))
+            table.pin.value = ""
+            table.twitter_account.label = T("Current twitter account")
+        else: # POST
+            table.pin.label = T("PIN")
+            table.pin.value = ""
+            table.oauth_key.label = T("OAuth key")
+            table.oauth_secret.label = T("OAuth secret")
+        return True
+    response.s3.prep = prep
+    
+    response.menu_options = admin_menu_options
+    return shn_rest_controller(module, "twitter_settings", listadd=False, deletable=False)
+
 
 #--------------------------------------------------------------------------------------------------
 
@@ -349,16 +412,16 @@ def person_search(value):
     return item
 
 def process_sms_via_api():
-	"Controller for SMS api processing - to be called via cron"
+    "Controller for SMS api processing - to be called via cron"
 
-	msg.process_outbox(contact_method = 2)
-	return
+    msg.process_outbox(contact_method = 2)
+    return
 
 def process_email_via_api():
-	"Controller for Email api processing - to be called via cron"
+    "Controller for Email api processing - to be called via cron"
 
-	msg.process_outbox(contact_method = 1)
-	return
+    msg.process_outbox(contact_method = 1)
+    return
 
 def process_sms_via_tropo():
     "Controller for SMS tropo processing - to be called via cron"
@@ -586,4 +649,3 @@ def tag():
     response.s3.pagination = True
     
     return shn_rest_controller(module, resource, listadd=False)
-

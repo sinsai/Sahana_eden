@@ -65,12 +65,12 @@ deployment_settings.base.cdn = False
 
 # Email settings
 # Outbound server
-#deployment_settings.mail.server = "127.0.0.1:25"
+deployment_settings.mail.server = "127.0.0.1:25"
 # Useful for Windows Laptops:
-deployment_settings.mail.server = "smtp.gmail.com:587"
-deployment_settings.mail.login = "gravitatz@gmail.com:"+"rganiyh,qnevz".encode('rot13') # protection from *honest* folks :)
+#deployment_settings.mail.server = "smtp.gmail.com:587"
+#deployment_settings.mail.login = "username:password"
 # From Address
-deployment_settings.mail.sender = "'Sahana bot' <gravitatz@gmail.com>"
+deployment_settings.mail.sender = "'Sahana' <sahana@your.org>"
 # Address to which mails get sent to approve new users
 deployment_settings.mail.approver = "gravitatz@gmail.com"
 

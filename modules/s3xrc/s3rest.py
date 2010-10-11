@@ -43,7 +43,7 @@ import gluon.contrib.simplejson as json
 
 from gluon.storage import Storage
 from gluon.sql import Row
-from gluon.html import URL, TABLE, TR, TH, TD, THEAD, TBODY, A
+from gluon.html import URL, TABLE, TR, TH, TD, THEAD, TBODY, A, DIV, SPAN
 from gluon.http import HTTP, redirect
 from gluon.sqlhtml import SQLTABLE, SQLFORM
 
@@ -70,7 +70,7 @@ class S3SQLTable(SQLTABLE):
 
             @todo 2.2: fix docstring
             @todo 2.2: PEP8
-            
+
         """
 
         table_field = re.compile('[\w_]+\.[\w_]+')
@@ -334,7 +334,8 @@ class S3Resource(object):
 
         """ Parse URL context queries
 
-            @todo 2.2: fix docstring
+            @param resource: the resource
+            @param vars: dict of URL vars
 
         """
 
@@ -387,8 +388,9 @@ class S3Resource(object):
 
         """ URL query parser
 
-            @todo 2.2: fix docstring
-            
+            @param resource: the resource
+            @param vars: dict of URL vars
+
         """
 
         c = self.parse_context(resource, vars)
@@ -763,8 +765,8 @@ class S3Resource(object):
 
         """ Add a filter to the current query
 
-            @todo 2.2: fix docstring
-            
+            @param filter: a web2py query
+
         """
 
         if filter is not None:
@@ -797,7 +799,7 @@ class S3Resource(object):
 
         """ Get a list of all readable fields in the resource table
 
-            @todo: fix docstring
+            @param subset: list of fieldnames to limit the selection to
 
         """
 
@@ -1318,6 +1320,82 @@ class S3Resource(object):
 
 
     # -------------------------------------------------------------------------
+    def __put(self, r):
+
+        """ Get PUT method handler
+
+            @param r: the S3Request
+
+        """
+
+        permit = self.permit
+
+        xml_formats = self.manager.xml_import_formats
+        json_formats = self.manager.json_import_formats
+
+        if r.representation in xml_formats or \
+           r.representation in json_formats:
+            authorised = permit("create", self.tablename) and \
+                         permit("update", self.tablename)
+            if not authorised:
+                r.unauthorised()
+            else:
+                return self.get_handler("import_tree")
+        else:
+            raise HTTP(501, body=self.ERROR.BAD_FORMAT)
+
+
+    # -------------------------------------------------------------------------
+    def __post(self, r):
+
+        """ Get POST method handler
+
+            @param r: the S3Request
+
+        """
+
+        if r.representation in self.manager.xml_import_formats or \
+           r.representation in self.manager.json_import_formats:
+            return self.__put(r)
+        else:
+            post_vars = r.request.post_vars
+            table = r.target()[2]
+            if "deleted" in table and \
+               "id" not in post_vars and "uuid" not in post_vars:
+                original = self.manager.original(table, post_vars)
+                if original and original.deleted:
+                    r.request.post_vars.update(id=original.id)
+                    r.request.vars.update(id=original.id)
+            return self.__get(r)
+
+
+    # -------------------------------------------------------------------------
+    def __delete(self, r):
+
+        """ Get DELETE method handler
+
+            @param r: the S3Request
+
+        """
+
+        permit = self.permit
+
+        tablename = r.component and r.component.tablename or r.tablename
+
+        if r.id or \
+           r.component and r.component_id:
+            authorised = permit("delete", tablename, r.id)
+            if not authorised:
+                r.unauthorised()
+
+            if r.next is None:
+                r.next = r.there()
+            return self.get_handler("delete")
+        else:
+            raise HTTP(501, body=self.ERROR.BAD_METHOD)
+
+
+    # -------------------------------------------------------------------------
     def __get_options(self, r, **attr):
 
         """ Method handler to get field options in the current resource
@@ -1464,38 +1542,12 @@ class S3Resource(object):
 
 
     # -------------------------------------------------------------------------
-    def __put(self, r):
-
-        """ Get PUT method handler
-
-            @param r: the S3Request
-
-        """
-
-        permit = self.permit
-
-        xml_formats = self.manager.xml_import_formats
-        json_formats = self.manager.json_import_formats
-
-        if r.representation in xml_formats or \
-           r.representation in json_formats:
-            authorised = permit("create", self.tablename) and \
-                         permit("update", self.tablename)
-            if not authorised:
-                r.unauthorised()
-            else:
-                return self.get_handler("import_tree")
-        else:
-            raise HTTP(501, body=self.ERROR.BAD_FORMAT)
-
-
-    # -------------------------------------------------------------------------
     def __read_body(self, r):
 
         """ Read data from request body
 
-            @todo 2.2: fix docstring
-            
+            @param r: the S3Request
+
         """
 
         self.__files = Storage()
@@ -1534,7 +1586,7 @@ class S3Resource(object):
         """ Import XML/JSON data
 
             @todo 2.2: fix docstring
-            
+
         """
 
         xml = self.manager.xml
@@ -1614,56 +1666,6 @@ class S3Resource(object):
         return item
 
 
-    # -------------------------------------------------------------------------
-    def __post(self, r):
-
-        """ Get POST method handler
-
-            @param r: the S3Request
-
-        """
-
-        if r.representation in self.manager.xml_import_formats or \
-           r.representation in self.manager.json_import_formats:
-            return self.__put(r)
-        else:
-            post_vars = r.request.post_vars
-            table = r.target()[2]
-            if "deleted" in table and \
-               "id" not in post_vars and "uuid" not in post_vars:
-                original = self.manager.original(table, post_vars)
-                if original and original.deleted:
-                    r.request.post_vars.update(id=original.id)
-                    r.request.vars.update(id=original.id)
-            return self.__get(r)
-
-
-    # -------------------------------------------------------------------------
-    def __delete(self, r):
-
-        """ Get DELETE method handler
-
-            @param r: the S3Request
-
-        """
-
-        permit = self.permit
-
-        tablename = r.component and r.component.tablename or r.tablename
-
-        if r.id or \
-           r.component and r.component_id:
-            authorised = permit("delete", tablename, r.id)
-            if not authorised:
-                r.unauthorised()
-
-            if r.next is None:
-                r.next = r.there()
-            return self.get_handler("delete")
-        else:
-            raise HTTP(501, body=self.ERROR.BAD_METHOD)
-
-
     # XML/JSON functions ======================================================
 
     def __export_tree(self,
@@ -1677,7 +1679,7 @@ class S3Resource(object):
         """ Export this resource as element tree
 
             @todo 2.2: fix docstring
-            
+
         """
 
         return self.manager.export_tree(self,
@@ -1696,7 +1698,7 @@ class S3Resource(object):
         """ Export this resource as XML
 
             @todo 2.2: fix docstring
-            
+
         """
 
         tree = self.__export_tree()
@@ -1723,7 +1725,7 @@ class S3Resource(object):
         """ Export this resource as JSON
 
             @todo 2.2: fix docstring
-            
+
         """
 
         tree = self.__export_tree()
@@ -1756,7 +1758,7 @@ class S3Resource(object):
             @raise IOError: at insufficient permissions
 
             @todo 2.2: fix docstring
-            
+
         """
 
         json_message = self.manager.xml.json_message
@@ -1873,7 +1875,7 @@ class S3Resource(object):
         """ Export field options of this resource as element tree
 
             @todo 2.2: fix docstring
-            
+
         """
 
         if component is not None:
@@ -1896,7 +1898,7 @@ class S3Resource(object):
         """ Export field options of this resource as XML
 
             @todo 2.2: fix docstring
-            
+
         """
 
         tree = self.options_tree(component=component, fields=fields)
@@ -1909,7 +1911,7 @@ class S3Resource(object):
         """ Export field options of this resource as JSON
 
             @todo 2.2: fix docstring
-            
+
         """
 
         tree = etree.ElementTree(self.options_tree(component=component,
@@ -1923,7 +1925,7 @@ class S3Resource(object):
         """ Export a list of fields in the primary table as element tree
 
             @todo 2.2: fix docstring
-            
+
         """
 
         if component is not None:
@@ -1944,7 +1946,7 @@ class S3Resource(object):
         """ Export a list of fields in the primary table as XML
 
             @todo 2.2: fix docstring
-            
+
         """
 
         tree = self.fields_tree(component=component)
@@ -1957,7 +1959,7 @@ class S3Resource(object):
         """ Export a list of fields in the primary table as JSON
 
             @todo 2.2: fix docstring
-            
+
         """
 
         tree = etree.ElementTree(self.fields_tree(component=component))
@@ -1983,7 +1985,7 @@ class S3Resource(object):
         """ Push (=POST) the current resource to a target URL
 
             @todo 2.2: fix docstring
-            
+
         """
 
         if not converter:
@@ -2179,7 +2181,7 @@ class S3Resource(object):
         """ Fetch data to the current resource from a remote URL
 
             @todo 2.2: fix docstring
-            
+
         """
 
         xml = self.manager.xml
@@ -2302,7 +2304,7 @@ class S3Resource(object):
         """ Add a record to this resource
 
             @todo 2.2: implement this
-            
+
         """
 
         return None
@@ -2313,24 +2315,31 @@ class S3Resource(object):
         """ View a record of this resource
 
             @todo 2.2: implement this
-            
+
         """
 
         return None
 
 
     # -------------------------------------------------------------------------
-    def update(self, record,
-               record_id=None,
+    def update(self, id,
+               data=None,
                onvalidation=None,
                onaccept=None,
-               message="Record updated",
-               download_url=None):
+               message="Record updated"):
 
-        """ Update a record in this resource
+        """ Update form for this resource
 
-            @todo 2.2: complete implementation
-            
+            @param id: the ID of the record to update (None to create a new record)
+            @param data: the data to prepopulate the form with (only with id=None)
+            @param onvalidation: onvalidation callback hook
+            @param onaccept: onaccept callback hook
+            @param message: success message
+
+            @todo 2.2: move formstyle and download_url into parameter list,
+                do not access settings here
+            @todo 2.2: implement audit here
+
         """
 
         # Environment
@@ -2342,50 +2351,56 @@ class S3Resource(object):
         s3 = self.manager.s3
         settings = s3.crud
 
-        # Table and callbacks
+        # Table
         table = self.table
-        model = self.manager.model
+        #model = self.manager.model
 
-        onvalidation = model.get_config(table, "onvalidation")
-        onaccept = model.get_config(table, "onaccept")
+        #onvalidation = model.get_config(table, "onvalidation")
+        #onaccept = model.get_config(table, "onaccept")
+
+        # Create a new record: record=None, record_id=None
+        # Update an existing record: record=ID, record_id=None
+        # Copy a record: record=record, record_id=None
+
+        if id is None and data:
+            record = Storage(data)
+            if "id" in record:
+                del record["id"]
+        else:
+            record = id
+
+        # Add asterisk to labels of required fields
+        labels = Storage()
+        for field in table:
+            if field.writable:
+                requires = field.requires and str(field.requires) or ""
+                if field.required or "IS_NOT_EMPTY" in requires:
+                    labels[field.name] = DIV("%s:" % field.label, SPAN(" *", _class="req"))
 
         # Get the form
-
-        #table,
-        #record = None,
-        #deletable = False,
-        #linkto = None,
-        #upload = None,
-        #fields = None,
-        #col3 = {},
-        #submit_button = 'Submit',
-        #delete_label = 'Check to delete:',
-        #showid = True,
-        #readonly = False,
-        #comments = True,
-        #keepopts = [],
-        #ignore_rw = False,
-        #record_id = None,
-        #formstyle = 'table3cols',
-        #**attributes
-
-        form = SQLFORM(table, record,
-                       record_id=record_id,
-                       #labels = None,
+        form = SQLFORM(table,
+                       record=record,
+                       record_id=id,
+                       labels = labels,
                        showid=False,
+                       #showid=<use a setting>, # we do generally not want this, do we?
                        deletable=False,
-                       upload=download_url,
-                       submit_button=settings.submit_button,
+                       #deletable = <use a resource setting>, # not needed (action button)
+                       #delete_label = <use a setting>, # not needed (action button)
+                       #upload=download_url, # solve this!
+                       submit_button=settings.submit_button or self.manager.T("Save"),
+                       #hidden=dict(_next=next), # not needed
                        formstyle=settings.formstyle)
 
+        # Set form name
         formname = "%s/%s" % (self.tablename, form.record_id)
 
-        # Keep values in form?
+        # Keep values in form? (We do not need this at all)
         #keepvalues = self.settings.keepvalues
         #if request.vars.delete_this_record:
             #keepvalues = False
 
-        # Get the onvalidation
+        # Get the proper onvalidation routine
         if isinstance(onvalidation, dict):
             onvalidation = onvalidation.get(self.tablename, [])
 
@@ -2400,7 +2415,7 @@ class S3Resource(object):
             # Update message
             response.flash = message
 
-            # Spool delete message if delete
+            # Spool delete message if delete (we do not delete-on-update, do we?)
             #if request.vars.delete_this_record:
                 #message = self.messages.record_deleted
                 #callback(ondelete,form,table._tablename)
@@ -2419,7 +2434,7 @@ class S3Resource(object):
         """ Delete all records in this resource
 
             @todo 2.2: implement this
-            
+
         """
 
         return None

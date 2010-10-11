@@ -72,7 +72,7 @@ deployment_settings.mail.server = "127.0.0.1:25"
 # From Address
 deployment_settings.mail.sender = "'Sahana' <sahana@your.org>"
 # Address to which mails get sent to approve new users
-deployment_settings.mail.approver = "gravitatz@gmail.com"
+deployment_settings.mail.approver = "useradmin@your.org"
 
 # L10n settings
 # Uncomment this if the deployment is just in a few countries

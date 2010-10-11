@@ -243,24 +243,25 @@ def twitter_settings():
         tablename = module + "_" + resource
         table = db[tablename]
 
-        if jr.http == "GET":
+        if jr.http == "GET" and jr.method in ["create","update"]: # We're showing the form
             try:
                 session.s3.twitter_oauth_url = oauth.get_authorization_url()
                 session.s3.twitter_request_key = oauth.request_token.key
                 session.s3.twitter_request_secret = oauth.request_token.secret
             except tweepy.TweepError:
-                session.error=T("problem connecting to twitter.com")
+                session.error=T("problem connecting to twitter.com - please refresh")
                 return True
+            table.pin.readable = True
             table.pin.label = SPAN(T("PIN number "),
                 A(T("from Twitter"), _href=T(session.s3.twitter_oauth_url), _target="_blank"),
                 T(" (leave empty to detach account)"))
             table.pin.value = ""
             table.twitter_account.label = T("Current twitter account")
-        else: # POST
-            table.pin.label = T("PIN")
-            table.pin.value = ""
-            table.oauth_key.label = T("OAuth key")
-            table.oauth_secret.label = T("OAuth secret")
+            return True
+        else: # Not showing form, no need for pin
+            table.pin.readable = False
+            table.pin.label = T("PIN") # won't be seen
+            table.pin.value = ""       # but let's be on the safe side
         return True
     response.s3.prep = prep
     

@@ -57,7 +57,7 @@ if deployment_settings.has_module(module):
                 session.error=T("Settings were reset because authenticating with twitter failed")
         # Either user asked to reset, or error - clear everything
         for k in ['oauth_key','oauth_secret','twitter_account']:
-            form.vars[k] = ""
+            form.vars[k] = None
         for k in ['twitter_request_key','twitter_request_secret']:
             session.s3[k] = ""
         

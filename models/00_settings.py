@@ -166,6 +166,10 @@ def s3_formstyle(id, label, widget, comment):
 
     row = []
 
+
+    # *** The following block is no longer needed with S3CRUDHandler:
+    #     the asterisk will automatically be inserted:
+
     tn, rowname = id.split("_", 1)
     s = rowname.split("__", 1)[0].split("_")
 
@@ -177,7 +181,6 @@ def s3_formstyle(id, label, widget, comment):
             f = "_".join(s)
             field = table.get(f, None)
             break
-
     if field:
         requires = str(field.requires)
     else:
@@ -189,9 +192,15 @@ def s3_formstyle(id, label, widget, comment):
         row.append(TR(TD(DIV(label, SPAN("* ", _class="req")), _class="w2p_fl", _colspan="2"), _id=id + "1"))
     else:
         row.append(TR(TD(label, _class="w2p_fl", _colspan="2"), _id=id + "1"))
-
     # Widget & Comment on the 2nd Row
     row.append(TR(widget, TD(comment, _class="w2p_fc"), _id=id))
+
+    # *** Instead, remove the prior block and uncomment just this:
+
+    ## Label on the 1st row
+    #row.append(TR(TD(label, _class="w2p_fl", _colspan="2"), _id=id + "1"))
+    ## Widget & Comment on the 2nd Row
+    #row.append(TR(widget, TD(comment, _class="w2p_fc"), _id=id))
 
     return tuple(row)
 

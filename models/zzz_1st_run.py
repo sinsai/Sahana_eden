@@ -168,25 +168,28 @@ if populate:
                 #outbound_mail_server = "mail:25",
                 #outbound_mail_from = "demo@sahanafoundation.org",
             )
-        tablename = "msg_modem_settings"
-        table = db[tablename]
-        if not db(table.id > 0).count():
-            table.insert(modem_baud=115200)
-        tablename = "msg_gateway_settings"
-        table = db[tablename]
-        if not db(table.id > 0).count():
-            table.insert(to_variable = "to")
-        tablename = "msg_tropo_settings"
-        table = db[tablename]
-        if not db(table.id > 0).count():
-            # Need an entry for the Settings/1/Update URL to work
-            table.insert(token_messaging = "")
+        # Need entries for the Settings/1/Update URLs to work
         tablename = "msg_setting"
         table = db[tablename]
         if not db(table.id > 0).count():
-            table.insert(
-                outgoing_sms_handler = "Gateway"
-                )
+            table.insert( outgoing_sms_handler = "Gateway" )
+        tablename = "msg_modem_settings"
+        table = db[tablename]
+        if not db(table.id > 0).count():
+            table.insert( modem_baud = 115200 )
+        tablename = "msg_gateway_settings"
+        table = db[tablename]
+        if not db(table.id > 0).count():
+            table.insert( to_variable = "to" )
+        tablename = "msg_tropo_settings"
+        table = db[tablename]
+        if not db(table.id > 0).count():
+            table.insert( token_messaging = "" )
+        tablename = "msg_twitter_settings"
+        table = db[tablename]
+        if not db(table.id > 0).count():
+            table.insert( pin = "" )
+
 
 
     # Ticketing System

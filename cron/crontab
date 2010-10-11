@@ -1,20 +1,22 @@
 # Crontab - scheduled tasks
 # Import data into database at startup (not used)
-#@reboot root *applications/eden/cron/1st_run.py
+#@reboot web2py *applications/eden/cron/1st_run.py
 # Collect Inbound SMS
-#@reboot root *applications/eden/cron/sms_handler_modem.py
+#@reboot web2py *applications/eden/cron/sms_handler_modem.py
 # Synchronisation
-#@reboot root *sync/schedule_cron
-0   *   *   *   *   root    *sync/sync_cron
+#@reboot web2py *sync/schedule_cron
+0   *   *   *   *   web2py    *sync/sync_cron
 # Send outgoing emails every 5 minutes
-#*/5   *       *       *       *       root *msg/process_email_via_api
+#*/5   *       *       *       *       web2py *msg/process_email_via_api
 # Send outgoing SMS every 5 minutes
-#*/5   *       *       *       *       root *msg/process_sms_via_api
+#*/5   *       *       *       *       web2py *msg/process_sms_via_api
+# Send outgoing Tropo SMS every 5 minutes
+#*/5   *       *       *       *       web2py *msg/process_sms_via_tropo
 # Collect incoming emails every 15 minutes
-#*/15  *       *       *       *       root *applications/eden/cron/email_receive.py
+#*/15  *       *       *       *       web2py *applications/eden/cron/email_receive.py
 # Process Import Jobs (deprecated)
-#*/5    *       *       *       *       root *applications/eden/cron/import_job_do_processing.py
-#*/5    *       *       *       *       root *applications/eden/cron/import_job_do_import.py
+#*/5    *       *       *       *       web2py *applications/eden/cron/import_job_do_processing.py
+#*/5    *       *       *       *       web2py *applications/eden/cron/import_job_do_import.py
 # Poll RMS Feeds (Haiti-specific)
-#*/5   *       *       *       *       root *applications/eden/cron/rms_sms2record.py
-#*/5   *       *       *       *       root *applications/eden/cron/rms_tweet2request.py
+#*/5   *       *       *       *       web2py *applications/eden/cron/rms_sms2record.py
+#*/5   *       *       *       *       web2py *applications/eden/cron/rms_tweet2request.py

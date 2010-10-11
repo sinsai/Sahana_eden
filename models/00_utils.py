@@ -38,7 +38,7 @@ def s3_sessions():
     # Security Policy
     #session.s3.self_registration = deployment_settings.get_security_self_registration()
     session.s3.security_policy = deployment_settings.get_security_policy()
-
+    
     # We Audit if either the Global or Module asks us to
     # (ignore gracefully if module author hasn't implemented this)
     try:

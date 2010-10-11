@@ -20,7 +20,7 @@ deployment_settings.database.pool_size = 30
 
 # Authentication settings
 # This setting should be changed _before_ registering the 1st user
-deployment_settings.auth.hmac_key = "mmmmysahana"
+deployment_settings.auth.hmac_key = "akeytochange"
 # These settings should be changed _after_ the 1st (admin) user is
 # registered in order to secure the deployment
 deployment_settings.auth.registration_requires_verification = False
@@ -32,8 +32,8 @@ deployment_settings.auth.openid = False
 # (select Aplication Type: Client)
 # You'll get your consumer_key and consumer_secret from twitter
 # Keep these empty if you don't need twitter integration
-deployment_settings.oauth.consumer_key="2jcgMA9EbMM9kRu2TTQKmQ"
-deployment_settings.oauth.consumer_secret="VqGmNaY4e73f7u2cTmWkbGxNzOUXDgELlC8bPclQiE"
+deployment_settings.oauth.consumer_key=""
+deployment_settings.oauth.consumer_secret=""
 
 # Base settings
 # Set this to the Public URL of the instance

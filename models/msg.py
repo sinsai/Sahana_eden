@@ -416,7 +416,7 @@ def shn_msg_compose( redirect_module = "msg",
 
     table1.subject.label = T("Subject")
     table1.message.label = T("Message")
-    table1.priority.label = T("Priority")
+    #table1.priority.label = T("Priority")
 
     table2.pe_id.writable = table2.pe_id.readable = True
     table2.pe_id.label = T("Recipients")

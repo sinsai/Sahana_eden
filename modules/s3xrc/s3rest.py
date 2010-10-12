@@ -2310,15 +2310,32 @@ class S3Resource(object):
         return None
 
     # -------------------------------------------------------------------------
-    def read(self, record_id):
+    def read(self, id):
 
         """ View a record of this resource
 
-            @todo 2.2: implement this
+            @param id: the ID of the record to display
+
+            @todo 2.2: implement audit here?
 
         """
 
-        return None
+        # Get the CRUD settings
+        s3 = self.manager.s3
+        settings = s3.crud
+
+        # Get the table
+        table = self.table
+
+        # Get the form
+        form = SQLFORM(table, id,
+                       readonly=True,
+                       comments=False,
+                       showid=False,
+                       #upload=<setting>, # fix this
+                       formstyle=settings.formstyle)
+
+        return form
 
 
     # -------------------------------------------------------------------------

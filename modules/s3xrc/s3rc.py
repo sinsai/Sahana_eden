@@ -190,7 +190,7 @@ class S3ResourceController(object):
 
 
     # Utilities ===============================================================
-    
+
     def __fields(self, table, skip=[]):
 
         """ Finds all readable fields in a table and splits
@@ -658,7 +658,7 @@ class S3ResourceController(object):
         elif xml_escape:
             text = self.xml.xml_encode(text)
 
-        return text
+        return text.decode("utf-8")
 
 
     # -------------------------------------------------------------------------
@@ -740,11 +740,11 @@ class S3ResourceController(object):
             @returns: a list of matching elements
 
             @todo 2.2: implement this and use in import_tree()
-            
+
         """
 
         raise NotImplementedError
-        
+
 
     # -------------------------------------------------------------------------
     def export_tree(self, resource,

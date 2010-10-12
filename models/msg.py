@@ -137,14 +137,15 @@ if deployment_settings.has_module(module):
                             Field("actionable", "boolean", default = True),
                             Field("actioned", "boolean", default = False),
                             Field("actioned_comments", "text"),
-                            Field("priority", "integer", default = 1),
+                            # Hide until actually wired-up for something
+                            #Field("priority", "integer", default = 1),
                             Field("inbound", "boolean", default = False),
                             migrate=migrate,
                             *(s3_timestamp() + s3_uid() + s3_deletion_status()))
 
     table.uuid.requires = IS_NOT_IN_DB(db, "%s.uuid" % tablename)
-    table.priority.requires = IS_NULL_OR(IS_IN_SET(msg_priority_opts))
-    table.priority.label = T("Priority")
+    #table.priority.requires = IS_NULL_OR(IS_IN_SET(msg_priority_opts))
+    #table.priority.label = T("Priority")
     table.inbound.label = T("Direction")
     table.inbound.represent = lambda direction: (direction and ["In"] or ["Out"])[0]
     #@ToDo More Labels for i18n
@@ -162,7 +163,8 @@ if deployment_settings.has_module(module):
                                        "actionable",
                                        "actioned",
                                        #"actioned_comments",
-                                       "priority"])
+                                       #"priority"
+                                       ])
 
     # Reusable Message ID
     message_id = S3ReusableField("message_id", db.msg_log,

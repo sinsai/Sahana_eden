@@ -120,6 +120,7 @@ class S3Exporter(object):
         """
 
         db = self.db
+        table = resource.table
 
         session = self.manager.session
         request = self.manager.request
@@ -208,7 +209,7 @@ class S3Exporter(object):
 
         for field in fields:
             # Append label
-            label = Label(text=xml.xml_encode(str(field.label))[:16],
+            label = Label(text=xml.xml_encode(str(field.label))[:16].decode("utf-8"),
                           top=0.8*cm, left=LEFTMARGIN*cm)
             _elements.append(label)
 
@@ -216,7 +217,7 @@ class S3Exporter(object):
             value = ObjectValue(attribute_name = field.name,
                                 left = LEFTMARGIN * cm,
                                 width = COLWIDTH * cm,
-                                get_value = lambda instance, column = col: \
+                                get_value = lambda instance, column = field.name: \
                                             _represent(column, instance[column]))
             detailElements.append(value)
 

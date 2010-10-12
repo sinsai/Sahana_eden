@@ -362,12 +362,146 @@ class S3CRUDHandler(S3MethodHandler):
 
         """ Read a single record
 
-            @todo 2.2: implement this
             @todo 2.2: fix docstring
+            @todo 2.2: subheadings?
+            @todo 2.2: plain representation
+            @todo 2.2: attribute reader function?
+            @todo 2.2: move record_id finder into method handler class
 
         """
 
-        return dict()
+        # Initialize output
+        output = dict()
+
+        table = self.table
+        tablename = self.tablename
+
+        # Get request parameters
+        representation = r.representation.lower()
+
+        # Buttons
+        T = self.manager.T
+
+        LIST = self.crud_string(tablename, "label_list_button")
+        EDIT = T("Edit")
+        DELETE = T("Delete")
+
+        href_list = r.there()
+        href_edit = r.other(method="update", representation=representation)
+        href_delete = r.other(method="delete", representation=representation)
+
+        # Get the table-specific attributes
+        _attr = r.component and r.component.attr or attr
+        main = _attr.get("main", None)
+        extra = _attr.get("extra", None)
+        caller = _attr.get("caller", None)
+        editable = _attr.get("editable", True)
+        deletable = _attr.get("deletable", True)
+
+        # List fields
+        list_fields = _attr.get("list_fields", None)
+
+        # Get the correct record ID
+        if r.component:
+            resource = r.resource.components.get(r.component_name).resource
+            resource.load(start=0, limit=1)
+            if not len(resource):
+                if not r.multiple:
+                    r.component_id = None
+                    if self.permit("create", tablename):
+                        redirect(r.other(method="create", representation=representation))
+                    else:
+                        record_id = None
+                else:
+                    session.error = self.manager.ERROR.BAD_RECORD
+                    redirect(r.there())
+            else:
+                record_id = resource.records().first().id
+        else:
+            record_id = r.id
+
+        # Redirect to update if user has permission unless URL method specified
+        if not r.method:
+            authorised = self.permit("update", tablename, record_id)
+            if authorised and representation == "html" and editable:
+                return self.update(r, **attr)
+
+        # Check for read permission => not necessary as already checked in the resource
+        #authorised = shn_has_permission("read", tablename, record_id)
+        #if not authorised:
+            #r.unauthorised()
+
+        # Audit
+        audit = self.manager.audit
+        audit("read", self.prefix, self.name,
+              record=record_id, representation=representation)
+
+        if r.representation in self.INTERACTIVE_FORMATS:
+
+            # Title and subtitle
+            title = self.crud_string(r.tablename, "title_display")
+            output.update(title=title)
+            if r.component:
+                subtitle = self.crud_string(tablename, "title_display")
+                output.update(subtitle=subtitle)
+
+            # Item
+            if record_id:
+                item = self.resource.read(record_id)
+                #subheadings = attr.get("subheadings", None)
+                #if subheadings:
+                    #shn_insert_subheadings(item, tablename, subheadings)
+            else:
+                item = self.crud_string(tablename, "msg_list_empty")
+
+            # Put into view
+            if representation == "html":
+                self.response.view = self._view(r, "display.html")
+                output.update(item=item)
+            elif representation in ("popup", "iframe"):
+                self.response.view = self._view(r, "popup.html")
+                output.update(form=item, main=main, extra=extra, caller=caller)
+
+            # Add update button
+            authorised = self.permit("update", tablename, record_id)
+            if authorised and href_edit and editable and r.method != "update":
+                edit = A(EDIT, _href=href_edit, _class="action-btn")
+                output.update(edit=edit)
+
+            # Add delete button
+            authorised = self.permit("delete", tablename)
+            if authorised and href_delete and deletable:
+                delete = A(DELETE, _href=href_delete, _id="delete-btn", _class="action-btn")
+                output.update(delete=delete)
+
+            # Add list button
+            if not r.component or r.multiple:
+                list_btn = A(LIST, _href=href_list, _class="action-btn")
+                output.update(list_btn=list_btn)
+
+        #elif representation == "plain":
+            #item = crud.read(table, record_id)
+            #response.view = "plain.html"
+            #return dict(item=item)
+
+        elif representation == "csv":
+            exporter = S3Exporter(self.manager)
+            return exporter.csv(self.resource)
+
+        elif representation == "pdf":
+            exporter = S3Exporter(self.manager)
+            return exporter.pdf(self.resource,
+                                list_fields=list_fields)
+
+        elif representation == "xls":
+            exporter = S3Exporter(self.manager)
+            return exporter.xls(self.resource,
+                                list_fields=list_fields)
+
+        else:
+            raise HTTP(501, body=self.manager.ERROR.BAD_FORMAT)
+
+        return output
 
 
     # -------------------------------------------------------------------------
@@ -381,6 +515,7 @@ class S3CRUDHandler(S3MethodHandler):
             @todo 2.2: add buttons
             @todo 2.2: move audit into resource/CRUD
             @todo 2.2: redirection??
+            @todo 2.2: Navigate-Away-Script
 
         """
 
@@ -627,9 +762,9 @@ class S3CRUDHandler(S3MethodHandler):
         table = self.resource.table
         list_fields = model.get_config(table, "list_fields")
         if not list_fields:
-            fields = resource.readable_fields()
+            fields = self.resource.readable_fields()
         else:
-            fields = resource.readable_fields(subset=list_fields)
+            fields = self.resource.readable_fields(subset=list_fields)
         if not fields:
             fields = [table.id]
 

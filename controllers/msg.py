@@ -179,7 +179,7 @@ def tropo():
                 uuid = s.id
                 recipient = s.to["id"]
                 try:
-                    fromaddress = s["from"]["id"]
+                    fromaddress = s.fromaddress["id"]
                 except:
                     # SyntaxError: s.from => invalid syntax (why!?)
                     fromaddress = ""

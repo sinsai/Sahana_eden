@@ -66,6 +66,14 @@ deployment_settings.mail.sender = "'Sahana' <sahana@your.org>"
 # Address to which mails get sent to approve new users
 deployment_settings.mail.approver = "useradmin@your.org"
 
+# Twitter settings:
+# Register an app at http://twitter.com/apps
+# (select Aplication Type: Client)
+# You'll get your consumer_key and consumer_secret from Twitter
+# You can keep these empty if you don't need Twitter integration
+deployment_settings.twitter.oauth_consumer_key = ""
+deployment_settings.twitter.oauth_consumer_secret = ""
+
 # L10n settings
 # Uncomment this if the deployment is just in a few countries
 # (used in the GIS Location Selector & maybe in future: Messaging)
@@ -254,7 +262,7 @@ deployment_settings.modules = Storage(
                 pr_address = {"importer" : True},
                 pr_pe_contact = {"importer" : True},
                 pr_presence = {"importer" : True},
-	 	        pr_identity = {"importer" : True},
+                pr_identity = {"importer" : True},
                 pr_person = {"importer" : True},
                 pr_group = {"importer" : True},
                 pr_group_membership = {"importer" : True},
@@ -327,14 +335,14 @@ deployment_settings.modules = Storage(
     #        module_type = 10,
     #    ),
     importer = Storage(
-    	     name_nice = "Spreadsheet Importer",
-    	     description = "Used to import data from spreadsheets into the database",
-    	     module_type = 10,
+             name_nice = "Spreadsheet Importer",
+             description = "Used to import data from spreadsheets into the database",
+             module_type = 10,
     ),
     survey = Storage(
-    	     name_nice = "Survey Module",
-    	     description = "Create, enter, and manage surveys.",
-    	     module_type = 10,
+             name_nice = "Survey Module",
+             description = "Create, enter, and manage surveys.",
+             module_type = 10,
     )
     #lms = Storage(
     #        name_nice = T("Logistics Management System"),

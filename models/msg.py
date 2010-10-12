@@ -6,7 +6,6 @@
 
 module = "msg"
 if deployment_settings.has_module(module):
-
     # Settings
     resource = "setting"
     tablename = "%s_%s" % (module, resource)
@@ -35,41 +34,7 @@ if deployment_settings.has_module(module):
                     migrate=migrate)
     table.inbound_mail_type.requires = IS_IN_SET(["imap", "pop3"], zero=None)
 
-    # Status
-    resource = "email_inbound_status"
-    tablename = "%s_%s" % (module, resource)
-    table = db.define_table(tablename,
-                            Field("status"),
-                            migrate=migrate)
-
-
-    # Valid message outbox statuses
-    msg_status_type_opts = {
-        1:T("Unsent"),
-        2:T("Sent"),
-        3:T("Draft"),
-        4:T("Invalid")
-        }
-
-    opt_msg_status = db.Table(None, "opt_msg_status",
-                              Field("status", "integer", notnull=True,
-                              requires = IS_IN_SET(msg_status_type_opts, zero=None),
-                              default = 1,
-                              label = T("Status"),
-                              represent = lambda opt: msg_status_type_opts.get(opt, UNKNOWN_OPT)))
-
-    # SMS store for persistence and scratch pad for combining incoming xform chunks
-    resource = "xforms_store"
-    tablename = "%s_%s" % (module, resource)
-    table = db.define_table(tablename,
-                            Field("sender", "string", length = 20),
-                            Field("fileno", "integer"),
-                            Field("totalno", "integer"),
-                            Field("partno", "integer"),
-                            Field("message", "string", length = 160),
-                            migrate=migrate)
-
-    # Settings for modem.
+    #------------------------------------------------------------------------
     resource = "modem_settings"
     tablename = "%s_%s" % (module, resource)
     table = db.define_table(tablename,
@@ -80,7 +45,7 @@ if deployment_settings.has_module(module):
                             #Field("preference", "integer", default = 5), To be used later
                             migrate=migrate)
 
-    # Settings for modem.
+    #------------------------------------------------------------------------
     resource = "gateway_settings"
     tablename = "%s_%s" % (module, resource)
     table = db.define_table(tablename,
@@ -92,7 +57,7 @@ if deployment_settings.has_module(module):
                             #Field("preference", "integer", default = 5), To be used later
                             migrate=migrate)
     
-    # Settings for Tropo
+    #------------------------------------------------------------------------
     resource = "tropo_settings"
     tablename = "%s_%s" % (module, resource)
     table = db.define_table(tablename,
@@ -101,6 +66,54 @@ if deployment_settings.has_module(module):
                             migrate=migrate)
     
                             
+    #------------------------------------------------------------------------
+    resource = "twitter_settings"
+    tablename = "%s_%s" % (module, resource)
+    table = db.define_table(tablename,
+                            Field("pin"),
+                            Field("oauth_key"),
+                            Field("oauth_secret"),
+                            Field("twitter_account"),
+                            migrate=migrate)
+    table.oauth_key.writable = False
+    table.oauth_secret.writable = False
+
+    ### comment these 2 when debugging
+    table.oauth_key.readable = False
+    table.oauth_secret.readable = False
+    
+    table.twitter_account.writable = False
+    
+    def twitter_settings_onvalidation(form):
+        """ Complete oauth: take tokens from session + pin from form, and do the 2nd API call to Twitter """
+        if form.vars.pin and session.s3.twitter_request_key and session.s3.twitter_request_secret:
+            try:
+                import tweepy
+            except:
+                raise HTTP(501, body=T("Can't import tweepy"))
+                          
+            oauth = tweepy.OAuthHandler(deployment_settings.twitter.oauth_consumer_key,
+                                        deployment_settings.twitter.oauth_consumer_secret)
+            oauth.set_request_token(session.s3.twitter_request_key, session.s3.twitter_request_secret)
+            try:
+                oauth.get_access_token(form.vars.pin)
+                form.vars.oauth_key = oauth.access_token.key
+                form.vars.oauth_secret = oauth.access_token.secret
+                twitter = tweepy.API(oauth)
+                form.vars.twitter_account = twitter.me().screen_name
+                form.vars.pin = "" # we won't need it anymore
+                return
+            except tweepy.TweepError:
+                session.error = T("Settings were reset because authenticating with Twitter failed")
+        # Either user asked to reset, or error - clear everything
+        for k in ["oauth_key", "oauth_secret", "twitter_account"]:
+            form.vars[k] = None
+        for k in ["twitter_request_key", "twitter_request_secret"]:
+            session.s3[k] = ""
+        
+    s3xrc.model.configure(table, onvalidation=twitter_settings_onvalidation) 
+
+    #------------------------------------------------------------------------
     # Message priority
     msg_priority_opts = {
         3:T("High"),
@@ -124,18 +137,22 @@ if deployment_settings.has_module(module):
                             Field("actionable", "boolean", default = True),
                             Field("actioned", "boolean", default = False),
                             Field("actioned_comments", "text"),
-                            Field("priority", "integer", default = 1),
+                            # Hide until actually wired-up for something
+                            #Field("priority", "integer", default = 1),
                             Field("inbound", "boolean", default = False),
                             migrate=migrate,
                             *(s3_timestamp() + s3_uid() + s3_deletion_status()))
 
     table.uuid.requires = IS_NOT_IN_DB(db, "%s.uuid" % tablename)
-    table.priority.requires = IS_NULL_OR(IS_IN_SET(msg_priority_opts))
-    table.priority.label = T("Priority")
+    #table.priority.requires = IS_NULL_OR(IS_IN_SET(msg_priority_opts))
+    #table.priority.label = T("Priority")
+    table.inbound.label = T("Direction")
+    table.inbound.represent = lambda direction: (direction and ["In"] or ["Out"])[0]
     #@ToDo More Labels for i18n
 
     s3xrc.model.configure(table,
                           list_fields=["id",
+                                       "inbound",
                                        "pe_id",
                                        "fromaddress",
                                        "recipient",
@@ -146,7 +163,8 @@ if deployment_settings.has_module(module):
                                        "actionable",
                                        "actioned",
                                        #"actioned_comments",
-                                       "priority"])
+                                       #"priority"
+                                       ])
 
     # Reusable Message ID
     message_id = S3ReusableField("message_id", db.msg_log,
@@ -156,6 +174,7 @@ if deployment_settings.has_module(module):
                                  ondelete = "RESTRICT"
                                 )
 
+    #------------------------------------------------------------------------
     # Message Tag - Used to tag a message to a resource
     resource = "tag"
     tablename = "%s_%s" % (module, resource)
@@ -176,12 +195,12 @@ if deployment_settings.has_module(module):
                                         "resource",
                                        ])
 
+    #------------------------------------------------------------------------
     # The following was added to show only the supported messaging methods
     msg_contact_method_opts = { # pr_contact_method dependency
         1:T("Email"),
         2:T("Mobile Phone"),
     }
-
 
     # Channel - For inbound messages this tells which channel the message came in from.
     resource = "channel"
@@ -195,6 +214,30 @@ if deployment_settings.has_module(module):
                             migrate=migrate,
                             *(s3_timestamp() + s3_uid() + s3_deletion_status()))
 
+
+    #------------------------------------------------------------------------
+    # Status
+    resource = "email_inbound_status"
+    tablename = "%s_%s" % (module, resource)
+    table = db.define_table(tablename,
+                            Field("status"),
+                            migrate=migrate)
+
+
+    # Valid message outbox statuses
+    msg_status_type_opts = {
+        1:T("Unsent"),
+        2:T("Sent"),
+        3:T("Draft"),
+        4:T("Invalid")
+        }
+
+    opt_msg_status = db.Table(None, "opt_msg_status",
+                              Field("status", "integer", notnull=True,
+                              requires = IS_IN_SET(msg_status_type_opts, zero=None),
+                              default = 1,
+                              label = T("Status"),
+                              represent = lambda opt: msg_status_type_opts.get(opt, UNKNOWN_OPT)))
 
     # Outbox - needs to be separate to Log since a single message sent needs different outbox entries for each recipient
     resource = "outbox"
@@ -245,6 +288,7 @@ if deployment_settings.has_module(module):
                                         "person_id",
                                        ])
 
+    #------------------------------------------------------------------------
     # Tropo Scratch pad for outbound messaging
     resource = "tropo_scratch"
     tablename = "%s_%s" % (module, resource)
@@ -259,8 +303,18 @@ if deployment_settings.has_module(module):
 
     table.uuid.requires = IS_NOT_IN_DB(db, "%s.uuid" % tablename)
 
+    # SMS store for persistence and scratch pad for combining incoming xform chunks
+    resource = "xforms_store"
+    tablename = "%s_%s" % (module, resource)
+    table = db.define_table(tablename,
+                            Field("sender", "string", length = 20),
+                            Field("fileno", "integer"),
+                            Field("totalno", "integer"),
+                            Field("partno", "integer"),
+                            Field("message", "string", length = 160),
+                            migrate=migrate)
 
-
+    #------------------------------------------------------------------------
     # CAP: Common Alerting Protocol
     # http://docs.oasis-open.org/emergency/cap/v1.2/CAP-v1.2.html
     # CAP alert Status Code (status)
@@ -323,6 +377,7 @@ if deployment_settings.has_module(module):
                             *(s3_timestamp() + s3_uid() + s3_deletion_status()))
     table.uuid.requires = IS_NOT_IN_DB(db, "%s.uuid" % tablename)
 
+#------------------------------------------------------------------------
 def shn_msg_compose( redirect_module = "msg",
                      redirect_function = "compose",
                      redirect_vars = None,
@@ -361,7 +416,7 @@ def shn_msg_compose( redirect_module = "msg",
 
     table1.subject.label = T("Subject")
     table1.message.label = T("Message")
-    table1.priority.label = T("Priority")
+    #table1.priority.label = T("Priority")
 
     table2.pe_id.writable = table2.pe_id.readable = True
     table2.pe_id.label = T("Recipients")

@@ -12,19 +12,19 @@ if module not in deployment_settings.modules:
 
 # Options Menu (available in all Functions' Views)
 response.menu_options = [
-	[T("Compose"), False, URL(r=request, c="msg", f="compose")],
-	[T("Distribution groups"), False, URL(r=request, f="group"), [
-		[T("List/Add"), False, URL(r=request, f="group")],
-		[T("Group Memberships"), False, URL(r=request, f="group_membership")],
-	]],
-	[T("Log"), False, URL(r=request, f="log")],
-	[T("Outbox"), False, URL(r=request, f="outbox")],
+    [T("Compose"), False, URL(r=request, c="msg", f="compose")],
+    [T("Distribution groups"), False, URL(r=request, f="group"), [
+        [T("List/Add"), False, URL(r=request, f="group")],
+        [T("Group Memberships"), False, URL(r=request, f="group_membership")],
+    ]],
+    [T("Log"), False, URL(r=request, f="log")],
+    [T("Outbox"), False, URL(r=request, f="outbox")],
     #["CAP", False, URL(r=request, f="tbc")]
 ]
 
 # S3 framework functions
 def index():
-    "Module's Home Page"
+    """ Module's Home Page """
 
     module_name = deployment_settings.modules[module].name_nice
 
@@ -33,6 +33,113 @@ def index():
 def tbc():
     """ Coming soon... """
     return dict()
+
+#-------------------------------------------------------------------------------
+def compose():
+
+    return shn_msg_compose()
+
+#--------------------------------------
+def process_email_via_api():
+    """ Controller for Email api processing - to be called via cron """
+
+    msg.process_outbox(contact_method = 1)
+    return
+
+def process_sms_via_api():
+    """ Controller for SMS api processing - to be called via cron """
+
+    msg.process_outbox(contact_method = 2)
+    return
+
+def process_sms_via_tropo():
+    """ Controller for SMS tropo processing - to be called via cron """
+
+    msg.process_outbox(contact_method = 2,option = 3)
+    return
+
+#-------------------------------------------------------------------------------
+def outbox():
+    """ View the contents of the Outbox """
+
+    if not auth.shn_logged_in():
+        session.error = T("Requires Login!")
+        redirect(URL(r=request, c="default", f="user", args="login"))
+
+    resource = request.function
+    tablename = module + "_" + resource
+    table = db[tablename]
+
+    table.message_id.label = T("Message")
+    table.message_id.writable = False
+    table.pe_id.readable = True
+    table.pe_id.label = T("Recipient")
+    
+    # Subject works for Email but not SMS
+    table.message_id.represent = lambda id: db(db.msg_log.id == id).select(db.msg_log.message, limitby=(0, 1)).first().message
+
+    # CRUD Strings
+    s3.crud_strings[tablename] = Storage(
+        title_list = T("View Outbox"),
+        title_update = T("Edit Message"),
+        subtitle_list = T("Available Messages"),
+        label_list_button = T("View Outbox"),
+        label_delete_button = T("Delete Message"),
+        msg_record_modified = T("Message updated"),
+        msg_record_deleted = T("Message deleted"),
+        msg_list_empty = T("No Messages currently in Outbox")
+    )
+
+    # Server-side Pagination
+    response.s3.pagination = True
+
+    return shn_rest_controller(module, resource, listadd=False)
+
+def log():
+    """ RESTful CRUD controller """
+
+    if not auth.shn_logged_in():
+        session.error = T("Requires Login!")
+        redirect(URL(r=request, c="default", f="user", args="login"))
+
+    resource = request.function
+    tablename = "%s_%s" % (module, resource)
+    table = db[tablename]
+
+    # Model options
+    table.message.comment = SPAN("*", _class="req")
+    #table.priority.represent = lambda id: (
+    #    [id and
+    #        DIV(IMG(_src="/%s/static/img/priority/priority_%d.gif" % (request.application,id,), _height=12)) or
+    #        DIV(IMG(_src="/%s/static/img/priority/priority_4.gif" % request.application), _height=12)
+    #    ][0].xml())
+
+    # Add Auth Restrictions
+
+    # CRUD Strings
+    ADD_MESSAGE = T("Add Message")
+    LIST_MESSAGES = T("List Messages")
+    s3.crud_strings[tablename] = Storage(
+        title_create = ADD_MESSAGE,
+        title_display = T("Message Details"),
+        title_list = LIST_MESSAGES,
+        title_update = T("Edit message"),
+        title_search = T("Search messages"),
+        subtitle_create = T("Send new message"),
+        subtitle_list = T("Messages"),
+        label_list_button = LIST_MESSAGES,
+        label_create_button = ADD_MESSAGE,
+        msg_record_created = T("Message added"),
+        msg_record_modified = T("Message updated"),
+        msg_record_deleted = T("Message deleted"),
+        msg_list_empty = T("No messages in the system"))
+
+    rheader = DIV(B(T("Master Message Log")), ": ", T("All Inbound & Outbound Messages are stored here"))
+
+    # Server-side Pagination
+    response.s3.pagination = True
+
+    return shn_rest_controller(module, resource, listadd=False, rheader=rheader)
 
 def tropo():
     """
@@ -69,14 +176,15 @@ def tropo():
                 message = s.initialText
                 # This is an SMS/IM
                 # Place it in the InBox
-                # @ToDo: For now dumping in a separate table
                 uuid = s.id
                 recipient = s.to["id"]
-                # SyntaxError: invalid syntax (why!?)
-                #from = s.from["id"]
-                #db.msg_log.insert(uuid=uuid, fromaddress=from, recipient=recipient, message=message, inbound=True)
-                db.msg_log.insert(uuid=uuid, recipient=recipient, message=message, inbound=True)
-                # Return a '200 OK'
+                try:
+                    fromaddress = s.fromaddress["id"]
+                except:
+                    # SyntaxError: s.from => invalid syntax (why!?)
+                    fromaddress = ""
+                db.msg_log.insert(uuid=uuid, fromaddress=fromaddress, recipient=recipient, message=message, inbound=True)
+                # Send the message to the parser
                 reply = parserdooth(message)
                 t.say([reply])
                 return t.RenderJson()
@@ -92,17 +200,18 @@ def tropo():
 # Parser
 def parserdooth(message):
     """ 
-    This function hopes to grow into a full fledged page that offers customizable routing with keywords
-    Dooth = Messenger 
+        This function hopes to grow into a full fledged page that offers customizable routing with keywords
+        Dooth = Messenger 
     """
     import difflib
     import string
-    primary_keywords=["get","give","show"] # Equivalent keywords in one list
-    contact_keywords=["email","mobile","facility","clinical","security","phone","status","hospital","person","organisation"]
+
+    primary_keywords = ["get", "give", "show"] # Equivalent keywords in one list
+    contact_keywords = ["email", "mobile", "facility", "clinical", "security", "phone", "status", "hospital", "person", "organisation"]
     keywords = string.split(message)
     query = []
-    name = ''
-    reply = ''
+    name = ""
+    reply = ""
     for word in keywords:
         match = difflib.get_close_matches(word, primary_keywords + contact_keywords)
         if match:
@@ -110,22 +219,22 @@ def parserdooth(message):
         else:
             name = word
 
-#    ------------ Person Search [get name person phone email]------------
+#   ------------ Person Search [get name person phone email]------------
     if "person" in query:
         result = person_search(name)
     
         if len(result) > 1:
             return "Multiple Matches"
         if len(result) == 1:
-            if 'Person' in result[0]['name']:
-                reply = result[0]['name']
+            if "Person" in result[0]["name"]:
+                reply = result[0]["name"]
                 table3 = db.pr_pe_contact
                 if "email" in query:
-                    query = (table3.pe_id == result[0]['id']) & (table3.contact_method == 1)
+                    query = (table3.pe_id == result[0]["id"]) & (table3.contact_method == 1)
                     recipient = db(query).select(table3.value, orderby = table3.priority, limitby=(0, 1)).first()
                     reply = reply + " Email->" + recipient.value
                 if "mobile" in query:
-                    query = (table3.pe_id == result[0]['id']) & (table3.contact_method == 2)
+                    query = (table3.pe_id == result[0]["id"]) & (table3.contact_method == 2)
                     recipient = db(query).select(table3.value, orderby = table3.priority, limitby=(0, 1)).first()
                     reply = reply + " Mobile->" + str(recipient.value)
         if len(reply) == 0:
@@ -156,10 +265,10 @@ def parserdooth(message):
 
         return reply
 
-#-----------------Organisation search [example: get name organisation phone]------------------------------
+#   -----------------Organisation search [example: get name organisation phone]------------------------------
     if "organisation" in query:
         table = db.org_organisation
-        result = s3xrc.search_simple(table,fields=["name"],label = str(name))
+        result = s3xrc.search_simple(table, fields=["name"], label = str(name))
         if len(result) > 1:
             return "Multiple Matches"
 
@@ -174,6 +283,7 @@ def parserdooth(message):
         return reply
 
     return "Please provide one of the keywords - person, hospital, organisation"
+
 #--------------------------------------
 @auth.shn_requires_membership(1)
 def setting():
@@ -208,6 +318,8 @@ def setting():
     response.menu_options = admin_menu_options
     return shn_rest_controller(module, resource, deletable=False, listadd=False)
 
+#--------------------------------------
+@auth.shn_requires_membership(1)
 def email_settings():
     """ RESTful CRUD controller for email settings - appears in the administration menu """
 
@@ -228,8 +340,8 @@ def email_settings():
             _title=T("Delete") + "|" + T("If this is set to True then mails will be deleted from the server after downloading.")))
 
     if not auth.has_membership(auth.id_group("Administrator")):
-		session.error = UNAUTHORISED
-		redirect(URL(r=request, f="index"))
+        session.error = UNAUTHORISED
+        redirect(URL(r=request, f="index"))
     # CRUD Strings
     ADD_SETTING = T("Add Setting")
     VIEW_SETTINGS = T("View Settings")
@@ -251,204 +363,10 @@ def email_settings():
     response.menu_options = admin_menu_options
     return shn_rest_controller(module, "email_settings", listadd=False, deletable=False)
 
-#--------------------------------------------------------------------------------------------------
-
-# The following 2 functions hook into the pr functions
-# -----------------------------------------------------------------------------
-def group():
-    "RESTful CRUD controller"
-    
-    if auth.is_logged_in() or auth.basic():
-        pass
-    else:
-        redirect(URL(r=request, c="default", f="user", args="login",
-        vars={"_next":URL(r=request, c="msg", f="group")}))
-
-    module = "pr"
-    resource = request.function
-    tablename = module + "_" + resource
-    table = db[tablename]
-
-    # Hide unnecessary fields
-    table.description.readable = table.description.writable = False
-
-    # Do not show system groups
-    response.s3.filter = (table.system == False)
-
-    response.s3.pagination = True
-
-    return shn_rest_controller(module, resource,
-                               main="name",
-                               extra="description",
-                               rheader=shn_pr_rheader,
-                               deletable=False)
-# -----------------------------------------------------------------------------
-def group_membership():
-    "RESTful CRUD controller"
-
-    if auth.is_logged_in() or auth.basic():
-        pass
-    else:
-        redirect(URL(r=request, c="default", f="user", args="login",
-        vars={"_next":URL(r=request, c="msg", f="group_membership")}))
-
-    module = "pr"
-    resource = request.function
-    tablename = module + "_" + resource
-    table = db[tablename]
-
-    # Hide unnecessary fields
-    table.description.readable = table.description.writable = False
-    table.comments.readable = table.comments.writable = False
-    table.group_head.readable = table.group_head.writable = False
-    
-    return shn_rest_controller(module, resource)
-
-#-------------------------------------------------------------------------------
-
-def pe_contact():
-    """ Allows the user to add, update and delete their contacts"""
-    
-    if auth.is_logged_in() or auth.basic():
-        person = db(db.pr_person.uuid == auth.user.person_uuid).select(db.pr_person.pe_id, limitby=(0, 1)).first().pe_id
-        response.s3.filter = (db.pr_pe_contact.pe_id == person)
-    else:
-        redirect(URL(r=request, c="default", f="user", args="login",
-            vars={"_next":URL(r=request, c="msg", f="pe_contact")}))
-
-    module = "pr"
-    resource = request.function
-    tablename = module + "_" + resource
-    table = db[tablename]
-
-    # These fields will be populated automatically
-    table.name.writable = table.name.readable = False
-    table.pe_id.writable = table.pe_id.readable = False
-    table.person_name.writable = table.person_name.readable = False
-    table.id.writable = False
-#   table.id.readable = False
-
-    def msg_pe_contact_onvalidation(form):
-        """ This onvalidation method adds the person id to the record """
-        person = db(db.pr_person.uuid == auth.user.person_uuid).select(db.pr_person.pe_id, limitby=(0, 1)).first().pe_id
-        form.vars.pe_id = person
-
-    def msg_pe_contact_restrict_access(jr):
-        """ The following restricts update and delete access to contacts not owned by the user """
-        if jr.id :
-            person = db(db.pr_person.uuid == auth.user.person_uuid).select(db.pr_person.pe_id, limitby=(0, 1)).first().pe_id
-            if person == db(db.pr_pe_contact.id == jr.id).select(db.pr_pe_contact.pe_id, limitby=(0, 1)).first().pe_id :
-                return True
-            else:
-                session.error = T("Access denied")
-                return dict(bypass = True, output = redirect(URL(r=request)))
-        else:
-            return True
-    s3xrc.model.configure(table,
-            onvalidation=lambda form: msg_pe_contact_onvalidation(form))
-    response.s3.prep = msg_pe_contact_restrict_access
-    response.menu_options = []
-    return shn_rest_controller(module, resource, listadd=True)
-
-#-------------------------------------------------------------------------------
-
-def search():
-    """
-        Do a search of groups which match a type
-        Used for auto-completion
-    """
-    if auth.is_logged_in() or auth.basic():
-        pass
-    else:
-        return
-    import gluon.contrib.simplejson as json
-    # JQuery Autocomplete uses 'q' instead of 'value'
-    value = request.vars.q
-    if value:
-        item = person_search(value)
-        item = json.dumps(item)
-        response.view = "xml.html"
-        return dict(item=item)
-    return
-
-def person_search(value):
-    """Generic function to do the search of groups which match a type"""
-    table1 = db.pr_group
-    field1 = "name"
-    table2 = db.pr_person
-    field21 = "first_name"
-    field22 = "middle_name"
-    field23 = "last_name"
-    item = []
-    query = db((table1[field1].like("%" + value + "%")) & (table1.deleted == False)).select(db.pr_group.pe_id)
-    for row in query:
-        item.append({"id":row.pe_id, "name":shn_pentity_represent(row.pe_id, default_label = "")})
-    query = db((table2[field21].like("%" + value + "%")) & (table2.deleted == False)).select(db.pr_person.pe_id)
-    for row in query:
-        item.append({"id":row.pe_id, "name":shn_pentity_represent(row.pe_id, default_label = "")})
-    query = db((table2[field22].like("%" + value + "%")) & (table2.deleted == False)).select(db.pr_person.pe_id)
-    for row in query:
-        item.append({"id":row.pe_id, "name":shn_pentity_represent(row.pe_id, default_label = "")})
-    query = db((table2[field23].like("%" + value + "%")) & (table2.deleted == False)).select(db.pr_person.pe_id)
-    for row in query:
-        item.append({"id":row.pe_id, "name":shn_pentity_represent(row.pe_id, default_label = "")})
-    return item
-
-def process_sms_via_api():
-	"Controller for SMS api processing - to be called via cron"
-
-	msg.process_outbox(contact_method = 2)
-	return
-
-def process_email_via_api():
-	"Controller for Email api processing - to be called via cron"
-
-	msg.process_outbox(contact_method = 1)
-	return
-
-def process_sms_via_tropo():
-    "Controller for SMS tropo processing - to be called via cron"
-
-    msg.process_outbox(contact_method = 2,option = 3)
-    return
-
-#-------------------------------------------------------------------------------
-@auth.shn_requires_membership(1)
-def tropo_settings():
-    """ Tropo settings """
-    resource = request.function
-    tablename = module + "_" + resource
-    table = db[tablename]
-    table.token_messaging.label = T("Tropo Messaging Token")
-    table.token_messaging.comment = DIV(DIV(_class="stickytip",_title=T("Tropo Messaging Token") + "|" + T("The token associated with this application on") + " <a href='https://www.tropo.com/docs/scripting/troposessionapi.htm' target=_blank>Tropo.com</a>"))
-    #table.token_voice.label = T("Tropo Voice Token")
-    #table.token_voice.comment = DIV(DIV(_class="stickytip",_title=T("Tropo Voice Token") + "|" + T("The token associated with this application on") + " <a href='https://www.tropo.com/docs/scripting/troposessionapi.htm' target=_blank>Tropo.com</a>"))
-    # CRUD Strings
-    ADD_SETTING = T("Add Setting")
-    VIEW_SETTINGS = T("View Settings")
-    s3.crud_strings[tablename] = Storage(
-        title_create = ADD_SETTING,
-        title_display = T("Setting Details"),
-        title_list = VIEW_SETTINGS,
-        title_update = T("Edit Tropo Settings"),
-        title_search = T("Search Settings"),
-        subtitle_list = T("Settings"),
-        label_list_button = VIEW_SETTINGS,
-        label_create_button = ADD_SETTING,
-        msg_record_created = T("Setting added"),
-        msg_record_modified = T("Tropo settings updated"),
-        msg_record_deleted = T("Setting deleted"),
-        msg_list_empty = T("No Settings currently defined")
-    )
-
-    crud.settings.update_next = URL(r=request, args=[1, "update"])
-    response.menu_options = admin_menu_options
-    return shn_rest_controller(module, resource, deletable=False, listadd=False)
-
 #-------------------------------------------------------------------------------
 @auth.shn_requires_membership(1)
 def modem_settings():
-    """ Modem settings """
+    """ RESTful CRUD controller for modem settings - appears in the administration menu """
     
     try:
         import serial
@@ -492,9 +410,10 @@ def modem_settings():
     return shn_rest_controller(module, resource, deletable=False,
     listadd=False)
 
+#-------------------------------------------------------------------------------
 @auth.shn_requires_membership(1)
 def gateway_settings():
-    """ Gateway settings """
+    """ RESTful CRUD controller for gateway settings - appears in the administration menu """
 
     resource = request.function
     tablename = module + "_" + resource
@@ -536,95 +455,252 @@ def gateway_settings():
     response.menu_options = admin_menu_options
     return shn_rest_controller(module, resource, deletable=False, listadd=False)
 
-def compose():
+#-------------------------------------------------------------------------------
+@auth.shn_requires_membership(1)
+def tropo_settings():
+    """ RESTful CRUD controller for Tropo settings - appears in the administration menu """
+    resource = request.function
+    tablename = module + "_" + resource
+    table = db[tablename]
+    table.token_messaging.label = T("Tropo Messaging Token")
+    table.token_messaging.comment = DIV(DIV(_class="stickytip",_title=T("Tropo Messaging Token") + "|" + T("The token associated with this application on") + " <a href='https://www.tropo.com/docs/scripting/troposessionapi.htm' target=_blank>Tropo.com</a>"))
+    #table.token_voice.label = T("Tropo Voice Token")
+    #table.token_voice.comment = DIV(DIV(_class="stickytip",_title=T("Tropo Voice Token") + "|" + T("The token associated with this application on") + " <a href='https://www.tropo.com/docs/scripting/troposessionapi.htm' target=_blank>Tropo.com</a>"))
+    # CRUD Strings
+    ADD_SETTING = T("Add Setting")
+    VIEW_SETTINGS = T("View Settings")
+    s3.crud_strings[tablename] = Storage(
+        title_create = ADD_SETTING,
+        title_display = T("Setting Details"),
+        title_list = VIEW_SETTINGS,
+        title_update = T("Edit Tropo Settings"),
+        title_search = T("Search Settings"),
+        subtitle_list = T("Settings"),
+        label_list_button = VIEW_SETTINGS,
+        label_create_button = ADD_SETTING,
+        msg_record_created = T("Setting added"),
+        msg_record_modified = T("Tropo settings updated"),
+        msg_record_deleted = T("Setting deleted"),
+        msg_list_empty = T("No Settings currently defined")
+    )
 
-    return shn_msg_compose()
+    crud.settings.update_next = URL(r=request, args=[1, "update"])
+    response.menu_options = admin_menu_options
+    return shn_rest_controller(module, resource, deletable=False, listadd=False)
 
-def outbox():
-    "View the contents of the Outbox"
+#-------------------------------------------------------------------------------
+@auth.shn_requires_membership(1)
+def twitter_settings():
+    """ RESTful CRUD controller for Twitter settings - appears in the administration menu """
 
-    if not auth.shn_logged_in():
-        session.error = T("Requires Login!")
-        redirect(URL(r=request, c="default", f="user", args="login"))
+    # CRUD Strings
+    ADD_SETTING = T("Add Setting")
+    VIEW_SETTINGS = T("View Settings")
+    s3.crud_strings[tablename] = Storage(
+        title_create = ADD_SETTING,
+        title_display = T("Setting Details"),
+        title_list = VIEW_SETTINGS,
+        title_update = T("Authenticate system's Twitter account"),
+        title_search = T("Search Settings"),
+        subtitle_list = T("Settings"),
+        label_list_button = VIEW_SETTINGS,
+        label_create_button = ADD_SETTING,
+        msg_record_created = T("Setting added"),
+        msg_record_modified = T("System's Twitter account updated"),
+        msg_record_deleted = T("Setting deleted"),
+        msg_list_empty = T("No Settings currently defined")
+    )
+    
+    def prep(jr):
+        try:
+            import tweepy
+        except:
+            session.error = T("Couldn't import tweepy library")
+            return True
+        if not (deployment_settings.twitter.oauth_consumer_key and deployment_settings.twitter.oauth_consumer_secret):
+            session.error = T("You should edit Twitter settings in models/000_config.py")
+            return True
+        oauth = tweepy.OAuthHandler(deployment_settings.twitter.oauth_consumer_key,
+                                    deployment_settings.twitter.oauth_consumer_secret)
 
+        resource = request.function
+        tablename = module + "_" + resource
+        table = db[tablename]
+
+        if jr.http == "GET" and jr.method in ["create", "update"]:
+            # We're showing the form
+            try:
+                session.s3.twitter_oauth_url = oauth.get_authorization_url()
+                session.s3.twitter_request_key = oauth.request_token.key
+                session.s3.twitter_request_secret = oauth.request_token.secret
+            except tweepy.TweepError:
+                session.error = T("problem connecting to twitter.com - please refresh")
+                return True
+            table.pin.readable = True
+            table.pin.label = SPAN(T("PIN number "),
+                A(T("from Twitter"), _href=T(session.s3.twitter_oauth_url), _target="_blank"),
+                T(" (leave empty to detach account)"))
+            table.pin.value = ""
+            table.twitter_account.label = T("Current Twitter account")
+            return True
+        else:
+            # Not showing form, no need for pin
+            table.pin.readable = False
+            table.pin.label = T("PIN") # won't be seen
+            table.pin.value = ""       # but let's be on the safe side
+        return True
+    response.s3.prep = prep
+    
+    response.menu_options = admin_menu_options
+    return shn_rest_controller(module, "twitter_settings", listadd=False, deletable=False)
+
+
+#--------------------------------------------------------------------------------------------------
+# The following 2 functions hook into the pr functions
+# -----------------------------------------------------------------------------
+def group():
+    """ RESTful CRUD controller """
+    
+    if auth.is_logged_in() or auth.basic():
+        pass
+    else:
+        redirect(URL(r=request, c="default", f="user", args="login",
+        vars={"_next":URL(r=request, c="msg", f="group")}))
+
+    module = "pr"
     resource = request.function
     tablename = module + "_" + resource
     table = db[tablename]
 
-    table.message_id.label = T("Message")
-    table.message_id.writable = False
-    table.pe_id.readable = True
-    table.pe_id.label = T("Recipient")
-    
-    # Subject works for Email but not SMS
-    table.message_id.represent = lambda id: db(db.msg_log.id == id).select(db.msg_log.message, limitby=(0, 1)).first().message
+    # Hide unnecessary fields
+    table.description.readable = table.description.writable = False
 
-    # CRUD Strings
-    s3.crud_strings[tablename] = Storage(
-        title_list = T("View Outbox"),
-        title_update = T("Edit Message"),
-        subtitle_list = T("Available Messages"),
-        label_list_button = T("View Outbox"),
-        label_delete_button = T("Delete Message"),
-        msg_record_modified = T("Message updated"),
-        msg_record_deleted = T("Message deleted"),
-        msg_list_empty = T("No Messages currently in Outbox")
-    )
+    # Do not show system groups
+    response.s3.filter = (table.system == False)
 
-    # Server-side Pagination
     response.s3.pagination = True
 
-    return shn_rest_controller(module, resource, listadd=False)
+    return shn_rest_controller(module, resource,
+                               main="name",
+                               extra="description",
+                               rheader=shn_pr_rheader,
+                               deletable=False)
+# -----------------------------------------------------------------------------
+def group_membership():
+    """ RESTful CRUD controller """
 
-def log():
-    " RESTful CRUD controller "
+    if auth.is_logged_in() or auth.basic():
+        pass
+    else:
+        redirect(URL(r=request, c="default", f="user", args="login",
+        vars={"_next":URL(r=request, c="msg", f="group_membership")}))
 
-    if not auth.shn_logged_in():
-        session.error = T("Requires Login!")
-        redirect(URL(r=request, c="default", f="user", args="login"))
-
+    module = "pr"
     resource = request.function
-    tablename = "%s_%s" % (module, resource)
+    tablename = module + "_" + resource
     table = db[tablename]
 
-    # Model options
-    table.message.comment = SPAN("*", _class="req")
-    table.priority.represent = lambda id: (
-        [id and
-            DIV(IMG(_src="/%s/static/img/priority/priority_%d.gif" % (request.application,id,), _height=12)) or
-            DIV(IMG(_src="/%s/static/img/priority/priority_4.gif" % request.application), _height=12)
-        ][0].xml())
-    # Add Auth Restrictions
+    # Hide unnecessary fields
+    table.description.readable = table.description.writable = False
+    table.comments.readable = table.comments.writable = False
+    table.group_head.readable = table.group_head.writable = False
+    
+    return shn_rest_controller(module, resource)
 
-    # CRUD Strings
-    ADD_MESSAGE = T("Add Message")
-    LIST_MESSAGES = T("List Messages")
-    s3.crud_strings[tablename] = Storage(
-        title_create = ADD_MESSAGE,
-        title_display = T("Message Details"),
-        title_list = LIST_MESSAGES,
-        title_update = T("Edit message"),
-        title_search = T("Search messages"),
-        subtitle_create = T("Send new message"),
-        subtitle_list = T("Messages"),
-        label_list_button = LIST_MESSAGES,
-        label_create_button = ADD_MESSAGE,
-        msg_record_created = T("Message added"),
-        msg_record_modified = T("Message updated"),
-        msg_record_deleted = T("Message deleted"),
-        msg_list_empty = T("No messages in the system"))
+#-------------------------------------------------------------------------------
 
-    rheader = DIV(B(T("Master Message Log")), ": ", T("All Inbound & Outbound Messages are stored here"))
+def pe_contact():
+    """ Allows the user to add, update and delete their contacts """
+    
+    if auth.is_logged_in() or auth.basic():
+        person = db(db.pr_person.uuid == auth.user.person_uuid).select(db.pr_person.pe_id, limitby=(0, 1)).first().pe_id
+        response.s3.filter = (db.pr_pe_contact.pe_id == person)
+    else:
+        redirect(URL(r=request, c="default", f="user", args="login",
+            vars={"_next":URL(r=request, c="msg", f="pe_contact")}))
 
-    # Server-side Pagination
-    response.s3.pagination = True
+    module = "pr"
+    resource = request.function
+    tablename = module + "_" + resource
+    table = db[tablename]
 
-    return shn_rest_controller(module, resource, listadd=False, rheader=rheader)
+    # These fields will be populated automatically
+    table.name.writable = table.name.readable = False
+    table.pe_id.writable = table.pe_id.readable = False
+    table.person_name.writable = table.person_name.readable = False
+    table.id.writable = False
+#   table.id.readable = False
 
+    def msg_pe_contact_onvalidation(form):
+        """ This onvalidation method adds the person id to the record """
+        person = db(db.pr_person.uuid == auth.user.person_uuid).select(db.pr_person.pe_id, limitby=(0, 1)).first().pe_id
+        form.vars.pe_id = person
+
+    def msg_pe_contact_restrict_access(jr):
+        """ The following restricts update and delete access to contacts not owned by the user """
+        if jr.id :
+            person = db(db.pr_person.uuid == auth.user.person_uuid).select(db.pr_person.pe_id, limitby=(0, 1)).first().pe_id
+            if person == db(db.pr_pe_contact.id == jr.id).select(db.pr_pe_contact.pe_id, limitby=(0, 1)).first().pe_id :
+                return True
+            else:
+                session.error = T("Access denied")
+                return dict(bypass = True, output = redirect(URL(r=request)))
+        else:
+            return True
+    s3xrc.model.configure(table,
+            onvalidation=lambda form: msg_pe_contact_onvalidation(form))
+    response.s3.prep = msg_pe_contact_restrict_access
+    response.menu_options = []
+    return shn_rest_controller(module, resource, listadd=True)
+
+#-------------------------------------------------------------------------------
+def search():
+    """
+        Do a search of groups which match a type
+        Used for auto-completion
+    """
+    if auth.is_logged_in() or auth.basic():
+        pass
+    else:
+        return
+    import gluon.contrib.simplejson as json
+    # JQuery Autocomplete uses 'q' instead of 'value'
+    value = request.vars.q
+    if value:
+        item = person_search(value)
+        item = json.dumps(item)
+        response.view = "xml.html"
+        return dict(item=item)
+    return
+
+def person_search(value):
+    """ Generic function to do the search of groups which match a type """
+    table1 = db.pr_group
+    field1 = "name"
+    table2 = db.pr_person
+    field21 = "first_name"
+    field22 = "middle_name"
+    field23 = "last_name"
+    item = []
+    query = db((table1[field1].like("%" + value + "%")) & (table1.deleted == False)).select(db.pr_group.pe_id)
+    for row in query:
+        item.append({"id":row.pe_id, "name":shn_pentity_represent(row.pe_id, default_label = "")})
+    query = db((table2[field21].like("%" + value + "%")) & (table2.deleted == False)).select(db.pr_person.pe_id)
+    for row in query:
+        item.append({"id":row.pe_id, "name":shn_pentity_represent(row.pe_id, default_label = "")})
+    query = db((table2[field22].like("%" + value + "%")) & (table2.deleted == False)).select(db.pr_person.pe_id)
+    for row in query:
+        item.append({"id":row.pe_id, "name":shn_pentity_represent(row.pe_id, default_label = "")})
+    query = db((table2[field23].like("%" + value + "%")) & (table2.deleted == False)).select(db.pr_person.pe_id)
+    for row in query:
+        item.append({"id":row.pe_id, "name":shn_pentity_represent(row.pe_id, default_label = "")})
+    return item
+
+#--------------------------------------
 # Enabled only for testing
 @auth.shn_requires_membership(1)
 def tag():
-    " RESTful CRUD controller "
+    """ RESTful CRUD controller """
     resource = "tag"
     tablename = "%s_%s" % (module, resource)
     table = db[tablename]
@@ -632,4 +708,3 @@ def tag():
     response.s3.pagination = True
     
     return shn_rest_controller(module, resource, listadd=False)
-

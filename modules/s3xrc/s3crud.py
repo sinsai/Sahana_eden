@@ -186,7 +186,7 @@ class S3MethodHandler(object):
     """ REST Method Handler Base Class
 
         @todo 2.2: implement parent class S3Responder
-        
+
     """
 
     # -------------------------------------------------------------------------
@@ -351,7 +351,7 @@ class S3CRUDHandler(S3MethodHandler):
 
             @todo 2.2: implement this
             @todo 2.2: fix docstring
-            
+
         """
 
         return dict()
@@ -362,12 +362,146 @@ class S3CRUDHandler(S3MethodHandler):
 
         """ Read a single record
 
-            @todo 2.2: implement this
             @todo 2.2: fix docstring
-            
+            @todo 2.2: subheadings?
+            @todo 2.2: plain representation
+            @todo 2.2: attribute reader function?
+            @todo 2.2: move record_id finder into method handler class
+
         """
-        
-        return dict()
+
+        # Initialize output
+        output = dict()
+
+        table = self.table
+        tablename = self.tablename
+
+        # Get request parameters
+        representation = r.representation.lower()
+
+        # Buttons
+        T = self.manager.T
+
+        LIST = self.crud_string(tablename, "label_list_button")
+        EDIT = T("Edit")
+        DELETE = T("Delete")
+
+        href_list = r.there()
+        href_edit = r.other(method="update", representation=representation)
+        href_delete = r.other(method="delete", representation=representation)
+
+        # Get the table-specific attributes
+        _attr = r.component and r.component.attr or attr
+        main = _attr.get("main", None)
+        extra = _attr.get("extra", None)
+        caller = _attr.get("caller", None)
+        editable = _attr.get("editable", True)
+        deletable = _attr.get("deletable", True)
+
+        # List fields
+        list_fields = _attr.get("list_fields", None)
+
+        # Get the correct record ID
+        if r.component:
+            resource = r.resource.components.get(r.component_name).resource
+            resource.load(start=0, limit=1)
+            if not len(resource):
+                if not r.multiple:
+                    r.component_id = None
+                    if self.permit("create", tablename):
+                        redirect(r.other(method="create", representation=representation))
+                    else:
+                        record_id = None
+                else:
+                    session.error = self.manager.ERROR.BAD_RECORD
+                    redirect(r.there())
+            else:
+                record_id = resource.records().first().id
+        else:
+            record_id = r.id
+
+        # Redirect to update if user has permission unless URL method specified
+        if not r.method:
+            authorised = self.permit("update", tablename, record_id)
+            if authorised and representation == "html" and editable:
+                return self.update(r, **attr)
+
+        # Check for read permission => not necessary as already checked in the resource
+        #authorised = shn_has_permission("read", tablename, record_id)
+        #if not authorised:
+            #r.unauthorised()
+
+        # Audit
+        audit = self.manager.audit
+        audit("read", self.prefix, self.name,
+              record=record_id, representation=representation)
+
+        if r.representation in self.INTERACTIVE_FORMATS:
+
+            # Title and subtitle
+            title = self.crud_string(r.tablename, "title_display")
+            output.update(title=title)
+            if r.component:
+                subtitle = self.crud_string(tablename, "title_display")
+                output.update(subtitle=subtitle)
+
+            # Item
+            if record_id:
+                item = self.resource.read(record_id)
+                #subheadings = attr.get("subheadings", None)
+                #if subheadings:
+                    #shn_insert_subheadings(item, tablename, subheadings)
+            else:
+                item = self.crud_string(tablename, "msg_list_empty")
+
+            # Put into view
+            if representation == "html":
+                self.response.view = self._view(r, "display.html")
+                output.update(item=item)
+            elif representation in ("popup", "iframe"):
+                self.response.view = self._view(r, "popup.html")
+                output.update(form=item, main=main, extra=extra, caller=caller)
+
+            # Add update button
+            authorised = self.permit("update", tablename, record_id)
+            if authorised and href_edit and editable and r.method != "update":
+                edit = A(EDIT, _href=href_edit, _class="action-btn")
+                output.update(edit=edit)
+
+            # Add delete button
+            authorised = self.permit("delete", tablename)
+            if authorised and href_delete and deletable:
+                delete = A(DELETE, _href=href_delete, _id="delete-btn", _class="action-btn")
+                output.update(delete=delete)
+
+            # Add list button
+            if not r.component or r.multiple:
+                list_btn = A(LIST, _href=href_list, _class="action-btn")
+                output.update(list_btn=list_btn)
+
+        #elif representation == "plain":
+            #item = crud.read(table, record_id)
+            #response.view = "plain.html"
+            #return dict(item=item)
+
+        elif representation == "csv":
+            exporter = S3Exporter(self.manager)
+            return exporter.csv(self.resource)
+
+        elif representation == "pdf":
+            exporter = S3Exporter(self.manager)
+            return exporter.pdf(self.resource,
+                                list_fields=list_fields)
+
+        elif representation == "xls":
+            exporter = S3Exporter(self.manager)
+            return exporter.xls(self.resource,
+                                list_fields=list_fields)
+
+        else:
+            raise HTTP(501, body=self.manager.ERROR.BAD_FORMAT)
+
+        return output
 
 
     # -------------------------------------------------------------------------
@@ -375,12 +509,186 @@ class S3CRUDHandler(S3MethodHandler):
 
         """ Update a record
 
-            @todo 2.2: implement this
             @todo 2.2: fix docstring
-            
+            @todo 2.2: complete other representations
+            @todo 2.2: re-implement map
+            @todo 2.2: add buttons
+            @todo 2.2: move audit into resource/CRUD
+            @todo 2.2: redirection??
+            @todo 2.2: Navigate-Away-Script
+
         """
-        
-        return dict()
+
+        # Initialize output
+        output = dict()
+
+        table = self.table
+
+        model = self.manager.model
+        representation = r.representation.lower()
+
+        onvalidation = model.get_config(table, "update_onvalidation")
+        if not onvalidation:
+            onvalidation = model.get_config(table, "onvalidation")
+
+        onaccept = model.get_config(table, "update_onaccept")
+        if not onaccept:
+            onaccept = model.get_config(table, "onaccept")
+
+        # Table-specific parameters
+        _attr = r.component and r.component.attr or attr
+        editable = _attr.get("editable", True)
+        deletable = _attr.get("deletable", True)
+        update_next = _attr.get("update_next", None)
+
+        # Find the correct record ID
+        if r.component:
+            resource = r.resource.components.get(r.component_name).resource
+            resource.load(start=0, limit=1)
+            if not len(resource):
+                if not r.multiple:
+                    r.component_id = None
+                    # Do we really want to redirect here?
+                    redirect(r.other(method="create", representation=representation))
+                else:
+                    session.error = BADRECORD
+                    # Do we really want to redirect here?
+                    redirect(r.there())
+            else:
+                record_id = resource.records().first().id
+        else:
+            record_id = r.id
+
+        # Redirect to read view if not editable
+        if not editable and representation in self.INTERACTIVE_FORMATS:
+            return self.read(r, **attr)
+
+        # Check permission for update
+        authorised = self.permit("update", self.tablename, record_id)
+        if not authorised:
+            r.unauthorised()
+
+        # Audit read (user is reading the data even when not updating them)
+        audit = self.manager.audit
+        audit("read", self.prefix, self.name,
+              record=record_id, representation=representation)
+
+        if representation in self.INTERACTIVE_FORMATS:
+
+            # Custom view
+            if representation == "html":
+                self.response.view = self._view(r, "update.html")
+            elif representation in ("popup", "iframe"):
+                self.response.view = self._view(r, "popup.html")
+
+            # Title and subtitle
+            if r.component:
+                title = self.crud_string(r.tablename, "title_display")
+                subtitle = self.crud_string(self.tablename, "title_update")
+                output.update(title=title, subtitle=subtitle)
+            else:
+                title = self.crud_string(self.tablename, "title_update")
+                output.update(title=title)
+
+            # Add delete button
+            #if deletable:
+                #href_delete = r.other(method="delete", representation=representation)
+                #label_del_button = shn_get_crud_string(tablename, "label_delete_button")
+                #del_btn = A(label_del_button,
+                            #_href=href_delete,
+                            #_id="delete-btn",
+                            #_class="action-btn")
+                #output.update(del_btn=del_btn)
+
+            if r.component:
+                _comment = table[r.fkey].comment
+                table[r.fkey].comment = None
+                table[r.fkey].default = r.record[r.pkey]
+                if r.http == "POST":
+                    table[r.fkey].writable = True
+                    request.post_vars.update({r.fkey: str(r.record[r.pkey])})
+                else:
+                    table[r.fkey].writable = False
+                #crud.settings.update_onvalidation = None
+                #crud.settings.update_onaccept = None
+                #if not representation in ("popup", "iframe"):
+                    #crud.settings.update_next = update_next or r.there()
+            #else:
+                #if not representation in ("popup", "iframe") and \
+                #not crud.settings.update_next:
+                    #crud.settings.update_next = update_next or r.here()
+                #if not onvalidation:
+                    #onvalidation = crud.settings.update_onvalidation
+                #if not onaccept:
+                    #onaccept = crud.settings.update_onaccept
+
+            if onaccept:
+                _onaccept = lambda form: \
+                            audit("update", self.prefix, self.name, form=form,
+                                  representation=representation) and \
+                            self.manager.store_session(self.prefix, self.name, form.vars.id) and \
+                            onaccept(form)
+            else:
+                _onaccept = lambda form: \
+                            audit("update", self.prefix, self.name, form=form,
+                                  representation=representation) and \
+                            self.manager.store_session(self.prefix, self.name, form.vars.id)
+
+            #crud.settings.update_deletable = deletable
+            message = self.crud_string(self.tablename, "msg_record_modified")
+
+            form = self.resource.update(record_id,
+                                        message=message,
+                                        onvalidation=onvalidation,
+                                        onaccept=_onaccept)
+
+            #subheadings = attr.get("subheadings", None)
+            #if subheadings:
+                #shn_insert_subheadings(form, tablename, subheadings)
+
+            # Cancel button?
+            #form[0].append(TR(TD(), TD(INPUT(_type="reset", _value=T("Reset form")))))
+            #if response.s3.cancel:
+                #form[0][-1][1].append(INPUT(_type="button",
+                                            #_value=T("Cancel"),
+                                            #_onclick="window.location='%s';" %
+                                                    #response.s3.cancel))
+
+            #if deployment_settings.get_ui_navigate_away_confirm():
+                #form.append( SCRIPT ("EnableNavigateAwayConfirm();") )
+
+            output.update(form=form)
+
+            # Restore comment
+            #if r.component:
+                #table[r.fkey].comment = _comment
+
+            # Add a list button if appropriate
+            #if not r.component or r.multiple:
+                #label_list_button = shn_get_crud_string(tablename, "label_list_button")
+                #if label_list_button:
+                    #list_btn = A(label_list_button, _href=r.there(), _class="action-btn")
+                    #output.update(list_btn=list_btn)
+
+            #if "location_id" in db[tablename].fields and db[tablename].location_id.writable:
+                ## Allow the Location Selector to take effect
+                #_gis.location_id = True
+                #if response.s3.gis.map_selector:
+                    ## Include a map
+                    #_map = shn_map(r, method="update", tablename=tablename, prefix=prefix, name=name)
+                    #oldlocation = _map["oldlocation"]
+                    #_map = _map["_map"]
+                    #output.update(_map=_map, oldlocation=oldlocation)
+
+        #elif representation == "plain":
+            #pass
+        #elif r.representation == "url":
+            #pass
+
+        else:
+            raise HTTP(501, body=self.manager.ERROR.BAD_FORMAT)
+
+        return output
 
 
     # -------------------------------------------------------------------------
@@ -390,9 +698,9 @@ class S3CRUDHandler(S3MethodHandler):
 
             @todo 2.2: implement this
             @todo 2.2: fix docstring
-            
+
         """
-        
+
         return dict()
 
 
@@ -454,9 +762,9 @@ class S3CRUDHandler(S3MethodHandler):
         table = self.resource.table
         list_fields = model.get_config(table, "list_fields")
         if not list_fields:
-            fields = resource.readable_fields()
+            fields = self.resource.readable_fields()
         else:
-            fields = resource.readable_fields(subset=list_fields)
+            fields = self.resource.readable_fields(subset=list_fields)
         if not fields:
             fields = [table.id]
 
@@ -580,7 +888,7 @@ class S3CRUDHandler(S3MethodHandler):
         """ Get the target view path
 
             @todo 2.2: fix docstring
-            
+
         """
 
         request = r.request
@@ -624,7 +932,7 @@ class S3CRUDHandler(S3MethodHandler):
         """ Generate a link button
 
             @todo 2.2: fix docstring
-            
+
         """
 
         labelstr = self.crud_string(tablename, label)
@@ -643,7 +951,7 @@ class S3CRUDHandler(S3MethodHandler):
         """ Get a CRUD info string for interactive pages
 
             @todo 2.2: fix docstring
-            
+
         """
 
         s3 = self.manager.s3
@@ -660,7 +968,7 @@ class S3CRUDHandler(S3MethodHandler):
         """ Linker for the record ID column in list views
 
             @todo 2.2: fix docstring
-            
+
         """
 
         c = None
@@ -725,7 +1033,7 @@ class S3CRUDHandler(S3MethodHandler):
         """ Convert the SSPag GET vars into a filter query
 
             @todo 2.2: fix docstring
-            
+
         """
 
         vars = self.request.get_vars
@@ -778,7 +1086,7 @@ class S3CRUDHandler(S3MethodHandler):
         """ Convert the SSPag GET vars into a sorting query
 
             @todo 2.2: fix docstring
-            
+
         """
 
         vars = self.request.get_vars

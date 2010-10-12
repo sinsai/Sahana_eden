@@ -343,7 +343,12 @@ deployment_settings.modules = Storage(
              name_nice = "Survey Module",
              description = "Create, enter, and manage surveys.",
              module_type = 10,
-    )
+    ),
+    assess = Storage(
+             name_nice = "Assessment Module",
+             description = "Generic Assessments",
+             module_type = 10,
+    ),
     #lms = Storage(
     #        name_nice = T("Logistics Management System"),
     #        description = T("An intake system, a warehouse management system, commodity tracking, supply chain management, procurement and other asset and resource management capabilities."),

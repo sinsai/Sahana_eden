@@ -10,30 +10,36 @@ module = "survey"
 
 if deployment_settings.has_module(module):
 
-    # Reusable table
-    name_desc = db.Table(db,
-                         Field("name", "string", default="", length=120),
-                         Field("description", "text", default="", length=500),
-                         *s3_meta_fields())
+#    # Reusable table
+#    name_desc = db.Table(db,
+#                         Field("name", "string", default="", length=120),
+#                         Field("description", "text", default="", length=500),
+#                         *s3_meta_fields())
 
     # Survey Template
     resource = "template"
     tablename = module + "_" + resource
-    template = db.define_table(tablename, name_desc,
+    template = db.define_table(tablename,
+                               Field("name", "string", default="", length=120),
+                               Field("description", "text", default="", length=500),
                                Field("table_name", "string", readable=False, writable=False),
                                Field("locked", "boolean", readable=False, writable=False),
                                person_id(),
                                organisation_id(),
+                               *s3_meta_fields(),
                                migrate=migrate)
 
     # Survey Series
     resource = "series"
     tablename = module + "_" + resource
-    series = db.define_table(tablename, name_desc,
+    series = db.define_table(tablename,
+                             Field("name", "string", default="", length=120),
+                             Field("description", "text", default="", length=500),
                              Field("survey_template_id", db.survey_template),
                              Field("from_date", "date", default=None),
                              Field("to_date", "date", default=None),
                              location_id(),
+                             *s3_meta_fields(),
                              migrate=migrate)
 
     # Survey Section

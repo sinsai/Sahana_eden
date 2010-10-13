@@ -180,6 +180,14 @@ if deployment_settings.has_module(module):
     table.value.requires = IS_EMPTY_OR(IS_IN_SET(assess_severity_opts))
     table.value.widget=SQLFORM.widgets.radio.widget
     
+    def shn_assess_summary_value_represent(id):
+        if id:
+            return id
+        else:
+            return NONE
+    
+    table.value.represent = shn_assess_summary_value_represent
+    
     # CRUD strings
     ADD_ASSESS_SUMMARY = T("Add Assessment Summary")
     LIST_ASSESS_SUMMARY = T("List Assessment Summaries")

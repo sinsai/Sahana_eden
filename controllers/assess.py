@@ -116,11 +116,7 @@ def assess_short_mobile():
                            _type = "text")   
         elif field[0] == "summary":
             id = name
-            label = "%s:" % shn_get_db_field_value(db = db,
-                                                   table = "cluster_subsector",
-                                                   field = "abrv",
-                                                   look_up = field[1]
-                                                   )
+            label = "%s:" % shn_cluster_subsector_represent( field[1] )
             widget = db.assess_summary.value.widget(db.assess_summary.value,
                                                        None,
                                                        _name = name
@@ -139,7 +135,7 @@ def assess_short_mobile():
                 INPUT(_value = T("Save"),
                       _type = "submit"  
                       ),
-                _class = "mobile"
+                _class = "mobile",
                 )
     
     if auth.is_logged_in():

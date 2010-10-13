@@ -2674,7 +2674,7 @@ OpenLayers.Util.extend( selectPdfControl, {
                 style_marker.graphicName = styleMarker.graphicName;
                 style_marker.pointRadius = styleMarker.pointRadius;
                 style_marker.fillColor = styleMarker.fillColor;
-                style_marker.fillOpacity = 0.4;
+                style_marker.fillOpacity = 0.6;
                 style_marker.strokeColor = styleMarker.fillColor;
                 style_marker.strokeWidth = 2;
                 style_marker.strokeOpacity = 1;
@@ -3006,6 +3006,7 @@ OpenLayers.Util.extend( selectPdfControl, {
         """
                     layers_features += """
         geom = parser.read('""" + wkt + """').geometry;
+        var i = new Array();
         featureVec = addFeature('""" + str(feature.id) + """', '""" + fname + """', geom, styleMarker, i, popup_url)
         features.push(featureVec);
         """

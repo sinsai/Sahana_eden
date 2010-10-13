@@ -998,8 +998,8 @@ def shn_list(r, **attr):
                 output.update(rheader=rh)
         else:
             title = shn_get_crud_string(tablename, "title_list")
-            if rheader:
-                output.update(rheader=rheader)
+            #if rheader:
+            #    output.update(rheader=rheader)
 
         subtitle = shn_get_crud_string(tablename, "subtitle_list")
         output.update(title=title, subtitle=subtitle)

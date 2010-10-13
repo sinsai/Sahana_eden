@@ -69,50 +69,50 @@ if deployment_settings.has_module("org"):
                             organisation_id(),
                             cluster_subsector_id (),
                             Field("description"),
-                            Field("quantity"),
-                            Field("unit"), # Change to link to supply
+                            #Field("quantity"),
+                            #Field("unit"), # Change to link to supply
                             Field("start_date","date"),
                             Field("end_date","date"),
                             location_id(),
-                            shelter_id(),
+                            #shelter_id(),
                             Field("total_bnf_reach","integer"),
-                            Field("bnf_type","integer"),
-                            Field("bnf_date","date"),
-                            Field("total_bnf_target","integer"),
-                            Field("male","integer"),
-                            Field("female","integer"),
-                            Field("child_2","integer"),
-                            Field("child_5","integer"),
-                            Field("child_15","integer"),
-                            Field("cba_women","integer"),
-                            Field("pl_women","integer"),
+                            #Field("bnf_type","integer"),
+                            #Field("bnf_date","date"),
+                            #Field("total_bnf_target","integer"),
+                            #Field("male","integer"),
+                            #Field("female","integer"),
+                            #Field("child_2","integer"),
+                            #Field("child_5","integer"),
+                            #Field("child_15","integer"),
+                            #Field("cba_women","integer"),
+                            #Field("pl_women","integer"),
                             person_id(),
                             comments(),
                             migrate=migrate, *s3_meta_fields())
 
 
     table.total_bnf_reach.label = T("Total # of Beneficiaries Reached ")
-    table.bnf_type.label = T("Beneficiary Type")
-    table.bnf_date.label = T("Date of Latest Information on Beneficiaries Reached")
-    table.total_bnf_target.label = T("Total # of Target Beneficiaries")
-    table.child_2.label = T("Children (< 2 years)")
-    table.child_5.label = T("Children (2-5 years)")
-    table.child_15.label = T("Children (5-15 years)")
-    table.cba_women.label = T("CBA Women")
-    table.cba_women.comment = DIV( _class="tooltip", _title= T("Women of Child Bearing Age"))
-    table.pl_women.label = T("PL Women")
-    table.pl_women.comment = DIV( _class="tooltip", _title= T("Women who are Pregnant or in Labour"))
+    #table.bnf_type.label = T("Beneficiary Type")
+    #table.bnf_date.label = T("Date of Latest Information on Beneficiaries Reached")
+    #table.total_bnf_target.label = T("Total # of Target Beneficiaries")
+    #table.child_2.label = T("Children (< 2 years)")
+    #table.child_5.label = T("Children (2-5 years)")
+    #table.child_15.label = T("Children (5-15 years)")
+    #table.cba_women.label = T("CBA Women")
+    #table.cba_women.comment = DIV( _class="tooltip", _title= T("Women of Child Bearing Age"))
+    #table.pl_women.label = T("PL Women")
+    #table.pl_women.comment = DIV( _class="tooltip", _title= T("Women who are Pregnant or in Labour"))
 
     table.person_id.label = T("Contact Person")
 
-    table.comments.comment = T("(Constraints Only)")
+    #table.comments.comment = T("(Constraints Only)")
 
     for field in table:
         if field.type == "integer":
             field.requires = IS_NULL_OR( IS_INT_IN_RANGE(0,99999999) )
 
-    table.bnf_type.requires = IS_NULL_OR(IS_IN_SET(opt_bnf_type))
-    table.bnf_type.represent = lambda opt: opt_bnf_type.get(opt, NONE)
+    #table.bnf_type.requires = IS_NULL_OR(IS_IN_SET(opt_bnf_type))
+    #table.bnf_type.represent = lambda opt: opt_bnf_type.get(opt, NONE)
 
     # CRUD Strings
     ADD_ACTIVITY = T("Add Activity")

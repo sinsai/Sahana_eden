@@ -2999,6 +2999,7 @@ OpenLayers.Util.extend( selectPdfControl, {
         """
                     else:
                         layers_features += """
+        var i = '';
         styleMarker.iconURL = '';
         styleMarker.graphicName = '""" + graphicName + """';
         styleMarker.pointRadius = """ + str(pointRadius) + """;

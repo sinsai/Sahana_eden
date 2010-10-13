@@ -247,6 +247,8 @@ class IS_ONE_OF_EMPTY(Validator):
                     labels = map(lambda r: \
                                  " ".join([r[l] for l in label if l in r]),
                                  records)
+                elif hasattr(label, '__call__'): #Is a function
+                    labels = map(label, records)
                 elif "name" in _table:
                     labels = map(lambda r: r.name, records)
                 else:

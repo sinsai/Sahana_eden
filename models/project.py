@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 """
-    Supply
+    Project
 
     @author: Michael Howden (michael@sahanafoundation.org)
     @date-created: 2010-08-25
@@ -22,6 +22,18 @@ if deployment_settings.has_module("org"):
 
 
     ADD_ACTIVITY_TYPE = T("Add Activity Type")
+    
+    def activity_type_comment():
+        if auth.has_membership(auth.id_group("'Administrator'")):
+            return DIV(A(ADD_ACTIVITY_TYPE,
+                         _class="colorbox",
+                         _href=URL(r=request, c="project", f="activity_type", args="create", vars=dict(format="popup")),
+                         _target="top",
+                         _title=ADD_ACTIVITY_TYPE
+                         )
+                       )
+        else:
+            return None    
 
     activity_type_id = S3ReusableField("activity_type_id", db.project_activity_type, sortby="name",
                                        requires = IS_NULL_OR(IS_ONE_OF(db, "project_activity_type.id","%(name)s", sort=True)),
@@ -30,12 +42,7 @@ if deployment_settings.has_module("org"):
                                                                                      field = "name",
                                                                                      look_up = id),
                                        label = T("Activity Type"),
-                                       comment = DIV(A(ADD_ACTIVITY_TYPE,
-                                                       _class="colorbox",
-                                                       _href=URL(r=request, c="project", f="activity_type", args="create", vars=dict(format="popup")),
-                                                       _target="top",
-                                                       _title=ADD_ACTIVITY_TYPE)
-                                                      ),
+                                       comment = activity_type_comment(),
                                        ondelete = "RESTRICT"
                                        )
 
@@ -60,7 +67,7 @@ if deployment_settings.has_module("org"):
                                                                   _title=ADD_ORGANIZATION + "|" + T("The Organization which is funding this Activity."))))
                                            ),
                             organisation_id(),
-                            activity_type_id(),
+                            cluster_subsector_id (),
                             Field("description"),
                             Field("quantity"),
                             Field("unit"), # Change to link to supply

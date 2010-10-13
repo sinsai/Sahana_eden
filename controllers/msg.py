@@ -277,6 +277,12 @@ def parserdooth(message):
             reply = reply + " " + organisation.name + "(Organisation) "
             if "phone" in query:
                 reply = reply + "Phone->" + str(organisation.donation_phone)
+            if "office" in query:
+                reply = reply + "Address->" + shn_get_db_field_value(db = db,
+                                                                     table = "org_office",
+                                                                     field = "organisation_id()",
+                                                                     look_up = organisation.id
+                                                                     )            
         if len(reply) == 0:
             return "No Match"
 

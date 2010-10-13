@@ -162,7 +162,8 @@ if deployment_settings.has_module(module):
                             assess_id(),
                             cluster_subsector_id(),
                             #Field("value", "double"),
-                            Field("value", "integer"),
+                            Field("value", "integer",
+                                  default = 0),
                             comments(),
                             migrate=migrate, *s3_meta_fields()
                             )        
@@ -180,9 +181,16 @@ if deployment_settings.has_module(module):
     table.value.requires = IS_EMPTY_OR(IS_IN_SET(assess_severity_opts))
     table.value.widget=SQLFORM.widgets.radio.widget
     
-    def shn_assess_summary_value_represent(id):
-        if id:
-            return id
+    def shn_assess_summary_value_represent(value):        
+        if value:
+            value_colour_dict = {0:"green",
+                                 1:"yellow",
+                                 2:"orange",
+                                 3:"red"}
+            return IMG( _src="/%s/static/img/%s_circle_16px.png" % (request.application, value_colour_dict[value]),
+                        _alt= value,
+                        _align="middle"
+                        )
         else:
             return NONE
     

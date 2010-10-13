@@ -69,7 +69,8 @@ def summary():
     return shn_rest_controller(module, resource)    
 #==============================================================================
 def assess_short_mobile():
-    assess_short_fields = (("baseline", 1),
+    assess_short_fields = (("assess", "location"),
+                           ("baseline", 1),
                            ("baseline", 2),
                            ("baseline", 4),
                            ("baseline", 3),
@@ -87,15 +88,26 @@ def assess_short_mobile():
     comment = ""
     for field in assess_short_fields:
         name = "assess_short_%s_%s" % (field[0], field[1])
+        id = name
         if field[0] == "assess":
-            id = "assess_short_assess_%s" % field[1]
-            label = "%s:" % db.assess_assess[ field[1] ].label
-            #widget = db.assess_assess[ field[1] ].widget
-            widget = TEXTAREA(_name = id,
-                              _class = "double",
-                              _type = "text")            
+            if field[1] == "comments":
+                label = "%s:" % db.assess_assess[ field[1] ].label
+                #widget = db.assess_assess[ field[1] ].widget
+                widget = TEXTAREA(_name = id,
+                                  _class = "double",
+                                  _type = "text")        
+            if field[1] == "location":
+                label = "Location:"
+                #widget = db.assess_assess[ field[1] ].widget
+                widget = DIV(INPUT(_name = id,
+                               _type = "text"), 
+                         INPUT(_name = "gis_location_lat",
+                               _id = "gis_location_lat",
+                               _type = "text"),   
+                         INPUT(_name = "gis_location_lon", 
+                               _id = "gis_location_lon",                            
+                               _type = "text"))                                
         elif field[0] == "baseline":
-            id = name
             label = shn_get_db_field_value(db = db,
                                            table = "assess_baseline_type",
                                            field = "name",
@@ -105,7 +117,6 @@ def assess_short_mobile():
                            _class = "double",
                            _type = "text")           
         elif field[0] == "impact":
-            id = name
             label = "%s:" % shn_get_db_field_value(db = db,
                                                    table = "impact_type",
                                                    field = "name",
@@ -115,14 +126,16 @@ def assess_short_mobile():
                            _class = "double",
                            _type = "text")   
         elif field[0] == "summary":
-            id = name
             label = "%s:" % shn_cluster_subsector_represent( field[1] )
             widget = db.assess_summary.value.widget(db.assess_summary.value,
-                                                       None,
+                                                       0,
                                                        _name = name
                                                        )
-            for option in widget:
+            for option, color in zip(widget, ["green", "yellow", "orange", "red"]):
+                option[0].__setitem__("_style", "background-color:%s;" % color)
                 option[0][0].__setitem__("_name", name)
+                
+                
             
         if field[0] == "title":        
             form_row.append(TR(H3( field[1] )))    
@@ -144,11 +157,20 @@ def assess_short_mobile():
             
             #Add Assess (must happen first)
             for field in assess_short_fields:
-                if field[0] != "assess":
+                if field[0] != "assess" or field[1] == "location":
                     continue
                 name = "assess_short_assess_%s" % field[1]
                 if name in request.vars:
                     record_dict[field[1]] = request.vars[name]
+            if "assess_short_assess_location" in request.vars:
+                location_dict = {}
+                location_dict["name"] = request.vars["assess_short_assess_location"]
+                if "gis_location_lat" in request.vars:
+                    location_dict["lat"] = request.vars["gis_location_lat"]
+                if "gis_location_lon" in request.vars:
+                    location_dict["lon"] = request.vars["gis_location_lon"]                    
+                location_id = db.gis_location.insert(**location_dict)
+                record_dict["location_id"] = location_id
             asssess_id = db.assess_assess.insert(**record_dict)
             
             fk_dict = dict(baseline = "baseline_type_id",
@@ -172,6 +194,19 @@ def assess_short_mobile():
                     record_dict[fk_dict[ field[0] ] ] = field[1]
                     record_dict["value"] = request.vars[name]
                     db[component_dict[ field[0] ] ].insert(**record_dict)
+                    
+            #Send Out Notification SMS (to Taipida)
+            message = "Sahana: New Assessment reported from %s by %s %s" % ( location_dict["name"],
+                                                                     session.auth.user.first_name,
+                                                                     session.auth.user.last_name
+                                                                     )
+            msg.send_by_pe_id(    3,
+                                  subject="",
+                                  message="...",
+                                  sender_pe_id = None,
+                                  pr_message_method = 2,
+                                  sender="",
+                                  fromaddress="")
                     
             form = FORM(H1("Sahana Eden"),
                         H2("Short Assessment"),

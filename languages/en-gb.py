@@ -3277,6 +3277,7 @@
 'Weekly': 'Weekly',
 'Weight': 'Weight',
 'Weight (kg)': 'Weight (kg)',
+'Welcome to the Sahana Eden Disaster Management Platform': 'Welcome to the Sahana Eden Disaster Management Platform',
 'Welcome to the Sahana Eden Disaster Management System': 'Welcome to the Sahana Eden Disaster Management System',
 'Welcome to the Sahana Portal at ': 'Welcome to the Sahana Portal at ',
 'Well-Known Text': 'Well-Known Text',

@@ -1444,8 +1444,8 @@ class GIS(object):
             html.append(SCRIPT(_type="text/javascript", _src=URL(r=request, c="static", f="scripts/gis/usng2.js")))
             html.append(SCRIPT(_type="text/javascript", _src=URL(r=request, c="static", f="scripts/gis/RemoveFeature.js")))
             html.append(SCRIPT(_type="text/javascript", _src=URL(r=request, c="static", f="scripts/gis/osm_styles.js")))
-            html.append(SCRIPT(_type="text/javascript", _src=URL(r=request, c="static", f="scripts/gis/geoext/lib/GeoExt.js")))
-            html.append(SCRIPT(_type="text/javascript", _src=URL(r=request, c="static", f="scripts/gis/geoext/ux/GeoNamesSearchCombo.js")))
+            html.append(SCRIPT(_type="text/javascript", _src=URL(r=request, c="static", f="scripts/gis/GeoExt/lib/GeoExt.js")))
+            html.append(SCRIPT(_type="text/javascript", _src=URL(r=request, c="static", f="scripts/gis/GeoExt/ux/GeoNamesSearchCombo.js")))
         else:
             html.append(SCRIPT(_type="text/javascript", _src=URL(r=request, c="static", f="scripts/gis/OpenLayers.js")))
             html.append(SCRIPT(_type="text/javascript", _src=URL(r=request, c="static", f="scripts/gis/OpenStreetMap.js")))
@@ -1915,7 +1915,7 @@ OpenLayers.Util.extend( selectPdfControl, {
         # Search
         if search:
             search = """
-        var mapSearch = new GeoExt.ux.geonames.GeoNamesSearchCombo({
+        var mapSearch = new GeoExt.ux.GeoNamesSearchCombo({
             map: map,
             zoom: 8
          });
@@ -2999,6 +2999,7 @@ OpenLayers.Util.extend( selectPdfControl, {
         """
                     else:
                         layers_features += """
+        var i = '';
         styleMarker.iconURL = '';
         styleMarker.graphicName = '""" + graphicName + """';
         styleMarker.pointRadius = """ + str(pointRadius) + """;

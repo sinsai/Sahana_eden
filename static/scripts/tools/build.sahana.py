@@ -132,9 +132,9 @@ def dojs(dogis = False):
             "gis":                          ".."
         }
         configDictGeoExt = {
-            "GeoExt.js":                "../gis/geoext/lib",
-            "GeoExt":                   "../gis/geoext/lib",
-            "ux":                       "../gis/geoext"
+            "GeoExt.js":                "../gis/GeoExt/lib",
+            "GeoExt":                   "../gis/GeoExt/lib",
+            "ux":                       "../gis/GeoExt"
         }
         configDictOpenLayers = {
             "OpenLayers.js":                "../gis/openlayers/lib",

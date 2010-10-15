@@ -200,13 +200,14 @@ def assess_short_mobile():
                                                                      session.auth.user.first_name,
                                                                      session.auth.user.last_name
                                                                      )
-            msg.send_by_pe_id(    3,
-                                  subject="",
-                                  message="...",
-                                  sender_pe_id = None,
-                                  pr_message_method = 2,
-                                  sender="",
-                                  fromaddress="")
+            #Hard coded notification message for Demo
+            #msg.send_by_pe_id(    3,
+            #                      subject="",
+            #                      message=message,
+            #                      sender_pe_id = None,
+            #                      pr_message_method = 2,
+            #                      sender="",
+            #                      fromaddress="")
                     
             form = FORM(H1("Sahana Eden"),
                         H2("Short Assessment"),

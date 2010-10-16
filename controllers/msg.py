@@ -108,11 +108,12 @@ def log():
 
     # Model options
     table.message.comment = SPAN("*", _class="req")
-    table.priority.represent = lambda id: (
-        [id and
-            DIV(IMG(_src="/%s/static/img/priority/priority_%d.gif" % (request.application,id,), _height=12)) or
-            DIV(IMG(_src="/%s/static/img/priority/priority_4.gif" % request.application), _height=12)
-        ][0].xml())
+    #table.priority.represent = lambda id: (
+    #    [id and
+    #        DIV(IMG(_src="/%s/static/img/priority/priority_%d.gif" % (request.application,id,), _height=12)) or
+    #        DIV(IMG(_src="/%s/static/img/priority/priority_4.gif" % request.application), _height=12)
+    #    ][0].xml())
+
     # Add Auth Restrictions
 
     # CRUD Strings
@@ -175,14 +176,15 @@ def tropo():
                 message = s.initialText
                 # This is an SMS/IM
                 # Place it in the InBox
-                # @ToDo: For now dumping in a separate table
                 uuid = s.id
                 recipient = s.to["id"]
-                # SyntaxError: invalid syntax (why!?)
-                #from = s.from["id"]
-                #db.msg_log.insert(uuid=uuid, fromaddress=from, recipient=recipient, message=message, inbound=True)
-                db.msg_log.insert(uuid=uuid, recipient=recipient, message=message, inbound=True)
-                # Return a '200 OK'
+                try:
+                    fromaddress = s.fromaddress["id"]
+                except:
+                    # SyntaxError: s.from => invalid syntax (why!?)
+                    fromaddress = ""
+                db.msg_log.insert(uuid=uuid, fromaddress=fromaddress, recipient=recipient, message=message, inbound=True)
+                # Send the message to the parser
                 reply = parserdooth(message)
                 t.say([reply])
                 return t.RenderJson()

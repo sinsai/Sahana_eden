@@ -55,18 +55,25 @@ class Msg(object):
                     self.sms_api_post_config[tmp_parameter.split("=")[0]] = tmp_parameter.split("=")[1]
             self.mail = mail
             self.modem = modem
-            self.tropo_token_messaging = db(db.msg_tropo_settings.id == 1).select(db.msg_tropo_settings.token_messaging, limitby=(0, 1)).first().token_messaging
-            self.tropo_token_voice = db(db.msg_tropo_settings.id == 1).select(db.msg_tropo_settings.token_voice, limitby=(0, 1)).first().token_voice
+            self.tropo_token_messaging = db(db.msg_tropo_settings.id == 1).select(db.msg_tropo_settings.token_messaging,
+                                                                                  limitby=(0, 1)).first().token_messaging
+            #self.tropo_token_voice = db(db.msg_tropo_settings.id == 1).select(db.msg_tropo_settings.token_voice,
+            #                                                                  limitby=(0, 1)).first().token_voice
         except:
             pass
 
     def sanitise_phone(self, phone):
         """
-        Strip out unnecessary characters from the string:
-        +()- & space
+            Strip out unnecessary characters from the string:
+            +()- & space
         """
 
-        clean = string.translate(phone, None, DELETECHARS)
+        try:
+            # Python 2.6
+            clean = string.translate(phone, None, DELETECHARS)
+        except:
+            # Python 2.5
+            clean = string.translate(phone, string.maketrans("", ""), DELETECHARS)
 
         # If number starts with a 0 then need to remove this & add the country code in
         if clean[0] == "0":
@@ -81,7 +88,7 @@ class Msg(object):
     
     def send_sms_via_modem(self, mobile, text=""):
         """
-        Function to send SMS via locally-attached Modem
+            Function to send SMS via locally-attached Modem
         """
         
         mobile = self.sanitise_phone(mobile)
@@ -97,7 +104,7 @@ class Msg(object):
 
     def send_sms_via_api(self, mobile, text=""):
         """
-        Function to send SMS via API
+            Function to send SMS via API
         """
         
         mobile = self.sanitise_phone(mobile)
@@ -147,14 +154,16 @@ class Msg(object):
 
     def send_email_via_api(self, to, subject, message):
         """
-        Function to send Email via API
-        - simple Wrapper over Web2Py's Email API
+            Function to send Email via API
+            - simple Wrapper over Web2Py's Email API
         """
 
         return self.mail.send(to, subject, message)
 
     def check_pe_id_validity(self, pe_id):
-        """ To check if the pe_id passed is valid or not """
+        """
+            Check if the pe_id passed is valid or not
+        """
 
         db = self.db
 
@@ -172,7 +181,10 @@ class Msg(object):
                       sender="",
                       fromaddress="",
                       system_generated = False):
-        """ As the function name suggests - depends on pr_message_method """
+        """
+            Send a message to a Person Entity
+            - depends on pr_message_method
+        """
 
         db = self.db
 
@@ -217,7 +229,10 @@ class Msg(object):
                             sender="",
                             fromaddress="",
                             system_generated=False):
-        """ API wrapper over send_by_pe_id - depends on pr_message_method """
+        """
+            API wrapper over send_by_pe_id
+            - depends on pr_message_method
+        """
         
         return self.send_by_pe_id(pe_id,
                                   subject,
@@ -230,8 +245,8 @@ class Msg(object):
 
     def process_outbox(self, contact_method=1, option=1): #pr_message_method dependent
         """
-        Send Pending Messages from Outbox.
-        If succesful then move from Outbox to Sent. A modified copy of send_email
+            Send Pending Messages from Outbox.
+            If succesful then move from Outbox to Sent. A modified copy of send_email
         """
 
         db = self.db
@@ -324,7 +339,9 @@ class Msg(object):
                       system_generated = False,
                       pr_message_method = 1,
                       ):
-        """ Function to call to drop messages into msg_log """
+        """
+            Function to call to drop incoming messages into msg_log
+        """
 
         db = self.db
 
@@ -340,7 +357,7 @@ class Msg(object):
             #2) This is not transaction safe - power failure in the middle will cause no message in the outbox
         try:
             db.msg_channel.insert(message_id = message_log_id,
-                                    pr_message_method = pr_message_method)
+                                  pr_message_method = pr_message_method)
         except:
             return False
         # Explicitly commit DB operations when running from Cron

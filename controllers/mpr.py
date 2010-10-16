@@ -102,12 +102,12 @@ def index():
                                     vars=dict(condition=vita.CONFIRMED))
                         output.update(myself=myself)
 
-            linkto = shn_linkto(jr, update=True)("[id]")
+            linkto = jr.resource.crud._linkto(jr, update=True)("[id]")
             response.s3.actions.append(dict(label=DETAILS, _class="action-btn", url=linkto))
 
         else:
             label = UPDATE
-            linkto = shn_linkto(jr, update=True)("[id]")
+            linkto = jr.resource.crud._linkto(jr, update=True)("[id]")
             response.s3.actions = [
                 dict(label=str(label), _class="action-btn", url=str(linkto))
             ]

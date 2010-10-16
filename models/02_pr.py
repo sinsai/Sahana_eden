@@ -656,11 +656,12 @@ def shn_pr_person_search_simple(r, **attr):
             # Get the results
             if results:
                 resource.build_query(id=results)
-                report = resource.crud(r, method="list", **attr)
+                report = resource.crud(r, method="list", **attr)["items"]
+                session.s3.filter = {"person.id":",".join(map(str,results))}
             else:
-                report = dict(items=T("No matching records found."))
+                report = T("No matching records found.")
 
-            output.update(dict(report))
+            output.update(items=report)
 
         # Title and subtitle
         title = T("Search for a Person")

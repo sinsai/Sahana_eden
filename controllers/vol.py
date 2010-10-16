@@ -112,18 +112,18 @@ def person():
 
     response.s3.pagination = True
 
-    def person_postp(jr, output):
-        if jr.representation in shn_interactive_view_formats:
-            if not jr.component:
-                label = READ
-            else:
-                label = UPDATE
-            linkto = shn_linkto(jr, sticky=True)("[id]")
-            response.s3.actions = [
-                dict(label=str(label), _class="action-btn", url=str(linkto))
-            ]
-        return output
-    response.s3.postp = person_postp
+    #def person_postp(jr, output):
+        #if jr.representation in shn_interactive_view_formats:
+            #if not jr.component:
+                #label = READ
+            #else:
+                #label = UPDATE
+            #linkto = shn_linkto(jr, sticky=True)("[id]")
+            #response.s3.actions = [
+                #dict(label=str(label), _class="action-btn", url=str(linkto))
+            #]
+        #return output
+    #response.s3.postp = person_postp
 
     tab_set = "person"
     if "vol_tabs" in request.vars:
@@ -339,18 +339,18 @@ def group():
                                        "group_head",
                                        "description"])
 
-    def group_postp(jr, output):
-        if jr.representation in shn_interactive_view_formats:
-            if not jr.component:
-                label = READ
-            else:
-                label = UPDATE
-            linkto = shn_linkto(jr, sticky=True)("[id]")
-            response.s3.actions = [
-                dict(label=str(label), _class="action-btn", url=str(linkto))
-            ]
-        return output
-    response.s3.postp = group_postp
+    #def group_postp(jr, output):
+        #if jr.representation in shn_interactive_view_formats:
+            #if not jr.component:
+                #label = READ
+            #else:
+                #label = UPDATE
+            #linkto = shn_linkto(jr, sticky=True)("[id]")
+            #response.s3.actions = [
+                #dict(label=str(label), _class="action-btn", url=str(linkto))
+            #]
+        #return output
+    #response.s3.postp = group_postp
 
     output = shn_rest_controller("pr", "group",
                                  main="name",

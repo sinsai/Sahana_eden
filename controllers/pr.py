@@ -86,10 +86,11 @@ def index():
                 label = READ
             else:
                 label = UPDATE
-            linkto = shn_linkto(jr, sticky=True)("[id]")
+            linkto = jr.resource.crud._linkto(jr)("[id]")
             response.s3.actions = [
                 dict(label=str(label), _class="action-btn", url=str(linkto))
             ]
+        jr.next = None
         return output
     response.s3.postp = postp
 
@@ -129,18 +130,18 @@ def person():
                                        "group_head",
                                        "description"])
 
-    def postp(r, output):
-        if r.representation in shn_interactive_view_formats:
-            if not r.component:
-                label = READ
-            else:
-                label = UPDATE
-            linkto = shn_linkto(r, sticky=True)("[id]")
-            response.s3.actions = [
-                dict(label=str(label), _class="action-btn", url=str(linkto))
-            ]
-        return output
-    response.s3.postp = postp
+    #def postp(r, output):
+        #if r.representation in shn_interactive_view_formats:
+            #if not r.component:
+                #label = READ
+            #else:
+                #label = UPDATE
+            #linkto = shn_linkto(r, sticky=True)("[id]")
+            #response.s3.actions = [
+                #dict(label=str(label), _class="action-btn", url=str(linkto))
+            #]
+        #return output
+    #response.s3.postp = postp
 
     response.s3.pagination = True
     output = shn_rest_controller(module, resource,
@@ -177,18 +178,18 @@ def group():
                                        "group_head",
                                        "description"])
 
-    def group_postp(jr, output):
-        if jr.representation in shn_interactive_view_formats:
-            if not jr.component:
-                label = READ
-            else:
-                label = UPDATE
-            linkto = shn_linkto(jr, sticky=True)("[id]")
-            response.s3.actions = [
-                dict(label=str(label), _class="action-btn", url=linkto)
-            ]
-        return output
-    response.s3.postp = group_postp
+    #def group_postp(jr, output):
+        #if jr.representation in shn_interactive_view_formats:
+            #if not jr.component:
+                #label = READ
+            #else:
+                #label = UPDATE
+            #linkto = shn_linkto(jr, sticky=True)("[id]")
+            #response.s3.actions = [
+                #dict(label=str(label), _class="action-btn", url=linkto)
+            #]
+        #return output
+    #response.s3.postp = group_postp
 
     response.s3.pagination = True
     output = shn_rest_controller(module, resource,

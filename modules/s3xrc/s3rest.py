@@ -205,13 +205,19 @@ class S3Resource(object):
 
         self.ERROR = manager.ERROR
 
+        # Authorization hooks
         self.permit = manager.auth.shn_has_permission
         self.accessible_query = manager.auth.shn_accessible_query
 
+        # Audit hook
+        self.audit = manager.audit
+
+        # Basic properties
         self.prefix = prefix
         self.name = name
-        self.vars = None # will be set by build_query
+        self.vars = None # set during build_query
 
+        # Private properties
         self.__query = None
         self.__multiple = True
 
@@ -220,10 +226,12 @@ class S3Resource(object):
         self.__ids = []
         self.__uids = []
 
-        # Bind to data store
+        self.__files = Storage()
+
+        # Bind to model and data store
         self.__bind(storage)
 
-        # Attach components and build query
+        # Attach components and build initial query
         self.components = Storage()
         self.parent = parent
 
@@ -231,9 +239,7 @@ class S3Resource(object):
             self.__attach(select=components)
             self.build_query(id=id, uid=uid, filter=filter, vars=vars)
 
-        self.__files = Storage()
-
-        # Store CRUD and method handlers
+        # Store CRUD and other method handlers
         self.crud = self.manager.crud
         self.__handler = Storage(options=self.__get_options,
                                  fields=self.__get_fields,
@@ -245,7 +251,7 @@ class S3Resource(object):
 
     def set_handler(self, method, handler):
 
-        """ Set method handler for this resource
+        """ Set a REST method handler for this resource
 
             @param method: the method name
             @param handler: the handler function
@@ -259,7 +265,7 @@ class S3Resource(object):
     # -------------------------------------------------------------------------
     def get_handler(self, method):
 
-        """ Get method handler for this resource
+        """ Get a REST method handler for this resource
 
             @param method: the method name
             @returns: the handler function
@@ -290,6 +296,7 @@ class S3Resource(object):
             raise KeyError("Undefined table: %s" % self.tablename)
 
         if self.__storage is not None:
+            # Other data store
             raise NotImplementedError
 
 
@@ -301,7 +308,7 @@ class S3Resource(object):
             @param select: name or list of names of components to attach.
                 If select is None (default), then all declared components
                 of this resource will be attached, to attach none of the
-                components, pass an empty list instead.
+                components, pass an empty list.
 
         """
 
@@ -818,15 +825,16 @@ class S3Resource(object):
 
         """ Get the total number of available records in this resource """
 
+        # Rebuild the query if it has been cleared
         if not self.__query:
             self.build_query()
             self.__length = None
 
         if self.__length is None:
-
             if self.__storage is None:
                 self.__length = self.db(self.__query).count()
             else:
+                # Other data store
                 raise NotImplementedError
 
         return self.__length
@@ -943,6 +951,7 @@ class S3Resource(object):
                 self.__uids = [row[uid] for row in self.__set]
 
         else:
+            # Other data store
             raise NotImplementedError
 
 
@@ -1125,7 +1134,7 @@ class S3Resource(object):
 
     def execute_request(self, r, **attr):
 
-        """ Execute a request on this resource
+        """ Execute a request
 
             @param r: the request to execute
             @type r: S3Request
@@ -1179,9 +1188,9 @@ class S3Resource(object):
                         else:
                             status = pre.get("status", 400)
                             message = pre.get("message", self.ERROR.BAD_REQUEST)
-                            raise HTTP(status, message)
+                            r.error(status, message)
             elif not pre:
-                raise HTTP(400, body=self.ERROR.BAD_REQUEST)
+                r.error(400, self.ERROR.BAD_REQUEST)
 
         # Default view
         if r.representation <> "html":
@@ -1201,7 +1210,7 @@ class S3Resource(object):
             elif r.http == "DELETE":
                 handler = self.__delete(r)
             else:
-                raise HTTP(501, body=self.ERROR.BAD_METHOD)
+                r.error(501, self.ERROR.BAD_METHOD)
             if handler is not None:
                 output = handler(r, **attr)
             else:
@@ -1217,7 +1226,7 @@ class S3Resource(object):
             output.update(jr=r)
 
         # Redirection (makes no sense in GET)
-        if r.next is not None and r.http != "GET" or r.method == "delete":
+        if r.next is not None and r.http != "GET":
             if isinstance(output, dict):
                 form = output.get("form", None)
                 if form and form.errors:
@@ -1234,7 +1243,7 @@ class S3Resource(object):
     # -------------------------------------------------------------------------
     def __get(self, r):
 
-        """ Get GET method handler
+        """ Get the GET method handler
 
             @param r: the S3Request
 
@@ -1272,7 +1281,7 @@ class S3Resource(object):
                         r.id = self.get_id()
                         r.uid = self.get_uid()
                     else:
-                        raise HTTP(404, self.ERROR.BAD_RECORD)
+                        r.error(404, self.ERROR.BAD_RECORD)
                     method = "read"
                 else:
                     method = "list"
@@ -1311,7 +1320,7 @@ class S3Resource(object):
             return None
 
         else:
-            raise HTTP(501, body=self.ERROR.BAD_METHOD)
+            r.error(501, self.ERROR.BAD_METHOD)
 
         if not authorised:
             r.unauthorised()
@@ -1322,7 +1331,7 @@ class S3Resource(object):
     # -------------------------------------------------------------------------
     def __put(self, r):
 
-        """ Get PUT method handler
+        """ Get the PUT method handler
 
             @param r: the S3Request
 
@@ -1342,37 +1351,42 @@ class S3Resource(object):
             else:
                 return self.get_handler("import_tree")
         else:
-            raise HTTP(501, body=self.ERROR.BAD_FORMAT)
+            r.error(501, self.ERROR.BAD_FORMAT)
 
 
     # -------------------------------------------------------------------------
     def __post(self, r):
 
-        """ Get POST method handler
+        """ Get the POST method handler
 
             @param r: the S3Request
 
         """
 
-        if r.representation in self.manager.xml_import_formats or \
-           r.representation in self.manager.json_import_formats:
-            return self.__put(r)
+        method = r.method
+
+        if method == "delete":
+            return self.__delete(r)
         else:
-            post_vars = r.request.post_vars
-            table = r.target()[2]
-            if "deleted" in table and \
-               "id" not in post_vars and "uuid" not in post_vars:
-                original = self.manager.original(table, post_vars)
-                if original and original.deleted:
-                    r.request.post_vars.update(id=original.id)
-                    r.request.vars.update(id=original.id)
-            return self.__get(r)
+            if r.representation in self.manager.xml_import_formats or \
+            r.representation in self.manager.json_import_formats:
+                return self.__put(r)
+            else:
+                post_vars = r.request.post_vars
+                table = r.target()[2]
+                if "deleted" in table and \
+                "id" not in post_vars and "uuid" not in post_vars:
+                    original = self.manager.original(table, post_vars)
+                    if original and original.deleted:
+                        r.request.post_vars.update(id=original.id)
+                        r.request.vars.update(id=original.id)
+                return self.__get(r)
 
 
     # -------------------------------------------------------------------------
     def __delete(self, r):
 
-        """ Get DELETE method handler
+        """ Get the DELETE method handler
 
             @param r: the S3Request
 
@@ -1382,17 +1396,17 @@ class S3Resource(object):
 
         tablename = r.component and r.component.tablename or r.tablename
 
-        if r.id or \
-           r.component and r.component_id:
-            authorised = permit("delete", tablename, r.id)
-            if not authorised:
-                r.unauthorised()
+        #if r.id or \
+           #r.component and r.component_id:
+        authorised = permit("delete", tablename)
+        if not authorised:
+            r.unauthorised()
 
-            if r.next is None:
-                r.next = r.there()
-            return self.get_handler("delete")
-        else:
-            raise HTTP(501, body=self.ERROR.BAD_METHOD)
+        #if r.next is None and r.http == "POST":
+            #r.next = r.there()
+        return self.get_handler("delete")
+        #else:
+            #r.error(501, self.ERROR.BAD_METHOD)
 
 
     # -------------------------------------------------------------------------
@@ -1422,7 +1436,7 @@ class S3Resource(object):
         elif r.representation == "json":
             return self.options_json(component=r.component_name, fields=fields)
         else:
-            raise HTTP(501, body=self.ERROR.BAD_FORMAT)
+            r.error(501, self.ERROR.BAD_FORMAT)
 
 
     # -------------------------------------------------------------------------
@@ -1440,13 +1454,13 @@ class S3Resource(object):
         elif r.representation == "json":
             return self.fields_json(component=r.component_name)
         else:
-            raise HTTP(501, body=self.ERROR.BAD_FORMAT)
+            r.error(501, self.ERROR.BAD_FORMAT)
 
 
     # -------------------------------------------------------------------------
     def __get_tree(self, r, **attr):
 
-        """ Method handler to export this resource in XML or JSON formats
+        """ Export this resource in XML or JSON formats
 
             @param r: the request
             @param attr: request attributes
@@ -1479,7 +1493,7 @@ class S3Resource(object):
                                     template_name)
 
             if not os.path.exists(template):
-                raise HTTP(501, body="%s: %s" % (self.ERROR.BAD_TEMPLATE, template))
+                r.error(501, "%s: %s" % (self.ERROR.BAD_TEMPLATE, template))
 
         start = r.request.vars.get("start", None)
         if start is not None:
@@ -1530,10 +1544,7 @@ class S3Resource(object):
 
             tree = self.manager.xml.transform(tree, template, **args)
             if not tree:
-                error = self.manager.xml.json_message(False, 400,
-                            str("XSLT Transformation Error: %s ") % \
-                            self.manager.xml.error)
-                raise HTTP(400, body=error)
+                r.error(400, "XSLT Transformation Error: %s " % self.manager.xml.error)
 
         if r.representation in xml_formats:
             return self.manager.xml.tostring(tree, pretty_print=True)
@@ -1612,8 +1623,7 @@ class S3Resource(object):
             tree = xml.json2tree(source)
 
         if not tree:
-            item = xml.json_message(False, 400, xml.error)
-            raise HTTP(400, body=item)
+            r.error(400, xml.error)
 
         # XSLT Transformation
         if not r.representation in ("xml", "json"):
@@ -1625,17 +1635,14 @@ class S3Resource(object):
                                     template_name)
 
             if not os.path.exists(template):
-                raise HTTP(501, body="%s: %s" % (self.ERROR.BAD_TEMPLATE, template))
+                r.error(501, "%s: %s" % (self.ERROR.BAD_TEMPLATE, template))
 
             tree = xml.transform(tree, template,
                                  domain=self.manager.domain,
                                  base_url=self.manager.base_url)
 
             if not tree:
-                error = xml.json_message(False, 400,
-                            str("XSLT Transformation Error: %s ") % \
-                            self.manager.xml.error)
-                raise HTTP(400, body=error)
+                r.error(400, "XSLT Transformation Error: %s" % self.manager.xml.error)
 
         if r.component:
             skip_resource = True
@@ -1659,8 +1666,7 @@ class S3Resource(object):
             item = xml.json_message()
         else:
             tree = xml.tree2json(tree)
-            item = xml.json_message(False, 400, self.manager.error, tree=tree)
-            raise HTTP(400, body=item)
+            r.error(400, self.manager.error, tree=tree)
 
         #return dict(item=item)
         return item
@@ -1697,7 +1703,11 @@ class S3Resource(object):
 
         """ Export this resource as XML
 
-            @todo 2.2: fix docstring
+            @param template: path to the XSLT stylesheet (if required)
+            @param pretty_print: whether to use newlines/indentation in the output
+            @param args: dict of arguments to pass to the XSLT stylesheet
+
+            @todo 2.2: slicing?
 
         """
 
@@ -1724,7 +1734,11 @@ class S3Resource(object):
 
         """ Export this resource as JSON
 
-            @todo 2.2: fix docstring
+            @param template: path to the XSLT stylesheet (if required)
+            @param pretty_print: whether to use newlines/indentation in the output
+            @param args: dict of arguments to pass to the XSLT stylesheet
+
+            @todo 2.2: slicing?
 
         """
 
@@ -2299,40 +2313,89 @@ class S3Resource(object):
 
     # CRUD functions ==========================================================
 
-    def create(self):
+    def create(self,
+               onvalidation=None,
+               onaccept=None,
+               message="Record created",
+               download_url=None,
+               from_table=None,
+               from_record=None,
+               map_fields=None,
+               format=None):
 
         """ Add a record to this resource
 
-            @todo 2.2: implement this
-
-        """
-
-        return None
-
-    # -------------------------------------------------------------------------
-    def read(self, id):
-
-        """ View a record of this resource
-
-            @param id: the ID of the record to display
-
-            @todo 2.2: implement audit here?
+            @todo 2.2: fix docstring
 
         """
 
         # Get the CRUD settings
-        s3 = self.manager.s3
-        settings = s3.crud
+        settings = self.manager.s3.crud
 
         # Get the table
         table = self.table
+
+        # Copy record
+        data = None
+        if from_table is not None:
+            row = self.db(from_table.id == from_record).select(from_table.ALL, limit=(0,1)).first()
+            if row:
+                if map_fields:
+                    if isinstance(map_fields, dict):
+                        data = Storage([(map_fields[f], row[f])
+                                        for f in map_fields
+                                        if f in table and f in row and f != "id"])
+
+                    elif isinstance(map_fields, (list, tuple)):
+                        data = Storage([(f, row[f])
+                                        for f in map_fields
+                                        if f in table and f in row and f != "id"])
+                    else:
+                        raise TypeError
+                else:
+                    data = Storage([(f, row[f])
+                                    for f in row
+                                    if f in table and f != "id"])
+
+        # Get the form
+        form = self.update(None,
+                           data=data,
+                           onvalidation=onvalidation,
+                           onaccept=onaccept,
+                           message=message,
+                           download_url=download_url,
+                           format=format)
+
+        return form
+
+
+    # -------------------------------------------------------------------------
+    def read(self, id, download_url=None, format=None):
+
+        """ View a record of this resource
+
+            @param id: the ID of the record to display
+            @param download_url: download URL for uploaded files in this resource
+            @param format: the representation format
+
+        """
+
+        # Get the CRUD settings
+        settings = self.manager.s3.crud
+
+        # Get the table
+        table = self.table
+
+        # Audit
+        audit = self.manager.audit
+        audit("read", self.prefix, self.name, record=id, representation=format)
 
         # Get the form
         form = SQLFORM(table, id,
                        readonly=True,
                        comments=False,
                        showid=False,
-                       #upload=<setting>, # fix this
+                       upload=download_url,
                        formstyle=settings.formstyle)
 
         return form
@@ -2343,7 +2406,9 @@ class S3Resource(object):
                data=None,
                onvalidation=None,
                onaccept=None,
-               message="Record updated"):
+               message="Record updated",
+               download_url=None,
+               format=None):
 
         """ Update form for this resource
 
@@ -2352,10 +2417,8 @@ class S3Resource(object):
             @param onvalidation: onvalidation callback hook
             @param onaccept: onaccept callback hook
             @param message: success message
-
-            @todo 2.2: move formstyle and download_url into parameter list,
-                do not access settings here
-            @todo 2.2: implement audit here
+            @param download_url: Download URL for uploaded files in this resource
+            @param format: the representation format
 
         """
 
@@ -2370,15 +2433,9 @@ class S3Resource(object):
 
         # Table
         table = self.table
-        #model = self.manager.model
+        model = self.manager.model
 
-        #onvalidation = model.get_config(table, "onvalidation")
-        #onaccept = model.get_config(table, "onaccept")
-
-        # Create a new record: record=None, record_id=None
-        # Update an existing record: record=ID, record_id=None
-        # Copy a record: record=record, record_id=None
-
+        # Copy from another record?
         if id is None and data:
             record = Storage(data)
             if "id" in record:
@@ -2400,28 +2457,20 @@ class S3Resource(object):
                        record_id=id,
                        labels = labels,
                        showid=False,
-                       #showid=<use a setting>, # we do generally not want this, do we?
                        deletable=False,
-                       #deletable = <use a resource setting>, # not needed (action button)
-                       #delete_label = <use a setting>, # not needed (action button)
-                       #upload=download_url, # solve this!
+                       upload=download_url,
                        submit_button=settings.submit_button or self.manager.T("Save"),
-                       #hidden=dict(_next=next), # not needed
                        formstyle=settings.formstyle)
 
         # Set form name
         formname = "%s/%s" % (self.tablename, form.record_id)
-
-        # Keep values in form? (We do not need this at all)
-        #keepvalues = self.settings.keepvalues
-        #if request.vars.delete_this_record:
-            #keepvalues = False
 
         # Get the proper onvalidation routine
         if isinstance(onvalidation, dict):
             onvalidation = onvalidation.get(self.tablename, [])
 
         # Run the form
+        audit = self.manager.audit
         if form.accepts(request.post_vars,
                         session,
                         formname=formname,
@@ -2429,32 +2478,92 @@ class S3Resource(object):
                         keepvalues=False,
                         hideerror=False):
 
-            # Update message
+            # Message
             response.flash = message
 
-            # Spool delete message if delete (we do not delete-on-update, do we?)
-            #if request.vars.delete_this_record:
-                #message = self.messages.record_deleted
-                #callback(ondelete,form,table._tablename)
-            #response.flash = message
+            # Audit
+            if id is None:
+                audit("create", self.prefix, self.name, form=form, representation=format)
+            else:
+                audit("update", self.prefix, self.name, form=form, representation=format)
+
+            # Update super entity links
+            model.update_super(table, form.vars)
+
+            # Store session vars
+            if form.vars.id:
+                self.manager.store_session(self.prefix, self.name, form.vars.id)
 
             # Execute onaccept
             self.manager.callback(onaccept, form, name=self.tablename)
+        else:
+            # Audit read (user is reading even when not updating the data)
+            audit("read", self.prefix, self.name, form=form, representation=format)
 
         return form
 
 
     # -------------------------------------------------------------------------
-    def delete(self,
-               ondelete=None):
+    def delete(self, ondelete=None, format=None):
 
-        """ Delete all records in this resource
+        """ Delete all (deletable) records in this resource
 
-            @todo 2.2: implement this
+            @param ondelete: on-delete callback
+            @param format: the representation format of the request
+
+            @returns: number of records deleted
+
+            @todo 2.2: move error message into resource controller
+            @todo 2.2: check for integrity error exception explicitly
 
         """
 
-        return None
+        settings = self.manager.s3.crud
+        archive_not_delete = settings.archive_not_delete
+
+        T = self.manager.T
+        INTEGRITY_ERROR = T("Cannot delete whilst there are linked records. Please delete linked records first.")
+
+        self.load()
+        records = self.records()
+
+        permit = self.permit
+        audit = self.manager.audit
+
+        numrows = 0
+        for row in records:
+            if permit("delete", self.tablename, row.id):
+
+                # Clear session
+                if self.manager.get_session(prefix=self.prefix, name=self.name) == row.id:
+                    self.manager.clear_session(prefix=self.prefix, name=self.name)
+
+                # Archive record?
+                if archive_not_delete and "deleted" in self.table:
+                    self.db(self.table.id == row.id).update(deleted=True)
+                    numrows += 1
+                    audit("delete", self.prefix, self.name,
+                          record=row.id, representation=format)
+                    self.manager.model.delete_super(self.table, row)
+                    if ondelete:
+                        ondelete(row)
+
+                # otherwise: delete record
+                else:
+                    try:
+                        del self.table[row.id]
+                    except: # Integrity Error
+                        self.manager.session.error = INTEGRITY_ERROR
+                    else:
+                        numrows += 1
+                        audit("delete", self.prefix, self.name,
+                              record=row.id, representation=format)
+                        self.manager.model.delete_super(self.table, row)
+                        if ondelete:
+                            ondelete(row)
+
+        return numrows
+
 
     # -------------------------------------------------------------------------
     def select(self,
@@ -2465,9 +2574,14 @@ class S3Resource(object):
                linkto=None,
                download_url=None,
                as_page=False,
-               as_list=False):
+               as_list=False,
+               format=None):
 
-        """ List of all records of this resource """
+        """ List of all records of this resource
+
+            @todo 2.2: fix docstring
+
+        """
 
         db = self.db
 
@@ -2482,6 +2596,10 @@ class S3Resource(object):
             limitby = (start, start + limit)
         else:
             limitby = None
+
+        # Audit
+        audit = self.manager.audit
+        audit("list", self.prefix, self.name, representation=format)
 
         rows = db(query).select(*fields, **dict(orderby=orderby,
                                                 limitby=limitby))
@@ -2518,8 +2636,10 @@ class S3Request(object):
 
     """ Class to handle requests """
 
-    DEFAULT_REPRESENTATION = "html"
     UNAUTHORISED = "Not Authorised"
+
+    DEFAULT_REPRESENTATION = "html"
+    INTERACTIVE_FORMATS = ("html", "popup", "iframe")
 
     # -------------------------------------------------------------------------
     def __init__(self, manager, prefix, name):
@@ -2534,12 +2654,12 @@ class S3Request(object):
 
         self.manager = manager
 
+        # Get the environment
         self.session = manager.session or Storage()
         self.request = manager.request
         self.response = manager.response
 
-        self.error = None
-
+        # Main resource parameters
         self.prefix = prefix or self.request.controller
         self.name = name or self.request.function
 
@@ -2557,6 +2677,10 @@ class S3Request(object):
 
         # Parse the request
         self.__parse()
+
+        # Interactive representation format?
+        self.representation = self.representation.lower()
+        self.interactive = self.representation in self.INTERACTIVE_FORMATS
 
         # Append component ID to the URL query
         if self.component_name and self.component_id:
@@ -2613,8 +2737,8 @@ class S3Request(object):
                 self.record = self.resource.records().first()
                 self.id = self.record.id
                 self.manager.store_session(self.resource.prefix,
-                                             self.resource.name,
-                                             self.id)
+                                           self.resource.name,
+                                           self.id)
             else:
                 manager.error = "No matching record found"
                 raise KeyError(manager.error)
@@ -2640,13 +2764,41 @@ class S3Request(object):
                         vars={"_next": self.here()})
             redirect(login)
         else:
-            raise HTTP(401, body = self.UNAUTHORISED)
+            raise HTTP(401, body=self.UNAUTHORISED)
+
+
+    # -------------------------------------------------------------------------
+    def error(self, status, message, tree=None):
+
+        """ Action upon error
+
+            @param r: the S3Request
+            @param status: HTTP status code
+            @param message: the error message
+
+        """
+
+        xml = self.manager.xml
+
+        if self.representation == "html":
+            self.session.error = message
+            redirect(URL(r=self.request, f="index"))
+        else:
+            raise HTTP(status,
+                       body=xml.json_message(success=False,
+                                             status_code=status,
+                                             message=message,
+                                             tree=tree))
 
 
     # -------------------------------------------------------------------------
     def _bind(self, resource):
 
-        """ @todo 2.2: add docstring """
+        """ Re-bind this request to another resource
+
+            @param resource: the S3Resource
+
+        """
 
         self.resource = resource
 
@@ -2723,6 +2875,7 @@ class S3Request(object):
             @param id: the record ID for the URL
             @param method: an explicit method for the URL
             @param representation: the representation for the URL
+            @param vars: the URL query variables
 
             @todo 2.2: make this based on S3Resource.url()
 
@@ -2798,8 +2951,7 @@ class S3Request(object):
         """ URL of the current request
 
             @param representation: the representation for the URL
-
-            @todo 2.2: fix docstring
+            @param vars: the URL query variables
 
         """
 
@@ -2815,8 +2967,7 @@ class S3Request(object):
             @param method: an explicit method for the URL
             @param record_id: the record ID for the URL
             @param representation: the representation for the URL
-
-            @todo 2.2: fix docstring
+            @param vars: the URL query variables
 
         """
 
@@ -2830,8 +2981,7 @@ class S3Request(object):
         """ URL of a HTTP/list request on the same resource
 
             @param representation: the representation for the URL
-
-            @todo 2.2: fix docstring
+            @param vars: the URL query variables
 
         """
 
@@ -2844,8 +2994,7 @@ class S3Request(object):
         """ URL of the same request with neutralized primary record ID
 
             @param representation: the representation for the URL
-
-            @todo 2.2: fix docstring
+            @param vars: the URL query variables
 
         """
 
@@ -2856,7 +3005,12 @@ class S3Request(object):
 
     def target(self):
 
-        """ Get the target table of the current request """
+        """ Get the target table of the current request
+
+            @returns: a tuple of (prefix, name, table, tablename) of the target
+                resource of this request
+
+        """
 
         if self.component is not None:
             return (self.component.prefix,

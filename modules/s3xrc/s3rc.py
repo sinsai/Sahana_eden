@@ -57,8 +57,17 @@ class S3ResourceController(object):
 
     """ S3 Resource Controller
 
+        @param db: the database (DAL)
+        @param domain: name of the current domain
+        @param base_url: base URL of this instance
+        @param rpp: rows-per-page for server-side pagination
+        @param gis: the GIS toolkit to use
+        @param messages: a function to retrieve message URLs tagged for a resource
+        @param cache: the cache object
+
+        @todo 2.2: fix docstring/parameters
         @todo 2.2: move formats into settings
-        @todo 2.2: error messages internationalization?
+        @todo 2.2: error messages internationalization!
 
     """
 
@@ -88,11 +97,11 @@ class S3ResourceController(object):
     # Error messages
     ERROR = Storage(
         BAD_RECORD = "Record not found",
-        BAD_METHOD = "Invalid method",
-        BAD_FORMAT = "Invalid data format",
+        BAD_METHOD = "Unsupported method",
+        BAD_FORMAT = "Unsupported data format",
         BAD_REQUEST = "Invalid request",
         BAD_TEMPLATE = "XSLT template not found",
-        BAD_RESOURCE = "Invalid resource",
+        BAD_RESOURCE = "Nonexistent or invalid resource",
         PARSE_ERROR = "XML parse error",
         TRANSFORMATION_ERROR = "XSLT transformation error",
         BAD_SOURCE = "Invalid XML source",
@@ -103,8 +112,6 @@ class S3ResourceController(object):
         NOT_IMPLEMENTED = "Not implemented"
     )
 
-    # =========================================================================
-
     def __init__(self,
                  environment,
                  domain=None, # @todo 2.2: read fromm environment
@@ -113,39 +120,22 @@ class S3ResourceController(object):
                  messages=None, # @todo 2.2: move into settings
                  **attr):
 
-        """ Constructor
-
-            @param db: the database (DAL)
-            @param domain: name of the current domain
-            @param base_url: base URL of this instance
-            @param rpp: rows-per-page for server-side pagination
-            @param gis: the GIS toolkit to use
-            @param messages: a function to retrieve message URLs tagged for a resource
-            @param cache: the cache object
-
-            @todo 2.2: fix docstring/parameters
-            @todo 2.2: remove assertions
-
-        """
-
         # Environment
         environment = Storage(environment)
 
+        self.T = environment.T
+
         self.db = environment.db
         self.cache = environment.cache
-
-        self.auth = environment.auth
-        self.gis = environment.gis
-
-        self.s3 = environment.s3
 
         self.session = environment.session
         self.request = environment.request
         self.response = environment.response
 
-        self.T = environment.T #: Global translator object
-
         # Settings
+        self.s3 = environment.s3 #@todo 2.2: rename variable?
+        #self.settings = self.s3.<what?> @todo 2.2
+
         self.domain = domain
         self.base_url = base_url
         self.download_url = "%s/default/download" % base_url
@@ -159,22 +149,25 @@ class S3ResourceController(object):
         self.error = None
 
         # Toolkits
-        self.model = S3ResourceModel(self.db)
-        self.crud = S3CRUDHandler(self)
-        self.xml = S3XML(self.db,
+        self.audit = environment.s3_audit       # Audit
+        self.auth = environment.auth            # Auth
+        self.gis = environment.gis              # GIS
+
+        self.model = S3ResourceModel(self.db)   # Resource Model, @todo 2.2: reduce parameter list to (self)?
+        self.crud = S3CRUDHandler(self)         # CRUD Handler
+        self.xml = S3XML(self.db,               # S3XML, @todo 2.2: reduce parameter list to (self)?
                          domain=domain,
                          base_url=base_url,
                          gis=self.gis,
                          cache=self.cache)
 
         # Hooks
-        self.audit = environment.s3_audit   # Audit
         self.messages = None                # Messages Finder
         self.tree_resolve = None            # Tree Resolver
         self.sync_resolve = None            # Sync Resolver
         self.sync_log = None                # Sync Logger
 
-        # Import/Export formats: move into settings
+        # Import/Export formats, @todo 2.2: move into settings
         attr = Storage(attr)
 
         self.xml_import_formats = attr.get("xml_import_formats", ["xml"])
@@ -185,7 +178,7 @@ class S3ResourceController(object):
         self.json_export_formats = attr.get("json_export_formats",
                                             dict(json="text/x-json"))
 
-        # Method Handlers
+        # Method Handlers, @todo 2.2: deprecate?
         self.__handler = Storage()
 
 
@@ -1266,10 +1259,10 @@ class S3Vector(object):
                  mtime=None,
                  rmap=None,
                  directory=None,
-                 permit=None,
-                 audit=None,
-                 sync=None,
-                 log=None,
+                 permit=None, # @todo 2.2: read from manager
+                 audit=None, # @todo 2.2: read from manager
+                 sync=None, # @todo 2.2: read from manager
+                 log=None, # @todo 2.2: read from manager
                  onvalidation=None,
                  onaccept=None):
 

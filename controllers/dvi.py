@@ -101,16 +101,6 @@ def recreq():
 
     db.dvi_recreq.person_id.default = s3_logged_in_person()
 
-    def recreq_postp(jr, output):
-        if jr.representation in shn_interactive_view_formats:
-            label = UPDATE
-            linkto = shn_linkto(jr, sticky=True)("[id]")
-            response.s3.actions = [
-                dict(label=str(label), _class="action-btn", url=str(linkto))
-            ]
-        return output
-    response.s3.postp = recreq_postp
-
     response.s3.pagination = True
     output = shn_rest_controller(module, resource, listadd=False)
 

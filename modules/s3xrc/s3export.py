@@ -61,20 +61,22 @@ class S3Exporter(object):
 
             @param manager: the resource controller
 
-            @todo 2.2: error message completion/internationalization
+            @todo 2.2: error message completion
 
         """
 
         self.manager = manager
 
+        T = manager.T
+
         self.db = self.manager.db
         self.s3 = self.manager.s3
 
         self.ERROR = Storage(
-            REPORTLAB_ERROR = "ReportLab not installed",
-            GERALDO_ERROR = "Geraldo not installed",
-            NO_RECORDS = "No records in this resource",
-            XLWT_ERROR = "Xlwt not installed",
+            REPORTLAB_ERROR = T("ReportLab not installed"),
+            GERALDO_ERROR = T("Geraldo not installed"),
+            NO_RECORDS = T("No records in this resource"),
+            XLWT_ERROR = T("Xlwt not installed"),
         )
 
     # -------------------------------------------------------------------------
@@ -83,6 +85,8 @@ class S3Exporter(object):
         """ Export record(s) as CSV
 
             @param resource: the resource to export
+
+            @todo: implement audit
 
         """
 
@@ -116,6 +120,8 @@ class S3Exporter(object):
             @todo 2.2: do not redirect
             @todo 2.2: PEP-8
             @todo 2.2: test this!
+
+            @todo: implement audit
 
         """
 
@@ -276,6 +282,8 @@ class S3Exporter(object):
             @todo 2.2: PEP-8
             @todo 2.2: use S3Resource.readable_fields
                 (once it gets moved there from CRUD)
+
+            @todo: implement audit
 
         """
 

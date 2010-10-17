@@ -947,13 +947,6 @@ def shn_rest_controller(module, resource, **attr):
 
     """ Helper function to apply the S3Resource REST interface """
 
-    # Comment these to use S3CRUDHandler:
-    #s3xrc.set_handler("list", shn_list)
-    #s3xrc.set_handler("read", shn_read)
-    #s3xrc.set_handler("create", shn_create)
-    #s3xrc.set_handler("update", shn_update)
-    #s3xrc.set_handler("delete", shn_delete)
-
     # @todo: implement these as S3MethodHandler:
     s3xrc.set_handler("search", shn_search)
     s3xrc.set_handler("copy", shn_copy)
@@ -1009,6 +1002,121 @@ def shn_rest_controller(module, resource, **attr):
                                   args=["create"], vars=vars))
                     add_btn = A(label, _href=url, _class="action-btn")
                     output.update(add_btn=add_btn)
+
+    return output
+
+
+# -----------------------------------------------------------------------------
+def s3_rest_controller(prefix, resourcename, **attr):
+
+    """ Helper function to apply the S3Resource REST interface (new version)
+
+        @param prefix: the application prefix
+        @param resourcename: the resource name (without prefix)
+        @param attr: additional keyword parameters
+
+        Any keyword parameters will be copied into the output dict (provided
+        that the output is a dict). If a keyword parameter is callable, then
+        it will be invoked, and its return value will be added to the output
+        dict instead. The callable receives the S3Request as its first and
+        only parameter.
+
+        CRUD can be configured per table using:
+
+            s3xrc.model.configure(table, **attr)
+
+        *** Redirection:
+
+        create_next             URL to redirect to after a record has been created
+        update_next             URL to redirect to after a record has been updated
+        delete_next             URL to redirect to after a record has been deleted
+
+        *** Form configuration:
+
+        list_fields             list of names of fields to include into list views
+        subheadings             Sub-headings (see separate documentation)
+        listadd                 Enable/Disable add-form in list views
+
+        *** CRUD configuration:
+
+        editable                Allow/Deny record updates in this table
+        deletable               Allow/Deny record deletions in this table
+        insertable              Allow/Deny record insertions into this table
+        copyable                Allow/Deny record copying within this table
+
+        *** Callbacks:
+
+        create_onvalidation     Function/Lambda for additional record validation on create
+        create_onaccept         Function/Lambda after successful record insertion
+
+        update_onvalidation     Function/Lambda for additional record validation on update
+        update_onaccept         Function/Lambda after successful record update
+
+        onvalidation            Fallback for both create_onvalidation and update_onvalidation
+        onaccept                Fallback for both create_onaccept and update_onaccept
+        ondelete                Function/Lambda after record deletion
+
+    """
+
+    # Set method handlers
+    s3xrc.set_handler("search", shn_search)
+    s3xrc.set_handler("copy", shn_copy)
+    s3xrc.set_handler("barchart", shn_barchart)
+
+    # Parse and execute the request
+    resource, r = s3xrc.parse_request(prefix, resourcename)
+    output = resource.execute_request(r, **attr)
+
+    # Add default action buttons in list views
+    if isinstance(output, dict) and not r.method:
+
+        if response.s3.actions is None:
+
+            prefix, name, table, tablename = r.target()
+            authorised = shn_has_permission("update", tablename)
+
+            # If the component has components itself, then use the
+            # component's native controller for CRU(D) => make sure
+            # you have one, or override by native=False
+            if r.component and s3xrc.model.has_components(prefix, name):
+                native = output.get("native", True)
+            else:
+                native = False
+
+            # Get table config
+            model = s3xrc.model
+            listadd = model.get_config(table, "listadd", True)
+            editable = model.get_config(table, "editable", True)
+            deletable = model.get_config(table, "deletable", True)
+            copyable = model.get_config(table, "copyable", False)
+
+            # URL to open the resource
+            open_url = r.resource.crud._linkto(r,
+                                               authorised=authorised,
+                                               update=editable,
+                                               native=native)("[id]")
+
+            # Add action buttons for Open/Delete/Copy as appropriate
+            shn_action_buttons(r,
+                               deletable=deletable,
+                               copyable=copyable,
+                               read_url=open_url,
+                               update_url=open_url)
+
+            # Override Add-button, link to native controller and put
+            # the primary key into vars for automatic linking
+            if native and not listadd and \
+               shn_has_permission("create", tablename):
+                label = shn_get_crud_string(tablename,
+                                            "label_create_button")
+                hook = r.resource.components[name]
+                fkey = "%s.%s" % (name, hook.fkey)
+                vars = request.vars.copy()
+                vars.update({fkey: r.id})
+                url = str(URL(r=request, c=prefix, f=name,
+                              args=["create"], vars=vars))
+                add_btn = A(label, _href=url, _class="action-btn")
+                output.update(add_btn=add_btn)
 
     return output
 

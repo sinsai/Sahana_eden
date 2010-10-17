@@ -368,7 +368,7 @@ class S3ResourceModel(object):
 
 
     # -------------------------------------------------------------------------
-    def get_config(self, table, key):
+    def get_config(self, table, key, default=None):
 
         """ Reads a configuration attribute of a resource
 
@@ -378,9 +378,9 @@ class S3ResourceModel(object):
         """
 
         if table._tablename in self.config:
-            return self.config[table._tablename].get(key, None)
+            return self.config[table._tablename].get(key, default)
         else:
-            return None
+            return default
 
 
     # -------------------------------------------------------------------------

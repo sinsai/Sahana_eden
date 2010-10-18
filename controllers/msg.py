@@ -58,6 +58,13 @@ def process_sms_via_tropo():
     msg.process_outbox(contact_method = 2,option = 3)
     return
 
+def process_text_via_twitter():
+    """ Controller for twitter message processing - to be called via cron """
+
+    msg.process_outbox(contact_method = 3)
+    return
+
+
 #-------------------------------------------------------------------------------
 def outbox():
     """ View the contents of the Outbox """

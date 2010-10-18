@@ -12,6 +12,8 @@
 #*/5   *       *       *       *       web2py *msg/process_sms_via_api
 # Send outgoing Tropo SMS every 5 minutes
 #*/5   *       *       *       *       web2py *msg/process_sms_via_tropo
+# Send outgoing twitter DMs/tweets every minute
+*   *       *       *       *       web2py *msg/process_text_via_twitter
 # Collect incoming emails every 15 minutes
 #*/15  *       *       *       *       web2py *applications/eden/cron/email_receive.py
 # Process Import Jobs (deprecated)

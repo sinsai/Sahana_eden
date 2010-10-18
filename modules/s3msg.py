@@ -33,7 +33,13 @@ import string
 import urllib
 from urllib2 import urlopen
 
-DELETECHARS = string.translate(string.printable, string.maketrans(string.printable, string.printable), string.digits)
+IDENTITYTRANS = ALLCHARS = string.maketrans("","")
+NOTPHONECHARS = ALLCHARS.translate(IDENTITYTRANS, string.digits)
+NOTTWITTERCHARS = ALLCHARS.translate(IDENTITYTRANS, string.digits+string.letters+'_')
+
+TWITTER_MAX_CHARS = 140
+TWITTER_HAS_NEXT_SUFFIX = u' \u2026'
+TWITTER_HAS_PREV_PREFIX = u'\u2026 '
 
 class Msg(object):
     """ Toolkit for hooking into the Messaging framework """
@@ -59,21 +65,29 @@ class Msg(object):
                                                                                   limitby=(0, 1)).first().token_messaging
             #self.tropo_token_voice = db(db.msg_tropo_settings.id == 1).select(db.msg_tropo_settings.token_voice,
             #                                                                  limitby=(0, 1)).first().token_voice
+            
+            # Try to initialize twitter api
+            self.twitter_account = self.twitter_api = None # fallback against evil eye       
+            tmp_twitter_settings = db(db.msg_twitter_settings.id > 0).select(limitby=(0, 1)).first()
+            if tmp_twitter_settings and tmp_twitter_settings.twitter_account:
+                try:
+                    oauth = tweepy.OAuthHandler(deployment_settings.twitter.oauth_consumer_key,
+                                                deployment_settings.twitter.oauth_consumer_secret)
+                    oauth.set_access_token(self.twitter_oauth_key, self.twitter_oaut_secret)
+                    self.twitter_api = tweepy.API(oauth)                    
+                    self.twitter_account = tmp_twitter_settings.twitter_account
+                except:
+                    pass
         except:
             pass
-
+    
     def sanitise_phone(self, phone):
         """
             Strip out unnecessary characters from the string:
             +()- & space
         """
 
-        try:
-            # Python 2.6
-            clean = string.translate(phone, None, DELETECHARS)
-        except:
-            # Python 2.5
-            clean = string.translate(phone, string.maketrans("", ""), DELETECHARS)
+        clean = phone.translate(IDENTITYTRANS, NOTPHONECHARS)
 
         # If number starts with a 0 then need to remove this & add the country code in
         if clean[0] == "0":
@@ -118,7 +132,71 @@ class Msg(object):
             return True
         except:
             return False
-    
+            
+    def sanitise_twitter_account(self, account):
+        """
+            Only keep characters that are legal for a twitter account:
+            letters, digits, and _
+        """
+
+        return account.translate(IDENTITYTRANS, NOTTWITTERCHARS)
+        
+    def break_to_chunks(self,text, chunk_size=TWITTER_MAX_CHARS,
+                        suffix = TWITTER_HAS_NEXT_SUFFIX, prefix = TWITTER_HAS_PREV_PREFIX):
+        """
+            Breaks text to <=chunk_size long chunks. Tries to do this at a space.
+            All chunks except for last end with suffix.
+            All chunks except for first start with prefix.
+        """
+        
+        res = []
+        current_prefix = "" # first chunk has no prefix
+        while text:
+            if len(current_prefix+text) <= chunk_size:
+                res.append(current_prefix+text)
+                return res
+            else: # break a chunk
+                c = text[:chunk_size-len(current_prefix)-len(suffix)]
+                i = c.rfind(' ')
+                if i > 0: # got a blank
+                    c = c[:i]
+                text = text[len(c):].lstrip()
+                res.append((current_prefix+c.rstrip()+suffix))
+                current_prefix = prefix # from now on, we want a prefix
+
+    def send_text_via_twitter(self, recepient, text=""):
+        """
+            Function to send text to recepient via direct message (if recepient follows us).
+            Falls back to @mention (leaves less characters for the message).
+            Breaks long text to chunks if needed.
+        """
+        
+        if not self.twitter_api and text:
+            return False
+        recepient = self.sanitise_twitter_account(recepient)
+        try:
+            can_dm = api.exists_friendship(self.twitter_account,recepient)
+        except tweepy.TweepError: # recepient not found
+            return False
+        if can_dm:
+            chunks = self.break_to_chunks(text,TWITTER_MAX_CHARS)
+            for c in chunks:
+                try:
+                    self.twitter_api.send_direct_message(recepient,c)
+                except tweepy.TweepError:
+                    # Is there a way to log an error here?
+                    pass
+        else:
+            prefix = "@%s " % recepient
+            chunks = self.break_to_chunks(text,TWITTER_MAX_CHARS-len(prefix))
+            for c in chunks:
+                try:
+                    self.twitter_api.update_status(prefix+c)
+                except tweepy.TweepError:
+                    # Is there a way to log an error here?
+                    pass
+        return True
+   
     def send_text_via_tropo(self, row_id, message_id, recipient, message, network = "SMS"):
         """
             Send a URL request to Tropo to pick a message up
@@ -273,6 +351,8 @@ class Msg(object):
                 query = (table3.pe_id == pe_id) & (table3.contact_method == contact_method)
                 recipient = db(query).select(table3.value, orderby = table3.priority, limitby=(0, 1)).first()
                 if recipient:
+                    if (contact_method == 3):
+                        return self.send_text_via_twitter(recipient.value, message)
                     if (contact_method == 2 and option == 2):
                         if self.outgoing_sms_handler == "Modem":
                             return self.send_sms_via_modem(recipient.value, message)

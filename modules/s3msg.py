@@ -32,6 +32,7 @@ __author__ = "Praneeth Bodduluri <lifeeth[at]gmail.com>"
 import string
 import urllib
 from urllib2 import urlopen
+import tweepy
 
 IDENTITYTRANS = ALLCHARS = string.maketrans("","")
 NOTPHONECHARS = ALLCHARS.translate(IDENTITYTRANS, string.digits)
@@ -47,8 +48,9 @@ class Msg(object):
     sms_api_post_config = {}
     sms_api_enabled = False
 
-    def __init__(self, environment, db=None, T=None, mail=None, modem=None):
+    def __init__(self, environment, deployment_settings, db=None, T=None, mail=None, modem=None):
         try:
+            self.deployment_settings = deployment_settings
             self.db = db
             settings = db(db.msg_setting.id > 0).select(limitby=(0, 1)).first()
             self.default_country_code = settings.default_country_code
@@ -73,7 +75,8 @@ class Msg(object):
                 try:
                     oauth = tweepy.OAuthHandler(deployment_settings.twitter.oauth_consumer_key,
                                                 deployment_settings.twitter.oauth_consumer_secret)
-                    oauth.set_access_token(self.twitter_oauth_key, self.twitter_oaut_secret)
+                    oauth.set_access_token(tmp_twitter_settings.oauth_key,
+                                           tmp_twitter_settings.oauth_secret)
                     self.twitter_api = tweepy.API(oauth)                    
                     self.twitter_account = tmp_twitter_settings.twitter_account
                 except:
@@ -175,10 +178,11 @@ class Msg(object):
             return False
         recepient = self.sanitise_twitter_account(recepient)
         try:
-            can_dm = api.exists_friendship(self.twitter_account,recepient)
+            can_dm = self.twitter_api.exists_friendship(recepient,self.twitter_account)
         except tweepy.TweepError: # recepient not found
             return False
         if can_dm:
+            print "can dm to '%s'" % recepient
             chunks = self.break_to_chunks(text,TWITTER_MAX_CHARS)
             for c in chunks:
                 try:
@@ -348,10 +352,11 @@ class Msg(object):
             entity_type = db(query).select(table2.pe_type, limitby=(0, 1)).first().pe_type
             def dispatch_to_pe_id(pe_id):
                 table3 = db.pr_pe_contact
+                query = (table3.pe_id == pe_id)
                 query = (table3.pe_id == pe_id) & (table3.contact_method == contact_method)
                 recipient = db(query).select(table3.value, orderby = table3.priority, limitby=(0, 1)).first()
                 if recipient:
-                    if (contact_method == 3):
+                    if (contact_method == 4):
                         return self.send_text_via_twitter(recipient.value, message)
                     if (contact_method == 2 and option == 2):
                         if self.outgoing_sms_handler == "Modem":

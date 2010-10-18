@@ -18,4 +18,4 @@ db.gis_layer_feature.resource.requires = IS_NULL_OR(IS_IN_SET(tables))
 
 # MSG
 s3msg = local_import("s3msg")
-msg = s3msg.Msg(globals(), db, T, mail)
+msg = s3msg.Msg(globals(), deployment_settings, db, T, mail)

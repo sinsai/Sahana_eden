@@ -61,7 +61,7 @@ def process_sms_via_tropo():
 def process_text_via_twitter():
     """ Controller for twitter message processing - to be called via cron """
 
-    msg.process_outbox(contact_method = 3)
+    msg.process_outbox(contact_method = 4) # 3 is reserved for XMPP
     return
 
 

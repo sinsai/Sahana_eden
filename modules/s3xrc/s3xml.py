@@ -39,6 +39,7 @@
 __all__ = ["S3XML"]
 
 from gluon.storage import Storage
+from gluon.validators import IS_EMPTY_OR
 import gluon.contrib.simplejson as json
 
 try:
@@ -165,7 +166,7 @@ class S3XML(object):
             @param cache: the cache
 
             @todo 2.2: pass resource controller?
-            
+
         """
 
         self.db = db
@@ -962,7 +963,7 @@ class S3XML(object):
         """ Get options of a field as <select>
 
             @todo 2.2: fix docstring
-            
+
         """
 
         select = etree.Element(self.TAG.select)
@@ -1003,7 +1004,7 @@ class S3XML(object):
         """ Get options of option fields in a table as <select>s
 
             @todo 2.2: fix docstring
-            
+
         """
 
         db = self.db
@@ -1036,7 +1037,7 @@ class S3XML(object):
         """ Get fields in a table as <fields> element
 
             @todo 2.2: fix docstring
-            
+
         """
 
         db = self.db

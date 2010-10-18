@@ -43,7 +43,7 @@ __all__ = ["S3Audit",
 import datetime, os
 
 from gluon.storage import Storage
-from gluon.html import URL, A, SCRIPT, FORM, TABLE, TR, TD, INPUT
+from gluon.html import URL, DIV, A, SCRIPT, FORM, TABLE, TR, TD, INPUT
 from gluon.http import HTTP, redirect
 from gluon.serializers import json
 from gluon.sql import Field, Row
@@ -311,9 +311,11 @@ class S3MethodHandler(object):
     # -------------------------------------------------------------------------
     def _view(self, r, default, format=None):
 
-        """ Get the target view path
+        """ Get the path to the view template file
 
-            @todo 2.2: fix docstring
+            @param r: the S3Request
+            @param default: name of the default view template file
+            @param format: format string (optional)
 
         """
 
@@ -423,8 +425,6 @@ class S3CRUDHandler(S3MethodHandler):
 
             @todo 2.2: copy from a previous record
             @todo 2.2: cancel button
-            @todo 2.2: add map
-            @todo 2.2: list button
             @todo 2.2: other representations
 
         """
@@ -568,24 +568,22 @@ class S3CRUDHandler(S3MethodHandler):
             if self.settings.navigate_away_confirm:
                 form.append(SCRIPT("EnableNavigateAwayConfirm();"))
 
-            # Add map
-            #if "location_id" in db[tablename].fields and db[tablename].location_id.writable:
-                ## Allow the Location Selector to take effect
-                #_gis.location_id = True
-                #if response.s3.gis.map_selector:
-                    ## Include a map
-                    #_map = shn_map(r, method="create")
-                    #output.update(_map=_map)
-
             # Put the form into output
             output.update(form=form)
 
-            ## Add a list button if appropriate
-            #if not r.component or r.multiple:
-                #label_list_button = shn_get_crud_string(tablename, "label_list_button")
-                #if label_list_button:
-                    #list_btn = A(label_list_button, _href=r.there(), _class="action-btn")
-                    #output.update(list_btn=list_btn)
+            # Add map
+            if "location_id" in table.fields and table.location_id.writable:
+                # Allow the Location Selector to take effect
+                response.s3.gis.location_id = True
+                if response.s3.gis.map_selector:
+                    # Include a map
+                    _map = self.manager.gis.form_map(r, method="create")
+                    output.update(_map=_map)
+
+            # Buttons
+            buttons = self.insert_buttons(r, "list")
+            if buttons:
+                output.update(buttons)
 
             # Redirection
             if not create_next:
@@ -660,8 +658,6 @@ class S3CRUDHandler(S3MethodHandler):
         table = self.table
         tablename = self.tablename
 
-        T = self.manager.T
-
         # Get representation
         representation = r.representation
 
@@ -676,11 +672,6 @@ class S3CRUDHandler(S3MethodHandler):
         record_id = self._record_id(r)
         if not record_id:
             r.error(404, self.resource.ERROR.BAD_RECORD)
-
-        # Audit
-        audit = self.manager.audit
-        audit("read", self.prefix, self.name,
-              record=record_id, representation=representation)
 
         if r.interactive:
 
@@ -720,37 +711,16 @@ class S3CRUDHandler(S3MethodHandler):
                 output.update(form=item, caller=caller)
 
             # Buttons
-            LIST = self.crud_string(tablename, "label_list_button")
-            EDIT = T("Edit")
-            DELETE = T("Delete")
+            buttons = self.insert_buttons(r, "update", "delete", "list", record_id=record_id)
+            if buttons:
+                output.update(buttons)
 
-            href_list = r.there()
-            href_edit = r.other(method="update", representation=representation)
-            href_delete = r.other(method="delete", representation=representation)
-
-            # Add update button
-            authorised = self.permit("update", tablename, record_id)
-            if authorised and href_edit and editable and r.method != "update":
-                # @todo: rename into edit_btn
-                edit = self.crud_button(EDIT, _href=href_edit, _id="edit-btn")
-                output.update(edit=edit)
-
-            # Add delete button
-            authorised = self.permit("delete", tablename)
-            if authorised and href_delete and deletable:
-                # @todo: rename into delete_btn
-                delete = self.crud_button(DELETE, _href=href_delete, _id="delete-btn")
-                output.update(delete=delete)
-
-            # Add list button
-            if not r.component or r.multiple:
-                list_btn = self.crud_button(LIST, _href=href_list, _id="list-btn")
-                output.update(list_btn=list_btn)
-
-        #elif representation == "plain":
-            #item = crud.read(table, record_id)
-            #response.view = "plain.html"
-            #return dict(item=item)
+        elif representation == "plain":
+            item = self.resource.read(record_id,
+                                      download_url=self.download_url,
+                                      format=representation)
+            response.view = "plain.html"
+            output.update(item=item)
 
         elif representation == "csv":
             exporter = S3Exporter(self.manager)
@@ -783,9 +753,6 @@ class S3CRUDHandler(S3MethodHandler):
             @param attr: dictionary of parameters for the method handler
 
             @todo 2.2: complete other representations
-            @todo 2.2: re-implement map
-            @todo 2.2: add buttons
-            @todo 2.2: move audit into resource/CRUD
             @todo 2.2: Navigate-Away-Script
             @todo 2.2: Fix subheadings
             @todo 2.2: Cancel button?
@@ -897,33 +864,24 @@ class S3CRUDHandler(S3MethodHandler):
             # Put form into output
             output.update(form=form)
 
-            # Add delete button
-            #if deletable:
-                #href_delete = r.other(method="delete", representation=representation)
-                #label_del_button = shn_get_crud_string(tablename, "label_delete_button")
-                #del_btn = A(label_del_button,
-                            #_href=href_delete,
-                            #_id="delete-btn",
-                            #_class="action-btn")
-                #output.update(del_btn=del_btn)
-
-            # Add a list button if appropriate
-            #if not r.component or r.multiple:
-                #label_list_button = shn_get_crud_string(tablename, "label_list_button")
-                #if label_list_button:
-                    #list_btn = A(label_list_button, _href=r.there(), _class="action-btn")
-                    #output.update(list_btn=list_btn)
-
             # Add map
-            #if "location_id" in db[tablename].fields and db[tablename].location_id.writable:
-                ## Allow the Location Selector to take effect
-                #_gis.location_id = True
-                #if response.s3.gis.map_selector:
-                    ## Include a map
-                    #_map = shn_map(r, method="update", tablename=tablename, prefix=prefix, name=name)
-                    #oldlocation = _map["oldlocation"]
-                    #_map = _map["_map"]
-                    #output.update(_map=_map, oldlocation=oldlocation)
+            if "location_id" in table.fields and table.location_id.writable:
+                # Allow the Location Selector to take effect
+                response.s3.gis.location_id = True
+                if response.s3.gis.map_selector:
+                    # Include a map
+                    _map = gis.form_map(r, method="update",
+                                        tablename=tablename,
+                                        prefix=self.prefix,
+                                        name=self.name)
+                    oldlocation = _map["oldlocation"]
+                    _map = _map["_map"]
+                    output.update(_map=_map, oldlocation=oldlocation)
+
+            # Add delete and list buttons
+            buttons = self.insert_buttons(r, "delete", "list", record_id=record_id)
+            if buttons:
+                output.update(buttons)
 
             # Redirection (@todo 2.2: document this!)
             if not update_next:
@@ -977,7 +935,7 @@ class S3CRUDHandler(S3MethodHandler):
         output = dict()
 
         # Get callback (@todo 2.2: document this!)
-        ondelete = model.get_config(table, "ondelete")
+        ondelete = self._config("ondelete")
 
         # Get table-specific parameters
         deletable = self._config("deletable", True)
@@ -998,6 +956,7 @@ class S3CRUDHandler(S3MethodHandler):
                            _style="margin-left: 10px;")))))
             items = self.select(r, **attr).get("items", None)
             output.update(form=form, items=items)
+
             response.view = self._view(r, "delete.html")
 
         elif r.http == "POST" or \
@@ -1037,9 +996,6 @@ class S3CRUDHandler(S3MethodHandler):
             @param r: the S3Request
             @param attr: dictionary of parameters for the method handler
 
-            @todo 2.2: complete this
-            @todo 2.2: mapping?
-
         """
 
         # Get environment
@@ -1049,8 +1005,6 @@ class S3CRUDHandler(S3MethodHandler):
 
         table = self.table
         tablename = self.tablename
-
-        T = self.manager.T
 
         # Get representation
         representation = r.representation
@@ -1063,6 +1017,7 @@ class S3CRUDHandler(S3MethodHandler):
         sortby = self._config("sortby", [[1,'asc']])
         linkto = self._config("linkto", None)
         listadd = self._config("listadd", True)
+        list_fields = self._config("list_fields")
 
         # GET vars
         vars = request.get_vars
@@ -1088,8 +1043,6 @@ class S3CRUDHandler(S3MethodHandler):
             linkto = self._linkto(r)
 
         # List fields
-        table = self.resource.table
-        list_fields = model.get_config(table, "list_fields")
         if not list_fields:
             fields = self.resource.readable_fields()
         else:
@@ -1108,17 +1061,39 @@ class S3CRUDHandler(S3MethodHandler):
 
             # Add add-form (do this before retrieving the list!)
             if listadd:
+                # Add-form
                 form = self.create(r, **attr).get("form", None)
                 output.update(form=form)
-                addtitle = self.crud_string(self.tablename, "subtitle_create")
+
+                # Add-Title
+                addtitle = self.crud_string(tablename, "subtitle_create")
                 output.update(addtitle=addtitle)
+
+                # ShowAdd-Button
                 showaddbtn = self.crud_button(None,
-                                              tablename=self.tablename,
+                                              tablename=tablename,
                                               name="label_create_button",
                                               _id="show-add-btn")
                 output.update(showaddbtn=showaddbtn)
+
+                # Add map
+                if "location_id" in table.fields and table.location_id.writable:
+                    # Allow the Location Selector to take effect
+                    response.s3.gis.location_id = True
+                    if response.s3.gis.map_selector:
+                        # Include a map
+                        _map = self.manager.gis.form_map(r, method="create")
+                        output.update(_map=_map)
+
+                # View
                 self.response.view = self._view(r, "list_create.html")
             else:
+                # Buttons
+                buttons = self.insert_buttons(r, "add")
+                if buttons:
+                    output.update(buttons)
+
+                # View
                 self.response.view = self._view(r, "list.html")
 
             # Get the list
@@ -1302,6 +1277,76 @@ class S3CRUDHandler(S3MethodHandler):
 
 
     # -------------------------------------------------------------------------
+    def insert_buttons(self, r, *buttons, **attr):
+
+        """ Insert resource action buttons
+
+            @param r: the S3Request
+            @param record_id: the record ID
+            @param buttons: button names ("add", "edit", "delete", "list")
+
+        """
+
+        output = dict()
+
+        T = self.manager.T
+
+        tablename = self.tablename
+        representation = r.representation
+
+        record_id = attr.get("record_id", None)
+
+        # Button labels
+        ADD = self.crud_string(tablename, "label_create_button")
+        EDIT = T("Edit")
+        DELETE = self.crud_string(tablename, "label_delete_button")
+        LIST = self.crud_string(tablename, "label_list_button")
+
+        # Button URLs
+        href_add = r.other(method="create", representation=representation)
+        href_edit = r.other(method="update", representation=representation)
+        href_delete = r.other(method="delete", representation=representation)
+        href_list = r.there()
+
+        # Table CRUD configuration
+        insertable = self._config("insertable", True)
+        editable = self._config("editable", True)
+        deletable = self._config("deletable", True)
+
+        # Add button
+        if "add" in buttons:
+            authorised = self.permit("create", tablename)
+            if authorised and href_add and insertable:
+                add_btn = self.crud_button(ADD, _href=href_add, _id="add-btn")
+                output.update(add_btn=add_btn)
+
+        # List button
+        if "list" in buttons:
+            if not r.component or r.multiple:
+                list_btn = self.crud_button(LIST, _href=href_list, _id="list-btn")
+                output.update(list_btn=list_btn)
+
+        if not record_id:
+            return output
+
+        # Edit button
+        if "edit" in buttons:
+            authorised = self.permit("update", tablename, record_id)
+            if authorised and href_edit and editable and r.method != "update":
+                edit_btn = self.crud_button(EDIT, _href=href_edit, _id="edit-btn")
+                output.update(edit_btn=edit_btn)
+
+        # Delete button
+        if "delete" in buttons:
+            authorised = self.permit("delete", tablename, record_id)
+            if authorised and href_delete and deletable:
+                delete_btn = self.crud_button(DELETE, _href=href_delete, _id="delete-btn")
+                output.update(delete_btn=delete_btn)
+
+        return output
+
+
+    # -------------------------------------------------------------------------
     def _linkto(self, r, authorised=None, update=None, native=False):
 
         """ Returns a linker function for the record ID column in list views
@@ -1317,14 +1362,15 @@ class S3CRUDHandler(S3MethodHandler):
 
         prefix, name, table, tablename = r.target()
         permit = self.manager.auth.shn_has_permission
+        model = self.manager.model
 
         if authorised is None:
             authorised = permit("update", tablename)
 
         if authorised and update:
-            linkto = self._config("linkto_update", None)
+            linkto = model.get_config(table, "linkto_update", None)
         else:
-            linkto = self._config("linkto", None)
+            linkto = model.get_config(table, "linkto", None)
 
         if r.component and native:
             # link to native component controller (be sure that you have one)
@@ -1447,4 +1493,129 @@ class S3CRUDHandler(S3MethodHandler):
                         for i in xrange(iSortingCols)])
 
 
+# *****************************************************************************
+class S3SearchSimple(S3CRUDHandler):
+
+    """ Simple string-search method handler
+
+        @param manager: the resource controller
+        @param label: the label for the input field in the search form
+        @param comment: help text for the input field in the search form
+        @param fields: the fields to search for the string
+
+    """
+
+
+    def __init__(self, manager, label=None, comment=None, fields=None):
+
+        S3CRUDHandler.__init__(self, manager)
+        self.__label = label
+        self.__comment = comment
+        self.__fields = fields
+
+
+    # -------------------------------------------------------------------------
+    def respond(self, r, **attr):
+
+        """ Responder
+
+            @param r: the S3Request
+            @param attr: request parameters
+
+        """
+
+        # Get environment
+        session = self.session
+        request = self.request
+        response = self.response
+
+        resource = self.resource
+        table = self.table
+        tablename = self.tablename
+
+        T = self.manager.T
+
+        # Get representation
+        representation = r.representation
+
+        # Initialize output
+        output = dict()
+
+        # Get table-specific parameters
+        sortby = self._config("sortby", [[1,'asc']])
+        orderby = self._config("orderby", None)
+        list_fields = self._config("list_fields")
+
+        # GET vars
+        vars = request.get_vars
+
+        if r.interactive:
+
+            # Select form
+            form = FORM(TABLE(TR("%s: " % self.__label,
+                                 INPUT(_type="text", _name="label", _size="40"),
+                                 DIV(DIV(_class="tooltip",
+                                         _title="%s|%s" % (self.__label,
+                                                           self.__comment)))),
+                              TR("", INPUT(_type="submit",
+                                           _value=T("Search")))))
+
+            output.update(form=form)
+
+            # Accept action
+            if form.accepts(request.vars, session, keepvalues=True):
+
+                # Default wildcard
+                if form.vars.label == "":
+                    form.vars.label = "%"
+
+                # Search in fields
+                results = self.manager._search_simple(table,
+                                                      fields = self.__fields,
+                                                      label = form.vars.label)
+
+                # Get the results
+                if results:
+                    linkto = self._linkto(r)
+                    if not list_fields:
+                        fields = resource.readable_fields()
+                    else:
+                        fields = resource.readable_fields(subset=list_fields)
+                    if not fields:
+                        fields = [table.id]
+                    resource.build_query(id=results)
+                    items = resource.select(fields=fields,
+                                            orderby=orderby,
+                                            linkto=linkto,
+                                            download_url=self.download_url,
+                                            format=representation)
+                    session.s3.filter = {"%s.id" % resource.name:",".join(map(str,results))}
+                else:
+                    items = T("No matching records found.")
+
+                output.update(items=items, sortby=sortby)
+
+                # Add-button
+                buttons = self.insert_buttons(r, "add")
+                if buttons:
+                    output.update(buttons)
+
+            # Title and subtitle
+            title = self.crud_string(tablename, "title_search")
+            subtitle = T("Matching Records")
+            output.update(title=title, subtitle=subtitle)
+
+            # View
+            response.view = "search_simple.html"
+
+        elif representation == "aadata":
+            return self.select(r, **attr)
+
+        else:
+            r.error(resource.ERROR.BAD_FORMAT)
+
+        return output
+
+
+# END
 # *****************************************************************************

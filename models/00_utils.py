@@ -1068,7 +1068,7 @@ def s3_rest_controller(prefix, resourcename, **attr):
     output = resource.execute_request(r, **attr)
 
     # Add default action buttons in list views
-    if isinstance(output, dict) and not r.method:
+    if isinstance(output, dict) and not r.method or r.method=="search_simple":
 
         if response.s3.actions is None:
 

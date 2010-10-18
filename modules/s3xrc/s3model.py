@@ -540,6 +540,8 @@ class S3ResourceModel(object):
         """
 
         super = self.get_config(table, "super_entity")
+        if not super:
+            return True
         if not isinstance(super, (list, tuple)):
             super = [super]
 

@@ -50,7 +50,7 @@ from lxml import etree
 from s3xml import S3XML
 from s3rest import S3Resource, S3Request
 from s3model import S3ResourceModel
-from s3crud import S3CRUDHandler
+from s3crud import S3CRUDHandler, S3SearchSimple
 
 # *****************************************************************************
 class S3ResourceController(object):
@@ -1135,7 +1135,30 @@ class S3ResourceController(object):
 
 
     # -------------------------------------------------------------------------
-    def search_simple(self, table, fields=None, label=None, filterby=None):
+    def search_simple(self, label=None, comment=None, fields=[]):
+
+        """ Generate a search_simple method handler
+
+            @param label: the label for the input field in the search form
+            @param comment: help text for the input field in the search form
+            @param fields: the fields to search for the string
+
+        """
+
+        if not label:
+            label = self.T("Enter search text")
+
+        if not fields:
+            fields = ["id"]
+
+        return S3SearchSimple(self,
+                              label=label,
+                              comment=comment,
+                              fields=fields)
+
+
+    # -------------------------------------------------------------------------
+    def _search_simple(self, table, fields=None, label=None, filterby=None):
 
         """ Simple search function for resources
 

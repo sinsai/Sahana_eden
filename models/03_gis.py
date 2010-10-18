@@ -729,11 +729,12 @@ def s3_gis_location_search_simple(r, **attr):
             # Get the results
             if results:
                 resource.build_query(id=results)
-                report = shn_list(r, listadd=False)
+                report = resource.crud(r, method="list", **attr)["items"]
+                r.next = None
             else:
-                report = dict(items=T("No matching records found."))
+                report = T("No matching records found.")
 
-            output.update(dict(report))
+            output.update(items=report)
 
         # Title and subtitle
         title = T("Search for a Location")

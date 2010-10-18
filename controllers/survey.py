@@ -63,7 +63,8 @@ def template():
         msg_list_empty = T("No Survey Template currently registered"))
 
     output = shn_rest_controller(module, resource, listadd=False)    
-    return transform_buttons(output, next=True, cancel=True)
+    #return transform_buttons(output, next=True, cancel=True)
+    return output
 
 def template_link():
     response.s3.prep = response.s3.prep = lambda jr: jr.representation in ("xml", "json") and True or False
@@ -265,7 +266,8 @@ def question():
         msg_list_empty = T("No Survey Questions currently registered"))
     output = shn_rest_controller(module, resource, listadd=False)
 
-    return transform_buttons(output, cancel=True, save=True)
+    #return transform_buttons(output, cancel=True, save=True)
+    return output
 
 def add_buttons(form, save = None, prev = None, next = None, finish = None, cancel=None):
     """

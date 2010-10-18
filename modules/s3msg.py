@@ -167,31 +167,32 @@ class Msg(object):
                 res.append((current_prefix+c.rstrip()+suffix))
                 current_prefix = prefix # from now on, we want a prefix
 
-    def send_text_via_twitter(self, recepient, text=""):
+    def send_text_via_twitter(self, recipient, text=""):
         """
-            Function to send text to recepient via direct message (if recepient follows us).
+            Function to send text to recipient via direct message (if recipient follows us).
             Falls back to @mention (leaves less characters for the message).
             Breaks long text to chunks if needed.
         """
         
         if not self.twitter_api and text:
             return False
-        recepient = self.sanitise_twitter_account(recepient)
+        recipient = self.sanitise_twitter_account(recipient)
         try:
-            can_dm = self.twitter_api.exists_friendship(recepient,self.twitter_account)
-        except tweepy.TweepError: # recepient not found
+            can_dm = self.twitter_api.exists_friendship(recipient,self.twitter_account)
+        except tweepy.TweepError: # recipient not found
             return False
         if can_dm:
-            print "can dm to '%s'" % recepient
             chunks = self.break_to_chunks(text,TWITTER_MAX_CHARS)
             for c in chunks:
                 try:
-                    self.twitter_api.send_direct_message(recepient,c)
+                    # Note: send_direct_message() requires explicit kwargs (at least in tweepy 1.5)
+                    # See http://groups.google.com/group/tweepy/msg/790fcab8bc6affb5
+                    self.twitter_api.send_direct_message(screen_name=recipient, text=c)
                 except tweepy.TweepError:
                     # Is there a way to log an error here?
                     pass
         else:
-            prefix = "@%s " % recepient
+            prefix = "@%s " % recipient
             chunks = self.break_to_chunks(text,TWITTER_MAX_CHARS-len(prefix))
             for c in chunks:
                 try:

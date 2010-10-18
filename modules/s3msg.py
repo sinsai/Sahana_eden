@@ -352,7 +352,6 @@ class Msg(object):
             entity_type = db(query).select(table2.pe_type, limitby=(0, 1)).first().pe_type
             def dispatch_to_pe_id(pe_id):
                 table3 = db.pr_pe_contact
-                query = (table3.pe_id == pe_id)
                 query = (table3.pe_id == pe_id) & (table3.contact_method == contact_method)
                 recipient = db(query).select(table3.value, orderby = table3.priority, limitby=(0, 1)).first()
                 if recipient:

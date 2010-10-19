@@ -43,7 +43,7 @@ class ModemThread( threading.Thread ):
     def __init__(self, modem):
         self.modem = modem
         threading.Thread.__init__ ( self )
-        self.msg = s3msg.Msg(globals(), db, T, modem=modem)
+        self.msg = s3msg.Msg(globals(), deployment_settings, db, T, modem=modem)
 
     def run(self):
         boxdata = self.modem.query("AT+CMGD=?")
@@ -59,7 +59,7 @@ class ModemThread( threading.Thread ):
                     # for debug purposes
                     #print "Got message: " + message.text
                     # Temp: SMS AutoResponder on by default
-                    #self.modem.send_sms(message.sender,"This is to be replaced with the autorespond message")
+                    #self.modem.send_sms(message.sender, "This is to be replaced with the autorespond message")
                     self.receive_msg(message=message.text, fromaddress=message.sender, pr_message_method=2) 
                     # ^ dependent on the pr_message_method
                 if cleanup:

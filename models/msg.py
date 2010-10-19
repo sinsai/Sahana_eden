@@ -200,6 +200,8 @@ if deployment_settings.has_module(module):
     msg_contact_method_opts = { # pr_contact_method dependency
         1:T("Email"),
         2:T("Mobile Phone"),
+        #3:T("XMPP"),
+        4:T("Twitter"),
     }
 
     # Channel - For inbound messages this tells which channel the message came in from.

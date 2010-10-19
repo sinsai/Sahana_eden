@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 
-""" S3XRC Resource Framework - CRUD method handlers
+""" S3XRC Resource Framework - CRUD Method Handlers
 
-    @version: 2.1.7
+    @version: 2.1.8
 
     @see: U{B{I{S3XRC}} <http://eden.sahanafoundation.org/wiki/S3XRC>} on Eden wiki
 
@@ -645,7 +645,6 @@ class S3CRUDHandler(S3MethodHandler):
             @param attr: dictionary of parameters for the method handler
 
             @todo 2.2: plain representation
-            @todo 2.2: attribute reader function?
             @todo 2.2: add update form if permitted + show_add_btn
 
         """
@@ -665,8 +664,8 @@ class S3CRUDHandler(S3MethodHandler):
         output = dict()
 
         # Get table configuration
-        editable = self._config("editable")
-        deletable = self._config("deletable")
+        editable = self._config("editable", True)
+        deletable = self._config("deletable", True)
 
         # Get the target record ID
         record_id = self._record_id(r)
@@ -753,8 +752,6 @@ class S3CRUDHandler(S3MethodHandler):
             @param attr: dictionary of parameters for the method handler
 
             @todo 2.2: complete other representations
-            @todo 2.2: Navigate-Away-Script
-            @todo 2.2: Fix subheadings
             @todo 2.2: Cancel button?
 
         """
@@ -915,6 +912,7 @@ class S3CRUDHandler(S3MethodHandler):
             @param attr: dictionary of parameters for the method handler
 
             @todo 2.2: put style information into stylesheet
+            @todo 2.2: move confirmation form into resource
 
         """
 
@@ -1282,8 +1280,8 @@ class S3CRUDHandler(S3MethodHandler):
         """ Insert resource action buttons
 
             @param r: the S3Request
-            @param record_id: the record ID
             @param buttons: button names ("add", "edit", "delete", "list")
+            @keyword record_id: the record ID
 
         """
 

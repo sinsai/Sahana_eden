@@ -2,7 +2,7 @@
 
 """ S3XRC Resource Framework
 
-    @version: 2.1.7
+    @version: 2.1.8
 
     @see: U{B{I{S3XRC}} <http://eden.sahanafoundation.org/wiki/S3XRC>} on Eden wiki
 

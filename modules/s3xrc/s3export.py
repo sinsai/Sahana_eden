@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 
-""" S3XRC Resource Framework - Data Export Toolkit
+""" S3XRC Resource Framework - Resource Export Toolkit
 
-    @version: 2.1.7
+    @version: 2.1.8
 
     @see: U{B{I{S3XRC}} <http://eden.sahanafoundation.org/wiki/S3XRC>} on Eden wiki
 
@@ -41,7 +41,7 @@
 
 __all__ = ["S3Exporter"]
 
-import StringIO
+import StringIO, datetime
 
 from gluon.http import HTTP, redirect
 from gluon.html import URL
@@ -78,6 +78,104 @@ class S3Exporter(object):
             NO_RECORDS = T("No records in this resource"),
             XLWT_ERROR = T("Xlwt not installed"),
         )
+
+    # -------------------------------------------------------------------------
+    def xml(self, resource,
+            start=None,
+            limit=None,
+            marker=None,
+            msince=None,
+            show_urls=True,
+            dereference=True,
+            template=None,
+            pretty_print=False, **args):
+
+        """ Export a resource as XML
+
+            @param resource: the resource
+            @param template: path to the XSLT stylesheet (if required)
+            @param pretty_print: whether to use newlines/indentation in the output
+            @param args: dict of arguments to pass to the XSLT stylesheet
+
+            @todo 2.2: fix docstring
+
+        """
+
+        args = Storage(args)
+
+        tree = self.manager.export_tree(resource,
+                                        audit=self.manager.audit,
+                                        start=start,
+                                        limit=limit,
+                                        marker=marker,
+                                        msince=msince,
+                                        show_urls=show_urls,
+                                        dereference=dereference)
+
+        if tree and template is not None:
+            tfmt = "%Y-%m-%d %H:%M:%S"
+            args.update(domain=self.manager.domain,
+                        base_url=self.manager.base_url,
+                        prefix=resource.prefix,
+                        name=resource.name,
+                        utcnow=datetime.datetime.utcnow().strftime(tfmt))
+
+            tree = self.manager.xml.transform(tree, template, **args)
+
+        if tree:
+            return self.manager.xml.tostring(tree, pretty_print=pretty_print)
+        else:
+            return None
+
+
+    # -------------------------------------------------------------------------
+    def json(self, resource,
+             start=None,
+             limit=None,
+             marker=None,
+             msince=None,
+             show_urls=True,
+             dereference=True,
+             template=None,
+             pretty_print=False, **args):
+
+        """ Export a resource as JSON
+
+            @param resource: the resource
+            @param template: path to the XSLT stylesheet (if required)
+            @param pretty_print: whether to use newlines/indentation in the output
+            @param args: dict of arguments to pass to the XSLT stylesheet
+
+            @todo 2.2: fix docstring
+
+        """
+
+        args = Storage(args)
+
+        tree = self.manager.export_tree(resource,
+                                        audit=self.manager.audit,
+                                        start=start,
+                                        limit=limit,
+                                        marker=marker,
+                                        msince=msince,
+                                        show_urls=show_urls,
+                                        dereference=dereference)
+
+        if tree and template is not None:
+            tfmt = "%Y-%m-%d %H:%M:%S"
+            args.update(domain=self.manager.domain,
+                        base_url=self.manager.base_url,
+                        prefix=resource.prefix,
+                        name=resource.name,
+                        utcnow=datetime.datetime.utcnow().strftime(tfmt))
+
+            tree = self.manager.xml.transform(tree, template, **args)
+
+        if tree:
+            return self.manager.xml.tree2json(tree, pretty_print=pretty_print)
+        else:
+            return None
+
 
     # -------------------------------------------------------------------------
     def csv(self, resource):

@@ -2,7 +2,7 @@
 
 """ S3XRC Resource Framework - Resource Controller
 
-    @version: 2.1.7
+    @version: 2.1.8
 
     @see: U{B{I{S3XRC}} <http://eden.sahanafoundation.org/wiki/S3XRC>} on Eden wiki
 
@@ -51,19 +51,18 @@ from s3xml import S3XML
 from s3rest import S3Resource, S3Request
 from s3model import S3ResourceModel
 from s3crud import S3CRUDHandler, S3SearchSimple
+from s3export import S3Exporter
+from s3import import S3Importer
 
 # *****************************************************************************
 class S3ResourceController(object):
 
     """ S3 Resource Controller
 
-        @param db: the database (DAL)
         @param domain: name of the current domain
         @param base_url: base URL of this instance
         @param rpp: rows-per-page for server-side pagination
-        @param gis: the GIS toolkit to use
         @param messages: a function to retrieve message URLs tagged for a resource
-        @param cache: the cache object
 
         @todo 2.2: fix docstring/parameters
         @todo 2.2: move formats into settings
@@ -162,10 +161,11 @@ class S3ResourceController(object):
                          cache=self.cache)
 
         # Hooks
-        self.messages = None                # Messages Finder
-        self.tree_resolve = None            # Tree Resolver
-        self.sync_resolve = None            # Sync Resolver
-        self.sync_log = None                # Sync Logger
+        self.permit = self.auth.shn_has_permission  # Permission Checker
+        self.messages = None                        # Messages Finder
+        self.tree_resolve = None                    # Tree Resolver
+        self.sync_resolve = None                    # Sync Resolver
+        self.sync_log = None                        # Sync Logger
 
         # Import/Export formats, @todo 2.2: move into settings
         attr = Storage(attr)
@@ -177,6 +177,9 @@ class S3ResourceController(object):
         self.json_import_formats = attr.get("json_import_formats", ["json"])
         self.json_export_formats = attr.get("json_export_formats",
                                             dict(json="text/x-json"))
+
+        self.exporter = S3Exporter(self)    # Resource Exporter
+        self.importer = S3Importer(self)    # Resource Importer
 
         # Method Handlers, @todo 2.2: deprecate?
         self.__handler = Storage()
@@ -659,11 +662,11 @@ class S3ResourceController(object):
 
         """ Find the original record for a possible duplicate:
 
-            - if the record contains a UUID, then only that UUID is used
-                to match the record with an existing DB record
+                - if the record contains a UUID, then only that UUID is used
+                    to match the record with an existing DB record
 
-            - otherwise, if the record contains some values for unique fields,
-                all of them must match the same existing DB record
+                - otherwise, if the record contains some values for unique fields,
+                    all of them must match the same existing DB record
 
             @param table: the table
             @param record: the record as dict or S3XML Element
@@ -1412,6 +1415,8 @@ class S3Vector(object):
 
         self.resolve() # Resolve references
 
+        model = self.__manager.model
+
         skip_components = False
 
         if not self.committed:
@@ -1535,6 +1540,7 @@ class S3Vector(object):
                     if self.audit:
                         self.audit(self.method, self.prefix, self.name,
                                    form=form, record=self.id, representation="xml")
+                    model.update_super(self.table, form.vars)
                     if self.onaccept:
                         self.__manager.callback(self.onaccept, form, name=self.tablename)
 

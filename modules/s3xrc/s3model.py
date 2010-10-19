@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 
-""" S3XRC Resource Framework - Model Extensions
+""" S3XRC Resource Framework - Data Model Extensions
 
-    @version: 2.1.7
+    @version: 2.1.8
 
     @see: U{B{I{S3XRC}} <http://eden.sahanafoundation.org/wiki/S3XRC>} on Eden wiki
 
@@ -35,8 +35,7 @@
 """
 
 __all__ = ["S3ResourceComponent",
-           "S3ResourceModel",
-           "S3ResourceLinker"]
+           "S3ResourceModel"]
 
 from gluon.storage import Storage
 from gluon.sql import Table, Field
@@ -44,19 +43,16 @@ from gluon.sql import Table, Field
 # *****************************************************************************
 class S3ResourceComponent(object):
 
-    """ Class to represent component relations between resources """
+    """ Class to represent component relations between resources
 
-    # -------------------------------------------------------------------------
+        @param db: the database (DAL)
+        @param prefix: prefix of the resource name (=module name)
+        @param name: name of the resource (=without prefix)
+        @param attr: attributes
+
+    """
+
     def __init__(self, db, prefix, name, **attr):
-
-        """ Constructor
-
-            @param db: the database (DAL)
-            @param prefix: prefix of the resource name (=module name)
-            @param name: name of the resource (=without prefix)
-            @param attr: attributes
-
-        """
 
         self.db = db
         self.prefix = prefix
@@ -109,15 +105,13 @@ class S3ResourceComponent(object):
 class S3ResourceModel(object):
 
 
-    """ Class to handle the compound resources model """
+    """ Class to handle the compound resources model
+
+        @param db: the database (DAL)
+
+    """
 
     def __init__(self, db):
-
-        """ Constructor
-
-            @param db: the database (DAL)
-
-        """
 
         self.db = db
         self.components = {}
@@ -552,20 +546,6 @@ class S3ResourceModel(object):
                     self.db(s.uuid == uid).update(deleted=True)
 
         return True
-
-
-# *****************************************************************************
-class S3ResourceLinker(object):
-
-    """ Resource Linker
-
-        @todo 2.2: implement
-
-    """
-
-    def __init__(self):
-
-        pass
 
 
 # *****************************************************************************

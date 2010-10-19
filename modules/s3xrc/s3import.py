@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 
-""" S3XRC Resource Framework - Data Import Toolkit
+""" S3XRC Resource Framework - Resource Import Toolkit
 
-    @version: 2.1.7
+    @version: 2.1.8
 
     @see: U{B{I{S3XRC}} <http://eden.sahanafoundation.org/wiki/S3XRC>} on Eden wiki
 
@@ -161,6 +161,115 @@ class S3Importer(object):
                                     tree=xml.tree2json(tree))
 
         return dict(item=item)
+
+
+    # -------------------------------------------------------------------------
+    def xml(self, resource, source,
+            files=None,
+            id=None,
+            template=None,
+            ignore_errors=False, **args):
+
+        """ Import data from an XML source into a resource
+
+            @param resource: the resource to import to
+            @param source: the XML source (or ElementTree)
+            @param files: file attachments as {filename:file}
+            @param id: the ID or list of IDs of records to update (None for all)
+            @param template: the XSLT template
+            @param ignore_errors: do not stop on errors (skip invalid elements)
+            @param args: arguments to pass to the XSLT template
+
+            @raise SyntaxError: in case of a parser or transformation error
+            @raise IOError: at insufficient permissions
+
+        """
+
+        xml = self.manager.xml
+        permit = self.manager.permit
+
+        authorised = permit("create", resource.table) and \
+                     permit("update", resource.table)
+        if not authorised:
+            raise IOError("Insufficient permissions")
+
+        if isinstance(source, etree._ElementTree):
+            tree = source
+        else:
+            tree = xml.parse(source)
+
+        if tree:
+            if template is not None:
+                tree = xml.transform(tree, template, **args)
+                if not tree:
+                    raise SyntaxError(xml.error)
+
+            if files is not None and isinstance(files, dict):
+                resource.files(files=Storage(files))
+
+            success = self.manager.import_tree(resource, id, tree,
+                                               ignore_errors=ignore_errors)
+
+            resource.files(files=Storage())
+            return success
+        else:
+            raise SyntaxError("Invalid XML source")
+
+
+    # -------------------------------------------------------------------------
+    def json(self, resource, source,
+             files=None,
+             id=None,
+             template=None,
+             ignore_errors=False, **args):
+
+        """ Import data from a JSON source into a resource
+
+            @param resource: the resource to import data to
+            @param source: the JSON source (or ElementTree)
+            @param files: file attachments as {filename:file}
+            @param id: the ID or list of IDs of records to update (None for all)
+            @param template: the XSLT template
+            @param ignore_errors: do not stop on errors (skip invalid elements)
+            @param args: arguments to pass to the XSLT template
+
+            @raise SyntaxError: in case of a parser or transformation error
+            @raise IOError: at insufficient permissions
+
+        """
+
+        xml = self.manager.xml
+        permit = self.manager.permit
+
+        authorised = permit("create", resource.table) and \
+                     permit("update", resource.table)
+        if not authorised:
+            raise IOError("Insufficient permissions")
+
+        if isinstance(source, etree._ElementTree):
+            tree = source
+        elif isinstance(source, basestring):
+            from StringIO import StringIO
+            source = StringIO(source)
+            tree = xml.json2tree(source)
+        else:
+            tree = xml.json2tree(source)
+
+        if tree:
+            if template is not None:
+                tree = xml.transform(tree, template, **args)
+                if not tree:
+                    raise SyntaxError(xml.error)
+            if files is not None and isinstance(files, dict):
+                resource.files(files=Storage(files))
+
+            success = self.manager.import_tree(resource, id, tree,
+                                               ignore_errors=ignore_errors)
+
+            resource.files(files=Storage())
+            return success
+        else:
+            raise SyntaxError("Invalid JSON source.")
 
 
 # *****************************************************************************

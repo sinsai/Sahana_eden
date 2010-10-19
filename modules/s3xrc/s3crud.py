@@ -38,7 +38,8 @@
 
 __all__ = ["S3Audit",
            "S3MethodHandler",
-           "S3CRUDHandler"]
+           "S3CRUDHandler",
+           "S3SearchSimple"]
 
 import datetime, os
 
@@ -644,7 +645,6 @@ class S3CRUDHandler(S3MethodHandler):
             @param r: the S3Request
             @param attr: dictionary of parameters for the method handler
 
-            @todo 2.2: plain representation
             @todo 2.2: add update form if permitted + show_add_btn
 
         """
@@ -722,20 +722,18 @@ class S3CRUDHandler(S3MethodHandler):
             output.update(item=item)
 
         elif representation == "csv":
-            exporter = S3Exporter(self.manager)
-            return exporter.csv(self.resource)
+            exporter = self.resource.exporter.csv
+            return exporter(self.resource)
 
         elif representation == "pdf":
             list_fields = self._config("list_fields")
-            exporter = S3Exporter(self.manager)
-            return exporter.pdf(self.resource,
-                                list_fields=list_fields)
+            exporter = self.resource.exporter.pdf
+            return exporter(self.resource, list_fields=list_fields)
 
-        elif representation == "xls": # @todo: move importers/exporters into resource
+        elif representation == "xls":
             list_fields = self._config("list_fields")
-            exporter = S3Exporter(self.manager)
-            return exporter.xls(self.resource,
-                                list_fields=list_fields)
+            exporter = self.resource.exporter.xls
+            return exporter(self.resource, list_fields=list_fields)
 
         else:
             r.error(501, self.manager.ERROR.BAD_FORMAT)
@@ -880,7 +878,7 @@ class S3CRUDHandler(S3MethodHandler):
             if buttons:
                 output.update(buttons)
 
-            # Redirection (@todo 2.2: document this!)
+            # Redirection
             if not update_next:
                 if r.component:
                     self.next = r.there(representation=r.representation)
@@ -932,7 +930,7 @@ class S3CRUDHandler(S3MethodHandler):
         # Initialize output
         output = dict()
 
-        # Get callback (@todo 2.2: document this!)
+        # Get callback
         ondelete = self._config("ondelete")
 
         # Get table-specific parameters
@@ -1050,7 +1048,7 @@ class S3CRUDHandler(S3MethodHandler):
 
         if r.interactive:
 
-            # Pagination? @todo 2.2: document this!
+            # Pagination?
             if not response.s3.no_sspag:
                 limit = 1
 

@@ -316,16 +316,22 @@ def setting():
         msg_list_empty = T("No Settings currently defined")
     )
 
-    # @todo: migrate CRUD settings
-    crud.settings.update_next = URL(r=request, args=[1, "update"])
+    s3xrc.model.configure(table,
+                          deletable=False,
+                          listadd=False,
+                          update_next = URL(r=request, args=[1, "update"]))
     response.menu_options = admin_menu_options
-    # @todo: migrate CRUD settings
-    return s3_rest_controller(module, resource, deletable=False, listadd=False)
+    return s3_rest_controller(module, resource)
+
 
 #--------------------------------------
 @auth.shn_requires_membership(1)
 def email_settings():
-    """ RESTful CRUD controller for email settings - appears in the administration menu """
+
+    """ RESTful CRUD controller for email settings
+            - appears in the administration menu
+
+    """
 
     resource = request.function
     tablename = module + "_" + resource

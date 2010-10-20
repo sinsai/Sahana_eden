@@ -1,15 +1,16 @@
 # -*- coding: utf-8 -*-
 
-"""
-    Project
+""" Project
 
     @author: Michael Howden (michael@sahanafoundation.org)
     @date-created: 2010-08-25
 
     Project Management
+
 """
 
-module = request.controller
+prefix = request.controller
+resourcename = request.function
 
 # Not wanted in Gap, just Activities
 #response.menu_options = org_menu
@@ -20,30 +21,32 @@ def activity_type():
 
     """ RESTful CRUD controller """
 
-    resourcename = request.function
-    tablename = "%s_%s" % (module, resourcename)
+    tablename = "%s_%s" % (prefix, resourcename)
     table = db[tablename]
 
     response.menu_options = org_menu
 
     s3xrc.model.configure(table, listadd=False)
-    return shn_rest_controller(module, resourcename)
+    return s3_rest_controller(prefix, resourcename)
+
 
 #==============================================================================
 def activity():
 
     """ RESTful CRUD controller """
 
-    resourcename = request.function
-    tablename = "%s_%s" % (module, resourcename)
+    tablename = "%s_%s" % (prefix, resourcename)
     table = db[tablename]
 
     response.menu_options = org_menu
 
-    return shn_rest_controller(module, resourcename)
+    return s3_rest_controller(prefix, resourcename)
+
 
 #==============================================================================
 def gap():
+
+    """ @todo: fix docstring """
 
     #Get all assess_summary
     assess_rows = db((db.assess_summary.id > 0) &\
@@ -185,6 +188,9 @@ def gap():
 
 #==============================================================================
 def gap_map():
+
+    """ @todo: fix docstring """
+
     feature_queries = []
     cluster_subsector_rows = db(db.org_cluster_subsector.id > 0).select()
     for cluster_subsector_rows in cluster_subsector_rows:
@@ -273,4 +279,6 @@ def gap_map():
 
     return dict(map = map,
                 title = T("Assessment and Activities Map") )
+
+
 #==============================================================================

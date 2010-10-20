@@ -920,7 +920,7 @@ class S3ResourceController(object):
 
                 load_list = load_map[tablename]
                 prefix, name = tablename.split("_", 1)
-                rresource = self.resource(prefix, name, id=load_list, components=[])
+                rresource = self._resource(prefix, name, id=load_list, components=[])
                 table = rresource.table
                 rresource.load()
 

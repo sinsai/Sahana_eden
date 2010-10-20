@@ -89,7 +89,8 @@ class S3Importer(object):
 
         """
 
-        xml = self.manager.xml
+        manager = self.manager
+        xml = manager.xml
 
         prefix, name, table, tablename = r.target()
 
@@ -133,11 +134,11 @@ class S3Importer(object):
                     else:
                         data.text = value
                     element.append(data)
-        tree = xml.tree([element], domain=s3xrc.domain)
+        tree = xml.tree([element], domain=manager.domain)
 
         # Import data
         result = Storage(committed=False)
-        s3xrc.sync_resolve = lambda vector, result=result: result.update(vector=vector)
+        manager.sync_resolve = lambda vector, result=result: result.update(vector=vector)
         try:
             success = resource.import_xml(tree)
         except SyntaxError:
@@ -159,7 +160,7 @@ class S3Importer(object):
                 item = xml.json_message(True, 200, "Record updated")
         else:
             item = xml.json_message(False, 403, "Could not create/update record: %s" %
-                                    s3xrc.error or xml.error,
+                                    manager.error or xml.error,
                                     tree=xml.tree2json(tree))
 
         return dict(item=item)

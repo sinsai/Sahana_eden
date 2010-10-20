@@ -384,16 +384,17 @@ def group():
 
     """ RESTful CRUD controller """
 
-    module = "auth"
-    resource = "group"
-    table = module + "_" + resource
+    prefix = "auth"
+    resourcename = "group"
+    tablename = "%s_%s" % (prefix, resourcename)
+    table = db[tablename]
 
     # Model options
 
     # CRUD Strings
     ADD_ROLE = T("Add Role")
     LIST_ROLES = T("List Roles")
-    s3.crud_strings[table] = Storage(
+    s3.crud_strings[tablename] = Storage(
         title_create = ADD_ROLE,
         title_display = T("Role Details"),
         title_list = LIST_ROLES,
@@ -409,7 +410,7 @@ def group():
         msg_list_empty = T("No Roles currently defined"))
 
     s3xrc.model.configure(table, main="role")
-    return s3_rest_controller(module, resource)
+    return s3_rest_controller(prefix, resourcename)
 
 @auth.shn_requires_membership(1)
 def membership():

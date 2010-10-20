@@ -188,7 +188,7 @@ def parameter():
     return s3_rest_controller(module, resource)
 
 def item():
-    "RESTful CRUD controller"
+    """ RESTful CRUD controller """
     resource = request.function
     table = module + "_" + resource
 
@@ -324,7 +324,7 @@ def item_export_pdf():
     return output.read()
 
 def kit():
-    "RESTful CRUD controller"
+    """ RESTful CRUD controller """
     resource = request.function
     table = module + "_" + resource
 
@@ -352,8 +352,8 @@ def kit():
     response.s3.formats.pdf = URL(r=request, f="kit_export_pdf")
     response.s3.formats.xls = URL(r=request, f="kit_export_xls")
     if len(request.args) == 2:
-        # @todo: migrate CRUD settings
-        crud.settings.update_next = URL(r=request, f="kit_item", args=request.args[1])
+        s3xrc.model.configure(table,
+            update_next=URL(r=request, f="kit_item", args=request.args[1]))
 
     return s3_rest_controller(module, resource, main="code")
 
@@ -758,7 +758,7 @@ def kit_import_csv():
     redirect(URL(r=request, f="kit"))
 
 def bundle():
-    "RESTful CRUD controller"
+    """ RESTful CRUD controller """
     resource = request.function
     table = module + "_" + resource
 
@@ -784,8 +784,8 @@ def bundle():
         msg_list_empty = T("No Bundles currently registered"))
 
     if len(request.args) == 2:
-        # @todo: migrate CRUD settings
-        crud.settings.update_next = URL(r=request, f="bundle_kit_item", args=request.args[1])
+        s3xrc.model.configure(table,
+            update_next=URL(r=request, f="bundle_kit_item", args=request.args[1]))
 
     return s3_rest_controller(module, resource)
 
@@ -1063,7 +1063,7 @@ def bundle_update_items():
     redirect(URL(r=request, f="bundle_kit_item", args=[bundle]))
 
 def staff():
-    "RESTful CRUD controller"
+    """ RESTful CRUD controller """
     resource = request.function
     table = module + "_" + resource
 
@@ -1092,7 +1092,7 @@ def staff():
 
 # This should be deprecated & replaced with a link to gis_location
 def location():
-    "RESTful CRUD controller"
+    """ RESTful CRUD controller """
     resource = request.function
     table = module + "_" + resource
 
@@ -1120,15 +1120,14 @@ def location():
     return s3_rest_controller(module, resource, main="code")
 
 def project():
-    "RESTful CRUD controller"
+
+    """ RESTful CRUD controller """
+
     resource = request.function
     tablename = "org_%s" % (resource)
     table = db[tablename]
 
-    # @todo: migrate CRUD settings
     output = s3_rest_controller("org", resource,
-                                 listadd=False,
-                                 main="code",
                                  rheader=lambda jr: shn_project_rheader(jr,
                                             tabs = [(T("Basic Details"), None),
                                                     (T("Staff"), "staff"),
@@ -1143,7 +1142,7 @@ def project():
 
 
 def budget():
-    "RESTful CRUD controller"
+    """ RESTful CRUD controller """
     resource = request.function
     table = module + "_" + resource
 

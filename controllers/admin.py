@@ -17,7 +17,8 @@ response.menu_options = admin_menu_options
 
 # S3 framework functions
 def index():
-    "Module's Home Page"
+
+    """ Module's Home Page """
 
     module_name = deployment_settings.modules[module].name_nice
 
@@ -25,7 +26,8 @@ def index():
 
 @auth.shn_requires_membership(1)
 def setting():
-    "RESTful CRUD controller"
+
+    """ RESTful CRUD controller """
 
     resource = request.function
     tablename = "s3_" + resource
@@ -67,7 +69,7 @@ def setting():
 
 @auth.shn_requires_membership(1)
 def theme():
-    "RESTful CRUD controller"
+    """ RESTful CRUD controller """
     resource = "theme"
     tablename = module + "_" + resource
     table = db[tablename]
@@ -231,7 +233,7 @@ def theme_check(form):
 
 @auth.shn_requires_membership(1)
 def user():
-    "RESTful CRUD controller"
+    """ RESTful CRUD controller """
     module = "auth"
     resource = "user"
     tablename = module + "_" + resource
@@ -379,7 +381,9 @@ def usergroup():
 
 @auth.shn_requires_membership(1)
 def group():
-    "RESTful CRUD controller"
+
+    """ RESTful CRUD controller """
+
     module = "auth"
     resource = "group"
     table = module + "_" + resource
@@ -404,11 +408,14 @@ def group():
         msg_record_deleted = T("Role deleted"),
         msg_list_empty = T("No Roles currently defined"))
 
-    return s3_rest_controller(module, resource, main="role")
+    s3xrc.model.configure(table, main="role")
+    return s3_rest_controller(module, resource)
 
 @auth.shn_requires_membership(1)
 def membership():
-    "RESTful CRUD controller"
+
+    """ RESTful CRUD controller """
+
     module = "auth"
     resource = "membership"
     table = module + "_" + resource
@@ -434,7 +441,8 @@ def membership():
         msg_record_deleted = T("Membership deleted"),
         msg_list_empty = T("No Memberships currently defined"))
 
-    return s3_rest_controller(module, resource, main="user_id")
+    s3xrc.model.configure(table, main="user_id")
+    return s3_rest_controller(module, resource)
 
 @auth.shn_requires_membership(1)
 def users():

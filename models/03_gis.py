@@ -111,6 +111,8 @@ projection_id = S3ReusableField("projection_id", db.gis_projection, sortby="name
                                  ondelete = "RESTRICT"
                                 )
 
+s3xrc.model.configure(table, deletable=False)
+
 # -----------------------------------------------------------------------------
 # GIS Symbology
 resource = "symbology"
@@ -225,6 +227,7 @@ s3xrc.model.add_component(module, resource,
 
 s3xrc.model.configure(table,
                       deletable=False,
+                      listadd=False,
                       list_fields = ["lat",
                                      "lon",
                                      "zoom",
@@ -484,7 +487,7 @@ table.lon.comment = A(CONVERSION_TOOL,
                       _title=T("You can use the Conversion Tool to convert from either GPS coordinates or Degrees/Minutes/Seconds."),
                       _id="btnConvert")
 
-#s3xrc.model.configure(table,
+s3xrc.model.configure(table, listadd=False)
     #list_fields=["id", "name", "level", "parent", "lat", "lon"])
 
 # Reusable field to include in other table definitions
@@ -886,6 +889,8 @@ table.apikey.requires = IS_NOT_EMPTY()
 table.name.label = T("Service")
 table.apikey.label = T("Key")
 
+s3xrc.model.configure(table, listadd=False, deletable=False)
+
 # -----------------------------------------------------------------------------
 # GPS Tracks (files in GPX format)
 resource = "track"
@@ -932,6 +937,8 @@ track_id = S3ReusableField("track_id", db.gis_track, sortby="name",
                           DIV( _class="tooltip", _title=T("GPX Track") + "|" + T("A file downloaded from a GPS containing a series of geographic points in XML format."))),
                 ondelete = "RESTRICT"
                 )
+
+s3xrc.model.configure(table, deletable=False)
 
 # -----------------------------------------------------------------------------
 # GIS Layers

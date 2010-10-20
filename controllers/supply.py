@@ -16,7 +16,7 @@ response.menu_options = logs_menu
 #==============================================================================
 #@auth.shn_requires_membership(1)
 def item_category():
-    "RESTful CRUD controller"
+    """ RESTful CRUD controller """
     resource = request.function
     tablename = "%s_%s" % (module, resource)
     table = db[tablename]
@@ -40,7 +40,7 @@ def shn_item_rheader(jr, tabs=[]):
     return None
 
 def item():
-    "RESTful CRUD controller"
+    """ RESTful CRUD controller """
     resource = request.function
     tablename = "%s_%s" % (module, resource)
     table = db[tablename]

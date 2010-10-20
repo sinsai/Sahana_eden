@@ -110,46 +110,46 @@ def admin():
     return dict(module_name=module_name, title=title)
 
 def unit():
-    "RESTful CRUD controller"
+    """ RESTful CRUD controller """
     return s3_rest_controller(module, 'unit')
 def site():
-    "RESTful CRUD controller"
+    """ RESTful CRUD controller """
     return s3_rest_controller(module, 'site')
 
 '''def site_category():
-    "RESTful CRUD controller"
+    """ RESTful CRUD controller """
     return s3_rest_controller(module, 'site_category')
 '''
 def storage_loc():
-    "RESTful CRUD controller"
+    """ RESTful CRUD controller """
     return s3_rest_controller(module, 'storage_loc')
 
 def storage_bin_type():
-    "RESTful CRUD controller"
+    """ RESTful CRUD controller """
     return s3_rest_controller(module, 'storage_bin_type')
 
 def storage_bin():
-    "RESTful CRUD controller"
+    """ RESTful CRUD controller """
     return s3_rest_controller(module, 'storage_bin')
 
 def catalog():
-    "RESTful CRUD controller"
+    """ RESTful CRUD controller """
     return s3_rest_controller(module, 'catalog')
 
 def catalog_cat():
-    "RESTful CRUD controller"
+    """ RESTful CRUD controller """
     return s3_rest_controller(module, 'catalog_cat')
 
 def catalog_subcat():
-    "RESTful CRUD controller"
+    """ RESTful CRUD controller """
     return s3_rest_controller(module, 'catalog_subcat')
 
 def category_master():
-    "RESTful CRUD controller"
+    """ RESTful CRUD controller """
     return s3_rest_controller(module, 'category_master')
 
 def item():
-    "RESTful CRUD controller"
+    """ RESTful CRUD controller """
     return s3_rest_controller(module, 'item')
 
 '''def item_cascade(form):

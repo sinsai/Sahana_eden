@@ -578,6 +578,8 @@ s3xrc.model.add_component(module, resource,
                           joinby=dict(org_organisation="organisation_id"))
 
 s3xrc.model.configure(table,
+                      listadd=False,
+                      main="code",
                       list_fields=["id",
                                    "organisation_id",
                                    "location_id",

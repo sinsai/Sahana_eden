@@ -256,8 +256,7 @@ def location():
         # We've been called from the Location Selector widget
         table.addr_street.readable = table.addr_street.writable = False
 
-    # @todo: migrate CRUD settings
-    output = s3_rest_controller(module, resource, listadd=False)
+    output = s3_rest_controller(module, resource)
 
     _map = vars.get("_map", None)
     if _map and isinstance(output, dict):
@@ -612,8 +611,7 @@ def apikey():
         msg_record_deleted = T("Key deleted"),
         msg_list_empty = T("No Keys currently defined"))
 
-    # @todo: migrate CRUD settings
-    output = s3_rest_controller(module, resource, deletable=False, listadd=False)
+    output = s3_rest_controller(module, resource)
 
     if not "gis" in response.view:
         response.view = "gis/" + response.view
@@ -621,7 +619,9 @@ def apikey():
     return output
 
 def config():
+
     """ RESTful CRUD controller """
+
     resource = request.function
     tablename = module + "_" + resource
     table = db[tablename]
@@ -640,8 +640,7 @@ def config():
         return True
     response.s3.prep = prep
 
-    # @todo: migrate CRUD settings
-    output = s3_rest_controller(module, resource, deletable=False, listadd=False)
+    output = s3_rest_controller(module, resource)
 
     if not "gis" in response.view:
         response.view = "gis/" + response.view
@@ -656,6 +655,7 @@ def config():
             output["rheader"] = P(T("These are the default settings for all users. To change settings just for you, click "), A(T("here"), _href=URL(r=request, c="pr", f="person", args=["config"], vars={"person.uid":auth.user.person_uuid})))
 
     return output
+
 
 def feature_class():
     """
@@ -730,9 +730,9 @@ def layer_feature():
         msg_record_deleted = T("Feature Layer deleted"),
         msg_list_empty = T("No Feature Layers currently defined"))
 
-    # @todo: migrate CRUD settings
-    crud.settings.create_onvalidation = lambda form: feature_layer_query(form)
-    crud.settings.update_onvalidation = lambda form: feature_layer_query(form)
+    s3xrc.model.configure(table,
+        create_onvalidation = lambda form: feature_layer_query(form)
+        update_onvalidation = lambda form: feature_layer_query(form))
 
     output = s3_rest_controller(module, resource)
 
@@ -802,7 +802,9 @@ def marker():
     return output
 
 def projection():
+
     """ RESTful CRUD controller """
+
     if deployment_settings.get_security_map() and not shn_has_role("MapAdmin"):
         unauthorised()
 
@@ -835,8 +837,7 @@ def projection():
         msg_record_deleted = T("Projection deleted"),
         msg_list_empty = T("No Projections currently defined"))
 
-    # @todo: migrate CRUD settings
-    output = s3_rest_controller(module, resource, deletable=False)
+    output = s3_rest_controller(module, resource)
 
     if not "gis" in response.view:
         response.view = "gis/" + response.view
@@ -844,7 +845,9 @@ def projection():
     return output
 
 def track():
+
     """ RESTful CRUD controller """
+
     if deployment_settings.get_security_map() and not shn_has_role("MapAdmin"):
         unauthorised()
 
@@ -857,9 +860,8 @@ def track():
     # CRUD Strings
     # used in multiple controllers, so defined in model
 
-    # @todo: migrate CRUD settings
-    output = s3_rest_controller(module, resource, deletable=False)
-    return output
+    return s3_rest_controller(module, resource)
+
 
 # Common CRUD strings for all layers
 ADD_LAYER = T("Add Layer")
@@ -911,8 +913,8 @@ def layer_openstreetmap():
         msg_record_deleted=LAYER_DELETED,
         msg_list_empty=NO_LAYERS)
 
-    # @todo: migrate CRUD settings
-    output = s3_rest_controller(module, resource, deletable=False, listadd=False)
+    s3xrc.model.configure(table, deletable=False, listadd=False)
+    output = s3_rest_controller(module, resource)
 
     if not "gis" in response.view:
         response.view = "gis/" + response.view
@@ -950,8 +952,8 @@ def layer_google():
         msg_record_deleted=LAYER_DELETED,
         msg_list_empty=NO_LAYERS)
 
-    # @todo: migrate CRUD settings
-    output = s3_rest_controller(module, resource, deletable=False, listadd=False)
+    s3xrc.model.configure(table, deletable=False, listadd=False)
+    output = s3_rest_controller(module, resource)
 
     if not "gis" in response.view:
         response.view = "gis/" + response.view
@@ -989,8 +991,8 @@ def layer_yahoo():
         msg_record_deleted=LAYER_DELETED,
         msg_list_empty=NO_LAYERS)
 
-    # @todo: migrate CRUD settings
-    output = s3_rest_controller(module, resource, deletable=False, listadd=False)
+    s3xrc.model.configure(table, deletable=False, listadd=False)
+    output = s3_rest_controller(module, resource)
 
     if not "gis" in response.view:
         response.view = "gis/" + response.view
@@ -1028,8 +1030,8 @@ def layer_mgrs():
         msg_record_deleted=LAYER_DELETED,
         msg_list_empty=NO_LAYERS)
 
-    # @todo: migrate CRUD settings
-    output = s3_rest_controller(module, resource, deletable=False, listadd=False)
+    s3xrc.model.configure(table, deletable=False, listadd=False)
+    output = s3_rest_controller(module, resource)
 
     if not "gis" in response.view:
         response.view = "gis/" + response.view
@@ -1067,8 +1069,8 @@ def layer_bing():
         msg_record_deleted=LAYER_DELETED,
         msg_list_empty=NO_LAYERS)
 
-    # @todo: migrate CRUD settings
-    output = s3_rest_controller(module, resource, deletable=False, listadd=False)
+    s3xrc.model.configure(table, deletable=False, listadd=False)
+    output = s3_rest_controller(module, resource)
 
     if not "gis" in response.view:
         response.view = "gis/" + response.view

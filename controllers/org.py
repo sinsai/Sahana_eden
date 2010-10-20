@@ -161,7 +161,9 @@ s3.crud_strings[tablename] = Storage(
     msg_list_empty = T("No Donors currently registered"))
 
 def project():
+
     """ RESTful CRUD controller """
+
     resource = request.function
     tablename = "%s_%s" % (module, resource)
     table = db[tablename]
@@ -177,14 +179,8 @@ def project():
                                                     #(T("Sites"), "site"),  # Ticket 195
                                                    ])
 
-    # @todo: migrate CRUD settings
-    output = s3_rest_controller(module, resource,
-                                 listadd=False,
-                                 main="code",
-                                 rheader=rheader
-                                )
+    return s3_rest_controller(module, resource, rheader=rheader)
 
-    return output
 
 def task():
     """ RESTful CRUD controller """

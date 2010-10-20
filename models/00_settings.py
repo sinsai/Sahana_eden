@@ -204,6 +204,30 @@ def s3_formstyle(id, label, widget, comment):
 
     return tuple(row)
 
+def s3_formstyle_mobile(id, label, widget, comment):
+
+    """ Provide the Sahana Eden Form Style
+        Label above the Inputs:
+        http://uxmovement.com/design-articles/faster-with-top-aligned-labels
+
+    """
+
+    row = []
+
+    # Label on the 1st row
+    row.append(TR(TD(label, _class="w2p_fl", _colspan="2"), _id=id + "1"))
+    # Widget & Comment on the 2nd Row
+    row.append(TR(widget, TD(comment, _class="w2p_fc"), _id=id))
+
+    # *** Instead, remove the prior block and uncomment just this:
+
+    ## Label on the 1st row
+    #row.append(TR(TD(label, _class="w2p_fl", _colspan="2"), _id=id + "1"))
+    ## Widget & Comment on the 2nd Row
+    #row.append(TR(widget, TD(comment, _class="w2p_fc"), _id=id))
+
+    return tuple(row)
+
 crud.settings.formstyle = s3_formstyle
 
 ########

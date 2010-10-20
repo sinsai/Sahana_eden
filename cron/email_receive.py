@@ -7,13 +7,14 @@
 import sys, socket, email, uuid
 
 # Read-in configuration from Database
-host = db(db.msg_email_settings.id == 1).select().first().inbound_mail_server
-server_type = db(db.msg_email_settings.id == 1).select().first().inbound_mail_type
-ssl = db(db.msg_email_settings.id == 1).select().first().inbound_mail_ssl
-port = db(db.msg_email_settings.id == 1).select().first().inbound_mail_port
-username = db(db.msg_email_settings.id == 1).select().first().inbound_mail_username
-password = db(db.msg_email_settings.id == 1).select().first().inbound_mail_password
-delete = db(db.msg_email_settings.id == 1).select().first().inbound_mail_delete
+settings = db(db.msg_email_settings.id == 1).select(limitby=(0, 1)).first()
+host = settings.inbound_mail_server
+server_type = settings.inbound_mail_type
+ssl = settings.inbound_mail_ssl
+port = settings.inbound_mail_port
+username = settings.inbound_mail_username
+password = settings.inbound_mail_password
+delete = settings.inbound_mail_delete
 
 if server_type == "pop3":
     import poplib
@@ -28,8 +29,8 @@ if server_type == "pop3":
         print error
         # Store status in the DB
         try:
-            id = db().select(db.msg_email_inbound_status.id)[0].id
-            db(db.msg_email_inbound_status.id==id).update(status=error)
+            id = db().select(db.msg_email_inbound_status.id, limitby=(0, 1)).first().id
+            db(db.msg_email_inbound_status.id == id).update(status=error)
         except:
             db.msg_email_inbound_status.insert(status=error)
         # Explicitly commit DB operations when running from Cron
@@ -47,8 +48,8 @@ if server_type == "pop3":
             print "Login failed:", e
             # Store status in the DB
             try:
-                id = db().select(db.msg_email_inbound_status.id)[0].id
-                db(db.msg_email_inbound_status.id==id).update(status="Login failed: %s" % e)
+                id = db().select(db.msg_email_inbound_status.id, limitby=(0, 1)).first().id
+                db(db.msg_email_inbound_status.id == id).update(status="Login failed: %s" % e)
             except:
                 db.msg_email_inbound_status.insert(status="Login failed: %s" % e)
             # Explicitly commit DB operations when running from Cron
@@ -98,8 +99,8 @@ elif server_type == "imap":
         print error
         # Store status in the DB
         try:
-            id = db().select(db.msg_email_inbound_status.id)[0].id
-            db(db.msg_email_inbound_status.id==id).update(status=error)
+            id = db().select(db.msg_email_inbound_status.id, limitby=(0, 1)).first().id
+            db(db.msg_email_inbound_status.id == id).update(status=error)
         except:
             db.msg_email_inbound_status.insert(status=error)
         # Explicitly commit DB operations when running from Cron
@@ -112,8 +113,8 @@ elif server_type == "imap":
         print error
         # Store status in the DB
         try:
-            id = db().select(db.msg_email_inbound_status.id)[0].id
-            db(db.msg_email_inbound_status.id==id).update(status=error)
+            id = db().select(db.msg_email_inbound_status.id, limitby=(0, 1)).first().id
+            db(db.msg_email_inbound_status.id == id).update(status=error)
         except:
             db.msg_email_inbound_status.insert(status=error)
         # Explicitly commit DB operations when running from Cron

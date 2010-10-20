@@ -86,21 +86,103 @@ if populate:
             theme = 1
         )
 
-    # Organisation Registry
-    tablename = "org_sector"
+    # Organisation Registry       
+    tablename = "org_cluster"
     table = db[tablename]
     if not db(table.id > 0).count():
-        table.insert( name = "Agriculture" )
-        table.insert( name = "Shelter and Non-Food Items" )
-        table.insert( name = "Coordination and Support Services" )
-        table.insert( name = "Food" )
-        table.insert( name = "Infrastructure and Rehabilitation" )
-        table.insert( name = "Security" )
-        table.insert( name = "Water and Sanitation" )
-        table.insert( name = "Education" )
-        table.insert( name = "Health" )
-        table.insert( name = "Protection and Human Rights and Rule of Law" )
-        table.insert( name = "Urban Search and Rescue" )
+        table.insert(
+            abrv = T("Agriculture"),
+            name = T("Agriculture"),
+        )
+        table.insert(
+            abrv = T("Camp"),
+            name = T("Camp Coordination/Management"),
+        )
+        table.insert(
+            abrv = T("Recovery"),
+            name = T("Early Recovery"),
+        )
+        table.insert(
+            abrv = T("Education"),
+            name = T("Education"),
+        )
+        table.insert(
+            abrv = T("Shelter"),
+            name = T("Emergency Shelter"),
+        )
+        table.insert(
+            abrv = T("Telecommunications"),
+            name = T("Emergency Telecommunications"),
+        )
+        table.insert(
+            abrv = T("Health"),
+            name = T("Health"),
+        )
+        table.insert(
+            abrv = T("Logistics"),
+            name = T("Logistics"),
+        )
+        table.insert(
+            abrv = T("Nutrition"),
+            name = T("Nutrition"),
+        )
+        table.insert(
+            abrv = T("Protection"),
+            name = T("Protection"),
+        )
+        table.insert(
+            abrv = T("WASH"),
+            name = T("Water Sanitation Hygiene"),
+        )
+    tablename = "org_cluster_subsector"
+    table = db[tablename]
+    # Ensure that the clusters we defined are in the DB ready to be used as a FK
+    db.commit()
+    if not db(table.id > 0).count():
+        table.insert(
+            cluster_id = 11,
+            abrv = T("Aggravating factors")
+        )
+        table.insert(
+            cluster_id = 11,
+            abrv = T("Hygiene practice")
+        )
+        table.insert(
+            cluster_id = 11,
+            abrv = T("Hygiene NFIs")
+        )
+        table.insert(
+            cluster_id = 11,
+            abrv = T("Water supply")
+        )
+        table.insert(
+            cluster_id = 11,
+            abrv = T("Excreta disposal)
+        )
+        table.insert(
+            cluster_id = 11,
+            abrv = T("Disease vectors")
+        )
+        table.insert(
+            cluster_id = 11,
+            abrv = T("Solid waste")
+        )
+        table.insert(
+            cluster_id = 11,
+            abrv = T("Drainage")
+        )
+        table.insert(
+            cluster_id = 9,
+            abrv = T("Food Supply")
+        )
+        table.insert(
+            cluster_id = 5,
+            abrv = T("Shelter")
+        )
+        table.insert(
+            cluster_id = 5,
+            abrv = T("Clothing")
+        )
 
     # Person Registry
     tablename = "pr_person"
@@ -203,6 +285,26 @@ if populate:
             table.insert( name = "Request for Assistance" )
             table.insert( name = "Offer of Help" )
 
+    # Assessment
+    if "assess" in deployment_settings.modules:
+        tablename = "assess_baseline_type"
+        table = db[tablename]
+        if not db(table.id > 0).count():
+            table.insert( name = "# of population" )
+            table.insert( name = "# of households" )
+            table.insert( name = "# of children under 5" )
+            table.insert( name = "# of children" )
+
+    # Impacts
+    if deployment_settings.has_module("irs") or deployment_settings.has_module("assess"):        
+        tablename = "impact_type"
+        table = db[tablename]
+        if not db(table.id > 0).count():
+            table.insert( name = "# of People Affected" )
+            table.insert( name = "# of People Injured" )
+            table.insert( name = "# of People Deceased" )
+            table.insert( name = "# of Houses Destroyed" )
+            table.insert( name = "# of Houses Damaged" )
 
     # GIS Module
     tablename = "gis_marker"

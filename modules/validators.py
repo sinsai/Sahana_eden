@@ -143,7 +143,7 @@ class IS_ONE_OF_EMPTY(Validator):
         'label' can be a string template for the record, or a set of field
         names of the fields to be used as option labels, or a function or lambda
         to create an option label from the respective record (which has to return
-        a string, of course)
+        a string, of course). The function will take the record as an argument
 
         No 'options' method as designed to be called next to an Autocomplete field so don't download a large dropdown unnecessarily.
     """
@@ -247,6 +247,9 @@ class IS_ONE_OF_EMPTY(Validator):
                     labels = map(lambda r: \
                                  " ".join([r[l] for l in label if l in r]),
                                  records)
+                elif hasattr(label, '__call__'):
+                    # Is a function
+                    labels = map(label, records)
                 elif "name" in _table:
                     labels = map(lambda r: r.name, records)
                 else:
@@ -500,19 +503,19 @@ class IS_UTC_DATETIME(Validator):
 
         offset_hrs = int(_offset_str[-5] + _offset_str[-4:-2])
         offset_min = int(_offset_str[-5] + _offset_str[-2:])
-        offset = 3600*offset_hrs + 60*offset_min
+        offset = 3600 * offset_hrs + 60 * offset_min
 
         # Offset must be in range -1439 to +1439 minutes
         if offset < -86340 or offset > 86340:
             return (dt, self.error_message["offset"])
 
         try:
-            (y,m,d,hh,mm,ss,t0,t1,t2) = time.strptime(dtstr, str(self.format))
-            dt = datetime(y,m,d,hh,mm,ss)
+            (y, m, d, hh, mm, ss, t0, t1, t2) = time.strptime(dtstr, str(self.format))
+            dt = datetime(y, m, d, hh, mm, ss)
         except:
             try:
-                (y,m,d,hh,mm,ss,t0,t1,t2) = time.strptime(dtstr+":00", str(self.format))
-                dt = datetime(y,m,d,hh,mm,ss)
+                (y, m, d, hh, mm, ss, t0, t1, t2) = time.strptime(dtstr+":00", str(self.format))
+                dt = datetime(y, m, d, hh, mm, ss)
             except:
                 return(value, self.error_message["format"])
 

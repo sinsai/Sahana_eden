@@ -157,7 +157,7 @@ if populate:
         )
         table.insert(
             cluster_id = 11,
-            abrv = T("Excreta disposal)
+            abrv = T("Excreta disposal")
         )
         table.insert(
             cluster_id = 11,

@@ -141,12 +141,10 @@ def log():
         msg_record_deleted = T("Message deleted"),
         msg_list_empty = T("No messages in the system"))
 
-    rheader = DIV(B(T("Master Message Log")), ": ", T("All Inbound & Outbound Messages are stored here"))
-
     # Server-side Pagination
     response.s3.pagination = True
 
-    return shn_rest_controller(module, resource, listadd=False, rheader=rheader)
+    return shn_rest_controller(module, resource, listadd=False)
 
 def tropo():
     """

@@ -10,6 +10,51 @@
 
 module = request.controller
 
+if module not in deployment_settings.modules:
+    session.error = T("Module disabled!")
+    redirect(URL(r=request, c="default", f="index"))
+
+# Options Menu (available in all Functions' Views)
+def shn_menu():
+    menu = [
+        [T("Assessments"), False, URL(r=request, f="assess"), [
+            [T("List"), False, URL(r=request, f="assess")],
+            [T("Add"), False, URL(r=request, f="assess", args="create")],
+            [T("Mobile"), False, URL(r=request, f="assess_short_mobile")],
+            #[T("Search"), False, URL(r=request, f="assess", args="search")],
+        ]],
+        [T("Baselines"), False, URL(r=request, f="baseline"), [
+            [T("List"), False, URL(r=request, f="baseline")],
+            [T("Add"), False, URL(r=request, f="baseline", args="create")],
+            #[T("Search"), False, URL(r=request, f="baseline", args="search")],
+        ]],
+        [T("Summary"), False, URL(r=request, f="summary"), [
+            [T("List"), False, URL(r=request, f="summary")],
+            [T("Add"), False, URL(r=request, f="summary", args="create")],
+            #[T("Search"), False, URL(r=request, f="summary", args="search")],
+        ]],
+    ]
+    if shn_has_role(1):
+        menu_editor = [
+            [T("Edit Options"), False, URL(r=request, f="#"), [
+                [T("List / Add Baseline Types"), False, URL(r=request, f="baseline_type")],
+            ]],
+        ]
+        menu.extend(menu_editor)
+    response.menu_options = menu
+
+shn_menu()
+
+# S3 framework functions
+# -----------------------------------------------------------------------------
+def index():
+
+    """ Module's Home Page """
+
+    module_name = deployment_settings.modules[module].name_nice
+
+    return dict(module_name=module_name)
+
 #==============================================================================
 def shn_assess_rheader(jr, tabs=[]):
     if jr.representation == "html":

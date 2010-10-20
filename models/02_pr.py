@@ -534,6 +534,9 @@ group_id = S3ReusableField("group_id", db.pr_group,
 
 # -----------------------------------------------------------------------------
 s3xrc.model.configure(table,
+    deletable=False,
+    main="name",
+    extra="description",
     onaccept=lambda form, table=table: shn_pentity_onaccept(form, table=table),
     delete_onaccept=lambda form: shn_pentity_ondelete(form))
 

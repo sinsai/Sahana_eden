@@ -340,6 +340,7 @@ organisation_id = S3ReusableField("organisation_id", db.org_organisation, sortby
                           #joinby=dict(org_sector="sector_id"))
 
 s3xrc.model.configure(table,
+                      listadd=False,
                       # Ensure that table is substituted when lambda defined not evaluated by using the default value
                       onaccept=lambda form, tab=table: shn_pentity_onaccept(form, table=tab),
                       delete_onaccept=lambda form: shn_pentity_ondelete(form),
@@ -692,6 +693,7 @@ s3xrc.model.add_component(module, resource,
 
 # May wish to over-ride this in controllers
 s3xrc.model.configure(table,
+                      listadd=False,
                       list_fields=["id",
                                    "person_id",
                                    "organisation_id",
@@ -846,6 +848,7 @@ s3xrc.model.add_component(module, resource,
                                       org_office="office_id"))
 
 s3xrc.model.configure(table,
+                      listadd=False,
                       onvalidation = lambda form: shn_org_task_onvalidation(form),
                       list_fields=["id",
                                    "project_id",

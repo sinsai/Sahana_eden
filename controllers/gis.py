@@ -731,7 +731,7 @@ def layer_feature():
         msg_list_empty = T("No Feature Layers currently defined"))
 
     s3xrc.model.configure(table,
-        create_onvalidation = lambda form: feature_layer_query(form)
+        create_onvalidation = lambda form: feature_layer_query(form),
         update_onvalidation = lambda form: feature_layer_query(form))
 
     output = s3_rest_controller(module, resource)

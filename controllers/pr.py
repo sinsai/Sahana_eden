@@ -6,7 +6,8 @@
 
 """
 
-module = prefix = request.controller
+prefix = request.controller
+resourcename = request.function
 
 # -----------------------------------------------------------------------------
 # Options Menu (available in all Functions" Views)
@@ -45,27 +46,28 @@ def shn_menu():
 
 shn_menu()
 
+
 # -----------------------------------------------------------------------------
 def index():
 
     """ Module's Home Page """
 
     try:
-        module_name = deployment_settings.modules[module].name_nice
+        module_name = deployment_settings.modules[prefix].name_nice
     except:
         module_name = T("Person Registry")
 
-    def prep(jr):
-        if jr.representation == "html":
-            if not jr.id:
-                jr.method = "search_simple"
-                jr.custom_action = shn_pr_person_search_simple
+    def prep(r):
+        if r.representation == "html":
+            if not r.id:
+                r.method = "search_simple"
+                r.custom_action = shn_pr_person_search_simple
             else:
-               redirect(URL(r=request, f="person", args=[jr.id]))
+               redirect(URL(r=request, f="person", args=[r.id]))
         return True
     response.s3.prep = prep
 
-    def postp(jr, output):
+    def postp(r, output):
         if isinstance(output, dict):
             gender = []
             for g_opt in pr_gender_opts:
@@ -81,16 +83,16 @@ def index():
 
             total = int(db(db.pr_person.deleted == False).count())
             output.update(module_name=module_name, gender=gender, age=age, total=total)
-        if jr.representation in shn_interactive_view_formats:
-            if not jr.component:
+        if r.representation in shn_interactive_view_formats:
+            if not r.component:
                 label = READ
             else:
                 label = UPDATE
-            linkto = jr.resource.crud._linkto(jr)("[id]")
+            linkto = r.resource.crud._linkto(r)("[id]")
             response.s3.actions = [
                 dict(label=str(label), _class="action-btn", url=str(linkto))
             ]
-        jr.next = None
+        r.next = None
         return output
     response.s3.postp = postp
 
@@ -100,12 +102,11 @@ def index():
     shn_menu()
     return output
 
+
 # -----------------------------------------------------------------------------
 def person():
 
     """ RESTful CRUD controller """
-
-    resource = request.function
 
     def prep(r):
         if r.component_name == "config":
@@ -132,7 +133,7 @@ def person():
     table = db.pr_person
     s3xrc.model.configure(table, listadd = False, insertable = True)
 
-    output = s3_rest_controller(module, resource,
+    output = s3_rest_controller(prefix, resourcename,
                                 main="first_name",
                                 extra="last_name",
                                 rheader=lambda r: shn_pr_rheader(r,
@@ -150,12 +151,14 @@ def person():
     shn_menu()
     return output
 
+
 # -----------------------------------------------------------------------------
 def group():
 
     """ RESTful CRUD controller """
 
-    resource = request.function
+    tablename = "%s_%s" % (prefix, resourcename)
+    table = db[tablename]
 
     response.s3.filter = (db.pr_group.system == False) # do not show system groups
 
@@ -165,71 +168,60 @@ def group():
                                        "group_head",
                                        "description"])
 
-    #def group_postp(jr, output):
-        #if jr.representation in shn_interactive_view_formats:
-            #if not jr.component:
-                #label = READ
-            #else:
-                #label = UPDATE
-            #linkto = shn_linkto(jr, sticky=True)("[id]")
-            #response.s3.actions = [
-                #dict(label=str(label), _class="action-btn", url=linkto)
-            #]
-        #return output
-    #response.s3.postp = group_postp
-
-    # @todo: migrate CRUD settings
-    output = s3_rest_controller(module, resource,
-                main="name",
-                extra="description",
-                rheader=lambda jr: shn_pr_rheader(jr,
+    output = s3_rest_controller(prefix, resourcename,
+                rheader=lambda r: shn_pr_rheader(r,
                     tabs = [(T("Group Details"), None),
                             (T("Address"), "address"),
                             (T("Contact Data"), "pe_contact"),
-                            (T("Members"), "group_membership")]),
-                deletable=False)
+                            (T("Members"), "group_membership")]))
 
     shn_menu()
     return output
+
 
 # -----------------------------------------------------------------------------
 def image():
 
     """ RESTful CRUD controller """
 
-    resource = request.function
-    return s3_rest_controller(module, resource)
+    return s3_rest_controller(prefix, resourcename)
+
 
 # -----------------------------------------------------------------------------
 def pe_contact():
 
     """ RESTful CRUD controller """
 
-    resource = request.function
-    return s3_rest_controller(module, resource)
+    return s3_rest_controller(prefix, resourcename)
+
 
 # -----------------------------------------------------------------------------
 #def group_membership():
 
     #""" RESTful CRUD controller """
 
-    #resource = request.function
-    #return s3_rest_controller(module, resource)
+    #return s3_rest_controller(prefix, resourcename)
+
 
 # -----------------------------------------------------------------------------
 def pentity():
 
     """ RESTful CRUD controller """
 
-    resourcename = request.function
     return s3_rest_controller(prefix, resourcename)
+
 
 # -----------------------------------------------------------------------------
 def download():
 
-    """ Download a file. """
+    """ Download a file.
+
+        @todo: deprecate? (individual download handler probably not needed)
+
+    """
 
     return response.download(request, db)
+
 
 # -----------------------------------------------------------------------------
 def tooltip():
@@ -239,5 +231,6 @@ def tooltip():
     if "formfield" in request.vars:
         response.view = "pr/ajaxtips/%s.html" % request.vars.formfield
     return dict()
+
 
 # -----------------------------------------------------------------------------

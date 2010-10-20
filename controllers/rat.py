@@ -175,6 +175,7 @@ def assessment():
         return output
     response.s3.postp = postp
 
+    # @todo: migrate CRUD settings
     crud.settings.create_next = None # Do not redirect from CRUD
 
     rheader = lambda r: shn_rat_rheader(r,
@@ -187,8 +188,9 @@ def assessment():
                                                 (T("Livelihood"), "section7"),
                                                 (T("Education"), "section8"),
                                                 (T("Protection"), "section9") ])
-    response.s3.pagination = True
-    output = shn_rest_controller(module, resource,
+
+    # @todo: migrate CRUD settings
+    output = s3_rest_controller(module, resource,
                                  listadd=False,
                                  rheader=rheader,
                                  subheadings=subheadings)

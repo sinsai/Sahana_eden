@@ -31,8 +31,10 @@ def index():
 def spreadsheet():
     """ RESTful Controller """
     resource = request.function
+    # @todo: migrate CRUD settings
     crud.settings.create_onaccept = lambda form: redirect(URL(r=request, c="importer", f="spreadsheetview"))
-    return shn_rest_controller(module, resource, listadd=False)
+    # @todo: migrate CRUD settings
+    return s3_rest_controller(module, resource, listadd=False)
 
 def spreadsheetview():
     k = db(db.importer_spreadsheet.id > 0).select(limitby=(0, 1)).last()

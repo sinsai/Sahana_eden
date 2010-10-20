@@ -76,8 +76,7 @@ def assessment():
         return output
     response.s3.postp = user_postp
 
-    response.s3.pagination = True
-    output = shn_rest_controller(module, resource)
+    output = s3_rest_controller(module, resource)
     return output
 
 
@@ -121,8 +120,7 @@ def school_district():
                                                    (T("School Reports"), "school_report")
                                                   ])
 
-    response.s3.pagination = True
-    output = shn_rest_controller(module, resource, rheader=rheader)
+    output = s3_rest_controller(module, resource, rheader=rheader)
     return output
 
 # -----------------------------------------------------------------------------
@@ -144,8 +142,7 @@ def school_report():
         return output
     response.s3.postp = user_postp
 
-    response.s3.pagination = True
-    output = shn_rest_controller(module, resource)
+    output = s3_rest_controller(module, resource)
     return output
 
 # -----------------------------------------------------------------------------

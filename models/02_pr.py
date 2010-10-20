@@ -30,11 +30,15 @@ table = db.define_table(tablename,
                         Field("pe_label", length=128),
                         migrate=migrate, *s3_deletion_status())
 
-
 table.pe_type.writable = False
 table.pe_type.represent = lambda opt: pr_pe_types.get(opt, opt)
 table.uuid.writable = False
 table.pe_label.writable = False
+
+s3xrc.model.configure(table,
+                      editable=False,
+                      deletable=False,
+                      listadd=False)
 
 
 # -----------------------------------------------------------------------------
@@ -555,9 +559,7 @@ table.person_id.label = T("Person")
 s3xrc.model.add_component(module, resource,
                           multiple=True,
                           joinby=dict(pr_group="group_id",
-                                      pr_person="person_id"),
-                          deletable=True,
-                          editable=True)
+                                      pr_person="person_id"))
 
 s3xrc.model.configure(table,
     list_fields=[

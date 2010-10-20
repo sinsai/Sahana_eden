@@ -65,6 +65,7 @@ class S3Importer(object):
         """ Import CSV file into database
 
             @todo 2.2: fix docstring
+            @todo 2.3: make this resource-based (files!)
 
         """
 
@@ -84,6 +85,7 @@ class S3Importer(object):
             @todo 2.2: fix docstring
             @todo 2.2: make this work
             @todo 2.2: PEP-8
+            @todo 2.3: make this resource-based
 
         """
 

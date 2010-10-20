@@ -118,7 +118,7 @@ def user():
 
 def source():
     "RESTful CRUD controller"
-    return shn_rest_controller("s3", "source")
+    return s3_rest_controller("s3", "source")
 
 # NB These 4 functions are unlikely to get used in production
 def header():

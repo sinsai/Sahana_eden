@@ -1,11 +1,11 @@
 # -*- coding: utf-8 -*-
 
 """
-    Supply 
-    
+    Supply
+
     @author: Michael Howden (michael@sahanafoundation.org)
-    @date-created: 2010-08-16    
-    
+    @date-created: 2010-08-16
+
     Generic Supply functionality such as catalogs and items that will be used across multiple modules
 """
 
@@ -20,7 +20,8 @@ def item_category():
     resource = request.function
     tablename = "%s_%s" % (module, resource)
     table = db[tablename]
-    return shn_rest_controller(module, resource, listadd=False)
+    # @todo: migrate CRUD settings
+    return s3_rest_controller(module, resource, listadd=False)
 
 #==============================================================================
 def shn_item_rheader(jr, tabs=[]):
@@ -43,13 +44,13 @@ def item():
     resource = request.function
     tablename = "%s_%s" % (module, resource)
     table = db[tablename]
-    
+
     tabs = [
             (T("Edit Details"), None),
-            (T("In Inventories"), "store_item"),  
-            (T("Requested"), "ritem"),                                                                                                  
+            (T("In Inventories"), "store_item"),
+            (T("Requested"), "ritem"),
            ]
 
-    rheader = lambda r: shn_item_rheader(r, tabs)    
+    rheader = lambda r: shn_item_rheader(r, tabs)
 
-    return shn_rest_controller(module, resource, rheader=rheader)
+    return s3_rest_controller(module, resource, rheader=rheader)

@@ -149,9 +149,9 @@ if deployment_settings.has_module(module):
     # rms_req as component of doc_documents
     s3xrc.model.add_component(module, resource,
                               multiple=True,
-                              joinby=dict(doc_document="document_id", cr_shelter = "shelter_id", hms_hospital = "hospital_id"),
-                              deletable=True,
-                              editable=True)
+                              joinby=dict(doc_document="document_id",
+                                          cr_shelter="shelter_id",
+                                          hms_hospital="hospital_id"))
 
     # --------------------------------------------------------------------
     def shn_rms_get_req(label, fields=None, filterby=None):
@@ -331,9 +331,8 @@ if deployment_settings.has_module(module):
     # Items as component of Locations
     s3xrc.model.add_component(module, resource,
                               multiple=True,
-                              joinby=dict(rms_req="req_id", supply_item="item_id"),
-                              deletable=True,
-                              editable=True)
+                              joinby=dict(rms_req="req_id",
+                                          supply_item="item_id"))
 
     # ------------------
     # Create pledge table
@@ -369,9 +368,7 @@ if deployment_settings.has_module(module):
     # Pledges as a component of requests
     s3xrc.model.add_component(module, resource,
                               multiple=True,
-                              joinby=dict(rms_req = "req_id"),
-                              deletable=True,
-                              editable=True)
+                              joinby=dict(rms_req = "req_id"))
 
     s3xrc.model.configure(table,
                           list_fields=["id",
@@ -433,16 +430,14 @@ if deployment_settings.has_module(module):
 
     s3xrc.model.add_component(module, resource,
                               multiple=True,
-                              joinby=dict(rms_req="req_id"),
-                              deletable=True,
-                              editable=True,
-                              main="request_key", extra="value")
+                              joinby=dict(rms_req="req_id"))
 
     s3xrc.model.configure(table,
                           list_fields=["id",
                                        "req_id",
                                        "request_key",
-                                       "value"])
+                                       "value"],
+                          main="request_key", extra="value")
 
     # Make some fields invisible:
     table.req_id.readable = table.req_id.writable = False

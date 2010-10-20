@@ -115,8 +115,7 @@ def index():
         return output
     response.s3.postp = postp
 
-    response.s3.pagination = True
-    output = shn_rest_controller("pr", "person")
+    output = s3_rest_controller("pr", "person")
     response.view = "mpr/index.html"
 
     shn_menu()
@@ -244,8 +243,8 @@ def person():
 
     rheader = lambda r: shn_pr_rheader(r, tabs=mpr_tabs)
 
-    response.s3.pagination = True
-    output = shn_rest_controller("pr", resource,
+    # @todo: migrate CRUD settings
+    output = s3_rest_controller("pr", resource,
                                  main="first_name",
                                  extra="last_name",
                                  listadd=False,

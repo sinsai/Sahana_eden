@@ -54,8 +54,7 @@ def river():
         return output
     response.s3.postp = user_postp
 
-    response.s3.pagination = True
-    output = shn_rest_controller(module, resource)
+    output = s3_rest_controller(module, resource)
     return output
 
 
@@ -67,17 +66,17 @@ def freport():
     table = db[tablename]
 
     resource = request.function
-    
+
     # Don't send the locations list to client (pulled by AJAX instead)
     # Make the Location field mandatory
     table.location_id.requires = IS_ONE_OF_EMPTY(db, "gis_location.id")
-    
+
     table.datetime.comment = SPAN("*", _class="req")
 
     # Disable legacy fields, unless updating, so the data can be manually transferred to new fields
     #if "update" not in request.args:
-    #    table.document.readable = table.document.writable = False    
-        
+    #    table.document.readable = table.document.writable = False
+
     # Post-processor
     def postp(jr, output):
         shn_action_buttons(jr, deletable=False)
@@ -87,8 +86,7 @@ def freport():
     rheader = lambda r: shn_flood_rheader(r, tabs = [(T("Basic Details"), None),
                                                      (T("Locations"), "freport_location")
                                                     ])
-    response.s3.pagination = True
-    output = shn_rest_controller(module, resource, rheader=rheader)
+    output = s3_rest_controller(module, resource, rheader=rheader)
     return output
 
 # -----------------------------------------------------------------------------

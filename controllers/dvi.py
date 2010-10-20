@@ -101,8 +101,8 @@ def recreq():
 
     db.dvi_recreq.person_id.default = s3_logged_in_person()
 
-    response.s3.pagination = True
-    output = shn_rest_controller(module, resource, listadd=False)
+    s3xrc.model.configure(db.dvi_recreq, listadd=False)
+    output = s3_rest_controller(module, resource)
 
     shn_menu()
     return output
@@ -126,10 +126,12 @@ def body():
         if ids:
             response.s3.filter = (~(db.dvi_body.pe_id.belongs(ids)))
 
-    response.s3.pagination = True
-    output = shn_rest_controller(module, resource,
-                                 main="pe_label",
-                                 extra="gender",
+    s3xrc.model.configure(db.dvi_body,
+                          listadd=False,
+                          main="pe_label",
+                          extra="gender")
+
+    output = s3_rest_controller(module, resource,
                                  rheader=lambda r: \
                                          shn_dvi_rheader(r, tabs=[
                                             (T("Recovery"), ""),
@@ -139,8 +141,7 @@ def body():
                                             (T("Effects Inventory"), "effects"),
                                             (T("Tracing"), "presence"),
                                             (T("Identification"), "identification"),
-                                         ]),
-                                 listadd=False)
+                                         ]))
     shn_menu()
     return output
 
@@ -167,12 +168,15 @@ def person():
                                        "description"])
 
     s3xrc.model.configure(db.pr_person,
-        list_fields=["id",
-                     "first_name",
-                     "middle_name",
-                     "last_name",
-                     "gender",
-                     "age_group"])
+                          listadd=False,
+                          editable=False,
+                          deletable=False,
+                          list_fields=["id",
+                                       "first_name",
+                                       "middle_name",
+                                       "last_name",
+                                       "gender",
+                                       "age_group"])
 
     def prep(jr):
         if not jr.id and not jr.method and not jr.component:
@@ -242,13 +246,9 @@ def person():
 
     rheader = lambda r: shn_pr_rheader(r, tabs=mpr_tabs)
 
-    response.s3.pagination = True
-    output = shn_rest_controller("pr", resource,
+    output = s3_rest_controller("pr", resource,
                                  main="first_name",
                                  extra="last_name",
-                                 listadd=False,
-                                 editable=False,
-                                 deletable=False,
                                  rheader=rheader)
 
     shn_menu()

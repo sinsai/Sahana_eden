@@ -274,9 +274,7 @@ organisation_id = S3ReusableField("organisation_id", db.org_organisation, sortby
 # doesn't work - component join keys cannot be 1-to-many (=a component record can only belong to one primary record)
 #s3xrc.model.add_component(module, resource,
                           #multiple=True,
-                          #joinby=dict(org_sector="sector_id"),
-                          #deletable=True,
-                          #editable=True)
+                          #joinby=dict(org_sector="sector_id"))
 
 s3xrc.model.configure(table,
                       # Ensure that table is substituted when lambda defined not evaluated by using the default value
@@ -388,9 +386,7 @@ office_id = S3ReusableField("office_id", db.org_office, sortby="default/indexnam
 s3xrc.model.add_component(module, resource,
                           multiple=True,
                           #joinby=dict(org_organisation="organisation_id", gis_location="location_id"),
-                          joinby=dict(org_organisation="organisation_id"),
-                          deletable=True,
-                          editable=True)
+                          joinby=dict(org_organisation="organisation_id"))
 
 # Office is a member of two superentities, so has to call both of their
 # onaccept and ondelete methods.
@@ -516,9 +512,7 @@ project_id = S3ReusableField("project_id", db.org_project, sortby="name",
 s3xrc.model.add_component(module, resource,
                           multiple=True,
                           #joinby=dict(org_organisation="organisation_id", gis_location="location_id"),
-                          joinby=dict(org_organisation="organisation_id"),
-                          deletable=True,
-                          editable=True)
+                          joinby=dict(org_organisation="organisation_id"))
 
 s3xrc.model.configure(table,
                       list_fields=["id",
@@ -627,9 +621,9 @@ staff_id = S3ReusableField("staff_id", db.org_staff, sortby="name",
 # Staff as component of Orgs, Offices & Projects
 s3xrc.model.add_component(module, resource,
                           multiple=True,
-                          joinby=dict(org_organisation="organisation_id", org_office="office_id", org_project="project_id"),
-                          deletable=True,
-                          editable=True)
+                          joinby=dict(org_organisation="organisation_id",
+                                      org_office="office_id",
+                                      org_project="project_id"))
 
 # May wish to over-ride this in controllers
 s3xrc.model.configure(table,
@@ -782,11 +776,9 @@ s3.crud_strings[tablename] = Storage(
 
 # Task as Component of Project, Office, (Organisation to come? via Project? Can't rely on that as multi-Org projects)
 s3xrc.model.add_component(module, resource,
-    multiple=True,
-    joinby=dict(org_project="project_id", org_office="office_id"),
-    deletable=True,
-    editable=True,
-    main="subject", extra="description")
+                          multiple=True,
+                          joinby=dict(org_project="project_id",
+                                      org_office="office_id"))
 
 s3xrc.model.configure(table,
                       onvalidation = lambda form: shn_org_task_onvalidation(form),
@@ -796,7 +788,8 @@ s3xrc.model.configure(table,
                                    "priority",
                                    "subject",
                                    "person_id",
-                                   "status"])
+                                   "status"],
+                      main="subject", extra="description")
 
 # -----------------------------------------------------------------------------
 # shn_project_search_location:

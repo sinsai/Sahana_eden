@@ -94,9 +94,7 @@ if deployment_settings.has_module(module):
     # assessment as component of doc_documents
     #s3xrc.model.add_component(module, resource,
     #                          multiple=True,
-    #                          joinby=dict(doc_document="document_id"),
-    #                          deletable=True,
-    #                          editable=True)
+    #                          joinby=dict(doc_document="document_id"))
 
     def shn_sitrep_school_report_onvalidation(form):
 

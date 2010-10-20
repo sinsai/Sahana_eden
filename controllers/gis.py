@@ -256,8 +256,8 @@ def location():
         # We've been called from the Location Selector widget
         table.addr_street.readable = table.addr_street.writable = False
 
-    response.s3.pagination = True
-    output = shn_rest_controller(module, resource, listadd=False)
+    # @todo: migrate CRUD settings
+    output = s3_rest_controller(module, resource, listadd=False)
 
     _map = vars.get("_map", None)
     if _map and isinstance(output, dict):
@@ -612,7 +612,8 @@ def apikey():
         msg_record_deleted = T("Key deleted"),
         msg_list_empty = T("No Keys currently defined"))
 
-    output = shn_rest_controller(module, resource, deletable=False, listadd=False)
+    # @todo: migrate CRUD settings
+    output = s3_rest_controller(module, resource, deletable=False, listadd=False)
 
     if not "gis" in response.view:
         response.view = "gis/" + response.view
@@ -639,7 +640,8 @@ def config():
         return True
     response.s3.prep = prep
 
-    output = shn_rest_controller(module, resource, deletable=False, listadd=False)
+    # @todo: migrate CRUD settings
+    output = s3_rest_controller(module, resource, deletable=False, listadd=False)
 
     if not "gis" in response.view:
         response.view = "gis/" + response.view
@@ -689,7 +691,7 @@ def feature_class():
         msg_record_deleted = T("Feature Class deleted"),
         msg_list_empty = T("No Feature Classes currently defined"))
 
-    output = shn_rest_controller(module, resource)
+    output = s3_rest_controller(module, resource)
 
     if not "gis" in response.view and response.view != "popup.html":
         response.view = "gis/" + response.view
@@ -728,10 +730,11 @@ def layer_feature():
         msg_record_deleted = T("Feature Layer deleted"),
         msg_list_empty = T("No Feature Layers currently defined"))
 
+    # @todo: migrate CRUD settings
     crud.settings.create_onvalidation = lambda form: feature_layer_query(form)
     crud.settings.update_onvalidation = lambda form: feature_layer_query(form)
 
-    output = shn_rest_controller(module, resource)
+    output = s3_rest_controller(module, resource)
 
     return output
 
@@ -791,8 +794,7 @@ def marker():
         msg_record_deleted = T("Marker deleted"),
         msg_list_empty = T("No Markers currently available"))
 
-    response.s3.pagination = True
-    output = shn_rest_controller(module, resource)
+    output = s3_rest_controller(module, resource)
 
     if not "gis" in response.view and response.view != "popup.html":
         response.view = "gis/" + response.view
@@ -833,7 +835,8 @@ def projection():
         msg_record_deleted = T("Projection deleted"),
         msg_list_empty = T("No Projections currently defined"))
 
-    output = shn_rest_controller(module, resource, deletable=False)
+    # @todo: migrate CRUD settings
+    output = s3_rest_controller(module, resource, deletable=False)
 
     if not "gis" in response.view:
         response.view = "gis/" + response.view
@@ -854,7 +857,8 @@ def track():
     # CRUD Strings
     # used in multiple controllers, so defined in model
 
-    output = shn_rest_controller(module, resource, deletable=False)
+    # @todo: migrate CRUD settings
+    output = s3_rest_controller(module, resource, deletable=False)
     return output
 
 # Common CRUD strings for all layers
@@ -907,7 +911,8 @@ def layer_openstreetmap():
         msg_record_deleted=LAYER_DELETED,
         msg_list_empty=NO_LAYERS)
 
-    output = shn_rest_controller(module, resource, deletable=False, listadd=False)
+    # @todo: migrate CRUD settings
+    output = s3_rest_controller(module, resource, deletable=False, listadd=False)
 
     if not "gis" in response.view:
         response.view = "gis/" + response.view
@@ -945,7 +950,8 @@ def layer_google():
         msg_record_deleted=LAYER_DELETED,
         msg_list_empty=NO_LAYERS)
 
-    output = shn_rest_controller(module, resource, deletable=False, listadd=False)
+    # @todo: migrate CRUD settings
+    output = s3_rest_controller(module, resource, deletable=False, listadd=False)
 
     if not "gis" in response.view:
         response.view = "gis/" + response.view
@@ -983,7 +989,8 @@ def layer_yahoo():
         msg_record_deleted=LAYER_DELETED,
         msg_list_empty=NO_LAYERS)
 
-    output = shn_rest_controller(module, resource, deletable=False, listadd=False)
+    # @todo: migrate CRUD settings
+    output = s3_rest_controller(module, resource, deletable=False, listadd=False)
 
     if not "gis" in response.view:
         response.view = "gis/" + response.view
@@ -1021,7 +1028,8 @@ def layer_mgrs():
         msg_record_deleted=LAYER_DELETED,
         msg_list_empty=NO_LAYERS)
 
-    output = shn_rest_controller(module, resource, deletable=False, listadd=False)
+    # @todo: migrate CRUD settings
+    output = s3_rest_controller(module, resource, deletable=False, listadd=False)
 
     if not "gis" in response.view:
         response.view = "gis/" + response.view
@@ -1059,7 +1067,8 @@ def layer_bing():
         msg_record_deleted=LAYER_DELETED,
         msg_list_empty=NO_LAYERS)
 
-    output = shn_rest_controller(module, resource, deletable=False, listadd=False)
+    # @todo: migrate CRUD settings
+    output = s3_rest_controller(module, resource, deletable=False, listadd=False)
 
     if not "gis" in response.view:
         response.view = "gis/" + response.view
@@ -1101,7 +1110,7 @@ def layer_georss():
         msg_record_deleted=LAYER_DELETED,
         msg_list_empty=NO_LAYERS)
 
-    output = shn_rest_controller(module, resource)
+    output = s3_rest_controller(module, resource)
 
     if not "gis" in response.view:
         response.view = "gis/" + response.view
@@ -1142,7 +1151,7 @@ def layer_gpx():
         msg_record_deleted=LAYER_DELETED,
         msg_list_empty=NO_LAYERS)
 
-    output = shn_rest_controller(module, resource)
+    output = s3_rest_controller(module, resource)
 
     if not "gis" in response.view:
         response.view = "gis/" + response.view
@@ -1190,7 +1199,7 @@ def layer_kml():
         return output
     response.s3.postp = user_postp
 
-    output = shn_rest_controller(module, resource)
+    output = s3_rest_controller(module, resource)
 
     if not "gis" in response.view:
         response.view = "gis/" + response.view
@@ -1233,7 +1242,7 @@ def layer_tms():
         msg_record_deleted=LAYER_DELETED,
         msg_list_empty=NO_LAYERS)
 
-    output = shn_rest_controller(module, resource)
+    output = s3_rest_controller(module, resource)
 
     if not "gis" in response.view:
         response.view = "gis/" + response.view
@@ -1275,7 +1284,7 @@ def layer_wfs():
         msg_record_deleted=LAYER_DELETED,
         msg_list_empty=NO_LAYERS)
 
-    output = shn_rest_controller(module, resource)
+    output = s3_rest_controller(module, resource)
 
     if not "gis" in response.view:
         response.view = "gis/" + response.view
@@ -1318,7 +1327,7 @@ def layer_wms():
         msg_record_deleted=LAYER_DELETED,
         msg_list_empty=NO_LAYERS)
 
-    output = shn_rest_controller(module, resource)
+    output = s3_rest_controller(module, resource)
 
     if not "gis" in response.view:
         response.view = "gis/" + response.view
@@ -1356,7 +1365,7 @@ def layer_js():
         msg_record_deleted=LAYER_DELETED,
         msg_list_empty=NO_LAYERS)
 
-    output = shn_rest_controller(module, resource)
+    output = s3_rest_controller(module, resource)
 
     if not "gis" in response.view:
         response.view = "gis/" + response.view
@@ -1398,7 +1407,7 @@ def layer_xyz():
         msg_record_deleted=LAYER_DELETED,
         msg_list_empty=NO_LAYERS)
 
-    output = shn_rest_controller(module, resource)
+    output = s3_rest_controller(module, resource)
 
     if not "gis" in response.view:
         response.view = "gis/" + response.view

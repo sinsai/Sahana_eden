@@ -52,9 +52,12 @@ def setting():
         return output
     response.s3.postp = postp
 
-    crud.settings.update_next = URL(r=request, args=["update", 1])
+    s3xrc.model.configure(table,
+                          deletable=False,
+                          listadd=False,
+                          update_next = URL(r=request, args=["update", 1]))
 
-    return shn_rest_controller("sync", "setting", deletable=False, listadd=False)
+    return s3_rest_controller("sync", "setting")
 
 
 # -----------------------------------------------------------------------------
@@ -63,8 +66,8 @@ def peer():
 
     """ Synchronization Peer - RESTful controller """
 
-    name = "peer"
-    tablename = "%s_%s" % (prefix, name)
+    resourcename = "peer"
+    tablename = "%s_%s" % (prefix, resourcename)
 
     s3.crud_strings[tablename] = Storage(
         title_create = T("New Synchronization Peer"),
@@ -98,16 +101,14 @@ def peer():
     table.uuid.label = T("UID")
     table.url.label = T("URL")
 
-    response.s3.pagination = True
+    s3xrc.model.configure(table, listadd=False)
 
     rheader = lambda r: sync_rheader(r, tabs=[
                                     (T("Peer"), None),
                                     (T("Jobs"), "job"),
                                     (T("Log"), "log")])
 
-    return shn_rest_controller(prefix, name,
-                               listadd=False,
-                               rheader=rheader)
+    return s3_rest_controller(prefix, resourcename, rheader=rheader)
 
 
 # -----------------------------------------------------------------------------
@@ -116,14 +117,12 @@ def job():
 
     """ Synchronization Job - RESTful controller """
 
-    name = "job"
+    resourcename = "job"
 
     primary_resources = s3_sync_primary_resources()
     db.sync_job.resources.requires = IS_NULL_OR(IS_IN_SET(primary_resources, multiple=True, zero=None))
 
-    response.s3.pagination = True
-
-    return shn_rest_controller(prefix, name)
+    return s3_rest_controller(prefix, resourcename)
 
 
 # -----------------------------------------------------------------------------
@@ -132,14 +131,17 @@ def registration():
 
     """ Peer registration requests - RESTful controller """
 
-    name = "registration"
+    resourcename = "registration"
 
-    response.s3.pagination = True
+    tablename = "%s_%s" % (prefix, resourcename)
+    table = db[tablename]
 
-    return shn_rest_controller(prefix, name,
-        listadd=False,
-        editable=False,
-        deletable=True)
+    s3xrc.model.configure(table,
+                          listadd=False,
+                          editable=False,
+                          deletable=True)
+
+    return s3_rest_controller(prefix, resourcename)
 
 
 # -----------------------------------------------------------------------------
@@ -148,14 +150,17 @@ def log():
 
     """ Synchronization log - RESTful controller """
 
-    name = "log"
+    resourcename = "log"
 
-    response.s3.pagination = True
+    tablename = "%s_%s" % (prefix, resourcename)
+    table = db[tablename]
 
-    return shn_rest_controller(prefix, name,
-                listadd = False,
-                editable = False,
-                deletable = True)
+    s3xrc.model.configure(table,
+                          listadd = False,
+                          editable = False,
+                          deletable = True)
+
+    return s3_rest_controller(prefix, name)
 
 
 # -----------------------------------------------------------------------------
@@ -540,7 +545,7 @@ def sync():
     response.s3.postp = postp
 
     # Execute the request
-    output = shn_rest_controller(prefix, name)
+    output = s3_rest_controller(prefix, name)
 
     #return ret_data
     return output
@@ -1120,12 +1125,17 @@ def conflict():
 
     """ Conflict Resolution UI """
 
-    name = "conflict"
+    resourcename = "conflict"
 
-    return shn_rest_controller(prefix, name,
-                listadd = False,
-                editable = False,
-                deletable = True)
+    tablename = "%s_%s" % (prefix, resourcename)
+    table = db[tablename]
+
+    s3xrc.model.configure(table,
+                          listadd = False,
+                          editable = False,
+                          deletable = True)
+
+    return s3_rest_controller(prefix, name)
 
 
 # -----------------------------------------------------------------------------

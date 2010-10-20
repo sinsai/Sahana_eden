@@ -409,8 +409,6 @@ class S3ResourceModel(object):
             @param fields: any shared fields
             @param args: table arguments (e.g. migrate)
 
-            @todo 2.2: document this
-
         """
 
         table = self.db.define_table(tablename,
@@ -440,9 +438,6 @@ class S3ResourceModel(object):
 
             @param super: the super-entity table
 
-            @todo 2.2: implement this
-            @todo 2.2: document this
-
         """
 
         for key in super.fields:
@@ -462,9 +457,6 @@ class S3ResourceModel(object):
 
             @param table: the instance table
             @param record: the instance record
-
-            @todo 2.2: implement this
-            @todo 2.2: document this
 
         """
 
@@ -527,9 +519,6 @@ class S3ResourceModel(object):
 
             @param table: the instance table
             @param record: the instance record
-
-            @todo 2.2: implement this
-            @todo 2.2: document this
 
         """
 

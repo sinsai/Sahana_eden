@@ -1,11 +1,11 @@
 # -*- coding: utf-8 -*-
 
 """
-    Project 
-    
+    Project
+
     @author: Michael Howden (michael@sahanafoundation.org)
-    @date-created: 2010-08-25    
-    
+    @date-created: 2010-08-25
+
     Project Management
 """
 
@@ -20,7 +20,8 @@ def activity_type():
     resource = request.function
     tablename = "%s_%s" % (module, resource)
     table = db[tablename]
-    return shn_rest_controller(module, resource, listadd=False)
+    # @todo: migrate CRUD settings
+    return s3_rest_controller(module, resource, listadd=False)
 
 #==============================================================================
 def activity():
@@ -28,5 +29,5 @@ def activity():
     resource = request.function
     tablename = "%s_%s" % (module, resource)
     table = db[tablename]
-    
-    return shn_rest_controller(module, resource)
+
+    return s3_rest_controller(module, resource)

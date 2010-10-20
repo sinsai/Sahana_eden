@@ -901,7 +901,11 @@ class S3Resource(object):
     # -------------------------------------------------------------------------
     def records(self):
 
-        """ Get the current set """
+        """ Get the current set
+
+            @returns: a Set or an empty list if no set is loaded
+
+        """
 
         if self.__set is None:
             return []
@@ -915,6 +919,7 @@ class S3Resource(object):
         """ Retrieves a record from the current set by its ID
 
             @param key: the record ID
+            @returns: a Row
 
         """
 
@@ -932,7 +937,11 @@ class S3Resource(object):
     # -------------------------------------------------------------------------
     def __iter__(self):
 
-        """ Generator for the current set """
+        """ Generator for the current set
+
+            @returns: an Iterator
+
+        """
 
         if self.__set is None:
             self.load()
@@ -951,6 +960,7 @@ class S3Resource(object):
             @param key: the record ID
             @param component: the name of the component
                 (None to get the primary record)
+            @returns: a record (if component is None) or a list of records
 
         """
 
@@ -977,6 +987,8 @@ class S3Resource(object):
         """ Returns all IDs of the current set, or, if no set is loaded,
             all IDs of the resource
 
+            @returns: a list of record IDs
+
         """
 
         if not self.__ids:
@@ -995,6 +1007,8 @@ class S3Resource(object):
 
         """ Returns all UIDs of the current set, or, if no set is loaded,
             all UIDs of the resource
+
+            @returns: a list of record UIDs
 
         """
 
@@ -1649,14 +1663,17 @@ class S3Resource(object):
             @param template: path to the XSLT stylesheet (if not native S3-XML)
             @param pretty_print: insert newlines/indentation in the output
             @param args: arguments to pass to the XSLT stylesheet
+            @returns: the XML as string
 
             @todo 2.2: slicing?
 
         """
 
-        return self.exporter.xml(self,
-                                 template=template,
-                                 pretty_print=pretty_print, **args)
+        exporter = self.exporter.xml
+
+        return exporter(self,
+                        template=template,
+                        pretty_print=pretty_print, **args)
 
 
     # -------------------------------------------------------------------------
@@ -1667,14 +1684,17 @@ class S3Resource(object):
             @param template: path to the XSLT stylesheet (if not native S3-JSON)
             @param pretty_print: insert newlines/indentation in the output
             @param args: arguments to pass to the XSLT stylesheet
+            @returns: the JSON as string
 
             @todo 2.2: slicing?
 
         """
 
-        return self.exporter.json(self,
-                                  template=template,
-                                  pretty_print=pretty_print, **args)
+        exporter = self.exporter.json
+
+        return exporter(self,
+                        template=template,
+                        pretty_print=pretty_print, **args)
 
 
     # -------------------------------------------------------------------------
@@ -1692,6 +1712,7 @@ class S3Resource(object):
             @param template: the XSLT template
             @param ignore_errors: do not stop on errors (skip invalid elements)
             @param args: arguments to pass to the XSLT template
+            @returns: a JSON message as string
 
             @raise SyntaxError: in case of a parser or transformation error
             @raise IOError: at insufficient permissions
@@ -1723,6 +1744,7 @@ class S3Resource(object):
             @param template: the XSLT template
             @param ignore_errors: do not stop on errors (skip invalid elements)
             @param args: arguments to pass to the XSLT template
+            @returns: a JSON message as string
 
             @raise SyntaxError: in case of a parser or transformation error
             @raise IOError: at insufficient permissions
@@ -2459,7 +2481,7 @@ class S3Resource(object):
 
         """ URL of this resource (not implemented yet)
 
-            @todo 2.2: implement this.
+            @todo 2.3: implement this.
 
         """
 

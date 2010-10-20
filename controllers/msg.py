@@ -81,7 +81,7 @@ def outbox():
     table.message_id.writable = False
     table.pe_id.readable = True
     table.pe_id.label = T("Recipient")
-    
+
     # Subject works for Email but not SMS
     table.message_id.represent = lambda id: db(db.msg_log.id == id).select(db.msg_log.message, limitby=(0, 1)).first().message
 
@@ -97,10 +97,8 @@ def outbox():
         msg_list_empty = T("No Messages currently in Outbox")
     )
 
-    # Server-side Pagination
-    response.s3.pagination = True
-
-    return shn_rest_controller(module, resource, listadd=False)
+    # @todo: migrate CRUD settings
+    return s3_rest_controller(module, resource, listadd=False)
 
 def log():
     """ RESTful CRUD controller """
@@ -143,10 +141,8 @@ def log():
 
     rheader = DIV(B(T("Master Message Log")), ": ", T("All Inbound & Outbound Messages are stored here"))
 
-    # Server-side Pagination
-    response.s3.pagination = True
-
-    return shn_rest_controller(module, resource, listadd=False, rheader=rheader)
+    # @todo: migrate CRUD settings
+    return s3_rest_controller(module, resource, listadd=False, rheader=rheader)
 
 def tropo():
     """
@@ -165,7 +161,7 @@ def tropo():
             # This is an Outbound message which we've requested Tropo to send for us
             table = db.msg_tropo_scratch
             query = (table.row_id == row_id)
-            row = db(query).select().first() 
+            row = db(query).select().first()
             # Send the message
             #t.message(say_obj={"say":{"value":row.message}},to=row.recipient,network=row.network)
             t.call(to=row.recipient, network=row.network)
@@ -206,9 +202,9 @@ def tropo():
 #--------------------------------------
 # Parser
 def parserdooth(message):
-    """ 
+    """
         This function hopes to grow into a full fledged page that offers customizable routing with keywords
-        Dooth = Messenger 
+        Dooth = Messenger
     """
     import difflib
     import string
@@ -229,7 +225,7 @@ def parserdooth(message):
 #   ------------ Person Search [get name person phone email]------------
     if "person" in query:
         result = person_search(name)
-    
+
         if len(result) > 1:
             return "Multiple Matches"
         if len(result) == 1:
@@ -255,7 +251,7 @@ def parserdooth(message):
         result = s3xrc.search_simple(table,fields=["name"],label = str(name))
         if len(result) > 1:
             return "Multiple Matches"
-    
+
         if len(result) == 1:
             hospital = db(table.id == result[0]).select().first()
             reply = reply + " " + hospital.name + "(Hospital) "
@@ -321,9 +317,11 @@ def setting():
         msg_list_empty = T("No Settings currently defined")
     )
 
+    # @todo: migrate CRUD settings
     crud.settings.update_next = URL(r=request, args=[1, "update"])
     response.menu_options = admin_menu_options
-    return shn_rest_controller(module, resource, deletable=False, listadd=False)
+    # @todo: migrate CRUD settings
+    return s3_rest_controller(module, resource, deletable=False, listadd=False)
 
 #--------------------------------------
 @auth.shn_requires_membership(1)
@@ -333,7 +331,7 @@ def email_settings():
     resource = request.function
     tablename = module + "_" + resource
     table = db[tablename]
-    
+
     table.inbound_mail_server.label = T("Server")
     table.inbound_mail_type.label = T("Type")
     table.inbound_mail_ssl.label = "SSL"
@@ -366,15 +364,16 @@ def email_settings():
         msg_record_deleted = T("Setting deleted"),
         msg_list_empty = T("No Settings currently defined")
     )
-    
+
     response.menu_options = admin_menu_options
-    return shn_rest_controller(module, "email_settings", listadd=False, deletable=False)
+    # @todo: migrate CRUD settings
+    return s3_rest_controller(module, "email_settings", listadd=False, deletable=False)
 
 #-------------------------------------------------------------------------------
 @auth.shn_requires_membership(1)
 def modem_settings():
     """ RESTful CRUD controller for modem settings - appears in the administration menu """
-    
+
     try:
         import serial
     except ImportError:
@@ -384,7 +383,7 @@ def modem_settings():
     resource = request.function
     tablename = module + "_" + resource
     table = db[tablename]
-    
+
     table.modem_port.label = T("Port")
     table.modem_baud.label = T("Baud")
     table.modem_port.comment = DIV(DIV(_class="tooltip",
@@ -393,7 +392,7 @@ def modem_settings():
         _title=T("Baud") + "|" + T("Baud rate to use for your modem - The default is safe for most cases")))
     table.enabled.comment = DIV(DIV(_class="tooltip",
         _title=T("Enabled") + "|" + T("Unselect to disable the modem")))
-    
+
     # CRUD Strings
     ADD_SETTING = T("Add Setting")
     VIEW_SETTINGS = T("View Settings")
@@ -412,9 +411,11 @@ def modem_settings():
         msg_list_empty = T("No Settings currently defined")
     )
 
+    # @todo: migrate CRUD settings
     crud.settings.update_next = URL(r=request, args=[1, "update"])
     response.menu_options = admin_menu_options
-    return shn_rest_controller(module, resource, deletable=False,
+    # @todo: migrate CRUD settings
+    return s3_rest_controller(module, resource, deletable=False,
     listadd=False)
 
 #-------------------------------------------------------------------------------
@@ -425,7 +426,7 @@ def gateway_settings():
     resource = request.function
     tablename = module + "_" + resource
     table = db[tablename]
-    
+
     table.url.label = T("URL")
     table.to_variable.label = T("To variable")
     table.message_variable.label = T("Message variable")
@@ -458,9 +459,11 @@ def gateway_settings():
         msg_list_empty = T("No Settings currently defined")
     )
 
+    # @todo: migrate CRUD settings
     crud.settings.update_next = URL(r=request, args=[1, "update"])
     response.menu_options = admin_menu_options
-    return shn_rest_controller(module, resource, deletable=False, listadd=False)
+    # @todo: migrate CRUD settings
+    return s3_rest_controller(module, resource, deletable=False, listadd=False)
 
 #-------------------------------------------------------------------------------
 @auth.shn_requires_membership(1)
@@ -491,9 +494,11 @@ def tropo_settings():
         msg_list_empty = T("No Settings currently defined")
     )
 
+    # @todo: migrate CRUD settings
     crud.settings.update_next = URL(r=request, args=[1, "update"])
     response.menu_options = admin_menu_options
-    return shn_rest_controller(module, resource, deletable=False, listadd=False)
+    # @todo: migrate CRUD settings
+    return s3_rest_controller(module, resource, deletable=False, listadd=False)
 
 #-------------------------------------------------------------------------------
 @auth.shn_requires_membership(1)
@@ -517,7 +522,7 @@ def twitter_settings():
         msg_record_deleted = T("Setting deleted"),
         msg_list_empty = T("No Settings currently defined")
     )
-    
+
     def prep(jr):
         try:
             import tweepy
@@ -557,9 +562,10 @@ def twitter_settings():
             table.pin.value = ""       # but let's be on the safe side
         return True
     response.s3.prep = prep
-    
+
     response.menu_options = admin_menu_options
-    return shn_rest_controller(module, "twitter_settings", listadd=False, deletable=False)
+    # @todo: migrate CRUD settings
+    return s3_rest_controller(module, "twitter_settings", listadd=False, deletable=False)
 
 
 #--------------------------------------------------------------------------------------------------
@@ -567,7 +573,7 @@ def twitter_settings():
 # -----------------------------------------------------------------------------
 def group():
     """ RESTful CRUD controller """
-    
+
     if auth.is_logged_in() or auth.basic():
         pass
     else:
@@ -585,9 +591,8 @@ def group():
     # Do not show system groups
     response.s3.filter = (table.system == False)
 
-    response.s3.pagination = True
-
-    return shn_rest_controller(module, resource,
+    # @todo: migrate CRUD settings
+    return s3_rest_controller(module, resource,
                                main="name",
                                extra="description",
                                rheader=shn_pr_rheader,
@@ -611,14 +616,14 @@ def group_membership():
     table.description.readable = table.description.writable = False
     table.comments.readable = table.comments.writable = False
     table.group_head.readable = table.group_head.writable = False
-    
-    return shn_rest_controller(module, resource)
+
+    return s3_rest_controller(module, resource)
 
 #-------------------------------------------------------------------------------
 
 def pe_contact():
     """ Allows the user to add, update and delete their contacts """
-    
+
     if auth.is_logged_in() or auth.basic():
         person = db(db.pr_person.uuid == auth.user.person_uuid).select(db.pr_person.pe_id, limitby=(0, 1)).first().pe_id
         response.s3.filter = (db.pr_pe_contact.pe_id == person)
@@ -658,7 +663,8 @@ def pe_contact():
             onvalidation=lambda form: msg_pe_contact_onvalidation(form))
     response.s3.prep = msg_pe_contact_restrict_access
     response.menu_options = []
-    return shn_rest_controller(module, resource, listadd=True)
+    # @todo: migrate CRUD settings
+    return s3_rest_controller(module, resource, listadd=True)
 
 #-------------------------------------------------------------------------------
 def search():
@@ -711,7 +717,6 @@ def tag():
     resource = "tag"
     tablename = "%s_%s" % (module, resource)
     table = db[tablename]
-    # Server-side Pagination
-    response.s3.pagination = True
-    
-    return shn_rest_controller(module, resource, listadd=False)
+
+    # @todo: migrate CRUD settings
+    return s3_rest_controller(module, resource, listadd=False)

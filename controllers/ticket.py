@@ -29,7 +29,8 @@ def index():
 def category():
     """ RESTful CRUD controller """
     resource = request.function
-    return shn_rest_controller(module, resource, listadd=False)
+    # @todo: migrate CRUD settings
+    return s3_rest_controller(module, resource, listadd=False)
 
 def log():
     """ RESTful CRUD controller """
@@ -87,5 +88,5 @@ def log():
         msg_record_deleted = T("Ticket deleted"),
         msg_list_empty = T("No Tickets currently registered"))
 
-    response.s3.pagination = True
-    return shn_rest_controller(module, resource, listadd=False)
+    # @todo: migrate CRUD settings
+    return s3_rest_controller(module, resource, listadd=False)

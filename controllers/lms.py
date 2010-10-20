@@ -98,9 +98,9 @@ response.menu_options = [
 
 def index():
     "Module's Home Page"
-    
+
     module_name = deployment_settings.modules[module].name_nice
-    
+
     return dict(module_name=module_name)
 
 # Administration Index Page
@@ -111,46 +111,46 @@ def admin():
 
 def unit():
     "RESTful CRUD controller"
-    return shn_rest_controller(module, 'unit')
+    return s3_rest_controller(module, 'unit')
 def site():
     "RESTful CRUD controller"
-    return shn_rest_controller(module, 'site')
+    return s3_rest_controller(module, 'site')
 
 '''def site_category():
     "RESTful CRUD controller"
-    return shn_rest_controller(module, 'site_category')
+    return s3_rest_controller(module, 'site_category')
 '''
 def storage_loc():
     "RESTful CRUD controller"
-    return shn_rest_controller(module, 'storage_loc')
+    return s3_rest_controller(module, 'storage_loc')
 
 def storage_bin_type():
     "RESTful CRUD controller"
-    return shn_rest_controller(module, 'storage_bin_type')
+    return s3_rest_controller(module, 'storage_bin_type')
 
 def storage_bin():
     "RESTful CRUD controller"
-    return shn_rest_controller(module, 'storage_bin')
+    return s3_rest_controller(module, 'storage_bin')
 
 def catalog():
     "RESTful CRUD controller"
-    return shn_rest_controller(module, 'catalog')
+    return s3_rest_controller(module, 'catalog')
 
 def catalog_cat():
     "RESTful CRUD controller"
-    return shn_rest_controller(module, 'catalog_cat')
+    return s3_rest_controller(module, 'catalog_cat')
 
 def catalog_subcat():
     "RESTful CRUD controller"
-    return shn_rest_controller(module, 'catalog_subcat')
+    return s3_rest_controller(module, 'catalog_subcat')
 
 def category_master():
     "RESTful CRUD controller"
-    return shn_rest_controller(module, 'category_master')
+    return s3_rest_controller(module, 'category_master')
 
 def item():
     "RESTful CRUD controller"
-    return shn_rest_controller(module, 'item')
+    return s3_rest_controller(module, 'item')
 
 '''def item_cascade(form):
     """

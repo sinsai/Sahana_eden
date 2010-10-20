@@ -221,11 +221,10 @@ s3.crud_strings[tablename] = Storage(
 # Configs as component of Persons (Personalised configurations)
 s3xrc.model.add_component(module, resource,
                           multiple=False,
-                          joinby="pe_id",
-                          deletable=False,
-                          editable=True)
+                          joinby="pe_id")
 
 s3xrc.model.configure(table,
+                      deletable=False,
                       list_fields = ["lat",
                                      "lon",
                                      "zoom",
@@ -519,9 +518,7 @@ if response.s3.countries:
 # Locations as component of Locations ('Parent')
 #s3xrc.model.add_component(module, resource,
 #                          multiple=False,
-#                          joinby=dict(gis_location="parent"),
-#                          deletable=True,
-#                          editable=True)
+#                          joinby=dict(gis_location="parent"))
 
 # -----------------------------------------------------------------------------
 # Local Names

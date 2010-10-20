@@ -379,8 +379,6 @@ class S3Exporter(object):
             @todo 2.2: complete docstring
             @todo 2.2: PEP-8
             @todo 2.2: use S3Resource.readable_fields
-                (once it gets moved there from CRUD)
-
             @todo: implement audit
 
         """

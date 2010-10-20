@@ -82,10 +82,7 @@ s3.crud_strings[tablename] = Storage(
 # Addresses as component of person entities
 s3xrc.model.add_component(module, resource,
                           multiple=True,
-                          joinby="pe_id",
-                          deletable=True,
-                          editable=True)
-
+                          joinby="pe_id")
 
 s3xrc.model.configure(table,
     list_fields = [
@@ -154,9 +151,7 @@ pe_contact_id = S3ReusableField("pe_contact_id", db.pr_pe_contact,
 # Contact information as component of person entities
 s3xrc.model.add_component(module, resource,
                           multiple=True,
-                          joinby="pe_id",
-                          deletable=True,
-                          editable=True)
+                          joinby="pe_id")
 
 s3xrc.model.configure(table,
     list_fields=[
@@ -266,10 +261,7 @@ def shn_pr_image_onvalidation(form):
 # Images as component of person entities
 s3xrc.model.add_component(module, resource,
                           multiple=True,
-                          joinby="pe_id",
-                          deletable=True,
-                          editable=True)
-
+                          joinby="pe_id")
 
 s3xrc.model.configure(table,
     onvalidation=shn_pr_image_onvalidation,
@@ -418,10 +410,7 @@ def s3_pr_presence_onvalidation(form):
 # Presence as component of person entities
 s3xrc.model.add_component(module, resource,
                           multiple=True,
-                          joinby="pe_id",
-                          deletable=True,
-                          editable=True,
-                          main="time", extra="location_details")
+                          joinby="pe_id")
 
 def s3_pr_presence_onaccept(form):
     vita.presence_accept(form)
@@ -443,7 +432,8 @@ s3xrc.model.configure(table,
         "presence_condition",
         "orig_id",
         "dest_id"
-    ])
+    ],
+    main="time", extra="location_details")
 
 
 ADD_LOG_ENTRY = T("Add Log Entry")
@@ -490,9 +480,7 @@ table.pe_id.requires = IS_ONE_OF(db, "pr_pentity.pe_id",
 # Subscriptions as component of person entities
 s3xrc.model.add_component(module, resource,
                           multiple=True,
-                          joinby="pe_id",
-                          deletable=True,
-                          editable=True)
+                          joinby="pe_id")
 
 s3xrc.model.configure(table,
     list_fields=[
@@ -559,9 +547,7 @@ table.ia_name.label = T("Issuing Authority")
 # Identity as component of persons
 s3xrc.model.add_component(module, resource,
                           multiple=True,
-                          joinby=dict(pr_person="person_id"),
-                          deletable=True,
-                          editable=True)
+                          joinby=dict(pr_person="person_id"))
 
 s3xrc.model.configure(table,
     list_fields=[
@@ -803,9 +789,7 @@ if deployment_settings.has_module("dvi") or \
     # Physical description as component of person entity
     s3xrc.model.add_component(module, resource,
                               multiple=False,
-                              joinby="pe_id",
-                              deletable=True,
-                              editable=True)
+                              joinby="pe_id")
 
 # End
 # *****************************************************************************

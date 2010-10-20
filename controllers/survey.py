@@ -33,6 +33,7 @@ def template():
     """ RESTlike CRUD controller """
     resource = request.function
     def _prep(jr):
+        # @todo: migrate CRUD settings
         crud.settings.create_next = URL(r=request, c="survey", f="questions")
         crud.settings.update_next = URL(r=request, c="survey", f="questions")
         return True
@@ -62,13 +63,14 @@ def template():
         msg_record_deleted = T("Survey Template deleted"),
         msg_list_empty = T("No Survey Template currently registered"))
 
-    output = shn_rest_controller(module, resource, listadd=False)    
+    # @todo: migrate CRUD settings
+    output = s3_rest_controller(module, resource, listadd=False)
     #return transform_buttons(output, next=True, cancel=True)
     return output
 
 def template_link():
     response.s3.prep = response.s3.prep = lambda jr: jr.representation in ("xml", "json") and True or False
-    return shn_rest_controller("survey", "template_link")
+    return s3_rest_controller("survey", "template_link")
 
 def questions():
     """
@@ -130,11 +132,11 @@ def table():
     # query for the template to get the table name
     template = db(db.survey_template.id == series.survey_template_id).select(limitby=(0, 1)).first()
 
-    # everything is good at this point!    
+    # everything is good at this point!
     table = get_table_for_template(template.id)
     resource = "template_%s" % (template.id)
     table.uuid.requires = IS_NOT_IN_DB(db, "%s.uuid" % template.table_name)
-    table.id.represent =  lambda id: A(id, _href=URL(r=request, f="table", args=[id, "update"], vars={"series_id":request.vars.series_id}))        
+    table.id.represent =  lambda id: A(id, _href=URL(r=request, f="table", args=[id, "update"], vars={"series_id":request.vars.series_id}))
      # CRUD Strings
     s3.crud_strings[template.table_name] = Storage(
         title_create = T("Add Survey Answer"),
@@ -151,7 +153,8 @@ def table():
         msg_record_deleted = T("Survey Answer deleted"),
         msg_list_empty = T("No Survey Answers currently registered"))
     response.s3.filter = (table.series_id == series_id)
-    output = shn_rest_controller("survey", resource, listadd=False)
+    # @todo: migrate CRUD settings
+    output = s3_rest_controller("survey", resource, listadd=False)
     authorised = shn_has_permission("create", table)
     if authorised:
         output.update(add_btn=A(T("Add Survey Answer"),
@@ -206,13 +209,14 @@ def series():
         return output
     response.s3.postp = _postp
 
-    output = shn_rest_controller(module, resource, listadd=False)
+    # @todo: migrate CRUD settings
+    output = s3_rest_controller(module, resource, listadd=False)
 
     return output
 
 def question():
     """ Question data, e.g., name, description, etc. """
-    
+
     resource = request.function
     tablename = "%s_%s" % (module, resource)
     table = db[tablename]
@@ -264,7 +268,8 @@ def question():
         msg_record_modified = T("Survey Question updated"),
         msg_record_deleted = T("Survey Question deleted"),
         msg_list_empty = T("No Survey Questions currently registered"))
-    output = shn_rest_controller(module, resource, listadd=False)
+    # @todo: migrate CRUD settings
+    output = s3_rest_controller(module, resource, listadd=False)
 
     #return transform_buttons(output, cancel=True, save=True)
     return output
@@ -309,7 +314,7 @@ def has_dupe_questions(template_id, question_id):
         return True
     else:
         return False
-        
+
 def prune_questions(questions_id, questions, all_questions):
     if not questions_id:
         return # do nothing
@@ -342,7 +347,7 @@ def get_table_for_template(template_id):
     tbl = None
 
     if template: # avoid blow ups!
-        fields = [Field("series_id", db.survey_series, writable=False, readable=False)                  
+        fields = [Field("series_id", db.survey_series, writable=False, readable=False)
                   ] # A list of Fields representing the questions
 
         questions = db((db.survey_template_link.survey_template_id == template_id) & \
@@ -389,7 +394,7 @@ def shn_survey_action_buttons(jr, deletable=True):
     if jr.component:
         args = [jr.component_name, "[id]"]
     else:
-        args = ["[id]"]       
+        args = ["[id]"]
     if auth.is_logged_in():
         # Provide the ability to delete records in bulk
         if deletable:
@@ -400,7 +405,7 @@ def shn_survey_action_buttons(jr, deletable=True):
         else:
             url = URL(r=request, f="table", vars={"series_id":args})
             response.s3.actions = [
-                dict(label=str(UPDATE), _class="action-btn", url=str(URL(r=request, args = args + ["update"]))),             
+                dict(label=str(UPDATE), _class="action-btn", url=str(URL(r=request, args = args + ["update"]))),
                 dict(label="Answer", _class="action-btn", url=str(URL(r=request, f="table",args="create", vars={"series_id":"[id]"}))),
                 dict(label="Results", _class="action-btn", url=str(URL(r=request, f="table", vars={"series_id":"[id]"}))) ]
     else:
@@ -411,7 +416,7 @@ def shn_survey_action_buttons(jr, deletable=True):
     return
 
 # Unused code
-    
+
 #def section():
 #    """ RESTlike CRUD controller """
 #    resource = request.function
@@ -438,7 +443,8 @@ def shn_survey_action_buttons(jr, deletable=True):
 #        msg_record_modified = T("Survey Section updated"),
 #        msg_record_deleted = T("Survey Section deleted"),
 #        msg_list_empty = T("No Survey Sections currently registered"))
-#    output = shn_rest_controller(module, resource, listadd=False)
+    # @todo: migrate CRUD settings
+#    output = s3_rest_controller(module, resource, listadd=False)
 #
 #    return transform_buttons(output, save=True, cancel=True)
 
@@ -455,7 +461,8 @@ def shn_survey_action_buttons(jr, deletable=True):
 ##    table.row_choices.label = T("Row Choices (One Per Line)")
 ##    table.column_choices.label = T("Column Choices (One Per Line")
 ##    table.tf_choices.label = T("Text before each Text Field (One per line)")
-#    output = shn_rest_controller(module, resource, listadd=False)
+    # @todo: migrate CRUD settings
+#    output = s3_rest_controller(module, resource, listadd=False)
 #    output.update(question_type=question_type)
 #    return transform_buttons(output, prev=True, finish=True, cancel=True)
 

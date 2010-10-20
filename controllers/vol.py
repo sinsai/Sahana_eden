@@ -110,8 +110,6 @@ def person():
     in the URL's vars is "person" or "volunteer".
     """
 
-    response.s3.pagination = True
-
     #def person_postp(jr, output):
         #if jr.representation in shn_interactive_view_formats:
             #if not jr.component:
@@ -159,7 +157,8 @@ def person():
                ]
 
     resource = request.function
-    output = shn_rest_controller("pr", resource,
+    # @todo: migrate CRUD settings
+    output = s3_rest_controller("pr", resource,
         main="first_name",
         extra="last_name",
         rheader=lambda r: shn_pr_rheader(r, tabs),
@@ -175,9 +174,6 @@ def project():
 
     resource = request.function
 
-    # ServerSidePagination
-    response.s3.pagination = True
-
     tabs = [
             (T("Basic Details"), None),
             (T("Staff"), "staff"),
@@ -188,7 +184,8 @@ def project():
 
     rheader = lambda r: shn_project_rheader(r, tabs)
 
-    output = shn_rest_controller("org", resource,
+    # @todo: migrate CRUD settings
+    output = s3_rest_controller("org", resource,
                                  listadd=False,
                                  main="code",
                                  rheader=rheader)
@@ -221,15 +218,14 @@ def task():
     s3.crud_strings[tablename].title_list = T("My Tasks")
     s3.crud_strings[tablename].subtitle_list = T("Task List")
 
-    response.s3.pagination = True
-
-    return shn_rest_controller("org", resource, listadd=False)
+    # @todo: migrate CRUD settings
+    return s3_rest_controller("org", resource, listadd=False)
 
 
 # -----------------------------------------------------------------------------
 def skill_types():
     "Allow user to define new skill types."
-    return shn_rest_controller(module, "skill_types")
+    return s3_rest_controller(module, "skill_types")
 
 
 # -----------------------------------------------------------------------------
@@ -331,7 +327,6 @@ def group():
         msg_list_empty = T("No Members currently registered"))
 
     response.s3.filter = (db.pr_group.system == False) # do not show system groups
-    response.s3.pagination = True
 
     s3xrc.model.configure(db.pr_group_membership,
                           list_fields=["id",
@@ -352,7 +347,8 @@ def group():
         #return output
     #response.s3.postp = group_postp
 
-    output = shn_rest_controller("pr", "group",
+    # @todo: migrate CRUD settings
+    output = s3_rest_controller("pr", "group",
                                  main="name",
                                  extra="description",
                                  rheader=lambda jr: shn_pr_rheader(jr,
@@ -370,7 +366,7 @@ def group():
 # -----------------------------------------------------------------------------
 def skill():
     "Select skills a volunteer has."
-    return shn_rest_controller(module, "skill")
+    return s3_rest_controller(module, "skill")
 
 
 # -----------------------------------------------------------------------------
@@ -457,4 +453,4 @@ def compose_group():
 # TODO: Is resource a bad name, due to possible confusion with other usage?
 def resource():
     "Select resources a volunteer has."
-    return shn_rest_controller(module, "resource")
+    return s3_rest_controller(module, "resource")

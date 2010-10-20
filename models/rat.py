@@ -259,12 +259,10 @@ if deployment_settings.has_module(module):
     # - therefore disable the listadd & jump out of the tabs for Create/Update
     s3xrc.model.add_component(module, resource,
                               multiple=True,
-                              joinby=dict(cr_shelter="shelter_id", doc_document="document_id"),
-                              listadd=False,
-                              deletable=True,
-                              editable=True)
+                              joinby=dict(cr_shelter="shelter_id", doc_document="document_id"))
 
     s3xrc.model.configure(table,
+        listadd=False,
         onaccept=lambda form: rat_assessment_onaccept(form))
 
 
@@ -391,9 +389,9 @@ if deployment_settings.has_module(module):
 
     s3xrc.model.add_component(module, resource,
                               multiple = False,
-                              joinby = dict(rat_assessment="assessment_id"),
-                              deletable = False,
-                              editable = True)
+                              joinby = dict(rat_assessment="assessment_id"))
+
+    s3xrc.model.configure(table, deletable=False)
 
 
     # Section 3: Shelter & Essential NFIs -------------------------------------
@@ -512,9 +510,9 @@ if deployment_settings.has_module(module):
 
     s3xrc.model.add_component(module, resource,
                               multiple = False,
-                              joinby = dict(rat_assessment="assessment_id"),
-                              deletable = False,
-                              editable = True)
+                              joinby = dict(rat_assessment="assessment_id"))
+
+    s3xrc.model.configure(table, deletable=False)
 
     # Section 4 - Water and Sanitation ----------------------------------------
 
@@ -672,9 +670,9 @@ if deployment_settings.has_module(module):
 
     s3xrc.model.add_component(module, resource,
                               multiple = False,
-                              joinby = dict(rat_assessment="assessment_id"),
-                              deletable = False,
-                              editable = True)
+                              joinby = dict(rat_assessment="assessment_id"))
+
+    s3xrc.model.configure(table, deletable=False)
 
     # Section 5 - Health ------------------------------------------------------
 
@@ -856,9 +854,9 @@ if deployment_settings.has_module(module):
 
     s3xrc.model.add_component(module, resource,
                               multiple = False,
-                              joinby = dict(rat_assessment="assessment_id"),
-                              deletable = False,
-                              editable = True)
+                              joinby = dict(rat_assessment="assessment_id"))
+
+    s3xrc.model.configure(table, deletable=False)
 
     # Section 6 - Nutrition/Food Security -------------------------------------
 
@@ -960,9 +958,9 @@ if deployment_settings.has_module(module):
 
     s3xrc.model.add_component(module, resource,
                               multiple = False,
-                              joinby = dict(rat_assessment="assessment_id"),
-                              deletable = False,
-                              editable = True)
+                              joinby = dict(rat_assessment="assessment_id"))
+
+    s3xrc.model.configure(table, deletable=False)
 
     # Section 7 - Livelihood --------------------------------------------------
 
@@ -1082,9 +1080,9 @@ if deployment_settings.has_module(module):
 
     s3xrc.model.add_component(module, resource,
                               multiple = False,
-                              joinby = dict(rat_assessment="assessment_id"),
-                              deletable = False,
-                              editable = True)
+                              joinby = dict(rat_assessment="assessment_id"))
+
+    s3xrc.model.configure(table, deletable=False)
 
     # Section 8 - Education ---------------------------------------------------
 
@@ -1296,9 +1294,10 @@ if deployment_settings.has_module(module):
 
     s3xrc.model.add_component(module, resource,
                               multiple = False,
-                              joinby = dict(rat_assessment="assessment_id"),
-                              deletable = False,
-                              editable = True)
+                              joinby = dict(rat_assessment="assessment_id"))
+
+    s3xrc.model.configure(table, deletable=False)
+
 
     # Section 9 - Protection --------------------------------------------------
 
@@ -1595,9 +1594,9 @@ if deployment_settings.has_module(module):
 
     s3xrc.model.add_component(module, resource,
                               multiple = False,
-                              joinby = dict(rat_assessment="assessment_id"),
-                              deletable = False,
-                              editable = True)
+                              joinby = dict(rat_assessment="assessment_id"))
+
+    s3xrc.model.configure(table, deletable=False)
 
     # -----------------------------------------------------------------------------
     def shn_rat_summary(r, **attr):

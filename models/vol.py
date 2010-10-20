@@ -81,9 +81,7 @@ if deployment_settings.has_module(module):
 
     s3xrc.model.add_component(module, resource,
                               multiple=False,
-                              joinby=dict(pr_person="person_id"),
-                              deletable=True,
-                              editable=True)
+                              joinby=dict(pr_person="person_id"))
 
     s3xrc.model.configure(table,
                           list_fields=["organisation_id",
@@ -151,9 +149,7 @@ if deployment_settings.has_module(module):
 
     s3xrc.model.add_component(module, resource,
                               multiple=True,
-                              joinby=dict(pr_person="person_id"),
-                              deletable=True,
-                              editable=True)
+                              joinby=dict(pr_person="person_id"))
 
     s3xrc.model.configure(table,
                           list_fields=["id",
@@ -258,9 +254,7 @@ if deployment_settings.has_module(module):
 
     s3xrc.model.add_component(module, resource,
         multiple=True,
-        joinby=dict(pr_person="person_id"),
-        deletable=True,
-        editable=True)
+        joinby=dict(pr_person="person_id"))
 
     s3xrc.model.configure(table,
                           list_fields=["id",

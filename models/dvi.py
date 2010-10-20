@@ -255,12 +255,9 @@ if deployment_settings.has_module(module):
         msg_record_deleted = T("Checklist deleted"),
         msg_list_empty = T("No Checklist available"))
 
-    # Joined Resource
     s3xrc.model.add_component(module, resource,
                               multiple = False,
-                              joinby = "pe_id",
-                              deletable = True,
-                              editable = True)
+                              joinby = "pe_id")
 
     s3xrc.model.configure(table, list_fields = ["id"])
 
@@ -304,9 +301,7 @@ if deployment_settings.has_module(module):
     # Joined Resource
     s3xrc.model.add_component(module, resource,
                               multiple = False,
-                              joinby = "pe_id",
-                              deletable = True,
-                              editable = True)
+                              joinby = "pe_id")
 
     s3xrc.model.configure(table, list_fields = ["id"])
 
@@ -397,9 +392,7 @@ if deployment_settings.has_module(module):
     # Identification reports as component of person entities
     s3xrc.model.add_component(module, resource,
                               multiple = False,
-                              joinby = "pe_id",
-                              deletable = True,
-                              editable = True)
+                              joinby = "pe_id")
 
 
     # -----------------------------------------------------------------------------
@@ -582,11 +575,12 @@ if deployment_settings.has_module(module):
                 # Get the results
                 if results:
                     resource.build_query(id=results)
-                    report = shn_list(r, listadd=False)
+                    report = resource.crud(r, method="list", **attr)["items"]
+                    r.next = None
                 else:
-                    report = dict(items=T("No matching records found."))
+                    report = T("No matching records found.")
 
-                output.update(dict(report))
+                output.update(items=report)
 
             # Title and subtitle
             title = T("Search Recovery Reports")

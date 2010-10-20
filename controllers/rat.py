@@ -1,19 +1,20 @@
 # -*- coding: utf-8 -*-
 
+""" Rapid Assessment Tool - Controllers
+
+    @author: Fran Boon
+    @author: Dominic König
+
+    @see: http://eden.sahanafoundation.org/wiki/Pakistan
+    @todo: Rename as 'assessment' (Deprioritised due to Data
+        Migration issues being distracting for us currently)
+
 """
-Rapid Assessment Tool - Controllers
 
-@author: Fran Boon
-@author: Dominic König
+prefix = request.controller
+resourcename = request.function
 
-@see: http://eden.sahanafoundation.org/wiki/Pakistan
-@ToDo: Rename as 'assessment' (Deprioritised due to Data Migration issues being distracting for us currently)
-
-"""
-
-module = request.controller
-
-if module not in deployment_settings.modules:
+if prefix not in deployment_settings.modules:
     session.error = T("Module disabled!")
     redirect(URL(r=request, c="default", f="index"))
 
@@ -33,9 +34,9 @@ response.menu_options = [
 # -----------------------------------------------------------------------------
 def index():
 
-    """ Custom View """
+    """ Module Homepage """
 
-    module_name = deployment_settings.modules[module].name_nice
+    module_name = deployment_settings.modules[prefix].name_nice
     return dict(module_name=module_name)
 
 
@@ -56,8 +57,7 @@ def assessment():
 
     """ Rapid Assessments, RESTful controller """
 
-    resource = request.function
-    tablename = "%s_%s" % (module, resource)
+    tablename = "%s_%s" % (prefix, resourcename)
     table = db[tablename]
 
     # Don't send the locations list to client (pulled by AJAX instead)
@@ -77,66 +77,64 @@ def assessment():
             table.staff_id.default = staff_id.id
 
     # Subheadings in forms:
-    subheadings = {
-        "rat_section2" : {
+    s3xrc.model.configure(db.rat_section2,
+        subheadings = {
             "Population and number of households": "population_total",
             "Fatalities": "dead_women",
             "Casualties": "injured_women",
             "Missing Persons": "missing_women",
             "General information on demographics": "household_head_elderly",
-            "Comments": "comments"
-        },
-        "rat_section3" : {
+            "Comments": "comments"})
+    s3xrc.model.configure(db.rat_section3,
+        subheadings = {
             "Access to Shelter": "houses_total",
             "Water storage containers in households": "water_containers_available",
             "Other non-food items": "cooking_equipment_available",
             "Shelter/NFI Assistance": "nfi_assistance_available",
-            "Comments": "comments"
-        },
-        "rat_section4" : {
+            "Comments": "comments"})
+    s3xrc.model.configure(db.rat_section4,
+        subheadings = {
             "Water supply": "water_source_pre_disaster_type",
             "Water collection": "water_coll_time",
             "Places for defecation": "defec_place_type",
             "Environment": "close_industry",
             "Latrines": "latrines_number",
-            "Comments": "comments"
-        },
-        "rat_section5" : {
+            "Comments": "comments"})
+    s3xrc.model.configure(db.rat_section5,
+        subheadings = {
             "Health services status": "health_services_pre_disaster",
             "Current health problems": "health_problems_adults",
             "Nutrition problems": "malnutrition_present_pre_disaster",
-            "Comments": "comments"
-        },
-        "rat_section6" : {
+            "Comments": "comments"})
+    s3xrc.model.configure(db.rat_section6,
+        subheadings = {
             "Existing food stocks": "food_stocks_main_dishes",
             "food_sources" : "Food sources",
             "Food assistance": "food_assistance_available",
-            "Comments": "comments"
-        },
-        "rat_section7" : {
+            "Comments": "comments"})
+    s3xrc.model.configure(db.rat_section7,
+        subheadings = {
             "Sources of income / Major expenses": "income_sources_pre_disaster",
             "business_damaged" : "Access to cash",
             "Current community priorities": "rank_reconstruction_assistance",
-            "Comments": "comments"
-        },
-        "rat_section8" : {
+            "Comments": "comments"})
+    s3xrc.model.configure(db.rat_section8,
+        subheadings = {
             "Access to education services": "schools_total",
             "Alternative places for studying": "alternative_study_places_available",
             "School activities": "schools_open_pre_disaster",
             "School attendance": "children_0612_female",
             "School assistance": "school_assistance_available",
-            "Comments": "comments"
-        },
-        "rat_section9" : {
+            "Comments": "comments"})
+    s3xrc.model.configure(db.rat_section9,
+        subheadings = {
             "Physical Safety": "vulnerable_groups_safe_env",
             "Separated children, caregiving arrangements": "children_separated",
             "Persons in institutions": "children_in_disabled_homes",
             "Activities of children": "child_activities_u12f_pre_disaster",
             "Coping Activities": "coping_activities_elderly",
             "Current general needs": "current_general_needs",
-            "Comments": "comments"
-        }
-    }
+            "Comments": "comments"})
 
     # @ToDo  Generalize this and make it available as a function that other
     # component prep methods can call to set the default for a join field.
@@ -175,7 +173,7 @@ def assessment():
         return output
     response.s3.postp = postp
 
-    crud.settings.create_next = None # Do not redirect from CRUD
+    s3xrc.model.configure(table, create_next="", listadd=False)
 
     rheader = lambda r: shn_rat_rheader(r,
                                         tabs = [(T("Identification"), None),
@@ -187,11 +185,8 @@ def assessment():
                                                 (T("Livelihood"), "section7"),
                                                 (T("Education"), "section8"),
                                                 (T("Protection"), "section9") ])
-    response.s3.pagination = True
-    output = shn_rest_controller(module, resource,
-                                 listadd=False,
-                                 rheader=rheader,
-                                 subheadings=subheadings)
+
+    output = s3_rest_controller(prefix, resourcename, rheader=rheader)
 
     response.extra_styles = ["S3/rat.css"]
     return output
@@ -203,7 +198,6 @@ def download():
     """ Download a file """
 
     return response.download(request, db)
-
 
 
 # -----------------------------------------------------------------------------

@@ -52,8 +52,6 @@
     <td>
       <table cellpadding="0" cellspacing="0">
         <!-- hide/show private -->
-        <tr><td align="right"><span class="options">[<a href="javascript:void(0);" class="privatelink"
-    onclick="toggle_private();">hide&nbsp;private</a>]</span></td></tr>
         <tr><td align="right"><span class="options"
             >[<a href="frames.html" target="_top">frames</a
             >]&nbsp;|&nbsp;<a href="vita.modules.s3xrc.s3crud.S3CRUDHandler-class.html"
@@ -63,7 +61,7 @@
   </tr>
 </table>
 <!-- ==================== CLASS DESCRIPTION ==================== -->
-<h1 class="epydoc">Class S3CRUDHandler</h1><p class="nomargin-top"><span class="codelink"><a href="vita.modules.s3xrc.s3crud-pysrc.html#S3CRUDHandler">source&nbsp;code</a></span></p>
+<h1 class="epydoc">Class S3CRUDHandler</h1><p class="nomargin-top"></p>
 <pre class="base-tree">
      object --+    
               |    
@@ -73,24 +71,15 @@
 </pre>
 
 <hr />
-<p>Interactive CRUD Method Handler Base Class</p>
+<p>Interactive CRUD Method Handler</p>
 
 <!-- ==================== INSTANCE METHODS ==================== -->
 <a name="section-InstanceMethods"></a>
 <table class="summary" border="1" cellpadding="3"
        cellspacing="0" width="100%" bgcolor="white">
 <tr bgcolor="#70b0f0" class="table-header">
-  <td colspan="2" class="table-header">
-    <table border="0" cellpadding="0" cellspacing="0" width="100%">
-      <tr valign="top">
-        <td align="left"><span class="table-header">Instance Methods</span></td>
-        <td align="right" valign="top"
-         ><span class="options">[<a href="#section-InstanceMethods"
-         class="privatelink" onclick="toggle_private();"
-         >hide private</a>]</span></td>
-      </tr>
-    </table>
-  </td>
+  <td align="left" colspan="2" class="table-header">
+    <span class="table-header">Instance Methods</span></td>
 </tr>
 <tr>
     <td width="15%" align="right" valign="top" class="summary">
@@ -103,7 +92,7 @@
         <span class="summary-sig-arg">**attr</span>)</span><br />
       Responder</td>
           <td align="right" valign="top">
-            <span class="codelink"><a href="vita.modules.s3xrc.s3crud-pysrc.html#S3CRUDHandler.respond">source&nbsp;code</a></span>
+            
             
           </td>
         </tr>
@@ -122,7 +111,7 @@
         <span class="summary-sig-arg">**attr</span>)</span><br />
       Create new records</td>
           <td align="right" valign="top">
-            <span class="codelink"><a href="vita.modules.s3xrc.s3crud-pysrc.html#S3CRUDHandler.create">source&nbsp;code</a></span>
+            
             
           </td>
         </tr>
@@ -141,7 +130,7 @@
         <span class="summary-sig-arg">**attr</span>)</span><br />
       Read a single record</td>
           <td align="right" valign="top">
-            <span class="codelink"><a href="vita.modules.s3xrc.s3crud-pysrc.html#S3CRUDHandler.read">source&nbsp;code</a></span>
+            
             
           </td>
         </tr>
@@ -160,7 +149,7 @@
         <span class="summary-sig-arg">**attr</span>)</span><br />
       Update a record</td>
           <td align="right" valign="top">
-            <span class="codelink"><a href="vita.modules.s3xrc.s3crud-pysrc.html#S3CRUDHandler.update">source&nbsp;code</a></span>
+            
             
           </td>
         </tr>
@@ -179,7 +168,7 @@
         <span class="summary-sig-arg">**attr</span>)</span><br />
       Delete record(s)</td>
           <td align="right" valign="top">
-            <span class="codelink"><a href="vita.modules.s3xrc.s3crud-pysrc.html#S3CRUDHandler.delete">source&nbsp;code</a></span>
+            
             
           </td>
         </tr>
@@ -198,27 +187,7 @@
         <span class="summary-sig-arg">**attr</span>)</span><br />
       Get a list view of the requested resource</td>
           <td align="right" valign="top">
-            <span class="codelink"><a href="vita.modules.s3xrc.s3crud-pysrc.html#S3CRUDHandler.select">source&nbsp;code</a></span>
             
-          </td>
-        </tr>
-      </table>
-      
-    </td>
-  </tr>
-<tr class="private">
-    <td width="15%" align="right" valign="top" class="summary">
-      <span class="summary-type">&nbsp;</span>
-    </td><td class="summary">
-      <table width="100%" cellpadding="0" cellspacing="0" border="0">
-        <tr>
-          <td><span class="summary-sig"><a href="vita.modules.s3xrc.s3crud.S3CRUDHandler-class.html#_view" class="summary-sig-name" onclick="show_private();">_view</a>(<span class="summary-sig-arg">self</span>,
-        <span class="summary-sig-arg">r</span>,
-        <span class="summary-sig-arg">default</span>,
-        <span class="summary-sig-arg">format</span>=<span class="summary-sig-default">None</span>)</span><br />
-      Get the target view path</td>
-          <td align="right" valign="top">
-            <span class="codelink"><a href="vita.modules.s3xrc.s3crud-pysrc.html#S3CRUDHandler._view">source&nbsp;code</a></span>
             
           </td>
         </tr>
@@ -233,14 +202,15 @@
       <table width="100%" cellpadding="0" cellspacing="0" border="0">
         <tr>
           <td><span class="summary-sig"><a href="vita.modules.s3xrc.s3crud.S3CRUDHandler-class.html#crud_button" class="summary-sig-name">crud_button</a>(<span class="summary-sig-arg">self</span>,
-        <span class="summary-sig-arg">tablename</span>,
         <span class="summary-sig-arg">label</span>,
+        <span class="summary-sig-arg">tablename</span>=<span class="summary-sig-default">None</span>,
+        <span class="summary-sig-arg">name</span>=<span class="summary-sig-default">None</span>,
         <span class="summary-sig-arg">_href</span>=<span class="summary-sig-default">None</span>,
         <span class="summary-sig-arg">_id</span>=<span class="summary-sig-default">None</span>,
         <span class="summary-sig-arg">_class</span>=<span class="summary-sig-default">&quot;action-btn&quot;</span>)</span><br />
       Generate a link button</td>
           <td align="right" valign="top">
-            <span class="codelink"><a href="vita.modules.s3xrc.s3crud-pysrc.html#S3CRUDHandler.crud_button">source&nbsp;code</a></span>
+            
             
           </td>
         </tr>
@@ -259,7 +229,7 @@
         <span class="summary-sig-arg">name</span>)</span><br />
       Get a CRUD info string for interactive pages</td>
           <td align="right" valign="top">
-            <span class="codelink"><a href="vita.modules.s3xrc.s3crud-pysrc.html#S3CRUDHandler.crud_string">source&nbsp;code</a></span>
+            
             
           </td>
         </tr>
@@ -267,20 +237,39 @@
       
     </td>
   </tr>
-<tr class="private">
+<tr>
     <td width="15%" align="right" valign="top" class="summary">
       <span class="summary-type">&nbsp;</span>
     </td><td class="summary">
       <table width="100%" cellpadding="0" cellspacing="0" border="0">
         <tr>
-          <td><span class="summary-sig"><a href="vita.modules.s3xrc.s3crud.S3CRUDHandler-class.html#_linkto" class="summary-sig-name" onclick="show_private();">_linkto</a>(<span class="summary-sig-arg">self</span>,
-        <span class="summary-sig-arg">r</span>,
-        <span class="summary-sig-arg">authorised</span>=<span class="summary-sig-default">None</span>,
-        <span class="summary-sig-arg">update</span>=<span class="summary-sig-default">None</span>,
-        <span class="summary-sig-arg">native</span>=<span class="summary-sig-default">False</span>)</span><br />
-      Linker for the record ID column in list views</td>
+          <td><span class="summary-sig"><a href="vita.modules.s3xrc.s3crud.S3CRUDHandler-class.html#insert_subheadings" class="summary-sig-name">insert_subheadings</a>(<span class="summary-sig-arg">self</span>,
+        <span class="summary-sig-arg">form</span>,
+        <span class="summary-sig-arg">tablename</span>,
+        <span class="summary-sig-arg">subheadings</span>)</span><br />
+      Insert subheadings into forms</td>
           <td align="right" valign="top">
-            <span class="codelink"><a href="vita.modules.s3xrc.s3crud-pysrc.html#S3CRUDHandler._linkto">source&nbsp;code</a></span>
+            
+            
+          </td>
+        </tr>
+      </table>
+      
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a href="vita.modules.s3xrc.s3crud.S3CRUDHandler-class.html#insert_buttons" class="summary-sig-name">insert_buttons</a>(<span class="summary-sig-arg">self</span>,
+        <span class="summary-sig-arg">r</span>,
+        <span class="summary-sig-arg">*buttons</span>,
+        <span class="summary-sig-arg">**attr</span>)</span><br />
+      Insert resource action buttons</td>
+          <td align="right" valign="top">
+            
             
           </td>
         </tr>
@@ -299,7 +288,7 @@
         <span class="summary-sig-arg">fields</span>)</span><br />
       Convert the SSPag GET vars into a filter query</td>
           <td align="right" valign="top">
-            <span class="codelink"><a href="vita.modules.s3xrc.s3crud-pysrc.html#S3CRUDHandler.ssp_filter">source&nbsp;code</a></span>
+            
             
           </td>
         </tr>
@@ -318,7 +307,7 @@
         <span class="summary-sig-arg">fields</span>)</span><br />
       Convert the SSPag GET vars into a sorting query</td>
           <td align="right" valign="top">
-            <span class="codelink"><a href="vita.modules.s3xrc.s3crud-pysrc.html#S3CRUDHandler.ssp_orderby">source&nbsp;code</a></span>
+            
             
           </td>
         </tr>
@@ -349,22 +338,29 @@
     </td>
   </tr>
 </table>
+<!-- ==================== INSTANCE VARIABLES ==================== -->
+<a name="section-InstanceVariables"></a>
+<table class="summary" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr bgcolor="#70b0f0" class="table-header">
+  <td align="left" colspan="2" class="table-header">
+    <span class="table-header">Instance Variables</span></td>
+</tr>
+  <tr>
+    <td colspan="2" class="summary">
+    <p class="indent-wrapped-lines"><b>Inherited from <code><a href="vita.modules.s3xrc.s3crud.S3MethodHandler-class.html">S3MethodHandler</a></code></b>:
+      <code><a href="vita.modules.s3xrc.s3crud.S3MethodHandler-class.html#download_url">download_url</a></code>
+      </p>
+    </td>
+  </tr>
+</table>
 <!-- ==================== PROPERTIES ==================== -->
 <a name="section-Properties"></a>
 <table class="summary" border="1" cellpadding="3"
        cellspacing="0" width="100%" bgcolor="white">
 <tr bgcolor="#70b0f0" class="table-header">
-  <td colspan="2" class="table-header">
-    <table border="0" cellpadding="0" cellspacing="0" width="100%">
-      <tr valign="top">
-        <td align="left"><span class="table-header">Properties</span></td>
-        <td align="right" valign="top"
-         ><span class="options">[<a href="#section-Properties"
-         class="privatelink" onclick="toggle_private();"
-         >hide private</a>]</span></td>
-      </tr>
-    </table>
-  </td>
+  <td align="left" colspan="2" class="table-header">
+    <span class="table-header">Properties</span></td>
 </tr>
   <tr>
     <td colspan="2" class="summary">
@@ -379,17 +375,8 @@
 <table class="details" border="1" cellpadding="3"
        cellspacing="0" width="100%" bgcolor="white">
 <tr bgcolor="#70b0f0" class="table-header">
-  <td colspan="2" class="table-header">
-    <table border="0" cellpadding="0" cellspacing="0" width="100%">
-      <tr valign="top">
-        <td align="left"><span class="table-header">Method Details</span></td>
-        <td align="right" valign="top"
-         ><span class="options">[<a href="#section-MethodDetails"
-         class="privatelink" onclick="toggle_private();"
-         >hide private</a>]</span></td>
-      </tr>
-    </table>
-  </td>
+  <td align="left" colspan="2" class="table-header">
+    <span class="table-header">Method Details</span></td>
 </tr>
 </table>
 <a name="respond"></a>
@@ -404,26 +391,24 @@
         <span class="sig-arg">**attr</span>)</span>
   </h3>
   </td><td align="right" valign="top"
-    ><span class="codelink"><a href="vita.modules.s3xrc.s3crud-pysrc.html#S3CRUDHandler.respond">source&nbsp;code</a></span>&nbsp;
+    >&nbsp;
     </td>
   </tr></table>
   
   <p>Responder</p>
   <dl class="fields">
+    <dt>Parameters:</dt>
+    <dd><ul class="nomargin-top">
+        <li><strong class="pname"><code>r</code></strong> - the S3Request</li>
+        <li><strong class="pname"><code>attr</code></strong> - dictionary of parameters for the method handler</li>
+    </ul></dd>
+    <dt>Returns:</dt>
+        <dd>output object to send to the view</dd>
     <dt>Overrides:
         <a href="vita.modules.s3xrc.s3crud.S3MethodHandler-class.html#respond">S3MethodHandler.respond</a>
     </dt>
   </dl>
-<div class="fields">      <strong>To Do (2.2):</strong>
-      <ul class="nomargin-top">
-        <li>
-        fix docstring
-        </li>
-        <li>
-        complete this
-        </li>
-      </ul>
-</div></td></tr></table>
+</td></tr></table>
 </div>
 <a name="create"></a>
 <div>
@@ -437,20 +422,28 @@
         <span class="sig-arg">**attr</span>)</span>
   </h3>
   </td><td align="right" valign="top"
-    ><span class="codelink"><a href="vita.modules.s3xrc.s3crud-pysrc.html#S3CRUDHandler.create">source&nbsp;code</a></span>&nbsp;
+    >&nbsp;
     </td>
   </tr></table>
   
   <p>Create new records</p>
   <dl class="fields">
+    <dt>Parameters:</dt>
+    <dd><ul class="nomargin-top">
+        <li><strong class="pname"><code>r</code></strong> - the S3Request</li>
+        <li><strong class="pname"><code>attr</code></strong> - dictionary of parameters for the method handler</li>
+    </ul></dd>
   </dl>
 <div class="fields">      <strong>To Do (2.2):</strong>
       <ul class="nomargin-top">
         <li>
-        implement this
+        copy from a previous record
         </li>
         <li>
-        fix docstring
+        cancel button
+        </li>
+        <li>
+        other representations
         </li>
       </ul>
 </div></td></tr></table>
@@ -467,20 +460,25 @@
         <span class="sig-arg">**attr</span>)</span>
   </h3>
   </td><td align="right" valign="top"
-    ><span class="codelink"><a href="vita.modules.s3xrc.s3crud-pysrc.html#S3CRUDHandler.read">source&nbsp;code</a></span>&nbsp;
+    >&nbsp;
     </td>
   </tr></table>
   
   <p>Read a single record</p>
   <dl class="fields">
+    <dt>Parameters:</dt>
+    <dd><ul class="nomargin-top">
+        <li><strong class="pname"><code>r</code></strong> - the S3Request</li>
+        <li><strong class="pname"><code>attr</code></strong> - dictionary of parameters for the method handler</li>
+    </ul></dd>
   </dl>
 <div class="fields">      <strong>To Do (2.2):</strong>
       <ul class="nomargin-top">
         <li>
-        implement this
+        plain representation
         </li>
         <li>
-        fix docstring
+        add update form if permitted + show_add_btn
         </li>
       </ul>
 </div></td></tr></table>
@@ -497,20 +495,25 @@
         <span class="sig-arg">**attr</span>)</span>
   </h3>
   </td><td align="right" valign="top"
-    ><span class="codelink"><a href="vita.modules.s3xrc.s3crud-pysrc.html#S3CRUDHandler.update">source&nbsp;code</a></span>&nbsp;
+    >&nbsp;
     </td>
   </tr></table>
   
   <p>Update a record</p>
   <dl class="fields">
+    <dt>Parameters:</dt>
+    <dd><ul class="nomargin-top">
+        <li><strong class="pname"><code>r</code></strong> - the S3Request</li>
+        <li><strong class="pname"><code>attr</code></strong> - dictionary of parameters for the method handler</li>
+    </ul></dd>
   </dl>
 <div class="fields">      <strong>To Do (2.2):</strong>
       <ul class="nomargin-top">
         <li>
-        implement this
+        complete other representations
         </li>
         <li>
-        fix docstring
+        Cancel button?
         </li>
       </ul>
 </div></td></tr></table>
@@ -527,20 +530,25 @@
         <span class="sig-arg">**attr</span>)</span>
   </h3>
   </td><td align="right" valign="top"
-    ><span class="codelink"><a href="vita.modules.s3xrc.s3crud-pysrc.html#S3CRUDHandler.delete">source&nbsp;code</a></span>&nbsp;
+    >&nbsp;
     </td>
   </tr></table>
   
   <p>Delete record(s)</p>
   <dl class="fields">
+    <dt>Parameters:</dt>
+    <dd><ul class="nomargin-top">
+        <li><strong class="pname"><code>r</code></strong> - the S3Request</li>
+        <li><strong class="pname"><code>attr</code></strong> - dictionary of parameters for the method handler</li>
+    </ul></dd>
   </dl>
 <div class="fields">      <strong>To Do (2.2):</strong>
       <ul class="nomargin-top">
         <li>
-        implement this
+        put style information into stylesheet
         </li>
         <li>
-        fix docstring
+        move confirmation form into resource
         </li>
       </ul>
 </div></td></tr></table>
@@ -557,48 +565,19 @@
         <span class="sig-arg">**attr</span>)</span>
   </h3>
   </td><td align="right" valign="top"
-    ><span class="codelink"><a href="vita.modules.s3xrc.s3crud-pysrc.html#S3CRUDHandler.select">source&nbsp;code</a></span>&nbsp;
+    >&nbsp;
     </td>
   </tr></table>
   
   <p>Get a list view of the requested resource</p>
   <dl class="fields">
+    <dt>Parameters:</dt>
+    <dd><ul class="nomargin-top">
+        <li><strong class="pname"><code>r</code></strong> - the S3Request</li>
+        <li><strong class="pname"><code>attr</code></strong> - dictionary of parameters for the method handler</li>
+    </ul></dd>
   </dl>
-<div class="fields">      <strong>To Do (2.2):</strong>
-      <ul class="nomargin-top">
-        <li>
-        complete this
-        </li>
-        <li>
-        fix docstring
-        </li>
-      </ul>
-</div></td></tr></table>
-</div>
-<a name="_view"></a>
-<div class="private">
-<table class="details" border="1" cellpadding="3"
-       cellspacing="0" width="100%" bgcolor="white">
-<tr><td>
-  <table width="100%" cellpadding="0" cellspacing="0" border="0">
-  <tr valign="top"><td>
-  <h3 class="epydoc"><span class="sig"><span class="sig-name">_view</span>(<span class="sig-arg">self</span>,
-        <span class="sig-arg">r</span>,
-        <span class="sig-arg">default</span>,
-        <span class="sig-arg">format</span>=<span class="sig-default">None</span>)</span>
-  </h3>
-  </td><td align="right" valign="top"
-    ><span class="codelink"><a href="vita.modules.s3xrc.s3crud-pysrc.html#S3CRUDHandler._view">source&nbsp;code</a></span>&nbsp;
-    </td>
-  </tr></table>
-  
-  <p>Get the target view path</p>
-  <dl class="fields">
-  </dl>
-<div class="fields">      <p><strong>To Do (2.2):</strong>
-        fix docstring
-      </p>
-</div></td></tr></table>
+</td></tr></table>
 </div>
 <a name="crud_button"></a>
 <div>
@@ -608,14 +587,15 @@
   <table width="100%" cellpadding="0" cellspacing="0" border="0">
   <tr valign="top"><td>
   <h3 class="epydoc"><span class="sig"><span class="sig-name">crud_button</span>(<span class="sig-arg">self</span>,
-        <span class="sig-arg">tablename</span>,
         <span class="sig-arg">label</span>,
+        <span class="sig-arg">tablename</span>=<span class="sig-default">None</span>,
+        <span class="sig-arg">name</span>=<span class="sig-default">None</span>,
         <span class="sig-arg">_href</span>=<span class="sig-default">None</span>,
         <span class="sig-arg">_id</span>=<span class="sig-default">None</span>,
         <span class="sig-arg">_class</span>=<span class="sig-default">&quot;action-btn&quot;</span>)</span>
   </h3>
   </td><td align="right" valign="top"
-    ><span class="codelink"><a href="vita.modules.s3xrc.s3crud-pysrc.html#S3CRUDHandler.crud_button">source&nbsp;code</a></span>&nbsp;
+    >&nbsp;
     </td>
   </tr></table>
   
@@ -639,7 +619,7 @@
         <span class="sig-arg">name</span>)</span>
   </h3>
   </td><td align="right" valign="top"
-    ><span class="codelink"><a href="vita.modules.s3xrc.s3crud-pysrc.html#S3CRUDHandler.crud_string">source&nbsp;code</a></span>&nbsp;
+    >&nbsp;
     </td>
   </tr></table>
   
@@ -651,31 +631,64 @@
       </p>
 </div></td></tr></table>
 </div>
-<a name="_linkto"></a>
-<div class="private">
+<a name="insert_subheadings"></a>
+<div>
 <table class="details" border="1" cellpadding="3"
        cellspacing="0" width="100%" bgcolor="white">
 <tr><td>
   <table width="100%" cellpadding="0" cellspacing="0" border="0">
   <tr valign="top"><td>
-  <h3 class="epydoc"><span class="sig"><span class="sig-name">_linkto</span>(<span class="sig-arg">self</span>,
-        <span class="sig-arg">r</span>,
-        <span class="sig-arg">authorised</span>=<span class="sig-default">None</span>,
-        <span class="sig-arg">update</span>=<span class="sig-default">None</span>,
-        <span class="sig-arg">native</span>=<span class="sig-default">False</span>)</span>
+  <h3 class="epydoc"><span class="sig"><span class="sig-name">insert_subheadings</span>(<span class="sig-arg">self</span>,
+        <span class="sig-arg">form</span>,
+        <span class="sig-arg">tablename</span>,
+        <span class="sig-arg">subheadings</span>)</span>
   </h3>
   </td><td align="right" valign="top"
-    ><span class="codelink"><a href="vita.modules.s3xrc.s3crud-pysrc.html#S3CRUDHandler._linkto">source&nbsp;code</a></span>&nbsp;
+    >&nbsp;
     </td>
   </tr></table>
   
-  <p>Linker for the record ID column in list views</p>
+  <p>Insert subheadings into forms</p>
   <dl class="fields">
+    <dt>Parameters:</dt>
+    <dd><ul class="nomargin-top">
+        <li><strong class="pname"><code>form</code></strong> - the form</li>
+        <li><strong class="pname"><code>tablename</code></strong> - the tablename</li>
+        <li><strong class="pname"><code>subheadings</code></strong> - a dict of {&quot;Headline&quot;: Fieldnames}, where Fieldname can
+          be either a single field name or a list/tuple of field names 
+          belonging under that headline</li>
+    </ul></dd>
   </dl>
-<div class="fields">      <p><strong>To Do (2.2):</strong>
-        fix docstring
-      </p>
-</div></td></tr></table>
+</td></tr></table>
+</div>
+<a name="insert_buttons"></a>
+<div>
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr><td>
+  <table width="100%" cellpadding="0" cellspacing="0" border="0">
+  <tr valign="top"><td>
+  <h3 class="epydoc"><span class="sig"><span class="sig-name">insert_buttons</span>(<span class="sig-arg">self</span>,
+        <span class="sig-arg">r</span>,
+        <span class="sig-arg">*buttons</span>,
+        <span class="sig-arg">**attr</span>)</span>
+  </h3>
+  </td><td align="right" valign="top"
+    >&nbsp;
+    </td>
+  </tr></table>
+  
+  <p>Insert resource action buttons</p>
+  <dl class="fields">
+    <dt>Parameters:</dt>
+    <dd><ul class="nomargin-top">
+        <li><strong class="pname"><code>r</code></strong> - the S3Request</li>
+        <li><strong class="pname"><code>buttons</code></strong> - button names (&quot;add&quot;, &quot;edit&quot;, 
+          &quot;delete&quot;, &quot;list&quot;)</li>
+        <li><strong class="pname"><code>record_id</code></strong> - the record ID</li>
+    </ul></dd>
+  </dl>
+</td></tr></table>
 </div>
 <a name="ssp_filter"></a>
 <div>
@@ -689,7 +702,7 @@
         <span class="sig-arg">fields</span>)</span>
   </h3>
   </td><td align="right" valign="top"
-    ><span class="codelink"><a href="vita.modules.s3xrc.s3crud-pysrc.html#S3CRUDHandler.ssp_filter">source&nbsp;code</a></span>&nbsp;
+    >&nbsp;
     </td>
   </tr></table>
   
@@ -713,7 +726,7 @@
         <span class="sig-arg">fields</span>)</span>
   </h3>
   </td><td align="right" valign="top"
-    ><span class="codelink"><a href="vita.modules.s3xrc.s3crud-pysrc.html#S3CRUDHandler.ssp_orderby">source&nbsp;code</a></span>&nbsp;
+    >&nbsp;
     </td>
   </tr></table>
   
@@ -757,7 +770,7 @@
 <table border="0" cellpadding="0" cellspacing="0" width="100%%">
   <tr>
     <td align="left" class="footer">
-    Generated by Epydoc 3.0.1 on Sun Oct 10 08:09:08 2010
+    Generated by Epydoc 3.0.1 on Tue Oct 19 22:45:13 2010
     </td>
     <td align="right" class="footer">
       <a target="mainFrame" href="http://epydoc.sourceforge.net"

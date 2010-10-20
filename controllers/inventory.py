@@ -60,7 +60,7 @@ def store():
            ]
     rheader = lambda r: shn_store_rheader(r, tabs)
 
-    output = shn_rest_controller(module, resource, rheader=rheader)
+    output = s3_rest_controller(module, resource, rheader=rheader)
     return output
 
 def index():
@@ -85,4 +85,4 @@ def store_item():
     tablename = "%s_%s" % (module, resource)
     table = db[tablename]
 
-    return shn_rest_controller(module, resource)
+    return s3_rest_controller(module, resource)

@@ -2,7 +2,7 @@
 
 """ S3XRC Resource Framework - Resource Controller
 
-    @version: 2.1.7
+    @version: 2.1.8
 
     @see: U{B{I{S3XRC}} <http://eden.sahanafoundation.org/wiki/S3XRC>} on Eden wiki
 
@@ -50,15 +50,23 @@ from lxml import etree
 from s3xml import S3XML
 from s3rest import S3Resource, S3Request
 from s3model import S3ResourceModel
-from s3crud import S3CRUDHandler
+from s3crud import S3CRUDHandler, S3SearchSimple
+from s3export import S3Exporter
+from s3import import S3Importer
 
 # *****************************************************************************
 class S3ResourceController(object):
 
     """ S3 Resource Controller
 
+        @param domain: name of the current domain
+        @param base_url: base URL of this instance
+        @param rpp: rows-per-page for server-side pagination
+        @param messages: a function to retrieve message URLs tagged for a resource
+
+        @todo 2.2: fix docstring/parameters
         @todo 2.2: move formats into settings
-        @todo 2.2: error messages internationalization?
+        @todo 2.2: error messages internationalization!
 
     """
 
@@ -88,11 +96,11 @@ class S3ResourceController(object):
     # Error messages
     ERROR = Storage(
         BAD_RECORD = "Record not found",
-        BAD_METHOD = "Invalid method",
-        BAD_FORMAT = "Invalid data format",
+        BAD_METHOD = "Unsupported method",
+        BAD_FORMAT = "Unsupported data format",
         BAD_REQUEST = "Invalid request",
         BAD_TEMPLATE = "XSLT template not found",
-        BAD_RESOURCE = "Invalid resource",
+        BAD_RESOURCE = "Nonexistent or invalid resource",
         PARSE_ERROR = "XML parse error",
         TRANSFORMATION_ERROR = "XSLT transformation error",
         BAD_SOURCE = "Invalid XML source",
@@ -103,8 +111,6 @@ class S3ResourceController(object):
         NOT_IMPLEMENTED = "Not implemented"
     )
 
-    # =========================================================================
-
     def __init__(self,
                  environment,
                  domain=None, # @todo 2.2: read fromm environment
@@ -113,39 +119,22 @@ class S3ResourceController(object):
                  messages=None, # @todo 2.2: move into settings
                  **attr):
 
-        """ Constructor
-
-            @param db: the database (DAL)
-            @param domain: name of the current domain
-            @param base_url: base URL of this instance
-            @param rpp: rows-per-page for server-side pagination
-            @param gis: the GIS toolkit to use
-            @param messages: a function to retrieve message URLs tagged for a resource
-            @param cache: the cache object
-
-            @todo 2.2: fix docstring/parameters
-            @todo 2.2: remove assertions
-
-        """
-
         # Environment
         environment = Storage(environment)
 
+        self.T = environment.T
+
         self.db = environment.db
         self.cache = environment.cache
-
-        self.auth = environment.auth
-        self.gis = environment.gis
-
-        self.s3 = environment.s3
 
         self.session = environment.session
         self.request = environment.request
         self.response = environment.response
 
-        self.T = environment.T #: Global translator object
-
         # Settings
+        self.s3 = environment.s3 #@todo 2.2: rename variable?
+        #self.settings = self.s3.<what?> @todo 2.2
+
         self.domain = domain
         self.base_url = base_url
         self.download_url = "%s/default/download" % base_url
@@ -159,22 +148,26 @@ class S3ResourceController(object):
         self.error = None
 
         # Toolkits
-        self.model = S3ResourceModel(self.db)
-        self.crud = S3CRUDHandler(self)
-        self.xml = S3XML(self.db,
+        self.audit = environment.s3_audit       # Audit
+        self.auth = environment.auth            # Auth
+        self.gis = environment.gis              # GIS
+
+        self.model = S3ResourceModel(self.db)   # Resource Model, @todo 2.2: reduce parameter list to (self)?
+        self.crud = S3CRUDHandler(self)         # CRUD Handler
+        self.xml = S3XML(self.db,               # S3XML, @todo 2.2: reduce parameter list to (self)?
                          domain=domain,
                          base_url=base_url,
                          gis=self.gis,
                          cache=self.cache)
 
         # Hooks
-        self.audit = environment.s3_audit   # Audit
-        self.messages = None                # Messages Finder
-        self.tree_resolve = None            # Tree Resolver
-        self.sync_resolve = None            # Sync Resolver
-        self.sync_log = None                # Sync Logger
+        self.permit = self.auth.shn_has_permission  # Permission Checker
+        self.messages = None                        # Messages Finder
+        self.tree_resolve = None                    # Tree Resolver
+        self.sync_resolve = None                    # Sync Resolver
+        self.sync_log = None                        # Sync Logger
 
-        # Import/Export formats: move into settings
+        # Import/Export formats, @todo 2.2: move into settings
         attr = Storage(attr)
 
         self.xml_import_formats = attr.get("xml_import_formats", ["xml"])
@@ -185,7 +178,10 @@ class S3ResourceController(object):
         self.json_export_formats = attr.get("json_export_formats",
                                             dict(json="text/x-json"))
 
-        # Method Handlers
+        self.exporter = S3Exporter(self)    # Resource Exporter
+        self.importer = S3Importer(self)    # Resource Importer
+
+        # Method Handlers, @todo 2.2: deprecate?
         self.__handler = Storage()
 
 
@@ -620,7 +616,7 @@ class S3ResourceController(object):
         if field.represent:
             text = str(cache.ram("%s_repr_%s" % (field, val),
                                  lambda: field.represent(val),
-                                 time_expire=5)).decode("utf-8")
+                                 time_expire=5))
         else:
             if val is None:
                 text = NONE
@@ -658,7 +654,12 @@ class S3ResourceController(object):
         elif xml_escape:
             text = self.xml.xml_encode(text)
 
-        return text.decode("utf-8")
+        try:
+            text = text.decode("utf-8")
+        except:
+            pass
+
+        return text
 
 
     # -------------------------------------------------------------------------
@@ -666,11 +667,11 @@ class S3ResourceController(object):
 
         """ Find the original record for a possible duplicate:
 
-            - if the record contains a UUID, then only that UUID is used
-                to match the record with an existing DB record
+                - if the record contains a UUID, then only that UUID is used
+                    to match the record with an existing DB record
 
-            - otherwise, if the record contains some values for unique fields,
-                all of them must match the same existing DB record
+                - otherwise, if the record contains some values for unique fields,
+                    all of them must match the same existing DB record
 
             @param table: the table
             @param record: the record as dict or S3XML Element
@@ -1142,7 +1143,30 @@ class S3ResourceController(object):
 
 
     # -------------------------------------------------------------------------
-    def search_simple(self, table, fields=None, label=None, filterby=None):
+    def search_simple(self, label=None, comment=None, fields=[]):
+
+        """ Generate a search_simple method handler
+
+            @param label: the label for the input field in the search form
+            @param comment: help text for the input field in the search form
+            @param fields: the fields to search for the string
+
+        """
+
+        if not label:
+            label = self.T("Enter search text")
+
+        if not fields:
+            fields = ["id"]
+
+        return S3SearchSimple(self,
+                              label=label,
+                              comment=comment,
+                              fields=fields)
+
+
+    # -------------------------------------------------------------------------
+    def _search_simple(self, table, fields=None, label=None, filterby=None):
 
         """ Simple search function for resources
 
@@ -1266,10 +1290,10 @@ class S3Vector(object):
                  mtime=None,
                  rmap=None,
                  directory=None,
-                 permit=None,
-                 audit=None,
-                 sync=None,
-                 log=None,
+                 permit=None, # @todo 2.2: read from manager
+                 audit=None, # @todo 2.2: read from manager
+                 sync=None, # @todo 2.2: read from manager
+                 log=None, # @todo 2.2: read from manager
                  onvalidation=None,
                  onaccept=None):
 
@@ -1396,6 +1420,8 @@ class S3Vector(object):
 
         self.resolve() # Resolve references
 
+        model = self.__manager.model
+
         skip_components = False
 
         if not self.committed:
@@ -1519,6 +1545,7 @@ class S3Vector(object):
                     if self.audit:
                         self.audit(self.method, self.prefix, self.name,
                                    form=form, record=self.id, representation="xml")
+                    model.update_super(self.table, form.vars)
                     if self.onaccept:
                         self.__manager.callback(self.onaccept, form, name=self.tablename)
 

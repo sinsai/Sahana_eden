@@ -79,9 +79,7 @@ if deployment_settings.has_module(module):
 
     s3xrc.model.add_component(module, resource,
                               multiple=False,
-                              joinby=dict(pr_person="person_id"),
-                              deletable=False,
-                              editable=True)
+                              joinby=dict(pr_person="person_id"))
 
 
     def shn_mpr_report_onaccept(form):
@@ -128,6 +126,7 @@ if deployment_settings.has_module(module):
 
 
     s3xrc.model.configure(table,
+        deletable=False,
         onaccept = lambda form: shn_mpr_report_onaccept(form),
         list_fields = [
             "id",

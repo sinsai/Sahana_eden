@@ -350,12 +350,11 @@ table.run_interval.represent = lambda opt: sync_job_intervals.get(opt, UNKNOWN_O
 
 s3xrc.model.add_component(module, resource,
                           joinby = dict(sync_peer="peer_id"),
-                          multiple = True,
-                          editable = False,
-                          listadd = False,
-                          deletable = True)
+                          multiple = True)
 
 s3xrc.model.configure(table,
+    editable = False,
+    listadd = False,
     list_fields = ["id",
         "timestmp",
         "peer_id",

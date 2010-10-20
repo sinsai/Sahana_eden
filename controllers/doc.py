@@ -121,8 +121,7 @@ def document():
 
     rheader = lambda r: shn_document_rheader(r)
 
-    response.s3.pagination = True
-    output = shn_rest_controller(module, resource,
+    output = s3_rest_controller(module, resource,
                                  rheader=rheader)
 
     return output
@@ -136,8 +135,7 @@ def image():
     # Model options
     # used in multiple controllers, so in the model
 
-    response.s3.pagination = True
-    output = shn_rest_controller(module, resource)
+    output = s3_rest_controller(module, resource)
 
     return output
 #==============================================================================
@@ -176,7 +174,7 @@ def metadata():
         msg_record_deleted = T("Metadata deleted"),
         msg_list_empty = T("No Metadata currently defined"))
 
-    return shn_rest_controller(module, resource)
+    return s3_rest_controller(module, resource)
 #==============================================================================
 def bulk_upload():
     """

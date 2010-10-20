@@ -102,12 +102,12 @@ def index():
                                     vars=dict(condition=vita.CONFIRMED))
                         output.update(myself=myself)
 
-            linkto = shn_linkto(jr, update=True)("[id]")
+            linkto = jr.resource.crud._linkto(jr, update=True)("[id]")
             response.s3.actions.append(dict(label=DETAILS, _class="action-btn", url=linkto))
 
         else:
             label = UPDATE
-            linkto = shn_linkto(jr, update=True)("[id]")
+            linkto = jr.resource.crud._linkto(jr, update=True)("[id]")
             response.s3.actions = [
                 dict(label=str(label), _class="action-btn", url=str(linkto))
             ]
@@ -115,8 +115,7 @@ def index():
         return output
     response.s3.postp = postp
 
-    response.s3.pagination = True
-    output = shn_rest_controller("pr", "person")
+    output = s3_rest_controller("pr", "person")
     response.view = "mpr/index.html"
 
     shn_menu()
@@ -244,12 +243,7 @@ def person():
 
     rheader = lambda r: shn_pr_rheader(r, tabs=mpr_tabs)
 
-    response.s3.pagination = True
-    output = shn_rest_controller("pr", resource,
-                                 main="first_name",
-                                 extra="last_name",
-                                 listadd=False,
-                                 rheader=rheader)
+    output = s3_rest_controller("pr", resource, rheader=rheader)
 
     shn_menu()
     return output

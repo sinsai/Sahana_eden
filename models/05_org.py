@@ -124,43 +124,106 @@ site_id = S3ReusableField("site_id", db.org_site,
                          )
 
 # -----------------------------------------------------------------------------
-# Sectors (to be renamed as Clusters)
-#
-resource = "sector"
-tablename = "%s_%s" % (module, resource)
-table = db.define_table(tablename, #timestamp, uuidstamp, authorstamp, deletion_status,
+# Cluster
+resourcename = "cluster"
+tablename = "%s_%s" % (module, resourcename)
+table = db.define_table(tablename,
+                        Field("abrv", length=64, notnull=True, unique=True),
                         Field("name", length=128, notnull=True, unique=True),
-                        migrate=migrate, *s3_meta_fields())
+                        migrate=migrate, *s3_meta_fields()
+                        )
+
+# CRUD strings
+ADD_CLUSTER = T("Add Cluster")
+LIST_CLUSTER = T("List Cluster")
+s3.crud_strings[tablename] = Storage(
+    title_create = ADD_CLUSTER,
+    title_display = T("Cluster Details"),
+    title_list = LIST_CLUSTER,
+    title_update = T("Edit Cluster"),
+    title_search = T("Search Clusters"),
+    subtitle_create = T("Add New Cluster"),
+    subtitle_list = T("Clusters"),
+    label_list_button = LIST_CLUSTER,
+    label_create_button = ADD_CLUSTER,
+    label_delete_button = T("Delete Cluster"),
+    msg_record_created = T("Cluster added"),
+    msg_record_modified = T("Cluster updated"),
+    msg_record_deleted = T("Cluster deleted"),
+    msg_list_empty = T("No Clusters currently registered"))
+
+cluster_id = S3ReusableField("cluster_id", db.org_cluster, sortby="abrv",
+                                   requires = IS_NULL_OR(IS_ONE_OF(db, "org_cluster.id","%(abrv)s", sort=True)),
+                                   represent = lambda id: shn_get_db_field_value(db = db,
+                                                                                 table = "org_cluster",
+                                                                                 field = "abrv",
+                                                                                 look_up = id),
+                                   label = T("Cluster"),
+                                   #comment = Script to filter the cluster_subsector drop down
+                                   ondelete = "RESTRICT"
+                                   )
+
+# -----------------------------------------------------------------------------
+# Cluster Subsector
+resourcename = "cluster_subsector"
+tablename = "%s_%s" % (module, resourcename)
+table = db.define_table(tablename,
+                        cluster_id(),
+                        Field("abrv", length=64, notnull=True, unique=True),
+                        Field("name", length=128),
+                        migrate=migrate, *s3_meta_fields()
+                        )
+
+# CRUD strings
+ADD_CLUSTER_SUBSECTOR = T("Add Cluster Subsector")
+LIST_CLUSTER_SUBSECTOR = T("List Cluster Subsectors")
+s3.crud_strings[tablename] = Storage(
+    title_create = ADD_CLUSTER_SUBSECTOR,
+    title_display = T("Cluster Subsector Details"),
+    title_list = LIST_CLUSTER_SUBSECTOR,
+    title_update = T("Edit Cluster Subsector"),
+    title_search = T("Search Cluster Subsectors"),
+    subtitle_create = T("Add New Cluster Subsector"),
+    subtitle_list = T("Cluster Subsectors"),
+    label_list_button = LIST_CLUSTER_SUBSECTOR,
+    label_create_button = ADD_CLUSTER_SUBSECTOR,
+    label_delete_button = T("Delete Cluster Subsector"),
+    msg_record_created = T("Cluster Subsector added"),
+    msg_record_modified = T("Cluster Subsector updated"),
+    msg_record_deleted = T("Cluster Subsector deleted"),
+    msg_list_empty = T("No Cluster Subsectors currently registered"))
 
 
-# Field settings
-table.uuid.requires = IS_NOT_IN_DB(db, "%s.uuid" % tablename)
-table.name.requires = [IS_NOT_EMPTY(), IS_NOT_IN_DB(db, "%s.name" % tablename)]
-table.name.label = T("Name")
-table.name.comment = SPAN("*", _class="req")
+def shn_org_cluster_subsector_represent(id):
+    record = db(db.org_cluster_subsector.id == id).select(db.org_cluster_subsector.cluster_id,
+                                                      db.org_cluster_subsector.abrv,
+                                                      limitby = (0,1) ).first()
+    return shn_org_cluster_subsector_requires_represent( record)
 
-# Functions
-def shn_sector_represent(sector_ids):
-    if not sector_ids:
-        return NONE
-    elif isinstance(sector_ids, (list, tuple)):
-        sectors = db(db.org_sector.id.belongs(sector_ids)).select(db.org_sector.name)
-        return ", ".join([s.name for s in sectors])
+def shn_org_cluster_subsector_requires_represent(record):
+    """Used to generate text for the Select"""
+    if record:
+        cluster_record = db(db.org_cluster_cluster.id == record.cluster_id).select(db.org_cluster_cluster.abrv,
+                                                      limitby = (0,1) ).first()
+        if cluster_record:
+            cluster = cluster_record.abrv
+        else:
+            cluster = NONE
+        return "%s:%s" %(cluster,record.abrv)
     else:
-        sector = db(db.org_sector.id == sector_ids).select(db.org_sector.name, limitby=(0, 1)).first()
-        return sector and sector.name or NONE
+        return NONE
 
-# Reusable field
-ADD_SECTOR = T("Add Cluster")
-sector_id = S3ReusableField("sector_id", "list:reference org_sector", sortby="name",
-                            requires = IS_NULL_OR(IS_ONE_OF(db, "org_sector.id", "%(name)s", multiple=True)),
-                            represent = shn_sector_represent,
-                            label = T("Cluster"),
-                            comment = DIV(A(ADD_SECTOR, _class="colorbox", _href=URL(r=request, c="org", f="sector", args="create", vars=dict(format="popup")), _target="top", _title=ADD_SECTOR),
-                                      DIV( _class="tooltip", _title=T("Add Sector") + "|" + T("The Sector(s) this organization works in. Multiple values can be selected by holding down the 'Control' key."))),
-                            ondelete = "RESTRICT",
-                            #widget = SQLFORM.widgets.checkboxes.widget
-                           )
+cluster_subsector_id = S3ReusableField("cluster_subsector_id", db.org_cluster_subsector, sortby="abrv",
+                                   requires = IS_NULL_OR(IS_ONE_OF(db,
+                                                                   "org_cluster_subsector.id",
+                                                                   shn_org_cluster_subsector_requires_represent,
+                                                                   sort=True)),
+                                   represent = shn_org_cluster_subsector_represent,
+                                   label = T("Cluster Subsector"),
+                                   #comment = Script to filter the cluster_subsector drop down
+                                   ondelete = "RESTRICT"
+                                   )
+
 
 # -----------------------------------------------------------------------------
 # Organizations
@@ -187,7 +250,7 @@ table = db.define_table(tablename, #timestamp, uuidstamp, authorstamp, deletion_
                         Field("name", length=128, notnull=True, unique=True),
                         Field("acronym", length=8),
                         Field("type", "integer"),
-                        sector_id(),
+                        cluster_id(),
                         #Field("registration", label=T("Registration")),    # Registration Number
                         Field("country", "string", length=2),
                         Field("website"),
@@ -274,11 +337,10 @@ organisation_id = S3ReusableField("organisation_id", db.org_organisation, sortby
 # doesn't work - component join keys cannot be 1-to-many (=a component record can only belong to one primary record)
 #s3xrc.model.add_component(module, resource,
                           #multiple=True,
-                          #joinby=dict(org_sector="sector_id"),
-                          #deletable=True,
-                          #editable=True)
+                          #joinby=dict(org_sector="sector_id"))
 
 s3xrc.model.configure(table,
+                      listadd=False,
                       # Ensure that table is substituted when lambda defined not evaluated by using the default value
                       onaccept=lambda form, tab=table: shn_pentity_onaccept(form, table=tab),
                       delete_onaccept=lambda form: shn_pentity_ondelete(form),
@@ -388,9 +450,7 @@ office_id = S3ReusableField("office_id", db.org_office, sortby="default/indexnam
 s3xrc.model.add_component(module, resource,
                           multiple=True,
                           #joinby=dict(org_organisation="organisation_id", gis_location="location_id"),
-                          joinby=dict(org_organisation="organisation_id"),
-                          deletable=True,
-                          editable=True)
+                          joinby=dict(org_organisation="organisation_id"))
 
 # Office is a member of two superentities, so has to call both of their
 # onaccept and ondelete methods.
@@ -450,7 +510,7 @@ table = db.define_table(tablename,
                         Field("name"),
                         organisation_id(),
                         location_id(),
-                        sector_id(),
+                        cluster_id(),
                         Field('status', 'integer',
                                 requires = IS_IN_SET(org_project_status_opts, zero=None),
                                 # default = 99,
@@ -516,15 +576,15 @@ project_id = S3ReusableField("project_id", db.org_project, sortby="name",
 s3xrc.model.add_component(module, resource,
                           multiple=True,
                           #joinby=dict(org_organisation="organisation_id", gis_location="location_id"),
-                          joinby=dict(org_organisation="organisation_id"),
-                          deletable=True,
-                          editable=True)
+                          joinby=dict(org_organisation="organisation_id"))
 
 s3xrc.model.configure(table,
+                      listadd=False,
+                      main="code",
                       list_fields=["id",
                                    "organisation_id",
                                    "location_id",
-                                   "sector_id",
+                                   "cluster_id",
                                    "code",
                                    "name",
                                    "status",
@@ -627,12 +687,13 @@ staff_id = S3ReusableField("staff_id", db.org_staff, sortby="name",
 # Staff as component of Orgs, Offices & Projects
 s3xrc.model.add_component(module, resource,
                           multiple=True,
-                          joinby=dict(org_organisation="organisation_id", org_office="office_id", org_project="project_id"),
-                          deletable=True,
-                          editable=True)
+                          joinby=dict(org_organisation="organisation_id",
+                                      org_office="office_id",
+                                      org_project="project_id"))
 
 # May wish to over-ride this in controllers
 s3xrc.model.configure(table,
+                      listadd=False,
                       list_fields=["id",
                                    "person_id",
                                    "organisation_id",
@@ -782,13 +843,12 @@ s3.crud_strings[tablename] = Storage(
 
 # Task as Component of Project, Office, (Organisation to come? via Project? Can't rely on that as multi-Org projects)
 s3xrc.model.add_component(module, resource,
-    multiple=True,
-    joinby=dict(org_project="project_id", org_office="office_id"),
-    deletable=True,
-    editable=True,
-    main="subject", extra="description")
+                          multiple=True,
+                          joinby=dict(org_project="project_id",
+                                      org_office="office_id"))
 
 s3xrc.model.configure(table,
+                      listadd=False,
                       onvalidation = lambda form: shn_org_task_onvalidation(form),
                       list_fields=["id",
                                    "project_id",
@@ -796,7 +856,8 @@ s3xrc.model.configure(table,
                                    "priority",
                                    "subject",
                                    "person_id",
-                                   "status"])
+                                   "status"],
+                      main="subject", extra="description")
 
 # -----------------------------------------------------------------------------
 # shn_project_search_location:
@@ -909,9 +970,9 @@ def shn_project_rheader(jr, tabs=[]):
             project = jr.record
 
             sectors = TABLE()
-            if project.sector_id:
+            if project.cluster_id:
                 # @ToDo@ Fix for list: type
-                _sectors = re.split("\|", project.sector_id)[1:-1]
+                _sectors = re.split("\|", project.cluster_id)[1:-1]
                 for sector in _sectors:
                     sectors.append(TR(db(db.org_sector.id == sector).select(db.org_sector.name, limitby=(0, 1)).first().name))
 
@@ -941,8 +1002,6 @@ def shn_project_rheader(jr, tabs=[]):
                 return rheader
 
     return None
-
-# -----------------------------------------------------------------------------
 
 org_menu = [
     [T("Organizations"), False, URL(r=request, c="org", f="organisation"),[

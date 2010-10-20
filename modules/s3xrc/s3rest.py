@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 
-""" S3XRC Resource Framework - RESTful API
+""" S3XRC Resource Framework - Resource API
 
-    @version: 2.1.7
+    @version: 2.1.8
 
     @see: U{B{I{S3XRC}} <http://eden.sahanafoundation.org/wiki/S3XRC>} on Eden wiki
 
@@ -173,9 +173,21 @@ class S3SQLTable(SQLTABLE):
 # *****************************************************************************
 class S3Resource(object):
 
-    """ API for resources """
+    """ API for resources
 
-    # -------------------------------------------------------------------------
+        @param manager: the resource controller
+        @param prefix: prefix of the resource name (=module name)
+        @param name: name of the resource (without prefix)
+        @param id: record ID (or list of record IDs)
+        @param uid: record UID (or list of record UIDs)
+        @param filter: filter query (DAL resources only)
+        @param vars: dictionary of URL query variables
+        @param parent: the parent resource
+        @param components: component name (or list of component names)
+        @param storage: URL of the data store, None for DAL
+
+    """
+
     def __init__(self, manager, prefix, name,
                  id=None,
                  uid=None,
@@ -185,33 +197,26 @@ class S3Resource(object):
                  components=None,
                  storage=None):
 
-        """ Constructor
-
-            @param manager: the resource controller
-            @param prefix: prefix of the resource name (=module name)
-            @param name: name of the resource (without prefix)
-            @param id: record ID (or list of record IDs)
-            @param uid: record UID (or list of record UIDs)
-            @param filter: filter query (DAL resources only)
-            @param vars: dictionary of URL query variables
-            @param parent: the parent resource
-            @param components: component name (or list of component names)
-            @param storage: URL of the data store, None for DAL
-
-        """
-
         self.manager = manager
         self.db = manager.db
-
         self.ERROR = manager.ERROR
 
-        self.permit = manager.auth.shn_has_permission
+        self.exporter = manager.exporter
+        self.importer = manager.importer
+
+        # Authorization hooks
+        self.permit = manager.permit
         self.accessible_query = manager.auth.shn_accessible_query
 
+        # Audit hook
+        self.audit = manager.audit
+
+        # Basic properties
         self.prefix = prefix
         self.name = name
-        self.vars = None # will be set by build_query
+        self.vars = None # set during build_query
 
+        # Private properties
         self.__query = None
         self.__multiple = True
 
@@ -220,10 +225,12 @@ class S3Resource(object):
         self.__ids = []
         self.__uids = []
 
-        # Bind to data store
+        self.__files = Storage()
+
+        # Bind to model and data store
         self.__bind(storage)
 
-        # Attach components and build query
+        # Attach components and build initial query
         self.components = Storage()
         self.parent = parent
 
@@ -231,9 +238,7 @@ class S3Resource(object):
             self.__attach(select=components)
             self.build_query(id=id, uid=uid, filter=filter, vars=vars)
 
-        self.__files = Storage()
-
-        # Store CRUD and method handlers
+        # Store CRUD and other method handlers
         self.crud = self.manager.crud
         self.__handler = Storage(options=self.__get_options,
                                  fields=self.__get_fields,
@@ -241,11 +246,11 @@ class S3Resource(object):
                                  import_tree=self.__put_tree)
 
 
-    # Configuration ===========================================================
+    # Method handler configuration ============================================
 
     def set_handler(self, method, handler):
 
-        """ Set method handler for this resource
+        """ Set a REST method handler for this resource
 
             @param method: the method name
             @param handler: the handler function
@@ -259,7 +264,7 @@ class S3Resource(object):
     # -------------------------------------------------------------------------
     def get_handler(self, method):
 
-        """ Get method handler for this resource
+        """ Get a REST method handler for this resource
 
             @param method: the method name
             @returns: the handler function
@@ -290,6 +295,7 @@ class S3Resource(object):
             raise KeyError("Undefined table: %s" % self.tablename)
 
         if self.__storage is not None:
+            # Other data store
             raise NotImplementedError
 
 
@@ -301,7 +307,7 @@ class S3Resource(object):
             @param select: name or list of names of components to attach.
                 If select is None (default), then all declared components
                 of this resource will be attached, to attach none of the
-                components, pass an empty list instead.
+                components, pass an empty list.
 
         """
 
@@ -329,7 +335,8 @@ class S3Resource(object):
                                                    resource=resource)
 
 
-    # -------------------------------------------------------------------------
+    # Query handling ==========================================================
+
     def parse_context(self, resource, vars):
 
         """ Parse URL context queries
@@ -386,7 +393,7 @@ class S3Resource(object):
     # -------------------------------------------------------------------------
     def url_query(self, resource, vars):
 
-        """ URL query parser
+        """ Parse URL query
 
             @param resource: the resource
             @param vars: dict of URL vars
@@ -763,7 +770,7 @@ class S3Resource(object):
     # -------------------------------------------------------------------------
     def add_filter(self, filter=None):
 
-        """ Add a filter to the current query
+        """ Extend the current query by a filter query
 
             @param filter: a web2py query
 
@@ -793,111 +800,37 @@ class S3Resource(object):
         return self.__query
 
 
+    # -------------------------------------------------------------------------
+    def clear_query(self):
+
+        """ Removes the current query (does not remove the set!) """
+
+        self.__query = None
+
+        if self.components:
+            for c in self.components:
+                self.components[c].resource.clear_query()
+
+
     # Data access =============================================================
 
-    def readable_fields(self, subset=None):
-
-        """ Get a list of all readable fields in the resource table
-
-            @param subset: list of fieldnames to limit the selection to
-
-        """
-
-        table = self.table
-
-        if subset:
-            return [table[f] for f in subset
-                    if f in table.fields and table[f].readable]
-        else:
-            return [table[f] for f in table.fields
-                    if table[f].readable]
-
-
-    # -------------------------------------------------------------------------
     def count(self):
 
         """ Get the total number of available records in this resource """
 
+        # Rebuild the query if it has been cleared
         if not self.__query:
             self.build_query()
             self.__length = None
 
         if self.__length is None:
-
             if self.__storage is None:
                 self.__length = self.db(self.__query).count()
             else:
+                # Other data store
                 raise NotImplementedError
 
         return self.__length
-
-
-    # -------------------------------------------------------------------------
-    def __load_ids(self):
-
-        """ Loads the IDs of all records matching the master query, or,
-            if no query is given, all IDs in the primary table
-
-        """
-
-        if self.__query is None:
-            self.build_query()
-
-        if self.__storage is None:
-
-            if self.manager.UID in self.table.fields:
-                fields = (self.table.id, self.table[self.manager.UID])
-            else:
-                fields = (self.table.id,)
-
-            set = self.db(self.__query).select(*fields)
-            self.__ids = [row.id for row in set]
-            if self.manager.UID in self.table.fields:
-                self.__uids = [row.uid for row in set]
-
-        else:
-            raise NotImplementedError
-
-
-    # -------------------------------------------------------------------------
-    def get_id(self):
-
-        """ Returns all IDs of the current set, or, if no set is loaded,
-            all IDs of the resource
-
-        """
-
-        if not self.__ids:
-            self.__load_ids()
-
-        if not self.__ids:
-            return None
-        elif len(self.__ids) == 1:
-            return self.__ids[0]
-        else:
-            return self.__ids
-
-
-    # -------------------------------------------------------------------------
-    def get_uid(self):
-
-        """ Returns all UIDs of the current set, or, if no set is loaded,
-            all UIDs of the resource
-
-        """
-
-        if self.manager.UID not in self.table.fields:
-            return None
-
-        if not self.__uids:
-            self.__load_ids()
-
-        if not self.__uids:
-            return None
-        elif len(self.__uids) == 1:
-            return self.__uids[0]
-        else:
-            return self.__uids
 
 
     # -------------------------------------------------------------------------
@@ -943,6 +876,7 @@ class S3Resource(object):
                 self.__uids = [row[uid] for row in self.__set]
 
         else:
+            # Other data store
             raise NotImplementedError
 
 
@@ -965,21 +899,13 @@ class S3Resource(object):
 
 
     # -------------------------------------------------------------------------
-    def clear_query(self):
-
-        """ Removes the current query (does not remove the set) """
-
-        self.__query = None
-
-        if self.components:
-            for c in self.components:
-                self.components[c].resource.clear_query()
-
-
-    # -------------------------------------------------------------------------
     def records(self):
 
-        """ Get the current set """
+        """ Get the current set
+
+            @returns: a Set or an empty list if no set is loaded
+
+        """
 
         if self.__set is None:
             return []
@@ -993,6 +919,7 @@ class S3Resource(object):
         """ Retrieves a record from the current set by its ID
 
             @param key: the record ID
+            @returns: a Row
 
         """
 
@@ -1010,7 +937,11 @@ class S3Resource(object):
     # -------------------------------------------------------------------------
     def __iter__(self):
 
-        """ Generator for the current set """
+        """ Generator for the current set
+
+            @returns: an Iterator
+
+        """
 
         if self.__set is None:
             self.load()
@@ -1029,6 +960,7 @@ class S3Resource(object):
             @param key: the record ID
             @param component: the name of the component
                 (None to get the primary record)
+            @returns: a record (if component is None) or a list of records
 
         """
 
@@ -1047,6 +979,78 @@ class S3Resource(object):
                 return l
             else:
                 raise AttributeError
+
+
+    # -------------------------------------------------------------------------
+    def get_id(self):
+
+        """ Returns all IDs of the current set, or, if no set is loaded,
+            all IDs of the resource
+
+            @returns: a list of record IDs
+
+        """
+
+        if not self.__ids:
+            self.__load_ids()
+
+        if not self.__ids:
+            return None
+        elif len(self.__ids) == 1:
+            return self.__ids[0]
+        else:
+            return self.__ids
+
+
+    # -------------------------------------------------------------------------
+    def get_uid(self):
+
+        """ Returns all UIDs of the current set, or, if no set is loaded,
+            all UIDs of the resource
+
+            @returns: a list of record UIDs
+
+        """
+
+        if self.manager.UID not in self.table.fields:
+            return None
+
+        if not self.__uids:
+            self.__load_ids()
+
+        if not self.__uids:
+            return None
+        elif len(self.__uids) == 1:
+            return self.__uids[0]
+        else:
+            return self.__uids
+
+
+    # -------------------------------------------------------------------------
+    def __load_ids(self):
+
+        """ Loads the IDs of all records matching the master query, or,
+            if no query is given, all IDs in the primary table
+
+        """
+
+        if self.__query is None:
+            self.build_query()
+
+        if self.__storage is None:
+
+            if self.manager.UID in self.table.fields:
+                fields = (self.table.id, self.table[self.manager.UID])
+            else:
+                fields = (self.table.id,)
+
+            set = self.db(self.__query).select(*fields)
+            self.__ids = [row.id for row in set]
+            if self.manager.UID in self.table.fields:
+                self.__uids = [row.uid for row in set]
+
+        else:
+            raise NotImplementedError
 
 
     # Representation ==========================================================
@@ -1100,32 +1104,11 @@ class S3Resource(object):
             return 0
 
 
-    # -------------------------------------------------------------------------
-    def url(self):
-
-        """ URL of this resource (not implemented yet)
-
-            @todo 2.2: implement this.
-
-        """
-
-        # Not implemented yet
-        raise NotImplementedError
-
-
-    # -------------------------------------------------------------------------
-    def files(self):
-
-        """ Get the list of attached files """
-
-        return self.__files
-
-
     # REST Interface ==========================================================
 
     def execute_request(self, r, **attr):
 
-        """ Execute a request on this resource
+        """ Execute a request
 
             @param r: the request to execute
             @type r: S3Request
@@ -1179,9 +1162,9 @@ class S3Resource(object):
                         else:
                             status = pre.get("status", 400)
                             message = pre.get("message", self.ERROR.BAD_REQUEST)
-                            raise HTTP(status, message)
+                            r.error(status, message)
             elif not pre:
-                raise HTTP(400, body=self.ERROR.BAD_REQUEST)
+                r.error(400, self.ERROR.BAD_REQUEST)
 
         # Default view
         if r.representation <> "html":
@@ -1201,7 +1184,7 @@ class S3Resource(object):
             elif r.http == "DELETE":
                 handler = self.__delete(r)
             else:
-                raise HTTP(501, body=self.ERROR.BAD_METHOD)
+                r.error(501, self.ERROR.BAD_METHOD)
             if handler is not None:
                 output = handler(r, **attr)
             else:
@@ -1217,7 +1200,7 @@ class S3Resource(object):
             output.update(jr=r)
 
         # Redirection (makes no sense in GET)
-        if r.next is not None and r.http != "GET" or r.method == "delete":
+        if r.next is not None and r.http != "GET":
             if isinstance(output, dict):
                 form = output.get("form", None)
                 if form and form.errors:
@@ -1234,7 +1217,7 @@ class S3Resource(object):
     # -------------------------------------------------------------------------
     def __get(self, r):
 
-        """ Get GET method handler
+        """ Get the GET method handler
 
             @param r: the S3Request
 
@@ -1272,7 +1255,7 @@ class S3Resource(object):
                         r.id = self.get_id()
                         r.uid = self.get_uid()
                     else:
-                        raise HTTP(404, self.ERROR.BAD_RECORD)
+                        r.error(404, self.ERROR.BAD_RECORD)
                     method = "read"
                 else:
                     method = "list"
@@ -1311,7 +1294,7 @@ class S3Resource(object):
             return None
 
         else:
-            raise HTTP(501, body=self.ERROR.BAD_METHOD)
+            r.error(501, self.ERROR.BAD_METHOD)
 
         if not authorised:
             r.unauthorised()
@@ -1322,7 +1305,7 @@ class S3Resource(object):
     # -------------------------------------------------------------------------
     def __put(self, r):
 
-        """ Get PUT method handler
+        """ Get the PUT method handler
 
             @param r: the S3Request
 
@@ -1342,37 +1325,42 @@ class S3Resource(object):
             else:
                 return self.get_handler("import_tree")
         else:
-            raise HTTP(501, body=self.ERROR.BAD_FORMAT)
+            r.error(501, self.ERROR.BAD_FORMAT)
 
 
     # -------------------------------------------------------------------------
     def __post(self, r):
 
-        """ Get POST method handler
+        """ Get the POST method handler
 
             @param r: the S3Request
 
         """
 
-        if r.representation in self.manager.xml_import_formats or \
-           r.representation in self.manager.json_import_formats:
-            return self.__put(r)
+        method = r.method
+
+        if method == "delete":
+            return self.__delete(r)
         else:
-            post_vars = r.request.post_vars
-            table = r.target()[2]
-            if "deleted" in table and \
-               "id" not in post_vars and "uuid" not in post_vars:
-                original = self.manager.original(table, post_vars)
-                if original and original.deleted:
-                    r.request.post_vars.update(id=original.id)
-                    r.request.vars.update(id=original.id)
-            return self.__get(r)
+            if r.representation in self.manager.xml_import_formats or \
+            r.representation in self.manager.json_import_formats:
+                return self.__put(r)
+            else:
+                post_vars = r.request.post_vars
+                table = r.target()[2]
+                if "deleted" in table and \
+                "id" not in post_vars and "uuid" not in post_vars:
+                    original = self.manager.original(table, post_vars)
+                    if original and original.deleted:
+                        r.request.post_vars.update(id=original.id)
+                        r.request.vars.update(id=original.id)
+                return self.__get(r)
 
 
     # -------------------------------------------------------------------------
     def __delete(self, r):
 
-        """ Get DELETE method handler
+        """ Get the DELETE method handler
 
             @param r: the S3Request
 
@@ -1382,18 +1370,115 @@ class S3Resource(object):
 
         tablename = r.component and r.component.tablename or r.tablename
 
-        if r.id or \
-           r.component and r.component_id:
-            authorised = permit("delete", tablename, r.id)
-            if not authorised:
-                r.unauthorised()
+        #if r.id or \
+           #r.component and r.component_id:
+        authorised = permit("delete", tablename)
+        if not authorised:
+            r.unauthorised()
 
-            if r.next is None:
-                r.next = r.there()
-            return self.get_handler("delete")
+        #if r.next is None and r.http == "POST":
+            #r.next = r.there()
+        return self.get_handler("delete")
+        #else:
+            #r.error(501, self.ERROR.BAD_METHOD)
+
+
+    # -------------------------------------------------------------------------
+    def __get_tree(self, r, **attr):
+
+        """ Export this resource in XML or JSON formats
+
+            @param r: the request
+            @param attr: request attributes
+
+        """
+
+        xml_formats = self.manager.xml_export_formats
+        json_formats = self.manager.json_export_formats
+
+        template = None
+
+        if r.representation == "json":
+            show_urls = False
+            dereference = False
         else:
-            raise HTTP(501, body=self.ERROR.BAD_METHOD)
+            show_urls = True
+            dereference = True
 
+        # Find XSLT stylesheet
+        if r.representation not in ("xml", "json"):
+            template_name = "%s.%s" % (r.representation,
+                                       self.manager.XSLT_FILE_EXTENSION)
+
+            template = os.path.join(r.request.folder,
+                                    self.manager.XSLT_EXPORT_TEMPLATES,
+                                    template_name)
+
+            if not os.path.exists(template):
+                r.error(501, "%s: %s" % (self.ERROR.BAD_TEMPLATE, template))
+
+        # Slicing
+        start = r.request.vars.get("start", None)
+        if start is not None:
+            try:
+                start = int(start)
+            except ValueError:
+                start = None
+
+        limit = r.request.vars.get("limit", None)
+        if limit is not None:
+            try:
+                limit = int(limit)
+            except ValueError:
+                limit = None
+
+        # Default GIS marker
+        marker = r.request.vars.get("marker", None)
+
+        # msince
+        msince = r.request.vars.get("msince", None)
+        if msince is not None:
+            tfmt = "%Y-%m-%dT%H:%M:%SZ"
+            try:
+                (y,m,d,hh,mm,ss,t0,t1,t2) = time.strptime(msince, tfmt)
+                msince = datetime.datetime(y,m,d,hh,mm,ss)
+            except ValueError:
+                msince = None
+
+        # Add stylesheet parameters
+        args = Storage()
+        if template is not None:
+            if r.component:
+                args.update(id=r.id, component=r.component.tablename)
+            mode = r.request.vars.get("xsltmode", None)
+            if mode is not None:
+                args.update(mode=mode)
+
+        # Get the exporter, set response headers
+        if r.representation in json_formats:
+            exporter = self.exporter.json
+            r.response.headers["Content-Type"] = \
+                json_formats.get(r.representation, "text/x-json")
+        else:
+            exporter = self.exporter.xml
+            r.response.headers["Content-Type"] = \
+                xml_formats.get(r.representation, "application/xml")
+
+        # Export the resource
+        output = exporter(self,
+                          template=template,
+                          start=start,
+                          limit=limit,
+                          marker=marker,
+                          msince=msince,
+                          show_urls=True,
+                          dereference=True, **args)
+
+        # Transformation error?
+        if not output:
+            r.error(400, "XSLT Transformation Error: %s " % self.manager.xml.error)
+
+        return output
 
     # -------------------------------------------------------------------------
     def __get_options(self, r, **attr):
@@ -1422,7 +1507,7 @@ class S3Resource(object):
         elif r.representation == "json":
             return self.options_json(component=r.component_name, fields=fields)
         else:
-            raise HTTP(501, body=self.ERROR.BAD_FORMAT)
+            r.error(501, self.ERROR.BAD_FORMAT)
 
 
     # -------------------------------------------------------------------------
@@ -1440,105 +1525,7 @@ class S3Resource(object):
         elif r.representation == "json":
             return self.fields_json(component=r.component_name)
         else:
-            raise HTTP(501, body=self.ERROR.BAD_FORMAT)
-
-
-    # -------------------------------------------------------------------------
-    def __get_tree(self, r, **attr):
-
-        """ Method handler to export this resource in XML or JSON formats
-
-            @param r: the request
-            @param attr: request attributes
-
-        """
-
-        xml_formats = self.manager.xml_export_formats
-        json_formats = self.manager.json_export_formats
-
-        template = None
-        show_urls = True
-        dereference = True
-
-        if r.representation in xml_formats:
-            r.response.headers["Content-Type"] = \
-                xml_formats.get(r.representation, "application/xml")
-        else:
-            r.response.headers["Content-Type"] = \
-                json_formats.get(r.representation, "text/x-json")
-            if r.representation == "json":
-                show_urls = False
-                dereference = False
-
-        if r.representation not in ("xml", "json"):
-            template_name = "%s.%s" % (r.representation,
-                                       self.manager.XSLT_FILE_EXTENSION)
-
-            template = os.path.join(r.request.folder,
-                                    self.manager.XSLT_EXPORT_TEMPLATES,
-                                    template_name)
-
-            if not os.path.exists(template):
-                raise HTTP(501, body="%s: %s" % (self.ERROR.BAD_TEMPLATE, template))
-
-        start = r.request.vars.get("start", None)
-        if start is not None:
-            try:
-                start = int(start)
-            except ValueError:
-                start = None
-
-        limit = r.request.vars.get("limit", None)
-        if limit is not None:
-            try:
-                limit = int(limit)
-            except ValueError:
-                limit = None
-
-        marker = r.request.vars.get("marker", None)
-
-        msince = r.request.vars.get("msince", None)
-        if msince is not None:
-            tfmt = "%Y-%m-%dT%H:%M:%SZ"
-            try:
-                (y,m,d,hh,mm,ss,t0,t1,t2) = time.strptime(msince, tfmt)
-                msince = datetime.datetime(y,m,d,hh,mm,ss)
-            except ValueError:
-                msince = None
-
-        tree = self.__export_tree(start=start,
-                                  limit=limit,
-                                  marker=marker,
-                                  msince=msince,
-                                  show_urls=True,
-                                  dereference=True)
-
-        if template is not None:
-            tfmt = "%Y-%m-%d %H:%M:%S"
-            args = dict(domain=self.manager.domain,
-                        base_url=self.manager.base_url,
-                        prefix=self.prefix,
-                        name=self.name,
-                        utcnow=datetime.datetime.utcnow().strftime(tfmt))
-
-            if r.component:
-                args.update(id=r.id, component=r.component.tablename)
-
-            mode = r.request.vars.get("xsltmode", None)
-            if mode is not None:
-                args.update(mode=mode)
-
-            tree = self.manager.xml.transform(tree, template, **args)
-            if not tree:
-                error = self.manager.xml.json_message(False, 400,
-                            str("XSLT Transformation Error: %s ") % \
-                            self.manager.xml.error)
-                raise HTTP(400, body=error)
-
-        if r.representation in xml_formats:
-            return self.manager.xml.tostring(tree, pretty_print=True)
-        else:
-            return self.manager.xml.tree2json(tree, pretty_print=True)
+            r.error(501, self.ERROR.BAD_FORMAT)
 
 
     # -------------------------------------------------------------------------
@@ -1585,7 +1572,11 @@ class S3Resource(object):
 
         """ Import XML/JSON data
 
-            @todo 2.2: fix docstring
+            @param r: the S3Request
+            @param attr: the request attributes
+
+            @todo 2.2: clean-up
+            @todo 2.2: test this
 
         """
 
@@ -1593,6 +1584,8 @@ class S3Resource(object):
         xml_formats = self.manager.xml_import_formats
 
         vars = r.request.vars
+
+        # Get the source
         if r.representation in xml_formats:
             if "filename" in vars:
                 source = vars["filename"]
@@ -1612,35 +1605,31 @@ class S3Resource(object):
             tree = xml.json2tree(source)
 
         if not tree:
-            item = xml.json_message(False, 400, xml.error)
-            raise HTTP(400, body=item)
+            r.error(400, xml.error)
 
-        # XSLT Transformation
-        if not r.representation in ("xml", "json"):
+        # Get the transformation stylesheet
+        template = None
+        template_name = "%s.%s" % (r.name, self.manager.XSLT_FILE_EXTENSION)
+        if template_name in self.__files:
+            template = self.__files[template_name]
+        elif "transform" in vars:
+            template = vars["transform"]
+        elif not r.representation in ("xml", "json"):
             template_name = "%s.%s" % (r.representation,
                                        self.manager.XSLT_FILE_EXTENSION)
-
             template = os.path.join(r.request.folder,
                                     self.manager.XSLT_IMPORT_TEMPLATES,
                                     template_name)
-
             if not os.path.exists(template):
-                raise HTTP(501, body="%s: %s" % (self.ERROR.BAD_TEMPLATE, template))
+                r.error(501, "%s: %s" % (self.ERROR.BAD_TEMPLATE, template))
 
+        # Transform source
+        if template:
             tree = xml.transform(tree, template,
                                  domain=self.manager.domain,
                                  base_url=self.manager.base_url)
-
             if not tree:
-                error = xml.json_message(False, 400,
-                            str("XSLT Transformation Error: %s ") % \
-                            self.manager.xml.error)
-                raise HTTP(400, body=error)
-
-        if r.component:
-            skip_resource = True
-        else:
-            skip_resource = False
+                r.error(400, "XSLT Transformation Error: %s" % self.manager.xml.error)
 
         if r.method == "create":
             id = None
@@ -1652,15 +1641,14 @@ class S3Resource(object):
         else:
             ignore_errors = False
 
-        success = self.__import_tree(id, tree,
-                                     ignore_errors=ignore_errors)
+        success = self.manager.import_tree(self, id, tree,
+                                           ignore_errors=ignore_errors)
 
         if success:
             item = xml.json_message()
         else:
             tree = xml.tree2json(tree)
-            item = xml.json_message(False, 400, self.manager.error, tree=tree)
-            raise HTTP(400, body=item)
+            r.error(400, self.manager.error, tree=tree)
 
         #return dict(item=item)
         return item
@@ -1668,55 +1656,24 @@ class S3Resource(object):
 
     # XML/JSON functions ======================================================
 
-    def __export_tree(self,
-                      start=None,
-                      limit=None,
-                      marker=None,
-                      msince=None,
-                      show_urls=True,
-                      dereference=True):
-
-        """ Export this resource as element tree
-
-            @todo 2.2: fix docstring
-
-        """
-
-        return self.manager.export_tree(self,
-                                          audit=self.manager.audit,
-                                          start=start,
-                                          limit=limit,
-                                          marker=marker,
-                                          msince=msince,
-                                          show_urls=show_urls,
-                                          dereference=dereference)
-
-
-    # -------------------------------------------------------------------------
     def export_xml(self, template=None, pretty_print=False, **args):
 
         """ Export this resource as XML
 
-            @todo 2.2: fix docstring
+            @param template: path to the XSLT stylesheet (if not native S3-XML)
+            @param pretty_print: insert newlines/indentation in the output
+            @param args: arguments to pass to the XSLT stylesheet
+            @returns: the XML as string
+
+            @todo 2.2: slicing?
 
         """
 
-        tree = self.__export_tree()
+        exporter = self.exporter.xml
 
-        if tree and template is not None:
-            tfmt = "%Y-%m-%d %H:%M:%S"
-            args.update(domain=self.manager.domain,
-                        base_url=self.manager.base_url,
-                        prefix=self.prefix,
-                        name=self.name,
-                        utcnow=datetime.datetime.utcnow().strftime(tfmt))
-
-            tree = self.manager.xml.transform(tree, template, **args)
-
-        if tree:
-            return self.manager.xml.tostring(tree, pretty_print=pretty_print)
-        else:
-            return None
+        return exporter(self,
+                        template=template,
+                        pretty_print=pretty_print, **args)
 
 
     # -------------------------------------------------------------------------
@@ -1724,53 +1681,20 @@ class S3Resource(object):
 
         """ Export this resource as JSON
 
-            @todo 2.2: fix docstring
+            @param template: path to the XSLT stylesheet (if not native S3-JSON)
+            @param pretty_print: insert newlines/indentation in the output
+            @param args: arguments to pass to the XSLT stylesheet
+            @returns: the JSON as string
+
+            @todo 2.2: slicing?
 
         """
 
-        tree = self.__export_tree()
+        exporter = self.exporter.json
 
-        if tree and template is not None:
-            tfmt = "%Y-%m-%d %H:%M:%S"
-            args.update(domain=self.manager.domain,
-                        base_url=self.manager.base_url,
-                        prefix=self.prefix,
-                        name=self.name,
-                        utcnow=datetime.datetime.utcnow().strftime(tfmt))
-
-            tree = self.manager.xml.transform(tree, template, **args)
-
-        if tree:
-            return self.manager.xml.tree2json(tree, pretty_print=pretty_print)
-        else:
-            return None
-
-
-    # -------------------------------------------------------------------------
-    def __import_tree(self, id, tree,
-                      files=None,
-                      ignore_errors=False):
-
-        """ Import data from an element tree to this resource
-
-            @param files: file attachments as {filename:file}
-
-            @raise IOError: at insufficient permissions
-
-            @todo 2.2: fix docstring
-
-        """
-
-        json_message = self.manager.xml.json_message
-
-        if files is not None and isinstance(files, dict):
-            self.__files = Storage(files)
-
-        success = self.manager.import_tree(self, id, tree,
-                                             ignore_errors=ignore_errors)
-
-        self.__files = Storage()
-        return success
+        return exporter(self,
+                        template=template,
+                        pretty_print=pretty_print, **args)
 
 
     # -------------------------------------------------------------------------
@@ -1780,7 +1704,7 @@ class S3Resource(object):
                    template=None,
                    ignore_errors=False, **args):
 
-        """ Import data from an XML source to this resource
+        """ Import data from an XML source into this resource
 
             @param source: the XML source (or ElementTree)
             @param files: file attachments as {filename:file}
@@ -1788,35 +1712,21 @@ class S3Resource(object):
             @param template: the XSLT template
             @param ignore_errors: do not stop on errors (skip invalid elements)
             @param args: arguments to pass to the XSLT template
+            @returns: a JSON message as string
 
             @raise SyntaxError: in case of a parser or transformation error
             @raise IOError: at insufficient permissions
 
         """
 
-        xml = self.manager.xml
-        permit = self.permit
 
-        authorised = permit("create", self.table) and \
-                     permit("update", self.table)
-        if not authorised:
-            raise IOError("Insufficient permissions")
+        importer = self.importer.xml
 
-        if isinstance(source, etree._ElementTree):
-            tree = source
-        else:
-            tree = xml.parse(source)
-
-        if tree:
-            if template is not None:
-                tree = xml.transform(tree, template, **args)
-                if not tree:
-                    raise SyntaxError(xml.error)
-            return self.__import_tree(id, tree,
-                                      files=files,
-                                      ignore_errors=ignore_errors)
-        else:
-            raise SyntaxError("Invalid XML source")
+        return importer(self, source,
+                        files=files,
+                        id=id,
+                        template=template,
+                        ignore_errors=ignore_errors, **args)
 
 
     # -------------------------------------------------------------------------
@@ -1826,7 +1736,7 @@ class S3Resource(object):
                     template=None,
                     ignore_errors=False, **args):
 
-        """ Import data from a JSON source to this resource
+        """ Import data from a JSON source into this resource
 
             @param source: the JSON source (or ElementTree)
             @param files: file attachments as {filename:file}
@@ -1834,188 +1744,59 @@ class S3Resource(object):
             @param template: the XSLT template
             @param ignore_errors: do not stop on errors (skip invalid elements)
             @param args: arguments to pass to the XSLT template
+            @returns: a JSON message as string
 
             @raise SyntaxError: in case of a parser or transformation error
             @raise IOError: at insufficient permissions
 
         """
 
-        xml = self.manager.xml
-        permit = self.permit
+        importer = self.importer.json
 
-        authorised = permit("create", self.table) and \
-                     permit("update", self.table)
-        if not authorised:
-            raise IOError("Insufficient permissions")
-
-        if isinstance(source, etree._ElementTree):
-            tree = source
-        elif isinstance(source, basestring):
-            from StringIO import StringIO
-            source = StringIO(source)
-            tree = xml.json2tree(source)
-        else:
-            tree = xml.json2tree(source)
-
-        if tree:
-            if template is not None:
-                tree = xml.transform(tree, template, **args)
-                if not tree:
-                    raise SyntaxError(xml.error)
-            return self.__import_tree(id, tree,
-                                      files=files,
-                                      ignore_errors=ignore_errors)
-        else:
-            raise SyntaxError("Invalid JSON source.")
+        return importer(self, source,
+                        files=files,
+                        id=id,
+                        template=template,
+                        ignore_errors=ignore_errors, **args)
 
 
     # -------------------------------------------------------------------------
-    def options_tree(self, component=None, fields=None):
-
-        """ Export field options of this resource as element tree
-
-            @todo 2.2: fix docstring
-
-        """
-
-        if component is not None:
-            c = self.components.get(component, None)
-            if c:
-                tree = c.resource.options_tree(fields=fields)
-                return tree
-            else:
-                raise AttributeError
-        else:
-            tree = self.manager.xml.get_options(self.prefix,
-                                                  self.name,
-                                                  fields=fields)
-            return tree
-
-
-    # -------------------------------------------------------------------------
-    def options_xml(self, component=None, fields=None):
-
-        """ Export field options of this resource as XML
-
-            @todo 2.2: fix docstring
-
-        """
-
-        tree = self.options_tree(component=component, fields=fields)
-        return self.manager.xml.tostring(tree, pretty_print=True)
-
-
-    # -------------------------------------------------------------------------
-    def options_json(self, component=None, fields=None):
-
-        """ Export field options of this resource as JSON
-
-            @todo 2.2: fix docstring
-
-        """
-
-        tree = etree.ElementTree(self.options_tree(component=component,
-                                                   fields=fields))
-        return self.manager.xml.tree2json(tree, pretty_print=True)
-
-
-    # -------------------------------------------------------------------------
-    def fields_tree(self, component=None):
-
-        """ Export a list of fields in the primary table as element tree
-
-            @todo 2.2: fix docstring
-
-        """
-
-        if component is not None:
-            c = self.components.get(component, None)
-            if c:
-                tree = c.resource.fields_tree()
-                return tree
-            else:
-                raise AttributeError
-        else:
-            tree = self.manager.xml.get_fields(self.prefix, self.name)
-            return tree
-
-
-    # -------------------------------------------------------------------------
-    def fields_xml(self, component=None):
-
-        """ Export a list of fields in the primary table as XML
-
-            @todo 2.2: fix docstring
-
-        """
-
-        tree = self.fields_tree(component=component)
-        return self.manager.xml.tostring(tree, pretty_print=True)
-
-
-    # -------------------------------------------------------------------------
-    def fields_json(self, component=None):
-
-        """ Export a list of fields in the primary table as JSON
-
-            @todo 2.2: fix docstring
-
-        """
-
-        tree = etree.ElementTree(self.fields_tree(component=component))
-        return self.manager.xml.tree2json(tree, pretty_print=True)
-
-
-    # -------------------------------------------------------------------------
-    def __push_tree(self, url,
-                    converter=None,
-                    template=None,
-                    xsltmode=None,
-                    content_type=None,
-                    username=None,
-                    password=None,
-                    proxy=None,
-                    start=None,
-                    limit=None,
-                    marker=None,
-                    msince=None,
-                    show_urls=True,
-                    dereference=True):
+    def push(self, url,
+             exporter=None,
+             template=None,
+             xsltmode=None,
+             start=None,
+             limit=None,
+             marker=None,
+             msince=None,
+             show_urls=True,
+             dereference=True,
+             content_type=None,
+             username=None,
+             password=None,
+             proxy=None):
 
         """ Push (=POST) the current resource to a target URL
 
             @todo 2.2: fix docstring
+            @todo 2.2: error handling?
 
         """
 
-        if not converter:
-            raise SyntaxError
+        args = Storage()
+        if template and xsltmode:
+            args.update(mode=xsltmode)
 
-        xml = self.manager.xml
-        response = None
+        data = exporter(start=start,
+                        limit=limit,
+                        marker=marker,
+                        msince=msince,
+                        show_urls=show_urls,
+                        dereference=dereference,
+                        template=template,
+                        pretty_print=False, **args)
 
-        tree = self.__export_tree(start=start,
-                                  limit=limit,
-                                  marker=marker,
-                                  msince=msince,
-                                  show_urls=show_urls,
-                                  dereference=dereference)
-
-        if tree:
-            if template:
-                tfmt = "%Y-%m-%d %H:%M:%S"
-                args = dict(domain=self.manager.domain,
-                            base_url=self.manager.base_url,
-                            prefix=self.prefix,
-                            name=self.name,
-                            utcnow=datetime.datetime.utcnow().strftime(tfmt))
-
-                if xsltmode:
-                    args.update(mode=xsltmode)
-
-                tree = xml.transform(tree, template, **args)
-            data = converter(tree)
-
+        if data:
             url_split = url.split("://", 1)
             if len(url_split) == 2:
                 protocol, path = url_split
@@ -2059,114 +1840,44 @@ class S3Resource(object):
             else:
                 response = f.read()
 
-        return response
+            return response
+
+        else:
+            return None
 
 
     # -------------------------------------------------------------------------
-    def push_xml(self, url,
-                 template=None,
-                 xsltmode=None,
-                 username=None,
-                 password=None,
-                 proxy=None,
-                 start=None,
-                 limit=None,
-                 marker=None,
-                 msince=None,
-                 show_urls=True,
-                 dereference=True):
+    def push_xml(self, url, **args):
 
         """ Push (=POST) this resource as XML to a target URL
 
             @param url: the URL to push to
-            @param template: path to the XSLT stylesheet to use
-            @param xsltmode: XSLT stylesheet "mode" parameter
-            @param username: username for HTTP basic auth (optional)
-            @param password: password for HTTP basic auth (optional)
-            @param proxy: proxy server to use (optional)
-            @param start: start record (for pagination)
-            @param limit: maximum number of records to send (for pagination)
-            @param marker: path to the default marker for GIS features
-            @param msince: export only records modified after that datetime (ISO-format)
-            @param show_urls: show URLs in resource elements
-            @param dereference: export referenced objects in the tree
+            @param args: see push argument list
 
             @returns: the response from the peer as string
 
         """
 
-        xml = self.manager.xml
+        exporter = self.exporter.xml
 
-        converter = lambda tree: xml.tostring(tree)
-        content_type = "application/xml"
+        return self.push(url, exporter=exporter, **args)
 
-        return self.__push_tree(url,
-                                converter=converter,
-                                template=template,
-                                xsltmode=xsltmode,
-                                content_type=content_type,
-                                username=username,
-                                password=password,
-                                proxy=proxy,
-                                start=start,
-                                limit=limit,
-                                marker=marker,
-                                msince=msince,
-                                show_urls=show_urls,
-                                dereference=dereference)
 
     # -------------------------------------------------------------------------
-    def push_json(self, url,
-                  template=None,
-                  xsltmode=None,
-                  username=None,
-                  password=None,
-                  proxy=None,
-                  start=None,
-                  limit=None,
-                  marker=None,
-                  msince=None,
-                  show_urls=True,
-                  dereference=True):
+    def push_json(self, url, **args):
 
         """ Push (=POST) this resource as JSON to a target URL
 
             @param url: the URL to push to
-            @param template: path to the XSLT stylesheet to use
-            @param xsltmode: XSLT stylesheet "mode" parameter
-            @param username: username for HTTP basic auth (optional)
-            @param password: password for HTTP basic auth (optional)
-            @param proxy: proxy server to use (optional)
-            @param start: start record (for pagination)
-            @param limit: maximum number of records to send (for pagination)
-            @param marker: path to the default marker for GIS features
-            @param msince: export only records modified after that datetime (ISO-format)
-            @param show_urls: show URLs in resource elements
-            @param dereference: export referenced objects in the tree
+            @param args: see push argument list
 
             @returns: the response from the peer as string
 
         """
 
-        xml = self.manager.xml
+        exporter = self.exporter.json
 
-        converter = lambda tree: xml.tree2json(tree)
-        content_type = "text/x-json"
-
-        return self.__push_tree(url,
-                                converter=converter,
-                                template=template,
-                                xsltmode=xsltmode,
-                                content_type=content_type,
-                                username=username,
-                                password=password,
-                                proxy=proxy,
-                                start=start,
-                                limit=limit,
-                                marker=marker,
-                                msince=msince,
-                                show_urls=show_urls,
-                                dereference=dereference)
+        return self.push(url, exporter=exporter, **args)
 
 
     # -------------------------------------------------------------------------
@@ -2267,7 +1978,18 @@ class S3Resource(object):
                   template=None,
                   ignore_errors=False, **args):
 
-        """ @todo 2.2: add docstring """
+        """ Fetch resource data from a remote HTTP XML source
+
+            @param url: the URL of the source
+            @param username: username to authenticate at the source
+            @param password: password to authenticate at the source
+            @param proxy: URL of the proxy server to use
+            @param template: the URL or path to the XSLT stylesheet
+                to transform the import data into S3XML
+            @param ignore_errors: skip any invalid records
+            @param args: arguments for the XSLT stylesheet
+
+        """
 
         return self.fetch(url,
                           username=username,
@@ -2286,7 +2008,18 @@ class S3Resource(object):
                    template=None,
                    ignore_errors=False, **args):
 
-        """ @todo 2.2: add docstring """
+        """ Fetch resource data from a remote HTTP JSON source
+
+            @param url: the URL of the source
+            @param username: username to authenticate at the source
+            @param password: password to authenticate at the source
+            @param proxy: URL of the proxy server to use
+            @param template: the URL or path to the XSLT stylesheet
+                to transform the import data into S3XML
+            @param ignore_errors: skip any invalid records
+            @param args: arguments for the XSLT stylesheet
+
+        """
 
         return self.fetch(url,
                           username=username,
@@ -2297,42 +2030,197 @@ class S3Resource(object):
                           ignore_errors=ignore_errors, **args)
 
 
-    # CRUD functions ==========================================================
+    # -------------------------------------------------------------------------
+    def options(self, component=None, fields=None):
 
-    def create(self):
+        """ Export field options of this resource as element tree
 
-        """ Add a record to this resource
-
-            @todo 2.2: implement this
+            @param component: name of the component which the options are
+                requested of, None for the primary table
+            @param fields: list of names of fields for which the options
+                are requested, None for all fields (which have options)
 
         """
 
-        return None
+        if component is not None:
+            c = self.components.get(component, None)
+            if c:
+                tree = c.resource.options(fields=fields)
+                return tree
+            else:
+                raise AttributeError
+        else:
+            tree = self.manager.xml.get_options(self.prefix,
+                                                self.name,
+                                                fields=fields)
+            return tree
+
 
     # -------------------------------------------------------------------------
-    def read(self, id):
+    def options_xml(self, component=None, fields=None):
 
-        """ View a record of this resource
+        """ Export field options of this resource as XML
 
-            @param id: the ID of the record to display
+            @param component: name of the component which the options are
+                requested of, None for the primary table
+            @param fields: list of names of fields for which the options
+                are requested, None for all fields (which have options)
 
-            @todo 2.2: implement audit here?
+        """
+
+        tree = self.options(component=component, fields=fields)
+        return self.manager.xml.tostring(tree, pretty_print=True)
+
+
+    # -------------------------------------------------------------------------
+    def options_json(self, component=None, fields=None):
+
+        """ Export field options of this resource as JSON
+
+            @param component: name of the component which the options are
+                requested of, None for the primary table
+            @param fields: list of names of fields for which the options
+                are requested, None for all fields (which have options)
+
+        """
+
+        tree = etree.ElementTree(self.options(component=component,
+                                              fields=fields))
+        return self.manager.xml.tree2json(tree, pretty_print=True)
+
+
+    # -------------------------------------------------------------------------
+    def fields(self, component=None):
+
+        """ Export a list of fields in the primary table as element tree
+
+            @todo 2.2: fix docstring
+
+        """
+
+        if component is not None:
+            c = self.components.get(component, None)
+            if c:
+                tree = c.resource.fields()
+                return tree
+            else:
+                raise AttributeError
+        else:
+            tree = self.manager.xml.get_fields(self.prefix, self.name)
+            return tree
+
+
+    # -------------------------------------------------------------------------
+    def fields_xml(self, component=None):
+
+        """ Export a list of fields in the primary table as XML
+
+            @todo 2.2: fix docstring
+
+        """
+
+        tree = self.fields(component=component)
+        return self.manager.xml.tostring(tree, pretty_print=True)
+
+
+    # -------------------------------------------------------------------------
+    def fields_json(self, component=None):
+
+        """ Export a list of fields in the primary table as JSON
+
+            @todo 2.2: fix docstring
+
+        """
+
+        tree = etree.ElementTree(self.fields(component=component))
+        return self.manager.xml.tree2json(tree, pretty_print=True)
+
+
+    # CRUD functions ==========================================================
+
+    def create(self,
+               onvalidation=None,
+               onaccept=None,
+               message="Record created",
+               download_url=None,
+               from_table=None,
+               from_record=None,
+               map_fields=None,
+               format=None):
+
+        """ Add a record to this resource
+
+            @todo 2.2: fix docstring
 
         """
 
         # Get the CRUD settings
-        s3 = self.manager.s3
-        settings = s3.crud
+        settings = self.manager.s3.crud
 
         # Get the table
         table = self.table
+
+        # Copy record
+        data = None
+        if from_table is not None:
+            row = self.db(from_table.id == from_record).select(from_table.ALL, limit=(0,1)).first()
+            if row:
+                if map_fields:
+                    if isinstance(map_fields, dict):
+                        data = Storage([(map_fields[f], row[f])
+                                        for f in map_fields
+                                        if f in table and f in row and f != "id"])
+
+                    elif isinstance(map_fields, (list, tuple)):
+                        data = Storage([(f, row[f])
+                                        for f in map_fields
+                                        if f in table and f in row and f != "id"])
+                    else:
+                        raise TypeError
+                else:
+                    data = Storage([(f, row[f])
+                                    for f in row
+                                    if f in table and f != "id"])
+
+        # Get the form
+        form = self.update(None,
+                           data=data,
+                           onvalidation=onvalidation,
+                           onaccept=onaccept,
+                           message=message,
+                           download_url=download_url,
+                           format=format)
+
+        return form
+
+
+    # -------------------------------------------------------------------------
+    def read(self, id, download_url=None, format=None):
+
+        """ View a record of this resource
+
+            @param id: the ID of the record to display
+            @param download_url: download URL for uploaded files in this resource
+            @param format: the representation format
+
+        """
+
+        # Get the CRUD settings
+        settings = self.manager.s3.crud
+
+        # Get the table
+        table = self.table
+
+        # Audit
+        audit = self.manager.audit
+        audit("read", self.prefix, self.name, record=id, representation=format)
 
         # Get the form
         form = SQLFORM(table, id,
                        readonly=True,
                        comments=False,
                        showid=False,
-                       #upload=<setting>, # fix this
+                       upload=download_url,
                        formstyle=settings.formstyle)
 
         return form
@@ -2343,7 +2231,9 @@ class S3Resource(object):
                data=None,
                onvalidation=None,
                onaccept=None,
-               message="Record updated"):
+               message="Record updated",
+               download_url=None,
+               format=None):
 
         """ Update form for this resource
 
@@ -2352,10 +2242,8 @@ class S3Resource(object):
             @param onvalidation: onvalidation callback hook
             @param onaccept: onaccept callback hook
             @param message: success message
-
-            @todo 2.2: move formstyle and download_url into parameter list,
-                do not access settings here
-            @todo 2.2: implement audit here
+            @param download_url: Download URL for uploaded files in this resource
+            @param format: the representation format
 
         """
 
@@ -2370,15 +2258,9 @@ class S3Resource(object):
 
         # Table
         table = self.table
-        #model = self.manager.model
+        model = self.manager.model
 
-        #onvalidation = model.get_config(table, "onvalidation")
-        #onaccept = model.get_config(table, "onaccept")
-
-        # Create a new record: record=None, record_id=None
-        # Update an existing record: record=ID, record_id=None
-        # Copy a record: record=record, record_id=None
-
+        # Copy from another record?
         if id is None and data:
             record = Storage(data)
             if "id" in record:
@@ -2400,28 +2282,20 @@ class S3Resource(object):
                        record_id=id,
                        labels = labels,
                        showid=False,
-                       #showid=<use a setting>, # we do generally not want this, do we?
                        deletable=False,
-                       #deletable = <use a resource setting>, # not needed (action button)
-                       #delete_label = <use a setting>, # not needed (action button)
-                       #upload=download_url, # solve this!
+                       upload=download_url,
                        submit_button=settings.submit_button or self.manager.T("Save"),
-                       #hidden=dict(_next=next), # not needed
                        formstyle=settings.formstyle)
 
         # Set form name
         formname = "%s/%s" % (self.tablename, form.record_id)
-
-        # Keep values in form? (We do not need this at all)
-        #keepvalues = self.settings.keepvalues
-        #if request.vars.delete_this_record:
-            #keepvalues = False
 
         # Get the proper onvalidation routine
         if isinstance(onvalidation, dict):
             onvalidation = onvalidation.get(self.tablename, [])
 
         # Run the form
+        audit = self.manager.audit
         if form.accepts(request.post_vars,
                         session,
                         formname=formname,
@@ -2429,32 +2303,92 @@ class S3Resource(object):
                         keepvalues=False,
                         hideerror=False):
 
-            # Update message
+            # Message
             response.flash = message
 
-            # Spool delete message if delete (we do not delete-on-update, do we?)
-            #if request.vars.delete_this_record:
-                #message = self.messages.record_deleted
-                #callback(ondelete,form,table._tablename)
-            #response.flash = message
+            # Audit
+            if id is None:
+                audit("create", self.prefix, self.name, form=form, representation=format)
+            else:
+                audit("update", self.prefix, self.name, form=form, representation=format)
+
+            # Update super entity links
+            model.update_super(table, form.vars)
+
+            # Store session vars
+            if form.vars.id:
+                self.manager.store_session(self.prefix, self.name, form.vars.id)
 
             # Execute onaccept
             self.manager.callback(onaccept, form, name=self.tablename)
+        else:
+            # Audit read (user is reading even when not updating the data)
+            audit("read", self.prefix, self.name, form=form, representation=format)
 
         return form
 
 
     # -------------------------------------------------------------------------
-    def delete(self,
-               ondelete=None):
+    def delete(self, ondelete=None, format=None):
 
-        """ Delete all records in this resource
+        """ Delete all (deletable) records in this resource
 
-            @todo 2.2: implement this
+            @param ondelete: on-delete callback
+            @param format: the representation format of the request
+
+            @returns: number of records deleted
+
+            @todo 2.2: move error message into resource controller
+            @todo 2.2: check for integrity error exception explicitly
 
         """
 
-        return None
+        settings = self.manager.s3.crud
+        archive_not_delete = settings.archive_not_delete
+
+        T = self.manager.T
+        INTEGRITY_ERROR = T("Cannot delete whilst there are linked records. Please delete linked records first.")
+
+        self.load()
+        records = self.records()
+
+        permit = self.permit
+        audit = self.manager.audit
+
+        numrows = 0
+        for row in records:
+            if permit("delete", self.tablename, row.id):
+
+                # Clear session
+                if self.manager.get_session(prefix=self.prefix, name=self.name) == row.id:
+                    self.manager.clear_session(prefix=self.prefix, name=self.name)
+
+                # Archive record?
+                if archive_not_delete and "deleted" in self.table:
+                    self.db(self.table.id == row.id).update(deleted=True)
+                    numrows += 1
+                    audit("delete", self.prefix, self.name,
+                          record=row.id, representation=format)
+                    self.manager.model.delete_super(self.table, row)
+                    if ondelete:
+                        ondelete(row)
+
+                # otherwise: delete record
+                else:
+                    try:
+                        del self.table[row.id]
+                    except: # Integrity Error
+                        self.manager.session.error = INTEGRITY_ERROR
+                    else:
+                        numrows += 1
+                        audit("delete", self.prefix, self.name,
+                              record=row.id, representation=format)
+                        self.manager.model.delete_super(self.table, row)
+                        if ondelete:
+                            ondelete(row)
+
+        return numrows
+
 
     # -------------------------------------------------------------------------
     def select(self,
@@ -2465,9 +2399,14 @@ class S3Resource(object):
                linkto=None,
                download_url=None,
                as_page=False,
-               as_list=False):
+               as_list=False,
+               format=None):
 
-        """ List of all records of this resource """
+        """ List of all records of this resource
+
+            @todo 2.2: fix docstring
+
+        """
 
         db = self.db
 
@@ -2482,6 +2421,10 @@ class S3Resource(object):
             limitby = (start, start + limit)
         else:
             limitby = None
+
+        # Audit
+        audit = self.manager.audit
+        audit("list", self.prefix, self.name, representation=format)
 
         rows = db(query).select(*fields, **dict(orderby=orderby,
                                                 limitby=limitby))
@@ -2513,13 +2456,66 @@ class S3Resource(object):
         return items
 
 
+    # Utilities ===============================================================
+
+    def readable_fields(self, subset=None):
+
+        """ Get a list of all readable fields in the resource table
+
+            @param subset: list of fieldnames to limit the selection to
+
+        """
+
+        table = self.table
+
+        if subset:
+            return [table[f] for f in subset
+                    if f in table.fields and table[f].readable]
+        else:
+            return [table[f] for f in table.fields
+                    if table[f].readable]
+
+
+    # -------------------------------------------------------------------------
+    def url(self):
+
+        """ URL of this resource (not implemented yet)
+
+            @todo 2.3: implement this.
+
+        """
+
+        # Not implemented yet
+        raise NotImplementedError
+
+
+    # -------------------------------------------------------------------------
+    def files(self, files=None):
+
+        """ Get/set the list of attached files
+
+            @param files: the file list as dict {filename:file},
+                None to not update the current list
+
+            @returns: the file list as dict {filename:file}
+
+        """
+
+        if files is not None:
+            self.__files = files
+
+        return self.__files
+
+
 # *****************************************************************************
 class S3Request(object):
 
     """ Class to handle requests """
 
-    DEFAULT_REPRESENTATION = "html"
     UNAUTHORISED = "Not Authorised"
+
+    DEFAULT_REPRESENTATION = "html"
+    INTERACTIVE_FORMATS = ("html", "popup", "iframe")
 
     # -------------------------------------------------------------------------
     def __init__(self, manager, prefix, name):
@@ -2534,12 +2530,12 @@ class S3Request(object):
 
         self.manager = manager
 
+        # Get the environment
         self.session = manager.session or Storage()
         self.request = manager.request
         self.response = manager.response
 
-        self.error = None
-
+        # Main resource parameters
         self.prefix = prefix or self.request.controller
         self.name = name or self.request.function
 
@@ -2557,6 +2553,10 @@ class S3Request(object):
 
         # Parse the request
         self.__parse()
+
+        # Interactive representation format?
+        self.representation = self.representation.lower()
+        self.interactive = self.representation in self.INTERACTIVE_FORMATS
 
         # Append component ID to the URL query
         if self.component_name and self.component_id:
@@ -2613,8 +2613,8 @@ class S3Request(object):
                 self.record = self.resource.records().first()
                 self.id = self.record.id
                 self.manager.store_session(self.resource.prefix,
-                                             self.resource.name,
-                                             self.id)
+                                           self.resource.name,
+                                           self.id)
             else:
                 manager.error = "No matching record found"
                 raise KeyError(manager.error)
@@ -2640,13 +2640,41 @@ class S3Request(object):
                         vars={"_next": self.here()})
             redirect(login)
         else:
-            raise HTTP(401, body = self.UNAUTHORISED)
+            raise HTTP(401, body=self.UNAUTHORISED)
+
+
+    # -------------------------------------------------------------------------
+    def error(self, status, message, tree=None):
+
+        """ Action upon error
+
+            @param status: HTTP status code
+            @param message: the error message
+            @param tree: the tree causing the error
+
+        """
+
+        xml = self.manager.xml
+
+        if self.representation == "html":
+            self.session.error = message
+            redirect(URL(r=self.request, f="index"))
+        else:
+            raise HTTP(status,
+                       body=xml.json_message(success=False,
+                                             status_code=status,
+                                             message=message,
+                                             tree=tree))
 
 
     # -------------------------------------------------------------------------
     def _bind(self, resource):
 
-        """ @todo 2.2: add docstring """
+        """ Re-bind this request to another resource
+
+            @param resource: the S3Resource
+
+        """
 
         self.resource = resource
 
@@ -2723,6 +2751,7 @@ class S3Request(object):
             @param id: the record ID for the URL
             @param method: an explicit method for the URL
             @param representation: the representation for the URL
+            @param vars: the URL query variables
 
             @todo 2.2: make this based on S3Resource.url()
 
@@ -2798,8 +2827,7 @@ class S3Request(object):
         """ URL of the current request
 
             @param representation: the representation for the URL
-
-            @todo 2.2: fix docstring
+            @param vars: the URL query variables
 
         """
 
@@ -2815,8 +2843,7 @@ class S3Request(object):
             @param method: an explicit method for the URL
             @param record_id: the record ID for the URL
             @param representation: the representation for the URL
-
-            @todo 2.2: fix docstring
+            @param vars: the URL query variables
 
         """
 
@@ -2830,8 +2857,7 @@ class S3Request(object):
         """ URL of a HTTP/list request on the same resource
 
             @param representation: the representation for the URL
-
-            @todo 2.2: fix docstring
+            @param vars: the URL query variables
 
         """
 
@@ -2844,8 +2870,7 @@ class S3Request(object):
         """ URL of the same request with neutralized primary record ID
 
             @param representation: the representation for the URL
-
-            @todo 2.2: fix docstring
+            @param vars: the URL query variables
 
         """
 
@@ -2856,7 +2881,12 @@ class S3Request(object):
 
     def target(self):
 
-        """ Get the target table of the current request """
+        """ Get the target table of the current request
+
+            @returns: a tuple of (prefix, name, table, tablename) of the target
+                resource of this request
+
+        """
 
         if self.component is not None:
             return (self.component.prefix,

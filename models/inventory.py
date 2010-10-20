@@ -68,19 +68,13 @@ if deployment_settings.has_module("logs"):
     # inventory_store as component of doc_documents
     s3xrc.model.add_component(module, resource,
                               multiple=True,
-                              joinby=dict(doc_document="document_id"),
-                              deletable=True,
-                              editable=True)
+                              joinby=dict(doc_document="document_id"))
     # Also a component of sites, but these are 1-1 and use a natural join.
-    # @ToDo Should these be editable and deletable?  Or should an
-    # inventory store be created when a site is created?
     # @ToDo Is multiple assumed True or False?  It's not touched
     # in add_component, so safest to set it explicitly.
     s3xrc.model.add_component(module, resource,
                               multiple=False,
-                              joinby="site_id",
-                              deletable=False,
-                              editable=True)
+                              joinby="site_id")
 
     #==============================================================================
     # Inventory Item
@@ -117,9 +111,8 @@ if deployment_settings.has_module("logs"):
     # Items as component of Stores
     s3xrc.model.add_component(module, resource,
                               multiple=True,
-                              joinby=dict(inventory_store="inventory_store_id", supply_item="item_id"),
-                              deletable=True,
-                              editable=True)
+                              joinby=dict(inventory_store="inventory_store_id",
+                                          supply_item="item_id"))
 
 
     logs_menu = [

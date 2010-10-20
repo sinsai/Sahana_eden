@@ -17,21 +17,25 @@ situation_types = Storage(
 
 resource = "situation"
 tablename = "%s_%s" % (module, resource)
-table = db.define_table(tablename,
-                        Field("sit_id", "id"),
-                        Field("sit_type"),
-                        Field("uuid", length=128),
-                        Field("datetime", "datetime"),
-                        location_id(),
-                        migrate=migrate, *s3_deletion_status())
+#table = db.define_table(tablename,
+                        #Field("sit_id", "id"),
+                        #Field("sit_type"),
+                        #Field("uuid", length=128),
+                        #Field("datetime", "datetime"),
+                        #location_id(),
+                        #migrate=migrate, *s3_deletion_status())
 
+table = s3xrc.model.super_entity(tablename, "sit_id", situation_types,
+                                 Field("datetime", "datetime"),
+                                 location_id(),
+                                 migrate=migrate)
 
-table.sit_type.writable = False
-table.sit_type.represent = lambda opt: situation_types.get(opt, opt)
-table.uuid.writable = False
+#table.sit_type.writable = False
+#table.sit_type.represent = lambda opt: situation_types.get(opt, opt)
+#table.uuid.writable = False
 
 sit_id = S3ReusableField("sit_id", db.sit_situation,
-                         requires = IS_NULL_OR(IS_ONE_OF(db, "sit_situation.id", "%(sit_id)s", orderby="sit_situation.sit_id")),
+                         requires = IS_NULL_OR(IS_ONE_OF(db, "sit_situation.sit_id", "%(sit_id)s", orderby="sit_situation.sit_id")),
                          represent = lambda id: id and str(id) or NONE,
                          readable = False,
                          writable = False,
@@ -77,7 +81,7 @@ def s3_situation_onaccept(form, table=None):
 
         sit = db(situation.uuid == uid).select(situation.sit_id, limitby=(0, 1)).first()
         if sit:
-            values = dict(sit_type=table._tablename,
+            values = dict(instance_type=table._tablename,
                           uuid=record.uuid,
                           deleted=record.deleted)
             if "datetime" in record:
@@ -88,7 +92,7 @@ def s3_situation_onaccept(form, table=None):
                 values.update(location_id = record.location_id)
             db(situation.uuid == uid).update(**values)
         else:
-            values = dict(sit_type=table._tablename,
+            values = dict(instance_type=table._tablename,
                           uuid=record.uuid,
                           deleted=False)
             if "datetime" in record:

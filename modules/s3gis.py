@@ -599,13 +599,19 @@ class GIS(object):
             query = query & (table_fclass.category == category)
         marker_id = db(query).select(table_fclass.marker_id, limitby=(0, 1), cache=cache).first()
         if marker_id:
-            marker = db(table_marker.id == marker_id.id).select(table_marker.image, table_marker.height,
-                        table_marker.width, limitby=(0, 1), cache=cache).first()
+            marker = db(table_marker.id == marker_id.id).select(table_marker.image,
+                                                                table_marker.height,
+                                                                table_marker.width,
+                                                                limitby=(0, 1),
+                                                                cache=cache).first()
             return marker
 
         # 2nd choice for a Marker is the default
         query = (table_marker.id == config.marker_id)
-        marker = db(query).select(table_marker.image, table_marker.height, table_marker.width, limitby=(0, 1),
+        marker = db(query).select(table_marker.image,
+                                  table_marker.height,
+                                  table_marker.width,
+                                  limitby=(0, 1),
                                   cache=cache).first()
         if marker:
             return marker
@@ -2683,7 +2689,7 @@ OpenLayers.Util.extend( selectPdfControl, {
                 style_marker.graphicName = styleMarker.graphicName;
                 style_marker.pointRadius = styleMarker.pointRadius;
                 style_marker.fillColor = styleMarker.fillColor;
-                style_marker.fillOpacity = 0.4;
+                style_marker.fillOpacity = 0.5;
                 style_marker.strokeColor = styleMarker.fillColor;
                 style_marker.strokeWidth = 2;
                 style_marker.strokeOpacity = 1;

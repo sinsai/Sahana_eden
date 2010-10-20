@@ -17,7 +17,8 @@ response.menu_options = admin_menu_options
 
 # S3 framework functions
 def index():
-    "Module's Home Page"
+
+    """ Module's Home Page """
 
     module_name = deployment_settings.modules[module].name_nice
 
@@ -25,7 +26,8 @@ def index():
 
 @auth.shn_requires_membership(1)
 def setting():
-    "RESTful CRUD controller"
+
+    """ RESTful CRUD controller """
 
     resource = request.function
     tablename = "s3_" + resource
@@ -53,20 +55,21 @@ def setting():
     s3.crud_strings[tablename] = Storage(
         title_update = T("Edit Settings"),
         msg_record_modified = T("Settings updated"),
-        label_list_button = None
-    )
-    #crud.settings.update_next = URL(r=request, args=[1, "update"])
+        label_list_button = None)
 
     s3xrc.model.configure(table,
+                          deletable=False,
+                          listadd=False,
                           #onvalidation=theme_check,
+                          #update_next = URL(r=request, args=[1, "update"])
                           onaccept=theme_apply)
-    output = shn_rest_controller("s3", resource, deletable=False, listadd=False)
+
+    output = s3_rest_controller("s3", resource)
     return output
-    s3xrc.model.clear_config(table, "onvalidation", "onaccept")
 
 @auth.shn_requires_membership(1)
 def theme():
-    "RESTful CRUD controller"
+    """ RESTful CRUD controller """
     resource = "theme"
     tablename = module + "_" + resource
     table = db[tablename]
@@ -116,7 +119,7 @@ def theme():
                           list_fields=["id", "name", "col_background"],
                           )
 
-    return shn_rest_controller(module, resource)
+    return s3_rest_controller(module, resource)
     s3xrc.model.clear_config(table, "onvalidation")
 
 def theme_apply(form):
@@ -230,7 +233,7 @@ def theme_check(form):
 
 @auth.shn_requires_membership(1)
 def user():
-    "RESTful CRUD controller"
+    """ RESTful CRUD controller """
     module = "auth"
     resource = "user"
     tablename = module + "_" + resource
@@ -257,13 +260,11 @@ def user():
         msg_record_deleted = T("User deleted"),
         msg_list_empty = T("No Users currently registered"))
 
-    # Add users to Person Registry & 'Authenticated' role
-    crud.settings.create_onaccept = lambda form: auth.shn_register(form)
-
     # Allow the ability for admin to Disable logins
     db.auth_user.registration_key.writable = True
     db.auth_user.registration_key.readable = True
     db.auth_user.registration_key.label = T("Disabled?")
+
     # In Controller to allow registration to work with UUIDs - only manual edits need this setting
     db.auth_user.registration_key.requires = IS_NULL_OR(IS_IN_SET(["disabled", "pending"]))
 
@@ -277,12 +278,13 @@ def user():
         return True
     response.s3.prep = user_prep
 
-    response.s3.pagination = True
-    output = shn_rest_controller(module, resource, main="first_name")
+    s3xrc.model.configure(table,
+        main="first_name",
+        # Add users to Person Registry & 'Authenticated' role:
+        create_onaccept = lambda form: auth.shn_register(form))
 
-    s3xrc.model.clear_config(table, "onvalidation", "onaccept")
+    return s3_rest_controller(module, resource)
 
-    return output
 
 def user_approve(form):
     "Send an email to user if their account is approved (moved from 'pending' to 'blank'(i.e. enabled))"
@@ -379,7 +381,9 @@ def usergroup():
 
 @auth.shn_requires_membership(1)
 def group():
-    "RESTful CRUD controller"
+
+    """ RESTful CRUD controller """
+
     module = "auth"
     resource = "group"
     table = module + "_" + resource
@@ -404,11 +408,14 @@ def group():
         msg_record_deleted = T("Role deleted"),
         msg_list_empty = T("No Roles currently defined"))
 
-    return shn_rest_controller(module, resource, main="role")
+    s3xrc.model.configure(table, main="role")
+    return s3_rest_controller(module, resource)
 
 @auth.shn_requires_membership(1)
 def membership():
-    "RESTful CRUD controller"
+
+    """ RESTful CRUD controller """
+
     module = "auth"
     resource = "membership"
     table = module + "_" + resource
@@ -434,7 +441,8 @@ def membership():
         msg_record_deleted = T("Membership deleted"),
         msg_list_empty = T("No Memberships currently defined"))
 
-    return shn_rest_controller(module, resource, main="user_id")
+    s3xrc.model.configure(table, main="user_id")
+    return s3_rest_controller(module, resource)
 
 @auth.shn_requires_membership(1)
 def users():

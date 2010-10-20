@@ -1,12 +1,11 @@
 # -*- coding: utf-8 -*-
 
-"""
-    Ticketing Module - Controllers
-"""
+""" Ticketing Module - Controllers """
 
-module = request.controller
+prefix = request.controller
+resourcename = request.function
 
-if module not in deployment_settings.modules:
+if prefix not in deployment_settings.modules:
     session.error = T("Module disabled!")
     redirect(URL(r=request, c="default", f="index"))
 
@@ -18,23 +17,31 @@ response.menu_options = [
 #    [T("Search Tickets"), False, URL(r=request, f="log", args="search")] #disabled due to problems with pagination
 ]
 
-# S3 framework functions
+
 def index():
+
     """ Module's Home Page """
 
-    module_name = deployment_settings.modules[module].name_nice
-
+    module_name = deployment_settings.modules[prefix].name_nice
     return dict(module_name=module_name, a=1)
 
+
 def category():
+
     """ RESTful CRUD controller """
-    resource = request.function
-    return shn_rest_controller(module, resource, listadd=False)
+
+    tablename = "%s_%s" % (prefix, resourcename)
+    table = db[tablename]
+
+    s3xrc.model.configure(table, listadd=False)
+    return s3_rest_controller(prefix, resourcename)
+
 
 def log():
+
     """ RESTful CRUD controller """
-    resource = request.function
-    tablename = "%s_%s" % (module, resource)
+
+    tablename = "%s_%s" % (prefix, resourcename)
     table = db[tablename]
 
     # Model options
@@ -87,5 +94,6 @@ def log():
         msg_record_deleted = T("Ticket deleted"),
         msg_list_empty = T("No Tickets currently registered"))
 
-    response.s3.pagination = True
-    return shn_rest_controller(module, resource, listadd=False)
+    s3xrc.model.configure(table, listadd=False)
+    return s3_rest_controller(prefix, resourcename)
+

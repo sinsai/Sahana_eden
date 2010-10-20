@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 
-""" S3XRC Resource Framework - Model Extensions
+""" S3XRC Resource Framework - Data Model Extensions
 
-    @version: 2.1.7
+    @version: 2.1.8
 
     @see: U{B{I{S3XRC}} <http://eden.sahanafoundation.org/wiki/S3XRC>} on Eden wiki
 
@@ -34,43 +34,25 @@
 
 """
 
-__all__ = ["S3SuperEntity",
-           "S3ResourceComponent",
-           "S3ResourceModel",
-           "S3ResourceLinker"]
+__all__ = ["S3ResourceComponent",
+           "S3ResourceModel"]
 
 from gluon.storage import Storage
-
-# *****************************************************************************
-class S3SuperEntity(object):
-
-    """ Super Entity class
-
-        @todo 2.2: implement
-
-    """
-
-    def __init__(self):
-
-        pass
-
+from gluon.sql import Table, Field
 
 # *****************************************************************************
 class S3ResourceComponent(object):
 
-    """ Class to represent component relations between resources """
+    """ Class to represent component relations between resources
 
-    # -------------------------------------------------------------------------
+        @param db: the database (DAL)
+        @param prefix: prefix of the resource name (=module name)
+        @param name: name of the resource (=without prefix)
+        @param attr: attributes
+
+    """
+
     def __init__(self, db, prefix, name, **attr):
-
-        """ Constructor
-
-            @param db: the database (DAL)
-            @param prefix: prefix of the resource name (=module name)
-            @param name: name of the resource (=without prefix)
-            @param attr: attributes
-
-        """
 
         self.db = db
         self.prefix = prefix
@@ -123,17 +105,13 @@ class S3ResourceComponent(object):
 class S3ResourceModel(object):
 
 
-    """ Class to handle the compound resources model """
+    """ Class to handle the compound resources model
 
+        @param db: the database (DAL)
 
-    # -------------------------------------------------------------------------
+    """
+
     def __init__(self, db):
-
-        """ Constructor
-
-            @param db: the database (DAL)
-
-        """
 
         self.db = db
         self.components = {}
@@ -141,63 +119,9 @@ class S3ResourceModel(object):
         self.methods = {}
         self.cmethods = {}
 
-        # Initialize super entities
-        self.super_entity = Storage()
 
+    # Components ==============================================================
 
-    # Configuration ===========================================================
-
-    def configure(self, table, **attr):
-
-        """ Update the extra configuration of a table
-
-            @param table: the table
-            @param attr: dict of attributes to update
-
-        """
-
-        cfg = self.config.get(table._tablename, Storage())
-        cfg.update(attr)
-        self.config[table._tablename] = cfg
-
-
-    # -------------------------------------------------------------------------
-    def get_config(self, table, key):
-
-        """ Reads a configuration attribute of a resource
-
-            @param table: the resource DB table
-            @param key: the key (name) of the attribute
-
-        """
-
-        if table._tablename in self.config:
-            return self.config[table._tablename].get(key, None)
-        else:
-            return None
-
-
-    # -------------------------------------------------------------------------
-    def clear_config(self, table, *keys):
-
-        """ Removes configuration attributes of a resource
-
-            @param table: the resource DB table
-            @param keys: keys of attributes to remove (maybe multiple)
-
-        """
-
-        if not keys:
-            if table._tablename in self.config:
-                del self.config[table._tablename]
-        else:
-            if table._tablename in self.config:
-                for k in keys:
-                    if k in self.config[table._tablename]:
-                        del self.config[table._tablename][k]
-
-
-    # -------------------------------------------------------------------------
     def add_component(self, prefix, name, **attr):
 
         """ Adds a component to the model
@@ -319,6 +243,39 @@ class S3ResourceModel(object):
 
 
     # -------------------------------------------------------------------------
+    def set_attr(self, component_name, name, value):
+
+        """ Sets an attribute for a component
+
+            @param component_name: name of the component (without prefix)
+            @param name: name of the attribute
+            @param value: value for the attribute
+
+            @todo 2.2: deprecate?
+
+        """
+
+        return self.components[component_name].set_attr(name, value)
+
+
+    # -------------------------------------------------------------------------
+    def get_attr(self, component_name, name):
+
+        """ Retrieves an attribute value of a component
+
+            @param component_name: name of the component (without prefix)
+            @param name: name of the attribute
+
+            @todo 2.2: fix docstring
+            @todo 2.2: deprecate?
+
+        """
+
+        return self.components[component_name].get_attr(name)
+
+
+    # Resource Methods ========================================================
+
     def set_method(self, prefix, name,
                    component_name=None,
                    method=None,
@@ -388,47 +345,196 @@ class S3ResourceModel(object):
                 return None
 
 
-    # -------------------------------------------------------------------------
-    def set_attr(self, component_name, name, value):
+    # Resource configuration ==================================================
 
-        """ Sets an attribute for a component
+    def configure(self, table, **attr):
 
-            @param component_name: name of the component (without prefix)
-            @param name: name of the attribute
-            @param value: value for the attribute
+        """ Update the extra configuration of a table
 
-        """
-
-        return self.components[component_name].set_attr(name, value)
-
-
-    # -------------------------------------------------------------------------
-    def get_attr(self, component_name, name):
-
-        """ Retrieves an attribute value of a component
-
-            @param component_name: name of the component (without prefix)
-            @param name: name of the attribute
-
-            @todo 2.2: fix docstring
+            @param table: the table
+            @param attr: dict of attributes to update
 
         """
 
-        return self.components[component_name].get_attr(name)
+        cfg = self.config.get(table._tablename, Storage())
+        cfg.update(attr)
+        self.config[table._tablename] = cfg
 
 
-# *****************************************************************************
-class S3ResourceLinker(object):
+    # -------------------------------------------------------------------------
+    def get_config(self, table, key, default=None):
 
-    """ Resource Linker
+        """ Reads a configuration attribute of a resource
 
-        @todo 2.2: implement
+            @param table: the resource DB table
+            @param key: the key (name) of the attribute
 
-    """
+        """
 
-    def __init__(self):
+        if table._tablename in self.config:
+            return self.config[table._tablename].get(key, default)
+        else:
+            return default
 
-        pass
+
+    # -------------------------------------------------------------------------
+    def clear_config(self, table, *keys):
+
+        """ Removes configuration attributes of a resource
+
+            @param table: the resource DB table
+            @param keys: keys of attributes to remove (maybe multiple)
+
+        """
+
+        if not keys:
+            if table._tablename in self.config:
+                del self.config[table._tablename]
+        else:
+            if table._tablename in self.config:
+                for k in keys:
+                    if k in self.config[table._tablename]:
+                        del self.config[table._tablename][k]
+
+
+    # Super-Entity API ========================================================
+
+    def super_entity(self, tablename, key, types, *fields, **args):
+
+        """ Create a new super-entity table
+
+            @param tablename: the tablename
+            @param key: name of the primary key
+            @param types: a dictionary of instance types
+            @param fields: any shared fields
+            @param args: table arguments (e.g. migrate)
+
+        """
+
+        table = self.db.define_table(tablename,
+                                     Field(key, "id",
+                                           readable=False,
+                                           writable=False),
+                                     Field("deleted", "boolean",
+                                           readable=False,
+                                           writable=False),
+                                     Field("instance_type",
+                                           readable=False,
+                                           writable=False),
+                                     Field("uuid", length=128,
+                                           readable=False,
+                                           writable=False),
+                                     *fields, **args)
+
+        table.instance_type.represent = lambda opt: types.get(opt, opt)
+
+        return table
+
+
+    # -------------------------------------------------------------------------
+    def super_key(self, super):
+
+        """ Get a foreign key field for a super-entity
+
+            @param super: the super-entity table
+
+        """
+
+        for key in super.fields:
+            if str(super[key].type) == "id":
+                break
+
+        return Field(key, super,
+                     readable = False,
+                     writable = False,
+                     ondelete = "RESTRICT")
+
+
+    # -------------------------------------------------------------------------
+    def update_super(self, table, record):
+
+        """ Updates the super-entity links of an instance record
+
+            @param table: the instance table
+            @param record: the instance record
+
+        """
+
+        # Get the record
+        id = record.get("id", None)
+        record = self.db(table.id==id).select(table.ALL, limitby=(0,1)).first()
+        if not record:
+            return True
+
+        # Get the super-entities of this table
+        super = self.get_config(table, "super_entity")
+        if not super:
+            return True
+        elif not isinstance(super, (list, tuple)):
+            super = [super]
+
+        for s in super:
+
+            # Get the key
+            for key in s.fields:
+                if str(s[key].type) == "id":
+                    break
+
+            # Get the shared field map
+            shared = self.get_config(table, "%s_fields" % s._tablename)
+            if shared:
+                data = dict([(f, record[shared[f]])
+                             for f in shared if shared[f] in record and f in s.fields])
+            else:
+                data = dict([(f, record[f])
+                             for f in s.fields if f in record])
+
+            # Add instance type and deletion status
+            data.update(instance_type=table._tablename,
+                        deleted=record.get("deleted", False))
+
+            # UID
+            uid=record.get("uuid", None)
+            data.update(uuid=uid)
+
+            # Update records
+            row = self.db(s.uuid==uid).select(s[key], limitby=(0,1)).first()
+            if row:
+                k = {key:row[key]}
+                self.db(s[key]==row[key]).update(**data)
+                if record[key] != row[key]:
+                    self.db(table.id==id).update(k)
+            else:
+                k = s.insert(**data)
+                if k:
+                    self.db(table.id==id).update(**{key:k})
+
+        return True
+
+
+    # -------------------------------------------------------------------------
+    def delete_super(self, table, record):
+
+        """ Removes the super-entity links of an instance record
+
+            @param table: the instance table
+            @param record: the instance record
+
+        """
+
+        super = self.get_config(table, "super_entity")
+        if not super:
+            return True
+        if not isinstance(super, (list, tuple)):
+            super = [super]
+
+        uid = record.get("uuid", None)
+        if uid:
+            for s in super:
+                if "deleted" in s.fields:
+                    self.db(s.uuid == uid).update(deleted=True)
+
+        return True
 
 
 # *****************************************************************************

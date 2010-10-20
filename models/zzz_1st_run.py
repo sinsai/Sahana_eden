@@ -86,21 +86,9 @@ if populate:
             theme = 1
         )
 
-    # Organisation Registry
-    tablename = "org_sector"
-    table = db[tablename]
-    if not db(table.id > 0).count():
-        table.insert( name = "Agriculture" )
-        table.insert( name = "Shelter and Non-Food Items" )
-        table.insert( name = "Coordination and Support Services" )
-        table.insert( name = "Food" )
-        table.insert( name = "Infrastructure and Rehabilitation" )
-        table.insert( name = "Security" )
-        table.insert( name = "Water and Sanitation" )
-        table.insert( name = "Education" )
-        table.insert( name = "Health" )
-        table.insert( name = "Protection and Human Rights and Rule of Law" )
-        table.insert( name = "Urban Search and Rescue" )
+    # Organisation Registry       
+    shn_import_table("org_cluster_subsector")  
+    shn_import_table("org_cluster")        
 
     # Person Registry
     tablename = "pr_person"
@@ -203,7 +191,14 @@ if populate:
             table.insert( name = "Request for Assistance" )
             table.insert( name = "Offer of Help" )
 
+    # Assessment
+    if "assess" in deployment_settings.modules:
+        shn_import_table("assess_baseline_type")
 
+    # Impacts
+    if deployment_settings.has_module("irs") or deployment_settings.has_module("assess"):        
+        shn_import_table("impact_type")    
+    
     # GIS Module
     tablename = "gis_marker"
     table = db[tablename]

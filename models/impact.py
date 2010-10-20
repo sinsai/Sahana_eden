@@ -62,8 +62,6 @@ if deployment_settings.has_module("irs") or deployment_settings.has_module("asse
                                        ondelete = "RESTRICT"
                                        )    
     
-    shn_import_table("impact_type")
-    
     # -----------------------------------------------------------------------------
     # Impact
     resource = "impact"

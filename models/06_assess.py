@@ -111,7 +111,6 @@ if deployment_settings.has_module(module):
                                        ondelete = "RESTRICT"
                                        )    
     
-    shn_import_table("assess_baseline_type")
     # -----------------------------------------------------------------------------
     # Baseline
     resource = "baseline"

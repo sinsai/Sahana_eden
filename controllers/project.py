@@ -158,7 +158,7 @@ def gap():
             total_bnf_reach = NONE
                    
         gap_table.append(TR( shn_gis_location_represent(gap_row.location_id),
-                             shn_cluster_subsector_represent(gap_row.cluster_subsector_id),
+                             shn_org_cluster_subsector_represent(gap_row.cluster_subsector_id),
                              assess_action_btn,
                              shn_assess_summary_value_represent(gap_row.assess_value),
                              activity_action_btn,
@@ -175,10 +175,10 @@ def gap():
 #==============================================================================
 def gap_map():
     feature_queries = []
-    cluster_subsector_rows = db(db.cluster_subsector.id > 0).select()
+    cluster_subsector_rows = db(db.org_cluster_subsector.id > 0).select()
     for cluster_subsector_rows in cluster_subsector_rows:
         cluster_subsector_id = cluster_subsector_rows.id
-        cluster_subsector = shn_cluster_subsector_represent(cluster_subsector_id)
+        cluster_subsector = shn_org_cluster_subsector_represent(cluster_subsector_id)
         
         #Add activity row
         activity_rows = db((db.project_activity.id > 0) &\

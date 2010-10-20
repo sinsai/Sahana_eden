@@ -1444,8 +1444,8 @@ class GIS(object):
             html.append(SCRIPT(_type="text/javascript", _src=URL(r=request, c="static", f="scripts/gis/usng2.js")))
             html.append(SCRIPT(_type="text/javascript", _src=URL(r=request, c="static", f="scripts/gis/RemoveFeature.js")))
             html.append(SCRIPT(_type="text/javascript", _src=URL(r=request, c="static", f="scripts/gis/osm_styles.js")))
-            html.append(SCRIPT(_type="text/javascript", _src=URL(r=request, c="static", f="scripts/gis/geoext/lib/GeoExt.js")))
-            html.append(SCRIPT(_type="text/javascript", _src=URL(r=request, c="static", f="scripts/gis/geoext/ux/GeoNamesSearchCombo.js")))
+            html.append(SCRIPT(_type="text/javascript", _src=URL(r=request, c="static", f="scripts/gis/GeoExt/lib/GeoExt.js")))
+            html.append(SCRIPT(_type="text/javascript", _src=URL(r=request, c="static", f="scripts/gis/GeoExt/ux/GeoNamesSearchCombo.js")))
         else:
             html.append(SCRIPT(_type="text/javascript", _src=URL(r=request, c="static", f="scripts/gis/OpenLayers.js")))
             html.append(SCRIPT(_type="text/javascript", _src=URL(r=request, c="static", f="scripts/gis/OpenStreetMap.js")))
@@ -1915,7 +1915,7 @@ OpenLayers.Util.extend( selectPdfControl, {
         # Search
         if search:
             search = """
-        var mapSearch = new GeoExt.ux.geonames.GeoNamesSearchCombo({
+        var mapSearch = new GeoExt.ux.GeoNamesSearchCombo({
             map: map,
             zoom: 8
          });
@@ -2627,6 +2627,15 @@ OpenLayers.Util.extend( selectPdfControl, {
         });
         """
 
+            if deployment_settings.get_gis_duplicate_features():
+                uuid_from_fid = """
+                var uuid = fid.replace('_', '');
+                """
+            else:
+                uuid_from_fid = """
+                var uuid = fid;
+                """
+
             layers_features += """
         var featureLayers = new Array();
         var features = [];
@@ -2706,11 +2715,12 @@ OpenLayers.Util.extend( selectPdfControl, {
             centerPoint = feature.geometry.getBounds().getCenterLonLat();
             if(feature.cluster) {
                 // Cluster
-                var name, uuid, url;
+                var name, fid, uuid, url;
                 var html = '""" + str(T("There are multiple records at this location")) + """:<ul>';
                 for (var i = 0; i < feature.cluster.length; i++) {
                     name = feature.cluster[i].attributes.name;
-                    uuid = feature.cluster[i].fid;
+                    fid = feature.cluster[i].fid;
+                    """ + uuid_from_fid + """
                     url = feature.cluster[i].popup_url + uuid;
                     html += "<li><a href='javascript:loadClusterPopup(" + "\\"" + url + "\\", \\"" + id + "\\"" + ")'>" + name + "</a></li>";
                 }
@@ -2742,7 +2752,8 @@ OpenLayers.Util.extend( selectPdfControl, {
                 feature.popup = popup;
                 map.addPopup(popup);
                 // call AJAX to get the contentHTML
-                var uuid = feature.fid;
+                var fid = feature.fid;
+                """ + uuid_from_fid + """
                 loadDetails(popup_url + uuid, id, popup);
             }
         }
@@ -2999,6 +3010,7 @@ OpenLayers.Util.extend( selectPdfControl, {
         """
                     else:
                         layers_features += """
+        var i = '';
         styleMarker.iconURL = '';
         styleMarker.graphicName = '""" + graphicName + """';
         styleMarker.pointRadius = """ + str(pointRadius) + """;
@@ -3432,6 +3444,7 @@ OpenLayers.Util.extend( selectPdfControl, {
     var options = {
         displayProjection: proj4326,
         projection: projection_current,
+        paddingForPopups: new OpenLayers.Bounds(50, 10, 200, 300),
         units: '""" + units + """',
         maxResolution: """ + str(maxResolution) + """,
         maxExtent: new OpenLayers.Bounds(""" + maxExtent + """),

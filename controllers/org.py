@@ -24,33 +24,24 @@ def index():
 
     return dict(module_name=module_name)
 
-def sector():
-    """
-        RESTful CRUD controller
-        @ToDo: Rename as Cluster? (Too UN/INGO-focussed?)
-    """
-    resource = request.function
-    tablename = "%s_%s" % (module, resource)
+
+#==============================================================================
+def cluster():
+    "RESTful CRUD controller"
+    resourcename = request.function
+    tablename = "%s_%s" % (module, resourcename)
     table = db[tablename]
 
-    # CRUD strings
-    LIST_SECTORS = T("List Clusters")
-    s3.crud_strings[tablename] = Storage(
-        title_create = ADD_SECTOR,
-        title_display = T("Cluster Details"),
-        title_list = LIST_SECTORS,
-        title_update = T("Edit Cluster"),
-        title_search = T("Search Clusters"),
-        subtitle_create = T("Add New Cluster"),
-        subtitle_list = T("Clusters"),
-        label_list_button = LIST_SECTORS,
-        label_create_button = ADD_SECTOR,
-        msg_record_created = T("Cluster added"),
-        msg_record_modified = T("Cluster updated"),
-        msg_record_deleted = T("Cluster deleted"),
-        msg_list_empty = T("No Clusters currently registered"))
-    
-    return shn_rest_controller(module, resource, listadd=False)
+    return shn_rest_controller(module, resourcename)    
+#==============================================================================
+def cluster_subsector():
+    "RESTful CRUD controller"
+    resourcename = request.function
+    tablename = "%s_%s" % (module, resourcename)
+    table = db[tablename]
+
+    return shn_rest_controller(module, resourcename)    
+#==============================================================================
 
 def organisation():
     """ RESTful CRUD controller """
@@ -219,8 +210,8 @@ def shn_org_rheader(r, tabs=[]):
 
             organisation = r.record
 
-            if organisation.sector_id:
-                _sectors = shn_sector_represent(organisation.sector_id)
+            if organisation.cluster_id:
+                _sectors = shn_sector_represent(organisation.cluster_id)
             else:
                 _sectors = None
 

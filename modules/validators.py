@@ -143,7 +143,7 @@ class IS_ONE_OF_EMPTY(Validator):
         'label' can be a string template for the record, or a set of field
         names of the fields to be used as option labels, or a function or lambda
         to create an option label from the respective record (which has to return
-        a string, of course)
+        a string, of course). The function will take the record as an argument
 
         No 'options' method as designed to be called next to an Autocomplete field so don't download a large dropdown unnecessarily.
     """
@@ -247,7 +247,8 @@ class IS_ONE_OF_EMPTY(Validator):
                     labels = map(lambda r: \
                                  " ".join([r[l] for l in label if l in r]),
                                  records)
-                elif hasattr(label, '__call__'): #Is a function
+                elif hasattr(label, '__call__'): #Is a function?
+                    #allows labels to be a function
                     labels = map(label, records)
                 elif "name" in _table:
                     labels = map(lambda r: r.name, records)

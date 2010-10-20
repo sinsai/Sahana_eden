@@ -1,11 +1,31 @@
 # -*- coding: utf-8 -*-
 
-"""
-    Global settings
-    Those which are typically edited during a deployment are in 000_config.py & their results parsed into here.
-    Deployers shouldn't typically need to edit any settings here
+""" Global settings:
+
+    Those which are typically edited during a deployment are in
+    000_config.py & their results parsed into here. Deployers
+    shouldn't typically need to edit any settings here.
+
 """
 
+##################
+# Global variables
+##################
+
+# Interactive view formats
+shn_interactive_view_formats = ("html", "popup", "iframe")
+
+# Error messages
+UNAUTHORISED = T("Not authorised!")
+BADFORMAT = T("Unsupported data format!")
+BADMETHOD = T("Unsupported method!")
+BADRECORD = T("Record not found!")
+INVALIDREQUEST = T("Invalid request!")
+XLWT_ERROR = T("xlwt module not available within the running Python - this needs installing for XLS output!")
+GERALDO_ERROR = T("Geraldo module not available within the running Python - this needs installing for PDF output!")
+REPORTLAB_ERROR = T("ReportLab module not available within the running Python - this needs installing for PDF output!")
+
+# Common Labels
 BREADCRUMB = ">> "
 UNKNOWN_OPT = T("Unknown")
 NONE = "-"
@@ -17,6 +37,10 @@ UPDATE = T("Open")
 DELETE = T("Delete")
 COPY = T("Copy")
 NOT_APPLICABLE = T("N/A")
+
+# Data Export Settings
+ROWSPERPAGE = 20
+PRETTY_PRINT = False
 
 # Keep all our configuration options in a single pair of global variables
 
@@ -148,65 +172,14 @@ auth.settings.login_onaccept = shn_auth_on_login
 
 auth.settings.lock_keys = True
 
-######
-# Crud
-######
-
-# Breaks refresh of List after Create: http://groups.google.com/group/web2py/browse_thread/thread/d5083ed08c685e34
-#crud.settings.keepvalues = True
-crud.messages.submit_button = T("Save")
+########
+# S3CRUD
+########
 
 def s3_formstyle(id, label, widget, comment):
 
     """ Provide the Sahana Eden Form Style
-        Label above the Inputs:
-        http://uxmovement.com/design-articles/faster-with-top-aligned-labels
 
-    """
-
-    row = []
-
-
-    # *** The following block is no longer needed with S3CRUDHandler:
-    #     the asterisk will automatically be inserted:
-
-    tn, rowname = id.split("_", 1)
-    s = rowname.split("__", 1)[0].split("_")
-
-    table = field = None
-    while len(s) > 1:
-        tn = "%s_%s" % (tn, s.pop(0))
-        table = db.get(tn, None)
-        if table:
-            f = "_".join(s)
-            field = table.get(f, None)
-            break
-    if field:
-        requires = str(field.requires)
-    else:
-        requires = ""
-
-    # Label on the 1st row
-    if "IS_NOT_EMPTY" in requires or \
-       field and field.required:
-        row.append(TR(TD(DIV(label, SPAN("* ", _class="req")), _class="w2p_fl", _colspan="2"), _id=id + "1"))
-    else:
-        row.append(TR(TD(label, _class="w2p_fl", _colspan="2"), _id=id + "1"))
-    # Widget & Comment on the 2nd Row
-    row.append(TR(widget, TD(comment, _class="w2p_fc"), _id=id))
-
-    # *** Instead, remove the prior block and uncomment just this:
-
-    ## Label on the 1st row
-    #row.append(TR(TD(label, _class="w2p_fl", _colspan="2"), _id=id + "1"))
-    ## Widget & Comment on the 2nd Row
-    #row.append(TR(widget, TD(comment, _class="w2p_fc"), _id=id))
-
-    return tuple(row)
-
-def s3_formstyle_mobile(id, label, widget, comment):
-
-    """ Provide the Sahana Eden Form Style
         Label above the Inputs:
         http://uxmovement.com/design-articles/faster-with-top-aligned-labels
 
@@ -219,24 +192,73 @@ def s3_formstyle_mobile(id, label, widget, comment):
     # Widget & Comment on the 2nd Row
     row.append(TR(widget, TD(comment, _class="w2p_fc"), _id=id))
 
-    # *** Instead, remove the prior block and uncomment just this:
-
-    ## Label on the 1st row
-    #row.append(TR(TD(label, _class="w2p_fl", _colspan="2"), _id=id + "1"))
-    ## Widget & Comment on the 2nd Row
-    #row.append(TR(widget, TD(comment, _class="w2p_fc"), _id=id))
-
     return tuple(row)
 
-crud.settings.formstyle = s3_formstyle
+s3_formstyle_mobile = s3_formstyle
 
-########
-# S3CRUD
-########
-
-s3.crud = Storage()
 s3.crud.formstyle = s3_formstyle
 s3.crud.submit_buttom = T("Save")
+
+s3.crud.archive_not_delete = deployment_settings.get_security_archive_not_delete()
+s3.crud.navigate_away_confirm = deployment_settings.get_ui_navigate_away_confirm()
+
+#############
+# Web2py/Crud
+#############
+
+# Breaks refresh of List after Create: http://groups.google.com/group/web2py/browse_thread/thread/d5083ed08c685e34
+#crud.settings.keepvalues = True
+crud.messages.submit_button = T("Save")
+crud.settings.formstyle = s3_formstyle
+
+##################
+# XML/JSON Formats
+##################
+
+XSLT_FILE_EXTENSION = "xsl" #: File extension of XSLT templates
+XSLT_IMPORT_TEMPLATES = "static/xslt/import" #: Path to XSLT templates for data import
+XSLT_EXPORT_TEMPLATES = "static/xslt/export" #: Path to XSLT templates for data export
+
+# Supported XML Output Formats
+shn_xml_export_formats = dict(
+    xml = "application/xml", # Native S3XML (must be included here!)
+    gpx = "application/xml", # GPX
+    lmx = "application/xml", # NOKIA Landmarks
+    pfif = "application/xml", # Person Finder Interchange Format
+    have = "application/xml", # EDXL-HAVE
+    osm = "application/xml", # Open Street Map
+    rss = "application/rss+xml", # RSS
+    georss = "application/rss+xml", # GeoRSS
+    kml = "application/vnd.google-earth.kml+xml", # KML
+)
+
+# Supported XML Import Formats
+shn_xml_import_formats = ["xml", # native S3XML (must be included here!)
+                          "lmx", # Nokia Landmarks
+                          "osm", # Open Street Map
+                          "pfif", # Person Finder Interchange Format
+                          "ushahidi", # Ushahidi
+                          "odk",
+                          "agasti", # Sahana Agasti
+                          "fods" # Flat Open Document Spreadsheet
+                         ]
+
+# Supported JSON Export Formats
+shn_json_export_formats = dict(
+    json = "text/x-json", # Native S3XML-JSON (must be included here!)
+    geojson = "text/x-json" # GeoJSON
+)
+
+# Supported JSON Import Formats
+shn_json_import_formats = ["json", # native S3XML-JSON (must be included here!)
+                          ]
+
+# Register formats with resource controller
+s3xrc.xml_import_formats = shn_xml_import_formats
+s3xrc.xml_export_formats = shn_xml_export_formats
+s3xrc.json_import_formats = shn_json_import_formats
+s3xrc.json_export_formats = shn_json_export_formats
+
 
 ##########
 # Messages

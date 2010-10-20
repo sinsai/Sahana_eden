@@ -56,7 +56,7 @@ if deployment_settings.has_module(module):
                             Field("enabled", "boolean", default = False),
                             #Field("preference", "integer", default = 5), To be used later
                             migrate=migrate)
-    
+
     #------------------------------------------------------------------------
     resource = "tropo_settings"
     tablename = "%s_%s" % (module, resource)
@@ -64,8 +64,8 @@ if deployment_settings.has_module(module):
                             Field("token_messaging"),
                             #Field("token_voice"),
                             migrate=migrate)
-    
-                            
+
+
     #------------------------------------------------------------------------
     resource = "twitter_settings"
     tablename = "%s_%s" % (module, resource)
@@ -81,9 +81,9 @@ if deployment_settings.has_module(module):
     ### comment these 2 when debugging
     table.oauth_key.readable = False
     table.oauth_secret.readable = False
-    
+
     table.twitter_account.writable = False
-    
+
     def twitter_settings_onvalidation(form):
         """ Complete oauth: take tokens from session + pin from form, and do the 2nd API call to Twitter """
         if form.vars.pin and session.s3.twitter_request_key and session.s3.twitter_request_secret:
@@ -91,7 +91,7 @@ if deployment_settings.has_module(module):
                 import tweepy
             except:
                 raise HTTP(501, body=T("Can't import tweepy"))
-                          
+
             oauth = tweepy.OAuthHandler(deployment_settings.twitter.oauth_consumer_key,
                                         deployment_settings.twitter.oauth_consumer_secret)
             oauth.set_request_token(session.s3.twitter_request_key, session.s3.twitter_request_secret)
@@ -110,8 +110,8 @@ if deployment_settings.has_module(module):
             form.vars[k] = None
         for k in ["twitter_request_key", "twitter_request_secret"]:
             session.s3[k] = ""
-        
-    s3xrc.model.configure(table, onvalidation=twitter_settings_onvalidation) 
+
+    s3xrc.model.configure(table, onvalidation=twitter_settings_onvalidation)
 
     #------------------------------------------------------------------------
     # Message priority
@@ -261,9 +261,7 @@ if deployment_settings.has_module(module):
 
     s3xrc.model.add_component(module, resource,
                               multiple=True,
-                              joinby=dict(msg_log="message_id"),
-                              deletable=True,
-                              editable=True)
+                              joinby=dict(msg_log="message_id"))
 
     table.uuid.requires = IS_NOT_IN_DB(db, "%s.uuid" % tablename)
     s3xrc.model.configure(table,

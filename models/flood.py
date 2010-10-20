@@ -90,10 +90,8 @@ if deployment_settings.has_module(module):
 
     #freport as component of doc_documents
     s3xrc.model.add_component(module, resource,
-                          multiple = True,
-                          joinby = dict( doc_document = "document_id" ),
-                          deletable = True,
-                          editable = True)
+                              multiple=True,
+                              joinby=dict(doc_document="document_id"))
 
     # -----------------------------------------------------------------------------
     # Locations
@@ -139,6 +137,4 @@ if deployment_settings.has_module(module):
 
     s3xrc.model.add_component(module, resource,
                               multiple = True,
-                              joinby = dict(flood_freport="freport_id"),
-                              deletable = True,
-                              editable = True)
+                              joinby = dict(flood_freport="freport_id"))

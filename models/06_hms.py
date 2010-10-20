@@ -267,10 +267,7 @@ if deployment_settings.has_module(module):
 
     s3xrc.model.add_component(module, resource,
                               multiple=True,
-                              joinby=dict(hms_hospital="hospital_id"),
-                              deletable=True,
-                              editable=True,
-                              main="person_id", extra="title")
+                              joinby=dict(hms_hospital="hospital_id"))
 
     s3xrc.model.configure(table,
                           list_fields=["id",
@@ -280,7 +277,8 @@ if deployment_settings.has_module(module):
                                        "mobile",
                                        "email",
                                        "fax",
-                                       "skype"])
+                                       "skype"],
+                          main="person_id", extra="title")
 
     # CRUD Strings
     s3.crud_strings[tablename] = Storage(
@@ -347,10 +345,7 @@ if deployment_settings.has_module(module):
 
     s3xrc.model.add_component(module, resource,
                               multiple=True,
-                              joinby=dict(hms_hospital="hospital_id"),
-                              deletable=True,
-                              editable=False,
-                              main="hospital_id", extra="id")
+                              joinby=dict(hms_hospital="hospital_id"))
 
     s3xrc.model.configure(table,
                           list_fields=["id",
@@ -359,7 +354,8 @@ if deployment_settings.has_module(module):
                                        "admissions24",
                                        "discharges24",
                                        "deaths24",
-                                       "comment"])
+                                       "comment"],
+                          main="hospital_id", extra="id")
 
     s3.crud_strings[tablename] = Storage(
         title_create = T("Add Activity Report"),
@@ -480,23 +476,21 @@ if deployment_settings.has_module(module):
     # add as component
     s3xrc.model.add_component(module, resource,
                               multiple=True,
-                              joinby=dict(hms_hospital="hospital_id"),
-                              deletable=True,
-                              editable=True,
-                              main="hospital_id", extra="id")
+                              joinby=dict(hms_hospital="hospital_id"))
 
     s3xrc.model.configure(table,
                           onaccept = lambda form: \
                                      shn_hms_bedcount_update(form),
-                          delete_onaccept = lambda row: \
-                                            shn_hms_bedcount_update(row),
+                          ondelete = lambda row: \
+                                     shn_hms_bedcount_update(row),
                           list_fields=["id",
                                        "unit_name",
                                        "bed_type",
                                        "date",
                                        "beds_baseline",
                                        "beds_available",
-                                       "beds_add24"])
+                                       "beds_add24"],
+                          main="hospital_id", extra="id")
 
     s3.crud_strings[tablename] = Storage(
         title_create = T("Add Unit"),
@@ -575,12 +569,11 @@ if deployment_settings.has_module(module):
 
     s3xrc.model.add_component(module, resource,
                               multiple=False,
-                              joinby=dict(hms_hospital="hospital_id"),
-                              deletable=True,
-                              editable=True,
-                              main="hospital_id", extra="id")
+                              joinby=dict(hms_hospital="hospital_id"))
 
-    s3xrc.model.configure(table, list_fields = ["id"])
+    s3xrc.model.configure(table,
+                          list_fields = ["id"],
+                          main="hospital_id", extra="id")
 
     # -----------------------------------------------------------------------------
     # Images
@@ -645,9 +638,7 @@ if deployment_settings.has_module(module):
 
     s3xrc.model.add_component(module, resource,
                               multiple=True,
-                              joinby=dict(hms_hospital="hospital_id"),
-                              deletable=True,
-                              editable=True)
+                              joinby=dict(hms_hospital="hospital_id"))
 
     s3xrc.model.configure(table,
                           list_fields=["id",
@@ -691,12 +682,11 @@ if deployment_settings.has_module(module):
     # Add as component
     s3xrc.model.add_component(module, resource,
                               multiple=True,
-                              joinby=dict(hms_hospital="hospital_id"),
-                              deletable=True,
-                              editable=True,
-                              main="hospital_id", extra="id")
+                              joinby=dict(hms_hospital="hospital_id"))
 
-    s3xrc.model.configure(table, list_fields = ["id"])
+    s3xrc.model.configure(table,
+                          list_fields=["id"],
+                          main="hospital_id", extra="id")
 
     # -----------------------------------------------------------------------------
     # Hospital Search by Name
@@ -746,11 +736,12 @@ if deployment_settings.has_module(module):
                 # Get the results
                 if results:
                     resource.build_query(id=results)
-                    report = shn_list(r, listadd=False)
+                    report = resource.crud(r, method="list", **attr)["items"]
+                    r.next = None
                 else:
-                    report = dict(items=T("No matching records found."))
+                    report = T("No matching records found.")
 
-                output.update(dict(report))
+                output.update(items=report)
 
             # Title and subtitle
             title = T("Search for a Hospital")

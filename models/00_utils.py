@@ -1,19 +1,22 @@
 # -*- coding: utf-8 -*-
 
-"""
-    Utilities
-"""
+""" Utilities """
+
+# *****************************************************************************
+# Session
 
 def s3_sessions():
-    """
-        Extend session to support:
+
+    """ Extend session to support:
             Multiple flash classes
             Roles caching
             Settings
                 Debug mode
                 Security mode
                 Audit modes
+
     """
+
     response.error = session.error
     response.confirmation = session.confirmation
     response.warning = session.warning
@@ -38,7 +41,7 @@ def s3_sessions():
     # Security Policy
     #session.s3.self_registration = deployment_settings.get_security_self_registration()
     session.s3.security_policy = deployment_settings.get_security_policy()
-    
+
     # We Audit if either the Global or Module asks us to
     # (ignore gracefully if module author hasn't implemented this)
     try:
@@ -56,13 +59,18 @@ def s3_sessions():
 # Extend the session
 s3_sessions()
 
-# -----------------------------------------------------------------------------
-# Debug Function (same name/parameters as JavaScript one)
+# *****************************************************************************
+# Utilities
+
 def s3_debug(message, value=None):
-    """
+
+    """ Debug Function (same name/parameters as JavaScript one)
+
         Provide an easy, safe, systematic way of handling Debug output
         (print to stdout doesn't work with WSGI deployments)
+
     """
+
     import sys
     try:
         output = "S3 Debug: " + str(message)
@@ -75,9 +83,8 @@ def s3_debug(message, value=None):
 
     print >> sys.stderr, output
 
+
 # -----------------------------------------------------------------------------
-# User Time Zone Operations:
-#
 def s3_get_utc_offset():
 
     """ Get the current UTC offset for the client """
@@ -110,12 +117,14 @@ def s3_get_utc_offset():
 session.s3.utc_offset = s3_get_utc_offset()
 
 
+# -----------------------------------------------------------------------------
 def shn_user_utc_offset():
 
     """ for backward compatibility """
     return session.s3.utc_offset
 
 
+# -----------------------------------------------------------------------------
 def shn_as_local_time(value):
     """
         represents a given UTC datetime.datetime object as string:
@@ -135,9 +144,11 @@ def shn_as_local_time(value):
         dt = value
         return dt.strftime(str(format))+" +0000"
 
+
 # -----------------------------------------------------------------------------
 # Phone number requires
 shn_phone_requires = IS_NULL_OR(IS_MATCH('\+?\s*[\s\-\.\(\)\d]+(?:(?: x| ext)\s?\d{1,5})?$'))
+
 
 # -----------------------------------------------------------------------------
 # Make URLs clickable
@@ -145,9 +156,12 @@ shn_url_represent = lambda url: (url and [A(url, _href=url, _target="blank")] or
 
 
 # -----------------------------------------------------------------------------
-def myname(user_id):
-    user = db.auth_user[user_id]
-    return user.first_name if user else NONE
+#def myname(user_id):
+
+    #""" Return the first name of the current user """
+
+    #user = db.auth_user[user_id]
+    #return user.first_name if user else NONE
 
 
 # -----------------------------------------------------------------------------
@@ -166,6 +180,9 @@ def s3_logged_in_person():
 
 # -----------------------------------------------------------------------------
 def unauthorised():
+
+    """ Redirection upon unauthorized request (interactive!) """
+
     session.error = T("Not Authorised!")
     redirect(URL(r=request, c="default", f="user", args="login"))
 
@@ -173,8 +190,10 @@ def unauthorised():
 # -----------------------------------------------------------------------------
 def shn_abbreviate(word, size=48):
 
-    """
-        Abbreviate a string. For use as a .represent
+    """ Abbreviate a string. For use as a .represent
+
+        see also: vita.truncate(self, text, length=48, nice=True)
+
     """
 
     if word:
@@ -186,10 +205,6 @@ def shn_abbreviate(word, size=48):
         return word
 
 
-# @ToDo An alternative to having the caller pass in a constructed url
-# would be to let then pass in an url or a linkto function, and call
-# the function here.
-
 # -----------------------------------------------------------------------------
 def shn_action_buttons(r,
                        deletable=True,
@@ -199,12 +214,15 @@ def shn_action_buttons(r,
                        delete_url=None,
                        copy_url=None):
 
-    """
-        Provide the usual Action Buttons for Column views.
+    """ Provide the usual Action Buttons for Column views.
         Allow customizing the urls, since this overwrites anything
         that would be inserted by shn_list via linkto.  The resource
         id should be represented by "[id]".
+
         Designed to be called from a postp
+
+        @note: standard action buttons will be inserted automatically
+
     """
 
     if r.component:
@@ -244,8 +262,10 @@ def shn_action_buttons(r,
 # -----------------------------------------------------------------------------
 def shn_compose_message(data, template):
 
-    """
-        Compose an SMS Message from an XSLT
+    """ Compose an SMS Message from an XSLT
+
+        from FRP
+
     """
 
     if data:
@@ -271,14 +291,14 @@ def shn_compose_message(data, template):
 # -----------------------------------------------------------------------------
 def shn_crud_strings(table_name,
                      table_name_plural = None):
-    """
+
+    """ Creates the strings for the title of/in the various CRUD Forms.
+
         @author: Michael Howden (michael@aidiq.com)
 
-        @description:
-            Creates the strings for the title of/in the various CRUD Forms.
-
-            NB Whilst this is useful for RAD purposes, it isn't ideal for maintenance of translations,
-               so it's use should be discouraged for the core system
+        @note: Whilst this is useful for RAD purposes, it isn't ideal for
+               maintenance of translations, so it's use should be discouraged
+               for the core system
 
         @arguments:
             table_name - string - The User's name for the resource in the table - eg. "Person"
@@ -289,6 +309,7 @@ def shn_crud_strings(table_name,
 
         @example
             s3.crud_strings[<table_name>] = shn_crud_strings(<table_name>, <table_name_plural>)
+
     """
 
     if not table_name_plural:
@@ -321,9 +342,8 @@ def shn_crud_strings(table_name,
 
 # -----------------------------------------------------------------------------
 def shn_get_crud_string(tablename, name):
-    """
-        Get the CRUD strings for a table
-    """
+
+    """ Get the CRUD strings for a table """
 
     crud_strings = s3.crud_strings.get(tablename, s3.crud_strings)
     not_found = s3.crud_strings.get(name, None)
@@ -334,6 +354,7 @@ def shn_get_crud_string(tablename, name):
 # -----------------------------------------------------------------------------
 def shn_import_table(table_name,
                      import_if_not_empty = False):
+
     """
         @author: Michael Howden (michael@aidiq.com)
 
@@ -344,6 +365,7 @@ def shn_import_table(table_name,
         @arguments:
             table_name - string - The name of the table
             import_if_not_empty - bool
+
     """
 
     table = db[table_name]
@@ -356,6 +378,8 @@ def shn_import_table(table_name,
 
 # -----------------------------------------------------------------------------
 def shn_last_update(table, record_id):
+
+    """ @todo: docstring?? """
 
     if table and record_id:
         record = table[record_id]
@@ -385,13 +409,16 @@ def shn_last_update(table, record_id):
 def shn_represent_file(file_name,
                        table,
                        field = "file"):
+
     """
         @author: Michael Howden (michael@aidiq.com)
 
         @description:
             Represents a file (stored in a table) as the filename with a link to that file
             THIS FUNCTION IS REDUNDANT AND CAN PROBABLY BE REPLACED BY shn_file_represent in models/06_doc.py
+
     """
+
     import base64
     url_file = crud.settings.download_url + "/" + file_name
 
@@ -419,6 +446,8 @@ def shn_represent_file(file_name,
 # -----------------------------------------------------------------------------
 def s3_represent_multiref(table, opt, represent=None):
 
+    """ @todo: docstring?? """
+
     if represent is None:
         if "name" in table.fields:
             represent = lambda r: r and r.name or UNKNOWN_OPT
@@ -444,10 +473,14 @@ def s3_represent_multiref(table, opt, represent=None):
 
 # -----------------------------------------------------------------------------
 def shn_table_links(reference):
+
+    """ Return a dict of tables & their fields which have references to the
+        specified table
+
+        @deprecated: to be replaced by db[tablename]._referenced_by
+
     """
-        Return a dict of tables & their fields which have references to the specified table
-        - to be replaced by db[tablename]._referenced_by
-    """
+
     tables = {}
     for table in db.tables:
         count = 0
@@ -460,61 +493,15 @@ def shn_table_links(reference):
 
     return tables
 
-# -----------------------------------------------------------------------------
-def shn_insert_subheadings(form, tablename, subheadings):
-
-    """
-    Insert subheadings into forms
-
-    @param form: the form
-    @param tablename: the tablename
-    @param subheadings: a dict of {"Headline": Fieldnames}, where Fieldname can
-                        be either a single field name or a list/tuple of
-                        field names belonging under that headline
-
-    """
-
-    if subheadings:
-        if tablename in subheadings:
-            subheadings = subheadings.get(tablename)
-        form_rows = iter(form[0])
-        tr = form_rows.next()
-        i = 0
-        done = []
-        while tr:
-            f = tr.attributes.get("_id", None)
-            if f.startswith(tablename) and f[-6:] == "__row1":
-                f = f[len(tablename)+1:-6]
-                for k in subheadings.keys():
-                    if k in done:
-                        continue
-                    fields = subheadings[k]
-                    if not isinstance(fields, (list, tuple)):
-                        fields = [fields]
-                    if f in fields:
-                        done.append(k)
-                        form[0].insert(i, TR(TD(k, _colspan=3, _class="subheading"),
-                                             _class = "subheading",
-                                             _id = "%s_%s__subheading" % (tablename, f)))
-                        tr.attributes.update(_class="after_subheading")
-                        tr = form_rows.next()
-                        i += 1
-            try:
-                tr = form_rows.next()
-            except StopIteration:
-                break
-            else:
-                i += 1
-
 
 # -----------------------------------------------------------------------------
 def shn_rheader_tabs(r, tabs=[], paging=False):
 
-    """
-    Constructs a DIV of component links for a S3RESTRequest
+    """ Constructs a DIV of component links for a S3RESTRequest
 
-    @param tabs: the tabs as list of tuples (title, component_name, vars), where vars is optional
-    @param paging: add paging buttons previous/next to the tabs
+        @param tabs: the tabs as list of tuples (title, component_name, vars),
+            where vars is optional
+        @param paging: add paging buttons previous/next to the tabs
 
     """
 
@@ -579,3 +566,559 @@ def shn_rheader_tabs(r, tabs=[], paging=False):
         rheader_tabs = ""
 
     return rheader_tabs
+
+# -----------------------------------------------------------------------------
+def shn_import_csv(file, table=None):
+
+    """ Import CSV file into Database """
+
+    if table:
+        table.import_from_csv_file(file)
+    else:
+        # This is the preferred method as it updates reference fields
+        db.import_from_csv_file(file)
+        db.commit()
+
+#
+# shn_custom_view -------------------------------------------------------------
+#
+def shn_custom_view(r, default_name, format=None):
+
+    """ Check for custom view """
+
+    prefix = r.request.controller
+
+    if r.component:
+
+        custom_view = "%s_%s_%s" % (r.name, r.component_name, default_name)
+
+        _custom_view = os.path.join(request.folder, "views", prefix, custom_view)
+
+        if not os.path.exists(_custom_view):
+            custom_view = "%s_%s" % (r.name, default_name)
+            _custom_view = os.path.join(request.folder, "views", prefix, custom_view)
+
+    else:
+        if format:
+            custom_view = "%s_%s_%s" % (r.name, default_name, format)
+        else:
+            custom_view = "%s_%s" % (r.name, default_name)
+        _custom_view = os.path.join(request.folder, "views", prefix, custom_view)
+
+    if os.path.exists(_custom_view):
+        response.view = "%s/%s" % (prefix, custom_view)
+    else:
+        if format:
+            response.view = default_name.replace(".html", "_%s.html" % format)
+        else:
+            response.view = default_name
+
+
+# -----------------------------------------------------------------------------
+def shn_copy(r, **attr):
+
+    """ Copy a record
+
+        used as REST method handler for S3Resources
+
+        @todo: move into S3CRUDHandler
+
+    """
+
+    redirect(URL(r=request, args="create", vars={"from_record":r.id}))
+
+
+# -----------------------------------------------------------------------------
+def shn_list_item(table, resource, action, main="name", extra=None):
+
+    """ Display nice names with clickable links & optional extra info
+
+        used in shn_search
+
+    """
+
+    item_list = [TD(A(table[main], _href=URL(r=request, f=resource, args=[table.id, action])))]
+    if extra:
+        item_list.extend(eval(extra))
+    items = DIV(TABLE(TR(item_list)))
+    return DIV(*items)
+
+
+# -----------------------------------------------------------------------------
+def shn_represent_extra(table, module, resource, deletable=True, extra=None):
+
+    """ Display more than one extra field (separated by spaces)
+
+        used in shn_search
+
+    """
+
+    authorised = shn_has_permission("delete", table._tablename)
+    item_list = []
+    if extra:
+        extra_list = extra.split()
+        for any_item in extra_list:
+            item_list.append("TD(db(db.%s_%s.id==%i).select()[0].%s)" % \
+                             (module, resource, table.id, any_item))
+    if authorised and deletable:
+        item_list.append("TD(INPUT(_type='checkbox', _class='delete_row', _name='%s', _id='%i'))" % \
+                         (resource, table.id))
+    return ",".join( item_list )
+
+
+# -----------------------------------------------------------------------------
+def shn_represent(table, module, resource, deletable=True, main="name", extra=None):
+
+    """ Designed to be called via table.represent to make t2.search() output useful
+
+        used in shn_search
+
+    """
+
+    db[table].represent = lambda table: \
+                          shn_list_item(table, resource,
+                                        action="display",
+                                        main=main,
+                                        extra=shn_represent_extra(table,
+                                                                  module,
+                                                                  resource,
+                                                                  deletable,
+                                                                  extra))
+    return
+
+
+# -----------------------------------------------------------------------------
+def shn_search(r, **attr):
+
+    """ Search function, mostly used with the JSON representation
+
+        used as method handler for S3Resources
+
+        @todo: replace by a S3MethodHandler
+
+    """
+
+    deletable = attr.get("deletable", True)
+    main = attr.get("main", None)
+    extra = attr.get("extra", None)
+
+    request = r.request
+
+    # Filter Search list to just those records which user can read
+    query = shn_accessible_query("read", r.table)
+
+    # Filter search to items which aren't deleted
+    if "deleted" in r.table:
+        query = (r.table.deleted == False) & query
+
+    # Respect response.s3.filter
+    if response.s3.filter:
+        query = response.s3.filter & query
+
+    if r.representation in shn_interactive_view_formats:
+
+        shn_represent(r.table, r.prefix, r.name, deletable, main, extra)
+        search = t2.search(r.table, query=query)
+        #search = crud.search(r.table, query=query)[0]
+
+        # Check for presence of Custom View
+        shn_custom_view(r, "search.html")
+
+        # CRUD Strings
+        title = s3.crud_strings.title_search
+
+        output = dict(search=search, title=title)
+
+    elif r.representation == "json":
+
+        _vars = request.vars
+        _table = r.table
+
+        # JQuery Autocomplete uses "q" instead of "value"
+        value = _vars.value or _vars.q or None
+
+        if _vars.field and _vars.filter and value:
+            field = str.lower(_vars.field)
+            _field = _table[field]
+
+            # Optional fields
+            if "field2" in _vars:
+                field2 = str.lower(_vars.field2)
+            else:
+                field2 = None
+            if "field3" in _vars:
+                field3 = str.lower(_vars.field3)
+            else:
+                field3 = None
+            if "parent" in _vars and _vars.parent:
+                if _vars.parent == "null":
+                    parent = None
+                else:
+                    parent = int(_vars.parent)
+            else:
+                parent = None
+            if "exclude_field" in _vars:
+                exclude_field = str.lower(_vars.exclude_field)
+                if "exclude_value" in _vars:
+                    exclude_value = str.lower(_vars.exclude_value)
+                else:
+                    exclude_value = None
+            else:
+                exclude_field = None
+                exclude_value = None
+
+            limit = int(_vars.limit or 0)
+
+            filter = _vars.filter
+            if filter == "~":
+                if field2 and field3:
+                    # pr_person name search
+                    if " " in value:
+                        value1, value2 = value.split(" ", 1)
+                        query = query & ((_field.like("%" + value1 + "%")) & \
+                                        (_table[field2].like("%" + value2 + "%")) | \
+                                        (_table[field3].like("%" + value2 + "%")))
+                    else:
+                        query = query & ((_field.like("%" + value + "%")) | \
+                                        (_table[field2].like("%" + value + "%")) | \
+                                        (_table[field3].like("%" + value + "%")))
+
+                elif exclude_field and exclude_value:
+                    # gis_location hierarchical search
+                    # Filter out poor-quality data, such as from Ushahidi
+                    query = query & (_field.like("%" + value + "%")) & \
+                                    (_table[exclude_field] != exclude_value)
+
+                elif parent:
+                    # gis_location hierarchical search
+                    # NB Currently not used - we allow people to search freely across all the hierarchy
+                    # SQL Filter is immediate children only so need slow lookup
+                    #query = query & (_table.parent == parent) & \
+                    #                (_field.like("%" + value + "%"))
+                    children = gis.get_children(parent)
+                    children = children.find(lambda row: value in str.lower(row.name))
+                    item = children.json()
+                    query = None
+
+                else:
+                    # Normal single-field
+                    query = query & (_field.like("%" + value + "%"))
+
+                if query:
+                    if limit:
+                        item = db(query).select(limitby=(0, limit)).json()
+                    else:
+                        item = db(query).select().json()
+
+            elif filter == "=":
+                query = query & (_field == value)
+                if parent:
+                    # e.g. gis_location hierarchical search
+                    query = query & (_table.parent == parent)
+
+                if _table == db.gis_location:
+                    # Don't return unnecessary fields (WKT is large!)
+                    item = db(query).select(_table.id, _table.uuid, _table.parent, _table.name, _table.level, _table.lat, _table.lon, _table.addr_street).json()
+                else:
+                    item = db(query).select().json()
+
+            elif filter == "<":
+                query = query & (_field < value)
+                item = db(query).select().json()
+
+            elif filter == ">":
+                query = query & (_field > value)
+                item = db(query).select().json()
+
+            else:
+                item = s3xrc.xml.json_message(False, 400, "Unsupported filter! Supported filters: ~, =, <, >")
+                raise HTTP(400, body=item)
+
+        else:
+            #item = s3xrc.xml.json_message(False, 400, "Search requires specifying Field, Filter & Value!")
+            #raise HTTP(400, body=item)
+            # Provide a simplified JSON output which is in the same format as the Search one
+            # (easier to parse than S3XRC & means no need for different parser for filtered/unfiltered)
+            if _table == db.gis_location:
+                # Don't return unnecessary fields (WKT is large!)
+                item = db(query).select(_table.id, _table.name, _table.level).json()
+            else:
+                item = db(query).select().json()
+
+        response.view = "xml.html"
+        output = dict(item=item)
+
+    else:
+        raise HTTP(501, body=BADFORMAT)
+
+    return output
+
+
+# -----------------------------------------------------------------------------
+def shn_barchart (r, **attr):
+
+    """ Provide simple barcharts for resource attributes
+        SVG representation uses the SaVaGe library
+        Need to request a specific value to graph in request.vars
+
+        used as REST method handler for S3Resources
+
+        @todo: replace by a S3MethodHandler
+
+    """
+
+    import gluon.contrib.simplejson as json
+
+    # Get all the variables and format them if needed
+    valKey = r.request.vars.get("value")
+
+    nameKey = r.request.vars.get("name")
+    if not nameKey and r.table.get("name"):
+        # Try defaulting to the most-commonly used:
+        nameKey = "name"
+
+    # The parameter value is required; it must be provided
+    # The parameter name is optional; it is useful, but we don't need it
+    # Here we check to make sure we can find value in the table,
+    # and name (if it was provided)
+    if not r.table.get(valKey):
+        raise HTTP (400, s3xrc.xml.json_message(success=False, status_code="400", message="Need a Value for the Y axis"))
+    elif nameKey and not r.table.get(nameKey):
+        raise HTTP (400, s3xrc.xml.json_message(success=False, status_code="400", message=nameKey + " attribute not found in this resource."))
+
+    start = request.vars.get("start")
+    if start:
+        start = int(start)
+
+    limit = r.request.vars.get("limit")
+    if limit:
+        limit = int(limit)
+
+    settings = r.request.vars.get("settings")
+    if settings:
+        settings = json.loads(settings)
+    else:
+        settings = {}
+
+    if r.representation.lower() == "svg":
+        r.response.headers["Content-Type"] = "image/svg+xml"
+
+        graph = local_import("savage.graph")
+        bar = graph.BarGraph(settings=settings)
+
+        title = deployment_settings.modules.get(module).name_nice
+        bar.setTitle(title)
+
+        if nameKey:
+            xlabel = r.table.get(nameKey).label
+            if xlabel:
+                bar.setXLabel(str(xlabel))
+            else:
+                bar.setXLabel(nameKey)
+
+        ylabel = r.table.get(valKey).label
+        if ylabel:
+            bar.setYLabel(str(ylabel))
+        else:
+            bar.setYLabel(valKey)
+
+        try:
+            records = r.resource.load(start, limit)
+            for entry in r.resource:
+                val = entry[valKey]
+
+                # Can't graph None type
+                if not val is None:
+                    if nameKey:
+                        name = entry[nameKey]
+                    else:
+                        name = None
+                    bar.addBar(name, val)
+            return bar.save()
+        # If the field that was provided was not numeric, we have problems
+        except ValueError:
+            raise HTTP(400, "Bad Request")
+    else:
+        raise HTTP(501, body=BADFORMAT)
+
+
+# -----------------------------------------------------------------------------
+def shn_rest_controller(module, resource, **attr):
+
+    """ Helper function to apply the S3Resource REST interface """
+
+    # @todo: implement these as S3MethodHandler:
+    s3xrc.set_handler("search", shn_search)
+    s3xrc.set_handler("copy", shn_copy)
+    s3xrc.set_handler("barchart", shn_barchart)
+
+    res, r = s3xrc.parse_request(module, resource)
+    output = res.execute_request(r, **attr)
+
+    # Add default action buttons in list views:
+    if isinstance(output, dict) and not r.method:
+        c = r.component
+        if response.s3.actions is None:
+            native = False
+            if c:
+                _attr = c.attr
+                authorised = shn_has_permission("update", c.tablename)
+                if s3xrc.model.has_components(c.prefix, c.name):
+                    # Use the component's native controller for CRU(D), need
+                    # to make sure you have one, or override by native=False
+                    native = attr.get("native", True)
+            else:
+                _attr = attr
+                authorised = shn_has_permission("update", r.tablename)
+
+            listadd = _attr.get("listadd", True)
+            editable = _attr.get("editable", True)
+            deletable = _attr.get("deletable", True)
+            copyable = _attr.get("copyable", False)
+
+            # URL to open the resource
+            open_url = r.resource.crud._linkto(r,
+                                               authorised=authorised,
+                                               update=editable,
+                                               native=native)("[id]")
+
+            # Add action buttons for Open/Delete/Copy as appropriate
+            shn_action_buttons(r,
+                               deletable=deletable,
+                               copyable=copyable,
+                               read_url=open_url,
+                               update_url=open_url)
+
+            # Override add button for native controller use (+automatic linking)
+            if native and not listadd:
+                if shn_has_permission("create", c.tablename):
+                    label = shn_get_crud_string(c.tablename,
+                                                "label_create_button")
+                    hook = r.resource.components[c.name]
+                    fkey = "%s.%s" % (c.name, hook.fkey)
+                    vars = request.vars.copy()
+                    vars.update({fkey: r.id})
+                    url = str(URL(r=request, c=c.prefix, f=c.name,
+                                  args=["create"], vars=vars))
+                    add_btn = A(label, _href=url, _class="action-btn")
+                    output.update(add_btn=add_btn)
+
+    return output
+
+
+# -----------------------------------------------------------------------------
+def s3_rest_controller(prefix, resourcename, **attr):
+
+    """ Helper function to apply the S3Resource REST interface (new version)
+
+        @param prefix: the application prefix
+        @param resourcename: the resource name (without prefix)
+        @param attr: additional keyword parameters
+
+        Any keyword parameters will be copied into the output dict (provided
+        that the output is a dict). If a keyword parameter is callable, then
+        it will be invoked, and its return value will be added to the output
+        dict instead. The callable receives the S3Request as its first and
+        only parameter.
+
+        CRUD can be configured per table using:
+
+            s3xrc.model.configure(table, **attr)
+
+        *** Redirection:
+
+        create_next             URL to redirect to after a record has been created
+        update_next             URL to redirect to after a record has been updated
+        delete_next             URL to redirect to after a record has been deleted
+
+        *** Form configuration:
+
+        list_fields             list of names of fields to include into list views
+        subheadings             Sub-headings (see separate documentation)
+        listadd                 Enable/Disable add-form in list views
+
+        *** CRUD configuration:
+
+        editable                Allow/Deny record updates in this table
+        deletable               Allow/Deny record deletions in this table
+        insertable              Allow/Deny record insertions into this table
+        copyable                Allow/Deny record copying within this table
+
+        *** Callbacks:
+
+        create_onvalidation     Function/Lambda for additional record validation on create
+        create_onaccept         Function/Lambda after successful record insertion
+
+        update_onvalidation     Function/Lambda for additional record validation on update
+        update_onaccept         Function/Lambda after successful record update
+
+        onvalidation            Fallback for both create_onvalidation and update_onvalidation
+        onaccept                Fallback for both create_onaccept and update_onaccept
+        ondelete                Function/Lambda after record deletion
+
+    """
+
+    # Set method handlers
+    s3xrc.set_handler("search", shn_search)
+    s3xrc.set_handler("copy", shn_copy)
+    s3xrc.set_handler("barchart", shn_barchart)
+
+    # Parse and execute the request
+    resource, r = s3xrc.parse_request(prefix, resourcename)
+    output = resource.execute_request(r, **attr)
+
+    # Add default action buttons in list views
+    if isinstance(output, dict) and not r.method or r.method=="search_simple":
+
+        if response.s3.actions is None:
+
+            prefix, name, table, tablename = r.target()
+            authorised = shn_has_permission("update", tablename)
+
+            # If the component has components itself, then use the
+            # component's native controller for CRU(D) => make sure
+            # you have one, or override by native=False
+            if r.component and s3xrc.model.has_components(prefix, name):
+                native = output.get("native", True)
+            else:
+                native = False
+
+            # Get table config
+            model = s3xrc.model
+            listadd = model.get_config(table, "listadd", True)
+            editable = model.get_config(table, "editable", True)
+            deletable = model.get_config(table, "deletable", True)
+            copyable = model.get_config(table, "copyable", False)
+
+            # URL to open the resource
+            open_url = r.resource.crud._linkto(r,
+                                               authorised=authorised,
+                                               update=editable,
+                                               native=native)("[id]")
+
+            # Add action buttons for Open/Delete/Copy as appropriate
+            shn_action_buttons(r,
+                               deletable=deletable,
+                               copyable=copyable,
+                               read_url=open_url,
+                               update_url=open_url)
+
+            # Override Add-button, link to native controller and put
+            # the primary key into vars for automatic linking
+            if native and not listadd and \
+               shn_has_permission("create", tablename):
+                label = shn_get_crud_string(tablename,
+                                            "label_create_button")
+                hook = r.resource.components[name]
+                fkey = "%s.%s" % (name, hook.fkey)
+                vars = request.vars.copy()
+                vars.update({fkey: r.id})
+                url = str(URL(r=request, c=prefix, f=name,
+                              args=["create"], vars=vars))
+                add_btn = A(label, _href=url, _class="action-btn")
+                output.update(add_btn=add_btn)
+
+    return output
+
+# END
+# *****************************************************************************

@@ -102,6 +102,4 @@ if deployment_settings.has_module(module):
     # Items as component of Distributions
     s3xrc.model.add_component(module, resource,
                               multiple=True,
-                              joinby=dict(logs_distrib="distrib_id", supply_item="item_id"),
-                              deletable=True,
-                              editable=True)
+                              joinby=dict(logs_distrib="distrib_id", supply_item="item_id"))

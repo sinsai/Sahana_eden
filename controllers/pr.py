@@ -6,7 +6,7 @@
 
 """
 
-module = request.controller
+module = prefix = request.controller
 
 # -----------------------------------------------------------------------------
 # Options Menu (available in all Functions" Views)
@@ -86,15 +86,15 @@ def index():
                 label = READ
             else:
                 label = UPDATE
-            linkto = shn_linkto(jr, sticky=True)("[id]")
+            linkto = jr.resource.crud._linkto(jr)("[id]")
             response.s3.actions = [
                 dict(label=str(label), _class="action-btn", url=str(linkto))
             ]
+        jr.next = None
         return output
     response.s3.postp = postp
 
-    response.s3.pagination = True
-    output = shn_rest_controller("pr", "person")
+    output = s3_rest_controller("pr", "person")
     response.view = "pr/index.html"
 
     shn_menu()
@@ -129,25 +129,13 @@ def person():
                                        "group_head",
                                        "description"])
 
-    def postp(r, output):
-        if r.representation in shn_interactive_view_formats:
-            if not r.component:
-                label = READ
-            else:
-                label = UPDATE
-            linkto = shn_linkto(r, sticky=True)("[id]")
-            response.s3.actions = [
-                dict(label=str(label), _class="action-btn", url=str(linkto))
-            ]
-        return output
-    response.s3.postp = postp
+    table = db.pr_person
+    s3xrc.model.configure(table, listadd = False, insertable = True)
 
-    response.s3.pagination = True
-    output = shn_rest_controller(module, resource,
-                                 listadd = False,
-                                 main="first_name",
-                                 extra="last_name",
-                                 rheader=lambda r: shn_pr_rheader(r,
+    output = s3_rest_controller(module, resource,
+                                main="first_name",
+                                extra="last_name",
+                                rheader=lambda r: shn_pr_rheader(r,
                                     tabs = [(T("Basic Details"), None),
                                             (T("Images"), "image"),
                                             (T("Identity"), "identity"),
@@ -177,21 +165,21 @@ def group():
                                        "group_head",
                                        "description"])
 
-    def group_postp(jr, output):
-        if jr.representation in shn_interactive_view_formats:
-            if not jr.component:
-                label = READ
-            else:
-                label = UPDATE
-            linkto = shn_linkto(jr, sticky=True)("[id]")
-            response.s3.actions = [
-                dict(label=str(label), _class="action-btn", url=linkto)
-            ]
-        return output
-    response.s3.postp = group_postp
+    #def group_postp(jr, output):
+        #if jr.representation in shn_interactive_view_formats:
+            #if not jr.component:
+                #label = READ
+            #else:
+                #label = UPDATE
+            #linkto = shn_linkto(jr, sticky=True)("[id]")
+            #response.s3.actions = [
+                #dict(label=str(label), _class="action-btn", url=linkto)
+            #]
+        #return output
+    #response.s3.postp = group_postp
 
-    response.s3.pagination = True
-    output = shn_rest_controller(module, resource,
+    # @todo: migrate CRUD settings
+    output = s3_rest_controller(module, resource,
                 main="name",
                 extra="description",
                 rheader=lambda jr: shn_pr_rheader(jr,
@@ -210,7 +198,7 @@ def image():
     """ RESTful CRUD controller """
 
     resource = request.function
-    return shn_rest_controller(module, resource)
+    return s3_rest_controller(module, resource)
 
 # -----------------------------------------------------------------------------
 def pe_contact():
@@ -218,7 +206,7 @@ def pe_contact():
     """ RESTful CRUD controller """
 
     resource = request.function
-    return shn_rest_controller(module, resource)
+    return s3_rest_controller(module, resource)
 
 # -----------------------------------------------------------------------------
 #def group_membership():
@@ -226,19 +214,15 @@ def pe_contact():
     #""" RESTful CRUD controller """
 
     #resource = request.function
-    #return shn_rest_controller(module, resource)
+    #return s3_rest_controller(module, resource)
 
 # -----------------------------------------------------------------------------
 def pentity():
 
     """ RESTful CRUD controller """
 
-    resource = request.function
-    response.s3.pagination = True
-    return shn_rest_controller(module, resource,
-                               editable=False,
-                               deletable=False,
-                               listadd=False)
+    resourcename = request.function
+    return s3_rest_controller(prefix, resourcename)
 
 # -----------------------------------------------------------------------------
 def download():

@@ -124,16 +124,17 @@ def req():
         return output
     response.s3.postp = postp
 
-    response.s3.pagination = True
-    output = shn_rest_controller(module, resource,
-                                 editable=True,
-                                 #listadd=False,
-                                 rheader=shn_rms_rheader)
+    s3xrc.model.configure(table,
+                          #listadd=False,
+                          editable=True)
 
-    return output
+    return s3_rest_controller(module, resource, rheader=shn_rms_rheader)
+
 
 def ritem():
-    "RESTful CRUD controller"
+
+    """ RESTful CRUD controller """
+
     resource = request.function
     tablename = "%s_%s" % (module, resource)
     table = db[tablename]
@@ -147,13 +148,15 @@ def ritem():
 
     s3.crud_strings[tablename].label_create_button = None
 
-    return shn_rest_controller(module,
+    # @todo: migrate CRUD settings
+    return s3_rest_controller(module,
                                resource,
                                listadd=False,
                                #rheader=rheader
                                )
 
 def pledge():
+
     """ RESTful CRUD controller """
 
     resource = request.function
@@ -192,15 +195,16 @@ def pledge():
         return output
     response.s3.postp = postp
 
-    response.s3.pagination = True
-    return shn_rest_controller(module,
-                               resource,
-                               editable = True,
-                               #listadd=False
-                               )
+    s3xrc.model.configure(table,
+                          #listadd=False,
+                          editable=True)
+
+    return s3_rest_controller(module, resource)
 
 
 def shn_rms_rheader(jr):
+
+    """ @todo: fix docstring """
 
     if jr.representation == "html":
 

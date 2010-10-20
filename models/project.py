@@ -131,11 +131,8 @@ if deployment_settings.has_module("org"):
                                          msg_record_deleted = T("Activity Deleted"),
                                          msg_list_empty = T("No Activities Found")
                                          )
-    # Activities as component of Orgs & Locations
+    # Activities as component of Orgs
     s3xrc.model.add_component(module, resource,
                               multiple=True,
-                              joinby=dict(org_organisation="organisation_id"),
-                              #joinby=dict(org_organisation="organisation_id", gis_location="location_id"),
-                              deletable=True,
-                              editable=True)
+                              joinby=dict(org_organisation="organisation_id"))
 

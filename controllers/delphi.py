@@ -295,22 +295,22 @@ def group():
     if not shn_has_role(1):
         raise HTTP(403)
 
-    return shn_rest_controller(module, "group")
+    return s3_rest_controller(module, "group")
 
 def user_to_group():
     if not shn_has_role(1):
         raise HTTP(403)
 
-    return shn_rest_controller(module, "user_to_group")
+    return s3_rest_controller(module, "user_to_group")
 
 def problem():
     # TODO: access check
-    return shn_rest_controller(module, "problem")
+    return s3_rest_controller(module, "problem")
 
 def solution():
     # TODO: access check
     table.problem_id.default = get_last_problem_id()
-    return shn_rest_controller(module, "solution")
+    return s3_rest_controller(module, "solution")
 
 def summary():
     pr, duser = __get_commons()

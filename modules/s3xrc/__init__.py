@@ -2,8 +2,8 @@
 
 """ S3XRC Resource Framework
 
-    @version: 2.1.7
-    
+    @version: 2.1.8
+
     @see: U{B{I{S3XRC}} <http://eden.sahanafoundation.org/wiki/S3XRC>} on Eden wiki
 
     @requires: U{B{I{lxml}} <http://codespeak.net/lxml>}
@@ -41,5 +41,5 @@
 
 from s3rc import S3ResourceController
 from s3rest import S3Resource
-from s3crud import S3Audit, S3MethodHandler, S3CRUDHandler
+from s3crud import S3Audit, S3MethodHandler, S3CRUDHandler, S3SearchSimple
 

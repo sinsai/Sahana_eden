@@ -24,26 +24,31 @@ def index():
 
     return dict(module_name=module_name)
 
-
 #==============================================================================
 def cluster():
-    "RESTful CRUD controller"
+
+    """ RESTful CRUD controller """
+
     resourcename = request.function
     tablename = "%s_%s" % (module, resourcename)
     table = db[tablename]
 
-    return shn_rest_controller(module, resourcename)    
+    return shn_rest_controller(module, resourcename)
+
 #==============================================================================
 def cluster_subsector():
-    "RESTful CRUD controller"
+
+    """ RESTful CRUD controller """
+
     resourcename = request.function
     tablename = "%s_%s" % (module, resourcename)
     table = db[tablename]
 
-    return shn_rest_controller(module, resourcename)    
-#==============================================================================
+    return shn_rest_controller(module, resourcename)
 
+#==============================================================================
 def organisation():
+
     """ RESTful CRUD controller """
 
     resource = request.function
@@ -59,10 +64,8 @@ def organisation():
                                                 #(T("Sites"), "site"),  # Ticket 195
                                                ])
 
-    response.s3.pagination = True
-    output = shn_rest_controller(module, resource,
-                                 listadd=False,
-                                 rheader=rheader)
+    s3xrc.model.configure(db.org_organisation, listadd=False)
+    output = s3_rest_controller(module, resource, rheader=rheader)
 
     return output
 
@@ -71,7 +74,7 @@ def office():
     resource = request.function
     tablename = "%s_%s" % (module, resource)
     table = db[tablename]
-    
+
     if isinstance(request.vars.organisation_id, list):
         request.vars.organisation_id = request.vars.organisation_id[0]
 
@@ -88,15 +91,15 @@ def office():
                 session.s3.organisation_name = db(db.org_organisation.id == int(session.s3.organisation_id)).select(db.org_organisation.name).first().name
         return True
     response.s3.prep = prep
-    
+
     rheader = lambda r: shn_org_rheader(r,
                                         tabs = [(T("Basic Details"), None),
                                                 (T("Contact Data"), "pe_contact"),
                                                 (T("Staff"), "staff"),
                                                ])
 
-    response.s3.pagination = True
-    output = shn_rest_controller(module, resource,
+    # @todo: migrate CRUD settings
+    output = s3_rest_controller(module, resource,
                                  #listadd=False,
                                  rheader=rheader)
 
@@ -108,7 +111,7 @@ def staff():
     resource = request.function
     tablename = "%s_%s" % (module, resource)
     table = db[tablename]
-    
+
     # Pre-processor
     def prep(jr):
         # No point in downloading large dropdowns which we hide, so provide a smaller represent
@@ -122,9 +125,9 @@ def staff():
         return True
     response.s3.prep = prep
 
-    response.s3.pagination = True
-    output = shn_rest_controller(module, resource, listadd=False)
-    
+    # @todo: migrate CRUD settings
+    output = s3_rest_controller(module, resource, listadd=False)
+
     return output
 
 def donor():
@@ -132,10 +135,10 @@ def donor():
     resource = request.function
     tablename = "%s_%s" % (module, resource)
     table = db[tablename]
-    
-    response.s3.pagination = True
-    output = shn_rest_controller(module, resource, listadd=False)
-    
+
+    # @todo: migrate CRUD settings
+    output = s3_rest_controller(module, resource, listadd=False)
+
     return output
 
 # Component Resources need these settings to be visible where they are linked from
@@ -158,7 +161,9 @@ s3.crud_strings[tablename] = Storage(
     msg_list_empty = T("No Donors currently registered"))
 
 def project():
+
     """ RESTful CRUD controller """
+
     resource = request.function
     tablename = "%s_%s" % (module, resource)
     table = db[tablename]
@@ -173,38 +178,32 @@ def project():
                                                     #(T("Donors"), "organisation"),
                                                     #(T("Sites"), "site"),  # Ticket 195
                                                    ])
-                                           
-    response.s3.pagination = True
-    output = shn_rest_controller(module, resource,
-                                 listadd=False,
-                                 main="code",
-                                 rheader=rheader
-                                )
-    
-    return output
+
+    return s3_rest_controller(module, resource, rheader=rheader)
+
 
 def task():
     """ RESTful CRUD controller """
     resource = request.function
     tablename = "%s_%s" % (module, resource)
     table = db[tablename]
-    
-    response.s3.pagination = True
-    output = shn_rest_controller(module, resource,
+
+    # @todo: migrate CRUD settings
+    output = s3_rest_controller(module, resource,
                                  listadd=False
                                 )
-    
+
     return output
 
 def shn_org_rheader(r, tabs=[]):
     " Organisation Registry page headers "
 
     if r.representation == "html":
-        
+
         rheader_tabs = shn_rheader_tabs(r, tabs)
-        
+
         if r.name == "organisation":
-        
+
             #_next = r.here()
             #_same = r.same()
 
@@ -219,7 +218,7 @@ def shn_org_rheader(r, tabs=[]):
                 _type = org_organisation_type_opts[organisation.type]
             except KeyError:
                 _type = None
-            
+
             rheader = DIV(TABLE(
                 TR(
                     TH(T("Organization") + ": "),
@@ -238,7 +237,7 @@ def shn_org_rheader(r, tabs=[]):
             return rheader
 
         elif r.name == "office":
-        
+
             #_next = r.here()
             #_same = r.same()
 

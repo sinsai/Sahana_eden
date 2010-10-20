@@ -133,11 +133,11 @@ class S3Importer(object):
                     else:
                         data.text = value
                     element.append(data)
-        tree = xml.tree([element], domain=s3xrc.domain)
+        tree = xml.tree([element], domain=self.manager.domain)
 
         # Import data
         result = Storage(committed=False)
-        s3xrc.sync_resolve = lambda vector, result=result: result.update(vector=vector)
+        self.manager.sync_resolve = lambda vector, result=result: result.update(vector=vector)
         try:
             success = resource.import_xml(tree)
         except SyntaxError:

@@ -112,8 +112,8 @@ def incident():
                                                    (T("Response"), "iresponse")
                                                   ])
 
-    # @todo: migrate CRUD settings
-    output = s3_rest_controller(module, resource, listadd=False, rheader=rheader)
+    s3xrc.model.configure(table, listadd=False)
+    output = s3_rest_controller(module, resource, rheader=rheader)
     return output
 
 # -----------------------------------------------------------------------------
@@ -167,8 +167,8 @@ def ireport():
                                                    (T("Images"), "iimage")
                                                   ])
 
-    # @todo: migrate CRUD settings
-    output = s3_rest_controller(module, resource, listadd=False, rheader=rheader)
+    s3xrc.model.configure(table, listadd=False)
+    output = s3_rest_controller(module, resource, rheader=rheader)
     return output
 
 # -----------------------------------------------------------------------------

@@ -243,12 +243,7 @@ def person():
 
     rheader = lambda r: shn_pr_rheader(r, tabs=mpr_tabs)
 
-    # @todo: migrate CRUD settings
-    output = s3_rest_controller("pr", resource,
-                                 main="first_name",
-                                 extra="last_name",
-                                 listadd=False,
-                                 rheader=rheader)
+    output = s3_rest_controller("pr", resource, rheader=rheader)
 
     shn_menu()
     return output

@@ -136,14 +136,8 @@ def hospital():
                                                        (T("Contacts"), "hcontact")
                                                       ])
 
-    # @todo: migrate CRUD settings
-    output = s3_rest_controller(module, resource,
-                                 rheader=rheader,
-                                 #listadd=False
-                                )
-
+    output = s3_rest_controller(module, resource, rheader=rheader)
     shn_menu()
-
     return output
 
 

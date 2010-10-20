@@ -29,11 +29,15 @@ def index():
 
 @auth.requires_membership("Administrator")
 def spreadsheet():
+
     """ RESTful Controller """
+
     resource = request.function
-    # @todo: migrate CRUD settings
-    crud.settings.create_onaccept = lambda form: redirect(URL(r=request, c="importer", f="spreadsheetview"))
-    # @todo: migrate CRUD settings
+
+    s3xrc.model.configure(db.importer_spreadsheet,
+        create_onaccept = lambda form: redirect(URL(r=request, c="importer", f="spreadsheetview")),
+        listadd=False)
+
     return s3_rest_controller(module, resource, listadd=False)
 
 def spreadsheetview():

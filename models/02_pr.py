@@ -432,6 +432,9 @@ def pr_person_onvalidation(form):
 
 # -----------------------------------------------------------------------------
 s3xrc.model.configure(table,
+    main="first_name",
+    extra="last_name",
+    listadd=False,
     onvalidation=lambda form: pr_person_onvalidation(form),
     onaccept=lambda form, table=table: shn_pentity_onaccept(form, table=table),
     delete_onaccept=lambda form: shn_pentity_ondelete(form),

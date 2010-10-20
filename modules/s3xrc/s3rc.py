@@ -838,7 +838,7 @@ class S3ResourceController(object):
                                        download_url=self.download_url,
                                        marker=marker)
             self.xml.add_references(element, rmap, show_ids=self.show_ids)
-            self.xml.gis_encode(rmap,
+            self.xml.gis_encode(resource, record, rmap,
                                 download_url=self.download_url,
                                 marker=marker)
 
@@ -887,7 +887,7 @@ class S3ResourceController(object):
                                                 download_url=self.download_url,
                                                 marker=marker)
                     self.xml.add_references(celement, crmap, show_ids=self.show_ids)
-                    self.xml.gis_encode(rmap,
+                    self.xml.gis_encode(cresource, crecord, rmap,
                                         download_url=self.download_url,
                                         marker=marker)
 
@@ -948,7 +948,7 @@ class S3ResourceController(object):
                                                download_url=self.download_url,
                                                marker=marker)
                     self.xml.add_references(element, rmap, show_ids=self.show_ids)
-                    self.xml.gis_encode(rmap,
+                    self.xml.gis_encode(rresource, record, rmap,
                                         download_url=self.download_url,
                                         marker=marker)
 

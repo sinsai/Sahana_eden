@@ -616,7 +616,7 @@ class S3ResourceController(object):
         if field.represent:
             text = str(cache.ram("%s_repr_%s" % (field, val),
                                  lambda: field.represent(val),
-                                 time_expire=5)).decode("utf-8")
+                                 time_expire=5))
         else:
             if val is None:
                 text = NONE
@@ -654,7 +654,12 @@ class S3ResourceController(object):
         elif xml_escape:
             text = self.xml.xml_encode(text)
 
-        return text.decode("utf-8")
+        try:
+            text = text.decode("utf-8")
+        except:
+            pass
+
+        return text
 
 
     # -------------------------------------------------------------------------

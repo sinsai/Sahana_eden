@@ -1,33 +1,40 @@
 # -*- coding: utf-8 -*-
 
-"""
-    Supply
+""" Supply
 
     @author: Michael Howden (michael@sahanafoundation.org)
     @date-created: 2010-08-16
 
     Generic Supply functionality such as catalogs and items that will be used across multiple modules
+
 """
 
-module = request.controller
+prefix = request.controller
+resourcename = request.function
 
 response.menu_options = logs_menu
 
 #==============================================================================
 #@auth.shn_requires_membership(1)
 def item_category():
+
     """ RESTful CRUD controller """
-    resource = request.function
-    tablename = "%s_%s" % (module, resource)
+
+    tablename = "%s_%s" % (prefix, resourcename)
     table = db[tablename]
-    # @todo: migrate CRUD settings
-    return s3_rest_controller(module, resource, listadd=False)
+
+    s3xrc.model.configure(table, listadd=False)
+    return s3_rest_controller(prefix, resourcename)
+
 
 #==============================================================================
-def shn_item_rheader(jr, tabs=[]):
-    if jr.representation == "html":
-        rheader_tabs = shn_rheader_tabs(jr, tabs)
-        item = jr.record
+def shn_item_rheader(r, tabs=[]):
+
+    """ @todo: fix docstring, PEP8 """
+
+    if r.representation == "html":
+        rheader_tabs = shn_rheader_tabs(r, tabs)
+        item = r.record
         category = db(db.supply_item_category.id == item.item_category_id).select(db.supply_item_category.name, limitby=(0, 1)).first().name
         rheader = DIV(TABLE(TR(
                                TH(T("Category") + ": "),   category,
@@ -39,10 +46,13 @@ def shn_item_rheader(jr, tabs=[]):
         return rheader
     return None
 
+
+#==============================================================================
 def item():
+
     """ RESTful CRUD controller """
-    resource = request.function
-    tablename = "%s_%s" % (module, resource)
+
+    tablename = "%s_%s" % (prefix, resourcename)
     table = db[tablename]
 
     tabs = [
@@ -52,5 +62,7 @@ def item():
            ]
 
     rheader = lambda r: shn_item_rheader(r, tabs)
+    return s3_rest_controller(prefix, resourcename, rheader=rheader)
 
-    return s3_rest_controller(module, resource, rheader=rheader)
+
+#==============================================================================

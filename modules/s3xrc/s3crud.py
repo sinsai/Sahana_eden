@@ -865,6 +865,7 @@ class S3CRUDHandler(S3MethodHandler):
                 response.s3.gis.location_id = True
                 if response.s3.gis.map_selector:
                     # Include a map
+                    gis = self.manager.gis
                     _map = gis.form_map(r, method="update",
                                         tablename=tablename,
                                         prefix=self.prefix,

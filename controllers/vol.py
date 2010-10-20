@@ -1,14 +1,13 @@
 # -*- coding: utf-8 -*-
 
-"""
-    Volunteer Management System
-"""
+""" Volunteer Management System """
 
 from gluon.sql import Rows
 
-module = request.controller
+prefix = request.controller
+resourcename = request.function
 
-if module not in deployment_settings.modules:
+if prefix not in deployment_settings.modules:
     session.error = T("Module disabled!")
     redirect(URL(r=request, c="default", f="index"))
 
@@ -96,7 +95,7 @@ def index():
 
     """ Module's Home Page """
 
-    module_name = deployment_settings.modules[module].name_nice
+    module_name = deployment_settings.modules[prefix].name_nice
 
     return dict(module_name=module_name)
 
@@ -109,19 +108,6 @@ def person():
     volunteer-specific person component tabs, depending on whether "vol_tabs"
     in the URL's vars is "person" or "volunteer".
     """
-
-    #def person_postp(jr, output):
-        #if jr.representation in shn_interactive_view_formats:
-            #if not jr.component:
-                #label = READ
-            #else:
-                #label = UPDATE
-            #linkto = shn_linkto(jr, sticky=True)("[id]")
-            #response.s3.actions = [
-                #dict(label=str(label), _class="action-btn", url=str(linkto))
-            #]
-        #return output
-    #response.s3.postp = person_postp
 
     tab_set = "person"
     if "vol_tabs" in request.vars:
@@ -156,13 +142,8 @@ def person():
                 #(T("Resources"), "resource"),
                ]
 
-    resource = request.function
-    # @todo: migrate CRUD settings
-    output = s3_rest_controller("pr", resource,
-        main="first_name",
-        extra="last_name",
-        rheader=lambda r: shn_pr_rheader(r, tabs),
-        listadd=False)
+    output = s3_rest_controller("pr", resourcename,
+                                rheader=lambda r: shn_pr_rheader(r, tabs))
 
     shn_menu()
     return output
@@ -170,9 +151,8 @@ def person():
 
 # -----------------------------------------------------------------------------
 def project():
-    "Project controller"
 
-    resource = request.function
+    """ RESTful CRUD controller """
 
     tabs = [
             (T("Basic Details"), None),
@@ -183,28 +163,18 @@ def project():
            ]
 
     rheader = lambda r: shn_project_rheader(r, tabs)
-
-    # @todo: migrate CRUD settings
-    output = s3_rest_controller("org", resource,
-                                 listadd=False,
-                                 main="code",
-                                 rheader=rheader)
-
-    return output
+    return s3_rest_controller("org", resourcename, rheader=rheader)
 
 
 # -----------------------------------------------------------------------------
 def task():
+
     """ Manage current user's tasks """
 
-    resource = request.function
-    tablename = "org_%s" % (resource)
+    tablename = "org_%s" % (resourcename)
     table = db[tablename]
 
-    my_person_id = None
-
-    if auth.user is not None and auth.user.person_uuid:
-        my_person_id = db(db.pr_person.uuid == auth.user.person_uuid).select(db.pr_person.id, limitby=(0,1)).first()
+    my_person_id = s3_logged_in_person()
 
     if not my_person_id:
         session.error = T("No person record found for current user.")
@@ -218,32 +188,42 @@ def task():
     s3.crud_strings[tablename].title_list = T("My Tasks")
     s3.crud_strings[tablename].subtitle_list = T("Task List")
 
-    # @todo: migrate CRUD settings
-    return s3_rest_controller("org", resource, listadd=False)
+    return s3_rest_controller("org", resourcename)
 
 
 # -----------------------------------------------------------------------------
 def skill_types():
-    "Allow user to define new skill types."
-    return s3_rest_controller(module, "skill_types")
+
+    """ Allow user to define new skill types. """
+
+    return s3_rest_controller(prefix, "skill_types")
 
 
 # -----------------------------------------------------------------------------
 def view_map():
-    """
-    Map Location of Volunteer.
-    Use most recent presence if available, else any address that's available.
+
+    """ Map Location of Volunteer.
+
+        Use most recent presence if available, else any address that's
+        available.
+
     """
 
     person_id = request.args(0)
 
-    presence_query = (db.pr_person.id == person_id) & (db.pr_presence.pe_id == db.pr_person.pe_id) & (db.gis_location.id == db.pr_presence.location_id)
+    presence_query = (db.pr_person.id == person_id) & \
+                     (db.pr_presence.pe_id == db.pr_person.pe_id) & \
+                     (db.gis_location.id == db.pr_presence.location_id)
 
     # Need sql.Rows object for show_map, so don't extract individual row.
-    location = db(presence_query).select(db.gis_location.ALL, orderby=~db.pr_presence.datetime, limitby=(0, 1))
+    location = db(presence_query).select(db.gis_location.ALL,
+                                         orderby=~db.pr_presence.datetime,
+                                         limitby=(0, 1))
 
     if not location:
-        address_query = (db.pr_person.id == person_id) & (db.pr_address.pe_id == db.pr_person.pe_id) & (db.gis_location.id == db.pr_address.location_id)
+        address_query = (db.pr_person.id == person_id) & \
+                        (db.pr_address.pe_id == db.pr_person.pe_id) & \
+                        (db.gis_location.id == db.pr_address.location_id)
         # TODO: If there are multiple addresses, which should we choose?
         # For now, take whichever address is supplied first.
         location = db(address_query).select(db.gis_location.ALL, limitby=(0, 1))
@@ -257,9 +237,13 @@ def view_map():
 
         volunteer = {"feature_group" : "People"}
         html = gis.show_map(
-            feature_queries = [{"name" : "Volunteer", "query" : location, "active" : True, "marker" : db(db.gis_marker.name == "volunteer").select().first().id}],
+            feature_queries = [{"name" : "Volunteer",
+                                "query" : location,
+                                "active" : True,
+                                "marker" : db(db.gis_marker.name == "volunteer").select().first().id}],
             feature_groups = [volunteer],
-            wms_browser = {"name" : "Risk Maps", "url" : "http://preview.grid.unep.ch:8080/geoserver/ows?service=WMS&request=GetCapabilities"},
+            wms_browser = {"name" : "Risk Maps",
+                           "url" : "http://preview.grid.unep.ch:8080/geoserver/ows?service=WMS&request=GetCapabilities"},
             catalogue_overlays = True,
             catalogue_toolbar = True,
             toolbar = True,
@@ -278,9 +262,7 @@ def view_map():
 # -----------------------------------------------------------------------------
 def group():
 
-    """
-    Team controller -- teams use the group table from pr.
-    """
+    """ Team controller -- teams use the group table from PR """
 
     tablename = "pr_group"
     table = db[tablename]
@@ -334,30 +316,13 @@ def group():
                                        "group_head",
                                        "description"])
 
-    #def group_postp(jr, output):
-        #if jr.representation in shn_interactive_view_formats:
-            #if not jr.component:
-                #label = READ
-            #else:
-                #label = UPDATE
-            #linkto = shn_linkto(jr, sticky=True)("[id]")
-            #response.s3.actions = [
-                #dict(label=str(label), _class="action-btn", url=str(linkto))
-            #]
-        #return output
-    #response.s3.postp = group_postp
-
-    # @todo: migrate CRUD settings
+    s3xrc.model.configure(table, main="name", extra="description", listadd=False, deletable=False)
     output = s3_rest_controller("pr", "group",
-                                 main="name",
-                                 extra="description",
                                  rheader=lambda jr: shn_pr_rheader(jr,
                                         tabs = [(T("Team Details"), None),
                                                 (T("Address"), "address"),
                                                 (T("Contact Data"), "pe_contact"),
-                                                (T("Members"), "group_membership")]),
-                                 listadd=False,
-                                 deletable=False)
+                                                (T("Members"), "group_membership")]))
 
     shn_menu()
     return output
@@ -365,15 +330,18 @@ def group():
 
 # -----------------------------------------------------------------------------
 def skill():
-    "Select skills a volunteer has."
-    return s3_rest_controller(module, "skill")
+
+    """ Select skills a volunteer has. """
+
+    return s3_rest_controller(prefix, "skill")
 
 
 # -----------------------------------------------------------------------------
 def view_team_map():
-    """
-    Map Location of Volunteer in a Team.
-    Use most recent presence if available, else any address that's available.
+
+    """ Map Location of Volunteer in a Team.
+        Use most recent presence if available, else any address that's available.
+
     """
 
     group_id = request.args(0)
@@ -423,34 +391,40 @@ def view_team_map():
 
 # -----------------------------------------------------------------------------
 def compose_person():
-    "Send message to volunteer"
+
+    """ Send message to volunteer """
 
     person_pe_id_query = (db.pr_person.id == request.vars.person_id)
     pe_id_row = db(person_pe_id_query).select(db.pr_person.pe_id).first()
     request.vars.pe_id = pe_id_row["pe_id"]
 
-    return shn_msg_compose( redirect_module=module,
-                            redirect_function="compose_person",
-                            redirect_vars={"person_id":request.vars.person_id},
-                            title_name="Send a message to a volunteer" )
+    return shn_msg_compose(redirect_module=prefix,
+                           redirect_function="compose_person",
+                           redirect_vars={"person_id":request.vars.person_id},
+                           title_name="Send a message to a volunteer")
 
 
 # -----------------------------------------------------------------------------
 def compose_group():
-    "Send message to members of a team"
+
+    """ Send message to members of a team """
 
     group_pe_id_query = (db.pr_group.id == request.vars.group_id)
     pe_id_row = db(group_pe_id_query).select(db.pr_group.pe_id).first()
     request.vars.pe_id = pe_id_row["pe_id"]
 
-    return shn_msg_compose( redirect_module=module,
-                            redirect_function="compose_group",
-                            redirect_vars={"group_id":request.vars.group_id},
-                            title_name="Send a message to a team of volunteers" )
+    return shn_msg_compose(redirect_module=prefix,
+                           redirect_function="compose_group",
+                           redirect_vars={"group_id":request.vars.group_id},
+                           title_name="Send a message to a team of volunteers")
 
 
 # -----------------------------------------------------------------------------
 # TODO: Is resource a bad name, due to possible confusion with other usage?
 def resource():
-    "Select resources a volunteer has."
-    return s3_rest_controller(module, "resource")
+
+    """ Select resources a volunteer has """
+
+    return s3_rest_controller(prefix, "resource")
+
+# -----------------------------------------------------------------------------

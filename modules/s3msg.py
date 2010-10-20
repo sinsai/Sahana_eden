@@ -438,13 +438,13 @@ class Msg(object):
         return
 
     def receive_msg(self,
-                      subject="",
-                      message="",
-                      sender="",
-                      fromaddress="",
-                      system_generated = False,
-                      pr_message_method = 1,
-                      ):
+                    subject="",
+                    message="",
+                    sender="",
+                    fromaddress="",
+                    system_generated = False,
+                    pr_message_method = 1,
+                   ):
         """
             Function to call to drop incoming messages into msg_log
         """

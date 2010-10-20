@@ -312,6 +312,11 @@ deployment_settings.modules = Storage(
             description = T("A library of digital resources, such as photos, documents and reports"),
             module_type = 10,
         ),
+    assess = Storage(
+         name_nice = "Assessment Module",
+         description = "Generic Assessments",
+         module_type = 10,
+    ),
     irs = Storage(
         name_nice = T("Incident Reporting"),
         description = T("Incident Reporting System"),

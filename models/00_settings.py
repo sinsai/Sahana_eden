@@ -194,7 +194,8 @@ def s3_formstyle(id, label, widget, comment):
 
     return tuple(row)
 
-#s3.crud = Storage()
+s3_formstyle_mobile = s3_formstyle
+
 s3.crud.formstyle = s3_formstyle
 s3.crud.submit_buttom = T("Save")
 

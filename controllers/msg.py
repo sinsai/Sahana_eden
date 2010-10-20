@@ -97,8 +97,9 @@ def outbox():
         msg_list_empty = T("No Messages currently in Outbox")
     )
 
-    # @todo: migrate CRUD settings
-    return s3_rest_controller(module, resource, listadd=False)
+    s3xrc.model.configure(table, listadd=False)
+    return s3_rest_controller(module, resource)
+
 
 def log():
     """ RESTful CRUD controller """
@@ -139,10 +140,8 @@ def log():
         msg_record_deleted = T("Message deleted"),
         msg_list_empty = T("No messages in the system"))
 
-    rheader = DIV(B(T("Master Message Log")), ": ", T("All Inbound & Outbound Messages are stored here"))
-
-    # @todo: migrate CRUD settings
-    return s3_rest_controller(module, resource, listadd=False, rheader=rheader)
+    s3xrc.model.configure(table, listadd=False)
+    return shn_rest_controller(module, resource)
 
 def tropo():
     """

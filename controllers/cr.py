@@ -43,7 +43,6 @@ def index():
 
     module_name = deployment_settings.modules[module].name_nice
 
-    shn_menu()
     return dict(module_name=module_name)
 
 # -----------------------------------------------------------------------------
@@ -73,7 +72,6 @@ def shelter_type():
     # @ToDo Shelters per type display is broken -- always returns none.
     output = s3_rest_controller(module, resource,
                                  rheader=rheader)
-    shn_menu()
     return output
 
 # -----------------------------------------------------------------------------
@@ -100,7 +98,6 @@ def shelter_service():
 
     output = s3_rest_controller(module, resource,
                                  rheader=rheader)
-    shn_menu()
     return output
 
 # -----------------------------------------------------------------------------
@@ -176,7 +173,6 @@ def shelter():
     output = s3_rest_controller(module, resource,
                                  rheader=rheader)
 
-    shn_menu()
     return output
 
 # -----------------------------------------------------------------------------
@@ -346,16 +342,14 @@ def shn_shelter_rheader(r, tabs=[]):
 
         record = r.record
         rheader = DIV(TABLE(
-                        TR(
-                            TH(T("Name") + ": "), record.name
-                          ),
-                        ),
+                            TR(
+                                TH(T("Name") + ": "), record.name
+                              ),
+                            ),
                       rheader_tabs)
-
         return rheader
 
-    else:
-        return None
+    return None
 
 # -----------------------------------------------------------------------------
 # This code provides urls of the form:

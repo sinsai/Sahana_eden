@@ -162,7 +162,7 @@ if deployment_settings.has_module(module):
     resource = "incident"
     tablename = "%s_%s" % (module, resource)
     table = db.define_table(tablename,
-                            s3xrc.model.super_key(db.sit_situation),
+                            sit_id(),
                             Field("name"),
                             Field("category"),
                             Field("contact"),
@@ -213,10 +213,8 @@ if deployment_settings.has_module(module):
                                   label = T("Incident"),
                                   ondelete = "RESTRICT")
     s3xrc.model.configure(table,
-                          super_entity=db.sit_situation,
-                          # Remove the following two lines with new CRUD (not needed there)
-                          #onaccept=lambda form, table=table: s3xrc.model.update_super(table, form.vars),
-                          #delete_onaccept=lambda row, table=table: s3xrc.model.delete_super(table, row),
+                          onaccept=lambda form, table=table: s3_situation_onaccept(form, table=table),
+                          delete_onaccept=lambda row: s3_situation_ondelete(row),
                           list_fields = [
                             "id",
                             "category",
@@ -301,7 +299,9 @@ if deployment_settings.has_module(module):
     # irs_ireport as component of doc_documents
     s3xrc.model.add_component(module, resource,
                               multiple=True,
-                              joinby=dict(doc_document="document_id"))
+                              joinby=dict(doc_document="document_id"),
+                              deletable=True,
+                              editable=True)
 
 
     # -----------------------------------------------------------------------------
@@ -392,7 +392,9 @@ if deployment_settings.has_module(module):
     # Disabling until we figure out how to link to Assessments module
     #s3xrc.model.add_component(module, resource,
     #                          multiple = True,
-    #                          joinby = dict(irs_incident="incident_id"))
+    #                          joinby = dict(irs_incident="incident_id"),
+    #                          deletable = True,
+    #                          editable = True)
 
     # -----------------------------------------------------------------------------
     irs_image_type_opts = {
@@ -443,7 +445,9 @@ if deployment_settings.has_module(module):
                               multiple = True,
                               joinby = dict(irs_incident="incident_id",
                                             irs_ireport="report_id",
-                                            irs_iassessment="assessment_id"))
+                                            irs_iassessment="assessment_id"),
+                              deletable = True,
+                              editable = True)
 
     # -----------------------------------------------------------------------------
     irs_response_type_opts = {
@@ -487,7 +491,9 @@ if deployment_settings.has_module(module):
 
     s3xrc.model.add_component(module, resource,
                               multiple = True,
-                              joinby = dict(irs_incident="incident_id"))
+                              joinby = dict(irs_incident="incident_id"),
+                              deletable = True,
+                              editable = True)
 
     # -----------------------------------------------------------------------------
     @auth.shn_requires_membership(1) # must be Administrator

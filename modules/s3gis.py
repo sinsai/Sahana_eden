@@ -2683,7 +2683,7 @@ OpenLayers.Util.extend( selectPdfControl, {
                 style_marker.graphicName = styleMarker.graphicName;
                 style_marker.pointRadius = styleMarker.pointRadius;
                 style_marker.fillColor = styleMarker.fillColor;
-                style_marker.fillOpacity = 0.4;
+                style_marker.fillOpacity = 0.5;
                 style_marker.strokeColor = styleMarker.fillColor;
                 style_marker.strokeWidth = 2;
                 style_marker.strokeOpacity = 1;

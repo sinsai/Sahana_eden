@@ -11,8 +11,8 @@ if deployment_settings.has_module(module):
     # Assement
     # This is the current status of an Incident
     # @ToDo Change this so that there is a 'lead' ireport updated in the case of duplicates
-    resource = "assess"
-    tablename = "%s_%s" % (module, resource)
+    resourcename = "assess"
+    tablename = "%s_%s" % (module, resourcename)
     table = db.define_table(tablename,
                             Field("datetime", "datetime"),
                             location_id(),
@@ -62,8 +62,8 @@ if deployment_settings.has_module(module):
     
     # -----------------------------------------------------------------------------
     # Baseline Type
-    resource = "baseline_type"
-    tablename = "%s_%s" % (module, resource)
+    resourcename = "baseline_type"
+    tablename = "%s_%s" % (module, resourcename)
     table = db.define_table(tablename,
                             Field("name", length=128, notnull=True, unique=True),
                             migrate=migrate, *s3_meta_fields()
@@ -113,8 +113,8 @@ if deployment_settings.has_module(module):
     
     # -----------------------------------------------------------------------------
     # Baseline
-    resource = "baseline"
-    tablename = "%s_%s" % (module, resource)
+    resourcename = "baseline"
+    tablename = "%s_%s" % (module, resourcename)
     table = db.define_table(tablename,
                             assess_id(),
                             baseline_type_id(),
@@ -146,7 +146,7 @@ if deployment_settings.has_module(module):
         msg_list_empty = T("No Baselines currently registered"))     
     
     # Baseline as component of assessments
-    s3xrc.model.add_component(module, resource,
+    s3xrc.model.add_component(module, resourcename,
                               multiple=True,
                               joinby=dict(assess_assess="assess_id"),
                               deletable=True,
@@ -155,8 +155,8 @@ if deployment_settings.has_module(module):
 
     # -----------------------------------------------------------------------------
     # Summary
-    resource = "summary"
-    tablename = "%s_%s" % (module, resource)
+    resourcename = "summary"
+    tablename = "%s_%s" % (module, resourcename)
     table = db.define_table(tablename,
                             assess_id(),
                             cluster_subsector_id(),
@@ -215,7 +215,7 @@ if deployment_settings.has_module(module):
         msg_list_empty = T("No Assessment Summaries currently registered"))     
     
     # Summary as component of assessments
-    s3xrc.model.add_component(module, resource,
+    s3xrc.model.add_component(module, resourcename,
                               multiple=True,
                               joinby=dict(assess_assess="assess_id"),
                               deletable=True,

@@ -12,8 +12,8 @@ if deployment_settings.has_module(module):
 
     # -----------------------------------------------------------------------------
     # Rivers
-    resource = "river"
-    tablename = "%s_%s" % (module, resource)
+    resourcename = "river"
+    tablename = "%s_%s" % (module, resourcename)
     table = db.define_table(tablename,
                             Field("name"),
                             comments(),
@@ -50,8 +50,8 @@ if deployment_settings.has_module(module):
 
     # -----------------------------------------------------------------------------
     # Flood Reports
-    resource = "freport"
-    tablename = "%s_%s" % (module, resource)
+    resourcename = "freport"
+    tablename = "%s_%s" % (module, resourcename)
     table = db.define_table(tablename,
                             location_id(),
                             Field("datetime", "datetime"),
@@ -89,7 +89,7 @@ if deployment_settings.has_module(module):
                                  ondelete = "RESTRICT")
 
     #freport as component of doc_documents
-    s3xrc.model.add_component(module, resource,
+    s3xrc.model.add_component(module, resourcename,
                               multiple=True,
                               joinby=dict(doc_document="document_id"))
 
@@ -101,8 +101,8 @@ if deployment_settings.has_module(module):
         3:T("Very High"),
         4:T("Low")
     }
-    resource = "freport_location"
-    tablename = "%s_%s" % (module, resource)
+    resourcename = "freport_location"
+    tablename = "%s_%s" % (module, resourcename)
     table = db.define_table(tablename,
                             freport_id(),
                             river_id(),
@@ -135,6 +135,6 @@ if deployment_settings.has_module(module):
         msg_record_deleted = T("Location deleted"),
         msg_list_empty = T("No Locations currently registered"))
 
-    s3xrc.model.add_component(module, resource,
+    s3xrc.model.add_component(module, resourcename,
                               multiple = True,
                               joinby = dict(flood_freport="freport_id"))

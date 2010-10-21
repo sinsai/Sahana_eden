@@ -76,8 +76,8 @@ if deployment_settings.has_module(module):
         4: T("Not Applicable")
     } #: Operating Room Status Options
 
-    resource = "hospital"
-    tablename = "%s_%s" % (module, resource)
+    resourcename = "hospital"
+    tablename = "%s_%s" % (module, resourcename)
     table = db.define_table(tablename,
                     site_id(),
                     Field("gov_uuid", unique=True, length=128), # UID assigned by Local Government
@@ -235,8 +235,8 @@ if deployment_settings.has_module(module):
     # -----------------------------------------------------------------------------
     # Contacts
     #
-    resource = "hcontact"
-    tablename = "%s_%s" % (module, resource)
+    resourcename = "hcontact"
+    tablename = "%s_%s" % (module, resourcename)
     table = db.define_table(tablename,
                             hospital_id(),
                             person_id(),
@@ -265,7 +265,7 @@ if deployment_settings.has_module(module):
     table.fax.requires = shn_phone_requires
     table.skype.label = T("Skype ID")
 
-    s3xrc.model.add_component(module, resource,
+    s3xrc.model.add_component(module, resourcename,
                               multiple=True,
                               joinby=dict(hms_hospital="hospital_id"))
 
@@ -299,8 +299,8 @@ if deployment_settings.has_module(module):
     # -----------------------------------------------------------------------------
     # Activity
     #
-    resource = "hactivity"
-    tablename = "%s_%s" % (module, resource)
+    resourcename = "hactivity"
+    tablename = "%s_%s" % (module, resourcename)
     table = db.define_table(tablename,
                             hospital_id(),
                             Field("date", "datetime"),              # Date&Time the entry applies to
@@ -343,7 +343,7 @@ if deployment_settings.has_module(module):
     table.deaths24.comment = DIV(DIV(_class="tooltip",
         _title=T("Deaths/24hrs") + "|" + T("Number of deaths during the past 24 hours.")))
 
-    s3xrc.model.add_component(module, resource,
+    s3xrc.model.add_component(module, resourcename,
                               multiple=True,
                               joinby=dict(hms_hospital="hospital_id"))
 
@@ -394,8 +394,8 @@ if deployment_settings.has_module(module):
         99: T("Other")
     }
 
-    resource = "bed_capacity"
-    tablename = "%s_%s" % (module, resource)
+    resourcename = "bed_capacity"
+    tablename = "%s_%s" % (module, resourcename)
     table = db.define_table(tablename,
                             hospital_id(),
                             Field("unit_name", length=64),
@@ -474,7 +474,7 @@ if deployment_settings.has_module(module):
                 available_beds=a_beds)
 
     # add as component
-    s3xrc.model.add_component(module, resource,
+    s3xrc.model.add_component(module, resourcename,
                               multiple=True,
                               joinby=dict(hms_hospital="hospital_id"))
 
@@ -511,8 +511,8 @@ if deployment_settings.has_module(module):
     # -----------------------------------------------------------------------------
     # Services
     #
-    resource = "services"
-    tablename = "%s_%s" % (module, resource)
+    resourcename = "services"
+    tablename = "%s_%s" % (module, resourcename)
     table = db.define_table(tablename,
                             hospital_id(),
                             Field("burn", "boolean", default=False),
@@ -567,7 +567,7 @@ if deployment_settings.has_module(module):
         msg_record_deleted = T("Service profile deleted"),
         msg_list_empty = T("No service profile available"))
 
-    s3xrc.model.add_component(module, resource,
+    s3xrc.model.add_component(module, resourcename,
                               multiple=False,
                               joinby=dict(hms_hospital="hospital_id"))
 
@@ -585,8 +585,8 @@ if deployment_settings.has_module(module):
         99:T("other")
     }
 
-    resource = "himage"
-    tablename = "%s_%s" % (module, resource)
+    resourcename = "himage"
+    tablename = "%s_%s" % (module, resourcename)
     table = db.define_table(tablename,
                             hospital_id(),
                             #Field("title"),
@@ -636,7 +636,7 @@ if deployment_settings.has_module(module):
         msg_list_empty = T("No Images currently registered")
     )
 
-    s3xrc.model.add_component(module, resource,
+    s3xrc.model.add_component(module, resourcename,
                               multiple=True,
                               joinby=dict(hms_hospital="hospital_id"))
 
@@ -651,8 +651,8 @@ if deployment_settings.has_module(module):
     # -----------------------------------------------------------------------------
     # Resources (multiple) - TODO: to be completed!
     #
-    resource = "resources"
-    tablename = "%s_%s" % (module, resource)
+    resourcename = "resources"
+    tablename = "%s_%s" % (module, resourcename)
     table = db.define_table(tablename,
                             hospital_id(),
                             Field("type"),
@@ -680,7 +680,7 @@ if deployment_settings.has_module(module):
         msg_list_empty = T("No resources currently reported"))
 
     # Add as component
-    s3xrc.model.add_component(module, resource,
+    s3xrc.model.add_component(module, resourcename,
                               multiple=True,
                               joinby=dict(hms_hospital="hospital_id"))
 

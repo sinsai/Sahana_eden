@@ -580,13 +580,13 @@ class S3XML(object):
                         marker_url = "%s/gis_marker.image.%s.png" % \
                                      (download_url, marker)
                     else:
-                        marker = self.gis.get_marker(r.value)
+                        marker = self.gis.get_marker(resource.tablename)
                         marker_url = "%s/%s" % (download_url, marker.image)
                     r.element.set(self.ATTRIBUTE.marker,
                                   self.xml_encode(marker_url))
                     # Lookup GPS Marker
                     # @ToDo Fix for new FeatureClass
-                    symbol = None
+                    #symbol = None
                     #if LatLon[self.FeatureClass]:
                     #    fctbl = db.gis_feature_class
                     #    query = (fctbl.id == str(LatLon[self.FeatureClass]))
@@ -595,8 +595,8 @@ class S3XML(object):
                     #                    limitby=(0, 1)).first().gps_marker
                     #    except:
                     #        pass
-                    if not symbol:
-                        symbol = "White Dot"
+                    #if not symbol:
+                    symbol = "White Dot"
                     r.element.set(self.ATTRIBUTE.sym,
                                   self.xml_encode(symbol))
 
@@ -633,21 +633,22 @@ class S3XML(object):
             resource.set(self.UID, self.xml_encode(value))
             if table._tablename == "gis_location" and self.gis:
                 # Look up the marker to display
-                marker = self.gis.get_marker(_value)
+                marker = self.gis.get_marker(resource)
                 marker_url = "%s/%s" % (download_url, marker.image)
                 resource.set(self.ATTRIBUTE.marker,
                                 self.xml_encode(marker_url))
                 # Look up the GPS Marker
-                symbol = None
-                try:
-                    db = self.db
-                    query = (db.gis_feature_class.id == record.feature_class_id)
-                    symbol = db(query).select(limitby=(0, 1)).first().gps_marker
-                except:
-                    # No Feature Class
-                    pass
-                if not symbol:
-                    symbol = "White Dot"
+                # @ToDo Fix for new FeatureClass
+                #symbol = None
+                #try:
+                #    db = self.db
+                #    query = (db.gis_feature_class.id == record.feature_class_id)
+                #    symbol = db(query).select(limitby=(0, 1)).first().gps_marker
+                #except:
+                #    # No Feature Class
+                #    pass
+                #if not symbol:
+                symbol = "White Dot"
                 resource.set(self.ATTRIBUTE.sym, self.xml_encode(symbol))
 
         for i in xrange(0, len(fields)):

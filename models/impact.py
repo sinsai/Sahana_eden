@@ -13,8 +13,8 @@ module = "impact"
 if deployment_settings.has_module("irs") or deployment_settings.has_module("assess"):
     # -----------------------------------------------------------------------------
     # Impact Type
-    resource = "type"
-    tablename = "%s_%s" % (module, resource)
+    resourcename = "type"
+    tablename = "%s_%s" % (module, resourcename)
     table = db.define_table(tablename,
                             Field("name", length=128, notnull=True, unique=True),
                             migrate=migrate, *s3_meta_fields()
@@ -64,8 +64,8 @@ if deployment_settings.has_module("irs") or deployment_settings.has_module("asse
     
     # -----------------------------------------------------------------------------
     # Impact
-    resource = "impact"
-    tablename = "%s_%s" % (module, resource)
+    resourcename = "impact"
+    tablename = "%s_%s" % (module, resourcename)
     table = db.define_table(tablename,
                             incident_id(),
                             assess_id(),
@@ -99,7 +99,7 @@ if deployment_settings.has_module("irs") or deployment_settings.has_module("asse
         msg_list_empty = T("No Impacts currently registered"))     
     
     # Impact as component of assessments and incidents
-    s3xrc.model.add_component(module, resource,
+    s3xrc.model.add_component(module, resourcename,
                               multiple=True,
                               joinby=dict(assess_assess="assess_id", irs_incident="incident_id"),
                               deletable=True,

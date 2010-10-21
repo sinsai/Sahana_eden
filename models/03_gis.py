@@ -31,8 +31,8 @@ else:
 
 # -----------------------------------------------------------------------------
 # GIS Markers (Icons)
-resource = "marker"
-tablename = "%s_%s" % (module, resource)
+resourcename = "marker"
+tablename = "%s_%s" % (module, resourcename)
 table = db.define_table(tablename,
                         #uuidstamp, # Markers don't sync
                         Field("name", length=128, notnull=True, unique=True),
@@ -81,8 +81,8 @@ s3xrc.model.configure(table,
 
 # -----------------------------------------------------------------------------
 # GIS Projections
-resource = "projection"
-tablename = "%s_%s" % (module, resource)
+resourcename = "projection"
+tablename = "%s_%s" % (module, resourcename)
 table = db.define_table(tablename,
                         Field("name", length=128, notnull=True, unique=True),
                         Field("epsg", "integer", notnull=True),
@@ -115,8 +115,8 @@ s3xrc.model.configure(table, deletable=False)
 
 # -----------------------------------------------------------------------------
 # GIS Symbology
-resource = "symbology"
-tablename = "%s_%s" % (module, resource)
+resourcename = "symbology"
+tablename = "%s_%s" % (module, resourcename)
 table = db.define_table(tablename,
                         Field("name", length=128, notnull=True, unique=True),
                         migrate=migrate,
@@ -143,8 +143,8 @@ opt_gis_layout = db.Table(None, "opt_gis_layout",
                                 label = T("Layout"),
                                 represent = lambda opt: gis_config_layout_opts.get(opt, UNKNOWN_OPT)))
 # id=1 = Default settings
-resource = "config"
-tablename = "%s_%s" % (module, resource)
+resourcename = "config"
+tablename = "%s_%s" % (module, resourcename)
 table = db.define_table(tablename,
                         pe_id(),                           # Personal Entity Reference
                         Field("lat", "double"),
@@ -221,7 +221,7 @@ s3.crud_strings[tablename] = Storage(
 )
 
 # Configs as component of Persons (Personalised configurations)
-s3xrc.model.add_component(module, resource,
+s3xrc.model.add_component(module, resourcename,
                           multiple=False,
                           joinby="pe_id")
 
@@ -360,8 +360,8 @@ gis_gps_marker_opts = [
     "White Dot",
     "Zoo"
 ]
-resource = "feature_class"
-tablename = "%s_%s" % (module, resource)
+resourcename = "feature_class"
+tablename = "%s_%s" % (module, resourcename)
 table = db.define_table(tablename,
                         Field("name", length=128, notnull=True, unique=True),
                         Field("description"),
@@ -411,8 +411,8 @@ gis_source_opts = {
     "wikipedia":"Wikipedia",
     "yahoo":"Yahoo! GeoPlanet",
     }
-resource = "location"
-tablename = "%s_%s" % (module, resource)
+resourcename = "location"
+tablename = "%s_%s" % (module, resourcename)
 table = db.define_table(tablename,
                         Field("name", notnull=True),    # Primary name
                         Field("name_dummy"),            # Dummy field to provide Widget (real data is stored in the separate table which links back to this one)
@@ -519,14 +519,14 @@ if response.s3.countries:
 
 # -----------------------------------------------------------------------------
 # Locations as component of Locations ('Parent')
-#s3xrc.model.add_component(module, resource,
+#s3xrc.model.add_component(module, resourcename,
 #                          multiple=False,
 #                          joinby=dict(gis_location="parent"))
 
 # -----------------------------------------------------------------------------
 # Local Names
-resource = "location_name"
-tablename = module + "_" + resource
+resourcename = "location_name"
+tablename = module + "_" + resourcename
 table = db.define_table(tablename,
                         location_id(),
                         Field("language"),
@@ -541,7 +541,7 @@ table.language.label = T("Language")
 table.name_l10n.label = T("Name")
 
 # Names as component of Locations
-s3xrc.model.add_component(module, resource,
+s3xrc.model.add_component(module, resourcename,
                           joinby=dict(gis_location="location_id"),
                           multiple=True)
 
@@ -842,8 +842,8 @@ def shn_gis_location_represent(id):
 # Feature Layers
 # Used to select a set of Features for either Display or Export
 # (replaces feature_group)
-resource = "layer_feature"
-tablename = "%s_%s" % (module, resource)
+resourcename = "layer_feature"
+tablename = "%s_%s" % (module, resourcename)
 table = db.define_table(tablename,
                         Field("name", length=128, notnull=True, unique=True),
                         Field("module"),
@@ -873,8 +873,8 @@ table.resource.label = T("Resource")
 
 # -----------------------------------------------------------------------------
 # GIS Keys - needed for commercial mapping services
-resource = "apikey" # Can't use 'key' as this has other meanings for dicts!
-tablename = "%s_%s" % (module, resource)
+resourcename = "apikey" # Can't use 'key' as this has other meanings for dicts!
+tablename = "%s_%s" % (module, resourcename)
 table = db.define_table(tablename,
                         Field("name", notnull=True),
                         Field("apikey", length=128, notnull=True),
@@ -893,8 +893,8 @@ s3xrc.model.configure(table, listadd=False, deletable=False)
 
 # -----------------------------------------------------------------------------
 # GPS Tracks (files in GPX format)
-resource = "track"
-tablename = "%s_%s" % (module, resource)
+resourcename = "track"
+tablename = "%s_%s" % (module, resourcename)
 table = db.define_table(tablename, #timestamp,
                         #uuidstamp, # Tracks don't sync
                         Field("name", length=128, notnull=True, unique=True),
@@ -959,8 +959,8 @@ gis_layer = db.Table(db, "gis_layer", timestamp,
                      Field("enabled", "boolean", default=True, label=T("Available in Viewer?"))
                     )
 for layertype in gis_layer_types:
-    resource = "layer_" + layertype
-    tablename = "%s_%s" % (module, resource)
+    resourcename = "layer_" + layertype
+    tablename = "%s_%s" % (module, resourcename)
     # Create Type-specific Layer tables
     if layertype == "openstreetmap":
         t = db.Table(db, table,
@@ -1088,8 +1088,8 @@ for layertype in gis_layer_types:
 # -----------------------------------------------------------------------------
 # GIS Cache
 # (Store downloaded KML & GeoRSS feeds)
-resource = "cache"
-tablename = "%s_%s" % (module, resource)
+resourcename = "cache"
+tablename = "%s_%s" % (module, resourcename)
 table = db.define_table(tablename,
                 Field("name", length=128, notnull=True, unique=True),
                 Field("file", "upload", autodelete = True),

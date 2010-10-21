@@ -400,7 +400,7 @@ class GIS(object):
         if resource in gis_categorised_resources:
             for i in range(0, len(locations)):
                 locations[i].popup_label = locations[i].name + "-" + popup_label
-                locations[i].marker = self._get_marker(resource, locations[i]["%s_%s" % (module, resource)].category)
+                locations[i].marker = self.get_marker(resource, locations[i]["%s_%s" % (module, resource)].category)
         else:
             for i in range(0, len(locations)):
                 locations[i].popup_label = locations[i].name + "-" + popup_label
@@ -569,7 +569,7 @@ class GIS(object):
         return None
 
     # -----------------------------------------------------------------------------
-    def _get_marker(self, resource, category=None):
+    def get_marker(self, resource, category=None):
 
         """
             Returns the Marker for a Feature
@@ -599,11 +599,11 @@ class GIS(object):
             query = query & (table_fclass.category == category)
         marker_id = db(query).select(table_fclass.marker_id, limitby=(0, 1), cache=cache).first()
         if marker_id:
-            marker = db(table_marker.id == marker_id.id).select(table_marker.image,
-                                                                table_marker.height,
-                                                                table_marker.width,
-                                                                limitby=(0, 1),
-                                                                cache=cache).first()
+            marker = db(table_marker.id == marker_id.marker_id).select(table_marker.image,
+                                                                       table_marker.height,
+                                                                       table_marker.width,
+                                                                       limitby=(0, 1),
+                                                                       cache=cache).first()
             return marker
 
         # 2nd choice for a Marker is the default
@@ -614,57 +614,6 @@ class GIS(object):
                                   limitby=(0, 1),
                                   cache=cache).first()
         if marker:
-            return marker
-        else:
-            return ""
-
-    def get_marker(self, feature_id, category=None):
-
-        """
-            Returns the Marker for a Feature
-                marker.image = filename
-                marker.height
-                marker.width
-
-            Used by s3xrc for Feeds export
-
-            @param feature_id: the feature ID (int) or UUID (str)
-            @ToDo: Lookup should be done by resource/category not by feature_id
-        """
-
-        cache = self.cache
-        db = self.db
-        table_feature = db.gis_location
-        table_marker = db.gis_marker
-        table_fclass = db.gis_feature_class
-
-        config = self.get_config()
-        symbology = config.symbology_id
-
-        query = None
-
-        if isinstance(feature_id, int):
-            query = (table_feature.id == feature_id)
-        elif isinstance(feature_id, str):
-            query = (table_feature.uuid == feature_id)
-
-        # 1st choice for a Marker is the Feature Class's
-        #query = (table_fclass.resource == resource) & \
-        #        (table_fclass.symbology_id == symbology)
-        #if category:
-        #   query = query & (table_fclass.category == category)
-        #marker_id = db(query).select(table_fclass.marker_id, limitby=(0, 1), cache=cache).first()
-        #if marker_id:
-        #   marker = db(table_marker.id == marker_id.id).select(table_marker.image, table_marker.height, table_marker.width, limitby=(0, 1), cache=cache).first()
-        #   return marker.first()
-
-        # 2nd choice for a Marker is the default
-        query = (table_marker.id == config.marker_id)
-        marker = db(query).select(table_marker.image, table_marker.height, table_marker.width, limitby=(0, 1),
-                                  cache=cache)
-
-        if marker:
-            marker = marker.first()
             return marker
         else:
             return ""

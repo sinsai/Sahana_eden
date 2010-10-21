@@ -43,8 +43,8 @@ if deployment_settings.has_module(module):
     #def shn_req_aid_represent(id):
         #return  A(T("Make Pledge"), _href=URL(r=request, f="req", args=[id, "pledge"]))
 
-    resource = "req"
-    tablename = "%s_%s" % (module, resource)
+    resourcename = "req"
+    tablename = "%s_%s" % (module, resourcename)
     table = db.define_table(tablename, #timestamp, uuidstamp, deletion_status,
         sit_id(),
         person_id(),
@@ -147,7 +147,7 @@ if deployment_settings.has_module(module):
         delete_onaccept=lambda row: s3_situation_ondelete(row))
 
     # rms_req as component of doc_documents
-    s3xrc.model.add_component(module, resource,
+    s3xrc.model.add_component(module, resourcename,
                               multiple=True,
                               joinby=dict(doc_document="document_id",
                                           cr_shelter="shelter_id",
@@ -294,13 +294,13 @@ if deployment_settings.has_module(module):
             redirect(URL(r=request))
 
     # Plug into REST controller
-    s3xrc.model.set_method(module, resource, method="search_simple", action=shn_rms_req_search_simple )
+    s3xrc.model.set_method(module, resourcename, method="search_simple", action=shn_rms_req_search_simple )
 
     #==============================================================================
     # Request Item
     #
-    resource = "ritem"
-    tablename = "%s_%s" % (module, resource)
+    resourcename = "ritem"
+    tablename = "%s_%s" % (module, resourcename)
     table = db.define_table(tablename,
                             req_id(),
                             item_id(),
@@ -329,7 +329,7 @@ if deployment_settings.has_module(module):
         msg_list_empty = T("No Items currently requested"))
 
     # Items as component of Locations
-    s3xrc.model.add_component(module, resource,
+    s3xrc.model.add_component(module, resourcename,
                               multiple=True,
                               joinby=dict(rms_req="req_id",
                                           supply_item="item_id"))
@@ -340,8 +340,8 @@ if deployment_settings.has_module(module):
     #def shn_req_pledge_represent(id):
         #return  A(T("Edit Pledge"), _href=URL(r=request, f="pledge", args=[id]))
 
-    resource = "pledge"
-    tablename = "%s_%s" % (module, resource)
+    resourcename = "pledge"
+    tablename = "%s_%s" % (module, resourcename)
     table = db.define_table(tablename,
                             Field("submitted_on", "datetime"),
                             Field("req_id", db.rms_req),
@@ -366,7 +366,7 @@ if deployment_settings.has_module(module):
     table.person_id.label = T("Person")
 
     # Pledges as a component of requests
-    s3xrc.model.add_component(module, resource,
+    s3xrc.model.add_component(module, resourcename,
                               multiple=True,
                               joinby=dict(rms_req = "req_id"))
 
@@ -419,8 +419,8 @@ if deployment_settings.has_module(module):
 
     # ------------------
     # Create the table for request_detail for requests with arbitrary keys
-    resource = "req_detail"
-    tablename = "%s_%s" % (module, resource)
+    resourcename = "req_detail"
+    tablename = "%s_%s" % (module, resourcename)
     table = db.define_table(tablename,
                             req_id(),
                             Field("request_key", "string"),
@@ -428,7 +428,7 @@ if deployment_settings.has_module(module):
                             migrate=migrate, *s3_meta_fields())
 
 
-    s3xrc.model.add_component(module, resource,
+    s3xrc.model.add_component(module, resourcename,
                               multiple=True,
                               joinby=dict(rms_req="req_id"))
 

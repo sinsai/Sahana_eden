@@ -15,8 +15,8 @@ if deployment_settings.has_module(module):
 
     pass
     # Resource
-    #resource = "resource"
-    #table = module + "_" + resource
+    #resourcename = "resource"
+    #table = module + "_" + resourcename
     #db.define_table(table,
     #                Field("name"),
     #                migrate=migrate)

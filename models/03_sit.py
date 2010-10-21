@@ -15,8 +15,8 @@ situation_types = Storage(
     pr_presence = T("Presence")
 )
 
-resource = "situation"
-tablename = "%s_%s" % (module, resource)
+resourcename = "situation"
+tablename = "%s_%s" % (module, resourcename)
 #table = db.define_table(tablename,
                         #Field("sit_id", "id"),
                         #Field("sit_type"),

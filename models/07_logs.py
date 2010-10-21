@@ -15,8 +15,8 @@ if deployment_settings.has_module(module):
     #==============================================================================
     # Distribution
     #
-    resource = "distrib"
-    tablename = "%s_%s" % (module, resource)
+    resourcename = "distrib"
+    tablename = "%s_%s" % (module, resourcename)
     table = db.define_table(tablename,
                             Field("date", "date"),
                             location_id(),
@@ -70,8 +70,8 @@ if deployment_settings.has_module(module):
     #==============================================================================
     # Distribution Item
     #
-    resource = "distrib_item"
-    tablename = "%s_%s" % (module, resource)
+    resourcename = "distrib_item"
+    tablename = "%s_%s" % (module, resourcename)
     table = db.define_table(tablename,
                             distrib_id(),
                             item_id(),
@@ -100,6 +100,6 @@ if deployment_settings.has_module(module):
         msg_list_empty = T("No Distribution Items currently registered"))
 
     # Items as component of Distributions
-    s3xrc.model.add_component(module, resource,
+    s3xrc.model.add_component(module, resourcename,
                               multiple=True,
                               joinby=dict(logs_distrib="distrib_id", supply_item="item_id"))

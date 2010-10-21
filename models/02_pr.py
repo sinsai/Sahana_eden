@@ -20,8 +20,8 @@ pr_pe_types = Storage(
     dvi_body = T("Body")
 )
 
-resource = "pentity"
-tablename = "%s_%s" % (module, resource)
+resourcename = "pentity"
+tablename = "%s_%s" % (module, resourcename)
 table = db.define_table(tablename,
                         Field("pe_id", "id"),
                         Field("pe_type"),
@@ -292,8 +292,8 @@ def shn_pr_person_represent(id):
 
 
 # -----------------------------------------------------------------------------
-resource = "person"
-tablename = "%s_%s" % (module, resource)
+resourcename = "person"
+tablename = "%s_%s" % (module, resourcename)
 table = db.define_table(tablename,
                         pe_id(),
                         pe_label(),
@@ -469,8 +469,8 @@ pr_group_type = S3ReusableField("group_type", "integer",
 
 
 # -----------------------------------------------------------------------------
-resource = "group"
-tablename = "%s_%s" % (module, resource)
+resourcename = "group"
+tablename = "%s_%s" % (module, resourcename)
 table = db.define_table(tablename,
                         pe_id(),
                         pr_group_type(),
@@ -544,8 +544,8 @@ s3xrc.model.configure(table,
 # *****************************************************************************
 # Group membership
 #
-resource = "group_membership"
-tablename = "%s_%s" % (module, resource)
+resourcename = "group_membership"
+tablename = "%s_%s" % (module, resourcename)
 table = db.define_table(tablename,
                         group_id(),
                         person_id(),
@@ -562,7 +562,7 @@ table.person_id.label = T("Person")
 
 
 # -----------------------------------------------------------------------------
-s3xrc.model.add_component(module, resource,
+s3xrc.model.add_component(module, resourcename,
                           multiple=True,
                           joinby=dict(pr_group="group_id",
                                       pr_person="person_id"))

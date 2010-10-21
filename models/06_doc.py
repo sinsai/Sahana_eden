@@ -6,8 +6,8 @@
 
 module = "doc"
 #==============================================================================
-resource = "document"
-tablename = "%s_%s" % (module, resource)
+resourcename = "document"
+tablename = "%s_%s" % (module, resourcename)
 table = db.define_table(tablename,
                         Field("name", length=128, notnull=True, unique=True),
                         Field("file", "upload", autodelete = True,),
@@ -108,8 +108,8 @@ document_id = S3ReusableField("document_id",
                               ondelete = "RESTRICT",
                              )
 #==============================================================================
-resource = "image"
-tablename = "%s_%s" % (module, resource)
+resourcename = "image"
+tablename = "%s_%s" % (module, resourcename)
 table = db.define_table(tablename,
                         Field("name", length=128, notnull=True, unique=True),
                         Field("image", "upload"),

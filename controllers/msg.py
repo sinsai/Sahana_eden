@@ -1,12 +1,11 @@
 # -*- coding: utf-8 -*-
 
-"""
-    Messaging Module - Controllers
-"""
+""" Messaging Module - Controllers """
 
-module = request.controller
+prefix = request.controller
+resourcename = request.function
 
-if module not in deployment_settings.modules:
+if prefix not in deployment_settings.modules:
     session.error = T("Module disabled!")
     redirect(URL(r=request, c="default", f="index"))
 
@@ -22,59 +21,77 @@ response.menu_options = [
     #["CAP", False, URL(r=request, f="tbc")]
 ]
 
-# S3 framework functions
+
+#------------------------------------------------------------------------------
 def index():
     """ Module's Home Page """
 
-    module_name = deployment_settings.modules[module].name_nice
-
+    module_name = deployment_settings.modules[prefix].name_nice
     return dict(module_name=module_name)
 
-def tbc():
-    """ Coming soon... """
-    return dict()
 
-#-------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
+def tbc():
+
+    """ Coming soon... """
+
+    raise NotImplementedError
+
+
+#------------------------------------------------------------------------------
 def compose():
+
+    """ @todo: fix docstring """
 
     return shn_msg_compose()
 
-#--------------------------------------
+
+#------------------------------------------------------------------------------
 def process_email_via_api():
+
     """ Controller for Email api processing - to be called via cron """
 
     msg.process_outbox(contact_method = 1)
     return
 
+
+#------------------------------------------------------------------------------
 def process_sms_via_api():
+
     """ Controller for SMS api processing - to be called via cron """
 
     msg.process_outbox(contact_method = 2)
     return
 
+
+#------------------------------------------------------------------------------
 def process_sms_via_tropo():
+
     """ Controller for SMS tropo processing - to be called via cron """
 
     msg.process_outbox(contact_method = 2, option = 3)
     return
 
+
+#------------------------------------------------------------------------------
 def process_text_via_twitter():
+
     """ Controller for twitter message processing - to be called via cron """
 
     msg.process_outbox(contact_method = 4) # 3 is reserved for XMPP
     return
 
 
-#-------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 def outbox():
+
     """ View the contents of the Outbox """
 
     if not auth.shn_logged_in():
         session.error = T("Requires Login!")
         redirect(URL(r=request, c="default", f="user", args="login"))
 
-    resource = request.function
-    tablename = module + "_" + resource
+    tablename = "%s_%s" % (prefix, resourcename)
     table = db[tablename]
 
     table.message_id.label = T("Message")
@@ -98,18 +115,19 @@ def outbox():
     )
 
     s3xrc.model.configure(table, listadd=False)
-    return s3_rest_controller(module, resource)
+    return s3_rest_controller(prefix, resourcename)
 
 
+#------------------------------------------------------------------------------
 def log():
+
     """ RESTful CRUD controller """
 
     if not auth.shn_logged_in():
         session.error = T("Requires Login!")
         redirect(URL(r=request, c="default", f="user", args="login"))
 
-    resource = request.function
-    tablename = "%s_%s" % (module, resource)
+    tablename = "%s_%s" % (prefix, resourcename)
     table = db[tablename]
 
     # Model options
@@ -141,13 +159,18 @@ def log():
         msg_list_empty = T("No messages in the system"))
 
     s3xrc.model.configure(table, listadd=False)
-    return shn_rest_controller(module, resource)
+    return s3_rest_controller(prefix, resourcename)
 
+
+#------------------------------------------------------------------------------
 def tropo():
+
+    """ Receive a JSON POST from the Tropo WebAPI
+
+        @see: https://www.tropo.com/docs/webapi/newhowitworks.htm
+
     """
-        Receive a JSON POST from the Tropo WebAPI
-        https://www.tropo.com/docs/webapi/newhowitworks.htm
-    """
+
     exec("from applications.%s.modules.tropo import Tropo, Session" % request.application)
     # Faster for Production (where app-name won't change):
     #from applications.eden.modules.tropo import Tropo, Session
@@ -198,12 +221,16 @@ def tropo():
         # GET request or some random POST
         pass
 
-#--------------------------------------
+
+#------------------------------------------------------------------------------
 # Parser
+#
 def parserdooth(message):
-    """
-        This function hopes to grow into a full fledged page that offers customizable routing with keywords
-        Dooth = Messenger
+
+    """ This function hopes to grow into a full fledged page that offers
+        customizable routing with keywords
+            - Dooth = Messenger
+
     """
     import difflib
     import string
@@ -286,13 +313,14 @@ def parserdooth(message):
 
     return "Please provide one of the keywords - person, hospital, organisation"
 
-#--------------------------------------
+
+#------------------------------------------------------------------------------
 @auth.shn_requires_membership(1)
 def setting():
+
     """ Overall settings for the messaging framework """
 
-    resource = request.function
-    tablename = module + "_" + resource
+    tablename = "%s_%s" % (prefix, resourcename)
     table = db[tablename]
     table.outgoing_sms_handler.label = T("Outgoing SMS handler")
     table.outgoing_sms_handler.comment = DIV(DIV(_class="tooltip",
@@ -321,10 +349,10 @@ def setting():
                           listadd=False,
                           update_next = URL(r=request, args=[1, "update"]))
     response.menu_options = admin_menu_options
-    return s3_rest_controller(module, resource)
+    return s3_rest_controller(prefix, resourcename)
 
 
-#--------------------------------------
+#------------------------------------------------------------------------------
 @auth.shn_requires_membership(1)
 def email_settings():
 
@@ -333,8 +361,7 @@ def email_settings():
 
     """
 
-    resource = request.function
-    tablename = module + "_" + resource
+    tablename = "%s_%s" % (prefix, resourcename)
     table = db[tablename]
 
     table.inbound_mail_server.label = T("Server")
@@ -371,12 +398,14 @@ def email_settings():
     )
 
     response.menu_options = admin_menu_options
-    # @todo: migrate CRUD settings
-    return s3_rest_controller(module, "email_settings", listadd=False, deletable=False)
+    s3xrc.model.configure(table, listadd=False, deletable=False)
+    return s3_rest_controller(prefix, "email_settings")
 
-#-------------------------------------------------------------------------------
+
+#------------------------------------------------------------------------------
 @auth.shn_requires_membership(1)
 def modem_settings():
+
     """ RESTful CRUD controller for modem settings - appears in the administration menu """
 
     try:
@@ -385,8 +414,7 @@ def modem_settings():
         session.error = T("Python Serial module not available within the running Python - this needs installing to activate the Modem")
         redirect(URL(r=request, c="admin", f="index"))
 
-    resource = request.function
-    tablename = module + "_" + resource
+    tablename = "%s_%s" % (prefix, resourcename)
     table = db[tablename]
 
     table.modem_port.label = T("Port")
@@ -416,20 +444,21 @@ def modem_settings():
         msg_list_empty = T("No Settings currently defined")
     )
 
-    # @todo: migrate CRUD settings
-    crud.settings.update_next = URL(r=request, args=[1, "update"])
+    s3xrc.model.configure(table,
+                          deletable=False,
+                          listadd=False,
+                          update_next = URL(r=request, args=[1, "update"]))
     response.menu_options = admin_menu_options
-    # @todo: migrate CRUD settings
-    return s3_rest_controller(module, resource, deletable=False,
-    listadd=False)
+    return s3_rest_controller(prefix, resourcename)
 
-#-------------------------------------------------------------------------------
+
+#------------------------------------------------------------------------------
 @auth.shn_requires_membership(1)
 def gateway_settings():
+
     """ RESTful CRUD controller for gateway settings - appears in the administration menu """
 
-    resource = request.function
-    tablename = module + "_" + resource
+    tablename = "%s_%s" % (prefix, resourcename)
     table = db[tablename]
 
     table.url.label = T("URL")
@@ -464,19 +493,23 @@ def gateway_settings():
         msg_list_empty = T("No Settings currently defined")
     )
 
-    # @todo: migrate CRUD settings
-    crud.settings.update_next = URL(r=request, args=[1, "update"])
+    s3xrc.model.configure(table,
+                          deletable=False,
+                          listadd=False,
+                          update_next = URL(r=request, args=[1, "update"]))
     response.menu_options = admin_menu_options
-    # @todo: migrate CRUD settings
-    return s3_rest_controller(module, resource, deletable=False, listadd=False)
+    return s3_rest_controller(prefix, resourcename)
 
-#-------------------------------------------------------------------------------
+
+#------------------------------------------------------------------------------
 @auth.shn_requires_membership(1)
 def tropo_settings():
+
     """ RESTful CRUD controller for Tropo settings - appears in the administration menu """
-    resource = request.function
-    tablename = module + "_" + resource
+
+    tablename = "%s_%s" % (prefix, resourcename)
     table = db[tablename]
+
     table.token_messaging.label = T("Tropo Messaging Token")
     table.token_messaging.comment = DIV(DIV(_class="stickytip",_title=T("Tropo Messaging Token") + "|" + T("The token associated with this application on") + " <a href='https://www.tropo.com/docs/scripting/troposessionapi.htm' target=_blank>Tropo.com</a>"))
     #table.token_voice.label = T("Tropo Voice Token")
@@ -499,16 +532,22 @@ def tropo_settings():
         msg_list_empty = T("No Settings currently defined")
     )
 
-    # @todo: migrate CRUD settings
-    crud.settings.update_next = URL(r=request, args=[1, "update"])
+    s3xrc.model.configure(table,
+                          deletable=False,
+                          listadd=False,
+                          update_next = URL(r=request, args=[1, "update"]))
     response.menu_options = admin_menu_options
-    # @todo: migrate CRUD settings
-    return s3_rest_controller(module, resource, deletable=False, listadd=False)
+    return s3_rest_controller(prefix, resourcename)
 
-#-------------------------------------------------------------------------------
+
+#------------------------------------------------------------------------------
 @auth.shn_requires_membership(1)
 def twitter_settings():
+
     """ RESTful CRUD controller for Twitter settings - appears in the administration menu """
+
+    tablename = "%s_%s" % (prefix, resourcename)
+    table = db[tablename]
 
     # CRUD Strings
     ADD_SETTING = T("Add Setting")
@@ -528,7 +567,7 @@ def twitter_settings():
         msg_list_empty = T("No Settings currently defined")
     )
 
-    def prep(jr):
+    def prep(r):
         try:
             import tweepy
         except:
@@ -540,11 +579,11 @@ def twitter_settings():
         oauth = tweepy.OAuthHandler(deployment_settings.twitter.oauth_consumer_key,
                                     deployment_settings.twitter.oauth_consumer_secret)
 
-        resource = request.function
-        tablename = module + "_" + resource
-        table = db[tablename]
+        #tablename = "%s_%s" % (prefix, resourcename)
+        #table = db[tablename]
+        table = r.table
 
-        if jr.http == "GET" and jr.method in ["create", "update"]:
+        if r.http == "GET" and r.method in ("create", "update"):
             # We're showing the form
             try:
                 session.s3.twitter_oauth_url = oauth.get_authorization_url()
@@ -569,14 +608,15 @@ def twitter_settings():
     response.s3.prep = prep
 
     response.menu_options = admin_menu_options
-    # @todo: migrate CRUD settings
-    return s3_rest_controller(module, "twitter_settings", listadd=False, deletable=False)
+    s3xrc.model.configure(table, listadd=False, deletable=False)
+    return s3_rest_controller(prefix, "twitter_settings")
 
 
-#--------------------------------------------------------------------------------------------------
-# The following 2 functions hook into the pr functions
-# -----------------------------------------------------------------------------
+#------------------------------------------------------------------------------
+# The following 2 functions hook into the pr functions:
+#
 def group():
+
     """ RESTful CRUD controller """
 
     if auth.is_logged_in() or auth.basic():
@@ -585,9 +625,8 @@ def group():
         redirect(URL(r=request, c="default", f="user", args="login",
         vars={"_next":URL(r=request, c="msg", f="group")}))
 
-    module = "pr"
-    resource = request.function
-    tablename = module + "_" + resource
+    prefix = "pr"
+    tablename = "%s_%s" % (prefix, resourcename)
     table = db[tablename]
 
     # Hide unnecessary fields
@@ -596,14 +635,12 @@ def group():
     # Do not show system groups
     response.s3.filter = (table.system == False)
 
-    # @todo: migrate CRUD settings
-    return s3_rest_controller(module, resource,
-                               main="name",
-                               extra="description",
-                               rheader=shn_pr_rheader,
-                               deletable=False)
-# -----------------------------------------------------------------------------
+    return s3_rest_controller(prefix, resourcename, rheader=shn_pr_rheader)
+
+
+#------------------------------------------------------------------------------
 def group_membership():
+
     """ RESTful CRUD controller """
 
     if auth.is_logged_in() or auth.basic():
@@ -612,9 +649,8 @@ def group_membership():
         redirect(URL(r=request, c="default", f="user", args="login",
         vars={"_next":URL(r=request, c="msg", f="group_membership")}))
 
-    module = "pr"
-    resource = request.function
-    tablename = module + "_" + resource
+    prefix = "pr"
+    tablename = "%s_%s" % (prefix, resourcename)
     table = db[tablename]
 
     # Hide unnecessary fields
@@ -622,11 +658,12 @@ def group_membership():
     table.comments.readable = table.comments.writable = False
     table.group_head.readable = table.group_head.writable = False
 
-    return s3_rest_controller(module, resource)
+    return s3_rest_controller(prefix, resourcename)
 
-#-------------------------------------------------------------------------------
 
+#------------------------------------------------------------------------------
 def pe_contact():
+
     """ Allows the user to add, update and delete their contacts """
 
     if auth.is_logged_in() or auth.basic():
@@ -636,9 +673,8 @@ def pe_contact():
         redirect(URL(r=request, c="default", f="user", args="login",
             vars={"_next":URL(r=request, c="msg", f="pe_contact")}))
 
-    module = "pr"
-    resource = request.function
-    tablename = module + "_" + resource
+    prefix = "pr"
+    tablename = "%s_%s" % (prefix, resourcename)
     table = db[tablename]
 
     # These fields will be populated automatically
@@ -646,41 +682,46 @@ def pe_contact():
     table.pe_id.writable = table.pe_id.readable = False
     table.person_name.writable = table.person_name.readable = False
     table.id.writable = False
-#   table.id.readable = False
+    #table.id.readable = False
 
     def msg_pe_contact_onvalidation(form):
         """ This onvalidation method adds the person id to the record """
         person = db(db.pr_person.uuid == auth.user.person_uuid).select(db.pr_person.pe_id, limitby=(0, 1)).first().pe_id
         form.vars.pe_id = person
+    s3xrc.model.configure(table,
+            onvalidation=lambda form: msg_pe_contact_onvalidation(form))
 
-    def msg_pe_contact_restrict_access(jr):
+    def msg_pe_contact_restrict_access(r):
         """ The following restricts update and delete access to contacts not owned by the user """
-        if jr.id :
+        if r.id :
             person = db(db.pr_person.uuid == auth.user.person_uuid).select(db.pr_person.pe_id, limitby=(0, 1)).first().pe_id
-            if person == db(db.pr_pe_contact.id == jr.id).select(db.pr_pe_contact.pe_id, limitby=(0, 1)).first().pe_id :
+            if person == db(db.pr_pe_contact.id == r.id).select(db.pr_pe_contact.pe_id, limitby=(0, 1)).first().pe_id :
                 return True
             else:
                 session.error = T("Access denied")
                 return dict(bypass = True, output = redirect(URL(r=request)))
         else:
             return True
-    s3xrc.model.configure(table,
-            onvalidation=lambda form: msg_pe_contact_onvalidation(form))
     response.s3.prep = msg_pe_contact_restrict_access
-    response.menu_options = []
-    # @todo: migrate CRUD settings
-    return s3_rest_controller(module, resource, listadd=True)
 
-#-------------------------------------------------------------------------------
+    response.menu_options = []
+    return s3_rest_controller(prefix, resourcename)
+
+
+#------------------------------------------------------------------------------
 def search():
+
+    """ Do a search of groups which match a type
+
+            - Used for auto-completion
+
     """
-        Do a search of groups which match a type
-        Used for auto-completion
-    """
+
     if auth.is_logged_in() or auth.basic():
         pass
     else:
         return
+
     import gluon.contrib.simplejson as json
     # JQuery Autocomplete uses 'q' instead of 'value'
     value = request.vars.q
@@ -691,8 +732,12 @@ def search():
         return dict(item=item)
     return
 
+
+#------------------------------------------------------------------------------
 def person_search(value):
+
     """ Generic function to do the search of groups which match a type """
+
     table1 = db.pr_group
     field1 = "name"
     table2 = db.pr_person
@@ -714,14 +759,21 @@ def person_search(value):
         item.append({"id":row.pe_id, "name":shn_pentity_represent(row.pe_id, default_label = "")})
     return item
 
-#--------------------------------------
-# Enabled only for testing
+
+#------------------------------------------------------------------------------
+# Enabled only for testing:
+#
 @auth.shn_requires_membership(1)
 def tag():
+
     """ RESTful CRUD controller """
-    resource = "tag"
-    tablename = "%s_%s" % (module, resource)
+
+    resourcename = "tag"
+    tablename = "%s_%s" % (prefix, resourcename)
     table = db[tablename]
 
-    # @todo: migrate CRUD settings
-    return s3_rest_controller(module, resource, listadd=False)
+    s3xrc.model.configure(table, listadd=False)
+    return s3_rest_controller(prefix, resourcename)
+
+
+#------------------------------------------------------------------------------

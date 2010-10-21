@@ -615,8 +615,9 @@ class S3CRUDHandler(S3MethodHandler):
             #response.view = "plain.html"
             #return dict(item=form)
 
-        #elif representation == "url":
-            #return import_url(r)
+        elif representation == "url":
+            importer = self.resource.importer.url
+            return importer(r)
 
         #elif representation == "csv":
             ## Read in POST

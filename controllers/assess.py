@@ -1,16 +1,16 @@
 # -*- coding: utf-8 -*-
 
-"""
-    Assessment - Controller
+""" Assessment - Controller
 
     @author: Michael Howden (michael@sahanafoundation.org)
     @date-created: 2010-08-25
 
 """
 
-module = request.controller
+prefix = request.controller
+resourcename = request.function
 
-if module not in deployment_settings.modules:
+if prefix not in deployment_settings.modules:
     session.error = T("Module disabled!")
     redirect(URL(r=request, c="default", f="index"))
 
@@ -45,18 +45,21 @@ def shn_menu():
 
 shn_menu()
 
-# S3 framework functions
-# -----------------------------------------------------------------------------
+#==============================================================================
 def index():
 
     """ Module's Home Page """
 
-    module_name = deployment_settings.modules[module].name_nice
+    module_name = deployment_settings.modules[prefix].name_nice
 
     return dict(module_name=module_name)
 
+
 #==============================================================================
 def shn_assess_rheader(jr, tabs=[]):
+
+    """ @todo: fix docstring """
+
     if jr.representation == "html":
         rheader_tabs = shn_rheader_tabs(jr, tabs)
         assess = jr.record
@@ -70,11 +73,14 @@ def shn_assess_rheader(jr, tabs=[]):
                      )
         return rheader
     return None
-# ---------------------------------------------------------------------
+
+
+#==============================================================================
 def assess():
+
     """ RESTful CRUD controller """
-    resource = request.function
-    tablename = "%s_%s" % (module, resource)
+
+    tablename = "%s_%s" % (prefix, resourcename)
     table = db[tablename]
 
     tabs = [
@@ -87,33 +93,47 @@ def assess():
 
     rheader = lambda r: shn_assess_rheader(r, tabs)
 
-    return shn_rest_controller(module, resource, rheader=rheader)
+    return s3_rest_controller(prefix, resourcename, rheader=rheader)
+
+
 #==============================================================================
 def baseline_type():
+
     """ RESTful CRUD controller """
-    resource = request.function
-    tablename = "%s_%s" % (module, resource)
+
+    tablename = "%s_%s" % (prefix, resourcename)
     table = db[tablename]
 
-    return shn_rest_controller(module, resource)
+    return s3_rest_controller(prefix, resourcename)
+
+
 #==============================================================================
 def baseline():
+
     """ RESTful CRUD controller """
-    resource = request.function
-    tablename = "%s_%s" % (module, resource)
+
+    tablename = "%s_%s" % (prefix, resourcename)
     table = db[tablename]
 
-    return shn_rest_controller(module, resource)
+    return s3_rest_controller(prefix, resourcename)
+
+
 #==============================================================================
 def summary():
+
     """ RESTful CRUD controller """
-    resource = request.function
-    tablename = "%s_%s" % (module, resource)
+
+    tablename = "%s_%s" % (prefix, resourcename)
     table = db[tablename]
 
-    return shn_rest_controller(module, resource)
+    return s3_rest_controller(prefix, resourcename)
+
+
 #==============================================================================
 def assess_short_mobile():
+
+    """ @todo: fix docstring """
+
     assess_short_fields = (("assess", "location"),
                            ("baseline", 1),
                            ("baseline", 2),
@@ -266,4 +286,5 @@ def assess_short_mobile():
          redirect(URL(r=request, c = "default", f = "index"))
 
     return dict(form = form)
-#ef s3_formstyle(id, label, widget, comment):
+
+#==============================================================================

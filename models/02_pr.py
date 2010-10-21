@@ -404,7 +404,7 @@ def pr_person_onvalidation(form):
 
     try:
         age = int(form.vars.get("age_group", None))
-    except ValueError:
+    except (ValueError, TypeError):
         age = None
     dob = form.vars.get("date_of_birth", None)
 

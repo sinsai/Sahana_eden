@@ -34,7 +34,7 @@ def cluster():
     tablename = "%s_%s" % (prefix, resourcename)
     table = db[tablename]
 
-    return shn_rest_controller(prefix, resourcename)
+    return s3_rest_controller(prefix, resourcename)
 
 
 #==============================================================================
@@ -45,7 +45,7 @@ def cluster_subsector():
     tablename = "%s_%s" % (prefix, resourcename)
     table = db[tablename]
 
-    return shn_rest_controller(prefix, resourcename)
+    return s3_rest_controller(prefix, resourcename)
 
 
 #==============================================================================

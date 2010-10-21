@@ -60,7 +60,7 @@ class S3Importer(object):
 
 
     # -------------------------------------------------------------------------
-    def csv(self, file):
+    def csv(self, file, table=None):
 
         """ Import CSV file into database
 
@@ -69,10 +69,13 @@ class S3Importer(object):
 
         """
 
-        db = self.db
-
-        db.import_from_csv_file(file)
-        db.commit()
+        if table:
+            table.import_from_csv_file(file)
+        else:
+            db = self.db
+            # This is the preferred method as it updates reference fields
+            db.import_from_csv_file(file)
+            db.commit()
 
 
     # -------------------------------------------------------------------------
@@ -80,11 +83,9 @@ class S3Importer(object):
 
         """ Import data from URL query
 
-            Restriction: can only update single records (no mass-update)
+            @param r: the S3Request
+            @note: can only update single records (no mass-update)
 
-            @todo 2.2: fix docstring
-            @todo 2.2: make this work
-            @todo 2.2: PEP-8
             @todo 2.3: make this resource-based
 
         """
@@ -138,7 +139,8 @@ class S3Importer(object):
 
         # Import data
         result = Storage(committed=False)
-        manager.sync_resolve = lambda vector, result=result: result.update(vector=vector)
+        manager.sync_resolve = lambda vector, result=result: \
+                                      result.update(vector=vector)
         try:
             success = resource.import_xml(tree)
         except SyntaxError:
@@ -154,14 +156,15 @@ class S3Importer(object):
             method = result.method
             if method == result.METHOD.CREATE:
                 item = xml.json_message(True, 201, "Created as %s?%s.id=%s" %
-                                        (str(r.there(representation="html", vars=dict())),
-                                        result.name, result.id))
+                        (str(r.there(representation="html", vars=dict())),
+                        result.name, result.id))
             else:
                 item = xml.json_message(True, 200, "Record updated")
         else:
-            item = xml.json_message(False, 403, "Could not create/update record: %s" %
-                                    manager.error or xml.error,
-                                    tree=xml.tree2json(tree))
+            item = xml.json_message(False, 403,
+                        "Could not create/update record: %s" %
+                            manager.error or xml.error,
+                        tree=xml.tree2json(tree))
 
         return dict(item=item)
 

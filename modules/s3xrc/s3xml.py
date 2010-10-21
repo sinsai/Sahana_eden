@@ -533,10 +533,12 @@ class S3XML(object):
 
 
     # -------------------------------------------------------------------------
-    def gis_encode(self, rmap, download_url="", marker=None):
+    def gis_encode(self, resource, record, rmap, download_url="", marker=None):
 
         """ GIS-encodes location references
 
+            @param resource: the referencing resource
+            @param record: the particular record
             @param rmap: list of references to encode
             @param download_url: download URL of this instance
             @param marker: filename to override filenames in marker URLs

@@ -619,18 +619,25 @@ class S3CRUDHandler(S3MethodHandler):
             importer = self.resource.importer.url
             return importer(r)
 
-        #elif representation == "csv":
-            ## Read in POST
-            #import csv
-            #csv.field_size_limit(1000000000)
-            ##infile = open(request.vars.filename, "rb")
-            #infile = r.request.vars.filename.file
-            #try:
-                #import_csv(infile, table)
-                #session.flash = T("Data uploaded")
-            #except:
-                #session.error = T("Unable to parse CSV file!")
-            #redirect(r.there())
+        elif representation == "csv":
+            import csv, cgi
+            csv.field_size_limit(1000000000)
+            infile = request.vars.filename
+            importer = self.resource.importer.csv
+            if isinstance(infile, cgi.FieldStorage) and infile.filename:
+                infile = infile.file
+            else:
+                try:
+                    infile = open(infile, "rb")
+                except:
+                    session.error = T("Cannot read from file: %s" % infile)
+                    redirect(r.there(representation="html"))
+            try:
+                importer(infile, table=table)
+            except:
+                session.error = T("Unable to parse CSV file or file contains invalid data")
+            else:
+                session.flash = T("Data uploaded")
 
         else:
             r.error(501, self.manager.ERROR.BAD_FORMAT)
@@ -894,8 +901,10 @@ class S3CRUDHandler(S3MethodHandler):
 
         #elif representation == "plain":
             #pass
-        #elif r.representation == "url":
-            #pass
+
+        elif representation == "url":
+            importer = self.resource.importer.url
+            return importer(r)
 
         else:
             r.error(501, self.manager.ERROR.BAD_FORMAT)

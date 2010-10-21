@@ -2160,27 +2160,44 @@ class S3Resource(object):
         # Get the table
         table = self.table
 
-        # Copy record
+        # Copy data from a previous record?
         data = None
         if from_table is not None:
-            row = self.db(from_table.id == from_record).select(from_table.ALL, limit=(0,1)).first()
-            if row:
-                if map_fields:
-                    if isinstance(map_fields, dict):
-                        data = Storage([(map_fields[f], row[f])
-                                        for f in map_fields
-                                        if f in table and f in row and f != "id"])
-
-                    elif isinstance(map_fields, (list, tuple)):
-                        data = Storage([(f, row[f])
-                                        for f in map_fields
-                                        if f in table and f in row and f != "id"])
-                    else:
-                        raise TypeError
+            if map_fields:
+                if isinstance(map_fields, dict):
+                    fields = [from_table[map_fields[f]]
+                              for f in map_fields
+                                  if f in table.fields and
+                                  map_fields[f] in from_table.fields and
+                                  table[f].writable]
+                elif isinstance(map_fields, (list, tuple)):
+                    fields = [from_table[f]
+                              for f in map_fields
+                                  if f in table.fields and
+                                  f in from_table.fields and
+                                  table[f].writable]
                 else:
-                    data = Storage([(f, row[f])
-                                    for f in row
-                                    if f in table and f != "id"])
+                    raise TypeError
+            else:
+                fields = [from_table[f]
+                          for f in table.fields
+                              if f in from_table.fields and
+                              table[f].writable]
+
+            row = self.db(from_table.id == from_record).select(limitby=(0,1), *fields).first()
+            if row:
+                if isinstance(map_fields, dict):
+                    data = Storage([(f, row[map_fields[f]]) for f in map_fields])
+                else:
+                    data = Storage(row)
+
+            if data:
+                missing_fields = Storage()
+                for f in table.fields:
+                    if f not in data and table[f].writable:
+                        missing_fields[f] = table[f].default
+                data.update(missing_fields)
+                data.update(id=None)
 
         # Get the form
         form = self.update(None,
@@ -2263,8 +2280,6 @@ class S3Resource(object):
         # Copy from another record?
         if id is None and data:
             record = Storage(data)
-            if "id" in record:
-                del record["id"]
         else:
             record = id
 

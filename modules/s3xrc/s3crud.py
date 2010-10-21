@@ -490,7 +490,7 @@ class S3CRUDHandler(S3MethodHandler):
                 else:
                     table[r.fkey].writable = False
 
-            ## Copy from a previous record?
+            # Copy from a previous record?
             from_table = None
             from_record = r.request.get_vars.get("from_record", None)
             map_fields = r.request.get_vars.get("from_fields", None)
@@ -505,15 +505,12 @@ class S3CRUDHandler(S3MethodHandler):
                     from_table = table
                 if map_fields:
                     del r.request.get_vars["from_fields"] # forget it
-                    print map_fields
                     if map_fields.find("$") != -1:
                         mf = map_fields.split(",")
                         mf = [f.find("$") != -1 and f.split("$") or [f,f] for f in mf]
                         map_fields = Storage(mf)
                     else:
                         map_fields = map_fields.split(",")
-
-            print "map_fields=%s" % map_fields
 
             # Success message
             message = self.crud_string(self.tablename, "msg_record_created")

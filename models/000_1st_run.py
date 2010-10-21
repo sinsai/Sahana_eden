@@ -10,8 +10,9 @@
 """
 import os,shutil
 
-template_src = os.path.join('applications','eden','deployment-templates')
-template_dst = os.path.join('applications','eden')
+template_src = os.path.join('applications',request.application,'deployment-templates')
+template_dst = os.path.join('applications',request.application)
+
 template_files = (
     'models/000_config.py',
     'cron/crontab'

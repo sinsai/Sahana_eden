@@ -9,7 +9,6 @@
 # Remind admin to edit this file
 FINISHED_EDITING_CONFIG_FILE = False # change to True after you finish editing this file
 if not FINISHED_EDITING_CONFIG_FILE:
-    # Raise might be a bit harsh. Maybe there's a nicer s3 way to show an error message
     raise HTTP(501,body="Please edit models/000_config.py first")
 
 s3cfg = local_import("s3cfg")

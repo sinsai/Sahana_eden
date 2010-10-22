@@ -490,38 +490,27 @@ class S3CRUDHandler(S3MethodHandler):
                 else:
                     table[r.fkey].writable = False
 
-            ## Copy from a previous record?
-            #from_record = r.request.get_vars.get("from_record", None)
-            #from_fields = r.request.get_vars.get("from_fields", None)
-            #original = None
-            #if from_record:
-                #del r.request.get_vars["from_record"] # forget it
-                #if from_record.find(".") != -1:
-                    #source_name, from_record = from_record.split(".", 1)
-                    #source = db.get(source_name, None)
-                #else:
-                    #source = table
-                #if from_fields:
-                    #del r.request.get_vars["from_fields"] # forget it
-                    #from_fields = from_fields.split(",")
-                #else:
-                    #from_fields = [f for f in table.fields if f in source.fields and f != "id"]
-                #if source and from_record:
-                    #copy_fields = [source[f] for f in from_fields if
-                                        #f in source.fields and
-                                        #f in table.fields and
-                                        #table[f].type == source[f].type and
-                                        #table[f].readable and table[f].writable]
-                    #if shn_has_permission("read", source._tablename, from_record):
-                        #original = db(source.id == from_record).select(limitby=(0, 1), *copy_fields).first()
-                    #if original:
-                        #missing_fields = Storage()
-                        #for f in table.fields:
-                            #if f not in original and \
-                            #table[f].readable and table[f].writable:
-                                #missing_fields[f] = table[f].default
-                        #original.update(missing_fields)
-            data = None
+            # Copy from a previous record?
+            from_table = None
+            from_record = r.request.get_vars.get("from_record", None)
+            map_fields = r.request.get_vars.get("from_fields", None)
+            if from_record:
+                del r.request.get_vars["from_record"] # forget it
+                if from_record.find(".") != -1:
+                    from_table, from_record = from_record.split(".", 1)
+                    from_table = self.db.get(from_table, None)
+                    if not from_table:
+                        r.error(404, self.resource.ERROR.BAD_RESOURCE)
+                else:
+                    from_table = table
+                if map_fields:
+                    del r.request.get_vars["from_fields"] # forget it
+                    if map_fields.find("$") != -1:
+                        mf = map_fields.split(",")
+                        mf = [f.find("$") != -1 and f.split("$") or [f,f] for f in mf]
+                        map_fields = Storage(mf)
+                    else:
+                        map_fields = map_fields.split(",")
 
             # Success message
             message = self.crud_string(self.tablename, "msg_record_created")
@@ -547,9 +536,9 @@ class S3CRUDHandler(S3MethodHandler):
                 form = self.resource.create(onvalidation=onvalidation,
                                             onaccept=onaccept,
                                             message=message,
-                                            #from_table=None,
-                                            #from_record=None,
-                                            #map_fields=None,
+                                            from_table=from_table,
+                                            from_record=from_record,
+                                            map_fields=map_fields,
                                             download_url=self.download_url,
                                             format=representation)
 

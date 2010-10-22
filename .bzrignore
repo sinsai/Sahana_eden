@@ -1,8 +1,10 @@
 .git
 .gitignore
 cache/*
+cron/crontab
 databases/*
 errors/*
+models/000_config.py
 sessions/*
 static/scripts/tools/httpserver.log
 uploads/*

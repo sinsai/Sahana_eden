@@ -6,11 +6,16 @@
     Deployers shouldn't typically need to edit any other files.
 """
 
+# Remind admin to edit this file
+FINISHED_EDITING_CONFIG_FILE = False # change to True after you finish editing this file
+if not FINISHED_EDITING_CONFIG_FILE:
+    raise HTTP(501, body="Please edit models/000_config.py first")
+
 s3cfg = local_import("s3cfg")
 deployment_settings = s3cfg.S3Config(T)
 
 # Database settings
-deployment_settings.database.db_type = "mysql"
+deployment_settings.database.db_type = "sqlite"
 deployment_settings.database.host = "localhost"
 deployment_settings.database.port = "" # use default
 deployment_settings.database.database = "sahana"

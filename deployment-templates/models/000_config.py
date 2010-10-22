@@ -154,6 +154,10 @@ deployment_settings.gis.geoserver_url = "http://localhost/geoserver"
 deployment_settings.gis.geoserver_username = "admin"
 deployment_settings.gis.geoserver_password = "password"
 
+# OpenStreetMap settings:
+# Register your app by logging in to www.openstreetmap.org & then selecting 'oauth settings'
+deployment_settings.osm.oauth_consumer_key = ""
+deployment_settings.osm.oauth_consumer_secret = ""
 
 # Security Policy settings
 # Lock-down access to Map Editing

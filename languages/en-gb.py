@@ -1,5 +1,6 @@
 # coding: utf8
 {
+'': '',
 ' Module is the main communications hub of the Sahana system. It is used to send alerts and/or messages using SMS & Email to various groups and individuals before, during and after a disaster.': ' Module is the main communications hub of the Sahana system. It is used to send alerts and/or messages using SMS & Email to various groups and individuals before, during and after a disaster.',
 ' by ': ' by ',
 ' is envisioned to be composed of several sub-modules that work together to provide complex functionality for the management of relief and project items by an organization. This includes an intake system, a warehouse management system, commodity tracking, supply chain management, fleet management, procurement, financial tracking and other asset and resource management capabilities.': ' is envisioned to be composed of several sub-modules that work together to provide complex functionality for the management of relief and project items by an organisation. This includes an intake system, a warehouse management system, commodity tracking, supply chain management, fleet management, procurement, financial tracking and other asset and resource management capabilities.',
@@ -2122,6 +2123,7 @@
 'Open': 'Open',
 'Open area': 'Open area',
 'Open recent': 'Open recent',
+'OpenStreetMap Editor': 'OpenStreetMap Editor',
 'Operating Rooms': 'Operating Rooms',
 'Options': 'Options',
 'Organization': 'Organisation',
@@ -3346,6 +3348,7 @@
 "You haven't made any calculations": "You haven't made any calculations",
 'You must be logged in to report persons missing or found.': 'You must be logged in to report persons missing or found.',
 'You must provide a series id to proceed.': 'You must provide a series id to proceed.',
+'You should edit OpenStreetMap settings in models/000_config.py': 'You should edit OpenStreetMap settings in models/000_config.py',
 'Your action is required. Please approve user %s asap: ': 'Your action is required. Please approve user %s asap: ',
 'Your current ordered list of solution items is shown below. You can change it by voting again.': 'Your current ordered list of solution items is shown below. You can change it by voting again.',
 'Your post was added successfully.': 'Your post was added successfully.',

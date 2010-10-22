@@ -225,6 +225,8 @@ class S3Resource(object):
         self.__ids = []
         self.__uids = []
 
+        self.lastid = None
+
         self.__files = Storage()
 
         # Bind to model and data store
@@ -2332,6 +2334,7 @@ class S3Resource(object):
 
             # Store session vars
             if form.vars.id:
+                self.lastid = str(form.vars.id)
                 self.manager.store_session(self.prefix, self.name, form.vars.id)
 
             # Execute onaccept

@@ -250,6 +250,12 @@ class S3MethodHandler(object):
         output = self.respond(r, **attr)
 
         # Redirection to next
+        if self.next and self.resource.lastid:
+            self.next = str(self.next)
+            placeholder = "%5Bid%5D"
+            self.next = self.next.replace(placeholder, self.resource.lastid)
+            placeholder = "[id]"
+            self.next = self.next.replace(placeholder, self.resource.lastid)
         r.next = self.next
 
         # Done
@@ -667,7 +673,10 @@ class S3CRUDHandler(S3MethodHandler):
         # Get the target record ID
         record_id = self._record_id(r)
         if not record_id:
-            r.error(404, self.resource.ERROR.BAD_RECORD)
+            if r.component and not r.multiple:
+                return self.create(r, **attr)
+            else:
+                r.error(404, self.resource.ERROR.BAD_RECORD)
 
         if r.interactive:
 

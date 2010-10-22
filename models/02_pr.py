@@ -141,6 +141,8 @@ def shn_pentity_ondelete(record):
 # -----------------------------------------------------------------------------
 def shn_pentity_onaccept(form, table=None):
 
+    """ @todo: fix docstring """
+
     if not "uuid" in table.fields or "id" not in form.vars:
         return False
 
@@ -171,12 +173,6 @@ def shn_pentity_onaccept(form, table=None):
             pe_id = pentity.insert(uuid=uid, pe_label=pe_label, pe_type=pe_type)
             #db(pentity.id == pe_id).update(pe_id=pe_id, deleted=False)
             db(table.id == id).update(pe_id=pe_id)
-
-        # If a person gets added in MPR, then redirect to missing report
-        if request.controller == "mpr" and \
-           table._tablename == "pr_person" and \
-           record.missing == True:
-            response.s3.mpr_next = URL(r=request, c="mpr", f="person", args=[record.id, "missing_report"])
 
         return True
 

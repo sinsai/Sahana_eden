@@ -41,7 +41,7 @@ __all__ = ["S3Audit",
            "S3CRUDHandler",
            "S3SearchSimple"]
 
-import datetime, os
+import datetime, os, sys
 
 from gluon.storage import Storage
 from gluon.html import URL, DIV, A, SCRIPT, FORM, TABLE, TR, TD, INPUT
@@ -130,7 +130,8 @@ class S3Audit(object):
         else:
             record = None
 
-        #print "Audit: %s on %s_%s #%s" % (operation, prefix, name, record or 0)
+        # Pseudo-audit for testing (writes to stderr instead of DB):
+        #print >> sys.stderr, "Audit: %s on %s_%s #%s" % (operation, prefix, name, record or 0)
 
         tablename = "%s_%s" % (prefix, name)
 
@@ -500,8 +501,11 @@ class S3CRUDHandler(S3MethodHandler):
             from_table = None
             from_record = r.request.get_vars.get("from_record", None)
             map_fields = r.request.get_vars.get("from_fields", None)
+
             if from_record:
                 del r.request.get_vars["from_record"] # forget it
+
+                # Find original table
                 if from_record.find(".") != -1:
                     from_table, from_record = from_record.split(".", 1)
                     from_table = self.db.get(from_table, None)
@@ -509,6 +513,13 @@ class S3CRUDHandler(S3MethodHandler):
                         r.error(404, self.resource.ERROR.BAD_RESOURCE)
                 else:
                     from_table = table
+
+                # User must be authorised to read the original!
+                authorised = self.permit("read", from_table._tablename, from_record)
+                if not authorised:
+                    r.unauthorised()
+
+                # Field mapping?
                 if map_fields:
                     del r.request.get_vars["from_fields"] # forget it
                     if map_fields.find("$") != -1:
@@ -523,6 +534,8 @@ class S3CRUDHandler(S3MethodHandler):
 
             # Get the form
             if "id" in request.post_vars:
+
+                # Copy formkey if un-deleting a duplicate
                 original = str(request.post_vars.id)
                 formkey = session.get("_formkey[%s/None]" % tablename)
                 formname = "%s/%s" % (tablename, original)
@@ -532,12 +545,14 @@ class S3CRUDHandler(S3MethodHandler):
                     request.post_vars.update(deleted=False)
                 request.post_vars.update(_formname=formname, id=original)
                 request.vars.update(**request.post_vars)
+
                 form = self.resource.update(original,
                                             message=message,
                                             onvalidation=onvalidation,
                                             onaccept=onaccept,
                                             download_url=self.download_url,
                                             format=representation)
+
             else:
                 form = self.resource.create(onvalidation=onvalidation,
                                             onaccept=onaccept,

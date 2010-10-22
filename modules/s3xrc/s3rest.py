@@ -2186,6 +2186,11 @@ class S3Resource(object):
                               if f in from_table.fields and
                               table[f].writable]
 
+            # Audit read => this is a read method, finally
+            audit = self.manager.audit
+            prefix, name = from_table._tablename.split("_", 1)
+            audit("read", prefix, name, record=from_record, representation=format)
+
             row = self.db(from_table.id == from_record).select(limitby=(0,1), *fields).first()
             if row:
                 if isinstance(map_fields, dict):
@@ -2339,7 +2344,8 @@ class S3Resource(object):
 
             # Execute onaccept
             self.manager.callback(onaccept, form, name=self.tablename)
-        else:
+
+        elif id:
             # Audit read (user is reading even when not updating the data)
             audit("read", self.prefix, self.name, form=form, representation=format)
 

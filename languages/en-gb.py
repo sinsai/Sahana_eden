@@ -1058,7 +1058,7 @@
 'End date': 'End date',
 'End of Period': 'End of Period',
 'English': 'English',
-'Enter Coordinates in Deg Min Sec': 'Enter Coordinates in Deg Min Sec',
+'Enter Coordinates:': 'Enter Coordinates:',
 'Enter a GPS Coord': 'Enter a GPS Coord',
 'Enter a date before': 'Enter a date before',
 'Enter a name for the spreadsheet you are uploading (mandatory).': 'Enter a name for the spreadsheet you are uploading (mandatory).',

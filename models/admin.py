@@ -9,8 +9,8 @@ import cPickle as pickle
 module = "admin"
 
 # Import Jobs
-resource = "import_job"
-tablename = "%s_%s" % (module, resource)
+resourcename = "import_job"
+tablename = "%s_%s" % (module, resourcename)
 table = db.define_table(tablename,
                         Field("module", "string",
                               default="org", notnull=True),
@@ -48,8 +48,8 @@ def display_status_select(data):
         return data
     return SELECT("ignore", "import", value=data, _class="import_line_status")
 
-resource = "import_line"
-tablename = "%s_%s" % (module, resource)
+resourcename = "import_line"
+tablename = "%s_%s" % (module, resourcename)
 table = db.define_table(tablename,
                         Field("import_job", db.admin_import_job, writable=False),
                         Field("line_no", "integer"),

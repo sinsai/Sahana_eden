@@ -11,8 +11,8 @@ if deployment_settings.has_module(module):
 
     # -------------------------------------------------------------------------
     # Shelter types
-    resource = "shelter_type"
-    tablename = module + "_" + resource
+    resourcename = "shelter_type"
+    tablename = module + "_" + resourcename
     table = db.define_table(tablename,
                             Field("name",
                                   notnull=True,
@@ -46,8 +46,8 @@ if deployment_settings.has_module(module):
                                      )
 
     # -------------------------------------------------------------------------
-    resource = "shelter_service"
-    tablename = module + "_" + resource
+    resourcename = "shelter_service"
+    tablename = module + "_" + resourcename
     table = db.define_table(tablename,
                             Field("name",
                                   notnull=True,
@@ -92,8 +92,8 @@ if deployment_settings.has_module(module):
                                          )
 
     # -------------------------------------------------------------------------
-    resource = "shelter"
-    tablename = module + "_" + resource
+    resourcename = "shelter"
+    tablename = module + "_" + resourcename
 
     # If the HMS module is enabled, we include a hospital_id field, so if the
     # shelter is co-located with a hospital, the hospital can be identified.
@@ -191,19 +191,17 @@ if deployment_settings.has_module(module):
 
     # Add Shelters as component of Services, Types, Locations as a simple way
     # to get reports showing shelters per type, etc.
-    s3xrc.model.add_component(module, resource,
+    s3xrc.model.add_component(module, resourcename,
                               multiple=True,
                               joinby=dict(cr_shelter_type="shelter_type_id",
                                           cr_shelter_service="shelter_service_id",
                                           #gis_location="location_id",
-                                          doc_document="document_id"),
-                              deletable=True,
-                              editable=True,
-                              listadd=False)
+                                          doc_document="document_id"))
 
     s3xrc.model.configure(table,
+        listadd=False,
         onaccept=lambda form: shn_site_onaccept(form, table=db.cr_shelter),
-        delete_onaccept=lambda form: shn_site_ondelete(form),
+        ondelete=lambda form: shn_site_ondelete(form),
         list_fields=["id",
                      "name",
                      "shelter_type_id",
@@ -223,7 +221,4 @@ if deployment_settings.has_module(module):
 
     s3xrc.model.add_component("pr", "presence",
         multiple=True,
-        joinby=dict(cr_shelter="shelter_id"),
-        editable=False,
-        deletable=False,
-        listadd=True)
+        joinby=dict(cr_shelter="shelter_id"))

@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 
-""" S3XRC Resource Framework - XML/JSON toolkit
+""" S3XRC Resource Framework - XML/JSON Toolkit
 
-    @version: 2.1.7
+    @version: 2.1.8
 
     @see: U{B{I{S3XRC}} <http://eden.sahanafoundation.org/wiki/S3XRC>} on Eden wiki
 
@@ -39,6 +39,7 @@
 __all__ = ["S3XML"]
 
 from gluon.storage import Storage
+from gluon.validators import IS_EMPTY_OR
 import gluon.contrib.simplejson as json
 
 try:
@@ -165,7 +166,7 @@ class S3XML(object):
             @param cache: the cache
 
             @todo 2.2: pass resource controller?
-            
+
         """
 
         self.db = db
@@ -532,10 +533,12 @@ class S3XML(object):
 
 
     # -------------------------------------------------------------------------
-    def gis_encode(self, rmap, download_url="", marker=None):
+    def gis_encode(self, resource, record, rmap, download_url="", marker=None):
 
         """ GIS-encodes location references
 
+            @param resource: the referencing resource
+            @param record: the particular record
             @param rmap: list of references to encode
             @param download_url: download URL of this instance
             @param marker: filename to override filenames in marker URLs
@@ -577,13 +580,13 @@ class S3XML(object):
                         marker_url = "%s/gis_marker.image.%s.png" % \
                                      (download_url, marker)
                     else:
-                        marker = self.gis.get_marker(r.value)
+                        marker = self.gis.get_marker(resource.tablename)
                         marker_url = "%s/%s" % (download_url, marker.image)
                     r.element.set(self.ATTRIBUTE.marker,
                                   self.xml_encode(marker_url))
                     # Lookup GPS Marker
                     # @ToDo Fix for new FeatureClass
-                    symbol = None
+                    #symbol = None
                     #if LatLon[self.FeatureClass]:
                     #    fctbl = db.gis_feature_class
                     #    query = (fctbl.id == str(LatLon[self.FeatureClass]))
@@ -592,8 +595,8 @@ class S3XML(object):
                     #                    limitby=(0, 1)).first().gps_marker
                     #    except:
                     #        pass
-                    if not symbol:
-                        symbol = "White Dot"
+                    #if not symbol:
+                    symbol = "White Dot"
                     r.element.set(self.ATTRIBUTE.sym,
                                   self.xml_encode(symbol))
 
@@ -630,21 +633,22 @@ class S3XML(object):
             resource.set(self.UID, self.xml_encode(value))
             if table._tablename == "gis_location" and self.gis:
                 # Look up the marker to display
-                marker = self.gis.get_marker(_value)
+                marker = self.gis.get_marker(resource)
                 marker_url = "%s/%s" % (download_url, marker.image)
                 resource.set(self.ATTRIBUTE.marker,
                                 self.xml_encode(marker_url))
                 # Look up the GPS Marker
-                symbol = None
-                try:
-                    db = self.db
-                    query = (db.gis_feature_class.id == record.feature_class_id)
-                    symbol = db(query).select(limitby=(0, 1)).first().gps_marker
-                except:
-                    # No Feature Class
-                    pass
-                if not symbol:
-                    symbol = "White Dot"
+                # @ToDo Fix for new FeatureClass
+                #symbol = None
+                #try:
+                #    db = self.db
+                #    query = (db.gis_feature_class.id == record.feature_class_id)
+                #    symbol = db(query).select(limitby=(0, 1)).first().gps_marker
+                #except:
+                #    # No Feature Class
+                #    pass
+                #if not symbol:
+                symbol = "White Dot"
                 resource.set(self.ATTRIBUTE.sym, self.xml_encode(symbol))
 
         for i in xrange(0, len(fields)):
@@ -962,7 +966,7 @@ class S3XML(object):
         """ Get options of a field as <select>
 
             @todo 2.2: fix docstring
-            
+
         """
 
         select = etree.Element(self.TAG.select)
@@ -1003,7 +1007,7 @@ class S3XML(object):
         """ Get options of option fields in a table as <select>s
 
             @todo 2.2: fix docstring
-            
+
         """
 
         db = self.db
@@ -1036,7 +1040,7 @@ class S3XML(object):
         """ Get fields in a table as <fields> element
 
             @todo 2.2: fix docstring
-            
+
         """
 
         db = self.db

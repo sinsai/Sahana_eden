@@ -43,7 +43,6 @@ def index():
 
     module_name = deployment_settings.modules[module].name_nice
 
-    shn_menu()
     return dict(module_name=module_name)
 
 # -----------------------------------------------------------------------------
@@ -71,9 +70,8 @@ def shelter_type():
                                                    ])
 
     # @ToDo Shelters per type display is broken -- always returns none.
-    output = shn_rest_controller(module, resource,
+    output = s3_rest_controller(module, resource,
                                  rheader=rheader)
-    shn_menu()
     return output
 
 # -----------------------------------------------------------------------------
@@ -98,9 +96,8 @@ def shelter_service():
                                             tabs = [(T("Basic Details"), None),
                                                     (T("Shelters"), "shelter")])
 
-    output = shn_rest_controller(module, resource,
+    output = s3_rest_controller(module, resource,
                                  rheader=rheader)
-    shn_menu()
     return output
 
 # -----------------------------------------------------------------------------
@@ -142,8 +139,9 @@ def shelter():
     # Pre-processor
     response.s3.prep = shn_shelter_prep
 
-    crud.settings.create_onvalidation = shn_shelter_onvalidation
-    crud.settings.update_onvalidation = shn_shelter_onvalidation
+    s3xrc.model.configure(table,
+        create_onvalidation = shn_shelter_onvalidation,
+        update_onvalidation = shn_shelter_onvalidation)
 
     # Post-processor
     def postp(r, output):
@@ -163,8 +161,6 @@ def shelter():
         return output
     response.s3.postp = postp
 
-    response.s3.pagination = True
-
     shelter_tabs = [(T("Basic Details"), None),
                     (T("Assessments"), "assessment"),
                     (T("People"), "presence"),
@@ -174,10 +170,9 @@ def shelter():
 
     rheader = lambda r: shn_shelter_rheader(r, tabs=shelter_tabs)
 
-    output = shn_rest_controller(module, resource,
+    output = s3_rest_controller(module, resource,
                                  rheader=rheader)
 
-    shn_menu()
     return output
 
 # -----------------------------------------------------------------------------
@@ -347,16 +342,14 @@ def shn_shelter_rheader(r, tabs=[]):
 
         record = r.record
         rheader = DIV(TABLE(
-                        TR(
-                            TH(T("Name") + ": "), record.name
-                          ),
-                        ),
+                            TR(
+                                TH(T("Name") + ": "), record.name
+                              ),
+                            ),
                       rheader_tabs)
-
         return rheader
 
-    else:
-        return None
+    return None
 
 # -----------------------------------------------------------------------------
 # This code provides urls of the form:

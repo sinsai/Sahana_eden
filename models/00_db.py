@@ -64,6 +64,10 @@ MENU2 = s3tools.MENU2
 from gluon.tools import Service
 service = Service(globals())
 
+# Keep all S3 framework-level elements stored off here, so as to avoid polluting global namespace & to make it clear which part of the framework is being interacted with
+# Avoid using this where a method parameter could be used: http://en.wikipedia.org/wiki/Anti_pattern#Programming_anti-patterns
+s3 = Storage()
+
 # Custom classes which extend default T2
 # (to deprecate)
 exec("from applications.%s.modules.sahana import *" % request.application)
@@ -95,6 +99,15 @@ gis = s3gis.GIS(globals(), deployment_settings, db, auth, cache=cache)
 s3vita = local_import("s3vita")
 vita = s3vita.S3Vita(globals(), db)
 
+# S3XRC
+_s3xrc = local_import("s3xrc")
+s3.crud = Storage()
+s3_audit = _s3xrc.S3Audit(db, session, migrate=migrate)
+s3xrc = _s3xrc.S3ResourceController(globals(),
+            domain=request.env.server_name,
+            base_url="%s/%s" % (deployment_settings.get_base_public_url(),
+                                request.application))
+
 # Logout session clearing
 # shn_on_login ----------------------------------------------------------------
 # added 2009-08-27 by nursix
@@ -116,7 +129,5 @@ def shn_auth_on_logout(user):
     # S3XRC
     s3xrc.clear_session()
 
-# Keep all S3 framework-level elements stored off here, so as to avoid polluting global namespace & to make it clear which part of the framework is being interacted with
-# Avoid using this where a method parameter could be used: http://en.wikipedia.org/wiki/Anti_pattern#Programming_anti-patterns
-s3 = Storage()
-
+# END
+# *****************************************************************************

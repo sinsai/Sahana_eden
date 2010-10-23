@@ -19,8 +19,8 @@ $(document).ready(function() {
         {
         ColumnSettings[i] = null;
         }
-    
-  {{if response.s3.pagination:}}
+
+  {{if not response.s3.no_sspag:}}
     // Cache the pages to reduce server-side calls
     var oCache = {
         iCacheLower: -1
@@ -60,7 +60,7 @@ $(document).ready(function() {
         if ( oCache.iCacheLower < 0 || iRequestStart < oCache.iCacheLower || iRequestEnd > oCache.iCacheUpper ) {
             bNeedServer = true;
         }
-        
+
         /* sorting etc changed? */
         if ( oCache.lastRequest && !bNeedServer ) {
             for( var i=0, iLen=aoData.length ; i < iLen ; i++ )
@@ -73,10 +73,10 @@ $(document).ready(function() {
                 }
             }
         }
-        
+
         /* Store the request for checking next time around */
         oCache.lastRequest = aoData.slice();
-        
+
         if ( bNeedServer ) {
             if ( iRequestStart < oCache.iCacheLower ) {
                 iRequestStart = iRequestStart - (iRequestLength * (iPipe - 1));
@@ -84,14 +84,14 @@ $(document).ready(function() {
                     iRequestStart = 0;
                 }
             }
-            
+
             oCache.iCacheLower = iRequestStart;
             oCache.iCacheUpper = iRequestStart + (iRequestLength * iPipe);
             oCache.iDisplayLength = fnGetKey( aoData, 'iDisplayLength' );
             fnSetKey( aoData, 'iDisplayStart', iRequestStart );
             fnSetKey( aoData, 'iDisplayLength', iRequestLength * iPipe );
-            
-            $.getJSON( sSource, aoData, function (json) { 
+
+            $.getJSON( sSource, aoData, function (json) {
                 /* Callback processing */
                 oCache.lastJson = jQuery.extend(true, {}, json);
                 if ( oCache.iCacheLower != oCache.iDisplayStart ) {
@@ -110,7 +110,7 @@ $(document).ready(function() {
         }
     }
   {{pass}}
-    
+
     $('#list').dataTable({
         'bStateSave': true,
   {{try:}}
@@ -120,7 +120,7 @@ $(document).ready(function() {
     {{pass}}
   {{except:}}
   {{pass}}
-  {{if response.s3.pagination:}}
+  {{if not response.s3.no_sspag:}}
         'bFilter': true,
         'bSort': true,
         'sPaginationType': 'full_numbers',

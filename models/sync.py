@@ -48,8 +48,8 @@ policy = S3ReusableField("policy", "integer", notnull=True,
 # -----------------------------------------------------------------------------
 # Settings
 #
-resource = "setting"
-tablename = "%s_%s" % (module, resource)
+resourcename = "setting"
+tablename = "%s_%s" % (module, resourcename)
 table = db.define_table(tablename, #uuidstamp,
                         Field("proxy"),
                         migrate=migrate, *s3_uid())
@@ -63,8 +63,8 @@ table.proxy.label = T("Proxy-server")
 # -----------------------------------------------------------------------------
 # Synchronization status
 #
-resource = "status"
-tablename = "%s_%s" % (module, resource)
+resourcename = "status"
+tablename = "%s_%s" % (module, resourcename)
 table = db.define_table(tablename,
                         Field("locked", "boolean"),
                         Field("halt", "boolean"),
@@ -81,8 +81,8 @@ table = db.define_table(tablename,
 #
 sync_message_types = ("OK", "ERROR", "SUCCESS", "FAILURE", "DONE", "SKIPPED", "")
 
-resource = "notification"
-tablename = "%s_%s" % (module, resource)
+resourcename = "notification"
+tablename = "%s_%s" % (module, resourcename)
 table = db.define_table(tablename, timestamp,
                         Field("pid", "integer"),
                         Field("type", default=""),
@@ -106,8 +106,8 @@ formats += [f for f in s3xrc.xml_import_formats if f not in formats]
 formats += [f for f in s3xrc.json_export_formats if f not in formats]
 formats += [f for f in s3xrc.json_import_formats if f not in formats]
 
-resource = "peer"
-tablename = "%s_%s" % (module, resource)
+resourcename = "peer"
+tablename = "%s_%s" % (module, resourcename)
 table = db.define_table(tablename,
                         #uuidstamp,
                         Field("name"),
@@ -221,8 +221,8 @@ s3xrc.model.configure(table,
     #2: T("Sahana Eden <=> Other (Sahana Agasti, Ushahidi, etc.)")
 #}
 
-#resource = "schedule"
-#tablename = "%s_%s" % (module, resource)
+#resourcename = "schedule"
+#tablename = "%s_%s" % (module, resourcename)
 #table = db.define_table(tablename, timestamp,
                         #Field("comments", length=128),              # brief comments about the scheduled job
                         #Field("period",                             # schedule interval period, either hourly, "h", daily, "d", weekly, "w" or one-time, "o"
@@ -278,8 +278,8 @@ sync_weekdays = {
     7: T("Sunday"),
 }
 
-resource = "job"
-tablename = "%s_%s" % (module, resource)
+resourcename = "job"
+tablename = "%s_%s" % (module, resourcename)
 table = db.define_table(tablename,
                         Field("last_run", "datetime"),
                         Field("type", "integer"),
@@ -317,7 +317,7 @@ table.run_interval.represent = lambda opt: sync_job_intervals.get(opt, UNKNOWN_O
 table.days.requires = IS_EMPTY_OR(IS_IN_SET(sync_weekdays, zero=None, multiple=True))
 table.days.default = sync_weekdays.keys()
 
-s3xrc.model.add_component(module, resource,
+s3xrc.model.add_component(module, resourcename,
                           joinby = dict(sync_peer="peer_id"),
                           multiple = True)
 
@@ -325,8 +325,8 @@ s3xrc.model.add_component(module, resource,
 # -----------------------------------------------------------------------------
 # Sync General Log - keeps log of all syncs
 #
-resource = "log"
-tablename = "%s_%s" % (module, resource)
+resourcename = "log"
+tablename = "%s_%s" % (module, resourcename)
 table = db.define_table(tablename,
                         peer_id(),
                         Field("timestmp", "datetime"),
@@ -348,14 +348,13 @@ table.complete.represent = lambda val: val and T("all records") or T("updates on
 table.run_interval.label = T("Run Interval")
 table.run_interval.represent = lambda opt: sync_job_intervals.get(opt, UNKNOWN_OPT)
 
-s3xrc.model.add_component(module, resource,
+s3xrc.model.add_component(module, resourcename,
                           joinby = dict(sync_peer="peer_id"),
-                          multiple = True,
-                          editable = False,
-                          listadd = False,
-                          deletable = True)
+                          multiple = True)
 
 s3xrc.model.configure(table,
+    editable = False,
+    listadd = False,
     list_fields = ["id",
         "timestmp",
         "peer_id",
@@ -368,8 +367,8 @@ s3xrc.model.configure(table,
 # -----------------------------------------------------------------------------
 # Synchronization conflicts
 #
-resource = "conflict"
-tablename = "%s_%s" % (module, resource)
+resourcename = "conflict"
+tablename = "%s_%s" % (module, resourcename)
 table = db.define_table(tablename,
                         Field("peer_uuid", length=128),
                         Field("tablename"),
@@ -385,8 +384,8 @@ table = db.define_table(tablename,
 # -----------------------------------------------------------------------------
 # Peer registrations
 #
-resource = "registration"
-tablename = "%s_%s" % (module, resource)
+resourcename = "registration"
+tablename = "%s_%s" % (module, resourcename)
 table = db.define_table(tablename,
                         Field("name"),
                         Field("uuid", length=128),

@@ -11,8 +11,8 @@ if deployment_settings.has_module(module):
 
     # -----------------
     # Categories table
-    resource = "category"
-    tablename = "%s_%s" % (module, resource)
+    resourcename = "category"
+    tablename = "%s_%s" % (module, resourcename)
     table = db.define_table(tablename,
                             Field("name"),
                             migrate=migrate, *s3_meta_fields())
@@ -29,8 +29,8 @@ if deployment_settings.has_module(module):
         1:T("Low")
     }
 
-    resource = "log"
-    tablename = "%s_%s" % (module, resource)
+    resourcename = "log"
+    tablename = "%s_%s" % (module, resourcename)
     table = db.define_table(tablename,
                             Field("subject"),
                             Field("message", "text"),

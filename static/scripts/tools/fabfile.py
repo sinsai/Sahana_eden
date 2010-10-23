@@ -11,6 +11,9 @@ import pexpect
 # - /root/.my.cnf is configured to allow root access to MySQL without password
 # - root on Prod/Demo can SSH to Test without password
 #
+# Usage:
+# fab [test|demo|prod] deploy
+#
 
 test_host = "test.eden.sahanafoundation.org"
 demo_host = "demo.eden.sahanafoundation.org"
@@ -319,7 +322,7 @@ def pull():
             print(green("%s: Upgrading to version %i" % (env.host, env.revno)))
             run("bzr pull -r %i" % env.revno, pty=True)
         except:
-            if "test" in env.host:
+            if "test" in env.host or "demo" in env.host:
                 # Upgrade to current Trunk
                 print(green("%s: Upgrading to current Trunk" % env.host))
                 run("bzr pull", pty=True)

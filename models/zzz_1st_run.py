@@ -86,21 +86,103 @@ if populate:
             theme = 1
         )
 
-    # Organisation Registry
-    tablename = "org_sector"
+    # Organisation Registry       
+    tablename = "org_cluster"
     table = db[tablename]
     if not db(table.id > 0).count():
-        table.insert( name = "Agriculture" )
-        table.insert( name = "Shelter and Non-Food Items" )
-        table.insert( name = "Coordination and Support Services" )
-        table.insert( name = "Food" )
-        table.insert( name = "Infrastructure and Rehabilitation" )
-        table.insert( name = "Security" )
-        table.insert( name = "Water and Sanitation" )
-        table.insert( name = "Education" )
-        table.insert( name = "Health" )
-        table.insert( name = "Protection and Human Rights and Rule of Law" )
-        table.insert( name = "Urban Search and Rescue" )
+        table.insert(
+            abrv = T("Agriculture"),
+            name = T("Agriculture"),
+        )
+        table.insert(
+            abrv = T("Camp"),
+            name = T("Camp Coordination/Management"),
+        )
+        table.insert(
+            abrv = T("Recovery"),
+            name = T("Early Recovery"),
+        )
+        table.insert(
+            abrv = T("Education"),
+            name = T("Education"),
+        )
+        table.insert(
+            abrv = T("Shelter"),
+            name = T("Emergency Shelter"),
+        )
+        table.insert(
+            abrv = T("Telecommunications"),
+            name = T("Emergency Telecommunications"),
+        )
+        table.insert(
+            abrv = T("Health"),
+            name = T("Health"),
+        )
+        table.insert(
+            abrv = T("Logistics"),
+            name = T("Logistics"),
+        )
+        table.insert(
+            abrv = T("Nutrition"),
+            name = T("Nutrition"),
+        )
+        table.insert(
+            abrv = T("Protection"),
+            name = T("Protection"),
+        )
+        table.insert(
+            abrv = T("WASH"),
+            name = T("Water Sanitation Hygiene"),
+        )
+    tablename = "org_cluster_subsector"
+    table = db[tablename]
+    # Ensure that the clusters we defined are in the DB ready to be used as a FK
+    db.commit()
+    if not db(table.id > 0).count():
+        table.insert(
+            cluster_id = 11,
+            abrv = T("Aggravating factors")
+        )
+        table.insert(
+            cluster_id = 11,
+            abrv = T("Hygiene practice")
+        )
+        table.insert(
+            cluster_id = 11,
+            abrv = T("Hygiene NFIs")
+        )
+        table.insert(
+            cluster_id = 11,
+            abrv = T("Water supply")
+        )
+        table.insert(
+            cluster_id = 11,
+            abrv = T("Excreta disposal")
+        )
+        table.insert(
+            cluster_id = 11,
+            abrv = T("Disease vectors")
+        )
+        table.insert(
+            cluster_id = 11,
+            abrv = T("Solid waste")
+        )
+        table.insert(
+            cluster_id = 11,
+            abrv = T("Drainage")
+        )
+        table.insert(
+            cluster_id = 9,
+            abrv = T("Food Supply")
+        )
+        table.insert(
+            cluster_id = 5,
+            abrv = T("Shelter")
+        )
+        table.insert(
+            cluster_id = 5,
+            abrv = T("Clothing")
+        )
 
     # Person Registry
     tablename = "pr_person"
@@ -203,6 +285,26 @@ if populate:
             table.insert( name = "Request for Assistance" )
             table.insert( name = "Offer of Help" )
 
+    # Assessment
+    if "assess" in deployment_settings.modules:
+        tablename = "assess_baseline_type"
+        table = db[tablename]
+        if not db(table.id > 0).count():
+            table.insert( name = "# of population" )
+            table.insert( name = "# of households" )
+            table.insert( name = "# of children under 5" )
+            table.insert( name = "# of children" )
+
+    # Impacts
+    if deployment_settings.has_module("irs") or deployment_settings.has_module("assess"):        
+        tablename = "impact_type"
+        table = db[tablename]
+        if not db(table.id > 0).count():
+            table.insert( name = "# of People Affected" )
+            table.insert( name = "# of People Injured" )
+            table.insert( name = "# of People Deceased" )
+            table.insert( name = "# of Houses Destroyed" )
+            table.insert( name = "# of Houses Damaged" )
 
     # GIS Module
     tablename = "gis_marker"
@@ -415,6 +517,7 @@ if populate:
     table = db[tablename]
     # Ensure that the projection/marker we defined are in the DB ready to be used as FKs
     db.commit()
+    symbology_us = db(db.gis_symbology.name == "US").select(db.gis_symbology.id, limitby=(0, 1)).first().id
     if not db(table.id > 0).count():
         # We want to start at ID 1
         table.truncate()
@@ -426,7 +529,7 @@ if populate:
             marker_id = 1,
             map_height = 600,
             map_width = 800,
-            symbology_id = db(db.gis_symbology.name == "US").select(limitby=(0, 1)).first().id,
+            symbology_id = symbology_us,
             wmsbrowser_url = "http://geo.eden.sahanafoundation.org/geoserver/wms?service=WMS&request=GetCapabilities"
         )
 
@@ -464,31 +567,36 @@ if populate:
         table.insert(
             uuid = "www.sahanafoundation.org/GIS-FEATURE-CLASS-AIRPORT",
             name = "Airport",
-            marker_id = db(db.gis_marker.name == "airport").select(limitby=(0, 1)).first().id,
+            symbology_id = symbology_us,
+            marker_id = db(db.gis_marker.name == "airport").select(db.gis_marker.id, limitby=(0, 1)).first().id,
             gps_marker = "Airport",
         )
         table.insert(
             uuid = "www.sahanafoundation.org/GIS-FEATURE-CLASS-BRIDGE",
             name = "Bridge",
-            marker_id = db(db.gis_marker.name == "bridge").select(limitby=(0, 1)).first().id,
+            symbology_id = symbology_us,
+            marker_id = db(db.gis_marker.name == "bridge").select(db.gis_marker.id, limitby=(0, 1)).first().id,
             gps_marker = "Bridge",
         )
         table.insert(
             uuid = "www.sahanafoundation.org/GIS-FEATURE-CLASS-CHURCH",
             name = "Church",
-            marker_id = db(db.gis_marker.name == "church").select(limitby=(0, 1)).first().id,
+            symbology_id = symbology_us,
+            marker_id = db(db.gis_marker.name == "church").select(db.gis_marker.id, limitby=(0, 1)).first().id,
             gps_marker = "Church",
         )
         table.insert(
             uuid = "www.sahanafoundation.org/GIS-FEATURE-CLASS-FOOD",
             name = "Food",
-            marker_id = db(db.gis_marker.name == "food").select(limitby=(0, 1)).first().id,
+            symbology_id = symbology_us,
+            marker_id = db(db.gis_marker.name == "food").select(db.gis_marker.id, limitby=(0, 1)).first().id,
             gps_marker = "Restaurant",
         )
         table.insert(
             uuid = "www.sahanafoundation.org/GIS-FEATURE-CLASS-HOSPITAL",
             name = "Hospital",
-            marker_id = db(db.gis_marker.name == "hospital").select(limitby=(0, 1)).first().id,
+            symbology_id = symbology_us,
+            marker_id = db(db.gis_marker.name == "hospital").select(db.gis_marker.id, limitby=(0, 1)).first().id,
             gps_marker = "Medical Facility",
             resource = "hms_hospital"
         )
@@ -500,21 +608,24 @@ if populate:
         table.insert(
             uuid = "www.sahanafoundation.org/GIS-FEATURE-CLASS-OFFICE",
             name = "Office",
-            marker_id = db(db.gis_marker.name == "office").select(limitby=(0, 1)).first().id,
+            symbology_id = symbology_us,
+            marker_id = db(db.gis_marker.name == "office").select(db.gis_marker.id, limitby=(0, 1)).first().id,
             gps_marker = "Building",
-            resource = "or_office"
+            resource = "org_office"
         )
         table.insert(
             uuid = "www.sahanafoundation.org/GIS-FEATURE-CLASS-PERSON",
             name = "Person",
-            marker_id = db(db.gis_marker.name == "person").select(limitby=(0, 1)).first().id,
+            symbology_id = symbology_us,
+            marker_id = db(db.gis_marker.name == "person").select(db.gis_marker.id, limitby=(0, 1)).first().id,
             gps_marker = "Contact, Dreadlocks",
             resource = "pr_person"
         )
         table.insert(
             uuid = "www.sahanafoundation.org/GIS-FEATURE-CLASS-PORT",
             name = "Port",
-            marker_id = db(db.gis_marker.name == "port").select(limitby=(0, 1)).first().id,
+            symbology_id = symbology_us,
+            marker_id = db(db.gis_marker.name == "port").select(db.gis_marker.id, limitby=(0, 1)).first().id,
             gps_marker = "Marina",
         )
         table.insert(
@@ -524,42 +635,48 @@ if populate:
         table.insert(
             uuid = "www.sahanafoundation.org/GIS-FEATURE-CLASS-SCHOOL",
             name = "School",
-            marker_id = db(db.gis_marker.name == "school").select(limitby=(0, 1)).first().id,
+            marker_id = db(db.gis_marker.name == "school").select(db.gis_marker.id, limitby=(0, 1)).first().id,
             gps_marker = "School",
         )
         table.insert(
             uuid = "www.sahanafoundation.org/GIS-FEATURE-CLASS-SHELTER",
             name = "Shelter",
-            marker_id = db(db.gis_marker.name == "shelter").select(limitby=(0, 1)).first().id,
+            symbology_id = symbology_us,
+            marker_id = db(db.gis_marker.name == "shelter").select(db.gis_marker.id, limitby=(0, 1)).first().id,
             gps_marker = "Campground",
             resource = "cr_shelter"
         )
         table.insert(
             uuid = "www.sahanafoundation.org/GIS-FEATURE-CLASS-SMS",
             name = "SMS",
-            marker_id = db(db.gis_marker.name == "phone").select(limitby=(0, 1)).first().id,
+            marker_id = db(db.gis_marker.name == "phone").select(db.gis_marker.id, limitby=(0, 1)).first().id,
         )
         table.insert(
             uuid = "www.sahanafoundation.org/GIS-FEATURE-CLASS-VEHICLE",
             name = "Vehicle",
-            marker_id = db(db.gis_marker.name == "vehicle").select(limitby=(0, 1)).first().id,
+            symbology_id = symbology_us,
+            marker_id = db(db.gis_marker.name == "vehicle").select(db.gis_marker.id, limitby=(0, 1)).first().id,
             gps_marker = "Car",
         )
         table.insert(
             uuid = "www.sahanafoundation.org/GIS-FEATURE-CLASS-VOLUNTEER",
             name = "Volunteer",
-            marker_id = db(db.gis_marker.name == "volunteer").select(limitby=(0, 1)).first().id,
+            symbology_id = symbology_us,
+            marker_id = db(db.gis_marker.name == "volunteer").select(db.gis_marker.id, limitby=(0, 1)).first().id,
             gps_marker = "Contact, Dreadlocks",
         )
         table.insert(
             uuid = "www.sahanafoundation.org/GIS-FEATURE-CLASS-WAREHOUSE",
             name = "Warehouse",
+            symbology_id = symbology_us,
+            marker_id = db(db.gis_marker.name == "office").select(db.gis_marker.id, limitby=(0, 1)).first().id,
             gps_marker = "Building",
         )
         table.insert(
             uuid = "www.sahanafoundation.org/GIS-FEATURE-CLASS-WATER",
             name = "Water",
-            marker_id = db(db.gis_marker.name == "water").select(limitby=(0, 1)).first().id,
+            symbology_id = symbology_us,
+            marker_id = db(db.gis_marker.name == "water").select(db.gis_marker.id, limitby=(0, 1)).first().id,
             gps_marker = "Drinking Water",
         )
     tablename = "gis_apikey"
@@ -589,42 +706,42 @@ if populate:
             resource = "ireport",
             popup_label = "Incident",
             # Default (but still better to define here as otherwise each feature needs to check it's feature_class)
-            marker_id = db(db.gis_marker.name == "marker_red").select(limitby=(0, 1)).first().id
+            marker_id = db(db.gis_marker.name == "marker_red").select(db.gis_marker.id, limitby=(0, 1)).first().id
         )
         table.insert(
             name = "Shelters",
             module = "cr",
             resource = "shelter",
             popup_label = "Shelter",
-            marker_id = db(db.gis_marker.name == "shelter").select(limitby=(0, 1)).first().id
+            marker_id = db(db.gis_marker.name == "shelter").select(db.gis_marker.id, limitby=(0, 1)).first().id
         )
         table.insert(
             name = "Requests",
             module = "rms",
             resource = "req",
             popup_label = "Request",
-            marker_id = db(db.gis_marker.name == "marker_yellow").select(limitby=(0, 1)).first().id
+            marker_id = db(db.gis_marker.name == "marker_yellow").select(db.gis_marker.id, limitby=(0, 1)).first().id
         )
         table.insert(
             name = "Assessments",
             module = "rat",
             resource = "assessment",
             popup_label = "Assessment",
-            marker_id = db(db.gis_marker.name == "marker_green").select(limitby=(0, 1)).first().id
+            marker_id = db(db.gis_marker.name == "marker_green").select(db.gis_marker.id, limitby=(0, 1)).first().id
         )
         table.insert(
             name = "Activities",
             module = "project",
             resource = "activity",
             popup_label = "Activity",
-            marker_id = db(db.gis_marker.name == "activity").select(limitby=(0, 1)).first().id
+            marker_id = db(db.gis_marker.name == "activity").select(db.gis_marker.id, limitby=(0, 1)).first().id
         )
         table.insert(
             name = "Warehouses",
             module = "inventory",
             resource = "store",
             popup_label = "Warehouse",
-            marker_id = db(db.gis_marker.name == "office").select(limitby=(0, 1)).first().id
+            marker_id = db(db.gis_marker.name == "office").select(db.gis_marker.id, limitby=(0, 1)).first().id
         )
     tablename = "gis_layer_openstreetmap"
     table = db[tablename]

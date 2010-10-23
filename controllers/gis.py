@@ -21,6 +21,12 @@ response.menu_options = [
     # Currently broken
     #[T("Bulk Uploader"), False, URL(r=request, c="doc", f="bulk_upload")]
 ]
+
+osm_oauth_consumer_key = deployment_settings.get_osm_oauth_consumer_key()
+osm_oauth_consumer_secret = deployment_settings.get_osm_oauth_consumer_secret()
+if osm_oauth_consumer_key and osm_oauth_consumer_secret:
+    response.menu_options.append([T("OpenStreetMap Editor"), False, URL(r=request, f="potlatch2", args="potlatch2.html")])
+        
 if not deployment_settings.get_security_map() or shn_has_role("MapAdmin"):
     response.menu_options.append([T("Service Catalogue"), False, URL(r=request, f="map_service_catalogue")])
     response.menu_options.append([T("De-duplicator"), False, URL(r=request, f="location_duplicates")])
@@ -256,8 +262,7 @@ def location():
         # We've been called from the Location Selector widget
         table.addr_street.readable = table.addr_street.writable = False
 
-    response.s3.pagination = True
-    output = shn_rest_controller(module, resource, listadd=False)
+    output = s3_rest_controller(module, resource)
 
     _map = vars.get("_map", None)
     if _map and isinstance(output, dict):
@@ -612,7 +617,7 @@ def apikey():
         msg_record_deleted = T("Key deleted"),
         msg_list_empty = T("No Keys currently defined"))
 
-    output = shn_rest_controller(module, resource, deletable=False, listadd=False)
+    output = s3_rest_controller(module, resource)
 
     if not "gis" in response.view:
         response.view = "gis/" + response.view
@@ -620,7 +625,9 @@ def apikey():
     return output
 
 def config():
+
     """ RESTful CRUD controller """
+
     resource = request.function
     tablename = module + "_" + resource
     table = db[tablename]
@@ -639,7 +646,7 @@ def config():
         return True
     response.s3.prep = prep
 
-    output = shn_rest_controller(module, resource, deletable=False, listadd=False)
+    output = s3_rest_controller(module, resource)
 
     if not "gis" in response.view:
         response.view = "gis/" + response.view
@@ -654,6 +661,7 @@ def config():
             output["rheader"] = P(T("These are the default settings for all users. To change settings just for you, click "), A(T("here"), _href=URL(r=request, c="pr", f="person", args=["config"], vars={"person.uid":auth.user.person_uuid})))
 
     return output
+
 
 def feature_class():
     """
@@ -689,7 +697,7 @@ def feature_class():
         msg_record_deleted = T("Feature Class deleted"),
         msg_list_empty = T("No Feature Classes currently defined"))
 
-    output = shn_rest_controller(module, resource)
+    output = s3_rest_controller(module, resource)
 
     if not "gis" in response.view and response.view != "popup.html":
         response.view = "gis/" + response.view
@@ -728,10 +736,11 @@ def layer_feature():
         msg_record_deleted = T("Feature Layer deleted"),
         msg_list_empty = T("No Feature Layers currently defined"))
 
-    crud.settings.create_onvalidation = lambda form: feature_layer_query(form)
-    crud.settings.update_onvalidation = lambda form: feature_layer_query(form)
+    s3xrc.model.configure(table,
+        create_onvalidation = lambda form: feature_layer_query(form),
+        update_onvalidation = lambda form: feature_layer_query(form))
 
-    output = shn_rest_controller(module, resource)
+    output = s3_rest_controller(module, resource)
 
     return output
 
@@ -791,8 +800,7 @@ def marker():
         msg_record_deleted = T("Marker deleted"),
         msg_list_empty = T("No Markers currently available"))
 
-    response.s3.pagination = True
-    output = shn_rest_controller(module, resource)
+    output = s3_rest_controller(module, resource)
 
     if not "gis" in response.view and response.view != "popup.html":
         response.view = "gis/" + response.view
@@ -800,7 +808,9 @@ def marker():
     return output
 
 def projection():
+
     """ RESTful CRUD controller """
+
     if deployment_settings.get_security_map() and not shn_has_role("MapAdmin"):
         unauthorised()
 
@@ -833,7 +843,7 @@ def projection():
         msg_record_deleted = T("Projection deleted"),
         msg_list_empty = T("No Projections currently defined"))
 
-    output = shn_rest_controller(module, resource, deletable=False)
+    output = s3_rest_controller(module, resource)
 
     if not "gis" in response.view:
         response.view = "gis/" + response.view
@@ -841,7 +851,9 @@ def projection():
     return output
 
 def track():
+
     """ RESTful CRUD controller """
+
     if deployment_settings.get_security_map() and not shn_has_role("MapAdmin"):
         unauthorised()
 
@@ -854,8 +866,8 @@ def track():
     # CRUD Strings
     # used in multiple controllers, so defined in model
 
-    output = shn_rest_controller(module, resource, deletable=False)
-    return output
+    return s3_rest_controller(module, resource)
+
 
 # Common CRUD strings for all layers
 ADD_LAYER = T("Add Layer")
@@ -907,7 +919,8 @@ def layer_openstreetmap():
         msg_record_deleted=LAYER_DELETED,
         msg_list_empty=NO_LAYERS)
 
-    output = shn_rest_controller(module, resource, deletable=False, listadd=False)
+    s3xrc.model.configure(table, deletable=False, listadd=False)
+    output = s3_rest_controller(module, resource)
 
     if not "gis" in response.view:
         response.view = "gis/" + response.view
@@ -945,7 +958,8 @@ def layer_google():
         msg_record_deleted=LAYER_DELETED,
         msg_list_empty=NO_LAYERS)
 
-    output = shn_rest_controller(module, resource, deletable=False, listadd=False)
+    s3xrc.model.configure(table, deletable=False, listadd=False)
+    output = s3_rest_controller(module, resource)
 
     if not "gis" in response.view:
         response.view = "gis/" + response.view
@@ -983,7 +997,8 @@ def layer_yahoo():
         msg_record_deleted=LAYER_DELETED,
         msg_list_empty=NO_LAYERS)
 
-    output = shn_rest_controller(module, resource, deletable=False, listadd=False)
+    s3xrc.model.configure(table, deletable=False, listadd=False)
+    output = s3_rest_controller(module, resource)
 
     if not "gis" in response.view:
         response.view = "gis/" + response.view
@@ -1021,7 +1036,8 @@ def layer_mgrs():
         msg_record_deleted=LAYER_DELETED,
         msg_list_empty=NO_LAYERS)
 
-    output = shn_rest_controller(module, resource, deletable=False, listadd=False)
+    s3xrc.model.configure(table, deletable=False, listadd=False)
+    output = s3_rest_controller(module, resource)
 
     if not "gis" in response.view:
         response.view = "gis/" + response.view
@@ -1059,7 +1075,8 @@ def layer_bing():
         msg_record_deleted=LAYER_DELETED,
         msg_list_empty=NO_LAYERS)
 
-    output = shn_rest_controller(module, resource, deletable=False, listadd=False)
+    s3xrc.model.configure(table, deletable=False, listadd=False)
+    output = s3_rest_controller(module, resource)
 
     if not "gis" in response.view:
         response.view = "gis/" + response.view
@@ -1101,7 +1118,7 @@ def layer_georss():
         msg_record_deleted=LAYER_DELETED,
         msg_list_empty=NO_LAYERS)
 
-    output = shn_rest_controller(module, resource)
+    output = s3_rest_controller(module, resource)
 
     if not "gis" in response.view:
         response.view = "gis/" + response.view
@@ -1142,7 +1159,7 @@ def layer_gpx():
         msg_record_deleted=LAYER_DELETED,
         msg_list_empty=NO_LAYERS)
 
-    output = shn_rest_controller(module, resource)
+    output = s3_rest_controller(module, resource)
 
     if not "gis" in response.view:
         response.view = "gis/" + response.view
@@ -1190,7 +1207,7 @@ def layer_kml():
         return output
     response.s3.postp = user_postp
 
-    output = shn_rest_controller(module, resource)
+    output = s3_rest_controller(module, resource)
 
     if not "gis" in response.view:
         response.view = "gis/" + response.view
@@ -1233,7 +1250,7 @@ def layer_tms():
         msg_record_deleted=LAYER_DELETED,
         msg_list_empty=NO_LAYERS)
 
-    output = shn_rest_controller(module, resource)
+    output = s3_rest_controller(module, resource)
 
     if not "gis" in response.view:
         response.view = "gis/" + response.view
@@ -1275,7 +1292,7 @@ def layer_wfs():
         msg_record_deleted=LAYER_DELETED,
         msg_list_empty=NO_LAYERS)
 
-    output = shn_rest_controller(module, resource)
+    output = s3_rest_controller(module, resource)
 
     if not "gis" in response.view:
         response.view = "gis/" + response.view
@@ -1318,7 +1335,7 @@ def layer_wms():
         msg_record_deleted=LAYER_DELETED,
         msg_list_empty=NO_LAYERS)
 
-    output = shn_rest_controller(module, resource)
+    output = s3_rest_controller(module, resource)
 
     if not "gis" in response.view:
         response.view = "gis/" + response.view
@@ -1356,7 +1373,7 @@ def layer_js():
         msg_record_deleted=LAYER_DELETED,
         msg_list_empty=NO_LAYERS)
 
-    output = shn_rest_controller(module, resource)
+    output = s3_rest_controller(module, resource)
 
     if not "gis" in response.view:
         response.view = "gis/" + response.view
@@ -1398,7 +1415,7 @@ def layer_xyz():
         msg_record_deleted=LAYER_DELETED,
         msg_list_empty=NO_LAYERS)
 
-    output = shn_rest_controller(module, resource)
+    output = s3_rest_controller(module, resource)
 
     if not "gis" in response.view:
         response.view = "gis/" + response.view
@@ -1566,6 +1583,36 @@ def geolocate():
 
     if service == "yahoo":
         return s3gis.YahooGeocoder(location, db).get_xml()
+
+# -----------------------------------------------------------------------------
+def potlatch2():
+    """
+        Custom View for the Potlatch2 OpenStreetMap editor
+        http://wiki.openstreetmap.org/wiki/Potlatch_2
+    """
+
+    if request.args(0) == "potlatch2.html":
+        if osm_oauth_consumer_key and osm_oauth_consumer_secret:
+            settings = gis.get_config()
+            lat = settings.lat
+            lon = settings.lon
+            # This isn't good as it makes for too large an area to edit
+            #zoom = settings.zoom
+
+            response.extra_styles = ["S3/potlatch2.css"]
+            
+            return dict(lat=lat, lon=lon, key=osm_oauth_consumer_key, secret=osm_oauth_consumer_secret)
+            #return dict(lat=lat, lon=lon, zoom=zoom, key=osm_oauth_consumer_key, secret=osm_oauth_consumer_secret)
+        
+        else:
+            session.error = T("To edit OpenStreetMap, you need to edit the OpenStreetMap settings in models/000_config.py")
+            redirect(URL(r=request, f="index"))
+
+    else:
+        # This is a hack for unconfigured servers.
+        # Production instances should configure the server to bypass the Model loads completely
+        # (Apache mod_rewrite or Web2Py routes.py)
+        redirect(URL(a=request.application, c="static", f="potlatch2", args=request.args), how=301)
 
 # -----------------------------------------------------------------------------
 def proxy():

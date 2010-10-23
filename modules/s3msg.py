@@ -471,13 +471,13 @@ class Msg(object):
         return (self.twitter_api.saved_searches())[2].query
     #------------------------------------------------------------------------
     def receive_msg(self,
-                      subject="",
-                      message="",
-                      sender="",
-                      fromaddress="",
-                      system_generated = False,
-                      pr_message_method = 1,
-                      ):
+                    subject="",
+                    message="",
+                    sender="",
+                    fromaddress="",
+                    system_generated = False,
+                    pr_message_method = 1,
+                   ):
         """
             Function to call to drop incoming messages into msg_log
         """

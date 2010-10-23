@@ -60,7 +60,7 @@ def distrib():
            ]
     rheader = lambda r: shn_distrib_rheader(r, tabs)
 
-    output = shn_rest_controller(module, resource, rheader=rheader)
+    output = s3_rest_controller(module, resource, rheader=rheader)
     return output
 
 def index():
@@ -85,5 +85,5 @@ def distrib_item():
     tablename = "%s_%s" % (module, resource)
     table = db[tablename]
 
-    output = shn_rest_controller(module, resource)
+    output = s3_rest_controller(module, resource)
     return output

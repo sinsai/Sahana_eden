@@ -22,8 +22,8 @@ pr_address_type_opts = {
 
 
 # -----------------------------------------------------------------------------
-resource = "address"
-tablename = "%s_%s" % (module, resource)
+resourcename = "address"
+tablename = "%s_%s" % (module, resourcename)
 table = db.define_table(tablename,
                         pe_id(),
                         Field("type",
@@ -80,12 +80,9 @@ s3.crud_strings[tablename] = Storage(
     msg_list_empty = T("No Addresses currently registered"))
 
 # Addresses as component of person entities
-s3xrc.model.add_component(module, resource,
+s3xrc.model.add_component(module, resourcename,
                           multiple=True,
-                          joinby="pe_id",
-                          deletable=True,
-                          editable=True)
-
+                          joinby="pe_id")
 
 s3xrc.model.configure(table,
     list_fields = [
@@ -115,8 +112,8 @@ pr_contact_method_opts = {
 
 
 # -----------------------------------------------------------------------------
-resource = "pe_contact"
-tablename = "%s_%s" % (module, resource)
+resourcename = "pe_contact"
+tablename = "%s_%s" % (module, resourcename)
 table = db.define_table(tablename,
                         pe_id(),
                         Field("contact_method",
@@ -152,11 +149,9 @@ pe_contact_id = S3ReusableField("pe_contact_id", db.pr_pe_contact,
 
 
 # Contact information as component of person entities
-s3xrc.model.add_component(module, resource,
+s3xrc.model.add_component(module, resourcename,
                           multiple=True,
-                          joinby="pe_id",
-                          deletable=True,
-                          editable=True)
+                          joinby="pe_id")
 
 s3xrc.model.configure(table,
     list_fields=[
@@ -200,8 +195,8 @@ pr_image_type_opts = {
 
 
 # -----------------------------------------------------------------------------
-resource = "image"
-tablename = "%s_%s" % (module, resource)
+resourcename = "image"
+tablename = "%s_%s" % (module, resourcename)
 table = db.define_table(tablename,
                         pe_id(),
                         Field("type", "integer",
@@ -264,12 +259,9 @@ def shn_pr_image_onvalidation(form):
 
 # -----------------------------------------------------------------------------
 # Images as component of person entities
-s3xrc.model.add_component(module, resource,
+s3xrc.model.add_component(module, resourcename,
                           multiple=True,
-                          joinby="pe_id",
-                          deletable=True,
-                          editable=True)
-
+                          joinby="pe_id")
 
 s3xrc.model.configure(table,
     onvalidation=shn_pr_image_onvalidation,
@@ -307,8 +299,8 @@ s3.crud_strings[tablename] = Storage(
 pr_presence_condition_opts = vita.presence_conditions
 
 # -----------------------------------------------------------------------------
-resource = "presence"
-tablename = "%s_%s" % (module, resource)
+resourcename = "presence"
+tablename = "%s_%s" % (module, resourcename)
 table = db.define_table(tablename,
                         pe_id(),
                         sit_id(),
@@ -416,12 +408,9 @@ def s3_pr_presence_onvalidation(form):
 
 # -----------------------------------------------------------------------------
 # Presence as component of person entities
-s3xrc.model.add_component(module, resource,
+s3xrc.model.add_component(module, resourcename,
                           multiple=True,
-                          joinby="pe_id",
-                          deletable=True,
-                          editable=True,
-                          main="time", extra="location_details")
+                          joinby="pe_id")
 
 def s3_pr_presence_onaccept(form):
     vita.presence_accept(form)
@@ -443,7 +432,8 @@ s3xrc.model.configure(table,
         "presence_condition",
         "orig_id",
         "dest_id"
-    ])
+    ],
+    main="time", extra="location_details")
 
 
 ADD_LOG_ENTRY = T("Add Log Entry")
@@ -466,8 +456,8 @@ s3.crud_strings[tablename] = Storage(
 # *****************************************************************************
 # Subscription (pe_subscription)
 #
-resource = "pe_subscription"
-tablename = "%s_%s" % (module, resource)
+resourcename = "pe_subscription"
+tablename = "%s_%s" % (module, resourcename)
 table = db.define_table(tablename,
                         pe_id(),
                         Field("resource"),
@@ -488,11 +478,9 @@ table.pe_id.requires = IS_ONE_OF(db, "pr_pentity.pe_id",
 #table.resource.requires = IS_IN_SET(db.tables)
 
 # Subscriptions as component of person entities
-s3xrc.model.add_component(module, resource,
+s3xrc.model.add_component(module, resourcename,
                           multiple=True,
-                          joinby="pe_id",
-                          deletable=True,
-                          editable=True)
+                          joinby="pe_id")
 
 s3xrc.model.configure(table,
     list_fields=[
@@ -530,8 +518,8 @@ pr_id_type_opts = {
 
 
 # -----------------------------------------------------------------------------
-resource = "identity"
-tablename = "%s_%s" % (module, resource)
+resourcename = "identity"
+tablename = "%s_%s" % (module, resourcename)
 table = db.define_table(tablename,
                         person_id(),
                         Field("type", "integer",
@@ -557,11 +545,9 @@ table.value.comment = SPAN("*", _class="req")
 table.ia_name.label = T("Issuing Authority")
 
 # Identity as component of persons
-s3xrc.model.add_component(module, resource,
+s3xrc.model.add_component(module, resourcename,
                           multiple=True,
-                          joinby=dict(pr_person="person_id"),
-                          deletable=True,
-                          editable=True)
+                          joinby=dict(pr_person="person_id"))
 
 s3xrc.model.configure(table,
     list_fields=[
@@ -689,8 +675,8 @@ if deployment_settings.has_module("dvi") or \
 
 
 # -----------------------------------------------------------------------------
-    resource = "physical_description"
-    tablename = "%s_%s" % (module, resource)
+    resourcename = "physical_description"
+    tablename = "%s_%s" % (module, resourcename)
     table = db.define_table(tablename,
                             pe_id(),
 
@@ -801,11 +787,9 @@ if deployment_settings.has_module("dvi") or \
     table.pe_id.writable = False
 
     # Physical description as component of person entity
-    s3xrc.model.add_component(module, resource,
+    s3xrc.model.add_component(module, resourcename,
                               multiple=False,
-                              joinby="pe_id",
-                              deletable=True,
-                              editable=True)
+                              joinby="pe_id")
 
 # End
 # *****************************************************************************

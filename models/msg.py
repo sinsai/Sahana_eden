@@ -7,8 +7,8 @@
 module = "msg"
 if deployment_settings.has_module(module):
     # Settings
-    resource = "setting"
-    tablename = "%s_%s" % (module, resource)
+    resourcename = "setting"
+    tablename = "%s_%s" % (module, resourcename)
     table = db.define_table(tablename,
                             Field("outgoing_sms_handler"),
                             Field("default_country_code", "integer", default=44),
@@ -17,8 +17,8 @@ if deployment_settings.has_module(module):
     table.outgoing_sms_handler.requires = IS_IN_SET(["Modem","Gateway","Tropo"], zero=None)
 
     #------------------------------------------------------------------------
-    resource = "email_settings"
-    tablename = "%s_%s" % (module, resource)
+    resourcename = "email_settings"
+    tablename = "%s_%s" % (module, resourcename)
     table = db.define_table(tablename,
                     Field("inbound_mail_server"),
                     Field("inbound_mail_type"),
@@ -35,8 +35,8 @@ if deployment_settings.has_module(module):
     table.inbound_mail_type.requires = IS_IN_SET(["imap", "pop3"], zero=None)
 
     #------------------------------------------------------------------------
-    resource = "modem_settings"
-    tablename = "%s_%s" % (module, resource)
+    resourcename = "modem_settings"
+    tablename = "%s_%s" % (module, resourcename)
     table = db.define_table(tablename,
                             #Field("account_name"), # Nametag to remember account - To be used later
                             Field("modem_port"),
@@ -46,8 +46,8 @@ if deployment_settings.has_module(module):
                             migrate=migrate)
 
     #------------------------------------------------------------------------
-    resource = "gateway_settings"
-    tablename = "%s_%s" % (module, resource)
+    resourcename = "gateway_settings"
+    tablename = "%s_%s" % (module, resourcename)
     table = db.define_table(tablename,
                             Field("url", default = "https://api.clickatell.com/http/sendmsg"),
                             Field("parameters", default = "user=yourusername&password=yourpassword&api_id=yourapiid"),
@@ -56,19 +56,19 @@ if deployment_settings.has_module(module):
                             Field("enabled", "boolean", default = False),
                             #Field("preference", "integer", default = 5), To be used later
                             migrate=migrate)
-    
+
     #------------------------------------------------------------------------
-    resource = "tropo_settings"
-    tablename = "%s_%s" % (module, resource)
+    resourcename = "tropo_settings"
+    tablename = "%s_%s" % (module, resourcename)
     table = db.define_table(tablename,
                             Field("token_messaging"),
                             #Field("token_voice"),
                             migrate=migrate)
-    
-                            
+
+
     #------------------------------------------------------------------------
-    resource = "twitter_settings"
-    tablename = "%s_%s" % (module, resource)
+    resourcename = "twitter_settings"
+    tablename = "%s_%s" % (module, resourcename)
     table = db.define_table(tablename,
                             Field("pin"),
                             Field("oauth_key"),
@@ -81,9 +81,9 @@ if deployment_settings.has_module(module):
     ### comment these 2 when debugging
     table.oauth_key.readable = False
     table.oauth_secret.readable = False
-    
+
     table.twitter_account.writable = False
-    
+
     def twitter_settings_onvalidation(form):
         """ Complete oauth: take tokens from session + pin from form, and do the 2nd API call to Twitter """
         if form.vars.pin and session.s3.twitter_request_key and session.s3.twitter_request_secret:
@@ -91,7 +91,7 @@ if deployment_settings.has_module(module):
                 import tweepy
             except:
                 raise HTTP(501, body=T("Can't import tweepy"))
-                          
+
             oauth = tweepy.OAuthHandler(deployment_settings.twitter.oauth_consumer_key,
                                         deployment_settings.twitter.oauth_consumer_secret)
             oauth.set_request_token(session.s3.twitter_request_key, session.s3.twitter_request_secret)
@@ -110,8 +110,8 @@ if deployment_settings.has_module(module):
             form.vars[k] = None
         for k in ["twitter_request_key", "twitter_request_secret"]:
             session.s3[k] = ""
-        
-    s3xrc.model.configure(table, onvalidation=twitter_settings_onvalidation) 
+
+    s3xrc.model.configure(table, onvalidation=twitter_settings_onvalidation)
 
     #------------------------------------------------------------------------
     # Message priority
@@ -122,8 +122,8 @@ if deployment_settings.has_module(module):
     }
     #------------------------------------------------------------------------
     # Message Log - This is where all the messages / logs go into
-    resource = "log"
-    tablename = "%s_%s" % (module, resource)
+    resourcename = "log"
+    tablename = "%s_%s" % (module, resourcename)
     table = db.define_table(tablename,
                             pe_id(),                # Sender
                             Field("sender"),        # The name to go out incase of the email, if set used
@@ -177,8 +177,8 @@ if deployment_settings.has_module(module):
     
     #------------------------------------------------------------------------
     # Message Tag - Used to tag a message to a resource
-    resource = "tag"
-    tablename = "%s_%s" % (module, resource)
+    resourcename = "tag"
+    tablename = "%s_%s" % (module, resourcename)
     table = db.define_table(tablename,
                             message_id(),
                             Field("resource"),
@@ -243,8 +243,8 @@ if deployment_settings.has_module(module):
     }
 
     # Channel - For inbound messages this tells which channel the message came in from.
-    resource = "channel"
-    tablename = "%s_%s" % (module, resource)
+    resourcename = "channel"
+    tablename = "%s_%s" % (module, resourcename)
     table = db.define_table(tablename,
                             message_id(),
                             Field("pr_message_method", "integer",
@@ -257,8 +257,8 @@ if deployment_settings.has_module(module):
 
     #------------------------------------------------------------------------
     # Status
-    resource = "email_inbound_status"
-    tablename = "%s_%s" % (module, resource)
+    resourcename = "email_inbound_status"
+    tablename = "%s_%s" % (module, resourcename)
     table = db.define_table(tablename,
                             Field("status"),
                             migrate=migrate)
@@ -280,8 +280,8 @@ if deployment_settings.has_module(module):
                               represent = lambda opt: msg_status_type_opts.get(opt, UNKNOWN_OPT)))
 
     # Outbox - needs to be separate to Log since a single message sent needs different outbox entries for each recipient
-    resource = "outbox"
-    tablename = "%s_%s" % (module, resource)
+    resourcename = "outbox"
+    tablename = "%s_%s" % (module, resourcename)
     table = db.define_table(tablename,
                             message_id(),
                             pe_id(),            # Person/Group to send the message out to
@@ -297,11 +297,9 @@ if deployment_settings.has_module(module):
                             migrate=migrate,
                             *(s3_timestamp() + s3_uid() + s3_deletion_status()))
 
-    s3xrc.model.add_component(module, resource,
+    s3xrc.model.add_component(module, resourcename,
                               multiple=True,
-                              joinby=dict(msg_log="message_id"),
-                              deletable=True,
-                              editable=True)
+                              joinby=dict(msg_log="message_id"))
 
     table.uuid.requires = IS_NOT_IN_DB(db, "%s.uuid" % tablename)
     s3xrc.model.configure(table,
@@ -313,8 +311,8 @@ if deployment_settings.has_module(module):
                                        ])
 
     # Message Read Status - To replace Message Outbox #TODO
-    resource = "read_status"
-    tablename = "%s_%s" % (module, resource)
+    resourcename = "read_status"
+    tablename = "%s_%s" % (module, resourcename)
     table = db.define_table(tablename,
                             message_id(),
                             person_id(),
@@ -330,8 +328,8 @@ if deployment_settings.has_module(module):
 
     #------------------------------------------------------------------------
     # Tropo Scratch pad for outbound messaging
-    resource = "tropo_scratch"
-    tablename = "%s_%s" % (module, resource)
+    resourcename = "tropo_scratch"
+    tablename = "%s_%s" % (module, resourcename)
     table = db.define_table(tablename,
                             Field("row_id","integer"),
                             Field("message_id","integer"),
@@ -344,8 +342,8 @@ if deployment_settings.has_module(module):
     table.uuid.requires = IS_NOT_IN_DB(db, "%s.uuid" % tablename)
 
     # SMS store for persistence and scratch pad for combining incoming xform chunks
-    resource = "xforms_store"
-    tablename = "%s_%s" % (module, resource)
+    resourcename = "xforms_store"
+    tablename = "%s_%s" % (module, resourcename)
     table = db.define_table(tablename,
                             Field("sender", "string", length = 20),
                             Field("fileno", "integer"),
@@ -406,8 +404,8 @@ if deployment_settings.has_module(module):
         "AllClear":T("The subject event no longer poses a threat or concern and any follow on action is described in <instruction>"),
         "None":T("No action recommended"),
     }
-    resource = "report"
-    tablename = "%s_%s" % (module, resource)
+    resourcename = "report"
+    tablename = "%s_%s" % (module, resourcename)
     table = db.define_table(tablename,
                             message_id(),
                             location_id(),
@@ -431,11 +429,11 @@ def shn_msg_compose( redirect_module = "msg",
         @param title_name: Title of the page
     """
 
-    resource1 = "log"
-    tablename1 = "msg" + "_" + resource1
+    resourcename1 = "log"
+    tablename1 = "msg" + "_" + resourcename1
     table1 = db[tablename1]
-    resource2 = "outbox"
-    tablename2 = "msg" + "_" + resource2
+    resourcename2 = "outbox"
+    tablename2 = "msg" + "_" + resourcename2
     table2 = db[tablename2]
 
     if auth.is_logged_in() or auth.basic():

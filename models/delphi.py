@@ -10,8 +10,8 @@ if deployment_settings.has_module(module):
     ########
     # Groups
     ########
-    resource = "group"
-    tablename = module + "_" + resource
+    resourcename = "group"
+    tablename = module + "_" + resourcename
     table = db.define_table(tablename, timestamp,
                             Field("name", notnull=True),
                             Field("description", "text"),
@@ -50,8 +50,8 @@ if deployment_settings.has_module(module):
         3:T("Participant"),
         4:T("Moderator")
     }
-    resource = "user_to_group"
-    tablename = module + "_" + resource
+    resourcename = "user_to_group"
+    tablename = module + "_" + resourcename
     table = db.define_table(tablename,
                             Field("group_id", db.delphi_group, notnull=True),
                             Field("user_id", db.auth_user, notnull=True),
@@ -93,8 +93,8 @@ if deployment_settings.has_module(module):
     ##########
     # Problems
     ##########
-    resource = "problem"
-    tablename = module + "_" + resource
+    resourcename = "problem"
+    tablename = module + "_" + resourcename
     table = db.define_table(tablename,
                             Field("group_id", db.delphi_group, notnull=True),
                             Field("name", notnull=True),
@@ -140,8 +140,8 @@ if deployment_settings.has_module(module):
     ###########
     # Solutions
     ###########
-    resource = "solution"
-    tablename = module + "_" + resource
+    resourcename = "solution"
+    tablename = module + "_" + resourcename
     table = db.define_table(tablename,
                             Field("problem_id", db.delphi_problem, notnull=True),
                             Field("name"),
@@ -182,8 +182,8 @@ if deployment_settings.has_module(module):
     #######
     # Votes
     #######
-    resource = "vote"
-    tablename = module + "_" + resource
+    resourcename = "vote"
+    tablename = module + "_" + resourcename
     table = db.define_table(tablename,
                             Field("problem_id", db.delphi_problem, notnull=True),
                             Field("solution_id", db.delphi_solution, notnull=True),
@@ -200,8 +200,8 @@ if deployment_settings.has_module(module):
     #############
     # Forum Posts
     #############
-    resource = "forum_post"
-    tablename = module + "_" + resource
+    resourcename = "forum_post"
+    tablename = module + "_" + resourcename
     table = db.define_table(tablename,
                             Field("solution_id", db.delphi_solution, notnull=True),
                             Field("title"),

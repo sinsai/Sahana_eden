@@ -71,8 +71,8 @@ deployment_settings.mail.approver = "useradmin@your.org"
 # (select Aplication Type: Client)
 # You'll get your consumer_key and consumer_secret from Twitter
 # You can keep these empty if you don't need Twitter integration
-deployment_settings.twitter.oauth_consumer_key = ""
-deployment_settings.twitter.oauth_consumer_secret = ""
+deployment_settings.twitter.oauth_consumer_key = "WhhCqyWCkQPDXXQ25T4XGg"
+deployment_settings.twitter.oauth_consumer_secret = "l2vxGCsHERG6jIy45sOY0SYXq17t2A6DSvpXaHJUq4"
 
 # L10n settings
 # Uncomment this if the deployment is just in a few countries

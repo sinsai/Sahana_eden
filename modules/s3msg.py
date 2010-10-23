@@ -223,22 +223,6 @@ class Msg(object):
                     s3_debug("Unable to Tweet @mention")
         return True
     
-    #---------------------------------------------------------------------------------------------------
-    
-    def get_saved_queries(self):
-        """
-            Function to retrieve user saved queries
-        """
-        
-        if not self.twitter_api:
-            return False
-        try:
-            saved_searches = self.twitter_api.saved_searches()   
-        except tweepy.TweepError: 
-            s3_debug("Unable to retrieve twitter user saved searches.")
-            
-        queries = [s.query for search in saved_searches] 
-        return queries 
     #-------------------------------------------------------------------------------------------------     
     def send_text_via_tropo(self, row_id, message_id, recipient, message, network = "SMS"):
         """

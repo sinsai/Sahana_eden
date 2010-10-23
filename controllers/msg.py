@@ -19,7 +19,7 @@ response.menu_options = [
     ]],
     [T("Log"), False, URL(r=request, f="log")],
     [T("Outbox"), False, URL(r=request, f="outbox")],
-    [T("Search Tags"), False,URL(r=request, f="twitter_seach"),[
+    [T("Search Tags"), False,URL(r=request, f="twitter_search"),[
         [T("List/Add"), False, URL(r=request, f="twitter_search")],
     ]],
     [T("Tweet Results"), False, URL(r=request, f="search_results")]

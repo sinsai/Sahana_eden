@@ -214,8 +214,9 @@ if deployment_settings.has_module(module):
                             Field("twitter_search",db.msg_twitter_search),
                             migrate = migrate
                             )  
-    #table.twitter_search_id.requires = IS_ONE_OF(db,"twitter_search.id")                    
-    #table.twitter_search_id.represent = lambda id: db(db.twitter_search.id == id).select(db.twitter_search.search_query,limitby = (0,1).first().search_query)           
+   # table.twitter_search.requires = IS_ONE_OF(db,"twitter_search.search_query")                    
+    #table.twitter_search.represent = lambda id: db(db.msg_twitter_search.id == id).select(db.msg_twitter_search.search_query,limitby = (0,1)).first().search_query, ondelete = "RESTRICT"   )           
+                                    
                             
     s3xrc.model.add_component(module, resource,
                               multiple=True,

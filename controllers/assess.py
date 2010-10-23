@@ -38,6 +38,7 @@ def shn_menu():
         menu_editor = [
             [T("Edit Options"), False, URL(r=request, f="#"), [
                 [T("List / Add Baseline Types"), False, URL(r=request, f="baseline_type")],
+                [T("List / Add Impact Types"), False, URL(r=request, f="impact_type")],
             ]],
         ]
         menu.extend(menu_editor)
@@ -94,6 +95,20 @@ def assess():
     rheader = lambda r: shn_assess_rheader(r, tabs)
 
     return s3_rest_controller(prefix, resourcename, rheader=rheader)
+
+
+#==============================================================================
+def impact_type():
+
+    """ RESTful CRUD controller """
+
+    prefix = "impact"
+    resourcename = "type"
+    
+    tablename = "%s_%s" % (prefix, resourcename)
+    table = db[tablename]
+
+    return s3_rest_controller(prefix, resourcename)
 
 
 #==============================================================================

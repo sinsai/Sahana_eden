@@ -19,6 +19,11 @@ response.menu_options = [
     ]],
     [T("Log"), False, URL(r=request, f="log")],
     [T("Outbox"), False, URL(r=request, f="outbox")],
+    [T("Search Tags"), False,URL(r=request, f="twitter_seach"),[
+        [T("List/Add"), False, URL(r=request, f="twitter_search")],
+    ]],
+    [T("Tweet Results"), False, URL(r=request, f="search_results")]
+    
     #["CAP", False, URL(r=request, f="tbc")]
 ]
 
@@ -63,8 +68,39 @@ def process_text_via_twitter():
 
     msg.process_outbox(contact_method = 4) # 3 is reserved for XMPP
     return
+    
+def search_results():
+    """ Controller to retrieve real time tweets for user saved search queries - to be called via cron """
+    
+    result = msg.receive_subscribed_tweets()
+    
+    resource = request.function
+    tablename = module + "_" + resource
+    table = db[tablename]
 
+     # Server-side Pagination
+    response.s3.pagination = True
+    rheader = DIV(B(T("Master Message Log")), ": ", T(str(result)))
+    return shn_rest_controller(module, resource, listadd=True, rheader = rheader)    
+  
+        
+#----------------------------------------------------------------------------------------    
+def twitter_search():
+    """Controller to show/add the user's twitter search queries"""
+    
+    if not auth.shn_logged_in():
+        session.error = T("Requires Login!")
+        redirect(URL(r=request, c="default", f="user", args="login"))
 
+    resource = request.function
+    tablename = module + "_" + resource
+    table = db[tablename]
+
+     # Server-side Pagination
+    response.s3.pagination = True
+
+    return shn_rest_controller(module, resource, listadd=True)
+       
 #-------------------------------------------------------------------------------
 def outbox():
     """ View the contents of the Outbox """

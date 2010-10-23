@@ -222,7 +222,24 @@ class Msg(object):
                 except tweepy.TweepError:
                     s3_debug("Unable to Tweet @mention")
         return True
-   
+    
+    #---------------------------------------------------------------------------------------------------
+    
+    def get_saved_queries(self):
+        """
+            Function to retrieve user saved queries
+        """
+        
+        if not self.twitter_api:
+            return False
+        try:
+            saved_searches = self.twitter_api.saved_searches()   
+        except tweepy.TweepError: 
+            s3_debug("Unable to retrieve twitter user saved searches.")
+            
+        queries = [s.query for search in saved_searches] 
+        return queries 
+    #-------------------------------------------------------------------------------------------------     
     def send_text_via_tropo(self, row_id, message_id, recipient, message, network = "SMS"):
         """
             Send a URL request to Tropo to pick a message up
@@ -436,7 +453,39 @@ class Msg(object):
             self.process_outbox(contact_method, option)
 
         return
-
+    #-------------------------------------------------------------------------    
+    def receive_subscribed_tweets(self):
+        """
+            Function  to call to drop the tweets into search_results table - called via cron
+        """
+        
+        db = self.db
+        table = self.db.msg_twitter_search
+        rows = db().select(table.ALL)     
+        s3_debug("Number of Stored queries",len(rows))
+    
+        for row in rows:
+            query = row.search_query 
+            try:
+                search_results = self.twitter_api.search(query,result_type = "recent",show_user=True)
+                search_results.reverse()
+                s3_debug("Query:",query)
+                s3_debug("Number of query results:",len(search_results))
+                for result in search_results:
+                    s3_debug("Tweet:",result.text)
+                    db.msg_search_results.insert(tweet = result.text,
+                                             posted_by = result.from_user,
+                                             posted_at = result.created_at,
+                                             twitter_search = row.id
+                                            ) 
+            except tweepy.TweepError:
+                s3_debug("Unable to get the tweets for the user search query.")
+                return False
+            # Explicitly commit DB operations when running from Cron
+            db.commit()
+            
+        return (self.twitter_api.saved_searches())[2].query
+    #------------------------------------------------------------------------
     def receive_msg(self,
                       subject="",
                       message="",

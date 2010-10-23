@@ -1075,7 +1075,7 @@
 'End date': 'End date',
 'End of Period': 'End of Period',
 'English': 'English',
-'Enter Coordinates in Deg Min Sec': 'Enter Coordinates in Deg Min Sec',
+'Enter Coordinates:': 'Enter Coordinates:',
 'Enter a GPS Coord': 'Enter a GPS Coord',
 'Enter a date before': 'Enter a date before',
 'Enter a few characters of the name to select an existing Location or else simply type the name of the new Location.': 'Enter a few characters of the name to select an existing Location or else simply type the name of the new Location.',

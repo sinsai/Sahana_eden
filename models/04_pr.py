@@ -303,7 +303,7 @@ resourcename = "presence"
 tablename = "%s_%s" % (module, resourcename)
 table = db.define_table(tablename,
                         pe_id(),
-                        sit_id(),
+                        s3xrc.model.super_key(db.sit_situation),
                         Field("reporter", db.pr_person),
                         Field("observer", db.pr_person),
                         Field("shelter_id", "integer"),
@@ -414,13 +414,12 @@ s3xrc.model.add_component(module, resourcename,
 
 def s3_pr_presence_onaccept(form):
     vita.presence_accept(form)
-    s3_situation_onaccept(form, table=db.pr_presence)
 
 def s3_pr_presence_ondelete(row):
     vita.presence_accept(row)
-    s3_situation_ondelete(row)
 
 s3xrc.model.configure(table,
+    super_entity = db.sit_situation,
     onvalidation = lambda form: s3_pr_presence_onvalidation(form),
     onaccept = lambda form: s3_pr_presence_onaccept(form),
     delete_onaccept = lambda row: s3_pr_presence_ondelete(row),

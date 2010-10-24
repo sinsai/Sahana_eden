@@ -162,7 +162,7 @@ if deployment_settings.has_module(module):
     resourcename = "incident"
     tablename = "%s_%s" % (module, resourcename)
     table = db.define_table(tablename,
-                            sit_id(),
+                            s3xrc.model.super_key(db.sit_situation),
                             Field("name"),
                             Field("category"),
                             Field("contact"),
@@ -213,8 +213,7 @@ if deployment_settings.has_module(module):
                                   label = T("Incident"),
                                   ondelete = "RESTRICT")
     s3xrc.model.configure(table,
-                          onaccept=lambda form, table=table: s3_situation_onaccept(form, table=table),
-                          delete_onaccept=lambda row: s3_situation_ondelete(row),
+                          super_entity = db.sit_situation,
                           list_fields = [
                             "id",
                             "category",

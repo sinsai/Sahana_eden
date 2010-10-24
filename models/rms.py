@@ -45,27 +45,27 @@ if deployment_settings.has_module(module):
 
     resourcename = "req"
     tablename = "%s_%s" % (module, resourcename)
-    table = db.define_table(tablename, #timestamp, uuidstamp, deletion_status,
-        sit_id(),
-        person_id(),
-        hospital_id(),    # @ToDo Check if the module is enabled for adding FK: check CR for an example
-        shelter_id(),     # @ToDo Check if the module is enabled for adding FK: check CR for an example
-        organisation_id(),
-        Field("type", "integer"),
-        Field("priority", "integer"),
-        Field("message", "text"),
-        Field("timestmp", "datetime"),  # 'timestamp' is a reserved word in Postgres
-        location_id(),
-        Field("source_type", "integer"),
-        Field("source_id", "integer"),
-        Field("verified", "boolean"),
-        Field("verified_details"),
-        Field("actionable", "boolean"),
-        Field("actioned", "boolean"),
-        Field("actioned_details"),
-        Field("pledge_status", "string"),
-        document_id(),
-        migrate=migrate, *s3_meta_fields())
+    table = db.define_table(tablename,
+                            s3xrc.model.super_key(db.sit_situation),
+                            person_id(),
+                            hospital_id(),    # @ToDo Check if the module is enabled for adding FK: check CR for an example
+                            shelter_id(),     # @ToDo Check if the module is enabled for adding FK: check CR for an example
+                            organisation_id(),
+                            Field("type", "integer"),
+                            Field("priority", "integer"),
+                            Field("message", "text"),
+                            Field("timestmp", "datetime"),  # 'timestamp' is a reserved word in Postgres
+                            location_id(),
+                            Field("source_type", "integer"),
+                            Field("source_id", "integer"),
+                            Field("verified", "boolean"),
+                            Field("verified_details"),
+                            Field("actionable", "boolean"),
+                            Field("actioned", "boolean"),
+                            Field("actioned_details"),
+                            Field("pledge_status", "string"),
+                            document_id(),
+                            migrate=migrate, *s3_meta_fields())
 
 
     db.rms_req.pledge_status.writable = False
@@ -143,8 +143,7 @@ if deployment_settings.has_module(module):
     request_id = req_id #only for other models - this should be replaced!
 
     s3xrc.model.configure(table,
-        onaccept=lambda form, table=table: s3_situation_onaccept(form, table=table),
-        delete_onaccept=lambda row: s3_situation_ondelete(row))
+                          super_entity=db.sit_situation)
 
     # rms_req as component of doc_documents
     s3xrc.model.add_component(module, resourcename,

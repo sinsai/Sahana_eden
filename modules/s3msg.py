@@ -446,18 +446,31 @@ class Msg(object):
         db = self.db
         table = self.db.msg_twitter_search
         rows = db().select(table.ALL)     
-        s3_debug("Number of Stored queries",len(rows))
-    
+                
+        results_table = self.db.msg_search_results
+        #Get the latest updated post time to use it as since_id in twitter search
+        recent_time = results_table.posted_by.max()
+        
+        
+        
         for row in rows:
             query = row.search_query 
             try:
-                search_results = self.twitter_api.search(query,result_type = "recent",show_user=True)
+                if recent_time:
+                    search_results = self.twitter_api.search(query,result_type = "recent",show_user=True,since_id = recent_time )
+                else:
+                    search_results = self.twitter_api.search(query,result_type = "recent",show_user=True )
+                    
                 search_results.reverse()
-                s3_debug("Query:",query)
-                s3_debug("Number of query results:",len(search_results))
+                                
                 for result in search_results:
-                    s3_debug("Tweet:",result.text)
-                    db.msg_search_results.insert(tweet = result.text,
+                    #Check if the tweet already exists in the table
+                    tweet_exist = db((results_table.posted_by == result.from_user) & (results_table.posted_at == result.created_at )).select().first()  
+                    
+                    if tweet_exist:
+                        continue
+                    else:
+                        db.msg_search_results.insert(tweet = result.text,
                                              posted_by = result.from_user,
                                              posted_at = result.created_at,
                                              twitter_search = row.id
@@ -468,7 +481,7 @@ class Msg(object):
             # Explicitly commit DB operations when running from Cron
             db.commit()
             
-        return (self.twitter_api.saved_searches())[2].query
+        return True
     #------------------------------------------------------------------------
     def receive_msg(self,
                     subject="",

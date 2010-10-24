@@ -88,18 +88,17 @@ def process_text_via_twitter():
 #-------------------------------------------------------------------------------------------------
     
 def search_results():
-    """ Controller to retrieve real time tweets for user saved search queries - to be called via cron """
+    """ Controller to retrieve real time tweets for user saved search queries - to be called via cron .Currently in real time also. """
     
     result = msg.receive_subscribed_tweets()
     
-    resource = request.function
-    tablename = module + "_" + resource
+    tablename = "%s_%s" % (prefix, resourcename)
     table = db[tablename]
 
      # Server-side Pagination
     response.s3.pagination = True
-    rheader = DIV(B(T("Master Message Log")), ": ", T(str(result)))
-    return shn_rest_controller(module, resource, listadd=True, rheader = rheader)    
+    
+    return s3_rest_controller(prefix, resourcename, listadd=True)    
   
         
 #----------------------------------------------------------------------------------------    
@@ -110,16 +109,15 @@ def twitter_search():
         session.error = T("Requires Login!")
         redirect(URL(r=request, c="default", f="user", args="login"))
 
-    resource = request.function
-    tablename = module + "_" + resource
+    tablename = "%s_%s" % (prefix, resourcename)
     table = db[tablename]
 
      # Server-side Pagination
     response.s3.pagination = True
 
-    return shn_rest_controller(module, resource, listadd=True)
+    return s3_rest_controller(prefix, resourcename, listadd=True)
        
--------------------------------------------------------------------------------------------
+#-------------------------------------------------------------------------------------------
 
 def outbox():
 

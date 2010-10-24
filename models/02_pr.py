@@ -28,6 +28,7 @@ table = db.define_table(tablename,
                         Field("uuid", length=128),
                         #Field("pe_id", "integer"),
                         Field("pe_label", length=128),
+                        sequence_name="pr_pentity_pe_id_Seq",
                         migrate=migrate, *s3_deletion_status())
 
 table.pe_type.writable = False

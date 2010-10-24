@@ -147,6 +147,7 @@ def shn_as_local_time(value):
 
 # -----------------------------------------------------------------------------
 # Phone number requires
+# @ToDo Support ',' & '/' to separate multiple phone numbers
 shn_phone_requires = IS_NULL_OR(IS_MATCH('\+?\s*[\s\-\.\(\)\d]+(?:(?: x| ext)\s?\d{1,5})?$'))
 
 

@@ -196,15 +196,15 @@ s3.crud_strings[tablename] = Storage(
 
 def shn_org_cluster_subsector_represent(id):
     record = db(db.org_cluster_subsector.id == id).select(db.org_cluster_subsector.cluster_id,
-                                                      db.org_cluster_subsector.abrv,
-                                                      limitby = (0,1) ).first()
+                                                          db.org_cluster_subsector.abrv,
+                                                          limitby=(0, 1)).first()
     return shn_org_cluster_subsector_requires_represent( record)
 
 def shn_org_cluster_subsector_requires_represent(record):
     """Used to generate text for the Select"""
     if record:
-        cluster_record = db(db.org_cluster_cluster.id == record.cluster_id).select(db.org_cluster_cluster.abrv,
-                                                      limitby = (0,1) ).first()
+        cluster_record = db(db.org_cluster.id == record.cluster_id).select(db.org_cluster.abrv,
+                                                                           limitby=(0, 1)).first()
         if cluster_record:
             cluster = cluster_record.abrv
         else:

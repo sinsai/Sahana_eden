@@ -92,96 +92,103 @@ if populate:
     if not db(table.id > 0).count():
         table.insert(
             abrv = T("Agriculture"),
-            name = T("Agriculture"),
+            name = T("Agriculture")
         )
         table.insert(
             abrv = T("Camp"),
-            name = T("Camp Coordination/Management"),
+            name = T("Camp Coordination/Management")
         )
         table.insert(
             abrv = T("Recovery"),
-            name = T("Early Recovery"),
+            name = T("Early Recovery")
         )
         table.insert(
             abrv = T("Education"),
-            name = T("Education"),
+            name = T("Education")
         )
         table.insert(
             abrv = T("Shelter"),
-            name = T("Emergency Shelter"),
+            name = T("Emergency Shelter")
         )
         table.insert(
             abrv = T("Telecommunications"),
-            name = T("Emergency Telecommunications"),
+            name = T("Emergency Telecommunications")
         )
         table.insert(
             abrv = T("Health"),
-            name = T("Health"),
+            name = T("Health")
         )
         table.insert(
             abrv = T("Logistics"),
-            name = T("Logistics"),
+            name = T("Logistics")
         )
         table.insert(
             abrv = T("Nutrition"),
-            name = T("Nutrition"),
+            name = T("Nutrition")
         )
         table.insert(
             abrv = T("Protection"),
-            name = T("Protection"),
+            name = T("Protection")
         )
         table.insert(
             abrv = T("WASH"),
-            name = T("Water Sanitation Hygiene"),
+            name = T("Water Sanitation Hygiene")
         )
     tablename = "org_cluster_subsector"
     table = db[tablename]
     # Ensure that the clusters we defined are in the DB ready to be used as a FK
     db.commit()
     if not db(table.id > 0).count():
+        cluster_shelter = db(db.org_cluster.abrv == "Shelter").select(db.org_cluster.id, limitby=(0, 1)).first().id
+        cluster_nutrition = db(db.org_cluster.abrv == "Nutrition").select(db.org_cluster.id, limitby=(0, 1)).first().id
+        cluster_wash = db(db.org_cluster.abrv == "WASH").select(db.org_cluster.id, limitby=(0, 1)).first().id
         table.insert(
-            cluster_id = 11,
-            abrv = T("Aggravating factors")
+            cluster_id = cluster_shelter,
+            abrv = T("Clothing")
         )
         table.insert(
-            cluster_id = 11,
-            abrv = T("Hygiene practice")
-        )
-        table.insert(
-            cluster_id = 11,
-            abrv = T("Hygiene NFIs")
-        )
-        table.insert(
-            cluster_id = 11,
-            abrv = T("Water supply")
-        )
-        table.insert(
-            cluster_id = 11,
-            abrv = T("Excreta disposal")
-        )
-        table.insert(
-            cluster_id = 11,
-            abrv = T("Disease vectors")
-        )
-        table.insert(
-            cluster_id = 11,
-            abrv = T("Solid waste")
-        )
-        table.insert(
-            cluster_id = 11,
-            abrv = T("Drainage")
-        )
-        table.insert(
-            cluster_id = 9,
-            abrv = T("Food Supply")
-        )
-        table.insert(
-            cluster_id = 5,
+            cluster_id = cluster_shelter,
             abrv = T("Shelter")
         )
         table.insert(
-            cluster_id = 5,
-            abrv = T("Clothing")
+            cluster_id = cluster_nutrition,
+            abrv = T("Cooking NFIs")
+        )
+        table.insert(
+            cluster_id = cluster_nutrition,
+            abrv = T("Food Supply")
+        )
+        table.insert(
+            cluster_id = cluster_wash,
+            abrv = T("Aggravating factors")
+        )
+        table.insert(
+            cluster_id = cluster_wash,
+            abrv = T("Disease vectors")
+        )
+        table.insert(
+            cluster_id = cluster_wash,
+            abrv = T("Drainage")
+        )
+        table.insert(
+            cluster_id = cluster_wash,
+            abrv = T("Excreta disposal")
+        )
+        table.insert(
+            cluster_id = cluster_wash,
+            abrv = T("Hygiene NFIs")
+        )
+        table.insert(
+            cluster_id = cluster_wash,
+            abrv = T("Hygiene practice")
+        )
+        table.insert(
+            cluster_id = cluster_wash,
+            abrv = T("Solid waste")
+        )
+        table.insert(
+            cluster_id = cluster_wash,
+            abrv = T("Water supply")
         )
 
     # Person Registry
@@ -294,6 +301,7 @@ if populate:
             table.insert( name = "# of households" )
             table.insert( name = "# of children under 5" )
             table.insert( name = "# of children" )
+            table.insert( name = "# of cattle" )
 
     # Impacts
     if deployment_settings.has_module("irs") or deployment_settings.has_module("assess"):        
@@ -303,6 +311,7 @@ if populate:
             table.insert( name = "# of People Affected" )
             table.insert( name = "# of People Injured" )
             table.insert( name = "# of People Deceased" )
+            table.insert( name = "# of People Missing" )
             table.insert( name = "# of Houses Destroyed" )
             table.insert( name = "# of Houses Damaged" )
 

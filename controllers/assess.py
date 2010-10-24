@@ -126,7 +126,7 @@ def assess_short_mobile():
                            _class = "double",
                            _type = "text")   
         elif field[0] == "summary":
-            label = "%s:" % shn_cluster_subsector_represent( field[1] )
+            label = "%s:" % shn_org_cluster_subsector_represent( field[1] )
             widget = db.assess_summary.value.widget(db.assess_summary.value,
                                                        0,
                                                        _name = name

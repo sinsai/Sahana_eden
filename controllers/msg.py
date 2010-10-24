@@ -287,7 +287,7 @@ def parserdooth(message):
             if "office" in query:
                 reply = reply + "Address->" + shn_get_db_field_value(db = db,
                                                                      table = "org_office",
-                                                                     field = "organisation_id()",
+                                                                     field = "address",
                                                                      look_up = organisation.id
                                                                      )            
         if len(reply) == 0:

@@ -203,7 +203,7 @@ def shn_org_cluster_subsector_represent(id):
 def shn_org_cluster_subsector_requires_represent(record):
     """Used to generate text for the Select""" 
     if record:
-        cluster_record = db(db.org_cluster_cluster.id == record.cluster_id).select(db.org_cluster_cluster.abrv,
+        cluster_record = db(db.org_cluster.id == record.cluster_id).select(db.org_cluster.abrv,
                                                       limitby = (0,1) ).first()
         if cluster_record:
             cluster = cluster_record.abrv

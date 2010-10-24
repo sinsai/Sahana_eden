@@ -940,13 +940,15 @@ class S3XML(object):
                     if validate is not None:
                         if not isinstance(value, (basestring, list, tuple)):
                             v = str(value)
+                        elif isinstance(value, basestring):
+                            v = value.encode("utf-8")
                         else:
                             v = value
                         (value, error) = validate(table, original, f, v)
                         if isinstance(v, (list, tuple)):
                             child.set(self.ATTRIBUTE.value, str(v))
                         else:
-                            child.set(self.ATTRIBUTE.value, v)
+                            child.set(self.ATTRIBUTE.value, str(v).decode("utf-8"))
                         if error:
                             child.set(self.ATTRIBUTE.error, "%s: %s" % (f, error))
                             valid = False

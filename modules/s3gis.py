@@ -425,46 +425,72 @@ class GIS(object):
         return layer
 
     # -----------------------------------------------------------------------------
-    def get_features_in_radius(self, lat, lon, radius):
+    def get_features_in_radius(self, lat, lon, radius, resourcename="gis_location", category=None):
         """
             Returns Features within a Radius (in km) of a LatLon Location
-            Calling function has the job of filtering features by the type they are interested in
-            Formula from: http://blog.peoplesdns.com/archives/24
-            Spherical Law of Cosines (accurate down to around 1m & computationally quick): http://www.movable-type.co.uk/scripts/latlong.html
-
-            IF PROJECTION CHANGES THIS WILL NOT WORK
         """
 
-        import math
-
         db = self.db
+        deployment_settings = self.deployment_settings
 
         # km
-        radius_earth = 6378.137
-        pi = math.pi
+        RADIUS_EARTH = 6378.137
+        
+        if deployment_settings.gis.spatialdb and deployment_settings.database.db_type == "postgres":
+            # Use Postgres routine
+            import psycopg2
+            dbname = deployment_settings.database.database
+            username = deployment_settings.database.username
+            password = deployment_settings.database.password
+            host = deployment_settings.database.host
+            port = deployment_settings.database.port or 5432
 
-        # ToDo: Do a Square query 1st & then run the complex query over subset (to improve performance)
-        lat_max = 90
-        lat_min = -90
-        lon_max = 180
-        lon_min = -180
-        table = db.gis_location
-        query = (table.lat > lat_min) & (table.lat < lat_max) & (table.lon < lon_max) & (table.lon > lon_min)
-        deleted = ((table.deleted==False) | (table.deleted==None))
-        query = deleted & query
+            # Convert km to degrees (since we're using the_geom not the_geog)
+            # @ToDo
+            
+            # This function call will automatically include a bounding box comparison that will make use of any indexes that are available on the geometries.
+            conn = psycopg2.connect("dbname=%s user=%s password=%s host=%s port=%i" % (dbname, username, password, host, port))
+            cursor = conn.cursor()
+            query_string = cursor.mogrify("SELECT * FROM gis_location WHERE ST_DWithin (ST_GeomFromText ('POINT (%s, %s)', 4326), the_geom, %s);", [lat, lon, radius])
+            cursor.execute(query_string)
+            
+        elif SHAPELY:
+            # Use Shapely routine
+            # Is there one?
+            return None
+        else:
+            # Do it manually
+            # Formula from: http://blog.peoplesdns.com/archives/24
+            # Spherical Law of Cosines (accurate down to around 1m & computationally quick): http://www.movable-type.co.uk/scripts/latlong.html
+            # IF PROJECTION CHANGES THIS WILL NOT WORK
 
-        # ToDo: complete port from PHP to Eden
-        pilat180 = pi * lat /180
-        #calc = "radius_earth * math.acos((math.sin(pilat180) * math.sin(pi * table.lat /180)) + (math.cos(pilat180) * math.cos(pi*table.lat/180) * math.cos(pi * table.lon/180-pi* lon /180)))"
-        #query2 = "SELECT DISTINCT table.lon, table.lat, calc AS distance FROM table WHERE calc <= radius ORDER BY distance"
-        #query2 = (radius_earth * math.acos((math.sin(pilat180) * math.sin(pi * table.lat /180)) + (math.cos(pilat180) * math.cos(pi*table.lat/180) * math.cos(pi * table.lon/180-pi* lon /180))) < radius)
-        # TypeError: unsupported operand type(s) for *: 'float' and 'Field'
-        query2 = (radius_earth * math.acos((math.sin(pilat180) * math.sin(pi * table.lat /180))) < radius)
-        #query = query & query2
-        features = db(query).select()
-        #features = db(query).select(orderby=distance)
+            # ToDo: complete port from PHP to Eden
+            return None
 
-        return features
+            import math
+
+            pi = math.pi
+
+            # ToDo: Do a Square query 1st & then run the complex query over subset (to improve performance)
+            lat_max = 90
+            lat_min = -90
+            lon_max = 180
+            lon_min = -180
+            table = db.gis_location
+            query = (table.lat > lat_min) & (table.lat < lat_max) & (table.lon < lon_max) & (table.lon > lon_min)
+            deleted = ((table.deleted==False) | (table.deleted==None))
+            query = deleted & query
+
+            pilat180 = pi * lat /180
+            #calc = "RADIUS_EARTH * math.acos((math.sin(pilat180) * math.sin(pi * table.lat /180)) + (math.cos(pilat180) * math.cos(pi*table.lat/180) * math.cos(pi * table.lon/180-pi* lon /180)))"
+            #query2 = "SELECT DISTINCT table.lon, table.lat, calc AS distance FROM table WHERE calc <= radius ORDER BY distance"
+            #query2 = (RADIUS_EARTH * math.acos((math.sin(pilat180) * math.sin(pi * table.lat /180)) + (math.cos(pilat180) * math.cos(pi*table.lat/180) * math.cos(pi * table.lon/180-pi* lon /180))) < radius)
+            # TypeError: unsupported operand type(s) for *: 'float' and 'Field'
+            query2 = (RADIUS_EARTH * math.acos((math.sin(pilat180) * math.sin(pi * table.lat /180))) < radius)
+            #query = query & query2
+            features = db(query).select()
+            #features = db(query).select(orderby=distance)
+            return features
 
     # -----------------------------------------------------------------------------
     def get_latlon(self, feature_id, filter=False):

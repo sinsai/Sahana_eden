@@ -266,6 +266,7 @@ def parserdooth(message):
                     query = (table3.pe_id == result[0]["id"]) & (table3.contact_method == 2)
                     recipient = db(query).select(table3.value, orderby = table3.priority, limitby=(0, 1)).first()
                     reply = reply + " Mobile->" + str(recipient.value)
+
         if len(reply) == 0:
             return "No Match"
 
@@ -289,6 +290,7 @@ def parserdooth(message):
                 reply = reply + "Clinical status " + str(table.facility_status.represent(hospital.clinical_status))
             if "security" in query:
                 reply = reply + "Security status " + str(table.facility_status.represent(hospital.security_status))
+
         if len(reply) == 0:
             return "No Match"
 
@@ -306,6 +308,13 @@ def parserdooth(message):
             reply = reply + " " + organisation.name + "(Organisation) "
             if "phone" in query:
                 reply = reply + "Phone->" + str(organisation.donation_phone)
+            if "office" in query:
+                reply = reply + "Address->" + shn_get_db_field_value(db = db,
+                                                                     table = "org_office",
+                                                                     field = "address",
+                                                                     look_up = organisation.id
+                                                                    )          
+
         if len(reply) == 0:
             return "No Match"
 

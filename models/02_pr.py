@@ -28,7 +28,7 @@ table = db.define_table(tablename,
                         Field("uuid", length=128),
                         #Field("pe_id", "integer"),
                         Field("pe_label", length=128),
-                        sequence_name="pr_pentity_pe_id_Seq",
+                        sequence_name="pr_pentity_pe_id_Seq",   # Needed for Postgres since we're not using ID as the primary key
                         migrate=migrate, *s3_deletion_status())
 
 table.pe_type.writable = False
@@ -303,7 +303,7 @@ table = db.define_table(tablename,
                         pr_gender(),
                         pr_age_group(),
                         Field("date_of_birth", "date"),
-                        pr_country("nationality"),
+                        pr_country("nationality", label = T("Nationality")),
                         pr_country("country"),
                         pr_religion(),
                         pr_marital_status(),

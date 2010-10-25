@@ -26,7 +26,7 @@ osm_oauth_consumer_key = deployment_settings.get_osm_oauth_consumer_key()
 osm_oauth_consumer_secret = deployment_settings.get_osm_oauth_consumer_secret()
 if osm_oauth_consumer_key and osm_oauth_consumer_secret:
     response.menu_options.append([T("OpenStreetMap Editor"), False, URL(r=request, f="potlatch2", args="potlatch2.html")])
-        
+
 if not deployment_settings.get_security_map() or shn_has_role("MapAdmin"):
     response.menu_options.append([T("Service Catalogue"), False, URL(r=request, f="map_service_catalogue")])
     response.menu_options.append([T("De-duplicator"), False, URL(r=request, f="location_duplicates")])
@@ -1600,10 +1600,10 @@ def potlatch2():
             #zoom = settings.zoom
 
             response.extra_styles = ["S3/potlatch2.css"]
-            
+
             return dict(lat=lat, lon=lon, key=osm_oauth_consumer_key, secret=osm_oauth_consumer_secret)
             #return dict(lat=lat, lon=lon, zoom=zoom, key=osm_oauth_consumer_key, secret=osm_oauth_consumer_secret)
-        
+
         else:
             session.error = T("To edit OpenStreetMap, you need to edit the OpenStreetMap settings in models/000_config.py")
             redirect(URL(r=request, f="index"))

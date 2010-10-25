@@ -146,7 +146,7 @@ opt_gis_layout = db.Table(None, "opt_gis_layout",
 resourcename = "config"
 tablename = "%s_%s" % (module, resourcename)
 table = db.define_table(tablename,
-                        pe_id(),                           # Personal Entity Reference
+                        super_link(db.pr_pentity), # pe_id
                         Field("lat", "double"),
                         Field("lon", "double"),
                         Field("zoom", "integer"),
@@ -223,7 +223,7 @@ s3.crud_strings[tablename] = Storage(
 # Configs as component of Persons (Personalised configurations)
 s3xrc.model.add_component(module, resourcename,
                           multiple=False,
-                          joinby="pe_id")
+                          joinby=super_key(db.pr_pentity))
 
 s3xrc.model.configure(table,
                       deletable=False,

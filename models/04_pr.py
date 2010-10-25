@@ -8,7 +8,7 @@
 
 """
 
-module = "pr"
+prefix = "pr"
 
 # *****************************************************************************
 # Address (address)
@@ -23,9 +23,9 @@ pr_address_type_opts = {
 
 # -----------------------------------------------------------------------------
 resourcename = "address"
-tablename = "%s_%s" % (module, resourcename)
+tablename = "%s_%s" % (prefix, resourcename)
 table = db.define_table(tablename,
-                        pe_id(),
+                        super_link(db.pr_pentity), # pe_id
                         Field("type",
                               "integer",
                               requires = IS_IN_SET(pr_address_type_opts, zero=None),
@@ -49,8 +49,8 @@ table = db.define_table(tablename,
 table.uuid.requires = IS_NOT_IN_DB(db, "%s.uuid" % tablename)
 
 table.pe_id.requires = IS_ONE_OF(db, "pr_pentity.pe_id", shn_pentity_represent,
-                                 orderby="pe_type",
-                                 filterby="pe_type",
+                                 orderby="instance_type",
+                                 filterby="instance_type",
                                  filter_opts=("pr_person", "pr_group"))
 
 table.co_name.label = T("c/o Name")
@@ -80,9 +80,9 @@ s3.crud_strings[tablename] = Storage(
     msg_list_empty = T("No Addresses currently registered"))
 
 # Addresses as component of person entities
-s3xrc.model.add_component(module, resourcename,
+s3xrc.model.add_component(prefix, resourcename,
                           multiple=True,
-                          joinby="pe_id")
+                          joinby=super_key(db.pr_pentity))
 
 s3xrc.model.configure(table,
     list_fields = [
@@ -113,9 +113,9 @@ pr_contact_method_opts = {
 
 # -----------------------------------------------------------------------------
 resourcename = "pe_contact"
-tablename = "%s_%s" % (module, resourcename)
+tablename = "%s_%s" % (prefix, resourcename)
 table = db.define_table(tablename,
-                        pe_id(),
+                        super_link(db.pr_pentity), # pe_id
                         Field("contact_method",
                               "integer",
                               requires = IS_IN_SET(pr_contact_method_opts, zero=None),
@@ -134,8 +134,8 @@ table = db.define_table(tablename,
 table.uuid.requires = IS_NOT_IN_DB(db, "%s.uuid" % tablename)
 table.pe_id.requires = IS_ONE_OF(db, "pr_pentity.pe_id",
                                  shn_pentity_represent,
-                                 orderby="pe_type",
-                                 filterby="pe_type",
+                                 orderby="instance_type",
+                                 filterby="instance_type",
                                  filter_opts=("pr_person", "pr_group"))
 
 table.value.requires = IS_NOT_EMPTY()
@@ -149,9 +149,9 @@ pe_contact_id = S3ReusableField("pe_contact_id", db.pr_pe_contact,
 
 
 # Contact information as component of person entities
-s3xrc.model.add_component(module, resourcename,
+s3xrc.model.add_component(prefix, resourcename,
                           multiple=True,
-                          joinby="pe_id")
+                          joinby=super_key(db.pr_pentity))
 
 s3xrc.model.configure(table,
     list_fields=[
@@ -196,9 +196,9 @@ pr_image_type_opts = {
 
 # -----------------------------------------------------------------------------
 resourcename = "image"
-tablename = "%s_%s" % (module, resourcename)
+tablename = "%s_%s" % (prefix, resourcename)
 table = db.define_table(tablename,
-                        pe_id(),
+                        super_link(db.pr_pentity), # pe_id
                         Field("type", "integer",
                               requires = IS_IN_SET(pr_image_type_opts, zero=None),
                               default = 1,
@@ -259,9 +259,9 @@ def shn_pr_image_onvalidation(form):
 
 # -----------------------------------------------------------------------------
 # Images as component of person entities
-s3xrc.model.add_component(module, resourcename,
+s3xrc.model.add_component(prefix, resourcename,
                           multiple=True,
-                          joinby="pe_id")
+                          joinby=super_key(db.pr_pentity))
 
 s3xrc.model.configure(table,
     onvalidation=shn_pr_image_onvalidation,
@@ -300,10 +300,10 @@ pr_presence_condition_opts = vita.presence_conditions
 
 # -----------------------------------------------------------------------------
 resourcename = "presence"
-tablename = "%s_%s" % (module, resourcename)
+tablename = "%s_%s" % (prefix, resourcename)
 table = db.define_table(tablename,
-                        pe_id(),
-                        s3xrc.model.super_key(db.sit_situation),
+                        super_link(db.pr_pentity), # pe_id
+                        super_link(db.sit_situation), # sit_id
                         Field("reporter", db.pr_person),
                         Field("observer", db.pr_person),
                         Field("shelter_id", "integer"),
@@ -408,9 +408,9 @@ def s3_pr_presence_onvalidation(form):
 
 # -----------------------------------------------------------------------------
 # Presence as component of person entities
-s3xrc.model.add_component(module, resourcename,
+s3xrc.model.add_component(prefix, resourcename,
                           multiple=True,
-                          joinby="pe_id")
+                          joinby=super_key(db.pr_pentity))
 
 def s3_pr_presence_onaccept(form):
     vita.presence_accept(form)
@@ -456,9 +456,9 @@ s3.crud_strings[tablename] = Storage(
 # Subscription (pe_subscription)
 #
 resourcename = "pe_subscription"
-tablename = "%s_%s" % (module, resourcename)
+tablename = "%s_%s" % (prefix, resourcename)
 table = db.define_table(tablename,
-                        pe_id(),
+                        super_link(db.pr_pentity), # pe_id
                         Field("resource"),
                         Field("record"), # type="s3uuid"
                         comments(),
@@ -469,17 +469,17 @@ table = db.define_table(tablename,
 table.uuid.requires = IS_NOT_IN_DB(db, "%s.uuid" % tablename)
 table.pe_id.requires = IS_ONE_OF(db, "pr_pentity.pe_id",
                                     shn_pentity_represent,
-                                    filterby="pe_type",
-                                    orderby="pe_type",
+                                    filterby="instance_type",
+                                    orderby="instance_type",
                                     filter_opts=("pr_person", "pr_group"))
 
 # Moved to zzz_last.py to ensure all tables caught!
 #table.resource.requires = IS_IN_SET(db.tables)
 
 # Subscriptions as component of person entities
-s3xrc.model.add_component(module, resourcename,
+s3xrc.model.add_component(prefix, resourcename,
                           multiple=True,
-                          joinby="pe_id")
+                          joinby=super_key(db.pr_pentity))
 
 s3xrc.model.configure(table,
     list_fields=[
@@ -518,7 +518,7 @@ pr_id_type_opts = {
 
 # -----------------------------------------------------------------------------
 resourcename = "identity"
-tablename = "%s_%s" % (module, resourcename)
+tablename = "%s_%s" % (prefix, resourcename)
 table = db.define_table(tablename,
                         person_id(),
                         Field("type", "integer",
@@ -544,7 +544,7 @@ table.value.comment = SPAN("*", _class="req")
 table.ia_name.label = T("Issuing Authority")
 
 # Identity as component of persons
-s3xrc.model.add_component(module, resourcename,
+s3xrc.model.add_component(prefix, resourcename,
                           multiple=True,
                           joinby=dict(pr_person="person_id"))
 
@@ -675,9 +675,9 @@ if deployment_settings.has_module("dvi") or \
 
 # -----------------------------------------------------------------------------
     resourcename = "physical_description"
-    tablename = "%s_%s" % (module, resourcename)
+    tablename = "%s_%s" % (prefix, resourcename)
     table = db.define_table(tablename,
-                            pe_id(),
+                            super_link(db.pr_pentity), # pe_id
 
                             # Race and complexion
                             Field("race", "integer",
@@ -786,9 +786,9 @@ if deployment_settings.has_module("dvi") or \
     table.pe_id.writable = False
 
     # Physical description as component of person entity
-    s3xrc.model.add_component(module, resourcename,
+    s3xrc.model.add_component(prefix, resourcename,
                               multiple=False,
-                              joinby="pe_id")
+                              joinby=super_key(db.pr_pentity))
 
 # End
 # *****************************************************************************

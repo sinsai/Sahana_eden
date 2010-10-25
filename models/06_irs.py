@@ -162,7 +162,7 @@ if deployment_settings.has_module(module):
     resourcename = "incident"
     tablename = "%s_%s" % (module, resourcename)
     table = db.define_table(tablename,
-                            s3xrc.model.super_key(db.sit_situation),
+                            super_link(db.sit_situation),
                             Field("name"),
                             Field("category"),
                             Field("contact"),

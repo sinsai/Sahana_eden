@@ -1125,8 +1125,13 @@ class S3CRUDHandler(S3MethodHandler):
                                          download_url=self.download_url,
                                          format=representation)
 
+            # Empty table - or just no match?
             if not items:
-                if self.db(self.table.id > 0).count():
+                if "deleted" in self.table:
+                    available_records = self.db(self.table.deleted == False)
+                else:
+                    available_records = self.db(self.table.id > 0)
+                if available_records.count():
                     items = self.crud_string(self.tablename, "msg_no_match")
                 else:
                     items = self.crud_string(self.tablename, "msg_list_empty")

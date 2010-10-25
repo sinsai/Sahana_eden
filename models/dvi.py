@@ -118,7 +118,7 @@ if deployment_settings.has_module(module):
     resourcename = "body"
     tablename = "%s_%s" % (module, resourcename)
     table = db.define_table(tablename,
-                            pe_id(),
+                            super_link(db.pr_pentity), # pe_id
                             pe_label(),
                             dvi_recreq_id(),
                             Field("date_of_recovery", "datetime"),
@@ -177,8 +177,7 @@ if deployment_settings.has_module(module):
         msg_list_empty = T("No recovery reports available"))
 
     s3xrc.model.configure(table,
-                          onaccept=lambda form: shn_pentity_onaccept(form, table=db.dvi_body),
-                          delete_onaccept=lambda form: shn_pentity_ondelete(form),
+                          super_entity=db.pr_pentity,
                           list_fields=["id",
                                        "pe_label",
                                        "gender",
@@ -193,7 +192,7 @@ if deployment_settings.has_module(module):
     resourcename = "checklist"
     tablename = "%s_%s" % (module, resourcename)
     table = db.define_table(tablename,
-                    pe_id(),
+                    super_link(db.pr_pentity), # pe_id
                     Field("personal_effects","integer",
                         requires = IS_IN_SET(dvi_task_status_opts, zero=None),
                         default = 1,
@@ -257,7 +256,7 @@ if deployment_settings.has_module(module):
 
     s3xrc.model.add_component(module, resourcename,
                               multiple = False,
-                              joinby = "pe_id")
+                              joinby = super_key(db.pr_pentity))
 
     s3xrc.model.configure(table, list_fields = ["id"])
 
@@ -267,7 +266,7 @@ if deployment_settings.has_module(module):
     resourcename = "effects"
     tablename = "%s_%s" % (module, resourcename)
     table = db.define_table(tablename,
-                    pe_id(),
+                    super_link(db.pr_pentity), # pe_id
     #                person_id(),
                     Field("clothing", "text"),    #TODO: elaborate
                     Field("jewellery", "text"),   #TODO: elaborate
@@ -301,7 +300,7 @@ if deployment_settings.has_module(module):
     # Joined Resource
     s3xrc.model.add_component(module, resourcename,
                               multiple = False,
-                              joinby = "pe_id")
+                              joinby = super_key(db.pr_pentity))
 
     s3xrc.model.configure(table, list_fields = ["id"])
 
@@ -341,7 +340,7 @@ if deployment_settings.has_module(module):
     resourcename = "identification"
     tablename = "%s_%s" % (module, resourcename)
     table = db.define_table(tablename,
-                            pe_id(),
+                            super_link(db.pr_pentity), # pe_id
                             Field("identified_by", db.pr_person),  # Person identifying the body
                             Field("reported_by", db.pr_person),    # Person reporting
                             dvi_id_status(),                       # Identity status
@@ -392,7 +391,7 @@ if deployment_settings.has_module(module):
     # Identification reports as component of person entities
     s3xrc.model.add_component(module, resourcename,
                               multiple = False,
-                              joinby = "pe_id")
+                              joinby = super_key(db.pr_pentity))
 
 
     # -----------------------------------------------------------------------------

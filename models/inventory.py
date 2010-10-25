@@ -20,7 +20,7 @@ if deployment_settings.has_module("logs"):
     table = db.define_table(tablename,
                             location_id(),
                             document_id(),
-                            site_id(),
+                            super_link(db.org_site),
                             comments(),
                             migrate=migrate, *s3_meta_fields())
 
@@ -74,7 +74,7 @@ if deployment_settings.has_module("logs"):
     # in add_component, so safest to set it explicitly.
     s3xrc.model.add_component(module, resourcename,
                               multiple=False,
-                              joinby="site_id")
+                              joinby=super_key(db.org_site))
 
     #==============================================================================
     # Inventory Item

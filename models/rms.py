@@ -46,7 +46,7 @@ if deployment_settings.has_module(module):
     resourcename = "req"
     tablename = "%s_%s" % (module, resourcename)
     table = db.define_table(tablename,
-                            s3xrc.model.super_key(db.sit_situation),
+                            super_link(db.sit_situation),
                             person_id(),
                             hospital_id(),    # @ToDo Check if the module is enabled for adding FK: check CR for an example
                             shelter_id(),     # @ToDo Check if the module is enabled for adding FK: check CR for an example

@@ -105,7 +105,7 @@ if deployment_settings.has_module(module):
     # If this is a production site, do not disable HMS unless you really mean it...
 
     fields_before_hospital = db.Table(None, None,
-                                      site_id(),
+                                      super_link(db.org_site),
                                       Field("name", notnull=True),
                                       shelter_type_id(),
                                       shelter_service_id(),
@@ -200,8 +200,7 @@ if deployment_settings.has_module(module):
 
     s3xrc.model.configure(table,
         listadd=False,
-        onaccept=lambda form: shn_site_onaccept(form, table=db.cr_shelter),
-        ondelete=lambda form: shn_site_ondelete(form),
+        super_entity=db.org_site,
         list_fields=["id",
                      "name",
                      "shelter_type_id",

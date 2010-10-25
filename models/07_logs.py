@@ -20,7 +20,7 @@ if deployment_settings.has_module(module):
     table = db.define_table(tablename,
                             Field("date", "date"),
                             location_id(),
-                            #site_id(),
+                            #super_link(db.org_site),
                             comments(),
                             migrate=migrate, *s3_meta_fields())
 

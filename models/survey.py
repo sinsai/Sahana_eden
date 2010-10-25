@@ -17,8 +17,8 @@ if deployment_settings.has_module(module):
 #                         *s3_meta_fields())
 
     # Survey Template
-    resource = "template"
-    tablename = module + "_" + resource
+    resourcename = "template"
+    tablename = module + "_" + resourcename
     template = db.define_table(tablename,
                                Field("name", "string", default="", length=120),
                                Field("description", "text", default="", length=500),
@@ -30,8 +30,8 @@ if deployment_settings.has_module(module):
                                migrate=migrate)
 
     # Survey Series
-    resource = "series"
-    tablename = module + "_" + resource
+    resourcename = "series"
+    tablename = module + "_" + resourcename
     series = db.define_table(tablename,
                              Field("name", "string", default="", length=120),
                              Field("description", "text", default="", length=500),
@@ -43,15 +43,15 @@ if deployment_settings.has_module(module):
                              migrate=migrate)
 
     # Survey Section
-    resource = "questions"
-    tablename = module + "_" + resource
+    resourcename = "questions"
+    tablename = module + "_" + resourcename
     section = db.define_table(tablename,
                               migrate=migrate, *s3_meta_fields())
 
 
     # Survey Question
-    resource = "question"
-    tablename = module + "_" + resource
+    resourcename = "question"
+    tablename = module + "_" + resourcename
     question = db.define_table(tablename,
                                 Field("name", "string", default="", length=120),
                                 Field("question_type", "integer"),
@@ -67,8 +67,8 @@ if deployment_settings.has_module(module):
                                 #Field("aggregation_type", "string"))
 
     # Link table
-    resource = "template_link"
-    tablename = module + "_" + resource
+    resourcename = "template_link"
+    tablename = module + "_" + resourcename
     link_table = db.define_table(tablename,
                                  Field("survey_question_id", db.survey_question),
                                  Field("survey_template_id", db.survey_template),
@@ -81,15 +81,15 @@ if deployment_settings.has_module(module):
     # Unused code below here
 
 #    # Survey Instance
-#    resource = "instance"
-#    tablename = module + "_" + resource
+#    resourcename = "instance"
+#    tablename = module + "_" + resourcename
 #    instance = db.define_table(tablename, timestamp, uuidstamp, deletion_status, authorstamp,
 #                               Field("survey_series_id", db.survey_series),
 #                               migrate=migrate)
 
 #    # Survey Answer
-#    resource = "answer"
-#    tablename = module + "_" + resource
+#    resourcename = "answer"
+#    tablename = module + "_" + resourcename
 #    answer = db.define_table(tablename, timestamp, uuidstamp, deletion_status, authorstamp,
 #                             Field("survey_instance_id", db.survey_instance),
 #                             Field("question_id", db.survey_question),
@@ -101,8 +101,8 @@ if deployment_settings.has_module(module):
 #                             migrate=migrate)
 
 #    # Question options e.g., Row choices, Column Choices, Layout Configuration data, etc...
-#    resource = "question_options"
-#    tablename = module + "_" + resource
+#    resourcename = "question_options"
+#    tablename = module + "_" + resourcename
 #    question_options = db.define_table(tablename, uuidstamp, deletion_status, authorstamp,
 ##    #                                 Field("display_option", "integer"),
 ###                                     Field("answer_choices", "text", length=700),

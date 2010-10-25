@@ -411,6 +411,12 @@ class S3ResourceModel(object):
 
         """
 
+        # postgres workaround
+        if self.db._dbname == "postgres":
+            sequence_name = "%s_%s_Seq" % (tablename, key)
+        else:
+            sequence_name = None
+
         table = self.db.define_table(tablename,
                                      Field(key, "id",
                                            readable=False,
@@ -424,6 +430,7 @@ class S3ResourceModel(object):
                                      Field("uuid", length=128,
                                            readable=False,
                                            writable=False),
+                                     sequence_name=sequence_name,
                                      *fields, **args)
 
         table.instance_type.represent = lambda opt: types.get(opt, opt)

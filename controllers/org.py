@@ -89,9 +89,9 @@ def office():
                request.vars.organisation_id != "None":
                 session.s3.organisation_id = request.vars.organisation_id
                 # Organisation name should be displayed on the form if organisation_id is pre-selected
-                org = db.org_organisation
-                query = org.id == int(session.s3.organisation_id)
-                session.s3.organisation_name = db(query).select(org.name).first().name
+                orgs = db.org_organisation
+                query = orgs.id == int(session.s3.organisation_id)
+                session.s3.organisation_name = db(query).select(orgs.name, limitby=(0, 1)).first().name
         return True
     response.s3.prep = prep
 
@@ -101,7 +101,7 @@ def office():
                                                 (T("Staff"), "staff"),
                                                ])
 
-    return s3_rest_controller(prefix, resource, rheader=rheader)
+    return s3_rest_controller(prefix, resourcename, rheader=rheader)
 
 
 #==============================================================================

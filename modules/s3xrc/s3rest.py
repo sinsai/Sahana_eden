@@ -225,6 +225,8 @@ class S3Resource(object):
         self.__ids = []
         self.__uids = []
 
+        self.lastid = None
+
         self.__files = Storage()
 
         # Bind to model and data store
@@ -2160,27 +2162,49 @@ class S3Resource(object):
         # Get the table
         table = self.table
 
-        # Copy record
+        # Copy data from a previous record?
         data = None
         if from_table is not None:
-            row = self.db(from_table.id == from_record).select(from_table.ALL, limit=(0,1)).first()
-            if row:
-                if map_fields:
-                    if isinstance(map_fields, dict):
-                        data = Storage([(map_fields[f], row[f])
-                                        for f in map_fields
-                                        if f in table and f in row and f != "id"])
-
-                    elif isinstance(map_fields, (list, tuple)):
-                        data = Storage([(f, row[f])
-                                        for f in map_fields
-                                        if f in table and f in row and f != "id"])
-                    else:
-                        raise TypeError
+            if map_fields:
+                if isinstance(map_fields, dict):
+                    fields = [from_table[map_fields[f]]
+                              for f in map_fields
+                                  if f in table.fields and
+                                  map_fields[f] in from_table.fields and
+                                  table[f].writable]
+                elif isinstance(map_fields, (list, tuple)):
+                    fields = [from_table[f]
+                              for f in map_fields
+                                  if f in table.fields and
+                                  f in from_table.fields and
+                                  table[f].writable]
                 else:
-                    data = Storage([(f, row[f])
-                                    for f in row
-                                    if f in table and f != "id"])
+                    raise TypeError
+            else:
+                fields = [from_table[f]
+                          for f in table.fields
+                              if f in from_table.fields and
+                              table[f].writable]
+
+            # Audit read => this is a read method, finally
+            audit = self.manager.audit
+            prefix, name = from_table._tablename.split("_", 1)
+            audit("read", prefix, name, record=from_record, representation=format)
+
+            row = self.db(from_table.id == from_record).select(limitby=(0,1), *fields).first()
+            if row:
+                if isinstance(map_fields, dict):
+                    data = Storage([(f, row[map_fields[f]]) for f in map_fields])
+                else:
+                    data = Storage(row)
+
+            if data:
+                missing_fields = Storage()
+                for f in table.fields:
+                    if f not in data and table[f].writable:
+                        missing_fields[f] = table[f].default
+                data.update(missing_fields)
+                data.update(id=None)
 
         # Get the form
         form = self.update(None,
@@ -2263,8 +2287,6 @@ class S3Resource(object):
         # Copy from another record?
         if id is None and data:
             record = Storage(data)
-            if "id" in record:
-                del record["id"]
         else:
             record = id
 
@@ -2317,11 +2339,13 @@ class S3Resource(object):
 
             # Store session vars
             if form.vars.id:
+                self.lastid = str(form.vars.id)
                 self.manager.store_session(self.prefix, self.name, form.vars.id)
 
             # Execute onaccept
             self.manager.callback(onaccept, form, name=self.tablename)
-        else:
+
+        elif id:
             # Audit read (user is reading even when not updating the data)
             audit("read", self.prefix, self.name, form=form, representation=format)
 

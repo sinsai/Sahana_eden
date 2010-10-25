@@ -28,8 +28,8 @@ if deployment_settings.has_module(module):
                         label = T("Unit Set"),
                         represent = lambda opt: lms_unit_type_opts.get(opt, UNKNOWN_OPT)))
 
-    resource = "unit"
-    tablename = "%s_%s" % (module, resource)
+    resourcename = "unit"
+    tablename = "%s_%s" % (module, resourcename)
     table = db.define_table(tablename,
                     opt_lms_unit_type, #lms_unit_type_opts --> Type of Unit
                     Field("label"), #short code of Unit for e.g. "m" for "meter"
@@ -105,8 +105,8 @@ if deployment_settings.has_module(module):
                                 # default = 1,
                                 label = T("Category"),
                                 represent = lambda opt: site_category_opts.get(opt, UNKNOWN_OPT)))
-    resource = "site"
-    tablename = "%s_%s" % (module, resource)
+    resourcename = "site"
+    tablename = "%s_%s" % (module, resourcename)
     table = db.define_table(tablename,
                     Field("name", notnull=True),
                     Field("description"),
@@ -149,8 +149,8 @@ if deployment_settings.has_module(module):
         msg_list_empty = T("No Sites currently registered"))
 
     # Storage Locations
-    resource = "storage_loc"
-    tablename = "%s_%s" % (module, resource)
+    resourcename = "storage_loc"
+    tablename = "%s_%s" % (module, resourcename)
     table = db.define_table(tablename,
                     Field("site_id", db.lms_site),
                     Field("name", notnull=True),
@@ -199,8 +199,8 @@ if deployment_settings.has_module(module):
         msg_list_empty = T("No Storage Locations currently registered"))
 
     # Storage Bin Type
-    resource = "storage_bin_type"
-    tablename = "%s_%s" % (module, resource)
+    resourcename = "storage_bin_type"
+    tablename = "%s_%s" % (module, resourcename)
     table = db.define_table(tablename,
                     Field("name", notnull=True),
                     Field("description"),
@@ -228,8 +228,8 @@ if deployment_settings.has_module(module):
         msg_list_empty = T("No Storage Bin Type currently registered"))
 
     # Storage Bins
-    resource = "storage_bin"
-    tablename = "%s_%s" % (module, resource)
+    resourcename = "storage_bin"
+    tablename = "%s_%s" % (module, resourcename)
     table = db.define_table(tablename,
                     Field("site_id", db.lms_site),
                     Field("storage_id", db.lms_storage_loc),
@@ -285,8 +285,8 @@ if deployment_settings.has_module(module):
         msg_list_empty = T("No Storage Bins currently registered"))
 
     # Item Catalog Master
-    resource = "catalog"
-    tablename = "%s_%s" % (module, resource)
+    resourcename = "catalog"
+    tablename = "%s_%s" % (module, resourcename)
     table = db.define_table(tablename,
                     organisation_id(),
                     Field("name"),
@@ -316,8 +316,8 @@ if deployment_settings.has_module(module):
         msg_list_empty = T("No Item Catalog currently registered"))
 
     # Item Catalog Category
-    resource = "catalog_cat"
-    tablename = "%s_%s" % (module, resource)
+    resourcename = "catalog_cat"
+    tablename = "%s_%s" % (module, resourcename)
     table = db.define_table(tablename,
                     Field("name"),
                     Field("description"),
@@ -346,8 +346,8 @@ if deployment_settings.has_module(module):
         msg_list_empty = T("No Item Catalog Category currently registered"))
 
     # Item Catalog Sub-Category
-    resource = "catalog_subcat"
-    tablename = "%s_%s" % (module, resource)
+    resourcename = "catalog_subcat"
+    tablename = "%s_%s" % (module, resourcename)
     table = db.define_table(tablename,
                     Field("parent_category", db.lms_catalog_cat),
                     Field("name"),
@@ -380,8 +380,8 @@ if deployment_settings.has_module(module):
 
     # Category<>Sub-Category<>Catalog Relation between all three.
 
-    resource = "category_master"
-    tablename = "%s_%s" % (module, resource)
+    resourcename = "category_master"
+    tablename = "%s_%s" % (module, resourcename)
     table = db.define_table(tablename,
                     Field("category_id", db.lms_catalog_cat),
                     Field("subcategory_id", db.lms_catalog_subcat),
@@ -418,8 +418,8 @@ if deployment_settings.has_module(module):
         msg_list_empty = T("No Category<>Sub-Category<>Catalog Relation currently registered"))
 
     # Shipment
-    resource = "shipment"
-    tablename = "%s_%s" % (module, resource)
+    resourcename = "shipment"
+    tablename = "%s_%s" % (module, resourcename)
     table = db.define_table(tablename,
                             Field("way_bill", notnull=True),
                             Field("sender_site", db.lms_site),
@@ -459,8 +459,8 @@ if deployment_settings.has_module(module):
         msg_list_empty = T("No Shipment/Way Bills currently registered"))
 
     # Items
-    resource = "item"
-    tablename = "%s_%s" % (module, resource)
+    resourcename = "item"
+    tablename = "%s_%s" % (module, resourcename)
     table = db.define_table(tablename,
                     Field("site_id", db.lms_site),
                     Field("storage_id", db.lms_storage_loc, writable=False, default=0), #No storage location assigned
@@ -541,8 +541,8 @@ if deployment_settings.has_module(module):
     # Shipment<>Item - A shipment can have many items under it.
     # And an Item can have multiple shipment way bills, for e.g. during transit at multiple exchanges/transits
 
-    resource = "shipment_item"
-    tablename = "%s_%s" % (module, resource)
+    resourcename = "shipment_item"
+    tablename = "%s_%s" % (module, resourcename)
     table = db.define_table(tablename,
                     Field("shipment_id", db.lms_shipment),
                     Field("item_id", db.lms_item),
@@ -569,8 +569,8 @@ if deployment_settings.has_module(module):
     # Shipment<>Item - A shipment can have many items under it.
     # And an Item can have multiple shipment way bills, for e.g. during transit at multiple exchanges/transits
 
-    resource = "shipment_transit_logs"
-    tablename = "%s_%s" % (module, resource)
+    resourcename = "shipment_transit_logs"
+    tablename = "%s_%s" % (module, resourcename)
     table = db.define_table(tablename,
                     Field("shipment_id", db.lms_shipment),
                     Field("item_id", db.lms_item),
@@ -597,8 +597,8 @@ if deployment_settings.has_module(module):
         msg_list_empty = T("No Shipment Transit Logs currently registered"))
 
     # Kits
-    resource = "kit"
-    tablename = "%s_%s" % (module, resource)
+    resourcename = "kit"
+    tablename = "%s_%s" % (module, resourcename)
     table = db.define_table(tablename,
                     Field("code", length=128, notnull=True, unique=True),
                     Field("description"),
@@ -636,8 +636,8 @@ if deployment_settings.has_module(module):
         msg_list_empty = T("No Kits currently registered"))
 
     # Kit<>Item Many2Many
-    resource = "kit_item"
-    tablename = "%s_%s" % (module, resource)
+    resourcename = "kit_item"
+    tablename = "%s_%s" % (module, resourcename)
     table = db.define_table(tablename,
                     Field("kit_id", db.lms_kit),
                     Field("item_id", db.lms_item, ondelete="RESTRICT"),

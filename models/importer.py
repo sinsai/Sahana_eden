@@ -9,8 +9,8 @@
 module = "importer"
 if deployment_settings.has_module(module):
 
-    resource = "spreadsheet"
-    tablename = module + "_" + resource
+    resourcename = "spreadsheet"
+    tablename = module + "_" + resourcename
     table = db.define_table(tablename,
                             Field("name", required=True, notnull=True),
                             Field("path", type="upload", uploadfield=True, required=True, notnull=True),

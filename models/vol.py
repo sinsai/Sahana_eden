@@ -19,8 +19,8 @@ if deployment_settings.has_module(module):
     2: T("retired")
     }
 
-    resource = "volunteer"
-    tablename = module + "_" + resource
+    resourcename = "volunteer"
+    tablename = module + "_" + resourcename
     table = db.define_table(tablename,
                             person_id(),
                             # TODO: A person may volunteer for more than one org.
@@ -79,7 +79,7 @@ if deployment_settings.has_module(module):
         msg_record_deleted = T("Volunteer registration deleted"),
         msg_list_empty = T("No volunteer information registered"))
 
-    s3xrc.model.add_component(module, resource,
+    s3xrc.model.add_component(module, resourcename,
                               multiple=False,
                               joinby=dict(pr_person="person_id"))
 
@@ -120,8 +120,8 @@ if deployment_settings.has_module(module):
         3:T("denied")
     }
 
-    resource = "resource"
-    tablename = module + "_" + resource
+    resourcename = "resource"
+    tablename = module + "_" + resourcename
     table = db.define_table(tablename,
                             person_id(),
                             Field("type", "integer",
@@ -147,7 +147,7 @@ if deployment_settings.has_module(module):
                             migrate=migrate, *s3_meta_fields())
 
 
-    s3xrc.model.add_component(module, resource,
+    s3xrc.model.add_component(module, resourcename,
                               multiple=True,
                               joinby=dict(pr_person="person_id"))
 
@@ -181,8 +181,8 @@ if deployment_settings.has_module(module):
     #   Customize to add more client defined Skill
     #
 
-    resource = "skill_types"
-    tablename = module + "_" + resource
+    resourcename = "skill_types"
+    tablename = module + "_" + resourcename
     table = db.define_table(tablename,
                             Field("name",  length=128,notnull=True),
                             Field("category", "string", length=50),
@@ -239,20 +239,20 @@ if deployment_settings.has_module(module):
     #   A volunteer's skills (component of pr)
     #
 
-    resource = "skill"
-    tablename = module + "_" + resource
+    resourcename = "skill"
+    tablename = module + "_" + resourcename
     table = db.define_table(tablename,
                             person_id(),
                             skill_types_id(),
                             Field("status",
-                                  requires=IS_IN_SET(["approved","unapproved","denied"]),
+                                  requires=IS_IN_SET(["approved", "unapproved", "denied"]),
                                   label=T("Status"),
                                   notnull=True,
                                   default="unapproved"),
                             migrate=migrate, *s3_meta_fields())
 
 
-    s3xrc.model.add_component(module, resource,
+    s3xrc.model.add_component(module, resourcename,
         multiple=True,
         joinby=dict(pr_person="person_id"))
 

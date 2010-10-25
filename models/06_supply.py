@@ -14,8 +14,8 @@ if deployment_settings.has_module("logs"):
     #==============================================================================
     # Item Category
     #
-    resource = "item_category"
-    tablename = "%s_%s" % (module, resource)
+    resourcename = "item_category"
+    tablename = "%s_%s" % (module, resourcename)
     table = db.define_table(tablename,
                             Field("name", length=128, notnull=True, unique=True),
                             comments(),
@@ -57,8 +57,8 @@ if deployment_settings.has_module("logs"):
     #==============================================================================
     # Item
     #
-    resource = "item"
-    tablename = "%s_%s" % (module, resource)
+    resourcename = "item"
+    tablename = "%s_%s" % (module, resourcename)
     table = db.define_table(tablename,
                             item_category_id(),
                             Field("name", length=128, notnull=True, unique=True),

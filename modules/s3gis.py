@@ -400,7 +400,7 @@ class GIS(object):
         if resource in gis_categorised_resources:
             for i in range(0, len(locations)):
                 locations[i].popup_label = locations[i].name + "-" + popup_label
-                locations[i].marker = self._get_marker(resource, locations[i]["%s_%s" % (module, resource)].category)
+                locations[i].marker = self.get_marker(resource, locations[i]["%s_%s" % (module, resource)].category)
         else:
             for i in range(0, len(locations)):
                 locations[i].popup_label = locations[i].name + "-" + popup_label
@@ -425,46 +425,72 @@ class GIS(object):
         return layer
 
     # -----------------------------------------------------------------------------
-    def get_features_in_radius(self, lat, lon, radius):
+    def get_features_in_radius(self, lat, lon, radius, resourcename="gis_location", category=None):
         """
             Returns Features within a Radius (in km) of a LatLon Location
-            Calling function has the job of filtering features by the type they are interested in
-            Formula from: http://blog.peoplesdns.com/archives/24
-            Spherical Law of Cosines (accurate down to around 1m & computationally quick): http://www.movable-type.co.uk/scripts/latlong.html
-
-            IF PROJECTION CHANGES THIS WILL NOT WORK
         """
 
-        import math
-
         db = self.db
+        deployment_settings = self.deployment_settings
 
         # km
-        radius_earth = 6378.137
-        pi = math.pi
+        RADIUS_EARTH = 6378.137
+        
+        if deployment_settings.gis.spatialdb and deployment_settings.database.db_type == "postgres":
+            # Use Postgres routine
+            import psycopg2
+            dbname = deployment_settings.database.database
+            username = deployment_settings.database.username
+            password = deployment_settings.database.password
+            host = deployment_settings.database.host
+            port = deployment_settings.database.port or 5432
 
-        # ToDo: Do a Square query 1st & then run the complex query over subset (to improve performance)
-        lat_max = 90
-        lat_min = -90
-        lon_max = 180
-        lon_min = -180
-        table = db.gis_location
-        query = (table.lat > lat_min) & (table.lat < lat_max) & (table.lon < lon_max) & (table.lon > lon_min)
-        deleted = ((table.deleted==False) | (table.deleted==None))
-        query = deleted & query
+            # Convert km to degrees (since we're using the_geom not the_geog)
+            # @ToDo
+            
+            # This function call will automatically include a bounding box comparison that will make use of any indexes that are available on the geometries.
+            conn = psycopg2.connect("dbname=%s user=%s password=%s host=%s port=%i" % (dbname, username, password, host, port))
+            cursor = conn.cursor()
+            query_string = cursor.mogrify("SELECT * FROM gis_location WHERE ST_DWithin (ST_GeomFromText ('POINT (%s, %s)', 4326), the_geom, %s);", [lat, lon, radius])
+            cursor.execute(query_string)
+            
+        elif SHAPELY:
+            # Use Shapely routine
+            # Is there one?
+            return None
+        else:
+            # Do it manually
+            # Formula from: http://blog.peoplesdns.com/archives/24
+            # Spherical Law of Cosines (accurate down to around 1m & computationally quick): http://www.movable-type.co.uk/scripts/latlong.html
+            # IF PROJECTION CHANGES THIS WILL NOT WORK
 
-        # ToDo: complete port from PHP to Eden
-        pilat180 = pi * lat /180
-        #calc = "radius_earth * math.acos((math.sin(pilat180) * math.sin(pi * table.lat /180)) + (math.cos(pilat180) * math.cos(pi*table.lat/180) * math.cos(pi * table.lon/180-pi* lon /180)))"
-        #query2 = "SELECT DISTINCT table.lon, table.lat, calc AS distance FROM table WHERE calc <= radius ORDER BY distance"
-        #query2 = (radius_earth * math.acos((math.sin(pilat180) * math.sin(pi * table.lat /180)) + (math.cos(pilat180) * math.cos(pi*table.lat/180) * math.cos(pi * table.lon/180-pi* lon /180))) < radius)
-        # TypeError: unsupported operand type(s) for *: 'float' and 'Field'
-        query2 = (radius_earth * math.acos((math.sin(pilat180) * math.sin(pi * table.lat /180))) < radius)
-        #query = query & query2
-        features = db(query).select()
-        #features = db(query).select(orderby=distance)
+            # ToDo: complete port from PHP to Eden
+            return None
 
-        return features
+            import math
+
+            pi = math.pi
+
+            # ToDo: Do a Square query 1st & then run the complex query over subset (to improve performance)
+            lat_max = 90
+            lat_min = -90
+            lon_max = 180
+            lon_min = -180
+            table = db.gis_location
+            query = (table.lat > lat_min) & (table.lat < lat_max) & (table.lon < lon_max) & (table.lon > lon_min)
+            deleted = ((table.deleted==False) | (table.deleted==None))
+            query = deleted & query
+
+            pilat180 = pi * lat /180
+            #calc = "RADIUS_EARTH * math.acos((math.sin(pilat180) * math.sin(pi * table.lat /180)) + (math.cos(pilat180) * math.cos(pi*table.lat/180) * math.cos(pi * table.lon/180-pi* lon /180)))"
+            #query2 = "SELECT DISTINCT table.lon, table.lat, calc AS distance FROM table WHERE calc <= radius ORDER BY distance"
+            #query2 = (RADIUS_EARTH * math.acos((math.sin(pilat180) * math.sin(pi * table.lat /180)) + (math.cos(pilat180) * math.cos(pi*table.lat/180) * math.cos(pi * table.lon/180-pi* lon /180))) < radius)
+            # TypeError: unsupported operand type(s) for *: 'float' and 'Field'
+            query2 = (RADIUS_EARTH * math.acos((math.sin(pilat180) * math.sin(pi * table.lat /180))) < radius)
+            #query = query & query2
+            features = db(query).select()
+            #features = db(query).select(orderby=distance)
+            return features
 
     # -----------------------------------------------------------------------------
     def get_latlon(self, feature_id, filter=False):
@@ -569,7 +595,7 @@ class GIS(object):
         return None
 
     # -----------------------------------------------------------------------------
-    def _get_marker(self, resource, category=None):
+    def get_marker(self, resource, category=None):
 
         """
             Returns the Marker for a Feature
@@ -599,11 +625,11 @@ class GIS(object):
             query = query & (table_fclass.category == category)
         marker_id = db(query).select(table_fclass.marker_id, limitby=(0, 1), cache=cache).first()
         if marker_id:
-            marker = db(table_marker.id == marker_id.id).select(table_marker.image,
-                                                                table_marker.height,
-                                                                table_marker.width,
-                                                                limitby=(0, 1),
-                                                                cache=cache).first()
+            marker = db(table_marker.id == marker_id.marker_id).select(table_marker.image,
+                                                                       table_marker.height,
+                                                                       table_marker.width,
+                                                                       limitby=(0, 1),
+                                                                       cache=cache).first()
             return marker
 
         # 2nd choice for a Marker is the default
@@ -614,57 +640,6 @@ class GIS(object):
                                   limitby=(0, 1),
                                   cache=cache).first()
         if marker:
-            return marker
-        else:
-            return ""
-
-    def get_marker(self, feature_id, category=None):
-
-        """
-            Returns the Marker for a Feature
-                marker.image = filename
-                marker.height
-                marker.width
-
-            Used by s3xrc for Feeds export
-
-            @param feature_id: the feature ID (int) or UUID (str)
-            @ToDo: Lookup should be done by resource/category not by feature_id
-        """
-
-        cache = self.cache
-        db = self.db
-        table_feature = db.gis_location
-        table_marker = db.gis_marker
-        table_fclass = db.gis_feature_class
-
-        config = self.get_config()
-        symbology = config.symbology_id
-
-        query = None
-
-        if isinstance(feature_id, int):
-            query = (table_feature.id == feature_id)
-        elif isinstance(feature_id, str):
-            query = (table_feature.uuid == feature_id)
-
-        # 1st choice for a Marker is the Feature Class's
-        #query = (table_fclass.resource == resource) & \
-        #        (table_fclass.symbology_id == symbology)
-        #if category:
-        #   query = query & (table_fclass.category == category)
-        #marker_id = db(query).select(table_fclass.marker_id, limitby=(0, 1), cache=cache).first()
-        #if marker_id:
-        #   marker = db(table_marker.id == marker_id.id).select(table_marker.image, table_marker.height, table_marker.width, limitby=(0, 1), cache=cache).first()
-        #   return marker.first()
-
-        # 2nd choice for a Marker is the default
-        query = (table_marker.id == config.marker_id)
-        marker = db(query).select(table_marker.image, table_marker.height, table_marker.width, limitby=(0, 1),
-                                  cache=cache)
-
-        if marker:
-            marker = marker.first()
             return marker
         else:
             return ""
@@ -1299,7 +1274,7 @@ class GIS(object):
                  name   : "MyLabel",    # A string: the label for the layer
                  query  : query,        # A gluon.sql.Rows of gis_locations, which can be from a simple query or a Join. Extra fields can be added for 'marker' or 'shape' (with optional 'color' & 'size') & 'popup_label'
                  active : False,        # Is the feed displayed upon load or needs ticking to load afterwards?
-                 popup_url : None,      # The URL which will be used to fill the pop-up. it will be appended by the Location ID.
+                 popup_url : None,      # The URL which will be used to fill the pop-up. If the string contains <id> then the Location ID will be replaced here, otherwise it will be appended by the Location ID.
                  marker : None,         # The marker query or marker_id for the icon used to display the feature (over-riding the normal process).
                  polygons : False       # Use Polygon data, if-available (defaults to just using Point)
                 }]
@@ -1542,7 +1517,7 @@ OpenLayers.Util.extend( selectPdfControl, {
             legend1= """
         legendPanel = new GeoExt.LegendPanel({
             id: 'legendpanel',
-            title: '""" + str(T("Legend")) + """',
+            title: '""" + T("Legend") + """',
             defaults: {
                 labelCls: 'mylabel',
                 style: 'padding:5px'
@@ -1591,7 +1566,7 @@ OpenLayers.Util.extend( selectPdfControl, {
         //    map: map,
         //    iconCls: 'searchclick',
             // button options
-        //    tooltip: '""" + str(T("Query Feature")) + """',
+        //    tooltip: '""" + T("Query Feature") + """',
         //    toggleGroup: 'controls',
         //    enableToggle: true
         //});
@@ -1622,7 +1597,7 @@ OpenLayers.Util.extend( selectPdfControl, {
             },
             map: map,
             iconCls: 'drawpoint-off',
-            tooltip: '""" + str(T("Add Point")) + """',
+            tooltip: '""" + T("Add Point") + """',
             toggleGroup: 'controls',
             allowDepress: true,
             enableToggle: true,
@@ -1633,7 +1608,7 @@ OpenLayers.Util.extend( selectPdfControl, {
         //    control: new OpenLayers.Control.DrawFeature(draftLayer, OpenLayers.Handler.Path),
         //    map: map,
         //    iconCls: 'drawline-off',
-        //    tooltip: '""" + str(T("Add Line")) + """',
+        //    tooltip: '""" + T("Add Line") + """',
         //    toggleGroup: 'controls'
         //});
 
@@ -1641,7 +1616,7 @@ OpenLayers.Util.extend( selectPdfControl, {
         //    control: new OpenLayers.Control.DrawFeature(draftLayer, OpenLayers.Handler.Polygon),
         //    map: map,
         //    iconCls: 'drawpolygon-off',
-        //    tooltip: '""" + str(T("Add Polygon")) + """',
+        //    tooltip: '""" + T("Add Polygon") + """',
         //    toggleGroup: 'controls'
         //});
 
@@ -1649,7 +1624,7 @@ OpenLayers.Util.extend( selectPdfControl, {
         //    control: new OpenLayers.Control.DragFeature(draftLayer),
         //    map: map,
         //    iconCls: 'movefeature',
-        //    tooltip: '""" + str(T("Move Feature: Drag feature to desired location")) + """',
+        //    tooltip: '""" + T("Move Feature: Drag feature to desired location") + """',
         //    toggleGroup: 'controls'
         //});
 
@@ -1657,7 +1632,7 @@ OpenLayers.Util.extend( selectPdfControl, {
         //    control: new OpenLayers.Control.ModifyFeature(draftLayer, { mode: OpenLayers.Control.ModifyFeature.RESIZE }),
         //    map: map,
         //    iconCls: 'resizefeature',
-        //    tooltip: '""" + str(T("Resize Feature: Select the feature you wish to resize & then Drag the associated dot to your desired size")) + """',
+        //    tooltip: '""" + T("Resize Feature: Select the feature you wish to resize & then Drag the associated dot to your desired size") + """',
         //    toggleGroup: 'controls'
         //});
 
@@ -1665,7 +1640,7 @@ OpenLayers.Util.extend( selectPdfControl, {
         //    control: new OpenLayers.Control.ModifyFeature(draftLayer, { mode: OpenLayers.Control.ModifyFeature.ROTATE }),
         //    map: map,
         //    iconCls: 'rotatefeature',
-        //    tooltip: '""" + str(T("Rotate Feature: Select the feature you wish to rotate & then Drag the associated dot to rotate to your desired location")) + """',
+        //    tooltip: '""" + T("Rotate Feature: Select the feature you wish to rotate & then Drag the associated dot to rotate to your desired location") + """',
         //    toggleGroup: 'controls'
         //});
 
@@ -1673,7 +1648,7 @@ OpenLayers.Util.extend( selectPdfControl, {
         //    control: new OpenLayers.Control.ModifyFeature(draftLayer),
         //    map: map,
         //    iconCls: 'modifyfeature',
-        //    tooltip: '""" + str(T("Modify Feature: Select the feature you wish to deform & then Drag one of the dots to deform the feature in your chosen manner")) + """',
+        //    tooltip: '""" + T("Modify Feature: Select the feature you wish to deform & then Drag one of the dots to deform the feature in your chosen manner") + """',
         //    toggleGroup: 'controls'
         //});
 
@@ -1681,7 +1656,7 @@ OpenLayers.Util.extend( selectPdfControl, {
         //    control: removeControl,
         //    map: map,
         //    iconCls: 'removefeature',
-        //    tooltip: '""" + str(T("Remove Feature: Select the feature you wish to remove & press the delete key")) + """',
+        //    tooltip: '""" + T("Remove Feature: Select the feature you wish to remove & press the delete key") + """',
         //    toggleGroup: 'controls'
         //});
         """
@@ -1712,7 +1687,7 @@ OpenLayers.Util.extend( selectPdfControl, {
                 save_button = """
         var saveButton = new Ext.Toolbar.Button({
             iconCls: 'save',
-            tooltip: '""" + str(T("Save: Default Lat, Lon & Zoom for the Viewport")) + """',
+            tooltip: '""" + T("Save: Default Lat, Lon & Zoom for the Viewport") + """',
             handler: function() {
                 // Read current settings from map
                 var lonlat = map.getCenter();
@@ -1795,7 +1770,7 @@ OpenLayers.Util.extend( selectPdfControl, {
         );
         length.events.on({
             'measure': function(evt) {
-                alert('""" + str(T("The length is ")) + """' + evt.measure.toFixed(2) + ' ' + evt.units);
+                alert('""" + T("The length is ") + """' + evt.measure.toFixed(2) + ' ' + evt.units);
             }
         });
         var area = new OpenLayers.Control.Measure(
@@ -1809,7 +1784,7 @@ OpenLayers.Util.extend( selectPdfControl, {
         );
         area.events.on({
             'measure': function(evt) {
-                alert('""" + str(T("The area is ")) + """' + evt.measure.toFixed(2) + ' ' + evt.units + '2');
+                alert('""" + T("The area is ") + """' + evt.measure.toFixed(2) + ' ' + evt.units + '2');
             }
         });
 
@@ -1821,7 +1796,7 @@ OpenLayers.Util.extend( selectPdfControl, {
             map: map,
             iconCls: 'zoomfull',
             // button options
-            tooltip: '""" + str(T("Zoom to maximum map extent")) + """'
+            tooltip: '""" + T("Zoom to maximum map extent") + """'
         });
 
         var zoomout = new GeoExt.Action({
@@ -1829,7 +1804,7 @@ OpenLayers.Util.extend( selectPdfControl, {
             map: map,
             iconCls: 'zoomout',
             // button options
-            tooltip: '""" + str(T("Zoom Out: click in the map or use the left mouse button and drag to create a rectangle")) + """',
+            tooltip: '""" + T("Zoom Out: click in the map or use the left mouse button and drag to create a rectangle") + """',
             toggleGroup: 'controls'
         });
 
@@ -1838,7 +1813,7 @@ OpenLayers.Util.extend( selectPdfControl, {
             map: map,
             iconCls: 'zoomin',
             // button options
-            tooltip: '""" + str(T("Zoom In: click in the map or use the left mouse button and drag to create a rectangle")) + """',
+            tooltip: '""" + T("Zoom In: click in the map or use the left mouse button and drag to create a rectangle") + """',
             toggleGroup: 'controls'
         });
 
@@ -1847,7 +1822,7 @@ OpenLayers.Util.extend( selectPdfControl, {
             map: map,
             iconCls: 'pan-off',
             // button options
-            tooltip: '""" + str(T("Pan Map: keep the left mouse button pressed and drag the map")) + """',
+            tooltip: '""" + T("Pan Map: keep the left mouse button pressed and drag the map") + """',
             toggleGroup: 'controls',
             allowDepress: true,
             pressed: """ + pan_depress + """
@@ -1859,7 +1834,7 @@ OpenLayers.Util.extend( selectPdfControl, {
             map: map,
             iconCls: 'measure-off',
             // button options
-            tooltip: '""" + str(T("Measure Length: Click the points along the path & end with a double-click")) + """',
+            tooltip: '""" + T("Measure Length: Click the points along the path & end with a double-click") + """',
             toggleGroup: 'controls',
             allowDepress: true,
             enableToggle: true
@@ -1870,7 +1845,7 @@ OpenLayers.Util.extend( selectPdfControl, {
             map: map,
             iconCls: 'measure-area',
             // button options
-            tooltip: '""" + str(T("Measure Area: Click the points around the polygon & end with a double-click")) + """',
+            tooltip: '""" + T("Measure Area: Click the points around the polygon & end with a double-click") + """',
             toggleGroup: 'controls',
             allowDepress: true,
             enableToggle: true
@@ -1882,13 +1857,13 @@ OpenLayers.Util.extend( selectPdfControl, {
 
         var navPreviousButton = new Ext.Toolbar.Button({
             iconCls: 'back',
-            tooltip: '""" + str(T("Previous View")) + """',
+            tooltip: '""" + T("Previous View") + """',
             handler: nav.previous.trigger
         });
 
         var navNextButton = new Ext.Toolbar.Button({
             iconCls: 'next',
-            tooltip: '""" + str(T("Next View")) + """',
+            tooltip: '""" + T("Next View") + """',
             handler: nav.next.trigger
         });
 
@@ -1928,7 +1903,7 @@ OpenLayers.Util.extend( selectPdfControl, {
 
         var searchCombo = new Ext.Panel({
             id: 'searchCombo',
-            title: '""" + str(T("Search Geonames")) + """',
+            title: '""" + T("Search Geonames") + """',
             layout: 'border',
             rootVisible: false,
             split: true,
@@ -1936,7 +1911,7 @@ OpenLayers.Util.extend( selectPdfControl, {
             collapsible: true,
             collapseMode: 'mini',
             lines: false,
-            html: '""" + str(T("Geonames.org search requires Internet connectivity!")) + """',
+            html: '""" + T("Geonames.org search requires Internet connectivity!") + """',
             items: [{
                     region: 'center',
                     items: [ mapSearch ]
@@ -2013,11 +1988,11 @@ OpenLayers.Util.extend( selectPdfControl, {
             if "title" in print_tool:
                 mapTitle = str(print_tool["mapTitle"])
             else:
-                mapTitle = str(T("Map from Sahana Eden"))
+                mapTitle = T("Map from Sahana Eden")
             if "subtitle" in print_tool:
                 subTitle = str(print_tool["subTitle"])
             else:
-                subTitle = str(T("Printed from Sahana Eden"))
+                subTitle = T("Printed from Sahana Eden")
             if session.auth:
                 creator = session.auth.user.email
             else:
@@ -2046,7 +2021,7 @@ OpenLayers.Util.extend( selectPdfControl, {
             //    printProvider: printProvider
             //});
             // A layer to display the print page extent
-            //var pageLayer = new OpenLayers.Layer.Vector('""" + str(T("Print Extent")) + """');
+            //var pageLayer = new OpenLayers.Layer.Vector('""" + T("Print Extent") + """');
             //pageLayer.addFeatures(printPage.feature);
             //pageLayer.setVisibility(false);
             //map.addLayer(pageLayer);
@@ -2062,7 +2037,7 @@ OpenLayers.Util.extend( selectPdfControl, {
             //});
             // The form with fields controlling the print output
             var formPanel = new Ext.form.FormPanel({
-                title: '""" + str(T("Print Map")) + """',
+                title: '""" + T("Print Map") + """',
                 rootVisible: false,
                 split: true,
                 autoScroll: true,
@@ -2075,7 +2050,7 @@ OpenLayers.Util.extend( selectPdfControl, {
                 defaults: {anchor: '100%'},
                 listeners: {
                     'expand': function() {
-                        //if (null == mapPanel.map.getLayersByName('""" + str(T("Print Extent")) + """')[0]) {
+                        //if (null == mapPanel.map.getLayersByName('""" + T("Print Extent") + """')[0]) {
                         //    mapPanel.map.addLayer(pageLayer);
                         //}
                         if (null == mapPanel.plugins[0]) {
@@ -2103,7 +2078,7 @@ OpenLayers.Util.extend( selectPdfControl, {
                     xtype: 'textarea',
                     name: 'comment',
                     value: '',
-                    fieldLabel: '""" + str(T("Comment")) + """',
+                    fieldLabel: '""" + T("Comment") + """',
                     plugins: new GeoExt.plugins.PrintPageField({
                         printPage: printPage
                     })
@@ -2111,7 +2086,7 @@ OpenLayers.Util.extend( selectPdfControl, {
                     xtype: 'combo',
                     store: printProvider.layouts,
                     displayField: 'name',
-                    fieldLabel: '""" + str(T("Layout")) + """',
+                    fieldLabel: '""" + T("Layout") + """',
                     typeAhead: true,
                     mode: 'local',
                     triggerAction: 'all',
@@ -2122,7 +2097,7 @@ OpenLayers.Util.extend( selectPdfControl, {
                     xtype: 'combo',
                     store: printProvider.dpis,
                     displayField: 'name',
-                    fieldLabel: '""" + str(T("Resolution")) + """',
+                    fieldLabel: '""" + T("Resolution") + """',
                     tpl: '<tpl for="."><div class="x-combo-list-item">{name} dpi</div></tpl>',
                     typeAhead: true,
                     mode: 'local',
@@ -2139,7 +2114,7 @@ OpenLayers.Util.extend( selectPdfControl, {
                 //    xtype: 'combo',
                 //    store: printProvider.scales,
                 //    displayField: 'name',
-                //    fieldLabel: '""" + str(T("Scale")) + """',
+                //    fieldLabel: '""" + T("Scale") + """',
                 //    typeAhead: true,
                 //    mode: 'local',
                 //    triggerAction: 'all',
@@ -2149,13 +2124,13 @@ OpenLayers.Util.extend( selectPdfControl, {
                 //}, {
                 //    xtype: 'textfield',
                 //    name: 'rotation',
-                //    fieldLabel: '""" + str(T("Rotation")) + """',
+                //    fieldLabel: '""" + T("Rotation") + """',
                 //    plugins: new GeoExt.plugins.PrintPageField({
                 //        printPage: printPage
                 //    })
                 }],
                 buttons: [{
-                    text: '""" + str(T("Create PDF")) + """',
+                    text: '""" + T("Create PDF") + """',
                     handler: function() {
                         // the PrintExtent plugin is the mapPanel's 1st plugin
                         //mapPanel.plugins[0].print();
@@ -2173,7 +2148,7 @@ OpenLayers.Util.extend( selectPdfControl, {
         } else {
             // Display error diagnostic
             var formPanel = new Ext.Panel ({
-                title: '""" + str(T("Print Map")) + """',
+                title: '""" + T("Print Map") + """',
                 rootVisible: false,
                 split: true,
                 autoScroll: true,
@@ -2184,7 +2159,7 @@ OpenLayers.Util.extend( selectPdfControl, {
                 bodyStyle: 'padding:5px',
                 labelAlign: 'top',
                 defaults: {anchor: '100%'},
-                html: '""" + str(T("Printing disabled since server not accessible: ")) + "<BR />" + url + """'
+                html: '""" + T("Printing disabled since server not accessible: ") + "<BR />" + url + """'
             });
         }
         """
@@ -2722,12 +2697,17 @@ OpenLayers.Util.extend( selectPdfControl, {
             if(feature.cluster) {
                 // Cluster
                 var name, fid, uuid, url;
-                var html = '""" + str(T("There are multiple records at this location")) + """:<ul>';
+                var html = '""" + T("There are multiple records at this location") + """:<ul>';
                 for (var i = 0; i < feature.cluster.length; i++) {
                     name = feature.cluster[i].attributes.name;
                     fid = feature.cluster[i].fid;
                     """ + uuid_from_fid + """
-                    url = feature.cluster[i].popup_url + uuid;
+                    if ( feature.cluster[i].popup_url.match("<id>") != null ) {                   
+                        url = feature.cluster[i].popup_url.replace("<id>", uuid)
+                    }
+                    else {
+                        url = feature.cluster[i].popup_url + uuid;
+                    }
                     html += "<li><a href='javascript:loadClusterPopup(" + "\\"" + url + "\\", \\"" + id + "\\"" + ")'>" + name + "</a></li>";
                 }
                 html += '</ul>';
@@ -2760,7 +2740,13 @@ OpenLayers.Util.extend( selectPdfControl, {
                 // call AJAX to get the contentHTML
                 var fid = feature.fid;
                 """ + uuid_from_fid + """
-                loadDetails(popup_url + uuid, id, popup);
+                if ( popup_url.match("<id>") != null ) {                    
+                    popup_url = popup_url.replace("<id>", uuid)
+                }
+                else {
+                    popup_url = popup_url + uuid;
+                }               
+                loadDetails(popup_url, id, popup);
             }
         }
 
@@ -2784,7 +2770,7 @@ OpenLayers.Util.extend( selectPdfControl, {
             //features = [];
         """ + cluster_style + """
         draftLayer = new OpenLayers.Layer.Vector(
-            '""" + str(T("Draft Features")) + """', {}
+            '""" + T("Draft Features") + """', {}
             //{
             //    strategies: [ """ + strategy_cluster + """ ],
             //    styleMap: featureClusterStyleMap
@@ -3127,11 +3113,11 @@ OpenLayers.Util.extend( selectPdfControl, {
                             if os.access(filepath, os.R_OK):
                                 # Use cached version
                                 date = db(db.gis_cache.name == name).select(db.gis_cache.modified_on, limitby=(0, 1)).first().modified_on
-                                response.warning += url + " " + str(T("not accessible - using cached version from")) + " " + str(date) + "\n"
+                                response.warning += url + " " + T("not accessible - using cached version from") + " " + str(date) + "\n"
                                 url = URL(r=request, c="default", f="download", args=[filename])
                             else:
                                 # No cached version available
-                                response.warning += url + " " + str(T("not accessible - no cached version available!")) + "\n"
+                                response.warning += url + " " + T("not accessible - no cached version available!") + "\n"
                                 # skip layer
                                 continue
                         else:
@@ -3350,25 +3336,25 @@ OpenLayers.Util.extend( selectPdfControl, {
                                 if statinfo.st_size:
                                     # Use cached version
                                     date = db(db.gis_cache.name == name).select(db.gis_cache.modified_on, limitby=(0, 1)).first().modified_on
-                                    response.warning += url + " " + str(T("not accessible - using cached version from")) + " " + str(date) + "\n"
+                                    response.warning += url + " " + T("not accessible - using cached version from") + " " + str(date) + "\n"
                                     url = URL(r=request, c="default", f="download", args=[filename])
                                 else:
                                     # 0k file is all that is available
-                                    response.warning += url + " " + str(T("not accessible - no cached version available!")) + "\n"
+                                    response.warning += url + " " + T("not accessible - no cached version available!") + "\n"
                                     # skip layer
                                     continue
                             else:
                                 # No cached version available
-                                response.warning += url + " " + str(T("not accessible - no cached version available!")) + "\n"
+                                response.warning += url + " " + T("not accessible - no cached version available!") + "\n"
                                 # skip layer
                                 continue
                         else:
                             # Download was succesful
                             if "ParseError" in warning:
                                 # @ToDo Parse detail
-                                response.warning += str(T("Layer")) + ": " + name + " " + str(T("couldn't be parsed so NetworkLinks not followed.")) + "\n"
+                                response.warning += T("Layer") + ": " + name + " " + T("couldn't be parsed so NetworkLinks not followed.") + "\n"
                             if "GroundOverlay" in warning or "ScreenOverlay" in warning:
-                                response.warning += str(T("Layer")) + ": " + name + " " + str(T("includes a GroundOverlay or ScreenOverlay which aren't supported in OpenLayers yet, so it may not work properly.")) + "\n"
+                                response.warning += T("Layer") + ": " + name + " " + T("includes a GroundOverlay or ScreenOverlay which aren't supported in OpenLayers yet, so it may not work properly.") + "\n"
                             # Write file to cache
                             f.write(file)
                             f.close()
@@ -3706,7 +3692,7 @@ OpenLayers.Util.extend( selectPdfControl, {
         """ + search + """
 
         var layerTreeBase = {
-            text: '""" + str(T("Base Layers")) + """',
+            text: '""" + T("Base Layers") + """',
             nodeType: 'gx_baselayercontainer',
             layerStore: mapPanel.layers,
             leaf: false,
@@ -3714,7 +3700,7 @@ OpenLayers.Util.extend( selectPdfControl, {
         };
 
         var layerTreeFeaturesExternal = {
-            text: '""" + str(T("External Features")) + """',
+            text: '""" + T("External Features") + """',
             nodeType: 'gx_overlaylayercontainer',
             layerStore: mapPanel.layers,
             leaf: false,
@@ -3722,8 +3708,8 @@ OpenLayers.Util.extend( selectPdfControl, {
         };
 
         var layerTreeFeaturesInternal = {
-            //text: '""" + str(T("Internal Features")) + """',
-            text: '""" + str(T("Overlays")) + """',
+            //text: '""" + T("Internal Features") + """',
+            text: '""" + T("Overlays") + """',
             nodeType: 'gx_overlaylayercontainer',
             layerStore: mapPanel.layers,
             leaf: false,
@@ -3734,7 +3720,7 @@ OpenLayers.Util.extend( selectPdfControl, {
 
         var layerTree = new Ext.tree.TreePanel({
             id: 'treepanel',
-            title: '""" + str(T("Layers")) + """',
+            title: '""" + T("Layers") + """',
             loader: new Ext.tree.TreeLoader({applyLoader: false}),
             root: new Ext.tree.AsyncTreeNode({
                 expanded: true,
@@ -3765,7 +3751,7 @@ OpenLayers.Util.extend( selectPdfControl, {
             items: [{
                     region: 'west',
                     id: 'tools',
-                    title: '""" + str(T("Tools")) + """',
+                    title: '""" + T("Tools") + """',
                     border: true,
                     width: 250,
                     autoScroll: true,

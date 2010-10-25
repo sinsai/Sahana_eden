@@ -20,14 +20,15 @@ pr_pe_types = Storage(
     dvi_body = T("Body")
 )
 
-resource = "pentity"
-tablename = "%s_%s" % (module, resource)
+resourcename = "pentity"
+tablename = "%s_%s" % (module, resourcename)
 table = db.define_table(tablename,
                         Field("pe_id", "id"),
                         Field("pe_type"),
                         Field("uuid", length=128),
                         #Field("pe_id", "integer"),
                         Field("pe_label", length=128),
+                        sequence_name="pr_pentity_pe_id_Seq",   # Needed for Postgres since we're not using ID as the primary key
                         migrate=migrate, *s3_deletion_status())
 
 table.pe_type.writable = False
@@ -141,6 +142,8 @@ def shn_pentity_ondelete(record):
 # -----------------------------------------------------------------------------
 def shn_pentity_onaccept(form, table=None):
 
+    """ @todo: fix docstring """
+
     if not "uuid" in table.fields or "id" not in form.vars:
         return False
 
@@ -171,12 +174,6 @@ def shn_pentity_onaccept(form, table=None):
             pe_id = pentity.insert(uuid=uid, pe_label=pe_label, pe_type=pe_type)
             #db(pentity.id == pe_id).update(pe_id=pe_id, deleted=False)
             db(table.id == id).update(pe_id=pe_id)
-
-        # If a person gets added in MPR, then redirect to missing report
-        if request.controller == "mpr" and \
-           table._tablename == "pr_person" and \
-           record.missing == True:
-            response.s3.mpr_next = URL(r=request, c="mpr", f="person", args=[record.id, "missing_report"])
 
         return True
 
@@ -292,8 +289,8 @@ def shn_pr_person_represent(id):
 
 
 # -----------------------------------------------------------------------------
-resource = "person"
-tablename = "%s_%s" % (module, resource)
+resourcename = "person"
+tablename = "%s_%s" % (module, resourcename)
 table = db.define_table(tablename,
                         pe_id(),
                         pe_label(),
@@ -306,7 +303,7 @@ table = db.define_table(tablename,
                         pr_gender(),
                         pr_age_group(),
                         Field("date_of_birth", "date"),
-                        pr_country("nationality"),
+                        pr_country("nationality", label = T("Nationality")),
                         pr_country("country"),
                         pr_religion(),
                         pr_marital_status(),
@@ -469,8 +466,8 @@ pr_group_type = S3ReusableField("group_type", "integer",
 
 
 # -----------------------------------------------------------------------------
-resource = "group"
-tablename = "%s_%s" % (module, resource)
+resourcename = "group"
+tablename = "%s_%s" % (module, resourcename)
 table = db.define_table(tablename,
                         pe_id(),
                         pr_group_type(),
@@ -544,8 +541,8 @@ s3xrc.model.configure(table,
 # *****************************************************************************
 # Group membership
 #
-resource = "group_membership"
-tablename = "%s_%s" % (module, resource)
+resourcename = "group_membership"
+tablename = "%s_%s" % (module, resourcename)
 table = db.define_table(tablename,
                         group_id(),
                         person_id(),
@@ -562,7 +559,7 @@ table.person_id.label = T("Person")
 
 
 # -----------------------------------------------------------------------------
-s3xrc.model.add_component(module, resource,
+s3xrc.model.add_component(module, resourcename,
                           multiple=True,
                           joinby=dict(pr_group="group_id",
                                       pr_person="person_id"))

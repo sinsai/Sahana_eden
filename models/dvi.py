@@ -33,8 +33,8 @@ if deployment_settings.has_module(module):
     # -----------------------------------------------------------------------------
     # Recovery Request
     #
-    resource = "recreq"
-    tablename = "%s_%s" % (module, resource)
+    resourcename = "recreq"
+    tablename = "%s_%s" % (module, resourcename)
     table = db.define_table(tablename,
                             Field("date", "datetime"),
                             Field("site_id", length=64),
@@ -115,8 +115,8 @@ if deployment_settings.has_module(module):
     #
     # Body ------------------------------------------------------------------------
     #
-    resource = "body"
-    tablename = "%s_%s" % (module, resource)
+    resourcename = "body"
+    tablename = "%s_%s" % (module, resourcename)
     table = db.define_table(tablename,
                             pe_id(),
                             pe_label(),
@@ -190,8 +190,8 @@ if deployment_settings.has_module(module):
     #
     # Checklist of operations -----------------------------------------------------
     #
-    resource = "checklist"
-    tablename = "%s_%s" % (module, resource)
+    resourcename = "checklist"
+    tablename = "%s_%s" % (module, resourcename)
     table = db.define_table(tablename,
                     pe_id(),
                     Field("personal_effects","integer",
@@ -255,7 +255,7 @@ if deployment_settings.has_module(module):
         msg_record_deleted = T("Checklist deleted"),
         msg_list_empty = T("No Checklist available"))
 
-    s3xrc.model.add_component(module, resource,
+    s3xrc.model.add_component(module, resourcename,
                               multiple = False,
                               joinby = "pe_id")
 
@@ -264,8 +264,8 @@ if deployment_settings.has_module(module):
     #
     # Personal Effects ------------------------------------------------------------------------
     #
-    resource = "effects"
-    tablename = "%s_%s" % (module, resource)
+    resourcename = "effects"
+    tablename = "%s_%s" % (module, resourcename)
     table = db.define_table(tablename,
                     pe_id(),
     #                person_id(),
@@ -299,7 +299,7 @@ if deployment_settings.has_module(module):
         msg_list_empty = T("No Details currently registered"))
 
     # Joined Resource
-    s3xrc.model.add_component(module, resource,
+    s3xrc.model.add_component(module, resourcename,
                               multiple = False,
                               joinby = "pe_id")
 
@@ -338,8 +338,8 @@ if deployment_settings.has_module(module):
                         represent = lambda opt: dvi_id_method_opts.get(opt, UNKNOWN_OPT))
 
 
-    resource = "identification"
-    tablename = "%s_%s" % (module, resource)
+    resourcename = "identification"
+    tablename = "%s_%s" % (module, resourcename)
     table = db.define_table(tablename,
                             pe_id(),
                             Field("identified_by", db.pr_person),  # Person identifying the body
@@ -390,7 +390,7 @@ if deployment_settings.has_module(module):
 
 
     # Identification reports as component of person entities
-    s3xrc.model.add_component(module, resource,
+    s3xrc.model.add_component(module, resourcename,
                               multiple = False,
                               joinby = "pe_id")
 

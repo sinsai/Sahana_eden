@@ -13,6 +13,7 @@ class S3Config(Storage):
         self.mail = Storage()
         self.twitter = Storage()
         self.L10n = Storage()
+        self.osm = Storage()
         self.security = Storage()
         self.ui = Storage()
         self.T = T
@@ -107,6 +108,12 @@ class S3Config(Storage):
         return self.gis.get("geoserver_password", "password")
     def get_gis_spatialdb(self):
         return self.gis.get("spatialdb", False)
+    
+    # OpenStreetMap settings
+    def get_osm_oauth_consumer_key(self):
+        return self.osm.get("oauth_consumer_key", "")
+    def get_osm_oauth_consumer_secret(self):
+        return self.osm.get("oauth_consumer_secret", "")
     
     # Twitter settings
     def get_twitter_oauth_consumer_key(self):

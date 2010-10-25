@@ -14,8 +14,8 @@ if deployment_settings.has_module(module):
     # *************************************************************************
     # Assessments - WFP (deprecated)
     #
-    resource = "assessment"
-    tablename = "%s_%s" % (module, resource)
+    resourcename = "assessment"
+    tablename = "%s_%s" % (module, resourcename)
     table = db.define_table(tablename,
                             Field("title"),
                             location_id(),
@@ -92,7 +92,7 @@ if deployment_settings.has_module(module):
         msg_list_empty = T("No Assessments currently registered"))
 
     # assessment as component of doc_documents
-    #s3xrc.model.add_component(module, resource,
+    #s3xrc.model.add_component(module, resourcename,
     #                          multiple=True,
     #                          joinby=dict(doc_document="document_id"))
 

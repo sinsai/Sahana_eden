@@ -41,7 +41,7 @@ __all__ = ["S3Audit",
            "S3CRUDHandler",
            "S3SearchSimple"]
 
-import datetime, os
+import datetime, os, sys
 
 from gluon.storage import Storage
 from gluon.html import URL, DIV, A, SCRIPT, FORM, TABLE, TR, TD, INPUT
@@ -130,7 +130,8 @@ class S3Audit(object):
         else:
             record = None
 
-        #print "Audit: %s on %s_%s #%s" % (operation, prefix, name, record or 0)
+        # Pseudo-audit for testing (writes to stderr instead of DB):
+        #print >> sys.stderr, "Audit: %s on %s_%s #%s" % (operation, prefix, name, record or 0)
 
         tablename = "%s_%s" % (prefix, name)
 
@@ -250,6 +251,12 @@ class S3MethodHandler(object):
         output = self.respond(r, **attr)
 
         # Redirection to next
+        if self.next and self.resource.lastid:
+            self.next = str(self.next)
+            placeholder = "%5Bid%5D"
+            self.next = self.next.replace(placeholder, self.resource.lastid)
+            placeholder = "[id]"
+            self.next = self.next.replace(placeholder, self.resource.lastid)
         r.next = self.next
 
         # Done
@@ -490,44 +497,45 @@ class S3CRUDHandler(S3MethodHandler):
                 else:
                     table[r.fkey].writable = False
 
-            ## Copy from a previous record?
-            #from_record = r.request.get_vars.get("from_record", None)
-            #from_fields = r.request.get_vars.get("from_fields", None)
-            #original = None
-            #if from_record:
-                #del r.request.get_vars["from_record"] # forget it
-                #if from_record.find(".") != -1:
-                    #source_name, from_record = from_record.split(".", 1)
-                    #source = db.get(source_name, None)
-                #else:
-                    #source = table
-                #if from_fields:
-                    #del r.request.get_vars["from_fields"] # forget it
-                    #from_fields = from_fields.split(",")
-                #else:
-                    #from_fields = [f for f in table.fields if f in source.fields and f != "id"]
-                #if source and from_record:
-                    #copy_fields = [source[f] for f in from_fields if
-                                        #f in source.fields and
-                                        #f in table.fields and
-                                        #table[f].type == source[f].type and
-                                        #table[f].readable and table[f].writable]
-                    #if shn_has_permission("read", source._tablename, from_record):
-                        #original = db(source.id == from_record).select(limitby=(0, 1), *copy_fields).first()
-                    #if original:
-                        #missing_fields = Storage()
-                        #for f in table.fields:
-                            #if f not in original and \
-                            #table[f].readable and table[f].writable:
-                                #missing_fields[f] = table[f].default
-                        #original.update(missing_fields)
-            data = None
+            # Copy from a previous record?
+            from_table = None
+            from_record = r.request.get_vars.get("from_record", None)
+            map_fields = r.request.get_vars.get("from_fields", None)
+
+            if from_record:
+                del r.request.get_vars["from_record"] # forget it
+
+                # Find original table
+                if from_record.find(".") != -1:
+                    from_table, from_record = from_record.split(".", 1)
+                    from_table = self.db.get(from_table, None)
+                    if not from_table:
+                        r.error(404, self.resource.ERROR.BAD_RESOURCE)
+                else:
+                    from_table = table
+
+                # User must be authorised to read the original!
+                authorised = self.permit("read", from_table._tablename, from_record)
+                if not authorised:
+                    r.unauthorised()
+
+                # Field mapping?
+                if map_fields:
+                    del r.request.get_vars["from_fields"] # forget it
+                    if map_fields.find("$") != -1:
+                        mf = map_fields.split(",")
+                        mf = [f.find("$") != -1 and f.split("$") or [f,f] for f in mf]
+                        map_fields = Storage(mf)
+                    else:
+                        map_fields = map_fields.split(",")
 
             # Success message
             message = self.crud_string(self.tablename, "msg_record_created")
 
             # Get the form
             if "id" in request.post_vars:
+
+                # Copy formkey if un-deleting a duplicate
                 original = str(request.post_vars.id)
                 formkey = session.get("_formkey[%s/None]" % tablename)
                 formname = "%s/%s" % (tablename, original)
@@ -537,19 +545,21 @@ class S3CRUDHandler(S3MethodHandler):
                     request.post_vars.update(deleted=False)
                 request.post_vars.update(_formname=formname, id=original)
                 request.vars.update(**request.post_vars)
+
                 form = self.resource.update(original,
                                             message=message,
                                             onvalidation=onvalidation,
                                             onaccept=onaccept,
                                             download_url=self.download_url,
                                             format=representation)
+
             else:
                 form = self.resource.create(onvalidation=onvalidation,
                                             onaccept=onaccept,
                                             message=message,
-                                            #from_table=None,
-                                            #from_record=None,
-                                            #map_fields=None,
+                                            from_table=from_table,
+                                            from_record=from_record,
+                                            map_fields=map_fields,
                                             download_url=self.download_url,
                                             format=representation)
 
@@ -619,18 +629,25 @@ class S3CRUDHandler(S3MethodHandler):
             importer = self.resource.importer.url
             return importer(r)
 
-        #elif representation == "csv":
-            ## Read in POST
-            #import csv
-            #csv.field_size_limit(1000000000)
-            ##infile = open(request.vars.filename, "rb")
-            #infile = r.request.vars.filename.file
-            #try:
-                #import_csv(infile, table)
-                #session.flash = T("Data uploaded")
-            #except:
-                #session.error = T("Unable to parse CSV file!")
-            #redirect(r.there())
+        elif representation == "csv":
+            import csv, cgi
+            csv.field_size_limit(1000000000)
+            infile = request.vars.filename
+            importer = self.resource.importer.csv
+            if isinstance(infile, cgi.FieldStorage) and infile.filename:
+                infile = infile.file
+            else:
+                try:
+                    infile = open(infile, "rb")
+                except:
+                    session.error = T("Cannot read from file: %s" % infile)
+                    redirect(r.there(representation="html"))
+            try:
+                importer(infile, table=table)
+            except:
+                session.error = T("Unable to parse CSV file or file contains invalid data")
+            else:
+                session.flash = T("Data uploaded")
 
         else:
             r.error(501, self.manager.ERROR.BAD_FORMAT)
@@ -671,7 +688,10 @@ class S3CRUDHandler(S3MethodHandler):
         # Get the target record ID
         record_id = self._record_id(r)
         if not record_id:
-            r.error(404, self.resource.ERROR.BAD_RECORD)
+            if r.component and not r.multiple:
+                return self.create(r, **attr)
+            else:
+                r.error(404, self.resource.ERROR.BAD_RECORD)
 
         if r.interactive:
 
@@ -894,8 +914,10 @@ class S3CRUDHandler(S3MethodHandler):
 
         #elif representation == "plain":
             #pass
-        #elif r.representation == "url":
-            #pass
+
+        elif representation == "url":
+            importer = self.resource.importer.url
+            return importer(r)
 
         else:
             r.error(501, self.manager.ERROR.BAD_FORMAT)

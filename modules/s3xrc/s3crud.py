@@ -482,14 +482,6 @@ class S3CRUDHandler(S3MethodHandler):
             create_next = self._config("create_next")
             subheadings = self._config("subheadings")
 
-            # Set view
-            if representation in ("popup", "iframe"):
-                response.view = self._view(r, "popup.html")
-                output.update(caller=request.vars.caller)
-                r.next = None
-            else:
-                response.view = self._view(r, "create.html")
-
             # Title and subtitle
             if r.component:
                 title = self.crud_string(r.tablename, "title_display")
@@ -616,6 +608,16 @@ class S3CRUDHandler(S3MethodHandler):
                 except TypeError:
                     self.next = create_next
 
+            # Set view
+            if representation in ("popup", "iframe"):
+                response.view = self._view(r, "popup.html")
+                output.update(caller=request.vars.caller)
+                # Do not redirect from create in a Popup
+                r.next = None
+                self.next = None
+            else:
+                response.view = self._view(r, "create.html")
+            
         #elif representation == "plain":
             #if onaccept:
                 #_onaccept = lambda form: \

@@ -1,4 +1,8 @@
 {{extend "layout.html"}}
 {{=H1(title)}}
 {{=H3(subtitle)}}
+{{=T("Select the Cluster Layers for Assessments and Activities to analyse the Gaps:")}}
+{{=UL(T("Assessments are shown as green, yellow, orange, red."),
+	  T("Activities are blue.")
+	  )}}
 {{=XML(map)}}

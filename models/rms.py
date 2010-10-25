@@ -75,6 +75,9 @@ if deployment_settings.has_module(module):
     
     table.from_inventory_store_id.label = T("From Warehouse")
     
+    #This is only set by rms/store_for_req
+    #table.from_inventory_store_id.readable = table.from_inventory_store_id.writable = False
+    
     table.message.requires = IS_NOT_EMPTY()
 
     # Hide fields from user:
@@ -128,7 +131,8 @@ if deployment_settings.has_module(module):
         msg_record_created = T("Request added"),
         msg_record_modified = T("Request updated"),
         msg_record_deleted = T("Request deleted"),
-        msg_list_empty = T("No Requests have been made yet"))
+        msg_list_empty = T("No Requests have been made yet"),
+        msg_no_match = T("No Requests match this criteria"))
 
     # Reusable Field
     request_id = S3ReusableField("request_id", db.rms_req, sortby="message",

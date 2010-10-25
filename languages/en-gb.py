@@ -422,6 +422,8 @@
 'Assessment Details': 'Assessment Details',
 'Assessment Type': 'Assessment Type',
 'Assessment added': 'Assessment added',
+'Assessment and Activities Gap Analysis Map': 'Assessment and Activities Gap Analysis Map',
+'Assessment and Activities Gap Analysis Report': 'Assessment and Activities Gap Analysis Report',
 'Assessment deleted': 'Assessment deleted',
 'Assessment updated': 'Assessment updated',
 'Assessments': 'Assessments',

@@ -316,6 +316,7 @@ def custom_assess(custom_assess_fields):
                            )
 
             # Add Assess Components
+            cluster_summary = {}
             for field in custom_assess_fields:
                 if field[0] == "assess":
                     continue
@@ -326,8 +327,29 @@ def custom_assess(custom_assess_fields):
                     record_dict[fk_dict[ field[0] ] ] = field[1]
                     record_dict["value"] = request.vars[name]
                     if field[0] == "impact":
-                        record_dict["severity"] = request.vars[name + "_severity"]
+                        severity = int(request.vars[name + "_severity"])
+                        record_dict["severity"] = severity
+                        
+                        #record the Severity per cluster 
+                        cluster_id = \
+                            shn_get_db_field_value(db = db,
+                                                   table = "impact_type",
+                                                   field = "cluster_id",
+                                                   look_up = field[1]) 
+                        if cluster_id in cluster_summary.keys():
+                            cluster_summary[cluster_id].append(severity)
+                        elif cluster_id:
+                            cluster_summary[cluster_id] = [severity]
                     db[component_dict[ field[0] ] ].insert(**record_dict)
+            
+            #Add cluster summaries @TODO - make sure that this doesn't happen if there are clusters in the assess
+            for cluster_id in cluster_summary.keys():
+                severity_values = cluster_summary[cluster_id]
+                db.assess_summary.insert(assess_id = assess_id,
+                                         cluster_id = cluster_id,
+                                         #Average severity
+                                         value =sum(severity_values)/len(severity_values)
+                                         )
 
             # Send Out Notification SMS
             #message = "Sahana: " + T("New Assessment reported from") + " %s by %s %s" % ( location_dict["name"],

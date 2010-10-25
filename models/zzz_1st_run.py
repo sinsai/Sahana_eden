@@ -282,7 +282,7 @@ if populate:
                               shn_get_db_field_value(db = db,
                                                      table = "org_cluster",
                                                      field = "id",
-                                                     look_up = "Agriculture",
+                                                     look_up = "Food",
                                                      look_up_field = "abrv") 
                           )              
             table.insert( name = "# People at Risk From Vector-Borne Diseases",
@@ -290,7 +290,7 @@ if populate:
                               shn_get_db_field_value(db = db,
                                                      table = "org_cluster",
                                                      field = "id",
-                                                     look_up = "Agriculture",
+                                                     look_up = "Health",
                                                      look_up_field = "abrv") 
                           )  
             table.insert( name = "# People without Access to Safe Drinking-Water",

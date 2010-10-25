@@ -29,8 +29,8 @@ def setting():
 
     """ RESTful CRUD controller """
 
-    resource = request.function
-    tablename = "s3_" + resource
+    resourcename = request.function
+    tablename = "s3_" + resourcename
     table = db[tablename]
 
     table.admin_name.label = T("Admin Name")
@@ -64,7 +64,7 @@ def setting():
                           #update_next = URL(r=request, args=[1, "update"])
                           onaccept=theme_apply)
 
-    output = s3_rest_controller("s3", resource)
+    output = s3_rest_controller("s3", resourcename)
     return output
 
 @auth.shn_requires_membership(1)

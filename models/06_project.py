@@ -36,7 +36,7 @@ if deployment_settings.has_module("project"):
                                     label = T("Project Status"),
                                     represent = lambda opt: project_project_status_opts.get(opt, UNKNOWN_OPT)),
                             Field("description", "text"),
-                            Field("beneficiaries", "integer"),
+                            Field("beneficiaries", "integer"), #@todo: change this field name to total_bnf
                             Field("start_date", "date"),
                             Field("end_date", "date"),
                             Field("funded", "boolean"),
@@ -44,6 +44,8 @@ if deployment_settings.has_module("project"):
                             Field("budgeted_cost", "double"),
                             migrate=migrate, *s3_meta_fields())
     
+    #@todo: Fix the widget for this before displaying - should donor  be component?
+    table.donor_id.readable = table.donor_id.writable = False
     
     # Field settings
     table.code.requires = [IS_NOT_EMPTY(error_message=T("Please fill this!")),
@@ -59,6 +61,8 @@ if deployment_settings.has_module("project"):
     table.start_date.label = T("Start date")
     table.end_date.label = T("End date")
     table.description.label = T("Description")
+    table.beneficiaries.label = T("Total Beneficiaries")
+    
     table.status.label = T("Status")
     
     ADD_PROJECT = T("Add Project")

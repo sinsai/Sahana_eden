@@ -525,7 +525,7 @@ s3xrc.model.add_component(module, resourcename,
 
 # May wish to over-ride this in controllers
 s3xrc.model.configure(table,
-                      listadd=False,
+                      #listadd=False,
                       list_fields=["id",
                                    "person_id",
                                    "organisation_id",

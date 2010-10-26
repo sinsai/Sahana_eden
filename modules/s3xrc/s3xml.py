@@ -769,6 +769,7 @@ class S3XML(object):
                 uids = [uids]
 
             relements = []
+            id_map = None
 
             if not uids:
                 expr = './/%s[@%s="%s"]' % (

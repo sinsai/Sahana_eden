@@ -100,8 +100,8 @@ def location():
 
     """ RESTful CRUD controller for Locations """
 
-    resource = request.function
-    tablename = module + "_" + resource
+    resourcename = request.function
+    tablename = module + "_" + resourcename
     table = db[tablename]
 
     # Allow prep to pass vars back to the controller
@@ -261,7 +261,7 @@ def location():
         # We've been called from the Location Selector widget
         table.addr_street.readable = table.addr_street.writable = False
 
-    output = s3_rest_controller(module, resource)
+    output = s3_rest_controller(module, resourcename)
 
     _map = vars.get("_map", None)
     if _map and isinstance(output, dict):

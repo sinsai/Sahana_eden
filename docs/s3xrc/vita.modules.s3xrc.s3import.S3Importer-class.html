@@ -52,6 +52,8 @@
     <td>
       <table cellpadding="0" cellspacing="0">
         <!-- hide/show private -->
+        <tr><td align="right"><span class="options">[<a href="javascript:void(0);" class="privatelink"
+    onclick="toggle_private();">hide&nbsp;private</a>]</span></td></tr>
         <tr><td align="right"><span class="options"
             >[<a href="frames.html" target="_top">frames</a
             >]&nbsp;|&nbsp;<a href="vita.modules.s3xrc.s3import.S3Importer-class.html"
@@ -61,7 +63,7 @@
   </tr>
 </table>
 <!-- ==================== CLASS DESCRIPTION ==================== -->
-<h1 class="epydoc">Class S3Importer</h1><p class="nomargin-top"></p>
+<h1 class="epydoc">Class S3Importer</h1><p class="nomargin-top"><span class="codelink"><a href="vita.modules.s3xrc.s3import-pysrc.html#S3Importer">source&nbsp;code</a></span></p>
 <pre class="base-tree">
 object --+
          |
@@ -76,8 +78,17 @@ object --+
 <table class="summary" border="1" cellpadding="3"
        cellspacing="0" width="100%" bgcolor="white">
 <tr bgcolor="#70b0f0" class="table-header">
-  <td align="left" colspan="2" class="table-header">
-    <span class="table-header">Instance Methods</span></td>
+  <td colspan="2" class="table-header">
+    <table border="0" cellpadding="0" cellspacing="0" width="100%">
+      <tr valign="top">
+        <td align="left"><span class="table-header">Instance Methods</span></td>
+        <td align="right" valign="top"
+         ><span class="options">[<a href="#section-InstanceMethods"
+         class="privatelink" onclick="toggle_private();"
+         >hide private</a>]</span></td>
+      </tr>
+    </table>
+  </td>
 </tr>
 <tr>
     <td width="15%" align="right" valign="top" class="summary">
@@ -89,7 +100,7 @@ object --+
         <span class="summary-sig-arg">manager</span>)</span><br />
       Constructor</td>
           <td align="right" valign="top">
-            
+            <span class="codelink"><a href="vita.modules.s3xrc.s3import-pysrc.html#S3Importer.__init__">source&nbsp;code</a></span>
             
           </td>
         </tr>
@@ -104,10 +115,11 @@ object --+
       <table width="100%" cellpadding="0" cellspacing="0" border="0">
         <tr>
           <td><span class="summary-sig"><a href="vita.modules.s3xrc.s3import.S3Importer-class.html#csv" class="summary-sig-name">csv</a>(<span class="summary-sig-arg">self</span>,
-        <span class="summary-sig-arg">file</span>)</span><br />
+        <span class="summary-sig-arg">file</span>,
+        <span class="summary-sig-arg">table</span>=<span class="summary-sig-default">None</span>)</span><br />
       Import CSV file into database</td>
           <td align="right" valign="top">
-            
+            <span class="codelink"><a href="vita.modules.s3xrc.s3import-pysrc.html#S3Importer.csv">source&nbsp;code</a></span>
             
           </td>
         </tr>
@@ -125,7 +137,7 @@ object --+
         <span class="summary-sig-arg">r</span>)</span><br />
       Import data from URL query</td>
           <td align="right" valign="top">
-            
+            <span class="codelink"><a href="vita.modules.s3xrc.s3import-pysrc.html#S3Importer.url">source&nbsp;code</a></span>
             
           </td>
         </tr>
@@ -149,7 +161,7 @@ object --+
         <span class="summary-sig-arg">**args</span>)</span><br />
       Import data from an XML source into a resource</td>
           <td align="right" valign="top">
-            
+            <span class="codelink"><a href="vita.modules.s3xrc.s3import-pysrc.html#S3Importer.xml">source&nbsp;code</a></span>
             
           </td>
         </tr>
@@ -173,7 +185,7 @@ object --+
         <span class="summary-sig-arg">**args</span>)</span><br />
       Import data from a JSON source into a resource</td>
           <td align="right" valign="top">
-            
+            <span class="codelink"><a href="vita.modules.s3xrc.s3import-pysrc.html#S3Importer.json">source&nbsp;code</a></span>
             
           </td>
         </tr>
@@ -205,8 +217,17 @@ object --+
 <table class="summary" border="1" cellpadding="3"
        cellspacing="0" width="100%" bgcolor="white">
 <tr bgcolor="#70b0f0" class="table-header">
-  <td align="left" colspan="2" class="table-header">
-    <span class="table-header">Properties</span></td>
+  <td colspan="2" class="table-header">
+    <table border="0" cellpadding="0" cellspacing="0" width="100%">
+      <tr valign="top">
+        <td align="left"><span class="table-header">Properties</span></td>
+        <td align="right" valign="top"
+         ><span class="options">[<a href="#section-Properties"
+         class="privatelink" onclick="toggle_private();"
+         >hide private</a>]</span></td>
+      </tr>
+    </table>
+  </td>
 </tr>
   <tr>
     <td colspan="2" class="summary">
@@ -221,8 +242,17 @@ object --+
 <table class="details" border="1" cellpadding="3"
        cellspacing="0" width="100%" bgcolor="white">
 <tr bgcolor="#70b0f0" class="table-header">
-  <td align="left" colspan="2" class="table-header">
-    <span class="table-header">Method Details</span></td>
+  <td colspan="2" class="table-header">
+    <table border="0" cellpadding="0" cellspacing="0" width="100%">
+      <tr valign="top">
+        <td align="left"><span class="table-header">Method Details</span></td>
+        <td align="right" valign="top"
+         ><span class="options">[<a href="#section-MethodDetails"
+         class="privatelink" onclick="toggle_private();"
+         >hide private</a>]</span></td>
+      </tr>
+    </table>
+  </td>
 </tr>
 </table>
 <a name="__init__"></a>
@@ -237,7 +267,7 @@ object --+
     <br /><em class="fname">(Constructor)</em>
   </h3>
   </td><td align="right" valign="top"
-    >&nbsp;
+    ><span class="codelink"><a href="vita.modules.s3xrc.s3import-pysrc.html#S3Importer.__init__">source&nbsp;code</a></span>&nbsp;
     </td>
   </tr></table>
   
@@ -261,18 +291,24 @@ object --+
   <table width="100%" cellpadding="0" cellspacing="0" border="0">
   <tr valign="top"><td>
   <h3 class="epydoc"><span class="sig"><span class="sig-name">csv</span>(<span class="sig-arg">self</span>,
-        <span class="sig-arg">file</span>)</span>
+        <span class="sig-arg">file</span>,
+        <span class="sig-arg">table</span>=<span class="sig-default">None</span>)</span>
   </h3>
   </td><td align="right" valign="top"
-    >&nbsp;
+    ><span class="codelink"><a href="vita.modules.s3xrc.s3import-pysrc.html#S3Importer.csv">source&nbsp;code</a></span>&nbsp;
     </td>
   </tr></table>
   
   <p>Import CSV file into database</p>
   <dl class="fields">
+    <dt>Parameters:</dt>
+    <dd><ul class="nomargin-top">
+        <li><strong class="pname"><code>file</code></strong> - file handle</li>
+        <li><strong class="pname"><code>table</code></strong> - the table to import to</li>
+    </ul></dd>
   </dl>
-<div class="fields">      <p><strong>To Do (2.2):</strong>
-        fix docstring
+<div class="fields">      <p><strong>To Do (2.3):</strong>
+        make this resource-based (files!)
       </p>
 </div></td></tr></table>
 </div>
@@ -287,26 +323,23 @@ object --+
         <span class="sig-arg">r</span>)</span>
   </h3>
   </td><td align="right" valign="top"
-    >&nbsp;
+    ><span class="codelink"><a href="vita.modules.s3xrc.s3import-pysrc.html#S3Importer.url">source&nbsp;code</a></span>&nbsp;
     </td>
   </tr></table>
   
   <p>Import data from URL query</p>
-  <p>Restriction: can only update single records (no mass-update)</p>
   <dl class="fields">
+    <dt>Parameters:</dt>
+    <dd><ul class="nomargin-top">
+        <li><strong class="pname"><code>r</code></strong> - the S3Request</li>
+    </ul></dd>
   </dl>
-<div class="fields">      <strong>To Do (2.2):</strong>
-      <ul class="nomargin-top">
-        <li>
-        fix docstring
-        </li>
-        <li>
-        make this work
-        </li>
-        <li>
-        PEP-8
-        </li>
-      </ul>
+<div class="fields">      <p><strong>Note:</strong>
+        can only update single records (no mass-update)
+      </p>
+      <p><strong>To Do (2.3):</strong>
+        make this resource-based
+      </p>
 </div></td></tr></table>
 </div>
 <a name="xml"></a>
@@ -326,7 +359,7 @@ object --+
         <span class="sig-arg">**args</span>)</span>
   </h3>
   </td><td align="right" valign="top"
-    >&nbsp;
+    ><span class="codelink"><a href="vita.modules.s3xrc.s3import-pysrc.html#S3Importer.xml">source&nbsp;code</a></span>&nbsp;
     </td>
   </tr></table>
   
@@ -367,7 +400,7 @@ object --+
         <span class="sig-arg">**args</span>)</span>
   </h3>
   </td><td align="right" valign="top"
-    >&nbsp;
+    ><span class="codelink"><a href="vita.modules.s3xrc.s3import-pysrc.html#S3Importer.json">source&nbsp;code</a></span>&nbsp;
     </td>
   </tr></table>
   
@@ -423,7 +456,7 @@ object --+
 <table border="0" cellpadding="0" cellspacing="0" width="100%%">
   <tr>
     <td align="left" class="footer">
-    Generated by Epydoc 3.0.1 on Tue Oct 19 22:45:13 2010
+    Generated by Epydoc 3.0.1 on Tue Oct 26 15:06:23 2010
     </td>
     <td align="right" class="footer">
       <a target="mainFrame" href="http://epydoc.sourceforge.net"

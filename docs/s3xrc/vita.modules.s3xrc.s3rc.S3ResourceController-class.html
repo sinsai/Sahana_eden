@@ -52,6 +52,8 @@
     <td>
       <table cellpadding="0" cellspacing="0">
         <!-- hide/show private -->
+        <tr><td align="right"><span class="options">[<a href="javascript:void(0);" class="privatelink"
+    onclick="toggle_private();">hide&nbsp;private</a>]</span></td></tr>
         <tr><td align="right"><span class="options"
             >[<a href="frames.html" target="_top">frames</a
             >]&nbsp;|&nbsp;<a href="vita.modules.s3xrc.s3rc.S3ResourceController-class.html"
@@ -61,7 +63,7 @@
   </tr>
 </table>
 <!-- ==================== CLASS DESCRIPTION ==================== -->
-<h1 class="epydoc">Class S3ResourceController</h1><p class="nomargin-top"></p>
+<h1 class="epydoc">Class S3ResourceController</h1><p class="nomargin-top"><span class="codelink"><a href="vita.modules.s3xrc.s3rc-pysrc.html#S3ResourceController">source&nbsp;code</a></span></p>
 <pre class="base-tree">
 object --+
          |
@@ -75,9 +77,6 @@ object --+
 <div class="fields">      <strong>To Do (2.2):</strong>
       <ul class="nomargin-top">
         <li>
-        fix docstring/parameters
-        </li>
-        <li>
         move formats into settings
         </li>
         <li>
@@ -89,8 +88,17 @@ object --+
 <table class="summary" border="1" cellpadding="3"
        cellspacing="0" width="100%" bgcolor="white">
 <tr bgcolor="#70b0f0" class="table-header">
-  <td align="left" colspan="2" class="table-header">
-    <span class="table-header">Instance Methods</span></td>
+  <td colspan="2" class="table-header">
+    <table border="0" cellpadding="0" cellspacing="0" width="100%">
+      <tr valign="top">
+        <td align="left"><span class="table-header">Instance Methods</span></td>
+        <td align="right" valign="top"
+         ><span class="options">[<a href="#section-InstanceMethods"
+         class="privatelink" onclick="toggle_private();"
+         >hide private</a>]</span></td>
+      </tr>
+    </table>
+  </td>
 </tr>
 <tr>
     <td width="15%" align="right" valign="top" class="summary">
@@ -107,7 +115,79 @@ object --+
         <span class="summary-sig-arg">**attr</span>)</span><br />
       x.__init__(...) initializes x; see x.__class__.__doc__ for signature</td>
           <td align="right" valign="top">
+            <span class="codelink"><a href="vita.modules.s3xrc.s3rc-pysrc.html#S3ResourceController.__init__">source&nbsp;code</a></span>
             
+          </td>
+        </tr>
+      </table>
+      
+    </td>
+  </tr>
+<tr class="private">
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a href="vita.modules.s3xrc.s3rc.S3ResourceController-class.html#__fields" class="summary-sig-name" onclick="show_private();">__fields</a>(<span class="summary-sig-arg">self</span>,
+        <span class="summary-sig-arg">table</span>,
+        <span class="summary-sig-arg">skip</span>=<span class="summary-sig-default">[]</span>)</span><br />
+      Finds all readable fields in a table and splits them into reference 
+      and non-reference fields</td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="vita.modules.s3xrc.s3rc-pysrc.html#S3ResourceController.__fields">source&nbsp;code</a></span>
+            
+          </td>
+        </tr>
+      </table>
+      
+    </td>
+  </tr>
+<tr class="private">
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a href="vita.modules.s3xrc.s3rc.S3ResourceController-class.html#__vectorize" class="summary-sig-name" onclick="show_private();">__vectorize</a>(<span class="summary-sig-arg">self</span>,
+        <span class="summary-sig-arg">resource</span>,
+        <span class="summary-sig-arg">element</span>,
+        <span class="summary-sig-arg">id</span>=<span class="summary-sig-default">None</span>,
+        <span class="summary-sig-arg">files</span>=<span class="summary-sig-default">[]</span>,
+        <span class="summary-sig-arg">validate</span>=<span class="summary-sig-default">None</span>,
+        <span class="summary-sig-arg">permit</span>=<span class="summary-sig-default">None</span>,
+        <span class="summary-sig-arg">audit</span>=<span class="summary-sig-default">None</span>,
+        <span class="summary-sig-arg">sync</span>=<span class="summary-sig-default">None</span>,
+        <span class="summary-sig-arg">log</span>=<span class="summary-sig-default">None</span>,
+        <span class="summary-sig-arg">tree</span>=<span class="summary-sig-default">None</span>,
+        <span class="summary-sig-arg">directory</span>=<span class="summary-sig-default">None</span>,
+        <span class="summary-sig-arg">vmap</span>=<span class="summary-sig-default">None</span>,
+        <span class="summary-sig-arg">lookahead</span>=<span class="summary-sig-default">True</span>)</span><br />
+      Builds a list of vectors from an element</td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="vita.modules.s3xrc.s3rc-pysrc.html#S3ResourceController.__vectorize">source&nbsp;code</a></span>
+            
+          </td>
+        </tr>
+      </table>
+      
+    </td>
+  </tr>
+<tr class="private">
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a href="vita.modules.s3xrc.s3rc.S3ResourceController-class.html#__directory" class="summary-sig-name" onclick="show_private();">__directory</a>(<span class="summary-sig-arg">self</span>,
+        <span class="summary-sig-arg">d</span>,
+        <span class="summary-sig-arg">l</span>,
+        <span class="summary-sig-arg">k</span>,
+        <span class="summary-sig-arg">v</span>,
+        <span class="summary-sig-arg">e</span>=<span class="summary-sig-default">{}</span>)</span><br />
+      Converts a list of dicts into a directory</td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="vita.modules.s3xrc.s3rc-pysrc.html#S3ResourceController.__directory">source&nbsp;code</a></span>
             
           </td>
         </tr>
@@ -127,7 +207,7 @@ object --+
         <span class="summary-sig-arg">**vars</span>)</span><br />
       Invoke a hook or a list of hooks</td>
           <td align="right" valign="top">
-            
+            <span class="codelink"><a href="vita.modules.s3xrc.s3rc-pysrc.html#S3ResourceController.callback">source&nbsp;code</a></span>
             
           </td>
         </tr>
@@ -146,7 +226,7 @@ object --+
         <span class="summary-sig-arg">name</span>)</span><br />
       Reads the last record ID for a resource from a session</td>
           <td align="right" valign="top">
-            
+            <span class="codelink"><a href="vita.modules.s3xrc.s3rc-pysrc.html#S3ResourceController.get_session">source&nbsp;code</a></span>
             
           </td>
         </tr>
@@ -166,7 +246,7 @@ object --+
         <span class="summary-sig-arg">id</span>)</span><br />
       Stores a record ID for a resource in a session</td>
           <td align="right" valign="top">
-            
+            <span class="codelink"><a href="vita.modules.s3xrc.s3rc-pysrc.html#S3ResourceController.store_session">source&nbsp;code</a></span>
             
           </td>
         </tr>
@@ -185,7 +265,7 @@ object --+
         <span class="summary-sig-arg">name</span>=<span class="summary-sig-default">None</span>)</span><br />
       Clears one or all record IDs stored in a session</td>
           <td align="right" valign="top">
-            
+            <span class="codelink"><a href="vita.modules.s3xrc.s3rc-pysrc.html#S3ResourceController.clear_session">source&nbsp;code</a></span>
             
           </td>
         </tr>
@@ -204,7 +284,7 @@ object --+
         <span class="summary-sig-arg">handler</span>)</span><br />
       Set the default handler for a resource method</td>
           <td align="right" valign="top">
-            
+            <span class="codelink"><a href="vita.modules.s3xrc.s3rc-pysrc.html#S3ResourceController.set_handler">source&nbsp;code</a></span>
             
           </td>
         </tr>
@@ -222,7 +302,52 @@ object --+
         <span class="summary-sig-arg">method</span>)</span><br />
       Get the default handler for a resource method</td>
           <td align="right" valign="top">
+            <span class="codelink"><a href="vita.modules.s3xrc.s3rc-pysrc.html#S3ResourceController.get_handler">source&nbsp;code</a></span>
             
+          </td>
+        </tr>
+      </table>
+      
+    </td>
+  </tr>
+<tr class="private">
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a href="vita.modules.s3xrc.s3rc.S3ResourceController-class.html#_resource" class="summary-sig-name" onclick="show_private();">_resource</a>(<span class="summary-sig-arg">self</span>,
+        <span class="summary-sig-arg">prefix</span>,
+        <span class="summary-sig-arg">name</span>,
+        <span class="summary-sig-arg">id</span>=<span class="summary-sig-default">None</span>,
+        <span class="summary-sig-arg">uid</span>=<span class="summary-sig-default">None</span>,
+        <span class="summary-sig-arg">filter</span>=<span class="summary-sig-default">None</span>,
+        <span class="summary-sig-arg">vars</span>=<span class="summary-sig-default">None</span>,
+        <span class="summary-sig-arg">parent</span>=<span class="summary-sig-default">None</span>,
+        <span class="summary-sig-arg">components</span>=<span class="summary-sig-default">None</span>,
+        <span class="summary-sig-arg">storage</span>=<span class="summary-sig-default">None</span>)</span><br />
+      Wrapper function for S3Resource, creates a resource</td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="vita.modules.s3xrc.s3rc-pysrc.html#S3ResourceController._resource">source&nbsp;code</a></span>
+            
+          </td>
+        </tr>
+      </table>
+      
+    </td>
+  </tr>
+<tr class="private">
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a href="vita.modules.s3xrc.s3rc.S3ResourceController-class.html#_request" class="summary-sig-name" onclick="show_private();">_request</a>(<span class="summary-sig-arg">self</span>,
+        <span class="summary-sig-arg">prefix</span>,
+        <span class="summary-sig-arg">name</span>)</span><br />
+      Wrapper function for S3Request</td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="vita.modules.s3xrc.s3rc-pysrc.html#S3ResourceController._request">source&nbsp;code</a></span>
             
           </td>
         </tr>
@@ -242,7 +367,7 @@ object --+
       Parse an HTTP request and generate the corresponding S3Request and 
       S3Resource objects.</td>
           <td align="right" valign="top">
-            
+            <span class="codelink"><a href="vita.modules.s3xrc.s3rc-pysrc.html#S3ResourceController.parse_request">source&nbsp;code</a></span>
             
           </td>
         </tr>
@@ -263,7 +388,7 @@ object --+
         <span class="summary-sig-arg">value</span>)</span><br />
       Validates a single value</td>
           <td align="right" valign="top">
-            
+            <span class="codelink"><a href="vita.modules.s3xrc.s3rc-pysrc.html#S3ResourceController.validate">source&nbsp;code</a></span>
             
           </td>
         </tr>
@@ -286,7 +411,7 @@ object --+
         <span class="summary-sig-arg">xml_escape</span>=<span class="summary-sig-default">False</span>)</span><br />
       Represent a field value</td>
           <td align="right" valign="top">
-            
+            <span class="codelink"><a href="vita.modules.s3xrc.s3rc-pysrc.html#S3ResourceController.represent">source&nbsp;code</a></span>
             
           </td>
         </tr>
@@ -305,7 +430,7 @@ object --+
         <span class="summary-sig-arg">record</span>)</span><br />
       Find the original record for a possible duplicate:</td>
           <td align="right" valign="top">
-            
+            <span class="codelink"><a href="vita.modules.s3xrc.s3rc-pysrc.html#S3ResourceController.original">source&nbsp;code</a></span>
             
           </td>
         </tr>
@@ -325,7 +450,7 @@ object --+
         <span class="summary-sig-arg">id</span>)</span><br />
       Find the matching element for a record</td>
           <td align="right" valign="top">
-            
+            <span class="codelink"><a href="vita.modules.s3xrc.s3rc-pysrc.html#S3ResourceController.match">source&nbsp;code</a></span>
             
           </td>
         </tr>
@@ -351,7 +476,7 @@ object --+
         <span class="summary-sig-arg">dereference</span>=<span class="summary-sig-default">True</span>)</span><br />
       Export a resource as S3XML element tree</td>
           <td align="right" valign="top">
-            
+            <span class="codelink"><a href="vita.modules.s3xrc.s3rc-pysrc.html#S3ResourceController.export_tree">source&nbsp;code</a></span>
             
           </td>
         </tr>
@@ -372,7 +497,7 @@ object --+
         <span class="summary-sig-arg">ignore_errors</span>=<span class="summary-sig-default">False</span>)</span><br />
       Imports data from an S3XML element tree into a resource</td>
           <td align="right" valign="top">
-            
+            <span class="codelink"><a href="vita.modules.s3xrc.s3rc-pysrc.html#S3ResourceController.import_tree">source&nbsp;code</a></span>
             
           </td>
         </tr>
@@ -392,7 +517,28 @@ object --+
         <span class="summary-sig-arg">fields</span>=<span class="summary-sig-default">[]</span>)</span><br />
       Generate a search_simple method handler</td>
           <td align="right" valign="top">
+            <span class="codelink"><a href="vita.modules.s3xrc.s3rc-pysrc.html#S3ResourceController.search_simple">source&nbsp;code</a></span>
             
+          </td>
+        </tr>
+      </table>
+      
+    </td>
+  </tr>
+<tr class="private">
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a href="vita.modules.s3xrc.s3rc.S3ResourceController-class.html#_search_simple" class="summary-sig-name" onclick="show_private();">_search_simple</a>(<span class="summary-sig-arg">self</span>,
+        <span class="summary-sig-arg">table</span>,
+        <span class="summary-sig-arg">fields</span>=<span class="summary-sig-default">None</span>,
+        <span class="summary-sig-arg">label</span>=<span class="summary-sig-default">None</span>,
+        <span class="summary-sig-arg">filterby</span>=<span class="summary-sig-default">None</span>)</span><br />
+      Simple search function for resources</td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="vita.modules.s3xrc.s3rc-pysrc.html#S3ResourceController._search_simple">source&nbsp;code</a></span>
             
           </td>
         </tr>
@@ -424,8 +570,17 @@ object --+
 <table class="summary" border="1" cellpadding="3"
        cellspacing="0" width="100%" bgcolor="white">
 <tr bgcolor="#70b0f0" class="table-header">
-  <td align="left" colspan="2" class="table-header">
-    <span class="table-header">Class Variables</span></td>
+  <td colspan="2" class="table-header">
+    <table border="0" cellpadding="0" cellspacing="0" width="100%">
+      <tr valign="top">
+        <td align="left"><span class="table-header">Class Variables</span></td>
+        <td align="right" valign="top"
+         ><span class="options">[<a href="#section-ClassVariables"
+         class="privatelink" onclick="toggle_private();"
+         >hide private</a>]</span></td>
+      </tr>
+    </table>
+  </td>
 </tr>
 <tr>
     <td width="15%" align="right" valign="top" class="summary">
@@ -526,8 +681,17 @@ T_PERMITTED= &quot;Operation not permitted&quot;, NOT_IMPLEMENTED= &quot;Not imp
 <table class="summary" border="1" cellpadding="3"
        cellspacing="0" width="100%" bgcolor="white">
 <tr bgcolor="#70b0f0" class="table-header">
-  <td align="left" colspan="2" class="table-header">
-    <span class="table-header">Properties</span></td>
+  <td colspan="2" class="table-header">
+    <table border="0" cellpadding="0" cellspacing="0" width="100%">
+      <tr valign="top">
+        <td align="left"><span class="table-header">Properties</span></td>
+        <td align="right" valign="top"
+         ><span class="options">[<a href="#section-Properties"
+         class="privatelink" onclick="toggle_private();"
+         >hide private</a>]</span></td>
+      </tr>
+    </table>
+  </td>
 </tr>
   <tr>
     <td colspan="2" class="summary">
@@ -542,8 +706,17 @@ T_PERMITTED= &quot;Operation not permitted&quot;, NOT_IMPLEMENTED= &quot;Not imp
 <table class="details" border="1" cellpadding="3"
        cellspacing="0" width="100%" bgcolor="white">
 <tr bgcolor="#70b0f0" class="table-header">
-  <td align="left" colspan="2" class="table-header">
-    <span class="table-header">Method Details</span></td>
+  <td colspan="2" class="table-header">
+    <table border="0" cellpadding="0" cellspacing="0" width="100%">
+      <tr valign="top">
+        <td align="left"><span class="table-header">Method Details</span></td>
+        <td align="right" valign="top"
+         ><span class="options">[<a href="#section-MethodDetails"
+         class="privatelink" onclick="toggle_private();"
+         >hide private</a>]</span></td>
+      </tr>
+    </table>
+  </td>
 </tr>
 </table>
 <a name="__init__"></a>
@@ -563,7 +736,7 @@ T_PERMITTED= &quot;Operation not permitted&quot;, NOT_IMPLEMENTED= &quot;Not imp
     <br /><em class="fname">(Constructor)</em>
   </h3>
   </td><td align="right" valign="top"
-    >&nbsp;
+    ><span class="codelink"><a href="vita.modules.s3xrc.s3rc-pysrc.html#S3ResourceController.__init__">source&nbsp;code</a></span>&nbsp;
     </td>
   </tr></table>
   
@@ -572,15 +745,127 @@ T_PERMITTED= &quot;Operation not permitted&quot;, NOT_IMPLEMENTED= &quot;Not imp
   <dl class="fields">
     <dt>Parameters:</dt>
     <dd><ul class="nomargin-top">
+        <li><strong class="pname"><code>environment</code></strong> - the environment of this run</li>
         <li><strong class="pname"><code>domain</code></strong> - name of the current domain</li>
         <li><strong class="pname"><code>base_url</code></strong> - base URL of this instance</li>
         <li><strong class="pname"><code>rpp</code></strong> - rows-per-page for server-side pagination</li>
         <li><strong class="pname"><code>messages</code></strong> - a function to retrieve message URLs tagged for a resource</li>
+        <li><strong class="pname"><code>attr</code></strong> - configuration settings</li>
+        <li><strong class="pname"><code>xml_export_formats</code></strong> - XML export format configuration (see 00_settings.py)</li>
+        <li><strong class="pname"><code>xml_import_formats</code></strong> - XML import format configuration (see 00_settings.py)</li>
+        <li><strong class="pname"><code>json_export_formats</code></strong> - JSON export format configuration (see 00_settings.py)</li>
+        <li><strong class="pname"><code>json_import_formats</code></strong> - JSON import format configuration (see 00_settings.py)</li>
     </ul></dd>
     <dt>Overrides:
         object.__init__
         <dd><em class="note">(inherited documentation)</em></dd>
     </dt>
+  </dl>
+</td></tr></table>
+</div>
+<a name="__fields"></a>
+<div class="private">
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr><td>
+  <table width="100%" cellpadding="0" cellspacing="0" border="0">
+  <tr valign="top"><td>
+  <h3 class="epydoc"><span class="sig"><span class="sig-name">__fields</span>(<span class="sig-arg">self</span>,
+        <span class="sig-arg">table</span>,
+        <span class="sig-arg">skip</span>=<span class="sig-default">[]</span>)</span>
+  </h3>
+  </td><td align="right" valign="top"
+    ><span class="codelink"><a href="vita.modules.s3xrc.s3rc-pysrc.html#S3ResourceController.__fields">source&nbsp;code</a></span>&nbsp;
+    </td>
+  </tr></table>
+  
+  <p>Finds all readable fields in a table and splits them into reference 
+  and non-reference fields</p>
+  <dl class="fields">
+    <dt>Parameters:</dt>
+    <dd><ul class="nomargin-top">
+        <li><strong class="pname"><code>table</code></strong> - the DB table</li>
+        <li><strong class="pname"><code>skip</code></strong> - list of field names to skip</li>
+    </ul></dd>
+  </dl>
+</td></tr></table>
+</div>
+<a name="__vectorize"></a>
+<div class="private">
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr><td>
+  <table width="100%" cellpadding="0" cellspacing="0" border="0">
+  <tr valign="top"><td>
+  <h3 class="epydoc"><span class="sig"><span class="sig-name">__vectorize</span>(<span class="sig-arg">self</span>,
+        <span class="sig-arg">resource</span>,
+        <span class="sig-arg">element</span>,
+        <span class="sig-arg">id</span>=<span class="sig-default">None</span>,
+        <span class="sig-arg">files</span>=<span class="sig-default">[]</span>,
+        <span class="sig-arg">validate</span>=<span class="sig-default">None</span>,
+        <span class="sig-arg">permit</span>=<span class="sig-default">None</span>,
+        <span class="sig-arg">audit</span>=<span class="sig-default">None</span>,
+        <span class="sig-arg">sync</span>=<span class="sig-default">None</span>,
+        <span class="sig-arg">log</span>=<span class="sig-default">None</span>,
+        <span class="sig-arg">tree</span>=<span class="sig-default">None</span>,
+        <span class="sig-arg">directory</span>=<span class="sig-default">None</span>,
+        <span class="sig-arg">vmap</span>=<span class="sig-default">None</span>,
+        <span class="sig-arg">lookahead</span>=<span class="sig-default">True</span>)</span>
+  </h3>
+  </td><td align="right" valign="top"
+    ><span class="codelink"><a href="vita.modules.s3xrc.s3rc-pysrc.html#S3ResourceController.__vectorize">source&nbsp;code</a></span>&nbsp;
+    </td>
+  </tr></table>
+  
+  <p>Builds a list of vectors from an element</p>
+  <dl class="fields">
+    <dt>Parameters:</dt>
+    <dd><ul class="nomargin-top">
+        <li><strong class="pname"><code>resource</code></strong> - the resource name (=tablename)</li>
+        <li><strong class="pname"><code>element</code></strong> - the element</li>
+        <li><strong class="pname"><code>id</code></strong> - target record ID</li>
+        <li><strong class="pname"><code>validate</code></strong> - validate hook (function to validate record)</li>
+        <li><strong class="pname"><code>permit</code></strong> - permit hook (function to check table permissions)</li>
+        <li><strong class="pname"><code>audit</code></strong> - audit hook (function to audit table access)</li>
+        <li><strong class="pname"><code>sync</code></strong> - sync hook (function to resolve sync conflicts)</li>
+        <li><strong class="pname"><code>log</code></strong> - log hook (function to log imports)</li>
+        <li><strong class="pname"><code>tree</code></strong> - the element tree of the source</li>
+        <li><strong class="pname"><code>directory</code></strong> - the resource directory of the tree</li>
+        <li><strong class="pname"><code>vmap</code></strong> - the vector map for the import</li>
+        <li><strong class="pname"><code>lookahead</code></strong> - resolve any references</li>
+    </ul></dd>
+  </dl>
+</td></tr></table>
+</div>
+<a name="__directory"></a>
+<div class="private">
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr><td>
+  <table width="100%" cellpadding="0" cellspacing="0" border="0">
+  <tr valign="top"><td>
+  <h3 class="epydoc"><span class="sig"><span class="sig-name">__directory</span>(<span class="sig-arg">self</span>,
+        <span class="sig-arg">d</span>,
+        <span class="sig-arg">l</span>,
+        <span class="sig-arg">k</span>,
+        <span class="sig-arg">v</span>,
+        <span class="sig-arg">e</span>=<span class="sig-default">{}</span>)</span>
+  </h3>
+  </td><td align="right" valign="top"
+    ><span class="codelink"><a href="vita.modules.s3xrc.s3rc-pysrc.html#S3ResourceController.__directory">source&nbsp;code</a></span>&nbsp;
+    </td>
+  </tr></table>
+  
+  <p>Converts a list of dicts into a directory</p>
+  <dl class="fields">
+    <dt>Parameters:</dt>
+    <dd><ul class="nomargin-top">
+        <li><strong class="pname"><code>d</code></strong> - the directory</li>
+        <li><strong class="pname"><code>l</code></strong> - the list</li>
+        <li><strong class="pname"><code>k</code></strong> - the key field</li>
+        <li><strong class="pname"><code>v</code></strong> - the value field</li>
+        <li><strong class="pname"><code>e</code></strong> - directory of elements to exclude</li>
+    </ul></dd>
   </dl>
 </td></tr></table>
 </div>
@@ -597,7 +882,7 @@ T_PERMITTED= &quot;Operation not permitted&quot;, NOT_IMPLEMENTED= &quot;Not imp
         <span class="sig-arg">**vars</span>)</span>
   </h3>
   </td><td align="right" valign="top"
-    >&nbsp;
+    ><span class="codelink"><a href="vita.modules.s3xrc.s3rc-pysrc.html#S3ResourceController.callback">source&nbsp;code</a></span>&nbsp;
     </td>
   </tr></table>
   
@@ -628,7 +913,7 @@ T_PERMITTED= &quot;Operation not permitted&quot;, NOT_IMPLEMENTED= &quot;Not imp
         <span class="sig-arg">name</span>)</span>
   </h3>
   </td><td align="right" valign="top"
-    >&nbsp;
+    ><span class="codelink"><a href="vita.modules.s3xrc.s3rc-pysrc.html#S3ResourceController.get_session">source&nbsp;code</a></span>&nbsp;
     </td>
   </tr></table>
   
@@ -655,7 +940,7 @@ T_PERMITTED= &quot;Operation not permitted&quot;, NOT_IMPLEMENTED= &quot;Not imp
         <span class="sig-arg">id</span>)</span>
   </h3>
   </td><td align="right" valign="top"
-    >&nbsp;
+    ><span class="codelink"><a href="vita.modules.s3xrc.s3rc-pysrc.html#S3ResourceController.store_session">source&nbsp;code</a></span>&nbsp;
     </td>
   </tr></table>
   
@@ -682,7 +967,7 @@ T_PERMITTED= &quot;Operation not permitted&quot;, NOT_IMPLEMENTED= &quot;Not imp
         <span class="sig-arg">name</span>=<span class="sig-default">None</span>)</span>
   </h3>
   </td><td align="right" valign="top"
-    >&nbsp;
+    ><span class="codelink"><a href="vita.modules.s3xrc.s3rc-pysrc.html#S3ResourceController.clear_session">source&nbsp;code</a></span>&nbsp;
     </td>
   </tr></table>
   
@@ -708,7 +993,7 @@ T_PERMITTED= &quot;Operation not permitted&quot;, NOT_IMPLEMENTED= &quot;Not imp
         <span class="sig-arg">handler</span>)</span>
   </h3>
   </td><td align="right" valign="top"
-    >&nbsp;
+    ><span class="codelink"><a href="vita.modules.s3xrc.s3rc-pysrc.html#S3ResourceController.set_handler">source&nbsp;code</a></span>&nbsp;
     </td>
   </tr></table>
   
@@ -716,7 +1001,7 @@ T_PERMITTED= &quot;Operation not permitted&quot;, NOT_IMPLEMENTED= &quot;Not imp
   <dl class="fields">
   </dl>
 <div class="fields">      <p><strong>To Do (2.2):</strong>
-        remove this
+        deprecate?
       </p>
 </div></td></tr></table>
 </div>
@@ -731,7 +1016,7 @@ T_PERMITTED= &quot;Operation not permitted&quot;, NOT_IMPLEMENTED= &quot;Not imp
         <span class="sig-arg">method</span>)</span>
   </h3>
   </td><td align="right" valign="top"
-    >&nbsp;
+    ><span class="codelink"><a href="vita.modules.s3xrc.s3rc-pysrc.html#S3ResourceController.get_handler">source&nbsp;code</a></span>&nbsp;
     </td>
   </tr></table>
   
@@ -739,9 +1024,75 @@ T_PERMITTED= &quot;Operation not permitted&quot;, NOT_IMPLEMENTED= &quot;Not imp
   <dl class="fields">
   </dl>
 <div class="fields">      <p><strong>To Do (2.2):</strong>
-        remove this
+        deprecate?
       </p>
 </div></td></tr></table>
+</div>
+<a name="_resource"></a>
+<div class="private">
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr><td>
+  <table width="100%" cellpadding="0" cellspacing="0" border="0">
+  <tr valign="top"><td>
+  <h3 class="epydoc"><span class="sig"><span class="sig-name">_resource</span>(<span class="sig-arg">self</span>,
+        <span class="sig-arg">prefix</span>,
+        <span class="sig-arg">name</span>,
+        <span class="sig-arg">id</span>=<span class="sig-default">None</span>,
+        <span class="sig-arg">uid</span>=<span class="sig-default">None</span>,
+        <span class="sig-arg">filter</span>=<span class="sig-default">None</span>,
+        <span class="sig-arg">vars</span>=<span class="sig-default">None</span>,
+        <span class="sig-arg">parent</span>=<span class="sig-default">None</span>,
+        <span class="sig-arg">components</span>=<span class="sig-default">None</span>,
+        <span class="sig-arg">storage</span>=<span class="sig-default">None</span>)</span>
+  </h3>
+  </td><td align="right" valign="top"
+    ><span class="codelink"><a href="vita.modules.s3xrc.s3rc-pysrc.html#S3ResourceController._resource">source&nbsp;code</a></span>&nbsp;
+    </td>
+  </tr></table>
+  
+  <p>Wrapper function for S3Resource, creates a resource</p>
+  <dl class="fields">
+    <dt>Parameters:</dt>
+    <dd><ul class="nomargin-top">
+        <li><strong class="pname"><code>prefix</code></strong> - the application prefix of the resource</li>
+        <li><strong class="pname"><code>name</code></strong> - the resource name (without prefix)</li>
+        <li><strong class="pname"><code>id</code></strong> - record ID or list of record IDs</li>
+        <li><strong class="pname"><code>uid</code></strong> - record UID or list of record UIDs</li>
+        <li><strong class="pname"><code>filter</code></strong> - web2py query to filter the resource query</li>
+        <li><strong class="pname"><code>vars</code></strong> - dict of URL query parameters</li>
+        <li><strong class="pname"><code>parent</code></strong> - the parent resource (if this is a component)</li>
+        <li><strong class="pname"><code>components</code></strong> - list of component (names)</li>
+        <li><strong class="pname"><code>storage</code></strong> - the data store (None for DB)</li>
+    </ul></dd>
+  </dl>
+</td></tr></table>
+</div>
+<a name="_request"></a>
+<div class="private">
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr><td>
+  <table width="100%" cellpadding="0" cellspacing="0" border="0">
+  <tr valign="top"><td>
+  <h3 class="epydoc"><span class="sig"><span class="sig-name">_request</span>(<span class="sig-arg">self</span>,
+        <span class="sig-arg">prefix</span>,
+        <span class="sig-arg">name</span>)</span>
+  </h3>
+  </td><td align="right" valign="top"
+    ><span class="codelink"><a href="vita.modules.s3xrc.s3rc-pysrc.html#S3ResourceController._request">source&nbsp;code</a></span>&nbsp;
+    </td>
+  </tr></table>
+  
+  <p>Wrapper function for S3Request</p>
+  <dl class="fields">
+    <dt>Parameters:</dt>
+    <dd><ul class="nomargin-top">
+        <li><strong class="pname"><code>prefix</code></strong> - the module prefix of the resource</li>
+        <li><strong class="pname"><code>name</code></strong> - the resource name (without prefix)</li>
+    </ul></dd>
+  </dl>
+</td></tr></table>
 </div>
 <a name="parse_request"></a>
 <div>
@@ -755,7 +1106,7 @@ T_PERMITTED= &quot;Operation not permitted&quot;, NOT_IMPLEMENTED= &quot;Not imp
         <span class="sig-arg">name</span>)</span>
   </h3>
   </td><td align="right" valign="top"
-    >&nbsp;
+    ><span class="codelink"><a href="vita.modules.s3xrc.s3rc-pysrc.html#S3ResourceController.parse_request">source&nbsp;code</a></span>&nbsp;
     </td>
   </tr></table>
   
@@ -784,7 +1135,7 @@ T_PERMITTED= &quot;Operation not permitted&quot;, NOT_IMPLEMENTED= &quot;Not imp
         <span class="sig-arg">value</span>)</span>
   </h3>
   </td><td align="right" valign="top"
-    >&nbsp;
+    ><span class="codelink"><a href="vita.modules.s3xrc.s3rc-pysrc.html#S3ResourceController.validate">source&nbsp;code</a></span>&nbsp;
     </td>
   </tr></table>
   
@@ -816,7 +1167,7 @@ T_PERMITTED= &quot;Operation not permitted&quot;, NOT_IMPLEMENTED= &quot;Not imp
         <span class="sig-arg">xml_escape</span>=<span class="sig-default">False</span>)</span>
   </h3>
   </td><td align="right" valign="top"
-    >&nbsp;
+    ><span class="codelink"><a href="vita.modules.s3xrc.s3rc-pysrc.html#S3ResourceController.represent">source&nbsp;code</a></span>&nbsp;
     </td>
   </tr></table>
   
@@ -846,7 +1197,7 @@ T_PERMITTED= &quot;Operation not permitted&quot;, NOT_IMPLEMENTED= &quot;Not imp
         <span class="sig-arg">record</span>)</span>
   </h3>
   </td><td align="right" valign="top"
-    >&nbsp;
+    ><span class="codelink"><a href="vita.modules.s3xrc.s3rc-pysrc.html#S3ResourceController.original">source&nbsp;code</a></span>&nbsp;
     </td>
   </tr></table>
   
@@ -883,7 +1234,7 @@ T_PERMITTED= &quot;Operation not permitted&quot;, NOT_IMPLEMENTED= &quot;Not imp
         <span class="sig-arg">id</span>)</span>
   </h3>
   </td><td align="right" valign="top"
-    >&nbsp;
+    ><span class="codelink"><a href="vita.modules.s3xrc.s3rc-pysrc.html#S3ResourceController.match">source&nbsp;code</a></span>&nbsp;
     </td>
   </tr></table>
   
@@ -922,7 +1273,7 @@ T_PERMITTED= &quot;Operation not permitted&quot;, NOT_IMPLEMENTED= &quot;Not imp
         <span class="sig-arg">dereference</span>=<span class="sig-default">True</span>)</span>
   </h3>
   </td><td align="right" valign="top"
-    >&nbsp;
+    ><span class="codelink"><a href="vita.modules.s3xrc.s3rc-pysrc.html#S3ResourceController.export_tree">source&nbsp;code</a></span>&nbsp;
     </td>
   </tr></table>
   
@@ -958,7 +1309,7 @@ T_PERMITTED= &quot;Operation not permitted&quot;, NOT_IMPLEMENTED= &quot;Not imp
         <span class="sig-arg">ignore_errors</span>=<span class="sig-default">False</span>)</span>
   </h3>
   </td><td align="right" valign="top"
-    >&nbsp;
+    ><span class="codelink"><a href="vita.modules.s3xrc.s3rc-pysrc.html#S3ResourceController.import_tree">source&nbsp;code</a></span>&nbsp;
     </td>
   </tr></table>
   
@@ -987,7 +1338,7 @@ T_PERMITTED= &quot;Operation not permitted&quot;, NOT_IMPLEMENTED= &quot;Not imp
         <span class="sig-arg">fields</span>=<span class="sig-default">[]</span>)</span>
   </h3>
   </td><td align="right" valign="top"
-    >&nbsp;
+    ><span class="codelink"><a href="vita.modules.s3xrc.s3rc-pysrc.html#S3ResourceController.search_simple">source&nbsp;code</a></span>&nbsp;
     </td>
   </tr></table>
   
@@ -1002,14 +1353,53 @@ T_PERMITTED= &quot;Operation not permitted&quot;, NOT_IMPLEMENTED= &quot;Not imp
   </dl>
 </td></tr></table>
 </div>
+<a name="_search_simple"></a>
+<div class="private">
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr><td>
+  <table width="100%" cellpadding="0" cellspacing="0" border="0">
+  <tr valign="top"><td>
+  <h3 class="epydoc"><span class="sig"><span class="sig-name">_search_simple</span>(<span class="sig-arg">self</span>,
+        <span class="sig-arg">table</span>,
+        <span class="sig-arg">fields</span>=<span class="sig-default">None</span>,
+        <span class="sig-arg">label</span>=<span class="sig-default">None</span>,
+        <span class="sig-arg">filterby</span>=<span class="sig-default">None</span>)</span>
+  </h3>
+  </td><td align="right" valign="top"
+    ><span class="codelink"><a href="vita.modules.s3xrc.s3rc-pysrc.html#S3ResourceController._search_simple">source&nbsp;code</a></span>&nbsp;
+    </td>
+  </tr></table>
+  
+  <p>Simple search function for resources</p>
+  <dl class="fields">
+    <dt>Parameters:</dt>
+    <dd><ul class="nomargin-top">
+        <li><strong class="pname"><code>table</code></strong> - the DB table</li>
+        <li><strong class="pname"><code>fields</code></strong> - list of fields to search for the label</li>
+        <li><strong class="pname"><code>label</code></strong> - label to be found</li>
+        <li><strong class="pname"><code>filterby</code></strong> - filter query for results</li>
+    </ul></dd>
+  </dl>
+</td></tr></table>
+</div>
 <br />
 <!-- ==================== CLASS VARIABLE DETAILS ==================== -->
 <a name="section-ClassVariableDetails"></a>
 <table class="details" border="1" cellpadding="3"
        cellspacing="0" width="100%" bgcolor="white">
 <tr bgcolor="#70b0f0" class="table-header">
-  <td align="left" colspan="2" class="table-header">
-    <span class="table-header">Class Variable Details</span></td>
+  <td colspan="2" class="table-header">
+    <table border="0" cellpadding="0" cellspacing="0" width="100%">
+      <tr valign="top">
+        <td align="left"><span class="table-header">Class Variable Details</span></td>
+        <td align="right" valign="top"
+         ><span class="options">[<a href="#section-ClassVariableDetails"
+         class="privatelink" onclick="toggle_private();"
+         >hide private</a>]</span></td>
+      </tr>
+    </table>
+  </td>
 </tr>
 </table>
 <a name="UID"></a>
@@ -1269,7 +1659,7 @@ T_PERMITTED= &quot;Operation not permitted&quot;, NOT_IMPLEMENTED= &quot;Not imp
 <table border="0" cellpadding="0" cellspacing="0" width="100%%">
   <tr>
     <td align="left" class="footer">
-    Generated by Epydoc 3.0.1 on Tue Oct 19 22:45:13 2010
+    Generated by Epydoc 3.0.1 on Tue Oct 26 15:06:23 2010
     </td>
     <td align="right" class="footer">
       <a target="mainFrame" href="http://epydoc.sourceforge.net"

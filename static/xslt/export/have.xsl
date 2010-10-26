@@ -9,9 +9,9 @@
 
     <!-- **********************************************************************
 
-         EDXL-HAVE Export Templates for S3XRC
+         EDXL-HAVE Export Templates
 
-         Version 0.4 / 2010-06-10 / by nursix
+         Version 0.5 / 2010-10-26 / by nursix
 
          Copyright (c) 2010 Sahana Software Foundation
 
@@ -44,20 +44,21 @@
     <xsl:param name="base_url"/>
 
     <!-- ****************************************************************** -->
+    <!-- Root Element -->
     <xsl:template match="/">
         <xsl:apply-templates select="./s3xrc"/>
     </xsl:template>
 
-
     <!-- ****************************************************************** -->
+    <!-- Hospital Status -->
     <xsl:template match="s3xrc">
         <have:HospitalStatus>
             <xsl:apply-templates select="./resource[@name='hms_hospital']"/>
         </have:HospitalStatus>
     </xsl:template>
 
-
     <!-- ****************************************************************** -->
+    <!-- Hospital -->
     <xsl:template match="resource[@name='hms_hospital']">
         <xsl:if test="./data[@field='facility_type']/@value=1 or
                       ./data[@field='facility_type']/@value=2 or
@@ -98,10 +99,11 @@
     </xsl:template>
 
     <!-- ****************************************************************** -->
+    <!-- Organization, Contact and Address Info -->
     <xsl:template name="OrgInfo">
-
         <have:OrganizationInformation>
 
+            <!-- @todo: move into separate template -->
             <xnl:OrganisationName>
                 <xsl:attribute name="xnl:ID">
                     <xsl:choose>
@@ -118,7 +120,14 @@
                 </xnl:NameElement>
             </xnl:OrganisationName>
 
+            <!-- @todo: move into separate template -->
+            <!-- @todo: implement email address -->
             <xpil:ContactNumbers>
+                <xpil:ContactNumber xpil:MediaType="Telephone" xpil:ContactNature="Exchange">
+                    <xpil:ContactNumberElement>
+                        <xsl:value-of select="./data[@field='phone_exchange']/text()" />
+                    </xpil:ContactNumberElement>
+                </xpil:ContactNumber>
                 <xpil:ContactNumber xpil:MediaType="Telephone" xpil:ContactNature="Business">
                     <xpil:ContactNumberElement>
                         <xsl:value-of select="./data[@field='phone_business']/text()" />
@@ -136,6 +145,7 @@
                 </xpil:ContactNumber>
             </xpil:ContactNumbers>
 
+            <!-- @todo: move into separate template -->
             <xpil:Addresses>
                 <xal:Address>
                     <xal:FreeTextAddress>
@@ -161,13 +171,16 @@
 
 
     <!-- ****************************************************************** -->
-
+    <!-- GeoLocation -->
     <xsl:template name="GeoLocation">
         <xsl:if test="./reference[@field='location_id']">
             <have:OrganizationGeoLocation>
                 <gml:Point>
                     <xsl:attribute name="gml:id">
                         <xsl:choose>
+                            <xsl:when test="starts-with(./reference[@field='location_id']/@uuid, 'urn:')">
+                                <xsl:value-of select="./reference[@field='location_id']/@uuid"/>
+                            </xsl:when>
                             <xsl:when test="contains(./reference[@field='location_id']/@uuid, '/')">
                                 <xsl:value-of select="./reference[@field='location_id']/@uuid"/>
                             </xsl:when>
@@ -188,7 +201,7 @@
 
 
     <!-- ****************************************************************** -->
-
+    <!-- Emergency Department Status -->
     <xsl:template name="EmergencyDeptStatus">
         <have:EmergencyDepartmentStatus>
             <have:EMSTraffic>
@@ -219,7 +232,7 @@
 
 
     <!-- ****************************************************************** -->
-
+    <!-- Bed Capacity -->
     <xsl:template name="BedCapacityStatus">
         <have:HospitalBedCapacityStatus>
             <have:BedCapacity>
@@ -238,14 +251,14 @@
     </xsl:template>
 
     <!-- ****************************************************************** -->
-
+    <!-- Service Coverage -->
     <xsl:template name="ServiceCoverageStatus">
         <xsl:apply-templates select="./resource[@name='hms_services']"/>
     </xsl:template>
 
 
     <!-- ****************************************************************** -->
-
+    <!-- Facility Status -->
     <xsl:template name="FacilityStatus">
         <have:FacilityStatus>
             <xsl:choose>
@@ -270,7 +283,7 @@
 
 
     <!-- ****************************************************************** -->
-
+    <!-- Clinical Status -->
     <xsl:template name="ClinicalStatus">
         <have:ClinicalStatus>
             <xsl:choose>
@@ -292,7 +305,7 @@
 
 
     <!-- ****************************************************************** -->
-
+    <!-- Morgue Capacity and Status -->
     <xsl:template name="MorgueCapacity">
         <have:MorgueCapacity>
             <have:MorgueCapacityStatus>
@@ -322,7 +335,7 @@
 
 
     <!-- ****************************************************************** -->
-
+    <!-- Security Status -->
     <xsl:template name="SecurityStatus">
         <have:SecurityStatus>
             <xsl:choose>
@@ -353,7 +366,7 @@
 
 
     <!-- ****************************************************************** -->
-
+    <!-- Activites 24hrs -->
     <xsl:template name="Activity24Hr">
         <have:Activity24Hr>
             <have:Admissions>
@@ -370,7 +383,7 @@
 
 
     <!-- ****************************************************************** -->
-
+    <!-- Resource Status -->
     <xsl:template name="HospitalResourceStatus">
         <have:HospitalResourceStatus>
             <have:FacilityOperations>
@@ -416,7 +429,7 @@
 
 
     <!-- ****************************************************************** -->
-
+    <!-- Helper for Resource Status Options -->
     <xsl:template name="ResourceStatusOptions">
         <xsl:param name="value"/>
         <xsl:choose>
@@ -431,7 +444,7 @@
 
 
     <!-- ****************************************************************** -->
-
+    <!-- Helper for Comments -->
     <xsl:template match="resource[@name='hms_shortage']">
         <xsl:if test="./data[@field='status']/@value='1' or ./data[@field='status']/@value='2'">
             <have:CommentText>
@@ -448,9 +461,8 @@
         </xsl:if>
     </xsl:template>
 
-
     <!-- ****************************************************************** -->
-
+    <!-- Service Coverage Status -->
     <xsl:template match="resource[@name='hms_services']">
         <have:ServiceCoverageStatus>
             <xsl:if test="starts-with(./data[@field='tran']/text(), 'T') or
@@ -524,7 +536,6 @@
             </xsl:if>
         </have:ServiceCoverageStatus>
     </xsl:template>
-
 
     <!-- ****************************************************************** -->
 

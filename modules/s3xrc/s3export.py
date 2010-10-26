@@ -2,7 +2,7 @@
 
 """ S3XRC Resource Framework - Resource Export Toolkit
 
-    @version: 2.1.8
+    @version: 2.1.9
 
     @see: U{B{I{S3XRC}} <http://eden.sahanafoundation.org/wiki/S3XRC>} on Eden wiki
 
@@ -93,11 +93,17 @@ class S3Exporter(object):
         """ Export a resource as XML
 
             @param resource: the resource
+            @param start: index of the first record to export (slicing)
+            @param limit: maximum number of records to export (slicing)
+            @param marker: URL of the default map marker
+            @param msince: export only records which have been modified
+                           after this datetime
+            @param show_urls: add the resource URLs as attribute to
+                              <resource> elements
+            @param dereference: include referenced resources
             @param template: path to the XSLT stylesheet (if required)
-            @param pretty_print: whether to use newlines/indentation in the output
+            @param pretty_print: insert newlines/indentation in the output
             @param args: dict of arguments to pass to the XSLT stylesheet
-
-            @todo 2.2: fix docstring
 
         """
 
@@ -142,11 +148,17 @@ class S3Exporter(object):
         """ Export a resource as JSON
 
             @param resource: the resource
+            @param start: index of the first record to export (slicing)
+            @param limit: maximum number of records to export (slicing)
+            @param marker: URL of the default map marker
+            @param msince: export only records which have been modified
+                           after this datetime
+            @param show_urls: add the resource URLs as attribute to
+                              <resource> elements
+            @param dereference: include referenced resources
             @param template: path to the XSLT stylesheet (if required)
-            @param pretty_print: whether to use newlines/indentation in the output
+            @param pretty_print: insert newlines/indentation in the output
             @param args: dict of arguments to pass to the XSLT stylesheet
-
-            @todo 2.2: fix docstring
 
         """
 
@@ -180,7 +192,7 @@ class S3Exporter(object):
     # -------------------------------------------------------------------------
     def csv(self, resource):
 
-        """ Export record(s) as CSV
+        """ Export resource as CSV (does not include components)
 
             @param resource: the resource to export
 
@@ -208,13 +220,12 @@ class S3Exporter(object):
     # -------------------------------------------------------------------------
     def pdf(self, resource, list_fields=None):
 
-        """ Export record(s) as Adobe PDF
+        """ Export resource as Adobe PDF (does not include components)
 
             @param resource: the resource
             @param list_fields: fields to include in list views
 
             @todo 2.2: fix error messages
-            @todo 2.2: replace _represent subfunction
             @todo 2.2: do not redirect
             @todo 2.2: PEP-8
             @todo 2.2: test this!
@@ -293,24 +304,6 @@ class S3Exporter(object):
                                strip_markup=True,
                                xml_escape=True)
 
-        #def _represent(field, data):
-            #if data is None:
-                #return ""
-            #represent = table[field].represent
-            #if not represent:
-                #represent = lambda v: str(v)
-            #text = str(represent(data)).decode("utf-8")
-            ## Filter out markup from text
-            #if "<" in text:
-                #try:
-                    #markup = etree.XML(text)
-                    #text = markup.xpath(".//text()")
-                    #if text:
-                        #text = " ".join(text)
-                #except etree.XMLSyntaxError:
-                    #pass
-            #return xml.xml_encode(text)
-
         for field in fields:
             # Append label
             label = Label(text=xml.xml_encode(str(field.label))[:16].decode("utf-8"),
@@ -376,7 +369,9 @@ class S3Exporter(object):
 
         """ Export record(s) as Microsoft Excel spreadsheet
 
-            @todo 2.2: complete docstring
+            @param resource: the resource
+            @param list_fields: fields to include in list views
+
             @todo 2.2: PEP-8
             @todo 2.2: use S3Resource.readable_fields
             @todo: implement audit

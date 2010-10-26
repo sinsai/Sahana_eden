@@ -189,9 +189,9 @@ class S3Vita(object):
                 if not db(query).count():
                     db(table.id == presence.id).update(closed=False)
 
-        pentity = db(db.pr_pentity.pe_id == pe_id).select(db.pr_pentity.pe_type,
+        pentity = db(db.pr_pentity.pe_id == pe_id).select(db.pr_pentity.instance_type,
                                                           limitby=(0,1)).first()
-        if pentity and pentity.pe_type == "pr_person":
+        if pentity and pentity.instance_type == "pr_person":
             query = this_entity & is_missing & (table.closed == False)
             if db(query).count():
                 db(db.pr_person.pe_id == pe_id).update(missing = True)

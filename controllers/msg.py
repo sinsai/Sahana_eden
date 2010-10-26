@@ -130,16 +130,6 @@ def log():
     tablename = "%s_%s" % (prefix, resourcename)
     table = db[tablename]
 
-    # Model options
-    table.message.comment = SPAN("*", _class="req")
-    #table.priority.represent = lambda id: (
-    #    [id and
-    #        DIV(IMG(_src="/%s/static/img/priority/priority_%d.gif" % (request.application,id,), _height=12)) or
-    #        DIV(IMG(_src="/%s/static/img/priority/priority_4.gif" % request.application), _height=12)
-    #    ][0].xml())
-
-    # Add Auth Restrictions
-
     # CRUD Strings
     ADD_MESSAGE = T("Add Message")
     LIST_MESSAGES = T("List Messages")
@@ -313,7 +303,7 @@ def parserdooth(message):
                                                                      table = "org_office",
                                                                      field = "address",
                                                                      look_up = organisation.id
-                                                                    )          
+                                                                    )
 
         if len(reply) == 0:
             return "No Match"

@@ -2,7 +2,7 @@
 
 """ S3XRC Resource Framework - CRUD Method Handlers
 
-    @version: 2.1.8
+    @version: 2.1.9
 
     @see: U{B{I{S3XRC}} <http://eden.sahanafoundation.org/wiki/S3XRC>} on Eden wiki
 
@@ -95,7 +95,7 @@ class S3Audit(object):
     def __call__(self, operation, prefix, name,
                  form=None,
                  record=None,
-                 representation=None):
+                 representation="unknown"):
 
         """ Caller
 
@@ -108,7 +108,6 @@ class S3Audit(object):
             @param representation: the representation format
 
             @todo 2.2: correct parameter naming for record ID
-            @todo 2.2: default for representation, HTML?
 
         """
 
@@ -431,9 +430,8 @@ class S3CRUDHandler(S3MethodHandler):
             @param r: the S3Request
             @param attr: dictionary of parameters for the method handler
 
-            @todo 2.2: copy from a previous record
             @todo 2.2: cancel button
-            @todo 2.2: other representations
+            @todo 2.2: plain representation
 
         """
 
@@ -770,8 +768,8 @@ class S3CRUDHandler(S3MethodHandler):
             @param r: the S3Request
             @param attr: dictionary of parameters for the method handler
 
-            @todo 2.2: complete other representations
-            @todo 2.2: Cancel button?
+            @todo 2.2: Cancel button
+            @todo 2.2: plain representation
 
         """
 
@@ -1125,8 +1123,13 @@ class S3CRUDHandler(S3MethodHandler):
                                          download_url=self.download_url,
                                          format=representation)
 
+            # Empty table - or just no match?
             if not items:
-                if self.db(self.table.id > 0).count():
+                if "deleted" in self.table:
+                    available_records = self.db(self.table.deleted == False)
+                else:
+                    available_records = self.db(self.table.id > 0)
+                if available_records.count():
                     items = self.crud_string(self.tablename, "msg_no_match")
                 else:
                     items = self.crud_string(self.tablename, "msg_list_empty")
@@ -1216,7 +1219,12 @@ class S3CRUDHandler(S3MethodHandler):
 
         """ Generate a link button
 
-            @todo 2.2: fix docstring
+            @param label: the link label (None if using CRUD string)
+            @param tablename: the name of table for CRUD string selection
+            @param name: name of CRUD string for the button label
+            @param _href: the target URL
+            @param _id: the HTML-ID of the link
+            @param _class: the HTML-class of the link
 
         """
 
@@ -1238,7 +1246,8 @@ class S3CRUDHandler(S3MethodHandler):
 
         """ Get a CRUD info string for interactive pages
 
-            @todo 2.2: fix docstring
+            @param tablename: the table name
+            @param name: the name of the CRUD string
 
         """
 
@@ -1371,7 +1380,11 @@ class S3CRUDHandler(S3MethodHandler):
 
         """ Returns a linker function for the record ID column in list views
 
-            @todo 2.2: fix docstring
+            @param r: the S3Request
+            @param authorised: user authorised for update (override internal check)
+            @param update: provide link to update rather than to read
+            @param native: link to the native controller rather than to
+                           component controller
 
         """
 
@@ -1440,7 +1453,8 @@ class S3CRUDHandler(S3MethodHandler):
 
         """ Convert the SSPag GET vars into a filter query
 
-            @todo 2.2: fix docstring
+            @param table: the table
+            @param fields: list of fields displayed in the list view (same order!)
 
         """
 
@@ -1493,7 +1507,8 @@ class S3CRUDHandler(S3MethodHandler):
 
         """ Convert the SSPag GET vars into a sorting query
 
-            @todo 2.2: fix docstring
+            @param table: the table
+            @param fields: list of fields displayed in the list view (same order!)
 
         """
 

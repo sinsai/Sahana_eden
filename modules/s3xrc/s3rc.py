@@ -2,7 +2,7 @@
 
 """ S3XRC Resource Framework - Resource Controller
 
-    @version: 2.1.8
+    @version: 2.1.9
 
     @see: U{B{I{S3XRC}} <http://eden.sahanafoundation.org/wiki/S3XRC>} on Eden wiki
 
@@ -59,12 +59,18 @@ class S3ResourceController(object):
 
     """ S3 Resource Controller
 
+        @param environment: the environment of this run
         @param domain: name of the current domain
         @param base_url: base URL of this instance
         @param rpp: rows-per-page for server-side pagination
         @param messages: a function to retrieve message URLs tagged for a resource
+        @param attr: configuration settings
 
-        @todo 2.2: fix docstring/parameters
+        @keyword xml_export_formats: XML export format configuration (see 00_settings.py)
+        @keyword xml_import_formats: XML import format configuration (see 00_settings.py)
+        @keyword json_export_formats: JSON export format configuration (see 00_settings.py)
+        @keyword json_import_formats: JSON import format configuration (see 00_settings.py)
+
         @todo 2.2: move formats into settings
         @todo 2.2: error messages internationalization!
 
@@ -154,11 +160,7 @@ class S3ResourceController(object):
 
         self.model = S3ResourceModel(self.db)   # Resource Model, @todo 2.2: reduce parameter list to (self)?
         self.crud = S3CRUDHandler(self)         # CRUD Handler
-        self.xml = S3XML(self.db,               # S3XML, @todo 2.2: reduce parameter list to (self)?
-                         domain=domain,
-                         base_url=base_url,
-                         gis=self.gis,
-                         cache=self.cache)
+        self.xml = S3XML(self)                  # XML Toolkit
 
         # Hooks
         self.permit = self.auth.shn_has_permission  # Permission Checker
@@ -459,7 +461,7 @@ class S3ResourceController(object):
 
         """ Set the default handler for a resource method
 
-            @todo 2.2: remove this
+            @todo 2.2: deprecate?
 
         """
 
@@ -471,7 +473,7 @@ class S3ResourceController(object):
 
         """ Get the default handler for a resource method
 
-            @todo 2.2: remove this
+            @todo 2.2: deprecate?
 
         """
 
@@ -488,9 +490,17 @@ class S3ResourceController(object):
                   components=None,
                   storage=None):
 
-        """ Wrapper function for S3Resource
+        """ Wrapper function for S3Resource, creates a resource
 
-            @todo 2.2: fix docstring
+            @param prefix: the application prefix of the resource
+            @param name: the resource name (without prefix)
+            @param id: record ID or list of record IDs
+            @param uid: record UID or list of record UIDs
+            @param filter: web2py query to filter the resource query
+            @param vars: dict of URL query parameters
+            @param parent: the parent resource (if this is a component)
+            @param components: list of component (names)
+            @param storage: the data store (None for DB)
 
         """
 

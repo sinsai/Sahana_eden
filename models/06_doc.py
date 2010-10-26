@@ -23,7 +23,6 @@ table = db.define_table(tablename,
 
 table.name.requires = [IS_NOT_EMPTY(), IS_NOT_IN_DB(db, "%s.name" % tablename)]
 #table.name.label = T("Name")
-table.name.comment = SPAN("*", _class="req")
 
 def shn_file_represent( file, table):
     if file:
@@ -124,7 +123,6 @@ table = db.define_table(tablename,
 
 table.name.requires = [IS_NOT_EMPTY(), IS_NOT_IN_DB(db, "%s.name" % tablename)]
 #table.name.label = T("Name")
-table.name.comment = SPAN("*", _class="req")
 table.url.label = T("URL")
 table.person_id.label = T("Person")
 

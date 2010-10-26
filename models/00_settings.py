@@ -238,6 +238,7 @@ shn_xml_import_formats = ["xml", # native S3XML (must be included here!)
                           "osm", # Open Street Map
                           "pfif", # Person Finder Interchange Format
                           "ushahidi", # Ushahidi
+                          "have",
                           "odk",
                           "agasti", # Sahana Agasti
                           "fods" # Flat Open Document Spreadsheet

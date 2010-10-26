@@ -213,7 +213,6 @@ table.country.represent = lambda opt: s3_list_of_nations.get(opt, UNKNOWN_OPT)
 table.website.requires = IS_NULL_OR(IS_URL())
 table.donation_phone.requires = shn_phone_requires
 table.name.label = T("Name")
-table.name.comment = SPAN("*", _class="req")
 table.acronym.label = T("Acronym")
 table.type.label = T("Type")
 table.donation_phone.label = T("Donation Phone #")
@@ -343,7 +342,6 @@ table.national_staff.requires = IS_NULL_OR(IS_INT_IN_RANGE(0, 99999))
 table.international_staff.requires = IS_NULL_OR(IS_INT_IN_RANGE(0, 9999))
 table.number_of_vehicles.requires = IS_NULL_OR(IS_INT_IN_RANGE(0, 9999))
 table.name.label = T("Name")
-table.name.comment = SPAN("*", _class="req")
 table.parent.label = T("Parent")
 table.type.label = T("Type")
 table.address.label = T("Address")
@@ -463,14 +461,11 @@ table.budgeted_cost.requires = IS_NULL_OR(IS_FLOAT_IN_RANGE(0, 999999999))
 # Project Resource called from multiple controllers
 # - so we define strings in the model
 table.code.label = T("Code")
-table.code.comment = SPAN("*", _class="req")
 table.name.label = T("Title")
 table.start_date.label = T("Start date")
 table.end_date.label = T("End date")
 table.description.label = T("Description")
-#table.description.comment = SPAN("*", _class="req")
 table.status.label = T("Status")
-table.status.comment = SPAN("*", _class="req")
 
 ADD_PROJECT = T("Add Project")
 s3.crud_strings[tablename] = Storage(
@@ -549,8 +544,8 @@ table.manager_id.represent = lambda id: (id and [shn_pr_person_represent(id)] or
 # Staff Resource called from multiple controllers
 # - so we define strings in the model
 table.person_id.label = T("Person")
-table.person_id.comment = DIV(SPAN("*", _class="req"), shn_person_id_comment)
-table.organisation_id.comment = DIV(SPAN("*", _class="req"), shn_organisation_comment)
+table.person_id.comment = shn_person_id_comment
+table.organisation_id.comment = shn_organisation_comment
 table.title.label = T("Job Title")
 table.title.comment = DIV( _class="tooltip", _title=T("Title") + "|" + T("The Role this person plays within this Office/Project."))
 table.manager_id.label = T("Manager")
@@ -735,7 +730,6 @@ table = db.define_table(tablename,
 # - so we define strings in the model
 table.subject.requires = IS_NOT_EMPTY()
 table.subject.label = T("Subject")
-table.subject.comment = SPAN("*", _class="req")
 
 table.person_id.label = T("Assigned to")
 

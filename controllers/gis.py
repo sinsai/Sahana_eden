@@ -119,9 +119,8 @@ def location():
         else:
             table.code.comment = DIV(_class="tooltip",
                                      _title=T("Code") + "|" + T("For a country this would be the ISO2 code, for a Town, it would be the Airport Locode."))
-            table.wkt.comment = DIV(SPAN("*", _class="req"),
-                                    DIV(_class="stickytip",
-                                        _title="WKT|" + T("The" + " <a href='http://en.wikipedia.org/wiki/Well-known_text' target=_blank>" + T("Well-Known Text") + "</a> " + "representation of the Polygon/Line.")))
+            table.wkt.comment = DIV(_class="stickytip",
+                                    _title="WKT|" + T("The" + " <a href='http://en.wikipedia.org/wiki/Well-known_text' target=_blank>" + T("Well-Known Text") + "</a> " + "representation of the Polygon/Line."))
 
         if r.http in ("GET", "POST") and r.representation in shn_interactive_view_formats:
             # Options which are only required in interactive HTML views
@@ -140,7 +139,6 @@ def location():
                                              DIV(
                                                _class="tooltip",
                                                _title=T("Parent") + "|" + T("The Area which this Site is located within."))),
-            table.name.comment = SPAN("*", _class="req")
             table.osm_id.comment = DIV(_class="stickytip",
                                        _title="OpenStreetMap ID|" + T("The") + " <a href='http://openstreetmap.org' target=_blank>OpenStreetMap</a> ID. " + T("If you know what the OSM ID of this location is then you can enter it here."))
             table.geonames_id.comment = DIV(_class="stickytip",
@@ -596,7 +594,6 @@ def apikey():
 
     # Model options
     table.name.writable = False
-    table.apikey.comment = SPAN("*", _class="req")
 
     # CRUD Strings
     ADD_KEY = T("Add Key")
@@ -676,7 +673,6 @@ def feature_class():
     table = db[tablename]
 
     # Model options
-    table.name.comment = SPAN("*", _class="req")
     table.gps_marker.comment = DIV( _class="tooltip", _title=T("GPS Marker") + "|" + T("Defines the icon used for display of features on handheld GPS."))
 
     # CRUD Strings
@@ -712,10 +708,6 @@ def layer_feature():
     resource = request.function
     tablename = module + "_" + resource
     table = db[tablename]
-
-    # Model options
-    table.name.comment = SPAN("*", _class="req")
-    #table.query.comment = SPAN("*", _class="req")
 
     # CRUD Strings
     ADD_FEATURE_LAYER = T("Add Feature Layer")
@@ -779,9 +771,6 @@ def marker():
     tablename = module + "_" + resource
     table = db[tablename]
 
-    # Model options
-    table.name.comment = SPAN("*", _class="req")
-
     # CRUD Strings
     LIST_MARKERS = T("List Markers")
     s3.crud_strings[tablename] = Storage(
@@ -817,12 +806,6 @@ def projection():
     resource = request.function
     tablename = module + "_" + resource
     table = db[tablename]
-
-    # Model options
-    table.name.comment = SPAN("*", _class="req")
-    table.epsg.comment = SPAN("*", _class="req")
-    table.maxExtent.comment = SPAN("*", _class="req")
-    table.maxResolution.comment = SPAN("*", _class="req")
 
     # CRUD Strings
     ADD_PROJECTION = T("Add Projection")
@@ -1092,9 +1075,6 @@ def layer_georss():
     tablename = module + "_" + resource
     table = db[tablename]
 
-    # Model options
-    table.url.comment = SPAN("*", _class="req")
-
     # CRUD Strings
     type = "GeoRSS"
     LAYERS = T(TYPE_LAYERS_FMT % type)
@@ -1175,9 +1155,6 @@ def layer_kml():
     tablename = module + "_" + resource
     table = db[tablename]
 
-    # Model options
-    table.url.comment = SPAN("*", _class="req")
-
     # CRUD Strings
     type = "KML"
     LAYERS = T(TYPE_LAYERS_FMT % type)
@@ -1223,10 +1200,6 @@ def layer_tms():
     tablename = module + "_" + resource
     table = db[tablename]
 
-    # Model options
-    table.url.comment = SPAN("*", _class="req")
-    table.layers.comment = SPAN("*", _class="req")
-
     # CRUD Strings
     type = "TMS"
     LAYERS = T(TYPE_LAYERS_FMT % type)
@@ -1266,9 +1239,6 @@ def layer_wfs():
     tablename = module + "_" + resource
     table = db[tablename]
 
-    # Model options
-    table.url.comment = SPAN("*", _class="req")
-
     # CRUD Strings
     type = "WFS"
     LAYERS = T(TYPE_LAYERS_FMT % type)
@@ -1307,10 +1277,6 @@ def layer_wms():
     resource = request.function
     tablename = module + "_" + resource
     table = db[tablename]
-
-    # Model options
-    table.url.comment = SPAN("*", _class="req")
-    table.layers.comment = SPAN("*", _class="req")
 
     # CRUD Strings
     type = "WMS"
@@ -1388,9 +1354,6 @@ def layer_xyz():
     resource = request.function
     tablename = module + "_" + resource
     table = db[tablename]
-
-    # Model options
-    table.url.comment = SPAN("*", _class="req")
 
     # CRUD Strings
     type = "XYZ"

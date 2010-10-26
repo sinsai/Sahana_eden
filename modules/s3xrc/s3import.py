@@ -2,7 +2,7 @@
 
 """ S3XRC Resource Framework - Resource Import Toolkit
 
-    @version: 2.1.8
+    @version: 2.1.9
 
     @see: U{B{I{S3XRC}} <http://eden.sahanafoundation.org/wiki/S3XRC>} on Eden wiki
 

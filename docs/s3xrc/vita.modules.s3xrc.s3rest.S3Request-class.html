@@ -52,6 +52,8 @@
     <td>
       <table cellpadding="0" cellspacing="0">
         <!-- hide/show private -->
+        <tr><td align="right"><span class="options">[<a href="javascript:void(0);" class="privatelink"
+    onclick="toggle_private();">hide&nbsp;private</a>]</span></td></tr>
         <tr><td align="right"><span class="options"
             >[<a href="frames.html" target="_top">frames</a
             >]&nbsp;|&nbsp;<a href="vita.modules.s3xrc.s3rest.S3Request-class.html"
@@ -61,7 +63,7 @@
   </tr>
 </table>
 <!-- ==================== CLASS DESCRIPTION ==================== -->
-<h1 class="epydoc">Class S3Request</h1><p class="nomargin-top"></p>
+<h1 class="epydoc">Class S3Request</h1><p class="nomargin-top"><span class="codelink"><a href="vita.modules.s3xrc.s3rest-pysrc.html#S3Request">source&nbsp;code</a></span></p>
 <pre class="base-tree">
 object --+
          |
@@ -76,8 +78,17 @@ object --+
 <table class="summary" border="1" cellpadding="3"
        cellspacing="0" width="100%" bgcolor="white">
 <tr bgcolor="#70b0f0" class="table-header">
-  <td align="left" colspan="2" class="table-header">
-    <span class="table-header">Instance Methods</span></td>
+  <td colspan="2" class="table-header">
+    <table border="0" cellpadding="0" cellspacing="0" width="100%">
+      <tr valign="top">
+        <td align="left"><span class="table-header">Instance Methods</span></td>
+        <td align="right" valign="top"
+         ><span class="options">[<a href="#section-InstanceMethods"
+         class="privatelink" onclick="toggle_private();"
+         >hide private</a>]</span></td>
+      </tr>
+    </table>
+  </td>
 </tr>
 <tr>
     <td width="15%" align="right" valign="top" class="summary">
@@ -91,7 +102,7 @@ object --+
         <span class="summary-sig-arg">name</span>)</span><br />
       Constructor</td>
           <td align="right" valign="top">
-            
+            <span class="codelink"><a href="vita.modules.s3xrc.s3rest-pysrc.html#S3Request.__init__">source&nbsp;code</a></span>
             
           </td>
         </tr>
@@ -108,7 +119,7 @@ object --+
           <td><span class="summary-sig"><a href="vita.modules.s3xrc.s3rest.S3Request-class.html#unauthorised" class="summary-sig-name">unauthorised</a>(<span class="summary-sig-arg">self</span>)</span><br />
       Action upon unauthorised request</td>
           <td align="right" valign="top">
-            
+            <span class="codelink"><a href="vita.modules.s3xrc.s3rest-pysrc.html#S3Request.unauthorised">source&nbsp;code</a></span>
             
           </td>
         </tr>
@@ -128,7 +139,63 @@ object --+
         <span class="summary-sig-arg">tree</span>=<span class="summary-sig-default">None</span>)</span><br />
       Action upon error</td>
           <td align="right" valign="top">
+            <span class="codelink"><a href="vita.modules.s3xrc.s3rest-pysrc.html#S3Request.error">source&nbsp;code</a></span>
             
+          </td>
+        </tr>
+      </table>
+      
+    </td>
+  </tr>
+<tr class="private">
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a href="vita.modules.s3xrc.s3rest.S3Request-class.html#_bind" class="summary-sig-name" onclick="show_private();">_bind</a>(<span class="summary-sig-arg">self</span>,
+        <span class="summary-sig-arg">resource</span>)</span><br />
+      Re-bind this request to another resource</td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="vita.modules.s3xrc.s3rest-pysrc.html#S3Request._bind">source&nbsp;code</a></span>
+            
+          </td>
+        </tr>
+      </table>
+      
+    </td>
+  </tr>
+<tr class="private">
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a href="vita.modules.s3xrc.s3rest.S3Request-class.html#__parse" class="summary-sig-name" onclick="show_private();">__parse</a>(<span class="summary-sig-arg">self</span>)</span><br />
+      Parses a web2py request for the REST interface</td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="vita.modules.s3xrc.s3rest-pysrc.html#S3Request.__parse">source&nbsp;code</a></span>
+            
+          </td>
+        </tr>
+      </table>
+      
+    </td>
+  </tr>
+<tr class="private">
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a href="vita.modules.s3xrc.s3rest.S3Request-class.html#__next" class="summary-sig-name" onclick="show_private();">__next</a>(<span class="summary-sig-arg">self</span>,
+        <span class="summary-sig-arg">id</span>=<span class="summary-sig-default">None</span>,
+        <span class="summary-sig-arg">method</span>=<span class="summary-sig-default">None</span>,
+        <span class="summary-sig-arg">representation</span>=<span class="summary-sig-default">None</span>,
+        <span class="summary-sig-arg">vars</span>=<span class="summary-sig-default">None</span>)</span><br />
+      Returns a URL of the current request</td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="vita.modules.s3xrc.s3rest-pysrc.html#S3Request.__next">source&nbsp;code</a></span>
             
           </td>
         </tr>
@@ -147,7 +214,7 @@ object --+
         <span class="summary-sig-arg">vars</span>=<span class="summary-sig-default">None</span>)</span><br />
       URL of the current request</td>
           <td align="right" valign="top">
-            
+            <span class="codelink"><a href="vita.modules.s3xrc.s3rest-pysrc.html#S3Request.here">source&nbsp;code</a></span>
             
           </td>
         </tr>
@@ -169,7 +236,7 @@ object --+
       URL of a request with different method and/or record_id of the same 
       resource</td>
           <td align="right" valign="top">
-            
+            <span class="codelink"><a href="vita.modules.s3xrc.s3rest-pysrc.html#S3Request.other">source&nbsp;code</a></span>
             
           </td>
         </tr>
@@ -188,7 +255,7 @@ object --+
         <span class="summary-sig-arg">vars</span>=<span class="summary-sig-default">None</span>)</span><br />
       URL of a HTTP/list request on the same resource</td>
           <td align="right" valign="top">
-            
+            <span class="codelink"><a href="vita.modules.s3xrc.s3rest-pysrc.html#S3Request.there">source&nbsp;code</a></span>
             
           </td>
         </tr>
@@ -207,7 +274,7 @@ object --+
         <span class="summary-sig-arg">vars</span>=<span class="summary-sig-default">None</span>)</span><br />
       URL of the same request with neutralized primary record ID</td>
           <td align="right" valign="top">
-            
+            <span class="codelink"><a href="vita.modules.s3xrc.s3rest-pysrc.html#S3Request.same">source&nbsp;code</a></span>
             
           </td>
         </tr>
@@ -224,7 +291,7 @@ object --+
           <td><span class="summary-sig"><a href="vita.modules.s3xrc.s3rest.S3Request-class.html#target" class="summary-sig-name">target</a>(<span class="summary-sig-arg">self</span>)</span><br />
       Get the target table of the current request</td>
           <td align="right" valign="top">
-            
+            <span class="codelink"><a href="vita.modules.s3xrc.s3rest-pysrc.html#S3Request.target">source&nbsp;code</a></span>
             
           </td>
         </tr>
@@ -256,8 +323,17 @@ object --+
 <table class="summary" border="1" cellpadding="3"
        cellspacing="0" width="100%" bgcolor="white">
 <tr bgcolor="#70b0f0" class="table-header">
-  <td align="left" colspan="2" class="table-header">
-    <span class="table-header">Class Variables</span></td>
+  <td colspan="2" class="table-header">
+    <table border="0" cellpadding="0" cellspacing="0" width="100%">
+      <tr valign="top">
+        <td align="left"><span class="table-header">Class Variables</span></td>
+        <td align="right" valign="top"
+         ><span class="options">[<a href="#section-ClassVariables"
+         class="privatelink" onclick="toggle_private();"
+         >hide private</a>]</span></td>
+      </tr>
+    </table>
+  </td>
 </tr>
 <tr>
     <td width="15%" align="right" valign="top" class="summary">
@@ -286,8 +362,17 @@ object --+
 <table class="summary" border="1" cellpadding="3"
        cellspacing="0" width="100%" bgcolor="white">
 <tr bgcolor="#70b0f0" class="table-header">
-  <td align="left" colspan="2" class="table-header">
-    <span class="table-header">Properties</span></td>
+  <td colspan="2" class="table-header">
+    <table border="0" cellpadding="0" cellspacing="0" width="100%">
+      <tr valign="top">
+        <td align="left"><span class="table-header">Properties</span></td>
+        <td align="right" valign="top"
+         ><span class="options">[<a href="#section-Properties"
+         class="privatelink" onclick="toggle_private();"
+         >hide private</a>]</span></td>
+      </tr>
+    </table>
+  </td>
 </tr>
   <tr>
     <td colspan="2" class="summary">
@@ -302,8 +387,17 @@ object --+
 <table class="details" border="1" cellpadding="3"
        cellspacing="0" width="100%" bgcolor="white">
 <tr bgcolor="#70b0f0" class="table-header">
-  <td align="left" colspan="2" class="table-header">
-    <span class="table-header">Method Details</span></td>
+  <td colspan="2" class="table-header">
+    <table border="0" cellpadding="0" cellspacing="0" width="100%">
+      <tr valign="top">
+        <td align="left"><span class="table-header">Method Details</span></td>
+        <td align="right" valign="top"
+         ><span class="options">[<a href="#section-MethodDetails"
+         class="privatelink" onclick="toggle_private();"
+         >hide private</a>]</span></td>
+      </tr>
+    </table>
+  </td>
 </tr>
 </table>
 <a name="__init__"></a>
@@ -320,7 +414,7 @@ object --+
     <br /><em class="fname">(Constructor)</em>
   </h3>
   </td><td align="right" valign="top"
-    >&nbsp;
+    ><span class="codelink"><a href="vita.modules.s3xrc.s3rest-pysrc.html#S3Request.__init__">source&nbsp;code</a></span>&nbsp;
     </td>
   </tr></table>
   
@@ -348,7 +442,7 @@ object --+
   <h3 class="epydoc"><span class="sig"><span class="sig-name">unauthorised</span>(<span class="sig-arg">self</span>)</span>
   </h3>
   </td><td align="right" valign="top"
-    >&nbsp;
+    ><span class="codelink"><a href="vita.modules.s3xrc.s3rest-pysrc.html#S3Request.unauthorised">source&nbsp;code</a></span>&nbsp;
     </td>
   </tr></table>
   
@@ -370,7 +464,7 @@ object --+
         <span class="sig-arg">tree</span>=<span class="sig-default">None</span>)</span>
   </h3>
   </td><td align="right" valign="top"
-    >&nbsp;
+    ><span class="codelink"><a href="vita.modules.s3xrc.s3rest-pysrc.html#S3Request.error">source&nbsp;code</a></span>&nbsp;
     </td>
   </tr></table>
   
@@ -385,6 +479,82 @@ object --+
   </dl>
 </td></tr></table>
 </div>
+<a name="_bind"></a>
+<div class="private">
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr><td>
+  <table width="100%" cellpadding="0" cellspacing="0" border="0">
+  <tr valign="top"><td>
+  <h3 class="epydoc"><span class="sig"><span class="sig-name">_bind</span>(<span class="sig-arg">self</span>,
+        <span class="sig-arg">resource</span>)</span>
+  </h3>
+  </td><td align="right" valign="top"
+    ><span class="codelink"><a href="vita.modules.s3xrc.s3rest-pysrc.html#S3Request._bind">source&nbsp;code</a></span>&nbsp;
+    </td>
+  </tr></table>
+  
+  <p>Re-bind this request to another resource</p>
+  <dl class="fields">
+    <dt>Parameters:</dt>
+    <dd><ul class="nomargin-top">
+        <li><strong class="pname"><code>resource</code></strong> - the S3Resource</li>
+    </ul></dd>
+  </dl>
+</td></tr></table>
+</div>
+<a name="__parse"></a>
+<div class="private">
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr><td>
+  <table width="100%" cellpadding="0" cellspacing="0" border="0">
+  <tr valign="top"><td>
+  <h3 class="epydoc"><span class="sig"><span class="sig-name">__parse</span>(<span class="sig-arg">self</span>)</span>
+  </h3>
+  </td><td align="right" valign="top"
+    ><span class="codelink"><a href="vita.modules.s3xrc.s3rest-pysrc.html#S3Request.__parse">source&nbsp;code</a></span>&nbsp;
+    </td>
+  </tr></table>
+  
+  <p>Parses a web2py request for the REST interface</p>
+  <dl class="fields">
+  </dl>
+</td></tr></table>
+</div>
+<a name="__next"></a>
+<div class="private">
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr><td>
+  <table width="100%" cellpadding="0" cellspacing="0" border="0">
+  <tr valign="top"><td>
+  <h3 class="epydoc"><span class="sig"><span class="sig-name">__next</span>(<span class="sig-arg">self</span>,
+        <span class="sig-arg">id</span>=<span class="sig-default">None</span>,
+        <span class="sig-arg">method</span>=<span class="sig-default">None</span>,
+        <span class="sig-arg">representation</span>=<span class="sig-default">None</span>,
+        <span class="sig-arg">vars</span>=<span class="sig-default">None</span>)</span>
+  </h3>
+  </td><td align="right" valign="top"
+    ><span class="codelink"><a href="vita.modules.s3xrc.s3rest-pysrc.html#S3Request.__next">source&nbsp;code</a></span>&nbsp;
+    </td>
+  </tr></table>
+  
+  <p>Returns a URL of the current request</p>
+  <dl class="fields">
+    <dt>Parameters:</dt>
+    <dd><ul class="nomargin-top">
+        <li><strong class="pname"><code>id</code></strong> - the record ID for the URL</li>
+        <li><strong class="pname"><code>method</code></strong> - an explicit method for the URL</li>
+        <li><strong class="pname"><code>representation</code></strong> - the representation for the URL</li>
+        <li><strong class="pname"><code>vars</code></strong> - the URL query variables</li>
+    </ul></dd>
+  </dl>
+<div class="fields">      <p><strong>To Do (2.2):</strong>
+        make this based on S3Resource.url()
+      </p>
+</div></td></tr></table>
+</div>
 <a name="here"></a>
 <div>
 <table class="details" border="1" cellpadding="3"
@@ -397,7 +567,7 @@ object --+
         <span class="sig-arg">vars</span>=<span class="sig-default">None</span>)</span>
   </h3>
   </td><td align="right" valign="top"
-    >&nbsp;
+    ><span class="codelink"><a href="vita.modules.s3xrc.s3rest-pysrc.html#S3Request.here">source&nbsp;code</a></span>&nbsp;
     </td>
   </tr></table>
   
@@ -425,7 +595,7 @@ object --+
         <span class="sig-arg">vars</span>=<span class="sig-default">None</span>)</span>
   </h3>
   </td><td align="right" valign="top"
-    >&nbsp;
+    ><span class="codelink"><a href="vita.modules.s3xrc.s3rest-pysrc.html#S3Request.other">source&nbsp;code</a></span>&nbsp;
     </td>
   </tr></table>
   
@@ -454,7 +624,7 @@ object --+
         <span class="sig-arg">vars</span>=<span class="sig-default">None</span>)</span>
   </h3>
   </td><td align="right" valign="top"
-    >&nbsp;
+    ><span class="codelink"><a href="vita.modules.s3xrc.s3rest-pysrc.html#S3Request.there">source&nbsp;code</a></span>&nbsp;
     </td>
   </tr></table>
   
@@ -480,7 +650,7 @@ object --+
         <span class="sig-arg">vars</span>=<span class="sig-default">None</span>)</span>
   </h3>
   </td><td align="right" valign="top"
-    >&nbsp;
+    ><span class="codelink"><a href="vita.modules.s3xrc.s3rest-pysrc.html#S3Request.same">source&nbsp;code</a></span>&nbsp;
     </td>
   </tr></table>
   
@@ -504,7 +674,7 @@ object --+
   <h3 class="epydoc"><span class="sig"><span class="sig-name">target</span>(<span class="sig-arg">self</span>)</span>
   </h3>
   </td><td align="right" valign="top"
-    >&nbsp;
+    ><span class="codelink"><a href="vita.modules.s3xrc.s3rest-pysrc.html#S3Request.target">source&nbsp;code</a></span>&nbsp;
     </td>
   </tr></table>
   
@@ -522,8 +692,17 @@ object --+
 <table class="details" border="1" cellpadding="3"
        cellspacing="0" width="100%" bgcolor="white">
 <tr bgcolor="#70b0f0" class="table-header">
-  <td align="left" colspan="2" class="table-header">
-    <span class="table-header">Class Variable Details</span></td>
+  <td colspan="2" class="table-header">
+    <table border="0" cellpadding="0" cellspacing="0" width="100%">
+      <tr valign="top">
+        <td align="left"><span class="table-header">Class Variable Details</span></td>
+        <td align="right" valign="top"
+         ><span class="options">[<a href="#section-ClassVariableDetails"
+         class="privatelink" onclick="toggle_private();"
+         >hide private</a>]</span></td>
+      </tr>
+    </table>
+  </td>
 </tr>
 </table>
 <a name="UNAUTHORISED"></a>
@@ -612,7 +791,7 @@ object --+
 <table border="0" cellpadding="0" cellspacing="0" width="100%%">
   <tr>
     <td align="left" class="footer">
-    Generated by Epydoc 3.0.1 on Tue Oct 19 22:45:13 2010
+    Generated by Epydoc 3.0.1 on Tue Oct 26 11:58:03 2010
     </td>
     <td align="right" class="footer">
       <a target="mainFrame" href="http://epydoc.sourceforge.net"

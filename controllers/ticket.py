@@ -45,7 +45,6 @@ def log():
     table = db[tablename]
 
     # Model options
-    table.message.comment = SPAN("*", _class="req")
     table.person_id.label = T("Assigned To")
     table.priority.represent = lambda id: (
         [id and

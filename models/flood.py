@@ -21,7 +21,6 @@ if deployment_settings.has_module(module):
 
 
     table.name.requires = IS_NOT_EMPTY()
-    table.name.comment = SPAN("*", _class="req")
 
     # CRUD strings
     ADD_RIVER = T("Add River")

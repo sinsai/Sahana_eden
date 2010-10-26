@@ -73,14 +73,11 @@ if deployment_settings.has_module(module):
     # Make Person Mandatory
     table.person_id.requires = IS_ONE_OF(db, "pr_person.id", shn_pr_person_represent, orderby="pr_person.first_name")
     table.person_id.label = T("Requestor")
-    table.person_id.comment = SPAN("*", _class="req")
 
     table.timestmp.requires = IS_DATETIME()
-    table.timestmp.comment = SPAN("*", _class="req")
     table.timestmp.label = T("Date & Time")
 
     table.message.requires = IS_NOT_EMPTY()
-    table.message.comment = SPAN("*", _class="req")
 
     # Hide fields from user:
     table.source_type.readable = table.source_type.writable = False
@@ -106,7 +103,6 @@ if deployment_settings.has_module(module):
     table.type.requires = IS_IN_SET(rms_type_opts)
     table.type.represent = lambda type: type and rms_type_opts[type]
     table.type.label = T("Request Type")
-    table.type.comment = SPAN("*", _class="req")
 
     table.source_type.requires = IS_NULL_OR(IS_IN_SET(rms_req_source_type))
     table.source_type.represent = lambda stype: stype and rms_req_source_type[stype]

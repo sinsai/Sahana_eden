@@ -176,12 +176,10 @@ if deployment_settings.has_module(module):
 
 
     table.name.requires = IS_NOT_EMPTY()
-    table.name.comment = SPAN("*", _class="req")
 
     table.datetime.label = T("Date/Time")
     table.datetime.requires = [IS_NOT_EMPTY(),
                                IS_UTC_DATETIME(utc_offset=shn_user_utc_offset(), allow_future=False)]
-    table.datetime.comment = SPAN("*", _class="req")
 
     # The full set available to Admins & Imports/Exports
     # (users use the subset by over-riding this in the Controller)
@@ -252,7 +250,6 @@ if deployment_settings.has_module(module):
 
     table.name.label = T("Short Description")
     table.name.requires = IS_NOT_EMPTY()
-    table.name.comment = SPAN("*", _class="req")
 
     table.message.label = T("Message")
     table.message.represent = lambda message: shn_abbreviate(message)
@@ -266,7 +263,6 @@ if deployment_settings.has_module(module):
     table.datetime.label = T("Date/Time")
     table.datetime.requires = [IS_NOT_EMPTY(),
                                IS_UTC_DATETIME(utc_offset=shn_user_utc_offset(), allow_future=False)]
-    table.datetime.comment = SPAN("*", _class="req")
 
     table.persons_affected.label = T("# of People Affected")
     table.persons_injured.label = T("# of People Injured")

@@ -60,7 +60,6 @@ table.postcode.label = T("ZIP/Postcode")
 table.country.label = T("Country")
 
 table.city.requires = IS_NOT_EMPTY()
-table.city.comment = SPAN("*", _class="req")
 
 ADD_ADDRESS = T("Add Address")
 LIST_ADDRESS = T("List of addresses")
@@ -139,7 +138,6 @@ table.pe_id.requires = IS_ONE_OF(db, "pr_pentity.pe_id",
                                  filter_opts=("pr_person", "pr_group"))
 
 table.value.requires = IS_NOT_EMPTY()
-table.value.comment = SPAN("*", _class="req")
 table.priority.requires = IS_IN_SET(range(1,10), zero=None)
 
 
@@ -215,21 +213,19 @@ table = db.define_table(tablename,
 table.uuid.requires = IS_NOT_IN_DB(db, "%s.uuid" % tablename)
 
 table.title.requires = IS_NOT_EMPTY()
-table.title.comment = DIV(SPAN("*", _class="req", _style="padding-right: 5px;"), DIV(_class="tooltip",
-    _title=T("Title") + "|" + T("Specify a descriptive title for the image.")))
+table.title.comment = DIV(_class="tooltip",
+    _title=T("Title") + "|" + T("Specify a descriptive title for the image."))
 
 table.url.label = T("URL")
 table.url.represent = lambda url: url and DIV(A(IMG(_src=url, _height=60), _href=url)) or T("None")
-table.url.comment =  DIV(SPAN("*", _class="req", _style="padding-right: 5px;"), DIV(_class="tooltip",
-    _title=T("URL") + "|" + T("The URL of the image file. If you don't upload an image file, then you must specify its location here.")))
-
-table.image.comment =  DIV(SPAN("*", _class="req", _style="padding-right: 5px;"), DIV(_class="tooltip",
-    _title=T("Image") + "|" + T("Upload an image file here. If you don't upload an image file, then you must specify its location in the URL field.")))
+table.url.comment =  DIV(_class="tooltip",
+    _title=T("URL") + "|" + T("The URL of the image file. If you don't upload an image file, then you must specify its location here."))
+table.image.comment =  DIV(_class="tooltip",
+    _title=T("Image") + "|" + T("Upload an image file here. If you don't upload an image file, then you must specify its location in the URL field."))
 table.image.represent = lambda image: image and \
         DIV(A(IMG(_src=URL(r=request, c="default", f="download", args=image),_height=60, _alt=T("View Image")),
               _href=URL(r=request, c="default", f="download", args=image))) or \
         T("No Image")
-
 table.description.comment =  DIV(_class="tooltip",
     _title=T("Description") + "|" + T("Give a brief description of the image, e.g. what can be seen where on the picture (optional)."))
 
@@ -265,6 +261,7 @@ s3xrc.model.add_component(prefix, resourcename,
 
 s3xrc.model.configure(table,
     onvalidation=shn_pr_image_onvalidation,
+    mark_required = ["url", "image"],
     list_fields=[
         "id",
         "title",
@@ -346,7 +343,6 @@ table.reporter.default = s3_logged_in_person()
 table.datetime.requires = IS_UTC_DATETIME(utc_offset=shn_user_utc_offset(), allow_future=False)
 table.datetime.represent = lambda value: shn_as_local_time(value)
 table.datetime.label = T("Date/Time")
-table.datetime.comment = SPAN("*", _class="req")
 table.datetime.default = request.utcnow
 
 table.closed.readable = False
@@ -540,7 +536,6 @@ table = db.define_table(tablename,
 table.uuid.requires = IS_NOT_IN_DB(db, "%s.uuid" % tablename)
 table.person_id.label = T("Person")
 table.value.requires = [IS_NOT_EMPTY(), IS_NOT_IN_DB(db, "%s.value" % tablename)]
-table.value.comment = SPAN("*", _class="req")
 table.ia_name.label = T("Issuing Authority")
 
 # Identity as component of persons

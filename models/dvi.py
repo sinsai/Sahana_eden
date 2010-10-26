@@ -52,7 +52,6 @@ if deployment_settings.has_module(module):
     table.uuid.requires = IS_NOT_IN_DB(db, "%s.uuid" % table)
 
     table.date.label = T("Date/Time of Find")
-    table.date.comment = SPAN("*", _class="req")
     table.date.default = request.utcnow
     table.date.requires = IS_UTC_DATETIME(utc_offset=shn_user_utc_offset(),
                                           allow_future=False)
@@ -65,7 +64,6 @@ if deployment_settings.has_module(module):
     table.person_id.label = T("Finder")
 
     table.bodies_est.label = T("Bodies found")
-    table.bodies_est.comment = SPAN("*", _class="req")
     table.bodies_est.requires = IS_INT_IN_RANGE(1, 99999)
     table.bodies_est.default = 0
 
@@ -132,12 +130,10 @@ if deployment_settings.has_module(module):
                             pr_age_group(),
                             migrate=migrate, *s3_meta_fields())
 
-    table.pe_label.comment = SPAN("*", _class="req")
     table.pe_label.requires = [IS_NOT_EMPTY(error_message=T("Enter a unique label!")),
                                IS_NOT_IN_DB(db, "dvi_body.pe_label")]
 
     table.date_of_recovery.default = request.utcnow
-    table.date_of_recovery.comment = SPAN("*", _class="req")
     table.date_of_recovery.requires = IS_UTC_DATETIME(utc_offset=shn_user_utc_offset(),
                                                       allow_future=False)
     table.date_of_recovery.represent = lambda value: shn_as_local_time(value)

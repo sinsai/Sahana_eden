@@ -2,7 +2,7 @@
 
 """ S3XRC Resource Framework - Resource Controller
 
-    @version: 2.1.8
+    @version: 2.1.9
 
     @see: U{B{I{S3XRC}} <http://eden.sahanafoundation.org/wiki/S3XRC>} on Eden wiki
 
@@ -154,11 +154,7 @@ class S3ResourceController(object):
 
         self.model = S3ResourceModel(self.db)   # Resource Model, @todo 2.2: reduce parameter list to (self)?
         self.crud = S3CRUDHandler(self)         # CRUD Handler
-        self.xml = S3XML(self.db,               # S3XML, @todo 2.2: reduce parameter list to (self)?
-                         domain=domain,
-                         base_url=base_url,
-                         gis=self.gis,
-                         cache=self.cache)
+        self.xml = S3XML(self)                  # XML Toolkit
 
         # Hooks
         self.permit = self.auth.shn_has_permission  # Permission Checker

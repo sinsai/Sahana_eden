@@ -248,8 +248,8 @@ table.first_name.requires.error_message = T("Please enter a First Name")
 
 table.pe_label.comment = DIV(DIV(_class="tooltip",
     _title=T("ID Label") + "|" + T("Number or Label on the identification tag this person is wearing (if any).")))
-table.first_name.comment =  DIV(SPAN("*", _class="req", _style="padding-right: 5px;"), DIV(_class="tooltip",
-    _title=T("First name") + "|" + T("The first or only name of the person (mandatory).")))
+table.first_name.comment =  DIV(_class="tooltip",
+    _title=T("First name") + "|" + T("The first or only name of the person (mandatory)."))
 table.preferred_name.comment = DIV(DIV(_class="tooltip",
     _title=T("Preferred Name") + "|" + T("The name to be used when calling for or directly addressing the person (optional).")))
 table.local_name.comment = DIV(DIV(_class="tooltip",
@@ -404,7 +404,6 @@ table.system.writable = False
 table.group_type.label = T("Group type")
 table.name.label = T("Group name")
 table.name.requires = IS_NOT_EMPTY()
-table.name.comment = DIV(SPAN("*", _class="req", _style="padding-right: 5px;"))
 
 table.description.label = T("Group description")
 table.description.comment = DIV(DIV(_class="tooltip",

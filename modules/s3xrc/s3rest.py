@@ -2,7 +2,7 @@
 
 """ S3XRC Resource Framework - Resource API
 
-    @version: 2.1.8
+    @version: 2.1.9
 
     @see: U{B{I{S3XRC}} <http://eden.sahanafoundation.org/wiki/S3XRC>} on Eden wiki
 
@@ -2292,10 +2292,26 @@ class S3Resource(object):
 
         # Add asterisk to labels of required fields
         labels = Storage()
+        mark_required = model.get_config(table, "mark_required")
         for field in table:
             if field.writable:
-                requires = field.requires and str(field.requires) or ""
-                if field.required or "IS_NOT_EMPTY" in requires:
+                required = field.required or \
+                           field.notnull or \
+                           mark_required and field.name in mark_required
+                validators = field.requires
+                if not validators and not required:
+                    continue
+                if not required:
+                    if not isinstance(validators, (list, tuple)):
+                        validators = [validators]
+                    for v in validators:
+                        if hasattr(v, "options"):
+                            continue
+                        val, error = v("")
+                        if error:
+                            required = True
+                            break
+                if required:
                     labels[field.name] = DIV("%s:" % field.label, SPAN(" *", _class="req"))
 
         # Get the form

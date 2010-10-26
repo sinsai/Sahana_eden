@@ -577,11 +577,6 @@ class S3CRUDHandler(S3MethodHandler):
             if subheadings:
                 self.insert_subheadings(form, tablename, subheadings)
 
-            try:
-                form[0][-1][0][0].update(_class = "submit")
-            except:
-                pass
-
             # Cancel button?
             #form[0].append(TR(TD(), TD(INPUT(_type="reset", _value=T("Reset form")))))
             #if response.s3.cancel:
@@ -879,11 +874,6 @@ class S3CRUDHandler(S3MethodHandler):
             # Insert subheadings
             if subheadings:
                 self.insert_subheadings(form, tablename, subheadings)
-
-            try:
-                form[0][-1][0][0].update(_class = "submit")
-            except:
-                pass
 
             # Cancel button?
             #form[0].append(TR(TD(), TD(INPUT(_type="reset", _value=T("Reset form")))))

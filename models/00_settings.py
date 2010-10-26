@@ -188,9 +188,9 @@ def s3_formstyle(id, label, widget, comment):
     row = []
 
     # Label on the 1st row
-    row.append(TR(TD(label, _class="w2p_fl", _colspan="2"), _class="s3rl", _id=id + "1"))
+    row.append(TR(TD(label, _class="w2p_fl"), TD(""), _id=id + "1"))
     # Widget & Comment on the 2nd Row
-    row.append(TR(widget, TD(comment, _class="w2p_fc"), _class="s3rc", _id=id))
+    row.append(TR(widget, TD(comment, _class="w2p_fc"), _id=id))
 
     return tuple(row)
 

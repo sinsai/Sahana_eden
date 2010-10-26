@@ -904,7 +904,7 @@ object --+
         <span class="summary-sig-arg">template</span>=<span class="summary-sig-default">None</span>,
         <span class="summary-sig-arg">ignore_errors</span>=<span class="summary-sig-default">False</span>,
         <span class="summary-sig-arg">**args</span>)</span><br />
-      Fetch data to the current resource from a remote URL</td>
+      Fetch XML (JSON) data to the current resource from a remote URL</td>
           <td align="right" valign="top">
             <span class="codelink"><a href="vita.modules.s3xrc.s3rest-pysrc.html#S3Resource.fetch">source&nbsp;code</a></span>
             
@@ -1027,7 +1027,7 @@ object --+
         <tr>
           <td><span class="summary-sig"><a href="vita.modules.s3xrc.s3rest.S3Resource-class.html#fields" class="summary-sig-name">fields</a>(<span class="summary-sig-arg">self</span>,
         <span class="summary-sig-arg">component</span>=<span class="summary-sig-default">None</span>)</span><br />
-      Export a list of fields in the primary table as element tree</td>
+      Export a list of fields in the resource as element tree</td>
           <td align="right" valign="top">
             <span class="codelink"><a href="vita.modules.s3xrc.s3rest-pysrc.html#S3Resource.fields">source&nbsp;code</a></span>
             
@@ -1045,7 +1045,7 @@ object --+
         <tr>
           <td><span class="summary-sig"><a href="vita.modules.s3xrc.s3rest.S3Resource-class.html#fields_xml" class="summary-sig-name">fields_xml</a>(<span class="summary-sig-arg">self</span>,
         <span class="summary-sig-arg">component</span>=<span class="summary-sig-default">None</span>)</span><br />
-      Export a list of fields in the primary table as XML</td>
+      Export a list of fields in the resource as XML</td>
           <td align="right" valign="top">
             <span class="codelink"><a href="vita.modules.s3xrc.s3rest-pysrc.html#S3Resource.fields_xml">source&nbsp;code</a></span>
             
@@ -1063,7 +1063,7 @@ object --+
         <tr>
           <td><span class="summary-sig"><a href="vita.modules.s3xrc.s3rest.S3Resource-class.html#fields_json" class="summary-sig-name">fields_json</a>(<span class="summary-sig-arg">self</span>,
         <span class="summary-sig-arg">component</span>=<span class="summary-sig-default">None</span>)</span><br />
-      Export a list of fields in the primary table as JSON</td>
+      Export a list of fields in the resource as JSON</td>
           <td align="right" valign="top">
             <span class="codelink"><a href="vita.modules.s3xrc.s3rest-pysrc.html#S3Resource.fields_json">source&nbsp;code</a></span>
             
@@ -1088,7 +1088,7 @@ object --+
         <span class="summary-sig-arg">from_record</span>=<span class="summary-sig-default">None</span>,
         <span class="summary-sig-arg">map_fields</span>=<span class="summary-sig-default">None</span>,
         <span class="summary-sig-arg">format</span>=<span class="summary-sig-default">None</span>)</span><br />
-      Add a record to this resource</td>
+      Provides and processes an Add-form for this resource</td>
           <td align="right" valign="top">
             <span class="codelink"><a href="vita.modules.s3xrc.s3rest-pysrc.html#S3Resource.create">source&nbsp;code</a></span>
             
@@ -2343,16 +2343,26 @@ object --+
   
   <p>Push (=POST) the current resource to a target URL</p>
   <dl class="fields">
+    <dt>Parameters:</dt>
+    <dd><ul class="nomargin-top">
+        <li><strong class="pname"><code>exporter</code></strong> - the exporter function</li>
+        <li><strong class="pname"><code>template</code></strong> - path to the XSLT stylesheet to be used by the exporter</li>
+        <li><strong class="pname"><code>xsltmode</code></strong> - &quot;mode&quot; parameter for the XSLT stylesheet</li>
+        <li><strong class="pname"><code>start</code></strong> - index of the first record to export (slicing)</li>
+        <li><strong class="pname"><code>limit</code></strong> - maximum number of records to export (slicing)</li>
+        <li><strong class="pname"><code>marker</code></strong> - default map marker URL</li>
+        <li><strong class="pname"><code>msince</code></strong> - export only records which have been modified after this datetime</li>
+        <li><strong class="pname"><code>show_urls</code></strong> - show URLs in the &lt;resource&gt; elements</li>
+        <li><strong class="pname"><code>dereference</code></strong> - include referenced resources in the export</li>
+        <li><strong class="pname"><code>content_type</code></strong> - content type specification for the export</li>
+        <li><strong class="pname"><code>username</code></strong> - username to authenticate at the peer site</li>
+        <li><strong class="pname"><code>password</code></strong> - password to authenticate at the peer site</li>
+        <li><strong class="pname"><code>proxy</code></strong> - URL of the proxy server to use</li>
+    </ul></dd>
   </dl>
-<div class="fields">      <strong>To Do (2.2):</strong>
-      <ul class="nomargin-top">
-        <li>
-        fix docstring
-        </li>
-        <li>
+<div class="fields">      <p><strong>To Do (2.2):</strong>
         error handling?
-        </li>
-      </ul>
+      </p>
 </div></td></tr></table>
 </div>
 <a name="push_xml"></a>
@@ -2433,13 +2443,20 @@ object --+
     </td>
   </tr></table>
   
-  <p>Fetch data to the current resource from a remote URL</p>
+  <p>Fetch XML (JSON) data to the current resource from a remote URL</p>
   <dl class="fields">
+    <dt>Parameters:</dt>
+    <dd><ul class="nomargin-top">
+        <li><strong class="pname"><code>url</code></strong> - the peer URL</li>
+        <li><strong class="pname"><code>username</code></strong> - username to authenticate at the peer site</li>
+        <li><strong class="pname"><code>password</code></strong> - password to authenticate at the peer site</li>
+        <li><strong class="pname"><code>proxy</code></strong> - URL of the proxy server to use</li>
+        <li><strong class="pname"><code>json</code></strong> - use JSON importer instead of XML importer</li>
+        <li><strong class="pname"><code>template</code></strong> - path to the XSLT stylesheet to transform the data</li>
+        <li><strong class="pname"><code>ignore_errors</code></strong> - skip invalid records</li>
+    </ul></dd>
   </dl>
-<div class="fields">      <p><strong>To Do (2.2):</strong>
-        fix docstring
-      </p>
-</div></td></tr></table>
+</td></tr></table>
 </div>
 <a name="fetch_xml"></a>
 <div>
@@ -2614,13 +2631,15 @@ object --+
     </td>
   </tr></table>
   
-  <p>Export a list of fields in the primary table as element tree</p>
+  <p>Export a list of fields in the resource as element tree</p>
   <dl class="fields">
+    <dt>Parameters:</dt>
+    <dd><ul class="nomargin-top">
+        <li><strong class="pname"><code>component</code></strong> - name of the component to lookup the fields (None for primary 
+          table)</li>
+    </ul></dd>
   </dl>
-<div class="fields">      <p><strong>To Do (2.2):</strong>
-        fix docstring
-      </p>
-</div></td></tr></table>
+</td></tr></table>
 </div>
 <a name="fields_xml"></a>
 <div>
@@ -2637,13 +2656,15 @@ object --+
     </td>
   </tr></table>
   
-  <p>Export a list of fields in the primary table as XML</p>
+  <p>Export a list of fields in the resource as XML</p>
   <dl class="fields">
+    <dt>Parameters:</dt>
+    <dd><ul class="nomargin-top">
+        <li><strong class="pname"><code>component</code></strong> - name of the component to lookup the fields (None for primary 
+          table)</li>
+    </ul></dd>
   </dl>
-<div class="fields">      <p><strong>To Do (2.2):</strong>
-        fix docstring
-      </p>
-</div></td></tr></table>
+</td></tr></table>
 </div>
 <a name="fields_json"></a>
 <div>
@@ -2660,13 +2681,15 @@ object --+
     </td>
   </tr></table>
   
-  <p>Export a list of fields in the primary table as JSON</p>
+  <p>Export a list of fields in the resource as JSON</p>
   <dl class="fields">
+    <dt>Parameters:</dt>
+    <dd><ul class="nomargin-top">
+        <li><strong class="pname"><code>component</code></strong> - name of the component to lookup the fields (None for primary 
+          table)</li>
+    </ul></dd>
   </dl>
-<div class="fields">      <p><strong>To Do (2.2):</strong>
-        fix docstring
-      </p>
-</div></td></tr></table>
+</td></tr></table>
 </div>
 <a name="create"></a>
 <div>
@@ -2690,13 +2713,21 @@ object --+
     </td>
   </tr></table>
   
-  <p>Add a record to this resource</p>
+  <p>Provides and processes an Add-form for this resource</p>
   <dl class="fields">
+    <dt>Parameters:</dt>
+    <dd><ul class="nomargin-top">
+        <li><strong class="pname"><code>onvalidation</code></strong> - onvalidation callback</li>
+        <li><strong class="pname"><code>onaccept</code></strong> - onaccept callback</li>
+        <li><strong class="pname"><code>message</code></strong> - flash message after successul operation</li>
+        <li><strong class="pname"><code>download_url</code></strong> - default download URL of the application</li>
+        <li><strong class="pname"><code>from_table</code></strong> - copy a record from this table</li>
+        <li><strong class="pname"><code>from_record</code></strong> - copy from this record ID</li>
+        <li><strong class="pname"><code>map_fields</code></strong> - field mapping for copying of records</li>
+        <li><strong class="pname"><code>format</code></strong> - the representation format of the request</li>
+    </ul></dd>
   </dl>
-<div class="fields">      <p><strong>To Do (2.2):</strong>
-        fix docstring
-      </p>
-</div></td></tr></table>
+</td></tr></table>
 </div>
 <a name="read"></a>
 <div>
@@ -2824,11 +2855,20 @@ object --+
   
   <p>List of all records of this resource</p>
   <dl class="fields">
+    <dt>Parameters:</dt>
+    <dd><ul class="nomargin-top">
+        <li><strong class="pname"><code>fields</code></strong> - list of fields to display</li>
+        <li><strong class="pname"><code>start</code></strong> - index of the first record to display</li>
+        <li><strong class="pname"><code>limit</code></strong> - maximum number of records to display</li>
+        <li><strong class="pname"><code>orderby</code></strong> - orderby for the query</li>
+        <li><strong class="pname"><code>linkto</code></strong> - hook to link record IDs</li>
+        <li><strong class="pname"><code>download_url</code></strong> - the default download URL of the application</li>
+        <li><strong class="pname"><code>as_page</code></strong> - return the list as JSON page</li>
+        <li><strong class="pname"><code>as_list</code></strong> - return the list as Python list</li>
+        <li><strong class="pname"><code>format</code></strong> - the representation format</li>
+    </ul></dd>
   </dl>
-<div class="fields">      <p><strong>To Do (2.2):</strong>
-        fix docstring
-      </p>
-</div></td></tr></table>
+</td></tr></table>
 </div>
 <a name="readable_fields"></a>
 <div>
@@ -2935,7 +2975,7 @@ object --+
 <table border="0" cellpadding="0" cellspacing="0" width="100%%">
   <tr>
     <td align="left" class="footer">
-    Generated by Epydoc 3.0.1 on Tue Oct 26 11:58:03 2010
+    Generated by Epydoc 3.0.1 on Tue Oct 26 15:06:23 2010
     </td>
     <td align="right" class="footer">
       <a target="mainFrame" href="http://epydoc.sourceforge.net"

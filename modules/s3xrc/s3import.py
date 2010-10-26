@@ -64,7 +64,9 @@ class S3Importer(object):
 
         """ Import CSV file into database
 
-            @todo 2.2: fix docstring
+            @param file: file handle
+            @param table: the table to import to
+
             @todo 2.3: make this resource-based (files!)
 
         """

@@ -59,12 +59,18 @@ class S3ResourceController(object):
 
     """ S3 Resource Controller
 
+        @param environment: the environment of this run
         @param domain: name of the current domain
         @param base_url: base URL of this instance
         @param rpp: rows-per-page for server-side pagination
         @param messages: a function to retrieve message URLs tagged for a resource
+        @param attr: configuration settings
 
-        @todo 2.2: fix docstring/parameters
+        @keyword xml_export_formats: XML export format configuration (see 00_settings.py)
+        @keyword xml_import_formats: XML import format configuration (see 00_settings.py)
+        @keyword json_export_formats: JSON export format configuration (see 00_settings.py)
+        @keyword json_import_formats: JSON import format configuration (see 00_settings.py)
+
         @todo 2.2: move formats into settings
         @todo 2.2: error messages internationalization!
 
@@ -455,7 +461,7 @@ class S3ResourceController(object):
 
         """ Set the default handler for a resource method
 
-            @todo 2.2: remove this
+            @todo 2.2: deprecate?
 
         """
 
@@ -467,7 +473,7 @@ class S3ResourceController(object):
 
         """ Get the default handler for a resource method
 
-            @todo 2.2: remove this
+            @todo 2.2: deprecate?
 
         """
 
@@ -484,9 +490,17 @@ class S3ResourceController(object):
                   components=None,
                   storage=None):
 
-        """ Wrapper function for S3Resource
+        """ Wrapper function for S3Resource, creates a resource
 
-            @todo 2.2: fix docstring
+            @param prefix: the application prefix of the resource
+            @param name: the resource name (without prefix)
+            @param id: record ID or list of record IDs
+            @param uid: record UID or list of record UIDs
+            @param filter: web2py query to filter the resource query
+            @param vars: dict of URL query parameters
+            @param parent: the parent resource (if this is a component)
+            @param components: list of component (names)
+            @param storage: the data store (None for DB)
 
         """
 

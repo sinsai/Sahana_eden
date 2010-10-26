@@ -85,8 +85,8 @@
     <!-- ****************************************************************** -->
     <!-- Organization -->
     <xsl:template match="have:Organization">
-        <xsl:apply-templates match="./have:OrganizationInformation"/>
-        <xsl:apply-templates match="./have:OrganizationGeoLocation"/>
+        <xsl:apply-templates select="./have:OrganizationInformation"/>
+        <xsl:apply-templates select="./have:OrganizationGeoLocation"/>
     </xsl:template>
 
     <!-- ****************************************************************** -->
@@ -116,7 +116,9 @@
     <!-- ****************************************************************** -->
     <!-- OrganizationInformation -->
     <xsl:template match="have:OrganizationInformation">
-        <xsl:apply-template select="./xnl:OrganisationName"/>
+        <xsl:apply-templates select="./xnl:OrganisationName"/>
+        <xsl:apply-templates select="./xpil:ContactNumbers"/>
+        <xsl:apply-templates select="./xpil:Addresses"/>
         <data field="facility_type" value="1">Hospital</data>
     </xsl:template>
 
@@ -141,7 +143,19 @@
     <!-- ****************************************************************** -->
     <!-- Contact Numbers -->
     <xsl:template match="xpil:ContactNumbers">
-        <!-- @todo: implement -->
+        <data field="phone_exchange">
+            <xsl:value-of select="./xpil:ContactNumber[@xpil:MediaType='Telephone' and @xpil:ContactNature='Exchange'][1]/xpil:ContactNumberElement/text()"/>
+        </data>
+        <data field="phone_business">
+            <xsl:value-of select="./xpil:ContactNumber[@xpil:MediaType='Telephone' and @xpil:ContactNature='Business'][1]/xpil:ContactNumberElement/text()"/>
+        </data>
+        <data field="phone_emergency">
+            <xsl:value-of select="./xpil:ContactNumber[@xpil:MediaType='Telephone' and @xpil:ContactNature='Emergency'][1]/xpil:ContactNumberElement/text()"/>
+        </data>
+        <data field="fax">
+            <xsl:value-of select="./xpil:ContactNumber[@xpil:MediaType='Fax'][1]/xpil:ContactNumberElement/text()"/>
+        </data>
+        <!-- @todo: add email address -->
     </xsl:template>
 
     <!-- ****************************************************************** -->
@@ -162,14 +176,14 @@
         <xsl:if test="$location">
             <reference field="location_id" resource="gis_location">
                 <resource name="gis_location">
-                    <data field="name">
-                        <xsl:value-of select="$name"/>
-                    </data>
                     <xsl:if test="$location_id">
                         <xsl:attribute name="uuid">
                             <xsl:value-of select="$location_id"/>
                         </xsl:attribute>
                     </xsl:if>
+                    <data field="name">
+                        <xsl:value-of select="$name"/>
+                    </data>
                     <data field="gis_feature_type" value="1">Point</data>
                     <data field="lat">
                         <xsl:value-of select="normalize-space(substring-before($location, ','))"/>

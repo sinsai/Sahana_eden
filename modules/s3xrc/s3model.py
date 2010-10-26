@@ -266,7 +266,6 @@ class S3ResourceModel(object):
             @param component_name: name of the component (without prefix)
             @param name: name of the attribute
 
-            @todo 2.2: fix docstring
             @todo 2.2: deprecate?
 
         """
@@ -319,8 +318,6 @@ class S3ResourceModel(object):
             @param name: name of the resource (=without prefix)
             @param component_name: name of the component (=without prefix)
             @param method: name of the method
-
-            @todo 2.2: fix docstring
 
         """
 

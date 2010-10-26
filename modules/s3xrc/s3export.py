@@ -369,7 +369,9 @@ class S3Exporter(object):
 
         """ Export record(s) as Microsoft Excel spreadsheet
 
-            @todo 2.2: complete docstring
+            @param resource: the resource
+            @param list_fields: fields to include in list views
+
             @todo 2.2: PEP-8
             @todo 2.2: use S3Resource.readable_fields
             @todo: implement audit

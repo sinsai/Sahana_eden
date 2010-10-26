@@ -121,6 +121,7 @@
             </xnl:OrganisationName>
 
             <!-- @todo: move into separate template -->
+            <!-- @todo: implement email address -->
             <xpil:ContactNumbers>
                 <xpil:ContactNumber xpil:MediaType="Telephone" xpil:ContactNature="Exchange">
                     <xpil:ContactNumberElement>

@@ -1780,7 +1780,21 @@ class S3Resource(object):
 
         """ Push (=POST) the current resource to a target URL
 
-            @todo 2.2: fix docstring
+            @param exporter: the exporter function
+            @param template: path to the XSLT stylesheet to be used by the exporter
+            @param xsltmode: "mode" parameter for the XSLT stylesheet
+            @param start: index of the first record to export (slicing)
+            @param limit: maximum number of records to export (slicing)
+            @param marker: default map marker URL
+            @param msince: export only records which have been modified after
+                           this datetime
+            @param show_urls: show URLs in the <resource> elements
+            @param dereference: include referenced resources in the export
+            @param content_type: content type specification for the export
+            @param username: username to authenticate at the peer site
+            @param password: password to authenticate at the peer site
+            @param proxy: URL of the proxy server to use
+
             @todo 2.2: error handling?
 
         """
@@ -1891,9 +1905,15 @@ class S3Resource(object):
               template=None,
               ignore_errors=False, **args):
 
-        """ Fetch data to the current resource from a remote URL
+        """ Fetch XML (JSON) data to the current resource from a remote URL
 
-            @todo 2.2: fix docstring
+            @param url: the peer URL
+            @param username: username to authenticate at the peer site
+            @param password: password to authenticate at the peer site
+            @param proxy: URL of the proxy server to use
+            @param json: use JSON importer instead of XML importer
+            @param template: path to the XSLT stylesheet to transform the data
+            @param ignore_errors: skip invalid records
 
         """
 
@@ -2094,9 +2114,10 @@ class S3Resource(object):
     # -------------------------------------------------------------------------
     def fields(self, component=None):
 
-        """ Export a list of fields in the primary table as element tree
+        """ Export a list of fields in the resource as element tree
 
-            @todo 2.2: fix docstring
+            @param component: name of the component to lookup the fields
+                              (None for primary table)
 
         """
 
@@ -2115,9 +2136,10 @@ class S3Resource(object):
     # -------------------------------------------------------------------------
     def fields_xml(self, component=None):
 
-        """ Export a list of fields in the primary table as XML
+        """ Export a list of fields in the resource as XML
 
-            @todo 2.2: fix docstring
+            @param component: name of the component to lookup the fields
+                              (None for primary table)
 
         """
 
@@ -2128,9 +2150,10 @@ class S3Resource(object):
     # -------------------------------------------------------------------------
     def fields_json(self, component=None):
 
-        """ Export a list of fields in the primary table as JSON
+        """ Export a list of fields in the resource as JSON
 
-            @todo 2.2: fix docstring
+            @param component: name of the component to lookup the fields
+                              (None for primary table)
 
         """
 
@@ -2150,9 +2173,16 @@ class S3Resource(object):
                map_fields=None,
                format=None):
 
-        """ Add a record to this resource
+        """ Provides and processes an Add-form for this resource
 
-            @todo 2.2: fix docstring
+            @param onvalidation: onvalidation callback
+            @param onaccept: onaccept callback
+            @param message: flash message after successul operation
+            @param download_url: default download URL of the application
+            @param from_table: copy a record from this table
+            @param from_record: copy from this record ID
+            @param map_fields: field mapping for copying of records
+            @param format: the representation format of the request
 
         """
 
@@ -2444,7 +2474,15 @@ class S3Resource(object):
 
         """ List of all records of this resource
 
-            @todo 2.2: fix docstring
+            @param fields: list of fields to display
+            @param start: index of the first record to display
+            @param limit: maximum number of records to display
+            @param orderby: orderby for the query
+            @param linkto: hook to link record IDs
+            @param download_url: the default download URL of the application
+            @param as_page: return the list as JSON page
+            @param as_list: return the list as Python list
+            @param format: the representation format
 
         """
 

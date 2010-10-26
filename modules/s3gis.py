@@ -693,9 +693,23 @@ class GIS(object):
             for r in reader:
                 yield dict(zip(headers, r))
 
+        def utf8_csv_reader(unicode_csv_data, dialect=csv.excel, **kwargs):
+            for row in csv.reader(unicode_csv_data):
+                yield [unicode(cell, "utf-8") for cell in row]
+
+        def utf8_dict_reader(data, dialect=csv.excel, **kwargs):
+            reader = utf8_csv_reader(data, dialect=dialect, **kwargs)
+            headers = reader.next()
+            for r in reader:
+                yield dict(zip(headers, r))
+
+        def utf8_encoder(unicode_csv_data):
+            for line in unicode_csv_data:
+                yield line.encode("utf-8")
+        
         # For each row
         current_row = 0
-        for row in latin_dict_reader(open(filename)):
+        for row in utf8_dict_reader(open(filename)):
             current_row += 1
             try:
                 name0 = row.pop("ADM0_NAME")

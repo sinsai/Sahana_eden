@@ -237,7 +237,7 @@ def shn_shelter_prep(r):
                                   (db.org_staff.person_id == db.pr_person.id)).select(
                                    db.org_staff.id, limitby=(0, 1)).first()
                     if staff_id:
-                        rat_assessment.staff_id.default = staff_id.id
+                        db.rat_assessment.staff_id.default = staff_id.id
 
             elif r.component.name == "store":
                 # Hide the Implied fields

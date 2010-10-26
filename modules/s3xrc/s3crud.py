@@ -131,6 +131,7 @@ class S3Audit(object):
 
         # Pseudo-audit for testing (writes to stderr instead of DB):
         #print >> sys.stderr, "Audit: %s on %s_%s #%s" % (operation, prefix, name, record or 0)
+        #return True
 
         tablename = "%s_%s" % (prefix, name)
 
@@ -258,6 +259,9 @@ class S3MethodHandler(object):
             self.next = self.next.replace(placeholder, self.resource.lastid)
         r.next = self.next
 
+        # Add additional view variables
+        self._extend_view(output, r, **attr)
+
         # Done
         return output
 
@@ -265,7 +269,7 @@ class S3MethodHandler(object):
     # -------------------------------------------------------------------------
     def respond(self, r, **attr):
 
-        """ Responder, to be implemented in subclass
+        """ Responder stub, to be overloaded in subclass
 
             @param r: the S3Request
             @param attr: dictionary of parameters for the method handler
@@ -275,7 +279,6 @@ class S3MethodHandler(object):
         """
 
         output = dict()
-
         return output
 
 
@@ -358,6 +361,40 @@ class S3MethodHandler(object):
                 return default
 
 
+    # -------------------------------------------------------------------------
+    def _extend_view(self, output, r, **attr):
+
+        """ Add additional view variables (invokes all callables)
+
+            @param output: the output dict
+            @param r: the S3Request
+            @param attr: the view variables
+
+            @note: overload this method in subclasses if you don't want
+                   additional view variables to be added automatically
+
+        """
+
+        if r.interactive and isinstance(output, dict):
+            for key in attr:
+                handler = attr[key]
+                if callable(handler):
+                    resolve = True
+                    try:
+                        display = handler(r)
+                    except:
+                        continue
+                else:
+                    display = handler
+
+                if isinstance(display, dict) and resolve:
+                    output.update(**display)
+                elif display is not None:
+                    output.update(**{key:display})
+                elif key in output:
+                    del output[key]
+
+
 # *****************************************************************************
 class S3CRUDHandler(S3MethodHandler):
 
@@ -380,44 +417,19 @@ class S3CRUDHandler(S3MethodHandler):
         # Request parameters
         self.download_url = self.manager.download_url
 
-        # Manage main containers
+        # Apply method
         if r.http == "DELETE" or self.method == "delete":
             output = self.delete(r, **attr)
-
         elif self.method == "create":
             output = self.create(r, **attr)
-
         elif self.method == "read":
             output = self.read(r, **attr)
-
         elif self.method == "update":
             output = self.update(r, **attr)
-
         elif self.method == "list":
             output = self.select(r, **attr)
-
         else:
             r.error(501, self.manager.ERROR.BAD_METHOD)
-
-        # Manage resource displays
-        if r.interactive and isinstance(output, dict):
-            for key in attr:
-                handler = attr[key]
-                if callable(handler):
-                    resolve = True
-                    try:
-                        display = handler(r)
-                    except:
-                        continue
-                else:
-                    display = handler
-
-                if isinstance(display, dict) and resolve:
-                    output.update(**display)
-                elif display is not None:
-                    output.update(**{key:display})
-                elif key in output:
-                    del output[key]
 
         return output
 
@@ -687,9 +699,9 @@ class S3CRUDHandler(S3MethodHandler):
         record_id = self._record_id(r)
         if not record_id:
             if r.component and not r.multiple:
-                return self.create(r, **attr)
-            else:
-                r.error(404, self.resource.ERROR.BAD_RECORD)
+                authorised = self.permit("create", tablename)
+                if authorised:
+                    return self.create(r, **attr)
 
         if r.interactive:
 

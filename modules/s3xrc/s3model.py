@@ -2,7 +2,7 @@
 
 """ S3XRC Resource Framework - Data Model Extensions
 
-    @version: 2.1.9
+    @version: 2.2.0
 
     @see: U{B{I{S3XRC}} <http://eden.sahanafoundation.org/wiki/S3XRC>} on Eden wiki
 
@@ -39,6 +39,7 @@ __all__ = ["S3ResourceComponent",
 
 from gluon.storage import Storage
 from gluon.sql import Table, Field
+from gluon.validators import IS_EMPTY_OR, IS_IN_DB
 
 # *****************************************************************************
 class S3ResourceComponent(object):
@@ -463,6 +464,8 @@ class S3ResourceModel(object):
         key = self.super_key(super)
 
         return Field(key, super,
+                     requires = IS_EMPTY_OR(IS_IN_DB(self.db, "%s.%s" %
+                                                    (super._tablename, key))),
                      readable = False,
                      writable = False,
                      ondelete = "RESTRICT")

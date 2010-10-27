@@ -38,6 +38,7 @@
 
 __all__ = ["S3XML"]
 
+import sys
 from gluon.storage import Storage
 from gluon.validators import IS_EMPTY_OR
 import gluon.contrib.simplejson as json

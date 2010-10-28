@@ -194,7 +194,6 @@ if deployment_settings.has_module(module):
     table.uuid.requires = IS_NOT_IN_DB(db, "%s.uuid" % tablename)
     table.name.requires = [IS_NOT_EMPTY(), IS_NOT_IN_DB(db, "%s.name" % tablename)]
     table.name.label = T("Name")
-    table.name.comment = SPAN("*", _class="req")
 
     # CRUD strings
     s3.crud_strings[tablename] = Storage(

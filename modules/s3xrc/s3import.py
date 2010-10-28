@@ -2,7 +2,7 @@
 
 """ S3XRC Resource Framework - Resource Import Toolkit
 
-    @version: 2.1.8
+    @version: 2.2.0
 
     @see: U{B{I{S3XRC}} <http://eden.sahanafoundation.org/wiki/S3XRC>} on Eden wiki
 
@@ -64,7 +64,9 @@ class S3Importer(object):
 
         """ Import CSV file into database
 
-            @todo 2.2: fix docstring
+            @param file: file handle
+            @param table: the table to import to
+
             @todo 2.3: make this resource-based (files!)
 
         """

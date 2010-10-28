@@ -51,7 +51,6 @@ def template():
     table.uuid.requires = IS_NOT_IN_DB(db,"%s.uuid" % tablename)
     table.name.requires = IS_NOT_EMPTY()
     table.name.label = T("Survey Name")
-    table.name.comment = SPAN("*", _class="req")
     table.description.label = T("Description")
 
     # CRUD Strings
@@ -195,18 +194,14 @@ def series():
     table.uuid.requires = IS_NOT_IN_DB(db,"%s.uuid" % tablename)
     table.name.requires = IS_NOT_EMPTY()
     table.name.label = T("Survey Series Name")
-    table.name.comment = SPAN("*", _class="req")
     table.description.label = T("Description")
     table.survey_template_id.label = T("Survey Template")
     table.survey_template_id.requires = IS_ONE_OF(db, "survey_template.id", "%(name)s")
     table.survey_template_id.represent = lambda id: (id and [db(db.survey_template.id == id).select(db.survey_template.name, limitby=(0, 1)).first().name] or [""])[0]
-    table.survey_template_id.comment = SPAN("*", _class="req")
     table.from_date.label = T("Start of Period")
     table.from_date.requires = IS_NOT_EMPTY()
-    table.from_date.comment = SPAN("*", _class="req")
     table.to_date.label = T("End of Period")
     table.to_date.requires = IS_NOT_EMPTY()
-    table.to_date.comment = SPAN("*", _class="req")
 
     # CRUD Strings
     s3.crud_strings[tablename] = Storage(
@@ -246,7 +241,6 @@ def question():
     table.uuid.requires = IS_NOT_IN_DB(db, "%s.uuid" % tablename)
     table.name.requires = IS_NOT_EMPTY()
     table.name.label = T("Survey Question Display Name")
-    table.name.comment = SPAN("*", _class="req")
     table.description.label = T("Description")
 #    table.tf_ta_columns.label = T("Number of Columns")
 #    table.ta_rows.label = T("Number of Rows")
@@ -274,7 +268,6 @@ def question():
     }
 
     table.question_type.requires = IS_IN_SET(question_types)
-    table.question_type.comment = SPAN("*", _class="req")
 
     # CRUD Strings
     s3.crud_strings[tablename] = Storage(
@@ -465,7 +458,6 @@ def shn_survey_action_buttons(r, deletable=True):
 #    table = db[tablename]
 #    table.uuid.requires = IS_NOT_IN_DB(db, "%s.uuid" % tablename)
 #    table.name.requires = IS_NOT_EMPTY()
-#    table.name.comment = SPAN("*", _class="req")
 #    table.name.label = T("Survey Section Display Name")
 #    table.description.label = T("Description")
 #

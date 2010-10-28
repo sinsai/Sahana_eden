@@ -2,7 +2,7 @@
 
 """ S3XRC Resource Framework - Data Model Extensions
 
-    @version: 2.1.8
+    @version: 2.2.0
 
     @see: U{B{I{S3XRC}} <http://eden.sahanafoundation.org/wiki/S3XRC>} on Eden wiki
 
@@ -39,6 +39,7 @@ __all__ = ["S3ResourceComponent",
 
 from gluon.storage import Storage
 from gluon.sql import Table, Field
+from gluon.validators import IS_EMPTY_OR, IS_IN_DB
 
 # *****************************************************************************
 class S3ResourceComponent(object):
@@ -266,7 +267,6 @@ class S3ResourceModel(object):
             @param component_name: name of the component (without prefix)
             @param name: name of the attribute
 
-            @todo 2.2: fix docstring
             @todo 2.2: deprecate?
 
         """
@@ -319,8 +319,6 @@ class S3ResourceModel(object):
             @param name: name of the resource (=without prefix)
             @param component_name: name of the component (=without prefix)
             @param method: name of the method
-
-            @todo 2.2: fix docstring
 
         """
 
@@ -441,7 +439,7 @@ class S3ResourceModel(object):
     # -------------------------------------------------------------------------
     def super_key(self, super):
 
-        """ Get a foreign key field for a super-entity
+        """ Get a the name of the key for a super-entity
 
             @param super: the super-entity table
 
@@ -449,9 +447,25 @@ class S3ResourceModel(object):
 
         for key in super.fields:
             if str(super[key].type) == "id":
-                break
+                return key
+
+        raise SyntaxError("No id-type key found in %s" % super._tablename)
+
+
+    # -------------------------------------------------------------------------
+    def super_link(self, super):
+
+        """ Get a foreign key field for a super-entity
+
+            @param super: the super-entity table
+
+        """
+
+        key = self.super_key(super)
 
         return Field(key, super,
+                     requires = IS_EMPTY_OR(IS_IN_DB(self.db, "%s.%s" %
+                                                    (super._tablename, key))),
                      readable = False,
                      writable = False,
                      ondelete = "RESTRICT")

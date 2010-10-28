@@ -10,17 +10,25 @@ if prefix not in deployment_settings.modules:
     redirect(URL(r=request, c="default", f="index"))
 
 # Options Menu (available in all Functions' Views)
-response.menu_options = [
-    [T("Compose"), False, URL(r=request, c="msg", f="compose")],
-    [T("Distribution groups"), False, URL(r=request, f="group"), [
-        [T("List/Add"), False, URL(r=request, f="group")],
-        [T("Group Memberships"), False, URL(r=request, f="group_membership")],
-    ]],
-    [T("Log"), False, URL(r=request, f="log")],
-    [T("Outbox"), False, URL(r=request, f="outbox")],
-    #["CAP", False, URL(r=request, f="tbc")]
-]
+def shn_menu():
+    menu = [
+        [T("Compose"), False, URL(r=request, c="msg", f="compose")],
+        [T("Distribution groups"), False, URL(r=request, f="group"), [
+            [T("List/Add"), False, URL(r=request, f="group")],
+            [T("Group Memberships"), False, URL(r=request, f="group_membership")],
+        ]],
+        [T("Log"), False, URL(r=request, f="log")],
+        [T("Outbox"), False, URL(r=request, f="outbox")],
+        #["CAP", False, URL(r=request, f="tbc")]
+    ]
+    if shn_has_role(1):
+        menu_editor = [
+            [T("Administration"), False, URL(r=request, f="#"), admin_menu_messaging],
+        ]
+        menu.extend(menu_editor)
+    response.menu_options = menu
 
+shn_menu()
 
 #------------------------------------------------------------------------------
 def index():
@@ -129,16 +137,6 @@ def log():
 
     tablename = "%s_%s" % (prefix, resourcename)
     table = db[tablename]
-
-    # Model options
-    table.message.comment = SPAN("*", _class="req")
-    #table.priority.represent = lambda id: (
-    #    [id and
-    #        DIV(IMG(_src="/%s/static/img/priority/priority_%d.gif" % (request.application,id,), _height=12)) or
-    #        DIV(IMG(_src="/%s/static/img/priority/priority_4.gif" % request.application), _height=12)
-    #    ][0].xml())
-
-    # Add Auth Restrictions
 
     # CRUD Strings
     ADD_MESSAGE = T("Add Message")
@@ -313,7 +311,7 @@ def parserdooth(message):
                                                                      table = "org_office",
                                                                      field = "address",
                                                                      look_up = organisation.id
-                                                                    )          
+                                                                    )
 
         if len(reply) == 0:
             return "No Match"

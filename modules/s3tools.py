@@ -860,7 +860,7 @@ class AuthS3(Auth):
                             self.user.person_uuid = person.uuid
                         continue
 
-                pe_id = etable.insert(pe_type="pr_person")
+                pe_id = etable.insert(instance_type="pr_person")
                 if pe_id:
                     new_id = ptable.insert(
                         pe_id = pe_id,

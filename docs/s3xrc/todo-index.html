@@ -44,6 +44,8 @@
     <td>
       <table cellpadding="0" cellspacing="0">
         <!-- hide/show private -->
+        <tr><td align="right"><span class="options">[<a href="javascript:void(0);" class="privatelink"
+    onclick="toggle_private();">hide&nbsp;private</a>]</span></td></tr>
         <tr><td align="right"><span class="options"
             >[<a href="frames.html" target="_top">frames</a
             >]&nbsp;|&nbsp;<a href="todo-index.html"
@@ -78,30 +80,27 @@
 <table class="metadata-index" border="1" cellpadding="3"
        cellspacing="0" width="100%" bgcolor="white">
 <tr bgcolor="#70b0f0" class="table-header">
-  <td align="left" colspan="2" class="table-header">
-    <span class="table-header">2.2</span></td>
+  <td colspan="2" class="table-header">
+    <table border="0" cellpadding="0" cellspacing="0" width="100%">
+      <tr valign="top">
+        <td align="left"><span class="table-header">2.2</span></td>
+        <td align="right" valign="top"
+         ><span class="options">[<a href="#section-22"
+         class="privatelink" onclick="toggle_private();"
+         >hide private</a>]</span></td>
+      </tr>
+    </table>
+  </td>
 </tr>
 </table><div>
 <table width="100%" class="metadata-index" bgcolor="#e0e0e0"><tr><td class="metadata-index"><b>To Do in <a href="vita.modules.s3xrc.s3crud.S3Audit-class.html#__call__">vita.modules.s3xrc.s3crud.S3Audit.__call__</a></b>    <ul class="nomargin">
       <li>correct parameter naming for record ID</li>
-      <li>default for representation, HTML?</li>
     </ul>
 </table></div>
 <div>
 <table width="100%" class="metadata-index" bgcolor="#e0e0e0"><tr><td class="metadata-index"><b>To Do in <a href="vita.modules.s3xrc.s3crud.S3CRUDHandler-class.html#create">vita.modules.s3xrc.s3crud.S3CRUDHandler.create</a></b>    <ul class="nomargin">
-      <li>copy from a previous record</li>
       <li>cancel button</li>
-      <li>other representations</li>
-    </ul>
-</table></div>
-<div>
-<table width="100%" class="metadata-index" bgcolor="#e0e0e0"><tr><td class="metadata-index"><b>To Do in <a href="vita.modules.s3xrc.s3crud.S3CRUDHandler-class.html#crud_button">vita.modules.s3xrc.s3crud.S3CRUDHandler.crud_button</a></b>    <ul class="nomargin">
-      <li>fix docstring</li>
-    </ul>
-</table></div>
-<div>
-<table width="100%" class="metadata-index" bgcolor="#e0e0e0"><tr><td class="metadata-index"><b>To Do in <a href="vita.modules.s3xrc.s3crud.S3CRUDHandler-class.html#crud_string">vita.modules.s3xrc.s3crud.S3CRUDHandler.crud_string</a></b>    <ul class="nomargin">
-      <li>fix docstring</li>
+      <li>plain representation</li>
     </ul>
 </table></div>
 <div>
@@ -112,24 +111,13 @@
 </table></div>
 <div>
 <table width="100%" class="metadata-index" bgcolor="#e0e0e0"><tr><td class="metadata-index"><b>To Do in <a href="vita.modules.s3xrc.s3crud.S3CRUDHandler-class.html#read">vita.modules.s3xrc.s3crud.S3CRUDHandler.read</a></b>    <ul class="nomargin">
-      <li>plain representation</li>
       <li>add update form if permitted + show_add_btn</li>
     </ul>
 </table></div>
 <div>
-<table width="100%" class="metadata-index" bgcolor="#e0e0e0"><tr><td class="metadata-index"><b>To Do in <a href="vita.modules.s3xrc.s3crud.S3CRUDHandler-class.html#ssp_filter">vita.modules.s3xrc.s3crud.S3CRUDHandler.ssp_filter</a></b>    <ul class="nomargin">
-      <li>fix docstring</li>
-    </ul>
-</table></div>
-<div>
-<table width="100%" class="metadata-index" bgcolor="#e0e0e0"><tr><td class="metadata-index"><b>To Do in <a href="vita.modules.s3xrc.s3crud.S3CRUDHandler-class.html#ssp_orderby">vita.modules.s3xrc.s3crud.S3CRUDHandler.ssp_orderby</a></b>    <ul class="nomargin">
-      <li>fix docstring</li>
-    </ul>
-</table></div>
-<div>
 <table width="100%" class="metadata-index" bgcolor="#e0e0e0"><tr><td class="metadata-index"><b>To Do in <a href="vita.modules.s3xrc.s3crud.S3CRUDHandler-class.html#update">vita.modules.s3xrc.s3crud.S3CRUDHandler.update</a></b>    <ul class="nomargin">
-      <li>complete other representations</li>
-      <li>Cancel button?</li>
+      <li>Cancel button</li>
+      <li>plain representation</li>
     </ul>
 </table></div>
 <div>
@@ -138,14 +126,8 @@
     </ul>
 </table></div>
 <div>
-<table width="100%" class="metadata-index" bgcolor="#e0e0e0"><tr><td class="metadata-index"><b>To Do in <a href="vita.modules.s3xrc.s3export.S3Exporter-class.html#json">vita.modules.s3xrc.s3export.S3Exporter.json</a></b>    <ul class="nomargin">
-      <li>fix docstring</li>
-    </ul>
-</table></div>
-<div>
 <table width="100%" class="metadata-index" bgcolor="#e0e0e0"><tr><td class="metadata-index"><b>To Do in <a href="vita.modules.s3xrc.s3export.S3Exporter-class.html#pdf">vita.modules.s3xrc.s3export.S3Exporter.pdf</a></b>    <ul class="nomargin">
       <li>fix error messages</li>
-      <li>replace _represent subfunction</li>
       <li>do not redirect</li>
       <li>PEP-8</li>
       <li>test this!</li>
@@ -153,43 +135,13 @@
 </table></div>
 <div>
 <table width="100%" class="metadata-index" bgcolor="#e0e0e0"><tr><td class="metadata-index"><b>To Do in <a href="vita.modules.s3xrc.s3export.S3Exporter-class.html#xls">vita.modules.s3xrc.s3export.S3Exporter.xls</a></b>    <ul class="nomargin">
-      <li>complete docstring</li>
       <li>PEP-8</li>
-      <li>use S3Resource.readable_fields (once it gets moved there from CRUD)</li>
-    </ul>
-</table></div>
-<div>
-<table width="100%" class="metadata-index" bgcolor="#e0e0e0"><tr><td class="metadata-index"><b>To Do in <a href="vita.modules.s3xrc.s3export.S3Exporter-class.html#xml">vita.modules.s3xrc.s3export.S3Exporter.xml</a></b>    <ul class="nomargin">
-      <li>fix docstring</li>
-    </ul>
-</table></div>
-<div>
-<table width="100%" class="metadata-index" bgcolor="#e0e0e0"><tr><td class="metadata-index"><b>To Do in <a href="vita.modules.s3xrc.s3import.S3Importer-class.html#csv">vita.modules.s3xrc.s3import.S3Importer.csv</a></b>    <ul class="nomargin">
-      <li>fix docstring</li>
-    </ul>
-</table></div>
-<div>
-<table width="100%" class="metadata-index" bgcolor="#e0e0e0"><tr><td class="metadata-index"><b>To Do in <a href="vita.modules.s3xrc.s3import.S3Importer-class.html#url">vita.modules.s3xrc.s3import.S3Importer.url</a></b>    <ul class="nomargin">
-      <li>fix docstring</li>
-      <li>make this work</li>
-      <li>PEP-8</li>
-    </ul>
-</table></div>
-<div>
-<table width="100%" class="metadata-index" bgcolor="#e0e0e0"><tr><td class="metadata-index"><b>To Do in <a href="vita.modules.s3xrc.s3model.S3ResourceModel-class.html#delete_super">vita.modules.s3xrc.s3model.S3ResourceModel.delete_super</a></b>    <ul class="nomargin">
-      <li>implement this</li>
-      <li>document this</li>
+      <li>use S3Resource.readable_fields</li>
     </ul>
 </table></div>
 <div>
 <table width="100%" class="metadata-index" bgcolor="#e0e0e0"><tr><td class="metadata-index"><b>To Do in <a href="vita.modules.s3xrc.s3model.S3ResourceModel-class.html#get_attr">vita.modules.s3xrc.s3model.S3ResourceModel.get_attr</a></b>    <ul class="nomargin">
-      <li>fix docstring</li>
       <li>deprecate?</li>
-    </ul>
-</table></div>
-<div>
-<table width="100%" class="metadata-index" bgcolor="#e0e0e0"><tr><td class="metadata-index"><b>To Do in <a href="vita.modules.s3xrc.s3model.S3ResourceModel-class.html#get_method">vita.modules.s3xrc.s3model.S3ResourceModel.get_method</a></b>    <ul class="nomargin">
-      <li>fix docstring</li>
     </ul>
 </table></div>
 <div>
@@ -198,32 +150,14 @@
     </ul>
 </table></div>
 <div>
-<table width="100%" class="metadata-index" bgcolor="#e0e0e0"><tr><td class="metadata-index"><b>To Do in <a href="vita.modules.s3xrc.s3model.S3ResourceModel-class.html#super_entity">vita.modules.s3xrc.s3model.S3ResourceModel.super_entity</a></b>    <ul class="nomargin">
-      <li>document this</li>
-    </ul>
-</table></div>
-<div>
-<table width="100%" class="metadata-index" bgcolor="#e0e0e0"><tr><td class="metadata-index"><b>To Do in <a href="vita.modules.s3xrc.s3model.S3ResourceModel-class.html#super_key">vita.modules.s3xrc.s3model.S3ResourceModel.super_key</a></b>    <ul class="nomargin">
-      <li>implement this</li>
-      <li>document this</li>
-    </ul>
-</table></div>
-<div>
-<table width="100%" class="metadata-index" bgcolor="#e0e0e0"><tr><td class="metadata-index"><b>To Do in <a href="vita.modules.s3xrc.s3model.S3ResourceModel-class.html#update_super">vita.modules.s3xrc.s3model.S3ResourceModel.update_super</a></b>    <ul class="nomargin">
-      <li>implement this</li>
-      <li>document this</li>
-    </ul>
-</table></div>
-<div>
 <table width="100%" class="metadata-index" bgcolor="#e0e0e0"><tr><td class="metadata-index"><b>To Do in <a href="vita.modules.s3xrc.s3rc.S3ResourceController-class.html">vita.modules.s3xrc.s3rc.S3ResourceController</a></b>    <ul class="nomargin">
-      <li>fix docstring/parameters</li>
       <li>move formats into settings</li>
       <li>error messages internationalization!</li>
     </ul>
 </table></div>
 <div>
 <table width="100%" class="metadata-index" bgcolor="#e0e0e0"><tr><td class="metadata-index"><b>To Do in <a href="vita.modules.s3xrc.s3rc.S3ResourceController-class.html#get_handler">vita.modules.s3xrc.s3rc.S3ResourceController.get_handler</a></b>    <ul class="nomargin">
-      <li>remove this</li>
+      <li>deprecate?</li>
     </ul>
 </table></div>
 <div>
@@ -233,7 +167,7 @@
 </table></div>
 <div>
 <table width="100%" class="metadata-index" bgcolor="#e0e0e0"><tr><td class="metadata-index"><b>To Do in <a href="vita.modules.s3xrc.s3rc.S3ResourceController-class.html#set_handler">vita.modules.s3xrc.s3rc.S3ResourceController.set_handler</a></b>    <ul class="nomargin">
-      <li>remove this</li>
+      <li>deprecate?</li>
     </ul>
 </table></div>
 <div>
@@ -242,9 +176,15 @@
       <li>propagate import errors properly to the importer</li>
     </ul>
 </table></div>
-<div>
-<table width="100%" class="metadata-index" bgcolor="#e0e0e0"><tr><td class="metadata-index"><b>To Do in <a href="vita.modules.s3xrc.s3rest.S3Resource-class.html#create">vita.modules.s3xrc.s3rest.S3Resource.create</a></b>    <ul class="nomargin">
-      <li>fix docstring</li>
+<div class="private">
+<table width="100%" class="metadata-index" bgcolor="#e0e0e0"><tr><td class="metadata-index"><b>To Do in <a href="vita.modules.s3xrc.s3rest.S3Request-class.html#__next" onclick="show_private();">vita.modules.s3xrc.s3rest.S3Request.__next</a></b>    <ul class="nomargin">
+      <li>make this based on S3Resource.url()</li>
+    </ul>
+</table></div>
+<div class="private">
+<table width="100%" class="metadata-index" bgcolor="#e0e0e0"><tr><td class="metadata-index"><b>To Do in <a href="vita.modules.s3xrc.s3rest.S3Resource-class.html#__put_tree" onclick="show_private();">vita.modules.s3xrc.s3rest.S3Resource.__put_tree</a></b>    <ul class="nomargin">
+      <li>clean-up</li>
+      <li>test this</li>
     </ul>
 </table></div>
 <div>
@@ -264,59 +204,14 @@
     </ul>
 </table></div>
 <div>
-<table width="100%" class="metadata-index" bgcolor="#e0e0e0"><tr><td class="metadata-index"><b>To Do in <a href="vita.modules.s3xrc.s3rest.S3Resource-class.html#fetch">vita.modules.s3xrc.s3rest.S3Resource.fetch</a></b>    <ul class="nomargin">
-      <li>fix docstring</li>
-    </ul>
-</table></div>
-<div>
-<table width="100%" class="metadata-index" bgcolor="#e0e0e0"><tr><td class="metadata-index"><b>To Do in <a href="vita.modules.s3xrc.s3rest.S3Resource-class.html#fields">vita.modules.s3xrc.s3rest.S3Resource.fields</a></b>    <ul class="nomargin">
-      <li>fix docstring</li>
-    </ul>
-</table></div>
-<div>
-<table width="100%" class="metadata-index" bgcolor="#e0e0e0"><tr><td class="metadata-index"><b>To Do in <a href="vita.modules.s3xrc.s3rest.S3Resource-class.html#fields_json">vita.modules.s3xrc.s3rest.S3Resource.fields_json</a></b>    <ul class="nomargin">
-      <li>fix docstring</li>
-    </ul>
-</table></div>
-<div>
-<table width="100%" class="metadata-index" bgcolor="#e0e0e0"><tr><td class="metadata-index"><b>To Do in <a href="vita.modules.s3xrc.s3rest.S3Resource-class.html#fields_xml">vita.modules.s3xrc.s3rest.S3Resource.fields_xml</a></b>    <ul class="nomargin">
-      <li>fix docstring</li>
-    </ul>
-</table></div>
-<div>
 <table width="100%" class="metadata-index" bgcolor="#e0e0e0"><tr><td class="metadata-index"><b>To Do in <a href="vita.modules.s3xrc.s3rest.S3Resource-class.html#push">vita.modules.s3xrc.s3rest.S3Resource.push</a></b>    <ul class="nomargin">
-      <li>fix docstring</li>
       <li>error handling?</li>
     </ul>
 </table></div>
-<div>
-<table width="100%" class="metadata-index" bgcolor="#e0e0e0"><tr><td class="metadata-index"><b>To Do in <a href="vita.modules.s3xrc.s3rest.S3Resource-class.html#select">vita.modules.s3xrc.s3rest.S3Resource.select</a></b>    <ul class="nomargin">
+<div class="private">
+<table width="100%" class="metadata-index" bgcolor="#e0e0e0"><tr><td class="metadata-index"><b>To Do in <a href="vita.modules.s3xrc.s3rest.S3SQLTable-class.html#__init__">vita.modules.s3xrc.s3rest.S3SQLTable.__init__</a></b>    <ul class="nomargin">
       <li>fix docstring</li>
-    </ul>
-</table></div>
-<div>
-<table width="100%" class="metadata-index" bgcolor="#e0e0e0"><tr><td class="metadata-index"><b>To Do in <a href="vita.modules.s3xrc.s3rest.S3Resource-class.html#url">vita.modules.s3xrc.s3rest.S3Resource.url</a></b>    <ul class="nomargin">
-      <li>implement this.</li>
-    </ul>
-</table></div>
-<div>
-<table width="100%" class="metadata-index" bgcolor="#e0e0e0"><tr><td class="metadata-index"><b>To Do in <a href="vita.modules.s3xrc.s3xml.S3XML-class.html#__init__">vita.modules.s3xrc.s3xml.S3XML.__init__</a></b>    <ul class="nomargin">
-      <li>pass resource controller?</li>
-    </ul>
-</table></div>
-<div>
-<table width="100%" class="metadata-index" bgcolor="#e0e0e0"><tr><td class="metadata-index"><b>To Do in <a href="vita.modules.s3xrc.s3xml.S3XML-class.html#get_field_options">vita.modules.s3xrc.s3xml.S3XML.get_field_options</a></b>    <ul class="nomargin">
-      <li>fix docstring</li>
-    </ul>
-</table></div>
-<div>
-<table width="100%" class="metadata-index" bgcolor="#e0e0e0"><tr><td class="metadata-index"><b>To Do in <a href="vita.modules.s3xrc.s3xml.S3XML-class.html#get_fields">vita.modules.s3xrc.s3xml.S3XML.get_fields</a></b>    <ul class="nomargin">
-      <li>fix docstring</li>
-    </ul>
-</table></div>
-<div>
-<table width="100%" class="metadata-index" bgcolor="#e0e0e0"><tr><td class="metadata-index"><b>To Do in <a href="vita.modules.s3xrc.s3xml.S3XML-class.html#get_options">vita.modules.s3xrc.s3xml.S3XML.get_options</a></b>    <ul class="nomargin">
-      <li>fix docstring</li>
+      <li>PEP8</li>
     </ul>
 </table></div>
 <div>
@@ -324,9 +219,36 @@
       <li>extend to report number of results/successful imports</li>
     </ul>
 </table></div>
+<div><!-- ==================== 2.3 ==================== -->
+<a name="section-23"></a>
+<table class="metadata-index" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr bgcolor="#70b0f0" class="table-header">
+  <td colspan="2" class="table-header">
+    <table border="0" cellpadding="0" cellspacing="0" width="100%">
+      <tr valign="top">
+        <td align="left"><span class="table-header">2.3</span></td>
+        <td align="right" valign="top"
+         ><span class="options">[<a href="#section-23"
+         class="privatelink" onclick="toggle_private();"
+         >hide private</a>]</span></td>
+      </tr>
+    </table>
+  </td>
+</tr>
+</table><div>
+<table width="100%" class="metadata-index" bgcolor="#e0e0e0"><tr><td class="metadata-index"><b>To Do in <a href="vita.modules.s3xrc.s3import.S3Importer-class.html#csv">vita.modules.s3xrc.s3import.S3Importer.csv</a></b>    <ul class="nomargin">
+      <li>make this resource-based (files!)</li>
+    </ul>
+</table></div>
 <div>
-<table width="100%" class="metadata-index" bgcolor="#e0e0e0"><tr><td class="metadata-index"><b>To Do in <a href="vita.modules.s3xrc.s3xml.S3XML-class.html#represent">vita.modules.s3xrc.s3xml.S3XML.represent</a></b>    <ul class="nomargin">
-      <li>use S3ResourceManager.represent()</li>
+<table width="100%" class="metadata-index" bgcolor="#e0e0e0"><tr><td class="metadata-index"><b>To Do in <a href="vita.modules.s3xrc.s3import.S3Importer-class.html#url">vita.modules.s3xrc.s3import.S3Importer.url</a></b>    <ul class="nomargin">
+      <li>make this resource-based</li>
+    </ul>
+</table></div>
+<div>
+<table width="100%" class="metadata-index" bgcolor="#e0e0e0"><tr><td class="metadata-index"><b>To Do in <a href="vita.modules.s3xrc.s3rest.S3Resource-class.html#url">vita.modules.s3xrc.s3rest.S3Resource.url</a></b>    <ul class="nomargin">
+      <li>implement this.</li>
     </ul>
 </table></div>
 <br /><!-- ==================== NAVIGATION BAR ==================== -->
@@ -360,7 +282,7 @@
 <table border="0" cellpadding="0" cellspacing="0" width="100%%">
   <tr>
     <td align="left" class="footer">
-    Generated by Epydoc 3.0.1 on Tue Oct 19 22:45:13 2010
+    Generated by Epydoc 3.0.1 on Tue Oct 26 15:06:22 2010
     </td>
     <td align="right" class="footer">
       <a target="mainFrame" href="http://epydoc.sourceforge.net"

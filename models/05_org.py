@@ -30,35 +30,25 @@ org_site_types = Storage(
 
 resource = "site"
 tablename = "%s_%s" % (module, resource)
-table = db.define_table(tablename,
-                        Field("site_type"),
-                        Field("uuid", length=128),
-                        Field("site_id", "integer"),
-                        migrate=migrate, *s3_deletion_status())
+table = super_entity(tablename, "site_id", org_site_types, migrate=migrate)
 
-
-table.site_type.writable = False
-table.site_type.represent = lambda opt: org_site_types.get(opt, opt)
-table.uuid.writable = False
-
+# -----------------------------------------------------------------------------
 def shn_site_represent(id, default_label="[no label]"):
 
-    """
-        Represent a site in option fields or list views
-    """
+    """ Represent a site in option fields or list views """
 
     site_str = T("None (no such record)")
 
     site_table = db.org_site
-    site = db(site_table.id == id).select(site_table.site_type,
-                                          limitby=(0, 1)).first()
+    site = db(site_table.site_id == id).select(site_table.instance_type,
+                                               limitby=(0, 1)).first()
     if not site:
         return site_str
 
-    site_type = site.site_type
-    site_type_nice = site_table.site_type.represent(site_type)
+    instance_type = site.instance_type
+    instance_type_nice = site_table.instance_type.represent(instance_type)
 
-    table = db.get(site_type, None)
+    table = db.get(instance_type, None)
     if not table:
         return site_str
 
@@ -67,61 +57,13 @@ def shn_site_represent(id, default_label="[no label]"):
     record = db(table.site_id == id).select(table.name, limitby=(0, 1)).first()
 
     if record:
-        site_str = "%s (%s)" % (record.name, site_type_nice)
+        site_str = "%s (%s)" % (record.name, instance_type_nice)
     else:
         # Since name is notnull for all types so far, this won't be reached.
-        site_str = "[site %d] (%s)" % (id, site_type_nice)
+        site_str = "[site %d] (%s)" % (id, instance_type_nice)
 
     return site_str
 
-def shn_site_ondelete(record):
-
-    uid = record.get("uuid", None)
-
-    if uid:
-
-        site_table = db.org_site
-        db(site_table.uuid == uid).update(deleted=True)
-
-    return True
-
-def shn_site_onaccept(form, table=None):
-
-    if "uuid" not in table.fields or "id" not in form.vars:
-        return False
-
-    id = form.vars.id
-
-    fields = [table.id, table.uuid]
-    record = db(table.id == id).select(limitby=(0, 1), *fields).first()
-
-    if record:
-
-        site_table = db.org_site
-        uid = record.uuid
-
-        site = db(site_table.uuid == uid).select(site_table.id, limitby=(0, 1)).first()
-        if site:
-            values = dict(site_id = site.id)
-            db(site_table.uuid == uid).update(**values)
-        else:
-            site_type = table._tablename
-            site_id = site_table.insert(uuid=uid, site_type=site_type)
-            db(site_table.id == site_id).update(site_id=site_id, deleted=False)
-            db(table.id == id).update(site_id=site_id)
-
-        return True
-
-    else:
-        return False
-
-site_id = S3ReusableField("site_id", db.org_site,
-                          requires = IS_NULL_OR(IS_ONE_OF(db, "org_site.id", shn_site_represent, orderby="org_site.id")),
-                          represent = lambda id: (id and [shn_site_represent(id)] or [NONE])[0],
-                          readable = False,
-                          writable = False,
-                          ondelete = "RESTRICT"
-                         )
 
 # -----------------------------------------------------------------------------
 # Cluster
@@ -244,7 +186,7 @@ org_organisation_type_opts = {
 resourcename = "organisation"
 tablename = module + "_" + resourcename
 table = db.define_table(tablename,
-                        pe_id(),
+                        super_link(db.pr_pentity), # pe_id
                         #Field("privacy", "integer", default=0),
                         #Field("archived", "boolean", default=False),
                         Field("name", length=128, notnull=True, unique=True),
@@ -271,7 +213,6 @@ table.country.represent = lambda opt: s3_list_of_nations.get(opt, UNKNOWN_OPT)
 table.website.requires = IS_NULL_OR(IS_URL())
 table.donation_phone.requires = shn_phone_requires
 table.name.label = T("Name")
-table.name.comment = SPAN("*", _class="req")
 table.acronym.label = T("Acronym")
 table.type.label = T("Type")
 table.donation_phone.label = T("Donation Phone #")
@@ -341,9 +282,7 @@ organisation_id = S3ReusableField("organisation_id", db.org_organisation, sortby
 
 s3xrc.model.configure(table,
                       listadd=False,
-                      # Ensure that table is substituted when lambda defined not evaluated by using the default value
-                      onaccept=lambda form, tab=table: shn_pentity_onaccept(form, table=tab),
-                      delete_onaccept=lambda form: shn_pentity_ondelete(form),
+                      super_entity=db.pr_pentity,
                       list_fields = ["id",
                                      "name",
                                      "acronym",
@@ -364,8 +303,8 @@ org_office_type_opts = {
 resourcename = "office"
 tablename = module + "_" + resourcename
 table = db.define_table(tablename,
-                        pe_id(),
-                        site_id(),
+                        super_link(db.pr_pentity), # pe_id
+                        super_link(db.org_site), # site_id
                         Field("name", notnull=True),
                         organisation_id(),
                         Field("type", "integer"),
@@ -403,7 +342,6 @@ table.national_staff.requires = IS_NULL_OR(IS_INT_IN_RANGE(0, 99999))
 table.international_staff.requires = IS_NULL_OR(IS_INT_IN_RANGE(0, 9999))
 table.number_of_vehicles.requires = IS_NULL_OR(IS_INT_IN_RANGE(0, 9999))
 table.name.label = T("Name")
-table.name.comment = SPAN("*", _class="req")
 table.parent.label = T("Parent")
 table.type.label = T("Type")
 table.address.label = T("Address")
@@ -452,21 +390,8 @@ s3xrc.model.add_component(module, resourcename,
                           #joinby=dict(org_organisation="organisation_id", gis_location="location_id"),
                           joinby=dict(org_organisation="organisation_id"))
 
-# Office is a member of two superentities, so has to call both of their
-# onaccept and ondelete methods.
-
-def shn_office_onaccept(form, table=None):
-    shn_pentity_onaccept(form, table=table)
-    shn_site_onaccept(form, table=table)
-
-def shn_office_ondelete(form):
-    shn_pentity_ondelete(form)
-    shn_site_ondelete(form)
-
 s3xrc.model.configure(table,
-                      # Ensure that table is substituted when lambda defined not evaluated by using the default value
-                      onaccept=lambda form, tab=table: shn_office_onaccept(form, table=tab),
-                      delete_onaccept=lambda form: shn_office_ondelete(form),
+                      super_entity=(db.pr_pentity, db.org_site),
                       list_fields=["id",
                                    "name",
                                    "organisation_id",   # Filtered in Component views
@@ -536,14 +461,11 @@ table.budgeted_cost.requires = IS_NULL_OR(IS_FLOAT_IN_RANGE(0, 999999999))
 # Project Resource called from multiple controllers
 # - so we define strings in the model
 table.code.label = T("Code")
-table.code.comment = SPAN("*", _class="req")
 table.name.label = T("Title")
 table.start_date.label = T("Start date")
 table.end_date.label = T("End date")
 table.description.label = T("Description")
-#table.description.comment = SPAN("*", _class="req")
 table.status.label = T("Status")
-table.status.comment = SPAN("*", _class="req")
 
 ADD_PROJECT = T("Add Project")
 s3.crud_strings[tablename] = Storage(
@@ -622,8 +544,8 @@ table.manager_id.represent = lambda id: (id and [shn_pr_person_represent(id)] or
 # Staff Resource called from multiple controllers
 # - so we define strings in the model
 table.person_id.label = T("Person")
-table.person_id.comment = DIV(SPAN("*", _class="req"), shn_person_id_comment)
-table.organisation_id.comment = DIV(SPAN("*", _class="req"), shn_organisation_comment)
+table.person_id.comment = shn_person_id_comment
+table.organisation_id.comment = shn_organisation_comment
 table.title.label = T("Job Title")
 table.title.comment = DIV( _class="tooltip", _title=T("Title") + "|" + T("The Role this person plays within this Office/Project."))
 table.manager_id.label = T("Manager")
@@ -808,7 +730,6 @@ table = db.define_table(tablename,
 # - so we define strings in the model
 table.subject.requires = IS_NOT_EMPTY()
 table.subject.label = T("Subject")
-table.subject.comment = SPAN("*", _class="req")
 
 table.person_id.label = T("Assigned to")
 

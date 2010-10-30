@@ -138,7 +138,7 @@ table.pe_id.requires = IS_ONE_OF(db, "pr_pentity.pe_id",
                                  filter_opts=("pr_person", "pr_group"))
 
 table.value.requires = IS_NOT_EMPTY()
-table.priority.requires = IS_IN_SET(range(1,10), zero=None)
+table.priority.requires = IS_IN_SET(range(1, 10), zero=None)
 
 
 pe_contact_id = S3ReusableField("pe_contact_id", db.pr_pe_contact,

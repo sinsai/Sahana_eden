@@ -10,7 +10,7 @@ prefix = request.controller
 resourcename = request.function
 
 # -----------------------------------------------------------------------------
-# Options Menu (available in all Functions" Views)
+# Options Menu (available in all Functions' Views)
 def shn_menu():
     response.menu_options = [
         [T("Home"), False, URL(r=request, f="index")],

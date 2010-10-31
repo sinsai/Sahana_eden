@@ -322,7 +322,7 @@ if deployment_settings.has_module(module):
     s3xrc.model.configure(table,
                           onaccept = lambda form: ireport_onaccept(form),
                           #onvalidation = ireport_onvalidation,
-                          list_fields = ["id", "category", "verified", "name", "message"]
+                          list_fields = ["id", "category", "location_id", "verified", "name", "message"]
                           )
 
     # irs_ireport as component of doc_documents

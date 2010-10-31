@@ -12,8 +12,56 @@
 prefix = request.controller
 resourcename = request.function
 
-# Not wanted in Gap, just Activities
-#response.menu_options = org_menu
+response.menu_options = [
+    [T("Projects"), False, URL(r=request, c="project", f="project"),[
+        [T("List"), False, URL(r=request, c="project", f="project")],
+        [T("Add"), False, URL(r=request, c="project", f="project", args="create")],
+        #[T("Search"), False, URL(r=request, f="organisation", args="search")]
+    ]],
+    [T("Activities"), False, URL(r=request, c="project", f="activity"),[
+        [T("List"), False, URL(r=request, c="project", f="activity")],
+        [T("Add"), False, URL(r=request,  c="project", f="activity", args="create")],
+        #[T("Search"), False, URL(r=request, f="project", args="search")]
+    ]],
+    [T("Tasks"), False, URL(r=request, c="project", f="task"),[
+        [T("List"), False, URL(r=request, c="project", f="task")],
+        [T("Add"), False, URL(r=request,  c="project",f="task", args="create")],
+        #[T("Search"), False, URL(r=request, f="office", args="search")]
+    ]],
+    [T("Assessment and Activities Gap Analysis"), False, URL(r=request, c="project", f="gap_report"),[
+        [T("Report"), False, URL(r=request, c="project", f="gap_report")],
+        [T("Map"), False, URL(r=request,  c="project",f="gap_map")],
+    ]],    
+]
+
+#==============================================================================
+def index():
+
+    """ Module's Home Page """
+
+    module_name = deployment_settings.modules[prefix].name_nice
+    return dict(module_name=module_name)
+
+#==============================================================================
+def project():
+
+    """ RESTful CRUD controller """
+
+    tablename = "%s_%s" % (prefix, resourcename)
+    table = db[tablename]
+
+    db.org_staff.person_id.comment[1] = DIV(DIV(_class="tooltip",
+        _title=T("Person") + "|" + T("Select the person assigned to this role for this project.")))
+
+    rheader = lambda r: shn_project_rheader(r,
+                                            tabs = [(T("Basic Details"), None),
+                                                    (T("Staff"), "staff"),
+                                                    (T("Tasks"), "task"),
+                                                    #(T("Donors"), "organisation"),
+                                                    #(T("Sites"), "site"),  # Ticket 195
+                                                   ])
+
+    return s3_rest_controller(prefix, resourcename, rheader=rheader)
 
 #==============================================================================
 # @ToDo: Create should be restricted to Admin
@@ -42,9 +90,18 @@ def activity():
 
     return s3_rest_controller(prefix, resourcename)
 
+#==============================================================================
+def task():
+
+    """ RESTful CRUD controller """
+
+    tablename = "%s_%s" % (prefix, resourcename)
+    table = db[tablename]
+
+    return s3_rest_controller(prefix, resourcename)
 
 #==============================================================================
-def gap():
+def gap_report():
 
     """ @todo: fix docstring """
 
@@ -72,7 +129,7 @@ def gap():
                                 db.project_activity.end_date
                                 )
 
-    def map_gap(row):
+    def map_assess_to_gap(row):
         return Storage( assess_id = row.assess_assess.id,
                         location_id = row.assess_assess.location_id,
                         cluster_subsector_id = row.assess_summary.cluster_subsector_id,
@@ -85,7 +142,7 @@ def gap():
                         total_bnf_reach = NONE,
                         )
 
-    gap_rows = map(map_gap, assess_rows)
+    gap_rows = map(map_assess_to_gap, assess_rows)
 
     for activity_row in activity_rows:
         add_new_gap_row = True
@@ -183,7 +240,7 @@ def gap():
                             )
                         )
 
-    return dict(title = T("Gap Analysis"),
+    return dict(title = T("Assessment and Activities Gap Analysis Report"),
                 gap_table = gap_table)
 
 #==============================================================================
@@ -278,7 +335,7 @@ def gap_map():
                 )
 
     return dict(map = map,
-                title = T("Assessment and Activities Map") )
+                title = T("Assessment and Activities Gap Analysis Map") )
 
 
 #==============================================================================

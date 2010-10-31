@@ -9,16 +9,14 @@ module = "assess"
 if deployment_settings.has_module(module):
     # ---------------------------------------------------------------------
     # Assement
-    # This is the current status of an Incident
-    # @ToDo Change this so that there is a 'lead' ireport updated in the case of duplicates
     resourcename = "assess"
     tablename = "%s_%s" % (module, resourcename)
     table = db.define_table(tablename,
                             Field("datetime", "datetime"),
                             location_id(),
-                            person_id("assessor_person_id"                                      
-                                      ),
+                            person_id("assessor_person_id"),
                             comments(),
+                            ireport_id(),
                             migrate=migrate, *s3_meta_fields()
                             )
     

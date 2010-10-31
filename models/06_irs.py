@@ -221,11 +221,24 @@ if deployment_settings.has_module(module):
     # -----------------------------------------------------------------------------
     # Reports
     # This is a report of an Incident
-    # A single incident may generate many reports
+    # (A single incident may generate many reports)
+    
+    def shn_assess_represent(assessments):
+        """ Represent assessments in the Incidents List """
+        add_assessment = A(T("Add Assessment"), _href=URL(r=request, c="assess", f="assess.html", args="create"), _class="action-btn")
+        output = add_assessment
+        if assessments:
+            _assessments = assessments.split("|")
+            for assessment in _assessments:
+                output.append(A(T("Open Assessment"), _href=URL(r=request, c="assess", f="assess", args=assessment), _class="action-btn"))
+            return output
+        else:
+            return output
+    
     resourcename = "ireport"
     tablename = "%s_%s" % (module, resourcename)
     table = db.define_table(tablename,
-                            incident_id(),
+                            incident_id(),      # ToDo: Remove
                             Field("name"),
                             Field("message", "text"),
                             Field("category"),
@@ -239,6 +252,9 @@ if deployment_settings.has_module(module):
                             #Field("persons_deceased", "integer"),
                             document_id(),
                             Field("verified", "boolean"),
+                            Field("assess_id", label=T("Assessments"),
+                                  represent = shn_assess_represent
+                            ),
                             comments(),
                             migrate=migrate, *s3_meta_fields())
 
@@ -299,6 +315,11 @@ if deployment_settings.has_module(module):
                               deletable=True,
                               editable=True)
 
+    ireport_id = S3ReusableField("incident_id", table,
+                                 requires = IS_NULL_OR(IS_ONE_OF(db, "irs_ireport.id", "%(name)s")),
+                                 represent = lambda id: id,
+                                 label = T("Incident"),
+                                 ondelete = "RESTRICT")
 
     # -----------------------------------------------------------------------------
     irs_assessment_type_opts = {
@@ -400,7 +421,7 @@ if deployment_settings.has_module(module):
         99:T("other")
     }
 
-    # Replace by image_id?
+    # Replace by image_id
     resourcename = "iimage"
     tablename = "%s_%s" % (module, resourcename)
     table = db.define_table(tablename,

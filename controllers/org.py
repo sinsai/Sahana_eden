@@ -162,40 +162,6 @@ s3.crud_strings[tablename] = Storage(
     msg_record_deleted = T("Donor deleted"),
     msg_list_empty = T("No Donors currently registered"))
 
-
-#==============================================================================
-def project():
-
-    """ RESTful CRUD controller """
-
-    tablename = "%s_%s" % (prefix, resourcename)
-    table = db[tablename]
-
-    db.org_staff.person_id.comment[1] = DIV(DIV(_class="tooltip",
-        _title=T("Person") + "|" + T("Select the person assigned to this role for this project.")))
-
-    rheader = lambda r: shn_project_rheader(r,
-                                            tabs = [(T("Basic Details"), None),
-                                                    (T("Staff"), "staff"),
-                                                    (T("Tasks"), "task"),
-                                                    #(T("Donors"), "organisation"),
-                                                    #(T("Sites"), "site"),  # Ticket 195
-                                                   ])
-
-    return s3_rest_controller(prefix, resourcename, rheader=rheader)
-
-
-#==============================================================================
-def task():
-
-    """ RESTful CRUD controller """
-
-    tablename = "%s_%s" % (prefix, resourcename)
-    table = db[tablename]
-
-    return s3_rest_controller(prefix, resourcename)
-
-
 #==============================================================================
 def shn_org_rheader(r, tabs=[]):
 

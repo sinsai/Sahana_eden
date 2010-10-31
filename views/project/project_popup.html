@@ -3,14 +3,14 @@
 
 <script type="text/javascript">//<![CDATA[
 $(document).ready(function () {
-    $('#org_project_organisation_id').val('{{=session.s3.organisation_id}}');
-    $('#org_project_organisation_id__row').hide();
+    $('#project_project_organisation_id').val('{{=session.s3.organisation_id}}');
+    $('#project_project_organisation_id__row').hide();
 });
 
 // If submission succesful
 {{if response.flash or response.confirmation:}}
     // Refresh the activities list
     var url = '{{=URL(r=request, c="org", f="dashboard") + "/" + str(session.s3.organisation_id)}}';    
-    self.parent.$('#org_project_list').load(url + ' #org_project_list'); 
+    self.parent.$('#project_project_list').load(url + ' #project_project_list'); 
 {{pass}}
 //]]></script>

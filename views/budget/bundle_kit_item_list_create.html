@@ -1,6 +1,6 @@
-{{extend 'layout.html'}}
-{{include 'budget/bundle_kit_item_header.html'}}
-{{=P(A(T("Edit Description"), _href=URL(r=request, f='bundle', args=(bundle, 'update'))))}}
+{{extend "layout.html"}}
+{{include "budget/bundle_kit_item_header.html"}}
+{{=P(A(T("Edit Description"), _href=URL(r=request, f="bundle", args=(bundle, "update"))))}}
 {{try:}}
  {{=H3(subtitle)}}
 {{except:}}
@@ -28,7 +28,7 @@
 {{except:}}
 {{pass}}
 </div>
-{{include 'key.html'}}
+{{include "key.html"}}
 <script type="text/javascript">//<![CDATA[
 $(function() {
     // Set the Crud dropdowns to the current Bundle

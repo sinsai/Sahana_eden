@@ -311,8 +311,7 @@ def parserdooth(message):
                                                                      table = "org_office",
                                                                      field = "address",
                                                                      look_up = organisation.id
-                                                                    )
-
+                                                                     )            
         if len(reply) == 0:
             return "No Match"
 

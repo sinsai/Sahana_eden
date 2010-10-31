@@ -71,8 +71,6 @@ def freport():
     # Make the Location field mandatory
     table.location_id.requires = IS_ONE_OF_EMPTY(db, "gis_location.id")
 
-    table.datetime.comment = SPAN("*", _class="req")
-
     # Disable legacy fields, unless updating, so the data can be manually transferred to new fields
     #if "update" not in request.args:
     #    table.document.readable = table.document.writable = False

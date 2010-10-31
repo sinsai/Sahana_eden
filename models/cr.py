@@ -14,9 +14,7 @@ if deployment_settings.has_module(module):
     resourcename = "shelter_type"
     tablename = module + "_" + resourcename
     table = db.define_table(tablename,
-                            Field("name",
-                                  notnull=True,
-                                  comment = SPAN("*", _class="req")),
+                            Field("name", notnull=True),
                             comments(),
                             migrate=migrate,
                             *(s3_timestamp() + s3_uid() + s3_deletion_status()))
@@ -49,9 +47,7 @@ if deployment_settings.has_module(module):
     resourcename = "shelter_service"
     tablename = module + "_" + resourcename
     table = db.define_table(tablename,
-                            Field("name",
-                                  notnull=True,
-                                  comment = SPAN("*", _class="req")),
+                            Field("name", notnull=True),
                             comments(),
                             migrate=migrate,
                             *(s3_timestamp() + s3_uid() + s3_deletion_status()))
@@ -105,7 +101,7 @@ if deployment_settings.has_module(module):
     # If this is a production site, do not disable HMS unless you really mean it...
 
     fields_before_hospital = db.Table(None, None,
-                                      site_id(),
+                                      super_link(db.org_site),
                                       Field("name", notnull=True),
                                       shelter_type_id(),
                                       shelter_service_id(),
@@ -131,8 +127,7 @@ if deployment_settings.has_module(module):
     if deployment_settings.has_module("hms"):
         table = db.define_table(tablename,
                                 fields_before_hospital,
-                                hospital_id(comment = DIV(SPAN("*", _class="req"),
-                                                          shn_hospital_id_comment)),
+                                hospital_id(comment = shn_hospital_id_comment),
                                 fields_after_hospital,
                                 migrate=migrate, *s3_meta_fields())
 
@@ -149,7 +144,6 @@ if deployment_settings.has_module(module):
     # can be non-unique, *especially* since location is not required.
     table.name.requires = IS_NOT_EMPTY()
     table.name.label = T("Shelter Name")
-    table.name.comment = SPAN("*", _class="req")
     table.person_id.label = T("Contact Person")
     table.address.label = T("Address")
     table.capacity.requires = IS_NULL_OR(IS_INT_IN_RANGE(0, 999999))
@@ -200,8 +194,7 @@ if deployment_settings.has_module(module):
 
     s3xrc.model.configure(table,
         listadd=False,
-        onaccept=lambda form: shn_site_onaccept(form, table=db.cr_shelter),
-        ondelete=lambda form: shn_site_ondelete(form),
+        super_entity=db.org_site,
         list_fields=["id",
                      "name",
                      "shelter_type_id",

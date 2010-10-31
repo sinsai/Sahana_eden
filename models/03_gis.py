@@ -146,7 +146,7 @@ opt_gis_layout = db.Table(None, "opt_gis_layout",
 resourcename = "config"
 tablename = "%s_%s" % (module, resourcename)
 table = db.define_table(tablename,
-                        pe_id(),                           # Personal Entity Reference
+                        super_link(db.pr_pentity), # pe_id
                         Field("lat", "double"),
                         Field("lon", "double"),
                         Field("zoom", "integer"),
@@ -194,11 +194,11 @@ table.cluster_threshold.label = T("Cluster Threshold")
 table.wmsbrowser_name.label = T("WMS Browser Name")
 table.wmsbrowser_url.label =  T("WMS Browser URL")
 # Defined here since Component
-table.lat.comment = DIV(SPAN("*", _class="req"), DIV( _class="tooltip", _title=T("Latitude") + "|" + T("Latitude is North-South (Up-Down). Latitude is zero on the equator and positive in the northern hemisphere and negative in the southern hemisphere.")))
-table.lon.comment = DIV(SPAN("*", _class="req"), DIV( _class="tooltip", _title=T("Longitude") + "|" + T("Longitude is West - East (sideways). Longitude is zero on the prime meridian (Greenwich Mean Time) and is positive to the east, across Europe and Asia.  Longitude is negative to the west, across the Atlantic and the Americas.")))
-table.zoom.comment = DIV(SPAN("*", _class="req"), DIV( _class="tooltip", _title=T("Zoom") + "|" + T("How much detail is seen. A high Zoom level means lot of detail, but not a wide area. A low Zoom level means seeing a wide area, but not a high level of detail.")))
-table.map_height.comment = DIV(SPAN("*", _class="req"), DIV( _class="tooltip", _title=T("Height") + "|" + T("Default Height of the map window. In Window layout the map maximises to fill the window, so no need to set a large value here.")))
-table.map_width.comment = DIV(SPAN("*", _class="req"), DIV( _class="tooltip", _title=T("Width") + "|" + T("Default Width of the map window. In Window layout the map maximises to fill the window, so no need to set a large value here.")))
+table.lat.comment = DIV( _class="tooltip", _title=T("Latitude") + "|" + T("Latitude is North-South (Up-Down). Latitude is zero on the equator and positive in the northern hemisphere and negative in the southern hemisphere."))
+table.lon.comment = DIV( _class="tooltip", _title=T("Longitude") + "|" + T("Longitude is West - East (sideways). Longitude is zero on the prime meridian (Greenwich Mean Time) and is positive to the east, across Europe and Asia.  Longitude is negative to the west, across the Atlantic and the Americas."))
+table.zoom.comment = DIV( _class="tooltip", _title=T("Zoom") + "|" + T("How much detail is seen. A high Zoom level means lot of detail, but not a wide area. A low Zoom level means seeing a wide area, but not a high level of detail."))
+table.map_height.comment = DIV( _class="tooltip", _title=T("Height") + "|" + T("Default Height of the map window. In Window layout the map maximises to fill the window, so no need to set a large value here."))
+table.map_width.comment = DIV( _class="tooltip", _title=T("Width") + "|" + T("Default Width of the map window. In Window layout the map maximises to fill the window, so no need to set a large value here."))
 table.wmsbrowser_name.comment = DIV( _class="tooltip", _title=T("WMS Browser Name") + "|" + T("The title of the WMS Browser panel in the Tools panel."))
 table.wmsbrowser_url.comment = DIV( _class="tooltip", _title=T("WMS Browser URL") + "|" + T("The URL for the GetCapabilities of a WMS Service whose layers you want accessible via the Map."))
 ADD_CONFIG = T("Add Config")
@@ -223,7 +223,7 @@ s3.crud_strings[tablename] = Storage(
 # Configs as component of Persons (Personalised configurations)
 s3xrc.model.add_component(module, resourcename,
                           multiple=False,
-                          joinby="pe_id")
+                          joinby=super_key(db.pr_pentity))
 
 s3xrc.model.configure(table,
                       deletable=False,
@@ -907,11 +907,10 @@ table = db.define_table(tablename, #timestamp,
 table.track.uploadfolder = os.path.join(request.folder, "uploads/tracks")
 table.name.requires = [IS_NOT_EMPTY(), IS_NOT_IN_DB(db, "%s.name" % tablename)]
 table.name.label = T("Name")
-table.name.comment = SPAN("*", _class="req")
 table.track.requires = IS_UPLOAD_FILENAME(extension="gpx")
 table.track.description = T("Description")
 table.track.label = T("GPS Track File")
-table.track.comment = DIV(SPAN("*", _class="req"), DIV( _class="tooltip", _title=T("GPS Track") + "|" + T("A file in GPX format taken from a GPS whose timestamps can be correlated with the timestamps on the photos to locate them on the map.")))
+table.track.comment = DIV( _class="tooltip", _title=T("GPS Track") + "|" + T("A file in GPX format taken from a GPS whose timestamps can be correlated with the timestamps on the photos to locate them on the map."))
 ADD_TRACK = T("Upload Track")
 LIST_TRACKS = T("List Tracks")
 s3.crud_strings[tablename] = Storage(
@@ -952,7 +951,7 @@ gis_layer_wms_img_formats = ["image/jpeg", "image/png", "image/bmp", "image/tiff
 # Base table from which the rest inherit
 gis_layer = db.Table(db, "gis_layer", timestamp,
                      #uuidstamp, # Layers like OpenStreetMap, Google, etc shouldn't sync
-                     Field("name", notnull=True, label=T("Name"), requires=IS_NOT_EMPTY(), comment=SPAN("*", _class="req")),
+                     Field("name", notnull=True, label=T("Name"), requires=IS_NOT_EMPTY()),
                      Field("description", label=T("Description")),
                      # System default priority is set in s3gis. User priorities will be set in WMC.
                      #Field("priority", "integer", label=T("Priority")),
@@ -1034,8 +1033,9 @@ for layertype in gis_layer_types:
                      Field("url", label=T("Location"), requires = IS_NOT_EMPTY()),
                      Field("version", label=T("Version"), default="1.1.0", requires = IS_IN_SET(["1.0.0", "1.1.0"], zero=None)),
                      Field("featureNS", requires=IS_NOT_EMPTY(), label=T("Feature Namespace"),
-                           comment=DIV(SPAN("*", _class="req"), DIV( _class="tooltip", _title="Feature Namespace" + "|" + T("In GeoServer, this is the Workspace Name. Within the WFS getCapabilities, this is the FeatureType Name part before the colon(:).")))),
-                     Field("featureType", requires=IS_NOT_EMPTY(), label=T("Feature Type"), comment=DIV(SPAN("*", _class="req"), DIV( _class="tooltip", _title=T("Feature Type") + "|" + T("In GeoServer, this is the Layer Name. Within the WFS getCapabilities, this is the FeatureType Name part after the colon(:).")))),
+                           comment=DIV( _class="tooltip", _title="Feature Namespace" + "|" + T("In GeoServer, this is the Workspace Name. Within the WFS getCapabilities, this is the FeatureType Name part before the colon(:)."))),
+                     Field("featureType", requires=IS_NOT_EMPTY(), label=T("Feature Type"),
+                           comment=DIV( _class="tooltip", _title=T("Feature Type") + "|" + T("In GeoServer, this is the Layer Name. Within the WFS getCapabilities, this is the FeatureType Name part after the colon(:)."))),
                      projection_id(),
                      #Field("editable", "boolean", default=False, label=T("Editable?")),
                     )

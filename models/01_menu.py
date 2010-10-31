@@ -62,6 +62,14 @@ else:
 
 # Menu for Admin module
 # (defined here as used in several different Controller files)
+admin_menu_messaging = [
+            [T("Global Messaging Settings"), False, URL(r=request, c="msg", f="setting", args=[1, "update"])],
+            [T("Email Settings"), False, URL(r=request, c="msg", f="email_settings", args=[1, "update"])],
+            [T("Twitter Settings"), False, URL(r=request, c="msg", f="twitter_settings", args=[1, "update"])],
+            [T("Modem Settings"), False, URL(r=request, c="msg", f="modem_settings", args=[1, "update"])],
+            [T("Gateway Settings"), False, URL(r=request, c="msg", f="gateway_settings", args=[1, "update"])],
+            [T("Tropo Settings"), False, URL(r=request, c="msg", f="tropo_settings", args=[1, "update"])],
+    ]
 admin_menu_options = [
     [T("Settings"), False, URL(r=request, c="admin", f="setting", args=[1, "update"]), [
         [T("Edit Themes"), False, URL(r=request, c="admin", f="theme")]
@@ -88,14 +96,7 @@ admin_menu_options = [
             [T("Conflict Resolution"), False, URL(r=request, c="sync", f="conflict")],
             [T("History"), False, URL(r=request, c="sync", f="log")]
     ]],
-    [T("Messaging"), False, "#",[
-            [T("Global Messaging Settings"), False, URL(r=request, c="msg", f="setting", args=[1, "update"])],
-            [T("Email Settings"), False, URL(r=request, c="msg", f="email_settings", args=[1, "update"])],
-            [T("Twitter Settings"), False, URL(r=request, c="msg", f="twitter_settings", args=[1, "update"])],
-            [T("Modem Settings"), False, URL(r=request, c="msg", f="modem_settings", args=[1, "update"])],
-            [T("Gateway Settings"), False, URL(r=request, c="msg", f="gateway_settings", args=[1, "update"])],
-            [T("Tropo Settings"), False, URL(r=request, c="msg", f="tropo_settings", args=[1, "update"])],
-    ]],
+    [T("Messaging"), False, "#", admin_menu_messaging],
     [T("Edit Application"), False, URL(r=request, a="admin", c="default", f="design", args=[request.application])],
     [T("Tickets"), False, URL(r=request, c="admin", f="errors")],
     [T("Functional Tests"), False, URL(r=request, c="static", f="selenium", args=["core", "TestRunner.html"], vars=dict(test="../tests/TestSuite.html", auto="true", resultsUrl=URL(r=request, c="admin", f="handleResults")))]

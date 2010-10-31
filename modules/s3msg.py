@@ -88,9 +88,9 @@ class Msg(object):
                                                                                   limitby=(0, 1)).first().token_messaging
             #self.tropo_token_voice = db(db.msg_tropo_settings.id == 1).select(db.msg_tropo_settings.token_voice,
             #                                                                  limitby=(0, 1)).first().token_voice
-            
+
             # Try to initialize Twitter api
-            self.twitter_account = self.twitter_api = None # fallback against evil eye       
+            self.twitter_account = self.twitter_api = None # fallback against evil eye
             tmp_twitter_settings = db(db.msg_twitter_settings.id > 0).select(limitby=(0, 1)).first()
             if tmp_twitter_settings and tmp_twitter_settings.twitter_account:
                 try:
@@ -98,13 +98,13 @@ class Msg(object):
                                                 deployment_settings.twitter.oauth_consumer_secret)
                     oauth.set_access_token(tmp_twitter_settings.oauth_key,
                                            tmp_twitter_settings.oauth_secret)
-                    self.twitter_api = tweepy.API(oauth)                    
+                    self.twitter_api = tweepy.API(oauth)
                     self.twitter_account = tmp_twitter_settings.twitter_account
                 except:
                     pass
         except:
             pass
-    
+
     def sanitise_phone(self, phone):
         """
             Strip out unnecessary characters from the string:
@@ -123,17 +123,17 @@ class Msg(object):
                 clean = str(self.default_country_code) + string.lstrip(clean, "0")
 
         return clean
-    
+
     def send_sms_via_modem(self, mobile, text=""):
         """
             Function to send SMS via locally-attached Modem
         """
-        
+
         mobile = self.sanitise_phone(mobile)
 
         # Add '+' before country code
         mobile = "+" + mobile
-        
+
         try:
             self.modem.send_sms(mobile, text)
             return True
@@ -144,9 +144,9 @@ class Msg(object):
         """
             Function to send SMS via API
         """
-        
+
         mobile = self.sanitise_phone(mobile)
-        
+
         try:
             self.sms_api_post_config[self.sms_api.message_variable] = text
             self.sms_api_post_config[self.sms_api.to_variable] = str(mobile)
@@ -156,7 +156,7 @@ class Msg(object):
             return True
         except:
             return False
-            
+
     def sanitise_twitter_account(self, account):
         """
             Only keep characters that are legal for a twitter account:
@@ -164,7 +164,7 @@ class Msg(object):
         """
 
         return account.translate(IDENTITYTRANS, NOTTWITTERCHARS)
-        
+
     def break_to_chunks(self, text,
                         chunk_size=TWITTER_MAX_CHARS,
                         suffix = TWITTER_HAS_NEXT_SUFFIX,
@@ -174,7 +174,7 @@ class Msg(object):
             All chunks except for last end with suffix.
             All chunks except for first start with prefix.
         """
-        
+
         res = []
         current_prefix = "" # first chunk has no prefix
         while text:
@@ -222,7 +222,7 @@ class Msg(object):
                 except tweepy.TweepError:
                     s3_debug("Unable to Tweet @mention")
         return True
-   
+
     def send_text_via_tropo(self, row_id, message_id, recipient, message, network = "SMS"):
         """
             Send a URL request to Tropo to pick a message up
@@ -337,7 +337,7 @@ class Msg(object):
             API wrapper over send_by_pe_id
             - depends on pr_message_method
         """
-        
+
         return self.send_by_pe_id(pe_id,
                                   subject,
                                   message,
@@ -371,7 +371,7 @@ class Msg(object):
             entity = row.pe_id
             table2 = db.pr_pentity
             query = table2.id == entity
-            entity_type = db(query).select(table2.pe_type, limitby=(0, 1)).first().pe_type
+            entity_type = db(query).select(table2.instance_type, limitby=(0, 1)).first().instance_type
             def dispatch_to_pe_id(pe_id):
                 table3 = db.pr_pe_contact
                 query = (table3.pe_id == pe_id) & (table3.contact_method == contact_method)

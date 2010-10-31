@@ -24,12 +24,8 @@ response.menu_options = [
 
 # Options used in multiple functions
 table = db.budget_item
-table.category_type.comment = SPAN("*", _class="req")
 table.code.label = T("Code")
-table.code.comment = SPAN("*", _class="req")
 table.description.label = T("Description")
-table.description.comment = SPAN("*", _class="req")
-table.cost_type.comment = SPAN("*", _class="req")
 table.unit_cost.label = T("Unit Cost")
 table.monthly_cost.label = T("Monthly Cost")
 table.minute_cost.label = T("Cost per Minute")
@@ -38,7 +34,6 @@ table.comments.label = T("Comments")
 
 table = db.budget_kit
 table.code.label = T("Code")
-table.code.comment = SPAN("*", _class="req")
 table.description.label = T("Description")
 table.total_unit_cost.label = T("Total Unit Cost")
 table.total_monthly_cost.label = T("Total Monthly Cost")
@@ -52,11 +47,9 @@ table.kit_id.represent = lambda kit_id: db(db.budget_kit.id == kit_id).select(db
 table.item_id.label = T("Item")
 table.item_id.represent = lambda item_id: db(db.budget_item.id == item_id).select(db.budget_item.description, limitby=(0, 1)).first().description
 table.quantity.label = T("Quantity")
-table.quantity.comment = SPAN("*", _class="req")
 
 table = db.budget_bundle
 table.name.label = T("Name")
-table.name.comment = SPAN("*", _class="req")
 table.description.label = T("Description")
 table.total_unit_cost.label = T("One time cost")
 table.total_monthly_cost.label = T("Recurring cost")
@@ -68,11 +61,8 @@ table.bundle_id.represent = lambda bundle_id: db(db.budget_bundle.id == bundle_i
 table.kit_id.label = T("Kit")
 table.kit_id.represent = lambda kit_id: db(db.budget_kit.id == kit_id).select(db.budget_kit.code, limitby=(0, 1)).first().code
 table.quantity.label = T("Quantity")
-table.quantity.comment = SPAN("*", _class="req")
 table.minutes.label = T("Minutes per Month")
-table.minutes.comment = SPAN("*", _class="req")
 table.megabytes.label = T("Megabytes per Month")
-table.megabytes.comment = SPAN("*", _class="req")
 
 table = db.budget_bundle_item
 table.bundle_id.label = T("Bundle")
@@ -80,25 +70,18 @@ table.bundle_id.represent = lambda bundle_id: db(db.budget_bundle.id == bundle_i
 table.item_id.label = T("Item")
 table.item_id.represent = lambda item_id: db(db.budget_item.id == item_id).select(db.budget_item.description, limitby=(0, 1)).first().description
 table.quantity.label = T("Quantity")
-table.quantity.comment = SPAN("*", _class="req")
 table.minutes.label = T("Minutes per Month")
-table.minutes.comment = SPAN("*", _class="req")
 table.megabytes.label = T("Megabytes per Month")
-table.megabytes.comment = SPAN("*", _class="req")
 
 table = db.budget_staff
 table.name.label = T("Name")
-table.name.comment = SPAN("*", _class="req")
 table.grade.label = T("Grade")
-table.grade.comment = SPAN("*", _class="req")
 table.salary.label = T("Monthly Salary")
-table.salary.comment = SPAN("*", _class="req")
 table.travel.label = T("Travel Cost")
 table.comments.label = T("Comments")
 
 table = db.budget_location
 table.code.label = T("Code")
-table.code.comment = SPAN("*", _class="req")
 table.description.label = T("Description")
 table.subsistence.label = T("Subsistence Cost")
 # UN terminology
@@ -108,13 +91,11 @@ table.comments.label = T("Comments")
 
 #table = db.budget_project
 #table.code.label = T("Code")
-#table.code.comment = SPAN("*", _class="req")
 #table.title.label = T("Title")
 #table.comments.label = T("Comments")
 
 table = db.budget_budget
 table.name.label = T("Name")
-table.name.comment = SPAN("*", _class="req")
 table.description.label = T("Description")
 table.total_onetime_costs.label = T("Total One-time Costs")
 table.total_recurring_costs.label = T("Total Recurring Costs")
@@ -130,9 +111,7 @@ table.location_id.represent = lambda location_id: db(db.budget_location.id == lo
 table.bundle_id.label = T("Bundle")
 table.bundle_id.represent = lambda bundle_id: db(db.budget_bundle.id == bundle_id).select(db.budget_bundle.name, limitby=(0, 1)).first().name
 table.quantity.label = T("Quantity")
-table.quantity.comment = SPAN("*", _class="req")
 table.months.label = T("Months")
-table.months.comment = SPAN("*", _class="req")
 
 table = db.budget_budget_staff
 table.budget_id.label = T("Budget")
@@ -144,9 +123,7 @@ table.location_id.represent = lambda location_id: db(db.budget_location.id == lo
 table.staff_id.label = T("Staff")
 table.staff_id.represent = lambda bundle_id: db(db.budget_staff.id == staff_id).select(db.budget_staff.description, limitby=(0, 1)).first().description
 table.quantity.label = T("Quantity")
-table.quantity.comment = SPAN("*", _class="req")
 table.months.label = T("Months")
-table.months.comment = SPAN("*", _class="req")
 
 # S3 framework functions
 def index():

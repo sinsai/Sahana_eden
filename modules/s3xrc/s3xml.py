@@ -2,7 +2,7 @@
 
 """ S3XRC Resource Framework - XML/JSON Toolkit
 
-    @version: 2.1.8
+    @version: 2.2.0
 
     @see: U{B{I{S3XRC}} <http://eden.sahanafoundation.org/wiki/S3XRC>} on Eden wiki
 
@@ -38,6 +38,7 @@
 
 __all__ = ["S3XML"]
 
+import sys
 from gluon.storage import Storage
 from gluon.validators import IS_EMPTY_OR
 import gluon.contrib.simplejson as json
@@ -155,27 +156,24 @@ class S3XML(object):
 
 
     # -------------------------------------------------------------------------
-    def __init__(self, db, domain=None, base_url=None, gis=None, cache=None):
+    def __init__(self, manager):
 
         """ Constructor
 
-            @param db: the database (DAL)
-            @param domain: name of the current domain
-            @param base_url: base URL of the current instance
-            @param gis: GIS toolkit to use
-            @param cache: the cache
-
-            @todo 2.2: pass resource controller?
+            @param manager: the resource controller
 
         """
 
-        self.db = db
-        self.error = None
-        self.domain = domain
-        self.base_url = base_url
+        self.manager = manager
+
+        self.db = manager.db
+        self.domain = manager.domain
+        self.base_url = manager.base_url
+        self.gis = manager.gis
+        self.cache = manager.cache
+
         self.domain_mapping = True
-        self.gis = gis
-        self.cache = cache
+        self.error = None
 
         self.filter_mci = False # Set to true to suppress export at MCI<0
 
@@ -401,24 +399,12 @@ class S3XML(object):
             @param f: the field name
             @param v: the value
 
-            @todo 2.2: use S3ResourceManager.represent()
-
         """
 
-        text = str(table[f].represent(v)).decode("utf-8")
-        # Filter out markup from text
-        if "<" in text:
-            try:
-                markup = etree.XML(text)
-                text = markup.xpath(".//text()")
-                if text:
-                    text = " ".join(text)
-                else:
-                    text = ""
-            except etree.XMLSyntaxError:
-                pass
-        text = self.xml_encode(text)
-        return text
+        return self.manager.represent(table[f],
+                                      value=v,
+                                      strip_markup=True,
+                                      xml_escape=True)
 
 
     # -------------------------------------------------------------------------
@@ -784,6 +770,7 @@ class S3XML(object):
                 uids = [uids]
 
             relements = []
+            id_map = None
 
             if not uids:
                 expr = './/%s[@%s="%s"]' % (
@@ -940,13 +927,15 @@ class S3XML(object):
                     if validate is not None:
                         if not isinstance(value, (basestring, list, tuple)):
                             v = str(value)
+                        elif isinstance(value, basestring):
+                            v = value.encode("utf-8")
                         else:
                             v = value
                         (value, error) = validate(table, original, f, v)
                         if isinstance(v, (list, tuple)):
                             child.set(self.ATTRIBUTE.value, str(v))
                         else:
-                            child.set(self.ATTRIBUTE.value, v)
+                            child.set(self.ATTRIBUTE.value, str(v).decode("utf-8"))
                         if error:
                             child.set(self.ATTRIBUTE.error, "%s: %s" % (f, error))
                             valid = False
@@ -965,7 +954,8 @@ class S3XML(object):
 
         """ Get options of a field as <select>
 
-            @todo 2.2: fix docstring
+            @param table: the table
+            @param fieldname: the fieldname
 
         """
 
@@ -1006,7 +996,9 @@ class S3XML(object):
 
         """ Get options of option fields in a table as <select>s
 
-            @todo 2.2: fix docstring
+            @param prefix: the application prefix
+            @param name: the resource name (without prefix)
+            @param fields: optional list of fieldnames
 
         """
 
@@ -1039,7 +1031,8 @@ class S3XML(object):
 
         """ Get fields in a table as <fields> element
 
-            @todo 2.2: fix docstring
+            @param prefix: the application prefix
+            @param name: the resource name (without prefix)
 
         """
 

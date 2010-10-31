@@ -22,8 +22,6 @@ if deployment_settings.has_module("logs"):
                             migrate=migrate, *s3_meta_fields())
 
 
-    table.name.comment = SPAN("*", _class="req")
-
     # CRUD strings
     ADD_ITEM_CATEGORY = T("Add Item Category")
     LIST_ITEM_CATEGORIES = T("List Item Categories")
@@ -65,8 +63,6 @@ if deployment_settings.has_module("logs"):
                             comments(),
                             migrate=migrate, *s3_meta_fields())
 
-
-    table.name.comment = SPAN("*", _class="req")
 
     # CRUD strings
     ADD_ITEM = T("Add Item")

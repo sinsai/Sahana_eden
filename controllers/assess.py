@@ -86,8 +86,8 @@ def assess():
 
     tabs = [
             (T("Edit Details"), None),
-            (T("Impacts"), "impact"),
             (T("Baselines"), "baseline"),
+            (T("Impacts"), "impact"),
             (T("Summary"), "summary"),
             #(T("Requested"), "ritem"),
            ]
@@ -176,7 +176,8 @@ def assess_short_mobile():
                 widget = TEXTAREA(_name = id,
                                   _class = "double",
                                   _type = "text")
-            if field[1] == "location":
+
+            elif field[1] == "location":
                 label = "Location:"
                 #widget = db.assess_assess[ field[1] ].widget
                 widget = DIV(INPUT(_name = id,
@@ -187,6 +188,7 @@ def assess_short_mobile():
                          INPUT(_name = "gis_location_lon",
                                _id = "gis_location_lon",
                                _type = "text"))
+
         elif field[0] == "baseline":
             label = shn_get_db_field_value(db = db,
                                            table = "assess_baseline_type",
@@ -196,6 +198,7 @@ def assess_short_mobile():
             widget = INPUT(_name = id,
                            _class = "double",
                            _type = "text")
+
         elif field[0] == "impact":
             label = "%s:" % shn_get_db_field_value(db = db,
                                                    table = "impact_type",
@@ -205,6 +208,7 @@ def assess_short_mobile():
             widget = INPUT(_name = id,
                            _class = "double",
                            _type = "text")
+
         elif field[0] == "summary":
             label = "%s:" % shn_org_cluster_subsector_represent( field[1] )
             widget = db.assess_summary.value.widget(db.assess_summary.value,
@@ -215,10 +219,9 @@ def assess_short_mobile():
                 option[0].__setitem__("_style", "background-color:%s;" % color)
                 option[0][0].__setitem__("_name", name)
 
-
-
-        if field[0] == "title":
+        elif field[0] == "title":
             form_row.append(TR(H3( field[1] )))
+
         else:
             form_row = form_row + list( s3_formstyle(id, label, widget, comment) )
 

@@ -351,7 +351,9 @@ def view_team_map():
     member_person_ids = [ x.person_id for x in members ] #list of members
 
     #Presence Data of the members with Presence Logs
-    presence_rows = db(db.pr_person.id.belongs(member_person_ids) & (db.pr_presence.pe_id == db.pr_person.pe_id) & (db.gis_location.id ==  db.pr_presence.location_id)).select(db.gis_location.ALL, db.pr_person.id, orderby=~db.pr_presence.datetime)
+    presence_rows = db(db.pr_person.id.belongs(member_person_ids) & \
+                      (db.pr_presence.pe_id == db.pr_person.pe_id) & \
+                      (db.gis_location.id ==  db.pr_presence.location_id)).select(db.gis_location.ALL, db.pr_person.id, orderby=~db.pr_presence.datetime)
     #Get Latest Presence Data
     person_location_sort = presence_rows.sort(lambda row:row.pr_person.id)
     previous_person_id = None
@@ -363,7 +365,9 @@ def view_team_map():
             previous_person_id = row.pr_person.id
 
     #Address of those members without Presence data
-    address = db(db.pr_person.id.belongs(member_person_ids) & (db.pr_address.pe_id == db.pr_person.pe_id) & (db.gis_location.id ==  db.pr_address.location_id)).select(db.gis_location.ALL)
+    address = db(db.pr_person.id.belongs(member_person_ids) & \
+                (db.pr_address.pe_id == db.pr_person.pe_id) & \
+                (db.gis_location.id ==  db.pr_address.location_id)).select(db.gis_location.ALL)
 
     locations_list.extend(address)
 

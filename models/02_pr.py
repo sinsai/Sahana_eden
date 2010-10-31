@@ -7,7 +7,7 @@
 
 """
 
-module = "pr"
+prefix = "pr"
 
 # *****************************************************************************
 # Person Entity
@@ -21,91 +21,76 @@ pr_pe_types = Storage(
 )
 
 resourcename = "pentity"
-tablename = "%s_%s" % (module, resourcename)
-table = db.define_table(tablename,
-                        Field("pe_id", "id"),
-                        Field("pe_type"),
-                        Field("uuid", length=128),
-                        #Field("pe_id", "integer"),
-                        Field("pe_label", length=128),
-                        migrate=migrate, *s3_deletion_status())
+tablename = "%s_%s" % (prefix, resourcename)
+table = super_entity(tablename, "pe_id", pr_pe_types,
+                     Field("pe_label", length=128),
+                     migrate=migrate)
 
-table.pe_type.writable = False
-table.pe_type.represent = lambda opt: pr_pe_types.get(opt, opt)
-table.uuid.writable = False
-table.pe_label.writable = False
-
-s3xrc.model.configure(table,
-                      editable=False,
-                      deletable=False,
-                      listadd=False)
-
+s3xrc.model.configure(table, editable=False, deletable=False, listadd=False)
 
 # -----------------------------------------------------------------------------
 def shn_pentity_represent(id, default_label="[no label]"):
 
-    """
-        Represent a Person Entity in option fields or list views
-    """
+    """ Represent a Person Entity in option fields or list views """
 
     pe_str = T("None (no such record)")
 
     pe_table = db.pr_pentity
-    pe = db(pe_table.pe_id == id).select(pe_table.pe_type,
+    pe = db(pe_table.pe_id == id).select(pe_table.instance_type,
                                          pe_table.pe_label,
                                          limitby=(0, 1)).first()
     if not pe:
         return pe_str
 
-    pe_type = pe.pe_type
-    pe_type_nice = pe_table.pe_type.represent(pe_type)
+    instance_type = pe.instance_type
+    instance_type_nice = pe_table.instance_type.represent(instance_type)
 
-    table = db.get(pe_type, None)
+    table = db.get(instance_type, None)
     if not table:
         return pe_str
 
     label = pe.pe_label or default_label
 
-    if pe_type == "pr_person":
+    if instance_type == "pr_person":
         person = db(table.pe_id == id).select(
                     table.first_name, table.middle_name, table.last_name,
                     limitby=(0, 1)).first()
         if person:
             pe_str = "%s %s (%s)" % (
-                vita.fullname(person), label, pe_type_nice
+                vita.fullname(person), label, instance_type_nice
             )
 
-    elif pe_type == "pr_group":
+    elif instance_type == "pr_group":
         group = db(table.pe_id == id).select(
                    table.name,
                    limitby=(0, 1)).first()
         if group:
             pe_str = "%s (%s)" % (
-                group.name, pe_type_nice
+                group.name, instance_type_nice
             )
 
-    elif pe_type == "org_organisation":
+    elif instance_type == "org_organisation":
         organisation = db(table.pe_id == id).select(
                           table.name,
                           limitby=(0, 1)).first()
         if organisation:
             pe_str = "%s (%s)" % (
-                organisation.name, pe_type_nice
+                organisation.name, instance_type_nice
             )
 
-    elif pe_type == "org_office":
+    elif instance_type == "org_office":
         office = db(table.pe_id == id).select(
                     table.name,
                     limitby=(0, 1)).first()
         if office:
             pe_str = "%s (%s)" % (
-                office.name, pe_type_nice
+                office.name, instance_type_nice
             )
 
     else:
         pe_str = "[%s] (%s)" % (
             label,
-            pe_type_nice
+            instance_type_nice
         )
 
     return pe_str
@@ -116,69 +101,6 @@ pe_label = S3ReusableField("pe_label", length=128,
                            label = T("ID Label"),
                            requires = IS_NULL_OR(IS_NOT_IN_DB(db,
                                       "pr_pentity.pe_label")))
-
-pe_id = S3ReusableField("pe_id", db.pr_pentity,
-                        requires = IS_NULL_OR(IS_ONE_OF(db, "pr_pentity.pe_id", shn_pentity_represent, orderby="pr_pentity.pe_id")),
-                        represent = lambda id: (id and [shn_pentity_represent(id)] or [NONE])[0],
-                        readable = False,
-                        writable = False,
-                        ondelete = "RESTRICT")
-
-
-# -----------------------------------------------------------------------------
-def shn_pentity_ondelete(record):
-
-    uid = record.get("uuid", None)
-
-    if uid:
-
-        pentity = db.pr_pentity
-        db(pentity.uuid == uid).update(deleted=True)
-
-    return True
-
-
-# -----------------------------------------------------------------------------
-def shn_pentity_onaccept(form, table=None):
-
-    """ @todo: fix docstring """
-
-    if not "uuid" in table.fields or "id" not in form.vars:
-        return False
-
-    id = form.vars.id
-
-    if "pe_label" in table.fields:
-        fields = [table.id, table.uuid, table.pe_label]
-    else:
-        fields = [table.id, table.uuid]
-    if "missing" in table.fields:
-        fields.append(table.missing)
-    record = db(table.id == id).select(limitby=(0,1), *fields).first()
-
-    if record:
-
-        pentity = db.pr_pentity
-        uid = record.uuid
-
-        pe = db(pentity.uuid == uid).select(pentity.pe_id, limitby=(0,1)).first()
-        if pe:
-            values = dict(pe_id = pe.pe_id)
-            if "pe_label" in record:
-                values.update(pe_label = record.pe_label)
-            db(pentity.uuid == uid).update(**values)
-        else:
-            pe_type = table._tablename
-            pe_label = record.get("pe_label", None)
-            pe_id = pentity.insert(uuid=uid, pe_label=pe_label, pe_type=pe_type)
-            #db(pentity.id == pe_id).update(pe_id=pe_id, deleted=False)
-            db(table.id == id).update(pe_id=pe_id)
-
-        return True
-
-    else:
-        return False
-
 
 # *****************************************************************************
 # Person
@@ -289,9 +211,9 @@ def shn_pr_person_represent(id):
 
 # -----------------------------------------------------------------------------
 resourcename = "person"
-tablename = "%s_%s" % (module, resourcename)
+tablename = "%s_%s" % (prefix, resourcename)
 table = db.define_table(tablename,
-                        pe_id(),
+                        super_link(db.pr_pentity), # pe_id
                         pe_label(),
                         Field("missing", "boolean", default=False),
                         Field("first_name", notnull=True),
@@ -326,8 +248,8 @@ table.first_name.requires.error_message = T("Please enter a First Name")
 
 table.pe_label.comment = DIV(DIV(_class="tooltip",
     _title=T("ID Label") + "|" + T("Number or Label on the identification tag this person is wearing (if any).")))
-table.first_name.comment =  DIV(SPAN("*", _class="req", _style="padding-right: 5px;"), DIV(_class="tooltip",
-    _title=T("First name") + "|" + T("The first or only name of the person (mandatory).")))
+table.first_name.comment =  DIV(_class="tooltip",
+    _title=T("First name") + "|" + T("The first or only name of the person (mandatory)."))
 table.preferred_name.comment = DIV(DIV(_class="tooltip",
     _title=T("Preferred Name") + "|" + T("The name to be used when calling for or directly addressing the person (optional).")))
 table.local_name.comment = DIV(DIV(_class="tooltip",
@@ -431,9 +353,8 @@ s3xrc.model.configure(table,
     main="first_name",
     extra="last_name",
     listadd=False,
+    super_entity=db.pr_pentity,
     onvalidation=lambda form: pr_person_onvalidation(form),
-    onaccept=lambda form, table=table: shn_pentity_onaccept(form, table=table),
-    delete_onaccept=lambda form: shn_pentity_ondelete(form),
     list_fields = [
         "id",
         "first_name",
@@ -466,9 +387,9 @@ pr_group_type = S3ReusableField("group_type", "integer",
 
 # -----------------------------------------------------------------------------
 resourcename = "group"
-tablename = "%s_%s" % (module, resourcename)
+tablename = "%s_%s" % (prefix, resourcename)
 table = db.define_table(tablename,
-                        pe_id(),
+                        super_link(db.pr_pentity), # pe_id
                         pr_group_type(),
                         Field("system","boolean",default=False),
                         Field("name"),
@@ -483,7 +404,6 @@ table.system.writable = False
 table.group_type.label = T("Group type")
 table.name.label = T("Group name")
 table.name.requires = IS_NOT_EMPTY()
-table.name.comment = DIV(SPAN("*", _class="req", _style="padding-right: 5px;"))
 
 table.description.label = T("Group description")
 table.description.comment = DIV(DIV(_class="tooltip",
@@ -531,17 +451,16 @@ group_id = S3ReusableField("group_id", db.pr_group,
 # -----------------------------------------------------------------------------
 s3xrc.model.configure(table,
     deletable=False,
+    super_entity=db.pr_pentity,
     main="name",
-    extra="description",
-    onaccept=lambda form, table=table: shn_pentity_onaccept(form, table=table),
-    delete_onaccept=lambda form: shn_pentity_ondelete(form))
+    extra="description")
 
 
 # *****************************************************************************
 # Group membership
 #
 resourcename = "group_membership"
-tablename = "%s_%s" % (module, resourcename)
+tablename = "%s_%s" % (prefix, resourcename)
 table = db.define_table(tablename,
                         group_id(),
                         person_id(),
@@ -558,7 +477,7 @@ table.person_id.label = T("Person")
 
 
 # -----------------------------------------------------------------------------
-s3xrc.model.add_component(module, resourcename,
+s3xrc.model.add_component(prefix, resourcename,
                           multiple=True,
                           joinby=dict(pr_group="group_id",
                                       pr_person="person_id"))
@@ -621,7 +540,7 @@ shn_pr_person_search_simple = s3xrc.search_simple(
             "identity.value"])
 
 # Plug into REST controller
-s3xrc.model.set_method(module, "person", method="search_simple", action=shn_pr_person_search_simple )
+s3xrc.model.set_method(prefix, "person", method="search_simple", action=shn_pr_person_search_simple )
 
 # -----------------------------------------------------------------------------
 #

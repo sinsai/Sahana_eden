@@ -2,7 +2,7 @@
 
 """ S3XRC Resource Framework - Resource API
 
-    @version: 2.1.8
+    @version: 2.2.0
 
     @see: U{B{I{S3XRC}} <http://eden.sahanafoundation.org/wiki/S3XRC>} on Eden wiki
 
@@ -1232,15 +1232,9 @@ class S3Resource(object):
 
         tablename = r.component and r.component.tablename or r.tablename
 
-        xml_export_formats = self.manager.xml_export_formats
-        json_export_formats = self.manager.json_export_formats
-        xml_import_formats = self.manager.xml_import_formats
-        json_import_formats = self.manager.json_import_formats
-
         if method is None or method in ("read", "display"):
             authorised = permit("read", tablename)
-            if r.representation in xml_export_formats or \
-               r.representation in json_export_formats:
+            if self.__transformable(r):
                 method = "export_tree"
             elif r.component:
                 if r.multiple and not r.component_id:
@@ -1265,8 +1259,7 @@ class S3Resource(object):
         elif method in ("create", "update"):
             authorised = permit(method, tablename)
             # @todo: Add user confirmation here:
-            if r.representation in xml_import_formats or \
-               r.representation in json_import_formats:
+            if self.__transformable(r, method="import"):
                 method = "import_tree"
 
         elif method == "copy":
@@ -1315,11 +1308,7 @@ class S3Resource(object):
 
         permit = self.permit
 
-        xml_formats = self.manager.xml_import_formats
-        json_formats = self.manager.json_import_formats
-
-        if r.representation in xml_formats or \
-           r.representation in json_formats:
+        if self.__transformable(r, method="import"):
             authorised = permit("create", self.tablename) and \
                          permit("update", self.tablename)
             if not authorised:
@@ -1344,8 +1333,7 @@ class S3Resource(object):
         if method == "delete":
             return self.__delete(r)
         else:
-            if r.representation in self.manager.xml_import_formats or \
-            r.representation in self.manager.json_import_formats:
+            if self.__transformable(r, method="import"):
                 return self.__put(r)
             else:
                 post_vars = r.request.post_vars
@@ -1409,15 +1397,29 @@ class S3Resource(object):
 
         # Find XSLT stylesheet
         if r.representation not in ("xml", "json"):
-            template_name = "%s.%s" % (r.representation,
-                                       self.manager.XSLT_FILE_EXTENSION)
-
-            template = os.path.join(r.request.folder,
-                                    self.manager.XSLT_EXPORT_TEMPLATES,
-                                    template_name)
-
-            if not os.path.exists(template):
-                r.error(501, "%s: %s" % (self.ERROR.BAD_TEMPLATE, template))
+            template = None
+            format = r.representation
+            folder = r.request.folder
+            path = self.manager.XSLT_EXPORT_TEMPLATES
+            extension = self.manager.XSLT_FILE_EXTENSION
+            if "transform" in r.request.vars:
+                # External stylesheet?
+                template = r.request.vars["transform"]
+            else:
+                resourcename = r.component and \
+                               r.component.name or r.name
+                templatename = "%s.%s" % (resourcename, extension)
+                if templatename in r.request.post_vars:
+                    # Attached stylesheet?
+                    p = r.request.post_vars[templatename]
+                    if isinstance(p, cgi.FieldStorage) and p.filename:
+                        template = p.file
+                else:
+                    # Integrated stylesheet?
+                    template_name = "%s.%s" % (format, extension)
+                    template = os.path.join(folder, path, template_name)
+                    if not os.path.exists(template):
+                        r.error(501, "%s: %s" % (self.ERROR.BAD_TEMPLATE, template))
 
         # Slicing
         start = r.request.vars.get("start", None)
@@ -1656,6 +1658,55 @@ class S3Resource(object):
         return item
 
 
+    # -------------------------------------------------------------------------
+    def __transformable(self, r, method=None):
+
+        """ Check the request for a transformable format
+
+            @param r: the S3Request
+            @param method: "import" for import methods, else None
+
+        """
+
+        format = r.representation
+
+        request = self.manager.request
+        if r.component:
+            resourcename = r.component.name
+        else:
+            resourcename = r.name
+
+        # format "xml" or "json"?
+        if format in ("xml", "json"):
+            return True
+
+        # XSLT transformation demanded in URL?
+        if "transform" in request.vars:
+            return True
+
+        extension = self.manager.XSLT_FILE_EXTENSION
+
+        # XSLT stylesheet attached?
+        template = "%s.%s" % (resourcename, extension)
+        if template in request.post_vars:
+            p = request.post_vars[template]
+            if isinstance(p, cgi.FieldStorage) and p.filename:
+                return True
+
+        # XSLT stylesheet exists in application?
+        if method == "import":
+            path = self.manager.XSLT_IMPORT_TEMPLATES
+        else:
+            path = self.manager.XSLT_EXPORT_TEMPLATES
+
+        template = os.path.join(r.request.folder,
+                                path, "%s.%s" % (format, extension))
+        if os.path.exists(template):
+            return True
+
+        return False
+
+
     # XML/JSON functions ======================================================
 
     def export_xml(self, template=None, pretty_print=False, **args):
@@ -1780,7 +1831,21 @@ class S3Resource(object):
 
         """ Push (=POST) the current resource to a target URL
 
-            @todo 2.2: fix docstring
+            @param exporter: the exporter function
+            @param template: path to the XSLT stylesheet to be used by the exporter
+            @param xsltmode: "mode" parameter for the XSLT stylesheet
+            @param start: index of the first record to export (slicing)
+            @param limit: maximum number of records to export (slicing)
+            @param marker: default map marker URL
+            @param msince: export only records which have been modified after
+                           this datetime
+            @param show_urls: show URLs in the <resource> elements
+            @param dereference: include referenced resources in the export
+            @param content_type: content type specification for the export
+            @param username: username to authenticate at the peer site
+            @param password: password to authenticate at the peer site
+            @param proxy: URL of the proxy server to use
+
             @todo 2.2: error handling?
 
         """
@@ -1891,9 +1956,15 @@ class S3Resource(object):
               template=None,
               ignore_errors=False, **args):
 
-        """ Fetch data to the current resource from a remote URL
+        """ Fetch XML (JSON) data to the current resource from a remote URL
 
-            @todo 2.2: fix docstring
+            @param url: the peer URL
+            @param username: username to authenticate at the peer site
+            @param password: password to authenticate at the peer site
+            @param proxy: URL of the proxy server to use
+            @param json: use JSON importer instead of XML importer
+            @param template: path to the XSLT stylesheet to transform the data
+            @param ignore_errors: skip invalid records
 
         """
 
@@ -2094,9 +2165,10 @@ class S3Resource(object):
     # -------------------------------------------------------------------------
     def fields(self, component=None):
 
-        """ Export a list of fields in the primary table as element tree
+        """ Export a list of fields in the resource as element tree
 
-            @todo 2.2: fix docstring
+            @param component: name of the component to lookup the fields
+                              (None for primary table)
 
         """
 
@@ -2115,9 +2187,10 @@ class S3Resource(object):
     # -------------------------------------------------------------------------
     def fields_xml(self, component=None):
 
-        """ Export a list of fields in the primary table as XML
+        """ Export a list of fields in the resource as XML
 
-            @todo 2.2: fix docstring
+            @param component: name of the component to lookup the fields
+                              (None for primary table)
 
         """
 
@@ -2128,9 +2201,10 @@ class S3Resource(object):
     # -------------------------------------------------------------------------
     def fields_json(self, component=None):
 
-        """ Export a list of fields in the primary table as JSON
+        """ Export a list of fields in the resource as JSON
 
-            @todo 2.2: fix docstring
+            @param component: name of the component to lookup the fields
+                              (None for primary table)
 
         """
 
@@ -2150,9 +2224,16 @@ class S3Resource(object):
                map_fields=None,
                format=None):
 
-        """ Add a record to this resource
+        """ Provides and processes an Add-form for this resource
 
-            @todo 2.2: fix docstring
+            @param onvalidation: onvalidation callback
+            @param onaccept: onaccept callback
+            @param message: flash message after successul operation
+            @param download_url: default download URL of the application
+            @param from_table: copy a record from this table
+            @param from_record: copy from this record ID
+            @param map_fields: field mapping for copying of records
+            @param format: the representation format of the request
 
         """
 
@@ -2292,10 +2373,26 @@ class S3Resource(object):
 
         # Add asterisk to labels of required fields
         labels = Storage()
+        mark_required = model.get_config(table, "mark_required")
         for field in table:
             if field.writable:
-                requires = field.requires and str(field.requires) or ""
-                if field.required or "IS_NOT_EMPTY" in requires:
+                required = field.required or \
+                           field.notnull or \
+                           mark_required and field.name in mark_required
+                validators = field.requires
+                if not validators and not required:
+                    continue
+                if not required:
+                    if not isinstance(validators, (list, tuple)):
+                        validators = [validators]
+                    for v in validators:
+                        if hasattr(v, "options"):
+                            continue
+                        val, error = v("")
+                        if error:
+                            required = True
+                            break
+                if required:
                     labels[field.name] = DIV("%s:" % field.label, SPAN(" *", _class="req"))
 
         # Get the form
@@ -2428,7 +2525,15 @@ class S3Resource(object):
 
         """ List of all records of this resource
 
-            @todo 2.2: fix docstring
+            @param fields: list of fields to display
+            @param start: index of the first record to display
+            @param limit: maximum number of records to display
+            @param orderby: orderby for the query
+            @param linkto: hook to link record IDs
+            @param download_url: the default download URL of the application
+            @param as_page: return the list as JSON page
+            @param as_list: return the list as Python list
+            @param format: the representation format
 
         """
 

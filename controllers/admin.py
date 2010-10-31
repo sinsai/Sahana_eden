@@ -76,7 +76,6 @@ def theme():
 
     # Model options
     table.name.label = T("Name")
-    table.name.comment = SPAN("*", _class="req")
     #table.logo.label = T("Logo")
     #table.logo.comment = A(SPAN("[Help]"), _class="tooltip", _title=T("Logo") + "|" + T("Name of the file (& optional sub-path) located in static which should be used for the top-left image."))
     #table.header_background.label = T("Header Background")

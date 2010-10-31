@@ -19,11 +19,8 @@ if deployment_settings.has_module(module):
                             migrate=migrate,
                             *(s3_timestamp() + s3_uid()))
 
-    table.name.comment = DIV(SPAN("*",
-                                  _class="req",
-                                  _style="padding-right: 5px"),
-                             DIV(_class = "tooltip",
-                                 _title = T("Name") + "|" + T("Enter a name for the spreadsheet you are uploading (mandatory).")))
+    table.name.comment = DIV(_class = "tooltip",
+                             _title = T("Name") + "|" + T("Enter a name for the spreadsheet you are uploading (mandatory)."))
 
     s3.crud_strings[tablename]= Storage(
             title_create = T("Upload a Spreadsheet"),

@@ -79,7 +79,7 @@ if deployment_settings.has_module(module):
     resourcename = "hospital"
     tablename = "%s_%s" % (module, resourcename)
     table = db.define_table(tablename,
-                    site_id(),
+                    super_link(db.org_site),
                     Field("gov_uuid", unique=True, length=128), # UID assigned by Local Government
                     Field("name", notnull=True),                # Name of the facility
                     Field("aka1"),                              # Alternate name, or name in local language
@@ -211,14 +211,8 @@ if deployment_settings.has_module(module):
 
 
     # -----------------------------------------------------------------------------
-    def shn_hms_hospital_onaccept(form, table=None):
-
-        shn_site_onaccept(form, table=table)
-
-
     s3xrc.model.configure(table,
-                          onaccept=lambda form, tab=table: \
-                          shn_hms_hospital_onaccept(form, table=tab),
+                          super_entity=db.org_site,
                           list_fields=["id",
                                        "gov_uuid",
                                        "name",

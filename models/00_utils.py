@@ -62,6 +62,10 @@ s3_sessions()
 # *****************************************************************************
 # Utilities
 
+super_entity = s3xrc.model.super_entity
+super_link = s3xrc.model.super_link
+super_key = s3xrc.model.super_key
+
 def s3_debug(message, value=None):
 
     """ Debug Function (same name/parameters as JavaScript one)
@@ -147,6 +151,7 @@ def shn_as_local_time(value):
 
 # -----------------------------------------------------------------------------
 # Phone number requires
+# @ToDo Support ',' & '/' to separate multiple phone numbers
 shn_phone_requires = IS_NULL_OR(IS_MATCH('\+?\s*[\s\-\.\(\)\d]+(?:(?: x| ext)\s?\d{1,5})?$'))
 
 

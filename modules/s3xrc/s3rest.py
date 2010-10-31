@@ -2,7 +2,7 @@
 
 """ S3XRC Resource Framework - Resource API
 
-    @version: 2.1.9
+    @version: 2.2.0
 
     @see: U{B{I{S3XRC}} <http://eden.sahanafoundation.org/wiki/S3XRC>} on Eden wiki
 
@@ -1232,15 +1232,9 @@ class S3Resource(object):
 
         tablename = r.component and r.component.tablename or r.tablename
 
-        xml_export_formats = self.manager.xml_export_formats
-        json_export_formats = self.manager.json_export_formats
-        xml_import_formats = self.manager.xml_import_formats
-        json_import_formats = self.manager.json_import_formats
-
         if method is None or method in ("read", "display"):
             authorised = permit("read", tablename)
-            if r.representation in xml_export_formats or \
-               r.representation in json_export_formats:
+            if self.__transformable(r):
                 method = "export_tree"
             elif r.component:
                 if r.multiple and not r.component_id:
@@ -1265,8 +1259,7 @@ class S3Resource(object):
         elif method in ("create", "update"):
             authorised = permit(method, tablename)
             # @todo: Add user confirmation here:
-            if r.representation in xml_import_formats or \
-               r.representation in json_import_formats:
+            if self.__transformable(r, method="import"):
                 method = "import_tree"
 
         elif method == "copy":
@@ -1315,11 +1308,7 @@ class S3Resource(object):
 
         permit = self.permit
 
-        xml_formats = self.manager.xml_import_formats
-        json_formats = self.manager.json_import_formats
-
-        if r.representation in xml_formats or \
-           r.representation in json_formats:
+        if self.__transformable(r, method="import"):
             authorised = permit("create", self.tablename) and \
                          permit("update", self.tablename)
             if not authorised:
@@ -1344,8 +1333,7 @@ class S3Resource(object):
         if method == "delete":
             return self.__delete(r)
         else:
-            if r.representation in self.manager.xml_import_formats or \
-            r.representation in self.manager.json_import_formats:
+            if self.__transformable(r, method="import"):
                 return self.__put(r)
             else:
                 post_vars = r.request.post_vars
@@ -1409,15 +1397,29 @@ class S3Resource(object):
 
         # Find XSLT stylesheet
         if r.representation not in ("xml", "json"):
-            template_name = "%s.%s" % (r.representation,
-                                       self.manager.XSLT_FILE_EXTENSION)
-
-            template = os.path.join(r.request.folder,
-                                    self.manager.XSLT_EXPORT_TEMPLATES,
-                                    template_name)
-
-            if not os.path.exists(template):
-                r.error(501, "%s: %s" % (self.ERROR.BAD_TEMPLATE, template))
+            template = None
+            format = r.representation
+            folder = r.request.folder
+            path = self.manager.XSLT_EXPORT_TEMPLATES
+            extension = self.manager.XSLT_FILE_EXTENSION
+            if "transform" in r.request.vars:
+                # External stylesheet?
+                template = r.request.vars["transform"]
+            else:
+                resourcename = r.component and \
+                               r.component.name or r.name
+                templatename = "%s.%s" % (resourcename, extension)
+                if templatename in r.request.post_vars:
+                    # Attached stylesheet?
+                    p = r.request.post_vars[templatename]
+                    if isinstance(p, cgi.FieldStorage) and p.filename:
+                        template = p.file
+                else:
+                    # Integrated stylesheet?
+                    template_name = "%s.%s" % (format, extension)
+                    template = os.path.join(folder, path, template_name)
+                    if not os.path.exists(template):
+                        r.error(501, "%s: %s" % (self.ERROR.BAD_TEMPLATE, template))
 
         # Slicing
         start = r.request.vars.get("start", None)
@@ -1654,6 +1656,55 @@ class S3Resource(object):
 
         #return dict(item=item)
         return item
+
+
+    # -------------------------------------------------------------------------
+    def __transformable(self, r, method=None):
+
+        """ Check the request for a transformable format
+
+            @param r: the S3Request
+            @param method: "import" for import methods, else None
+
+        """
+
+        format = r.representation
+
+        request = self.manager.request
+        if r.component:
+            resourcename = r.component.name
+        else:
+            resourcename = r.name
+
+        # format "xml" or "json"?
+        if format in ("xml", "json"):
+            return True
+
+        # XSLT transformation demanded in URL?
+        if "transform" in request.vars:
+            return True
+
+        extension = self.manager.XSLT_FILE_EXTENSION
+
+        # XSLT stylesheet attached?
+        template = "%s.%s" % (resourcename, extension)
+        if template in request.post_vars:
+            p = request.post_vars[template]
+            if isinstance(p, cgi.FieldStorage) and p.filename:
+                return True
+
+        # XSLT stylesheet exists in application?
+        if method == "import":
+            path = self.manager.XSLT_IMPORT_TEMPLATES
+        else:
+            path = self.manager.XSLT_EXPORT_TEMPLATES
+
+        template = os.path.join(r.request.folder,
+                                path, "%s.%s" % (format, extension))
+        if os.path.exists(template):
+            return True
+
+        return False
 
 
     # XML/JSON functions ======================================================

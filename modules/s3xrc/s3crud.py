@@ -2,7 +2,7 @@
 
 """ S3XRC Resource Framework - CRUD Method Handlers
 
-    @version: 2.1.9
+    @version: 2.2.0
 
     @see: U{B{I{S3XRC}} <http://eden.sahanafoundation.org/wiki/S3XRC>} on Eden wiki
 
@@ -106,8 +106,6 @@ class S3Audit(object):
             @param form: the form
             @param record: the record ID
             @param representation: the representation format
-
-            @todo 2.2: correct parameter naming for record ID
 
         """
 
@@ -442,7 +440,6 @@ class S3CRUDHandler(S3MethodHandler):
             @param r: the S3Request
             @param attr: dictionary of parameters for the method handler
 
-            @todo 2.2: cancel button
             @todo 2.2: plain representation
 
         """
@@ -467,6 +464,11 @@ class S3CRUDHandler(S3MethodHandler):
         insertable = self._config("insertable", True)
         if not insertable:
             r.error(400, self.resource.ERROR.BAD_METHOD)
+
+        # Check permission for create
+        authorised = self.permit("create", self.tablename)
+        if not authorised:
+            r.unauthorised()
 
         # Get callbacks
         onvalidation = self._config("create_onvalidation") or \
@@ -578,12 +580,11 @@ class S3CRUDHandler(S3MethodHandler):
                 self.insert_subheadings(form, tablename, subheadings)
 
             # Cancel button?
-            #form[0].append(TR(TD(), TD(INPUT(_type="reset", _value=T("Reset form")))))
-            #if response.s3.cancel:
-                #form[0][-1][1].append(INPUT(_type="button",
-                                            #_value=T("Cancel"),
-                                            #_onclick="window.location='%s';" %
-                                                    #response.s3.cancel))
+            if response.s3.cancel:
+                form[0][-1][1].append(INPUT(_type="button",
+                                            _value=T("Cancel"),
+                                            _onclick="window.location='%s';" %
+                                                     response.s3.cancel))
 
             # Navigate-away confirmation
             if self.settings.navigate_away_confirm:
@@ -780,7 +781,6 @@ class S3CRUDHandler(S3MethodHandler):
             @param r: the S3Request
             @param attr: dictionary of parameters for the method handler
 
-            @todo 2.2: Cancel button
             @todo 2.2: plain representation
 
         """
@@ -876,12 +876,11 @@ class S3CRUDHandler(S3MethodHandler):
                 self.insert_subheadings(form, tablename, subheadings)
 
             # Cancel button?
-            #form[0].append(TR(TD(), TD(INPUT(_type="reset", _value=T("Reset form")))))
-            #if response.s3.cancel:
-                #form[0][-1][1].append(INPUT(_type="button",
-                                            #_value=T("Cancel"),
-                                            #_onclick="window.location='%s';" %
-                                                    #response.s3.cancel))
+            if response.s3.cancel:
+                form[0][-1][1].append(INPUT(_type="button",
+                                            _value=T("Cancel"),
+                                            _onclick="window.location='%s';" %
+                                                     response.s3.cancel))
 
             # Navigate-away confirmation
             if self.settings.navigate_away_confirm:
@@ -976,6 +975,11 @@ class S3CRUDHandler(S3MethodHandler):
 
         if not deletable:
             r.error(403, self.manager.ERROR.NOT_PERMITTED)
+
+        # Check permission for delete
+        authorised = self.permit("delete", self.tablename, record_id)
+        if not authorised:
+            r.unauthorised()
 
         elif r.http == "GET" and not record_id:
             # Provide a confirmation form and a record list

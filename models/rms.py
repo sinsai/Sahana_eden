@@ -25,12 +25,10 @@ if deployment_settings.has_module(module):
         }
 
     rms_type_opts = {
-        1:T("Food"),
+        1:T("Items"),
         2:T("Find"),
-        3:T("Water"),
-        4:T("Medicine"),
-        5:T("Shelter"),
-        6:T("Report"),
+        3:T("Shelter"),
+        4:T("Report")
         }
 
     rms_req_source_type = { 1 : "Manual",
@@ -42,55 +40,59 @@ if deployment_settings.has_module(module):
 
     #def shn_req_aid_represent(id):
         #return  A(T("Make Pledge"), _href=URL(r=request, f="req", args=[id, "pledge"]))
+        
+    #2010-10-31 Michael Howden: The request resource is undergoing a significant re-design.
+    #A large number of fields a being commented out. Eventually they should be removed
+    #(Once the re-design is accepted)    
 
     resourcename = "req"
     tablename = "%s_%s" % (module, resourcename)
     table = db.define_table(tablename,
                             super_link(db.sit_situation),
-                            person_id(),
+                            Field("datetime", "datetime"),  # 'timestamp' is a reserved word in Postgres
+                            location_id(),                            
+                            person_id("requestor_person_id"),
                             hospital_id(),    # @ToDo Check if the module is enabled for adding FK: check CR for an example
                             shelter_id(),     # @ToDo Check if the module is enabled for adding FK: check CR for an example
                             organisation_id(),
+                            inventory_store_id("from_inventory_store_id"),
                             Field("type", "integer"),
                             Field("priority", "integer"),
                             Field("message", "text"),
-                            Field("timestmp", "datetime"),  # 'timestamp' is a reserved word in Postgres
-                            location_id(),
-                            Field("source_type", "integer"),
-                            Field("source_id", "integer"),
-                            Field("verified", "boolean"),
-                            Field("verified_details"),
-                            Field("actionable", "boolean"),
-                            Field("actioned", "boolean"),
-                            Field("actioned_details"),
-                            Field("pledge_status", "string"),
+                            activity_id(),
+                            #Field("verified", "boolean"),
+                            #Field("verified_details"),
+                            #Field("actionable", "boolean"),
+                            #Field("actioned", "boolean"),
+                            #Field("actioned_details"),
+                            #Field("pledge_status", "string"),
                             document_id(),
                             migrate=migrate, *s3_meta_fields())
 
 
-    db.rms_req.pledge_status.writable = False
-
     # Make Person Mandatory
-    table.person_id.requires = IS_ONE_OF(db, "pr_person.id", shn_pr_person_represent, orderby="pr_person.first_name")
-    table.person_id.label = T("Requestor")
+    table.requestor_person_id.requires = IS_ONE_OF(db, "pr_person.id", shn_pr_person_represent, orderby="pr_person.first_name")
+    table.requestor_person_id.label = T("Requestor")
 
-    table.timestmp.requires = IS_DATETIME()
-    table.timestmp.label = T("Date & Time")
-
+    table.datetime.requires = IS_DATETIME()
+    table.datetime.label = T("Date & Time")
+    
+    table.from_inventory_store_id.label = T("From Warehouse")
+    
     table.message.requires = IS_NOT_EMPTY()
 
     # Hide fields from user:
-    table.source_type.readable = table.source_type.writable = False
-    table.source_id.readable = table.source_id.writable = False
-    table.verified.readable = table.verified.writable = False
-    table.verified_details.readable = table.verified_details.writable = False
-    table.actionable.readable = table.actionable.writable = False
-    table.actioned.readable = table.actioned.writable = False
-    table.actioned_details.readable = table.actioned_details.writable = False
+    #table.source_type.readable = table.source_type.writable = False
+    #table.source_id.readable = table.source_id.writable = False
+    #table.verified.readable = table.verified.writable = False
+    #table.verified_details.readable = table.verified_details.writable = False
+    #table.actionable.readable = table.actionable.writable = False
+    #table.actioned.readable = table.actioned.writable = False
+    #table.actioned_details.readable = table.actioned_details.writable = False
 
     # Set default values
-    table.actionable.default = 1
-    table.source_type.default = 1
+    #table.actionable.default = 1
+    #table.source_type.default = 1
 
     table.priority.requires = IS_NULL_OR(IS_IN_SET(rms_priority_opts))
     table.priority.represent = lambda id: (
@@ -104,49 +106,61 @@ if deployment_settings.has_module(module):
     table.type.represent = lambda type: type and rms_type_opts[type]
     table.type.label = T("Request Type")
 
-    table.source_type.requires = IS_NULL_OR(IS_IN_SET(rms_req_source_type))
-    table.source_type.represent = lambda stype: stype and rms_req_source_type[stype]
-    table.source_type.label = T("Source Type")
+    #table.source_type.requires = IS_NULL_OR(IS_IN_SET(rms_req_source_type))
+    #table.source_type.represent = lambda stype: stype and rms_req_source_type[stype]
+    #table.source_type.label = T("Source Type")
 
     # CRUD strings
-    ADD_AID_REQUEST = T("Add Aid Request")
-    LIST_AID_REQUESTS = T("List Aid Requests")
+    ADD_REQUEST = T("Add Request")
+    LIST_REQUESTS = T("List Requests")
     s3.crud_strings[tablename] = Storage(
-        title_create = ADD_AID_REQUEST,
-        title_display = T("Aid Request Details"),
-        title_list = LIST_AID_REQUESTS,
-        title_update = T("Edit Aid Request"),
-        title_search = T("Search Aid Requests"),
-        subtitle_create = T("Add New Aid Request"),
-        subtitle_list = T("Aid Requests"),
-        label_list_button = LIST_AID_REQUESTS,
-        label_create_button = ADD_AID_REQUEST,
-        label_delete_button = T("Delete Aid Request"),
-        msg_record_created = T("Aid Request added"),
-        msg_record_modified = T("Aid Request updated"),
-        msg_record_deleted = T("Aid Request deleted"),
-        msg_list_empty = T("No Aid Requests have been made yet"))
+        title_create = ADD_REQUEST,
+        title_display = T("Request Details"),
+        title_list = LIST_REQUESTS,
+        title_update = T("Edit Request"),
+        title_search = T("Search Requests"),
+        subtitle_create = T("Add New Request"),
+        subtitle_list = T("Requests"),
+        label_list_button = LIST_REQUESTS,
+        label_create_button = ADD_REQUEST,
+        label_delete_button = T("Delete Request"),
+        msg_record_created = T("Request added"),
+        msg_record_modified = T("Request updated"),
+        msg_record_deleted = T("Request deleted"),
+        msg_list_empty = T("No Requests have been made yet"))
 
     # Reusable Field
-    req_id = S3ReusableField("req_id", db.rms_req, sortby="message",
+    request_id = S3ReusableField("request_id", db.rms_req, sortby="message",
                     requires = IS_NULL_OR(IS_ONE_OF(db, "rms_req.id", "%(message)s")),
                     represent = lambda id: (id and [db(db.rms_req.id == id).select(limitby=(0, 1)).first().message] or ["None"])[0],
-                    label = T("Aid Request"),
-                    comment = DIV(A(ADD_AID_REQUEST, _class="colorbox", _href=URL(r=request, c="rms", f="req", args="create", vars=dict(format="popup")), _target="top", _title=ADD_AID_REQUEST), DIV( _class="tooltip", _title=T("Add Request") + "|" + T("The Request this record is associated with."))),
+                    label = T("Request"),
+                    comment = DIV(A(ADD_REQUEST, 
+                                    _class="colorbox", 
+                                    _href=URL(r=request, c="rms", f="req", args="create", vars=dict(format="popup")), 
+                                    _target="top", 
+                                    _title=ADD_REQUEST
+                                    ), 
+                                  DIV( _class="tooltip", 
+                                       _title=T("Add Request") + "|" + T("The Request this record is associated with.")
+                                       )
+                                  ),
                     ondelete = "RESTRICT"
                     )
-
-    request_id = req_id #only for other models - this should be replaced!
 
     s3xrc.model.configure(table,
                           super_entity=db.sit_situation)
 
-    # rms_req as component of doc_documents
-    s3xrc.model.add_component(module, resourcename,
+    # rms_req as component of doc_documents, shelters, hospitals, activities and inventory store
+    s3xrc.model.add_component(module,
+                              resourcename,
                               multiple=True,
                               joinby=dict(doc_document="document_id",
                                           cr_shelter="shelter_id",
-                                          hms_hospital="hospital_id"))
+                                          hms_hospital="hospital_id",
+                                          project_activity = "activity_id",
+                                          inventory_store = "from_inventory_store_id",
+                                          )
+                              )
 
     # --------------------------------------------------------------------
     def shn_rms_get_req(label, fields=None, filterby=None):
@@ -261,7 +275,7 @@ if deployment_settings.has_module(module):
                         records.append(TR(
                             row.completion_status,
                             row.message,
-                            row.timestmp,
+                            row.datetime,
                             row.location_id and shn_gis_location_represent(row.location_id) or "unknown",
                             ))
                     items=DIV(TABLE(THEAD(TR(
@@ -297,12 +311,11 @@ if deployment_settings.has_module(module):
     resourcename = "ritem"
     tablename = "%s_%s" % (module, resourcename)
     table = db.define_table(tablename,
-                            req_id(),
+                            request_id(),
                             item_id(),
                             Field("quantity", "double"),
                             comments(),
                             migrate=migrate, *s3_meta_fields())
-
 
     # CRUD strings
     ADD_REQUEST_ITEM = T("Add Request Item")
@@ -326,98 +339,16 @@ if deployment_settings.has_module(module):
     # Items as component of Locations
     s3xrc.model.add_component(module, resourcename,
                               multiple=True,
-                              joinby=dict(rms_req="req_id",
+                              joinby=dict(rms_req="request_id",
                                           supply_item="item_id"))
 
-    # ------------------
-    # Create pledge table
-
-    #def shn_req_pledge_represent(id):
-        #return  A(T("Edit Pledge"), _href=URL(r=request, f="pledge", args=[id]))
-
-    resourcename = "pledge"
-    tablename = "%s_%s" % (module, resourcename)
-    table = db.define_table(tablename,
-                            Field("submitted_on", "datetime"),
-                            Field("req_id", db.rms_req),
-                            Field("status", "integer"),
-                            organisation_id(),
-                            person_id(),
-                            comments(),
-                            migrate=migrate, *s3_meta_fields())
-
-
-    # hide unnecessary fields
-    table.req_id.readable = table.req_id.writable = False
-
-    # set pledge default
-    table.status.default = 1
-
-    table.status.requires = IS_IN_SET(rms_status_opts, zero=None)
-    table.status.represent = lambda status: status and rms_status_opts[status]
-    table.status.label = T("Pledge Status")
-
-    table.organisation_id.label = T("Organization")
-    table.person_id.label = T("Person")
-
-    # Pledges as a component of requests
-    s3xrc.model.add_component(module, resourcename,
-                              multiple=True,
-                              joinby=dict(rms_req = "req_id"))
-
-    s3xrc.model.configure(table,
-                          list_fields=["id",
-                                       "organisation_id",
-                                       "person_id",
-                                       "submitted_on",
-                                       "status"])
-
-    s3.crud_strings[tablename] = Storage(title_create        = "Add Pledge",
-                                    title_display       = "Pledge Details",
-                                    title_list          = "List Pledges",
-                                    title_update        = "Edit Pledge",
-                                    title_search        = "Search Pledges",
-                                    subtitle_create     = "Add New Pledge",
-                                    subtitle_list       = "Pledges",
-                                    label_list_button   = "List Pledges",
-                                    label_create_button = "Add Pledge",
-                                    msg_record_created  = "Pledge added",
-                                    msg_record_modified = "Pledge updated",
-                                    msg_record_deleted  = "Pledge deleted",
-                                    msg_list_empty      = "No Pledges currently available")
-
-    def rms_pledge_onaccept(form):
-        #pledge_id = session.rcvars.rms_pledge
-
-        req_id = session.rcvars.rms_req #db(db.rms_pledge.id == pledge_id).select(db.rms_pledge.req_id).first().req_id
-
-        if req_id:
-            # This could be done as a join
-            pledges = db(db.rms_pledge.req_id == req_id).select(db.rms_pledge.status)
-            num_status = {}
-            for pledge in pledges:
-                status = pledge.status
-                if status:
-                    if status not in num_status:
-                        num_status[status] = 1
-                    else:
-                        num_status[status] = num_status[status] + 1
-
-            pledge_status = ""
-            for i in (3,2,1):
-                if i in num_status:
-                    pledge_status = pledge_status + str(rms_status_opts[i]) + ": " + str(num_status[i]) + ", "
-            pledge_status = pledge_status[:-2]
-            db(db.rms_req.id == req_id).update(pledge_status = pledge_status)
-
-    s3xrc.model.configure(db.rms_pledge, onaccept=rms_pledge_onaccept)
-
-    # ------------------
+    #==============================================================================
     # Create the table for request_detail for requests with arbitrary keys
+    # (This is probably redundant)
     resourcename = "req_detail"
     tablename = "%s_%s" % (module, resourcename)
     table = db.define_table(tablename,
-                            req_id(),
+                            request_id(),
                             Field("request_key", "string"),
                             Field("value", "string"),
                             migrate=migrate, *s3_meta_fields())
@@ -425,17 +356,17 @@ if deployment_settings.has_module(module):
 
     s3xrc.model.add_component(module, resourcename,
                               multiple=True,
-                              joinby=dict(rms_req="req_id"))
+                              joinby=dict(rms_req="request_id"))
 
     s3xrc.model.configure(table,
                           list_fields=["id",
-                                       "req_id",
+                                       "request_id",
                                        "request_key",
                                        "value"],
                           main="request_key", extra="value")
 
     # Make some fields invisible:
-    table.req_id.readable = table.req_id.writable = False
+    table.request_id.readable = table.request_id.writable = False
 
     # make all fields read only
     #table.tweet_req_id.readable = table.tweet_req_id.writable = False

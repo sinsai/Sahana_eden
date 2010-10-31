@@ -11,7 +11,7 @@
     project_project and project_task moved from 05_org.py
 """
 
-module = "project"
+application = "project"
 if deployment_settings.has_module("project"):
     #==============================================================================
     # Projects:
@@ -23,7 +23,7 @@ if deployment_settings.has_module("project"):
         99: T("inactive")
         }
     resourcename = "project"
-    tablename = module + "_" + resourcename
+    tablename = application + "_" + resourcename
     table = db.define_table(tablename,
                             Field("code"),
                             Field("name"),
@@ -89,10 +89,10 @@ if deployment_settings.has_module("project"):
                             )
     
     # Projects as component of Orgs & Locations
-    s3xrc.model.add_component(module, resourcename,
+    s3xrc.model.add_component(application, resourcename,
                               multiple=True,
                               #joinby=dict(project_organisation="organisation_id", gis_location="location_id"),
-                              joinby=dict(project_organisation="organisation_id"))
+                              joinby=dict(org_organisation="organisation_id"))
     
     s3xrc.model.configure(table,
                           listadd=False,
@@ -202,7 +202,7 @@ if deployment_settings.has_module("project"):
             redirect(URL(r=request))
     
     # Plug into REST controller
-    s3xrc.model.set_method(module, "project", method="search_location", action=shn_project_search_location )
+    s3xrc.model.set_method(application, "project", method="search_location", action=shn_project_search_location )
     
     # -----------------------------------------------------------------------------
     def shn_project_rheader(jr, tabs=[]):
@@ -256,7 +256,7 @@ if deployment_settings.has_module("project"):
     # Activity Type
     #
     resourcename = "activity_type"
-    tablename = "%s_%s" % (module, resourcename)
+    tablename = "%s_%s" % (application, resourcename)
     table = db.define_table(tablename,
                             Field("name", length=128, notnull=True, unique=True),
                             migrate=migrate, *s3_meta_fields())
@@ -295,8 +295,9 @@ if deployment_settings.has_module("project"):
                    }
 
     resourcename = "activity"
-    tablename = "%s_%s" % (module, resourcename)
+    tablename = "%s_%s" % (application, resourcename)
     table = db.define_table(tablename,
+                            Field("name"),
                             organisation_id("donor_id",
                                             label = T("Funding Organization"),
                                             comment = DIV(A(ADD_ORGANIZATION,
@@ -308,15 +309,15 @@ if deployment_settings.has_module("project"):
                                                                   _title=ADD_ORGANIZATION + "|" + T("The Organization which is funding this Activity."))))
                                            ),
                             organisation_id(),
-                            cluster_subsector_id(),
-                            Field("description"),
+                            cluster_id(),
+                            #cluster_subsector_id(),
                             #Field("quantity"),
                             #Field("unit"), # Change to link to supply
                             Field("start_date","date"),
                             Field("end_date","date"),
                             location_id(),
                             #shelter_id(),
-                            Field("total_bnf_reach","integer"),
+                            Field("total_bnf","integer"),
                             #Field("bnf_type","integer"),
                             #Field("bnf_date","date"),
                             #Field("total_bnf_target","integer"),
@@ -331,8 +332,8 @@ if deployment_settings.has_module("project"):
                             comments(),
                             migrate=migrate, *s3_meta_fields())
 
-
-    table.total_bnf_reach.label = T("Total # of Beneficiaries Reached ")
+    table.name.label = T("Short Description")
+    table.total_bnf.label = T("Total Beneficiaries")
     #table.bnf_type.label = T("Beneficiary Type")
     #table.bnf_date.label = T("Date of Latest Information on Beneficiaries Reached")
     #table.total_bnf_target.label = T("Total # of Target Beneficiaries")
@@ -372,8 +373,26 @@ if deployment_settings.has_module("project"):
                                          msg_record_deleted = T("Activity Deleted"),
                                          msg_list_empty = T("No Activities Found")
                                          )
+
+    activity_id = S3ReusableField( "activity_id", db.project_activity, sortby="name",
+                                   requires = IS_NULL_OR(IS_ONE_OF(db, "project_activity.id","%(name)s", sort=True)),
+                                   represent = lambda id: shn_get_db_field_value(db = db,
+                                                                                 table = "project_activity",
+                                                                                 field = "name",
+                                                                                 look_up = id),
+                                   label = T("Activity Type"),
+                                   comment = DIV(A(ADD_ACTIVITY,
+                                                   _class="colorbox",
+                                                   _href=URL(r=request, c="project", f="activity", args="create", vars=dict(format="popup")),
+                                                   _target="top",
+                                                   _title=ADD_ACTIVITY
+                                                   )
+                                                 ),
+                                   ondelete = "RESTRICT"
+                                   )    
+    
     # Activities as component of Orgs
-    s3xrc.model.add_component(module, resourcename,
+    s3xrc.model.add_component(application, resourcename,
                               multiple=True,
                               joinby=dict(org_organisation="organisation_id"))
     
@@ -400,7 +419,7 @@ if deployment_settings.has_module("project"):
     }
     
     resourcename = "task"
-    tablename = module + "_" + resourcename
+    tablename = application + "_" + resourcename
     table = db.define_table(tablename,
                             Field("priority", "integer",
                                 requires = IS_IN_SET(project_task_priority_opts, zero=None),
@@ -457,7 +476,7 @@ if deployment_settings.has_module("project"):
         msg_list_empty = T("No tasks currently registered"))
     
     # Task as Component of Project, Office, (Organisation to come? via Project? Can't rely on that as multi-Org projects)
-    s3xrc.model.add_component(module, resourcename,
+    s3xrc.model.add_component(application, resourcename,
                               multiple=True,
                               joinby=dict(project_project="project_id",
                                           project_office="office_id"))

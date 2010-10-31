@@ -78,7 +78,33 @@ def activity_type():
     s3xrc.model.configure(table, listadd=False)
     return s3_rest_controller(prefix, resourcename)
 
-
+#==============================================================================
+def shn_activity_rheader(r, tabs=[]):
+    if r.representation == "html":
+        rheader_tabs = shn_rheader_tabs(r, tabs)
+        project_activity = r.record
+        rheader = DIV( TABLE(
+                           TR( TH( T("Short Description") + ": "), 
+                               project_activity.name,
+                              ),
+                           TR( TH( T("Location") + ": "), 
+                               shn_gis_location_represent(project_activity.location_id),
+                               TH( T("Duration") + ": "),
+                               "%s to %s" % (project_activity.start_date, project_activity.end_date),
+                              ),                                      
+                           TR( TH( T("Organisation") + ": "),
+                               shn_organisation_represent(project_activity.organisation_id),                                       
+                               TH( T("Cluster") + ": "),
+                               shn_get_db_field_value(db = db,
+                                                      table = "org_cluster",
+                                                      field = "abrv",
+                                                      look_up = project_activity.cluster_id),                               
+                             ),
+                            ),
+                        rheader_tabs
+                        )                    
+        return rheader
+    return None
 #==============================================================================
 def activity():
 
@@ -87,8 +113,17 @@ def activity():
     tablename = "%s_%s" % (prefix, resourcename)
     table = db[tablename]
 
-    return s3_rest_controller(prefix, resourcename)
+    tabs = [
+            (T("Details"), None),
+            (T("Requests"), "req"),
+            #(T("Shipments To"), "rms_req"),
+           ]
+    rheader = lambda r: shn_activity_rheader(r, tabs)
+    
 
+    return s3_rest_controller(prefix, 
+                              resourcename,
+                              rheader = rheader)
 #==============================================================================
 def task():
 

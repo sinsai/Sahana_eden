@@ -137,7 +137,9 @@ def ireport():
     def prep(r):
         if r.method == "ushahidi":
             auth.settings.on_failed_authorization = r.other(method="", vars=None)
-        elif r.representation in shn_interactive_view_formats and r.method == "create":
+        elif r.representation in shn_interactive_view_formats and r.method == "update":
+            table.verified.writable = True
+        elif r.representation in shn_interactive_view_formats and (r.method == "create" or r.method == None):
             table.datetime.default = request.utcnow
             person = session.auth.user.id if auth.is_logged_in() else None
             if person:
@@ -151,6 +153,7 @@ def ireport():
     if not shn_has_role("Editor"):
         table.incident_id.readable = table.incident_id.writable = False
 
+    # @ToDo: Replace with doc_image
     db.irs_iimage.assessment_id.readable = \
     db.irs_iimage.assessment_id.writable = False
 
@@ -167,7 +170,7 @@ def ireport():
                                                    (T("Images"), "iimage")
                                                   ])
 
-    s3xrc.model.configure(table, listadd=False)
+    #s3xrc.model.configure(table, listadd=False)
     output = s3_rest_controller(module, resource, rheader=rheader)
     return output
 

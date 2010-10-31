@@ -258,7 +258,6 @@ if deployment_settings.has_module(module):
                             comments(),
                             migrate=migrate, *s3_meta_fields())
 
-
     table.category.label = T("Category")
     # The full set available to Admins & Imports/Exports
     # (users use the subset by over-riding this in the Controller)
@@ -307,6 +306,24 @@ if deployment_settings.has_module(module):
         msg_record_deleted = T("Incident Report deleted"),
         msg_list_empty = T("No Incident Reports currently registered"))
 
+    def ireport_onaccept(form):
+        """ Nasty Hack for Resource Linking """
+        if "assessments" in form.vars and form.vars.assessments:
+            pass
+        else:
+            # Default it to the record ID so that the represent can create an assessment for this Incident
+            form.vars.assessments = form.vars.id
+
+    # We don't want these visible in Create forms
+    # (we override in Update forms in controller)
+    table.verified.writable = table.verified.readable = False
+    table.assess_id.writable = table.assess_id.readable = False
+
+    s3xrc.model.configure(table,
+                          onaccept = lambda form: ireport_onaccept(form),
+                          #onvalidation = ireport_onvalidation,
+                          list_fields = ["id", "category", "verified", "name", "message"]
+                          )
 
     # irs_ireport as component of doc_documents
     s3xrc.model.add_component(module, resourcename,

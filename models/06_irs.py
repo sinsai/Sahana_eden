@@ -168,9 +168,9 @@ if deployment_settings.has_module(module):
                             Field("contact"),
                             location_id(),
                             Field("datetime", "datetime"),
-                            Field("persons_affected", "integer"),
-                            Field("persons_injured", "integer"),
-                            Field("persons_deceased", "integer"),
+                            #Field("persons_affected", "integer"),
+                            #Field("persons_injured", "integer"),
+                            #Field("persons_deceased", "integer"),
                             comments(),
                             migrate=migrate, *s3_meta_fields())
 
@@ -233,9 +233,10 @@ if deployment_settings.has_module(module):
                             Field("contact"),
                             Field("datetime", "datetime"),
                             location_id(),
-                            Field("persons_affected", "integer"),
-                            Field("persons_injured", "integer"),
-                            Field("persons_deceased", "integer"),
+                            # To be replaced by flexible Impacts as per Assessments?
+                            #Field("persons_affected", "integer"),
+                            #Field("persons_injured", "integer"),
+                            #Field("persons_deceased", "integer"),
                             document_id(),
                             Field("verified", "boolean"),
                             comments(),
@@ -264,9 +265,9 @@ if deployment_settings.has_module(module):
     table.datetime.requires = [IS_NOT_EMPTY(),
                                IS_UTC_DATETIME(utc_offset=shn_user_utc_offset(), allow_future=False)]
 
-    table.persons_affected.label = T("# of People Affected")
-    table.persons_injured.label = T("# of People Injured")
-    table.persons_deceased.label = T("# of People Deceased")
+    #table.persons_affected.label = T("# of People Affected")
+    #table.persons_injured.label = T("# of People Injured")
+    #table.persons_deceased.label = T("# of People Deceased")
 
     table.verified.label = T("Verified?")
     table.verified.represent = lambda verified: (T("No"), T("Yes"))[verified == True]

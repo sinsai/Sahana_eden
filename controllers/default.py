@@ -39,9 +39,13 @@ _table_user.language.represent = lambda opt: s3_languages.get(opt, UNKNOWN_OPT)
 def index():
     """ Main Home Page """
 
-    response.view = "default/demo.html"
     div_sit = DIV(H3(T("SITUATION")),
-                  A(DIV(T("Assessment"),
+                  A(DIV(T("Incidents"),
+                        _class = "menu_box"
+                        ),
+                    _href = URL( r=request, c="irs", f= "ireport")
+                    ),
+                  A(DIV(T("Assessments"),
                         _class = "menu_box"
                         ),
                     _href = URL( r=request, c="assess", f= "assess")

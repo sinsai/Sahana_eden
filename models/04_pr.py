@@ -133,7 +133,9 @@ table = db.define_table(tablename,
 table.uuid.requires = IS_NOT_IN_DB(db, "%s.uuid" % tablename)
 table.pe_id.requires = IS_ONE_OF(db, "pr_pentity.pe_id",
                                  shn_pentity_represent,
-                                 orderby="instance_type")
+                                 orderby="instance_type",
+                                 filterby="instance_type",
+                                 filter_opts=("pr_person", "pr_group"))
 
 table.value.requires = IS_NOT_EMPTY()
 table.priority.requires = IS_IN_SET(range(1, 10), zero=None)

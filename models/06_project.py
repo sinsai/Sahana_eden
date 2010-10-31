@@ -380,7 +380,7 @@ if deployment_settings.has_module("project"):
                                                                                  table = "project_activity",
                                                                                  field = "name",
                                                                                  look_up = id),
-                                   label = T("Activity Type"),
+                                   label = T("Activity"),
                                    comment = DIV(A(ADD_ACTIVITY,
                                                    _class="colorbox",
                                                    _href=URL(r=request, c="project", f="activity", args="create", vars=dict(format="popup")),

@@ -78,7 +78,7 @@ def index():
 
 def demo():
         #Custom Demo Menu
-    response.view = "default/demo.html" 
+    response.view = "default/demo.html"
     div_sit = DIV(H3(T("SITUATION")),
                   A(DIV(T("Assessment"),
                         _class = "menu_box"
@@ -89,8 +89,8 @@ def demo():
                         _class = "menu_box"
                         ),
                     _href = URL( r=request, c="rms", f= "req")
-                    ),  
-                  _class = "menu_div"                  
+                    ),
+                  _class = "menu_div"
                   )
     div_arrow_1 = DIV(IMG(_src = "/%s/static/img/arrow_blue_right.png" % request.application),
                           _class = "div_arrow")
@@ -104,18 +104,18 @@ def demo():
                         _class = "menu_box"
                         ),
                     _href = URL( r=request, c="project", f= "gap_map")
-                    ),                    
+                    ),
                   A(DIV(T("Inventories"),
                         _class = "menu_box"
                         ),
                     _href = URL( r=request, c="inventory", f= "store")
-                    ),     
+                    ),
                   A(DIV(T("Map"),
                         _class = "menu_box"
                         ),
                     _href = URL( r=request, c="gis", f= "index")
-                    ),                         
-                  _class = "menu_div"                  
+                    ),
+                  _class = "menu_div"
                   )
     div_arrow_2 = DIV(IMG(_src = "/%s/static/img/arrow_blue_right.png" % request.application),
                           _class = "div_arrow")
@@ -131,7 +131,7 @@ def demo():
                     _href = URL( r=request, c="logs", f= "distrib")
                     ),
                   _class = "menu_div",
-                  _id = "menu_div_response"                       
+                  _id = "menu_div_response"
                   )
 
 
@@ -215,8 +215,8 @@ def user():
     return dict(form=form, login_form=login_form, register_form=register_form, self_registration=self_registration)
 
 def source():
-    "RESTful CRUD controller"
-    return shn_rest_controller("s3", "source")
+    """ RESTful CRUD controller """
+    return s3_rest_controller("s3", "source")
 
 # NB These 4 functions are unlikely to get used in production
 def header():

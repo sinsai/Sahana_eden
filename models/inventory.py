@@ -15,8 +15,8 @@ if deployment_settings.has_module("logs"):
     #==============================================================================
     # Inventory Store
     #
-    resource = "store"
-    tablename = "%s_%s" % (module, resource)
+    resourcename = "store"
+    tablename = "%s_%s" % (module, resourcename)
     table = db.define_table(tablename,
                             location_id(),
                             document_id(),
@@ -66,27 +66,21 @@ if deployment_settings.has_module("logs"):
                 )
 
     # inventory_store as component of doc_documents
-    s3xrc.model.add_component(module, resource,
+    s3xrc.model.add_component(module, resourcename,
                               multiple=True,
-                              joinby=dict(doc_document="document_id"),
-                              deletable=True,
-                              editable=True)
+                              joinby=dict(doc_document="document_id"))
     # Also a component of sites, but these are 1-1 and use a natural join.
-    # @ToDo Should these be editable and deletable?  Or should an
-    # inventory store be created when a site is created?
     # @ToDo Is multiple assumed True or False?  It's not touched
     # in add_component, so safest to set it explicitly.
-    s3xrc.model.add_component(module, resource,
+    s3xrc.model.add_component(module, resourcename,
                               multiple=False,
-                              joinby="site_id",
-                              deletable=False,
-                              editable=True)
+                              joinby="site_id")
 
     #==============================================================================
     # Inventory Item
     #
-    resource = "store_item"
-    tablename = "%s_%s" % (module, resource)
+    resourcename = "store_item"
+    tablename = "%s_%s" % (module, resourcename)
     table = db.define_table(tablename,
                             inventory_store_id(),
                             item_id(),
@@ -115,11 +109,10 @@ if deployment_settings.has_module("logs"):
         msg_list_empty = T("No Inventory Items currently registered"))
 
     # Items as component of Stores
-    s3xrc.model.add_component(module, resource,
+    s3xrc.model.add_component(module, resourcename,
                               multiple=True,
-                              joinby=dict(inventory_store="inventory_store_id", supply_item="item_id"),
-                              deletable=True,
-                              editable=True)
+                              joinby=dict(inventory_store="inventory_store_id",
+                                          supply_item="item_id"))
 
 
     logs_menu = [

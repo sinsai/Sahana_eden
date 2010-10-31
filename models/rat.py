@@ -132,8 +132,8 @@ if deployment_settings.has_module(module):
     # Main Resource -----------------------------------------------------------
     # contains Section 1: Identification Information
     #
-    resource = "assessment"
-    tablename = "%s_%s" % (module, resource)
+    resourcename = "assessment"
+    tablename = "%s_%s" % (module, resourcename)
     table = db.define_table(tablename,
                             Field("date", "date"),
                             location_id(),
@@ -257,21 +257,19 @@ if deployment_settings.has_module(module):
     # Assessment as component of doc_document and cr_shelter.
     # RAT has components itself, so best not to constrain within the parent resource tabs
     # - therefore disable the listadd & jump out of the tabs for Create/Update
-    s3xrc.model.add_component(module, resource,
+    s3xrc.model.add_component(module, resourcename,
                               multiple=True,
-                              joinby=dict(cr_shelter="shelter_id", doc_document="document_id"),
-                              listadd=False,
-                              deletable=True,
-                              editable=True)
+                              joinby=dict(cr_shelter="shelter_id", doc_document="document_id"))
 
     s3xrc.model.configure(table,
+        listadd=False,
         onaccept=lambda form: rat_assessment_onaccept(form))
 
 
     # Section 2: Demographic --------------------------------------------------
 
-    resource = "section2"
-    tablename = "%s_%s" % (module, resource)
+    resourcename = "section2"
+    tablename = "%s_%s" % (module, resourcename)
     table = db.define_table(tablename,
                             assessment_id(),
                             Field("population_total", "integer"),
@@ -389,11 +387,11 @@ if deployment_settings.has_module(module):
     # CRUD strings
     s3.crud_strings[tablename] = rat_section_crud_strings
 
-    s3xrc.model.add_component(module, resource,
+    s3xrc.model.add_component(module, resourcename,
                               multiple = False,
-                              joinby = dict(rat_assessment="assessment_id"),
-                              deletable = False,
-                              editable = True)
+                              joinby = dict(rat_assessment="assessment_id"))
+
+    s3xrc.model.configure(table, deletable=False)
 
 
     # Section 3: Shelter & Essential NFIs -------------------------------------
@@ -416,8 +414,8 @@ if deployment_settings.has_module(module):
         99: T("Other (specify)")
     }
 
-    resource = "section3"
-    tablename = "%s_%s" % (module, resource)
+    resourcename = "section3"
+    tablename = "%s_%s" % (module, resourcename)
     table = db.define_table(tablename,
                             assessment_id(),
                             Field("houses_total", "integer"),
@@ -510,11 +508,11 @@ if deployment_settings.has_module(module):
     # CRUD strings
     s3.crud_strings[tablename] = rat_section_crud_strings
 
-    s3xrc.model.add_component(module, resource,
+    s3xrc.model.add_component(module, resourcename,
                               multiple = False,
-                              joinby = dict(rat_assessment="assessment_id"),
-                              deletable = False,
-                              editable = True)
+                              joinby = dict(rat_assessment="assessment_id"))
+
+    s3xrc.model.configure(table, deletable=False)
 
     # Section 4 - Water and Sanitation ----------------------------------------
 
@@ -556,8 +554,8 @@ if deployment_settings.has_module(module):
         999: NOT_APPLICABLE
     }
 
-    resource = "section4"
-    tablename = "%s_%s" % (module, resource)
+    resourcename = "section4"
+    tablename = "%s_%s" % (module, resourcename)
     table = db.define_table(tablename,
                             assessment_id(),
                             Field("water_source_pre_disaster_type", "integer"),
@@ -670,11 +668,11 @@ if deployment_settings.has_module(module):
     # CRUD strings
     s3.crud_strings[tablename] = rat_section_crud_strings
 
-    s3xrc.model.add_component(module, resource,
+    s3xrc.model.add_component(module, resourcename,
                               multiple = False,
-                              joinby = dict(rat_assessment="assessment_id"),
-                              deletable = False,
-                              editable = True)
+                              joinby = dict(rat_assessment="assessment_id"))
+
+    s3xrc.model.configure(table, deletable=False)
 
     # Section 5 - Health ------------------------------------------------------
 
@@ -698,8 +696,8 @@ if deployment_settings.has_module(module):
         99: T("Other (specify)")
     }
 
-    resource = "section5"
-    tablename = "%s_%s" % (module, resource)
+    resourcename = "section5"
+    tablename = "%s_%s" % (module, resourcename)
     table = db.define_table(tablename,
                             assessment_id(),
                             Field("health_services_pre_disaster", "boolean"),
@@ -854,11 +852,11 @@ if deployment_settings.has_module(module):
     # CRUD strings
     s3.crud_strings[tablename] = rat_section_crud_strings
 
-    s3xrc.model.add_component(module, resource,
+    s3xrc.model.add_component(module, resourcename,
                               multiple = False,
-                              joinby = dict(rat_assessment="assessment_id"),
-                              deletable = False,
-                              editable = True)
+                              joinby = dict(rat_assessment="assessment_id"))
+
+    s3xrc.model.configure(table, deletable=False)
 
     # Section 6 - Nutrition/Food Security -------------------------------------
 
@@ -895,8 +893,8 @@ if deployment_settings.has_module(module):
         99: "Other (specify)"
     }
 
-    resource = "section6"
-    tablename = "%s_%s" % (module, resource)
+    resourcename = "section6"
+    tablename = "%s_%s" % (module, resourcename)
     table = db.define_table(tablename,
                             assessment_id(),
                             Field("food_stocks_main_dishes", "list:integer"),
@@ -958,11 +956,11 @@ if deployment_settings.has_module(module):
     # CRUD strings
     s3.crud_strings[tablename] = rat_section_crud_strings
 
-    s3xrc.model.add_component(module, resource,
+    s3xrc.model.add_component(module, resourcename,
                               multiple = False,
-                              joinby = dict(rat_assessment="assessment_id"),
-                              deletable = False,
-                              editable = True)
+                              joinby = dict(rat_assessment="assessment_id"))
+
+    s3xrc.model.configure(table, deletable=False)
 
     # Section 7 - Livelihood --------------------------------------------------
 
@@ -997,8 +995,8 @@ if deployment_settings.has_module(module):
 
     rat_ranking_opts = xrange(1,7)
 
-    resource = "section7"
-    tablename = "%s_%s" % (module, resource)
+    resourcename = "section7"
+    tablename = "%s_%s" % (module, resourcename)
     table = db.define_table(tablename,
                             assessment_id(),
                             Field("income_sources_pre_disaster", "list:integer"),
@@ -1080,11 +1078,11 @@ if deployment_settings.has_module(module):
     # CRUD strings
     s3.crud_strings[tablename] = rat_section_crud_strings
 
-    s3xrc.model.add_component(module, resource,
+    s3xrc.model.add_component(module, resourcename,
                               multiple = False,
-                              joinby = dict(rat_assessment="assessment_id"),
-                              deletable = False,
-                              editable = True)
+                              joinby = dict(rat_assessment="assessment_id"))
+
+    s3xrc.model.configure(table, deletable=False)
 
     # Section 8 - Education ---------------------------------------------------
 
@@ -1123,8 +1121,8 @@ if deployment_settings.has_module(module):
         999: NOT_APPLICABLE
     }
 
-    resource = "section8"
-    tablename = "%s_%s" % (module, resource)
+    resourcename = "section8"
+    tablename = "%s_%s" % (module, resourcename)
     table = db.define_table(tablename,
                             assessment_id(),
                             Field("schools_total", "integer"),
@@ -1294,11 +1292,12 @@ if deployment_settings.has_module(module):
     # CRUD strings
     s3.crud_strings[tablename] = rat_section_crud_strings
 
-    s3xrc.model.add_component(module, resource,
+    s3xrc.model.add_component(module, resourcename,
                               multiple = False,
-                              joinby = dict(rat_assessment="assessment_id"),
-                              deletable = False,
-                              editable = True)
+                              joinby = dict(rat_assessment="assessment_id"))
+
+    s3xrc.model.configure(table, deletable=False)
+
 
     # Section 9 - Protection --------------------------------------------------
 
@@ -1330,8 +1329,8 @@ if deployment_settings.has_module(module):
         6: T("Disaster clean-up/repairs")
     })
 
-    resource = "section9"
-    tablename = "%s_%s" % (module, resource)
+    resourcename = "section9"
+    tablename = "%s_%s" % (module, resourcename)
     table = db.define_table(tablename,
                             assessment_id(),
                             Field("vulnerable_groups_safe_env", "boolean"),
@@ -1593,11 +1592,11 @@ if deployment_settings.has_module(module):
     # CRUD strings
     s3.crud_strings[tablename] = rat_section_crud_strings
 
-    s3xrc.model.add_component(module, resource,
+    s3xrc.model.add_component(module, resourcename,
                               multiple = False,
-                              joinby = dict(rat_assessment="assessment_id"),
-                              deletable = False,
-                              editable = True)
+                              joinby = dict(rat_assessment="assessment_id"))
+
+    s3xrc.model.configure(table, deletable=False)
 
     # -----------------------------------------------------------------------------
     def shn_rat_summary(r, **attr):

@@ -14,8 +14,8 @@ if deployment_settings.has_module("org"):
     #==============================================================================
     # Activity Type
     #
-    resource = "activity_type"
-    tablename = "%s_%s" % (module, resource)
+    resourcename = "activity_type"
+    tablename = "%s_%s" % (module, resourcename)
     table = db.define_table(tablename,
                             Field("name", length=128, notnull=True, unique=True),
                             migrate=migrate, *s3_meta_fields())
@@ -53,8 +53,8 @@ if deployment_settings.has_module("org"):
                      2: T("Families/HH")
                    }
 
-    resource = "activity"
-    tablename = "%s_%s" % (module, resource)
+    resourcename = "activity"
+    tablename = "%s_%s" % (module, resourcename)
     table = db.define_table(tablename,
                             organisation_id("donor_id",
                                             label = T("Funding Organization"),
@@ -67,7 +67,7 @@ if deployment_settings.has_module("org"):
                                                                   _title=ADD_ORGANIZATION + "|" + T("The Organization which is funding this Activity."))))
                                            ),
                             organisation_id(),
-                            cluster_subsector_id (),
+                            cluster_subsector_id(),
                             Field("description"),
                             #Field("quantity"),
                             #Field("unit"), # Change to link to supply
@@ -131,11 +131,8 @@ if deployment_settings.has_module("org"):
                                          msg_record_deleted = T("Activity Deleted"),
                                          msg_list_empty = T("No Activities Found")
                                          )
-    # Activities as component of Orgs & Locations
-    s3xrc.model.add_component(module, resource,
+    # Activities as component of Orgs
+    s3xrc.model.add_component(module, resourcename,
                               multiple=True,
-                              joinby=dict(org_organisation="organisation_id"),
-                              #joinby=dict(org_organisation="organisation_id", gis_location="location_id"),
-                              deletable=True,
-                              editable=True)
+                              joinby=dict(org_organisation="organisation_id"))
 

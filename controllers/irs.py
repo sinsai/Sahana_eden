@@ -64,7 +64,7 @@ def maps():
     popup_url = URL(r=request, f="ireport", args="read.popup?ireport.location_id=")
     incidents = {"name":T("Incident Reports"), "query":reports, "active":True, "popup_url": popup_url}
     feature_queries = [incidents]
-    
+
     map = gis.show_map(feature_queries=feature_queries, window=True)
 
     return dict(map=map)
@@ -83,8 +83,8 @@ def icategory():
     resource = request.function
     tablename = "%s_%s" % (module, resource)
     table = db[tablename]
-    
-    output = shn_rest_controller(module, resource)
+
+    output = s3_rest_controller(module, resource)
     return output
 
 # -----------------------------------------------------------------------------
@@ -112,8 +112,8 @@ def incident():
                                                    (T("Response"), "iresponse")
                                                   ])
 
-    response.s3.pagination = True
-    output = shn_rest_controller(module, resource, listadd=False, rheader=rheader)
+    s3xrc.model.configure(table, listadd=False)
+    output = s3_rest_controller(module, resource, rheader=rheader)
     return output
 
 # -----------------------------------------------------------------------------
@@ -132,7 +132,7 @@ def ireport():
     if not shn_has_role("Editor"):
         allowed_opts = [irs_incident_type_opts.get(opt.code, opt.code) for opt in db().select(db.irs_icategory.code)]
         table.category.requires = IS_NULL_OR(IS_IN_SET(allowed_opts))
-    
+
     # Pre-processor
     def prep(r):
         if r.method == "ushahidi":
@@ -150,7 +150,7 @@ def ireport():
 
     if not shn_has_role("Editor"):
         table.incident_id.readable = table.incident_id.writable = False
-    
+
     db.irs_iimage.assessment_id.readable = \
     db.irs_iimage.assessment_id.writable = False
 
@@ -167,8 +167,8 @@ def ireport():
                                                    (T("Images"), "iimage")
                                                   ])
 
-    response.s3.pagination = True
-    output = shn_rest_controller(module, resource, listadd=False, rheader=rheader)
+    s3xrc.model.configure(table, listadd=False)
+    output = s3_rest_controller(module, resource, rheader=rheader)
     return output
 
 # -----------------------------------------------------------------------------
@@ -195,8 +195,7 @@ def iassessment():
                                                    (T("Images"), "iimage")
                                                   ])
 
-    response.s3.pagination = True
-    output = shn_rest_controller(module, resource, rheader=rheader)
+    output = s3_rest_controller(module, resource, rheader=rheader)
     return output
 
 

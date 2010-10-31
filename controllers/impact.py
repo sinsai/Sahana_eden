@@ -1,29 +1,35 @@
 # -*- coding: utf-8 -*-
 
-"""
-    Impact - Controller
-    
+""" Impact - Controller
+
     @author: Michael Howden (michael@sahanafoundation.org)
-    @date-created: 2010-10-12  
-    
+    @date-created: 2010-10-12
+
 """
 
-module = request.controller
+prefix = request.controller
+resourcename = request.function
 
 #==============================================================================
 def type():
-    "RESTful CRUD controller"
-    resource = request.function
-    tablename = "%s_%s" % (module, resource)
+
+    """ RESTful CRUD controller """
+
+    tablename = "%s_%s" % (prefix, resourcename)
     table = db[tablename]
 
-    return shn_rest_controller(module, resource)    
+    return s3_rest_controller(prefix, resourcename)
+
+
 #==============================================================================
 def impact():
-    "RESTful CRUD controller"
-    resource = request.function
-    tablename = "%s_%s" % (module, resource)
+
+    """ RESTful CRUD controller """
+
+    tablename = "%s_%s" % (prefix, resourcename)
     table = db[tablename]
 
-    return shn_rest_controller(module, resource)    
+    return s3_rest_controller(prefix, resourcename)
+
+
 #==============================================================================

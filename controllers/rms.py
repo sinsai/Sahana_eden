@@ -1,12 +1,11 @@
 # -*- coding: utf-8 -*-
 
-"""
-    Request Management System - Controllers
-"""
+""" Request Management System - Controllers """
 
-module = request.controller
+prefix = request.controller
+resourcename = request.function
 
-if module not in deployment_settings.modules:
+if prefix not in deployment_settings.modules:
     session.error = T("Module disabled!")
     redirect(URL(r=request, c="default", f="index"))
 
@@ -49,25 +48,29 @@ if session.rcvars:
 
 response.menu_options = menu
 
-# S3 framework functions
-def index():
-    "Module's Home Page"
 
-    """ Default to the rms_req list view - TODO does not work with paginate!!!"""
+def index():
+
+    """ Module's Home Page
+
+        Default to the rms_req list view.
+
+    """
 
     request.function = "req"
     request.args = []
     return req()
 
-    #module_name = deployment_settings.modules[module].name_nice
-
+    #module_name = deployment_settings.modules[prefix].name_nice
     #return dict(module_name=module_name, a=1)
 
+
 def req():
+
     """ RESTful CRUD controller """
 
-    resource = request.function
-    tablename = module + "_" + resource
+    resourcename = request.function # check again in case we're coming from index()
+    tablename = "%s_%s" % (prefix, resourcename)
     table = db[tablename]
 
     # Pre-processor
@@ -107,14 +110,14 @@ def req():
             # listadd arrives here as method=None
             if r.method != "delete" and not r.component:
                 # Redirect to the Assessments tabs after creation
-                r.next = r.other(method="ritem", record_id=s3xrc.get_session(module, resource))
+                r.next = r.other(method="ritem", record_id=s3xrc.get_session(prefix, resourcename))
 
             # Custom Action Buttons
             if not r.component:
                 response.s3.actions = [
-                    dict(label=T("Open"), _class="action-btn", url=str(URL(r=request, args=["[id]", "update"]))),
-                    dict(label=T("Items"), _class="action-btn", url=str(URL(r=request, args=["[id]", "ritem"]))),
-                    dict(label=T("Pledge"), _class="action-btn", url=str(URL(r=request, args=["[id]", "pledge"])))
+                    dict(label=str(T("Open")), _class="action-btn", url=str(URL(r=request, args=["[id]", "update"]))),
+                    dict(label=str(T("Items")), _class="action-btn", url=str(URL(r=request, args=["[id]", "ritem"]))),
+                    dict(label=str(T("Pledge")), _class="action-btn", url=str(URL(r=request, args=["[id]", "pledge"])))
                 ]
             elif r.component_name == "pledge":
                 response.s3.actions = [
@@ -124,21 +127,21 @@ def req():
         return output
     response.s3.postp = postp
 
-    response.s3.pagination = True
-    output = shn_rest_controller(module, resource,
-                                 editable=True,
-                                 #listadd=False,
-                                 rheader=shn_rms_rheader)
+    s3xrc.model.configure(table,
+                          #listadd=False,
+                          editable=True)
 
-    return output
+    return s3_rest_controller(prefix, resourcename, rheader=shn_rms_rheader)
+
 
 def ritem():
-    "RESTful CRUD controller"
-    resource = request.function
-    tablename = "%s_%s" % (module, resource)
+
+    """ RESTful CRUD controller """
+
+    tablename = "%s_%s" % (prefix, resourcename)
     table = db[tablename]
 
-    #rheader = lambda jr: shn_item_rheader(jr,
+    #rheader = lambda r: shn_item_rheader(r,
     #                                      tabs = [(T("Requests for Item"), None),
     #                                              (T("Inventories with Item"), "location_item"),
     #                                              (T("Requests for Item"), "req"),
@@ -147,17 +150,15 @@ def ritem():
 
     s3.crud_strings[tablename].label_create_button = None
 
-    return shn_rest_controller(module,
-                               resource,
-                               listadd=False,
-                               #rheader=rheader
-                               )
+    s3xrc.model.configure(table, listadd=False)
+    return s3_rest_controller(prefix, resourcename) #, rheader=rheader)
+
 
 def pledge():
+
     """ RESTful CRUD controller """
 
-    resource = request.function
-    tablename = module + "_" + resource
+    tablename = "%s_%s" % (prefix, resourcename)
     table = db[tablename]
 
     # Pre-processor
@@ -192,23 +193,24 @@ def pledge():
         return output
     response.s3.postp = postp
 
-    response.s3.pagination = True
-    return shn_rest_controller(module,
-                               resource,
-                               editable = True,
-                               #listadd=False
-                               )
+    s3xrc.model.configure(table,
+                          #listadd=False,
+                          editable=True)
+
+    return s3_rest_controller(prefix, resourcename)
 
 
-def shn_rms_rheader(jr):
+def shn_rms_rheader(r):
 
-    if jr.representation == "html":
+    """ @todo: fix docstring """
 
-        _next = jr.here()
-        _same = jr.same()
+    if r.representation == "html":
 
-        if jr.name == "req":
-            aid_request = jr.record
+        _next = r.here()
+        _same = r.same()
+
+        if r.name == "req":
+            aid_request = r.record
             if aid_request:
                 try:
                     location = db(db.gis_location.id == aid_request.location_id).select(limitby=(0, 1)).first()
@@ -216,7 +218,7 @@ def shn_rms_rheader(jr):
                 except:
                     location_represent = None
 
-                rheader_tabs = shn_rheader_tabs( jr,
+                rheader_tabs = shn_rheader_tabs( r,
                                                  [(T("Edit Details"), None),
                                                   (T("Items"), "ritem"),
                                                   (T("Pledge"), "pledge"),

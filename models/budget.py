@@ -11,8 +11,8 @@ if deployment_settings.has_module(module):
 
     # Parameters
     # Only record 1 is used
-    resource = "parameter"
-    tablename = "%s_%s" % (module, resource)
+    resourcename = "parameter"
+    tablename = "%s_%s" % (module, resourcename)
     table = db.define_table(tablename,
                             Field("shipping", "double", default=15.00, notnull=True),
                             Field("logistics", "double", default=0.00, notnull=True),
@@ -65,8 +65,8 @@ if deployment_settings.has_module(module):
                                     # default = 1,
                                     label = T("Category"),
                                     represent = lambda opt: budget_category_type_opts.get(opt, UNKNOWN_OPT)))
-    resource = "item"
-    tablename = "%s_%s" % (module, resource)
+    resourcename = "item"
+    tablename = "%s_%s" % (module, resourcename)
     table = db.define_table(tablename,
                             opt_budget_category_type,
                             Field("code", length=128, notnull=True, unique=True),
@@ -119,8 +119,8 @@ if deployment_settings.has_module(module):
     s3xrc.model.configure(table, onaccept=lambda form: item_cascade(form))
 
     # Kits
-    resource = "kit"
-    tablename = "%s_%s" % (module, resource)
+    resourcename = "kit"
+    tablename = "%s_%s" % (module, resourcename)
     table = db.define_table(tablename,
                             Field("code", length=128, notnull=True, unique=True),
                             Field("description"),
@@ -168,8 +168,8 @@ if deployment_settings.has_module(module):
                           onaccept=lambda form: kit_total(form))
 
     # Kit<>Item Many2Many
-    resource = "kit_item"
-    tablename = "%s_%s" % (module, resource)
+    resourcename = "kit_item"
+    tablename = "%s_%s" % (module, resourcename)
     table = db.define_table(tablename,
                             Field("kit_id", db.budget_kit),
                             Field("item_id", db.budget_item, ondelete="RESTRICT"),
@@ -182,8 +182,8 @@ if deployment_settings.has_module(module):
     table.quantity.requires = IS_NOT_EMPTY()
 
     # Bundles
-    resource = "bundle"
-    tablename = "%s_%s" % (module, resource)
+    resourcename = "bundle"
+    tablename = "%s_%s" % (module, resourcename)
     table = db.define_table(tablename,
                             Field("name", length=128, notnull=True, unique=True),
                             Field("description"),
@@ -242,8 +242,8 @@ if deployment_settings.has_module(module):
                           onaccept=lambda form: bundle_total(form))
 
     # Bundle<>Kit Many2Many
-    resource = "bundle_kit"
-    tablename = "%s_%s" % (module, resource)
+    resourcename = "bundle_kit"
+    tablename = "%s_%s" % (module, resourcename)
     table = db.define_table(tablename,
                             Field("bundle_id", db.budget_bundle),
                             Field("kit_id", db.budget_kit, ondelete="RESTRICT"),
@@ -260,8 +260,8 @@ if deployment_settings.has_module(module):
     table.megabytes.requires = IS_NOT_EMPTY()
 
     # Bundle<>Item Many2Many
-    resource = "bundle_item"
-    tablename = "%s_%s" % (module, resource)
+    resourcename = "bundle_item"
+    tablename = "%s_%s" % (module, resourcename)
     table = db.define_table(tablename,
                             Field("bundle_id", db.budget_bundle),
                             Field("item_id", db.budget_item, ondelete="RESTRICT"),
@@ -278,8 +278,8 @@ if deployment_settings.has_module(module):
     table.megabytes.requires = IS_NOT_EMPTY()
 
     # Staff Types
-    resource = "staff"
-    tablename = "%s_%s" % (module, resource)
+    resourcename = "staff"
+    tablename = "%s_%s" % (module, resourcename)
     table = db.define_table(tablename,
                             Field("name", length=128, notnull=True, unique=True),
                             Field("grade", notnull=True),
@@ -299,8 +299,8 @@ if deployment_settings.has_module(module):
     table.salary.requires = IS_NOT_EMPTY()
 
     # Locations
-    resource = "location"
-    tablename = "%s_%s" % (module, resource)
+    resourcename = "location"
+    tablename = "%s_%s" % (module, resourcename)
     table = db.define_table(tablename,
                             Field("code", length=3, notnull=True, unique=True),
                             Field("description"),
@@ -313,8 +313,8 @@ if deployment_settings.has_module(module):
     table.code.requires = [IS_NOT_EMPTY(), IS_NOT_IN_DB(db, "%s.code" % table)]
 
     # Budgets
-    resource = "budget"
-    tablename = "%s_%s" % (module, resource)
+    resourcename = "budget"
+    tablename = "%s_%s" % (module, resourcename)
     table = db.define_table(tablename,
                             Field("name", length=128, notnull=True, unique=True),
                             Field("description"),
@@ -327,8 +327,8 @@ if deployment_settings.has_module(module):
     table.name.requires = [IS_NOT_EMPTY(), IS_NOT_IN_DB(db, "%s.name" % table)]
 
     # Budget<>Bundle Many2Many
-    resource = "budget_bundle"
-    tablename = "%s_%s" % (module, resource)
+    resourcename = "budget_bundle"
+    tablename = "%s_%s" % (module, resourcename)
     table = db.define_table(tablename,
                             Field("budget_id", db.budget_budget),
                             project_id(),
@@ -346,8 +346,8 @@ if deployment_settings.has_module(module):
     table.months.requires = IS_NOT_EMPTY()
 
     # Budget<>Staff Many2Many
-    resource = "budget_staff"
-    tablename = "%s_%s" % (module, resource)
+    resourcename = "budget_staff"
+    tablename = "%s_%s" % (module, resourcename)
     table = db.define_table(tablename,
                             Field("budget_id", db.budget_budget),
                             project_id(),

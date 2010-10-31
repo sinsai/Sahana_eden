@@ -98,9 +98,9 @@ response.menu_options = [
 
 def index():
     "Module's Home Page"
-    
+
     module_name = deployment_settings.modules[module].name_nice
-    
+
     return dict(module_name=module_name)
 
 # Administration Index Page
@@ -110,47 +110,47 @@ def admin():
     return dict(module_name=module_name, title=title)
 
 def unit():
-    "RESTful CRUD controller"
-    return shn_rest_controller(module, 'unit')
+    """ RESTful CRUD controller """
+    return s3_rest_controller(module, 'unit')
 def site():
-    "RESTful CRUD controller"
-    return shn_rest_controller(module, 'site')
+    """ RESTful CRUD controller """
+    return s3_rest_controller(module, 'site')
 
 '''def site_category():
-    "RESTful CRUD controller"
-    return shn_rest_controller(module, 'site_category')
+    """ RESTful CRUD controller """
+    return s3_rest_controller(module, 'site_category')
 '''
 def storage_loc():
-    "RESTful CRUD controller"
-    return shn_rest_controller(module, 'storage_loc')
+    """ RESTful CRUD controller """
+    return s3_rest_controller(module, 'storage_loc')
 
 def storage_bin_type():
-    "RESTful CRUD controller"
-    return shn_rest_controller(module, 'storage_bin_type')
+    """ RESTful CRUD controller """
+    return s3_rest_controller(module, 'storage_bin_type')
 
 def storage_bin():
-    "RESTful CRUD controller"
-    return shn_rest_controller(module, 'storage_bin')
+    """ RESTful CRUD controller """
+    return s3_rest_controller(module, 'storage_bin')
 
 def catalog():
-    "RESTful CRUD controller"
-    return shn_rest_controller(module, 'catalog')
+    """ RESTful CRUD controller """
+    return s3_rest_controller(module, 'catalog')
 
 def catalog_cat():
-    "RESTful CRUD controller"
-    return shn_rest_controller(module, 'catalog_cat')
+    """ RESTful CRUD controller """
+    return s3_rest_controller(module, 'catalog_cat')
 
 def catalog_subcat():
-    "RESTful CRUD controller"
-    return shn_rest_controller(module, 'catalog_subcat')
+    """ RESTful CRUD controller """
+    return s3_rest_controller(module, 'catalog_subcat')
 
 def category_master():
-    "RESTful CRUD controller"
-    return shn_rest_controller(module, 'category_master')
+    """ RESTful CRUD controller """
+    return s3_rest_controller(module, 'category_master')
 
 def item():
-    "RESTful CRUD controller"
-    return shn_rest_controller(module, 'item')
+    """ RESTful CRUD controller """
+    return s3_rest_controller(module, 'item')
 
 '''def item_cascade(form):
     """

@@ -37,8 +37,8 @@ if deployment_settings.has_module(module):
                                ondelete = "RESTRICT")
 
     # -------------------------------------------------------------------------
-    resource = "missing_report"
-    tablename = "%s_%s" % (module, resource)
+    resourcename = "missing_report"
+    tablename = "%s_%s" % (module, resourcename)
     table = db.define_table(tablename,
                             person_id(),
                             reporter(),
@@ -77,11 +77,9 @@ if deployment_settings.has_module(module):
     table.contact.comment =  DIV(DIV(_class="tooltip",
         _title=T("Contact") + "|" + T("Contact person in case of news or further questions (if different from reporting person). Include telephone number, address and email as available.")))
 
-    s3xrc.model.add_component(module, resource,
+    s3xrc.model.add_component(module, resourcename,
                               multiple=False,
-                              joinby=dict(pr_person="person_id"),
-                              deletable=False,
-                              editable=True)
+                              joinby=dict(pr_person="person_id"))
 
 
     def shn_mpr_report_onaccept(form):
@@ -128,6 +126,7 @@ if deployment_settings.has_module(module):
 
 
     s3xrc.model.configure(table,
+        deletable=False,
         onaccept = lambda form: shn_mpr_report_onaccept(form),
         list_fields = [
             "id",

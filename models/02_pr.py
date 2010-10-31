@@ -20,8 +20,8 @@ pr_pe_types = Storage(
     dvi_body = T("Body")
 )
 
-resource = "pentity"
-tablename = "%s_%s" % (module, resource)
+resourcename = "pentity"
+tablename = "%s_%s" % (module, resourcename)
 table = db.define_table(tablename,
                         Field("pe_id", "id"),
                         Field("pe_type"),
@@ -30,11 +30,15 @@ table = db.define_table(tablename,
                         Field("pe_label", length=128),
                         migrate=migrate, *s3_deletion_status())
 
-
 table.pe_type.writable = False
 table.pe_type.represent = lambda opt: pr_pe_types.get(opt, opt)
 table.uuid.writable = False
 table.pe_label.writable = False
+
+s3xrc.model.configure(table,
+                      editable=False,
+                      deletable=False,
+                      listadd=False)
 
 
 # -----------------------------------------------------------------------------
@@ -137,6 +141,8 @@ def shn_pentity_ondelete(record):
 # -----------------------------------------------------------------------------
 def shn_pentity_onaccept(form, table=None):
 
+    """ @todo: fix docstring """
+
     if not "uuid" in table.fields or "id" not in form.vars:
         return False
 
@@ -167,12 +173,6 @@ def shn_pentity_onaccept(form, table=None):
             pe_id = pentity.insert(uuid=uid, pe_label=pe_label, pe_type=pe_type)
             #db(pentity.id == pe_id).update(pe_id=pe_id, deleted=False)
             db(table.id == id).update(pe_id=pe_id)
-
-        # If a person gets added in MPR, then redirect to missing report
-        if request.controller == "mpr" and \
-           table._tablename == "pr_person" and \
-           record.missing == True:
-            response.s3.mpr_next = URL(r=request, c="mpr", f="person", args=[record.id, "missing_report"])
 
         return True
 
@@ -288,8 +288,8 @@ def shn_pr_person_represent(id):
 
 
 # -----------------------------------------------------------------------------
-resource = "person"
-tablename = "%s_%s" % (module, resource)
+resourcename = "person"
+tablename = "%s_%s" % (module, resourcename)
 table = db.define_table(tablename,
                         pe_id(),
                         pe_label(),
@@ -302,7 +302,7 @@ table = db.define_table(tablename,
                         pr_gender(),
                         pr_age_group(),
                         Field("date_of_birth", "date"),
-                        pr_country("nationality"),
+                        pr_country("nationality", label = T("Nationality")),
                         pr_country("country"),
                         pr_religion(),
                         pr_marital_status(),
@@ -400,7 +400,7 @@ def pr_person_onvalidation(form):
 
     try:
         age = int(form.vars.get("age_group", None))
-    except ValueError:
+    except (ValueError, TypeError):
         age = None
     dob = form.vars.get("date_of_birth", None)
 
@@ -428,6 +428,9 @@ def pr_person_onvalidation(form):
 
 # -----------------------------------------------------------------------------
 s3xrc.model.configure(table,
+    main="first_name",
+    extra="last_name",
+    listadd=False,
     onvalidation=lambda form: pr_person_onvalidation(form),
     onaccept=lambda form, table=table: shn_pentity_onaccept(form, table=table),
     delete_onaccept=lambda form: shn_pentity_ondelete(form),
@@ -462,8 +465,8 @@ pr_group_type = S3ReusableField("group_type", "integer",
 
 
 # -----------------------------------------------------------------------------
-resource = "group"
-tablename = "%s_%s" % (module, resource)
+resourcename = "group"
+tablename = "%s_%s" % (module, resourcename)
 table = db.define_table(tablename,
                         pe_id(),
                         pr_group_type(),
@@ -527,6 +530,9 @@ group_id = S3ReusableField("group_id", db.pr_group,
 
 # -----------------------------------------------------------------------------
 s3xrc.model.configure(table,
+    deletable=False,
+    main="name",
+    extra="description",
     onaccept=lambda form, table=table: shn_pentity_onaccept(form, table=table),
     delete_onaccept=lambda form: shn_pentity_ondelete(form))
 
@@ -534,8 +540,8 @@ s3xrc.model.configure(table,
 # *****************************************************************************
 # Group membership
 #
-resource = "group_membership"
-tablename = "%s_%s" % (module, resource)
+resourcename = "group_membership"
+tablename = "%s_%s" % (module, resourcename)
 table = db.define_table(tablename,
                         group_id(),
                         person_id(),
@@ -552,12 +558,10 @@ table.person_id.label = T("Person")
 
 
 # -----------------------------------------------------------------------------
-s3xrc.model.add_component(module, resource,
+s3xrc.model.add_component(module, resourcename,
                           multiple=True,
                           joinby=dict(pr_group="group_id",
-                                      pr_person="person_id"),
-                          deletable=True,
-                          editable=True)
+                                      pr_person="person_id"))
 
 s3xrc.model.configure(table,
     list_fields=[
@@ -607,77 +611,14 @@ elif request.function == "group":
 # *****************************************************************************
 # Functions:
 #
-def shn_pr_person_search_simple(r, **attr):
-
-    """ Simple search form for persons """
-
-    resource = r.resource
-    table = resource.table
-
-    r.id = None
-
-    # Check permission
-    if not shn_has_permission("read", table):
-        r.unauthorised()
-
-    if r.representation == "html":
-
-        # Check for redirection
-        next = r.request.vars.get("_next", None)
-        if not next:
-            next = URL(r=request, f="person", args="[id]")
-
-        # Select form
-        form = FORM(TABLE(
-                TR("%s: " % T("Name and/or ID"),
-                   INPUT(_type="text", _name="label", _size="40"),
-                   DIV(DIV(_class="tooltip",
-                           _title=T("Name and/or ID") + "|" + T("To search for a person, enter any of the first, middle or last names and/or an ID number of a person, separated by spaces. You may use % as wildcard. Press 'Search' without input to list all persons.")))),
-                TR("", INPUT(_type="submit", _value=T("Search")))))
-
-        output = dict(form=form, vars=form.vars)
-
-        # Accept action
-        items = None
-        if form.accepts(request.vars, session, keepvalues=True):
-
-            if form.vars.label == "":
-                form.vars.label = "%"
-
-            # Search
-            results = s3xrc.search_simple(table,
-                        fields = ["pe_label",
-                                  "first_name",
-                                  "middle_name",
-                                  "last_name",
-                                  "identity.value"],
-                        label = form.vars.label)
-
-            # Get the results
-            if results:
-                resource.build_query(id=results)
-                report = resource.crud(r, method="list", **attr)
-            else:
-                report = dict(items=T("No matching records found."))
-
-            output.update(dict(report))
-
-        # Title and subtitle
-        title = T("Search for a Person")
-        subtitle = T("Matching Records")
-
-        # Add-button
-        label_create_button = shn_get_crud_string("pr_person", "label_create_button")
-        add_btn = A(label_create_button, _class="action-btn",
-                    _href=URL(r=request, f="person", args="create"))
-
-        output.update(title=title, subtitle=subtitle, add_btn=add_btn)
-        response.view = "search_simple.html"
-        return output
-
-    else:
-        session.error = BADFORMAT
-        redirect(URL(r=request))
+shn_pr_person_search_simple = s3xrc.search_simple(
+    label=T("Name and/or ID"),
+    comment=T("To search for a person, enter any of the first, middle or last names and/or an ID number of a person, separated by spaces. You may use % as wildcard. Press 'Search' without input to list all persons."),
+    fields=["pe_label",
+            "first_name",
+            "middle_name",
+            "last_name",
+            "identity.value"])
 
 # Plug into REST controller
 s3xrc.model.set_method(module, "person", method="search_simple", action=shn_pr_person_search_simple )

@@ -1,0 +1,30 @@
+{{try:}}
+ {{=H2(title)}}
+{{except:}}
+{{pass}}
+<div id='rheader'>
+{{try:}}
+ {{=XML(rheader)}}
+{{except:}}
+ {{pass}}
+</div>
+<div id='map'></div>
+{{try:}}
+{{=showaddbtn}}
+{{except:}}
+{{pass}}
+<div class='form-container'>
+{{try:}}
+ {{=form}}
+{{except:}}
+{{pass}}
+</div>
+<p>&nbsp;</p>
+<div id='table-container'>
+{{try:}}
+ {{=items}}
+{{except:}}
+{{pass}}
+</div>
+{{include "pagenav.html"}}
+{{include "dataTables.html"}}

@@ -147,8 +147,8 @@ if deployment_settings.has_module(module):
     }
 
     # This Table defines which Categories are visible to end-users
-    resource = "icategory"
-    tablename = "%s_%s" % (module, resource)
+    resourcename = "icategory"
+    tablename = "%s_%s" % (module, resourcename)
     table = db.define_table(tablename,
                             Field("code"))
     table.code.label = T("Category")
@@ -159,8 +159,8 @@ if deployment_settings.has_module(module):
     # Incidents
     # This is the current status of an Incident
     # @ToDo Change this so that there is a 'lead' ireport updated in the case of duplicates
-    resource = "incident"
-    tablename = "%s_%s" % (module, resource)
+    resourcename = "incident"
+    tablename = "%s_%s" % (module, resourcename)
     table = db.define_table(tablename,
                             sit_id(),
                             Field("name"),
@@ -225,8 +225,8 @@ if deployment_settings.has_module(module):
     # Reports
     # This is a report of an Incident
     # A single incident may generate many reports
-    resource = "ireport"
-    tablename = "%s_%s" % (module, resource)
+    resourcename = "ireport"
+    tablename = "%s_%s" % (module, resourcename)
     table = db.define_table(tablename,
                             incident_id(),
                             Field("name"),
@@ -297,7 +297,7 @@ if deployment_settings.has_module(module):
 
 
     # irs_ireport as component of doc_documents
-    s3xrc.model.add_component(module, resource,
+    s3xrc.model.add_component(module, resourcename,
                               multiple=True,
                               joinby=dict(doc_document="document_id"),
                               deletable=True,
@@ -331,8 +331,8 @@ if deployment_settings.has_module(module):
     # Assessments
     # This is a follow-up assessment of an Incident
     # Deprecated by Assessments module?
-    resource = "iassessment"
-    tablename = "%s_%s" % (module, resource)
+    resourcename = "iassessment"
+    tablename = "%s_%s" % (module, resourcename)
     table = db.define_table(tablename,
                             incident_id(),
                             Field("datetime", "datetime"),
@@ -390,7 +390,7 @@ if deployment_settings.has_module(module):
         ])
 
     # Disabling until we figure out how to link to Assessments module
-    #s3xrc.model.add_component(module, resource,
+    #s3xrc.model.add_component(module, resourcename,
     #                          multiple = True,
     #                          joinby = dict(irs_incident="incident_id"),
     #                          deletable = True,
@@ -405,8 +405,8 @@ if deployment_settings.has_module(module):
     }
 
     # Replace by image_id?
-    resource = "iimage"
-    tablename = "%s_%s" % (module, resource)
+    resourcename = "iimage"
+    tablename = "%s_%s" % (module, resourcename)
     table = db.define_table(tablename,
                             Field("report_id", db.irs_ireport),
                             incident_id(),
@@ -441,7 +441,7 @@ if deployment_settings.has_module(module):
         msg_record_deleted = T("Image deleted"),
         msg_list_empty = T("No Images currently registered"))
 
-    s3xrc.model.add_component(module, resource,
+    s3xrc.model.add_component(module, resourcename,
                               multiple = True,
                               joinby = dict(irs_incident="incident_id",
                                             irs_ireport="report_id",
@@ -457,8 +457,8 @@ if deployment_settings.has_module(module):
         99:T("other")
     }
 
-    resource = "iresponse"
-    tablename = "%s_%s" % (module, resource)
+    resourcename = "iresponse"
+    tablename = "%s_%s" % (module, resourcename)
     table = db.define_table(tablename,
                             incident_id(),
                             Field("datetime", "datetime"),
@@ -489,7 +489,7 @@ if deployment_settings.has_module(module):
         msg_record_deleted = T("Response deleted"),
         msg_list_empty = T("No Responses currently registered"))
 
-    s3xrc.model.add_component(module, resource,
+    s3xrc.model.add_component(module, resourcename,
                               multiple = True,
                               joinby = dict(irs_incident="incident_id"),
                               deletable = True,

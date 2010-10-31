@@ -1084,7 +1084,7 @@ class S3CRUDHandler(S3MethodHandler):
         if not fields:
             fields = []
         if fields[0].name != table.fields[0]:
-            fields.insert(0, table[table.fields[0])
+            fields.insert(0, table[table.fields[0]])
 
         if r.interactive:
 
@@ -1637,7 +1637,7 @@ class S3SearchSimple(S3CRUDHandler):
                     if not fields:
                         fields = []
                     if fields[0].name != table.fields[0]:
-                        fields.insert(0, table[table.fields[0])
+                        fields.insert(0, table[table.fields[0]])
                     resource.build_query(id=results)
                     items = resource.select(fields=fields,
                                             orderby=orderby,

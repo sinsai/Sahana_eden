@@ -506,6 +506,7 @@ class S3CRUDHandler(S3MethodHandler):
                 if r.http == "POST":
                     table[r.fkey].writable = True
                     r.request.post_vars.update({r.fkey: str(r.record[r.pkey])})
+                    r.request.vars.update(**r.request.post_vars)
                 else:
                     table[r.fkey].writable = False
 

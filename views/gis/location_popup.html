@@ -50,9 +50,9 @@
                 $('#gis_location_name').val(location_name);
                 $('#gis_location_name__row').hide();
             }
-    {{elif "org_project" in request.vars.caller:}}
+    {{elif "project_project" in request.vars.caller:}}
             // Populate Name & Hide
-            var location_name = self.parent.$('#org_project_name').val();
+            var location_name = self.parent.$('#project_project_name').val();
             if (location_name) {
                 $('#gis_location_name').val(location_name);
                 $('#gis_location_name__row').hide();

@@ -331,6 +331,11 @@ deployment_settings.modules = Storage(
         description = T("Incident Reporting System"),
         module_type = 10
     ),
+    project = Storage(
+        name_nice = T("Project Tracking"),
+        description = T("Tracking of Projects, Activities and Tasks"),
+        module_type = 10
+    ),    
     org = Storage(
          name_nice = T("Organization Registry"),
             description = T('Lists "who is doing what & where". Allows relief agencies to coordinate their activities'),
@@ -338,9 +343,7 @@ deployment_settings.modules = Storage(
             resources = Storage(
                 org_organisation = {"importer" : True},
                 org_office = {"importer" : True},
-                org_project = {"importer" : True},
-                org_staff = {"importer" : True},
-                org_task = {"importer" : True}
+                org_staff = {"importer" : True}
             )
         ),
     #ticket = Storage(

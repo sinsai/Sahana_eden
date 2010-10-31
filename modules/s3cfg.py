@@ -189,7 +189,8 @@ class S3Config(Storage):
                 "rms",          # Request Management
                 "survey",       # Surveys
                 "ticket",       # Ticketing
-                "vol"           # Volunteer Management
+                "vol",          # Volunteer Management
+                "project",      # Project Tracking
             ]
         else:
             _modules = self.modules

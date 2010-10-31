@@ -419,100 +419,7 @@ donor_id = S3ReusableField("donor_id", db.org_organisation, sortby="name",
                     ondelete = "RESTRICT"
                    )
 
-# -----------------------------------------------------------------------------
-# Projects:
-#   the projects which each organization is engaged in
-#
-org_project_status_opts = {
-    1: T('active'),
-    2: T('completed'),
-    99: T('inactive')
-    }
-resourcename = "project"
-tablename = module + "_" + resourcename
-table = db.define_table(tablename,
-                        Field("code"),
-                        Field("name"),
-                        organisation_id(),
-                        location_id(),
-                        cluster_id(),
-                        Field('status', 'integer',
-                                requires = IS_IN_SET(org_project_status_opts, zero=None),
-                                # default = 99,
-                                label = T('Project Status'),
-                                represent = lambda opt: org_project_status_opts.get(opt, UNKNOWN_OPT)),
-                        Field("description", "text"),
-                        Field("beneficiaries", "integer"),
-                        Field("start_date", "date"),
-                        Field("end_date", "date"),
-                        Field("funded", "boolean"),
-                        donor_id(),
-                        Field("budgeted_cost", "double"),
-                        migrate=migrate, *s3_meta_fields())
 
-
-# Field settings
-table.code.requires = [IS_NOT_EMPTY(error_message=T("Please fill this!")),
-                         IS_NOT_IN_DB(db, "org_project.code")]
-table.start_date.requires = IS_NULL_OR(IS_DATE())
-table.end_date.requires = IS_NULL_OR(IS_DATE())
-table.budgeted_cost.requires = IS_NULL_OR(IS_FLOAT_IN_RANGE(0, 999999999))
-
-# Project Resource called from multiple controllers
-# - so we define strings in the model
-table.code.label = T("Code")
-table.name.label = T("Title")
-table.start_date.label = T("Start date")
-table.end_date.label = T("End date")
-table.description.label = T("Description")
-table.status.label = T("Status")
-
-ADD_PROJECT = T("Add Project")
-s3.crud_strings[tablename] = Storage(
-    title_create = ADD_PROJECT,
-    title_display = T("Project Details"),
-    title_list = T("List Projects"),
-    title_update = T("Edit Project"),
-    title_search = T("Search Projects"),
-    subtitle_create = T("Add New Project"),
-    subtitle_list = T("Projects"),
-    label_list_button = T("List Projects"),
-    label_create_button = ADD_PROJECT,
-    label_delete_button = T("Delete Project"),
-    msg_record_created = T("Project added"),
-    msg_record_modified = T("Project updated"),
-    msg_record_deleted = T("Project deleted"),
-    msg_list_empty = T("No Projects currently registered"))
-
-# Reusable field
-project_id = S3ReusableField("project_id", db.org_project, sortby="name",
-                        requires = IS_NULL_OR(IS_ONE_OF(db, "org_project.id", "%(code)s")),
-                        represent = lambda id: (id and [db.org_project[id].code] or [NONE])[0],
-                        comment = DIV(A(ADD_PROJECT, _class="colorbox", _href=URL(r=request, c="org", f="project", args="create", vars=dict(format="popup")), _target="top", _title=ADD_PROJECT),
-                                  DIV( _class="tooltip", _title=ADD_PROJECT + "|" + T("Add new project."))),
-                        label = "Project",
-                        ondelete = "RESTRICT"
-                        )
-
-# Projects as component of Orgs & Locations
-s3xrc.model.add_component(module, resourcename,
-                          multiple=True,
-                          #joinby=dict(org_organisation="organisation_id", gis_location="location_id"),
-                          joinby=dict(org_organisation="organisation_id"))
-
-s3xrc.model.configure(table,
-                      listadd=False,
-                      main="code",
-                      list_fields=["id",
-                                   "organisation_id",
-                                   "location_id",
-                                   "cluster_id",
-                                   "code",
-                                   "name",
-                                   "status",
-                                   "start_date",
-                                   "end_date",
-                                   "budgeted_cost"])
 
 # -----------------------------------------------------------------------------
 # Staff
@@ -525,7 +432,7 @@ table = db.define_table(tablename,
                         person_id(),
                         organisation_id(),
                         office_id(),
-                        project_id(),
+                        #project_id(),
                         Field("title"),
                         Field("manager_id", db.pr_person),
                         Field("focal_point", "boolean"),
@@ -611,7 +518,7 @@ s3xrc.model.add_component(module, resourcename,
                           multiple=True,
                           joinby=dict(org_organisation="organisation_id",
                                       org_office="office_id",
-                                      org_project="project_id"))
+                                      project_project="project_id"))
 
 # May wish to over-ride this in controllers
 s3xrc.model.configure(table,
@@ -629,7 +536,7 @@ s3xrc.model.configure(table,
                                    #"payrate"
                                    ])
 
-# org_position (component of org_project)
+# org_position (component of project_project)
 #   describes a position in a project
 #
 # Deprecated - replaced by staff
@@ -683,257 +590,13 @@ s3xrc.model.configure(table,
 #                        ondelete = "RESTRICT"
 #                        )
 
-# -----------------------------------------------------------------------------
-# org_task:
-#   a task within a project
-#
-org_task_status_opts = {
-    1: T("new"),
-    2: T("assigned"),
-    3: T("completed"),
-    4: T("postponed"),
-    5: T("feedback"),
-    6: T("cancelled"),
-    99: T("unspecified")
-}
 
-org_task_priority_opts = {
-    4: T("normal"),
-    1: T("immediately"),
-    2: T("urgent"),
-    3: T("high"),
-    5: T("low")
-}
-
-resourcename = "task"
-tablename = module + "_" + resourcename
-table = db.define_table(tablename,
-                        Field("priority", "integer",
-                            requires = IS_IN_SET(org_task_priority_opts, zero=None),
-                            # default = 4,
-                            label = T("Priority"),
-                            represent = lambda opt: org_task_priority_opts.get(opt, UNKNOWN_OPT)),
-                        Field("subject", length=80, notnull=True),
-                        Field("description", "text"),
-                        project_id(),
-                        office_id(),
-                        person_id(),
-                        Field("status", "integer",
-                            requires = IS_IN_SET(org_task_status_opts, zero=None),
-                            # default = 1,
-                            label = T("Status"),
-                            represent = lambda opt: org_task_status_opts.get(opt, UNKNOWN_OPT)),
-                        migrate=migrate, *s3_meta_fields())
-
-
-# Task Resource called from multiple controllers
-# - so we define strings in the model
-table.subject.requires = IS_NOT_EMPTY()
-table.subject.label = T("Subject")
-
-table.person_id.label = T("Assigned to")
-
-
-def shn_org_task_onvalidation(form):
-
-    """ Task form validation """
-
-    if str(form.vars.status) == "2" and not form.vars.person_id:
-        form.errors.person_id = T("Select a person in charge for status 'assigned'")
-
-    return False
-
-
-# CRUD Strings
-ADD_TASK = T("Add Task")
-LIST_TASKS = T("List Tasks")
-s3.crud_strings[tablename] = Storage(
-    title_create = ADD_TASK,
-    title_display = T("Task Details"),
-    title_list = LIST_TASKS,
-    title_update = T("Edit Task"),
-    title_search = T("Search Tasks"),
-    subtitle_create = T("Add New Task"),
-    subtitle_list = T("Tasks"),
-    label_list_button = LIST_TASKS,
-    label_create_button = ADD_TASK,
-    msg_record_created = T("Task added"),
-    msg_record_modified = T("Task updated"),
-    msg_record_deleted = T("Task deleted"),
-    msg_list_empty = T("No tasks currently registered"))
-
-# Task as Component of Project, Office, (Organisation to come? via Project? Can't rely on that as multi-Org projects)
-s3xrc.model.add_component(module, resourcename,
-                          multiple=True,
-                          joinby=dict(org_project="project_id",
-                                      org_office="office_id"))
-
-s3xrc.model.configure(table,
-                      listadd=False,
-                      onvalidation = lambda form: shn_org_task_onvalidation(form),
-                      list_fields=["id",
-                                   "project_id",
-                                   "office_id",
-                                   "priority",
-                                   "subject",
-                                   "person_id",
-                                   "status"],
-                      main="subject", extra="description")
-
-# -----------------------------------------------------------------------------
-# shn_project_search_location:
-#   form function to search projects by location
-#
-def shn_project_search_location(xrequest, **attr):
-
-    if attr is None:
-        attr = {}
-
-    if not shn_has_permission("read", db.org_project):
-        session.error = UNAUTHORISED
-        redirect(URL(r=request, c="default", f="user", args="login", vars={"_next":URL(r=request, args="search_location", vars=request.vars)}))
-
-    if xrequest.representation == "html":
-        # Check for redirection
-        if request.vars._next:
-            next = str.lower(request.vars._next)
-        else:
-            next = URL(r=request, c="org", f="project", args="[id]")
-
-        # Custom view
-        response.view = "%s/project_search.html" % xrequest.prefix
-
-        # Title and subtitle
-        title = T("Search for a Project")
-        subtitle = T("Matching Records")
-
-        # Select form:
-        l_opts = [OPTION(_value="")]
-        l_opts += [OPTION(location.name, _value=location.id)
-                for location in db(db.gis_location.deleted == False).select(db.gis_location.ALL, cache=(cache.ram, 3600))]
-        form = FORM(TABLE(
-                TR(T("Location: "),
-                SELECT(_name="location", *l_opts, **dict(name="location", requires=IS_NULL_OR(IS_IN_DB(db, "gis_location.id"))))),
-                TR("", INPUT(_type="submit", _value=T("Search")))
-                ))
-
-        output = dict(title=title, subtitle=subtitle, form=form, vars=form.vars)
-
-        # Accept action
-        items = None
-        if form.accepts(request.vars, session):
-
-            table = db.org_project
-            query = (table.deleted == False)
-
-            if form.vars.location is None:
-                results = db(query).select(table.ALL)
-            else:
-                query = query & (table.location_id == form.vars.location)
-                results = db(query).select(table.ALL)
-
-            if results and len(results):
-                records = []
-                for result in results:
-                    href = next.replace("%5bid%5d", "%s" % result.id)
-                    records.append(TR(
-                        A(result.name, _href=href),
-                        result.start_date or NONE,
-                        result.end_date or NONE,
-                        result.description or NONE,
-                        result.status and org_project_status_opts[result.status] or "unknown",
-                        ))
-                items=DIV(TABLE(THEAD(TR(
-                    TH("ID"),
-                    TH("Organization"),
-                    TH("Location"),
-                    TH("Sector(s)"),
-                    TH("Code"),
-                    TH("Name"),
-                    TH("Status"),
-                    TH("Start date"),
-                    TH("End date"),
-                    TH("Budgeted Cost"))),
-                    TBODY(records), _id="list", _class="display"))
-            else:
-                    items = T(NONE)
-
-        try:
-            label_create_button = s3.crud_strings["org_project"].label_create_button
-        except:
-            label_create_button = s3.crud_strings.label_create_button
-
-        add_btn = A(label_create_button, _href=URL(r=request, f="project", args="create"), _class="action-btn")
-
-        output.update(dict(items=items, add_btn=add_btn))
-
-        return output
-
-    else:
-        session.error = BADFORMAT
-        redirect(URL(r=request))
-
-# Plug into REST controller
-s3xrc.model.set_method(module, "project", method="search_location", action=shn_project_search_location )
-
-# -----------------------------------------------------------------------------
-def shn_project_rheader(jr, tabs=[]):
-
-    if jr.representation == "html":
-
-        rheader_tabs = shn_rheader_tabs(jr, tabs)
-
-        if jr.name == "project":
-
-            _next = jr.here()
-            _same = jr.same()
-
-            project = jr.record
-
-            sectors = TABLE()
-            if project.cluster_id:
-                # @ToDo@ Fix for list: type
-                _sectors = re.split("\|", project.cluster_id)[1:-1]
-                for sector in _sectors:
-                    sectors.append(TR(db(db.org_sector.id == sector).select(db.org_sector.name, limitby=(0, 1)).first().name))
-
-            if project:
-                rheader = DIV(TABLE(
-                    TR(
-                        TH(T("Code") + ": "),
-                        project.code,
-                        TH(A(T("Clear Selection"),
-                            _href=URL(r=request, f="project", args="clear", vars={"_next": _same})))
-                        ),
-                    TR(
-                        TH(T("Name") + ": "),
-                        project.name,
-                        TH(T("Location") + ": "),
-                        location_id.location_id.represent(project.location_id),
-                        ),
-                    TR(
-                        TH(T("Status") + ": "),
-                        "%s" % org_project_status_opts[project.status],
-                        TH(T("Cluster(s)") + ": "),
-                        sectors,
-                        #TH(A(T("Edit Project"),
-                        #    _href=URL(r=request, f="project", args=[jr.id, "update"], vars={"_next": _next})))
-                        )
-                ), rheader_tabs)
-                return rheader
-
-    return None
 
 org_menu = [
     [T("Organizations"), False, URL(r=request, c="org", f="organisation"),[
         [T("List"), False, URL(r=request, c="org", f="organisation")],
         [T("Add"), False, URL(r=request, c="org", f="organisation", args="create")],
         #[T("Search"), False, URL(r=request, f="organisation", args="search")]
-    ]],
-    [T("Activities"), False, URL(r=request, c="project", f="activity"),[
-        [T("List"), False, URL(r=request, c="project", f="activity")],
-        [T("Add"), False, URL(r=request,  c="project", f="activity", args="create")],
-        #[T("Search"), False, URL(r=request, f="project", args="search")]
     ]],
     [T("Offices"), False, URL(r=request, c="org", f="office"),[
         [T("List"), False, URL(r=request, c="org", f="office")],

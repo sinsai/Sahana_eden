@@ -76,7 +76,10 @@ if deployment_settings.has_module("logs"):
     table = db.define_table(tablename,
                             item_category_id(),
                             Field("name", length=128, notnull=True, unique=True),
-                            Field("unit", notnull=True),
+                            Field("unit", notnull=True, default="piece",
+                                  requires = IS_IN_SET(logs_unit_opts, zero=None),
+                                  represent = lambda opt: logs_unit_opts.get(opt, T("not specified"))
+                                 ),
                             comments(), # These comments do *not* pull through to an Inventory's Items or a Request's Items
                             migrate=migrate, *s3_meta_fields())
 

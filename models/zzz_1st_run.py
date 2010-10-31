@@ -289,13 +289,13 @@ if populate:
     if not db(table.id > 0).count():
         #shn_import_table("supply_item_category")
         table.insert( name = "Agriculture" )
-        table.insert( name = "Clothing" )
-        table.insert( name = "Equipment" )
+        #table.insert( name = "Clothing" )
+        #table.insert( name = "Equipment" )
         table.insert( name = "Food" )
         table.insert( name = "Health" )
-        table.insert( name = "NFIs" )
+        #table.insert( name = "NFIs" )
         table.insert( name = "Shelter" )
-        table.insert( name = "Transport" )
+        #table.insert( name = "Transport" )
         table.insert( name = "WASH" )
     tablename = "supply_item"
     table = db[tablename]
@@ -303,6 +303,7 @@ if populate:
         #shn_import_table("supply_item_pakistan")
         agriculture = db(db.supply_item_category.name == "Agriculture").select(db.supply_item_category.id, limitby=(0, 1)).first().id
         food = db(db.supply_item_category.name == "Food").select(db.supply_item_category.id, limitby=(0, 1)).first().id
+        health = db(db.supply_item_category.name == "Health").select(db.supply_item_category.id, limitby=(0, 1)).first().id
         shelter = db(db.supply_item_category.name == "Shelter").select(db.supply_item_category.id, limitby=(0, 1)).first().id
         wash = db(db.supply_item_category.name == "WASH").select(db.supply_item_category.id, limitby=(0, 1)).first().id
         table.insert(
@@ -316,6 +317,24 @@ if populate:
             name = "Rice",
             unit = "sack50kg",
             comments = "This should feed 125 people for 1 day"
+            )
+        table.insert(
+            item_category_id = food,
+            name = "Cooking Utensils",
+            unit = "kit",
+            comments = "Cooking Utensils for a Household"
+            )
+        table.insert(
+            item_category_id = health,
+            name = "First Ait Kit",
+            unit = "kit",
+            comments = "This should provide basic first aid (bandages, oral rehydration salts, etc) for 100 people to self-administer"
+            )
+        table.insert(
+            item_category_id = health,
+            name = "Medical Kit",
+            unit = "kit",
+            comments = "This should provide medical supplies (medicines, vaccines) for a professional clinic to provide assistance to a total community of 10,000 people."
             )
         table.insert(
             item_category_id = shelter,

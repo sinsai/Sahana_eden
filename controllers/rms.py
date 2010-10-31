@@ -19,12 +19,6 @@ menu = [
         #[T("Search"), False, URL(r=request, f="req", args="search")],
     ]],
     [T("All Requested Items"), False, URL(r=request, f="ritem")],
-    [T("Pledges"), False, URL(r=request, f="pledge"), [
-        [T("List"), False, URL(r=request, f="pledge")],
-        [T("Add"), False, URL(r=request, f="pledge", args="create")],
-        # @ToDo Search by status, location, organisation
-        #[T("Search"), False, URL(r=request, f="pledge", args="search")],
-    ]],
 ]
 if session.rcvars:
     if "hms_hospital" in session.rcvars:
@@ -82,22 +76,13 @@ def req():
             #if r.method == "create" and not r.component:
             # listadd arrives here as method=None
             if not r.component:
-                table.timestmp.default = request.utcnow
+                table.datetime.default = request.utcnow
                 person = session.auth.user.id if auth.is_logged_in() else None
                 if person:
                     person_uuid = db(db.auth_user.id == person).select(db.auth_user.person_uuid, limitby=(0, 1)).first().person_uuid
                     person = db(db.pr_person.uuid == person_uuid).select(db.pr_person.id, limitby=(0, 1)).first().id
-                    table.person_id.default = person
-                # If we hide this field then the dataTables columns don't match up
-                #table.pledge_status.readable = False
-
-            elif r.component.name == "pledge":
-                db.rms_pledge.submitted_on.default = request.utcnow
-                person = session.auth.user.id if auth.is_logged_in() else None
-                if person:
-                    person_uuid = db(db.auth_user.id == person).select(db.auth_user.person_uuid, limitby=(0, 1)).first().person_uuid
-                    person = db(db.pr_person.uuid == person_uuid).select(db.pr_person.id, limitby=(0, 1)).first().id
-                    db.rms_pledge.person_id.default = person
+                    table.requestor_person_id.default = person
+                
                 # @ToDo Default the Organisation too
 
         return True
@@ -117,21 +102,65 @@ def req():
                 response.s3.actions = [
                     dict(label=str(T("Open")), _class="action-btn", url=str(URL(r=request, args=["[id]", "update"]))),
                     dict(label=str(T("Items")), _class="action-btn", url=str(URL(r=request, args=["[id]", "ritem"]))),
-                    dict(label=str(T("Pledge")), _class="action-btn", url=str(URL(r=request, args=["[id]", "pledge"])))
-                ]
-            elif r.component_name == "pledge":
-                response.s3.actions = [
-                    dict(label=T("Details"), _class="action-btn", url=str(URL(r=request, args=["[id]", "pledge"])))
                 ]
 
         return output
     response.s3.postp = postp
 
     s3xrc.model.configure(table,
-                          #listadd=False,
+                          listadd=False, #@todo: List add is causing errors with JS - FIX
                           editable=True)
 
-    return s3_rest_controller(prefix, resourcename, rheader=shn_rms_rheader)
+    return s3_rest_controller(prefix, 
+                              resourcename, 
+                              rheader=shn_rms_req_rheader)
+
+def shn_rms_req_rheader(r):
+
+    """ @todo: fix docstring """
+
+    if r.representation == "html":
+
+        _next = r.here()
+        _same = r.same()
+
+        if r.name == "req":
+            req_record = r.record
+            if req_record:
+                try:
+                    location = db(db.gis_location.id == req_record.location_id).select(limitby=(0, 1)).first()
+                    location_represent = shn_gis_location_represent(location.id)
+                except:
+                    location_represent = None
+
+                rheader_tabs = shn_rheader_tabs( r,
+                                                 [(T("Edit Details"), None),
+                                                  (T("Items"), "ritem"),
+                                                  ]
+                                                 )
+
+                rheader = DIV( TABLE(
+                                   TR( TH( T("Message") + ": "),
+                                       TD(req_record.message, _colspan=3)
+                                      ),
+                                   TR( TH( T("Priority") + ": "),
+                                       req_record.priority,                                       
+                                       TH( T("Document") + ": "),
+                                       document_represent(req_record.document_id)
+                                      ),
+                                   TR( TH( T("Time of Request") + ": "),
+                                       req_record.datetime,
+                                      ),
+                                   TR( TH( T( "Location") + ": "),
+                                       location_represent,
+                                      ),
+                                     ),
+                                rheader_tabs
+                                )
+
+                return rheader
+    return None
+
 
 
 def ritem():
@@ -152,98 +181,3 @@ def ritem():
 
     s3xrc.model.configure(table, listadd=False)
     return s3_rest_controller(prefix, resourcename) #, rheader=rheader)
-
-
-def pledge():
-
-    """ RESTful CRUD controller """
-
-    tablename = "%s_%s" % (prefix, resourcename)
-    table = db[tablename]
-
-    # Pre-processor
-    def prep(r):
-        if r.representation in shn_interactive_view_formats:
-            if r.method == "create":
-                # auto fill posted_on field and make it readonly
-                table.submitted_on.default = request.now
-                table.submitted_on.writable = False
-
-                person = session.auth.user.id if auth.is_logged_in() else None
-                if person:
-                    person_uuid = db(db.auth_user.id == person).select(db.auth_user.person_uuid, limitby=(0, 1)).first().person_uuid
-                    person = db(db.pr_person.uuid == person_uuid).select(db.pr_person.id, limitby=(0, 1)).first().id
-                table.person_id.default = person
-        return True
-    response.s3.prep = prep
-
-    # Change the request status to completed when pledge delivered
-    # (this is necessary to close the loop)
-    #pledges = db(db.rms_pledge.status == 3).select()
-    #for pledge in pledges:
-    #    req = db(db.rms_req.id == pledge.req_id).update(completion_status = True)
-    #db.commit()
-
-    def postp(r, output):
-        if r.representation in shn_interactive_view_formats:
-            if not r.component:
-                response.s3.actions = [
-                    dict(label=str(READ), _class="action-btn", url=str(URL(r=request, args=["[id]", "read"])))
-                ]
-        return output
-    response.s3.postp = postp
-
-    s3xrc.model.configure(table,
-                          #listadd=False,
-                          editable=True)
-
-    return s3_rest_controller(prefix, resourcename)
-
-
-def shn_rms_rheader(r):
-
-    """ @todo: fix docstring """
-
-    if r.representation == "html":
-
-        _next = r.here()
-        _same = r.same()
-
-        if r.name == "req":
-            aid_request = r.record
-            if aid_request:
-                try:
-                    location = db(db.gis_location.id == aid_request.location_id).select(limitby=(0, 1)).first()
-                    location_represent = shn_gis_location_represent(location.id)
-                except:
-                    location_represent = None
-
-                rheader_tabs = shn_rheader_tabs( r,
-                                                 [(T("Edit Details"), None),
-                                                  (T("Items"), "ritem"),
-                                                  (T("Pledge"), "pledge"),
-                                                  ]
-                                                 )
-
-                rheader = DIV( TABLE(TR(TH(T("Message") + ": "),
-                                TD(aid_request.message, _colspan=3)),
-                                TR(TH(T("Priority") + ": "),
-                                aid_request.priority,
-                                #TH(T("Source Type") + ": "),
-                                #rms_req_source_type.get(aid_request.source_type, T("unknown"))),
-                                TH(T("Document") + ": "),
-                                document_represent(aid_request.document_id)),
-                                TR(TH(T("Time of Request") + ": "),
-                                aid_request.timestmp,
-                                TH(T("Verified") + ": "),
-                                aid_request.verified),
-                                TR(TH(T("Location") + ": "),
-                                location_represent,
-                                TH(T("Actionable") + ": "),
-                                aid_request.actionable)),
-                                rheader_tabs
-                                )
-
-                return rheader
-
-    return None

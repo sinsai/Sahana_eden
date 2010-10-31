@@ -13,7 +13,7 @@
             message = subject + '\n\n' + message + '\n\n' + contact + '\n\nIncident Report: ' + report_id;
             $('#rms_req_message').val(message);
             var datetime = self.parent.$('#irs_ireport_datetime').val();
-            $('#rms_req_timestmp').val(datetime);
+            $('#rms_req_datetime').val(datetime);
             var location = self.parent.$('#irs_ireport_location_id').val();
             $('#rms_req_location_id').val(location);
         }

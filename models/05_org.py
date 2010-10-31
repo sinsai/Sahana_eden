@@ -143,7 +143,7 @@ def shn_org_cluster_subsector_represent(id):
     return shn_org_cluster_subsector_requires_represent( record)
 
 def shn_org_cluster_subsector_requires_represent(record):
-    """Used to generate text for the Select"""
+    """ Used to generate text for the Select """
     if record:
         cluster_record = db(db.org_cluster.id == record.cluster_id).select(db.org_cluster.abrv,
                                                                            limitby=(0, 1)).first()
@@ -156,15 +156,15 @@ def shn_org_cluster_subsector_requires_represent(record):
         return NONE
 
 cluster_subsector_id = S3ReusableField("cluster_subsector_id", db.org_cluster_subsector, sortby="abrv",
-                                   requires = IS_NULL_OR(IS_ONE_OF(db,
-                                                                   "org_cluster_subsector.id",
-                                                                   shn_org_cluster_subsector_requires_represent,
-                                                                   sort=True)),
-                                   represent = shn_org_cluster_subsector_represent,
-                                   label = T("Cluster Subsector"),
-                                   #comment = Script to filter the cluster_subsector drop down
-                                   ondelete = "RESTRICT"
-                                   )
+                                       requires = IS_NULL_OR(IS_ONE_OF(db,
+                                                                       "org_cluster_subsector.id",
+                                                                       shn_org_cluster_subsector_requires_represent,
+                                                                       sort=True)),
+                                       represent = shn_org_cluster_subsector_represent,
+                                       label = T("Cluster Subsector"),
+                                       #comment = Script to filter the cluster_subsector drop down
+                                       ondelete = "RESTRICT"
+                                      )
 
 
 # -----------------------------------------------------------------------------

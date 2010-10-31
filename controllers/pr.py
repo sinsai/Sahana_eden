@@ -192,6 +192,12 @@ def pe_contact():
 
     """ RESTful CRUD controller """
 
+    table = db.pr_pe_contact
+
+    table.pe_id.label = T("Person/Group")
+    table.pe_id.readable = True
+    table.pe_id.writable = True
+
     return s3_rest_controller(prefix, resourcename)
 
 

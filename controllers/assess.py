@@ -84,6 +84,9 @@ def assess():
     tablename = "%s_%s" % (prefix, resourcename)
     table = db[tablename]
 
+    table.incident_id.comment = DIV(_class="tooltip",
+                                     _title=T("Incident") + "|" + T("Optional link to an Incident which this Assessment was triggered by."))
+
     tabs = [
             (T("Edit Details"), None),
             (T("Baselines"), "baseline"),
@@ -147,7 +150,7 @@ def summary():
 #==============================================================================
 def assess_short_mobile():
 
-    """ @todo: fix docstring """
+    """ Custom page to hide the complexity of the Assessments/Impacts/Summary model for a Mobile device """
 
     assess_short_fields = (("assess", "location"),
                            ("baseline", 1),
@@ -226,7 +229,7 @@ def assess_short_mobile():
             form_row = form_row + list( s3_formstyle(id, label, widget, comment) )
 
     form = FORM(H1("Sahana Eden"),
-                H2("Short Assessment"),
+                H2(T("Short Assessment")),
                 TABLE(*form_row),
                 INPUT(_value = T("Save"),
                       _type = "submit"
@@ -254,7 +257,7 @@ def assess_short_mobile():
                     location_dict["lon"] = request.vars["gis_location_lon"]
                 location_id = db.gis_location.insert(**location_dict)
                 record_dict["location_id"] = location_id
-            asssess_id = db.assess_assess.insert(**record_dict)
+            assess_id = db.assess_assess.insert(**record_dict)
 
             fk_dict = dict(baseline = "baseline_type_id",
                            impact = "impact_type_id",
@@ -266,24 +269,24 @@ def assess_short_mobile():
                            summary = "assess_summary"
                            )
 
-            #Add Assess Components
+            # Add Assess Components
             for field in assess_short_fields:
                 if field[0] == "assess":
                     continue
                 record_dict = {}
                 name = "assess_short_%s_%s" % (field[0], field[1])
                 if name in request.vars:
-                    record_dict["assess_id"] = asssess_id
+                    record_dict["assess_id"] = assess_id
                     record_dict[fk_dict[ field[0] ] ] = field[1]
                     record_dict["value"] = request.vars[name]
                     db[component_dict[ field[0] ] ].insert(**record_dict)
 
-            #Send Out Notification SMS (to Taipida)
-            message = "Sahana: New Assessment reported from %s by %s %s" % ( location_dict["name"],
+            # Send Out Notification SMS
+            message = "Sahana: " + T("New Assessment reported from") + " %s by %s %s" % ( location_dict["name"],
                                                                      session.auth.user.first_name,
                                                                      session.auth.user.last_name
                                                                      )
-            #Hard coded notification message for Demo
+            # Hard coded notification message for Demo
             #msg.send_by_pe_id(    3,
             #                      subject="",
             #                      message=message,
@@ -293,7 +296,7 @@ def assess_short_mobile():
             #                      fromaddress="")
 
             form = FORM(H1("Sahana Eden"),
-                        H2("Short Assessment"),
+                        H2(T("Short Assessment")),
                         P(T("Assessment Reported")),
                         A(T("Report Another Assessment..."),
                           _href = URL(r=request)

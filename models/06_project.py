@@ -18,9 +18,9 @@ if deployment_settings.has_module("project"):
     #   the projects which each organization is engaged in
     #
     project_project_status_opts = {
-        1: T('active'),
-        2: T('completed'),
-        99: T('inactive')
+        1: T("active"),
+        2: T("completed"),
+        99: T("inactive")
         }
     resourcename = "project"
     tablename = application + "_" + resourcename
@@ -30,10 +30,10 @@ if deployment_settings.has_module("project"):
                             organisation_id(),
                             location_id(),
                             cluster_id(),
-                            Field('status', 'integer',
+                            Field("status", "integer",
                                     requires = IS_IN_SET(project_project_status_opts, zero=None),
                                     # default = 99,
-                                    label = T('Project Status'),
+                                    label = T("Project Status"),
                                     represent = lambda opt: project_project_status_opts.get(opt, UNKNOWN_OPT)),
                             Field("description", "text"),
                             Field("beneficiaries", "integer"),

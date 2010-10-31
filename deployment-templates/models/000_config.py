@@ -293,6 +293,7 @@ deployment_settings.modules = Storage(
     #        description = T("Traces internally displaced people (IDPs) and their needs"),
     #        module_type = 10
     #    ),
+    # NB Budget module depends on Project Tracking Module
     budget = Storage(
             name_nice = T("Budgeting Module"),
             description = T("Allows a Budget to be drawn up"),

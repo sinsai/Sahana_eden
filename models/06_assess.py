@@ -7,7 +7,7 @@
 
 module = "assess"
 if deployment_settings.has_module(module):
-    # ---------------------------------------------------------------------
+    #==============================================================================
     # Assement
     # This is the current status of an Incident
     # @ToDo Change this so that there is a 'lead' ireport updated in the case of duplicates
@@ -16,6 +16,7 @@ if deployment_settings.has_module(module):
     table = db.define_table(tablename,
                             Field("datetime", "datetime"),
                             location_id(),
+                            organisation_id(), 
                             person_id("assessor_person_id"                                      
                                       ),
                             comments(),
@@ -60,7 +61,14 @@ if deployment_settings.has_module(module):
         msg_record_deleted = T("Assessment deleted"),
         msg_list_empty = T("No Assessments currently registered"))
     
-    # -----------------------------------------------------------------------------
+    #assess_assess as component of org_organisation
+    s3xrc.model.add_component(module, resourcename,
+                              multiple=True,
+                              joinby=dict(org_organisation="organisation_id"
+                                          )
+                              )    
+    
+    #==============================================================================
     # Baseline Type
     resourcename = "baseline_type"
     tablename = "%s_%s" % (module, resourcename)
@@ -111,7 +119,7 @@ if deployment_settings.has_module(module):
                                        ondelete = "RESTRICT"
                                        )    
     
-    # -----------------------------------------------------------------------------
+    #==============================================================================
     # Baseline
     resourcename = "baseline"
     tablename = "%s_%s" % (module, resourcename)
@@ -153,7 +161,7 @@ if deployment_settings.has_module(module):
                               editable=True)      
     
 
-    # -----------------------------------------------------------------------------
+    #==============================================================================
     # Summary
     resourcename = "summary"
     tablename = "%s_%s" % (module, resourcename)
@@ -222,4 +230,4 @@ if deployment_settings.has_module(module):
                               editable=True)      
     
     
-    # -----------------------------------------------------------------------------    
+    #==============================================================================  

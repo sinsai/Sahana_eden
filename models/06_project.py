@@ -11,7 +11,7 @@
     project_project and project_task moved from 05_org.py
 """
 
-module = "project"
+application = "project"
 if deployment_settings.has_module("project"):
     #==============================================================================
     # Projects:
@@ -23,7 +23,7 @@ if deployment_settings.has_module("project"):
         99: T('inactive')
         }
     resourcename = "project"
-    tablename = module + "_" + resourcename
+    tablename = application + "_" + resourcename
     table = db.define_table(tablename,
                             Field("code"),
                             Field("name"),
@@ -89,10 +89,10 @@ if deployment_settings.has_module("project"):
                             )
     
     # Projects as component of Orgs & Locations
-    s3xrc.model.add_component(module, resourcename,
+    s3xrc.model.add_component(application, resourcename,
                               multiple=True,
                               #joinby=dict(project_organisation="organisation_id", gis_location="location_id"),
-                              joinby=dict(project_organisation="organisation_id"))
+                              joinby=dict(org_organisation="organisation_id"))
     
     s3xrc.model.configure(table,
                           listadd=False,
@@ -202,7 +202,7 @@ if deployment_settings.has_module("project"):
             redirect(URL(r=request))
     
     # Plug into REST controller
-    s3xrc.model.set_method(module, "project", method="search_location", action=shn_project_search_location )
+    s3xrc.model.set_method(application, "project", method="search_location", action=shn_project_search_location )
     
     # -----------------------------------------------------------------------------
     def shn_project_rheader(jr, tabs=[]):
@@ -256,7 +256,7 @@ if deployment_settings.has_module("project"):
     # Activity Type
     #
     resourcename = "activity_type"
-    tablename = "%s_%s" % (module, resourcename)
+    tablename = "%s_%s" % (application, resourcename)
     table = db.define_table(tablename,
                             Field("name", length=128, notnull=True, unique=True),
                             migrate=migrate, *s3_meta_fields())
@@ -295,7 +295,7 @@ if deployment_settings.has_module("project"):
                    }
 
     resourcename = "activity"
-    tablename = "%s_%s" % (module, resourcename)
+    tablename = "%s_%s" % (application, resourcename)
     table = db.define_table(tablename,
                             organisation_id("donor_id",
                                             label = T("Funding Organization"),
@@ -373,7 +373,7 @@ if deployment_settings.has_module("project"):
                                          msg_list_empty = T("No Activities Found")
                                          )
     # Activities as component of Orgs
-    s3xrc.model.add_component(module, resourcename,
+    s3xrc.model.add_component(application, resourcename,
                               multiple=True,
                               joinby=dict(org_organisation="organisation_id"))
     
@@ -400,7 +400,7 @@ if deployment_settings.has_module("project"):
     }
     
     resourcename = "task"
-    tablename = module + "_" + resourcename
+    tablename = application + "_" + resourcename
     table = db.define_table(tablename,
                             Field("priority", "integer",
                                 requires = IS_IN_SET(project_task_priority_opts, zero=None),
@@ -457,7 +457,7 @@ if deployment_settings.has_module("project"):
         msg_list_empty = T("No tasks currently registered"))
     
     # Task as Component of Project, Office, (Organisation to come? via Project? Can't rely on that as multi-Org projects)
-    s3xrc.model.add_component(module, resourcename,
+    s3xrc.model.add_component(application, resourcename,
                               multiple=True,
                               joinby=dict(project_project="project_id",
                                           project_office="office_id"))

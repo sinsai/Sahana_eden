@@ -55,8 +55,11 @@ def organisation():
 
     rheader = lambda r: shn_org_rheader(r,
                                         tabs = [(T("Basic Details"), None),
-                                                (T("Offices"), "office"),
                                                 (T("Staff"), "staff"),
+                                                (T("Offices"), "office"),                                                
+                                                (T("Warehouses"), "store"),
+                                                (T("Assessments"), "assess"),
+                                                (T("Projects"), "project"),
                                                 (T("Activities"), "activity"),
                                                 #(T("Projects"), "project"),
                                                 #(T("Tasks"), "task"),

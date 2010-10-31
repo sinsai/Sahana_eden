@@ -23,16 +23,16 @@ def shn_menu():
             [T("Mobile"), False, URL(r=request, f="assess_short_mobile")],
             #[T("Search"), False, URL(r=request, f="assess", args="search")],
         ]],
-        [T("Baselines"), False, URL(r=request, f="baseline"), [
-            [T("List"), False, URL(r=request, f="baseline")],
-            [T("Add"), False, URL(r=request, f="baseline", args="create")],
-            #[T("Search"), False, URL(r=request, f="baseline", args="search")],
-        ]],
-        [T("Summary"), False, URL(r=request, f="summary"), [
-            [T("List"), False, URL(r=request, f="summary")],
-            [T("Add"), False, URL(r=request, f="summary", args="create")],
-            #[T("Search"), False, URL(r=request, f="summary", args="search")],
-        ]],
+        #[T("Baselines"), False, URL(r=request, f="baseline"), [
+        #    [T("List"), False, URL(r=request, f="baseline")],
+        #    [T("Add"), False, URL(r=request, f="baseline", args="create")],
+        #    #[T("Search"), False, URL(r=request, f="baseline", args="search")],
+        #]],
+        #[T("Summary"), False, URL(r=request, f="summary"), [
+        #    [T("List"), False, URL(r=request, f="summary")],
+        #    [T("Add"), False, URL(r=request, f="summary", args="create")],
+        #    #[T("Search"), False, URL(r=request, f="summary", args="search")],
+        #]],
     ]
     if shn_has_role(1):
         menu_editor = [

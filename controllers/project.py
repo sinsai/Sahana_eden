@@ -13,24 +13,25 @@ prefix = request.controller
 resourcename = request.function
 
 response.menu_options = [
-    [T("Projects"), False, URL(r=request, c="project", f="project"),[
-        [T("List"), False, URL(r=request, c="project", f="project")],
-        [T("Add"), False, URL(r=request, c="project", f="project", args="create")],
+    [T("Home"), False, URL(r=request, f="index")],
+    [T("Projects"), False, URL(r=request, f="project"),[
+        [T("List"), False, URL(r=request, f="project")],
+        [T("Add"), False, URL(r=request, f="project", args="create")],
         #[T("Search"), False, URL(r=request, f="organisation", args="search")]
     ]],
-    [T("Activities"), False, URL(r=request, c="project", f="activity"),[
-        [T("List"), False, URL(r=request, c="project", f="activity")],
-        [T("Add"), False, URL(r=request,  c="project", f="activity", args="create")],
+    [T("Activities"), False, URL(r=request, f="activity"),[
+        [T("List"), False, URL(r=request, f="activity")],
+        [T("Add"), False, URL(r=request, f="activity", args="create")],
         #[T("Search"), False, URL(r=request, f="project", args="search")]
     ]],
-    [T("Tasks"), False, URL(r=request, c="project", f="task"),[
-        [T("List"), False, URL(r=request, c="project", f="task")],
-        [T("Add"), False, URL(r=request,  c="project",f="task", args="create")],
+    [T("Tasks"), False, URL(r=request, f="task"),[
+        [T("List"), False, URL(r=request, f="task")],
+        [T("Add"), False, URL(r=request, f="task", args="create")],
         #[T("Search"), False, URL(r=request, f="office", args="search")]
     ]],
-    [T("Assessment and Activities Gap Analysis"), False, URL(r=request, c="project", f="gap_report"),[
-        [T("Report"), False, URL(r=request, c="project", f="gap_report")],
-        [T("Map"), False, URL(r=request,  c="project",f="gap_map")],
+    [T("Assessment and Activities Gap Analysis"), False, URL(r=request, f="gap_report"),[
+        [T("Report"), False, URL(r=request, f="gap_report")],
+        [T("Map"), False, URL(r=request ,f="gap_map")],
     ]],    
 ]
 
@@ -86,8 +87,6 @@ def activity():
     tablename = "%s_%s" % (prefix, resourcename)
     table = db[tablename]
 
-    response.menu_options = org_menu
-
     return s3_rest_controller(prefix, resourcename)
 
 #==============================================================================
@@ -103,9 +102,9 @@ def task():
 #==============================================================================
 def gap_report():
 
-    """ @todo: fix docstring """
+    """ Provide a Report on Gaps between Activities & Needs Assessments """
 
-    #Get all assess_summary
+    # Get all assess_summary
     assess_rows = db((db.assess_summary.id > 0) &\
                      (db.assess_summary.assess_id == db.assess_assess.id) &\
                      (db.assess_assess.location_id > 0) &\
@@ -146,7 +145,7 @@ def gap_report():
 
     for activity_row in activity_rows:
         add_new_gap_row = True
-        #check if there is an assess of this location & cluster_subsector_id
+        # Check if there is an Assessment of this location & cluster_subsector_id
         for gap_row in gap_rows:
             if activity_row.location_id == gap_row.location_id and \
                activity_row.cluster_subsector_id == gap_row.cluster_subsector_id:

@@ -1077,15 +1077,14 @@ class S3CRUDHandler(S3MethodHandler):
             linkto = self._linkto(r)
 
         # List fields
-        print list_fields
         if not list_fields:
             fields = self.resource.readable_fields()
         else:
             #fields = self.resource.readable_fields(subset=list_fields)
             fields = [table[f] for f in list_fields if f in table.fields]
         if not fields:
-            fields = [table.id]
-        if not table.id in fields:
+            fields = []
+        if "id" in table and not table.id in fields:
             fields.insert(0, table.id)
 
         if r.interactive:
@@ -1638,8 +1637,8 @@ class S3SearchSimple(S3CRUDHandler):
                         #fields = resource.readable_fields(subset=list_fields)
                         fields = [table[f] for f in list_fields if f in table.fields]
                     if not fields:
-                        fields = [table.id]
-                    if not table.id in fields:
+                        fields = []
+                    if "id" in table and not table.id in fields:
                         fields.insert(0, table.id)
                     resource.build_query(id=results)
                     items = resource.select(fields=fields,

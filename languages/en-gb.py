@@ -1606,6 +1606,7 @@
 'Length': 'Length',
 'Level': 'Level',
 'Library support not available for OpenID': 'Library support not available for OpenID',
+'License Plate': 'License Plate',
 'Line': 'Line',
 'Link Item & Shipment': 'Link Item & Shipment',
 'Link an Item & Shipment': 'Link an Item & Shipment',

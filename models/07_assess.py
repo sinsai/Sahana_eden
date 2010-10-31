@@ -165,7 +165,7 @@ if deployment_settings.has_module(module):
     tablename = "%s_%s" % (module, resourcename)
     table = db.define_table(tablename,
                             assess_id(),
-                            cluster_subsector_id(),
+                            cluster_id(),
                             #Field("value", "double"),
                             Field("value", "integer",
                                   default = 0),
@@ -186,7 +186,7 @@ if deployment_settings.has_module(module):
     table.value.requires = IS_EMPTY_OR(IS_IN_SET(assess_severity_opts))
     table.value.widget=SQLFORM.widgets.radio.widget
     
-    def shn_assess_summary_value_represent(value):        
+    def shn_assess_severity_represent(value):        
         if value:
             value_colour_dict = {0:"green",
                                  1:"yellow",
@@ -199,7 +199,7 @@ if deployment_settings.has_module(module):
         else:
             return NONE
     
-    table.value.represent = shn_assess_summary_value_represent
+    table.value.represent = shn_assess_severity_represent
     
     # CRUD strings
     ADD_ASSESS_SUMMARY = T("Add Assessment Summary")

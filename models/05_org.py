@@ -94,12 +94,15 @@ s3.crud_strings[tablename] = Storage(
     msg_record_deleted = T("Cluster deleted"),
     msg_list_empty = T("No Clusters currently registered"))
 
+def shn_org_cluster_represent(id):
+    return shn_get_db_field_value(db = db,
+                                  table = "org_cluster",
+                                  field = "abrv",
+                                  look_up = id)
+
 cluster_id = S3ReusableField("cluster_id", db.org_cluster, sortby="abrv",
                                    requires = IS_NULL_OR(IS_ONE_OF(db, "org_cluster.id","%(abrv)s", sort=True)),
-                                   represent = lambda id: shn_get_db_field_value(db = db,
-                                                                                 table = "org_cluster",
-                                                                                 field = "abrv",
-                                                                                 look_up = id),
+                                   represent = shn_org_cluster_represent,
                                    label = T("Cluster"),
                                    #comment = Script to filter the cluster_subsector drop down
                                    ondelete = "RESTRICT"

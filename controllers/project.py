@@ -6,13 +6,16 @@
     @date-created: 2010-08-25
 
     Project Management
-
 """
 
 prefix = request.controller
 resourcename = request.function
 
 response.menu_options = [
+    [T("Gap Analysis"), False, URL(r=request, c="project", f="gap_report"),[
+        [T("Report"), False, URL(r=request, c="project", f="gap_report")],
+        [T("Map"), False, URL(r=request,  c="project",f="gap_map")],
+    ]],                             
     [T("Projects"), False, URL(r=request, c="project", f="project"),[
         [T("List"), False, URL(r=request, c="project", f="project")],
         [T("Add"), False, URL(r=request, c="project", f="project", args="create")],
@@ -28,10 +31,6 @@ response.menu_options = [
         [T("Add"), False, URL(r=request,  c="project",f="task", args="create")],
         #[T("Search"), False, URL(r=request, f="office", args="search")]
     ]],
-    [T("Assessment and Activities Gap Analysis"), False, URL(r=request, c="project", f="gap_report"),[
-        [T("Report"), False, URL(r=request, c="project", f="gap_report")],
-        [T("Map"), False, URL(r=request,  c="project",f="gap_map")],
-    ]],    
 ]
 
 #==============================================================================
@@ -94,10 +93,7 @@ def shn_activity_rheader(r, tabs=[]):
                            TR( TH( T("Organisation") + ": "),
                                shn_organisation_represent(project_activity.organisation_id),                                       
                                TH( T("Cluster") + ": "),
-                               shn_get_db_field_value(db = db,
-                                                      table = "org_cluster",
-                                                      field = "abrv",
-                                                      look_up = project_activity.cluster_id),                               
+                               shn_org_cluster_represent(project_activity.cluster_id),                               
                              ),
                             ),
                         rheader_tabs
@@ -147,7 +143,7 @@ def gap_report():
                      ).select(db.assess_assess.id,
                               db.assess_assess.location_id,
                               db.assess_assess.datetime,
-                              db.assess_summary.cluster_subsector_id,
+                              db.assess_summary.cluster_id,
                               db.assess_summary.value
                               )
 
@@ -156,7 +152,7 @@ def gap_report():
                        (db.project_activity.deleted != True)
                        ).select(db.project_activity.id,
                                 db.project_activity.location_id,
-                                db.project_activity.cluster_subsector_id,
+                                db.project_activity.cluster_id,
                                 db.project_activity.organisation_id,
                                 db.project_activity.total_bnf_reach,
                                 db.project_activity.start_date,
@@ -166,7 +162,7 @@ def gap_report():
     def map_assess_to_gap(row):
         return Storage( assess_id = row.assess_assess.id,
                         location_id = row.assess_assess.location_id,
-                        cluster_subsector_id = row.assess_summary.cluster_subsector_id,
+                        cluster_id = row.assess_summary.cluster_id,
                         datetime = row.assess_assess.datetime,
                         assess_value = row.assess_summary.value,
                         activity_id = None,
@@ -180,10 +176,10 @@ def gap_report():
 
     for activity_row in activity_rows:
         add_new_gap_row = True
-        #check if there is an assess of this location & cluster_subsector_id
+        #check if there is an assess of this location & cluster_id
         for gap_row in gap_rows:
             if activity_row.location_id == gap_row.location_id and \
-               activity_row.cluster_subsector_id == gap_row.cluster_subsector_id:
+               activity_row.cluster_id == gap_row.cluster_id:
 
                 add_new_gap_row = False
 
@@ -196,7 +192,7 @@ def gap_report():
 
         if add_new_gap_row:
             gap_rows.append(Storage(location_id = activity_row.location_id,
-                                    cluster_subsector_id = activity_row.cluster_subsector_id,
+                                    cluster_id = activity_row.cluster_id,
                                     activity_id = activity_row.id,
                                     organisation_id = activity_row.organisation_id,
                                     start_date = activity_row.start_date,
@@ -263,9 +259,9 @@ def gap_report():
             total_bnf_reach = NONE
 
         gap_table.append(TR( shn_gis_location_represent(gap_row.location_id),
-                             shn_org_cluster_subsector_represent(gap_row.cluster_subsector_id),
+                             shn_org_cluster_represent(gap_row.cluster_id),
                              assess_action_btn,
-                             shn_assess_summary_value_represent(gap_row.assess_value),
+                             shn_assess_severity_represent(gap_row.assess_value),
                              activity_action_btn,
                              shn_organisation_represent(gap_row.organisation_id),
                              start_date,
@@ -279,24 +275,29 @@ def gap_report():
 
 #==============================================================================
 def gap_map():
-
     """ @todo: fix docstring """
+    
+    assess_summary_colour_code = {0:"#008000", #green
+                                  1:"#FFFF00", #yellow
+                                  2:"#FFA500", #orange
+                                  3:"#FF0000", #red
+                                  }    
 
     feature_queries = []
-    cluster_subsector_rows = db(db.org_cluster_subsector.id > 0).select()
-    for cluster_subsector_rows in cluster_subsector_rows:
-        cluster_subsector_id = cluster_subsector_rows.id
-        cluster_subsector = shn_org_cluster_subsector_represent(cluster_subsector_id)
+    cluster_rows = db(db.org_cluster.id > 0).select()
+    for cluster_rows in cluster_rows:
+        cluster_id = cluster_rows.id
+        cluster = shn_org_cluster_represent(cluster_id)
 
         #Add activity row
         activity_rows = db((db.project_activity.id > 0) &\
-                           (db.project_activity.cluster_subsector_id == cluster_subsector_id) &\
+                           (db.project_activity.cluster_id == cluster_id) &\
                            (db.project_activity.location_id > 0) &\
                            (db.project_activity.deleted != True) &
                            (db.project_activity.location_id == db.gis_location.id)
                            ).select(db.project_activity.id,
                                     db.project_activity.location_id,
-                                    db.project_activity.cluster_subsector_id,
+                                    db.project_activity.cluster_id,
                                     db.gis_location.uuid,
                                     db.gis_location.id,
                                     db.gis_location.name,
@@ -311,7 +312,7 @@ def gap_map():
                 activity_rows[i].gis_location.size = 6
                 activity_rows[i].gis_location.color = "#0000FF" #blue
 
-            feature_queries.append({ "name": "Activities - %s" % cluster_subsector,
+            feature_queries.append({ "name": "Activities - %s" % cluster,
                                      "query": activity_rows,
                                      "active": False,
                                      "popup_url" : "#",
@@ -319,7 +320,7 @@ def gap_map():
 
         #Add assess layer
         assess_rows = db((db.assess_summary.id > 0) &\
-                         (db.assess_summary.cluster_subsector_id == cluster_subsector_id) &\
+                         (db.assess_summary.cluster_id == cluster_id) &\
                          (db.assess_summary.assess_id == db.assess_assess.id) &\
                          (db.assess_assess.location_id > 0) &\
                          (db.assess_assess.deleted != True) &
@@ -327,7 +328,7 @@ def gap_map():
                          ).select(db.assess_assess.id,
                                   db.assess_assess.location_id,
                                   db.assess_assess.datetime,
-                                  db.assess_summary.cluster_subsector_id,
+                                  db.assess_summary.cluster_id,
                                   db.assess_summary.value,
                                   db.gis_location.uuid,
                                   db.gis_location.id,
@@ -342,16 +343,10 @@ def gap_map():
                 # 'gis_location' is needed because the quiery isn't simple due to the count - this could be fixed in s3gis.py
                 assess_rows[i].gis_location.shape = "circle"
                 assess_rows[i].gis_location.size = 4
-                if assess_rows[i].assess_summary.value == 0:
-                    assess_rows[i].gis_location.color = "#008000" #green
-                elif assess_rows[i].assess_summary.value == 1:
-                    assess_rows[i].gis_location.color = "#FFFF00" #yellow
-                elif assess_rows[i].assess_summary.value == 2:
-                    assess_rows[i].gis_location.color = "#FFA500" #orange
-                elif assess_rows[i].assess_summary.value == 3:
-                    assess_rows[i].gis_location.color = "#FF0000" #red
+                assess_rows[i].gis_location.color = \
+                    assess_summary_colour_code(assess_rows[i].assess_summary.value)
 
-            feature_queries.append({ "name": "Assessments - %s" % cluster_subsector,
+            feature_queries.append({ "name": "Assessments - %s" % cluster,
                                      "query": assess_rows,
                                      "active": False,
                                      "popup_url" : "#",

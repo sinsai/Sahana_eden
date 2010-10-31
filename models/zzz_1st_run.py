@@ -297,7 +297,7 @@ if populate:
         tablename = "assess_baseline_type"
         table = db[tablename]
         if not db(table.id > 0).count():
-            table.insert( name = "# of population" )
+            table.insert( name = "# of population")
             table.insert( name = "# of households" )
             table.insert( name = "# of children under 5" )
             table.insert( name = "# of children" )
@@ -309,11 +309,54 @@ if populate:
         table = db[tablename]
         if not db(table.id > 0).count():
             table.insert( name = "# of People Affected" )
-            table.insert( name = "# of People Injured" )
-            table.insert( name = "# of People Deceased" )
-            table.insert( name = "# of People Missing" )
-            table.insert( name = "# of Houses Destroyed" )
-            table.insert( name = "# of Houses Damaged" )
+            table.insert( name = "# People Needing Food",
+                          cluster_id = \
+                              shn_get_db_field_value(db = db,
+                                                     table = "org_cluster",
+                                                     field = "id",
+                                                     look_up = "Agriculture",
+                                                     look_up_field = "abrv") 
+                          )              
+            table.insert( name = "# People at Risk From Vector-Borne Diseases",
+                          cluster_id = \
+                              shn_get_db_field_value(db = db,
+                                                     table = "org_cluster",
+                                                     field = "id",
+                                                     look_up = "Agriculture",
+                                                     look_up_field = "abrv") 
+                          )  
+            table.insert( name = "# People without Access to Safe Drinking-Water",
+                          cluster_id = \
+                              shn_get_db_field_value(db = db,
+                                                     table = "org_cluster",
+                                                     field = "id",
+                                                     look_up = "WASH",
+                                                     look_up_field = "abrv") 
+                          )
+            table.insert( name = "# Houses Damaged",
+                          cluster_id = \
+                              shn_get_db_field_value(db = db,
+                                                     table = "org_cluster",
+                                                     field = "id",
+                                                     look_up = "Shelter",
+                                                     look_up_field = "abrv") 
+                          )  
+            table.insert( name = "# Houses Flooded",
+                          cluster_id = \
+                              shn_get_db_field_value(db = db,
+                                                     table = "org_cluster",
+                                                     field = "id",
+                                                     look_up = "Shelter",
+                                                     look_up_field = "abrv") 
+                          )                              
+            table.insert( name = "Ha. Rice Paddies Flooded",
+                          cluster_id = \
+                              shn_get_db_field_value(db = db,
+                                                     table = "org_cluster",
+                                                     field = "id",
+                                                     look_up = "Agriculture",
+                                                     look_up_field = "abrv") 
+                          )                                                    
 
     # GIS Module
     tablename = "gis_marker"

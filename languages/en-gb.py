@@ -29,6 +29,7 @@
 '4x4 Car': '4x4 Car',
 '8-14 days': '8-14 days',
 'A Reference Document such as a file, URL or contact person to verify this data. You can type the 1st few characters of the document name to link to an existing document.': 'A Reference Document such as a file, URL or contact person to verify this data. You can type the 1st few characters of the document name to link to an existing document.',
+'A Warehouse is a physical place which contains Relief Items available to be Distributed.': 'A Warehouse is a physical place which contains Relief Items available to be Distributed.',
 'A Warehouse/Site is a physical location with an address and GIS data where Items are Stored. It can be a Building, a particular area in a city or anything similar.': 'A Warehouse/Site is a physical location with an address and GIS data where Items are Stored. It can be a Building, a particular area in a city or anything similar.',
 'A brief description of the group (optional)': 'A brief description of the group (optional)',
 'A file downloaded from a GPS containing a series of geographic points in XML format.': 'A file downloaded from a GPS containing a series of geographic points in XML format.',

@@ -153,8 +153,8 @@ s3xrc.model.add_component(prefix, resourcename,
 
 s3xrc.model.configure(table,
     list_fields=[
-        "id",
-        "pe_id",
+        #"id",
+        #"pe_id",
         "contact_method",
         "value",
         "priority",

@@ -2360,6 +2360,7 @@
 'Project Details': 'Project Details',
 'Project Management': 'Project Management',
 'Project Status': 'Project Status',
+'Project Tracking': 'Project Tracking',
 'Project added': 'Project added',
 'Project deleted': 'Project deleted',
 'Project updated': 'Project updated',

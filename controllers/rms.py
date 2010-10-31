@@ -108,7 +108,7 @@ def req():
     response.s3.postp = postp
 
     s3xrc.model.configure(table,
-                          listadd=False, #@todo: List add is causing errors with JS - FIX
+                          #listadd=False, #@todo: List add is causing errors with JS - FIX
                           editable=True)
 
     return s3_rest_controller(prefix, 
@@ -143,16 +143,15 @@ def shn_rms_req_rheader(r):
                                    TR( TH( T("Message") + ": "),
                                        TD(req_record.message, _colspan=3)
                                       ),
+                                   TR( TH( T("Time of Request") + ": "),
+                                       req_record.datetime,
+                                       TH( T( "Location") + ": "),
+                                       location_represent,
+                                      ),                                      
                                    TR( TH( T("Priority") + ": "),
                                        req_record.priority,                                       
                                        TH( T("Document") + ": "),
                                        document_represent(req_record.document_id)
-                                      ),
-                                   TR( TH( T("Time of Request") + ": "),
-                                       req_record.datetime,
-                                      ),
-                                   TR( TH( T( "Location") + ": "),
-                                       location_represent,
                                       ),
                                      ),
                                 rheader_tabs

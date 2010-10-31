@@ -59,6 +59,7 @@ if deployment_settings.has_module(module):
                             Field("type", "integer"),
                             Field("priority", "integer"),
                             Field("message", "text"),
+                            activity_id(),
                             #Field("verified", "boolean"),
                             #Field("verified_details"),
                             #Field("actionable", "boolean"),
@@ -77,7 +78,7 @@ if deployment_settings.has_module(module):
     table.datetime.label = T("Date & Time")
     
     table.from_inventory_store_id.label = T("From Warehouse")
-
+    
     table.message.requires = IS_NOT_EMPTY()
 
     # Hide fields from user:
@@ -149,12 +150,17 @@ if deployment_settings.has_module(module):
     s3xrc.model.configure(table,
                           super_entity=db.sit_situation)
 
-    # rms_req as component of doc_documents
-    s3xrc.model.add_component(module, resourcename,
+    # rms_req as component of doc_documents, shelters, hospitals, activities and inventory store
+    s3xrc.model.add_component(module,
+                              resourcename,
                               multiple=True,
                               joinby=dict(doc_document="document_id",
                                           cr_shelter="shelter_id",
-                                          hms_hospital="hospital_id"))
+                                          hms_hospital="hospital_id",
+                                          project_activity = "activity_id",
+                                          inventory_store = "from_inventory_store_id",
+                                          )
+                              )
 
     # --------------------------------------------------------------------
     def shn_rms_get_req(label, fields=None, filterby=None):

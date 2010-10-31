@@ -37,43 +37,8 @@ _table_user.language.comment = DIV(_class="tooltip", _title=T("Language") + "|" 
 _table_user.language.represent = lambda opt: s3_languages.get(opt, UNKNOWN_OPT)
 
 def index():
-    "Module's Home Page"
+    """ Main Home Page """
 
-    modules = deployment_settings.modules
-
-    module_name = modules[module].name_nice
-
-    settings = db(db.s3_setting.id == 1).select(limitby=(0, 1)).first()
-    if settings:
-        admin_name = settings.admin_name
-        admin_email = settings.admin_email
-        admin_tel = settings.admin_tel
-    else:
-        # db empty and prepopulate is false
-        admin_name = T("Sahana Administrator"),
-        admin_email = "support@Not Set",
-        admin_tel = T("Not Set"),
-
-    self_registration = deployment_settings.get_security_self_registration()
-
-    response.title = T("Sahana FOSS Disaster Management System")
-    login_form = None
-    register_form = None
-
-    if not auth.is_logged_in():
-        # Provide a login box on front page
-        request.args = ["login"]
-        login_form = auth()
-
-        # Download the registration box on front page ready to unhide without a server-side call
-        if self_registration:
-            request.args = ["register"]
-            register_form = auth()
-
-    return dict( module_name=module_name, modules=modules, admin_name=admin_name, admin_email=admin_email, admin_tel=admin_tel, self_registration=self_registration, login_form=login_form, register_form=register_form)
-
-def demo():
-        #Custom Demo Menu
     response.view = "default/demo.html"
     div_sit = DIV(H3(T("SITUATION")),
                   A(DIV(T("Assessment"),

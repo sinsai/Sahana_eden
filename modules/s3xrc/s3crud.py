@@ -1080,12 +1080,11 @@ class S3CRUDHandler(S3MethodHandler):
         if not list_fields:
             fields = self.resource.readable_fields()
         else:
-            #fields = self.resource.readable_fields(subset=list_fields)
             fields = [table[f] for f in list_fields if f in table.fields]
         if not fields:
             fields = []
-        if "id" in table and not table.id in fields:
-            fields.insert(0, table.id)
+        if fields[0].name != table.fields[0]:
+            fields.insert(0, table[table.fields[0])
 
         if r.interactive:
 
@@ -1634,12 +1633,11 @@ class S3SearchSimple(S3CRUDHandler):
                     if not list_fields:
                         fields = resource.readable_fields()
                     else:
-                        #fields = resource.readable_fields(subset=list_fields)
                         fields = [table[f] for f in list_fields if f in table.fields]
                     if not fields:
                         fields = []
-                    if "id" in table and not table.id in fields:
-                        fields.insert(0, table.id)
+                    if fields[0].name != table.fields[0]:
+                        fields.insert(0, table[table.fields[0])
                     resource.build_query(id=results)
                     items = resource.select(fields=fields,
                                             orderby=orderby,

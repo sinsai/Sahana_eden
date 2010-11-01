@@ -100,6 +100,7 @@ if deployment_settings.has_module(module):
     table.type.requires = IS_IN_SET(rms_type_opts)
     table.type.represent = lambda type: type and rms_type_opts[type]
     table.type.label = T("Request Type")
+    table.type.comment = SPAN("*", _class="req")
 
     #rms_req_source_type = { 1 : "Manual",
     #                        2 : "SMS",

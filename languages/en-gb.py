@@ -74,6 +74,7 @@
 'Activities of girls 13-17yrs now': 'Activities of girls 13-17yrs now',
 'Activities of girls <12yrs before disaster': 'Activities of girls <12yrs before disaster',
 'Activities of girls <12yrs now': 'Activities of girls <12yrs now',
+'Activity': 'Activity',
 'Activity Added': 'Activity Added',
 'Activity Deleted': 'Activity Deleted',
 'Activity Details': 'Activity Details',

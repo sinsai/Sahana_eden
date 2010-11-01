@@ -45,10 +45,10 @@ def index():
                         ),
                     _href = URL( r=request, c="irs", f= "ireport")
                     ),
-                  A(DIV(T("Assessments"),
+                  A(DIV(T("Basic Assess."),
                         _class = "menu_box"
                         ),
-                    _href = URL( r=request, c="assess", f= "assess")
+                    _href = URL( r=request, c="assess", f= "basic_assess")
                     ),
                   A(DIV(T("Inventories"),
                         _class = "menu_box"
@@ -60,12 +60,12 @@ def index():
     div_arrow_1 = DIV(IMG(_src = "/%s/static/img/arrow_blue_right.png" % request.application),
                           _class = "div_arrow")
     div_dec = DIV(H3(T("DECISION")),
-                  A(DIV(T("Gap Analysis Report"),
+                  A(DIV(T("Gap Report"),
                         _class = "menu_box"
                         ),
                     _href = URL( r=request, c="project", f= "gap_report")
                     ),
-                  A(DIV(T("Gap Analysis Map"),
+                  A(DIV(T("Gap Map"),
                         _class = "menu_box"
                         ),
                     _href = URL( r=request, c="project", f= "gap_map")
@@ -98,6 +98,12 @@ def index():
                   _class = "menu_div",
                   _id = "menu_div_response"
                   )
+    
+    div_additional = DIV(A(DIV(T("Mobile Assess."),
+                           _class = "menu_box"
+                           ),
+                        _href = URL( r=request, c="assess", f= "mobile_basic_assess")
+                       ))    
 
     modules = deployment_settings.modules
 
@@ -135,6 +141,7 @@ def index():
                 div_dec = div_dec,
                 div_arrow_2 = div_arrow_2,
                 div_res = div_res,
+                div_additional = div_additional,
                 module_name=module_name, modules=modules, admin_name=admin_name, admin_email=admin_email, admin_tel=admin_tel, self_registration=self_registration, login_form=login_form, register_form=register_form)
 
 

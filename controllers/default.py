@@ -50,30 +50,25 @@ def index():
                         ),
                     _href = URL( r=request, c="assess", f= "assess")
                     ),
-                  A(DIV(T("Requests"),
+                  A(DIV(T("Inventories"),
                         _class = "menu_box"
                         ),
-                    _href = URL( r=request, c="rms", f= "req")
-                    ),
+                    _href = URL( r=request, c="inventory", f= "store")
+                    ),                    
                   _class = "menu_div"
                   )
     div_arrow_1 = DIV(IMG(_src = "/%s/static/img/arrow_blue_right.png" % request.application),
                           _class = "div_arrow")
     div_dec = DIV(H3(T("DECISION")),
-                  A(DIV(T("Gap Analysis"),
+                  A(DIV(T("Gap Analysis Report"),
                         _class = "menu_box"
                         ),
-                    _href = URL( r=request, c="project", f= "gap")
+                    _href = URL( r=request, c="project", f= "gap_report")
                     ),
-                  A(DIV(T("Activities Map"),
+                  A(DIV(T("Gap Analysis Map"),
                         _class = "menu_box"
                         ),
                     _href = URL( r=request, c="project", f= "gap_map")
-                    ),
-                  A(DIV(T("Inventories"),
-                        _class = "menu_box"
-                        ),
-                    _href = URL( r=request, c="inventory", f= "store")
                     ),
                   A(DIV(T("Map"),
                         _class = "menu_box"
@@ -90,15 +85,19 @@ def index():
                         ),
                     _href = URL( r=request, c="project", f= "activity")
                     ),
-                  A(DIV(T("Distribution"),
+                  A(DIV(T("Requests"),
                         _class = "menu_box"
                         ),
-                    _href = URL( r=request, c="logs", f= "distrib")
-                    ),
+                    _href = URL( r=request, c="rms", f= "req")
+                    ),                    
+                  #A(DIV(T("Distribution"),
+                  #      _class = "menu_box"
+                  #      ),
+                  #  _href = URL( r=request, c="logs", f= "distrib")
+                  #  ),
                   _class = "menu_div",
                   _id = "menu_div_response"
                   )
-
 
     modules = deployment_settings.modules
 

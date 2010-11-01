@@ -336,7 +336,7 @@ def gap_map():
                 activity_rows[i].gis_location.size = 6
                 activity_rows[i].gis_location.color = "#0000FF" #blue
 
-            feature_queries.append({ "name": "Activities - %s" % cluster,
+            feature_queries.append({ "name": "%s: Activities" % cluster,
                                      "query": activity_rows,
                                      "active": False,
                                      "popup_url" : "#",
@@ -368,9 +368,9 @@ def gap_map():
                 assess_rows[i].gis_location.shape = "circle"
                 assess_rows[i].gis_location.size = 4
                 assess_rows[i].gis_location.color = \
-                    assess_summary_colour_code(assess_rows[i].assess_summary.value)
+                    assess_summary_colour_code[assess_rows[i].assess_summary.value]
 
-            feature_queries.append({ "name": "Assessments - %s" % cluster,
+            feature_queries.append({ "name": "%s: Assessments" % cluster,
                                      "query": assess_rows,
                                      "active": False,
                                      "popup_url" : "#",

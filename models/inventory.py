@@ -58,7 +58,8 @@ if deployment_settings.has_module("logs"):
         msg_record_created = T("Warehouse added"),
         msg_record_modified = T("Warehouse updated"),
         msg_record_deleted = T("Warehouse deleted"),
-        msg_list_empty = T("No Warehouses currently registered"))
+        msg_list_empty = T("No Warehouses currently registered"),
+        msg_no_match = T("No Warehouses match this criteria"))
 
     # Reusable Field
     inventory_store_id = S3ReusableField("inventory_store_id", db.inventory_store, sortby="name",

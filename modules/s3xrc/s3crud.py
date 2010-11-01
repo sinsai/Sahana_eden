@@ -536,7 +536,7 @@ class S3CRUDHandler(S3MethodHandler):
                     del r.request.get_vars["from_fields"] # forget it
                     if map_fields.find("$") != -1:
                         mf = map_fields.split(",")
-                        mf = [f.find("$") != -1 and f.split("$") or [f,f] for f in mf]
+                        mf = [f.find("$") != -1 and f.split("$") or [f, f] for f in mf]
                         map_fields = Storage(mf)
                     else:
                         map_fields = map_fields.split(",")

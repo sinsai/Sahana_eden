@@ -49,7 +49,7 @@ def tbc():
 #------------------------------------------------------------------------------
 def compose():
 
-    """ @todo: fix docstring """
+    """ Compose a Message which can be sent to a pentity via a number of different communications channels """
 
     return shn_msg_compose()
 
@@ -311,8 +311,7 @@ def parserdooth(message):
                                                                      table = "org_office",
                                                                      field = "address",
                                                                      look_up = organisation.id
-                                                                    )
-
+                                                                     )            
         if len(reply) == 0:
             return "No Match"
 

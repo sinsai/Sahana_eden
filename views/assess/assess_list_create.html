@@ -1,0 +1,12 @@
+{{extend "layout.html"}}
+{{include "_list_create.html"}}
+{{try:}}
+{{incident = session.rcvars.irs_ireport}}
+<script type="text/javascript">//<![CDATA[
+$(function() {
+    //$('#assess_assess_incident_id').val({{=incident}});
+});
+//]]></script>
+{{except:}}
+{{pass}}
+{{include "gis/location_autocomplete.js"}}

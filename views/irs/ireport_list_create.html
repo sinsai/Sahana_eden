@@ -1,14 +1,7 @@
 {{extend "layout.html"}}
-{{include "_update.html"}}
+{{include "_list_create.html"}}
 <script type="text/javascript">//<![CDATA[
 $(function() {
-    // Organisation Autocomplete
-    {{entity_id = request.controller + "_" + request.function + "_organisation_id"}}
-    {{urlpath_c = "org"}}
-    {{urlpath_f = "organisation"}}
-    {{urlvar_field = "name"}}
-    {{include "auto_input.js"}}
-    
     // Person AutoComplete
     {{real_input = request.controller + "_" + request.function + "_person_id"}}
     {{dummy_input = "dummy_" + real_input}}
@@ -25,7 +18,13 @@ $(function() {
         var newvalue = data.id;
         $('#{{=real_input}}').val(newvalue);
     });
-
+    
+    // Reference AutoComplete
+    {{entity_id = request.controller + "_" + request.function + "_document_id"}}
+    {{urlpath_c = "doc"}}
+    {{urlpath_f = "document"}}
+    {{urlvar_field = "name"}}
+    {{include "auto_input.js"}}
 });
 //]]></script>
-
+{{include "gis/location_autocomplete.js"}}

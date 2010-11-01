@@ -9,16 +9,15 @@ module = "assess"
 if deployment_settings.has_module(module):
     # ---------------------------------------------------------------------
     # Assement
-    # This is the current status of an Incident
-    # @ToDo Change this so that there is a 'lead' ireport updated in the case of duplicates
     resourcename = "assess"
     tablename = "%s_%s" % (module, resourcename)
     table = db.define_table(tablename,
                             Field("datetime", "datetime"),
                             location_id(),
-                            person_id("assessor_person_id"                                      
-                                      ),
+                            organisation_id(), 
+                            person_id("assessor_person_id"),
                             comments(),
+                            ireport_id(),
                             migrate=migrate, *s3_meta_fields()
                             )
     
@@ -60,7 +59,14 @@ if deployment_settings.has_module(module):
         msg_record_deleted = T("Assessment deleted"),
         msg_list_empty = T("No Assessments currently registered"))
     
-    # -----------------------------------------------------------------------------
+    #assess_assess as component of org_organisation
+    s3xrc.model.add_component(module, resourcename,
+                              multiple=True,
+                              joinby=dict(org_organisation="organisation_id"
+                                          )
+                              )    
+    
+    #==============================================================================
     # Baseline Type
     resourcename = "baseline_type"
     tablename = "%s_%s" % (module, resourcename)
@@ -111,7 +117,7 @@ if deployment_settings.has_module(module):
                                        ondelete = "RESTRICT"
                                        )    
     
-    # -----------------------------------------------------------------------------
+    #==============================================================================
     # Baseline
     resourcename = "baseline"
     tablename = "%s_%s" % (module, resourcename)
@@ -153,13 +159,13 @@ if deployment_settings.has_module(module):
                               editable=True)      
     
 
-    # -----------------------------------------------------------------------------
+    #==============================================================================
     # Summary
     resourcename = "summary"
     tablename = "%s_%s" % (module, resourcename)
     table = db.define_table(tablename,
                             assess_id(),
-                            cluster_subsector_id(),
+                            cluster_id(),
                             #Field("value", "double"),
                             Field("value", "integer",
                                   default = 0),
@@ -180,7 +186,7 @@ if deployment_settings.has_module(module):
     table.value.requires = IS_EMPTY_OR(IS_IN_SET(assess_severity_opts))
     table.value.widget=SQLFORM.widgets.radio.widget
     
-    def shn_assess_summary_value_represent(value):        
+    def shn_assess_severity_represent(value):        
         if value:
             value_colour_dict = {0:"green",
                                  1:"yellow",
@@ -193,7 +199,7 @@ if deployment_settings.has_module(module):
         else:
             return NONE
     
-    table.value.represent = shn_assess_summary_value_represent
+    table.value.represent = shn_assess_severity_represent
     
     # CRUD strings
     ADD_ASSESS_SUMMARY = T("Add Assessment Summary")
@@ -222,4 +228,4 @@ if deployment_settings.has_module(module):
                               editable=True)      
     
     
-    # -----------------------------------------------------------------------------    
+    #==============================================================================    

@@ -168,9 +168,9 @@ if deployment_settings.has_module(module):
                             Field("contact"),
                             location_id(),
                             Field("datetime", "datetime"),
-                            Field("persons_affected", "integer"),
-                            Field("persons_injured", "integer"),
-                            Field("persons_deceased", "integer"),
+                            #Field("persons_affected", "integer"),
+                            #Field("persons_injured", "integer"),
+                            #Field("persons_deceased", "integer"),
                             comments(),
                             migrate=migrate, *s3_meta_fields())
 
@@ -221,11 +221,24 @@ if deployment_settings.has_module(module):
     # -----------------------------------------------------------------------------
     # Reports
     # This is a report of an Incident
-    # A single incident may generate many reports
+    # (A single incident may generate many reports)
+    
+    #def shn_assess_represent(assessments):
+    #    """ Represent assessments in the Incidents List """
+    #    add_assessment = A(T("Add Assessment"), _href=URL(r=request, c="assess", f="assess.html", args="create"), _class="action-btn")
+    #    output = add_assessment
+    #    if assessments:
+    #        _assessments = assessments.split("|")
+    #        for assessment in _assessments:
+    #            output.append(A(T("Open Assessment"), _href=URL(r=request, c="assess", f="assess", args=assessment), _class="action-btn"))
+    #        return output
+    #    else:
+    #        return output
+    
     resourcename = "ireport"
     tablename = "%s_%s" % (module, resourcename)
     table = db.define_table(tablename,
-                            incident_id(),
+                            incident_id(),      # ToDo: Remove
                             Field("name"),
                             Field("message", "text"),
                             Field("category"),
@@ -233,14 +246,17 @@ if deployment_settings.has_module(module):
                             Field("contact"),
                             Field("datetime", "datetime"),
                             location_id(),
-                            Field("persons_affected", "integer"),
-                            Field("persons_injured", "integer"),
-                            Field("persons_deceased", "integer"),
+                            # To be replaced by flexible Impacts as per Assessments?
+                            #Field("persons_affected", "integer"),
+                            #Field("persons_injured", "integer"),
+                            #Field("persons_deceased", "integer"),
                             document_id(),
                             Field("verified", "boolean"),
+                            #Field("assess_id", label=T("Assessments"),
+                            #      represent = shn_assess_represent
+                            #),
                             comments(),
                             migrate=migrate, *s3_meta_fields())
-
 
     table.category.label = T("Category")
     # The full set available to Admins & Imports/Exports
@@ -264,9 +280,9 @@ if deployment_settings.has_module(module):
     table.datetime.requires = [IS_NOT_EMPTY(),
                                IS_UTC_DATETIME(utc_offset=shn_user_utc_offset(), allow_future=False)]
 
-    table.persons_affected.label = T("# of People Affected")
-    table.persons_injured.label = T("# of People Injured")
-    table.persons_deceased.label = T("# of People Deceased")
+    #table.persons_affected.label = T("# of People Affected")
+    #table.persons_injured.label = T("# of People Injured")
+    #table.persons_deceased.label = T("# of People Deceased")
 
     table.verified.label = T("Verified?")
     table.verified.represent = lambda verified: (T("No"), T("Yes"))[verified == True]
@@ -290,6 +306,24 @@ if deployment_settings.has_module(module):
         msg_record_deleted = T("Incident Report deleted"),
         msg_list_empty = T("No Incident Reports currently registered"))
 
+    #def ireport_onaccept(form):
+    #    """ Nasty Hack for Resource Linking """
+    #    if "assessments" in form.vars and form.vars.assessments:
+    #        pass
+    #    else:
+    #        # Default it to the record ID so that the represent can create an assessment for this Incident
+    #        form.vars.assessments = form.vars.id
+
+    # We don't want these visible in Create forms
+    # (we override in Update forms in controller)
+    table.verified.writable = table.verified.readable = False
+    #table.assess_id.writable = table.assess_id.readable = False
+
+    s3xrc.model.configure(table,
+                          #onaccept = lambda form: ireport_onaccept(form),
+                          #onvalidation = ireport_onvalidation,
+                          list_fields = ["id", "category", "location_id", "verified", "name", "message"]
+                          )
 
     # irs_ireport as component of doc_documents
     s3xrc.model.add_component(module, resourcename,
@@ -298,6 +332,11 @@ if deployment_settings.has_module(module):
                               deletable=True,
                               editable=True)
 
+    ireport_id = S3ReusableField("incident_id", table,
+                                 requires = IS_NULL_OR(IS_ONE_OF(db, "irs_ireport.id", "%(name)s")),
+                                 represent = lambda id: id,
+                                 label = T("Incident"),
+                                 ondelete = "RESTRICT")
 
     # -----------------------------------------------------------------------------
     irs_assessment_type_opts = {
@@ -399,7 +438,7 @@ if deployment_settings.has_module(module):
         99:T("other")
     }
 
-    # Replace by image_id?
+    # Replace by image_id
     resourcename = "iimage"
     tablename = "%s_%s" % (module, resourcename)
     table = db.define_table(tablename,

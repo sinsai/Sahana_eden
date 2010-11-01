@@ -44,10 +44,13 @@ $(function() {
     var old_addr_street = '';
   {{pass}}
 
-    if (undefined == location_id){
-        // If the calling view hasn't provided a value then use the default
-        var location_id = '{{=request.controller + "_" + request.function + "_location_id"}}';
-    }
+  {{if response.s3.gis.location_id == True:}}
+  // If the calling view hasn't provided a value then use the default
+  var location_id = '{{=request.controller + "_" + request.function + "_location_id"}}';   
+  {{else:}}
+  //For custom Non-CRUD forms
+  var location_id = '{{=response.s3.gis.location_id}}';   
+  {{pass}}
     var location_id_row1 = '#' + location_id + '__row1';
     var location_id_row = '#' + location_id + '__row';
 

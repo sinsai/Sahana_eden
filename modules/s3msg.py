@@ -171,8 +171,8 @@ class Msg(object):
                         prefix = TWITTER_HAS_PREV_PREFIX):
         """
             Breaks text to <=chunk_size long chunks. Tries to do this at a space.
-            All chunks except for last end with suffix.
-            All chunks except for first start with prefix.
+            All chunks, except for last, end with suffix.
+            All chunks, except for first, start with prefix.
         """
 
         res = []
@@ -347,6 +347,28 @@ class Msg(object):
                                   fromaddress,
                                   system_generated)
 
+    def send_sms_by_pe_id(self,
+                          pe_id,
+                          message="",
+                          sender_pe_id=None,
+                          sender="",
+                          fromaddress="",
+                          system_generated=False):
+        """
+            API wrapper over send_by_pe_id
+            - depends on pr_message_method
+        """
+
+        return self.send_by_pe_id(pe_id,
+                                  message,
+                                  sender_pe_id,
+                                  2, # To set as an SMS
+                                  sender,
+                                  fromaddress,
+                                  system_generated,
+                                  subject=""
+                                 )
+
     def process_outbox(self, contact_method=1, option=1): #pr_message_method dependent
         """
             Send Pending Messages from Outbox.
@@ -407,7 +429,29 @@ class Msg(object):
                 group_id = db(query).select(table3.id, limitby=(0, 1)).first().id
                 table4 = db.pr_group_membership
                 query = (table4.group_id == group_id)
-                recipients = db(query).select()
+                recipients = db(query).select(table4.person_id)
+                for recipient in recipients:
+                    person_id = recipient.person_id
+                    table5 = db.pr_person
+                    query = (table5.id == person_id)
+                    pe_id = db(query).select(table5.pe_id, limitby=(0, 1)).first().pe_id
+                    db.msg_outbox.insert(message_id = message_id,
+                                         pe_id = pe_id,
+                                         pr_message_method = contact_method,
+                                         system_generated = True)
+                status = True
+                chainrun = True
+            
+            elif entity_type == "org_organisation":
+                # Take the entities of it and add in the messaging queue - with
+                # sender as the original sender and marks group email processed
+                # Set system generated = True
+                table3 = db.org_organisation
+                query = (table3.pe_id == entity)
+                org_id = db(query).select(table3.id, limitby=(0, 1)).first().id
+                table4 = db.org_staff
+                query = (table4.organisation_id == org_id)
+                recipients = db(query).select(table4.person_id)
                 for recipient in recipients:
                     person_id = recipient.person_id
                     table5 = db.pr_person

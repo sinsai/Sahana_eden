@@ -205,62 +205,15 @@ deployment_settings.modules = Storage(
                 gis_location = {"importer" : True}
              )
         ),
-    mpr = Storage(
-            name_nice = T("Missing Persons"),
-            description = T("Helps to report and search for Missing Persons"),
-            module_type = 2,
+    doc = Storage(
+            name_nice = T("Documents and Photos"),
+            description = T("A library of digital resources, such as photos, documents and reports"),
+            module_type = 10,
         ),
-    rms = Storage(
-            name_nice = T("Requests"),
-            description = T("Tracks requests for aid and matches them against donors who have pledged aid"),
-            module_type = 3,
-            resources = Storage(
-                rms_req = {"importer" : True},
-            )
-        ),
-    hms = Storage(
-            name_nice = T("Hospitals"),
-            description = T("Helps to monitor status of hospitals"),
-            module_type = 4,
-            resources = Storage(
-                hms_hospital = {"importer" : True}
-            )
-        ),
-    vol = Storage(
-            name_nice = T("Volunteers"),
-            description = T("Manage volunteers by capturing their skills, availability and allocation"),
-            module_type = 5,
-        ),
-    logs = Storage(
-            name_nice = T("Logistics Management"),
-            description = T("Managing, Storing and Distributing Relief Items"),
-            module_type = 10
-        ),
-    # Loaded as part of Org - no separate menu
-    #project = Storage(
-    #        name_nice = T("Project Management"),
-    #        description = T("Project Activities"),
-    #        module_type = 10
-    #    ),
     msg = Storage(
             name_nice = T("Messaging"),
             description = T("Sends & Receives Alerts via Email & SMS"),
             module_type = 10,
-        ),
-    flood = Storage(
-            name_nice = T("Flood Alerts"),
-            description = T("Flood Alerts show water levels in various parts of the country"),
-            module_type = 10
-        ),
-    sitrep = Storage(
-            name_nice = T("Assessments"),
-            description = T("Assessments are structured reports done by Professional Organizations - data includes WFP Assessments"),
-            module_type = 10
-        ),
-    rat = Storage(
-            name_nice = T("Rapid Assessments"),
-            description = T("Assessments are structured reports done by Professional Organizations"),
-            module_type = 10
         ),
     pr = Storage(
             name_nice = T("Person Registry"),
@@ -276,6 +229,11 @@ deployment_settings.modules = Storage(
                 pr_group = {"importer" : True},
                 pr_group_membership = {"importer" : True},
             )
+        ),
+    mpr = Storage(
+            name_nice = T("Missing Persons"),
+            description = T("Helps to report and search for Missing Persons"),
+            module_type = 10,
         ),
     dvi = Storage(
             name_nice = T("Disaster Victim Identification"),
@@ -293,6 +251,76 @@ deployment_settings.modules = Storage(
     #        description = T("Traces internally displaced people (IDPs) and their needs"),
     #        module_type = 10
     #    ),
+    org = Storage(
+         name_nice = T("Organization Registry"),
+            description = T('Lists "who is doing what & where". Allows relief agencies to coordinate their activities'),
+            module_type = 10,
+            resources = Storage(
+                org_organisation = {"importer" : True},
+                org_office = {"importer" : True},
+                org_staff = {"importer" : True}
+            )
+        ),
+    rms = Storage(
+            name_nice = T("Requests"),
+            description = T("Tracks requests for aid and matches them against donors who have pledged aid"),
+            module_type = 3,
+            resources = Storage(
+                rms_req = {"importer" : True},
+            )
+        ),
+    logs = Storage(
+            name_nice = T("Logistics Management"),
+            description = T("Managing, Storing and Distributing Relief Items"),
+            module_type = 10
+        ),
+    cr = Storage(
+            name_nice = T("Shelter Registry"),
+            description = T("Tracks the location, distibution, capacity and breakdown of victims in Shelters"),
+            module_type = 10,
+            resources = Storage(
+                cr_shelter = {"importer" : True }
+            )
+        ),
+    hms = Storage(
+            name_nice = T("Hospitals"),
+            description = T("Helps to monitor status of hospitals"),
+            module_type = 10,
+            resources = Storage(
+                hms_hospital = {"importer" : True}
+            )
+        ),
+    vol = Storage(
+            name_nice = T("Volunteers"),
+            description = T("Manage volunteers by capturing their skills, availability and allocation"),
+            module_type = 10,
+        ),
+    irs = Storage(
+        name_nice = T("Incident Reporting"),
+        description = T("Incident Reporting System"),
+        module_type = 10
+    ),
+    assess = Storage(
+         name_nice = "Assessments",
+         description = "Generic Assessments",
+         module_type = 2,
+    ),
+    rat = Storage(
+            name_nice = T("Rapid Assessments"),
+            description = T("Assessments are structured reports done by Professional Organizations"),
+            module_type = 10
+        ),
+    #sitrep = Storage(
+    #        name_nice = T("Assessments"),
+    #        description = T("Assessments are structured reports done by Professional Organizations - data includes WFP Assessments"),
+    #        module_type = 10
+    #    ),
+    project = Storage(
+        name_nice = T("Project Tracking"),
+        description = T("Tracking of Projects, Activities and Tasks"),
+        module_type = 10
+    ),    
+    # NB Budget module depends on Project Tracking Module
     budget = Storage(
             name_nice = T("Budgeting Module"),
             description = T("Allows a Budget to be drawn up"),
@@ -303,45 +331,15 @@ deployment_settings.modules = Storage(
                 budget_bundle = {"importer" : True},
             )
         ),
-    cr = Storage(
-            name_nice = T("Shelter Registry"),
-            description = T("Tracks the location, distibution, capacity and breakdown of victims in Shelters"),
-            module_type = 10,
-            resources = Storage(
-                cr_shelter = {"importer" : True }
-            )
-        ),
     delphi = Storage(
          name_nice = T("Delphi Decision Maker"),
             description = T("Supports the decision making of large groups of Crisis Management Experts by helping the groups create ranked list."),
             module_type = 10,
         ),
-    doc = Storage(
-            name_nice = T("Documents and Photos"),
-            description = T("A library of digital resources, such as photos, documents and reports"),
-            module_type = 10,
-        ),
-    assess = Storage(
-         name_nice = "Assessment Module",
-         description = "Generic Assessments",
-         module_type = 10,
-    ),
-    irs = Storage(
-        name_nice = T("Incident Reporting"),
-        description = T("Incident Reporting System"),
-        module_type = 10
-    ),
-    org = Storage(
-         name_nice = T("Organization Registry"),
-            description = T('Lists "who is doing what & where". Allows relief agencies to coordinate their activities'),
-            module_type = 10,
-            resources = Storage(
-                org_organisation = {"importer" : True},
-                org_office = {"importer" : True},
-                org_project = {"importer" : True},
-                org_staff = {"importer" : True},
-                org_task = {"importer" : True}
-            )
+    flood = Storage(
+            name_nice = T("Flood Alerts"),
+            description = T("Flood Alerts show water levels in various parts of the country"),
+            module_type = 10
         ),
     #ticket = Storage(
     #        name_nice = T("Ticketing Module"),

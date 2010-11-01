@@ -307,13 +307,13 @@ if deployment_settings.has_module(module):
     # TODO: Is this in use?  Have project location fields changed, since a
     # project could have multiple locations?
     # -------------------------------------------------------------------------
-    def shn_org_project_search_location(xrequest, **attr):
+    def shn_project_project_search_location(xrequest, **attr):
         """ Form function to search projects by location """
 
         if attr is None:
             attr = {}
 
-        if not shn_has_permission("read", db.org_project):
+        if not shn_has_permission("read", db.project_project):
             session.error = UNAUTHORISED
             redirect(URL(r=request, c="default", f="user", args="login", vars={"_next":URL(r=request, args="search_location", vars=request.vars)}))
 
@@ -347,7 +347,7 @@ if deployment_settings.has_module(module):
             items = None
             if form.accepts(request.vars, session):
 
-                table = db.org_project
+                table = db.project_project
                 query = (table.deleted == False)
 
                 if form.vars.location is None:
@@ -365,7 +365,7 @@ if deployment_settings.has_module(module):
                             result.start_date or "None",
                             result.end_date or "None",
                             result.description or "None",
-                            result.status and org_project_status_opts[result.status] or "unknown",
+                            result.status and project_project_status_opts[result.status] or "unknown",
                             ))
                     items=DIV(TABLE(THEAD(TR(
                         TH("Name"),
@@ -378,7 +378,7 @@ if deployment_settings.has_module(module):
                         items = T("None")
 
             try:
-                label_create_button = s3.crud_strings["org_project"].label_create_button
+                label_create_button = s3.crud_strings["project_project"].label_create_button
             except:
                 label_create_button = s3.crud_strings.label_create_button
 
@@ -393,7 +393,7 @@ if deployment_settings.has_module(module):
             redirect(URL(r=request))
 
     # Plug into REST controller
-    s3xrc.model.set_method(module, "project", method="search_location", action=shn_org_project_search_location )
+    s3xrc.model.set_method(module, "project", method="search_location", action=shn_project_project_search_location )
 
     # -------------------------------------------------------------------------
     # Unused Code

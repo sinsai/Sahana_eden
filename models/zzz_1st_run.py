@@ -208,25 +208,6 @@ if populate:
     if not db(table.id > 0).count():
        table.insert(proxy="")
 
-    # Logistics (old)
-    if "lms" in deployment_settings.modules:
-        tablename = "lms_catalog"
-        table = db[tablename]
-        if not db(table.id > 0).count():
-            table.insert(
-                name="Default",
-                description="Default Catalog",
-                comments="All items are by default added to this Catalog"
-            )
-
-    # Budget Module
-    if "budget" in deployment_settings.modules:
-        tablename = "budget_parameter"
-        table = db[tablename]
-        if not db(table.id > 0).count():
-            table.insert(
-            )
-
     # Incident Reporting System
     if "irs" in deployment_settings.modules:
         # Categories visible to ends-users by default
@@ -279,25 +260,12 @@ if populate:
         if not db(table.id > 0).count():
             table.insert( pin = "" )
 
-
-
-    # Ticketing System
-    if "ticket" in deployment_settings.modules:
-        tablename = "ticket_category"
-        table = db[tablename]
-        if not db(table.id > 0).count():
-            table.insert( name = "Report Missing Person" )
-            table.insert( name = "Report Security Incident" )
-            table.insert( name = "Report Information" )
-            table.insert( name = "Request for Assistance" )
-            table.insert( name = "Offer of Help" )
-
     # Assessment
     if "assess" in deployment_settings.modules:
         tablename = "assess_baseline_type"
         table = db[tablename]
         if not db(table.id > 0).count():
-            table.insert( name = "# of population" )
+            table.insert( name = "# of population")
             table.insert( name = "# of households" )
             table.insert( name = "# of children under 5" )
             table.insert( name = "# of children" )
@@ -309,11 +277,163 @@ if populate:
         table = db[tablename]
         if not db(table.id > 0).count():
             table.insert( name = "# of People Affected" )
-            table.insert( name = "# of People Injured" )
-            table.insert( name = "# of People Deceased" )
-            table.insert( name = "# of People Missing" )
-            table.insert( name = "# of Houses Destroyed" )
-            table.insert( name = "# of Houses Damaged" )
+            table.insert( name = "# People Needing Food",
+                          cluster_id = \
+                              shn_get_db_field_value(db = db,
+                                                     table = "org_cluster",
+                                                     field = "id",
+                                                     look_up = "Food",
+                                                     look_up_field = "abrv") 
+                          )              
+            table.insert( name = "# People at Risk From Vector-Borne Diseases",
+                          cluster_id = \
+                              shn_get_db_field_value(db = db,
+                                                     table = "org_cluster",
+                                                     field = "id",
+                                                     look_up = "Health",
+                                                     look_up_field = "abrv") 
+                          )  
+            table.insert( name = "# People without Access to Safe Drinking-Water",
+                          cluster_id = \
+                              shn_get_db_field_value(db = db,
+                                                     table = "org_cluster",
+                                                     field = "id",
+                                                     look_up = "WASH",
+                                                     look_up_field = "abrv") 
+                          )
+            table.insert( name = "# Houses Damaged",
+                          cluster_id = \
+                              shn_get_db_field_value(db = db,
+                                                     table = "org_cluster",
+                                                     field = "id",
+                                                     look_up = "Shelter",
+                                                     look_up_field = "abrv") 
+                          )  
+            table.insert( name = "# Houses Flooded",
+                          cluster_id = \
+                              shn_get_db_field_value(db = db,
+                                                     table = "org_cluster",
+                                                     field = "id",
+                                                     look_up = "Shelter",
+                                                     look_up_field = "abrv") 
+                          )                              
+            table.insert( name = "Ha. Rice Paddies Flooded",
+                          cluster_id = \
+                              shn_get_db_field_value(db = db,
+                                                     table = "org_cluster",
+                                                     field = "id",
+                                                     look_up = "Agriculture",
+                                                     look_up_field = "abrv") 
+                          )                                                    
+
+    # Supply / Inventory
+    tablename = "supply_item_category"
+    table = db[tablename]
+    if not db(table.id > 0).count():
+        #shn_import_table("supply_item_category")
+        table.insert( name = "Agriculture" )
+        #table.insert( name = "Clothing" )
+        #table.insert( name = "Equipment" )
+        table.insert( name = "Food" )
+        table.insert( name = "Health" )
+        #table.insert( name = "NFIs" )
+        table.insert( name = "Shelter" )
+        #table.insert( name = "Transport" )
+        table.insert( name = "WASH" )
+    tablename = "supply_item"
+    table = db[tablename]
+    if not db(table.id > 0).count():
+        #shn_import_table("supply_item_pakistan")
+        agriculture = db(db.supply_item_category.name == "Agriculture").select(db.supply_item_category.id, limitby=(0, 1)).first().id
+        food = db(db.supply_item_category.name == "Food").select(db.supply_item_category.id, limitby=(0, 1)).first().id
+        health = db(db.supply_item_category.name == "Health").select(db.supply_item_category.id, limitby=(0, 1)).first().id
+        shelter = db(db.supply_item_category.name == "Shelter").select(db.supply_item_category.id, limitby=(0, 1)).first().id
+        wash = db(db.supply_item_category.name == "WASH").select(db.supply_item_category.id, limitby=(0, 1)).first().id
+        table.insert(
+            item_category_id = agriculture,
+            name = "Rice Seed",
+            unit = "sack20kg",
+            comments = "This should provide enough seed for 1 Hectare of land"
+            )
+        table.insert(
+            item_category_id = food,
+            name = "Rice",
+            unit = "sack50kg",
+            comments = "This should feed 125 people for 1 day"
+            )
+        table.insert(
+            item_category_id = food,
+            name = "Cooking Utensils",
+            unit = "kit",
+            comments = "Cooking Utensils for a Household"
+            )
+        table.insert(
+            item_category_id = health,
+            name = "First Ait Kit",
+            unit = "kit",
+            comments = "This should provide basic first aid (bandages, oral rehydration salts, etc) for 100 people to self-administer"
+            )
+        table.insert(
+            item_category_id = health,
+            name = "Medical Kit",
+            unit = "kit",
+            comments = "This should provide medical supplies (medicines, vaccines) for a professional clinic to provide assistance to a total community of 10,000 people."
+            )
+        table.insert(
+            item_category_id = shelter,
+            name = "Shelter Kit",
+            unit = "kit",
+            comments = "This kit is suitable to provide emergency repair to a damaged home. It contains a tarpaulin, zinc sheet, wooden poles, hammer & nails"
+            )
+        table.insert(
+            item_category_id = shelter,
+            name = "Tent",
+            unit = "piece",
+            comments = "This should house a family of up to 8 people"
+            )
+        table.insert(
+            item_category_id = wash,
+            name = "Hygiene Kit",
+            unit = "kit",
+            comments = "Personal Hygiene supplies for 100 Households (5 persons/household): Each get 2x Buckets, 10x Soap, Cotton cloth"
+            )
+        table.insert(
+            item_category_id = wash,
+            name = "Water Purification Sachets",
+            unit = "kit",
+            comments = "Designed to provide a 1st phase drinking water purification solution at the household level. Contains 600 sachets to provide sufficient drinking water (4l) for 100 people for 30 days."
+            )
+
+
+    # Budget Module
+    if "budget" in deployment_settings.modules:
+        tablename = "budget_parameter"
+        table = db[tablename]
+        if not db(table.id > 0).count():
+            table.insert(
+            )
+
+    # Logistics (old)
+    if "lms" in deployment_settings.modules:
+        tablename = "lms_catalog"
+        table = db[tablename]
+        if not db(table.id > 0).count():
+            table.insert(
+                name="Default",
+                description="Default Catalog",
+                comments="All items are by default added to this Catalog"
+            )
+
+    # Ticketing System
+    if "ticket" in deployment_settings.modules:
+        tablename = "ticket_category"
+        table = db[tablename]
+        if not db(table.id > 0).count():
+            table.insert( name = "Report Missing Person" )
+            table.insert( name = "Report Security Incident" )
+            table.insert( name = "Report Information" )
+            table.insert( name = "Request for Assistance" )
+            table.insert( name = "Offer of Help" )
 
     # GIS Module
     tablename = "gis_marker"
@@ -891,17 +1011,6 @@ if populate:
         # Ticketing
         auth.add_group("TicketAdmin", description = "TicketAdmin - full access to Ticketing")
 
-    # Supply / Inventory
-    tablename = "supply_item_category"
-    table = db[tablename]
-    if not db(table.id > 0).count():
-        shn_import_table("supply_item_category")
-    tablename = "supply_item"
-    table = db[tablename]
-    if not db(table.id > 0).count():
-        shn_import_table("supply_item")
-
-
     # Security Defaults for all tables (if using 'full' security policy)
     if session.s3.security_policy != 1:
         table = auth.settings.table_permission_name
@@ -935,3 +1044,5 @@ if populate:
             #auth.add_permission(id, "update", table)
             #auth.add_permission(id, "delete", table)
 
+    # Ensure DB population committed when running through shell
+    db.commit()

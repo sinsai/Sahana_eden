@@ -252,11 +252,11 @@ def shn_shelter_prep(r):
                 db.rms_req.location_id.default = r.record.location_id
                 db.rms_req.location_id.comment = ""
                 # Set defaults
-                db.rms_req.timestmp.default = request.utcnow
+                db.rms_req.datetime.default = request.utcnow
                 if auth.is_logged_in():
                     requestor = db(db.pr_person.uuid == session.auth.user.person_uuid).select(db.pr_person.id, limitby=(0, 1)).first()
                     if requestor:
-                        db.rms_req.person_id.default = requestor.id
+                        db.rms_req.requestor_person_id.default = requestor.id
 
 
             elif r.component.name == "presence":

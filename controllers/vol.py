@@ -19,9 +19,9 @@ def shn_menu():
             [T("Add Project"), False, URL(r=request, f="project", args="create")],
         ]],
     ]
-    if session.rcvars and "org_project" in session.rcvars:
-        project_id = session.rcvars["org_project"]
-        selection = db.org_project[project_id]
+    if session.rcvars and "project_project" in session.rcvars:
+        project_id = session.rcvars["project_project"]
+        selection = db.project_project[project_id]
         if selection:
             menu_project = [
                     ["%s %s" % (T("Project") + ":", selection.code), False, URL(r=request, f="project", args=[project_id]),[
@@ -183,7 +183,7 @@ def task():
     table.person_id.default = my_person_id
     #table.person_id.writable = False
 
-    response.s3.filter = (db.org_task.person_id == my_person_id)
+    response.s3.filter = (db.project_task.person_id == my_person_id)
 
     s3.crud_strings[tablename].title_list = T("My Tasks")
     s3.crud_strings[tablename].subtitle_list = T("Task List")

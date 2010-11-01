@@ -64,7 +64,7 @@ def setting():
                           #update_next = URL(r=request, args=[1, "update"])
                           onaccept=theme_apply)
 
-    output = s3_rest_controller("s3", resource)
+    output = s3_rest_controller("s3", resource, list_btn=None)
     return output
 
 @auth.shn_requires_membership(1)

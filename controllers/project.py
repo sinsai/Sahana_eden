@@ -115,6 +115,12 @@ def activity():
            ]
     rheader = lambda r: shn_activity_rheader(r, tabs)
     
+    #Default values (from gap_report) set for fields 
+    default_fieldnames = ["location_id", "cluster_id"]
+    for fieldname in default_fieldnames:
+        if fieldname in request.vars:
+            table[fieldname].default = request.vars[fieldname]
+            table[fieldname].writable = False
 
     return s3_rest_controller(prefix, 
                               resourcename,
@@ -154,7 +160,7 @@ def gap_report():
                                 db.project_activity.location_id,
                                 db.project_activity.cluster_id,
                                 db.project_activity.organisation_id,
-                                db.project_activity.total_bnf_reach,
+                                db.project_activity.total_bnf,
                                 db.project_activity.start_date,
                                 db.project_activity.end_date
                                 )
@@ -169,7 +175,7 @@ def gap_report():
                         organisation_id = None,
                         start_date = NONE,
                         end_date = NONE,
-                        total_bnf_reach = NONE,
+                        total_bnf = NONE,
                         )
 
     gap_rows = map(map_assess_to_gap, assess_rows)
@@ -187,7 +193,7 @@ def gap_report():
                 gap_row.organisation_id = activity_row.organisation_id
                 gap_row.start_date = activity_row.start_date
                 gap_row.end_date = activity_row.end_date
-                gap_row.total_bnf_reach = activity_row.total_bnf_reach
+                gap_row.total_bnf = activity_row.total_bnf
                 break
 
         if add_new_gap_row:
@@ -197,19 +203,19 @@ def gap_report():
                                     organisation_id = activity_row.organisation_id,
                                     start_date = activity_row.start_date,
                                     end_date = activity_row.end_date,
-                                    total_bnf_reach = activity_row.total_bnf_reach,
+                                    total_bnf = activity_row.total_bnf,
                                     )
                             )
 
     headings = ("Location",
-                "Cluster Subsector",
+                "Clusters",
                 "Assessment",
                 "Severity",
                 "Activity",
                 "Organisation",
                 "Start Date",
                 "End Date",
-                "# Beneficiaries"
+                "Total Beneficiaries"
                 )
     gap_table = TABLE(THEAD(TR(*[TH(header) for header in headings])),
                       _id = "list",
@@ -224,6 +230,7 @@ def gap_report():
                                               f="assess",
                                               args = (gap_row.assess_id, "summary")
                                               ),
+                                  _target = "blank",
                                   _id = "show-add-btn",
                                   _class="action-btn"
                                   )
@@ -237,12 +244,26 @@ def gap_report():
                                                f="activity",
                                                args = (gap_row.activity_id)
                                                ),
+                                   _target = "blank",
                                    _id = "show-add-btn",
                                    _class="action-btn"
                                    ),
-        else:
-            activity_action_btn = NONE
-
+        else:            
+            activity_action_btn = A(T("Add"),
+                                   _href = URL(r=request,
+                                               c="project",
+                                               f="activity",
+                                               args = ("create"),
+                                               vars = {"location_id":gap_row.location_id,
+                                                       "cluster_id":gap_row.cluster_id,
+                                                       }
+                                               ),
+                                   _id = "show-add-btn",
+                                   _class="action-btn"
+                                   ),
+            
+            
+        #Displaying NONE
         if gap_row.start_date:
             start_date = gap_row.start_date
         else:
@@ -253,10 +274,10 @@ def gap_report():
         else:
             end_date = NONE
 
-        if gap_row.total_bnf_reach:
-            total_bnf_reach = gap_row.total_bnf_reach
+        if gap_row.total_bnf:
+            total_bnf = gap_row.total_bnf
         else:
-            total_bnf_reach = NONE
+            total_bnf = NONE
 
         gap_table.append(TR( shn_gis_location_represent(gap_row.location_id),
                              shn_org_cluster_represent(gap_row.cluster_id),
@@ -266,12 +287,14 @@ def gap_report():
                              shn_organisation_represent(gap_row.organisation_id),
                              start_date,
                              end_date,
-                             total_bnf_reach,
+                             total_bnf,
                             )
                         )
 
-    return dict(title = T("Assessment and Activities Gap Analysis Report"),
-                gap_table = gap_table)
+    return dict(title = T("Gap Analysis Report"),
+                subtitle = T("Assessments and Activities"),
+                gap_table = gap_table,                
+                )
 
 #==============================================================================
 def gap_map():
@@ -364,7 +387,8 @@ def gap_map():
                 )
 
     return dict(map = map,
-                title = T("Assessment and Activities Gap Analysis Map") )
+                title = T("Gap Analysis Map"),
+                subtitle = T("Assessments and Activities") )
 
 
 #==============================================================================

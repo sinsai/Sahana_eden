@@ -102,11 +102,24 @@ if deployment_settings.has_module("logs"):
         msg_record_modified = T("Item updated"),
         msg_record_deleted = T("Item deleted"),
         msg_list_empty = T("No Items currently registered"))
+    
+    def shn_item_represent(id):
+        record = db(db.supply_item.id == id).select(db.supply_item.name,
+                                                    db.supply_item.unit,
+                                                    limitby=(0, 1)).first()    
+        if not record:
+            return NONE
+        elif not record.unit:
+            return record.name
+        else:
+            item_represent = "%s (%s)" % (record.name, record.unit)
+            return item_represent
+
 
     # Reusable Field
     item_id = S3ReusableField("item_id", db.supply_item, sortby="name",
-                requires = IS_NULL_OR(IS_ONE_OF(db, "supply_item.id", "%(name)s", sort=True)),
-                represent = lambda id: shn_get_db_field_value(db=db, table="supply_item", field="name", look_up=id),
+                requires = IS_NULL_OR(IS_ONE_OF(db, "supply_item.id", "%(name)s (%(unit)s)", sort=True)),
+                represent = shn_item_represent,
                 label = T("Item"),
                 comment = DIV(A(ADD_ITEM, _class="colorbox", _href=URL(r=request, c="supply", f="item", args="create", vars=dict(format="popup")), _target="top", _title=ADD_ITEM),
                           DIV( _class="tooltip", _title=T("Relief Item") + "|" + T("Add a new Relief Item."))),

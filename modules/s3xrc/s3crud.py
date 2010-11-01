@@ -1113,6 +1113,8 @@ class S3CRUDHandler(S3MethodHandler):
                 output.update(showaddbtn=showaddbtn)
 
                 # Add map
+                #if tablename in shn_table_links("gis_location") and table.location_id.writable:
+                # @ToDo complete the ability to rename location_id field
                 if "location_id" in table.fields and table.location_id.writable:
                     # Allow the Location Selector to take effect
                     response.s3.gis.location_id = True

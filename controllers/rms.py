@@ -180,3 +180,9 @@ def ritem():
 
     s3xrc.model.configure(table, listadd=False)
     return s3_rest_controller(prefix, resourcename) #, rheader=rheader)
+
+def store_for_req():
+    
+    store_table = None 
+    
+    return dict(store_table = store_table)

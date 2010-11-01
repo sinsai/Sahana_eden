@@ -345,7 +345,7 @@ table.national_staff.requires = IS_NULL_OR(IS_INT_IN_RANGE(0, 99999))
 table.international_staff.requires = IS_NULL_OR(IS_INT_IN_RANGE(0, 9999))
 table.number_of_vehicles.requires = IS_NULL_OR(IS_INT_IN_RANGE(0, 9999))
 table.name.label = T("Name")
-table.parent.label = T("Parent")
+table.parent.label = T("Parent Office")
 table.type.label = T("Type")
 table.address.label = T("Address")
 table.postcode.label = T("Postcode")
@@ -353,9 +353,9 @@ table.phone1.label = T("Phone 1")
 table.phone2.label = T("Phone 2")
 table.email.label = T("Email")
 table.fax.label = T("Fax")
-table.national_staff.label = T("National Staff")
-table.international_staff.label = T("International Staff")
-table.number_of_vehicles.label = T("Number of Vehicles")
+table.national_staff.label = T("# of National Staff")
+table.international_staff.label = T("# of International Staff")
+table.number_of_vehicles.label = T("# of Vehicles")
 table.vehicle_types.label = T("Vehicle Types")
 table.equipment.label = T("Equipment")
 # CRUD strings
@@ -525,7 +525,7 @@ s3xrc.model.add_component(module, resourcename,
 
 # May wish to over-ride this in controllers
 s3xrc.model.configure(table,
-                      listadd=False,
+                      #listadd=False,
                       list_fields=["id",
                                    "person_id",
                                    "organisation_id",

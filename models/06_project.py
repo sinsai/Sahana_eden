@@ -99,7 +99,7 @@ if deployment_settings.has_module("project"):
                               joinby=dict(org_organisation="organisation_id"))
     
     s3xrc.model.configure(table,
-                          listadd=False,
+                          #listadd=False,
                           main="code",
                           list_fields=["id",
                                        "organisation_id",

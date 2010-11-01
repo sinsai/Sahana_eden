@@ -53,6 +53,22 @@ if deployment_settings.has_module("logs"):
                 )
 
     #==============================================================================
+    # Units
+    #
+    logs_unit_opts = {
+        "piece" : T("piece"),
+        "kit" : T("kit"),
+        "sack50kg" : T("sack 50kg"),
+        "sack20kg" : T("sack 20kg"),
+        "pack10" : T("pack of 10"),
+        "m" : T("meter"),
+        "m3" : T("meter cubed"),
+        "l" : T("liter"),
+        "kg" : T("kilogram"),
+        "ton" : T("ton"),
+    }
+    
+    #==============================================================================
     # Item
     #
     resourcename = "item"
@@ -60,7 +76,11 @@ if deployment_settings.has_module("logs"):
     table = db.define_table(tablename,
                             item_category_id(),
                             Field("name", length=128, notnull=True, unique=True),
-                            comments(),
+                            Field("unit", notnull=True, default="piece",
+                                  requires = IS_IN_SET(logs_unit_opts, zero=None),
+                                  represent = lambda opt: logs_unit_opts.get(opt, T("not specified"))
+                                 ),
+                            comments(), # These comments do *not* pull through to an Inventory's Items or a Request's Items
                             migrate=migrate, *s3_meta_fields())
 
 

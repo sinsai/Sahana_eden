@@ -223,17 +223,17 @@ if deployment_settings.has_module(module):
     # This is a report of an Incident
     # (A single incident may generate many reports)
     
-    def shn_assess_represent(assessments):
-        """ Represent assessments in the Incidents List """
-        add_assessment = A(T("Add Assessment"), _href=URL(r=request, c="assess", f="assess.html", args="create"), _class="action-btn")
-        output = add_assessment
-        if assessments:
-            _assessments = assessments.split("|")
-            for assessment in _assessments:
-                output.append(A(T("Open Assessment"), _href=URL(r=request, c="assess", f="assess", args=assessment), _class="action-btn"))
-            return output
-        else:
-            return output
+    #def shn_assess_represent(assessments):
+    #    """ Represent assessments in the Incidents List """
+    #    add_assessment = A(T("Add Assessment"), _href=URL(r=request, c="assess", f="assess.html", args="create"), _class="action-btn")
+    #    output = add_assessment
+    #    if assessments:
+    #        _assessments = assessments.split("|")
+    #        for assessment in _assessments:
+    #            output.append(A(T("Open Assessment"), _href=URL(r=request, c="assess", f="assess", args=assessment), _class="action-btn"))
+    #        return output
+    #    else:
+    #        return output
     
     resourcename = "ireport"
     tablename = "%s_%s" % (module, resourcename)
@@ -252,9 +252,9 @@ if deployment_settings.has_module(module):
                             #Field("persons_deceased", "integer"),
                             document_id(),
                             Field("verified", "boolean"),
-                            Field("assess_id", label=T("Assessments"),
-                                  represent = shn_assess_represent
-                            ),
+                            #Field("assess_id", label=T("Assessments"),
+                            #      represent = shn_assess_represent
+                            #),
                             comments(),
                             migrate=migrate, *s3_meta_fields())
 
@@ -306,21 +306,21 @@ if deployment_settings.has_module(module):
         msg_record_deleted = T("Incident Report deleted"),
         msg_list_empty = T("No Incident Reports currently registered"))
 
-    def ireport_onaccept(form):
-        """ Nasty Hack for Resource Linking """
-        if "assessments" in form.vars and form.vars.assessments:
-            pass
-        else:
-            # Default it to the record ID so that the represent can create an assessment for this Incident
-            form.vars.assessments = form.vars.id
+    #def ireport_onaccept(form):
+    #    """ Nasty Hack for Resource Linking """
+    #    if "assessments" in form.vars and form.vars.assessments:
+    #        pass
+    #    else:
+    #        # Default it to the record ID so that the represent can create an assessment for this Incident
+    #        form.vars.assessments = form.vars.id
 
     # We don't want these visible in Create forms
     # (we override in Update forms in controller)
     table.verified.writable = table.verified.readable = False
-    table.assess_id.writable = table.assess_id.readable = False
+    #table.assess_id.writable = table.assess_id.readable = False
 
     s3xrc.model.configure(table,
-                          onaccept = lambda form: ireport_onaccept(form),
+                          #onaccept = lambda form: ireport_onaccept(form),
                           #onvalidation = ireport_onvalidation,
                           list_fields = ["id", "category", "location_id", "verified", "name", "message"]
                           )

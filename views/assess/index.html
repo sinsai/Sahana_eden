@@ -1,0 +1,13 @@
+{{extend "layout.html"}}
+<div id='home'>
+{{=H2(module_name)}}
+<p>
+{{=T("The Assessments module allows field workers to send in reports on the Impact of Disasters.")}}
+</p>
+<h3>{{=T("Features Include")}}:</h3>
+<ul>
+<li>{{=A(T("Create Assessment"), _href=URL(r=request, f="assess", args="create"))}}</li>
+<li>{{=A(T("List Assessments"), _href=URL(r=request, f="assess"))}}</li>
+<li>{{=A(T("Create Mobile Assessment"), _href=URL(r=request, f="assess_short_mobile"))}}</li>
+</ul>
+</div>

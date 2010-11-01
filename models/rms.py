@@ -31,19 +31,15 @@ if deployment_settings.has_module(module):
         4:T("Report")
         }
 
-    rms_req_source_type = { 1 : "Manual",
-                            2 : "SMS",
-                            3 : "Tweet" }
-
     # -----------------
-    # Requests table (Combined SMS, Tweets & Manual entry)
+    # Requests table
 
     #def shn_req_aid_represent(id):
         #return  A(T("Make Pledge"), _href=URL(r=request, f="req", args=[id, "pledge"]))
         
-    #2010-10-31 Michael Howden: The request resource is undergoing a significant re-design.
-    #A large number of fields a being commented out. Eventually they should be removed
-    #(Once the re-design is accepted)    
+    # 2010-10-31 Michael Howden: The request resource is undergoing a significant re-design.
+    # A large number of fields are being commented out. Eventually they should be removed
+    # (Once the re-design is accepted)    
 
     resourcename = "req"
     tablename = "%s_%s" % (module, resourcename)
@@ -85,7 +81,6 @@ if deployment_settings.has_module(module):
     table.message.requires = IS_NOT_EMPTY()
 
     # Hide fields from user:
-    #table.source_type.readable = table.source_type.writable = False
     #table.source_id.readable = table.source_id.writable = False
     #table.verified.readable = table.verified.writable = False
     #table.verified_details.readable = table.verified_details.writable = False
@@ -110,6 +105,11 @@ if deployment_settings.has_module(module):
     table.type.label = T("Request Type")
     table.type.comment = SPAN("*", _class="req")
 
+    #rms_req_source_type = { 1 : "Manual",
+    #                        2 : "SMS",
+    #                        3 : "Tweet" }
+
+    #table.source_type.readable = table.source_type.writable = False
     #table.source_type.requires = IS_NULL_OR(IS_IN_SET(rms_req_source_type))
     #table.source_type.represent = lambda stype: stype and rms_req_source_type[stype]
     #table.source_type.label = T("Source Type")
@@ -152,8 +152,30 @@ if deployment_settings.has_module(module):
                     ondelete = "RESTRICT"
                     )
 
+    def rms_req_onaccept(form):
+        # Send a Message to the Inventory Managers when a new Request comes in
+        # Q: How to tell whether this is a new request?
+        
+        # Hack: Send to all people in the Organisation
+        try:
+            org_pe_id = db(db.org_organisation.id == form.vars.organisation_id).select(db.org_organisation.pe_id, limitby=(0, 1)).first().pe_id
+
+            message = T("Sahana: new request has been made. Please login to see if you can fulfil the request.")
+
+            msg.send_sms_by_pe_id(self,
+                                  org_pe_id,
+                                  message=message,
+                                  sender_pe_id="",
+                                  sender="",
+                                  fromaddress="",
+                                  system_generated=True)
+        except:
+            pass
+
     s3xrc.model.configure(table,
-                          super_entity=db.sit_situation)
+                          super_entity=db.sit_situation,
+                          onaccept = lambda form: rms_req_onaccept(form),
+                          )
 
     # rms_req as component of doc_documents, shelters, hospitals, activities and inventory store
     s3xrc.model.add_component(module,

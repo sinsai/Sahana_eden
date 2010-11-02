@@ -2,7 +2,7 @@
 
 """ S3XRC Resource Framework - CRUD Method Handlers
 
-    @version: 2.2.0
+    @version: 2.2.1
 
     @see: U{B{I{S3XRC}} <http://eden.sahanafoundation.org/wiki/S3XRC>} on Eden wiki
 
@@ -486,7 +486,6 @@ class S3CRUDHandler(S3MethodHandler):
             if representation in ("popup", "iframe"):
                 response.view = self._view(r, "popup.html")
                 output.update(caller=request.vars.caller)
-                r.next = None
             else:
                 response.view = self._view(r, "create.html")
 
@@ -594,7 +593,10 @@ class S3CRUDHandler(S3MethodHandler):
             output.update(form=form)
 
             # Add map
-            if "location_id" in table.fields and table.location_id.writable:
+            location_id = [f for f in table if f.writable and
+                            str(f.type) == "reference gis_location"]
+            if location_id:
+            #if "location_id" in table.fields and table.location_id.writable:
                 # Allow the Location Selector to take effect
                 response.s3.gis.location_id = True
                 if response.s3.gis.map_selector:
@@ -608,7 +610,9 @@ class S3CRUDHandler(S3MethodHandler):
                 output.update(buttons)
 
             # Redirection
-            if not create_next:
+            if representation in ("popup", "iframe"):
+                self.next = None
+            elif not create_next:
                 self.next = r.there(representation=representation)
             else:
                 try:
@@ -890,7 +894,10 @@ class S3CRUDHandler(S3MethodHandler):
             output.update(form=form)
 
             # Add map
-            if "location_id" in table.fields and table.location_id.writable:
+            location_id = [f for f in table if f.writable and
+                            str(f.type) == "reference gis_location"]
+            if location_id:
+            #if "location_id" in table.fields and table.location_id.writable:
                 # Allow the Location Selector to take effect
                 response.s3.gis.location_id = True
                 if response.s3.gis.map_selector:
@@ -910,7 +917,9 @@ class S3CRUDHandler(S3MethodHandler):
                 output.update(buttons)
 
             # Redirection
-            if not update_next:
+            if representation in ("popup", "iframe"):
+                self.next = None
+            elif not update_next:
                 if r.component:
                     self.next = r.there(representation=r.representation)
                 else:
@@ -1113,9 +1122,9 @@ class S3CRUDHandler(S3MethodHandler):
                 output.update(showaddbtn=showaddbtn)
 
                 # Add map
-                #if tablename in shn_table_links("gis_location") and table.location_id.writable:
-                # @ToDo complete the ability to rename location_id field
-                if "location_id" in table.fields and table.location_id.writable:
+                location_id = [f for f in table if f.writable and
+                               str(f.type) == "reference gis_location"]
+                if location_id:
                     # Allow the Location Selector to take effect
                     response.s3.gis.location_id = True
                     if response.s3.gis.map_selector:

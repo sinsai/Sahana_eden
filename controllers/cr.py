@@ -126,8 +126,8 @@ def shelter():
 
     """
 
-    resource = request.function
-    tablename = module + "_" + resource
+    resourcename = request.function
+    tablename = module + "_" + resourcename
     table = db[tablename]
 
     db.pr_presence.pe_id.readable = True
@@ -150,7 +150,7 @@ def shelter():
             # listadd arrives here as method=None
             if r.method != "delete" and not r.component:
                 # Redirect to the Assessments tabs after creation
-                r.next = r.other(method="assessment", record_id=s3xrc.get_session(module, resource))
+                r.next = r.other(method="assessment", record_id=s3xrc.get_session(module, resourcename))
 
             if r.component and r.component.name == "presence":
                 # No Delete on the Action buttons
@@ -170,7 +170,7 @@ def shelter():
 
     rheader = lambda r: shn_shelter_rheader(r, tabs=shelter_tabs)
 
-    output = s3_rest_controller(module, resource,
+    output = s3_rest_controller(module, resourcename,
                                  rheader=rheader)
 
     return output
@@ -237,7 +237,7 @@ def shn_shelter_prep(r):
                                   (db.org_staff.person_id == db.pr_person.id)).select(
                                    db.org_staff.id, limitby=(0, 1)).first()
                     if staff_id:
-                        rat_assessment.staff_id.default = staff_id.id
+                        db.rat_assessment.staff_id.default = staff_id.id
 
             elif r.component.name == "store":
                 # Hide the Implied fields

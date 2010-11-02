@@ -140,23 +140,46 @@ def summary():
 
 #==============================================================================
 def basic_assess():
-    custom_assess_fields = (("assess", "location_id", "selector"),
-                       ("impact", 1),
-                       ("impact", 2),
-                       ("impact", 3),
-                       ("impact", 4),
-                       ("impact", 5),
-                       ("impact", 6),
-                       ("impact", 7),                           
-                       ("assess", "comments"),
-                       )
+    ireport_id = request.vars.get("ireport_id")
+    location = None
+    if incident_id:
+        irs_location_id = shn_get_db_field_value(db = db,
+                                                 table = "irs_ireport",
+                                                 field = "location_id",
+                                                 look_up = ireport_id
+                                                 )
+        location = shn_gis_location_represent(irs_location_id)
+        custom_assess_fields = (
+                           ("impact", 1),
+                           ("impact", 2),
+                           ("impact", 3),
+                           ("impact", 4),
+                           ("impact", 5),
+                           ("impact", 6),
+                           ("impact", 7),                           
+                           ("assess", "comments"),
+                           )
+        form, form_accepted, assess_id = custom_assess(custom_assess_fields, location_id = irs_location_id)
+    else:
+        custom_assess_fields = (("assess", "location_id", "selector"),
+                           ("impact", 1),
+                           ("impact", 2),
+                           ("impact", 3),
+                           ("impact", 4),
+                           ("impact", 5),
+                           ("impact", 6),
+                           ("impact", 7),                           
+                           ("assess", "comments"),
+                           )
+        form, form_accepted, assess_id = custom_assess(custom_assess_fields)
+                
     
-    form, form_accepted, assess_id = custom_assess(custom_assess_fields)
     
     if form_accepted:
          response.confirmation = T("Basic Assessment Reported")
          redirect(URL(r = request, f = "assess", args = [assess_id, "impact"]))
     return dict(title = T("Basic Assessment"),
+                location = location,
                 form = form)    
 
 def mobile_basic_assess():
@@ -190,9 +213,8 @@ def color_code_severity_widget(widget, name):
         option[0][0].__setitem__("_name", name)
     return widget
 
-def custom_assess(custom_assess_fields):
+def custom_assess(custom_assess_fields, location_id = None):
     """ Custom page to hide the complexity of the Assessments/Impacts/Summary model for a Mobile device """
-
     form_row = []
     comment = ""
     for field in custom_assess_fields:
@@ -296,12 +318,15 @@ def custom_assess(custom_assess_fields):
                     location_dict["lat"] = request.vars["gis_location_lat"]
                 if "gis_location_lon" in request.vars:
                     location_dict["lon"] = request.vars["gis_location_lon"]
-                location_dict["name"] = request.vars["custom_assess_location_id"]    
-                location_id = db.gis_location.insert(**location_dict)
-                record_dict["location_id"] = location_id
+                location_dict["name"] = request.vars["custom_assess_location_id"]                    
+                record_dict["location_id"] = db.gis_location.insert(**location_dict)
             if "location_id" in request.vars:
                 #Location Select
-                record_dict["location_id"] = request.vars["location_id"]                
+                record_dict["location_id"] = request.vars["location_id"]  
+                
+            if location_id:
+                #Location_id was passed to function
+                record_dict["location_id"] =location_id        
                 
             assess_id = db.assess_assess.insert(**record_dict)
 
@@ -330,6 +355,11 @@ def custom_assess(custom_assess_fields):
                         severity = int(request.vars[name + "_severity"])
                         record_dict["severity"] = severity
                         
+                        if not record_dict["value"] and not record_dict["severity"]:
+                            #Do not record impact if there is no data for it. 
+                            #Should we still average severity though? Now not doing this
+                            continue                        
+                        
                         #record the Severity per cluster 
                         cluster_id = \
                             shn_get_db_field_value(db = db,
@@ -340,6 +370,7 @@ def custom_assess(custom_assess_fields):
                             cluster_summary[cluster_id].append(severity)
                         elif cluster_id:
                             cluster_summary[cluster_id] = [severity]
+                            
                     db[component_dict[ field[0] ] ].insert(**record_dict)
             
             #Add cluster summaries @TODO - make sure that this doesn't happen if there are clusters in the assess

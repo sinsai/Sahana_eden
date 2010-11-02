@@ -172,6 +172,13 @@ def ireport():
 
     #s3xrc.model.configure(table, listadd=False)
     output = s3_rest_controller(module, resource, rheader=rheader)
+    if response.s3.actions:
+        response.s3.actions.append({"url" : str(URL(r=request, c="assess", f="basic_assess", vars = {"ireport_id":"[id]"})),
+                                    "_class" : "action-btn",
+                                    "label" : "Assess"
+                                    }
+                                   )
+    
     return output
 
 # -----------------------------------------------------------------------------

@@ -208,7 +208,8 @@ def gap_report():
                                     )
                             )
 
-    headings = ("Location",
+    headings = ("Date",
+                "Location",
                 "Clusters",
                 "Assessment",
                 "Severity",
@@ -229,7 +230,7 @@ def gap_report():
                                   _href = URL(r=request,
                                               c="assess",
                                               f="assess",
-                                              args = (gap_row.assess_id, "summary")
+                                              args = (gap_row.assess_id, "impact")
                                               ),
                                   _target = "blank",
                                   _id = "show-add-btn",
@@ -265,6 +266,11 @@ def gap_report():
             
             
         #Displaying NONE
+        if gap_row.datetime:
+            datetime = gap_row.datetime
+        else:
+            datetime = NONE
+                    
         if gap_row.start_date:
             start_date = gap_row.start_date
         else:
@@ -280,7 +286,8 @@ def gap_report():
         else:
             total_bnf = NONE
 
-        gap_table.append(TR( shn_gis_location_represent(gap_row.location_id),
+        gap_table.append(TR( datetime, 
+                             shn_gis_location_represent(gap_row.location_id),
                              shn_org_cluster_represent(gap_row.cluster_id),
                              assess_action_btn,
                              shn_assess_severity_represent(gap_row.assess_value),

@@ -45,7 +45,7 @@
     <xsl:param name="utcnow"/>
 
     <!-- ****************************************************************** -->
-    <xsl:include href="rss_base.xsl"/> <!-- Do not remove this line! -->
+    <xsl:include href="base/rss.xsl"/> <!-- Do not remove this line! -->
 
     <!-- ****************************************************************** -->
     <!-- pr_person -->

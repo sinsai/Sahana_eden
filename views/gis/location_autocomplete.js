@@ -898,6 +898,62 @@ $(function() {
     $(location_id_row).before(row2);
     // Apply the tooltip which was missed 1st time round
     $('#gis_location_add_street_tooltip').cluetip({activation: 'hover', sticky: false, splitTitle: '|'});
+    label = '';
+    widget = "<a id='geocoder-results-button' href='#'>{{=T("Geolocator Search")}}</a> ({{=T("Type an address above and use the geolocator to complete it.")}})";
+    row1 = "<tr id='gis_location_map__row1'><td colspan='2'><label>" + label + '</label></td></tr>';
+    row2 = "<tr id='gis_location_map__row'><td>" + widget + '</td><td></td></tr>';
+    $(location_id_row).before(row1);
+    $(location_id_row).before(row2);
+
+    function geoLocatorResultsHandler(selectedAddress) {
+        //s3_debug("Selected place: ", selectedAddress);
+        console.log("Selected place: ", selectedAddress);
+        var street_addr = selectedAddress.AddressDetails.Country.
+            AdministrativeArea.SubAdministrativeArea.Locality.
+            Thoroughfare.ThoroughfareName;
+        var zipcode = selectedAddress.AddressDetails.Country.
+            AdministrativeArea.SubAdministrativeArea.Locality.
+            PostalCode.PostalCodeNumber;
+        var country = selectedAddress.AddressDetails.Country.CountryName;
+        if (zipcode) {
+            street_addr += " " + zipcode;
+        }
+        s3_debug("Geolocator selected country:", country);
+        s3_debug("Geolocator selected addr: ", street_addr);
+        $('#gis_location_lat').val(selectedAddress.Point.coordinates[0]);
+        $('#gis_location_lon').val(selectedAddress.Point.coordinates[1]);
+        $('#gis_location_addr_street').val(street_addr);
+        $('#gis_location_l0').val(country);
+    }
+
+    var geoCodeButton = Ext.get('geocoder-results-button');
+    geoCodeButton.on('click', function(){
+        var addr_street = $('#gis_location_addr_street').val();
+        var country = ""
+        var province = ""
+        // Unfortunately, adding in the country seems to pear down results
+        // just a little too much.  Should be tested more...
+        if ($('#gis_location_l0').val()) {
+            country = $('#gis_location_l0 :selected').text();
+        }
+        if ($('#gis_location_l1').val()) {
+            province = $('#gis_location_l1 :selected').text();
+        }
+        var search_term = addr_street + " " + province + " " + country;
+        s3_debug("Searching geolocator with: ", search_term);
+        if (!addr_street) {
+            return;
+        }
+        $.getJSONS3(
+            '/eden/gis/geolocate?location=' + search_term,
+            function(data) {
+                s3_debug("Geolocator results:", data);
+                geocode_results_picker(data, geoLocatorResultsHandler);
+            },
+            'false'
+        );
+    });
+
 
     // Call L0 after definition of L1-L5 (since it may need to recurse through them)
     S3.gis.locations_l0();
@@ -1106,5 +1162,6 @@ s3_tb_cleanup = function(level){
 {{pass}}
 
 {{include "gis/convert_gps.html"}}
+{{include "gis/geocoder_results_popup.html"}}
 
 {{pass}}

@@ -1,9 +1,10 @@
 # -*- coding: utf-8 -*-
 
-""" Synchronization - model
+""" SYNC Synchronization, Model
 
     @author: Amer Tahir
     @author: nursix
+    @version: 0.1.0
 
     Resources:
 

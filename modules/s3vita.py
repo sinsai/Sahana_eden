@@ -1,9 +1,9 @@
 # -*- coding: utf-8 -*-
 
-"""
-    VITA Sahana-Eden Person Data Toolkit
+""" VITA Sahana-Eden Person Data Toolkit
 
-    @version: 0.5.1
+    @version: 1.0.0
+    @see: U{http://eden.sahanafoundation.org/wiki/BluePrintVITA}
 
     @author: nursix
     @copyright: 2010 (c) Sahana Software Foundation

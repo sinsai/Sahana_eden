@@ -1,9 +1,10 @@
 # -*- coding: utf-8 -*-
 
-""" Synchronisation - Controllers
+""" SYNC Synchronisation, Controllers
 
     @author: Amer Tahir
     @author: nursix
+    @version: 0.1.0
 
 """
 

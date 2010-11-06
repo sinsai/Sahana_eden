@@ -1,9 +1,12 @@
 # -*- coding: utf-8 -*-
 
-""" DVI - Management of Dead Bodies and Disaster Victim Identification
+""" DVI - Disaster Victim Identification, Models
+   (Part of VITA)
 
-    @author: khushbu
     @author: nursix
+    @author: khushbu
+    @see: U{http://eden.sahanafoundation.org/wiki/BluePrintVITA}
+    @version: 1.0.0
 
 """
 

@@ -53,19 +53,30 @@ def organisation():
 
     """ RESTful CRUD controller """
 
+    # Post-processor
+    def postp(r, output):
+        # No point in downloading large dropdowns which we hide, so provide a smaller represent
+        if r.component and r.component_name in ["office", "project", "store", "assess", "activity"]:
+            db[r.component.tablename].location_id.requires = IS_NULL_OR(IS_ONE_OF_EMPTY(db, "gis_location.id"))
+            response.s3.gis.location_id = r.component.tablename + "_location_id"
+        return output
+    response.s3.postp = postp
+
     rheader = lambda r: shn_org_rheader(r,
                                         tabs = [(T("Basic Details"), None),
-                                                (T("Offices"), "office"),
                                                 (T("Staff"), "staff"),
+                                                (T("Offices"), "office"),                                                
+                                                (T("Warehouses"), "store"),
+                                                (T("Assessments"), "assess"),
+                                                (T("Projects"), "project"),
                                                 (T("Activities"), "activity"),
-                                                #(T("Projects"), "project"),
                                                 #(T("Tasks"), "task"),
                                                 #(T("Donors"), "organisation"),
                                                 #(T("Sites"), "site"),  # Ticket 195
                                                ])
 
-    return s3_rest_controller(prefix, resourcename, rheader=rheader)
-
+    output = s3_rest_controller(prefix, resourcename, rheader=rheader)
+    return output
 
 #==============================================================================
 def office():
@@ -161,40 +172,6 @@ s3.crud_strings[tablename] = Storage(
     msg_record_modified = T("Donor updated"),
     msg_record_deleted = T("Donor deleted"),
     msg_list_empty = T("No Donors currently registered"))
-
-
-#==============================================================================
-def project():
-
-    """ RESTful CRUD controller """
-
-    tablename = "%s_%s" % (prefix, resourcename)
-    table = db[tablename]
-
-    db.org_staff.person_id.comment[1] = DIV(DIV(_class="tooltip",
-        _title=T("Person") + "|" + T("Select the person assigned to this role for this project.")))
-
-    rheader = lambda r: shn_project_rheader(r,
-                                            tabs = [(T("Basic Details"), None),
-                                                    (T("Staff"), "staff"),
-                                                    (T("Tasks"), "task"),
-                                                    #(T("Donors"), "organisation"),
-                                                    #(T("Sites"), "site"),  # Ticket 195
-                                                   ])
-
-    return s3_rest_controller(prefix, resourcename, rheader=rheader)
-
-
-#==============================================================================
-def task():
-
-    """ RESTful CRUD controller """
-
-    tablename = "%s_%s" % (prefix, resourcename)
-    table = db[tablename]
-
-    return s3_rest_controller(prefix, resourcename)
-
 
 #==============================================================================
 def shn_org_rheader(r, tabs=[]):

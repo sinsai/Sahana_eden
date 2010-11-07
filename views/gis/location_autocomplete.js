@@ -44,10 +44,13 @@ $(function() {
     var old_addr_street = '';
   {{pass}}
 
-    if (undefined == location_id){
-        // If the calling view hasn't provided a value then use the default
-        var location_id = '{{=request.controller + "_" + request.function + "_location_id"}}';
-    }
+  {{if response.s3.gis.location_id == True:}}
+  // If the calling view hasn't provided a value then use the default
+  var location_id = '{{=request.controller + "_" + request.function + "_location_id"}}';   
+  {{else:}}
+  //For custom Non-CRUD forms
+  var location_id = '{{=response.s3.gis.location_id}}';   
+  {{pass}}
     var location_id_row1 = '#' + location_id + '__row1';
     var location_id_row = '#' + location_id + '__row';
 
@@ -572,7 +575,7 @@ $(function() {
 
     // Name
     // @ToDo: Localise according to current user's preference
-    label = '{{=T("Name")}}:';
+    label = '{{=T("Name")}}:<span class="req"> *</span>';
     widget = "<input id='gis_location_name' class='ac_input string' size='50' value='" + old_name + "' />";
     comment = "<div title='" + label + '|' + '{{=T("Enter a few characters of the name to select an existing Location or else simply type the name of the new Location.")}}' + "' id='gis_location_name_tooltip' class='tooltip'></div>";
     row1 = "<tr id='gis_location_name__row1'><td colspan='2'><label>" + label + '</label></td></tr>';

@@ -17,6 +17,7 @@ if deployment_settings.has_module("irs") or deployment_settings.has_module("asse
     tablename = "%s_%s" % (module, resourcename)
     table = db.define_table(tablename,
                             Field("name", length=128, notnull=True, unique=True),
+                            cluster_id(),
                             migrate=migrate, *s3_meta_fields()
                             )        
     
@@ -71,6 +72,8 @@ if deployment_settings.has_module("irs") or deployment_settings.has_module("asse
                             assess_id(),
                             impact_type_id(),
                             Field("value", "double"),
+                            Field("severity", "integer",
+                                  default = 0),                            
                             comments(),
                             migrate=migrate, *s3_meta_fields()
                             )        
@@ -78,6 +81,10 @@ if deployment_settings.has_module("irs") or deployment_settings.has_module("asse
     #Hide fk fields in forms
     table.incident_id.readable = table.incident_id.writable = False
     table.assess_id.readable = table.assess_id.writable = False
+                               
+    table.severity.requires = IS_EMPTY_OR(IS_IN_SET(assess_severity_opts))
+    table.severity.widget=SQLFORM.widgets.radio.widget    
+    table.severity.represent = shn_assess_severity_represent
     
     # CRUD strings
     ADD_IMPACT = T("Add Impact")

@@ -13,19 +13,24 @@ module = "inventory"
 if deployment_settings.has_module("logs"):
 
     #==============================================================================
-    # Inventory Store
+    # Inventory Store / Warehouse
     #
     resourcename = "store"
     tablename = "%s_%s" % (module, resourcename)
     table = db.define_table(tablename,
-                            location_id(),
-                            document_id(),
+                            organisation_id(),
+                            location_id(),                            
+                            #document_id(),
+                            person_id("contact_person_id"                 
+                                      ),                            
                             super_link(db.org_site),
                             comments(),
                             migrate=migrate, *s3_meta_fields())
 
 
     table.location_id.requires = IS_ONE_OF(db, "gis_location.id", repr_select, orderby="gis_location.name", sort=True)
+    
+    table.contact_person_id.label = T("Contact Person")
     s3xrc.model.configure(table, mark_required=["location_id"])
 
     # -----------------------------------------------------------------------------
@@ -37,38 +42,43 @@ if deployment_settings.has_module("logs"):
             return NONE
 
     # CRUD strings
-    ADD_INVENTORY_STORE = T("Add Inventory Store")
-    LIST_INVENTORY_STORES = T("List Inventory Stores")
+    ADD_INVENTORY_STORE = T("Add Warehouse")
+    LIST_INVENTORY_STORES = T("List Warehouses")
     s3.crud_strings[tablename] = Storage(
         title_create = ADD_INVENTORY_STORE,
-        title_display = T("Inventory Store Details"),
+        title_display = T("Warehouse Details"),
         title_list = LIST_INVENTORY_STORES,
-        title_update = T("Edit Inventory Store"),
-        title_search = T("Search Inventory Stores"),
-        subtitle_create = T("Add New Inventory Store"),
-        subtitle_list = T("Inventory Stores"),
+        title_update = T("Edit Warehouse"),
+        title_search = T("Search Warehouses"),
+        subtitle_create = T("Add New Warehouse"),
+        subtitle_list = T("Warehouses"),
         label_list_button = LIST_INVENTORY_STORES,
         label_create_button = ADD_INVENTORY_STORE,
-        label_delete_button = T("Delete Inventory Store"),
-        msg_record_created = T("Inventory Store added"),
-        msg_record_modified = T("Inventory Store updated"),
-        msg_record_deleted = T("Inventory Store deleted"),
-        msg_list_empty = T("No Inventory Stores currently registered"))
+        label_delete_button = T("Delete Warehouse"),
+        msg_record_created = T("Warehouse added"),
+        msg_record_modified = T("Warehouse updated"),
+        msg_record_deleted = T("Warehouse deleted"),
+        msg_list_empty = T("No Warehouses currently registered"),
+        #msg_no_match = T("No Warehouses match this criteria")
+        )
 
     # Reusable Field
     inventory_store_id = S3ReusableField("inventory_store_id", db.inventory_store, sortby="name",
                 requires = IS_NULL_OR(IS_ONE_OF(db, "inventory_store.id", inventory_store_represent, orderby="inventory_store.id", sort=True)),
                 represent = lambda id: shn_gis_location_represent(shn_get_db_field_value(db=db, table="inventory_store", field="location_id", look_up=id)),
-                label = T("Inventory Store"),
+                label = T("Warehouse"),
                 comment = DIV(A(ADD_INVENTORY_STORE, _class="colorbox", _href=URL(r=request, c="inventory", f="store", args="create", vars=dict(format="popup")), _target="top", _title=ADD_INVENTORY_STORE),
-                          DIV( _class="tooltip", _title=T("Inventory Store") + "|" + T("An Inventory Store is a physical place which contains Relief Items available to be Distributed."))),
+                          DIV( _class="tooltip", _title=T("Warehouse") + "|" + T("A Warehouse is a physical place which contains Relief Items available to be Distributed."))),
                 ondelete = "RESTRICT"
                 )
 
-    # inventory_store as component of doc_documents
+    # inventory_store as component of doc_documents and org_organisation
     s3xrc.model.add_component(module, resourcename,
                               multiple=True,
-                              joinby=dict(doc_document="document_id"))
+                              joinby=dict(doc_document="document_id",
+                                          org_organisation="organisation_id"
+                                          )
+                              )
     # Also a component of sites, but these are 1-1 and use a natural join.
     # @ToDo Is multiple assumed True or False?  It's not touched
     # in add_component, so safest to set it explicitly.
@@ -117,7 +127,7 @@ if deployment_settings.has_module("logs"):
 
     logs_menu = [
                 [T("Home"), False, URL(r=request, c="logs", f="index")],
-                [T("Inventory Stores"), False, URL(r=request, c="inventory", f="store"),
+                [T("Warehouses"), False, URL(r=request, c="inventory", f="store"),
                 [
                     [T("List"), False, URL(r=request, c="inventory", f="store")],
                     [T("Add"), False, URL(r=request, c="inventory", f="store", args="create")],

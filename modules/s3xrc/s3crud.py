@@ -482,14 +482,6 @@ class S3CRUDHandler(S3MethodHandler):
             create_next = self._config("create_next")
             subheadings = self._config("subheadings")
 
-            # Set view
-            if representation in ("popup", "iframe"):
-                response.view = self._view(r, "popup.html")
-                output.update(caller=request.vars.caller)
-                r.next = None
-            else:
-                response.view = self._view(r, "create.html")
-
             # Title and subtitle
             if r.component:
                 title = self.crud_string(r.tablename, "title_display")
@@ -536,7 +528,7 @@ class S3CRUDHandler(S3MethodHandler):
                     del r.request.get_vars["from_fields"] # forget it
                     if map_fields.find("$") != -1:
                         mf = map_fields.split(",")
-                        mf = [f.find("$") != -1 and f.split("$") or [f,f] for f in mf]
+                        mf = [f.find("$") != -1 and f.split("$") or [f, f] for f in mf]
                         map_fields = Storage(mf)
                     else:
                         map_fields = map_fields.split(",")
@@ -616,6 +608,16 @@ class S3CRUDHandler(S3MethodHandler):
                 except TypeError:
                     self.next = create_next
 
+            # Set view
+            if representation in ("popup", "iframe"):
+                response.view = self._view(r, "popup.html")
+                output.update(caller=request.vars.caller)
+                # Do not redirect from create in a Popup
+                r.next = None
+                self.next = None
+            else:
+                response.view = self._view(r, "create.html")
+            
         #elif representation == "plain":
             #if onaccept:
                 #_onaccept = lambda form: \
@@ -1080,9 +1082,11 @@ class S3CRUDHandler(S3MethodHandler):
         if not list_fields:
             fields = self.resource.readable_fields()
         else:
-            fields = self.resource.readable_fields(subset=list_fields)
+            fields = [table[f] for f in list_fields if f in table.fields]
         if not fields:
-            fields = [table.id]
+            fields = []
+        if fields[0].name != table.fields[0]:
+            fields.insert(0, table[table.fields[0]])
 
         if r.interactive:
 
@@ -1111,6 +1115,8 @@ class S3CRUDHandler(S3MethodHandler):
                 output.update(showaddbtn=showaddbtn)
 
                 # Add map
+                #if tablename in shn_table_links("gis_location") and table.location_id.writable:
+                # @ToDo complete the ability to rename location_id field
                 if "location_id" in table.fields and table.location_id.writable:
                     # Allow the Location Selector to take effect
                     response.s3.gis.location_id = True
@@ -1631,9 +1637,11 @@ class S3SearchSimple(S3CRUDHandler):
                     if not list_fields:
                         fields = resource.readable_fields()
                     else:
-                        fields = resource.readable_fields(subset=list_fields)
+                        fields = [table[f] for f in list_fields if f in table.fields]
                     if not fields:
-                        fields = [table.id]
+                        fields = []
+                    if fields[0].name != table.fields[0]:
+                        fields.insert(0, table[table.fields[0]])
                     resource.build_query(id=results)
                     items = resource.select(fields=fields,
                                             orderby=orderby,

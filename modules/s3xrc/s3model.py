@@ -421,7 +421,8 @@ class S3ResourceModel(object):
                                            writable=False),
                                      Field("deleted", "boolean",
                                            readable=False,
-                                           writable=False),
+                                           writable=False,
+                                           default=False),
                                      Field("instance_type",
                                            readable=False,
                                            writable=False),
@@ -439,7 +440,7 @@ class S3ResourceModel(object):
     # -------------------------------------------------------------------------
     def super_key(self, super):
 
-        """ Get a the name of the key for a super-entity
+        """ Get the name of the key for a super-entity
 
             @param super: the super-entity table
 
@@ -483,7 +484,7 @@ class S3ResourceModel(object):
 
         # Get the record
         id = record.get("id", None)
-        record = self.db(table.id==id).select(table.ALL, limitby=(0,1)).first()
+        record = self.db(table.id == id).select(table.ALL, limitby=(0, 1)).first()
         if not record:
             return True
 
@@ -519,16 +520,16 @@ class S3ResourceModel(object):
             data.update(uuid=uid)
 
             # Update records
-            row = self.db(s.uuid==uid).select(s[key], limitby=(0,1)).first()
+            row = self.db(s.uuid == uid).select(s[key], limitby=(0, 1)).first()
             if row:
                 k = {key:row[key]}
-                self.db(s[key]==row[key]).update(**data)
+                self.db(s[key] == row[key]).update(**data)
                 if record[key] != row[key]:
                     self.db(table.id==id).update(k)
             else:
                 k = s.insert(**data)
                 if k:
-                    self.db(table.id==id).update(**{key:k})
+                    self.db(table.id == id).update(**{key:k})
 
         return True
 

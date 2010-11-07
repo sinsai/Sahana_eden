@@ -193,13 +193,13 @@ if deployment_settings.has_module(module):
                                           doc_document="document_id"))
 
     s3xrc.model.configure(table,
-        listadd=False,
-        super_entity=db.org_site,
-        list_fields=["id",
-                     "name",
-                     "shelter_type_id",
-                     "shelter_service_id",
-                     "location_id"])
+                          #listadd=False,
+                          super_entity=db.org_site,
+                          list_fields=["id",
+                                       "name",
+                                       "shelter_type_id",
+                                       "shelter_service_id",
+                                       "location_id"])
 
     # Link to shelter from pr_presence
     table = db.pr_presence

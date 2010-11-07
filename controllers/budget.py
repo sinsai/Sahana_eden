@@ -1192,7 +1192,7 @@ def budget_staff_bundle():
             id_link = A(name, _href=URL(r=request, f="staff", args=[id, "read"]))
             location = db.budget_location[row.location_id].code
             location_link = A(location, _href=URL(r=request, f="location", args=[row.location_id, "read"]))
-            project = db.org_project[row.project_id].code
+            project = db.project_project[row.project_id].code
             project_link = A(project, _href=URL(r=request, c="org", f="project", args=[row.project_id, "read"]))
             description = _staff.comments
             quantity_box = INPUT(_value=row.quantity, _size=4, _name="staff_qty_" + str(id))
@@ -1220,7 +1220,7 @@ def budget_staff_bundle():
             id_link = A(name, _href=URL(r=request, f="bundle", args=[id, "read"]))
             location = db.budget_location[row.location_id].code
             location_link = A(location, _href=URL(r=request, f="location", args=[row.location_id, "read"]))
-            project = db.org_project[row.project_id].code
+            project = db.project_project[row.project_id].code
             project_link = A(project, _href=URL(r=request, c="org", f="project", args=[row.project_id, "read"]))
             description = _bundle.description
             quantity_box = INPUT(_value=row.quantity, _size=4, _name="bundle_qty_" + str(id))
@@ -1268,7 +1268,7 @@ def budget_staff_bundle():
             id_link = A(name, _href=URL(r=request, f="staff", args=[id, "read"]))
             location = db.budget_location[row.location_id].code
             location_link = A(location, _href=URL(r=request, f="location", args=[row.location_id, "read"]))
-            project = db.org_project[row.project_id].code
+            project = db.project_project[row.project_id].code
             project_link = A(project, _href=URL(r=request, c="org", f="project", args=[row.project_id, "read"]))
             description = _staff.comments
             quantity_box = INPUT(_value=row.quantity, _size=4, _name="staff_qty_" + str(id))
@@ -1296,7 +1296,7 @@ def budget_staff_bundle():
             id_link = A(name, _href=URL(r=request, f="bundle", args=[id, "read"]))
             location = db.budget_location[row.location_id].code
             location_link = A(location, _href=URL(r=request, f="location", args=[row.location_id, "read"]))
-            project = db.org_project[row.project_id].code
+            project = db.project_project[row.project_id].code
             project_link = A(project, _href=URL(r=request, c="org", f="project", args=[row.project_id, "read"]))
             description = _bundle.description
             quantity_box = row.quantity

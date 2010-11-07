@@ -10,7 +10,7 @@ prefix = request.controller
 resourcename = request.function
 
 # -----------------------------------------------------------------------------
-# Options Menu (available in all Functions" Views)
+# Options Menu (available in all Functions' Views)
 def shn_menu():
     response.menu_options = [
         [T("Home"), False, URL(r=request, f="index")],
@@ -191,6 +191,12 @@ def image():
 def pe_contact():
 
     """ RESTful CRUD controller """
+
+    table = db.pr_pe_contact
+
+    table.pe_id.label = T("Person/Group")
+    table.pe_id.readable = True
+    table.pe_id.writable = True
 
     return s3_rest_controller(prefix, resourcename)
 

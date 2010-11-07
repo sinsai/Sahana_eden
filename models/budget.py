@@ -2,6 +2,8 @@
 
 """
     Budgetting module
+    
+    NB Depends on Project Tracking module
 
     @author: Fran Boon
 """
@@ -78,7 +80,7 @@ if deployment_settings.has_module(module):
                             Field("megabyte_cost", "double", default=0.00),
                             comments(),
                             migrate=migrate,
-                            *(s3_timestamp()+s3_uid()+s3_deletion_status()))
+                            *(s3_timestamp() + s3_uid() + s3_deletion_status()))
 
     table.code.requires = [IS_NOT_EMPTY(), IS_NOT_IN_DB(db, "%s.code" % table)]
     table.description.requires = IS_NOT_EMPTY()
@@ -130,7 +132,7 @@ if deployment_settings.has_module(module):
                             Field("total_megabyte_cost", "double", writable=False),
                             comments(),
                             migrate=migrate,
-                            *(s3_timestamp()+s3_uid()+s3_deletion_status()))
+                            *(s3_timestamp() + s3_uid() + s3_deletion_status()))
 
     table.code.requires = [IS_NOT_EMPTY(), IS_NOT_IN_DB(db, "%s.code" % table)]
 

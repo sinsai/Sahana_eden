@@ -2,16 +2,10 @@
 {{include "_list_create.html"}}
 <script type="text/javascript">//<![CDATA[
 $(function() {
-  {{if not jr.component:}}
-    // @ToDo: Only show if there are records (table-container has TRs in)
-    var instructions = "<p><h3>Instructions</h3>{{=T("Click on 'Pledge' button in the left-hand column to make a Pledge to match a request for aid.")}}</p>";
-    $('#table-container').after(instructions);
-  {{else:}}
-  {{pass}}
-
     var msg_default = '{{=T("Enter a summary of the request here.")}}\n\n{{=T("The next screen will allow you to enter a detailed list of items and quantities, if appropriate...")}}';
     // Provide some default help text in the Message box
-    $('#rms_req_message').attr({ value: msg_default }).addClass('default-text').focus(function(){
+    //$('#rms_req_message').attr({ value: msg_default }).addClass('default-text').focus(function(){
+	$('#rms_req_message').addClass('default-text').attr({ value: msg_default }).focus(function(){    	
             if($(this).val() == msg_default){
                 // Clear on click if still default
                 $(this).val('').removeClass('default-text');

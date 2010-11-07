@@ -19,9 +19,9 @@ def shn_menu():
             [T("Add Project"), False, URL(r=request, f="project", args="create")],
         ]],
     ]
-    if session.rcvars and "org_project" in session.rcvars:
-        project_id = session.rcvars["org_project"]
-        selection = db.org_project[project_id]
+    if session.rcvars and "project_project" in session.rcvars:
+        project_id = session.rcvars["project_project"]
+        selection = db.project_project[project_id]
         if selection:
             menu_project = [
                     ["%s %s" % (T("Project") + ":", selection.code), False, URL(r=request, f="project", args=[project_id]),[
@@ -163,7 +163,7 @@ def project():
            ]
 
     rheader = lambda r: shn_project_rheader(r, tabs)
-    return s3_rest_controller("org", resourcename, rheader=rheader)
+    return s3_rest_controller("project", resourcename, rheader=rheader)
 
 
 # -----------------------------------------------------------------------------
@@ -171,7 +171,7 @@ def task():
 
     """ Manage current user's tasks """
 
-    tablename = "org_%s" % (resourcename)
+    tablename = "project_%s" % (resourcename)
     table = db[tablename]
 
     my_person_id = s3_logged_in_person()
@@ -183,12 +183,12 @@ def task():
     table.person_id.default = my_person_id
     #table.person_id.writable = False
 
-    response.s3.filter = (db.org_task.person_id == my_person_id)
+    response.s3.filter = (db.project_task.person_id == my_person_id)
 
     s3.crud_strings[tablename].title_list = T("My Tasks")
     s3.crud_strings[tablename].subtitle_list = T("Task List")
 
-    return s3_rest_controller("org", resourcename)
+    return s3_rest_controller("project", resourcename)
 
 
 # -----------------------------------------------------------------------------

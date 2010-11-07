@@ -29,8 +29,8 @@ def setting():
 
     """ RESTful CRUD controller """
 
-    resource = request.function
-    tablename = "s3_" + resource
+    resourcename = request.function
+    tablename = "s3_" + resourcename
     table = db[tablename]
 
     table.admin_name.label = T("Admin Name")
@@ -64,7 +64,7 @@ def setting():
                           #update_next = URL(r=request, args=[1, "update"])
                           onaccept=theme_apply)
 
-    output = s3_rest_controller("s3", resource)
+    output = s3_rest_controller("s3", resourcename)
     return output
 
 @auth.shn_requires_membership(1)
@@ -416,17 +416,17 @@ def membership():
 
     """ RESTful CRUD controller """
 
-    module = "auth"
-    resource = "membership"
-    table = module + "_" + resource
+    prefix = "auth"
+    resourcename = "membership"
+    tablename = prefix + "_" + resourcename
+    table = db[tablename]
 
     # Model options
 
     # CRUD Strings
-    table = "auth_membership"
     ADD_MEMBERSHIP = T("Add Membership")
     LIST_MEMBERSHIPS = T("List Memberships")
-    s3.crud_strings[table] = Storage(
+    s3.crud_strings[tablename] = Storage(
         title_create = ADD_MEMBERSHIP,
         title_display = T("Membership Details"),
         title_list = LIST_MEMBERSHIPS,
@@ -442,7 +442,7 @@ def membership():
         msg_list_empty = T("No Memberships currently defined"))
 
     s3xrc.model.configure(table, main="user_id")
-    return s3_rest_controller(module, resource)
+    return s3_rest_controller(prefix, resourcename)
 
 @auth.shn_requires_membership(1)
 def users():

@@ -57,10 +57,13 @@ def store():
     tabs = [
             (T("Details"), None),
             (T("Items"), "store_item"),
+            (T("Requests From"), "req"),
            ]
     rheader = lambda r: shn_store_rheader(r, tabs)
 
-    output = s3_rest_controller(module, resource, rheader=rheader)
+    output = s3_rest_controller(module, 
+                                resource, 
+                                rheader=rheader)
     return output
 
 def index():
@@ -69,10 +72,13 @@ def index():
         Default to the inventory_store list view
         @TODO does not work with paginate!!!
     """
+    response.view = "logs/index.html"
+    module_name = deployment_settings.modules["logs"].name_nice
+    return dict(module_name=module_name)    
 
-    request.function = "store"
-    request.args = []
-    return store()
+    #request.function = "store"
+    #request.args = []
+    #return store()
     #module_name = deployment_settings.modules[module].name_nice
     #return dict(module_name=module_name)
 

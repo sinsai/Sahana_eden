@@ -26,8 +26,8 @@ if deployment_settings.has_module(module):
                                Field("locked", "boolean", readable=False, writable=False),
                                person_id(),
                                organisation_id(),
-                               *s3_meta_fields(),
-                               migrate=migrate)
+                               migrate=migrate,
+                               *s3_meta_fields())
 
     # Survey Series
     resourcename = "series"
@@ -39,8 +39,8 @@ if deployment_settings.has_module(module):
                              Field("from_date", "date", default=None),
                              Field("to_date", "date", default=None),
                              location_id(),
-                             *s3_meta_fields(),
-                             migrate=migrate)
+                             migrate=migrate,
+                             *s3_meta_fields())
 
     # Survey Section
     resourcename = "questions"

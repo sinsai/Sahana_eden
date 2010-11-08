@@ -3,7 +3,7 @@
 """ HMS Hospital Status Assessment and Request Management System
 
     @author: nursix
-    @version: 1.0.0
+    @version: 1.0.1
 
 """
 
@@ -104,10 +104,10 @@ if deployment_settings.has_module(module):
                     Field("available_beds", "integer"),         # Available Beds
                     Field("ems_status", "integer",              # Emergency Room Status
                           requires = IS_NULL_OR(IS_IN_SET(hms_ems_traffic_opts)),
-                          label = T("EMS Traffic Status"),
+                          label = T("ER Status"),
                           represent = lambda opt: hms_ems_traffic_opts.get(opt, UNKNOWN_OPT)),
                     Field("ems_reason", length=128,             # Reason for EMS Status
-                          label = T("EMS Status Reason")),
+                          label = T("ER Status Reason")),
                     Field("or_status", "integer",               # Operating Room Status
                           requires = IS_NULL_OR(IS_IN_SET(hms_or_status_opts)),
                           label = T("OR Status"),
@@ -234,7 +234,11 @@ if deployment_settings.has_module(module):
     tablename = "%s_%s" % (module, resourcename)
     table = db.define_table(tablename,
                             hospital_id(),
-                            person_id(),
+                            person_id(label = T("Contact"),
+                                      requires = IS_ONE_OF(db, "pr_person.id",
+                                                           shn_pr_person_represent,
+                                                           orderby="pr_person.first_name",
+                                                           sort=True)),
                             Field("title"),
                             Field("phone"),
                             Field("mobile"),
@@ -245,7 +249,6 @@ if deployment_settings.has_module(module):
                             migrate=migrate,
                             *(s3_timestamp() + s3_deletion_status()))
 
-    table.person_id.label = T("Contact")
     table.title.label = T("Job Title")
     table.title.comment = DIV(DIV(_class="tooltip",
         _title=T("Title") + "|" + T("The Role this person plays within this hospital.")))
@@ -265,6 +268,7 @@ if deployment_settings.has_module(module):
                               joinby=dict(hms_hospital="hospital_id"))
 
     s3xrc.model.configure(table,
+                          mark_required = ["person_id"],
                           list_fields=["id",
                                        "person_id",
                                        "title",

@@ -3,7 +3,7 @@
 """ HMS Hospital Status Assessment and Request Management System
 
     @author: nursix
-    @version: 1.0.0
+    @version: 1.0.1
 
 """
 

@@ -940,6 +940,8 @@
 'EMS Status': 'EMS Status',
 'EMS Status Reason': 'EMS Status Reason',
 'EMS Traffic Status': 'EMS Traffic Status',
+'ER Status': 'ER Status',
+'ER Status Reason': 'ER Status Reason',
 'Early Recovery': 'Early Recovery',
 'Earthquake': 'Earthquake',
 'Easy access to sanitation items for women/girls': 'Easy access to sanitation items for women/girls',

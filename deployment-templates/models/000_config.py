@@ -265,7 +265,7 @@ deployment_settings.modules = Storage(
         name_nice = T("Project Tracking"),
         description = T("Tracking of Projects, Activities and Tasks"),
         module_type = 10
-    ),    
+    ),
     # NB Budget module depends on Project Tracking Module
     budget = Storage(
             name_nice = T("Budgeting Module"),
@@ -325,12 +325,12 @@ deployment_settings.modules = Storage(
              name_nice = "Survey Module",
              description = "Create, enter, and manage surveys.",
              module_type = 10,
-    )
+    ),
     delphi = Storage(
          name_nice = T("Delphi Decision Maker"),
             description = T("Supports the decision making of large groups of Crisis Management Experts by helping the groups create ranked list."),
             module_type = 10,
-        ),
+    ),
     importer = Storage(
              name_nice = "Spreadsheet Importer",
              description = "Used to import data from spreadsheets into the database",

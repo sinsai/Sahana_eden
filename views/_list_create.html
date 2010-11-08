@@ -45,9 +45,14 @@
 {{include "dataTables.html"}}
 <script type="text/javascript">//<![CDATA[
 $(document).ready(function(){
+{{if jr.http=="POST":}}
+    $('#list-add').show()
+    $('#show-add-btn').hide()
+{{else:}}
     $('#show-add-btn').click(function() {
         $('#list-add').show()
         $('#show-add-btn').hide()
     });
+{{pass}}
 });
 //]]></script>

@@ -2,7 +2,7 @@
 
 """ S3XRC Resource Framework - CRUD Method Handlers
 
-    @version: 2.2.1
+    @version: 2.2.2
 
     @see: U{B{I{S3XRC}} <http://eden.sahanafoundation.org/wiki/S3XRC>} on Eden wiki
 
@@ -463,12 +463,18 @@ class S3CRUDHandler(S3MethodHandler):
         # Get table configuration
         insertable = self._config("insertable", True)
         if not insertable:
-            r.error(400, self.resource.ERROR.BAD_METHOD)
+            if r.method is not None:
+                r.error(400, self.resource.ERROR.BAD_METHOD)
+            else:
+                return dict(form=None)
 
         # Check permission for create
         authorised = self.permit("create", self.tablename)
         if not authorised:
-            r.unauthorised()
+            if r.method is not None:
+                r.unauthorised()
+            else:
+                return dict(form=None)
 
         # Get callbacks
         onvalidation = self._config("create_onvalidation") or \
@@ -1059,6 +1065,7 @@ class S3CRUDHandler(S3MethodHandler):
         orderby = self._config("orderby", None)
         sortby = self._config("sortby", [[1,'asc']])
         linkto = self._config("linkto", None)
+        insertable = self._config("insertable", True)
         listadd = self._config("listadd", True)
         list_fields = self._config("list_fields")
 
@@ -1108,39 +1115,41 @@ class S3CRUDHandler(S3MethodHandler):
             if listadd:
                 # Add-form
                 form = self.create(r, **attr).get("form", None)
-                output.update(form=form)
 
-                # Add-Title
-                addtitle = self.crud_string(tablename, "subtitle_create")
-                output.update(addtitle=addtitle)
+                if form is not None:
+                    output.update(form=form)
 
-                # ShowAdd-Button
-                showaddbtn = self.crud_button(None,
-                                              tablename=tablename,
-                                              name="label_create_button",
-                                              _id="show-add-btn")
-                output.update(showaddbtn=showaddbtn)
+                    # Add-Title
+                    addtitle = self.crud_string(tablename, "subtitle_create")
+                    output.update(addtitle=addtitle)
 
-                # Add map
-                location_id = [f for f in table if f.writable and
-                               str(f.type) == "reference gis_location"]
-                if location_id:
-                    # Allow the Location Selector to take effect
-                    response.s3.gis.location_id = True
-                    if response.s3.gis.map_selector:
-                        # Include a map
-                        _map = self.manager.gis.form_map(r, method="create")
-                        output.update(_map=_map)
+                    # ShowAdd-Button
+                    showaddbtn = self.crud_button(None,
+                                                  tablename=tablename,
+                                                  name="label_create_button",
+                                                  _id="show-add-btn")
+                    output.update(showaddbtn=showaddbtn)
 
-                # View
-                self.response.view = self._view(r, "list_create.html")
-            else:
+                    # Add map
+                    location_id = [f for f in table if f.writable and
+                                str(f.type) == "reference gis_location"]
+                    if location_id:
+                        # Allow the Location Selector to take effect
+                        response.s3.gis.location_id = True
+                        if response.s3.gis.map_selector:
+                            # Include a map
+                            _map = self.manager.gis.form_map(r, method="create")
+                            output.update(_map=_map)
+
+                    self.response.view = self._view(r, "list_create.html")
+                else:
+                    self.response.view = self._view(r, "list.html")
+
+            elif insertable:
                 # Buttons
                 buttons = self.insert_buttons(r, "add")
                 if buttons:
                     output.update(buttons)
-
-                # View
                 self.response.view = self._view(r, "list.html")
 
             # Get the list

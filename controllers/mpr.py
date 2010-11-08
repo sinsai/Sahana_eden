@@ -1,8 +1,11 @@
 # -*- coding: utf-8 -*-
 
-""" MPR Missing Person Registry - Controllers
+""" MPR Missing Person Registry, Controllers
+    (Part of VITA)
 
     @author: nursix
+    @see: U{http://eden.sahanafoundation.org/wiki/BluePrintVITA}
+    @version: 1.0.0
 
 """
 

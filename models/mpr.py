@@ -1,9 +1,11 @@
 # -*- coding: utf-8 -*-
 
-""" MPR Missing Persons Registry
+""" MPR Missing Persons Registry, Models
+    (Part of VITA)
 
     @author: nursix
     @see: U{http://eden.sahanafoundation.org/wiki/BluePrintVITA}
+    @version: 1.0.0
 
 """
 

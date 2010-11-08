@@ -1,8 +1,11 @@
 # -*- coding: utf-8 -*-
 
-""" DVI Module - Controllers
+""" DVI Disaster Victim Identification, Controllers
+    (Part of VITA)
 
-    @author: Dominic König
+    @author: nursix
+    @see: U{http://eden.sahanafoundation.org/wiki/BluePrintVITA}
+    @version: 1.0.0
 
 """
 

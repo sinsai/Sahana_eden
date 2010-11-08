@@ -1,10 +1,11 @@
 # -*- coding: utf-8 -*-
 
-""" S3 Person Registry, additional components
+""" PR Person Registry, Additional Models
+    (Part of VITA)
 
     @author: nursix
-
     @see: U{http://eden.sahanafoundation.org/wiki/BluePrintVITA}
+    @version: 1.0.0
 
 """
 

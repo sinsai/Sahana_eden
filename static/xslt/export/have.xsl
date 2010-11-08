@@ -11,7 +11,7 @@
 
          EDXL-HAVE Export Templates
 
-         Version 0.5 / 2010-10-26 / by nursix
+         Version 0.5.0 / 2010-10-26 / by nursix
 
          Copyright (c) 2010 Sahana Software Foundation
 
@@ -233,6 +233,7 @@
 
     <!-- ****************************************************************** -->
     <!-- Bed Capacity -->
+    <!-- @todo: export broken down by department if available -->
     <xsl:template name="BedCapacityStatus">
         <have:HospitalBedCapacityStatus>
             <have:BedCapacity>

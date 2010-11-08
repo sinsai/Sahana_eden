@@ -1,9 +1,10 @@
 # -*- coding: utf-8 -*-
 
-"""
-    HMS Hospital Status Assessment and Request Management System
+""" HMS Hospital Status Assessment and Request Management System
 
     @author: nursix
+    @version: 1.0.0
+
 """
 
 module = "hms"

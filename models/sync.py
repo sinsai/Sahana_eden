@@ -1,9 +1,10 @@
 # -*- coding: utf-8 -*-
 
-""" Synchronization - model
+""" SYNC Synchronization, Model
 
     @author: Amer Tahir
     @author: nursix
+    @version: 0.1.0
 
     Resources:
 
@@ -18,7 +19,7 @@
 
 """
 
-module = "sync"
+prefix = "sync"
 
 import sys
 
@@ -49,11 +50,10 @@ policy = S3ReusableField("policy", "integer", notnull=True,
 # Settings
 #
 resourcename = "setting"
-tablename = "%s_%s" % (module, resourcename)
-table = db.define_table(tablename, #uuidstamp,
+tablename = "%s_%s" % (prefix, resourcename)
+table = db.define_table(tablename,
                         Field("proxy"),
                         migrate=migrate, *s3_uid())
-
 
 table.uuid.readable = True
 
@@ -64,7 +64,7 @@ table.proxy.label = T("Proxy-server")
 # Synchronization status
 #
 resourcename = "status"
-tablename = "%s_%s" % (module, resourcename)
+tablename = "%s_%s" % (prefix, resourcename)
 table = db.define_table(tablename,
                         Field("locked", "boolean"),
                         Field("halt", "boolean"),
@@ -82,7 +82,7 @@ table = db.define_table(tablename,
 sync_message_types = ("OK", "ERROR", "SUCCESS", "FAILURE", "DONE", "SKIPPED", "")
 
 resourcename = "notification"
-tablename = "%s_%s" % (module, resourcename)
+tablename = "%s_%s" % (prefix, resourcename)
 table = db.define_table(tablename, timestamp,
                         Field("pid", "integer"),
                         Field("type", default=""),
@@ -107,7 +107,7 @@ formats += [f for f in s3xrc.json_export_formats if f not in formats]
 formats += [f for f in s3xrc.json_import_formats if f not in formats]
 
 resourcename = "peer"
-tablename = "%s_%s" % (module, resourcename)
+tablename = "%s_%s" % (prefix, resourcename)
 table = db.define_table(tablename,
                         #uuidstamp,
                         Field("name"),
@@ -146,7 +146,6 @@ table.policy.label = T("Default synchronization policy")
 table.last_sync_time.label = T("Last synchronization time")
 table.last_sync_time.writable = False
 
-# -----------------------------------------------------------------------------
 peer_id = S3ReusableField("peer_id", db.sync_peer, notnull=True,
                           requires = IS_ONE_OF(db, "sync_peer.id", "%(name)s"),
                           represent = lambda id: (id and [db.sync_peer(id).name] or [NONE])[0])
@@ -206,49 +205,8 @@ s3xrc.model.configure(table,
 
 
 # -----------------------------------------------------------------------------
-# Sync Schedule - scheduled sync jobs
+# Sync Job - scheduled synchronization jobs
 #
-#sync_schedule_period_opts = {
-    #"h": T("Hourly"),
-    #"d": T("Daily"),
-    #"w": T("Weekly"),
-    #"o": T("Just Once"),
-    #"m": T("Manual")
-#}
-
-#sync_schedule_job_type_opts = {
-    #1: T("Sahana Eden <=> Sahana Eden"),
-    #2: T("Sahana Eden <=> Other (Sahana Agasti, Ushahidi, etc.)")
-#}
-
-#resourcename = "schedule"
-#tablename = "%s_%s" % (module, resourcename)
-#table = db.define_table(tablename, timestamp,
-                        #Field("comments", length=128),              # brief comments about the scheduled job
-                        #Field("period",                             # schedule interval period, either hourly, "h", daily, "d", weekly, "w" or one-time, "o"
-                              #length=10,
-                              #notnull=True,
-                              #default="m",
-                              #requires = IS_IN_SET(sync_schedule_period_opts) ),
-                        #Field("hours", "integer", default=4),   # specifies the number of hours when hourly period is specified in 'period' field
-                        #Field("days_of_week", length=40),       # comma-separated list of the day(s) of the week when job runs on weekly basis.
-                                                                ## A day in a week is represented as a number ranging from 1 to 7 (1 = Sunday, 7 = Saturday)
-                        #Field("time_of_day", "time"),           # the time (at day_of_week) when job runs on a weekly or daily basis
-                        #Field("runonce_datetime", "datetime"),  # the date and time when job runs just once
-                        #Field("job_type", "integer", default=1, # This specifies the type of job: 1 - SahanaEden <=> SahanaEden sync,
-                              #requires = IS_IN_SET(sync_schedule_job_type_opts) ),
-                                                            ## 2 - SahanaEden <= Other sync (could be SahanaAgasti, Ushahidi, etc.)
-                        #Field("job_command", "text", notnull=True), # sync command to execute when this job runs. This command is encoded as a JSON formatted object.
-                                                            ## It contains the UUID of the sync partner, the list of modules along
-                                                            ## with resources within them to sync, whether this would be a complete or partial sync
-                                                            ## (partial sync only retrieves data modified after the last sync, complete sync fetches all),
-                                                            ## whether this sync would be a two-way (both push and pull) or one-way (push or pull),
-                                                            ## and sync policy (default policy is taken from the sync partner's record)
-                        #Field("last_run", "datetime"),      # the date and time of last scheduled run
-                        #Field("enabled", "boolean",         # whether this schedule is enabled or not. Useful in cases when you want to temporarily
-                              #default=True),                # disable a schedule
-                        #migrate=migrate)
-
 sync_job_types = {
     1: T("Sahana Eden <=> Sahana Eden"),
     2: T("Sahana Eden <=> Other")
@@ -279,7 +237,7 @@ sync_weekdays = {
 }
 
 resourcename = "job"
-tablename = "%s_%s" % (module, resourcename)
+tablename = "%s_%s" % (prefix, resourcename)
 table = db.define_table(tablename,
                         Field("last_run", "datetime"),
                         Field("type", "integer"),
@@ -317,7 +275,7 @@ table.run_interval.represent = lambda opt: sync_job_intervals.get(opt, UNKNOWN_O
 table.days.requires = IS_EMPTY_OR(IS_IN_SET(sync_weekdays, zero=None, multiple=True))
 table.days.default = sync_weekdays.keys()
 
-s3xrc.model.add_component(module, resourcename,
+s3xrc.model.add_component(prefix, resourcename,
                           joinby = dict(sync_peer="peer_id"),
                           multiple = True)
 
@@ -326,7 +284,7 @@ s3xrc.model.add_component(module, resourcename,
 # Sync General Log - keeps log of all syncs
 #
 resourcename = "log"
-tablename = "%s_%s" % (module, resourcename)
+tablename = "%s_%s" % (prefix, resourcename)
 table = db.define_table(tablename,
                         peer_id(),
                         Field("timestmp", "datetime"),
@@ -348,7 +306,7 @@ table.complete.represent = lambda val: val and T("all records") or T("updates on
 table.run_interval.label = T("Run Interval")
 table.run_interval.represent = lambda opt: sync_job_intervals.get(opt, UNKNOWN_OPT)
 
-s3xrc.model.add_component(module, resourcename,
+s3xrc.model.add_component(prefix, resourcename,
                           joinby = dict(sync_peer="peer_id"),
                           multiple = True)
 
@@ -364,13 +322,14 @@ s3xrc.model.configure(table,
         "run_interval",
         "errors"])
 
+
 # -----------------------------------------------------------------------------
 # Synchronization conflicts
 #
 resourcename = "conflict"
-tablename = "%s_%s" % (module, resourcename)
+tablename = "%s_%s" % (prefix, resourcename)
 table = db.define_table(tablename,
-                        Field("peer_uuid", length=128),
+                        peer_id(),
                         Field("tablename"),
                         Field("uuid", length=128),
                         Field("remote_record", "text"),
@@ -380,12 +339,39 @@ table = db.define_table(tablename,
                         Field("resolved", "boolean"),
                         migrate=migrate)
 
+table.remote_record.readable = False
+table.remote_record.writable = False
+
+table.timestmp.default = request.utcnow
+
+table.resolved.default = False
+table.resolved.represent = lambda value: value and T("yes") or T("no")
+
+s3xrc.model.configure(table,
+    insertable = False,
+    listadd = False,
+    list_fields = ["id", "timestmp", "peer_id", "tablename", "uuid", "resolved"])
+
+s3.crud_strings[tablename] = Storage(
+    title_display = T("Conflict Details"),
+    title_list = T("Synchronization Conflicts"),
+    title_update = T("Resolve Conflict"),
+    subtitle_list = T("Unresolved Conflicts"),
+    label_list_button = T("List Conflicts"),
+    label_delete_button = T("Delete Entry"),
+    msg_no_match = T("No log entries matching the query"),
+    msg_list_empty = T("No conflicts logged"))
+
+s3xrc.model.add_component(prefix, resourcename,
+                          joinby = dict(sync_peer="peer_id"),
+                          multiple = True)
+
 
 # -----------------------------------------------------------------------------
 # Peer registrations
 #
 resourcename = "registration"
-tablename = "%s_%s" % (module, resourcename)
+tablename = "%s_%s" % (prefix, resourcename)
 table = db.define_table(tablename,
                         Field("name"),
                         Field("uuid", length=128),
@@ -538,5 +524,6 @@ def s3_sync_primary_resources():
             tablenames.append(t)
 
     return tablenames
+
 
 # -----------------------------------------------------------------------------

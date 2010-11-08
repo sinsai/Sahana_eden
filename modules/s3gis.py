@@ -683,15 +683,19 @@ class GIS(object):
         csv.field_size_limit(2**20 * 10)  # 10 megs
 
         # from http://docs.python.org/library/csv.html#csv-examples
-        def latin_csv_reader(unicode_csv_data, dialect=csv.excel, **kwargs):
-            for row in csv.reader(unicode_csv_data):
-                yield [unicode(cell, "latin-1") for cell in row]
+        #def latin_csv_reader(unicode_csv_data, dialect=csv.excel, **kwargs):
+        #    for row in csv.reader(unicode_csv_data):
+        #        yield [unicode(cell, "latin-1") for cell in row]
 
-        def latin_dict_reader(data, dialect=csv.excel, **kwargs):
-            reader = latin_csv_reader(data, dialect=dialect, **kwargs)
-            headers = reader.next()
-            for r in reader:
-                yield dict(zip(headers, r))
+        #def latin_dict_reader(data, dialect=csv.excel, **kwargs):
+        #    reader = latin_csv_reader(data, dialect=dialect, **kwargs)
+        #    headers = reader.next()
+        #    for r in reader:
+        #        yield dict(zip(headers, r))
+
+        #def utf8_encoder(unicode_csv_data):
+        #    for line in unicode_csv_data:
+        #        yield line.encode("utf-8")
 
         def utf8_csv_reader(unicode_csv_data, dialect=csv.excel, **kwargs):
             for row in csv.reader(unicode_csv_data):
@@ -703,10 +707,6 @@ class GIS(object):
             for r in reader:
                 yield dict(zip(headers, r))
 
-        def utf8_encoder(unicode_csv_data):
-            for line in unicode_csv_data:
-                yield line.encode("utf-8")
-        
         # For each row
         current_row = 0
         for row in utf8_dict_reader(open(filename)):

@@ -270,6 +270,7 @@ if populate:
             table.insert( name = "# of children under 5" )
             table.insert( name = "# of children" )
             table.insert( name = "# of cattle" )
+            table.insert( name = "Ha. of fields" )
 
     # Impacts
     if deployment_settings.has_module("irs") or deployment_settings.has_module("assess"):        
@@ -284,7 +285,7 @@ if populate:
                                                      field = "id",
                                                      look_up = "Food",
                                                      look_up_field = "abrv") 
-                          )              
+                          )
             table.insert( name = "# People at Risk From Vector-Borne Diseases",
                           cluster_id = \
                               shn_get_db_field_value(db = db,
@@ -292,7 +293,7 @@ if populate:
                                                      field = "id",
                                                      look_up = "Health",
                                                      look_up_field = "abrv") 
-                          )  
+                          )
             table.insert( name = "# People without Access to Safe Drinking-Water",
                           cluster_id = \
                               shn_get_db_field_value(db = db,
@@ -308,7 +309,7 @@ if populate:
                                                      field = "id",
                                                      look_up = "Shelter",
                                                      look_up_field = "abrv") 
-                          )  
+                          )
             table.insert( name = "# Houses Flooded",
                           cluster_id = \
                               shn_get_db_field_value(db = db,
@@ -316,15 +317,23 @@ if populate:
                                                      field = "id",
                                                      look_up = "Shelter",
                                                      look_up_field = "abrv") 
-                          )                              
-            table.insert( name = "Ha. Rice Paddies Flooded",
+                          )
+            table.insert( name = "Water Level still high?",
+                          cluster_id = \
+                              shn_get_db_field_value(db = db,
+                                                     table = "org_cluster",
+                                                     field = "id",
+                                                     look_up = "Shelter",
+                                                     look_up_field = "abrv") 
+                          )
+            table.insert( name = "Ha. Fields Flooded",
                           cluster_id = \
                               shn_get_db_field_value(db = db,
                                                      table = "org_cluster",
                                                      field = "id",
                                                      look_up = "Agriculture",
                                                      look_up_field = "abrv") 
-                          )                                                    
+                          )
 
     # Supply / Inventory
     tablename = "supply_item_category"
@@ -853,9 +862,9 @@ if populate:
         )
         table.insert(
             name = "Assessments",
-            module = "rat",
-            resource = "assessment",
-            popup_label = "Assessment",
+            module = "assess",
+            resource = "rat",
+            popup_label = "Rapid Assessment",
             marker_id = db(db.gis_marker.name == "marker_green").select(db.gis_marker.id, limitby=(0, 1)).first().id
         )
         table.insert(

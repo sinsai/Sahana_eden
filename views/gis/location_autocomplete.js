@@ -893,7 +893,6 @@ $(function() {
     // Street Address
     label = '{{=db.gis_location.addr_street.label}}:';
     widget = "<textarea id='gis_location_addr_street' class='text' rows='5' cols='46'>" + old_addr_street + '</textarea>';
-    // ToDo: GeoCoder widget here
     comment = "<div title='" + label + '|' + "{{=T("This can either be the postal address or a simpler description (such as `Next to the Fuel Station`).")}}" + "' id='gis_location_add_street_tooltip' class='tooltip'></div>";
     row1 = "<tr id='gis_location_addr_street__row1'><td colspan='2'><label>" + label + '</label></td></tr>';
     row2 = "<tr id='gis_location_addr_street__row'><td>" + widget + '</td><td>' + comment + '</td></tr>';
@@ -901,6 +900,64 @@ $(function() {
     $(location_id_row).before(row2);
     // Apply the tooltip which was missed 1st time round
     $('#gis_location_add_street_tooltip').cluetip({activation: 'hover', sticky: false, splitTitle: '|'});
+    
+    // GeoCoder widget
+    label = '';
+    widget = "<a id='geocoder-results-button' href='#'>{{=T("Geocoder Search")}}</a> ({{=T("Type an address above and use the geocoder to complete it.")}})";
+    row1 = "<tr id='gis_location_geocoder__row1'><td colspan='2'><label>" + label + '</label></td></tr>';
+    row2 = "<tr id='gis_location_geocoder__row'><td>" + widget + '</td><td></td></tr>';
+    // Enable when ready
+    //$(location_id_row).before(row1);
+    //$(location_id_row).before(row2);
+
+    function geoCoderResultsHandler(selectedAddress) {
+        //s3_debug('Selected place: ', selectedAddress);
+        var street_addr = selectedAddress.AddressDetails.Country.
+            AdministrativeArea.SubAdministrativeArea.Locality.
+            Thoroughfare.ThoroughfareName;
+        var zipcode = selectedAddress.AddressDetails.Country.
+            AdministrativeArea.SubAdministrativeArea.Locality.
+            PostalCode.PostalCodeNumber;
+        var country = selectedAddress.AddressDetails.Country.CountryName;
+        if (zipcode) {
+            street_addr += ' ' + zipcode;
+        }
+        //s3_debug('Geocoder selected country:', country);
+        //s3_debug('Geocoder selected addr:', street_addr);
+        $('#gis_location_lat').val(selectedAddress.Point.coordinates[0]);
+        $('#gis_location_lon').val(selectedAddress.Point.coordinates[1]);
+        $('#gis_location_addr_street').val(street_addr);
+        $('#gis_location_l0').val(country);
+    }
+
+    //var geoCodeButton = Ext.get('geocoder-results-button');
+    //geoCodeButton.on('click', function(){
+    //    var addr_street = $('#gis_location_addr_street').val();
+    //    var country = '';
+    //    var province = '';
+        // Unfortunately, adding in the country sometimes seems to pare down results too much.
+        // Needs more work...
+    //    if ($('#gis_location_l0').val()) {
+    //        country = $('#gis_location_l0 :selected').text();
+    //    }
+    //    if ($('#gis_location_l1').val()) {
+    //        province = $('#gis_location_l1 :selected').text();
+    //    }
+    //    var search_term = addr_street + ' ' + province + ' ' + country;
+        //s3_debug('Searching geocoder with: ', search_term);
+    //    if (!addr_street) {
+    //        return;
+    //    }
+    //    $.getJSONS3(
+    //        '/eden/gis/geocode?location=' + search_term,
+    //        function(data) {
+    //            //s3_debug('Geocoder results:', data);
+    //            geocode_results_picker(data, geoCoderResultsHandler);
+    //        },
+    //        'false'
+    //    );
+    //});
+
 
     // Call L0 after definition of L1-L5 (since it may need to recurse through them)
     S3.gis.locations_l0();
@@ -1109,5 +1166,6 @@ s3_tb_cleanup = function(level){
 {{pass}}
 
 {{include "gis/convert_gps.html"}}
+{{include "gis/geocoder_results_popup.html"}}
 
 {{pass}}

@@ -268,20 +268,37 @@ class GIS(object):
     def get_children(self, parent_id):
         """
             Return a list of all GIS Features which are children of the requested feature
-            @ ToDo Switch to modified preorder tree traversal:
+            @ Using Materialized path for retreiving the children
+            @author: Aravind Venkatesan and Ajay Kumar Sreenivasan from NCSU
             http://eden.sahanafoundation.org/wiki/HaitiGISToDo#HierarchicalTrees
         """
-
+        
         db = self.db
-        _locations = db.gis_location
-
-        deleted = (_locations.deleted == False)
-        query = deleted & (_locations.parent == parent_id)
-        children = db(query).select()
-        for child in children:
-            children = children & self.get_children(child.id)
-
-        return children
+        list = []
+        #print "Parent id = " + str(parent_id)
+        table = db.gis_location
+        parent_path = db(table.id == parent_id).select(table.path)
+        if(parent_path[0].path == None):
+            path = str(parent_id)
+        else:    
+            path = parent_path[0].path
+        for row in db(table.path.like(path+'/%')).select():
+            #print row.name
+            list.append(row.id)
+             
+        return list
+        
+       
+       # _locations = db.gis_location
+        #print "parent_id is" + str(parent_id)
+       # deleted = (_locations.deleted == False)
+       # query = deleted & (_locations.parent == parent_id)
+       # children = db(query).select()
+       # for child in children:
+       #     children = children & self.get_children(child.id)
+       # for i in children:
+       #     print i.id
+       # return children
 
     # -----------------------------------------------------------------------------
     def get_parents(self, feature_id):
@@ -976,15 +993,28 @@ class GIS(object):
         return res
 
     # -----------------------------------------------------------------------------
-    def update_location_tree(self):
+    def update_location_tree(self,parent,level,location_id):
         """
             Update the Tree for GIS Locations:
+            @author: Aravind Venkatesan and Ajay Kumar Sreenivasan from NCSU
+            @summary: Using Materialized path for each node in the tree 
             http://eden.sahanafoundation.org/wiki/HaitiGISToDo#HierarchicalTrees
         """
 
         db = self.db
-
-        # tbc
+        table = db.gis_location
+        if(level == "L0"):
+            node_path = str(location_id)
+            db(table.id == location_id).update(path=node_path)
+        else:
+            #print "parent id is" + str(parent)
+            path = db(table.id == parent).select(table.path)
+            #print path[0].path
+            if(path[0].path == None):
+               path[0].path = parent
+            #print path[0].path    
+            node_path = str(path[0].path) + "/" + str(location_id)
+            db(table.id == location_id).update(path=node_path)
 
         return
 

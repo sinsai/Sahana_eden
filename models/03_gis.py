@@ -417,8 +417,9 @@ table = db.define_table(tablename, timestamp, uuidstamp, deletion_status,
                         #marker_id,             # Being removed
                         Field("level", length=2),
                         Field("parent", "reference gis_location", ondelete = "RESTRICT"),   # This form of hierarchy may not work on all Databases
-                        Field("lft", "integer", readable=False, writable=False), # Left will be for MPTT: http://eden.sahanafoundation.org/wiki/HaitiGISToDo#HierarchicalTrees
-                        Field("rght", "integer", readable=False, writable=False),# Right currently unused
+                        Field("path", "string", length=500),
+                       # Field("lft", "integer", readable=False, writable=False), # Left will be for MPTT: http://eden.sahanafoundation.org/wiki/HaitiGISToDo#HierarchicalTrees
+                       # Field("rght", "integer", readable=False, writable=False),# Right currently unused
                         # Street Address (other address fields come from hierarchy)
                         Field("addr_street"),
                         #Field("addr_postcode"),
@@ -585,11 +586,13 @@ def gis_location_onaccept(form):
     """
         On Accept for GIS Locations (after DB I/O)
     """
+    print "in onaccept"
     if session.rcvars and hasattr(name_dummy_element, "onaccept"):
         # HTML UI, not XML import
         name_dummy_element.onaccept(db, session.rcvars.gis_location, request)
     else:
         location_id = form.vars.id
+        print "location_id is" + str(location_id)
         table = db.gis_location_name
         names = db(table.location_id == location_id).select(table.id)
         if names:
@@ -598,9 +601,14 @@ def gis_location_onaccept(form):
             name_dummy = "|".join(ids) # That's not how it should be
             table = db.gis_location
             db(table.id==location_id).update(name_dummy=name_dummy)
-    # Update the parent Hierarchy
-    gis.update_location_tree()
-    
+            # Update the parent Hierarchy       
+    # Aravind Venkatesan and Ajay Kumar Sreenivasan from NCSU
+    # Associating path for the new node once it is inserted
+    parent = form.vars.parent
+    #print "parent is" + str(parent)
+    level = form.vars.level
+    #print "level is" + str(level)
+    gis.update_location_tree(parent,level,form.vars.id)    
     return
 
 def gis_location_onvalidation(form):
@@ -611,7 +619,8 @@ def gis_location_onvalidation(form):
 
     record_error = T("Sorry, only users with the MapAdmin role are allowed to edit these locations")
     field_error = T("Please select another level")
-
+    print "in onvalidation method"
+    print "level is" + form.vars.level
     # Check Permissions
     # 'MapAdmin' should have all these perms set, no matter what 000_config has
     if form.vars.level == "L0" and not _gis.edit_L0:

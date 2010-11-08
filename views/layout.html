@@ -15,9 +15,16 @@
   {{include "sahana_styles_debug.html"}}
   {{include "sahana_scripts_debug.html"}}
 {{else:}}
+  
+{{if request["wsgi"]["environ"]["HTTP_USER_AGENT"].find("iPhone") != -1:}}
+  <link href="/{{=request.application}}/static/scripts/ext/resources/css/xtheme-mobile.css" rel="stylesheet" type="text/css" charset="utf-8" />
+  <link href="/{{=request.application}}/static/scripts/ext/resources/css/ext-all.min.css" rel="stylesheet" type="text/css" charset="utf-8" />
+  <link href="/{{=request.application}}/static/styles/S3/sahana.min.css" rel="stylesheet" type="text/css" charset="utf-8" />
+{{else:}}  
   <link href="/{{=request.application}}/static/scripts/ext/resources/css/ext-all.min.css" rel="stylesheet" type="text/css" charset="utf-8" />
   <link href="/{{=request.application}}/static/scripts/ext/resources/css/xtheme-gray.css" rel="stylesheet" type="text/css" charset="utf-8" />
   <link href="/{{=request.application}}/static/styles/S3/sahana.min.css" rel="stylesheet" type="text/css" charset="utf-8" />
+{{pass}}
   <link href="/{{=request.application}}/static/styles/S3/print.css" rel="stylesheet" type="text/css" media="print" charset="utf-8" />
   {{include "sahana_scripts_min.html"}}
 {{pass}}

@@ -163,7 +163,7 @@ def project():
            ]
 
     rheader = lambda r: shn_project_rheader(r, tabs)
-    return s3_rest_controller("org", resourcename, rheader=rheader)
+    return s3_rest_controller("project", resourcename, rheader=rheader)
 
 
 # -----------------------------------------------------------------------------
@@ -171,7 +171,7 @@ def task():
 
     """ Manage current user's tasks """
 
-    tablename = "org_%s" % (resourcename)
+    tablename = "project_%s" % (resourcename)
     table = db[tablename]
 
     my_person_id = s3_logged_in_person()
@@ -188,7 +188,7 @@ def task():
     s3.crud_strings[tablename].title_list = T("My Tasks")
     s3.crud_strings[tablename].subtitle_list = T("Task List")
 
-    return s3_rest_controller("org", resourcename)
+    return s3_rest_controller("project", resourcename)
 
 
 # -----------------------------------------------------------------------------

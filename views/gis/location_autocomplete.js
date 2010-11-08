@@ -575,7 +575,7 @@ $(function() {
 
     // Name
     // @ToDo: Localise according to current user's preference
-    label = '{{=T("Name")}}:';
+    label = '{{=T("Name")}}:<span class="req"> *</span>';
     widget = "<input id='gis_location_name' class='ac_input string' size='50' value='" + old_name + "' />";
     comment = "<div title='" + label + '|' + '{{=T("Enter a few characters of the name to select an existing Location or else simply type the name of the new Location.")}}' + "' id='gis_location_name_tooltip' class='tooltip'></div>";
     row1 = "<tr id='gis_location_name__row1'><td colspan='2'><label>" + label + '</label></td></tr>';

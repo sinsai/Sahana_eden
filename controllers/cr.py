@@ -150,7 +150,7 @@ def shelter():
             # listadd arrives here as method=None
             if r.method != "delete" and not r.component:
                 # Redirect to the Assessments tabs after creation
-                r.next = r.other(method="assessment", record_id=s3xrc.get_session(module, resourcename))
+                r.next = r.other(method="rat", record_id=s3xrc.get_session(module, resourcename))
 
             if r.component and r.component.name == "presence":
                 # No Delete on the Action buttons
@@ -162,10 +162,10 @@ def shelter():
     response.s3.postp = postp
 
     shelter_tabs = [(T("Basic Details"), None),
-                    (T("Assessments"), "assessment"),
+                    (T("Assessments"), "rat"),
                     (T("People"), "presence"),
-                    (T("Requests"), "req"),
                     (T("Inventory"), "store"),  # table is inventory_store
+                    (T("Requests"), "req"),
                    ]
 
     rheader = lambda r: shn_shelter_rheader(r, tabs=shelter_tabs)
@@ -226,18 +226,18 @@ def shn_shelter_prep(r):
         response.cr_shelter_request_was_html_or_popup = True
 
         if r.component:
-            if r.component.name == "assessment":
+            if r.component.name == "rat":
                 # Hide the Implied fields
-                db.rat_assessment.location_id.writable = False
-                db.rat_assessment.location_id.default = r.record.location_id
-                db.rat_assessment.location_id.comment = ""
+                db.assess_rat.location_id.writable = False
+                db.assess_rat.location_id.default = r.record.location_id
+                db.assess_rat.location_id.comment = ""
                 # Set defaults
                 if auth.is_logged_in():
                     staff_id = db((db.pr_person.uuid == session.auth.user.person_uuid) & \
                                   (db.org_staff.person_id == db.pr_person.id)).select(
                                    db.org_staff.id, limitby=(0, 1)).first()
                     if staff_id:
-                        db.rat_assessment.staff_id.default = staff_id.id
+                        db.assess_rat.staff_id.default = staff_id.id
 
             elif r.component.name == "store":
                 # Hide the Implied fields

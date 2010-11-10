@@ -1524,7 +1524,7 @@ def display_features():
     return dict(map=map)
 
 # -----------------------------------------------------------------------------
-def geolocate():
+def geocode():
 
     """
         Call a Geocoder service

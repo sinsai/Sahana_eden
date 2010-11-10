@@ -440,7 +440,7 @@ class S3CRUDHandler(S3MethodHandler):
             @param r: the S3Request
             @param attr: dictionary of parameters for the method handler
 
-            @todo 2.2: plain representation
+            @todo 2.3: plain representation
 
         """
 
@@ -684,7 +684,7 @@ class S3CRUDHandler(S3MethodHandler):
             @param r: the S3Request
             @param attr: dictionary of parameters for the method handler
 
-            @todo 2.2: add update form if permitted + show_add_btn
+            @todo 2.3: add update form if permitted + show_add_btn
 
         """
 
@@ -791,7 +791,7 @@ class S3CRUDHandler(S3MethodHandler):
             @param r: the S3Request
             @param attr: dictionary of parameters for the method handler
 
-            @todo 2.2: plain representation
+            @todo 2.3: plain representation
 
         """
 
@@ -957,8 +957,8 @@ class S3CRUDHandler(S3MethodHandler):
             @param r: the S3Request
             @param attr: dictionary of parameters for the method handler
 
-            @todo 2.2: put style information into stylesheet
-            @todo 2.2: move confirmation form into resource
+            @todo 2.3: put style information into stylesheet
+            @todo 2.3: move confirmation form into resource
 
         """
 

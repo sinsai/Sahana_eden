@@ -68,8 +68,8 @@ class S3SQLTable(SQLTABLE):
 
         """ Constructor
 
-            @todo 2.2: fix docstring
-            @todo 2.2: PEP8
+            @todo 2.3: fix docstring
+            @todo 2.3: PEP8
 
         """
 
@@ -1258,7 +1258,7 @@ class S3Resource(object):
 
         elif method in ("create", "update"):
             authorised = permit(method, tablename)
-            # @todo: Add user confirmation here:
+            # @todo 2.3: Add user confirmation here:
             if self.__transformable(r, method="import"):
                 method = "import_tree"
 
@@ -1360,17 +1360,11 @@ class S3Resource(object):
 
         tablename = r.component and r.component.tablename or r.tablename
 
-        #if r.id or \
-           #r.component and r.component_id:
         authorised = permit("delete", tablename)
         if not authorised:
             r.unauthorised()
 
-        #if r.next is None and r.http == "POST":
-            #r.next = r.there()
         return self.get_handler("delete")
-        #else:
-            #r.error(501, self.ERROR.BAD_METHOD)
 
 
     # -------------------------------------------------------------------------
@@ -1383,8 +1377,8 @@ class S3Resource(object):
 
         """
 
-        xml_formats = self.manager.xml_export_formats
-        json_formats = self.manager.json_export_formats
+        json_formats = self.manager.json_formats
+        content_type = self.manager.content_type
 
         template = None
 
@@ -1396,30 +1390,7 @@ class S3Resource(object):
             dereference = True
 
         # Find XSLT stylesheet
-        if r.representation not in ("xml", "json"):
-            template = None
-            format = r.representation
-            folder = r.request.folder
-            path = self.manager.XSLT_EXPORT_TEMPLATES
-            extension = self.manager.XSLT_FILE_EXTENSION
-            if "transform" in r.request.vars:
-                # External stylesheet?
-                template = r.request.vars["transform"]
-            else:
-                resourcename = r.component and \
-                               r.component.name or r.name
-                templatename = "%s.%s" % (resourcename, extension)
-                if templatename in r.request.post_vars:
-                    # Attached stylesheet?
-                    p = r.request.post_vars[templatename]
-                    if isinstance(p, cgi.FieldStorage) and p.filename:
-                        template = p.file
-                else:
-                    # Integrated stylesheet?
-                    template_name = "%s.%s" % (format, extension)
-                    template = os.path.join(folder, path, template_name)
-                    if not os.path.exists(template):
-                        r.error(501, "%s: %s" % (self.ERROR.BAD_TEMPLATE, template))
+        template = self.stylesheet(r, method="export")
 
         # Slicing
         start = r.request.vars.get("start", None)
@@ -1462,11 +1433,11 @@ class S3Resource(object):
         if r.representation in json_formats:
             exporter = self.exporter.json
             r.response.headers["Content-Type"] = \
-                json_formats.get(r.representation, "text/x-json")
+                content_type.get(r.representation, "text/x-json")
         else:
             exporter = self.exporter.xml
             r.response.headers["Content-Type"] = \
-                xml_formats.get(r.representation, "application/xml")
+                content_type.get(r.representation, "application/xml")
 
         # Export the resource
         output = exporter(self,
@@ -1579,26 +1550,15 @@ class S3Resource(object):
             @param r: the S3Request
             @param attr: the request attributes
 
-            @todo 2.2: clean-up
-            @todo 2.2: test this
-
         """
 
         xml = self.manager.xml
-        xml_formats = self.manager.xml_import_formats
-
         vars = r.request.vars
 
+        json_formats = self.manager.json_formats
+
         # Get the source
-        if r.representation in xml_formats:
-            if "filename" in vars:
-                source = vars["filename"]
-            elif "fetchurl" in vars:
-                source = vars["fetchurl"]
-            else:
-                source = self.__read_body(r)
-            tree = xml.parse(source)
-        else:
+        if r.representation in json_formats:
             if "filename" in vars:
                 source = open(vars["filename"])
             elif "fetchurl" in vars:
@@ -1607,25 +1567,20 @@ class S3Resource(object):
             else:
                 source = self.__read_body(r)
             tree = xml.json2tree(source)
+        else:
+            if "filename" in vars:
+                source = vars["filename"]
+            elif "fetchurl" in vars:
+                source = vars["fetchurl"]
+            else:
+                source = self.__read_body(r)
+            tree = xml.parse(source)
 
         if not tree:
             r.error(400, xml.error)
 
-        # Get the transformation stylesheet
-        template = None
-        template_name = "%s.%s" % (r.name, self.manager.XSLT_FILE_EXTENSION)
-        if template_name in self.__files:
-            template = self.__files[template_name]
-        elif "transform" in vars:
-            template = vars["transform"]
-        elif not r.representation in ("xml", "json"):
-            template_name = "%s.%s" % (r.representation,
-                                       self.manager.XSLT_FILE_EXTENSION)
-            template = os.path.join(r.request.folder,
-                                    self.manager.XSLT_IMPORT_TEMPLATES,
-                                    template_name)
-            if not os.path.exists(template):
-                r.error(501, "%s: %s" % (self.ERROR.BAD_TEMPLATE, template))
+        # Find XSLT stylesheet
+        template = self.stylesheet(r, method="import")
 
         # Transform source
         if template:
@@ -1658,55 +1613,6 @@ class S3Resource(object):
         return item
 
 
-    # -------------------------------------------------------------------------
-    def __transformable(self, r, method=None):
-
-        """ Check the request for a transformable format
-
-            @param r: the S3Request
-            @param method: "import" for import methods, else None
-
-        """
-
-        format = r.representation
-
-        request = self.manager.request
-        if r.component:
-            resourcename = r.component.name
-        else:
-            resourcename = r.name
-
-        # format "xml" or "json"?
-        if format in ("xml", "json"):
-            return True
-
-        # XSLT transformation demanded in URL?
-        if "transform" in request.vars:
-            return True
-
-        extension = self.manager.XSLT_FILE_EXTENSION
-
-        # XSLT stylesheet attached?
-        template = "%s.%s" % (resourcename, extension)
-        if template in request.post_vars:
-            p = request.post_vars[template]
-            if isinstance(p, cgi.FieldStorage) and p.filename:
-                return True
-
-        # XSLT stylesheet exists in application?
-        if method == "import":
-            path = self.manager.XSLT_IMPORT_TEMPLATES
-        else:
-            path = self.manager.XSLT_EXPORT_TEMPLATES
-
-        template = os.path.join(r.request.folder,
-                                path, "%s.%s" % (format, extension))
-        if os.path.exists(template):
-            return True
-
-        return False
-
-
     # XML/JSON functions ======================================================
 
     def export_xml(self, template=None, pretty_print=False, **args):
@@ -1718,7 +1624,7 @@ class S3Resource(object):
             @param args: arguments to pass to the XSLT stylesheet
             @returns: the XML as string
 
-            @todo 2.2: slicing?
+            @todo 2.3: slicing?
 
         """
 
@@ -1739,7 +1645,7 @@ class S3Resource(object):
             @param args: arguments to pass to the XSLT stylesheet
             @returns: the JSON as string
 
-            @todo 2.2: slicing?
+            @todo 2.3: slicing?
 
         """
 
@@ -1846,7 +1752,7 @@ class S3Resource(object):
             @param password: password to authenticate at the peer site
             @param proxy: URL of the proxy server to use
 
-            @todo 2.2: error handling?
+            @todo 2.3: error handling?
 
         """
 
@@ -2025,14 +1931,14 @@ class S3Resource(object):
         try:
             if json:
                 success = self.import_json(response,
-                                        template=template,
-                                        ignore_errors=ignore_errors,
-                                        args=args)
+                                           template=template,
+                                           ignore_errors=ignore_errors,
+                                           args=args)
             else:
                 success = self.import_xml(response,
-                                        template=template,
-                                        ignore_errors=ignore_errors,
-                                        args=args)
+                                          template=template,
+                                          ignore_errors=ignore_errors,
+                                          args=args)
         except IOError, e:
             return xml.json_message(False, 400, "LOCAL ERROR: %s" % e)
 
@@ -2459,8 +2365,8 @@ class S3Resource(object):
 
             @returns: number of records deleted
 
-            @todo 2.2: move error message into resource controller
-            @todo 2.2: check for integrity error exception explicitly
+            @todo 2.3: move error message into resource controller
+            @todo 2.3: check for integrity error exception explicitly
 
         """
 
@@ -2617,6 +2523,109 @@ class S3Resource(object):
         # Not implemented yet
         raise NotImplementedError
 
+
+    # -------------------------------------------------------------------------
+    def __transformable(self, r, method=None):
+
+        """ Check the request for a transformable format
+
+            @param r: the S3Request
+            @param method: "import" for import methods, else None
+
+        """
+
+        format = r.representation
+
+        request = self.manager.request
+        if r.component:
+            resourcename = r.component.name
+        else:
+            resourcename = r.name
+
+        # format "xml" or "json"?
+        if format in ("xml", "json"):
+            return True
+
+        # XSLT transformation demanded in URL?
+        if "transform" in request.vars:
+            return True
+
+        extension = self.manager.XSLT_FILE_EXTENSION
+
+        # XSLT stylesheet attached?
+        template = "%s.%s" % (resourcename, extension)
+        if template in request.post_vars:
+            p = request.post_vars[template]
+            if isinstance(p, cgi.FieldStorage) and p.filename:
+                return True
+
+        # XSLT stylesheet exists in application?
+        if method == "import":
+            path = self.manager.XSLT_IMPORT_TEMPLATES
+        else:
+            path = self.manager.XSLT_EXPORT_TEMPLATES
+
+        template = os.path.join(r.request.folder,
+                                path, "%s.%s" % (format, extension))
+        if os.path.exists(template):
+            return True
+
+        return False
+
+
+    # -------------------------------------------------------------------------
+    def stylesheet(self, r, method=None):
+
+        """ Find the XSLT stylesheet for a request
+
+            @param r: the S3Request
+            @param method: "import" for data imports, else None
+
+        """
+
+        request = r.request
+
+        format = r.representation
+        folder = request.folder
+
+        if method == "import":
+            path = self.manager.XSLT_IMPORT_TEMPLATES
+        else:
+            path = self.manager.XSLT_EXPORT_TEMPLATES
+
+        extension = self.manager.XSLT_FILE_EXTENSION
+
+        stylesheet = None
+
+        resourcename = r.component and \
+                       r.component.name or r.name
+
+        if format not in ("xml", "json"):
+
+            # External stylesheet?
+            if "transform" in request.vars:
+                stylesheet = request.vars["transform"]
+            else:
+                # Attached stylesheet?
+                ssname = "%s.%s" % (resourcename, extension)
+                if ssname in request.post_vars:
+                    p = request.post_vars[ssname]
+                    if isinstance(p, cgi.FieldStorage) and p.filename:
+                        stylesheet = p.file
+                # Integrated stylesheet?
+                else:
+                    ssname = "%s.%s" % (format, extension)
+                    stylesheet = os.path.join(folder, path, ssname)
+                    if not os.path.exists(stylesheet):
+                        r.error(501, "%s: %s" % (self.ERROR.BAD_TEMPLATE, template))
+
+        return stylesheet
+
+
+    # -------------------------------------------------------------------------
+    def content_type(self):
+
+        return None
 
     # -------------------------------------------------------------------------
     def files(self, files=None):
@@ -2882,7 +2891,7 @@ class S3Request(object):
             @param representation: the representation for the URL
             @param vars: the URL query variables
 
-            @todo 2.2: make this based on S3Resource.url()
+            @todo 2.3: make this based on S3Resource.url()
 
         """
 

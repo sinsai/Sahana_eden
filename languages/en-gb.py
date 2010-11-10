@@ -1931,6 +1931,7 @@
 'Name of the file (& optional sub-path) located in views which should be used for footer.': 'Name of the file (& optional sub-path) located in views which should be used for footer.',
 'Name of the person in local language and script (optional).': 'Name of the person in local language and script (optional).',
 'Name of the unit or department this report refers to. Leave empty if your hospital has no subdivisions.': 'Name of the unit or department this report refers to. Leave empty if your hospital has no subdivisions.',
+'Name: ': 'Name: ',
 'Names can be added in multiple languages': 'Names can be added in multiple languages',
 'National ID Card': 'National ID Card',
 'National NGO': 'National NGO',

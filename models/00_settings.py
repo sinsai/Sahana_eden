@@ -215,51 +215,21 @@ crud.settings.formstyle = s3_formstyle
 # XML/JSON Formats
 ##################
 
-XSLT_FILE_EXTENSION = "xsl" #: File extension of XSLT templates
-XSLT_IMPORT_TEMPLATES = "static/xslt/import" #: Path to XSLT templates for data import
-XSLT_EXPORT_TEMPLATES = "static/xslt/export" #: Path to XSLT templates for data export
+s3xrc.XSLT_FILE_EXTENSION = "xsl" #: File extension of XSLT templates
+s3xrc.XSLT_IMPORT_TEMPLATES = "static/xslt/import" #: Path to XSLT templates for data import
+s3xrc.XSLT_EXPORT_TEMPLATES = "static/xslt/export" #: Path to XSLT templates for data export
 
-# Supported XML Output Formats
-shn_xml_export_formats = dict(
-    xml = "application/xml", # Native S3XML (must be included here!)
-    gpx = "application/xml", # GPX
-    lmx = "application/xml", # NOKIA Landmarks
-    pfif = "application/xml", # Person Finder Interchange Format
-    have = "application/xml", # EDXL-HAVE
-    osm = "application/xml", # Open Street Map
+# Content Type Headers, default is application/xml for XML formats
+# and text/x-json for JSON formats, other content types must be
+# specified here:
+s3xrc.content_type = Storage(
     rss = "application/rss+xml", # RSS
     georss = "application/rss+xml", # GeoRSS
     kml = "application/vnd.google-earth.kml+xml", # KML
 )
 
-# Supported XML Import Formats
-shn_xml_import_formats = ["xml", # native S3XML (must be included here!)
-                          "lmx", # Nokia Landmarks
-                          "osm", # Open Street Map
-                          "pfif", # Person Finder Interchange Format
-                          "ushahidi", # Ushahidi
-                          "have",
-                          "odk",
-                          "agasti", # Sahana Agasti
-                          "fods" # Flat Open Document Spreadsheet
-                         ]
-
-# Supported JSON Export Formats
-shn_json_export_formats = dict(
-    json = "text/x-json", # Native S3XML-JSON (must be included here!)
-    geojson = "text/x-json" # GeoJSON
-)
-
-# Supported JSON Import Formats
-shn_json_import_formats = ["json", # native S3XML-JSON (must be included here!)
-                          ]
-
-# Register formats with resource controller
-s3xrc.xml_import_formats = shn_xml_import_formats
-s3xrc.xml_export_formats = shn_xml_export_formats
-s3xrc.json_import_formats = shn_json_import_formats
-s3xrc.json_export_formats = shn_json_export_formats
-
+# JSON Formats
+s3xrc.json_formats = ["geojson"]
 
 ##########
 # Messages

@@ -61,7 +61,7 @@ class S3Exporter(object):
 
             @param manager: the resource controller
 
-            @todo 2.2: error message completion
+            @todo 2.3: error message completion
 
         """
 
@@ -225,10 +225,10 @@ class S3Exporter(object):
             @param resource: the resource
             @param list_fields: fields to include in list views
 
-            @todo 2.2: fix error messages
-            @todo 2.2: do not redirect
-            @todo 2.2: PEP-8
-            @todo 2.2: test this!
+            @todo 2.3: fix error messages
+            @todo 2.3: do not redirect
+            @todo 2.3: PEP-8
+            @todo 2.3: test this!
 
             @todo: implement audit
 
@@ -372,8 +372,8 @@ class S3Exporter(object):
             @param resource: the resource
             @param list_fields: fields to include in list views
 
-            @todo 2.2: PEP-8
-            @todo 2.2: use S3Resource.readable_fields
+            @todo 2.3: PEP-8
+            @todo 2.3: use S3Resource.readable_fields
             @todo: implement audit
 
         """

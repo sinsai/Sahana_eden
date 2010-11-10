@@ -66,13 +66,7 @@ class S3ResourceController(object):
         @param messages: a function to retrieve message URLs tagged for a resource
         @param attr: configuration settings
 
-        @keyword xml_export_formats: XML export format configuration (see 00_settings.py)
-        @keyword xml_import_formats: XML import format configuration (see 00_settings.py)
-        @keyword json_export_formats: JSON export format configuration (see 00_settings.py)
-        @keyword json_import_formats: JSON import format configuration (see 00_settings.py)
-
-        @todo 2.2: move formats into settings
-        @todo 2.2: error messages internationalization!
+        @todo 2.3: error messages internationalization!
 
     """
 
@@ -81,10 +75,6 @@ class S3ResourceController(object):
 
     HOOKS = "s3"
     RCVARS = "rcvars"
-
-    XSLT_FILE_EXTENSION = "xsl"
-    XSLT_IMPORT_TEMPLATES = "static/xslt/import" #@todo 2.2: move into settings
-    XSLT_EXPORT_TEMPLATES = "static/xslt/export" #@todo 2.2: move into settings
 
     ACTION = Storage(
         create="create",
@@ -119,10 +109,10 @@ class S3ResourceController(object):
 
     def __init__(self,
                  environment,
-                 domain=None, # @todo 2.2: read fromm environment
-                 base_url=None, # @todo 2.2: read from environment
-                 rpp=None, # @todo 2.2: move into settings
-                 messages=None, # @todo 2.2: move into settings
+                 domain=None, # @todo 2.3: read fromm environment
+                 base_url=None, # @todo 2.3: read from environment
+                 rpp=None, # @todo 2.3: move into settings
+                 messages=None, # @todo 2.3: move into settings
                  **attr):
 
         # Environment
@@ -138,8 +128,7 @@ class S3ResourceController(object):
         self.response = environment.response
 
         # Settings
-        self.s3 = environment.s3 #@todo 2.2: rename variable?
-        #self.settings = self.s3.<what?> @todo 2.2
+        self.s3 = environment.s3 #@todo 2.3: rename variable?
 
         self.domain = domain
         self.base_url = base_url
@@ -158,7 +147,7 @@ class S3ResourceController(object):
         self.auth = environment.auth            # Auth
         self.gis = environment.gis              # GIS
 
-        self.model = S3ResourceModel(self.db)   # Resource Model, @todo 2.2: reduce parameter list to (self)?
+        self.model = S3ResourceModel(self.db)   # Resource Model, @todo 2.: reduce parameter list to (self)?
         self.crud = S3CRUDHandler(self)         # CRUD Handler
         self.xml = S3XML(self)                  # XML Toolkit
 
@@ -169,21 +158,19 @@ class S3ResourceController(object):
         self.sync_resolve = None                    # Sync Resolver
         self.sync_log = None                        # Sync Logger
 
-        # Import/Export formats, @todo 2.2: move into settings
-        attr = Storage(attr)
+        # JSON formats, content-type headers
+        self.json_formats = []
+        self.content_type = Storage()
 
-        self.xml_import_formats = attr.get("xml_import_formats", ["xml"])
-        self.xml_export_formats = attr.get("xml_export_formats",
-                                           dict(xml="application/xml"))
-
-        self.json_import_formats = attr.get("json_import_formats", ["json"])
-        self.json_export_formats = attr.get("json_export_formats",
-                                            dict(json="text/x-json"))
+        # XSLT Paths
+        self.XSLT_FILE_EXTENSION = "xsl"
+        self.XSLT_IMPORT_TEMPLATES = "static/xslt/import"
+        self.XSLT_EXPORT_TEMPLATES = "static/xslt/export"
 
         self.exporter = S3Exporter(self)    # Resource Exporter
         self.importer = S3Importer(self)    # Resource Importer
 
-        # Method Handlers, @todo 2.2: deprecate?
+        # Method Handlers, @todo 2.3: deprecate?
         self.__handler = Storage()
 
 
@@ -461,7 +448,7 @@ class S3ResourceController(object):
 
         """ Set the default handler for a resource method
 
-            @todo 2.2: deprecate?
+            @todo 2.3: deprecate?
 
         """
 
@@ -473,7 +460,7 @@ class S3ResourceController(object):
 
         """ Get the default handler for a resource method
 
-            @todo 2.2: deprecate?
+            @todo 2.3: deprecate?
 
         """
 
@@ -750,7 +737,7 @@ class S3ResourceController(object):
 
             @returns: a list of matching elements
 
-            @todo 2.2: implement this and use in import_tree()
+            @todo 2.3: implement this and use in import_tree()
 
         """
 
@@ -1300,10 +1287,10 @@ class S3Vector(object):
                  mtime=None,
                  rmap=None,
                  directory=None,
-                 permit=None, # @todo 2.2: read from manager
-                 audit=None, # @todo 2.2: read from manager
-                 sync=None, # @todo 2.2: read from manager
-                 log=None, # @todo 2.2: read from manager
+                 permit=None, # @todo 2.3: read from manager
+                 audit=None, # @todo 2.3: read from manager
+                 sync=None, # @todo 2.3: read from manager
+                 log=None, # @todo 2.3: read from manager
                  onvalidation=None,
                  onaccept=None):
 
@@ -1423,8 +1410,8 @@ class S3Vector(object):
 
         """ Commits the vector to the database
 
-            @todo 2.2: propagate onvalidation errors properly to the element
-            @todo 2.2: propagate import errors properly to the importer
+            @todo 2.3: propagate onvalidation errors properly to the element
+            @todo 2.3: propagate import errors properly to the importer
 
         """
 

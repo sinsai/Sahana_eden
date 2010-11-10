@@ -770,22 +770,27 @@ class GIS(object):
                 level = "L5"
                 name = name5
                 parent = name4
+                grandparent = name3
             elif name4:
                 level = "L4"
                 name = name4
                 parent = name3
+                grandparent = name2
             elif name3:
                 level = "L3"
                 name = name3
                 parent = name2
+                grandparent = name1
             elif name2:
                 level = "L2"
                 name = name2
                 parent = name1
+                grandparent = name0
             else:
                 level = "L1"
                 name = name1
                 parent = name0
+                grandparent = ""
 
             if name == "Name Unknown" or parent == "Name Unknown":
                 # Skip these locations
@@ -823,17 +828,25 @@ class GIS(object):
                 if parent == "Jammu Kashmir":
                     parent = "Pakistan"
 
-                _parent = db(_locations.name == parent).select(_locations.id, limitby=(0, 1), cache=cache).first()
+                if grandparent:
+                    _grandparent = db(_locations.name == grandparent).select(_locations.id, limitby=(0, 1), cache=cache).first()
+                    if _grandparent:
+                        _parent = db((_locations.name == parent) & (_locations.parent == _grandparent.id)).select(_locations.id, limitby=(0, 1), cache=cache).first()
+                    else:
+                        _parent = db(_locations.name == parent).select(_locations.id, limitby=(0, 1), cache=cache).first()
+                else:
+                    _parent = db(_locations.name == parent).select(_locations.id, limitby=(0, 1), cache=cache).first()
                 if _parent:
-                    parent = _parent.id
+                    parent_id = _parent.id
                 else:
                     s3_debug("Location", name)
                     s3_debug("Parent cannot be found", parent)
                     parent = ""
 
             # Check for duplicates
-            query = (_locations.name == name) & (_locations.level == level) & (_locations.parent == parent)
+            query = (_locations.name == name) & (_locations.level == level) & (_locations.parent == parent_id)
             duplicate = db(query).select()
+            
             if duplicate:
                 s3_debug("Location", name)
                 s3_debug("Duplicate - updating...")
@@ -845,9 +858,9 @@ class GIS(object):
             else:
                 # Create new entry in database
                 if uuid:
-                    _locations.insert(name=name, level=level, parent=parent, lat=lat, lon=lon, wkt=wkt, lon_min=lon_min, lon_max=lon_max, lat_min=lat_min, lat_max=lat_max, gis_feature_type=feature_type, uuid=uuid)
+                    _locations.insert(name=name, level=level, parent=parent_id, lat=lat, lon=lon, wkt=wkt, lon_min=lon_min, lon_max=lon_max, lat_min=lat_min, lat_max=lat_max, gis_feature_type=feature_type, uuid=uuid)
                 else:
-                    _locations.insert(name=name, level=level, parent=parent, lat=lat, lon=lon, wkt=wkt, lon_min=lon_min, lon_max=lon_max, lat_min=lat_min, lat_max=lat_max, gis_feature_type=feature_type)
+                    _locations.insert(name=name, level=level, parent=parent_id, lat=lat, lon=lon, wkt=wkt, lon_min=lon_min, lon_max=lon_max, lat_min=lat_min, lat_max=lat_max, gis_feature_type=feature_type)
 
         # Better to give user control, can then dry-run
         #db.commit()

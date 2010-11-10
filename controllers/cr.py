@@ -164,7 +164,7 @@ def shelter():
     shelter_tabs = [(T("Basic Details"), None),
                     (T("Assessments"), "rat"),
                     (T("People"), "presence"),
-                    (T("Inventory"), "store"),  # table is inventory_store
+                    (T("Warehouse"), "store"),  # table is inventory_store
                     (T("Requests"), "req"),
                    ]
 

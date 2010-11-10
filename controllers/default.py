@@ -28,10 +28,13 @@ auth.settings.register_onaccept = lambda form: auth.shn_register(form)
 
 _table_user = auth.settings.table_user
 _table_user.first_name.label = T("First Name")
+_table_user.first_name.comment = SPAN("*", _class="req")
 _table_user.last_name.label = T("Last Name")
 _table_user.last_name.comment = SPAN("*", _class="req")
 _table_user.email.label = T("E-mail")
 _table_user.email.comment = SPAN("*", _class="req")
+_table_user.password.comment = SPAN("*", _class="req")
+
 #_table_user.password.label = T("Password")
 #_table_user.language.label = T("Language")
 _table_user.language.default = "en"
@@ -52,7 +55,7 @@ def index():
                         ),
                     _href = URL( r=request, c="assess", f= "basic_assess")
                     ),
-                  A(DIV(T("Inventories"),
+                  A(DIV(T("Warehouses"),
                         _class = "menu_box"
                         ),
                     _href = URL( r=request, c="inventory", f= "store")

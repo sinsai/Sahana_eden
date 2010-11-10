@@ -230,6 +230,10 @@ def person():
                     table.presence_condition.default = condition
                     table.presence_condition.readable = False
                     table.presence_condition.writable = False
+                    if condition in vita.PERSISTANT_PRESENCE or \
+                       condition in vita.ABSENCE:
+                        s3xrc.model.configure(table,
+                            mark_required=["location_id", "shelter_id"])
                     table.orig_id.readable = False
                     table.orig_id.writable = False
                     table.dest_id.readable = False
@@ -260,6 +264,9 @@ def person():
                              vars=dict(condition=vita.CONFIRMED))
                 response.s3.actions.append(
                     dict(label=str(label), _class="action-btn", url=str(linkto)))
+            elif r.component_name == "presence":
+                if "showaddbtn" in output:
+                    del output["showaddbtn"]
         return output
     response.s3.postp = person_postp
 

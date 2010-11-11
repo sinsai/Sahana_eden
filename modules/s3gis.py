@@ -3227,7 +3227,7 @@ OpenLayers.Util.extend( selectPdfControl, {
             gpx_enabled = db(db.gis_layer_gpx.enabled == True).select()
             if gpx_enabled:
                 layers_gpx += """
-        var georssLayers = new Array();
+        var gpxLayers = new Array();
         var format_gpx = new OpenLayers.Format.GPX();
         function onGpxFeatureSelect(event) {
             // unselect any previous selections
@@ -3240,7 +3240,7 @@ OpenLayers.Util.extend( selectPdfControl, {
                     name = layer["name"]
                     track = db(db.gis_track.id == layer.track_id).select(db.gis_track.track, limitby=(0, 1)).first()
                     if track:
-                        url = track.track
+                        url = URL(r=request, c="default", f="download") + "/" + track.track
                     else:
                         url = ""
                     visible = layer["visible"]

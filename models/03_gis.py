@@ -576,7 +576,7 @@ def gis_location_onaccept(form):
     # Associating path for the new node once it is inserted
     parent = form.vars.parent
     level = form.vars.level
-    gis.update_location_tree(parent,level,form.vars.id)    
+    gis.update_location_tree(parent, level, form.vars.id)    
     return
 
 def gis_location_onvalidation(form):

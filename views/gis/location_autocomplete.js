@@ -902,12 +902,9 @@ $(function() {
     $('#gis_location_add_street_tooltip').cluetip({activation: 'hover', sticky: false, splitTitle: '|'});
     
     // GeoCoder widget
-    label = '';
     widget = "<a id='geocoder-results-button' href='#'>{{=T("Geocoder Search")}}</a> ({{=T("Type an address above and use the geocoder to complete it.")}})";
-    row1 = "<tr id='gis_location_geocoder__row1'><td colspan='2'><label>" + label + '</label></td></tr>';
     row2 = "<tr id='gis_location_geocoder__row'><td>" + widget + '</td><td></td></tr>';
     // Enable when ready
-    //$(location_id_row).before(row1);
     //$(location_id_row).before(row2);
 
     function geoCoderResultsHandler(selectedAddress) {
@@ -949,9 +946,9 @@ $(function() {
     //        return;
     //    }
     //    $.getJSONS3(
-    //        '/eden/gis/geocode?location=' + search_term,
+    //        '{{=URL(r=request, c="gis", f="geocode")}}' + '?location=' + search_term,
     //        function(data) {
-    //            //s3_debug('Geocoder results:', data);
+                //s3_debug('Geocoder results:', data);
     //            geocode_results_picker(data, geoCoderResultsHandler);
     //        },
     //        'false'

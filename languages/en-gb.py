@@ -826,6 +826,7 @@
 'Department/Unit Name': 'Department/Unit Name',
 'Deployment': 'Deployment',
 'Describe the condition of the roads to your hospital.': 'Describe the condition of the roads to your hospital.',
+'Describe the procedure which this record relates to (e.g. "medical examination")': 'Describe the procedure which this record relates to (e.g. "medical examination")',
 'Description': 'Description',
 'Description of Bin Type': 'Description of Bin Type',
 'Description of Contacts': 'Description of Contacts',

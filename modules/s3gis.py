@@ -1088,7 +1088,7 @@ class GIS(object):
         return res
 
     # -----------------------------------------------------------------------------
-    def update_location_tree(self,parent,level,location_id):
+    def update_location_tree(self, parent, level, location_id):
         """
             Update the Tree for GIS Locations:
             @author: Aravind Venkatesan and Ajay Kumar Sreenivasan from NCSU
@@ -3841,7 +3841,10 @@ OpenLayers.Util.extend( selectPdfControl, {
             zoom = config.zoom
             _locations = db.gis_location
             fields = [_locations.id, _locations.uuid, _locations.name, _locations.lat, _locations.lon, _locations.level, _locations.parent, _locations.addr_street]
-            location = db((db[tablename].id == r.id) & (_locations.id == db[tablename].location_id)).select(limitby=(0, 1), *fields).first()
+            if tablename == "gis_location":
+                location = db(db[tablename].id == r.id).select(limitby=(0, 1), *fields).first()
+            else:
+                location = db((db[tablename].id == r.id) & (_locations.id == db[tablename].location_id)).select(limitby=(0, 1), *fields).first()
             if location and location.lat is not None and location.lon is not None:
                 lat = location.lat
                 lon = location.lon
@@ -3854,7 +3857,10 @@ OpenLayers.Util.extend( selectPdfControl, {
                              id = r.id
                             )
             layer = self.get_feature_layer(prefix, name, layername, popup_label, filter=filter)
-            feature_queries = [layer]
+            if layer:
+                feature_queries = [layer]
+            else:
+                feature_queries = []
             _map = self.show_map(lat = lat,
                                  lon = lon,
                                  # Same as a single zoom on a cluster

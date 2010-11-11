@@ -41,14 +41,6 @@ GeoCoderResultSelectionDialog = Ext.extend(Ext.Window, {
 
         this.add(this.listView);
 
-        var closeButton = new Ext.Button({
-            text:'{{=T("Close")}}',
-            scope:this,
-            minWidth:75,
-            handler:this.onClose
-        });
-        this.addButton(closeButton);
-
         var okayButton = new Ext.Button({
             text:'{{=T("OK")}}',
             scope:this,
@@ -56,6 +48,15 @@ GeoCoderResultSelectionDialog = Ext.extend(Ext.Window, {
             handler:this.onOkay
         });
         this.addButton(okayButton);
+
+        var closeButton = new Ext.Button({
+            text:'{{=T("Cancel")}}',
+            scope:this,
+            minWidth:75,
+            handler:this.onClose
+        });
+        this.addButton(closeButton);
+
     },
 
     onClose: function() {

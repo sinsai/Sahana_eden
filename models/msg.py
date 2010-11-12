@@ -469,7 +469,7 @@ def shn_msg_compose( redirect_module = "msg",
                              request.vars.message,
                              sender_pe_id,
                              request.vars.pr_message_method):
-            session.flash = T("Message sent to outbox")
+            session.flash = T("Check outbox for the message status")
             redirect(URL(r=request, c=redirect_module, f=redirect_function, vars=redirect_vars))
         else:
             session.error = T("Error in message")

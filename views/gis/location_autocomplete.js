@@ -905,7 +905,7 @@ $(function() {
     widget = "<a id='geocoder-results-button' href='#'>{{=T("Geocoder Search")}}</a> ({{=T("Type an address above and use the geocoder to complete it.")}})";
     row2 = "<tr id='gis_location_geocoder__row'><td>" + widget + '</td><td></td></tr>';
     // Enable when ready
-    //$(location_id_row).before(row2);
+    $(location_id_row).before(row2);
 
     function geoCoderResultsHandler(selectedAddress) {
         //s3_debug('Selected place: ', selectedAddress);
@@ -927,33 +927,33 @@ $(function() {
         $('#gis_location_l0').val(country);
     }
 
-    //var geoCodeButton = Ext.get('geocoder-results-button');
-    //geoCodeButton.on('click', function(){
-    //    var addr_street = $('#gis_location_addr_street').val();
-    //    var country = '';
-    //    var province = '';
+    var geoCodeButton = Ext.get('geocoder-results-button');
+    geoCodeButton.on('click', function(){
+        var addr_street = $('#gis_location_addr_street').val();
+        var country = '';
+        var province = '';
         // Unfortunately, adding in the country sometimes seems to pare down results too much.
         // Needs more work...
-    //    if ($('#gis_location_l0').val()) {
-    //        country = $('#gis_location_l0 :selected').text();
-    //    }
-    //    if ($('#gis_location_l1').val()) {
-    //        province = $('#gis_location_l1 :selected').text();
-    //    }
-    //    var search_term = addr_street + ' ' + province + ' ' + country;
+        if ($('#gis_location_l0').val()) {
+            country = $('#gis_location_l0 :selected').text();
+        }
+        if ($('#gis_location_l1').val()) {
+            province = $('#gis_location_l1 :selected').text();
+        }
+        var search_term = addr_street + ' ' + province + ' ' + country;
         //s3_debug('Searching geocoder with: ', search_term);
-    //    if (!addr_street) {
-    //        return;
-    //    }
-    //    $.getJSONS3(
-    //        '{{=URL(r=request, c="gis", f="geocode")}}' + '?location=' + search_term,
-    //        function(data) {
+        if (!addr_street) {
+            return;
+        }
+        $.getJSONS3(
+            '{{=URL(r=request, c="gis", f="geocode")}}' + '?location=' + search_term,
+            function(data) {
                 //s3_debug('Geocoder results:', data);
-    //            geocode_results_picker(data, geoCoderResultsHandler);
-    //        },
-    //        'false'
-    //    );
-    //});
+                geocode_results_picker(data, geoCoderResultsHandler);
+            },
+            'false'
+        );
+    });
 
 
     // Call L0 after definition of L1-L5 (since it may need to recurse through them)

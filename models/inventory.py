@@ -19,17 +19,17 @@ if deployment_settings.has_module("logs"):
     tablename = "%s_%s" % (module, resourcename)
     table = db.define_table(tablename,
                             organisation_id(),
-                            location_id(),                            
+                            location_id(),
                             #document_id(),
-                            person_id("contact_person_id"                 
-                                      ),                            
+                            person_id("contact_person_id"
+                                      ),
                             super_link(db.org_site),
                             comments(),
                             migrate=migrate, *s3_meta_fields())
 
 
     table.location_id.requires = IS_ONE_OF(db, "gis_location.id", repr_select, orderby="gis_location.name", sort=True)
-    
+
     table.contact_person_id.label = T("Contact Person")
     s3xrc.model.configure(table, mark_required=["location_id"])
 
@@ -63,7 +63,7 @@ if deployment_settings.has_module("logs"):
         )
 
     # Reusable Field
-    inventory_store_id = S3ReusableField("inventory_store_id", db.inventory_store, sortby="name",
+    inventory_store_id = S3ReusableField("inventory_store_id", db.inventory_store,
                 requires = IS_NULL_OR(IS_ONE_OF(db, "inventory_store.id", inventory_store_represent, orderby="inventory_store.id", sort=True)),
                 represent = lambda id: shn_gis_location_represent(shn_get_db_field_value(db=db, table="inventory_store", field="location_id", look_up=id)),
                 label = T("Warehouse"),

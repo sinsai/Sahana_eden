@@ -1124,11 +1124,11 @@ class S3CRUDHandler(S3MethodHandler):
                     output.update(addtitle=addtitle)
 
                     # ShowAdd-Button
-                    showaddbtn = self.crud_button(None,
-                                                  tablename=tablename,
-                                                  name="label_create_button",
-                                                  _id="show-add-btn")
-                    output.update(showaddbtn=showaddbtn)
+                    showadd_btn = self.crud_button(None,
+                                                   tablename=tablename,
+                                                   name="label_create_button",
+                                                   _id="show-add-btn")
+                    output.update(showadd_btn=showadd_btn)
 
                     # Add map
                     location_id = [f for f in table if f.writable and

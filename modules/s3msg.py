@@ -265,18 +265,6 @@ class Msg(object):
 
         return self.mail.send(to, subject, message)
 
-    def check_pe_id_validity(self, pe_id):
-        """
-            Check if the pe_id passed is valid or not
-        """
-
-        db = self.db
-
-        if pe_id == db(db.pr_person.pe_id == 1).select(db.pr_person.pe_id, limitby=(0, 1)).first()["pe_id"]:
-            return True
-        else:
-            return False
-
     def send_by_pe_id(self,
                       pe_id,
                       subject="",
@@ -397,7 +385,7 @@ class Msg(object):
             entity_type = db(query).select(table2.instance_type, limitby=(0, 1)).first().instance_type
             def dispatch_to_pe_id(pe_id):
                 table3 = db.pr_pe_contact
-                query = (table3.pe_id == pe_id) & (table3.contact_method == contact_method)
+                query = (table3.pe_id == pe_id) & (table3.contact_method == contact_method) & (table3.deleted == False)
                 recipient = db(query).select(table3.value, orderby = table3.priority, limitby=(0, 1)).first()
                 if recipient:
                     if (contact_method == 4):

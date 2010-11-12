@@ -2420,6 +2420,7 @@ class S3Resource(object):
     # -------------------------------------------------------------------------
     def select(self,
                fields=None,
+               left=None,
                start=0,
                limit=None,
                orderby=None,
@@ -2432,6 +2433,7 @@ class S3Resource(object):
         """ List of all records of this resource
 
             @param fields: list of fields to display
+            @param left: left outer joins
             @param start: index of the first record to display
             @param limit: maximum number of records to display
             @param orderby: orderby for the query
@@ -2461,7 +2463,8 @@ class S3Resource(object):
         audit = self.manager.audit
         audit("list", self.prefix, self.name, representation=format)
 
-        rows = db(query).select(*fields, **dict(orderby=orderby,
+        rows = db(query).select(*fields, **dict(left=left,
+                                                orderby=orderby,
                                                 limitby=limitby))
 
         if not rows:

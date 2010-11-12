@@ -1124,11 +1124,11 @@ class S3CRUDHandler(S3MethodHandler):
                     output.update(addtitle=addtitle)
 
                     # ShowAdd-Button
-                    showaddbtn = self.crud_button(None,
-                                                  tablename=tablename,
-                                                  name="label_create_button",
-                                                  _id="show-add-btn")
-                    output.update(showaddbtn=showaddbtn)
+                    showadd_btn = self.crud_button(None,
+                                                   tablename=tablename,
+                                                   name="label_create_button",
+                                                   _id="show-add-btn")
+                    output.update(showadd_btn=showadd_btn)
 
                     # Add map
                     location_id = [f for f in table if f.writable and
@@ -1191,23 +1191,25 @@ class S3CRUDHandler(S3MethodHandler):
                 self.resource.build_query(vars=session.s3.filter)
 
             displayrows = totalrows = self.resource.count()
+            left = []
 
             # SSPag dynamic filter?
             if vars.sSearch:
-                squery = self.ssp_filter(table, fields)
+                squery = self.ssp_filter(table, fields, left=left)
                 if squery is not None:
                     self.resource.add_filter(squery)
                     displayrows = self.resource.count()
 
             # SSPag sorting
             if vars.iSortingCols and orderby is None:
-                orderby = self.ssp_orderby(table, fields)
+                orderby = self.ssp_orderby(table, fields, left=left)
 
             # Echo
             sEcho = int(vars.sEcho or 0)
 
             # Get the list
             items = self.resource.select(fields=fields,
+                                         left=left,
                                          start=start,
                                          limit=limit,
                                          orderby=orderby,
@@ -1487,12 +1489,13 @@ class S3CRUDHandler(S3MethodHandler):
 
 
     # -------------------------------------------------------------------------
-    def ssp_filter(self, table, fields):
+    def ssp_filter(self, table, fields, left=[]):
 
         """ Convert the SSPag GET vars into a filter query
 
             @param table: the table
             @param fields: list of fields displayed in the list view (same order!)
+            @param left: list of joins
 
         """
 
@@ -1505,8 +1508,28 @@ class S3CRUDHandler(S3MethodHandler):
 
         wildcard = "%%%s%%" % context
 
+        # Retrieve the list of search fields
+        flist = []
         for i in xrange(0, columns):
             field = fields[i]
+            fieldtype = str(field.type)
+            if fieldtype.startswith("reference") and \
+               hasattr(field, "sortby") and field.sortby:
+                tn = fieldtype[10:]
+                join = [j for j in left if j.table._tablename == tn]
+                if not join:
+                    left.append(self.db[tn].on(field == self.db[tn].id))
+                else:
+                    join[0].query = (join[0].query) | (field == self.db[tn].id)
+                if isinstance(field.sortby, (list, tuple)):
+                    flist.extend([self.db[tn][f] for f in field.sortby])
+                else:
+                    flist.append(self.db[tn][field.sortby])
+            else:
+                flist.append(field)
+
+        # Build search query
+        for field in flist:
             query = None
             if str(field.type) == "integer":
                 requires = field.requires
@@ -1528,10 +1551,8 @@ class S3CRUDHandler(S3MethodHandler):
                         query = field.belongs(vlist)
                 else:
                     continue
-
             elif str(field.type) in ("string", "text"):
                 query = field.lower().like(wildcard)
-
             if searchq is None and query:
                 searchq = query
             elif query:
@@ -1541,12 +1562,13 @@ class S3CRUDHandler(S3MethodHandler):
 
 
     # -------------------------------------------------------------------------
-    def ssp_orderby(self, table, fields):
+    def ssp_orderby(self, table, fields, left=[]):
 
         """ Convert the SSPag GET vars into a sorting query
 
             @param table: the table
             @param fields: list of fields displayed in the list view (same order!)
+            @param left: list of joins
 
         """
 
@@ -1555,15 +1577,33 @@ class S3CRUDHandler(S3MethodHandler):
 
         iSortingCols = int(vars["iSortingCols"])
 
-        colname = lambda i: fields[int(vars["iSortCol_%s" % str(i)])]
-
         def direction(i):
             dir = vars["sSortDir_%s" % str(i)]
             return dir and " %s" % dir or ""
 
-        return ", ".join(["%s%s" %
-                        (colname(i), direction(i))
-                        for i in xrange(iSortingCols)])
+        orderby = []
+        columns = [fields[int(vars["iSortCol_%s" % str(i)])]
+                   for i in xrange(iSortingCols)]
+        for i in xrange(len(columns)):
+            c = columns[i]
+            fieldtype = str(c.type)
+            if fieldtype.startswith("reference") and \
+               hasattr(c, "sortby") and c.sortby:
+                tn = fieldtype[10:]
+                join = [j for j in left if j.table._tablename == tn]
+                if not join:
+                    left.append(self.db[tn].on(c == self.db[tn].id))
+                else:
+                    join[0].query = (join[0].query) | (c == self.db[tn].id)
+                if not isinstance(c.sortby, (list, tuple)):
+                    orderby.append("%s.%s%s" % (tn, c.sortby, direction(i)))
+                else:
+                    orderby.append(", ".join(["%s.%s%s" % (tn, fn, direction(i))
+                                   for fn in c.sortby]))
+            else:
+                orderby.append("%s%s" % (c, direction(i)))
+
+        return ", ".join(orderby)
 
 
 # *****************************************************************************

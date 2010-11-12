@@ -3228,7 +3228,6 @@ OpenLayers.Util.extend( selectPdfControl, {
             if gpx_enabled:
                 layers_gpx += """
         var gpxLayers = new Array();
-        var format_gpx = new OpenLayers.Format.GPX();
         function onGpxFeatureSelect(event) {
             // unselect any previous selections
             tooltipUnselect(event);
@@ -3244,6 +3243,9 @@ OpenLayers.Util.extend( selectPdfControl, {
                     else:
                         url = ""
                     visible = layer["visible"]
+                    waypoints = layer["waypoints"]
+                    tracks = layer["tracks"]
+                    routes = layer["routes"]
                     marker_id = layer["marker_id"]
                     if marker_id:
                         marker = db(db.gis_marker.id == marker_id).select(db.gis_marker.image, limitby=(0, 1)).first().image
@@ -3257,6 +3259,23 @@ OpenLayers.Util.extend( selectPdfControl, {
                         visibility = "gpxLayer" + name_safe + ".setVisibility(true);"
                     else:
                         visibility = "gpxLayer" + name_safe + ".setVisibility(false);"
+                    gpx_format = "extractAttributes:true"
+                    style_marker = ""
+                    if not waypoints:
+                        gpx_format += ", extractWaypoints:false"
+                    else:
+                        style_marker = """
+        style_marker.graphicOpacity = 1;
+        style_marker.graphicWidth = i.width;
+        style_marker.graphicHeight = i.height;
+        style_marker.graphicXOffset = -(i.width / 2);
+        style_marker.graphicYOffset = -i.height;
+        style_marker.externalGraphic = iconURL;
+        """
+                    if not tracks:
+                        gpx_format += ", extractTracks:false"
+                    if not routes:
+                        gpx_format += ", extractRoutes:false"
                     layers_gpx += """
         iconURL = '""" + marker_url + """';
         // Pre-cache this image
@@ -3266,12 +3285,10 @@ OpenLayers.Util.extend( selectPdfControl, {
         i.src = iconURL;
         // Needs to be uniquely instantiated
         var style_marker = OpenLayers.Util.extend({}, OpenLayers.Feature.Vector.style['default']);
-        style_marker.graphicOpacity = 1;
-        style_marker.graphicWidth = i.width;
-        style_marker.graphicHeight = i.height;
-        style_marker.graphicXOffset = -(i.width / 2);
-        style_marker.graphicYOffset = -i.height;
-        style_marker.externalGraphic = iconURL;
+        """ + style_marker + """
+        style_marker.strokeColor = 'red';
+        style_marker.strokeWidth = 10;
+        style_marker.strokeOpacity = 0.5;
         var gpxLayer""" + name_safe + """ = new OpenLayers.Layer.Vector(
             '""" + name_safe + """',
             {
@@ -3280,7 +3297,7 @@ OpenLayers.Util.extend( selectPdfControl, {
                 style: style_marker,
                 protocol: new OpenLayers.Protocol.HTTP({
                     url: '""" + url + """',
-                    format: format_gpx
+                    format: new OpenLayers.Format.GPX({""" + gpx_format + """})
                 })
             }
         );

@@ -929,7 +929,10 @@ for layertype in gis_layer_types:
                      gis_layer,
                      Field("visible", "boolean", default=False, label=T("On by default?")),
                      #Field("url", label=T("Location")),
-                     track_id(),
+                     track_id(), # @ToDo remove this layer of complexity: Inlcude the upload field within the Layer
+                     Field("waypoints", "boolean", default=True, label=T("Display Waypoints?")),
+                     Field("tracks", "boolean", default=True, label=T("Display Tracks?")),
+                     Field("routes", "boolean", default=False, label=T("Display Routes?")),
                      marker_id()
                     )
         table = db.define_table(tablename, t, migrate=migrate)

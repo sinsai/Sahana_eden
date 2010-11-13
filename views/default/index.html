@@ -6,7 +6,7 @@
 {{=div_sit}}
 {{=div_arrow_1}}
 {{=div_dec}}
-{{=div_arrow_2}}	
+{{=div_arrow_2}}
 {{=div_res}}
 </div>
     <p class = "menu_text">
@@ -48,7 +48,13 @@ $(document).ready(function() {
     // Change register/login links to avoid page reload, back make back button work.
     $('#register-btn').attr('href', '#register');
     $('#login-btn').attr('href', '#login');
-    
+
+{{if request.env.request_method == "POST":}}
+    // Unhide register form
+    $('#register_form').removeClass('hide');
+    // Hide login form
+    $('#login_form').addClass('hide');
+{{pass}}
     // Redirect Register Button to unhide
     $('#register-btn').click(function() {
         // Unhide register form
@@ -56,7 +62,7 @@ $(document).ready(function() {
         // Hide login form
         $('#login_form').addClass('hide');
     });
-    
+
     // Redirect Login Button to unhide
     $('#login-btn').click(function() {
         // Hide register form

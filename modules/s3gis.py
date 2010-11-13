@@ -1041,7 +1041,7 @@ class GIS(object):
         """ Return a lit of the subtypes available for a Layer """
 
         if layer == "openstreetmap":
-            #return ["Mapnik", "CycleMap", "Labels", "Relief", "Osmarender", "Aerial"]
+            #return ["Mapnik", "CycleMap", "Labels", "Relief", "Osmarender", "Aerial", "Taiwan", "Haiti"]
             return ["Mapnik", "CycleMap", "Labels", "Relief", "Osmarender", "Taiwan"]
         elif layer == "google":
             return ["Satellite", "Maps", "Hybrid", "Terrain", "MapMaker", "MapMakerHybrid"]
@@ -2375,6 +2375,11 @@ OpenLayers.Util.extend( selectPdfControl, {
         var osmtw = new OpenLayers.Layer.TMS( '""" + openstreetmap.Taiwan + """', 'http://tile.openstreetmap.tw/tiles/', {type: 'png', getURL: osm_getTileURL } );
         map.addLayer(osmtw);
                     """
+            if openstreetmap.Haiti:
+                layers_openstreetmap += """
+        var osmht = new OpenLayers.Layer.TMS( '""" + openstreetmap.Haiti + """', 'http://geo.eden.sahanafoundation.org/tiles/', {type: 'png', getURL: osm_getTileURL } );
+        map.addLayer(osmht);
+                    """
         else:
             functions_openstreetmap = ""
 
@@ -3516,19 +3521,19 @@ OpenLayers.Util.extend( selectPdfControl, {
         """
         
             # Coordinate Grid
-            coordinate_enabled = db(db.gis_layer_coordinate.enabled == True).select()
+            coordinate_enabled = db(db.gis_layer_coordinate.enabled == True).select(db.gis_layer_coordinate.name, db.gis_layer_coordinate.visible)
             if coordinate_enabled:
+                layer = coordinate_enabled.first()
                 name = layer["name"]
                 # Generate HTML snippet
                 name_safe = re.sub("\W", "_", name)
                 if "visible" in layer and layer["visible"]:
-                    visibility = name_safe + ".setVisibility(true);"
+                    visibility = ""
                 else:
-                    visibility = name_safe + ".setVisibility(false);"
+                    visibility = ", visibility: false"
                 layer_coordinategrid = """
-        """ + visibility + """
-        map.addLayer(new OpenLayers.Layer.cdauth.CoordinateGrid(null, { name: '""" + name_safe + """', shortName: "grid" }));
-        """
+        map.addLayer(new OpenLayers.Layer.cdauth.CoordinateGrid(null, { name: '""" + name_safe + """', shortName: 'grid' """ + visibility + """ }));
+        """ 
             else:
                 layer_coordinategrid = ""
         

@@ -1041,10 +1041,10 @@ class GIS(object):
         """ Return a lit of the subtypes available for a Layer """
 
         if layer == "openstreetmap":
-            #return ["Mapnik", "Osmarender", "Aerial"]
-            return ["Mapnik", "Osmarender", "Taiwan"]
+            #return ["Mapnik", "CycleMap", "Osmarender", "Aerial"]
+            return ["Mapnik", "CycleMap", "Relief", "Osmarender", "Taiwan"]
         elif layer == "google":
-            return ["Satellite", "Maps", "Hybrid", "Terrain"]
+            return ["Satellite", "Maps", "Hybrid", "Terrain", "MapMaker", "MapMakerHybrid"]
         elif layer == "yahoo":
             return ["Satellite", "Maps", "Hybrid"]
         elif layer == "bing":
@@ -1416,6 +1416,7 @@ class GIS(object):
             html.append(LINK( _rel="stylesheet", _type="text/css", _href=URL(r=request, c="static", f="styles/gis/ie6-style.css"), _media="screen", _charset="utf-8") )
             html.append(LINK( _rel="stylesheet", _type="text/css", _href=URL(r=request, c="static", f="styles/gis/google.css"), _media="screen", _charset="utf-8") )
             html.append(LINK( _rel="stylesheet", _type="text/css", _href=URL(r=request, c="static", f="styles/gis/geoext-all-debug.css"), _media="screen", _charset="utf-8") )
+            html.append(LINK( _rel="stylesheet", _type="text/css", _href=URL(r=request, c="static", f="styles/gis/cdauth.css"), _media="screen", _charset="utf-8") )
             html.append(LINK( _rel="stylesheet", _type="text/css", _href=URL(r=request, c="static", f="styles/gis/gis.css"), _media="screen", _charset="utf-8") )
         else:
             html.append(LINK( _rel="stylesheet", _type="text/css", _href=URL(r=request, c="static", f="styles/gis/gis.min.css"), _media="screen", _charset="utf-8") )
@@ -1466,17 +1467,16 @@ class GIS(object):
         #########
         if session.s3.debug:
             html.append(SCRIPT(_type="text/javascript", _src=URL(r=request, c="static", f="scripts/gis/openlayers/lib/OpenLayers.js")))
-            html.append(SCRIPT(_type="text/javascript", _src=URL(r=request, c="static", f="scripts/gis/OpenStreetMap.js")))
+            #html.append(SCRIPT(_type="text/javascript", _src=URL(r=request, c="static", f="scripts/gis/OpenStreetMap.js")))
             html.append(SCRIPT(_type="text/javascript", _src=URL(r=request, c="static", f="scripts/gis/MP.js")))
+            html.append(SCRIPT(_type="text/javascript", _src=URL(r=request, c="static", f="scripts/gis/cdauth.js")))
             html.append(SCRIPT(_type="text/javascript", _src=URL(r=request, c="static", f="scripts/gis/usng2.js")))
-            html.append(SCRIPT(_type="text/javascript", _src=URL(r=request, c="static", f="scripts/gis/RemoveFeature.js")))
+            #html.append(SCRIPT(_type="text/javascript", _src=URL(r=request, c="static", f="scripts/gis/RemoveFeature.js")))
             html.append(SCRIPT(_type="text/javascript", _src=URL(r=request, c="static", f="scripts/gis/osm_styles.js")))
             html.append(SCRIPT(_type="text/javascript", _src=URL(r=request, c="static", f="scripts/gis/GeoExt/lib/GeoExt.js")))
             html.append(SCRIPT(_type="text/javascript", _src=URL(r=request, c="static", f="scripts/gis/GeoExt/ux/GeoNamesSearchCombo.js")))
         else:
             html.append(SCRIPT(_type="text/javascript", _src=URL(r=request, c="static", f="scripts/gis/OpenLayers.js")))
-            html.append(SCRIPT(_type="text/javascript", _src=URL(r=request, c="static", f="scripts/gis/OpenStreetMap.js")))
-            html.append(SCRIPT(_type="text/javascript", _src=URL(r=request, c="static", f="scripts/gis/RemoveFeature.js")))
             html.append(SCRIPT(_type="text/javascript", _src=URL(r=request, c="static", f="scripts/gis/GeoExt.js")))
 
         if print_tool:
@@ -2333,6 +2333,16 @@ OpenLayers.Util.extend( selectPdfControl, {
         var mapnik = new OpenLayers.Layer.TMS( '""" + openstreetmap.Mapnik + """', ['http://a.tile.openstreetmap.org/', 'http://b.tile.openstreetmap.org/', 'http://c.tile.openstreetmap.org/'], {type: 'png', getURL: osm_getTileURL, displayOutsideMaxExtent: true, attribution: '<a href="http://www.openstreetmap.org/">OpenStreetMap</a>' } );
         map.addLayer(mapnik);
                     """
+            if openstreetmap.CycleMap:
+                layers_openstreetmap += """
+        var cyclemap = new OpenLayers.Layer.TMS( '""" + openstreetmap.CycleMap + """', ['http://a.tile.opencyclemap.org/cycle/', 'http://b.tile.opencyclemap.org/cycle/', 'http://c.tile.opencyclemap.org/cycle/'], {type: 'png', getURL: osm_getTileURL, displayOutsideMaxExtent: true, attribution: '<a href="http://www.opencyclemap.org/">OpenCycleMap</a>' } );
+        map.addLayer(cyclemap);
+                    """
+            if openstreetmap.Relief:
+                layers_openstreetmap += """
+        var relief = new OpenLayers.Layer.TMS( '""" + openstreetmap.Relief + """', ['http://toolserver.org/~cmarqu/hill/'], {type: 'png', getURL: osm_getTileURL, displayOutsideMaxExtent: true, isBaseLayer: false, attribution: 'Relief by <a href="http://hikebikemap.de/">Hike &amp; Bike Map</a>' } );
+        map.addLayer(relief);
+                    """
             if openstreetmap.Osmarender:
                 layers_openstreetmap += """
         var osmarender = new OpenLayers.Layer.TMS( '""" + openstreetmap.Osmarender + """', ['http://a.tah.openstreetmap.org/Tiles/tile/', 'http://b.tah.openstreetmap.org/Tiles/tile/', 'http://c.tah.openstreetmap.org/Tiles/tile/'], {type: 'png', getURL: osm_getTileURL, displayOutsideMaxExtent: true, attribution: '<a href="http://www.openstreetmap.org/">OpenStreetMap</a>' } );
@@ -2385,6 +2395,16 @@ OpenLayers.Util.extend( selectPdfControl, {
                     layers_google += """
         var googleterrain = new OpenLayers.Layer.Google( '""" + google.Terrain + """' , {type: G_PHYSICAL_MAP, 'sphericalMercator': true } )
         map.addLayer(googleterrain);
+                    """
+                if google.MapMaker:
+                    layers_google += """
+        var googlemapmaker = new OpenLayers.Layer.Google( '""" + google.MapMaker + """' , {type: G_MAPMAKER_NORMAL_MAP, 'sphericalMercator': true } )
+        map.addLayer(googlemapmaker);
+                    """
+                if google.MapMakerHybrid:
+                    layers_google += """
+        var googlemapmakerhybrid = new OpenLayers.Layer.Google( '""" + google.MapMakerHybrid + """' , {type: G_MAPMAKER_HYBRID_MAP, 'sphericalMercator': true } )
+        map.addLayer(googlemapmakerhybrid);
                     """
 
             # Yahoo
@@ -3706,6 +3726,7 @@ OpenLayers.Util.extend( selectPdfControl, {
         """ + mouse_position + """
         map.addControl(new OpenLayers.Control.Permalink());
         map.addControl(new OpenLayers.Control.OverviewMap({mapOptions: options}));
+        map.addControl(new OpenLayers.Control.cdauth.GeoLocation());
 
         // Popups
         // onClick Popup

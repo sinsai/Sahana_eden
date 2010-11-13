@@ -231,6 +231,7 @@ def docss(dogis = True):
     if dogis:
         listCSSGIS = [
             "../../styles/gis/gis.css",
+            "../../styles/gis/cdauth.css",
             "../../styles/gis/popup.css",
             "../../styles/gis/layerlegend.css",
             #mfbase+"/ext/resources/css/ext-all.css", # would need to copy images if included here

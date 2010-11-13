@@ -666,7 +666,7 @@ if populate:
             projection_id = 1,
             marker_id = 1,
             map_height = 600,
-            map_width = 800,
+            map_width = 1000,
             symbology_id = symbology_us,
             wmsbrowser_url = "http://geo.eden.sahanafoundation.org/geoserver/wms?service=WMS&request=GetCapabilities"
         )
@@ -886,16 +886,16 @@ if populate:
     if not db(table.id > 0).count():
         # Populate table
         for subtype in gis_layer_openstreetmap_subtypes:
-            if subtype in ["Taiwan"]:
+            if subtype in ["Osmarender", "Taiwan"]:
                 # Local OSM layers should be disabled by default in default builds
                 table.insert(
-                        name = "OSM " + subtype,
+                        name = "OpenStreetMap (" + subtype + ")",
                         subtype = subtype,
                         enabled = False
                     )
             else:
                 table.insert(
-                        name = "OSM " + subtype,
+                        name = "OpenStreetMap (" + subtype + ")",
                         subtype = subtype
                     )
     tablename = "gis_layer_google"

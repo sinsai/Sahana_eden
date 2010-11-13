@@ -881,6 +881,15 @@ if populate:
             popup_label = "Warehouse",
             marker_id = db(db.gis_marker.name == "office").select(db.gis_marker.id, limitby=(0, 1)).first().id
         )
+    tablename = "gis_layer_coordinate"
+    table = db[tablename]
+    if not db(table.id > 0).count():
+        # Populate table
+        table.insert(
+                name = "Coordinate Grid",
+                enabled = False,
+                visible = False
+            )
     tablename = "gis_layer_openstreetmap"
     table = db[tablename]
     if not db(table.id > 0).count():
@@ -892,6 +901,12 @@ if populate:
                         name = "OpenStreetMap (" + subtype + ")",
                         subtype = subtype,
                         enabled = False
+                    )
+            elif subtype in ["Labels", "Relief"]:
+                table.insert(
+                        name = "OpenStreetMap (" + subtype + ")",
+                        subtype = subtype,
+                        visible = False
                     )
             else:
                 table.insert(

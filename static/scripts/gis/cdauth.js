@@ -20,7 +20,7 @@
 
 /**
  * @requires OpenLayers/Control.js
- * @requires OpenLayers/Layer.js
+ * @requires OpenLayers/Layer/Vector.js
  */
 
 OpenLayers.Control.cdauth = { };

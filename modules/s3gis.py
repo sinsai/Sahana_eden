@@ -1041,8 +1041,8 @@ class GIS(object):
         """ Return a lit of the subtypes available for a Layer """
 
         if layer == "openstreetmap":
-            #return ["Mapnik", "CycleMap", "Osmarender", "Aerial"]
-            return ["Mapnik", "CycleMap", "Relief", "Osmarender", "Taiwan"]
+            #return ["Mapnik", "CycleMap", "Labels", "Relief", "Osmarender", "Aerial"]
+            return ["Mapnik", "CycleMap", "Labels", "Relief", "Osmarender", "Taiwan"]
         elif layer == "google":
             return ["Satellite", "Maps", "Hybrid", "Terrain", "MapMaker", "MapMakerHybrid"]
         elif layer == "yahoo":
@@ -2301,11 +2301,13 @@ OpenLayers.Util.extend( selectPdfControl, {
         # OpenStreetMap
         gis_layer_openstreetmap_subtypes = self.layer_subtypes("openstreetmap")
         openstreetmap = Storage()
-        openstreetmap_enabled = db(db.gis_layer_openstreetmap.enabled == True).select()
+        osm_visible = Storage()
+        openstreetmap_enabled = db(db.gis_layer_openstreetmap.enabled == True).select(db.gis_layer_openstreetmap.name, db.gis_layer_openstreetmap.subtype, db.gis_layer_openstreetmap.visible)
         for layer in openstreetmap_enabled:
             for subtype in gis_layer_openstreetmap_subtypes:
                 if layer.subtype == subtype:
                     openstreetmap["%s" % subtype] = layer.name
+                    osm_visible["%s" % subtype] = layer.visible
 
         if openstreetmap:
             functions_openstreetmap = """
@@ -2338,10 +2340,25 @@ OpenLayers.Util.extend( selectPdfControl, {
         var cyclemap = new OpenLayers.Layer.TMS( '""" + openstreetmap.CycleMap + """', ['http://a.tile.opencyclemap.org/cycle/', 'http://b.tile.opencyclemap.org/cycle/', 'http://c.tile.opencyclemap.org/cycle/'], {type: 'png', getURL: osm_getTileURL, displayOutsideMaxExtent: true, attribution: '<a href="http://www.opencyclemap.org/">OpenCycleMap</a>' } );
         map.addLayer(cyclemap);
                     """
-            if openstreetmap.Relief:
+            if openstreetmap.Labels:
+                if osm_visible.Labels:
+                    visibility = ""
+                else:
+                    visibility = "osm_labels.setVisibility(false);"
                 layers_openstreetmap += """
-        var relief = new OpenLayers.Layer.TMS( '""" + openstreetmap.Relief + """', ['http://toolserver.org/~cmarqu/hill/'], {type: 'png', getURL: osm_getTileURL, displayOutsideMaxExtent: true, isBaseLayer: false, attribution: 'Relief by <a href="http://hikebikemap.de/">Hike &amp; Bike Map</a>' } );
-        map.addLayer(relief);
+        var osm_labels = new OpenLayers.Layer.TMS( '""" + openstreetmap.Labels + """', ['http://tiler1.censusprofiler.org/labelsonly/'], {type: 'png', getURL: osm_getTileURL, displayOutsideMaxExtent: true, isBaseLayer: false, attribution: 'Labels overlay CC-by-SA by <a href="http://oobrien.com/oom/">OpenOrienteeringMap</a>/<a href="http://www.openstreetmap.org/">OpenStreetMap</a> data' } );
+        """ + visibility + """
+        map.addLayer(osm_labels);
+                    """
+            if openstreetmap.Relief:
+                if osm_visible.Relief:
+                    visibility = ""
+                else:
+                    visibility = "osm_relief.setVisibility(false);"
+                layers_openstreetmap += """
+        var osm_relief = new OpenLayers.Layer.TMS( '""" + openstreetmap.Relief + """', ['http://toolserver.org/~cmarqu/hill/'], {type: 'png', getURL: osm_getTileURL, displayOutsideMaxExtent: true, isBaseLayer: false, attribution: 'Relief by <a href="http://hikebikemap.de/">Hike &amp; Bike Map</a>' } );
+        """ + visibility + """
+        map.addLayer(osm_relief);
                     """
             if openstreetmap.Osmarender:
                 layers_openstreetmap += """
@@ -3280,9 +3297,11 @@ OpenLayers.Util.extend( selectPdfControl, {
                     else:
                         visibility = "gpxLayer" + name_safe + ".setVisibility(false);"
                     gpx_format = "extractAttributes:true"
-                    style_marker = ""
                     if not waypoints:
                         gpx_format += ", extractWaypoints:false"
+                        style_marker = """
+        style_marker.externalGraphic = '';
+        """
                     else:
                         style_marker = """
         style_marker.graphicOpacity = 1;
@@ -3306,8 +3325,8 @@ OpenLayers.Util.extend( selectPdfControl, {
         // Needs to be uniquely instantiated
         var style_marker = OpenLayers.Util.extend({}, OpenLayers.Feature.Vector.style['default']);
         """ + style_marker + """
-        style_marker.strokeColor = 'red';
-        style_marker.strokeWidth = 10;
+        style_marker.strokeColor = 'blue';
+        style_marker.strokeWidth = 6;
         style_marker.strokeOpacity = 0.5;
         var gpxLayer""" + name_safe + """ = new OpenLayers.Layer.Vector(
             '""" + name_safe + """',
@@ -3495,7 +3514,24 @@ OpenLayers.Util.extend( selectPdfControl, {
                 layers_kml += """
         allLayers = allLayers.concat(kmlLayers);
         """
-
+        
+            # Coordinate Grid
+            coordinate_enabled = db(db.gis_layer_coordinate.enabled == True).select()
+            if coordinate_enabled:
+                name = layer["name"]
+                # Generate HTML snippet
+                name_safe = re.sub("\W", "_", name)
+                if "visible" in layer and layer["visible"]:
+                    visibility = name_safe + ".setVisibility(true);"
+                else:
+                    visibility = name_safe + ".setVisibility(false);"
+                layer_coordinategrid = """
+        """ + visibility + """
+        map.addLayer(new OpenLayers.Layer.cdauth.CoordinateGrid(null, { name: '""" + name_safe + """', shortName: "grid" }));
+        """
+            else:
+                layer_coordinategrid = ""
+        
         #############
         # Main script
         #############
@@ -3611,6 +3647,9 @@ OpenLayers.Util.extend( selectPdfControl, {
 
         // KML
         """ + layers_kml + """
+        
+        // CoordinateGrid
+        """ + layer_coordinategrid + """
     }
 
     """ + functions_openstreetmap + """

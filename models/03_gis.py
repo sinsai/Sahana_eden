@@ -882,7 +882,7 @@ s3xrc.model.configure(table, deletable=False)
 # -----------------------------------------------------------------------------
 # GIS Layers
 #gis_layer_types = ["bing", "shapefile", "scan"]
-gis_layer_types = ["openstreetmap", "georss", "google", "gpx", "js", "kml", "mgrs", "tms", "wfs", "wms", "xyz", "yahoo"]
+gis_layer_types = ["coordinate", "openstreetmap", "georss", "google", "gpx", "js", "kml", "mgrs", "tms", "wfs", "wms", "xyz", "yahoo"]
 gis_layer_openstreetmap_subtypes = gis.layer_subtypes("openstreetmap")
 gis_layer_google_subtypes = gis.layer_subtypes("google")
 gis_layer_yahoo_subtypes = gis.layer_subtypes("yahoo")
@@ -901,10 +901,17 @@ for layertype in gis_layer_types:
     resourcename = "layer_" + layertype
     tablename = "%s_%s" % (module, resourcename)
     # Create Type-specific Layer tables
-    if layertype == "openstreetmap":
+    if layertype == "coordinate":
         t = db.Table(db, table,
                      gis_layer,
-                     Field("subtype", label=T("Sub-type"), requires = IS_IN_SET(gis_layer_openstreetmap_subtypes, zero=None))
+                     Field("visible", "boolean", default=False, label=T("On by default?")),
+                    )
+        table = db.define_table(tablename, t, migrate=migrate)
+    elif layertype == "openstreetmap":
+        t = db.Table(db, table,
+                     gis_layer,
+                     Field("subtype", label=T("Sub-type"), requires = IS_IN_SET(gis_layer_openstreetmap_subtypes, zero=None)),
+                     Field("visible", "boolean", default=False, label=T("On by default?")),
                     )
         table = db.define_table(tablename, t, migrate=migrate)
     elif layertype == "georss":

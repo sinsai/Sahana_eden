@@ -1042,7 +1042,7 @@ class GIS(object):
 
         if layer == "openstreetmap":
             #return ["Mapnik", "CycleMap", "Labels", "Relief", "Osmarender", "Aerial", "Taiwan", "Haiti"]
-            return ["Mapnik", "CycleMap", "Labels", "Relief", "Osmarender", "Taiwan"]
+            return ["Mapnik", "CycleMap", "Labels", "Relief", "Osmarender", "Taiwan", "Haiti"]
         elif layer == "google":
             return ["Satellite", "Maps", "Hybrid", "Terrain", "MapMaker", "MapMakerHybrid"]
         elif layer == "yahoo":

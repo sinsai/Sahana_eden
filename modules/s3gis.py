@@ -277,22 +277,22 @@ class GIS(object):
             Return a list of all GIS Features which are children of the requested feature
             @ Using Materialized path for retrieving the children
             @author: Aravind Venkatesan and Ajay Kumar Sreenivasan from NCSU
-            
+
             This has been chosen over Modified Preorder Tree Traversal for greater efficiency:
             http://eden.sahanafoundation.org/wiki/HaitiGISToDo#HierarchicalTrees
         """
-        
+
         db = self.db
         list = []
         table = db.gis_location
         parent_path = db(table.id == parent_id).select(table.path)
         if(parent_path[0].path == None):
             path = str(parent_id)
-        else:    
+        else:
             path = parent_path[0].path
         for row in db(table.path.like(path + "/%")).select():
             list.append(row.id)
-             
+
         return list
 
     # -----------------------------------------------------------------------------
@@ -383,7 +383,7 @@ class GIS(object):
                 query = (db["%s_%s" % (module, resource)].deleted == False)
             else:
                 query = (db["%s_%s" % (module, resource)].id > 0)
-            
+
             if filter:
                 query = query & (db[filter.tablename].id == filter.id)
 
@@ -402,7 +402,7 @@ class GIS(object):
             else:
                 # Polygons & Categorised resources
                 locations = db(query).select(db.gis_location.id, db.gis_location.uuid, db.gis_location.parent, db.gis_location.name, db.gis_location.wkt, db.gis_location.lat, db.gis_location.lon, db["%s_%s" % (module, resource)].category)
-                
+
             if resource in gis_categorised_resources:
                 for i in range(0, len(locations)):
                     locations[i].popup_label = locations[i].name + "-" + popup_label
@@ -410,9 +410,9 @@ class GIS(object):
             else:
                 for i in range(0, len(locations)):
                     locations[i].popup_label = locations[i].name + "-" + popup_label
-            
+
             popup_url = URL(r=request, c=module, f=resource, args="read.plain?%s.location_id=" % resource)
-            
+
             if not marker and not resource in gis_categorised_resources:
                 # Add the marker here so that we calculate once/layer not once/feature
                 table_fclass = db.gis_feature_class
@@ -421,13 +421,13 @@ class GIS(object):
                 marker = db(query).select(db.gis_feature_class.id, limitby=(0, 1), cache=cache).first()
                 if marker:
                     marker = marker.id
-            
+
             try:
                 marker = db(db.gis_marker.name == marker).select(db.gis_marker.image, db.gis_marker.height, db.gis_marker.width, db.gis_marker.id, limitby=(0, 1), cache=cache).first()
                 layer = {"name":layername, "query":locations, "active":active, "marker":marker, "popup_url": popup_url, "polygons": polygons}
             except:
                 layer = {"name":layername, "query":locations, "active":active, "popup_url": popup_url, "polygons": polygons}
-        
+
             return layer
 
         except:
@@ -444,7 +444,7 @@ class GIS(object):
 
         # km
         RADIUS_EARTH = 6378.137
-        
+
         if deployment_settings.gis.spatialdb and deployment_settings.database.db_type == "postgres":
             # Use Postgres routine
             import psycopg2
@@ -456,13 +456,13 @@ class GIS(object):
 
             # Convert km to degrees (since we're using the_geom not the_geog)
             # @ToDo
-            
+
             # This function call will automatically include a bounding box comparison that will make use of any indexes that are available on the geometries.
             conn = psycopg2.connect("dbname=%s user=%s password=%s host=%s port=%i" % (dbname, username, password, host, port))
             cursor = conn.cursor()
             query_string = cursor.mogrify("SELECT * FROM gis_location WHERE ST_DWithin (ST_GeomFromText ('POINT (%s, %s)', 4326), the_geom, %s);", [lat, lon, radius])
             cursor.execute(query_string)
-            
+
         elif SHAPELY:
             # Use Shapely routine
             # Is there one?
@@ -846,7 +846,7 @@ class GIS(object):
             # Check for duplicates
             query = (_locations.name == name) & (_locations.level == level) & (_locations.parent == parent_id)
             duplicate = db(query).select()
-            
+
             if duplicate:
                 s3_debug("Location", name)
                 s3_debug("Duplicate - updating...")
@@ -1092,7 +1092,7 @@ class GIS(object):
         """
             Update the Tree for GIS Locations:
             @author: Aravind Venkatesan and Ajay Kumar Sreenivasan from NCSU
-            @summary: Using Materialized path for each node in the tree 
+            @summary: Using Materialized path for each node in the tree
             http://eden.sahanafoundation.org/wiki/HaitiGISToDo#HierarchicalTrees
         """
 
@@ -2790,7 +2790,7 @@ OpenLayers.Util.extend( selectPdfControl, {
                     name = feature.cluster[i].attributes.name;
                     fid = feature.cluster[i].fid;
                     """ + uuid_from_fid + """
-                    if ( feature.cluster[i].popup_url.match("<id>") != null ) {                   
+                    if ( feature.cluster[i].popup_url.match("<id>") != null ) {
                         url = feature.cluster[i].popup_url.replace("<id>", uuid)
                     }
                     else {
@@ -2828,12 +2828,12 @@ OpenLayers.Util.extend( selectPdfControl, {
                 // call AJAX to get the contentHTML
                 var fid = feature.fid;
                 """ + uuid_from_fid + """
-                if ( popup_url.match("<id>") != null ) {                    
+                if ( popup_url.match("<id>") != null ) {
                     popup_url = popup_url.replace("<id>", uuid)
                 }
                 else {
                     popup_url = popup_url + uuid;
-                }               
+                }
                 loadDetails(popup_url, id, popup);
             }
         }
@@ -3128,6 +3128,7 @@ OpenLayers.Util.extend( selectPdfControl, {
             # No Feature Layers requested
             pass
 
+        layer_coordinategrid = ""
         layers_georss = ""
         layers_gpx = ""
         layers_kml = ""
@@ -3519,7 +3520,7 @@ OpenLayers.Util.extend( selectPdfControl, {
                 layers_kml += """
         allLayers = allLayers.concat(kmlLayers);
         """
-        
+
             # Coordinate Grid
             coordinate_enabled = db(db.gis_layer_coordinate.enabled == True).select(db.gis_layer_coordinate.name, db.gis_layer_coordinate.visible)
             if coordinate_enabled:
@@ -3533,10 +3534,8 @@ OpenLayers.Util.extend( selectPdfControl, {
                     visibility = ", visibility: false"
                 layer_coordinategrid = """
         map.addLayer(new OpenLayers.Layer.cdauth.CoordinateGrid(null, { name: '""" + name_safe + """', shortName: 'grid' """ + visibility + """ }));
-        """ 
-            else:
-                layer_coordinategrid = ""
-        
+        """
+
         #############
         # Main script
         #############
@@ -3652,7 +3651,7 @@ OpenLayers.Util.extend( selectPdfControl, {
 
         // KML
         """ + layers_kml + """
-        
+
         // CoordinateGrid
         """ + layer_coordinategrid + """
     }

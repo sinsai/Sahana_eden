@@ -67,6 +67,7 @@ def shn_site_represent(id, default_label="[no label]"):
 
 # -----------------------------------------------------------------------------
 # Cluster
+# @ToDo Allow easy changing between the term 'Cluster' (UN) & 'Sector' (everywhere else)
 resourcename = "cluster"
 tablename = "%s_%s" % (module, resourcename)
 table = db.define_table(tablename,
@@ -270,12 +271,17 @@ shn_organisation_comment = DIV(A(ADD_ORGANIZATION,
                                  _title=ADD_ORGANIZATION + "|" + T("The Organization this record is associated with."))))
 
 organisation_id = S3ReusableField("organisation_id", db.org_organisation, sortby="name",
-                           requires = IS_NULL_OR(IS_ONE_OF(db, "org_organisation.id", shn_organisation_represent, orderby="org_organisation.name", sort=True)),
-                           represent = shn_organisation_represent,
-                           label = T("Organization"),
-                           comment = shn_organisation_comment,
-                           ondelete = "RESTRICT"
-                          )
+                                  requires = IS_NULL_OR(IS_ONE_OF(db, "org_organisation.id",
+                                                                  shn_organisation_represent,
+                                                                  orderby="org_organisation.name",
+                                                                  sort=True)
+                                                        ),
+                                  represent = shn_organisation_represent,
+                                  label = T("Organization"),
+                                  comment = shn_organisation_comment,
+                                  ondelete = "RESTRICT",
+                                  widget = S3AutocompleteWidget(request, module, resourcename)
+                                 )
 
 # Orgs as component of Clusters
 # doesn't work - component join keys cannot be 1-to-many (=a component record can only belong to one primary record)

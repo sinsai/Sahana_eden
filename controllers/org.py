@@ -91,18 +91,19 @@ def office():
 
     # Pre-processor
     def prep(r):
+        
+        if r.representation == "popup":
+            organisation = request.vars.organisation_id or session.s3.organisation_id or ""
+            if organisation:
+                table.organisation_id.default = organisation
+            
         # No point in downloading large dropdowns which we hide, so provide a smaller represent
         # the update forms are not ready. when they will - uncomment this and comment the next one
         #if r.method in ("create", "update"):
         if r.method == "create":
             table.organisation_id.requires = IS_NULL_OR(IS_ONE_OF_EMPTY(db, "org_organisation.id"))
-            if request.vars.organisation_id and \
-               request.vars.organisation_id != "None":
-                session.s3.organisation_id = request.vars.organisation_id
-                # Organisation name should be displayed on the form if organisation_id is pre-selected
-                orgs = db.org_organisation
-                query = orgs.id == int(session.s3.organisation_id)
-                session.s3.organisation_name = db(query).select(orgs.name, limitby=(0, 1)).first().name
+            if request.vars.organisation_id and request.vars.organisation_id != "None":
+                table.organisation_id.default = request.vars.organisation_id
         return True
     response.s3.prep = prep
 
@@ -131,8 +132,9 @@ def staff():
         if r.method == "create":
             # person_id mandatory for a staff!
             table.person_id.requires = IS_ONE_OF_EMPTY(db, "pr_person.id")
-            table.organisation_id.requires = IS_NULL_OR(IS_ONE_OF_EMPTY(db, "org_organisation.id"))
-            table.office_id.requires = IS_NULL_OR(IS_ONE_OF_EMPTY(db, "org_office.id"))
+            #table.organisation_id.requires = IS_NULL_OR(IS_ONE_OF_EMPTY(db, "org_organisation.id"))
+            table.organisation_id.widget = S3AutocompleteWidget(request, "org", "organisation", post_process="load_offices(false);")
+            #table.office_id.requires = IS_NULL_OR(IS_ONE_OF_EMPTY(db, "org_office.id"))
         return True
     response.s3.prep = prep
 

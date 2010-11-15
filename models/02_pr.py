@@ -315,7 +315,9 @@ person_id = S3ReusableField("person_id", db.pr_person,
                                         [shn_pr_person_represent(id)] or [NONE])[0],
                             label = T("Person"),
                             comment = shn_person_id_comment,
-                            ondelete = "RESTRICT")
+                            ondelete = "RESTRICT",
+                            widget = S3PersonAutocompleteWidget(request)
+                            )
 
 # -----------------------------------------------------------------------------
 def pr_person_onvalidation(form):

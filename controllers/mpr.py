@@ -152,8 +152,17 @@ def index():
     response.s3.prep = prep
     response.s3.postp = postp
 
+    if auth.shn_logged_in():
+        add_btn = A(T("Add Person"),
+                    _class="action-btn",
+                    _href=URL(r=request, f="person", args="create"))
+    else:
+        add_btn = None
+
     # REST controller
-    output = s3_rest_controller("pr", "person", module_name=module_name)
+    output = s3_rest_controller("pr", "person",
+                                module_name=module_name,
+                                add_btn=add_btn)
 
     # Set view, update menu and return output
     response.view = "mpr/index.html"
